@@ -1,0 +1,13 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@cv": ["./cv.json"],
+      "@cv/english": ["./cv_english.json"],
+      "@/*": ["src/*"],
+      "@types*": ["src/types/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  }
+}

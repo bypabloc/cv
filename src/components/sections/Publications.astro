@@ -1,29 +1,29 @@
 ---
 import Section from "../Section.astro";
 
-import { awards } from "@cv";
+import { publications } from "@cv";
 ---
 
-<Section title="Premios">
+<Section title="Publicaciones">
   <ul>
     {
-      awards.map(({ title, date, awarder, summary, url }) => {
+      publications.map(({ name, publisher, releaseDate, summary, url }) => {
         return (
           <li>
             <article>
               <header>
                 <div>
                   <h3>
-                    <a href={url} title={`Ver ${title}`} target="_blank">
-                      {title}
+                    <a href={url} title={`Ver ${name}`} target="_blank">
+                      {name}
                     </a>
                   </h3>
-                  <h4>{awarder}</h4>
+                  <h4>{publisher}</h4>
                 </div>
 
                 <div>
-                  <time datetime={date} data-title={date}>
-                    {date}
+                  <time datetime={releaseDate} data-title={releaseDate}>
+                    {releaseDate}
                   </time>
                 </div>
               </header>

@@ -1,44 +1,34 @@
 ---
 import Section from "../Section.astro";
 
-import { education } from "@cv";
+import { certificates } from "@cv";
 ---
 
-<Section title="Educación">
+<Section title="Certificados">
   <ul>
     {
-      education.map(({ institution, startDate, url, endDate, area, learn }) => {
-        const startYear = new Date(startDate).getFullYear();
-        const endYear =
-          endDate != null ? new Date(endDate).getFullYear() : "Actual";
-        const years = `${startYear} - ${endYear}`;
-
+      certificates.map(({ date, url, issuer, name }) => {
         return (
           <li>
             <article>
               <header>
                 <div>
                   <h3>
-                    <a href={url} title={`Ver ${institution}`} target="_blank">
-                      {institution}
+                    <a href={url} title={`Ver ${name}`} target="_blank">
+                      {name}
                     </a>
                   </h3>
                 </div>
 
                 <div>
-                  <time datetime={startDate} data-title={startDate}>
-                    {startYear}
-                  </time>
-                  {" - "}
-                  <time datetime={endDate} data-title={endDate}>
-                    {endYear}
+                  <time datetime={date} data-title={date}>
+                    {date}
                   </time>
                 </div>
               </header>
 
               <footer>
-                <p>{area}</p>
-                <p>{learn}</p>
+                <p>{issuer}</p>
               </footer>
             </article>
           </li>

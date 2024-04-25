@@ -30,7 +30,7 @@
   "work": [
     {
       "name": "Destacame",
-      "position": "Programador Web Full Stack",
+      "position": "Arquitecto Frontend y Desarrollador de Microservicios",
       "url": "https://destacame.cl",
       "startDate": "2022-08-01",
       "responsibilitiesNProjects": [
@@ -107,12 +107,31 @@
         "Python",
         "Django",
         "Microservices"
+      ],
+      "softSkills": [
+        "Aprendizaje continuo",
+        "Adaptabilidad",
+        "Trabajo en equipo",
+        "Resolución de problemas"
+      ],
+      "aptitudes": [
+        "JavaScript",
+        "Vue 2",
+        "Vue 3",
+        "CSS",
+        "HTML",
+        "AWS Route 53",
+        "AWS Lambda",
+        "AWS Cloudfront",
+        "AWS S3",
+        "Proactividad",
+        "HTML5",
+        "aws"
       ]
     },
     {
       "name": "AppInteli (Proyecto Personal)",
       "position": "Co-fundador y Desarrollador",
-      "url": "https://appinteli.com",
       "startDate": "2021-01-01",
       "endDate": "2023-10-01",
       "status": "inactive",
@@ -124,6 +143,27 @@
       "achievements": [
         "Desarrollé habilidades en la creación y gestión de un proyecto empresarial desde cero, junto con la adquisición de conocimientos técnicos y comerciales.",
         "A pesar de que el proyecto no alcanzó el éxito esperado, obtuve experiencia valiosa en aspectos de desarrollo, ventas y gestión de un negocio."
+      ],
+      "technicalSkills": [
+        "Nuxt",
+        "Laravel",
+        "AWS",
+        "MongoDB"
+      ],
+      "softSkills": [
+        "Emprendimiento",
+        "Trabajo en equipo",
+        "Adaptabilidad",
+        "Aprendizaje de errores",
+        "Habilidades de comunicación y venta."
+      ],
+      "aptitudes": [
+        "jQuery",
+        "JavaScript",
+        "HTML",
+        "Bootstrap",
+        "Proactividad",
+        "PHP"
       ]
     },
     {
@@ -153,60 +193,15 @@
         "Resolución rápida de problemas",
         "Comunicación eficaz",
         "Aprendizaje continuo y adaptación a nuevas tecnologías"
-      ]
-    },
-    {
-      "name": "Appinteli",
-      "position": "Co-fundador y Desarrollador",
-      "url": "https://appinteli.com",
-      "startDate": "2021-01-01",
-      "endDate": "2023-10-01",
-      "responsibilitiesNProjects": [
-        "Co-fundación y desarrollo de un ERP para tiendas pequeñas, enfocado en inventarios, ventas, compras y automatización de procesos como reportes y solicitudes de mercancía.",
-        "Implementación de un e-commerce sencillo y accesible como parte del sistema, mejorando la interacción cliente-tienda.",
-        "Atraer aproximadamente 10 clientes, manejando tanto el desarrollo como la parte comercial del proyecto."
-      ],
-      "achievements": [
-        "Desarrollé habilidades en la creación y gestión de un proyecto empresarial desde cero, junto con la adquisición de conocimientos técnicos y comerciales.",
-        "A pesar de que el proyecto no alcanzó el éxito esperado, obtuve experiencia valiosa en aspectos de desarrollo, ventas y gestión de un negocio."
-      ],
-      "technicalSkills": [
-        "Nuxt",
-        "Laravel",
-        "AWS",
-        "MongoDB",
-        "Arquitectura de Microservicios"
-      ],
-      "softSkills": [
-        "Emprendimiento",
-        "trabajo en equipo",
-        "adaptabilidad",
-        "aprendizaje de errores",
-        "habilidades de comunicación y venta."
       ],
       "aptitudes": [
-        "Desarrollo de software",
-        "Gestión",
-        "jQuery",
         "JavaScript",
         "HTML",
+        "CSS",
         "Bootstrap",
-        "Amazon EC2",
-        "Route 53",
-        "Liderazgo",
-        "Desarrollo web",
-        "Capacidad de innovación",
-        "SQL",
-        "Proactividad",
-        "PHP",
-        "Liderazgo de equipos",
-        "Capacidad de adaptación",
-        "HTML5",
-        "Analítico",
-        "Amazon S3",
-        "Amazon Simple Email Service",
-        "aws",
-        "Amazon Web Services"
+        "AWS",
+        "Vue 3",
+        "Proactividad"
       ]
     },
     {
@@ -305,12 +300,28 @@
         "Adaptabilidad",
         "Análisis de problemas",
         "Toma de decisiones basada en datos."
+      ],
+      "aptitudes": [
+        "Desarrollo de software",
+        "Gestión",
+        "jQuery",
+        "HTML",
+        "Bootstrap",
+        "Laravel",
+        "Desarrollo web",
+        "Capacidad de innovación",
+        "SQL",
+        "Proactividad",
+        "Capacidad de adaptación",
+        "Analítico",
+        "MariaDB"
       ]
     },
     {
-      "name": "Universidad",
-      "position": "Líder de Proyecto de Grado",
+      "name": "Freelance > Proyectos de Grado",
+      "position": "Líder, Arquitecto y Desarrollador",
       "startDate": "2015-01-01",
+      "endDate": "2015-12-01",
       "responsibilitiesNProjects": [
         "Reestructuración y finalización del proyecto de grado de dos equipos que enfrentaron dificultades técnicas.",
         "Dirección e implementación completa de las soluciones necesarias para cumplir con los objetivos del proyecto."
@@ -325,9 +336,10 @@
       "aptitudes": []
     },
     {
-      "name": "Instituto Autónomo de Infraestructura (IAI)",
+      "name": "Freelance > Instituto Autónomo de Infraestructura (IAI)",
       "position": "Líder de Desarrollo de Software y Arquitectura de Sistemas",
       "startDate": "2015-01-01",
+      "endDate": "2015-12-01",
       "responsibilitiesNProjects": [
         "Liderazgo en el desarrollo e implementación de un sistema informático para la gestión de obras.",
         "Diseño y desarrollo de una arquitectura de red con una PC como servidor para acceso centralizado a datos."
@@ -347,9 +359,10 @@
       ]
     },
     {
-      "name": "Ministerio de Educación 'IPASME'",
+      "name": "Freelance > Ministerio de Educación 'IPASME'",
       "position": "Desarrollador de software",
       "startDate": "2014-01-01",
+      "endDate": "2014-12-01",
       "responsibilitiesNProjects": [
         "Desarrollo e implementación de un sistema de gestión de historias médicas para pacientes.",
         "Creación de interfaces de escritorio en Java para Windows."
@@ -369,9 +382,10 @@
       ]
     },
     {
-      "name": "CORPOELEC",
+      "name": "Freelance > CORPOELEC",
       "position": "Desarrollador web",
       "startDate": "2013-01-01",
+      "endDate": "2013-12-01",
       "responsibilitiesNProjects": [
         "Implementación y mantenimiento de un sistema de inventario usando PHP y jQuery.",
         "Desarrollo de funcionalidades CRUD y asociación de equipos a personas."
@@ -392,16 +406,16 @@
   ],
   "education": [
     {
-      "institution": "YouTube",
+      "institution": "YouTube - Udemy - DevTalles (Fernando Herrera)",
       "url": "https://youtube.com",
       "area": "Desarrollo Web",
-      "learn": "Cuando comencé a introducirme en el curso de programación en 2016, accedía a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy uno no para de aprender",
+      "learn": "Cuando comencé a introducirme en el curso de programación en 2013, accedía a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender",
       "studyType": "course",
       "startDate": "2013-04-01"
     },
     {
       "institution": "Universidad Politécnica Territorial de Yaracuy Arístides Bastidas (UPTYAB)",
-      "url": "https://uptyab.edu.ve",
+      "url": "http://www.uptyab.edu.ve/web/index.php",
       "area": "Ingeniería Informática",
       "learn": "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros.",
       "studyType": "bachelorDegree",
@@ -411,7 +425,7 @@
   ],
   "awards": [
     {
-      "title": "Premio a Innovador del año en Destacame",
+      "title": "Premio a Innovador del año 2023 en Destacame",
       "date": "2024-01-24",
       "awarder": "Destacame",
       "summary": "Por liderar la implementación de soluciones tecnológicas innovadoras en la empresa, mejorando significativamente la eficiencia operativa y la experiencia del usuario.",
@@ -632,17 +646,17 @@
   ],
   "languages": [
     {
-      "language": "Spanish",
-      "fluency": "Native speaker"
+      "language": "Español",
+      "fluency": "Nativo"
     },
     {
-      "language": "English",
-      "fluency": "Basic"
+      "language": "Inglés",
+      "fluency": "Intermedio"
     }
   ],
   "interests": [
     {
-      "name": "Desarrollo y Automatización",
+      "name": "Desarrollador y Automatización",
       "keywords": [
         "Programación", "Automatización de Tareas", "Innovación Tecnológica"
       ]
@@ -696,6 +710,12 @@
       "reference": "Compañero de equipo en Destacame",
       "position": "Desarrollador Full Stack",
       "url": "https://www.linkedin.com/in/csfuente"
+    },
+    {
+      "name": "Helis Montes",
+      "reference": "Compañero de equipo en Destacame",
+      "position": "Desarrollador Full Stack",
+      "url": "https://www.linkedin.com/in/helis-montes"
     },
     {
       "name": "Edder Ramírez",

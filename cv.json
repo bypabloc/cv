@@ -646,17 +646,17 @@
   ],
   "languages": [
     {
-      "language": "Spanish",
-      "fluency": "Native speaker"
+      "language": "Español",
+      "fluency": "Nativo"
     },
     {
-      "language": "English",
-      "fluency": "Basic"
+      "language": "Inglés",
+      "fluency": "Intermedio"
     }
   ],
   "interests": [
     {
-      "name": "Desarrollo y Automatización",
+      "name": "Desarrollador y Automatización",
       "keywords": [
         "Programación", "Automatización de Tareas", "Innovación Tecnológica"
       ]
@@ -710,6 +710,12 @@
       "reference": "Compañero de equipo en Destacame",
       "position": "Desarrollador Full Stack",
       "url": "https://www.linkedin.com/in/csfuente"
+    },
+    {
+      "name": "Helis Montes",
+      "reference": "Compañero de equipo en Destacame",
+      "position": "Desarrollador Full Stack",
+      "url": "https://www.linkedin.com/in/helis-montes"
     },
     {
       "name": "Edder Ramírez",

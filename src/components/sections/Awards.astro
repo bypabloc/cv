@@ -1,0 +1,74 @@
+---
+import Section from "../Section.astro";
+
+import { awards } from "@cv";
+---
+
+<Section title="Premios">
+  <ul>
+    {
+      awards.map(({ title, date, awarder, summary, url }) => {
+        const dateStr = new Date(date);
+
+        return (
+          <li>
+            <article>
+              <header>
+                <div>
+                  <h3>
+                    <a href={url} title={`Ver ${title}`} target="_blank">
+                      {title}
+                    </a>
+                  </h3>
+                  <h4>{awarder}</h4>
+                </div>
+
+                <div>
+                  <time datetime={date} data-title={date}>
+                    {date}
+                  </time>
+                </div>
+              </header>
+
+              <footer>
+                <p>{summary}</p>
+              </footer>
+            </article>
+          </li>
+        );
+      })
+    }
+  </ul>
+</Section>
+
+<style>
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  article h3 {
+    font-weight: 500;
+    color: #111;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+  }
+
+  time {
+    color: #555;
+    font-size: 0.85rem;
+    min-width: 102px;
+  }
+
+  @media (width <= 700px) {
+    time {
+      text-align: right;
+    }
+  }
+</style>

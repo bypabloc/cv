@@ -392,12 +392,21 @@
   ],
   "education": [
     {
+      "institution": "YouTube",
+      "url": "https://youtube.com",
+      "area": "Desarrollo Web",
+      "learn": "Cuando comencé a introducirme en el curso de programación en 2016, accedía a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy uno no para de aprender",
+      "studyType": "course",
+      "startDate": "2013-04-01"
+    },
+    {
       "institution": "Universidad Politécnica Territorial de Yaracuy Arístides Bastidas (UPTYAB)",
       "url": "https://uptyab.edu.ve",
       "area": "Ingeniería Informática",
-      "studyType": "Grado",
-      "startDate": "2011-01-01",
-      "endDate": "2016-01-01"
+      "learn": "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros.",
+      "studyType": "bachelorDegree",
+      "startDate": "2011-03-01",
+      "endDate": "2016-03-01"
     }
   ],
   "awards": [

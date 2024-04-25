@@ -8,7 +8,7 @@ const works = work as Work[];
 ---
 
 <Section title="Experiencia laboral">
-  <ul>
+  <div class="flex column gap-8">
     {
       works.map(
         ({
@@ -28,7 +28,7 @@ const works = work as Work[];
             endDate != null ? new Date(endDate).getFullYear() : "Actual";
 
           return (
-            <li>
+            <div>
               <article>
                 <header>
                   <div>
@@ -51,67 +51,82 @@ const works = work as Work[];
                   </div>
                 </header>
 
-                <footer class="flex column gap-8">
-                  <h4>Responsabilidades y proyectos</h4>
-                  <div>
-                    {responsibilitiesNProjects.map((responsibility, index) => (
-                      <div class="responsibilities-n-projects">
-                        <p
-                          data-title="Ver detalles"
-                          data-content={responsibility}
-                        >
-                          {responsibility}
-                        </p>
-                      </div>
-                    ))}
+                <footer class="flex column gap-4">
+                  <div class="flex column gap-2">
+                    <h4>Responsabilidades y proyectos</h4>
+                    <div>
+                      {responsibilitiesNProjects.map(
+                        (responsibility, index) => (
+                          <div class="responsibilities-n-projects">
+                            <p
+                              data-title="Ver detalles"
+                              data-content={responsibility}
+                            >
+                              • {responsibility}
+                            </p>
+                          </div>
+                        )
+                      )}
+                    </div>
                   </div>
 
-                  <h4>Logros</h4>
-                  <ul>
-                    {achievements.map((achievement, index) => (
-                      <li>
-                        <p>{achievement}</p>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <h4>Habilidades técnicas</h4>
-                  <ul>
-                    {technicalSkills &&
-                      technicalSkills.map((skill, index) => (
+                  <div class="flex column gap-2">
+                    <h4>Logros</h4>
+                    <ul>
+                      {achievements.map((achievement, index) => (
                         <li>
-                          <p>{skill}</p>
+                          <p>• {achievement}</p>
                         </li>
                       ))}
-                  </ul>
+                    </ul>
+                  </div>
 
-                  <h4>Habilidades blandas</h4>
-                  <ul>
-                    {softSkills &&
-                      softSkills.map((skill, index) => (
-                        <li>
-                          <p>{skill}</p>
-                        </li>
-                      ))}
-                  </ul>
+                  <div class="flex column gap-2">
+                    <h4>Habilidades técnicas</h4>
+                    <div>
+                      {technicalSkills &&
+                        technicalSkills.map((skill, index) => (
+                          <span>
+                            {skill +
+                              (index < technicalSkills.length - 1 ? ", " : "")}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
 
-                  <h4>Aptitudes</h4>
-                  <ul>
-                    {aptitudes &&
-                      aptitudes.map((aptitude, index) => (
-                        <li>
-                          <p>{aptitude}</p>
-                        </li>
-                      ))}
-                  </ul>
+                  <div class="flex column gap-2">
+                    <h4>Habilidades blandas</h4>
+                    <ul>
+                      {softSkills &&
+                        softSkills.map((skill, index) => (
+                          <span>
+                            {skill +
+                              (index < softSkills.length - 1 ? ", " : "")}
+                          </span>
+                        ))}
+                    </ul>
+                  </div>
+
+                  <div class="flex column gap-2">
+                    <h4>Aptitudes</h4>
+                    <ul>
+                      {aptitudes &&
+                        aptitudes.map((aptitude, index) => (
+                          <span>
+                            {aptitude +
+                              (index < aptitudes.length - 1 ? ", " : "")}
+                          </span>
+                        ))}
+                    </ul>
+                  </div>
                 </footer>
               </article>
-            </li>
+            </div>
           );
         }
       )
     }
-  </ul>
+  </div>
 </Section>
 
 <style>
@@ -124,8 +139,9 @@ const works = work as Work[];
   }
 
   article h3 {
-    font-weight: 500;
+    font-weight: 700;
     color: #111;
+    font-size: larger;
   }
 
   article a {
@@ -138,7 +154,7 @@ const works = work as Work[];
 
   article h4 {
     color: #222;
-    font-weight: 400;
+    font-weight: 500;
   }
 
   header {

@@ -5,7 +5,19 @@ import { type Work } from "@/types/cv";
 import { work } from "@cv";
 
 const works = work as Work[];
+
 ---
+
+<script>
+  function toggleVisibility(contentDiv: HTMLElement) {
+    if (contentDiv.style.display === 'none') {
+      contentDiv.style.display = 'block';
+    } else {
+      contentDiv.style.display = 'none';
+    }
+  }
+</script>
+
 
 <Section title="Experiencia laboral">
   <div class="flex column gap-8">
@@ -78,44 +90,34 @@ const works = work as Work[];
                     </ul>
                   </div>
 
+                  <!-- Secciones con funcionalidad de ocultar/mostrar -->
                   <div class="flex column gap-2">
-                    <h4>Habilidades técnicas</h4>
-                    <div>
-                      {technicalSkills &&
-                        technicalSkills.map((skill, index) => (
-                          <span>
-                            {skill +
-                              (index < technicalSkills.length - 1 ? ", " : "")}
-                          </span>
-                        ))}
+                    <button onclick="toggleVisibility(this.nextElementSibling)">Habilidades técnicas</button>
+                    <div class="content" style="display: none;">
+                      {technicalSkills.map((skill, index) => (
+                        <span>{skill + (index < technicalSkills.length - 1 ? ", " : "")}</span>
+                      ))}
                     </div>
                   </div>
 
                   <div class="flex column gap-2">
-                    <h4>Habilidades blandas</h4>
-                    <ul>
-                      {softSkills &&
-                        softSkills.map((skill, index) => (
-                          <span>
-                            {skill +
-                              (index < softSkills.length - 1 ? ", " : "")}
-                          </span>
-                        ))}
-                    </ul>
+                    <button onclick="toggleVisibility(this.nextElementSibling)">Habilidades blandas</button>
+                    <div class="content" style="display: none;">
+                      {softSkills.map((skill, index) => (
+                        <span>{skill + (index < softSkills.length - 1 ? ", " : "")}</span>
+                      ))}
+                    </div>
                   </div>
 
                   <div class="flex column gap-2">
-                    <h4>Aptitudes</h4>
-                    <ul>
-                      {aptitudes &&
-                        aptitudes.map((aptitude, index) => (
-                          <span>
-                            {aptitude +
-                              (index < aptitudes.length - 1 ? ", " : "")}
-                          </span>
-                        ))}
-                    </ul>
+                    <button onclick="toggleVisibility(this.nextElementSibling)">Aptitudes</button>
+                    <div class="content" style="display: none;">
+                      {aptitudes.map((aptitude, index) => (
+                        <span>{aptitude + (index < aptitudes.length - 1 ? ", " : "")}</span>
+                      ))}
+                    </div>
                   </div>
+
                 </footer>
               </article>
             </div>
@@ -125,6 +127,7 @@ const works = work as Work[];
     }
   </div>
 </Section>
+
 
 <style>
   .flex {

@@ -45,10 +45,8 @@ const jsonData = {
     },
   ],
   basics: {
-    username: "pablo-c",
     name: "Pablo Contreras",
     label: "Ingeniero de software con más de 8 años de experiencia",
-    image: "/me.webp",
     email: "pacg1991@gmail.com",
     phone: "+51 918490148",
     url: "https://pablo-c.com",

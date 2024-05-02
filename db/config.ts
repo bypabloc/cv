@@ -11,18 +11,92 @@ const base = {
   updatedAt: column.date({ default: NOW }),
 };
 
-export const Networks = defineTable({
-  columns: {
-    ...base,
-    name: column.text({ unique: true }),
-    url: column.text(),
-  },
-});
-
 export const Users = defineTable({
   columns: {
     ...base,
     username: column.text({ unique: true }),
+  },
+});
+
+export const Networks = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+    url: column.text(),
+  },
+});
+
+export const typeFiles = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+    extension: column.text(),
+    mime: column.text(),
+    priority: column.number(),
+  },
+});
+
+export const Institutions = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+    url: column.text(),
+    locationUrl: column.text({ optional: true }),
+    mapEmbed: column.text({ optional: true }),
+  },
+});
+
+export const Issuers = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+    url: column.text(),
+  },
+});
+
+export const Publishers = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+    url: column.text(),
+  },
+});
+
+export const Languages = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+  },
+});
+
+export const Keywords = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+  },
+});
+
+export const Interests = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+    keywords: column.json(),
+  },
+});
+
+export const Skills = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
   },
 });
 
@@ -50,9 +124,9 @@ export const Images = defineTable({
     userId: column.text({
       references: () => Users.columns.id,
     }),
-    type: column.text(),
+    type: column.text({}),
     sort: column.number(),
-    url: column.text(),
+    path: column.json(),
   },
 });
 
@@ -65,6 +139,30 @@ export const NetworksUsers = defineTable({
     userId: column.text({
       references: () => Users.columns.id,
     }),
+    username: column.text(),
+  },
+});
+
+export const Employers = defineTable({
+  columns: {
+    ...base,
+    userId: column.text({
+      references: () => Users.columns.id,
+      optional: true,
+    }),
+    codeName: column.text({ unique: true }),
+    name: column.text(),
+    url: column.text(),
+    description: column.text({ optional: true }),
+    serviceStatus: column.text({ default: "active" }),
+  },
+});
+
+export const JobTypes = defineTable({
+  columns: {
+    ...base,
+    codeName: column.text({ unique: true }),
+    name: column.text(),
   },
 });
 
@@ -74,42 +172,21 @@ export const Works = defineTable({
     userId: column.text({
       references: () => Users.columns.id,
     }),
-    name: column.text({ unique: true }),
+    employerId: column.text({
+      references: () => Employers.columns.id,
+      optional: true,
+    }),
+    codeName: column.text({ unique: true }),
+    name: column.text(),
     position: column.text(),
-    url: column.text({ optional: true }),
     startDate: column.date(),
-    responsibilitiesNProjects: column.json(),
-    achievements: column.json(),
-  },
-});
-
-export const TechnicalSkills = defineTable({
-  columns: {
-    ...base,
-    userId: column.text({
-      references: () => Users.columns.id,
+    endDate: column.date({ optional: true }),
+    jobTypeId: column.text({
+      references: () => JobTypes.columns.id,
     }),
-    name: column.text(),
-  },
-});
-
-export const SoftSkills = defineTable({
-  columns: {
-    ...base,
-    userId: column.text({
-      references: () => Users.columns.id,
-    }),
-    name: column.text(),
-  },
-});
-
-export const Aptitudes = defineTable({
-  columns: {
-    ...base,
-    userId: column.text({
-      references: () => Users.columns.id,
-    }),
-    name: column.text(),
+    summary: column.text({ optional: true }),
+    responsibilitiesNProjects: column.json({ optional: true }),
+    achievements: column.json({ optional: true }),
   },
 });
 
@@ -119,7 +196,7 @@ export const WorksTechnicalSkills = defineTable({
       references: () => Works.columns.id,
     }),
     technicalSkillId: column.text({
-      references: () => TechnicalSkills.columns.id,
+      references: () => Skills.columns.id,
     }),
   },
 });
@@ -129,40 +206,21 @@ export const WorksSoftSkills = defineTable({
     workId: column.text({
       references: () => Works.columns.id,
     }),
-    softSkillId: column.text({
-      references: () => SoftSkills.columns.id,
+    skillId: column.text({
+      references: () => Skills.columns.id,
     }),
   },
 });
 
-export const WorksAptitudes = defineTable({
-  columns: {
-    workId: column.text({
-      references: () => Works.columns.id,
-    }),
-    aptitudeId: column.text({
-      references: () => Aptitudes.columns.id,
-    }),
-  },
-});
-
-export const Institution = defineTable({
-  columns: {
-    ...base,
-    name: column.text(),
-  },
-});
-
-export const Education = defineTable({
+export const Educations = defineTable({
   columns: {
     ...base,
     userId: column.text({
       references: () => Users.columns.id,
     }),
     institutionId: column.text({
-      references: () => Institution.columns.id,
+      references: () => Institutions.columns.id,
     }),
-    url: column.text(),
     area: column.text(),
     learn: column.text(),
     studyType: column.text(),
@@ -185,14 +243,6 @@ export const Awards = defineTable({
   },
 });
 
-export const Issuers = defineTable({
-  columns: {
-    ...base,
-    name: column.text(),
-    url: column.text(),
-  },
-});
-
 export const Certificates = defineTable({
   columns: {
     ...base,
@@ -205,14 +255,6 @@ export const Certificates = defineTable({
       references: () => Issuers.columns.id,
     }),
     url: column.text(),
-  },
-});
-
-export const Publishers = defineTable({
-  columns: {
-    ...base,
-    name: column.text({ unique: true }),
-    link: column.text(),
   },
 });
 
@@ -232,13 +274,6 @@ export const Publications = defineTable({
   },
 });
 
-export const Languages = defineTable({
-  columns: {
-    ...base,
-    name: column.text({ unique: true }),
-  },
-});
-
 export const LanguagesUsers = defineTable({
   columns: {
     ...base,
@@ -252,31 +287,14 @@ export const LanguagesUsers = defineTable({
   },
 });
 
-export const Keywords = defineTable({
-  columns: {
-    ...base,
-    name: column.text({ unique: true }),
-  },
-});
-
-export const KeywordsInterests = defineTable({
+export const UsersInterests = defineTable({
   columns: {
     userId: column.text({
       references: () => Users.columns.id,
     }),
-    keywordId: column.text({
-      references: () => Keywords.columns.id,
-    }),
     interestId: column.text({
       references: () => Interests.columns.id,
     }),
-  },
-});
-
-export const Interests = defineTable({
-  columns: {
-    ...base,
-    name: column.text({ unique: true }),
   },
 });
 
@@ -290,6 +308,7 @@ export const Projects = defineTable({
     description: column.text(),
     highlights: column.json(),
     url: column.text(),
+    serviceStatus: column.text({ default: "active" }),
   },
 });
 
@@ -303,14 +322,11 @@ export const References = defineTable({
     reference: column.text(),
     position: column.text(),
     url: column.text(),
-  },
-});
-
-export const Skills = defineTable({
-  columns: {
-    ...base,
-    name: column.text({ unique: true }),
-    level: column.text(),
+    employerId: column.text({
+      references: () => Employers.columns.id,
+      optional: true,
+    }),
+    scrappingRecommendation: column.json({ optional: true }),
   },
 });
 
@@ -323,6 +339,7 @@ export const SkillsUsers = defineTable({
     skillId: column.text({
       references: () => Skills.columns.id,
     }),
+    level: column.text(),
   },
 });
 
@@ -341,16 +358,15 @@ export const SkillsUsersKeywords = defineTable({
 export default defineDb({
   tables: {
     Basics,
-    Aptitudes,
     Awards,
     Users,
     Certificates,
-    Education,
-    Institution,
+    Educations,
+    Institutions,
     Interests,
     Issuers,
     Keywords,
-    KeywordsInterests,
+    UsersInterests,
     Languages,
     Networks,
     Projects,
@@ -360,10 +376,7 @@ export default defineDb({
     Skills,
     SkillsUsers,
     SkillsUsersKeywords,
-    SoftSkills,
-    TechnicalSkills,
     Works,
-    WorksAptitudes,
     WorksSoftSkills,
     WorksTechnicalSkills,
   },

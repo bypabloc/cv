@@ -27,7 +27,7 @@ export const Networks = defineTable({
   },
 });
 
-export const typeFiles = defineTable({
+export const TypeFiles = defineTable({
   columns: {
     ...base,
     codeName: column.text({ unique: true }),
@@ -152,7 +152,7 @@ export const Employers = defineTable({
     }),
     codeName: column.text({ unique: true }),
     name: column.text(),
-    url: column.text(),
+    url: column.text({ optional: true }),
     description: column.text({ optional: true }),
     serviceStatus: column.text({ default: "active" }),
   },
@@ -357,18 +357,22 @@ export const SkillsUsersKeywords = defineTable({
 
 export default defineDb({
   tables: {
-    Basics,
     Awards,
-    Users,
+    Basics,
     Certificates,
     Educations,
+    TypeFiles,
+    Employers,
+    Images,
     Institutions,
     Interests,
     Issuers,
+    JobTypes,
     Keywords,
-    UsersInterests,
     Languages,
+    LanguagesUsers,
     Networks,
+    NetworksUsers,
     Projects,
     Publications,
     Publishers,
@@ -376,6 +380,7 @@ export default defineDb({
     Skills,
     SkillsUsers,
     SkillsUsersKeywords,
+    Users,
     Works,
     WorksSoftSkills,
     WorksTechnicalSkills,

@@ -9,6 +9,7 @@ import {
   Basics,
   Certificates,
   Educations,
+  TypeFiles,
   Employers,
   Images,
   Institutions,
@@ -16,7 +17,6 @@ import {
   Issuers,
   JobTypes,
   Keywords,
-  KeywordsInterests,
   Languages,
   LanguagesUsers,
   Networks,
@@ -28,14 +28,13 @@ import {
   Skills,
   SkillsUsers,
   SkillsUsersKeywords,
-  SoftSkills,
-  TechnicalSkills,
-  typeFiles,
   Users,
   Works,
   WorksSoftSkills,
   WorksTechnicalSkills,
 } from "astro:db";
+
+import { registerNewRecords } from "./utils";
 
 /**
 # Estructura de la Base de Datos
@@ -325,15 +324,15 @@ const jsonData = {
     Employers
     JobTypes
   */
-  users: [
-    "bypabloc",
-    "pablo",
-    "pablo-c",
-    "pacg",
-    "pabloacg",
-    "pablo-contreras",
-    "pablo-contreras-guevara",
-  ],
+  users: {
+    bypabloc: {},
+    pablo: {},
+    "pablo-c": {},
+    pacg: {},
+    pabloacg: {},
+    "pablo-contreras": {},
+    "pablo-contreras-guevara": {},
+  },
   networks: {
     linkedin: {
       name: "LinkedIn",
@@ -404,7 +403,7 @@ const jsonData = {
   publishers: {
     medium: {
       name: "Medium",
-      link: "https://medium.com",
+      url: "https://medium.com",
     },
   },
   languages: {
@@ -2295,28 +2294,73 @@ export default async function () {
     JobTypes
   */
   const requestList: any[] = [];
-  const listUsers = await db.select().from(Users);
-  let notRegisteredUsers = await db
-    .select()
-    .from(Users)
-    .where(and(inArray(Users.username, jsonData.users)));
 
-  for (const user of notRegisteredUsers) {
-    const { username } = user;
-    jsonData.users.splice(jsonData.users.indexOf(username), 1);
-  }
-  if (jsonData.users.length) {
-    requestList.push(
-      db.insert(Users).values(
-        jsonData.users.map((username) => ({
-          username,
-        }))
-      )
-    );
-    await db.batch(requestList);
-    notRegisteredUsers = await db.select().from(Users);
-  }
-  console.log("notRegisteredUsers", notRegisteredUsers);
+  const users = await registerNewRecords(Users, "username", jsonData.users);
+  console.log("users", users);
+
+  const networks = await registerNewRecords(
+    Networks,
+    "codeName",
+    jsonData.networks
+  );
+  console.log("networks", networks);
+
+  const typeFiles = await registerNewRecords(
+    TypeFiles,
+    "codeName",
+    jsonData.typeFiles
+  );
+  console.log("typeFiles", typeFiles);
+
+  const institutions = await registerNewRecords(
+    Institutions,
+    "codeName",
+    jsonData.institutions
+  );
+  console.log("institutions", institutions);
+
+  const issuers = await registerNewRecords(
+    Issuers,
+    "codeName",
+    jsonData.issuers
+  );
+  console.log("issuers", issuers);
+
+  const publishers = await registerNewRecords(
+    Publishers,
+    "codeName",
+    jsonData.publishers
+  );
+  console.log("publishers", publishers);
+
+  const languages = await registerNewRecords(
+    Languages,
+    "codeName",
+    jsonData.languages
+  );
+  console.log("languages", languages);
+
+  const keywords = await registerNewRecords(
+    Keywords,
+    "codeName",
+    jsonData.keywords
+  );
+  console.log("keywords", keywords);
+
+  const employers = await registerNewRecords(
+    Employers,
+    "codeName",
+    jsonData.employers
+  );
+  console.log("employers", employers);
+
+  const jobTypes = await registerNewRecords(
+    JobTypes,
+    "codeName",
+    jsonData.jobTypes
+  );
+  console.log("jobTypes", jobTypes);
+
   // requestList.push(
   //   db.insert(Users).values(
   //     jsonData.users.map((username) => ({
@@ -2377,7 +2421,6 @@ export default async function () {
     Certificates
     Publications
     LanguagesUsers
-    KeywordsInterests
     Projects
     References
     SkillsUsers

@@ -1,16 +1,20 @@
 import {
   db,
   like,
+  not,
+  eq,
+  and,
+  inArray,
   Awards,
   Basics,
   Certificates,
   Educations,
-  Employers
+  Employers,
   Images,
   Institutions,
   Interests,
   Issuers,
-  JobTypes
+  JobTypes,
   Keywords,
   KeywordsInterests,
   Languages,
@@ -321,7 +325,15 @@ const jsonData = {
     Employers
     JobTypes
   */
-  users: ["bypabloc"],
+  users: [
+    "bypabloc",
+    "pablo",
+    "pablo-c",
+    "pacg",
+    "pabloacg",
+    "pablo-contreras",
+    "pablo-contreras-guevara",
+  ],
   networks: {
     linkedin: {
       name: "LinkedIn",
@@ -1676,8 +1688,10 @@ const jsonData = {
         "employers-codeName": "destacame",
         url: "https://www.linkedin.com/in/alan-vergara-bravo-b17164145",
         scrappingRecommendation: {
-          linkedin: "https://www.linkedin.com/in/bypabloc/details/recommendations",
-          elementId: "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-0",
+          linkedin:
+            "https://www.linkedin.com/in/bypabloc/details/recommendations",
+          elementId:
+            "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-0",
         },
       },
       {
@@ -1687,8 +1701,10 @@ const jsonData = {
         "employers-codeName": "destacame",
         url: "https://www.linkedin.com/in/alejandra-medinab",
         scrappingRecommendation: {
-          linkedin: "https://www.linkedin.com/in/bypabloc/details/recommendations",
-          elementId: "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-1",
+          linkedin:
+            "https://www.linkedin.com/in/bypabloc/details/recommendations",
+          elementId:
+            "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-1",
         },
       },
       {
@@ -1726,8 +1742,10 @@ const jsonData = {
         "employers-codeName": "dibal",
         url: "https://www.linkedin.com/in/jose-namoc-lopez",
         scrappingRecommendation: {
-          linkedin: "https://www.linkedin.com/in/bypabloc/details/recommendations",
-          elementId: "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-6",
+          linkedin:
+            "https://www.linkedin.com/in/bypabloc/details/recommendations",
+          elementId:
+            "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-6",
         },
       },
       {
@@ -1737,8 +1755,10 @@ const jsonData = {
         "employers-codeName": "dibal",
         url: "https://www.linkedin.com/in/jacnelly-colmenarez",
         scrappingRecommendation: {
-          linkedin: "https://www.linkedin.com/in/bypabloc/details/recommendations",
-          elementId: "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-2",
+          linkedin:
+            "https://www.linkedin.com/in/bypabloc/details/recommendations",
+          elementId:
+            "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-2",
         },
       },
       {
@@ -1754,8 +1774,10 @@ const jsonData = {
         url: "https://www.linkedin.com/in/samuelespinozac",
         position: "Desarrollador Full Stack",
         scrappingRecommendation: {
-          linkedin: "https://www.linkedin.com/in/bypabloc/details/recommendations",
-          elementId: "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-3",
+          linkedin:
+            "https://www.linkedin.com/in/bypabloc/details/recommendations",
+          elementId:
+            "profilePagedListComponent-ACoAACeoGgsB5cPxfqr-T2ylRvqy6qRWe6TgZfc-RECOMMENDATIONS-VIEW-DETAILS-profileTabSection-RECEIVED-RECOMMENDATIONS-NONE-es-ES-3",
         },
       },
     ],
@@ -2260,42 +2282,6 @@ const jsonData = {
 // Función asíncrona para insertar los datos
 export default async function () {
   // astro db execute "./db/seed.ts" --remote
-  // const tableSaved = {
-  //   Basics: asDrizzleTable("Basics", Basics),
-  //   Awards: asDrizzleTable("Awards", Awards),
-  //   Users: asDrizzleTable("Users", Users),
-  //   Certificates: asDrizzleTable("Certificates", Certificates),
-  //   Educations: asDrizzleTable("Educations", Educations),
-  //   Institutions: asDrizzleTable("Institutions", Institutions),
-  //   Interests: asDrizzleTable("Interests", Interests),
-  //   Issuers: asDrizzleTable("Issuers", Issuers),
-  //   Keywords: asDrizzleTable("Keywords", Keywords),
-  //   KeywordsInterests: asDrizzleTable("KeywordsInterests", KeywordsInterests),
-  //   Languages: asDrizzleTable("Languages", Languages),
-  //   Networks: asDrizzleTable("Networks", Networks),
-  //   Projects: asDrizzleTable("Projects", Projects),
-  //   Publications: asDrizzleTable("Publications", Publications),
-  //   Publishers: asDrizzleTable("Publishers", Publishers),
-  //   References: asDrizzleTable("References", References),
-  //   Skills: asDrizzleTable("Skills", Skills),
-  //   SkillsUsers: asDrizzleTable("SkillsUsers", SkillsUsers),
-  //   SkillsUsersKeywords: asDrizzleTable(
-  //     "SkillsUsersKeywords",
-  //     SkillsUsersKeywords
-  //   ),
-  //   SoftSkills: asDrizzleTable("SoftSkills", SoftSkills),
-  //   TechnicalSkills: asDrizzleTable("TechnicalSkills", TechnicalSkills),
-  //   Works: asDrizzleTable("Works", Works),
-  //   WorksSoftSkills: asDrizzleTable("WorksSoftSkills", WorksSoftSkills),
-  //   WorksTechnicalSkills: asDrizzleTable(
-  //     "WorksTechnicalSkills",
-  //     WorksTechnicalSkills
-  //   ),
-  // };
-  // const profilesIds = await db
-  //   .insert(typeSafeProfiles)
-  //   .values(jsonData.profiles);
-  // console.log("profilesIds", profilesIds);
   /**
     Networks
     Users
@@ -2308,7 +2294,42 @@ export default async function () {
     Employers
     JobTypes
   */
-  // const requestList: any[] = [];
+  const requestList: any[] = [];
+  const listUsers = await db.select().from(Users);
+  let notRegisteredUsers = await db
+    .select()
+    .from(Users)
+    .where(and(inArray(Users.username, jsonData.users)));
+
+  for (const user of notRegisteredUsers) {
+    const { username } = user;
+    jsonData.users.splice(jsonData.users.indexOf(username), 1);
+  }
+  if (jsonData.users.length) {
+    requestList.push(
+      db.insert(Users).values(
+        jsonData.users.map((username) => ({
+          username,
+        }))
+      )
+    );
+    await db.batch(requestList);
+    notRegisteredUsers = await db.select().from(Users);
+  }
+  console.log("notRegisteredUsers", notRegisteredUsers);
+  // requestList.push(
+  //   db.insert(Users).values(
+  //     jsonData.users.map((username) => ({
+  //       username,
+  //     }))
+  //   )
+  // );
+  // await db.batch(requestList);
+  // notRegisteredUsers = await db
+  //   .select()
+  //   .from(Users)
+  //   .where(and(inArray(Users.username, jsonData.users)));
+  // console.log("notRegisteredUsers", notRegisteredUsers);
   // jsonData.networks.forEach((network) => {
   //   requestList.push(
   //     db

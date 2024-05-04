@@ -6,12 +6,13 @@ import {
   and,
   inArray,
   Awards,
+  GroupsFiles,
+  Files,
   Basics,
   Certificates,
   Educations,
   TypeFiles,
   Employers,
-  Images,
   Institutions,
   Interests,
   Issuers,
@@ -26,289 +27,15 @@ import {
   Publishers,
   References,
   Skills,
-  SkillsUsers,
-  SkillsUsersKeywords,
   Users,
   Works,
+  SkillsKeywords,
+  InterestsKeywords,
   WorksSoftSkills,
   WorksTechnicalSkills,
 } from "astro:db";
 
 import { registerNewRecords } from "./utils";
-
-/**
-# Estructura de la Base de Datos
-
-## Tabla: Users
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **username:** text (Unique)
-
-## Tabla: Networks
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-- **url:** text
-
-## Tabla: typeFiles
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-- **extension:** text
-- **mime:** text
-- **priority:** number
-
-## Tabla: Institutions
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-- **url:** text
-- **locationUrl:** text (Optional)
-- **mapEmbed:** text (Optional)
-
-## Tabla: Issuers
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-- **url:** text
-
-## Tabla: Publishers
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-- **url:** text
-
-## Tabla: Languages
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-
-## Tabla: Keywords
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-
-## Tabla: Interests
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-- **keywords:** json
-
-## Tabla: Skills
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-
-## Tabla: Basics
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **names:** text
-- **lastName:** text
-- **label:** text
-- **image:** text
-- **email:** text
-- **phone:** text
-- **url:** text
-- **summary:** text
-- **location:** json
-
-## Tabla: Images
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **type:** text
-- **sort:** number
-- **path:** json
-
-## Tabla: NetworksUsers
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **networkId:** text (References: Networks.id)
-- **userId:** text (References: Users.id)
-- **username:** text
-
-## Tabla: Employers
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id, Optional)
-- **codeName:** text (Unique)
-- **name:** text
-- **url:** text
-- **description:** text (Optional)
-- **serviceStatus:** text (Default: "active")
-
-## Tabla: JobTypes
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **codeName:** text (Unique)
-- **name:** text
-
-## Tabla: Works
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **employerId:** text (References: Employers.id, Optional)
-- **codeName:** text (Unique)
-- **name:** text
-- **position:** text
-- **startDate:** date
-- **endDate:** date (Optional)
-- **jobTypeId:** text (References: JobTypes.id)
-- **summary:** text (Optional)
-- **responsibilitiesNProjects:** json (Optional)
-- **achievements:** json (Optional)
-
-## Tabla: WorksTechnicalSkills
-- **workId:** text (References: Works.id)
-- **technicalSkillId:** text (References: Skills.id)
-
-## Tabla: WorksSoftSkills
-- **workId:** text (References: Works.id)
-- **softSkillId:** text (References: SoftSkills.id)
-
-## Tabla: Educations
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **institutionId:** text (References: Institutions.id)
-- **area:** text
-- **learn:** text
-- **studyType:** text
-- **startDate:** date
-- **endDate:** date
-
-## Tabla: Awards
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **title:** text
-- **date:** date
-- **awarder:** text
-- **summary:** text
-- **url:** text
-
-## Tabla: Certificates
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **title:** text
-- **date:** date
-- **IssuersId:** text (References: Issuers.id)
-- **url:** text
-
-## Tabla: Publications
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **name:** text
-- **publisherId:** text (References: Publishers.id)
-- **releaseDate:** date
-- **url:** text
-- **summary:** text
-
-## Tabla: LanguagesUsers
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **languageId:** text (References: Languages.id)
-- **fluency:** text
-
-## Tabla: UsersInterests
-- **userId:** text (References: Users.id)
-- **interestId:** text (References: Interests.id)
-
-## Tabla: Projects
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **name:** text
-- **description:** text
-- **highlights:** json
-- **url:** text
-- **serviceStatus:** text (Default: "active")
-
-## Tabla: References
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **name:** text
-- **reference:** text
-- **position:** text
-- **url:** text
-
-## Tabla: SkillsUsers
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **userId:** text (References: Users.id)
-- **skillId:** text (References: Skills.id)
-- **level:** text
-
-## Tabla: SkillsUsersKeywords
-- **id:** text (Primary Key)
-- **status:** text (Default: "active")
-- **createdAt:** date (Default: NOW)
-- **updatedAt:** date (Default: NOW)
-- **skillUserId:** text (References: SkillsUsers.id)
-- **keywordId:** text (References: Keywords.id)
- */
 
 // Aquí van tus datos JSON como un objeto JS directamente en el script para simplificar
 const jsonData = {
@@ -320,460 +47,125 @@ const jsonData = {
     Issuers
     Publishers
     Languages
+    GroupsFiles
+    Skills
     Keywords
     Employers
     JobTypes
+    Interests
   */
-  users: {
-    bypabloc: {},
-    pablo: {},
-    "pablo-c": {},
-    pacg: {},
-    pabloacg: {},
-    "pablo-contreras": {},
-    "pablo-contreras-guevara": {},
-  },
-  networks: {
-    linkedin: {
+  users: [
+    {
+      username: "bypabloc",
+    },
+  ],
+  groupsFiles: [
+    {
+      codeName: "profile",
+      name: "Profile",
+    },
+    {
+      codeName: "projects",
+      name: "Projects",
+    },
+  ],
+  networks: [
+    {
+      codeName: "linkedin",
       name: "LinkedIn",
       url: "https://linkedin.com/in",
     },
-    github: {
+    {
+      codeName: "github",
       name: "GitHub",
       url: "https://github.com",
     },
-  },
-  typeFiles: {
-    avif: {
+  ],
+  typeFiles: [
+    {
+      codeName: "avif",
       name: "AVIF",
       extension: "avif",
       mime: "image/avif",
       tag: "source",
       priority: 100,
     },
-    webp: {
+    {
+      codeName: "webp",
       name: "WebP",
       extension: "webp",
       mime: "image/webp",
       tag: "source",
       priority: 70,
     },
-    jp2: {
+    {
+      codeName: "jp2",
       name: "JPEG2000",
       extension: "jp2",
       mime: "image/jpeg2000",
       tag: "source",
       priority: 50,
     },
-    jpeg: {
+    {
+      codeName: "jpeg",
       name: "JPEG",
       extension: "jpg",
       mime: "image/jpeg",
       tag: "img",
       priority: 20,
     },
-  },
-  institutions: {
-    uptyab: {
+  ],
+  institutions: [
+    {
+      codeName: "uptyab",
       name: "Universidad Politécnica Territorial de Yaracuy Arístides Bastidas (UPTYAB)",
       url: "http://www.uptyab.edu.ve/web/index.php",
       locationUrl: "https://maps.app.goo.gl/kKW1WfPh1YmCb495A",
       mapEmbed:
         '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3925.130375903552!2d-68.75705208540283!3d10.3314499212098!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e80c8d433543891%3A0x5d6f1945598c22ac!2sUniversidad%20Polit%C3%A9cnica%20Territorial%20de%20Yaracuy%20Ar%C3%ADstides%20Bastidas%20(UPTYAB)!5e0!3m2!1ses!2spe!4v1714485380993!5m2!1ses!2spe" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>',
     },
-    youtube: {
+    {
+      codeName: "youtube",
       name: "YouTube",
       url: "https://youtube.com",
     },
-    udemy: {
+    {
+      codeName: "udemy",
       name: "Udemy",
       url: "https://udemy.com",
     },
-  },
-  issuers: {
-    udemy: {
+  ],
+  issuers: [
+    {
+      codeName: "udemy",
       name: "Udemy",
       url: "https://udemy.com",
     },
-    devtalles: {
+    {
+      codeName: "devtalles",
       name: "DevTalles",
       url: "https://cursos.devtalles.com",
     },
-  },
-  publishers: {
-    medium: {
+  ],
+  publishers: [
+    {
+      codeName: "medium",
       name: "Medium",
       url: "https://medium.com",
     },
-  },
-  languages: {
-    es: {
+  ],
+  languages: [
+    {
+      codeName: "es",
       name: "Español",
       code: "es",
     },
-    en: {
+    {
+      codeName: "en",
       name: "Inglés",
       code: "en",
     },
-  },
-  keywords: {
-    programacion: {
-      name: "Programación",
-      list: ["programacion"],
-    },
-    desarrolloWeb: {
-      name: "Desarrollo Web",
-      list: ["desarrollo web"],
-    },
-    javascript: {
-      name: "JavaScript",
-      list: ["javascript"],
-    },
-    python: {
-      name: "Python",
-      list: ["python"],
-    },
-    vue: {
-      name: "Vue",
-      list: ["vue"],
-    },
-    nuxt: {
-      name: "Nuxt",
-      list: ["nuxt"],
-    },
-    django: {
-      name: "Django",
-      list: ["django"],
-    },
-    aws: {
-      name: "AWS",
-      list: ["aws"],
-    },
-    microservices: {
-      name: "Microservices",
-      list: ["microservices"],
-    },
-    microfrontends: {
-      name: "Microfrontends",
-      list: ["microfrontends"],
-    },
-    frontend: {
-      name: "Frontend",
-      list: ["frontend"],
-    },
-    laravel: {
-      name: "Laravel",
-      list: ["laravel"],
-    },
-    serverSideRendering: {
-      name: "Server Side Rendering",
-      list: ["server side rendering"],
-    },
-    metodologiasAgiles: {
-      name: "Metodologías Ágiles",
-      list: ["metodologias agiles"],
-    },
-    scrum: {
-      name: "Scrum",
-      list: ["scrum"],
-    },
-    shapeUp: {
-      name: "Shape Up",
-      list: ["shape up"],
-    },
-    java: {
-      name: "Java",
-      list: ["java"],
-    },
-    postgresql: {
-      name: "Postgresql",
-      list: ["postgresql"],
-    },
-    programacionOrientadaAObjetos: {
-      name: "Programación Orientada A Objetos",
-      list: ["programacion orientada a objetos"],
-    },
-    maquetacion: {
-      name: "Maquetación",
-      list: ["maquetacion"],
-    },
-    jquery: {
-      name: "Jquery",
-      list: ["jquery"],
-    },
-    html: {
-      name: "Html",
-      list: ["html"],
-    },
-    css: {
-      name: "Css",
-      list: ["css"],
-    },
-    php: {
-      name: "Php",
-      list: ["php"],
-    },
-    mysql: {
-      name: "Mysql",
-      list: ["mysql"],
-    },
-    git: {
-      name: "Git",
-      list: ["git"],
-    },
-    github: {
-      name: "Github",
-      list: ["github"],
-    },
-    bitbucket: {
-      name: "Bitbucket",
-      list: ["bitbucket"],
-    },
-    gitlab: {
-      name: "Gitlab",
-      list: ["gitlab"],
-    },
-    jira: {
-      name: "Jira",
-      list: ["jira"],
-    },
-    trello: {
-      name: "Trello",
-      list: ["trello"],
-    },
-    slack: {
-      name: "Slack",
-      list: ["slack"],
-    },
-    postman: {
-      name: "Postman",
-      list: ["postman"],
-    },
-    docker: {
-      name: "Docker",
-      list: ["docker"],
-    },
-    kubernetes: {
-      name: "Kubernetes",
-      list: ["kubernetes"],
-    },
-    linux: {
-      name: "Linux",
-      list: ["linux"],
-    },
-    mongodb: {
-      name: "MongoDB",
-      list: ["mongodb"],
-    },
-    nodejs: {
-      name: "Node.js",
-      list: ["nodejs"],
-    },
-    trabajoEnEquipo: {
-      name: "Trabajo en Equipo",
-      list: ["trabajo en equipo"],
-    },
-    aprendizajeDeErrores: {
-      name: "Aprendizaje de Errores",
-      list: ["aprendizaje de errores"],
-    },
-    comunicacion: {
-      name: "Comunicación",
-      list: ["comunicacion"],
-    },
-    liderazgo: {
-      name: "Liderazgo",
-      list: ["liderazgo"],
-    },
-    adaptabilidad: {
-      name: "Adaptabilidad",
-      list: ["adaptabilidad"],
-    },
-    resolucionDeProblemas: {
-      name: "Resolución de Problemas",
-      list: ["resolucion de problemas"],
-    },
-    creatividad: {
-      name: "Creatividad",
-      list: ["creatividad"],
-    },
-    pensamientoCritico: {
-      name: "Pensamiento Crítico",
-      list: ["pensamiento critico"],
-    },
-    gestionDelTiempo: {
-      name: "Gestión del Tiempo",
-      list: ["gestion del tiempo"],
-    },
-    empatia: {
-      name: "Empatía",
-      list: ["empatia"],
-    },
-    tomaDeDecisiones: {
-      name: "Toma de Decisiones",
-      list: ["toma de decisiones"],
-    },
-    aprendizajeContinuo: {
-      name: "Aprendizaje Continuo",
-      list: ["aprendizaje continuo"],
-    },
-    resiliencia: {
-      name: "Resiliencia",
-      list: ["resiliencia"],
-    },
-    proactividad: {
-      name: "Proactividad",
-      list: ["proactividad"],
-    },
-    capacidadDeAnalisis: {
-      name: "Capacidad de Análisis",
-      list: ["capacidad de analisis"],
-    },
-    capacidadDeSintesis: {
-      name: "Capacidad de Síntesis",
-      list: ["capacidad de sintesis"],
-    },
-    capacidadDeOrganizacion: {
-      name: "Capacidad de Organización",
-      list: ["capacidad de organizacion"],
-    },
-    capacidadDePlanificacion: {
-      name: "Capacidad de Planificación",
-      list: ["capacidad de planificacion"],
-    },
-    capacidadDeComunicacionEfectiva: {
-      name: "Capacidad de Comunicación Efectiva",
-      list: ["capacidad de comunicacion efectiva"],
-    },
-    capacidadDeNegociacion: {
-      name: "Capacidad de Negociación",
-      list: ["capacidad de negociacion"],
-    },
-    automatizacionDeTareas: {
-      name: "Automatización de Tareas",
-      list: ["automatizacion de tareas"],
-    },
-    innovacionTecnologica: {
-      name: "Innovación Tecnológica",
-      list: ["innovacion tecnologica"],
-    },
-    muayThai: {
-      name: "Muay Thai",
-      list: ["muay thai"],
-    },
-    karate: {
-      name: "Karate",
-      list: ["karate"],
-    },
-    fisica: {
-      name: "Física",
-      list: ["fisica"],
-    },
-    astronomia: {
-      name: "Astronomía",
-      list: ["astronomia"],
-    },
-    innovacionesTecnologicas: {
-      name: "Innovaciones Tecnológicas",
-      list: ["innovaciones tecnologicas"],
-    },
-    alimentacionSaludable: {
-      name: "Alimentación Saludable",
-      list: ["alimentacion saludable"],
-    },
-    comidaNoSaludable: {
-      name: "Comida No Saludable",
-      list: ["comida no saludable"],
-    },
-    exploracionGastronomica: {
-      name: "Exploración Gastronómica",
-      list: ["exploracion gastronomica"],
-    },
-    humor: {
-      name: "Humor",
-      list: ["humor"],
-    },
-    canalesDeHumor: {
-      name: "Canales de Humor",
-      list: ["canales de humor"],
-    },
-    backEnd: {
-      name: "Backend",
-      list: ["backend"],
-    },
-    fullStack: {
-      name: "Fullstack",
-      list: ["fullstack"],
-    },
-    spa: {
-      name: "SPA",
-      list: ["spa"],
-    },
-    vueCli: {
-      name: "Vue CLI",
-      list: ["vue cli"],
-    },
-    vueFramework: {
-      name: "Vue Framework",
-      list: ["vue framework"],
-    },
-    ssr: {
-      name: "SSR",
-      list: ["ssr"],
-    },
-    scripting: {
-      name: "Scripting",
-      list: ["scripting"],
-    },
-    webDevelopment: {
-      name: "Web Development",
-      list: ["web development"],
-    },
-    disenoResponsive: {
-      name: "Diseño Responsive",
-      list: ["diseno responsive"],
-    },
-    cloudServices: {
-      name: "Cloud Services",
-      list: ["cloud services"],
-    },
-    ec2: {
-      name: "EC2",
-      list: ["ec2"],
-    },
-    rds: {
-      name: "RDS",
-      list: ["rds"],
-    },
-    s3: {
-      name: "S3",
-      list: ["s3"],
-    },
-    ses: {
-      name: "SES",
-      list: ["ses"],
-    },
-    route53: {
-      name: "Route 53",
-      list: ["route 53"],
-    },
-    dynamodb: {
-      name: "DynamoDB",
-      list: ["dynamodb"],
-    },
-    controlDeVersiones: {
-      name: "Control de Versiones",
-      list: ["control de versiones"],
-    },
-    colaboracion: {
-      name: "Colaboración",
-      list: ["colaboracion"],
-    },
-    codigoFuente: {
-      name: "Código Fuente",
-      list: ["codigo fuente"],
-    },
-  },
+  ],
   employers: [
     {
       codeName: "destacame",
@@ -839,12 +231,1044 @@ const jsonData = {
       name: "Personal Project",
     },
   ],
+  keywords: [
+    {
+      codeName: "devops",
+      name: "DevOps",
+      keys: ["devops"],
+    }
+    // destácame - arquitecto frontend
+    {
+      codeName: "python",
+      name: "Python",
+      keys: ["python", "py"],
+    },
+    {
+      codeName: "django",
+      name: "Django",
+      keys: ["django"],
+    },
+    {
+      codeName: "microservices",
+      name: "Microservices",
+      keys: ["microservices"],
+    },
+    {
+      codeName: "aws",
+      name: "AWS",
+      keys: ["aws", "amazon web services"],
+    },
+    {
+      codeName: "frontend-architecture",
+      name: "Frontend Architecture",
+      keys: ["frontend architecture", "frontend-architecture"],
+    },
+  
+    // destácame - desarrollador web frontend
+    {
+      codeName: "vue",
+      name: "Vue.js",
+      keys: ["vue", "vuejs"],
+    },
+    {
+      codeName: "nuxt",
+      name: "Nuxt.js",
+      keys: ["nuxt", "nuxtjs"],
+    },
+    {
+      codeName: "typescript",
+      name: "TypeScript",
+      keys: ["typescript", "ts"],
+    },
+    {
+      codeName: "frontend-development",
+      name: "Frontend Development",
+      keys: ["frontend development", "frontend-development"],
+    },
+    {
+      codeName: "web-development",
+      name: "Web Development",
+      keys: ["web development", "web-development"],
+    },
+  
+    // appinteli - proyecto personal
+    {
+      codeName: "erp",
+      name: "ERP",
+      keys: ["erp"],
+    },
+    {
+      codeName: "project-management",
+      name: "Project Management",
+      keys: ["project management", "project-management"],
+    },
+    {
+      codeName: "ecommerce",
+      name: "E-commerce",
+      keys: ["ecommerce", "e-commerce"],
+    },
+    {
+      codeName: "automation",
+      name: "Automation",
+      keys: ["automation"],
+    },
+    {
+      codeName: "startup",
+      name: "Startup",
+      keys: ["startup"],
+    },
+  
+    // goodmeal - desarrollador web full stack
+    {
+      codeName: "full-stack-development",
+      name: "Full Stack Development",
+      keys: ["full stack development", "full-stack-development"],
+    },
+    {
+      codeName: "vue3",
+      name: "Vue 3",
+      keys: ["vue3", "vue 3"],
+    },
+    {
+      codeName: "scrum",
+      name: "Scrum",
+      keys: ["scrum"],
+    },
+    {
+      codeName: "bug-fixing",
+      name: "Bug Fixing",
+      keys: ["bug fixing", "bug-fixing"],
+    },
+    {
+      codeName: "web-application",
+      name: "Web Application",
+      keys: ["web application", "web-application"],
+    },
+  
+    // dibal - líder de equipo de desarrollo
+    {
+      codeName: "team-leadership",
+      name: "Team Leadership",
+      keys: ["team leadership", "team-leadership"],
+    },
+    {
+      codeName: "aws-deployment",
+      name: "AWS Deployment",
+      keys: ["aws deployment", "aws-deployment"],
+    },
+    {
+      codeName: "laravel",
+      name: "Laravel",
+      keys: ["laravel"],
+    },
+    {
+      codeName: "system-architecture",
+      name: "System Architecture",
+      keys: ["system architecture", "system-architecture"],
+    },
+    {
+      codeName: "microfrontend",
+      name: "Microfrontend",
+      keys: ["microfrontend"],
+    },
+  
+    // cofasa - desarrollador de sistemas web
+    {
+      codeName: "production-monitoring",
+      name: "Production Monitoring",
+      keys: ["production monitoring", "production-monitoring"],
+    },
+    {
+      codeName: "productivity-analysis",
+      name: "Productivity Analysis",
+      keys: ["productivity analysis", "productivity-analysis"],
+    },
+    {
+      codeName: "local-network",
+      name: "Local Network",
+      keys: ["local network", "local-network"],
+    },
+    {
+      codeName: "jquery",
+      name: "jQuery",
+      keys: ["jquery", "jq"],
+    },
+    {
+      codeName: "web-platform",
+      name: "Web Platform",
+      keys: ["web platform", "web-platform"],
+    },
+  
+    // iai - freelance proyectos de grado
+    {
+      codeName: "graduation-project",
+      name: "Graduation Project",
+      keys: ["graduation project", "graduation-project"],
+    },
+    {
+      codeName: "technical-challenges",
+      name: "Technical Challenges",
+      keys: ["technical challenges", "technical-challenges"],
+    },
+    {
+      codeName: "project-direction",
+      name: "Project Direction",
+      keys: ["project direction", "project-direction"],
+    },
+    {
+      codeName: "solution-implementation",
+      name: "Solution Implementation",
+      keys: ["solution implementation", "solution-implementation"],
+    },
+    {
+      codeName: "team-collaboration",
+      name: "Team Collaboration",
+      keys: ["team collaboration", "team-collaboration"],
+    },
+  
+    // iai - freelance desarrollo de software y arquitectura
+    {
+      codeName: "infrastructure-management",
+      name: "Infrastructure Management",
+      keys: ["infrastructure management", "infrastructure-management"],
+    },
+    {
+      codeName: "network-architecture",
+      name: "Network Architecture",
+      keys: ["network architecture", "network-architecture"],
+    },
+    {
+      codeName: "project-planning",
+      name: "Project Planning",
+      keys: ["project planning", "project-planning"],
+    },
+    {
+      codeName: "work-management",
+      name: "Work Management",
+      keys: ["work management", "work-management"],
+    },
+    {
+      codeName: "budget-management",
+      name: "Budget Management",
+      keys: ["budget management", "budget-management"],
+    },
+  
+    // ipasme - desarrollador de software
+    {
+      codeName: "medical-records",
+      name: "Medical Records",
+      keys: ["medical records", "medical-records"],
+    },
+    {
+      codeName: "desktop-application",
+      name: "Desktop Application",
+      keys: ["desktop application", "desktop-application"],
+    },
+    {
+      codeName: "java",
+      name: "Java",
+      keys: ["java"],
+    },
+    {
+      codeName: "object-oriented-programming",
+      name: "Object Oriented Programming",
+      keys: ["object oriented programming", "object-oriented-programming"],
+    },
+    {
+      codeName: "requirements-gathering",
+      name: "Requirements Gathering",
+      keys: ["requirements gathering", "requirements-gathering"],
+    },
+  
+    // corpoelec - desarrollador web
+    {
+      codeName: "inventory-management",
+      name: "Inventory Management",
+      keys: ["inventory management", "inventory-management"],
+    },
+    {
+      codeName: "php",
+      name: "PHP",
+      keys: ["php"],
+    },
+    {
+      codeName: "crud",
+      name: "CRUD",
+      keys: ["crud"],
+    },
+    {
+      codeName: "offline-system",
+      name: "Offline System",
+      keys: ["offline system", "offline-system"],
+    },
+    {
+      codeName: "asset-management",
+      name: "Asset Management",
+      keys: ["asset management", "asset-management"],
+    },
+
+    {
+      codeName: "machine-learning",
+      name: "Machine Learning",
+      keys: ["machine learning", "ml"],
+    },
+    {
+      codeName: "cloud-computing",
+      name: "Cloud Computing",
+      keys: ["cloud computing", "cloud-computing"],
+    },
+    {
+      codeName: "blockchain",
+      name: "Blockchain",
+      keys: ["blockchain"],
+    },
+    {
+      codeName: "ai-chatbots",
+      name: "AI Chatbots",
+      keys: ["ai chatbots", "chatbots"],
+    },
+    {
+      codeName: "internet-of-things",
+      name: "Internet of Things (IoT)",
+      keys: ["internet of things", "iot"],
+    },
+    {
+      codeName: "edge-computing",
+      name: "Edge Computing",
+      keys: ["edge computing", "edge-computing"],
+    },
+    {
+      codeName: "mobile-development",
+      name: "Mobile Development",
+      keys: ["mobile development", "mobile-development"],
+    },
+    {
+      codeName: "game-development",
+      name: "Game Development",
+      keys: ["game development", "game-development"],
+    },
+    {
+      codeName: "security-engineering",
+      name: "Security Engineering",
+      keys: ["security engineering", "security-engineering"],
+    },
+    {
+      codeName: "robotics",
+      name: "Robotics",
+      keys: ["robotics"],
+    },
+    {
+      codeName: "ar-vr",
+      name: "AR/VR",
+      keys: ["ar", "vr", "augmented reality", "virtual reality"],
+    },
+  ],
+  interests: [
+    {
+      codeName: "devops",
+      name: "DevOps",
+    },
+    {
+      codeName: "bot-creation",
+      name: "Creación de Bots",
+    },
+    {
+      codeName: "scraping",
+      name: "Scraping",
+    },
+    {
+      codeName: "kubernetes",
+      name: "Kubernetes",
+    },
+    {
+      codeName: "machine-learning",
+      name: "Machine Learning",
+    },
+    {
+      codeName: "cloud-computing",
+      name: "Cloud Computing",
+    },
+    {
+      codeName: "blockchain",
+      name: "Blockchain",
+    },
+    {
+      codeName: "ai-chatbots",
+      name: "AI Chatbots",
+    },
+    {
+      codeName: "microservices",
+      name: "Microservicios",
+    },
+    {
+      codeName: "internet-of-things",
+      name: "Internet of Things (IoT)",
+    },
+    {
+      codeName: "frontend-development",
+      name: "Frontend Development",
+    },
+    {
+      codeName: "backend-development",
+      name: "Backend Development",
+    },
+    {
+      codeName: "data-engineering",
+      name: "Data Engineering",
+    },
+    {
+      codeName: "serverless-computing",
+      name: "Serverless Computing",
+    },
+    {
+      codeName: "edge-computing",
+      name: "Edge Computing",
+    },
+    {
+      codeName: "mobile-development",
+      name: "Mobile Development",
+    },
+    {
+      codeName: "game-development",
+      name: "Game Development",
+    },
+    {
+      codeName: "security-engineering",
+      name: "Security Engineering",
+    },
+    {
+      codeName: "robotics",
+      name: "Robotics",
+    },
+    {
+      codeName: "ar-vr",
+      name: "AR/VR",
+    },
+  ],
+  skills: [
+    // Destácame - Arquitecto Frontend y Desarrollador de Microservicios
+    {
+      codeName: "python",
+      name: "Python",
+      description: "Lenguaje de programación utilizado en el desarrollo de microservicios.",
+      type: "Technical"
+    },
+    {
+      codeName: "django",
+      name: "Django",
+      description: "Framework web para Python utilizado en el desarrollo de backend.",
+      type: "Technical"
+    },
+    {
+      codeName: "microservices",
+      name: "Microservices",
+      description: "Arquitectura de microservicios para el desarrollo de aplicaciones escalables.",
+      type: "Technical"
+    },
+    {
+      codeName: "aws",
+      name: "AWS",
+      description: "Plataforma de servicios en la nube utilizada para implementación y despliegue.",
+      type: "Technical"
+    },
+    {
+      codeName: "frontend-architecture",
+      name: "Frontend Architecture",
+      description: "Diseño de la arquitectura de la aplicación frontend.",
+      type: "Technical"
+    },
+    {
+      codeName: "optimization",
+      name: "Optimization",
+      description: "Mejora de la eficiencia y el rendimiento de los sistemas.",
+      type: "Technical"
+    },
+    {
+      codeName: "automation",
+      name: "Automation",
+      description: "Automatización de procesos para mejorar la eficiencia.",
+      type: "Technical"
+    },
+    {
+      codeName: "fintech",
+      name: "Fintech",
+      description: "Conocimiento específico del mercado financiero.",
+      type: "Soft"
+    },
+    {
+      codeName: "strategic-planning",
+      name: "Strategic Planning",
+      description: "Planificación estratégica para la entrega de soluciones.",
+      type: "Soft"
+    },
+    {
+      codeName: "adaptability",
+      name: "Adaptability",
+      description: "Adaptación a cambios y desafíos.",
+      type: "Soft"
+    },
+  
+    // Destácame - Desarrollador Web Frontend
+    {
+      codeName: "vue",
+      name: "Vue.js",
+      description: "Framework JavaScript para la creación de interfaces de usuario.",
+      type: "Technical"
+    },
+    {
+      codeName: "nuxt",
+      name: "Nuxt.js",
+      description: "Framework de desarrollo web basado en Vue.js.",
+      type: "Technical"
+    },
+    {
+      codeName: "typescript",
+      name: "TypeScript",
+      description: "Lenguaje de programación tipado.",
+      type: "Technical"
+    },
+    {
+      codeName: "frontend-development",
+      name: "Frontend Development",
+      description: "Desarrollo frontend para mejorar la experiencia del usuario.",
+      type: "Technical"
+    },
+    {
+      codeName: "web-development",
+      name: "Web Development",
+      description: "Desarrollo de aplicaciones web.",
+      type: "Technical"
+    },
+    {
+      codeName: "quality-improvement",
+      name: "Quality Improvement",
+      description: "Mejora de la calidad en el desarrollo de software.",
+      type: "Technical"
+    },
+    {
+      codeName: "backend-development",
+      name: "Backend Development",
+      description: "Desarrollo de aplicaciones backend con Python y Django.",
+      type: "Technical"
+    },
+    {
+      codeName: "problem-solving",
+      name: "Problem Solving",
+      description: "Resolución de problemas técnicos complejos.",
+      type: "Soft"
+    },
+    {
+      codeName: "learning-agility",
+      name: "Learning Agility",
+      description: "Habilidad para aprender y aplicar nuevas tecnologías.",
+      type: "Soft"
+    },
+    {
+      codeName: "teamwork",
+      name: "Teamwork",
+      description: "Colaboración efectiva en equipo.",
+      type: "Soft"
+    },
+  
+    // AppInteli - Proyecto Personal
+    {
+      codeName: "erp",
+      name: "ERP",
+      description: "Desarrollo de sistemas de planificación de recursos empresariales.",
+      type: "Technical"
+    },
+    {
+      codeName: "project-management",
+      name: "Project Management",
+      description: "Gestión de proyectos empresariales.",
+      type: "Soft"
+    },
+    {
+      codeName: "ecommerce",
+      name: "E-commerce",
+      description: "Desarrollo de soluciones de comercio electrónico.",
+      type: "Technical"
+    },
+    {
+      codeName: "automation",
+      name: "Automation",
+      description: "Automatización de procesos empresariales.",
+      type: "Technical"
+    },
+    {
+      codeName: "startup",
+      name: "Startup",
+      description: "Gestión y desarrollo de startups.",
+      type: "Soft"
+    },
+    {
+      codeName: "technical-knowledge",
+      name: "Technical Knowledge",
+      description: "Conocimientos técnicos en múltiples áreas.",
+      type: "Technical"
+    },
+    {
+      codeName: "sales",
+      name: "Sales",
+      description: "Manejo de ventas y clientes.",
+      type: "Soft"
+    },
+    {
+      codeName: "business-management",
+      name: "Business Management",
+      description: "Gestión empresarial.",
+      type: "Soft"
+    },
+    {
+      codeName: "customer-relationship",
+      name: "Customer Relationship",
+      description: "Gestión de relaciones con los clientes.",
+      type: "Soft"
+    },
+    {
+      codeName: "self-motivation",
+      name: "Self Motivation",
+      description: "Automotivación y capacidad para gestionar proyectos personales.",
+      type: "Soft"
+    },
+  
+    // GoodMeal - Desarrollador Web Full Stack
+    {
+      codeName: "full-stack-development",
+      name: "Full Stack Development",
+      description: "Desarrollo frontend y backend.",
+      type: "Technical"
+    },
+    {
+      codeName: "vue3",
+      name: "Vue 3",
+      description: "Framework JavaScript para la creación de interfaces de usuario.",
+      type: "Technical"
+    },
+    {
+      codeName: "scrum",
+      name: "Scrum",
+      description: "Framework de desarrollo ágil.",
+      type: "Technical"
+    },
+    {
+      codeName: "bug-fixing",
+      name: "Bug Fixing",
+      description: "Corrección de errores de software.",
+      type: "Technical"
+    },
+    {
+      codeName: "web-application",
+      name: "Web Application",
+      description: "Desarrollo de aplicaciones web.",
+      type: "Technical"
+    },
+    {
+      codeName: "project-management",
+      name: "Project Management",
+      description: "Gestión de proyectos en entornos de startups.",
+      type: "Soft"
+    },
+    {
+      codeName: "time-management",
+      name: "Time Management",
+      description: "Gestión efectiva del tiempo en entornos de alta presión.",
+      type: "Soft"
+    },
+    {
+      codeName: "adaptability",
+      name: "Adaptability",
+      description: "Adaptación a los cambios en entornos de startups.",
+      type: "Soft"
+    },
+    {
+      codeName: "problem-solving",
+      name: "Problem Solving",
+      description: "Habilidad para solucionar problemas técnicos complejos.",
+      type: "Soft"
+    },
+    {
+      codeName: "teamwork",
+      name: "Teamwork",
+      description: "Colaboración efectiva con un equipo de desarrollo.",
+      type: "Soft"
+    },
+  
+    // Dibal - Líder de Equipo de Desarrollo
+    {
+      codeName: "team-leadership",
+      name: "Team Leadership",
+      description: "Liderazgo efectivo de equipos de desarrollo.",
+      type: "Soft"
+    },
+    {
+      codeName: "aws-deployment",
+      name: "AWS Deployment",
+      description: "Despliegue de aplicaciones en Amazon Web Services.",
+      type: "Technical"
+    },
+    {
+      codeName: "laravel",
+      name: "Laravel",
+      description: "Framework PHP para el desarrollo backend.",
+      type: "Technical"
+    },
+    {
+      codeName: "system-architecture",
+      name: "System Architecture",
+      description: "Diseño de arquitectura de sistemas.",
+      type: "Technical"
+    },
+    {
+      codeName: "microfrontend",
+      name: "Microfrontend",
+      description: "Arquitectura de microfrontends.",
+      type: "Technical"
+    },
+    {
+      codeName: "ecommerce-development",
+      name: "E-commerce Development",
+      description: "Desarrollo de soluciones de comercio electrónico.",
+      type: "Technical"
+    },
+    {
+      codeName: "cloud-computing",
+      name: "Cloud Computing",
+      description: "Uso de tecnologías en la nube para el desarrollo y despliegue.",
+      type: "Technical"
+    },
+    {
+      codeName: "agile-methodologies",
+      name: "Agile Methodologies",
+      description: "Metodologías ágiles para gestión de proyectos.",
+      type: "Soft"
+    },
+    {
+      codeName: "team-management",
+      name: "Team Management",
+      description: "Gestión efectiva de equipos.",
+      type: "Soft"
+    },
+    {
+      codeName: "customer-oriented",
+      name: "Customer Oriented",
+      description: "Enfoque en la experiencia del cliente.",
+      type: "Soft"
+    },
+  
+    // Cofasa - Desarrollador de Sistemas Web
+    {
+      codeName: "production-monitoring",
+      name: "Production Monitoring",
+      description: "Monitoreo de la producción en sistemas de manufactura.",
+      type: "Technical"
+    },
+    {
+      codeName: "productivity-analysis",
+      name: "Productivity Analysis",
+      description: "Análisis de productividad para la mejora continua.",
+      type: "Technical"
+    },
+    {
+      codeName: "local-network",
+      name: "Local Network",
+      description: "Gestión de redes locales.",
+      type: "Technical"
+    },
+    {
+      codeName: "jquery",
+      name: "jQuery",
+      description: "Biblioteca JavaScript para manipulación de DOM.",
+      type: "Technical"
+    },
+    {
+      codeName: "web-platform",
+      name: "Web Platform",
+      description: "Desarrollo de plataformas web.",
+      type: "Technical"
+    },
+    {
+      codeName: "business-analytics",
+      name: "Business Analytics",
+      description: "Análisis de datos empresariales.",
+      type: "Technical"
+    },
+    {
+      codeName: "security-management",
+      name: "Security Management",
+      description: "Gestión de seguridad en sistemas empresariales.",
+      type: "Technical"
+    },
+    {
+      codeName: "data-analysis",
+      name: "Data Analysis",
+      description: "Análisis de datos para la mejora de procesos.",
+      type: "Technical"
+    },
+    {
+      codeName: "team-collaboration",
+      name: "Team Collaboration",
+      description: "Colaboración efectiva en equipo.",
+      type: "Soft"
+    },
+    {
+      codeName: "problem-solving",
+      name: "Problem Solving",
+      description: "Habilidad para resolver problemas técnicos complejos.",
+      type: "Soft"
+    },
+  
+    // IAI - Freelance Proyectos de Grado
+    {
+      codeName: "graduation-project",
+      name: "Graduation Project",
+      description: "Dirección e implementación de proyectos de grado.",
+      type: "Technical"
+    },
+    {
+      codeName: "technical-challenges",
+      name: "Technical Challenges",
+      description: "Resolución de desafíos técnicos complejos.",
+      type: "Technical"
+    },
+    {
+      codeName: "project-direction",
+      name: "Project Direction",
+      description: "Dirección y gestión de proyectos.",
+      type: "Soft"
+    },
+    {
+      codeName: "solution-implementation",
+      name: "Solution Implementation",
+      description: "Implementación de soluciones técnicas.",
+      type: "Technical"
+    },
+    {
+      codeName: "team-collaboration",
+      name: "Team Collaboration",
+      description: "Colaboración efectiva en equipos de desarrollo.",
+      type: "Soft"
+    },
+    {
+      codeName: "technical-consulting",
+      name: "Technical Consulting",
+      description: "Asesoramiento técnico para proyectos de grado.",
+      type: "Soft"
+    },
+    {
+      codeName: "technical-writing",
+      name: "Technical Writing",
+      description: "Redacción técnica para documentación de proyectos.",
+      type: "Technical"
+    },
+    {
+      codeName: "time-management",
+      name: "Time Management",
+      description: "Gestión efectiva del tiempo para cumplir con los plazos.",
+      type: "Soft"
+    },
+    {
+      codeName: "problem-solving",
+      name: "Problem Solving",
+      description: "Habilidad para solucionar problemas técnicos.",
+      type: "Soft"
+    },
+    {
+      codeName: "adaptability",
+      name: "Adaptability",
+      description: "Adaptación a desafíos técnicos complejos.",
+      type: "Soft"
+    },
+  
+    // IAI - Freelance Desarrollo de Software y Arquitectura
+    {
+      codeName: "infrastructure-management",
+      name: "Infrastructure Management",
+      description: "Gestión de infraestructuras de sistemas.",
+      type: "Technical"
+    },
+    {
+      codeName: "network-architecture",
+      name: "Network Architecture",
+      description: "Diseño de arquitecturas de redes.",
+      type: "Technical"
+    },
+    {
+      codeName: "project-planning",
+      name: "Project Planning",
+      description: "Planificación efectiva de proyectos.",
+      type: "Soft"
+    },
+    {
+      codeName: "work-management",
+      name: "Work Management",
+      description: "Gestión de proyectos y tareas.",
+      type: "Soft"
+    },
+    {
+      codeName: "budget-management",
+      name: "Budget Management",
+      description: "Gestión de presupuestos de proyectos.",
+      type: "Soft"
+    },
+    {
+      codeName: "system-design",
+      name: "System Design",
+      description: "Diseño de sistemas informáticos.",
+      type: "Technical"
+    },
+    {
+      codeName: "software-development",
+      name: "Software Development",
+      description: "Desarrollo de aplicaciones de software.",
+      type: "Technical"
+    },
+    {
+      codeName: "data-management",
+      name: "Data Management",
+      description: "Gestión de datos para aplicaciones empresariales.",
+      type: "Technical"
+    },
+    {
+      codeName: "project-management",
+      name: "Project Management",
+      description: "Gestión de proyectos técnicos.",
+      type: "Soft"
+    },
+    {
+      codeName: "collaborative-work",
+      name: "Collaborative Work",
+      description: "Trabajo colaborativo para el desarrollo de proyectos.",
+      type: "Soft"
+    },
+  
+    // IPASME - Desarrollador de Software
+    {
+      codeName: "medical-records",
+      name: "Medical Records",
+      description: "Gestión de historias médicas electrónicas.",
+      type: "Technical"
+    },
+    {
+      codeName: "desktop-application",
+      name: "Desktop Application",
+      description: "Desarrollo de aplicaciones de escritorio.",
+      type: "Technical"
+    },
+    {
+      codeName: "java",
+      name: "Java",
+      description: "Lenguaje de programación para desarrollo de aplicaciones.",
+      type: "Technical"
+    },
+    {
+      codeName: "object-oriented-programming",
+      name: "Object Oriented Programming",
+      description: "Programación orientada a objetos.",
+      type: "Technical"
+    },
+    {
+      codeName: "requirements-gathering",
+      name: "Requirements Gathering",
+      description: "Levantamiento de requerimientos técnicos.",
+      type: "Technical"
+    },
+    {
+      codeName: "software-design",
+      name: "Software Design",
+      description: "Diseño de aplicaciones de software.",
+      type: "Technical"
+    },
+    {
+      codeName: "technical-communication",
+      name: "Technical Communication",
+      description: "Comunicación efectiva para el desarrollo técnico.",
+      type: "Soft"
+    },
+    {
+      codeName: "analytical-thinking",
+      name: "Analytical Thinking",
+      description: "Pensamiento analítico para soluciones técnicas.",
+      type: "Soft"
+    },
+    {
+      codeName: "problem-solving",
+      name: "Problem Solving",
+      description: "Resolución de problemas técnicos complejos.",
+      type: "Soft"
+    },
+    {
+      codeName: "adaptability",
+      name: "Adaptability",
+      description: "Adaptación a tecnologías y desafíos nuevos.",
+      type: "Soft"
+    },
+  
+    // Corpoelec - Desarrollador Web
+    {
+      codeName: "inventory-management",
+      name: "Inventory Management",
+      description: "Gestión de inventarios para aplicaciones empresariales.",
+      type: "Technical"
+    },
+    {
+      codeName: "php",
+      name: "PHP",
+      description: "Lenguaje de programación para desarrollo web.",
+      type: "Technical"
+    },
+    {
+      codeName: "crud",
+      name: "CRUD",
+      description: "Operaciones CRUD para bases de datos.",
+      type: "Technical"
+    },
+    {
+      codeName: "offline-system",
+      name: "Offline System",
+      description: "Desarrollo de sistemas para operar sin conexión.",
+      type: "Technical"
+    },
+    {
+      codeName: "asset-management",
+      name: "Asset Management",
+      description: "Gestión de activos para aplicaciones empresariales.",
+      type: "Technical"
+    },
+    {
+      codeName: "web-application",
+      name: "Web Application",
+      description: "Desarrollo de aplicaciones web.",
+      type: "Technical"
+    },
+    {
+      codeName: "data-entry",
+      name: "Data Entry",
+      description: "Entrada y manipulación de datos.",
+      type: "Technical"
+    },
+    {
+      codeName: "database-management",
+      name: "Database Management",
+      description: "Gestión de bases de datos.",
+      type: "Technical"
+    },
+    {
+      codeName: "problem-solving",
+      name: "Problem Solving",
+      description: "Habilidad para solucionar problemas técnicos.",
+      type: "Soft"
+    },
+    {
+      codeName: "team-collaboration",
+      name: "Team Collaboration",
+      description: "Colaboración efectiva con equipos de desarrollo.",
+      type: "Soft"
+    }
+  ],
 
   /**
-    Interests
-    Skills
     Basics
-    Images
     NetworksUsers
     Works
     Educations
@@ -854,333 +1278,19 @@ const jsonData = {
     LanguagesUsers
     Projects
     References
-    SkillsUsers
+    Files
+    SkillsKeywords
+    InterestsKeywords
   */
-  interests: [
-    {
-      codeName: "desarrolladorYAutomatizacion",
-      name: "Desarrollador y Automatización",
-      "keywords-codeName": [
-        "programacion",
-        "automatizacionDeTareas",
-        "innovacionTecnologica",
-      ],
-    },
-    {
-      codeName: "artesMarciales",
-      name: "Artes Marciales",
-      "keywords-codeName": ["muayThai", "karate"],
-    },
-    {
-      codeName: "cienciaYTecnologia",
-      name: "Ciencia y Tecnología",
-      "keywords-codeName": ["fisica", "astronomia", "innovacionesTecnologicas"],
-    },
-    {
-      codeName: "gastronomia",
-      name: "Gastronomía",
-      "keywords-codeName": [
-        "alimentacionSaludable",
-        "comidaNoSaludable",
-        "exploracionGastronomica",
-      ],
-    },
-    {
-      codeName: "entretenimiento",
-      name: "Entretenimiento",
-      "keywords-codeName": ["humor", "canalesDeHumor"],
-    },
-  ],
-  skills: [
-    {
-      codeName: "vue",
-      name: "Vue",
-      "keywords-codeName": ["vue"],
-    },
-    {
-      codeName: "nuxt",
-      name: "Nuxt",
-      "keywords-codeName": ["nuxt"],
-    },
-    {
-      codeName: "python",
-      name: "Python",
-      "keywords-codeName": ["python"],
-    },
-    {
-      codeName: "django",
-      name: "Django",
-      "keywords-codeName": ["django"],
-    },
-    {
-      codeName: "aws",
-      name: "Aws",
-      "keywords-codeName": ["aws"],
-    },
-    {
-      codeName: "microservices",
-      name: "Microservices",
-      "keywords-codeName": ["microservices"],
-    },
-    {
-      codeName: "microfrontends",
-      name: "Microfrontends",
-      "keywords-codeName": ["microfrontends"],
-    },
-    {
-      codeName: "frontend",
-      name: "Frontend",
-      "keywords-codeName": ["frontend"],
-    },
-    {
-      codeName: "javascript",
-      name: "Javascript",
-      "keywords-codeName": ["javascript"],
-    },
-    {
-      codeName: "laravel",
-      name: "Laravel",
-      "keywords-codeName": ["laravel"],
-    },
-    {
-      codeName: "serverSideRendering",
-      name: "Server Side Rendering",
-      "keywords-codeName": ["serverSideRendering"],
-    },
-    {
-      codeName: "metodologiasAgiles",
-      name: "Metodologías Ágiles",
-      "keywords-codeName": ["metodologiasAgiles"],
-    },
-    {
-      codeName: "scrum",
-      name: "Scrum",
-      "keywords-codeName": ["scrum"],
-    },
-    {
-      codeName: "shapeUp",
-      name: "Shape Up",
-      "keywords-codeName": ["shape up"],
-    },
-    {
-      codeName: "java",
-      name: "Java",
-      "keywords-codeName": ["java"],
-    },
-    {
-      codeName: "postgresql",
-      name: "Postgresql",
-      "keywords-codeName": ["postgresql"],
-    },
-    {
-      codeName: "programacionOrientadaAObjetos",
-      name: "Programación Orientada A Objetos",
-      "keywords-codeName": ["programacion orientada a objetos"],
-    },
-    {
-      codeName: "maquetacion",
-      name: "Maquetación",
-      "keywords-codeName": ["maquetacion"],
-    },
-    {
-      codeName: "jquery",
-      name: "Jquery",
-      "keywords-codeName": ["jquery"],
-    },
-    {
-      codeName: "html",
-      name: "Html",
-      "keywords-codeName": ["html"],
-    },
-    {
-      codeName: "css",
-      name: "Css",
-      "keywords-codeName": ["css"],
-    },
-    {
-      codeName: "php",
-      name: "Php",
-      "keywords-codeName": ["php"],
-    },
-    {
-      codeName: "mysql",
-      name: "Mysql",
-      "keywords-codeName": ["mysql"],
-    },
-    {
-      codeName: "git",
-      name: "Git",
-      "keywords-codeName": ["git"],
-    },
-    {
-      codeName: "github",
-      name: "Github",
-      "keywords-codeName": ["github"],
-    },
-    {
-      codeName: "bitbucket",
-      name: "Bitbucket",
-      "keywords-codeName": ["bitbucket"],
-    },
-    {
-      codeName: "gitlab",
-      name: "Gitlab",
-      "keywords-codeName": ["gitlab"],
-    },
-    {
-      codeName: "jira",
-      name: "Jira",
-      "keywords-codeName": ["jira"],
-    },
-    {
-      codeName: "trello",
-      name: "Trello",
-      "keywords-codeName": ["trello"],
-    },
-    {
-      codeName: "slack",
-      name: "Slack",
-      "keywords-codeName": ["slack"],
-    },
-    {
-      codeName: "postman",
-      name: "Postman",
-      "keywords-codeName": ["postman"],
-    },
-    {
-      codeName: "docker",
-      name: "Docker",
-      "keywords-codeName": ["docker"],
-    },
-    {
-      codeName: "kubernetes",
-      name: "Kubernetes",
-      "keywords-codeName": ["kubernetes"],
-    },
-    {
-      codeName: "linux",
-      name: "Linux",
-      "keywords-codeName": ["linux"],
-    },
-    {
-      codeName: "mongodb",
-      name: "Mongodb",
-      "keywords-codeName": ["mongodb"],
-    },
-    {
-      codeName: "nosql",
-      name: "nosql",
-      "keywords-codeName": ["nosql", "no sql"],
-    },
-    {
-      codeName: "nodejs",
-      name: "Node.Js",
-      "keywords-codeName": ["node js", "nodejs"],
-    },
-    {
-      codeName: "trabajoEnEquipo",
-      name: "Trabajo En Equipo",
-      "keywords-codeName": ["trabajo en equipo"],
-    },
-    {
-      codeName: "aprendizajeDeErrores",
-      name: "Aprendizaje De Errores",
-      "keywords-codeName": ["aprendizaje de errores"],
-    },
-    {
-      codeName: "comunicacion",
-      name: "Comunicación",
-      "keywords-codeName": ["comunicacion"],
-    },
-    {
-      codeName: "liderazgo",
-      name: "Liderazgo",
-      "keywords-codeName": ["liderazgo"],
-    },
-    {
-      codeName: "adaptabilidad",
-      name: "Adaptabilidad",
-      "keywords-codeName": ["adaptabilidad"],
-    },
-    {
-      codeName: "resolucionDeProblemas",
-      name: "Resolución De Problemas",
-      "keywords-codeName": ["resolucion de problemas"],
-    },
-    {
-      codeName: "creatividad",
-      name: "Creatividad",
-      "keywords-codeName": ["creatividad"],
-    },
-    {
-      codeName: "pensamientoCritico",
-      name: "Pensamiento Crítico",
-      "keywords-codeName": ["pensamiento critico"],
-    },
-    {
-      codeName: "gestionDelTiempo",
-      name: "Gestión Del Tiempo",
-      "keywords-codeName": ["gestion del tiempo"],
-    },
-    {
-      codeName: "empatia",
-      name: "Empatía",
-      "keywords-codeName": ["empatia"],
-    },
-    {
-      codeName: "tomaDeDecisiones",
-      name: "Toma De Decisiones",
-      "keywords-codeName": ["toma de decisiones"],
-    },
-    {
-      codeName: "aprendizajeContinuo",
-      name: "Aprendizaje Continuo",
-      "keywords-codeName": ["aprendizaje continuo"],
-    },
-    {
-      codeName: "resiliencia",
-      name: "Resiliencia",
-      "keywords-codeName": ["resiliencia"],
-    },
-    {
-      codeName: "proactividad",
-      name: "Proactividad",
-      "keywords-codeName": ["proactividad"],
-    },
-    {
-      codeName: "capacidadDeAnalisis",
-      name: "Capacidad De Análisis",
-      "keywords-codeName": ["capacidad de analisis"],
-    },
-    {
-      codeName: "capacidadDeSintesis",
-      name: "Capacidad De Síntesis",
-      "keywords-codeName": ["capacidad de sintesis"],
-    },
-    {
-      codeName: "capacidadDeOrganizacion",
-      name: "Capacidad De Organización",
-      "keywords-codeName": ["capacidad de organizacion"],
-    },
-    {
-      codeName: "capacidadDePlanificacion",
-      name: "Capacidad De Planificación",
-      "keywords-codeName": ["capacidad de planificacion"],
-    },
-    {
-      codeName: "capacidadDeComunicacionEfectiva",
-      name: "Capacidad De Comunicación Efectiva",
-      "keywords-codeName": ["capacidad de comunicacion efectiva"],
-    },
-    {
-      codeName: "capacidadDeNegociacion",
-      name: "Capacidad De Negociación",
-      "keywords-codeName": ["capacidad de negociacion"],
-    },
-  ],
   basics: [
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       names: "Pablo Alexander",
       lastName: "Contreras Guevara",
       label: "Ingeniero de software con más de 8 años de experiencia",
@@ -1198,73 +1308,229 @@ const jsonData = {
       },
     },
   ],
-  images: [
+  files: [
     {
-      "users-username": "bypabloc",
-      type: "profile",
-      sort: 1,
-      path: [
-        {
-          "typeFiles-codeName": "avif",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.avif",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
         },
-        {
-          "typeFiles-codeName": "webp",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.webp",
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
         },
-        {
-          "typeFiles-codeName": "jp2",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.jp2",
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "avif",
         },
-        {
-          "typeFiles-codeName": "jpeg",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.jpg",
-        },
-      ],
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.avif",
+      priority: 1,
     },
     {
-      "users-username": "bypabloc",
-      type: "profile",
-      sort: 2,
-      path: [
-        {
-          "typeFiles-codeName": "avif",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
         },
-        {
-          "typeFiles-codeName": "webp",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.webp",
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
         },
-        {
-          "typeFiles-codeName": "jp2",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.jp2",
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "webp",
         },
-        {
-          "typeFiles-codeName": "jpeg",
-          url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.jpg",
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.webp",
+      priority: 1,
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
         },
-      ],
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
+        },
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "jp2",
+        },
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.jp2",
+      priority: 1,
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
+        },
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "jpeg",
+        },
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.jpg",
+      priority: 1,
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
+        },
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "avif",
+        },
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif",
+      priority: 2,
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
+        },
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "webp",
+        },
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.webp",
+      priority: 2,
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
+        },
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "jp2",
+        },
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.jp2",
+      priority: 2,
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        groupFileId: {
+          table: "groupsFiles",
+          field: "codeName",
+          value: "profile",
+        },
+        fileTypeId: {
+          table: "typeFiles",
+          field: "codeName",
+          value: "jpeg",
+        },
+      },
+      url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.jpg",
+      priority: 2,
     },
   ],
-  networksUsers: {
-    bypabloc: [
-      {
-        "networks-codeName": "linkedin",
-        username: "bypabloc",
-        url: "https://linkedin.com/in/bypabloc",
+  networksUsers: [
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        networkId: {
+          table: "networks",
+          field: "codeName",
+          value: "linkedin",
+        },
       },
-      {
-        "networks-codeName": "github",
-        username: "bypabloc",
-        url: "https://github.com/bypabloc",
+      username: "bypabloc",
+      url: "https://linkedin.com/in/bypabloc",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        networkId: {
+          table: "networks",
+          field: "codeName",
+          value: "github",
+        },
       },
-    ],
-  },
+      username: "bypabloc",
+      url: "https://github.com/bypabloc",
+    },
+  ],
   works: [
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "destacame",
-      "jobType-codeName": "fullTime",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "fullTime",
+        },
+      },
       codeName: "destacame-architect",
       name: "Destacame",
       position: "Arquitecto Frontend y Desarrollador de Microservicios",
@@ -1281,9 +1547,23 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "destacame",
-      "jobType-codeName": "fullTime",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "fullTime",
+        },
+      },
       codeName: "destacame-frontend",
       name: "Destacame",
       position: "Desarrollador Web Frontend",
@@ -1302,9 +1582,18 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "appinteli",
-      "jobType-codeName": "personalProject",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "personalProject",
+        },
+      },
       codeName: "appinteli",
       name: "AppInteli (Proyecto Personal)",
       position: "Co-fundador y Desarrollador",
@@ -1322,9 +1611,23 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "goodmeal",
-      "jobType-codeName": "fullTime",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "goodmeal",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "fullTime",
+        },
+      },
       codeName: "goodmeal",
       name: "GoodMeal",
       position: "Desarrollador Web Full Stack",
@@ -1342,9 +1645,23 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "dibal",
-      "jobType-codeName": "fullTime",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "dibal",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "fullTime",
+        },
+      },
       codeName: "dibal",
       name: "Dibal",
       position: "Líder de Equipo de Desarrollo y Desarrollador",
@@ -1364,9 +1681,23 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "cofasa",
-      "jobType-codeName": "freelance",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "cofasa",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "freelance",
+        },
+      },
       codeName: "cofasa",
       name: "LABORATORIO COFASA S.A.",
       position: "Desarrollador de Sistemas Web",
@@ -1384,9 +1715,18 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "iai",
-      "jobType-codeName": "freelance",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "freelance",
+        },
+      },
       codeName: "projects-degrees",
       name: "Freelance > Proyectos de Grado",
       position: "Líder, Arquitecto y Desarrollador",
@@ -1401,9 +1741,18 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "iai",
-      "jobType-codeName": "freelance",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "freelance",
+        },
+      },
       codeName: "iai",
       name: "Freelance > Instituto Autónomo de Infraestructura (IAI)",
       position: "Líder de Desarrollo de Software y Arquitectura de Sistemas",
@@ -1419,9 +1768,18 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "ipasme",
-      "jobType-codeName": "freelance",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "freelance",
+        },
+      },
       codeName: "ipasme",
       name: "Freelance > Ministerio de Educación 'IPASME'",
       position: "Desarrollador de software",
@@ -1437,9 +1795,18 @@ const jsonData = {
       ],
     },
     {
-      "users-username": "bypabloc",
-      "employers-codeName": "corpoelec",
-      "jobType-codeName": "freelance",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        jobTypeId: {
+          table: "jobTypes",
+          field: "codeName",
+          value: "freelance",
+        },
+      },
       codeName: "corpoelec",
       name: "Freelance > CORPOELEC",
       position: "Desarrollador web",
@@ -1456,8 +1823,18 @@ const jsonData = {
   ],
   educations: [
     {
-      "users-username": "bypabloc",
-      "institutions-codeName": "uptyab",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        institutionId: {
+          table: "institutions",
+          field: "codeName",
+          value: "uptyab",
+        },
+      },
       area: "Desarrollo Web",
       learn:
         "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender",
@@ -1465,8 +1842,18 @@ const jsonData = {
       startDate: "2013-04-01",
     },
     {
-      "users-username": "bypabloc",
-      "institutions-codeName": "youtube",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        institutionId: {
+          table: "institutions",
+          field: "codeName",
+          value: "youtube",
+        },
+      },
       area: "Desarrollo Web",
       learn:
         "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros.",
@@ -1474,8 +1861,18 @@ const jsonData = {
       startDate: "2013-04-01",
     },
     {
-      "users-username": "bypabloc",
-      "institutions-codeName": "udemy",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        institutionId: {
+          table: "institutions",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       area: "Ingeniería Informática",
       learn:
         "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros.",
@@ -1486,7 +1883,13 @@ const jsonData = {
   ],
   awards: [
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       title: "Premio a Innovador del año 2023 en Destacame",
       date: "2024-01-24",
       awarder: "Destacame",
@@ -1495,7 +1898,13 @@ const jsonData = {
       url: "https://heyzine.com/flip-book/cdc911b3d1.html",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       title: "Desafío Triple Alianza Lima",
       date: "2020-11-18",
       awarder: "Incubagraria, 1551, StartUpUni",
@@ -1506,262 +1915,330 @@ const jsonData = {
   ],
   certificates: [
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "devtalles",
+        },
+      },
       name: "Docker - Guía práctica de uso para desarrolladores",
       date: "2023-04-20",
-      "issuers-codeName": "DevTalles",
       url: "https://cursos.devtalles.com/certificates/f7qc3ju28w",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "devtalles",
+        },
+      },
       name: "Node - Autenticación Rest con Clean Architecture",
       date: "2023-08-15",
-      "issuers-codeName": "DevTalles",
       url: "https://cursos.devtalles.com/certificates/91cxyahzil",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "devtalles",
+        },
+      },
       name: "Principios SOLID y Clean Code",
       date: "2023-11-05",
-      "issuers-codeName": "DevTalles",
       url: "http://ude.my/UC-ddf92744-e69f-47ab-b28d-c4f7b569b7d4",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "Next.js: El framework de React para producción",
       date: "2024-01-04",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-8297be13-d656-4e62-b64b-642819930c71",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "React: De cero a experto ( Hooks y MERN )",
       date: "2023-11-13",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-6f8fa099-e631-459d-a139-989d441a1b21",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "Vue.js - Intermedio: Lleva tus bases al siguiente nivel",
       date: "2023-03-22",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-b8d6554e-4cb9-49dd-becb-a5dbfdcf6f26",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "Vue.js: De cero a experto",
       date: "2023-05-30",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-a217906e-84eb-40dc-9303-36de5b71e0cc",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "SQL de cero: Tu guía práctica con PostgreSQL",
       date: "2023-02-12",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-afb98ee6-8704-4b20-9e1f-15bdacf2c76d",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "NodeJS: De cero a experto",
       date: "2023-02-12",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-9acb44f1-27c6-402e-9dae-8a04bf3d424b",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "Nest: Desarrollo backend escalable con Node",
       date: "2023-02-12",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-810baa94-7f51-4c54-b631-d62b4af77806",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "issuers",
+          field: "codeName",
+          value: "udemy",
+        },
+      },
       name: "JavaScript moderno: Guía para dominar el lenguaje",
       date: "2023-07-29",
-      "issuers-codeName": "Udemy",
       url: "http://ude.my/UC-516bd9e6-59a0-4f28-b3bf-db2539d158d9",
     },
   ],
   publications: [
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "publishers",
+          field: "codeName",
+          value: "medium",
+        },
+      },
       name: "Instalando Docker y Docker-compose en WSL2 Ubuntu sin Naufragar en el Intento",
-      "publishers-codeName": "medium",
       releaseDate: "2023-06-04",
       url: "https://bypablo.medium.com/un-viaje-épico-en-código-instalando-docker-y-docker-compose-en-wsl2-ubuntu-sin-naufragar-en-el-b21f38a9571",
       summary: "¿Como instalar Docker y Docker-compose en WSL2 sin fallar?",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "publishers",
+          field: "codeName",
+          value: "medium",
+        },
+      },
       name: "Explorando 'type' e 'interface' en TypeScript: Un Enfoque en el Universo Marvel",
-      "publishers-codeName": "medium",
       releaseDate: "2023-05-28",
       url: "https://bypablo.medium.com/explorando-type-e-interface-en-typescript-un-enfoque-en-el-universo-marvel-4ad47317838e",
       summary:
         "¿Cuál es la diferencia entre 'type' e 'interface' en TypeScript? ¿Cómo se aplican en el Universo Marvel?",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "publishers",
+          field: "codeName",
+          value: "medium",
+        },
+      },
       name: "JavaScript vs TypeScript: ¡El choque de titanes que desencadena una guerra de tipos!",
-      "publishers-codeName": "medium",
       releaseDate: "2023-05-29",
       url: "https://bypablo.medium.com/javascript-vs-typescript-el-choque-de-titanes-que-desencadena-una-guerra-de-tipos-dadc70c06766",
       summary:
         "¿Cuál es la diferencia entre JavaScript y TypeScript? ¿Cuál es mejor?",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "publishers",
+          field: "codeName",
+          value: "medium",
+        },
+      },
       name: '¡Bienvenidos a TypeScript, no más "undefined"!',
-      "publishers-codeName": "medium",
       releaseDate: "2023-05-30",
       url: "https://bypablo.medium.com/bienvenidos-a-typescript-no-más-undefined-5e473f0f4670",
       summary:
         "¿Qué es TypeScript? ¿Cómo se usa? ¿Por qué es mejor que JavaScript?",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "publishers",
+          field: "codeName",
+          value: "medium",
+        },
+      },
       name: "Dominando el Mundo de los Tipos en TypeScript",
-      "publishers-codeName": "medium",
       releaseDate: "2023-05-31",
       url: "https://bypablo.medium.com/dominando-el-mundo-de-los-tipos-en-typescript-e543eb42eb9c",
       summary:
         "¿Qué son los tipos en TypeScript? ¿Cómo se usan? ¿Por qué son importantes?",
     },
   ],
-  skillsUsers: [
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "JavaScript",
-      level: "Master",
-      "keywords-codeName": [
-        "desarrollo web",
-        "frontend",
-        "backend",
-        "fullstack",
-      ],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "Vue",
-      level: "Master",
-      "keywords-codeName": ["desarrollo web", "frontend", "spa", "vue cli"],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "Nuxt.js",
-      level: "Avanzado",
-      "keywords-codeName": [
-        "desarrollo web",
-        "frontend",
-        "vue framework",
-        "ssr",
-      ],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "Python",
-      level: "Avanzado",
-      "keywords-codeName": ["backend", "scripting", "web development"],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "CSS",
-      level: "Master",
-      "keywords-codeName": ["desarrollo web", "frontend", "diseño responsive"],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "HTML",
-      level: "Master",
-      "keywords-codeName": ["desarrollo web", "frontend"],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "AWS",
-      level: "Intermedio",
-      "keywords-codeName": [
-        "cloud services",
-        "ec2",
-        "rds",
-        "s3",
-        "ses",
-        "route 53",
-        "dynamodb",
-      ],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "Git",
-      level: "Avanzado",
-      "keywords-codeName": [
-        "control de versiones",
-        "colaboración",
-        "código fuente",
-      ],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "GitHub",
-      level: "Avanzado",
-      "keywords-codeName": [
-        "control de versiones",
-        "colaboración",
-        "código fuente",
-        "git",
-      ],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "Django",
-      level: "Avanzado",
-      "keywords-codeName": ["desarrollo web", "backend", "python framework"],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "Laravel",
-      level: "Avanzado",
-      "keywords-codeName": ["desarrollo web", "backend", "php framework"],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "jQuery",
-      level: "Avanzado",
-      "keywords-codeName": ["desarrollo web", "frontend", "javascript library"],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "MySQL",
-      level: "Avanzado",
-      "keywords-codeName": [
-        "bases de datos",
-        "sql",
-        "almacenamiento de datos",
-        "backend",
-      ],
-    },
-    {
-      "users-username": "bypabloc",
-      "skills-codeName": "MongoDB",
-      level: "Intermedio",
-      "keywords-codeName": ["nosql", "bases de datos", "big data"],
-    },
-  ],
   languagesUsers: [
     {
-      "users-username": "bypabloc",
-      "languages-codeName": "es",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+      },
       fluency: "Nativo",
     },
     {
-      "users-username": "bypabloc",
-      "languages-codeName": "en",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        issuerId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+      },
       fluency: "Intermedio",
     },
   ],
   projects: [
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       name: "ERP para pequeñas tiendas",
       description:
         "Co-fundador y desarrollador de un ERP enfocado en la automatización de procesos de inventario, ventas y compras para pequeñas tiendas.",
@@ -1775,11 +2252,21 @@ const jsonData = {
   ],
   references: [
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+      },
       name: "Alan Vergara Bravo",
       reference: "Compañero de equipo",
       position: "Software Architect Developer",
-      "employers-codeName": "destacame",
       url: "https://www.linkedin.com/in/alan-vergara-bravo-b17164145",
       scrappingRecommendation: {
         linkedin:
@@ -1789,11 +2276,21 @@ const jsonData = {
       },
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+      },
       name: "Alejandra Medina Briceño",
       reference: "Compañero de equipo",
       position: "Diseñadora UX/UI",
-      "employers-codeName": "destacame",
       url: "https://www.linkedin.com/in/alejandra-medinab",
       scrappingRecommendation: {
         linkedin:
@@ -1803,43 +2300,93 @@ const jsonData = {
       },
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+      },
       name: "Baldomero Águila",
       reference: "Compañero de equipo",
       position: "Desarrollador Mobile",
-      "employers-codeName": "destacame",
       url: "https://www.linkedin.com/in/baldomero",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+      },
       name: "Cristian Fuentes",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
-      "employers-codeName": "destacame",
       url: "https://www.linkedin.com/in/csfuente",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+      },
       name: "Helis Montes",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
-      "employers-codeName": "destacame",
       url: "https://www.linkedin.com/in/helis-montes",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "destacame",
+        },
+      },
       name: "Edder Ramírez",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
-      "employers-codeName": "destacame",
       url: "https://www.linkedin.com/in/edderleonardo",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
       name: "José Namoc",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
-      "employers-codeName": "dibal",
       url: "https://www.linkedin.com/in/jose-namoc-lopez",
       scrappingRecommendation: {
         linkedin:
@@ -1849,11 +2396,21 @@ const jsonData = {
       },
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        employerId: {
+          table: "employers",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
       name: "Jacnelly Colmenarez",
       reference: "Compañera de equipo",
       position: "UI/UX Designer",
-      "employers-codeName": "dibal",
       url: "https://www.linkedin.com/in/jacnelly-colmenarez",
       scrappingRecommendation: {
         linkedin:
@@ -1863,14 +2420,26 @@ const jsonData = {
       },
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       name: "Felipe Rivera",
       reference: "Trabajé en la misma empresa",
       position: "Talent Acquisition Lead",
       url: "https://www.linkedin.com/in/frtavonatti",
     },
     {
-      "users-username": "bypabloc",
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       name: "Samuel Esponiza",
       reference:
         "Estudié en la misma universidad y trabajé en proyectos juntos",
@@ -1884,6 +2453,288 @@ const jsonData = {
       },
     },
   ],
+  interestsKeywords: [
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "devops",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "automation",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "bot-creation",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "ai-chatbots",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "scraping",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "scrum",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "kubernetes",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "cloud-computing",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "machine-learning",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "machine-learning",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "cloud-computing",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "cloud-computing",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "blockchain",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "blockchain",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "ai-chatbots",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "ai-chatbots",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "microservices",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "microservices",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "internet-of-things",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "internet-of-things",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "frontend-development",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "frontend-development",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "backend-development",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "web-development",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "data-engineering",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "data-analysis",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "serverless-computing",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "cloud-computing",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "edge-computing",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "edge-computing",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "mobile-development",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "mobile-development",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "game-development",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "game-development",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "security-engineering",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "security-engineering",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "robotics",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "robotics",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "ar-vr",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "ar-vr",
+        },
+      },
+    },
+  ],
 
   /**
     UsersInterests
@@ -1892,495 +2743,288 @@ const jsonData = {
    */
   usersInterests: [
     {
-      "users-username": "bypabloc",
-      "interests-codeName": "desarrolladorYAutomatizacion",
-      name: "Desarrollo y Automatización",
-      "keywords-codeName": [
-        "desarrollo de software",
-        "automatización de procesos",
-      ],
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "devops",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
     },
     {
-      "users-username": "bypabloc",
-      "interests-codeName": "artesMarciales",
-      name: "Artes Marciales",
-      "keywords-codeName": ["karate", "kung fu", "taekwondo"],
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "bot-creation",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
     },
     {
-      "users-username": "bypabloc",
-      "interests-codeName": "cienciaYTecnologia",
-      name: "Ciencia y Tecnología",
-      "keywords-codeName": ["tecnología", "ciencia", "innovación"],
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "scraping",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
     },
     {
-      "users-username": "bypabloc",
-      "interests-codeName": "gastronomia",
-      name: "Gastronomía",
-      "keywords-codeName": ["cocina", "recetas", "comida"],
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "kubernetes",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
     },
     {
-      "users-username": "bypabloc",
-      "interests-codeName": "entretenimiento",
-      name: "Entretenimiento",
-      "keywords-codeName": ["películas", "series", "videojuegos"],
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "machine-learning",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "cloud-computing",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "blockchain",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "ai-chatbots",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "microservices",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "internet-of-things",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "frontend-development",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "backend-development",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "data-engineering",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "serverless-computing",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "edge-computing",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "mobile-development",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "game-development",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "security-engineering",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "robotics",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
+          value: "ar-vr",
+        },
+        keywordId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
     },
   ],
-  worksTechnicalSkills: [
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "frontend",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "backend",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "aws",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "microservices",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "microfrontends",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "javascript",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "vue",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "nuxt",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "python",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "django",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "shapeUp",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "java",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "postgresql",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "frontend",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "backend",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "aws",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "microservices",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "microfrontends",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "javascript",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "vue",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "nuxt",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "python",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "django",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "shapeUp",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "java",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "postgresql",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "frontend",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "backend",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "aws",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "microservices",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "microfrontends",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "javascript",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "vue",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "nuxt",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "python",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "django",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "shapeUp",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "java",
-    },
-    {
-      "works-codeName": "appinteli",
-      "skills-codeName": "postgresql",
-    },
-    {
-      "works-codeName": "goodmeal",
-      "skills-codeName": "frontend",
-    },
-    {
-      "works-codeName": "goodmeal",
-      "skills-codeName": "backend",
-    },
-    {
-      "works-codeName": "goodmeal",
-      "skills-codeName": "aws",
-    },
-    {
-      "works-codeName": "goodmeal",
-      "skills-codeName": "microservices",
-    },
-    {
-      "works-codeName": "goodmeal",
-      "skills-codeName": "microfrontends",
-    },
-    {
-      "works-codeName": "goodmeal",
-      "skills-codeName": "javascript",
-    },
-    {
-      "works-codeName": "goodmeal",
-      "skills-codeName": "vue",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "frontend",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "backend",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "aws",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "microservices",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "microfrontends",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "javascript",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "vue",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "nuxt",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "python",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "django",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "shapeUp",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "java",
-    },
-    {
-      "works-codeName": "dibal",
-      "skills-codeName": "postgresql",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "frontend",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "backend",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "aws",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "microservices",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "microfrontends",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "javascript",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "vue",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "nuxt",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "python",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "django",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "shapeUp",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "java",
-    },
-    {
-      "works-codeName": "cofasa",
-      "skills-codeName": "postgresql",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "frontend",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "backend",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "aws",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "microservices",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "microfrontends",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "javascript",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "vue",
-    },
-    {
-      "works-codeName": "projects-degrees",
-      "skills-codeName": "nuxt",
-    },
-  ],
-  worksSoftSkills: [
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "trabajoEnEquipo",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "aprendizajeDeErrores",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "comunicacion",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "liderazgo",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "adaptabilidad",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "resolucionDeProblemas",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "creatividad",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "pensamientoCritico",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "gestionDelTiempo",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "empatia",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "tomaDeDecisiones",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "aprendizajeContinuo",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "resiliencia",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "proactividad",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "capacidadDeAnalisis",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "capacidadDeSintesis",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "capacidadDeOrganizacion",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "capacidadDePlanificacion",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "capacidadDeComunicacionEfectiva",
-    },
-    {
-      "works-codeName": "destacame-architect",
-      "skills-codeName": "capacidadDeNegociacion",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "trabajoEnEquipo",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "aprendizajeDeErrores",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "comunicacion",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "liderazgo",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "adaptabilidad",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "resolucionDeProblemas",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "creatividad",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "pensamientoCritico",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "gestionDelTiempo",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "empatia",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "tomaDeDecisiones",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "aprendizajeContinuo",
-    },
-    {
-      "works-codeName": "destacame-frontend",
-      "skills-codeName": "resiliencia",
-    },
-  ],
+  worksTechnicalSkills: [],
+  worksSoftSkills: [],
 };
 
 // Función asíncrona para insertar los datos
@@ -2466,74 +3110,4 @@ export default async function () {
   );
   console.log("jobTypes", jobTypes);
 
-  // requestList.push(
-  //   db.insert(Users).values(
-  //     jsonData.users.map((username) => ({
-  //       username,
-  //     }))
-  //   )
-  // );
-  // await db.batch(requestList);
-  // notRegisteredUsers = await db
-  //   .select()
-  //   .from(Users)
-  //   .where(and(inArray(Users.username, jsonData.users)));
-  // console.log("notRegisteredUsers", notRegisteredUsers);
-  // jsonData.networks.forEach((network) => {
-  //   requestList.push(
-  //     db
-  //       .select()
-  //       .from(Networks)
-  //       .where(like(Networks.codeName, `%${network.codeName}%`))
-  //   );
-  // });
-  // const resNetworks = await db.batch(requestList);
-  // console.log("resNetworks", resNetworks);
-  // if (resNetworks.length) {
-  //   const createNetworks: any[] = [];
-  //   resNetworks.forEach((res, index) => {
-  //     if (!res.length) {
-  //       createNetworks.push(
-  //         db.insert(Networks).values(jsonData.networks[index])
-  //       );
-  //     }
-  //   });
-  //   // const resCreateNetworks = await db.batch(createNetworks);
-  //   // console.log("resCreateNetworks", resCreateNetworks);
-  // }
-  /**
-    Networks
-    Users
-    typeFiles
-    Institutions
-    Issuers
-    Publishers
-    Languages
-    Keywords
-    Interests
-    Skills
-
-    ------
-
-    TechnicalSkills
-    SoftSkills
-    Basics
-    Images
-    NetworksUsers
-    Works
-    Educations
-    Awards
-    Certificates
-    Publications
-    LanguagesUsers
-    Projects
-    References
-    SkillsUsers
-
-    ------
-
-    WorksTechnicalSkills
-    WorksSoftSkills
-    SkillsUsersKeywords
-   */
 }

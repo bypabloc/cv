@@ -33,8 +33,36 @@ export const TypeFiles = defineTable({
     codeName: column.text({ unique: true }),
     name: column.text(),
     extension: column.text(),
-    mime: column.text(),
-    priority: column.number(),
+    mime: column.text({ optional: true }),
+    tag: column.text({ optional: true }),
+    priority: column.number({ optional: true }),
+  },
+});
+
+export const GroupsFiles = defineTable({
+  columns: {
+    ...base,
+    name: column.text({ unique: true }),
+    description: column.text({ optional: true }),
+    priority: column.number({ optional: true }),
+  },
+});
+
+export const Files = defineTable({
+  columns: {
+    ...base,
+    groupFileId: column.text({
+      references: () => GroupsFiles.columns.id,
+    }),
+    userId: column.text({
+      references: () => Users.columns.id,
+    }),
+    fileTypeId: column.text({
+      references: () => TypeFiles.columns.id,
+    }),
+    url: column.text(),
+    priority: column.number({ optional: true }),
+    description: column.text({ optional: true }),
   },
 });
 
@@ -80,6 +108,7 @@ export const Keywords = defineTable({
     ...base,
     codeName: column.text({ unique: true }),
     name: column.text(),
+    keys: column.json(),
   },
 });
 
@@ -88,7 +117,17 @@ export const Interests = defineTable({
     ...base,
     codeName: column.text({ unique: true }),
     name: column.text(),
-    keywords: column.json(),
+  },
+});
+
+export const InterestsKeywords = defineTable({
+  columns: {
+    interestId: column.text({
+      references: () => Interests.columns.id,
+    }),
+    keywordId: column.text({
+      references: () => Keywords.columns.id,
+    }),
   },
 });
 
@@ -97,6 +136,19 @@ export const Skills = defineTable({
     ...base,
     codeName: column.text({ unique: true }),
     name: column.text(),
+    description: column.text({ optional: true }),
+    type: column.text(), // Tipo de habilidad, por ejemplo, 'Technical', 'Soft', etc.
+  },
+});
+
+export const SkillsKeywords = defineTable({
+  columns: {
+    skillId: column.text({
+      references: () => Skills.columns.id,
+    }),
+    keywordId: column.text({
+      references: () => Keywords.columns.id,
+    }),
   },
 });
 
@@ -114,18 +166,6 @@ export const Basics = defineTable({
     url: column.text(),
     summary: column.text(),
     location: column.json(),
-  },
-});
-
-export const Images = defineTable({
-  columns: {
-    ...base,
-    userId: column.text({
-      references: () => Users.columns.id,
-    }),
-    type: column.text({}),
-    sort: column.number(),
-    path: column.json(),
   },
 });
 
@@ -329,40 +369,16 @@ export const References = defineTable({
   },
 });
 
-export const SkillsUsers = defineTable({
-  columns: {
-    ...base,
-    userId: column.text({
-      references: () => Users.columns.id,
-    }),
-    skillId: column.text({
-      references: () => Skills.columns.id,
-    }),
-    level: column.text(),
-  },
-});
-
-export const SkillsUsersKeywords = defineTable({
-  columns: {
-    ...base,
-    skillUserId: column.text({
-      references: () => SkillsUsers.columns.id,
-    }),
-    keywordId: column.text({
-      references: () => Keywords.columns.id,
-    }),
-  },
-});
-
 export default defineDb({
   tables: {
     Awards,
+    GroupsFiles,
+    Files,
     Basics,
     Certificates,
     Educations,
     TypeFiles,
     Employers,
-    Images,
     Institutions,
     Interests,
     Issuers,
@@ -377,11 +393,11 @@ export default defineDb({
     Publishers,
     References,
     Skills,
-    SkillsUsers,
-    SkillsUsersKeywords,
     Users,
     Works,
+    SkillsKeywords,
     WorksSoftSkills,
     WorksTechnicalSkills,
+    InterestsKeywords,
   },
 });

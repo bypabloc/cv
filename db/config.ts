@@ -42,7 +42,8 @@ export const TypeFiles = defineTable({
 export const GroupsFiles = defineTable({
   columns: {
     ...base,
-    name: column.text({ unique: true }),
+    codeName: column.text({ unique: true }),
+    name: column.text(),
     description: column.text({ optional: true }),
     priority: column.number({ optional: true }),
   },

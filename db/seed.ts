@@ -40,76 +40,10 @@ import jsonData from "./data";
 import { registerNewRecords } from "./utils/registerNewRecords";
 import { registerRecordsWithRelations } from "./utils/registerRecordsWithRelations";
 
-// Aquí van tus datos JSON como un objeto JS directamente en el script para simplificar
 
 // Función asíncrona para insertar los datos
 export default async function () {
   // // astro db execute "./db/seed.ts" --remote
-
-  // let userByPabloC = await db
-  //   .select()
-  //   .from(Users)
-  //   .where(eq(Users.username, "bypabloc"))
-  //   .execute();
-
-  // if (!userByPabloC.length) {
-  //   await db.insert(Users).values([
-  //     {
-  //       username: "bypabloc",
-  //     },
-  //   ]);
-  //   userByPabloC = await db
-  //     .select()
-  //     .from(Users)
-  //     .where(eq(Users.username, "bypabloc"))
-  //     .execute();
-  // }
-
-  // const userOne = userByPabloC[0];
-  // console.log("userOne", userOne);
-
-  // const basics = await db
-  //   .select()
-  //   .from(Basics)
-  //   .where(eq(Basics.userId, userOne.id))
-  //   .execute();
-  // console.log("basics", basics);
-  // if (basics.length) {
-  //   return;
-  // }
-
-  // await db.insert(Basics).values([
-  //   {
-  //     names: "Pablo Alexander",
-  //     lastName: "Contreras Guevara",
-  //     label: "Ingeniero de software con más de 8 años de experiencia",
-  //     email: "pacg1991@gmail.com",
-  //     phone: "+51 918490148",
-  //     url: "https://pablo-c.com",
-  //     summary:
-  //       "Ingeniero de software con más de 8 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.",
-  //     location: {
-  //       address: "",
-  //       postalCode: "15009",
-  //       city: "Lima",
-  //       countryCode: "PE",
-  //       region: "Perú",
-  //     },
-  //     userId: userOne.id,
-  //   },
-  // ]);
-
-  // const basicsList = await db
-  //   .select()
-  //   .from(Basics)
-  //   .where(eq(Basics.userId, userOne.id))
-  //   .execute();
-  // console.log("basicsList", basicsList);
-
-  // if (true) {
-  //   return;
-  // }
-
   const tables: Record<string, any> = {};
 
   tables["users"] = {

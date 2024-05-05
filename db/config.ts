@@ -1,16 +1,8 @@
 import { defineDb, defineTable, column, sql, NOW } from "astro:db";
 
-// const base = {
-//   id: column.text({
-//     primaryKey: true,
-//   }),
-//   status: column.text({ default: "active" }),
-//   createdAt: column.date({ default: NOW }),
-//   updatedAt: column.date({ default: NOW }),
-// };
-
 export const Users = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -18,12 +10,14 @@ export const Users = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     username: column.text({ unique: true }),
   },
 });
 
 export const UsersAttributes = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -31,6 +25,7 @@ export const UsersAttributes = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
       index: true,
@@ -45,10 +40,15 @@ export const UsersAttributes = defineTable({
 
 export const AttributesTypes = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
+    status: column.text({ default: "active" }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text({ unique: true }),
     type: column.text(),
@@ -72,6 +72,7 @@ export const Networks = defineTable({
 
 export const TypeFiles = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -79,6 +80,7 @@ export const TypeFiles = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
     extension: column.text(),
@@ -90,6 +92,7 @@ export const TypeFiles = defineTable({
 
 export const GroupsFiles = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -97,6 +100,7 @@ export const GroupsFiles = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
     description: column.text({ optional: true }),
@@ -106,6 +110,7 @@ export const GroupsFiles = defineTable({
 
 export const Files = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -113,6 +118,7 @@ export const Files = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     groupFileId: column.text({
       references: () => GroupsFiles.columns.id,
     }),
@@ -130,6 +136,7 @@ export const Files = defineTable({
 
 export const Institutions = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -137,6 +144,7 @@ export const Institutions = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
     url: column.text(),
@@ -147,6 +155,7 @@ export const Institutions = defineTable({
 
 export const Issuers = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -154,6 +163,7 @@ export const Issuers = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
     url: column.text(),
@@ -162,6 +172,7 @@ export const Issuers = defineTable({
 
 export const Publishers = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -169,6 +180,7 @@ export const Publishers = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
     url: column.text(),
@@ -177,6 +189,7 @@ export const Publishers = defineTable({
 
 export const Languages = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -184,6 +197,7 @@ export const Languages = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
   },
@@ -191,6 +205,7 @@ export const Languages = defineTable({
 
 export const Keywords = defineTable({
   columns: {
+    // own
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -198,6 +213,7 @@ export const Keywords = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
     keys: column.json(),
@@ -206,6 +222,7 @@ export const Keywords = defineTable({
 
 export const Interests = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -213,6 +230,7 @@ export const Interests = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
   },
@@ -220,6 +238,15 @@ export const Interests = defineTable({
 
 export const InterestsKeywords = defineTable({
   columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({ default: "active" }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW }),
+    // own
     interestId: column.text({
       references: () => Interests.columns.id,
     }),
@@ -231,6 +258,7 @@ export const InterestsKeywords = defineTable({
 
 export const Skills = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -238,6 +266,7 @@ export const Skills = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
     description: column.text({ optional: true }),
@@ -247,6 +276,15 @@ export const Skills = defineTable({
 
 export const SkillsKeywords = defineTable({
   columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({ default: "active" }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW }),
+    // own
     skillId: column.text({
       references: () => Skills.columns.id,
     }),
@@ -258,6 +296,7 @@ export const SkillsKeywords = defineTable({
 
 export const NetworksUsers = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -265,6 +304,7 @@ export const NetworksUsers = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     networkId: column.text({
       references: () => Networks.columns.id,
     }),
@@ -278,6 +318,7 @@ export const NetworksUsers = defineTable({
 
 export const Employers = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -285,6 +326,7 @@ export const Employers = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
       optional: true,
@@ -299,6 +341,7 @@ export const Employers = defineTable({
 
 export const JobTypes = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -306,6 +349,7 @@ export const JobTypes = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     codeName: column.text({ unique: true }),
     name: column.text(),
   },
@@ -313,6 +357,7 @@ export const JobTypes = defineTable({
 
 export const Works = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -320,6 +365,7 @@ export const Works = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -343,6 +389,15 @@ export const Works = defineTable({
 
 export const WorksTechnicalSkills = defineTable({
   columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({ default: "active" }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW }),
+    // own
     workId: column.text({
       references: () => Works.columns.id,
     }),
@@ -354,6 +409,15 @@ export const WorksTechnicalSkills = defineTable({
 
 export const WorksSoftSkills = defineTable({
   columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({ default: "active" }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW }),
+    // own
     workId: column.text({
       references: () => Works.columns.id,
     }),
@@ -365,6 +429,7 @@ export const WorksSoftSkills = defineTable({
 
 export const Educations = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -372,6 +437,7 @@ export const Educations = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -388,6 +454,7 @@ export const Educations = defineTable({
 
 export const Awards = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -395,6 +462,7 @@ export const Awards = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -408,6 +476,7 @@ export const Awards = defineTable({
 
 export const Certificates = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -415,6 +484,7 @@ export const Certificates = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -429,6 +499,7 @@ export const Certificates = defineTable({
 
 export const Publications = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -436,6 +507,7 @@ export const Publications = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -451,6 +523,7 @@ export const Publications = defineTable({
 
 export const LanguagesUsers = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -458,6 +531,7 @@ export const LanguagesUsers = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -470,6 +544,15 @@ export const LanguagesUsers = defineTable({
 
 export const UsersInterests = defineTable({
   columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({ default: "active" }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -481,6 +564,7 @@ export const UsersInterests = defineTable({
 
 export const Projects = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -488,6 +572,7 @@ export const Projects = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
@@ -501,6 +586,7 @@ export const Projects = defineTable({
 
 export const References = defineTable({
   columns: {
+    // standard
     id: column.text({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
@@ -508,6 +594,7 @@ export const References = defineTable({
     status: column.text({ default: "active" }),
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ default: NOW }),
+    // own
     userId: column.text({
       references: () => Users.columns.id,
     }),

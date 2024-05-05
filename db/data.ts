@@ -199,6 +199,36 @@ export default {
       keys: ["devops"],
     },
     {
+      codeName: "docker",
+      name: "Docker",
+      keys: ["docker"],
+    },
+    {
+      codeName: "data-analysis",
+      name: "Data Analysis",
+      keys: ["data analysis", "data-analysis"],
+    },
+    {
+      codeName: "kubernetes",
+      name: "Kubernetes",
+      keys: ["kubernetes"],
+    },
+    {
+      codeName: "sql",
+      name: "SQL",
+      keys: ["sql"],
+    },
+    {
+      codeName: "node",
+      name: "Node.js",
+      keys: ["node", "nodejs"],
+    },
+    {
+      codeName: "react",
+      name: "React",
+      keys: ["react"],
+    },
+    {
       codeName: "javascript",
       name: "JavaScript",
       keys: ["javascript", "js"],
@@ -613,10 +643,37 @@ export default {
   ],
   skills: [
     {
+      codeName: "docker",
+      name: "Docker",
+      description:
+        "Plataforma de contenedores para el desarrollo de aplicaciones.",
+      type: "technical",
+    },
+    {
+      codeName: "kubernetes",
+      name: "Kubernetes",
+      description:
+        "Orquestador de contenedores para el despliegue de aplicaciones.",
+      type: "technical",
+    },
+    {
       codeName: "react",
       name: "React",
       description:
         "Framework JavaScript para la creación de interfaces de usuario.",
+      type: "technical",
+    },
+    {
+      codeName: "node",
+      name: "Node.js",
+      description:
+        "Entorno de ejecución de JavaScript para el desarrollo de aplicaciones backend.",
+      type: "technical",
+    },
+    {
+      codeName: "sql",
+      name: "SQL",
+      description: "Lenguaje de consulta estructurado para bases de datos.",
       type: "technical",
     },
     {

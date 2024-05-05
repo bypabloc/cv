@@ -93,7 +93,6 @@ export const registerRecordsWithRelations = async (
               (key) => tableModel[key].isUnique
             );
             let existingRecord = null;
-            console.log("uniqueColumns", uniqueColumns);
             if (uniqueColumns.length > 0) {
               let query = db.select().from(tableModel);
               for (const column of uniqueColumns) {

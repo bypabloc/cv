@@ -21,15 +21,25 @@ export const registerRecordsWithRelations = async (
       const { relationship, ...otherFields } = record;
       const processedRecord = { ...otherFields };
 
-      for (const [relationKey, relationInfo] of Object.entries(relationship)) {
+      for (const [field, value] of Object.entries(processedRecord)) {
+        const columnType = tableModel[field]?.columnType;
+        if (
+          columnType === "SQLiteCustomColumn" &&
+          tableModel[field]?.sqlName === "text"
+        ) {
+          processedRecord[field] = value ? new Date(value) : null;
+        }
+      }
+
+      for (const [relationKey, relationInfo] of Object.entries(
+        relationship || {}
+      )) {
         const { table, field, value } = relationInfo;
         const relatedTable = tables[table];
 
         if (!relatedTable) {
           throw new Error(`Table ${table} not found in tables.`);
         }
-
-        console.log("relatedTable.model[field]", relatedTable.model[field]);
 
         const relatedRecords = await db
           .select()
@@ -44,9 +54,7 @@ export const registerRecordsWithRelations = async (
           );
         }
 
-        console.log("relatedRecord", relatedRecord);
-
-        processedRecord[relationKey] = relatedRecord.uuid;
+        processedRecord[relationKey] = relatedRecord.id;
       }
 
       processedRecords.push(processedRecord);
@@ -76,10 +84,56 @@ export const registerRecordsWithRelations = async (
 
       return [...existingRecords, ...newRecords];
     } else {
+      const result = [];
       // Insertar los registros procesados
       if (processedRecords.length > 0) {
-        console.log("processedRecords", processedRecords);
-        await db.insert(tableModel).values(processedRecords);
+        for (const record of processedRecords) {
+          try {
+            const uniqueColumns = Object.keys(tableModel).filter(
+              (key) => tableModel[key].isUnique
+            );
+            let existingRecord = null;
+            console.log("uniqueColumns", uniqueColumns);
+            if (uniqueColumns.length > 0) {
+              let query = db.select().from(tableModel);
+              for (const column of uniqueColumns) {
+                if (record[column]) {
+                  query = query.where(eq(tableModel[column], record[column]));
+                }
+              }
+              const records = await query.execute();
+              existingRecord = records.length ? records[0] : null;
+            }
+
+            if (existingRecord) {
+              result.push(existingRecord);
+            } else {
+              try {
+                console.log(
+                  "record to insert:",
+                  JSON.stringify(record, null, 2)
+                );
+                const insertedRecords = await db
+                  .insert(tableModel)
+                  .values(record)
+                  .returning()
+                  .execute();
+                result.push(...insertedRecords);
+              } catch (error) {
+                console.error("Error inserting records:", error);
+                console.error("tableModel", tableModel);
+                throw new Error("Failed to insert records in Astro DB");
+              }
+            }
+          } catch (error) {
+            console.error("Error inserting records:", error);
+            // console.error(
+            //   "--------------- tableModel ---------------",
+            //   tableModel
+            // );
+            throw new Error("Failed to insert records in Astro DB");
+          }
+        }
       }
 
       return processedRecords;

@@ -13,6 +13,7 @@ export default {
       Employers
       JobTypes
       Interests
+      attributesTypes
     */
   users: [
     {
@@ -196,6 +197,11 @@ export default {
       codeName: "devops",
       name: "DevOps",
       keys: ["devops"],
+    },
+    {
+      codeName: "javascript",
+      name: "JavaScript",
+      keys: ["javascript", "js"],
     },
     // destácame - arquitecto frontend
     {
@@ -607,6 +613,13 @@ export default {
   ],
   skills: [
     {
+      codeName: "react",
+      name: "React",
+      description:
+        "Framework JavaScript para la creación de interfaces de usuario.",
+      type: "technical",
+    },
+    {
       codeName: "python",
       name: "Python",
       description:
@@ -768,6 +781,12 @@ export default {
       codeName: "full-stack-development",
       name: "Full Stack Development",
       description: "Desarrollo frontend y backend.",
+      type: "technical",
+    },
+    {
+      codeName: "javascript",
+      name: "JavaScript",
+      description: "Lenguaje de programación utilizado en el desarrollo web.",
       type: "technical",
     },
     {
@@ -1127,7 +1146,48 @@ export default {
       type: "technical",
     },
   ],
-
+  attributesTypes: [
+    {
+      codeName: "email",
+      name: "Email",
+      type: "text",
+    },
+    {
+      codeName: "phone",
+      name: "Phone",
+      type: "text",
+    },
+    {
+      codeName: "url",
+      name: "URL",
+      type: "text",
+    },
+    {
+      codeName: "label",
+      name: "Label",
+      type: "text",
+    },
+    {
+      codeName: "names",
+      name: "Names",
+      type: "text",
+    },
+    {
+      codeName: "lastName",
+      name: "Last Name",
+      type: "text",
+    },
+    {
+      codeName: "summary",
+      name: "Summary",
+      type: "text",
+    },
+    {
+      codeName: "location",
+      name: "Location",
+      type: "object",
+    },
+  ],
   /**
       Basics
       NetworksUsers
@@ -1142,8 +1202,9 @@ export default {
       Files
       SkillsKeywords
       InterestsKeywords
+      usersAttributes
     */
-  basics: [
+  usersAttributes: [
     {
       relationship: {
         userId: {
@@ -1151,16 +1212,119 @@ export default {
           field: "username",
           value: "bypabloc",
         },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "names",
+        },
       },
-      names: "Pablo Alexander",
-      lastName: "Contreras Guevara",
-      label: "Ingeniero de software con más de 8 años de experiencia",
-      email: "pacg1991@gmail.com",
-      phone: "+51 918490148",
-      url: "https://pablo-c.com",
-      summary:
+      attributeValue: "Pablo Alexander",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "lastName",
+        },
+      },
+      attributeValue: "Contreras Guevara",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "email",
+        },
+      },
+      attributeValue: "pacg1991@gmail.com",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "phone",
+        },
+      },
+      attributeValue: "+51 918490148",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "url",
+        },
+      },
+      attributeValue: "https://pablo-c.com",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "label",
+        },
+      },
+      attributeValue: "Ingeniero de software con más de 8 años de experiencia",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "summary",
+        },
+      },
+      attributeValue:
         "Ingeniero de software con más de 8 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.",
-      location: {
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        attributeTypeId: {
+          table: "attributesTypes",
+          field: "codeName",
+          value: "location",
+        },
+      },
+      attributeValue: {
         address: "",
         postalCode: "15009",
         city: "Lima",
@@ -1788,7 +1952,7 @@ export default {
           value: "devtalles",
         },
       },
-      name: "Docker - Guía práctica de uso para desarrolladores",
+      title: "Docker - Guía práctica de uso para desarrolladores",
       date: "2023-04-20",
       url: "https://cursos.devtalles.com/certificates/f7qc3ju28w",
     },
@@ -1805,7 +1969,7 @@ export default {
           value: "devtalles",
         },
       },
-      name: "Node - Autenticación Rest con Clean Architecture",
+      title: "Node - Autenticación Rest con Clean Architecture",
       date: "2023-08-15",
       url: "https://cursos.devtalles.com/certificates/91cxyahzil",
     },
@@ -1822,7 +1986,7 @@ export default {
           value: "devtalles",
         },
       },
-      name: "Principios SOLID y Clean Code",
+      title: "Principios SOLID y Clean Code",
       date: "2023-11-05",
       url: "http://ude.my/UC-ddf92744-e69f-47ab-b28d-c4f7b569b7d4",
     },
@@ -1839,7 +2003,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "Next.js: El framework de React para producción",
+      title: "Next.js: El framework de React para producción",
       date: "2024-01-04",
       url: "http://ude.my/UC-8297be13-d656-4e62-b64b-642819930c71",
     },
@@ -1856,7 +2020,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "React: De cero a experto ( Hooks y MERN )",
+      title: "React: De cero a experto ( Hooks y MERN )",
       date: "2023-11-13",
       url: "http://ude.my/UC-6f8fa099-e631-459d-a139-989d441a1b21",
     },
@@ -1873,7 +2037,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "Vue.js - Intermedio: Lleva tus bases al siguiente nivel",
+      title: "Vue.js - Intermedio: Lleva tus bases al siguiente nivel",
       date: "2023-03-22",
       url: "http://ude.my/UC-b8d6554e-4cb9-49dd-becb-a5dbfdcf6f26",
     },
@@ -1890,7 +2054,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "Vue.js: De cero a experto",
+      title: "Vue.js: De cero a experto",
       date: "2023-05-30",
       url: "http://ude.my/UC-a217906e-84eb-40dc-9303-36de5b71e0cc",
     },
@@ -1907,7 +2071,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "SQL de cero: Tu guía práctica con PostgreSQL",
+      title: "SQL de cero: Tu guía práctica con PostgreSQL",
       date: "2023-02-12",
       url: "http://ude.my/UC-afb98ee6-8704-4b20-9e1f-15bdacf2c76d",
     },
@@ -1924,7 +2088,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "NodeJS: De cero a experto",
+      title: "NodeJS: De cero a experto",
       date: "2023-02-12",
       url: "http://ude.my/UC-9acb44f1-27c6-402e-9dae-8a04bf3d424b",
     },
@@ -1941,7 +2105,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "Nest: Desarrollo backend escalable con Node",
+      title: "Nest: Desarrollo backend escalable con Node",
       date: "2023-02-12",
       url: "http://ude.my/UC-810baa94-7f51-4c54-b631-d62b4af77806",
     },
@@ -1958,7 +2122,7 @@ export default {
           value: "udemy",
         },
       },
-      name: "JavaScript moderno: Guía para dominar el lenguaje",
+      title: "JavaScript moderno: Guía para dominar el lenguaje",
       date: "2023-07-29",
       url: "http://ude.my/UC-516bd9e6-59a0-4f28-b3bf-db2539d158d9",
     },
@@ -1971,7 +2135,7 @@ export default {
           field: "username",
           value: "bypabloc",
         },
-        issuerId: {
+        publisherId: {
           table: "publishers",
           field: "codeName",
           value: "medium",
@@ -1989,7 +2153,7 @@ export default {
           field: "username",
           value: "bypabloc",
         },
-        issuerId: {
+        publisherId: {
           table: "publishers",
           field: "codeName",
           value: "medium",
@@ -2008,7 +2172,7 @@ export default {
           field: "username",
           value: "bypabloc",
         },
-        issuerId: {
+        publisherId: {
           table: "publishers",
           field: "codeName",
           value: "medium",
@@ -2027,7 +2191,7 @@ export default {
           field: "username",
           value: "bypabloc",
         },
-        issuerId: {
+        publisherId: {
           table: "publishers",
           field: "codeName",
           value: "medium",
@@ -2046,7 +2210,7 @@ export default {
           field: "username",
           value: "bypabloc",
         },
-        issuerId: {
+        publisherId: {
           table: "publishers",
           field: "codeName",
           value: "medium",
@@ -2067,7 +2231,7 @@ export default {
           field: "username",
           value: "bypabloc",
         },
-        issuerId: {
+        languageId: {
           table: "languages",
           field: "codeName",
           value: "es",
@@ -2082,7 +2246,7 @@ export default {
           field: "username",
           value: "bypabloc",
         },
-        issuerId: {
+        languageId: {
           table: "languages",
           field: "codeName",
           value: "en",
@@ -2592,6 +2756,120 @@ export default {
           table: "keywords",
           field: "codeName",
           value: "ar-vr",
+        },
+      },
+    },
+  ],
+  skillsKeywords: [
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "javascript",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "javascript",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "typescript",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "typescript",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "react",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "react",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "vue",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "vue",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "node",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "node",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "sql",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "sql",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "docker",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "docker",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "kubernetes",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "kubernetes",
         },
       },
     },

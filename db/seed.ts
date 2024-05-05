@@ -1,5 +1,3 @@
-import { v5 as uuidV5 } from "uuid";
-
 import {
   db,
   like,
@@ -8,7 +6,8 @@ import {
   and,
   inArray,
   Users,
-  Basics,
+  UsersAttributes,
+  AttributesTypes,
   Awards,
   GroupsFiles,
   Files,
@@ -45,71 +44,71 @@ import { registerRecordsWithRelations } from "./utils/registerRecordsWithRelatio
 
 // Función asíncrona para insertar los datos
 export default async function () {
-  // astro db execute "./db/seed.ts" --remote
+  // // astro db execute "./db/seed.ts" --remote
 
-  let userByPabloC = await db
-    .select()
-    .from(Users)
-    .where(eq(Users.username, "bypabloc"))
-    .execute();
+  // let userByPabloC = await db
+  //   .select()
+  //   .from(Users)
+  //   .where(eq(Users.username, "bypabloc"))
+  //   .execute();
 
-  if (!userByPabloC.length) {
-    await db.insert(Users).values([
-      {
-        username: "bypabloc",
-      },
-    ]);
-    userByPabloC = await db
-      .select()
-      .from(Users)
-      .where(eq(Users.username, "bypabloc"))
-      .execute();
-  }
+  // if (!userByPabloC.length) {
+  //   await db.insert(Users).values([
+  //     {
+  //       username: "bypabloc",
+  //     },
+  //   ]);
+  //   userByPabloC = await db
+  //     .select()
+  //     .from(Users)
+  //     .where(eq(Users.username, "bypabloc"))
+  //     .execute();
+  // }
 
-  const userOne = userByPabloC[0];
-  console.log("userOne", userOne);
+  // const userOne = userByPabloC[0];
+  // console.log("userOne", userOne);
 
-  const basics = await db
-    .select()
-    .from(Basics)
-    .where(eq(Basics.userId, userOne.id))
-    .execute();
-  console.log("basics", basics);
-  if (basics.length) {
-    return;
-  }
+  // const basics = await db
+  //   .select()
+  //   .from(Basics)
+  //   .where(eq(Basics.userId, userOne.id))
+  //   .execute();
+  // console.log("basics", basics);
+  // if (basics.length) {
+  //   return;
+  // }
 
-  await db.insert(Basics).values([
-    {
-      names: "Pablo Alexander",
-      lastName: "Contreras Guevara",
-      label: "Ingeniero de software con más de 8 años de experiencia",
-      email: "pacg1991@gmail.com",
-      phone: "+51 918490148",
-      url: "https://pablo-c.com",
-      summary:
-        "Ingeniero de software con más de 8 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.",
-      location: {
-        address: "",
-        postalCode: "15009",
-        city: "Lima",
-        countryCode: "PE",
-        region: "Perú",
-      },
-      userId: userOne.id,
-    },
-  ]);
+  // await db.insert(Basics).values([
+  //   {
+  //     names: "Pablo Alexander",
+  //     lastName: "Contreras Guevara",
+  //     label: "Ingeniero de software con más de 8 años de experiencia",
+  //     email: "pacg1991@gmail.com",
+  //     phone: "+51 918490148",
+  //     url: "https://pablo-c.com",
+  //     summary:
+  //       "Ingeniero de software con más de 8 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.",
+  //     location: {
+  //       address: "",
+  //       postalCode: "15009",
+  //       city: "Lima",
+  //       countryCode: "PE",
+  //       region: "Perú",
+  //     },
+  //     userId: userOne.id,
+  //   },
+  // ]);
 
-  const basicsList = await db
-    .select()
-    .from(Basics)
-    .where(eq(Basics.userId, userOne.id))
-    .execute();
-  console.log("basicsList", basicsList);
+  // const basicsList = await db
+  //   .select()
+  //   .from(Basics)
+  //   .where(eq(Basics.userId, userOne.id))
+  //   .execute();
+  // console.log("basicsList", basicsList);
 
-  if (true) {
-    return;
-  }
+  // if (true) {
+  //   return;
+  // }
 
   const tables: Record<string, any> = {};
 
@@ -206,13 +205,136 @@ export default async function () {
     model: Interests,
   };
 
-  tables["basics"] = {
+  tables["attributesTypes"] = {
+    records: await registerNewRecords(
+      AttributesTypes,
+      "codeName",
+      jsonData.attributesTypes
+    ),
+    model: AttributesTypes,
+  };
+
+  /**
+      Basics
+      NetworksUsers
+      Works
+      Educations
+      Awards
+      Certificates
+      Publications
+      LanguagesUsers
+      Projects
+      References
+      Files
+      SkillsKeywords
+      InterestsKeywords
+    */
+  tables["usersAttributes"] = {
     records: await registerRecordsWithRelations(
-      Basics,
-      jsonData.basics,
+      UsersAttributes,
+      jsonData.usersAttributes,
       tables
     ),
-    model: Basics,
+    model: UsersAttributes,
   };
-  console.log(tables["basics"]);
+
+  tables["networksUsers"] = {
+    records: await registerRecordsWithRelations(
+      NetworksUsers,
+      jsonData.networksUsers,
+      tables
+    ),
+    model: NetworksUsers,
+  };
+
+  tables["works"] = {
+    records: await registerRecordsWithRelations(Works, jsonData.works, tables),
+    model: Works,
+  };
+
+  tables["educations"] = {
+    records: await registerRecordsWithRelations(
+      Educations,
+      jsonData.educations,
+      tables
+    ),
+    model: Educations,
+  };
+
+  tables["awards"] = {
+    records: await registerRecordsWithRelations(
+      Awards,
+      jsonData.awards,
+      tables
+    ),
+    model: Awards,
+  };
+
+  tables["certificates"] = {
+    records: await registerRecordsWithRelations(
+      Certificates,
+      jsonData.certificates,
+      tables
+    ),
+    model: Certificates,
+  };
+
+  tables["publications"] = {
+    records: await registerRecordsWithRelations(
+      Publications,
+      jsonData.publications,
+      tables
+    ),
+    model: Publications,
+  };
+
+  tables["languagesUsers"] = {
+    records: await registerRecordsWithRelations(
+      LanguagesUsers,
+      jsonData.languagesUsers,
+      tables
+    ),
+    model: LanguagesUsers,
+  };
+
+  tables["projects"] = {
+    records: await registerRecordsWithRelations(
+      Projects,
+      jsonData.projects,
+      tables
+    ),
+    model: Projects,
+  };
+
+  tables["references"] = {
+    records: await registerRecordsWithRelations(
+      References,
+      jsonData.references,
+      tables
+    ),
+    model: References,
+  };
+
+  tables["files"] = {
+    records: await registerRecordsWithRelations(Files, jsonData.files, tables),
+    model: Files,
+  };
+
+  tables["skillsKeywords"] = {
+    records: await registerRecordsWithRelations(
+      SkillsKeywords,
+      jsonData.skillsKeywords,
+      tables
+    ),
+    model: SkillsKeywords,
+  };
+
+  tables["interestsKeywords"] = {
+    records: await registerRecordsWithRelations(
+      InterestsKeywords,
+      jsonData.interestsKeywords,
+      tables
+    ),
+    model: InterestsKeywords,
+  };
 }

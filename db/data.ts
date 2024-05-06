@@ -1649,7 +1649,6 @@ export default {
       codeName: "destacame-frontend",
       name: "Destacame",
       position: "Desarrollador Web Frontend",
-      url: "https://destacame.cl",
       startDate: new Date("2021-12-27"),
       endDate: new Date("2022-08-01"),
       responsibilitiesNProjects: [
@@ -1713,7 +1712,6 @@ export default {
       codeName: "goodmeal",
       name: "GoodMeal",
       position: "Desarrollador Web Full Stack",
-      url: "",
       startDate: new Date("2021-05-01"),
       endDate: new Date("2021-12-01"),
       responsibilitiesNProjects: [
@@ -1747,7 +1745,6 @@ export default {
       codeName: "dibal",
       name: "Dibal",
       position: "Líder de Equipo de Desarrollo y Desarrollador",
-      url: "https://dibal.pe",
       startDate: new Date("2018-12-01"),
       endDate: new Date("2021-09-01"),
       responsibilitiesNProjects: [
@@ -1783,7 +1780,6 @@ export default {
       codeName: "cofasa",
       name: "LABORATORIO COFASA S.A.",
       position: "Desarrollador de Sistemas Web",
-      url: "https://laboratoriocofasa.com/",
       startDate: new Date("2017-01-01"),
       endDate: new Date("2018-11-28"),
       responsibilitiesNProjects: [

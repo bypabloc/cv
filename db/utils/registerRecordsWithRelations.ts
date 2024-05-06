@@ -1,4 +1,4 @@
-import { db, eq, and, inArray } from "astro:db";
+import { db, eq, and, sql, inArray } from "astro:db";
 
 /**
  * Función para registrar registros con relaciones.
@@ -111,23 +111,37 @@ export const registerRecordsWithRelations = async (
             }
 
             if (Object.keys(record).length > 0) {
-              let query = db.select().from(tableModel);
-              const listVerify = [];
-              for (const column of Object.keys(record)) {
-                if (column === "id") continue;
-                query = query.where(and(tableModel[column], record[column]));
-                listVerify.push({
-                  column: column,
-                  data: record[column],
-                });
-              }
-              console.log(
-                `listVerify > ${tableModel[Symbol.for("drizzle:Name")]}`,
-                listVerify
-              );
+              // Construye el array `listVerify` con el nombre de la columna y su valor
+              const listVerify = Object.keys(record)
+                .filter(
+                  (column) =>
+                    column !== "id" &&
+                    column !== "responsibilitiesNProjects" &&
+                    column !== "achievements" &&
+                    column !== "highlights" &&
+                    column !== "scrappingRecommendation" &&
+                    column !== "keys"
+                )
+                .map((column) => ({ column, data: record[column] }));
+
+              // Construir la sentencia SQL con las condiciones
+              const conditions = listVerify
+                .map(
+                  ({ column, data }) =>
+                    sql`${sql.identifier([column])} = ${data}`
+                )
+                .reduce((acc, curr) => sql`${acc} AND ${curr}`);
+
+              const query = db.select().from(tableModel).where(conditions);
+
+              const { sql: sqlRaw, params: paramsRaw } = query.toSQL();
+              console.log("sqlRaw", sqlRaw);
+              console.log("paramsRaw", paramsRaw);
+
               const records = await query.execute();
+              console.log("records", records);
+
               existingRecord = records.length ? records[0] : null;
-              console.log("existingRecord", existingRecord);
             }
 
             if (existingRecord) {
@@ -150,6 +164,10 @@ export const registerRecordsWithRelations = async (
             }
           } catch (error) {
             console.error("Error inserting records:", error);
+            console.error(
+              "--------- tableModel ---------",
+              tableModel[Symbol.for("drizzle:BaseName")]
+            );
             throw new Error("Failed to insert records in Astro DB");
           }
         }

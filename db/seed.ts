@@ -1,6 +1,7 @@
 import {
   db,
   like,
+  sql,
   not,
   eq,
   and,
@@ -40,10 +41,40 @@ import jsonData from "./data";
 import { registerNewRecords } from "./utils/registerNewRecords";
 import { registerRecordsWithRelations } from "./utils/registerRecordsWithRelations";
 
-
 // Función asíncrona para insertar los datos
 export default async function () {
   // // astro db execute "./db/seed.ts" --remote
+
+  /**  
+    sqlRaw > select "id", "status", "createdAt", "updatedAt", "userId", "employerId", "codeName", "name", "position", "startDate", "endDate", "jobTypeId", "summary", "responsibilitiesNProjects", "achievements" from "Works" where ?
+    paramsRaw > [ "codeName = 'destacame-architect'" ]
+   */
+
+  /*
+  const columns = Works[Symbol.for("drizzle:Columns")];
+  const keysColumns = Object.keys(columns);
+
+  console.log("--------- Columns ---------", columns);
+  console.log("--------- Keys Columns ---------", keysColumns);
+  console.log("--------- Keys Columns ---------", columns.achievements);
+
+  // example columns.achievements.config.customTypeParams
+
+  console.log(
+    "----------------------- achievements -----------------------",
+    columns.achievements
+  );
+
+  console.log(
+    "--------- customTypeParams ---------",
+    columns.startDate.config.customTypeParams.dataType()
+  );
+
+  if (true) {
+    return;
+  }
+  */
+
   const tables: Record<string, any> = {};
 
   tables["users"] = {
@@ -182,7 +213,12 @@ export default async function () {
   };
 
   tables["works"] = {
-    records: await registerRecordsWithRelations(Works, jsonData.works, tables),
+    records: await registerRecordsWithRelations(
+      Works,
+      jsonData.works,
+      tables
+      // "codeName"
+    ),
     model: Works,
   };
 

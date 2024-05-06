@@ -7,9 +7,12 @@ export const Users = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     username: column.text({ unique: true }),
   },
@@ -22,9 +25,12 @@ export const UsersAttributes = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -45,9 +51,12 @@ export const AttributesTypes = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text({ unique: true }),
@@ -61,9 +70,12 @@ export const Networks = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     codeName: column.text({ unique: true }),
     name: column.text(),
     url: column.text(),
@@ -77,9 +89,12 @@ export const TypeFiles = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -97,9 +112,12 @@ export const GroupsFiles = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -115,9 +133,12 @@ export const Files = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     groupFileId: column.text({
       references: () => GroupsFiles.columns.id,
@@ -141,9 +162,12 @@ export const Institutions = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -160,9 +184,12 @@ export const Issuers = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -177,9 +204,12 @@ export const Publishers = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -194,9 +224,12 @@ export const Languages = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -210,9 +243,12 @@ export const Keywords = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -227,9 +263,12 @@ export const Interests = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -243,9 +282,12 @@ export const InterestsKeywords = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     interestId: column.text({
       references: () => Interests.columns.id,
@@ -263,9 +305,12 @@ export const Skills = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -281,9 +326,12 @@ export const SkillsKeywords = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     skillId: column.text({
       references: () => Skills.columns.id,
@@ -301,9 +349,12 @@ export const NetworksUsers = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     networkId: column.text({
       references: () => Networks.columns.id,
@@ -323,9 +374,12 @@ export const Employers = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -335,7 +389,10 @@ export const Employers = defineTable({
     name: column.text(),
     url: column.text({ optional: true }),
     description: column.text({ optional: true }),
-    serviceStatus: column.text({ default: "active" }),
+    servicestatus: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
   },
 });
 
@@ -346,9 +403,12 @@ export const JobTypes = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -362,9 +422,12 @@ export const Works = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -383,7 +446,9 @@ export const Works = defineTable({
     }),
     summary: column.text({ optional: true }),
     responsibilitiesNProjects: column.json({ optional: true }),
-    achievements: column.json({ optional: true }),
+    achievements: column.json({
+      optional: true,
+    }),
   },
 });
 
@@ -394,9 +459,12 @@ export const WorksTechnicalSkills = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     workId: column.text({
       references: () => Works.columns.id,
@@ -414,9 +482,12 @@ export const WorksSoftSkills = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     workId: column.text({
       references: () => Works.columns.id,
@@ -434,9 +505,12 @@ export const Educations = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -459,9 +533,12 @@ export const Awards = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -481,9 +558,12 @@ export const Certificates = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -504,9 +584,12 @@ export const Publications = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -528,9 +611,12 @@ export const LanguagesUsers = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -549,9 +635,12 @@ export const UsersInterests = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -569,18 +658,27 @@ export const Projects = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
     }),
     name: column.text(),
     description: column.text(),
-    highlights: column.json(),
+    highlights: column.json({
+      default: [],
+      defaultFn: () => [],
+    }),
     url: column.text(),
-    serviceStatus: column.text({ default: "active" }),
+    servicestatus: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
   },
 });
 
@@ -591,9 +689,12 @@ export const References = defineTable({
       primaryKey: true,
       default: sql`gen_random_uuid()`,
     }),
-    status: column.text({ default: "active" }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW }),
+    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,

@@ -1,4 +1,6 @@
 ---
+export const prerender = true;
+
 import Layout from "@/layouts/Layout.astro";
 
 import Basic from "@/components/sections/Basic.vue";
@@ -30,7 +32,9 @@ const { id } = Astro.params;
 
 <Layout title="Portafolio">
   <main>
-    <Basic client:load />
+    <client:only fallback="Cargando...">
+      <Basic queryParams={{}} client:load />
+    </client:only>
     <Hero />
     <About />
     <Experience />

@@ -1,11 +1,4 @@
 import {
-  db,
-  like,
-  sql,
-  not,
-  eq,
-  and,
-  inArray,
   Users,
   UsersAttributes,
   AttributesTypes,
@@ -306,5 +299,23 @@ export default async function () {
       tables
     ),
     model: InterestsKeywords,
+  };
+
+  tables["worksSoftSkills"] = {
+    records: await registerRecordsWithRelations(
+      WorksSoftSkills,
+      jsonData.worksSoftSkills,
+      tables
+    ),
+    model: WorksSoftSkills,
+  };
+
+  tables["worksTechnicalSkills"] = {
+    records: await registerRecordsWithRelations(
+      WorksTechnicalSkills,
+      jsonData.worksTechnicalSkills,
+      tables
+    ),
+    model: WorksTechnicalSkills,
   };
 }

@@ -24,9 +24,7 @@ console.log("queryParams", queryParams);
 
 <Layout title="Portafolio">
   <main>
-    <client:only fallback="Cargando...">
-      <Basic queryParams={queryParams} client:load />
-    </client:only>
+    <Basic queryParams={queryParams} />
     <Hero />
     <About />
     <Experience />

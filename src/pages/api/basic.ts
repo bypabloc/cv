@@ -4,11 +4,7 @@ import { getAttributesByUsername } from "@/utils/getAttributesByUsername";
 
 export const GET: APIRoute = async (context) => {
   try {
-    console.log("Context:", context);
-    const { request, params, props } = context;
-    console.log("Request:", request);
-    console.log("Params:", params);
-    console.log("Props:", props);
+    const { request } = context;
     const url = new URL(request.url);
     const username = url.searchParams.get("username");
 
@@ -22,13 +18,27 @@ export const GET: APIRoute = async (context) => {
       });
     }
 
-    return new Response(JSON.stringify({ username }), {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "cache-control": "public, s-maxage=60, stale-while-revalidate=25",
-      },
-    });
+    const attributes = await getAttributesByUsername(username);
+    if (!attributes.isValid) {
+      return new Response(JSON.stringify({ error: attributes.message }), {
+        status: 404,
+        headers: {
+          "content-type": "application/json",
+          // "cache-control": "public, s-maxage=60, stale-while-revalidate=25",
+        },
+      });
+    }
+
+    return new Response(
+      JSON.stringify({ username, attributes: attributes.attributes }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "cache-control": "public, s-maxage=60, stale-while-revalidate=25",
+        },
+      }
+    );
   } catch (error) {
     console.log("Error:", error);
     return new Response(JSON.stringify({ error }), {

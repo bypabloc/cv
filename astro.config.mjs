@@ -13,7 +13,7 @@ export default defineConfig({
     vue(),
     db(),
   ],
-  output: 'hybrid',
+  output: 'server',
   adapter: node({
     mode: "standalone"
   })

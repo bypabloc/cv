@@ -16,17 +16,21 @@ import Interests from "@/components/sections/Interests.astro";
 import References from "@/components/sections/References.astro";
 import KeyboardManager from "@/components/KeyboardManager.astro";
 
-// Obtén la URL actual con sus parámetros
-const url = new URL(Astro.url);
-const queryParams = Object.fromEntries(url.searchParams.entries());
-console.log("queryParams", queryParams);
+// getStaticPaths function
+export function getStaticPaths() {
+  return [
+    { params: { id: "bypabloc" } },
+    { params: { id: "rover" } },
+    { params: { id: "spot" } },
+  ];
+}
+
+const { id } = Astro.params;
 ---
 
 <Layout title="Portafolio">
   <main>
-    <client:only fallback="Cargando...">
-      <Basic queryParams={queryParams} client:load />
-    </client:only>
+    <Basic client:load />
     <Hero />
     <About />
     <Experience />
@@ -40,7 +44,6 @@ console.log("queryParams", queryParams);
     <Interests />
     <References />
   </main>
-
   <KeyboardManager />
 </Layout>
 

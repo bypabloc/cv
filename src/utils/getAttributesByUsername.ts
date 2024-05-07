@@ -31,6 +31,7 @@ export async function getAttributesByUsername(username: string) {
         value: UsersAttributes.attributeValue,
         codeName: AttributesTypes.codeName,
         type: AttributesTypes.type,
+        name: AttributesTypes.name,
       })
       .from(UsersAttributes)
       .innerJoin(
@@ -53,6 +54,7 @@ export async function getAttributesByUsername(username: string) {
       obj[attr.codeName] = {
         value: attr.value,
         type: attr.type,
+        name: attr.name,
       };
       return obj;
     }, {});

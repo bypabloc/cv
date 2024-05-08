@@ -15,16 +15,15 @@ import Languages from "@/components/sections/Languages.astro";
 import Interests from "@/components/sections/Interests.astro";
 import References from "@/components/sections/References.astro";
 import KeyboardManager from "@/components/KeyboardManager.astro";
+import { getUser } from "@/utils/db/getUser";
 
-// Obtén la URL actual con sus parámetros
-const url = new URL(Astro.url);
-const queryParams = Object.fromEntries(url.searchParams.entries());
-console.log("queryParams", queryParams);
+const user = await getUser("bypabloc");
+console.log("user", user);
 ---
 
 <Layout title="Portafolio">
   <main>
-    <Basic queryParams={queryParams} />
+    <Basic user={user.data?.user} />
     <Hero />
     <About />
     <Experience />

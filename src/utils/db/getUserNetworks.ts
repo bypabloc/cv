@@ -15,6 +15,7 @@ export const getUserNetworks = async (user: Record<string, any>) => {
         name: Networks.name,
         url: Networks.url,
         status: Networks.status,
+        icon: Networks.icon,
         username: NetworksUsers.username,
         networksUsersUrl: NetworksUsers.url,
       })

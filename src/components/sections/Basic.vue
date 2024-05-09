@@ -72,20 +72,48 @@ const printInfo = computed(() => {
           />
         </a>
         <a
-          v-for="network in networks"
-          :key="`network-${network.id}`"
-          :href="network.networksUsersUrl"
-          :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${network.name}`"
+          v-for="({id, name, networksUsersUrl, icon}) in networks"
+          :key="`network-${id}`"
+          :href="networksUsersUrl"
+          :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${name}`"
           target="_blank"
           rel="noopener noreferrer"
         >
           <span
-            class="i-ant-design-linkedin-outlined dark:i-ant-design-linkedin-filled"
             aria-hidden="true"
+            :class="[
+              ...Object.entries(icon).map(([key, value]) => {
+                if (key === 'light') return `${value}`
+                return `dark:${value}`
+              })
+            ]"
           />
-          {{ network.codeName }}
         </a>
       </footer>
+      <div
+        v-for="({id, name, networksUsersUrl, icon}) in networks"
+        :key="`network-${id}`"
+        :href="networksUsersUrl"
+        :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${name}`"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span
+          aria-hidden="true"
+          :class="[
+            Object.entries(icon).map(([key, value]) => {
+              if (key === 'light') return `${value}`
+              return `dark:${value}`
+            })
+          ]"
+        />
+        {{
+          Object.entries(icon).map(([key, value]) => {
+            if (key === "light") return `${value}`
+            return `dark:${value}`
+          })
+        }}
+      </div>
       <pre><code>{{ networks }}</code></pre>
     </div>
   </div>

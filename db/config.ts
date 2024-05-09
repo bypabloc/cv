@@ -79,6 +79,7 @@ export const Networks = defineTable({
     codeName: column.text({ unique: true }),
     name: column.text(),
     url: column.text(),
+    icon: column.json(),
   },
 });
 

@@ -35,11 +35,19 @@ export default {
       codeName: "linkedin",
       name: "LinkedIn",
       url: "https://linkedin.com/in",
+      icon: {
+        light: "i-ant-design-linkedin-outlined",
+        dark: "i-ant-design-linkedin-filled",
+      },
     },
     {
       codeName: "github",
       name: "GitHub",
       url: "https://github.com",
+      icon: {
+        light: "i-ant-design-github-outlined",
+        dark: "i-ant-design-github-filled",
+      },
     },
   ],
   typeFiles: [

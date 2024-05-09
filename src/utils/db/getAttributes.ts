@@ -31,11 +31,13 @@ export const getAttributes = async (user: Record<string, any>) => {
     }
 
     const attributesObject = attributes.reduce((obj, attr) => {
-      obj[attr.codeName] = {
+      const values = {
         value: attr.value,
-        type: attr.type,
-        name: attr.name,
       };
+      if (attr.type === "object") {
+        values.value = JSON.parse(attr.value);
+      }
+      obj[attr.codeName] = values;
       return obj;
     }, {});
 

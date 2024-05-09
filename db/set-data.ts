@@ -301,21 +301,21 @@ export default async function () {
     model: InterestsKeywords,
   };
 
-  tables["worksSoftSkills"] = {
-    records: await registerRecordsWithRelations(
-      WorksSoftSkills,
-      jsonData.worksSoftSkills,
-      tables
-    ),
-    model: WorksSoftSkills,
-  };
+  // tables["worksSoftSkills"] = {
+  //   records: await registerRecordsWithRelations(
+  //     WorksSoftSkills,
+  //     jsonData.worksSoftSkills,
+  //     tables
+  //   ),
+  //   model: WorksSoftSkills,
+  // };
 
-  tables["worksTechnicalSkills"] = {
-    records: await registerRecordsWithRelations(
-      WorksTechnicalSkills,
-      jsonData.worksTechnicalSkills,
-      tables
-    ),
-    model: WorksTechnicalSkills,
-  };
+  // tables["worksTechnicalSkills"] = {
+  //   records: await registerRecordsWithRelations(
+  //     WorksTechnicalSkills,
+  //     jsonData.worksTechnicalSkills,
+  //     tables
+  //   ),
+  //   model: WorksTechnicalSkills,
+  // };
 }

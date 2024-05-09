@@ -1616,7 +1616,7 @@ export default {
       codeName: "destacame-architect",
       name: "Destacame",
       position: "Arquitecto Frontend y Desarrollador de Microservicios",
-      startDate: new Date("2022-08-01"),
+      startDate: "2022-08-01",
       responsibilitiesNProjects: [
         "Desarrollo y aprendizaje continuo en tecnologías full stack, incluyendo Python, Django y microservices, así como en el modelo de microfrontends.",
         "Participación en el desarrollo de productos en el sector fintech, como un sistema para ayudar a los usuarios a saldar deudas en Chile y otro proyecto en México para ofrecer créditos con diferentes niveles a los usuarios.",
@@ -1649,8 +1649,8 @@ export default {
       codeName: "destacame-frontend",
       name: "Destacame",
       position: "Desarrollador Web Frontend",
-      startDate: new Date("2021-12-27"),
-      endDate: new Date("2022-08-01"),
+      startDate: "2021-12-27",
+      endDate: "2022-08-01",
       responsibilitiesNProjects: [
         "Contratado inicialmente para trabajar en el área de frontend debido a habilidades sobresalientes demostradas en pruebas técnicas.",
         "Implementación de estándares y nuevas tecnologías en el desarrollo frontend, trabajando con Vue y Nuxt.js para mejorar la experiencia del usuario.",
@@ -1678,8 +1678,8 @@ export default {
       codeName: "appinteli",
       name: "AppInteli (Proyecto Personal)",
       position: "Co-fundador y Desarrollador",
-      startDate: new Date("2021-01-01"),
-      endDate: new Date("2023-10-01"),
+      startDate: "2021-01-01",
+      endDate: "2023-10-01",
       status: "inactive",
       responsibilitiesNProjects: [
         "Co-fundación y desarrollo de un ERP para tiendas pequeñas, enfocado en inventarios, ventas, compras y automatización de procesos como reportes y solicitudes de mercancía.",
@@ -1712,8 +1712,8 @@ export default {
       codeName: "goodmeal",
       name: "GoodMeal",
       position: "Desarrollador Web Full Stack",
-      startDate: new Date("2021-05-01"),
-      endDate: new Date("2021-12-01"),
+      startDate: "2021-05-01",
+      endDate: "2021-12-01",
       responsibilitiesNProjects: [
         "Integración en una startup en crecimiento, trabajando bajo presión para satisfacer las demandas de los Project Managers y resolver bugs de manera eficiente",
         "Colaboración estrecha con un equipo talentoso, adoptando prácticas de Scrum, realizando reuniones diarias y mejorando las habilidades de trabajo en equipo",
@@ -1745,8 +1745,8 @@ export default {
       codeName: "dibal",
       name: "Dibal",
       position: "Líder de Equipo de Desarrollo y Desarrollador",
-      startDate: new Date("2018-12-01"),
-      endDate: new Date("2021-09-01"),
+      startDate: "2018-12-01",
+      endDate: "2021-09-01",
       responsibilitiesNProjects: [
         "Primer desarrollador contratado en la startup, contribuyendo al desarrollo de un sistema web para múltiples restaurantes usando jQuery y Laravel.",
         "Liderazgo del equipo de desarrollo, organizando e implementando arquitecturas adaptadas a las necesidades cambiantes del negocio.",
@@ -1780,8 +1780,8 @@ export default {
       codeName: "cofasa",
       name: "LABORATORIO COFASA S.A.",
       position: "Desarrollador de Sistemas Web",
-      startDate: new Date("2017-01-01"),
-      endDate: new Date("2018-11-28"),
+      startDate: "2017-01-01",
+      endDate: "2018-11-28",
       responsibilitiesNProjects: [
         "Desarrollo de un sistema web para el monitoreo del proceso de producción, registrando paradas en las máquinas para análisis de productividad.",
         "Implementación del sistema en toda la empresa en red local, con acceso seguro mediante usuario y contraseña para cada empleado.",
@@ -1808,8 +1808,8 @@ export default {
       codeName: "projects-degrees",
       name: "Freelance > Proyectos de Grado",
       position: "Líder, Arquitecto y Desarrollador",
-      startDate: new Date("2015-01-01"),
-      endDate: new Date("2015-12-01"),
+      startDate: "2015-01-01",
+      endDate: "2015-12-01",
       responsibilitiesNProjects: [
         "Reestructuración y finalización del proyecto de grado de dos equipos que enfrentaron dificultades técnicas.",
         "Dirección e implementación completa de las soluciones necesarias para cumplir con los objetivos del proyecto.",
@@ -1834,8 +1834,8 @@ export default {
       codeName: "iai",
       name: "Freelance > Instituto Autónomo de Infraestructura (IAI)",
       position: "Líder de Desarrollo de software y Arquitectura de Sistemas",
-      startDate: new Date("2015-01-01"),
-      endDate: new Date("2015-12-01"),
+      startDate: "2015-01-01",
+      endDate: "2015-12-01",
       responsibilitiesNProjects: [
         "Liderazgo en el desarrollo e implementación de un sistema informático para la gestión de obras.",
         "Diseño y desarrollo de una arquitectura de red con una PC como servidor para acceso centralizado a datos.",
@@ -1861,8 +1861,8 @@ export default {
       codeName: "ipasme",
       name: "Freelance > Ministerio de Educación 'IPASME'",
       position: "Desarrollador de software",
-      startDate: new Date("2014-01-01"),
-      endDate: new Date("2014-12-01"),
+      startDate: "2014-01-01",
+      endDate: "2014-12-01",
       responsibilitiesNProjects: [
         "Desarrollo e implementación de un sistema de gestión de historias médicas para pacientes.",
         "Creación de interfaces de escritorio en Java para Windows.",
@@ -1888,8 +1888,8 @@ export default {
       codeName: "corpoelec",
       name: "Freelance > CORPOELEC",
       position: "Desarrollador web",
-      startDate: new Date("2013-01-01"),
-      endDate: new Date("2013-12-01"),
+      startDate: "2013-01-01",
+      endDate: "2013-12-01",
       responsibilitiesNProjects: [
         "Implementación y mantenimiento de un sistema de inventario usando PHP y jQuery.",
         "Desarrollo de funcionalidades CRUD y asociación de equipos a personas.",
@@ -1917,7 +1917,7 @@ export default {
       learn:
         "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender",
       studyType: "course",
-      startDate: new Date("2013-04-01"),
+      startDate: "2013-04-01",
     },
     {
       relationship: {
@@ -1936,7 +1936,7 @@ export default {
       learn:
         "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros.",
       studyType: "course",
-      startDate: new Date("2013-04-01"),
+      startDate: "2013-04-01",
     },
     {
       relationship: {
@@ -1955,8 +1955,8 @@ export default {
       learn:
         "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros.",
       studyType: "bachelorDegree",
-      startDate: new Date("2011-03-01"),
-      endDate: new Date("2016-03-01"),
+      startDate: "2011-03-01",
+      endDate: "2016-03-01",
     },
   ],
   awards: [
@@ -1969,7 +1969,7 @@ export default {
         },
       },
       title: "Premio a Innovador del año 2023 en Destacame",
-      date: new Date("2024-01-24"),
+      date: "2024-01-24",
       awarder: "Destacame",
       summary:
         "Por liderar la implementación de soluciones tecnológicas innovadoras en la empresa, mejorando significativamente la eficiencia operativa y la experiencia del usuario.",
@@ -1984,7 +1984,7 @@ export default {
         },
       },
       title: "Desafío Triple Alianza Lima",
-      date: new Date("2020-11-18"),
+      date: "2020-11-18",
       awarder: "Incubagraria, 1551, StartUpUni",
       summary:
         'Por haber obtenido el 1er lugar en el sector Comercio del "Desafío Triple Alianza COVID-19", esto sucedió en mi experiencia en DIBAL.',
@@ -2006,7 +2006,7 @@ export default {
         },
       },
       title: "Docker - Guía práctica de uso para desarrolladores",
-      date: new Date("2023-04-20"),
+      date: "2023-04-20",
       url: "https://cursos.devtalles.com/certificates/f7qc3ju28w",
     },
     {
@@ -2023,7 +2023,7 @@ export default {
         },
       },
       title: "Node - Autenticación Rest con Clean Architecture",
-      date: new Date("2023-08-15"),
+      date: "2023-08-15",
       url: "https://cursos.devtalles.com/certificates/91cxyahzil",
     },
     {
@@ -2040,7 +2040,7 @@ export default {
         },
       },
       title: "Principios SOLID y Clean Code",
-      date: new Date("2023-11-05"),
+      date: "2023-11-05",
       url: "http://ude.my/UC-ddf92744-e69f-47ab-b28d-c4f7b569b7d4",
     },
     {
@@ -2057,7 +2057,7 @@ export default {
         },
       },
       title: "Next.js: El framework de React para producción",
-      date: new Date("2024-01-04"),
+      date: "2024-01-04",
       url: "http://ude.my/UC-8297be13-d656-4e62-b64b-642819930c71",
     },
     {
@@ -2074,7 +2074,7 @@ export default {
         },
       },
       title: "React: De cero a experto ( Hooks y MERN )",
-      date: new Date("2023-11-13"),
+      date: "2023-11-13",
       url: "http://ude.my/UC-6f8fa099-e631-459d-a139-989d441a1b21",
     },
     {
@@ -2091,7 +2091,7 @@ export default {
         },
       },
       title: "Vue.js - Intermedio: Lleva tus bases al siguiente nivel",
-      date: new Date("2023-03-22"),
+      date: "2023-03-22",
       url: "http://ude.my/UC-b8d6554e-4cb9-49dd-becb-a5dbfdcf6f26",
     },
     {
@@ -2108,7 +2108,7 @@ export default {
         },
       },
       title: "Vue.js: De cero a experto",
-      date: new Date("2023-05-30"),
+      date: "2023-05-30",
       url: "http://ude.my/UC-a217906e-84eb-40dc-9303-36de5b71e0cc",
     },
     {
@@ -2125,7 +2125,7 @@ export default {
         },
       },
       title: "SQL de cero: Tu guía práctica con PostgreSQL",
-      date: new Date("2023-02-12"),
+      date: "2023-02-12",
       url: "http://ude.my/UC-afb98ee6-8704-4b20-9e1f-15bdacf2c76d",
     },
     {
@@ -2142,7 +2142,7 @@ export default {
         },
       },
       title: "NodeJS: De cero a experto",
-      date: new Date("2023-02-12"),
+      date: "2023-02-12",
       url: "http://ude.my/UC-9acb44f1-27c6-402e-9dae-8a04bf3d424b",
     },
     {
@@ -2159,7 +2159,7 @@ export default {
         },
       },
       title: "Nest: Desarrollo backend escalable con Node",
-      date: new Date("2023-02-12"),
+      date: "2023-02-12",
       url: "http://ude.my/UC-810baa94-7f51-4c54-b631-d62b4af77806",
     },
     {
@@ -2176,7 +2176,7 @@ export default {
         },
       },
       title: "JavaScript moderno: Guía para dominar el lenguaje",
-      date: new Date("2023-07-29"),
+      date: "2023-07-29",
       url: "http://ude.my/UC-516bd9e6-59a0-4f28-b3bf-db2539d158d9",
     },
   ],
@@ -2195,7 +2195,7 @@ export default {
         },
       },
       name: "Instalando Docker y Docker-compose en WSL2 Ubuntu sin Naufragar en el Intento",
-      releaseDate: new Date("2023-06-04"),
+      releaseDate: "2023-06-04",
       url: "https://bypablo.medium.com/un-viaje-épico-en-código-instalando-docker-y-docker-compose-en-wsl2-ubuntu-sin-naufragar-en-el-b21f38a9571",
       summary: "¿Como instalar Docker y Docker-compose en WSL2 sin fallar?",
     },
@@ -2213,7 +2213,7 @@ export default {
         },
       },
       name: "Explorando 'type' e 'interface' en TypeScript: Un Enfoque en el Universo Marvel",
-      releaseDate: new Date("2023-05-28"),
+      releaseDate: "2023-05-28",
       url: "https://bypablo.medium.com/explorando-type-e-interface-en-typescript-un-enfoque-en-el-universo-marvel-4ad47317838e",
       summary:
         "¿Cuál es la diferencia entre 'type' e 'interface' en TypeScript? ¿Cómo se aplican en el Universo Marvel?",
@@ -2232,7 +2232,7 @@ export default {
         },
       },
       name: "JavaScript vs TypeScript: ¡El choque de titanes que desencadena una guerra de tipos!",
-      releaseDate: new Date("2023-05-29"),
+      releaseDate: "2023-05-29",
       url: "https://bypablo.medium.com/javascript-vs-typescript-el-choque-de-titanes-que-desencadena-una-guerra-de-tipos-dadc70c06766",
       summary:
         "¿Cuál es la diferencia entre JavaScript y TypeScript? ¿Cuál es mejor?",
@@ -2251,7 +2251,7 @@ export default {
         },
       },
       name: '¡Bienvenidos a TypeScript, no más "undefined"!',
-      releaseDate: new Date("2023-05-30"),
+      releaseDate: "2023-05-30",
       url: "https://bypablo.medium.com/bienvenidos-a-typescript-no-más-undefined-5e473f0f4670",
       summary:
         "¿Qué es TypeScript? ¿Cómo se usa? ¿Por qué es mejor que JavaScript?",
@@ -2270,7 +2270,7 @@ export default {
         },
       },
       name: "Dominando el Mundo de los Tipos en TypeScript",
-      releaseDate: new Date("2023-05-31"),
+      releaseDate: "2023-05-31",
       url: "https://bypablo.medium.com/dominando-el-mundo-de-los-tipos-en-typescript-e543eb42eb9c",
       summary:
         "¿Qué son los tipos en TypeScript? ¿Cómo se usan? ¿Por qué son importantes?",

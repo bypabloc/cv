@@ -134,12 +134,7 @@ export const registerRecordsWithRelations = async (
 
               const query = db.select().from(tableModel).where(conditions);
 
-              const { sql: sqlRaw, params: paramsRaw } = query.toSQL();
-              console.log("sqlRaw", sqlRaw);
-              console.log("paramsRaw", paramsRaw);
-
               const records = await query.execute();
-              console.log("records", records);
 
               existingRecord = records.length ? records[0] : null;
             }
@@ -151,6 +146,32 @@ export const registerRecordsWithRelations = async (
 
             try {
               console.log("record to insert:", JSON.stringify(record, null, 2));
+              Object.keys(record).forEach((key) => {
+                if (
+                  key !== "id" &&
+                  key !== "responsibilitiesNProjects" &&
+                  key !== "achievements" &&
+                  key !== "highlights" &&
+                  key !== "scrappingRecommendation" &&
+                  key !== "keys"
+                ) {
+                  try {
+                    if (record[key] instanceof Date && !isNaN(record[key])) {
+                      return;
+                    } else if (typeof record[key] === "object") {
+                      record[key] = JSON.stringify(record[key]);
+                    } else if (typeof record[key] === "string") {
+                      if (record[key].match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        record[key] = new Date(record[key]);
+                      }
+                    } else if (typeof record[key] === "undefined") {
+                      record[key] = null;
+                    } else if (record[key] === null) {
+                      record[key] = null;
+                    }
+                  } catch (error) {}
+                }
+              });
               const insertedRecords = await db
                 .insert(tableModel)
                 .values(record)
@@ -159,15 +180,15 @@ export const registerRecordsWithRelations = async (
               result.push(...insertedRecords);
             } catch (error) {
               console.error("Error inserting records:", error);
-              console.error("tableModel", tableModel);
+              // console.error("tableModel", tableModel);
               throw new Error("Failed to insert records in Astro DB");
             }
           } catch (error) {
             console.error("Error inserting records:", error);
-            console.error(
-              "--------- tableModel ---------",
-              tableModel[Symbol.for("drizzle:BaseName")]
-            );
+            // console.error(
+            //   "--------- tableModel ---------",
+            //   tableModel[Symbol.for("drizzle:BaseName")]
+            // );
             throw new Error("Failed to insert records in Astro DB");
           }
         }

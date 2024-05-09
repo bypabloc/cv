@@ -37,7 +37,10 @@ const printInfo = computed(() => {
       <h1>{{attributes.names.value}} {{ attributes.lastName.value }}</h1>
       <h2>{{attributes.label.value}}</h2>
       <span>
-        <WorldMap />
+        <span
+          class="i-clarity-world-line dark:i-clarity-world-solid"
+          aria-hidden="true"
+        />
         {{attributes.location.value.city}}, {{attributes.location.value.region}}
       </span>
       <footer class="print">
@@ -51,7 +54,10 @@ const printInfo = computed(() => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          mail
+          <span
+            class="i-material-symbols-mail-outline dark:i-material-symbols-mail"
+            aria-hidden="true"
+          />
         </a>
         <a
           v-if="phone"
@@ -60,7 +66,10 @@ const printInfo = computed(() => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          phone
+          <span
+            class="i-material-symbols-phone-enabled-outline dark:i-material-symbols-phone-enabled"
+            aria-hidden="true"
+          />
         </a>
         <a
           v-for="network in networks"
@@ -70,6 +79,10 @@ const printInfo = computed(() => {
           target="_blank"
           rel="noopener noreferrer"
         >
+          <span
+            class="i-ant-design-linkedin-outlined dark:i-ant-design-linkedin-filled"
+            aria-hidden="true"
+          />
           {{ network.codeName }}
         </a>
       </footer>

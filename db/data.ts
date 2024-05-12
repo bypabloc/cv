@@ -90,7 +90,7 @@ export default {
         },
         print: {
           visible: true,
-          template: "{contactInfo}",
+          template: "+{contactInfo}",
         },
       },
     },
@@ -111,7 +111,8 @@ export default {
         },
         print: {
           visible: true,
-          template: "{contactInfo}",
+          link: true,
+          template: "{url}/{contactInfo}",
         },
       },
     },
@@ -132,7 +133,8 @@ export default {
         },
         print: {
           visible: true,
-          template: "{contactInfo}",
+          link: true,
+          template: "{url}/{contactInfo}",
         },
       },
     },
@@ -181,7 +183,7 @@ export default {
           value: "email",
         },
       },
-      contactInfo: "bypabloc",
+      contactInfo: "pacg1991@gmail.com",
     },
     {
       relationship: {

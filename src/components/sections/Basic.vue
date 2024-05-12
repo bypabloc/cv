@@ -17,7 +17,14 @@ attributes.value = attributesResult.isValid ? attributesResult.data?.attributes 
 const networksResult = await getUserNetworks(props.user, attributes.value)
 networks.value = networksResult.isValid ? networksResult.data?.networks : [];
 
-console.log(networks.value)
+const linksPrint = computed(() => {
+  return networks.value.filter((network) => {
+    if (!network.printUrl.url) return false;
+    return true;
+  }).map((network) => {
+    return network.printUrl
+  });
+});
 </script>
 
 <template>
@@ -33,6 +40,26 @@ console.log(networks.value)
         {{attributes.location.value.city}}, {{attributes.location.value.region}}
       </span>
       <footer class="print">
+        <div>
+          <template
+            v-for="({url, link}, index) in linksPrint"
+            :key="`linksPrint-${index}`"
+          >
+            <a
+              v-if="link"
+              :href="url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ url }}{{ index < linksPrint.length - 1 ? ' • ' : '' }}
+            </a>
+            <span
+              v-else
+            >
+              {{ url }}{{ index < linksPrint.length - 1 ? ' • ' : '' }}
+            </span>
+          </template>
+        </div>
       </footer>
       <footer class="no-print">
         <a
@@ -49,7 +76,7 @@ console.log(networks.value)
           />
         </a>
       </footer>
-      <pre><code>{{ networks }}</code></pre>
+      <pre><code>{{ }}</code></pre>
     </div>
   </div>
 </template>
@@ -88,16 +115,24 @@ img {
   border-radius: 16px;
 }
 
+footer.print a {
+  color: #666;
+  /* display: flex;*/
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  letter-spacing: -0.05rem;
+}
 span {
   color: #666;
-  display: flex;
+  /* display: flex;*/
   align-items: center;
   gap: 0.25rem;
   font-size: 0.85rem;
   letter-spacing: -0.05rem;
 }
 
-footer {
+footer.no-print {
   color: #555;
   font-size: 0.65rem;
   display: flex;
@@ -105,7 +140,7 @@ footer {
   margin-top: 8px;
 }
 
-footer a {
+footer.no-print a {
   color: #777;
   display: inline-flex;
   align-items: center;
@@ -118,7 +153,7 @@ footer a {
   transition: all 0.3s ease;
 }
 
-footer a:hover {
+footer.no-print a:hover {
   background: #eee;
   border: 1px solid #ddd;
 }

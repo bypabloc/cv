@@ -46,5 +46,7 @@ export default defineConfig({
     "dark:i-ant-design-linkedin-filled",
     "i-ant-design-github-outlined",
     "dark:i-ant-design-github-filled",
+    "i-clarity-world-line",
+    "dark:i-clarity-world-solid",
   ],
 });

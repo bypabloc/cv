@@ -63,16 +63,28 @@ export const getUserNetworks = async (
 
     const networks = networksItems.map((network) => {
       const NetworksUsers = network.NetworksUsers;
-      const webUrl = NetworksUsers.url
+
+      const keys = {
+        webUrl: "",
+        printUrl: {},
+        description: "",
+      };
+      keys.webUrl = NetworksUsers.url
         ? NetworksUsers.url
         : replaceTemplateValues(network.config.web.template, {
             url: network.url,
             contactInfo: network.contactInfo,
           });
-      const printUrl = replaceTemplateValues(network.config.print.template, {
-        contactInfo: network.contactInfo,
-      });
-      const description = replaceTemplateValues(network.config.description, {
+      keys.printUrl = !network.config.print.visible
+        ? {}
+        : {
+            url: replaceTemplateValues(network.config.print.template, {
+              url: network.url,
+              contactInfo: network.contactInfo,
+            }),
+            link: network.config.print.link,
+          };
+      keys.description = replaceTemplateValues(network.config.description, {
         attributes,
         network,
         name: network.name,
@@ -86,9 +98,7 @@ export const getUserNetworks = async (
 
       return {
         ...network,
-        webUrl,
-        description,
-        printUrl,
+        ...keys,
         icons,
       };
     });

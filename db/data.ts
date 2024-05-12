@@ -1584,7 +1584,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.avif",
-      priority: 1,
+      priority: 2,
     },
     {
       relationship: {
@@ -1605,7 +1605,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.webp",
-      priority: 1,
+      priority: 2,
     },
     {
       relationship: {
@@ -1626,7 +1626,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.jp2",
-      priority: 1,
+      priority: 2,
     },
     {
       relationship: {
@@ -1647,7 +1647,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/2.jpg",
-      priority: 1,
+      priority: 2,
     },
     {
       relationship: {
@@ -1668,7 +1668,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif",
-      priority: 2,
+      priority: 1,
     },
     {
       relationship: {
@@ -1689,7 +1689,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.webp",
-      priority: 2,
+      priority: 1,
     },
     {
       relationship: {
@@ -1710,7 +1710,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.jp2",
-      priority: 2,
+      priority: 1,
     },
     {
       relationship: {
@@ -1731,7 +1731,7 @@ export default {
         },
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.jpg",
-      priority: 2,
+      priority: 1,
     },
   ],
   works: [

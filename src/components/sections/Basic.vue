@@ -5,6 +5,7 @@ import { ref, computed } from "vue";
 import { Users } from "astro:db";
 import { getAttributes } from "@/utils/db/getAttributes";
 import { getUserNetworks } from "@/utils/db/getUserNetworks";
+import { getFiles } from "@/utils/db/getFiles";
 
 const props = defineProps<{
   user: typeof Users;
@@ -12,12 +13,16 @@ const props = defineProps<{
 
 const attributes = ref([]);
 const networks = ref([]);
+const files = ref([]);
 
 const attributesResult = await getAttributes(props.user)
 attributes.value = attributesResult.isValid ? attributesResult.data?.attributes : {};
 
 const networksResult = await getUserNetworks(props.user, attributes.value)
 networks.value = networksResult.isValid ? networksResult.data?.networks : [];
+
+const filesResult = await getFiles(props.user)
+files.value = filesResult.isValid ? filesResult.data?.files : [];
 
 const firstName = computed(() => {
   console.log('attributes.value', attributes.value)
@@ -92,6 +97,7 @@ const linksPrint = computed(() => {
         </footer>
       </div>
     </div>
+    <pre><code>{{ files }}</code></pre>
   </Section>
 </template>
 

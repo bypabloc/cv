@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Section from "@/components/Section.vue";
+
 import { ref, computed } from "vue";
 import { Users } from "astro:db";
 import { getAttributes } from "@/utils/db/getAttributes";
@@ -17,6 +19,14 @@ attributes.value = attributesResult.isValid ? attributesResult.data?.attributes 
 const networksResult = await getUserNetworks(props.user, attributes.value)
 networks.value = networksResult.isValid ? networksResult.data?.networks : [];
 
+const firstName = computed(() => {
+  console.log('attributes.value', attributes.value)
+  return attributes?.value?.names?.value ? attributes?.value?.names?.value?.split(' ')[0] : '';
+});
+const lastName = computed(() => {
+  return attributes?.value?.lastName?.value ? attributes?.value?.lastName?.value?.split(' ')[0] : '';
+});
+
 const linksPrint = computed(() => {
   return networks.value.filter((network) => {
     if (!network.printUrl.url) return false;
@@ -28,57 +38,61 @@ const linksPrint = computed(() => {
 </script>
 
 <template>
-  <div class="container">
-    <div class="info">
-      <h1>{{attributes.names.value}} {{ attributes.lastName.value }}</h1>
-      <h2>{{attributes.label.value}}</h2>
-      <span>
-        <span
-          class="i-clarity-world-line dark:i-clarity-world-solid"
-          aria-hidden="true"
-        />
-        {{attributes.location.value.city}}, {{attributes.location.value.region}}
-      </span>
-      <footer class="print">
-        <div>
-          <template
-            v-for="({url, link}, index) in linksPrint"
-            :key="`linksPrint-${index}`"
-          >
-            <a
-              v-if="link"
-              :href="url"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {{ url }}{{ index < linksPrint.length - 1 ? ' • ' : '' }}
-            </a>
-            <span
-              v-else
-            >
-              {{ url }}{{ index < linksPrint.length - 1 ? ' • ' : '' }}
-            </span>
-          </template>
-        </div>
-      </footer>
-      <footer class="no-print">
-        <a
-          v-for="network in networks"
-          :key="`network-${network.id}`"
-          :href="network.webUrl"
-          :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${network.name}`"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+  <Section>
+    <div class="container">
+      <div class="info">
+        <h1>
+          {{ firstName }}
+          {{ lastName }}
+        </h1>
+        <h2>{{attributes.label.value}}</h2>
+        <span>
           <span
-            :class="`${network.icons.join(' ')}`"
+            class="i-clarity-world-line dark:i-clarity-world-solid"
             aria-hidden="true"
           />
-        </a>
-      </footer>
-      <pre><code>{{ }}</code></pre>
+          {{attributes.location.value.city}}, {{attributes.location.value.region}}
+        </span>
+        <footer class="print">
+          <div>
+            <template
+              v-for="({url, link}, index) in linksPrint"
+              :key="`linksPrint-${index}`"
+            >
+              <a
+                v-if="link"
+                :href="url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ url }}{{ index < linksPrint.length - 1 ? ' • ' : '' }}
+              </a>
+              <span
+                v-else
+              >
+                {{ url }}{{ index < linksPrint.length - 1 ? ' • ' : '' }}
+              </span>
+            </template>
+          </div>
+        </footer>
+        <footer class="no-print">
+          <a
+            v-for="network in networks"
+            :key="`network-${network.id}`"
+            :href="network.webUrl"
+            :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${network.name}`"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span
+              :class="`${network.icons.join(' ')}`"
+              aria-hidden="true"
+            />
+          </a>
+        </footer>
+      </div>
     </div>
-  </div>
+  </Section>
 </template>
 
 <style scoped>

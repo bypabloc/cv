@@ -2,7 +2,8 @@
 import Layout from "@/layouts/Layout.astro";
 
 import Basic from "@/components/sections/Basic.vue";
-import About from "@/components/sections/About.astro";
+import About from "@/components/sections/About.vue";
+import About1 from "@/components/sections/About.astro";
 import Education from "@/components/sections/Education.astro";
 import Experience from "@/components/sections/Experience.vue";
 import Awards from "@/components/sections/Awards.astro";
@@ -23,8 +24,9 @@ const user = await getUser("bypabloc");
 <Layout title="Portafolio">
   <main>
     <Basic user={user.data?.user} />
+    <About user={user.data?.user} />
     <Hero />
-    <About />
+    <About1 />
     <Experience />
     <Education />
     <Projects />
@@ -35,21 +37,21 @@ const user = await getUser("bypabloc");
     <Languages />
     <Interests />
     <References />
+
+    <KeyboardManager />
   </main>
 
-  <KeyboardManager />
-</Layout>
-
-<style>
-  main {
-    padding: 4rem;
-    margin: auto;
-    width: 100%;
-  }
-
-  @media (width <= 700px) {
+  <style>
     main {
-      padding: 2rem;
+      padding: 4rem;
+      margin: auto;
+      width: 100%;
     }
-  }
-</style>
+
+    @media (width <= 700px) {
+      main {
+        padding: 2rem;
+      }
+    }
+  </style>
+</Layout>

@@ -154,7 +154,7 @@ export const registerRecordsWithRelations = async (
                   key !== "highlights" &&
                   key !== "scrappingRecommendation" &&
                   key !== "keys" &&
-                  key !== "icon"
+                  key !== "icons"
                 ) {
                   try {
                     if (record[key] instanceof Date && !isNaN(record[key])) {

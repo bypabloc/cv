@@ -14,21 +14,10 @@ const networks = ref([]);
 const attributesResult = await getAttributes(props.user)
 attributes.value = attributesResult.isValid ? attributesResult.data?.attributes : {};
 
-const networksResult = await getUserNetworks(props.user)
+const networksResult = await getUserNetworks(props.user, attributes.value)
 networks.value = networksResult.isValid ? networksResult.data?.networks : [];
 
-const linkedInfo = computed(() => {
-  return networks.value.find(({ codeName }) => codeName === "linkedin")
-});
-const linkedUrl = computed(() => linkedInfo.value?.networksUsersUrl);
-
-const email = computed(() => attributes.value.email.value);
-const phone = computed(() => attributes.value.phone.value);
-
-const printInfo = computed(() => {
-  return [email.value, phone.value, linkedUrl.value].filter(Boolean).join(" • ")
-})
-
+console.log(networks.value)
 </script>
 
 <template>
@@ -44,76 +33,22 @@ const printInfo = computed(() => {
         {{attributes.location.value.city}}, {{attributes.location.value.region}}
       </span>
       <footer class="print">
-        {{printInfo}}
       </footer>
       <footer class="no-print">
         <a
-          v-if="email"
-          :href="`mailto:${email}`"
-          :title="`Enviar un correo electrónico a ${attributes.names.value} ${attributes.lastName.value} al correo ${email}`"
+          v-for="network in networks"
+          :key="`network-${network.id}`"
+          :href="network.webUrl"
+          :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${network.name}`"
           target="_blank"
           rel="noopener noreferrer"
         >
           <span
-            class="i-material-symbols-mail-outline dark:i-material-symbols-mail"
+            :class="`${network.icons.join(' ')}`"
             aria-hidden="true"
-          />
-        </a>
-        <a
-          v-if="phone"
-          :href="`tel:${phone}`"
-          :title="`Llamar por teléfono a ${attributes.names.value} ${attributes.lastName.value} al número ${phone}`"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span
-            class="i-material-symbols-phone-enabled-outline dark:i-material-symbols-phone-enabled"
-            aria-hidden="true"
-          />
-        </a>
-        <a
-          v-for="({id, name, networksUsersUrl, icon}) in networks"
-          :key="`network-${id}`"
-          :href="networksUsersUrl"
-          :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${name}`"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span
-            aria-hidden="true"
-            :class="[
-              ...Object.entries(icon).map(([key, value]) => {
-                if (key === 'light') return `${value}`
-                return `dark:${value}`
-              })
-            ]"
           />
         </a>
       </footer>
-      <div
-        v-for="({id, name, networksUsersUrl, icon}) in networks"
-        :key="`network-${id}`"
-        :href="networksUsersUrl"
-        :title="`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${name}`"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <span
-          aria-hidden="true"
-          :class="[
-            Object.entries(icon).map(([key, value]) => {
-              if (key === 'light') return `${value}`
-              return `dark:${value}`
-            })
-          ]"
-        />
-        {{
-          Object.entries(icon).map(([key, value]) => {
-            if (key === "light") return `${value}`
-            return `dark:${value}`
-          })
-        }}
-      </div>
       <pre><code>{{ networks }}</code></pre>
     </div>
   </div>

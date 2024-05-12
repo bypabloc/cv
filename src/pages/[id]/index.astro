@@ -17,24 +17,30 @@ import Languages from "@/components/sections/Languages.astro";
 import Interests from "@/components/sections/Interests.astro";
 import References from "@/components/sections/References.astro";
 import KeyboardManager from "@/components/KeyboardManager.astro";
+import { getUsers } from "@/utils/db/getUsers";
+import { getUser } from "@/utils/db/getUser";
 
-// getStaticPaths function
-export function getStaticPaths() {
-  return [
-    { params: { id: "bypabloc" } },
-    { params: { id: "rover" } },
-    { params: { id: "spot" } },
-  ];
+export async function getStaticPaths() {
+  const users = await getUsers("active");
+  if (!users.isValid) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const paths = users.data.users.map((user) => ({
+    params: { id: user.username },
+  }));
+  return paths;
 }
 
 const { id } = Astro.params;
+const user = await getUser(id);
 ---
 
 <Layout title="Portafolio">
   <main>
-    <client:only fallback="Cargando...">
-      <Basic queryParams={{}} client:load />
-    </client:only>
+    <Basic user={user.data?.user} />
     <Hero />
     <About />
     <Experience />

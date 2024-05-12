@@ -32,22 +32,186 @@ export default {
   ],
   networks: [
     {
+      codeName: "phone",
+      name: "Teléfono",
+      url: "tel",
+      config: {
+        description:
+          "Comunicarse con {attributes.names.value} {attributes.lastName.value} a través de {name}",
+        icon: {
+          default: "i-material-symbols-phone-enabled-outline",
+          dark: "i-material-symbols-phone-enabled",
+        },
+        web: {
+          visible: true,
+          template: "{url}:{contactInfo}",
+        },
+        print: {
+          visible: false,
+          template: "{contactInfo}",
+        },
+      },
+    },
+    {
+      codeName: "email",
+      name: "Correo Electrónico",
+      url: "mailto",
+      config: {
+        description:
+          "Comunicarse con {attributes.names.value} {attributes.lastName.value} a través del {name}",
+        icon: {
+          default: "i-material-symbols-mail-outline",
+          dark: "i-material-symbols-mail",
+        },
+        web: {
+          visible: true,
+          template: "{url}:{contactInfo}",
+        },
+        print: {
+          visible: true,
+          template: "{contactInfo}",
+        },
+      },
+    },
+    {
+      codeName: "whatsapp",
+      name: "WhatsApp",
+      url: "https://wa.me",
+      config: {
+        icon: {
+          default: "i-mdi-whatsapp",
+          dark: "i-mdi-whatsapp",
+        },
+        description:
+          "Comunicarse con {attributes.names.value} {attributes.lastName.value} a través {name}",
+        web: {
+          visible: true,
+          template: "{url}/{contactInfo}",
+        },
+        print: {
+          visible: true,
+          template: "{contactInfo}",
+        },
+      },
+    },
+    {
       codeName: "linkedin",
       name: "LinkedIn",
       url: "https://linkedin.com/in",
-      icon: {
-        light: "i-ant-design-linkedin-outlined",
-        dark: "i-ant-design-linkedin-filled",
+      config: {
+        description:
+          "Visitar el perfil de {attributes.names.value} {attributes.lastName.value} en {name}",
+        icon: {
+          default: "i-ant-design-linkedin-outlined",
+          dark: "i-ant-design-linkedin-filled",
+        },
+        web: {
+          visible: true,
+          template: "{url}/{contactInfo}",
+        },
+        print: {
+          visible: true,
+          template: "{contactInfo}",
+        },
       },
     },
     {
       codeName: "github",
       name: "GitHub",
       url: "https://github.com",
-      icon: {
-        light: "i-ant-design-github-outlined",
-        dark: "i-ant-design-github-filled",
+      config: {
+        description:
+          "Visitar el perfil de {attributes.names.value} {attributes.lastName.value} en {name}",
+        icon: {
+          default: "i-ant-design-github-outlined",
+          dark: "i-ant-design-github-filled",
+        },
+        web: {
+          visible: true,
+          template: "{url}/{contactInfo}",
+        },
+        print: {
+          visible: true,
+          template: "{contactInfo}",
+        },
       },
+    },
+  ],
+  networksUsers: [
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        networkId: {
+          table: "networks",
+          field: "codeName",
+          value: "phone",
+        },
+      },
+      contactInfo: "51918490148",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        networkId: {
+          table: "networks",
+          field: "codeName",
+          value: "whatsapp",
+        },
+      },
+      contactInfo: "51918490148",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        networkId: {
+          table: "networks",
+          field: "codeName",
+          value: "email",
+        },
+      },
+      contactInfo: "bypabloc",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        networkId: {
+          table: "networks",
+          field: "codeName",
+          value: "linkedin",
+        },
+      },
+      contactInfo: "bypabloc",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        networkId: {
+          table: "networks",
+          field: "codeName",
+          value: "github",
+        },
+      },
+      contactInfo: "bypabloc",
     },
   ],
   typeFiles: [
@@ -1566,40 +1730,6 @@ export default {
       },
       url: "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.jpg",
       priority: 2,
-    },
-  ],
-  networksUsers: [
-    {
-      relationship: {
-        userId: {
-          table: "users",
-          field: "username",
-          value: "bypabloc",
-        },
-        networkId: {
-          table: "networks",
-          field: "codeName",
-          value: "linkedin",
-        },
-      },
-      username: "bypabloc",
-      url: "https://linkedin.com/in/bypabloc",
-    },
-    {
-      relationship: {
-        userId: {
-          table: "users",
-          field: "username",
-          value: "bypabloc",
-        },
-        networkId: {
-          table: "networks",
-          field: "codeName",
-          value: "github",
-        },
-      },
-      username: "bypabloc",
-      url: "https://github.com/bypabloc",
     },
   ],
   works: [

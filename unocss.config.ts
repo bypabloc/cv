@@ -13,6 +13,8 @@ export default defineConfig({
       },
     }),
     presetIcons({
+      scale: 1.2,
+      warn: true,
       collections: {
         // https://icon-sets.iconify.design/
         mdi: () =>
@@ -27,9 +29,22 @@ export default defineConfig({
           import("@iconify-json/clarity/icons.json").then((i) => i.default),
       },
       extraProperties: {
+        "font-size": "1.2em",
         display: "inline-block",
         "vertical-align": "middle",
       },
     }),
+  ],
+  safelist: [
+    "i-mdi-whatsapp",
+    "dark:i-mdi-whatsapp",
+    "i-material-symbols-phone-enabled-outline",
+    "dark:i-material-symbols-phone-enabled",
+    "i-material-symbols-mail-outline",
+    "dark:i-material-symbols-mail",
+    "i-ant-design-linkedin-outlined",
+    "dark:i-ant-design-linkedin-filled",
+    "i-ant-design-github-outlined",
+    "dark:i-ant-design-github-filled",
   ],
 });

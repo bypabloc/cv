@@ -12,7 +12,7 @@ export const Users = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     username: column.text({ unique: true }),
   },
@@ -30,7 +30,7 @@ export const UsersAttributes = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -56,7 +56,7 @@ export const AttributesTypes = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text({ unique: true }),
@@ -75,11 +75,36 @@ export const Networks = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     codeName: column.text({ unique: true }),
     name: column.text(),
-    url: column.text(),
-    icon: column.json(),
+    url: column.text({ optional: true }),
+    config: column.json(),
+  },
+});
+
+export const NetworksUsers = defineTable({
+  columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
+    // own
+    networkId: column.text({
+      references: () => Networks.columns.id,
+    }),
+    userId: column.text({
+      references: () => Users.columns.id,
+    }),
+    contactInfo: column.text(),
+    url: column.text({ optional: true }),
   },
 });
 
@@ -95,7 +120,7 @@ export const TypeFiles = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -118,7 +143,7 @@ export const GroupsFiles = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -139,7 +164,7 @@ export const Files = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     groupFileId: column.text({
       references: () => GroupsFiles.columns.id,
@@ -168,7 +193,7 @@ export const Institutions = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -190,7 +215,7 @@ export const Issuers = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -210,7 +235,7 @@ export const Publishers = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -230,7 +255,7 @@ export const Languages = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -249,7 +274,7 @@ export const Keywords = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -269,7 +294,7 @@ export const Interests = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -288,7 +313,7 @@ export const InterestsKeywords = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     interestId: column.text({
       references: () => Interests.columns.id,
@@ -311,7 +336,7 @@ export const Skills = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -332,7 +357,7 @@ export const SkillsKeywords = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     skillId: column.text({
       references: () => Skills.columns.id,
@@ -340,31 +365,6 @@ export const SkillsKeywords = defineTable({
     keywordId: column.text({
       references: () => Keywords.columns.id,
     }),
-  },
-});
-
-export const NetworksUsers = defineTable({
-  columns: {
-    // standard
-    id: column.text({
-      primaryKey: true,
-      default: sql`gen_random_uuid()`,
-    }),
-    status: column.text({
-      default: "active",
-      enumValues: ["active", "inactive"],
-    }),
-    createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
-    // own
-    networkId: column.text({
-      references: () => Networks.columns.id,
-    }),
-    userId: column.text({
-      references: () => Users.columns.id,
-    }),
-    username: column.text(),
-    url: column.text(),
   },
 });
 
@@ -380,7 +380,7 @@ export const Employers = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -409,7 +409,7 @@ export const JobTypes = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     codeName: column.text({ unique: true }),
     name: column.text(),
@@ -428,7 +428,7 @@ export const Works = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -465,7 +465,7 @@ export const WorksTechnicalSkills = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     workId: column.text({
       references: () => Works.columns.id,
@@ -488,7 +488,7 @@ export const WorksSoftSkills = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     workId: column.text({
       references: () => Works.columns.id,
@@ -511,7 +511,7 @@ export const Educations = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -539,7 +539,7 @@ export const Awards = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -564,7 +564,7 @@ export const Certificates = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -590,7 +590,7 @@ export const Publications = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -617,7 +617,7 @@ export const LanguagesUsers = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -641,7 +641,7 @@ export const UsersInterests = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -664,7 +664,7 @@ export const Projects = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,
@@ -695,7 +695,7 @@ export const References = defineTable({
       enumValues: ["active", "inactive"],
     }),
     createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ default: NOW, onUpdateFn: () => NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
     userId: column.text({
       references: () => Users.columns.id,

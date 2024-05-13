@@ -6,6 +6,7 @@ import { Users } from "astro:db";
 import { getAttributes } from "@/utils/db/getAttributes";
 import { getUserNetworks } from "@/utils/db/getUserNetworks";
 import { getFiles } from "@/utils/db/getFiles";
+import UIPhotoFlow from "@/components/ui/PhotoFlow/Index.vue";
 
 const props = defineProps<{
   user: typeof Users;
@@ -23,6 +24,10 @@ networks.value = networksResult.isValid ? networksResult.data?.networks : [];
 
 const filesResult = await getFiles(props.user)
 files.value = filesResult.isValid ? filesResult.data?.files : [];
+
+const filesProfile = computed(() => {
+  return files?.value?.['profile'] || [];
+});
 
 const firstName = computed(() => {
   console.log('attributes.value', attributes.value)
@@ -96,8 +101,8 @@ const linksPrint = computed(() => {
           </a>
         </footer>
       </div>
+      <UIPhotoFlow :images="filesProfile" :user="user" type="perfil" :attributes="attributes" />
     </div>
-    <pre><code>{{ files }}</code></pre>
   </Section>
 </template>
 

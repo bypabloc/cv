@@ -55,7 +55,6 @@
 </template>
 
 <script setup lang="ts">
-console.log('Experience > script setup')
 import { ref, reactive, onMounted } from 'vue';
 import { work as works } from "@cv";
 // console.log('works', works)

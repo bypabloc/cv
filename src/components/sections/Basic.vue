@@ -30,7 +30,6 @@ const filesProfile = computed(() => {
 });
 
 const firstName = computed(() => {
-  console.log('attributes.value', attributes.value)
   return attributes?.value?.names?.value ? attributes?.value?.names?.value?.split(' ')[0] : '';
 });
 const lastName = computed(() => {
@@ -101,7 +100,13 @@ const linksPrint = computed(() => {
           </a>
         </footer>
       </div>
-      <UIPhotoFlow :images="filesProfile" :user="user" type="perfil" :attributes="attributes" />
+      <UIPhotoFlow
+        :images="filesProfile"
+        :user="user"
+        type="perfil"
+        :attributes="attributes"
+        width="128px"
+      />
     </div>
   </Section>
 </template>

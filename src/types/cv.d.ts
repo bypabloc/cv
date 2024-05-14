@@ -1,4 +1,4 @@
-export interface CV {
+interface CV {
   basics: Basics;
   work: Array<Work>;
   volunteer: Array<Volunteer>;
@@ -11,6 +11,16 @@ export interface CV {
   interests: Array<Interests>;
   references: Array<References>;
   projects: Array<Projects>;
+}
+
+interface ResponseDataFunction {
+  [key: string]: unknown;
+}
+
+interface ResponseFunction {
+  isValid: boolean;
+  message: string;
+  data?: ResponseDataFunction;
 }
 
 interface Basics {

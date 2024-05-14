@@ -1,0 +1,58 @@
+---
+import Basic from "@/components/sections/Basic.astro";
+import About from "@/components/sections/About.vue";
+import About1 from "@/components/sections/About.astro";
+import Education from "@/components/sections/Education.astro";
+import Experience from "@/components/sections/Experience.vue";
+import Awards from "@/components/sections/Awards.astro";
+import Certificates from "@/components/sections/Certificates.astro";
+import Hero from "@/components/sections/Hero.astro";
+import Projects from "@/components/sections/Projects.astro";
+import Publications from "@/components/sections/Publications.astro";
+import Skills from "@/components/sections/Skills.astro";
+import Languages from "@/components/sections/Languages.astro";
+import Interests from "@/components/sections/Interests.astro";
+import References from "@/components/sections/References.astro";
+import KeyboardManager from "@/components/KeyboardManager.astro";
+import { getUser } from "@/utils/db/getUser";
+
+const user = await getUser("bypabloc");
+---
+
+<main>
+  {
+    user.isValid && (
+      <>
+        <Basic user={user.data?.user} />
+        <About user={user.data?.user} />
+        <Hero />
+        <About1 />
+        <Experience />
+        <Education />
+        <Projects />
+        <Awards />
+        <Certificates />
+        <Publications />
+        <Skills />
+        <Languages />
+        <Interests />
+        <References />
+        <KeyboardManager />
+      </>
+    )
+  }
+</main>
+
+<style>
+  main {
+    padding: 4rem;
+    margin: auto;
+    width: 100%;
+  }
+
+  @media (width <= 700px) {
+    main {
+      padding: 2rem;
+    }
+  }
+</style>

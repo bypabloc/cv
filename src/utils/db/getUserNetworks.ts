@@ -35,7 +35,7 @@ function replaceTemplateValues(template, context) {
 export const getUserNetworks = async (
   user,
   attributes: object = {}
-): Promise<object> => {
+): Promise<ResponseFunction> => {
   try {
     const networksItems = await db
       .select({

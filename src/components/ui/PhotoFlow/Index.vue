@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, onMounted } from "vue";
-import { Users } from "astro:db";
+import { ref, computed } from "vue";
 import UIImage from "@/components/ui/Image/Index.vue";
 
 const props = defineProps({
@@ -42,48 +41,41 @@ const props = defineProps({
   }
 });
 
+const currentIndex = ref(0);
+
 const images = computed(() => {
   return props.images.map((image) => image?.files);
 });
 
-const currentIndex = ref(0);
-
-watchEffect(() => {
-  console.log('currentIndex ha cambiado:', currentIndex.value);
-});
-
 const advanceSlide = (step) => {
-  console.log('Valor actual de currentIndex:', currentIndex.value);
-  currentIndex.value = (currentIndex.value + step + props.images.length) % props.images.length;
-  console.log('Nuevo valor de currentIndex:', currentIndex.value);
+  if (props.images.length === 0) return;
+
+  const newIndex = (currentIndex.value + step + props.images.length) % props.images.length;
+  currentIndex.value = newIndex;
 };
 
 const currentImage = computed(() => {
-  return props.images[currentIndex.value];
-});
-
-onMounted(() => {
-  console.log('Componente montado');
+  return images.value[currentIndex.value] || [];
 });
 </script>
 
 <template>
   <div class="photo-flow">
     <UIImage
-      v-for="(image, index) in images"
-      :key="index"
-      :items="image"
-      :user="user"
-      :type="type"
-      :attributes="attributes"
-      :aspectRatio="aspectRatio"
-      :objectFit="objectFit"
-      :width="width"
-      :borderRadius="borderRadius"
-      :height="height"
-    />
-    <button @click="window.console.log('Botón clickeado'); advanceSlide(-1)">&#10094;</button>
-    <button @click="window.console.log('Botón clickeado'); advanceSlide(1)">&#10095;</button>
+      :items="currentImage"
+      :user="props.user"
+      :type="props.type"
+      :attributes="props.attributes"
+      :aspectRatio="props.aspectRatio"
+      :objectFit="props.objectFit"
+      :width="props.width"
+      :borderRadius="props.borderRadius"
+      :height="props.height"
+    >
+      {{ image }}
+    </UIImage>
+    <button @click="advanceSlide(-1)">&#10094;</button>
+    <button @click="advanceSlide(1)">&#10095;</button>
   </div>
 </template>
 

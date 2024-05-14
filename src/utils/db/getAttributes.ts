@@ -5,7 +5,9 @@ import { db, eq, UsersAttributes, AttributesTypes } from "astro:db";
  * @param {string} username - Nombre de usuario para filtrar.
  * @returns {Promise<object>} - Un objeto con los atributos del usuario.
  */
-export const getAttributes = async (user: Record<string, any>) => {
+export const getAttributes = async (
+  user: Record<string, any>
+): Promise<ResponseFunction> => {
   try {
     const attributes = await db
       .select({

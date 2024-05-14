@@ -6,7 +6,7 @@ import { db, eq, TypeFiles, GroupsFiles, Files, Users } from "astro:db";
  * @param {string} user - Instancia del usuario.
  * @returns {Promise<object>} - Un objeto con la información de los archivos.
  */
-export const getFiles = async (user): Promise<object> => {
+export const getFiles = async (user): Promise<ResponseFunction> => {
   try {
     const result = await db
       .select()

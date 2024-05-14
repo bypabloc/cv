@@ -2,21 +2,8 @@
 export const prerender = true;
 
 import Layout from "@/layouts/Layout.astro";
+import Page from "@/components/Page.astro";
 
-import Basic from "@/components/sections/Basic.vue";
-import About from "@/components/sections/About.astro";
-import Education from "@/components/sections/Education.astro";
-import Experience from "@/components/sections/Experience.vue";
-import Awards from "@/components/sections/Awards.astro";
-import Certificates from "@/components/sections/Certificates.astro";
-import Hero from "@/components/sections/Hero.astro";
-import Projects from "@/components/sections/Projects.astro";
-import Publications from "@/components/sections/Publications.astro";
-import Skills from "@/components/sections/Skills.astro";
-import Languages from "@/components/sections/Languages.astro";
-import Interests from "@/components/sections/Interests.astro";
-import References from "@/components/sections/References.astro";
-import KeyboardManager from "@/components/KeyboardManager.astro";
 import { getUsers } from "@/utils/db/getUsers";
 import { getUser } from "@/utils/db/getUser";
 
@@ -39,22 +26,7 @@ const user = await getUser(id);
 ---
 
 <Layout title="Portafolio">
-  <main>
-    <Basic user={user.data?.user} />
-    <Hero />
-    <About />
-    <Experience />
-    <Education />
-    <Projects />
-    <Awards />
-    <Certificates />
-    <Publications />
-    <Skills />
-    <Languages />
-    <Interests />
-    <References />
-  </main>
-  <KeyboardManager />
+  <Page :user={user} />
 </Layout>
 
 <style>

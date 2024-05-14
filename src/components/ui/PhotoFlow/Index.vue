@@ -43,61 +43,160 @@ const props = defineProps({
 
 const currentIndex = ref(0);
 
-const images = computed(() => {
-  return props.images.map((image) => image?.files);
-});
-
 const advanceSlide = (step) => {
   if (props.images.length === 0) return;
-
   const newIndex = (currentIndex.value + step + props.images.length) % props.images.length;
   currentIndex.value = newIndex;
 };
 
 const currentImage = computed(() => {
-  return images.value[currentIndex.value] || [];
+  return props.images[currentIndex.value] || [];
 });
 </script>
 
 <template>
-  <div class="photo-flow">
-    <UIImage
-      :items="currentImage"
-      :user="props.user"
-      :type="props.type"
-      :attributes="props.attributes"
-      :aspectRatio="props.aspectRatio"
-      :objectFit="props.objectFit"
-      :width="props.width"
-      :borderRadius="props.borderRadius"
-      :height="props.height"
-    >
-      {{ image }}
-    </UIImage>
-    <button @click="advanceSlide(-1)">&#10094;</button>
-    <button @click="advanceSlide(1)">&#10095;</button>
+  <div>
+    <div class="slideshow-container">
+      <div class="mySlides fade" v-for="(image, index) in props.images" :key="index" v-show="currentIndex === index">
+        <div class="numbertext">{{ index + 1 }} / {{ props.images.length }}</div>
+        <UIImage
+          :items="image.files"
+          :user="props.user"
+          :type="props.type"
+          :attributes="props.attributes"
+          :aspectRatio="props.aspectRatio"
+          :objectFit="props.objectFit"
+          :width="props.width"
+          :borderRadius="props.borderRadius"
+          :height="props.height"
+        />
+        <div class="text">{{ image.caption }}</div>
+      </div>
+      <a class="prev" @click="advanceSlide(-1)">&#10094;</a>
+      <a class="next" @click="advanceSlide(1)">&#10095;</a>
+      <div class="dots-container">
+        <span 
+          class="dot" 
+          :class="{ 'active': currentIndex === index }" 
+          v-for="(image, index) in props.images" 
+          :key="index" 
+          @click="currentIndex = index"
+        ></span>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.photo-flow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
+* {
+  box-sizing: border-box;
 }
 
-button {
-  all: unset;
+.slideshow-container {
+  max-width: 1000px;
+  position: relative;
+  margin: auto;
+}
+
+.mySlides {
+  display: none;
+}
+
+.mySlides.fade {
+  display: block;
+}
+
+.prev, .next, .numbertext, .dots-container {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.slideshow-container:hover .prev,
+.slideshow-container:hover .next,
+.slideshow-container:hover .numbertext,
+.slideshow-container:hover .dots-container {
+  opacity: 1;
+}
+
+.prev, .next {
   cursor: pointer;
-  padding: 10px;
-  background-color: #eee;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  margin-top: -22px;
+  padding: 16px;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  transition: 0.6s ease;
+  border-radius: 0 3px 3px 0;
+  user-select: none;
 }
 
-button:hover {
-  background-color: #ddd;
+.next {
+  right: 0;
+  border-radius: 3px 0 0 3px;
+}
+
+.prev:hover, .next:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.text {
+  color: #f2f2f2;
+  font-size: 15px;
+  padding: 8px 12px;
+  position: absolute;
+  bottom: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.numbertext {
+  color: #f2f2f2;
+  font-size: 12px;
+  padding: 8px 12px;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dots-container {
+  position: absolute;
+  bottom: 15px;
+  width: 100%;
+  text-align: center;
+}
+
+.dot {
+  cursor: pointer;
+  height: 15px;
+  width: 15px;
+  margin: 0 2px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.6s ease;
+}
+
+.active {
+  background-color: #717171;
+}
+
+.dot:hover {
+  background-color: #717171;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

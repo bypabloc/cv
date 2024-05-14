@@ -1,160 +1,115 @@
 ---
-import Section from "../Section.astro";
-import { type Work } from "@/types/cv";
+import Section from "@/components/Section.astro";
+import { getWorks } from "@/utils/db/getWorks";
 
-import { work } from "@cv";
+const { user } = Astro.props;
 
-const works = work as Work[];
-
+const worksResult = await getWorks(user);
+const works = worksResult.isValid ? worksResult.data?.works : [];
 ---
 
-<script>
-  function toggleVisibility(contentDiv: HTMLElement) {
-    if (contentDiv.style.display === 'none') {
-      contentDiv.style.display = 'block';
-    } else {
-      contentDiv.style.display = 'none';
-    }
-  }
-</script>
-
-
 <Section title="Experiencia laboral">
-  <div class="flex column gap-8">
+  <ul>
     {
-      works.map(
-        ({
-          name,
-          position,
-          url,
-          startDate,
-          endDate,
-          responsibilitiesNProjects,
-          achievements,
-          technicalSkills,
-          softSkills,
-          aptitudes,
-        }) => {
-          const startYear = new Date(startDate).getFullYear();
-          const endYear =
-            endDate != null ? new Date(endDate).getFullYear() : "Actual";
+      works.map((work) => (
+        <li key={work.id}>
+          <article>
+            <header>
+              <div>
+                <h3>
+                  <a href={work.url} title={`Ver ${work.name}`} target="_blank">
+                    {work.name}
+                  </a>
+                </h3>
+                <h4>{work.position}</h4>
+              </div>
+              <div>
+                <time
+                  datetime={work.startDate}
+                  data-title={new Date(work.startDate).toLocaleDateString()}
+                >
+                  {new Date(work.startDate).getFullYear()}
+                </time>
+                {" - "}
+                <time
+                  datetime={work.endDate}
+                  data-title={
+                    work.endDate
+                      ? new Date(work.endDate).toLocaleDateString()
+                      : "Actual"
+                  }
+                >
+                  {work.endDate
+                    ? new Date(work.endDate).getFullYear()
+                    : "Actual"}
+                </time>
+              </div>
+            </header>
 
-          return (
-            <div>
-              <article>
-                <header>
-                  <div>
-                    <h3>
-                      <a href={url} title={`Ver ${name}`} target="_blank">
-                        {name}
-                      </a>
-                    </h3>
-                    <h4>{position}</h4>
+            <footer class="flex column gap-4">
+              <div class="flex column gap-2">
+                <h4>Responsabilidades y proyectos</h4>
+                {work.responsibilitiesNProjects.map((responsibility) => (
+                  <p key={responsibility}>• {responsibility}</p>
+                ))}
+              </div>
+
+              <div class="flex column gap-2">
+                <h4>Logros</h4>
+                {work.achievements.map((achievement) => (
+                  <p key={achievement}>• {achievement}</p>
+                ))}
+              </div>
+
+              {work.technicalSkills && (
+                <div class="flex column gap-2">
+                  <h4>Habilidades técnicas</h4>
+                  <div class="content" style="display: none;">
+                    {work.technicalSkills.join(", ")}
                   </div>
+                </div>
+              )}
 
-                  <div>
-                    <time datetime={startDate} data-title={startDate}>
-                      {startYear}
-                    </time>
-                    {" - "}
-                    <time datetime={endDate} data-title={endDate}>
-                      {endYear}
-                    </time>
+              {work.softSkills && (
+                <div class="flex column gap-2">
+                  <h4>Habilidades blandas</h4>
+                  <div class="content" style="display: none;">
+                    {work.softSkills.join(", ")}
                   </div>
-                </header>
+                </div>
+              )}
 
-                <footer class="flex column gap-4">
-                  <div class="flex column gap-2">
-                    <h4>Responsabilidades y proyectos</h4>
-                    <div>
-                      {responsibilitiesNProjects.map(
-                        (responsibility, index) => (
-                          <div class="responsibilities-n-projects">
-                            <p data-content={responsibility}>
-                              • {responsibility}
-                            </p>
-                          </div>
-                        )
-                      )}
-                    </div>
+              {work.aptitudes && (
+                <div class="flex column gap-2">
+                  <h4>Aptitudes</h4>
+                  <div class="content" style="display: none;">
+                    {work.aptitudes.join(", ")}
                   </div>
-
-                  <div class="flex column gap-2">
-                    <h4>Logros</h4>
-                    <ul>
-                      {achievements.map((achievement, index) => (
-                        <li>
-                          <p>• {achievement}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <!-- Secciones con funcionalidad de ocultar/mostrar -->
-                  <div class="flex column gap-2">
-                    <button onclick="toggleVisibility(this.nextElementSibling)">Habilidades técnicas</button>
-                    <div class="content" style="display: none;">
-                      {technicalSkills.map((skill, index) => (
-                        <span>{skill + (index < technicalSkills.length - 1 ? ", " : "")}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div class="flex column gap-2">
-                    <button onclick="toggleVisibility(this.nextElementSibling)">Habilidades blandas</button>
-                    <div class="content" style="display: none;">
-                      {softSkills.map((skill, index) => (
-                        <span>{skill + (index < softSkills.length - 1 ? ", " : "")}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div class="flex column gap-2">
-                    <button onclick="toggleVisibility(this.nextElementSibling)">Aptitudes</button>
-                    <div class="content" style="display: none;">
-                      {aptitudes.map((aptitude, index) => (
-                        <span>{aptitude + (index < aptitudes.length - 1 ? ", " : "")}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                </footer>
-              </article>
-            </div>
-          );
-        }
-      )
+                </div>
+              )}
+            </footer>
+          </article>
+        </li>
+      ))
     }
-  </div>
+  </ul>
 </Section>
 
-
 <style>
-  .flex {
+  ul {
     display: flex;
-  }
-
-  .flex.column {
     flex-direction: column;
+    gap: 32px;
   }
 
   article h3 {
-    font-weight: 700;
+    font-weight: 500;
     color: #111;
-    font-size: larger;
-  }
-
-  article a {
-    color: #111;
-  }
-
-  article a:hover {
-    text-decoration: underline;
   }
 
   article h4 {
-    color: #222;
-    font-weight: 500;
+    font-weight: 400;
+    color: #666;
   }
 
   header {
@@ -168,49 +123,17 @@ const works = work as Work[];
     color: #555;
     font-size: 0.85rem;
     min-width: 102px;
-    cursor: default;
   }
 
-  [data-title]:hover:after {
-    opacity: 1;
-    transition: all 0.1s ease-in-out 0.5s;
-    visibility: visible;
+  .flex {
+    display: flex;
   }
 
-  [data-title]:after {
-    content: attr(data-title);
-    background-color: #333;
-    color: #fff;
-    font-size: 0.75rem;
-    font-family:
-      Menlo,
-      Monaco,
-      Lucida Console,
-      "Courier New",
-      monospace;
-    position: absolute;
-    padding: 0.2rem 0.5rem;
-    bottom: -1.4rem;
-    left: 50%;
-    white-space: nowrap;
-    box-shadow: 1px 1px 1px #222222;
-    opacity: 0;
-    border: 1px solid #111111;
-    z-index: 99999;
-    visibility: hidden;
-    border-radius: 6px;
+  .flex.column {
+    flex-direction: column;
   }
 
-  [data-title] {
-    position: relative;
-  }
-
-  .responsibilities-n-projects {
-    margin: 0;
-    padding: 0;
-  }
-
-  @media (width <= 700px) {
+  @media (max-width: 700px) {
     time {
       text-align: right;
     }

@@ -2,7 +2,7 @@
 import Basic from "@/components/sections/Basic.astro";
 import About from "@/components/sections/About.astro";
 import Education from "@/components/sections/Education.astro";
-import Experience from "@/components/sections/Experience.vue";
+import Experience from "@/components/sections/Experience.astro";
 import Awards from "@/components/sections/Awards.astro";
 import Certificates from "@/components/sections/Certificates.astro";
 import Projects from "@/components/sections/Projects.astro";
@@ -23,7 +23,7 @@ const user = await getUser("bypabloc");
       <>
         <Basic user={user.data?.user} />
         <About user={user.data?.user} />
-        <Experience />
+        <Experience user={user.data?.user} />
         <Education />
         <Projects />
         <Awards />

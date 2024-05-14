@@ -1,12 +1,34 @@
 ---
-import Section from "../Section.astro"
+// Importa las herramientas y componentes necesarios
+import Section from "@/components/Section.astro";
+import { getAttributes } from "@/utils/db/getAttributes";
 
-import { basics } from "@cv"
-const { summary } = basics
+interface User {
+  // Define las propiedades del tipo User como sean necesarias
+}
+
+// Define las props del componente
+interface Props {
+  user: User;
+}
+
+const props: Props = Astro.props;
+
+// Lógica para obtener los atributos
+let attributes = {};
+let networks = []; // Asume que esto también es necesario en tu lógica, aunque no esté usado en el Vue original
+
+async function fetchAttributes(user: User) {
+  const attributesResult = await getAttributes(user);
+  return attributesResult.isValid ? attributesResult.data?.attributes : {};
+}
+
+attributes = await fetchAttributes(props.user);
 ---
 
+<!-- HTML estructura del componente -->
 <Section title="Sobre mí">
   <p>
-    {summary}
+    {attributes.summary?.value}
   </p>
 </Section>

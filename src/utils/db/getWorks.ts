@@ -21,7 +21,19 @@ export const getWorks = async ({
   status?: string;
 } = {}): Promise<ResponseFunction> => {
   try {
-    let query = db.select().from(Works);
+    let query = db
+      .select({
+        id: Works.id,
+        codeName: Works.codeName,
+        name: Works.name,
+        position: Works.position,
+        startDate: Works.startDate,
+        endDate: Works.endDate,
+        responsibilitiesNProjects: Works.responsibilitiesNProjects,
+        achievements: Works.achievements,
+        summary: Works.summary,
+      })
+      .from(Works);
 
     if (status) {
       query = query.where(eq(Works.status, status));
@@ -37,38 +49,10 @@ export const getWorks = async ({
       };
     }
 
-    // Cargar habilidades técnicas asociadas
-    const technicalSkillsPromises = works.map((work) =>
-      db
-        .select()
-        .from(WorksTechnicalSkills)
-        .innerJoin(
-          TechnicalSkills,
-          eq(WorksTechnicalSkills.technicalSkillId, TechnicalSkills.id)
-        )
-        .where(eq(WorksTechnicalSkills.workId, work.id))
-        .execute()
+    console.log(
+      "Experiencias laborales encontradas:",
+      JSON.stringify(works, null, 2)
     );
-    const technicalSkillsResults = await Promise.all(technicalSkillsPromises);
-
-    // Cargar habilidades blandas asociadas
-    const softSkillsPromises = works.map((work) =>
-      db
-        .select()
-        .from(WorksSoftSkills)
-        .innerJoin(SoftSkills, eq(WorksSoftSkills.skillId, SoftSkills.id))
-        .where(eq(WorksSoftSkills.workId, work.id))
-        .execute()
-    );
-    const softSkillsResults = await Promise.all(softSkillsPromises);
-
-    // Combinar habilidades con las experiencias laborales
-    works.forEach((work, index) => {
-      work.technicalSkills = technicalSkillsResults[index];
-      work.softSkills = softSkillsResults[index];
-    });
-
-    console.log("Experiencias laborales obtenidas:", works);
 
     return {
       isValid: true,

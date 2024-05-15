@@ -186,10 +186,11 @@ export const registerRecordsWithRelations = async (
             }
           } catch (error) {
             console.error("Error inserting records:", error);
-            // console.error(
-            //   "--------- tableModel ---------",
-            //   tableModel[Symbol.for("drizzle:BaseName")]
-            // );
+            console.error(
+              "--------- tableModel ---------",
+              tableModel[Symbol.for("drizzle:BaseName")]
+            );
+            console.log("record:", record);
             throw new Error("Failed to insert records in Astro DB");
           }
         }

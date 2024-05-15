@@ -64,8 +64,10 @@ const works = worksResult.isValid ? worksResult.data?.works : [];
               {work.technicalSkills && (
                 <div class="flex column gap-2">
                   <h4>Habilidades técnicas</h4>
-                  <div class="content" style="display: none;">
-                    {work.technicalSkills.join(", ")}
+                  <div class="content">
+                    <pre>
+                      <code>{work.technicalSkills}</code>
+                    </pre>
                   </div>
                 </div>
               )}
@@ -73,8 +75,10 @@ const works = worksResult.isValid ? worksResult.data?.works : [];
               {work.softSkills && (
                 <div class="flex column gap-2">
                   <h4>Habilidades blandas</h4>
-                  <div class="content" style="display: none;">
-                    {work.softSkills.join(", ")}
+                  <div class="content">
+                    <pre>
+                      <code>{work.softSkills}</code>
+                    </pre>
                   </div>
                 </div>
               )}
@@ -82,8 +86,10 @@ const works = worksResult.isValid ? worksResult.data?.works : [];
               {work.aptitudes && (
                 <div class="flex column gap-2">
                   <h4>Aptitudes</h4>
-                  <div class="content" style="display: none;">
-                    {work.aptitudes.join(", ")}
+                  <div class="content">
+                    <pre>
+                      <code>{work.aptitudes}</code>
+                    </pre>
                   </div>
                 </div>
               )}

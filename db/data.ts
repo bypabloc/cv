@@ -3358,7 +3358,7 @@ export default {
   worksTechnicalSkills: [
     {
       relationship: {
-        interestId: {
+        workId: {
           table: "works",
           field: "codeName",
           value: "destacame-architect",
@@ -3372,7 +3372,7 @@ export default {
     },
     {
       relationship: {
-        interestId: {
+        workId: {
           table: "works",
           field: "codeName",
           value: "destacame-architect",
@@ -3386,7 +3386,7 @@ export default {
     },
     {
       relationship: {
-        interestId: {
+        workId: {
           table: "works",
           field: "codeName",
           value: "destacame-architect",
@@ -3879,12 +3879,12 @@ export default {
         workId: {
           table: "works",
           field: "codeName",
-          value: "infrastructure-management",
+          value: "iai",
         },
         technicalSkillId: {
           table: "skills",
           field: "codeName",
-          value: "network-architecture",
+          value: "infrastructure-management",
         },
       },
     },
@@ -3893,7 +3893,7 @@ export default {
         workId: {
           table: "works",
           field: "codeName",
-          value: "infrastructure-management",
+          value: "iai",
         },
         technicalSkillId: {
           table: "skills",
@@ -3907,7 +3907,7 @@ export default {
         workId: {
           table: "works",
           field: "codeName",
-          value: "infrastructure-management",
+          value: "iai",
         },
         technicalSkillId: {
           table: "skills",
@@ -4066,7 +4066,7 @@ export default {
           field: "codeName",
           value: "destacame-architect",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "fintech",
@@ -4080,21 +4080,7 @@ export default {
           field: "codeName",
           value: "destacame-architect",
         },
-        softSkillId: {
-          table: "skills",
-          field: "codeName",
-          value: "fintech",
-        },
-      },
-    },
-    {
-      relationship: {
-        workId: {
-          table: "works",
-          field: "codeName",
-          value: "destacame-architect",
-        },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "strategic-planning",
@@ -4108,7 +4094,7 @@ export default {
           field: "codeName",
           value: "destacame-architect",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "adaptability",
@@ -4124,7 +4110,7 @@ export default {
           field: "codeName",
           value: "destacame-frontend",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "problem-solving",
@@ -4138,7 +4124,7 @@ export default {
           field: "codeName",
           value: "destacame-frontend",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "learning-agility",
@@ -4152,7 +4138,7 @@ export default {
           field: "codeName",
           value: "destacame-frontend",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "teamwork",
@@ -4168,7 +4154,7 @@ export default {
           field: "codeName",
           value: "appinteli",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "project-management",
@@ -4182,7 +4168,7 @@ export default {
           field: "codeName",
           value: "appinteli",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "startup",
@@ -4196,7 +4182,7 @@ export default {
           field: "codeName",
           value: "appinteli",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "sales",
@@ -4210,7 +4196,7 @@ export default {
           field: "codeName",
           value: "appinteli",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "business-management",
@@ -4224,7 +4210,7 @@ export default {
           field: "codeName",
           value: "appinteli",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "customer-relationship",
@@ -4238,7 +4224,7 @@ export default {
           field: "codeName",
           value: "appinteli",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "self-motivation",
@@ -4254,7 +4240,7 @@ export default {
           field: "codeName",
           value: "goodmeal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "project-management",
@@ -4268,7 +4254,7 @@ export default {
           field: "codeName",
           value: "goodmeal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "time-management",
@@ -4282,7 +4268,7 @@ export default {
           field: "codeName",
           value: "goodmeal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "adaptability",
@@ -4296,7 +4282,7 @@ export default {
           field: "codeName",
           value: "goodmeal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "problem-solving",
@@ -4310,7 +4296,7 @@ export default {
           field: "codeName",
           value: "goodmeal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "teamwork",
@@ -4326,7 +4312,7 @@ export default {
           field: "codeName",
           value: "dibal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "team-leadership",
@@ -4340,7 +4326,7 @@ export default {
           field: "codeName",
           value: "dibal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "agile-methodologies",
@@ -4354,7 +4340,7 @@ export default {
           field: "codeName",
           value: "dibal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "team-management",
@@ -4368,7 +4354,7 @@ export default {
           field: "codeName",
           value: "dibal",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "customer-oriented",
@@ -4384,7 +4370,7 @@ export default {
           field: "codeName",
           value: "cofasa",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "team-collaboration",
@@ -4398,7 +4384,7 @@ export default {
           field: "codeName",
           value: "cofasa",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "problem-solving",
@@ -4414,7 +4400,7 @@ export default {
           field: "codeName",
           value: "projects-degrees",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "project-direction",
@@ -4428,7 +4414,7 @@ export default {
           field: "codeName",
           value: "projects-degrees",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "team-collaboration",
@@ -4442,7 +4428,7 @@ export default {
           field: "codeName",
           value: "projects-degrees",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "technical-consulting",
@@ -4456,7 +4442,7 @@ export default {
           field: "codeName",
           value: "projects-degrees",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "time-management",
@@ -4470,7 +4456,7 @@ export default {
           field: "codeName",
           value: "projects-degrees",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "problem-solving",
@@ -4484,7 +4470,7 @@ export default {
           field: "codeName",
           value: "projects-degrees",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "adaptability",
@@ -4500,7 +4486,7 @@ export default {
           field: "codeName",
           value: "iai",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "project-planning",
@@ -4514,7 +4500,7 @@ export default {
           field: "codeName",
           value: "iai",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "work-management",
@@ -4528,7 +4514,7 @@ export default {
           field: "codeName",
           value: "iai",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "budget-management",
@@ -4542,7 +4528,7 @@ export default {
           field: "codeName",
           value: "iai",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "project-management",
@@ -4556,7 +4542,7 @@ export default {
           field: "codeName",
           value: "iai",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "collaborative-work",
@@ -4572,7 +4558,7 @@ export default {
           field: "codeName",
           value: "ipasme",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "technical-communication",
@@ -4586,7 +4572,7 @@ export default {
           field: "codeName",
           value: "ipasme",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "analytical-thinking",
@@ -4600,7 +4586,7 @@ export default {
           field: "codeName",
           value: "ipasme",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "problem-solving",
@@ -4614,7 +4600,7 @@ export default {
           field: "codeName",
           value: "ipasme",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "adaptability",
@@ -4630,7 +4616,7 @@ export default {
           field: "codeName",
           value: "corpoelec",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "problem-solving",
@@ -4644,7 +4630,7 @@ export default {
           field: "codeName",
           value: "corpoelec",
         },
-        softSkillId: {
+        skillId: {
           table: "skills",
           field: "codeName",
           value: "team-collaboration",

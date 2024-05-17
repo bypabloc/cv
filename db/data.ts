@@ -2959,12 +2959,12 @@ export default {
         skillId: {
           table: "skills",
           field: "codeName",
-          value: "javascript",
+          value: "docker",
         },
         keywordId: {
           table: "keywords",
           field: "codeName",
-          value: "javascript",
+          value: "docker",
         },
       },
     },
@@ -2973,12 +2973,12 @@ export default {
         skillId: {
           table: "skills",
           field: "codeName",
-          value: "typescript",
+          value: "kubernetes",
         },
         keywordId: {
           table: "keywords",
           field: "codeName",
-          value: "typescript",
+          value: "kubernetes",
         },
       },
     },
@@ -2993,20 +2993,6 @@ export default {
           table: "keywords",
           field: "codeName",
           value: "react",
-        },
-      },
-    },
-    {
-      relationship: {
-        skillId: {
-          table: "skills",
-          field: "codeName",
-          value: "vue",
-        },
-        keywordId: {
-          table: "keywords",
-          field: "codeName",
-          value: "vue",
         },
       },
     },
@@ -3043,12 +3029,12 @@ export default {
         skillId: {
           table: "skills",
           field: "codeName",
-          value: "docker",
+          value: "python",
         },
         keywordId: {
           table: "keywords",
           field: "codeName",
-          value: "docker",
+          value: "python",
         },
       },
     },
@@ -3057,12 +3043,684 @@ export default {
         skillId: {
           table: "skills",
           field: "codeName",
-          value: "kubernetes",
+          value: "django",
         },
         keywordId: {
           table: "keywords",
           field: "codeName",
-          value: "kubernetes",
+          value: "django",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "microservices",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "microservices",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "aws",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "aws",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-architecture",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "frontend-architecture",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "vue",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "vue",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "nuxt",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "nuxt",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "typescript",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "typescript",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-development",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "frontend-development",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-development",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "web-development",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "erp",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "erp",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-management",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-management",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "ecommerce",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "ecommerce",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "automation",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "automation",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "startup",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "startup",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "full-stack-development",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "full-stack-development",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "vue3",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "vue3",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "scrum",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "scrum",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "bug-fixing",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "bug-fixing",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-application",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "web-application",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-leadership",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "team-leadership",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "aws-deployment",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "aws-deployment",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "laravel",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "laravel",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-architecture",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "system-architecture",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "microfrontend",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "microfrontend",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "production-monitoring",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "production-monitoring",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "local-network",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "local-network",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "jquery",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "jquery",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-platform",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "web-platform",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "graduation-project",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "graduation-project",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-challenges",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "technical-challenges",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-direction",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-direction",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "solution-implementation",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "solution-implementation",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-collaboration",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "team-collaboration",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "network-architecture",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "network-architecture",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-planning",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-planning",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "work-management",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "work-management",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "budget-management",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "budget-management",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "medical-records",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "medical-records",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "desktop-application",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "desktop-application",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "java",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "java",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "inventory-management",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "inventory-management",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "php",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "php",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "crud",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "crud",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "offline-system",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "offline-system",
+        },
+      },
+    },
+    {
+      relationship: {
+        skillId: {
+          table: "skills",
+          field: "codeName",
+          value: "asset-management",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "asset-management",
         },
       },
     },

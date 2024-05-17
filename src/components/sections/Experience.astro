@@ -1,17 +1,18 @@
 ---
 import Section from "@/components/Section.astro";
+import Skill from "@/components/ui/Skill/Index.vue";
 import { getWorks } from "@/utils/db/getWorks";
 
 const { user } = Astro.props;
 
-const worksResult = await getWorks(user);
-const works = worksResult.isValid ? worksResult.data?.works : [];
+const { isValid, data = {} } = await getWorks(user);
+const works = isValid ? data?.works : [];
 ---
 
 <Section title="Experiencia laboral">
   <ul>
     {
-      works.map((work) => (
+      Object.values(works).map((work) => (
         <li key={work.id}>
           <article>
             <header>
@@ -47,52 +48,43 @@ const works = worksResult.isValid ? worksResult.data?.works : [];
             </header>
 
             <footer class="flex column gap-4">
-              <div class="flex column gap-2">
-                <h4>Responsabilidades y proyectos</h4>
-                {work.responsibilitiesNProjects.map((responsibility) => (
-                  <p key={responsibility}>• {responsibility}</p>
-                ))}
-              </div>
-
-              <div class="flex column gap-2">
-                <h4>Logros</h4>
-                {work.achievements.map((achievement) => (
-                  <p key={achievement}>• {achievement}</p>
-                ))}
-              </div>
-
-              {work.technicalSkills && (
+              {work.summary && (
                 <div class="flex column gap-2">
-                  <h4>Habilidades técnicas</h4>
-                  <div class="content">
-                    <pre>
-                      <code>{work.technicalSkills}</code>
-                    </pre>
-                  </div>
+                  <p>
+                    <strong>Resumen:</strong> {work.summary}
+                  </p>
                 </div>
               )}
 
-              {work.softSkills && (
+              {work.responsibilitiesNProjects.length > 0 && (
                 <div class="flex column gap-2">
-                  <h4>Habilidades blandas</h4>
-                  <div class="content">
-                    <pre>
-                      <code>{work.softSkills}</code>
-                    </pre>
-                  </div>
+                  <h4>Responsabilidades y proyectos</h4>
+                  {work.responsibilitiesNProjects.map((responsibility) => (
+                    <p key={responsibility}>• {responsibility}</p>
+                  ))}
                 </div>
               )}
 
-              {work.aptitudes && (
+              {work.achievements.length > 0 && (
                 <div class="flex column gap-2">
-                  <h4>Aptitudes</h4>
-                  <div class="content">
-                    <pre>
-                      <code>{work.aptitudes}</code>
-                    </pre>
-                  </div>
+                  <h4>Logros</h4>
+                  {work.achievements.map((achievement) => (
+                    <p key={achievement}>• {achievement}</p>
+                  ))}
                 </div>
               )}
+
+              <Skill
+                title="Habilidades técnicas"
+                items={work.technicalSkills}
+                client:visible
+              />
+
+              <Skill
+                title="Habilidades blandas"
+                items={work.softSkills}
+                client:visible
+              />
             </footer>
           </article>
         </li>
@@ -108,13 +100,45 @@ const works = worksResult.isValid ? worksResult.data?.works : [];
     gap: 32px;
   }
 
-  article h3 {
+  footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  footer span {
+    border-radius: 6px;
+    background: #eee;
+    color: #444;
+    font-size: 0.6rem;
     font-weight: 500;
+    padding: 0.2rem 0.6rem;
+  }
+
+  .soft-skills {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  .soft-skills li {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    border-radius: 4px;
+  }
+
+  .soft-skills p {
+    margin: 0;
+    font-weight: 500;
+    color: #333;
+  }
+
+  article h3 {
+    font-weight: 700;
     color: #111;
   }
 
   article h4 {
-    font-weight: 400;
     color: #666;
   }
 

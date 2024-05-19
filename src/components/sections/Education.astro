@@ -1,13 +1,17 @@
 ---
 import Section from "../Section.astro";
+import { getEducations } from "@/utils/db/getEducations";
 
-import { education } from "@cv";
+const { user } = Astro.props;
+
+const { isValid, data = {} } = await getEducations({ user });
+const educations = isValid ? data?.educations : [];
 ---
 
 <Section title="Educación">
   <ul>
     {
-      education.map(({ institution, startDate, url, endDate, area, learn }) => {
+      educations.map(({ institution, startDate, endDate, area, learn }) => {
         const startYear = new Date(startDate).getFullYear();
         const endYear =
           endDate != null ? new Date(endDate).getFullYear() : "Actual";
@@ -19,8 +23,12 @@ import { education } from "@cv";
               <header>
                 <div>
                   <h3>
-                    <a href={url} title={`Ver ${institution}`} target="_blank">
-                      {institution}
+                    <a
+                      href={institution.url}
+                      title={`Ver ${institution.name}`}
+                      target="_blank"
+                    >
+                      {institution.name}
                     </a>
                   </h3>
                 </div>

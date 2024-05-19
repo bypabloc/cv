@@ -166,7 +166,7 @@ export const getWorks = async ({
       }
     });
 
-    console.log("works:", JSON.stringify(works, null, 2));
+    // console.log("works:", JSON.stringify(works, null, 2));
 
     const worksArray = Object.values(works);
 

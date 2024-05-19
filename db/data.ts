@@ -2050,25 +2050,6 @@ export default {
         institutionId: {
           table: "institutions",
           field: "codeName",
-          value: "uptyab",
-        },
-      },
-      area: "Desarrollo Web",
-      learn:
-        "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender",
-      studyType: "course",
-      startDate: "2013-04-01",
-    },
-    {
-      relationship: {
-        userId: {
-          table: "users",
-          field: "username",
-          value: "bypabloc",
-        },
-        institutionId: {
-          table: "institutions",
-          field: "codeName",
           value: "youtube",
         },
       },
@@ -2076,7 +2057,7 @@ export default {
       learn:
         "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros.",
       studyType: "course",
-      startDate: "2013-04-01",
+      startDate: "2017-04-01",
     },
     {
       relationship: {
@@ -2089,6 +2070,25 @@ export default {
           table: "institutions",
           field: "codeName",
           value: "udemy",
+        },
+      },
+      area: "Desarrollo Web",
+      learn:
+        "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender",
+      studyType: "course",
+      startDate: "2012-04-20",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+        institutionId: {
+          table: "institutions",
+          field: "codeName",
+          value: "uptyab",
         },
       },
       area: "Ingeniería Informática",

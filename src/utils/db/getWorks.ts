@@ -11,6 +11,7 @@ import {
   Keywords,
   Skills as SoftSkills,
   SkillsKeywords,
+  Users,
   Employers,
 } from "astro:db";
 
@@ -23,8 +24,10 @@ import {
  */
 export const getWorks = async ({
   status,
+  user,
 }: {
   status?: string;
+  user: Object;
 } = {}): Promise<ResponseFunction> => {
   try {
     let query = db
@@ -41,7 +44,8 @@ export const getWorks = async ({
         employer: Employers,
       })
       .from(Works)
-      .leftJoin(Employers, eq(Works.employerId, Employers.id)); // Unión con la tabla Employers
+      .where(eq(Works.userId, user.id))
+      .leftJoin(Employers, eq(Works.employerId, Employers.id));
 
     if (status) {
       query = query.where(eq(Works.status, status));

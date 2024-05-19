@@ -1,8 +1,12 @@
 ---
-import GitHub from "@/icons/GitHub.astro"
-import Section from "../Section.astro"
+import GitHub from "@/icons/GitHub.astro";
+import Section from "../Section.astro";
+import { getProjects } from "@/utils/db/getProjects";
 
-import { projects } from "@cv"
+const { user } = Astro.props;
+
+const { isValid, data = {} } = await getProjects({ user });
+const projects = isValid ? data?.projects : [];
 ---
 
 <Section title="Proyectos">
@@ -15,7 +19,11 @@ import { projects } from "@cv"
               <article>
                 <header>
                   <h3>
-                    <a href={url} target="_blank" title={`Ver el proyecto ${name}`}>
+                    <a
+                      href={url}
+                      target="_blank"
+                      title={`Ver el proyecto ${name}`}
+                    >
                       {name}
                     </a>
                     {isActive && <span>•</span>}
@@ -34,12 +42,12 @@ import { projects } from "@cv"
                 </header>
                 <footer>
                   {highlights.map((highlight) => {
-                    return <span>{highlight}</span>
+                    return <span>{highlight}</span>;
                   })}
                 </footer>
               </article>
             </li>
-          )
+          );
         }
       )
     }

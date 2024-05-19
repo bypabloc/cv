@@ -5,7 +5,7 @@ import { getWorks } from "@/utils/db/getWorks";
 
 const { user } = Astro.props;
 
-const { isValid, data = {} } = await getWorks(user);
+const { isValid, data = {} } = await getWorks({ user });
 const works = isValid ? data?.works : [];
 ---
 
@@ -35,14 +35,14 @@ const works = isValid ? data?.works : [];
               <div>
                 <time
                   datetime={work.startDate}
-                  data-title={new Date(work.startDate).toLocaleDateString()}
+                  title={new Date(work.startDate).toLocaleDateString()}
                 >
                   {new Date(work.startDate).getFullYear()}
                 </time>
                 {" - "}
                 <time
                   datetime={work.endDate}
-                  data-title={
+                  title={
                     work.endDate
                       ? new Date(work.endDate).toLocaleDateString()
                       : "Actual"

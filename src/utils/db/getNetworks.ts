@@ -1,4 +1,4 @@
-import { db, eq, Networks } from "astro:db";
+import { db, eq, Networks, Users } from "astro:db";
 
 /**
  * Consulta que devuelve todos las redes.
@@ -7,11 +7,16 @@ import { db, eq, Networks } from "astro:db";
  */
 export const getNetworks = async ({
   status,
+  user,
 }: {
   status?: string;
 } = {}): Promise<object> => {
   try {
-    let networks = await db.select().from(Networks).execute();
+    let networks = await db
+      .select()
+      .from(Networks)
+      .where(eq(Networks.userId, user.id))
+      .execute();
 
     if (status) {
       networks = networks.where(eq(Networks.status, status));

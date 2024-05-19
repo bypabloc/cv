@@ -390,7 +390,7 @@ export const Employers = defineTable({
     name: column.text(),
     url: column.text({ optional: true }),
     description: column.text({ optional: true }),
-    servicestatus: column.text({
+    serviceStatus: column.text({
       default: "active",
       enumValues: ["active", "inactive"],
     }),
@@ -676,7 +676,7 @@ export const Projects = defineTable({
       defaultFn: () => [],
     }),
     url: column.text(),
-    servicestatus: column.text({
+    serviceStatus: column.text({
       default: "active",
       enumValues: ["active", "inactive"],
     }),

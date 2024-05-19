@@ -18,9 +18,17 @@ const works = isValid ? data?.works : [];
             <header>
               <div>
                 <h3>
-                  <a href={work.url} title={`Ver ${work.name}`} target="_blank">
-                    {work.name}
-                  </a>
+                  {work?.employer ? (
+                    <a
+                      href={work.employer.url}
+                      title={`Ver ${work.employer.name}`}
+                      target="_blank"
+                    >
+                      {work.employer.name}
+                    </a>
+                  ) : (
+                    <span>{work.name}</span>
+                  )}
                 </h3>
                 <h4>{work.position}</h4>
               </div>
@@ -136,10 +144,12 @@ const works = isValid ? data?.works : [];
   article h3 {
     font-weight: 700;
     color: #111;
+    margin: 0;
   }
 
   article h4 {
     color: #666;
+    margin: 0;
   }
 
   header {
@@ -147,6 +157,16 @@ const works = isValid ? data?.works : [];
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 4px;
+  }
+
+  a {
+    display: inline-block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  a:hover {
+    text-decoration: underline;
   }
 
   time {

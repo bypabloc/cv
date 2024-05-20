@@ -1,34 +1,19 @@
-import {
-  db,
-  eq,
-  innerJoin,
-  inArray,
-  Works,
-  Skills,
-  WorksTechnicalSkills,
-  Skills as TechnicalSkills,
-  WorksSoftSkills,
-  Keywords,
-  Skills as SoftSkills,
-  SkillsKeywords,
-  Educations,
-  Users,
-  Employers,
-  Institutions,
-} from "astro:db";
+import { db, eq, Educations, Institutions, sql } from "astro:db";
 
 /**
- * Consulta que devuelve todos los proyectos de un usuario.
+ * Consulta que devuelve todas las experiencias educativas de un usuario.
  *
  * @param {string} status - Estado del usuario para filtrar.
- * @returns {Promise<object>} - Resultado de la consulta de los proyectos.
+ * @param {object} user - Usuario para filtrar.
+ * @returns {Promise<object>} - Resultado de la consulta de las experiencias educativas.
  */
 export const getEducations = async ({
   status,
   user,
 }: {
   status?: string;
-} = {}): Promise<ResponseFunction> => {
+  user: { id: string };
+}): Promise<ResponseFunction> => {
   try {
     let query = db
       .select({
@@ -42,27 +27,51 @@ export const getEducations = async ({
       })
       .from(Educations)
       .where(eq(Educations.userId, user.id))
-      .leftJoin(Institutions, eq(Institutions.id, Educations.institutionId));
+      .leftJoin(Institutions, eq(Institutions.id, Educations.institutionId))
+      .orderBy([
+        {
+          column: Educations.endDate,
+          order: "asc",
+          nulls: "first",
+        },
+        {
+          column: Educations.startDate,
+          order: "asc",
+        },
+      ])
+      .orderBy(
+        sql`
+          CASE
+            WHEN ${Educations.endDate} IS NULL THEN 0
+            ELSE 1
+          END,
+          ${Educations.endDate} ASC NULLS FIRST,
+          ${Educations.startDate} ASC
+        `
+      );
 
     if (status) {
       query = query.where(eq(Educations.status, status));
     }
 
-    const educations = await query;
+    const educations = await query.execute();
 
-    console.log("educations:", JSON.stringify(educations, null, 2));
+    console.log(
+      "Experiencias educativas obtenidas correctamente",
+      JSON.stringify(educations, null, 2)
+    );
 
     return {
       isValid: true,
       data: {
-        educations: educations || [],
+        educations,
       },
     };
   } catch (error) {
-    console.error("Error al obtener las experiencias laborales:", error);
+    console.error("Error al obtener las experiencias educativas:", error);
     return {
       isValid: false,
-      error: "Error al obtener las experiencias laborales",
+      error: "Error al obtener las experiencias educativas",
     };
   }
 };

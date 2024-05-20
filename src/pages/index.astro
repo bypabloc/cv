@@ -4,9 +4,11 @@ import Layout from "@/layouts/Layout.astro";
 import { getUser } from "@/utils/db/getUser";
 import Page from "@/components/Page.astro";
 
-const user = await getUser("bypabloc");
+const getUserResult = await getUser("bypabloc");
+
+const user = getUserResult.isValid ? getUserResult.data.user : null;
 ---
 
-<Layout title="Portafolio">
+<Layout title="Portafolio" user={user}>
   <Page user={user} />
 </Layout>

@@ -1,13 +1,24 @@
 ---
-import { basics } from "@cv";
+import { getAttributes } from "@/utils/db/getAttributes";
 
 interface Props {
   title: string;
+  user: Record<string, any>;
 }
 
-const { title } = Astro.props;
+const { title, user } = Astro.props;
 
-const { image, summary, url } = basics;
+const attributesResult = await getAttributes(user);
+const attributes = attributesResult.isValid
+  ? attributesResult.data?.attributes
+  : {};
+
+console.log("attributes", JSON.stringify(attributes, null, 2));
+
+const {
+  summary: { value: summary },
+  url: { value: url },
+} = attributes || {};
 ---
 
 <!doctype html>
@@ -18,20 +29,12 @@ const { image, summary, url } = basics;
     <meta name="description" content={summary} />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preload" as="image" href={image} />
 
     <meta property="og:url" content={url} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={summary} />
     <meta property="og:image" content="" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:domain" content={url.split("//")[1] ?? ""} />
-    <meta property="twitter:url" content={url} />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={summary} />
-    <meta name="twitter:image" content="" />
   </head>
   <body>
     <slot />

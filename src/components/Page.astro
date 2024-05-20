@@ -19,22 +19,22 @@ const { user } = Astro.props;
 
 <main>
   {
-    user.isValid && (
+    (
       <>
-        <Basic user={user.data?.user} />
-        <About user={user.data?.user} />
-        <Experience user={user.data?.user} />
-        <Education user={user.data?.user} />
-        <Projects user={user.data?.user} />
-        <Awards user={user.data?.user} />
-        <Certificates user={user.data?.user} />
-        <Publications user={user.data?.user} />
-        <TechnicalSkills user={user.data?.user} />
-        <SoftSkills user={user.data?.user} />
-        <Languages user={user.data?.user} />
-        <Interests user={user.data?.user} />
-        <References user={user.data?.user} />
-        <KeyboardManager user={user.data?.user} />
+        <Basic user={user} />
+        <About user={user} />
+        <Experience user={user} />
+        <Education user={user} />
+        <Projects user={user} />
+        <Awards user={user} />
+        <Certificates user={user} />
+        <Publications user={user} />
+        <TechnicalSkills user={user} />
+        <SoftSkills user={user} />
+        <Languages user={user} />
+        <Interests user={user} />
+        <References user={user} />
+        <KeyboardManager user={user} />
       </>
     )
   }

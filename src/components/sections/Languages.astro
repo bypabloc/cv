@@ -6,10 +6,6 @@ const { user } = Astro.props;
 
 const { isValid, data = {} } = await getLanguages({ user });
 const languages = isValid ? data?.languages : [];
-console.log("languages", languages);
-
-import { languages as langs } from "@cv";
-console.log("langs", langs);
 ---
 
 <Section title="Idiomas">

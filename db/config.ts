@@ -243,25 +243,6 @@ export const Publishers = defineTable({
   },
 });
 
-export const Languages = defineTable({
-  columns: {
-    // standard
-    id: column.text({
-      primaryKey: true,
-      default: sql`gen_random_uuid()`,
-    }),
-    status: column.text({
-      default: "active",
-      enumValues: ["active", "inactive"],
-    }),
-    createdAt: column.date({ default: NOW }),
-    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
-    // own
-    codeName: column.text({ unique: true }),
-    name: column.text(),
-  },
-});
-
 export const Keywords = defineTable({
   columns: {
     // own
@@ -602,6 +583,25 @@ export const Publications = defineTable({
     releaseDate: column.date(),
     url: column.text(),
     summary: column.text(),
+  },
+});
+
+export const Languages = defineTable({
+  columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
+    // own
+    codeName: column.text({ unique: true }),
+    name: column.text(),
   },
 });
 

@@ -1,10 +1,18 @@
 ---
 import Section from "../Section.astro";
+import { getLanguages } from "@/utils/db/getLanguages";
 
-import { languages } from "@cv";
+const { user } = Astro.props;
+
+const { isValid, data = {} } = await getLanguages({ user });
+const languages = isValid ? data?.languages : [];
+console.log("languages", languages);
+
+import { languages as langs } from "@cv";
+console.log("langs", langs);
 ---
 
-<Section title="Languages">
+<Section title="Idiomas">
   <ul>
     {
       languages.map(({ fluency, language }) => {
@@ -13,7 +21,7 @@ import { languages } from "@cv";
             <article>
               <header>
                 <div>
-                  <h3>{language}</h3>
+                  <h3>{language.name}</h3>
                 </div>
               </header>
 

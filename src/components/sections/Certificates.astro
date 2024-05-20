@@ -1,13 +1,24 @@
 ---
 import Section from "../Section.astro";
 
-import { certificates } from "@cv";
+import { getCertificates } from "@/utils/db/getCertificates";
+
+const { user } = Astro.props;
+
+const { isValid, data = {} } = await getCertificates({ user });
+const certificates = isValid ? data?.certificates : [];
+
+// Función para formatear la fecha a mes-año
+function formatDateToMonthYear(dateString) {
+  const options = { year: "numeric", month: "long" };
+  return new Date(dateString).toLocaleDateString("es-ES", options);
+}
 ---
 
 <Section title="Certificados">
   <ul>
     {
-      certificates.map(({ date, url, issuer, name }) => {
+      certificates.map(({ date, url, issuer, name, title }) => {
         return (
           <li>
             <article>
@@ -15,20 +26,20 @@ import { certificates } from "@cv";
                 <div>
                   <h3>
                     <a href={url} title={`Ver ${name}`} target="_blank">
-                      {name}
+                      {title}
                     </a>
                   </h3>
                 </div>
 
                 <div>
                   <time datetime={date} data-title={date}>
-                    {date}
+                    {formatDateToMonthYear(date)}
                   </time>
                 </div>
               </header>
 
               <footer>
-                <p>{issuer}</p>
+                <p>{issuer.name}</p>
               </footer>
             </article>
           </li>

@@ -1,4 +1,4 @@
-import { db, eq, Educations, Institutions, Awards, sql } from "astro:db";
+import { db, eq, Awards, sql } from "astro:db";
 
 /**
  * Consulta que devuelve todos los premios.
@@ -23,10 +23,10 @@ export const getAwards = async ({
 
     const awards = await query.execute();
 
-    console.log(
-      "Premios obtenidos correctamente",
-      JSON.stringify(awards, null, 2)
-    );
+    // console.log(
+    //   "Premios obtenidos correctamente",
+    //   JSON.stringify(awards, null, 2)
+    // );
 
     return {
       isValid: true,

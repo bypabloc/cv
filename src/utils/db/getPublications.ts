@@ -34,10 +34,10 @@ export const getPublications = async ({
 
     const publications = await query.execute();
 
-    console.log(
-      "Publicaciones obtenidas correctamente",
-      JSON.stringify(publications, null, 2)
-    );
+    // console.log(
+    //   "Publicaciones obtenidas correctamente",
+    //   JSON.stringify(publications, null, 2)
+    // );
 
     return {
       isValid: true,

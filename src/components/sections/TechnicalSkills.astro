@@ -1,0 +1,44 @@
+---
+import Section from "../Section.astro";
+
+import { getSkills } from "@/utils/db/getSkills";
+
+const { user } = Astro.props;
+
+const { isValid, data = {} } = await getSkills({ user });
+const skills = isValid ? data?.technical : [];
+---
+
+<Section title="Habilidades técnicas">
+  <ul>
+    {
+      skills.map(({ name, description }) => {
+        return (
+          <li>
+            <span>{name}</span>
+          </li>
+        );
+      })
+    }
+  </ul>
+</Section>
+
+<style>
+  ul {
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  li {
+    align-items: center;
+    background: #eee;
+    border-radius: 6px;
+    color: black;
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 500;
+    gap: 4px;
+    padding: 0.2rem 0.6rem;
+  }
+</style>

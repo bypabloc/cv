@@ -7,14 +7,14 @@ import Awards from "@/components/sections/Awards.astro";
 import Certificates from "@/components/sections/Certificates.astro";
 import Projects from "@/components/sections/Projects.astro";
 import Publications from "@/components/sections/Publications.astro";
-import Skills from "@/components/sections/Skills.astro";
+import TechnicalSkills from "@/components/sections/TechnicalSkills.astro";
+import SoftSkills from "@/components/sections/SoftSkills.astro";
 import Languages from "@/components/sections/Languages.astro";
 import Interests from "@/components/sections/Interests.astro";
 import References from "@/components/sections/References.astro";
 import KeyboardManager from "@/components/KeyboardManager.astro";
-import { getUser } from "@/utils/db/getUser";
 
-const user = await getUser("bypabloc");
+const { user } = Astro.props;
 ---
 
 <main>
@@ -29,7 +29,8 @@ const user = await getUser("bypabloc");
         <Awards user={user.data?.user} />
         <Certificates user={user.data?.user} />
         <Publications user={user.data?.user} />
-        <Skills user={user.data?.user} />
+        <TechnicalSkills user={user.data?.user} />
+        <SoftSkills user={user.data?.user} />
         <Languages user={user.data?.user} />
         <Interests user={user.data?.user} />
         <References user={user.data?.user} />

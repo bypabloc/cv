@@ -28,17 +28,6 @@ export const getEducations = async ({
       .from(Educations)
       .where(eq(Educations.userId, user.id))
       .leftJoin(Institutions, eq(Institutions.id, Educations.institutionId))
-      .orderBy([
-        {
-          column: Educations.endDate,
-          order: "asc",
-          nulls: "first",
-        },
-        {
-          column: Educations.startDate,
-          order: "asc",
-        },
-      ])
       .orderBy(
         sql`
           CASE
@@ -55,11 +44,6 @@ export const getEducations = async ({
     }
 
     const educations = await query.execute();
-
-    console.log(
-      "Experiencias educativas obtenidas correctamente",
-      JSON.stringify(educations, null, 2)
-    );
 
     return {
       isValid: true,

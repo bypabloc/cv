@@ -33,10 +33,10 @@ export const getCertificates = async ({
 
     const certificates = await query.execute();
 
-    console.log(
-      "Certificados obtenidos correctamente",
-      JSON.stringify(certificates, null, 2)
-    );
+    // console.log(
+    //   "Certificados obtenidos correctamente",
+    //   JSON.stringify(certificates, null, 2)
+    // );
 
     return {
       isValid: true,

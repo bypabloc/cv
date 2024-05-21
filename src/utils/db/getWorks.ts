@@ -125,10 +125,10 @@ export const getWorks = async ({
       };
     });
 
-    console.log(
-      "Experiencias laborales obtenidas correctamente",
-      JSON.stringify(formattedWorks, null, 2)
-    );
+    // console.log(
+    //   "Experiencias laborales obtenidas correctamente",
+    //   JSON.stringify(formattedWorks, null, 2)
+    // );
 
     return {
       isValid: true,

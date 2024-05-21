@@ -35,10 +35,10 @@ export const getReferences = async ({
 
     const references = await query.execute();
 
-    console.log(
-      "Referencias obtenidas correctamente",
-      JSON.stringify(references, null, 2)
-    );
+    // console.log(
+    //   "Referencias obtenidas correctamente",
+    //   JSON.stringify(references, null, 2)
+    // );
 
     return {
       isValid: true,

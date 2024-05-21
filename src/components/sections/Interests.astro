@@ -1,15 +1,11 @@
 ---
 import Section from "../Section.astro";
 import { getInterests } from "@/utils/db/getInterests";
-import { interests as intersOld } from "@cv";
 
 const { user } = Astro.props;
 
 const { isValid, data = {} } = await getInterests({ user });
 const interests = isValid ? data?.interests : [];
-console.log("interests", JSON.stringify(interests, null, 2));
-
-console.log("intersOld", JSON.stringify(intersOld, null, 2));
 ---
 
 <Section title="Intereses">

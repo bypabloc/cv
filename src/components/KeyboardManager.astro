@@ -14,8 +14,6 @@ const attributes = attributesResult.isValid
 const networksResult = await getUserNetworks(user, attributes);
 const networks = networksResult.isValid ? networksResult.data?.networks : [];
 
-console.log("networks", JSON.stringify(networks, null, 2));
-
 const reservedHotkeys = ["T", "N", "W", "R", "S", "F", "H", "B", "P"];
 const usedHotkeys = new Set();
 
@@ -55,8 +53,6 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
     hotkey,
   };
 });
-
-console.log("profilesInfo", JSON.stringify(profilesInfo, null, 2));
 ---
 
 <footer id="normal-footer" class="no-print">
@@ -106,8 +102,6 @@ console.log("profilesInfo", JSON.stringify(profilesInfo, null, 2));
   const hotkeypad = new HotKeyPad();
   const info = hotkeypad.instance.getAttribute("data-info") ?? "[]";
   const parsedInfo = JSON.parse(info) as Info[];
-
-  console.log("parsedInfo", parsedInfo);
 
   const data = parsedInfo.map(({ url, hotkey, icon, id, section, title }) => {
     return {

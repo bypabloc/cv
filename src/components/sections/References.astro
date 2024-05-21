@@ -1,7 +1,12 @@
 ---
 import Section from "../Section.astro";
 
-import { references } from "@cv";
+import { getReferences } from "@/utils/db/getReferences";
+
+const { user } = Astro.props;
+
+const { isValid, data = {} } = await getReferences({ user });
+const references = isValid ? data?.references : [];
 ---
 
 <Section title="Referencias">

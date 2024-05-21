@@ -1,13 +1,21 @@
 ---
 import Section from "../Section.astro";
+import { getInterests } from "@/utils/db/getInterests";
+import { interests as intersOld } from "@cv";
 
-import { interests } from "@cv";
+const { user } = Astro.props;
+
+const { isValid, data = {} } = await getInterests({ user });
+const interests = isValid ? data?.interests : [];
+console.log("interests", JSON.stringify(interests, null, 2));
+
+console.log("intersOld", JSON.stringify(intersOld, null, 2));
 ---
 
 <Section title="Intereses">
   <ul>
     {
-      interests.map(({ keywords, name }) => {
+      interests.map(({ name }) => {
         return (
           <li>
             <article>
@@ -16,10 +24,6 @@ import { interests } from "@cv";
                   <h3>{name}</h3>
                 </div>
               </header>
-
-              <footer>
-                <p>{keywords.join(", ")}</p>
-              </footer>
             </article>
           </li>
         );
@@ -32,11 +36,11 @@ import { interests } from "@cv";
   ul {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 2px;
   }
 
   article h3 {
-    font-weight: 500;
+    font-weight: 400;
     color: #111;
   }
 

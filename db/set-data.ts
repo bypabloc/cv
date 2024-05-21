@@ -16,6 +16,7 @@ import {
   Keywords,
   Languages,
   LanguagesUsers,
+  UsersInterests,
   Networks,
   NetworksUsers,
   Projects,
@@ -299,6 +300,15 @@ export default async function () {
       tables
     ),
     model: InterestsKeywords,
+  };
+
+  tables["usersInterests"] = {
+    records: await registerRecordsWithRelations(
+      UsersInterests,
+      jsonData.usersInterests,
+      tables
+    ),
+    model: UsersInterests,
   };
 
   tables["worksSoftSkills"] = {

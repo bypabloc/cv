@@ -738,6 +738,7 @@ export default defineDb({
     Publishers,
     References,
     Skills,
+    UsersInterests,
     Works,
     SkillsKeywords,
     WorksSoftSkills,

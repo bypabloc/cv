@@ -2705,6 +2705,20 @@ export default {
         interestId: {
           table: "interests",
           field: "codeName",
+          value: "bot-creation",
+        },
+        keywordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "automation",
+        },
+      },
+    },
+    {
+      relationship: {
+        interestId: {
+          table: "interests",
+          field: "codeName",
           value: "scraping",
         },
         keywordId: {
@@ -3739,7 +3753,7 @@ export default {
           field: "codeName",
           value: "devops",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3753,7 +3767,7 @@ export default {
           field: "codeName",
           value: "bot-creation",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3767,7 +3781,7 @@ export default {
           field: "codeName",
           value: "scraping",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3781,7 +3795,7 @@ export default {
           field: "codeName",
           value: "kubernetes",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3795,7 +3809,7 @@ export default {
           field: "codeName",
           value: "machine-learning",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3809,7 +3823,7 @@ export default {
           field: "codeName",
           value: "cloud-computing",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3823,7 +3837,7 @@ export default {
           field: "codeName",
           value: "blockchain",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3837,7 +3851,7 @@ export default {
           field: "codeName",
           value: "ai-chatbots",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3851,7 +3865,7 @@ export default {
           field: "codeName",
           value: "microservices",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3865,7 +3879,7 @@ export default {
           field: "codeName",
           value: "internet-of-things",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3879,7 +3893,7 @@ export default {
           field: "codeName",
           value: "frontend-development",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3893,7 +3907,7 @@ export default {
           field: "codeName",
           value: "backend-development",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3907,7 +3921,7 @@ export default {
           field: "codeName",
           value: "data-engineering",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3921,7 +3935,7 @@ export default {
           field: "codeName",
           value: "serverless-computing",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3935,7 +3949,7 @@ export default {
           field: "codeName",
           value: "edge-computing",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3949,7 +3963,7 @@ export default {
           field: "codeName",
           value: "mobile-development",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3963,7 +3977,7 @@ export default {
           field: "codeName",
           value: "game-development",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3977,7 +3991,7 @@ export default {
           field: "codeName",
           value: "security-engineering",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -3991,7 +4005,7 @@ export default {
           field: "codeName",
           value: "robotics",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",
@@ -4005,7 +4019,7 @@ export default {
           field: "codeName",
           value: "ar-vr",
         },
-        keywordId: {
+        userId: {
           table: "users",
           field: "username",
           value: "bypabloc",

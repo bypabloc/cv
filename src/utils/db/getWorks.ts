@@ -1,17 +1,13 @@
 import {
   db,
   eq,
-  innerJoin,
-  inArray,
+  sql,
   Works,
   Skills,
   WorksTechnicalSkills,
-  Skills as TechnicalSkills,
   WorksSoftSkills,
   Keywords,
-  Skills as SoftSkills,
   SkillsKeywords,
-  Users,
   Employers,
 } from "astro:db";
 
@@ -27,9 +23,10 @@ export const getWorks = async ({
   user,
 }: {
   status?: string;
-  user: Object;
+  user: { id: string };
 } = {}): Promise<ResponseFunction> => {
   try {
+    // Consulta principal para obtener los trabajos
     let query = db
       .select({
         id: Works.id,
@@ -42,10 +39,57 @@ export const getWorks = async ({
         achievements: Works.achievements,
         summary: Works.summary,
         employer: Employers,
+        technicalSkills: sql`(
+          SELECT json_group_array(
+            json_object(
+              'id', Skills.id,
+              'codeName', Skills.codeName,
+              'name', Skills.name,
+              'description', Skills.description,
+              'type', Skills.type,
+              'keywords', (SELECT json_group_array(json_object('id', Keywords.id, 'keys', Keywords.keys))
+                          FROM SkillsKeywords
+                          INNER JOIN Keywords ON Keywords.id = SkillsKeywords.keywordId
+                          WHERE SkillsKeywords.skillId = Skills.id)
+            )
+          )
+          FROM WorksTechnicalSkills
+          INNER JOIN Skills ON Skills.id = WorksTechnicalSkills.technicalSkillId
+          WHERE WorksTechnicalSkills.workId = Works.id
+        )`,
+        softSkills: sql`(
+          SELECT json_group_array(
+            json_object(
+              'id', Skills.id,
+              'codeName', Skills.codeName,
+              'name', Skills.name,
+              'description', Skills.description,
+              'type', Skills.type,
+              'keywords', (SELECT json_group_array(json_object('id', Keywords.id, 'keys', Keywords.keys))
+                          FROM SkillsKeywords
+                          INNER JOIN Keywords ON Keywords.id = SkillsKeywords.keywordId
+                          WHERE SkillsKeywords.skillId = Skills.id)
+            )
+          )
+          FROM WorksSoftSkills
+          INNER JOIN Skills ON Skills.id = WorksSoftSkills.skillId
+          WHERE WorksSoftSkills.workId = Works.id
+        )`,
       })
       .from(Works)
+      .leftJoin(Employers, eq(Works.employerId, Employers.id))
       .where(eq(Works.userId, user.id))
-      .leftJoin(Employers, eq(Works.employerId, Employers.id));
+      .groupBy(Works.id)
+      .orderBy(
+        sql`
+          CASE
+            WHEN ${Works.endDate} IS NULL THEN 0
+            ELSE 1
+          END,
+          ${Works.endDate} DESC NULLS FIRST,
+          ${Works.startDate} DESC
+        `
+      );
 
     if (status) {
       query = query.where(eq(Works.status, status));
@@ -61,119 +105,35 @@ export const getWorks = async ({
       };
     }
 
-    const worksIds = rawData.map((item) => item.id);
-
-    const works = {};
-    rawData.forEach((item) => {
-      works[item.id] = item;
-    });
-
-    const skillsIds = [];
-
-    const technicalSkills = await db
-      .select({
-        workId: WorksTechnicalSkills.workId,
-        skillId: WorksTechnicalSkills.technicalSkillId,
-        skillCodeName: Skills.codeName,
-        skillName: Skills.name,
-        skillDescription: Skills.description,
-        skillType: Skills.type,
-      })
-      .from(Skills)
-      .innerJoin(
-        WorksTechnicalSkills,
-        eq(WorksTechnicalSkills.technicalSkillId, Skills.id)
-      )
-      .where(inArray(WorksTechnicalSkills.workId, worksIds));
-
-    technicalSkills.forEach((item) => {
-      if (!works[item.workId].technicalSkills) {
-        works[item.workId].technicalSkills = [];
-      }
-      works[item.workId].technicalSkills.push({
-        id: item.skillId,
-        codeName: item.skillCodeName,
-        name: item.skillName,
-        description: item.skillDescription,
-        type: item.skillType,
-        keywords: [],
-      });
-      skillsIds.push(item.skillId);
-    });
-
-    const softSkills = await db
-      .select({
-        workId: WorksSoftSkills.workId,
-        skillId: WorksSoftSkills.skillId,
-        skillCodeName: Skills.codeName,
-        skillName: Skills.name,
-        skillDescription: Skills.description,
-        skillType: Skills.type,
-      })
-      .from(Skills)
-      .innerJoin(WorksSoftSkills, eq(WorksSoftSkills.skillId, Skills.id))
-      .where(inArray(WorksSoftSkills.workId, worksIds));
-
-    softSkills.forEach((item) => {
-      if (!works[item.workId].softSkills) {
-        works[item.workId].softSkills = [];
-      }
-      works[item.workId].softSkills.push({
-        id: item.skillId,
-        codeName: item.skillCodeName,
-        name: item.skillName,
-        description: item.skillDescription,
-        type: item.skillType,
-        keywords: [],
-      });
-      skillsIds.push(item.skillId);
-    });
-
-    const skillsIdsUniques = Array.from(new Set(skillsIds));
-
-    const skillsKeywords = await db
-      .select({
-        skillId: SkillsKeywords.skillId,
-        keywordId: Keywords.id,
-        keys: Keywords.keys,
-      })
-      .from(SkillsKeywords)
-      .innerJoin(Keywords, eq(Keywords.id, SkillsKeywords.keywordId))
-      .where(inArray(SkillsKeywords.skillId, skillsIdsUniques));
-
-    const skillsWithKeywords = {};
-    skillsKeywords.forEach((item) => {
-      if (!skillsWithKeywords[item.skillId]) {
-        skillsWithKeywords[item.skillId] = [];
-      }
-      skillsWithKeywords[item.skillId].push(...item.keys);
-    });
-
-    Object.keys(works).forEach((workId) => {
-      if (works[workId].technicalSkills) {
-        works[workId].technicalSkills = works[workId].technicalSkills.map(
-          (skill) => ({
-            ...skill,
-            keywords: skillsWithKeywords[skill.id] || [],
-          })
-        );
-      }
-      if (works[workId].softSkills) {
-        works[workId].softSkills = works[workId].softSkills.map((skill) => ({
+    // Convertir los campos JSON de string a arrays de objetos
+    const formattedWorks = rawData.map((work) => {
+      const safelyParseKeywords = (skills) => {
+        return skills.map((skill) => ({
           ...skill,
-          keywords: skillsWithKeywords[skill.id] || [],
+          keywords: Array.isArray(skill.keywords)
+            ? skill.keywords.map((k) =>
+                typeof k.keys === "string" ? JSON.parse(k.keys) : k.keys
+              )
+            : [],
         }));
-      }
+      };
+
+      return {
+        ...work,
+        technicalSkills: safelyParseKeywords(JSON.parse(work.technicalSkills)),
+        softSkills: safelyParseKeywords(JSON.parse(work.softSkills)),
+      };
     });
 
-    // console.log("works:", JSON.stringify(works, null, 2));
-
-    const worksArray = Object.values(works);
+    console.log(
+      "Experiencias laborales obtenidas correctamente",
+      JSON.stringify(formattedWorks, null, 2)
+    );
 
     return {
       isValid: true,
       data: {
-        works: worksArray,
+        works: formattedWorks,
       },
     };
   } catch (error) {

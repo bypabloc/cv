@@ -1,0 +1,54 @@
+---
+import { getWorks } from "@/utils/db/getWorks";
+
+const { title, description, user, attributes } = Astro.props;
+
+const { isValid, data = {} } = await getWorks({ user });
+const worksByEmployer = isValid ? data?.works : {};
+
+const extractKeywords = (data) => {
+  const keywords = new Set();
+
+  const recursiveExtract = (obj) => {
+    if (typeof obj === "object") {
+      for (const key in obj) {
+        if (key === "keywords" && Array.isArray(obj[key])) {
+          obj[key].forEach((kw_group) => {
+            kw_group.forEach((kw) => keywords.add(kw));
+          });
+        } else {
+          recursiveExtract(obj[key]);
+        }
+      }
+    } else if (Array.isArray(obj)) {
+      obj.forEach((item) => recursiveExtract(item));
+    }
+  };
+
+  recursiveExtract(data);
+  return Array.from(keywords);
+};
+
+const worksKeywords = extractKeywords(worksByEmployer);
+
+const keywords = worksKeywords.join(", ");
+
+console.log("worksKeywords", JSON.stringify(attributes, null, 2));
+
+const {
+  names: { value: names },
+  lastName: { value: lastName },
+} = attributes || {};
+
+const [firstNames, _secondNames] = names.split(" ");
+const [firstLastName, _secondLastName] = lastName.split(" ");
+
+const fullName = `${firstNames} ${firstLastName}`;
+---
+
+<head>
+  <meta charset="UTF-8" />
+  <title>{fullName}</title>
+  <meta name="description" content={description} />
+  <meta name="keywords" content={keywords} />
+</head>

@@ -144,10 +144,10 @@ export const getWorks = async ({
       return acc;
     }, {});
 
-    console.log(
-      "Experiencias laborales agrupadas correctamente",
-      JSON.stringify(groupedByEmployer, null, 2)
-    );
+    // console.log(
+    //   "Experiencias laborales agrupadas correctamente",
+    //   JSON.stringify(groupedByEmployer, null, 2)
+    // );
 
     return {
       isValid: true,

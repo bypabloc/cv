@@ -34,7 +34,17 @@ const toggleKeywords = () => {
   <div class="flex column gap-2">
     <div class="no-print">
       <h4 v-if="title" @click="toggleKeywords" class="clickable">
-        {{ !showKeywords ? "Ver" : "Ocultar" }} - {{ title }}
+        <i
+          v-if="showKeywords"
+          class="i-mdi-eye dark:i-mdi-eye-outline"
+          aria-hidden="true"
+        />
+        <i
+          v-else
+          class="i-mdi-eye-off dark:i-mdi-eye-off-outline"
+          aria-hidden="true"
+        />
+        {{ title }}
       </h4>
       <transition name="fade">
         <footer v-show="showKeywords">

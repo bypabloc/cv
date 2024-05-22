@@ -16,7 +16,7 @@ function formatDateToMonthYear(dateString) {
 ---
 
 <Section title="Publicaciones">
-  <ul>
+  <ul class="gap-2">
     {
       publications.map(({ name, publisher, releaseDate, summary, url }) => {
         return (
@@ -54,7 +54,6 @@ function formatDateToMonthYear(dateString) {
   ul {
     display: flex;
     flex-direction: column;
-    gap: 32px;
   }
 
   article h3 {

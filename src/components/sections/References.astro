@@ -10,7 +10,7 @@ const references = isValid ? data?.references : [];
 ---
 
 <Section title="Referencias">
-  <ul>
+  <ul class="gap-2">
     {
       references.map(({ name, position, reference, url }) => {
         return (
@@ -42,7 +42,6 @@ const references = isValid ? data?.references : [];
   ul {
     display: flex;
     flex-direction: column;
-    gap: 32px;
   }
 
   article h3 {

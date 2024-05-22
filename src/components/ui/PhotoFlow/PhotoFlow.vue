@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import UIImage from "@/components/ui/Image/Index.vue";
+import UIImage from "@/components/ui/Image/Image.vue";
 
 const props = defineProps({
   images: {
@@ -72,16 +72,16 @@ const currentImage = computed(() => {
         />
         <div class="text">{{ image.caption }}</div>
       </div>
-      <a class="prev" @click="advanceSlide(-1)">&#10094;</a>
-      <a class="next" @click="advanceSlide(1)">&#10095;</a>
+      <a href="#" class="prev" @click.prevent="advanceSlide(-1)">&#10094;</a>
+      <a href="#" class="next" @click.prevent="advanceSlide(1)">&#10095;</a>
       <div class="dots-container">
         <span 
-          class="dot" 
-          :class="{ 'active': currentIndex === index }" 
-          v-for="(image, index) in props.images" 
-          :key="index" 
+          class="dot"
+          :class="{ 'active': currentIndex === index }"
+          v-for="(image, index) in props.images"
+          :key="index"
           @click="currentIndex = index"
-        ></span>
+        />
       </div>
     </div>
   </div>

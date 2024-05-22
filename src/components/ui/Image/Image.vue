@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { Users } from "astro:db";
 
 const props = defineProps({
   items: {

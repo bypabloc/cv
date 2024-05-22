@@ -17,7 +17,7 @@ const worksByEmployer = isValid ? data?.works : {};
           <header>
             <div>
               {employerGroup.employer ? (
-                <h3>
+                <h3 class="employer-name">
                   <a
                     href={employerGroup.employer.url}
                     title={`Ver ${employerGroup.employer.name}`}
@@ -27,7 +27,7 @@ const worksByEmployer = isValid ? data?.works : {};
                   </a>
                 </h3>
               ) : (
-                <h3>Freelance</h3>
+                <h3 class="employer-name">Freelance</h3>
               )}
             </div>
           </header>
@@ -303,6 +303,11 @@ const worksByEmployer = isValid ? data?.works : {};
     height: 12px;
     border-radius: 50%;
     background: #444;
+  }
+
+  .employer-name {
+    font-size: 1.2rem; /* Tamaño de fuente más grande */
+    font-weight: bold; /* Texto en negrita */
   }
 
   @media (max-width: 700px) {

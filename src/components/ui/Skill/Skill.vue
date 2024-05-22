@@ -15,7 +15,6 @@ const props = defineProps({
 const items = computed(() => {
   return props.items.map((item) => {
     const keywords = Array.from(new Set(item.keywords));
-
     return {
       ...item,
       keywords,
@@ -47,21 +46,12 @@ const toggleKeywords = () => {
         {{ title }}
       </h4>
       <transition name="fade">
-        <footer v-show="showKeywords">
+        <footer v-if="showKeywords">
           <span v-for="item in items" :key="item.id">
             {{ item.description }}
           </span>
         </footer>
       </transition>
-      <ul class="keywords">
-        <template v-for="item in items" :key="item.id">
-          <template v-for="keyword in item.keywords" :key="keyword">
-            <li>
-              {{ keyword }}
-            </li>
-          </template>
-        </template>
-      </ul>
     </div>
     <div class="print">
       <h4 class="clickable">
@@ -97,7 +87,9 @@ footer span {
 }
 
 .keywords {
-  display: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .keywords li {

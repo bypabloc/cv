@@ -1,5 +1,4 @@
 ---
-import GitHub from "@/icons/GitHub.astro";
 import Section from "../Section.astro";
 import { getProjects } from "@/utils/db/getProjects";
 
@@ -34,7 +33,7 @@ const projects = isValid ? data?.projects : [];
                         target="_blank"
                         title={`Ver código fuente del proyecto ${name}`}
                       >
-                        <GitHub />
+                        <i class="i-mdi-github" />
                       </a>
                     )}
                   </h3>

@@ -15,7 +15,15 @@ export const getAwards = async ({
   user: { id: string };
 }): Promise<ResponseFunction> => {
   try {
-    let query = db.select().from(Awards).where(eq(Awards.userId, user.id));
+    let query = db
+      .select()
+      .from(Awards)
+      .where(eq(Awards.userId, user.id))
+      .orderBy(
+        sql`
+        ${Awards.date} DESC
+      `
+      );
 
     if (status) {
       query = query.where(eq(Awards.status, status));

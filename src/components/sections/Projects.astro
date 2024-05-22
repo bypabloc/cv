@@ -12,7 +12,7 @@ const projects = isValid ? data?.projects : [];
   <ul>
     {
       projects.map(
-        ({ url, description, highlights, name, isActive, github }) => {
+        ({ url, description, highlights, name, serviceStatus, github }) => {
           return (
             <li>
               <article>
@@ -25,7 +25,12 @@ const projects = isValid ? data?.projects : [];
                     >
                       {name}
                     </a>
-                    {isActive && <span>•</span>}
+                    {serviceStatus === "active" && (
+                      <span title="Proyecto activo">🟢</span>
+                    )}
+                    {serviceStatus === "inactive" && (
+                      <span title="Proyecto inactivo">🔴</span>
+                    )}
                     {github && (
                       <a
                         class="github-code-link"

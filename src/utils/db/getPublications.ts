@@ -26,7 +26,12 @@ export const getPublications = async ({
       })
       .from(Publications)
       .leftJoin(Publishers, eq(Publishers.id, Publications.publisherId))
-      .where(eq(Publications.userId, user.id));
+      .where(eq(Publications.userId, user.id))
+      .orderBy(
+        sql`
+        ${Publications.releaseDate} DESC
+      `
+      );
 
     if (status) {
       query = query.where(eq(Publications.status, status));

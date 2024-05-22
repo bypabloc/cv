@@ -2457,6 +2457,24 @@ export default {
           value: "bypabloc",
         },
       },
+      name: "Curriculum Vitae",
+      description:
+        "Desarrollo de un currículum vitae en Astro para mostrar mis habilidades y experiencia laboral.",
+      highlights: [
+        "Practicar mis habilidades de desarrollo web con Astro",
+        "Mostrar mi experiencia laboral de forma clara y concisa",
+      ],
+      url: "https://pablo-c.com",
+      serviceStatus: "active",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       name: "ERP para pequeñas tiendas",
       description:
         "Co-fundador y desarrollador de un ERP enfocado en la automatización de procesos de inventario, ventas y compras para pequeñas tiendas.",

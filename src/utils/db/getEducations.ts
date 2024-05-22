@@ -34,8 +34,8 @@ export const getEducations = async ({
             WHEN ${Educations.endDate} IS NULL THEN 0
             ELSE 1
           END,
-          ${Educations.endDate} ASC NULLS FIRST,
-          ${Educations.startDate} ASC
+          ${Educations.endDate} DESC NULLS FIRST,
+          ${Educations.startDate} DESC
         `
       );
 

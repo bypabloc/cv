@@ -25,7 +25,12 @@ export const getCertificates = async ({
       })
       .from(Certificates)
       .leftJoin(Issuers, eq(Issuers.id, Certificates.issuerId))
-      .where(eq(Certificates.userId, user.id));
+      .where(eq(Certificates.userId, user.id))
+      .orderBy(
+        sql`
+        ${Certificates.date} DESC
+      `
+      );
 
     if (status) {
       query = query.where(eq(Certificates.status, status));

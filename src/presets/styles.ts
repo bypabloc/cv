@@ -81,6 +81,24 @@ export default definePreset((params?: Preset) => {
 
       // Regla para gap
       [/^gap-(\d+)$/, ([, d]) => ({ gap: `${toValidInt(d) * factor}px` })],
+
+      // fxb fxb-column
+      [
+        /^d-flex$/,
+        () => {
+          return {
+            display: "flex",
+          };
+        },
+      ],
+      [
+        /^flex-(\w+)$/,
+        ([, d]) => {
+          return {
+            "flex-direction": d === "column" ? "column" : "row",
+          };
+        },
+      ],
     ],
     variants: [
       /* ... */

@@ -77,9 +77,8 @@ export const getWorks = async ({
         )`,
       })
       .from(Works)
-      .leftJoin(Employers, eq(Works.employerId, Employers.id))
+      .leftJoin(Employers, eq(Employers.id, Works.employerId))
       .where(eq(Works.userId, user.id))
-      .groupBy(Works.id)
       .orderBy(
         sql`
           CASE
@@ -125,15 +124,35 @@ export const getWorks = async ({
       };
     });
 
-    // console.log(
-    //   "Experiencias laborales obtenidas correctamente",
-    //   JSON.stringify(formattedWorks, null, 2)
-    // );
+    // Agrupar por empleador, pero mantener los que no tienen empleador separados
+    const groupedByEmployer = formattedWorks.reduce((acc, work) => {
+      const employerId = work.employer?.id;
+      if (employerId) {
+        if (!acc[employerId]) {
+          acc[employerId] = {
+            employer: work.employer,
+            works: [],
+          };
+        }
+        acc[employerId].works.push(work);
+      } else {
+        acc[work.id] = {
+          employer: null,
+          works: [work],
+        };
+      }
+      return acc;
+    }, {});
+
+    console.log(
+      "Experiencias laborales agrupadas correctamente",
+      JSON.stringify(groupedByEmployer, null, 2)
+    );
 
     return {
       isValid: true,
       data: {
-        works: formattedWorks,
+        works: groupedByEmployer,
       },
     };
   } catch (error) {

@@ -6,94 +6,102 @@ import { getWorks } from "@/utils/db/getWorks";
 const { user } = Astro.props;
 
 const { isValid, data = {} } = await getWorks({ user });
-const works = isValid ? data?.works : [];
+const worksByEmployer = isValid ? data?.works : {};
 ---
 
 <Section title="Experiencia laboral">
   <ul>
     {
-      Object.values(works).map((work) => (
-        <li key={work.id}>
+      Object.values(worksByEmployer).map((employerGroup) => (
+        <li key={employerGroup.employer?.id || employerGroup.works[0].id}>
           <article>
-            <header>
-              <div>
-                <h3>
-                  {work?.employer ? (
+            {employerGroup.employer ? (
+              <header>
+                <div>
+                  <h3>
                     <a
-                      href={work.employer.url}
-                      title={`Ver ${work.employer.name}`}
+                      href={employerGroup.employer.url}
+                      title={`Ver ${employerGroup.employer.name}`}
                       target="_blank"
                     >
-                      {work.employer.name}
+                      {employerGroup.employer.name}
                     </a>
-                  ) : (
-                    <span>{work.name}</span>
-                  )}
-                </h3>
+                  </h3>
+                </div>
+              </header>
+            ) : (
+              <header>
+                <div>
+                  <h3>Freelance</h3>
+                </div>
+              </header>
+            )}
+
+            {employerGroup.works.map((work) => (
+              <div class="flex f-row mt-4">
                 <h4>{work.position}</h4>
+                <div>
+                  <time
+                    datetime={work.startDate}
+                    title={new Date(work.startDate).toLocaleDateString()}
+                  >
+                    {new Date(work.startDate).getFullYear()}
+                  </time>
+                  {" - "}
+                  <time
+                    datetime={work.endDate}
+                    title={
+                      work.endDate
+                        ? new Date(work.endDate).toLocaleDateString()
+                        : "Actual"
+                    }
+                  >
+                    {work.endDate
+                      ? new Date(work.endDate).getFullYear()
+                      : "Actual"}
+                  </time>
+                </div>
               </div>
-              <div>
-                <time
-                  datetime={work.startDate}
-                  title={new Date(work.startDate).toLocaleDateString()}
-                >
-                  {new Date(work.startDate).getFullYear()}
-                </time>
-                {" - "}
-                <time
-                  datetime={work.endDate}
-                  title={
-                    work.endDate
-                      ? new Date(work.endDate).toLocaleDateString()
-                      : "Actual"
-                  }
-                >
-                  {work.endDate
-                    ? new Date(work.endDate).getFullYear()
-                    : "Actual"}
-                </time>
-              </div>
-            </header>
+              <footer class="flex column gap-4">
+                {work.summary && (
+                  <div class="flex column gap-2">
+                    <p>
+                      <strong>Resumen:</strong> {work.summary}
+                    </p>
+                  </div>
+                )}
 
-            <footer class="flex column gap-4">
-              {work.summary && (
-                <div class="flex column gap-2">
-                  <p>
-                    <strong>Resumen:</strong> {work.summary}
-                  </p>
-                </div>
-              )}
+                {work.responsibilitiesNProjects.length > 0 && (
+                  <div class="flex column gap-2">
+                    <h4>Responsabilidades y proyectos</h4>
+                    {work.responsibilitiesNProjects.map((responsibility) => (
+                      <p key={responsibility}>• {responsibility}</p>
+                    ))}
+                  </div>
+                )}
 
-              {work.responsibilitiesNProjects.length > 0 && (
-                <div class="flex column gap-2">
-                  <h4>Responsabilidades y proyectos</h4>
-                  {work.responsibilitiesNProjects.map((responsibility) => (
-                    <p key={responsibility}>• {responsibility}</p>
-                  ))}
-                </div>
-              )}
+                {work.achievements.length > 0 && (
+                  <div class="flex column gap-2">
+                    <h4>Logros</h4>
+                    {work.achievements.map((achievement) => (
+                      <p key={achievement}>• {achievement}</p>
+                    ))}
+                  </div>
+                )}
 
-              {work.achievements.length > 0 && (
-                <div class="flex column gap-2">
-                  <h4>Logros</h4>
-                  {work.achievements.map((achievement) => (
-                    <p key={achievement}>• {achievement}</p>
-                  ))}
-                </div>
-              )}
+                <Skill
+                  title="Habilidades técnicas"
+                  items={work.technicalSkills}
+                  client:visible
+                />
 
-              <Skill
-                title="Habilidades técnicas"
-                items={work.technicalSkills}
-                client:visible
-              />
-
-              <Skill
-                title="Habilidades blandas"
-                items={work.softSkills}
-                client:visible
-              />
-            </footer>
+                <Skill
+                  title="Habilidades blandas"
+                  items={work.softSkills}
+                  client:visible
+                />
+              </footer>
+            ))}
           </article>
         </li>
       ))
@@ -106,6 +114,12 @@ const works = isValid ? data?.works : [];
     display: flex;
     flex-direction: column;
     gap: 32px;
+  }
+
+  .flex.f-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   footer {

@@ -33,11 +33,11 @@ const worksKeywords = extractKeywords(worksByEmployer);
 
 const keywords = worksKeywords.join(", ");
 
-console.log("worksKeywords", JSON.stringify(attributes, null, 2));
-
 const {
   names: { value: names },
   lastName: { value: lastName },
+  summary: { value: summary },
+  url: { value: url },
 } = attributes || {};
 
 const [firstNames, _secondNames] = names.split(" ");
@@ -51,4 +51,12 @@ const fullName = `${firstNames} ${firstLastName}`;
   <title>{fullName}</title>
   <meta name="description" content={description} />
   <meta name="keywords" content={keywords} />
+  <meta name="viewport" content="width=device-width" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <meta property="og:url" content={url} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={summary} />
+  <meta property="og:image" content="" />
 </head>

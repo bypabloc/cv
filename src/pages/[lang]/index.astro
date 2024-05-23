@@ -1,0 +1,40 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+import { getUser } from "@/utils/db/getUser";
+import Page from "@/components/Page.astro";
+
+const getUserResult = await getUser("bypabloc");
+
+const user = getUserResult.isValid ? getUserResult.data.user : null;
+
+const { lang } = Astro.params;
+
+export async function getStaticPaths() {
+  const langs = [
+    {
+      lang: "es",
+    },
+    {
+      lang: "en",
+    },
+  ];
+
+  const paths = langs.map((lang) => ({
+    params: { lang: lang.lang },
+  }));
+
+  // Agregar una ruta por defecto
+  paths.push({
+    params: {
+      lang: "es", // Idioma por defecto
+    },
+  });
+
+  return paths;
+}
+---
+
+<Layout title="Portafolio" user={user}>
+  <Page user={user} />
+</Layout>

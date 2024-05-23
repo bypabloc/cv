@@ -16,13 +16,21 @@ export async function getStaticPaths() {
   }
 
   const paths = users.data.users.map((user) => ({
-    params: { id: user.username },
+    params: { username: user.username },
   }));
+
+  // Agregar una ruta por defecto
+  paths.push({
+    params: {
+      username: "bypabloc", // Nombre de usuario por defecto
+    },
+  });
+
   return paths;
 }
 
-const { id } = Astro.params;
-const getUserResult = await getUser(id);
+const { username } = Astro.params;
+const getUserResult = await getUser(username);
 
 const user = getUserResult.isValid ? getUserResult.data.user : null;
 ---

@@ -293,12 +293,10 @@ export default {
     {
       codeName: "es",
       name: "Español",
-      code: "es",
     },
     {
       codeName: "en",
-      name: "Inglés",
-      code: "en",
+      name: "English",
     },
   ],
   employers: [
@@ -819,8 +817,7 @@ export default {
     {
       codeName: "docker",
       name: "Docker",
-      description:
-        "Plataforma de contenedores para el desarrollo de aplicaciones.",
+      description: "Contenedores para el despliegue de aplicaciones.",
       type: "technical",
     },
     {
@@ -1757,16 +1754,16 @@ export default {
       name: "Destacame",
       position: "Arquitecto Frontend y Desarrollador de Microservicios",
       startDate: "2022-08-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Desarrollo y aprendizaje continuo en tecnologías full stack, incluyendo Python, Django y microservices, así como en el modelo de microfrontends.",
         "Participación en el desarrollo de productos en el sector fintech, como un sistema para ayudar a los usuarios a saldar deudas en Chile y otro proyecto en México para ofrecer créditos con diferentes niveles a los usuarios.",
         "Asignación a un equipo de optimización, encargado de desarrollar soluciones para mejorar el trabajo en diferentes áreas de la empresa, como un administrador de campañas que automatiza procesos que antes eran manuales.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Contribuí significativamente al desarrollo de productos financieros, adquiriendo conocimientos específicos del mercado fintech.",
         "Desarrollé habilidades en la creación de soluciones automatizadas, mejorando la eficiencia de procesos internos en la empresa.",
         "Adaptación a cambios y desafíos, incluyendo reducciones de personal, manteniendo un enfoque en la entrega de soluciones técnicas y estratégicas en mi actual rol en el equipo de plataforma.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -1791,16 +1788,16 @@ export default {
       position: "Desarrollador Web Frontend",
       startDate: "2021-12-27",
       endDate: "2022-08-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Contratado inicialmente para trabajar en el área de frontend debido a habilidades sobresalientes demostradas en pruebas técnicas.",
         "Implementación de estándares y nuevas tecnologías en el desarrollo frontend, trabajando con Vue y Nuxt.js para mejorar la experiencia del usuario.",
         "Aprendizaje y aplicación progresiva de habilidades en el backend, enfocándome en Python y Django, para expandir mis capacidades como desarrollador full stack.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Mejoré significativamente la calidad y eficiencia del desarrollo frontend mediante la adopción de nuevas tecnologías y estándares.",
         "Desarrollé habilidades en Python y Django, superando los desafíos iniciales de falta de experiencia en estas tecnologías.",
         "Contribuí a la versatilidad y flexibilidad del equipo de desarrollo, adaptándome a necesidades cambiantes y aprendiendo nuevas habilidades.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -1821,15 +1818,15 @@ export default {
       startDate: "2021-01-01",
       endDate: "2023-10-01",
       status: "inactive",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Co-fundación y desarrollo de un ERP para tiendas pequeñas, enfocado en inventarios, ventas, compras y automatización de procesos como reportes y solicitudes de mercancía.",
         "Implementación de un e-commerce sencillo y accesible como parte del sistema, mejorando la interacción cliente-tienda.",
         "Atraer aproximadamente 10 clientes, manejando tanto el desarrollo como la parte comercial del proyecto.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Desarrollé habilidades en la creación y gestión de un proyecto empresarial desde cero, junto con la adquisición de conocimientos técnicos y comerciales.",
         "A pesar de que el proyecto no alcanzó el éxito esperado, obtuve experiencia valiosa en aspectos de desarrollo, ventas y gestión de un negocio.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -1854,15 +1851,15 @@ export default {
       position: "Desarrollador Web Full Stack",
       startDate: "2021-05-01",
       endDate: "2021-12-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Integración en una startup en crecimiento, trabajando bajo presión para satisfacer las demandas de los Project Managers y resolver bugs de manera eficiente",
         "Colaboración estrecha con un equipo talentoso, adoptando prácticas de Scrum, realizando reuniones diarias y mejorando las habilidades de trabajo en equipo",
         "Restructuración del frontend de la aplicación web, migrándolo a Vue 3 y utilizando tecnologías de vanguardia para mejorar la eficiencia y rendimiento",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Superé los retos de trabajar en un ambiente de startup dinámico y en rápido crecimiento, entregando soluciones eficientes bajo plazos ajustados",
         "Lideré la migración y reestructuración del frontend hacia tecnologías más modernas, mejorando significativamente la experiencia de usuario y la eficiencia de la aplicación",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -1887,17 +1884,17 @@ export default {
       position: "Líder de Equipo de Desarrollo y Desarrollador",
       startDate: "2018-12-01",
       endDate: "2021-09-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Primer desarrollador contratado en la startup, contribuyendo al desarrollo de un sistema web para múltiples restaurantes usando jQuery y Laravel.",
         "Liderazgo del equipo de desarrollo, organizando e implementando arquitecturas adaptadas a las necesidades cambiantes del negocio.",
         "Desarrollo de un e-commerce en Vue que integra la gestión de restaurantes con la experiencia del cliente, minimizando la interacción humana.",
         "Encargado del despliegue de aplicaciones en AWS, utilizando servicios como EC2, RDS, S3, Route 53, SES, AutoScaling y LoadBalancer.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Contribuí al crecimiento de la startup, adaptándome y respondiendo eficazmente a las necesidades de los clientes.",
         "Lideré con éxito un equipo de desarrollo, facilitando el crecimiento de la empresa y la implementación de soluciones tecnológicas avanzadas.",
         "Implementé soluciones de comercio electrónico que mejoraron significativamente la experiencia del cliente y la eficiencia operativa de los restaurantes asociados.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -1922,15 +1919,15 @@ export default {
       position: "Desarrollador de Sistemas Web",
       startDate: "2017-01-01",
       endDate: "2018-11-28",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Desarrollo de un sistema web para el monitoreo del proceso de producción, registrando paradas en las máquinas para análisis de productividad.",
         "Implementación del sistema en toda la empresa en red local, con acceso seguro mediante usuario y contraseña para cada empleado.",
         "Trabajo con tecnologías como jQuery y Laravel para crear una plataforma eficiente y fácil de usar.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Contribuí al aumento de la productividad mediante el análisis de datos generados por el sistema, permitiendo a la empresa tomar decisiones informadas para mejorar procesos.",
         "Entendí la verdadera importancia del trabajo en equipo, lo que resultó en una colaboración más efectiva y un proyecto exitoso.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -1950,13 +1947,13 @@ export default {
       position: "Líder, Arquitecto y Desarrollador",
       startDate: "2015-01-01",
       endDate: "2015-12-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Reestructuración y finalización del proyecto de grado de dos equipos que enfrentaron dificultades técnicas.",
         "Dirección e implementación completa de las soluciones necesarias para cumplir con los objetivos del proyecto.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Completé el proyecto que dos equipos no pudieron en meses en una semana, instruyendo sobre cada implementación y sus razones.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -1976,14 +1973,14 @@ export default {
       position: "Líder de Desarrollo de software y Arquitectura de Sistemas",
       startDate: "2015-01-01",
       endDate: "2015-12-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Liderazgo en el desarrollo e implementación de un sistema informático para la gestión de obras.",
         "Diseño y desarrollo de una arquitectura de red con una PC como servidor para acceso centralizado a datos.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Diseño exitoso y desarrollo de la arquitectura del sistema, garantizando una implementación eficiente y adaptada.",
         "Mejora significativa en la gestión de obras y presupuestos a través de interfaces de usuario desarrolladas.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -2003,14 +2000,14 @@ export default {
       position: "Desarrollador de software",
       startDate: "2014-01-01",
       endDate: "2014-12-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Desarrollo e implementación de un sistema de gestión de historias médicas para pacientes.",
         "Creación de interfaces de escritorio en Java para Windows.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Aplicación de conceptos de POO y CRUDs en Java, mejorando mis habilidades técnicas.",
         "Mejora de habilidades de comunicación y levantamiento de requerimientos.",
-      ],
+      ]),
     },
     {
       relationship: {
@@ -2030,13 +2027,13 @@ export default {
       position: "Desarrollador web",
       startDate: "2013-01-01",
       endDate: "2013-12-01",
-      responsibilitiesNProjects: [
+      responsibilitiesNProjects: JSON.stringify([
         "Implementación y mantenimiento de un sistema de inventario usando PHP y jQuery.",
         "Desarrollo de funcionalidades CRUD y asociación de equipos a personas.",
-      ],
-      achievements: [
+      ]),
+      achievements: JSON.stringify([
         "Implementación exitosa del sistema en tres estados del país, operando de manera offline.",
-      ],
+      ]),
     },
   ],
   educations: [
@@ -2050,12 +2047,13 @@ export default {
         institutionId: {
           table: "institutions",
           field: "codeName",
-          value: "youtube",
+          value: "udemy",
         },
       },
+      codeName: "udemy-web-development-bypabloc",
       area: "Desarrollo Web",
       learn:
-        "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros.",
+        "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros. Con la misma filosofía de aprender a mi ritmo y a mi tiempo pero siempre aprendiendo.",
       studyType: "course",
       startDate: "2017-04-01",
     },
@@ -2069,9 +2067,10 @@ export default {
         institutionId: {
           table: "institutions",
           field: "codeName",
-          value: "udemy",
+          value: "youtube",
         },
       },
+      codeName: "youtube-web-development-bypabloc",
       area: "Desarrollo Web",
       learn:
         "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender",
@@ -2091,6 +2090,7 @@ export default {
           value: "uptyab",
         },
       },
+      codeName: "uptyab-informatics-engineering-bypabloc",
       area: "Ingeniería Informática",
       learn:
         "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros.",
@@ -2108,6 +2108,7 @@ export default {
           value: "bypabloc",
         },
       },
+      codeName: "innovator-destacame-2023",
       title: "Premio a Innovador del año 2023 en Destacame",
       date: "2024-01-24",
       awarder: "Destacame",
@@ -2123,6 +2124,7 @@ export default {
           value: "bypabloc",
         },
       },
+      codeName: "triple-alianza-lima-2020",
       title: "Desafío Triple Alianza Lima",
       date: "2020-11-18",
       awarder: "Incubagraria, 1551, StartUpUni",
@@ -2430,6 +2432,7 @@ export default {
           value: "es",
         },
       },
+      codeName: "es-bypabloc",
       fluency: "Nativo",
     },
     {
@@ -2445,6 +2448,7 @@ export default {
           value: "en",
         },
       },
+      codeName: "en-bypabloc",
       fluency: "Intermedio",
     },
   ],
@@ -2500,6 +2504,7 @@ export default {
           value: "destacame",
         },
       },
+      codeName: "alan-vergara-bravo",
       name: "Alan Vergara Bravo",
       reference: "Compañero de equipo",
       position: "software Architect Developer",
@@ -2524,6 +2529,7 @@ export default {
           value: "destacame",
         },
       },
+      codeName: "alejandra-medina-briceno",
       name: "Alejandra Medina Briceño",
       reference: "Compañero de equipo",
       position: "Diseñadora UX/UI",
@@ -2548,6 +2554,7 @@ export default {
           value: "destacame",
         },
       },
+      codeName: "baldomero-aguila",
       name: "Baldomero Águila",
       reference: "Compañero de equipo",
       position: "Desarrollador Mobile",
@@ -2566,6 +2573,7 @@ export default {
           value: "destacame",
         },
       },
+      codeName: "cristian-fuentes",
       name: "Cristian Fuentes",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
@@ -2584,6 +2592,7 @@ export default {
           value: "destacame",
         },
       },
+      codeName: "helis-montes",
       name: "Helis Montes",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
@@ -2602,6 +2611,7 @@ export default {
           value: "destacame",
         },
       },
+      codeName: "edder-ramirez",
       name: "Edder Ramírez",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
@@ -2620,6 +2630,7 @@ export default {
           value: "dibal",
         },
       },
+      codeName: "jose-namoc",
       name: "José Namoc",
       reference: "Compañero de equipo",
       position: "Desarrollador Full Stack",
@@ -2644,6 +2655,7 @@ export default {
           value: "dibal",
         },
       },
+      codeName: "jacnelly-colmenarez",
       name: "Jacnelly Colmenarez",
       reference: "Compañera de equipo",
       position: "UI/UX Designer",
@@ -2663,6 +2675,7 @@ export default {
           value: "bypabloc",
         },
       },
+      codeName: "felipe-rivera",
       name: "Felipe Rivera",
       reference: "Trabajé en la misma empresa",
       position: "Talent Acquisition Lead",
@@ -2676,6 +2689,7 @@ export default {
           value: "bypabloc",
         },
       },
+      codeName: "samuel-esponiza",
       name: "Samuel Esponiza",
       reference:
         "Estudié en la misma universidad y trabajé en proyectos juntos",
@@ -5327,5 +5341,6205 @@ export default {
         },
       },
     },
+  ],
+
+  // - Keywords
+  // - Interests
+  // - Works
+  // - Skills
+  // - Educations
+  // - Awards
+  // - LanguagesUsers
+  // - References
+  // - UsersAttributes
+  keywordsTranslations: [
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "data-analysis",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Análisis de Datos",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Gestión de Proyectos",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "automation",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Automatización",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "bug-fixing",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Corrección de Errores",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "team-leadership",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Liderazgo de Equipo",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "system-architecture",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Arquitectura de Sistemas",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "production-monitoring",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Monitoreo de Producción",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Análisis de Productividad",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "local-network",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Red Local",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "web-platform",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Plataforma Web",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "graduation-project",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Proyecto de Grado",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "technical-challenges",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Desafíos Técnicos",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-direction",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Dirección de Proyecto",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "solution-implementation",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Implementación de Solución",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "team-collaboration",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Colaboración de Equipo",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Gestión de Infraestructura",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "network-architecture",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Arquitectura de Redes",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-planning",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Planificación de Proyecto",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "work-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Gestión de Trabajo",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "budget-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Gestión de Presupuesto",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "medical-records",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Historias Clínicas",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "desktop-application",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Aplicación de Escritorio",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Programación Orientada a Objetos",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Recolección de Requisitos",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "inventory-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Gestión de Inventario",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "offline-system",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Sistema Offline",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "asset-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Gestión de Activos",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "data-analysis",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Data Analysis",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Project Management",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "automation",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Automation",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "bug-fixing",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Bug Fixing",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "team-leadership",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Team Leadership",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "system-architecture",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "System Architecture",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "production-monitoring",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Production Monitoring",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Productivity Analysis",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "local-network",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Local Network",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "web-platform",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Web Platform",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "graduation-project",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Graduation Project",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "technical-challenges",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Technical Challenges",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-direction",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Project Direction",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "solution-implementation",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Solution Implementation",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "team-collaboration",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Team Collaboration",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Infrastructure Management",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "network-architecture",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Network Architecture",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "project-planning",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Project Planning",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "work-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Work Management",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "budget-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Budget Management",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "medical-records",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Medical Records",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "desktop-application",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Desktop Application",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Object-Oriented Programming",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Requirements Gathering",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "inventory-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Inventory Management",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "offline-system",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Offline System",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "keywords",
+          field: "codeName",
+          value: "asset-management",
+        },
+      },
+      tableName: "Keywords",
+      field: "name",
+      translatedValue: "Asset Management",
+    },
+  ],
+  interestsTranslations: [
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "interests",
+          field: "codeName",
+          value: "bot-creation",
+        },
+      },
+      tableName: "Interests",
+      field: "name",
+      translatedValue: "Creación de Bots",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "interests",
+          field: "codeName",
+          value: "bot-creation",
+        },
+      },
+      tableName: "Interests",
+      field: "name",
+      translatedValue: "Bot Creation",
+    },
+  ],
+  worksTranslations: [
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-architect",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Frontend Architect and Microservices Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-architect",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Continuous development and learning in full stack technologies, including Python, Django, and microservices, as well as in the microfrontends model.",
+        "Participation in product development in the fintech sector, such as a system to help users pay off debts in Chile and another project in Mexico to offer credits with different levels to users.",
+        "Assignment to an optimization team, responsible for developing solutions to improve work in different areas of the company, such as a campaign manager that automates processes that were previously manual.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-architect",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "I significantly contributed to the development of financial products, acquiring specific knowledge of the fintech market.",
+        "I developed skills in creating automated solutions, improving the efficiency of internal processes in the company.",
+        "Adaptation to changes and challenges, including staff reductions, maintaining a focus on delivering technical and strategic solutions in my current role in the platform team.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-frontend",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Frontend Web Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-frontend",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Initially hired to work in the frontend area due to outstanding skills demonstrated in technical tests.",
+        "Implementation of standards and new technologies in frontend development, working with Vue and Nuxt.js to improve the user experience.",
+        "Progressive learning and application of backend skills, focusing on Python and Django, to expand my capabilities as a full stack developer.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-frontend",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "I significantly improved the quality and efficiency of frontend development through the adoption of new technologies and standards.",
+        "I developed skills in Python and Django, overcoming the initial challenges of lack of experience in these technologies.",
+        "I contributed to the versatility and flexibility of the development team, adapting to changing needs and learning new skills.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "appinteli",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Co-founder and Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "appinteli",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Co-founding and developing an ERP for small stores, focused on inventory, sales, purchases, and automation of processes such as reports and merchandise requests.",
+        "Implementation of a simple and accessible e-commerce as part of the system, improving client-store interaction.",
+        "Attracting approximately 10 clients, managing both development and the commercial side of the project.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "appinteli",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "I developed skills in creating and managing a business project from scratch, along with gaining technical and commercial knowledge.",
+        "Despite the project not achieving the expected success, I gained valuable experience in development, sales, and business management aspects.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "goodmeal",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Full Stack Web Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "goodmeal",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Integration into a growing startup, working under pressure to meet Project Managers' demands and efficiently solve bugs.",
+        "Close collaboration with a talented team, adopting Scrum practices, conducting daily meetings, and improving teamwork skills.",
+        "Restructuring the frontend of the web application, migrating it to Vue 3 and using cutting-edge technologies to improve efficiency and performance.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "goodmeal",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "I overcame the challenges of working in a dynamic and fast-growing startup environment, delivering efficient solutions under tight deadlines.",
+        "I led the migration and restructuring of the frontend towards more modern technologies, significantly improving user experience and application efficiency.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Development Team Leader and Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "First developer hired in the startup, contributing to the development of a web system for multiple restaurants using jQuery and Laravel.",
+        "Leadership of the development team, organizing and implementing architectures adapted to the changing needs of the business.",
+        "Development of an e-commerce in Vue that integrates restaurant management with customer experience, minimizing human interaction.",
+        "Responsible for application deployment on AWS, using services such as EC2, RDS, S3, Route 53, SES, AutoScaling, and LoadBalancer.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "I contributed to the growth of the startup, adapting and responding effectively to client needs.",
+        "I successfully led a development team, facilitating the company's growth and the implementation of advanced technological solutions.",
+        "I implemented e-commerce solutions that significantly improved the customer experience and operational efficiency of associated restaurants.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "cofasa",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Web Systems Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "cofasa",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Development of a web system for monitoring the production process, recording machine stoppages for productivity analysis.",
+        "Implementation of the system throughout the company on a local network, with secure access via username and password for each employee.",
+        "Working with technologies such as jQuery and Laravel to create an efficient and user-friendly platform.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "cofasa",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "I contributed to increased productivity through the analysis of data generated by the system, enabling the company to make informed decisions to improve processes.",
+        "I understood the true importance of teamwork, resulting in more effective collaboration and a successful project.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "projects-degrees",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Leader, Architect, and Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "projects-degrees",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Restructuring and completion of the graduation project for two teams that faced technical difficulties.",
+        "Complete direction and implementation of the necessary solutions to meet the project's objectives.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "projects-degrees",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "I completed the project that two teams could not finish in months within a week, instructing on each implementation and its reasons.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "iai",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Software Development Leader and Systems Architecture",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "iai",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Leadership in the development and implementation of a computer system for project management.",
+        "Design and development of a network architecture with a PC as a server for centralized data access.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "iai",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Successful design and development of the system architecture, ensuring efficient and adapted implementation.",
+        "Significant improvement in project and budget management through developed user interfaces.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "ipasme",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Software Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "ipasme",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Development and implementation of a medical records management system for patients.",
+        "Creation of desktop interfaces in Java for Windows.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "ipasme",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Application of OOP concepts and CRUDs in Java, improving my technical skills.",
+        "Improvement of communication and requirements gathering skills.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "corpoelec",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Web Developer",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "corpoelec",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Implementation and maintenance of an inventory system using PHP and jQuery.",
+        "Development of CRUD functionalities and association of equipment to people.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "corpoelec",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Successful implementation of the system in three states of the country, operating offline.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-architect",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Arquitecto Frontend y Desarrollador de Microservicios",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-architect",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Desarrollo y aprendizaje continuo en tecnologías full stack, incluyendo Python, Django y microservices, así como en el modelo de microfrontends.",
+        "Participación en el desarrollo de productos en el sector fintech, como un sistema para ayudar a los usuarios a saldar deudas en Chile y otro proyecto en México para ofrecer créditos con diferentes niveles a los usuarios.",
+        "Asignación a un equipo de optimización, encargado de desarrollar soluciones para mejorar el trabajo en diferentes áreas de la empresa, como un administrador de campañas que automatiza procesos que antes eran manuales.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-architect",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Contribuí significativamente al desarrollo de productos financieros, adquiriendo conocimientos específicos del mercado fintech.",
+        "Desarrollé habilidades en la creación de soluciones automatizadas, mejorando la eficiencia de procesos internos en la empresa.",
+        "Adaptación a cambios y desafíos, incluyendo reducciones de personal, manteniendo un enfoque en la entrega de soluciones técnicas y estratégicas en mi actual rol en el equipo de plataforma.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-frontend",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Desarrollador Web Frontend",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-frontend",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Contratado inicialmente para trabajar en el área de frontend debido a habilidades sobresalientes demostradas en pruebas técnicas.",
+        "Implementación de estándares y nuevas tecnologías en el desarrollo frontend, trabajando con Vue y Nuxt.js para mejorar la experiencia del usuario.",
+        "Aprendizaje y aplicación progresiva de habilidades en el backend, enfocándome en Python y Django, para expandir mis capacidades como desarrollador full stack.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "destacame-frontend",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Mejoré significativamente la calidad y eficiencia del desarrollo frontend mediante la adopción de nuevas tecnologías y estándares.",
+        "Desarrollé habilidades en Python y Django, superando los desafíos iniciales de falta de experiencia en estas tecnologías.",
+        "Contribuí a la versatilidad y flexibilidad del equipo de desarrollo, adaptándome a necesidades cambiantes y aprendiendo nuevas habilidades.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "appinteli",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Co-fundador y Desarrollador",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "appinteli",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Co-fundación y desarrollo de un ERP para tiendas pequeñas, enfocado en inventarios, ventas, compras y automatización de procesos como reportes y solicitudes de mercancía.",
+        "Implementación de un e-commerce sencillo y accesible como parte del sistema, mejorando la interacción cliente-tienda.",
+        "Atraer aproximadamente 10 clientes, manejando tanto el desarrollo como la parte comercial del proyecto.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "appinteli",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Desarrollé habilidades en la creación y gestión de un proyecto empresarial desde cero, junto con la adquisición de conocimientos técnicos y comerciales.",
+        "A pesar de que el proyecto no alcanzó el éxito esperado, obtuve experiencia valiosa en aspectos de desarrollo, ventas y gestión de un negocio.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "goodmeal",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Desarrollador Web Full Stack",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "goodmeal",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Integración en una startup en crecimiento, trabajando bajo presión para satisfacer las demandas de los Project Managers y resolver bugs de manera eficiente",
+        "Colaboración estrecha con un equipo talentoso, adoptando prácticas de Scrum, realizando reuniones diarias y mejorando las habilidades de trabajo en equipo",
+        "Restructuración del frontend de la aplicación web, migrándolo a Vue 3 y utilizando tecnologías de vanguardia para mejorar la eficiencia y rendimiento",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "goodmeal",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Superé los retos de trabajar en un ambiente de startup dinámico y en rápido crecimiento, entregando soluciones eficientes bajo plazos ajustados",
+        "Lideré la migración y reestructuración del frontend hacia tecnologías más modernas, mejorando significativamente la experiencia de usuario y la eficiencia de la aplicación",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Líder de Equipo de Desarrollo y Desarrollador",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Primer desarrollador contratado en la startup, contribuyendo al desarrollo de un sistema web para múltiples restaurantes usando jQuery y Laravel.",
+        "Liderazgo del equipo de desarrollo, organizando e implementando arquitecturas adaptadas a las necesidades cambiantes del negocio.",
+        "Desarrollo de un e-commerce en Vue que integra la gestión de restaurantes con la experiencia del cliente, minimizando la interacción humana.",
+        "Encargado del despliegue de aplicaciones en AWS, utilizando servicios como EC2, RDS, S3, Route 53, SES, AutoScaling y LoadBalancer.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "dibal",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Contribuí al crecimiento de la startup, adaptándome y respondiendo eficazmente a las necesidades de los clientes.",
+        "Lideré con éxito un equipo de desarrollo, facilitando el crecimiento de la empresa y la implementación de soluciones tecnológicas avanzadas.",
+        "Implementé soluciones de comercio electrónico que mejoraron significativamente la experiencia del cliente y la eficiencia operativa de los restaurantes asociados.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "cofasa",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Desarrollador de Sistemas Web",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "cofasa",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Desarrollo de un sistema web para el monitoreo del proceso de producción, registrando paradas en las máquinas para análisis de productividad.",
+        "Implementación del sistema en toda la empresa en red local, con acceso seguro mediante usuario y contraseña para cada empleado.",
+        "Trabajo con tecnologías como jQuery y Laravel para crear una plataforma eficiente y fácil de usar.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "cofasa",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Contribuí al aumento de la productividad mediante el análisis de datos generados por el sistema, permitiendo a la empresa tomar decisiones informadas para mejorar procesos.",
+        "Entendí la verdadera importancia del trabajo en equipo, lo que resultó en una colaboración más efectiva y un proyecto exitoso.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "projects-degrees",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Líder, Arquitecto y Desarrollador",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "projects-degrees",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Reestructuración y finalización del proyecto de grado de dos equipos que enfrentaron dificultades técnicas.",
+        "Dirección e implementación completa de las soluciones necesarias para cumplir con los objetivos del proyecto.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "projects-degrees",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Completé el proyecto que dos equipos no pudieron en meses en una semana, instruyendo sobre cada implementación y sus razones.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "iai",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue:
+        "Líder de Desarrollo de software y Arquitectura de Sistemas",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "iai",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Liderazgo en el desarrollo e implementación de un sistema informático para la gestión de obras.",
+        "Diseño y desarrollo de una arquitectura de red con una PC como servidor para acceso centralizado a datos.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "iai",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Diseño exitoso y desarrollo de la arquitectura del sistema, garantizando una implementación eficiente y adaptada.",
+        "Mejora significativa en la gestión de obras y presupuestos a través de interfaces de usuario desarrolladas.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "ipasme",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Desarrollador de software",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "ipasme",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Desarrollo e implementación de un sistema de gestión de historias médicas para pacientes.",
+        "Creación de interfaces de escritorio en Java para Windows.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "ipasme",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Aplicación de conceptos de POO y CRUDs en Java, mejorando mis habilidades técnicas.",
+        "Mejora de habilidades de comunicación y levantamiento de requerimientos.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "corpoelec",
+        },
+      },
+      tableName: "Works",
+      field: "position",
+      translatedValue: "Desarrollador web",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "corpoelec",
+        },
+      },
+      tableName: "Works",
+      field: "responsibilitiesNProjects",
+      translatedValue: JSON.stringify([
+        "Implementación y mantenimiento de un sistema de inventario usando PHP y jQuery.",
+        "Desarrollo de funcionalidades CRUD y asociación de equipos a personas.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "works",
+          field: "codeName",
+          value: "corpoelec",
+        },
+      },
+      tableName: "Works",
+      field: "achievements",
+      translatedValue: JSON.stringify([
+        "Implementación exitosa del sistema en tres estados del país, operando de manera offline.",
+      ]),
+    },
+  ],
+  skillsTranslations: [
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "docker",
+        },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Docker",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "docker",
+        },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Container platform for application development.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "docker",
+        },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Docker",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "docker",
+        },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Plataforma de contenedores para el desarrollo de aplicaciones.",
+    },
+    // Kubernetes
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "kubernetes" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Kubernetes",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "kubernetes" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Container orchestrator for application deployment.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "kubernetes" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Kubernetes",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "kubernetes" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Orquestador de contenedores para el despliegue de aplicaciones.",
+    },
+    // React
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "react" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "React",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "react" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "JavaScript framework for building user interfaces.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "react" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "React",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "react" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Framework JavaScript para la creación de interfaces de usuario.",
+    },
+    // Node.js
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "node" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Node.js",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "node" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "JavaScript runtime environment for backend development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "node" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Node.js",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "node" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Entorno de ejecución de JavaScript para el desarrollo de aplicaciones backend.",
+    },
+    // SQL
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "sql" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "SQL",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "sql" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Structured Query Language for databases.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "sql" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "SQL",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "sql" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Lenguaje de consulta estructurado para bases de datos.",
+    },
+    // Python
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "python" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Python",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "python" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Programming language used in microservices development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "python" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Python",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "python" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Lenguaje de programación utilizado en el desarrollo de microservicios.",
+    },
+    // Django
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "django" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Django",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "django" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Web framework for Python used in backend development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "django" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Django",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "django" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Framework web para Python utilizado en el desarrollo de backend.",
+    },
+    // Microservices
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "microservices" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Microservices",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "microservices" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Microservices architecture for scalable application development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "microservices" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Microservicios",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "microservices" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Arquitectura de microservicios para el desarrollo de aplicaciones escalables.",
+    },
+    // AWS
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "aws" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "AWS",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "aws" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Cloud services platform used for deployment and hosting.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "aws" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "AWS",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "aws" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Plataforma de servicios en la nube utilizada para implementación y despliegue.",
+    },
+    // Frontend Architecture
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Frontend Architecture",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Design of frontend application architecture.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Arquitectura Frontend",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Diseño de la arquitectura de la aplicación frontend.",
+    },
+    // Optimization
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "optimization" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Optimization",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "optimization" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Improvement of system efficiency and performance.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "optimization" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Optimización",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "optimization" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Mejora de la eficiencia y el rendimiento de los sistemas.",
+    },
+    // Automation
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "automation" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Automation",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "automation" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Process automation to improve efficiency.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "automation" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Automatización",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "automation" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Automatización de procesos para mejorar la eficiencia.",
+    },
+    // Fintech
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "fintech" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Fintech",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "fintech" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Specific knowledge of the financial market.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "fintech" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Fintech",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "fintech" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Conocimiento específico del mercado financiero.",
+    },
+    // Strategic Planning
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Strategic Planning",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Strategic planning for delivering solutions.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Planificación Estratégica",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Planificación estratégica para la entrega de soluciones.",
+    },
+    // Vue.js
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "vue" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Vue.js",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "vue" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "JavaScript framework for building user interfaces.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "vue" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Vue.js",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "vue" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Framework JavaScript para la creación de interfaces de usuario.",
+    },
+    // Nuxt.js
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "nuxt" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Nuxt.js",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "nuxt" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Web development framework based on Vue.js.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "nuxt" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Nuxt.js",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "nuxt" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Framework de desarrollo web basado en Vue.js.",
+    },
+    // TypeScript
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "typescript" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "TypeScript",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "typescript" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Typed programming language.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "typescript" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "TypeScript",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "typescript" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Lenguaje de programación tipado.",
+    },
+    // Frontend Development
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Frontend Development",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Frontend development to improve user experience.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desarrollo Frontend",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo frontend para mejorar la experiencia del usuario.",
+    },
+    // Web Development
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "web-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Web Development",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "web-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Web application development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "web-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desarrollo Web",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "web-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de aplicaciones web.",
+    },
+    // Quality Improvement
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Quality Improvement",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Improving software development quality.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Mejora de Calidad",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Mejora de la calidad en el desarrollo de software.",
+    },
+    // Backend Development
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table:"skills", field: "codeName", value: "backend-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Backend Development",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "backend-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Backend application development with Python and Django.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "backend-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desarrollo Backend",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "backend-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de aplicaciones backend con Python y Django.",
+    },
+    // Learning Agility
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Learning Agility",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Ability to learn and apply new technologies.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Agilidad de Aprendizaje",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Habilidad para aprender y aplicar nuevas tecnologías.",
+    },
+    // ERP
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "erp" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "ERP",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "erp" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Enterprise resource planning systems development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "erp" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "ERP",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "erp" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de sistemas de planificación de recursos empresariales.",
+    },
+    // E-commerce
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "E-commerce",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "E-commerce solutions development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "E-commerce",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de soluciones de comercio electrónico.",
+    },
+    // Startup
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "startup" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Startup",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "startup" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Management and development of startups.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "startup" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Startup",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "startup" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión y desarrollo de startups.",
+    },
+    // Technical Knowledge
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Technical Knowledge",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Technical knowledge in multiple areas.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Conocimiento Técnico",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Conocimientos técnicos en múltiples áreas.",
+    },
+    // Sales
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "sales" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Sales",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "sales" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Handling sales and clients.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "sales" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Ventas",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "sales" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Manejo de ventas y clientes.",
+    },
+    // Business Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "business-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Business Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "business-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Business management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "business-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión Empresarial",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "business-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión empresarial.",
+    },
+    // Customer Relationship
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Customer Relationship",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Customer relationship management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Relación con el Cliente",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de relaciones con los clientes.",
+    },
+    // Self Motivation
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Self Motivation",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Self-motivation and ability to manage personal projects.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Auto-motivación",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Automotivación y capacidad para gestionar proyectos personales.",
+    },
+    // Full Stack Development
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Full Stack Development",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Frontend and backend development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desarrollo Full Stack",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo frontend y backend.",
+    },
+    // JavaScript
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "javascript" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "JavaScript",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "javascript" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Programming language used in web development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "javascript" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "JavaScript",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "javascript" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Lenguaje de programación utilizado en el desarrollo web.",
+    },
+    // Vue 3
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "vue3" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Vue 3",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "vue3" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "JavaScript framework for building user interfaces.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "vue3" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Vue 3",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "vue3" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Framework JavaScript para la creación de interfaces de usuario.",
+    },
+    // Scrum
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "scrum" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Scrum",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "scrum" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Agile development framework.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "scrum" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Scrum",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "scrum" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Framework de desarrollo ágil.",
+    },
+    // Bug Fixing
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "bug-fixing" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Bug Fixing",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "bug-fixing" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Software bug fixing.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "bug-fixing" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Corrección de Errores",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "bug-fixing" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Corrección de errores de software.",
+    },
+    // Web Application
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "web-application" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Web Application",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "web-application" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Web application development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "web-application" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Aplicación Web",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "web-application" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de aplicaciones web.",
+    },
+    // Adaptability to Startups
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Adaptability to Startups",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Adaptation to changes in startup environments.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Adaptabilidad a Startups",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Adaptación a los cambios en entornos de startups.",
+    },
+    // Problem Solving
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Problem Solving",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Ability to solve complex technical problems.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Resolución de Problemas",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Habilidad para solucionar problemas técnicos complejos.",
+    },
+    // Teamwork
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "teamwork" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Teamwork",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "teamwork" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Effective collaboration with a development team.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "teamwork" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Trabajo en Equipo",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "teamwork" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Colaboración efectiva con un equipo de desarrollo.",
+    },
+    // Team Leadership
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Team Leadership",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Effective leadership of development teams.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Liderazgo de Equipo",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Liderazgo efectivo de equipos de desarrollo.",
+    },
+    // AWS Deployment
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "AWS Deployment",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Application deployment on Amazon Web Services.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Despliegue en AWS",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Despliegue de aplicaciones en Amazon Web Services.",
+    },
+    // Laravel
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "laravel" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Laravel",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "laravel" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "PHP framework for backend development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "laravel" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Laravel",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "laravel" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Framework PHP para el desarrollo backend.",
+    },
+    // System Architecture
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "System Architecture",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "System architecture design.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Arquitectura de Sistemas",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Diseño de arquitectura de sistemas.",
+    },
+    // Microfrontend
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Microfrontend",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Microfrontend architecture.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Microfrontend",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Arquitectura de microfrontends.",
+    },
+    // E-commerce Development
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "E-commerce Development",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "E-commerce solutions development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desarrollo de E-commerce",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de soluciones de comercio electrónico.",
+    },
+    // Cloud Computing
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Cloud Computing",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Use of cloud technologies for development and deployment.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Computación en la Nube",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Uso de tecnologías en la nube para el desarrollo y despliegue.",
+    },
+    // Agile Methodologies
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Agile Methodologies",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Agile methodologies for project management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Metodologías Ágiles",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Metodologías ágiles para gestión de proyectos.",
+    },
+    // Team Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "team-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Team Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "team-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Effective team management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "team-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Equipos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "team-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión efectiva de equipos.",
+    },
+    // Customer Oriented
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Customer Oriented",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Focus on customer experience.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Orientado al Cliente",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Enfoque en la experiencia del cliente.",
+    },
+    // Production Monitoring
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Production Monitoring",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Monitoring production in manufacturing systems.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Monitoreo de Producción",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Monitoreo de la producción en sistemas de manufactura.",
+    },
+    // Productivity Analysis
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Productivity Analysis",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Productivity analysis for continuous improvement.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Análisis de Productividad",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Análisis de productividad para la mejora continua.",
+    },
+    // Local Network
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "local-network" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Local Network",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "local-network" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Local network management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "local-network" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Red Local",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "local-network" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de redes locales.",
+    },
+    // jQuery
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "jquery" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "jQuery",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "jquery" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "JavaScript library for DOM manipulation.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "jquery" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "jQuery",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "jquery" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Biblioteca JavaScript para manipulación de DOM.",
+    },
+    // Web Platform
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "web-platform" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Web Platform",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "web-platform" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Web platform development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "web-platform" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Plataforma Web",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "web-platform" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de plataformas web.",
+    },
+    // Business Analytics
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Business Analytics",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Business data analysis.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Analítica de Negocios",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Análisis de datos empresariales.",
+    },
+    // Security Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "security-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Security Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "security-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Enterprise system security management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "security-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Seguridad",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "security-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de seguridad en sistemas empresariales.",
+    },
+    // Data Analysis
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Data Analysis",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Data analysis for process improvement.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Análisis de Datos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Análisis de datos para la mejora de procesos.",
+    },
+    // Team Collaboration
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Team Collaboration",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Effective team collaboration.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Colaboración de Equipo",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Colaboración efectiva en equipo.",
+    },
+    // Graduation Project
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Graduation Project",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Direction and implementation of graduation projects.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Proyecto de Grado",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Dirección e implementación de proyectos de grado.",
+    },
+    // Technical Challenges
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Technical Challenges",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Solving complex technical challenges.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desafíos Técnicos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Resolución de desafíos técnicos complejos.",
+    },
+    // Project Direction
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Project Direction",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Project management and direction.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Dirección de Proyecto",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Dirección y gestión de proyectos.",
+    },
+    // Solution Implementation
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Solution Implementation",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Implementation of technical solutions.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Implementación de Soluciones",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Implementación de soluciones técnicas.",
+    },
+    // Technical Consulting
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Technical Consulting",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Technical consulting for graduation projects.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Consultoría Técnica",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Asesoramiento técnico para proyectos de grado.",
+    },
+    // Technical Writing
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Technical Writing",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Technical writing for project documentation.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Redacción Técnica",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Redacción técnica para documentación de proyectos.",
+    },
+    // Time Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "time-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Time Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "time-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Effective time management to meet deadlines.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "time-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión del Tiempo",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "time-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión efectiva del tiempo para cumplir con los plazos.",
+    },
+    // Infrastructure Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Infrastructure Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Management of system infrastructures.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Infraestructura",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de infraestructuras de sistemas.",
+    },
+    // Network Architecture
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Network Architecture",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Network architecture design.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Arquitectura de Redes",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Diseño de arquitecturas de redes.",
+    },
+    // Project Planning
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Project Planning",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Effective project planning.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Planificación de Proyecto",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Planificación efectiva de proyectos.",
+    },
+    // Work Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "work-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Work Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "work-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Management of projects and tasks.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "work-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión del Trabajo",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "work-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de proyectos y tareas.",
+    },
+    // Budget Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Budget Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Project budget management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión del Presupuesto",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de presupuestos de proyectos.",
+    },
+    // System Design
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "system-design" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "System Design",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "system-design" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Design of computer systems.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "system-design" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Diseño de Sistemas",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "system-design" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Diseño de sistemas informáticos.",
+    },
+    // Software Development
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "software-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Software Development",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "software-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Software application development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "software-development" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desarrollo de Software",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "software-development" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de aplicaciones de software.",
+    },
+    // Data Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "data-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Data Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "data-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Data management for business applications.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "data-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Datos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "data-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de datos para aplicaciones empresariales.",
+    },
+    // Project Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "project-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Project Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "project-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Technical project management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "project-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Proyectos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "project-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de proyectos técnicos.",
+    },
+    // Collaborative Work
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Collaborative Work",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Collaborative work for project development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Trabajo Colaborativo",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Trabajo colaborativo para el desarrollo de proyectos.",
+    },
+    // Medical Records
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Medical Records",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Management of electronic medical records.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Historias Médicas",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de historias médicas electrónicas.",
+    },
+    // Desktop Application
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Desktop Application",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desktop application development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Aplicación de Escritorio",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de aplicaciones de escritorio.",
+    },
+    // Java
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "java" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Java",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "java" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Programming language for application development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "java" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Java",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "java" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Lenguaje de programación para desarrollo de aplicaciones.",
+    },
+    // Object Oriented Programming
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Object Oriented Programming",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Object-oriented programming.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Programación Orientada a Objetos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Programación orientada a objetos.",
+    },
+    // Requirements Gathering
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Requirements Gathering",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Technical requirements gathering.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Levantamiento de Requerimientos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Levantamiento de requerimientos técnicos.",
+    },
+    // Software Design
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "software-design" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Software Design",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "software-design" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Software design.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "software-design" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Diseño de Software",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "software-design" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Diseño de aplicaciones de software.",
+    },
+    // Technical Communication
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Technical Communication",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Effective communication for technical development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Comunicación Técnica",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Comunicación efectiva para el desarrollo técnico.",
+    },
+    // Analytical Thinking
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Analytical Thinking",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Analytical thinking for technical solutions.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Pensamiento Analítico",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Pensamiento analítico para soluciones técnicas.",
+    },
+    // Adaptability
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Adaptability",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Adaptation to new technologies and challenges.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Adaptabilidad",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "adaptability" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Adaptación a tecnologías y desafíos nuevos.",
+    },
+    // Inventory Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Inventory Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Inventory management for business applications.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Inventarios",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de inventarios para aplicaciones empresariales.",
+    },
+    // PHP
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "php" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "PHP",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "php" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Programming language for web development.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "php" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "PHP",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "php" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Lenguaje de programación para desarrollo web.",
+    },
+    // CRUD
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "crud" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "CRUD",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "crud" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "CRUD operations for databases.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "crud" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "CRUD",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "crud" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Operaciones CRUD para bases de datos.",
+    },
+    // Offline System
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Offline System",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Development of systems to operate offline.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Sistema Offline",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Desarrollo de sistemas para operar sin conexión.",
+    },
+    // Asset Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Asset Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Asset management for business applications.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Activos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de activos para aplicaciones empresariales.",
+    },
+    // Data Entry
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "data-entry" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Data Entry",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "data-entry" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Data entry and manipulation.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "data-entry" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Entrada de Datos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "data-entry" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Entrada y manipulación de datos.",
+    },
+    // Database Management
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "database-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Database Management",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: { table: "skills", field: "codeName", value: "database-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Database management.",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "database-management" },
+      },
+      tableName: "Skills",
+      field: "name",
+      translatedValue: "Gestión de Base de Datos",
+    },
+    {
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: { table: "skills", field: "codeName", value: "database-management" },
+      },
+      tableName: "Skills",
+      field: "description",
+      translatedValue: "Gestión de bases de datos.",
+    },
+  ],
+  educationsTranslations: [
+    // Udemy - Web Development
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "learn",
+      "translatedValue": "In Udemy I have taken several web development courses, including: JavaScript, React, Vue, Node, SQL, among others. With the same philosophy of learning at my own pace and in my own time but always learning."
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "area",
+      "translatedValue": "Web Development"
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "learn",
+      "translatedValue": "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros. Con la misma filosofía de aprender a mi ritmo y a mi tiempo pero siempre aprendiendo."
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "area",
+      "translatedValue": "Desarrollo Web"
+    },
+    // YouTube - Web Development
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "learn",
+      "translatedValue": "When I started getting into programming courses in 2013, I accessed free and paid material available online at that time, and to this day I continue to learn."
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "area",
+      "translatedValue": "Web Development"
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "learn",
+      "translatedValue": "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender"
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "area",
+      "translatedValue": "Desarrollo Web"
+    },
+    // UPTYAB - Informática
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "learn",
+      "translatedValue": "I studied Informatics Engineering at UPTYAB, where I gained knowledge in programming, databases, networks, operating systems, among others."
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "area",
+      "translatedValue": "Informatics Engineering"
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "learn",
+      "translatedValue": "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros."
+    },
+    {
+      "relationship": {
+        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
+        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      },
+      "tableName": "Educations",
+      "field": "area",
+      "translatedValue": "Ingeniería Informática"
+    }
+  ],
+  awardsTranslations: [
+    // Innovator Award - Destacame 2023
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "innovator-destacame-2023"
+        }
+      },
+      "tableName": "Awards",
+      "field": "title",
+      "translatedValue": "Innovator of the year 2023 at Destacame"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "innovator-destacame-2023"
+        }
+      },
+      "tableName": "Awards",
+      "field": "summary",
+      "translatedValue": "For leading the implementation of innovative technological solutions in the company, significantly improving operational efficiency and user experience."
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "es"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "innovator-destacame-2023"
+        }
+      },
+      "tableName": "Awards",
+      "field": "title",
+      "translatedValue": "Innovador del año 2023 en Destacame"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "es"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "innovator-destacame-2023"
+        }
+      },
+      "tableName": "Awards",
+      "field": "summary",
+      "translatedValue": "Por liderar la implementación de soluciones tecnológicas innovadoras en la empresa, mejorando significativamente la eficiencia operativa y la experiencia del usuario."
+    },
+    // Triple Alianza Award - Lima 2020
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "triple-alianza-lima-2020"
+        }
+      },
+      "tableName": "Awards",
+      "field": "title",
+      "translatedValue": "Triple Alliance Challenge Lima"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "triple-alianza-lima-2020"
+        }
+      },
+      "tableName": "Awards",
+      "field": "summary",
+      "translatedValue": "For having obtained 1st place in the Commerce sector of the 'Triple Alliance COVID-19 Challenge', this happened during my experience at DIBAL."
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "es"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "triple-alianza-lima-2020"
+        }
+      },
+      "tableName": "Awards",
+      "field": "title",
+      "translatedValue": "Desafío Triple Alianza Lima"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "es"
+        },
+        "recordId": {
+          "table": "awards",
+          "field": "codeName",
+          "value": "triple-alianza-lima-2020"
+        }
+      },
+      "tableName": "Awards",
+      "field": "summary",
+      "translatedValue": "Por haber obtenido el 1er lugar en el sector Comercio del 'Desafío Triple Alianza COVID-19', esto sucedió en mi experiencia en DIBAL."
+    }
+  ],
+  languagesUsersTranslations: [
+    {
+      relationship: {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "es"
+        },
+        recordId: {
+          table: "languagesUsers",
+          field: "codeName",
+          value: "es-bypabloc",
+        },
+      },
+      "tableName": "LanguagesUsers",
+      "field": "fluency",
+      translatedValue: "Nativo",
+    },
+    {
+      relationship: {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        recordId: {
+          table: "languagesUsers",
+          field: "codeName",
+          value: "es-bypabloc",
+        },
+      },
+      "tableName": "LanguagesUsers",
+      "field": "fluency",
+      translatedValue: "Native",
+    },
+    {
+      relationship: {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "es"
+        },
+        recordId: {
+          table: "languagesUsers",
+          field: "codeName",
+          value: "en-bypabloc",
+        },
+      },
+      "tableName": "LanguagesUsers",
+      "field": "fluency",
+      translatedValue: "Intermedio",
+    },
+    {
+      relationship: {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        recordId: {
+          table: "languagesUsers",
+          field: "codeName",
+          value: "en-bypabloc",
+        },
+      },
+      "tableName": "LanguagesUsers",
+      "field": "fluency",
+      translatedValue: "Intermediate",
+    },
+  ],
+  referencesTranslations: [
+    // Alan Vergara Bravo
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "alan-vergara-bravo"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "alan-vergara-bravo"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Software Architect Developer"
+    },
+    // Alejandra Medina Briceño
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "alejandra-medina-briceno"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "alejandra-medina-briceno"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "UX/UI Designer"
+    },
+    // Baldomero Águila
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "baldomero-aguila"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "baldomero-aguila"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Mobile Developer"
+    },
+    // Cristian Fuentes
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "cristian-fuentes"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "cristian-fuentes"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Full Stack Developer"
+    },
+    // Helis Montes
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "helis-montes"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "helis-montes"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Full Stack Developer"
+    },
+    // Edder Ramírez
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "edder-ramirez"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "edder-ramirez"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Full Stack Developer"
+    },
+    // José Namoc
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "jose-namoc"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "jose-namoc"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Full Stack Developer"
+    },
+    // Jacnelly Colmenarez
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "jacnelly-colmenarez"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Team Member"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "jacnelly-colmenarez"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "UI/UX Designer"
+    },
+    // Felipe Rivera
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "felipe-rivera"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Worked at the same company"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "felipe-rivera"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Talent Acquisition Lead"
+    },
+    // Samuel Esponiza
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "samuel-esponiza"
+        }
+      },
+      "tableName": "References",
+      "field": "reference",
+      "translatedValue": "Studied at the same university and worked on projects together"
+    },
+    {
+      "relationship": {
+        "languageId": {
+          "table": "languages",
+          "field": "codeName",
+          "value": "en"
+        },
+        "recordId": {
+          "table": "references",
+          "field": "codeName",
+          "value": "samuel-esponiza"
+        }
+      },
+      "tableName": "References",
+      "field": "position",
+      "translatedValue": "Full Stack Developer"
+    }
   ],
 };

@@ -427,8 +427,8 @@ export const Works = defineTable({
       references: () => JobTypes.columns.id,
     }),
     summary: column.text({ optional: true }),
-    responsibilitiesNProjects: column.json({ optional: true }),
-    achievements: column.json({
+    responsibilitiesNProjects: column.text({ optional: true }),
+    achievements: column.text({
       optional: true,
     }),
   },
@@ -500,6 +500,7 @@ export const Educations = defineTable({
     institutionId: column.text({
       references: () => Institutions.columns.id,
     }),
+    codeName: column.text({ unique: true }),
     area: column.text(),
     learn: column.text(),
     studyType: column.text(),
@@ -525,6 +526,7 @@ export const Awards = defineTable({
     userId: column.text({
       references: () => Users.columns.id,
     }),
+    codeName: column.text({ unique: true }),
     title: column.text(),
     date: column.date(),
     awarder: column.text(),
@@ -605,6 +607,31 @@ export const Languages = defineTable({
   },
 });
 
+export const Translations = defineTable({
+  columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
+    // own
+    tableName: column.text(), // Nombre de la tabla original
+    recordId: column.text(), // ID del registro en la tabla original
+    field: column.text(), // Nombre del campo a traducir
+    languageId: column.text({
+      // ID del idioma en la tabla de idiomas
+      references: () => Languages.columns.id,
+    }),
+    translatedValue: column.text(), // Valor traducido
+  },
+});
+
 export const LanguagesUsers = defineTable({
   columns: {
     // standard
@@ -625,6 +652,7 @@ export const LanguagesUsers = defineTable({
     languageId: column.text({
       references: () => Languages.columns.id,
     }),
+    codeName: column.text({ unique: true }),
     fluency: column.text(),
   },
 });
@@ -700,6 +728,7 @@ export const References = defineTable({
     userId: column.text({
       references: () => Users.columns.id,
     }),
+    codeName: column.text({ unique: true }),
     name: column.text(),
     reference: column.text(),
     position: column.text(),
@@ -744,5 +773,6 @@ export default defineDb({
     WorksSoftSkills,
     WorksTechnicalSkills,
     InterestsKeywords,
+    Translations,
   },
 });

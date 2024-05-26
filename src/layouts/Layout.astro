@@ -1,6 +1,7 @@
 ---
 import { getAttributes } from "@/utils/db/getAttributes";
 import Meta from "@/components/Meta.astro";
+import { getLangFromUrl } from "@/i18n/utils";
 
 interface Props {
   title: string;
@@ -13,6 +14,8 @@ const attributesResult = await getAttributes(user);
 const attributes = attributesResult.isValid
   ? attributesResult.data?.attributes
   : {};
+
+const lang = getLangFromUrl(Astro.url);
 
 const {
   summary: { value: summary },
@@ -28,7 +31,7 @@ const frontmatter = {
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <Meta {...frontmatter} />
   <body>
     <slot />

@@ -9,6 +9,8 @@ import {
   Keywords,
   SkillsKeywords,
   Employers,
+  Translations,
+  Languages,
 } from "astro:db";
 
 /**
@@ -16,36 +18,105 @@ import {
  * incluyendo habilidades técnicas y blandas asociadas, organizadas en un objeto donde la clave es el ID de Works.
  *
  * @param {string} status - Estado del usuario para filtrar.
+ * @param {object} user - Usuario para filtrar.
+ * @param {string} [languageCode="es"] - Código del idioma para las traducciones.
  * @returns {Promise<object>} - Resultado de la consulta con experiencias laborales y habilidades asociadas.
  */
 export const getWorks = async ({
   status,
   user,
+  languageCode = "es",
 }: {
   status?: string;
   user: { id: string };
+  languageCode?: string;
 } = {}): Promise<ResponseFunction> => {
   try {
-    // Consulta principal para obtener los trabajos
+    // Obtener el ID del idioma correspondiente al código de idioma
+    const languageQuery = db
+      .select({ id: Languages.id })
+      .from(Languages)
+      .where(eq(Languages.codeName, languageCode));
+
+    const languageResult = await languageQuery.execute();
+    const languageId = languageResult[0]?.id;
+
+    if (!languageId) {
+      return {
+        isValid: false,
+        error: `Language code ${languageCode} not found`,
+      };
+    }
+
+    // Realizar la consulta principal incluyendo las traducciones
     let query = db
       .select({
         id: Works.id,
         codeName: Works.codeName,
-        name: Works.name,
-        position: Works.position,
+        name: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Works.id}
+             AND ${Translations.tableName} = 'Works'
+             AND ${Translations.field} = 'name'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Works.name}) AS name`,
+        position: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Works.id}
+             AND ${Translations.tableName} = 'Works'
+             AND ${Translations.field} = 'position'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Works.position}) AS position`,
         startDate: Works.startDate,
         endDate: Works.endDate,
-        responsibilitiesNProjects: Works.responsibilitiesNProjects,
-        achievements: Works.achievements,
-        summary: Works.summary,
+        responsibilitiesNProjects: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Works.id}
+             AND ${Translations.tableName} = 'Works'
+             AND ${Translations.field} = 'responsibilitiesNProjects'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Works.responsibilitiesNProjects}) AS responsibilitiesNProjects`,
+        achievements: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Works.id}
+             AND ${Translations.tableName} = 'Works'
+             AND ${Translations.field} = 'achievements'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Works.achievements}) AS achievements`,
+        summary: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Works.id}
+             AND ${Translations.tableName} = 'Works'
+             AND ${Translations.field} = 'summary'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Works.summary}) AS summary`,
         employer: Employers,
         technicalSkills: sql`(
           SELECT json_group_array(
             json_object(
               'id', Skills.id,
               'codeName', Skills.codeName,
-              'name', Skills.name,
-              'description', Skills.description,
+              'name', COALESCE(
+                (SELECT ${Translations.translatedValue}
+                 FROM ${Translations}
+                 WHERE ${Translations.recordId} = Skills.id
+                   AND ${Translations.tableName} = 'Skills'
+                   AND ${Translations.field} = 'name'
+                   AND ${Translations.languageId} = ${languageId}),
+                Skills.name),
+              'description', COALESCE(
+                (SELECT ${Translations.translatedValue}
+                 FROM ${Translations}
+                 WHERE ${Translations.recordId} = Skills.id
+                   AND ${Translations.tableName} = 'Skills'
+                   AND ${Translations.field} = 'description'
+                   AND ${Translations.languageId} = ${languageId}),
+                Skills.description),
               'type', Skills.type,
               'keywords', (SELECT json_group_array(json_object('id', Keywords.id, 'keys', Keywords.keys))
                           FROM SkillsKeywords
@@ -62,8 +133,22 @@ export const getWorks = async ({
             json_object(
               'id', Skills.id,
               'codeName', Skills.codeName,
-              'name', Skills.name,
-              'description', Skills.description,
+              'name', COALESCE(
+                (SELECT ${Translations.translatedValue}
+                 FROM ${Translations}
+                 WHERE ${Translations.recordId} = Skills.id
+                   AND ${Translations.tableName} = 'Skills'
+                   AND ${Translations.field} = 'name'
+                   AND ${Translations.languageId} = ${languageId}),
+                Skills.name),
+              'description', COALESCE(
+                (SELECT ${Translations.translatedValue}
+                 FROM ${Translations}
+                 WHERE ${Translations.recordId} = Skills.id
+                   AND ${Translations.tableName} = 'Skills'
+                   AND ${Translations.field} = 'description'
+                   AND ${Translations.languageId} = ${languageId}),
+                Skills.description),
               'type', Skills.type,
               'keywords', (SELECT json_group_array(json_object('id', Keywords.id, 'keys', Keywords.keys))
                           FROM SkillsKeywords
@@ -106,12 +191,20 @@ export const getWorks = async ({
 
     // Convertir los campos JSON de string a arrays de objetos
     const formattedWorks = rawData.map((work) => {
+      const safelyParseJSON = (field) => {
+        try {
+          return JSON.parse(field);
+        } catch (e) {
+          return field;
+        }
+      };
+
       const safelyParseKeywords = (skills) => {
         return skills.map((skill) => ({
           ...skill,
           keywords: Array.isArray(skill.keywords)
             ? skill.keywords.map((k) =>
-                typeof k.keys === "string" ? JSON.parse(k.keys) : k.keys
+                typeof k.keys === "string" ? safelyParseJSON(k.keys) : k.keys
               )
             : [],
         }));
@@ -119,8 +212,14 @@ export const getWorks = async ({
 
       return {
         ...work,
-        technicalSkills: safelyParseKeywords(JSON.parse(work.technicalSkills)),
-        softSkills: safelyParseKeywords(JSON.parse(work.softSkills)),
+        responsibilitiesNProjects: safelyParseJSON(
+          work.responsibilitiesNProjects
+        ),
+        achievements: safelyParseJSON(work.achievements),
+        technicalSkills: safelyParseKeywords(
+          safelyParseJSON(work.technicalSkills)
+        ),
+        softSkills: safelyParseKeywords(safelyParseJSON(work.softSkills)),
       };
     });
 
@@ -143,11 +242,6 @@ export const getWorks = async ({
       }
       return acc;
     }, {});
-
-    // console.log(
-    //   "Experiencias laborales agrupadas correctamente",
-    //   JSON.stringify(groupedByEmployer, null, 2)
-    // );
 
     return {
       isValid: true,

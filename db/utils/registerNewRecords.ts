@@ -54,6 +54,7 @@ export const registerNewRecords = async (
     return allRegisteredRecords;
   } catch (error) {
     console.error("Error with Astro DB:", error);
+    console.log("tableModel", tableModel);
     // console.error("recordsArray", recordsArray);
     throw new Error("Failed to register new records in Astro DB");
   }

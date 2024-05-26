@@ -24,13 +24,6 @@ export async function getStaticPaths() {
     params: { lang: lang.lang },
   }));
 
-  // Agregar una ruta por defecto
-  paths.push({
-    params: {
-      lang: "es", // Idioma por defecto
-    },
-  });
-
   return paths;
 }
 ---

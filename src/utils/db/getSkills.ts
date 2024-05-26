@@ -1,36 +1,57 @@
 import {
   db,
   eq,
-  innerJoin,
   inArray,
+  sql,
   Works,
   Skills,
   WorksTechnicalSkills,
-  Skills as TechnicalSkills,
   WorksSoftSkills,
   Keywords,
-  Skills as SoftSkills,
   SkillsKeywords,
   Users,
   Employers,
+  Translations,
+  Languages,
 } from "astro:db";
 
 /**
- * Consulta que devuelve todas las habilidades técnicas y blandas únicas.
+ * Consulta que devuelve todas las habilidades técnicas y blandas únicas,
+ * incluyendo las traducciones correspondientes.
  *
  * @param {string} status - Estado del usuario para filtrar.
  * @param {object} user - Usuario para filtrar.
+ * @param {string} [languageCode="es"] - Código del idioma para las traducciones.
  * @returns {Promise<object>} - Resultado de la consulta con habilidades técnicas y blandas únicas.
  */
 export const getSkills = async ({
   status,
   user,
+  languageCode = "es",
 }: {
   status?: string;
-  user: Object;
+  user: { id: string };
+  languageCode?: string;
 } = {}): Promise<ResponseFunction> => {
   try {
-    let query = db
+    // Obtener el ID del idioma correspondiente al código de idioma
+    const languageQuery = db
+      .select({ id: Languages.id })
+      .from(Languages)
+      .where(eq(Languages.codeName, languageCode));
+
+    const languageResult = await languageQuery.execute();
+    const languageId = languageResult[0]?.id;
+
+    if (!languageId) {
+      return {
+        isValid: false,
+        error: `Language code ${languageCode} not found`,
+      };
+    }
+
+    // Consulta para obtener los IDs de las experiencias laborales del usuario
+    let worksQuery = db
       .select({
         id: Works.id,
       })
@@ -38,12 +59,13 @@ export const getSkills = async ({
       .where(eq(Works.userId, user.id));
 
     if (status) {
-      query = query.where(eq(Works.status, status));
+      worksQuery = worksQuery.where(eq(Works.status, status));
     }
 
-    const rawData = await query.execute();
+    const worksData = await worksQuery.execute();
+    const worksIds = worksData.map((item) => item.id);
 
-    if (!rawData.length) {
+    if (!worksIds.length) {
       console.error("Experiencias laborales no encontradas");
       return {
         isValid: false,
@@ -51,15 +73,34 @@ export const getSkills = async ({
       };
     }
 
-    const worksIds = rawData.map((item) => item.id);
-
-    const technicalSkills = await db
+    // Consulta para obtener las habilidades técnicas con traducciones
+    const technicalSkillsQuery = db
       .select({
-        id: WorksTechnicalSkills.technicalSkillId,
+        id: Skills.id,
         codeName: Skills.codeName,
-        name: Skills.name,
-        description: Skills.description,
+        name: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Skills.id}
+             AND ${Translations.tableName} = 'Skills'
+             AND ${Translations.field} = 'name'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Skills.name}) AS name`,
+        description: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Skills.id}
+             AND ${Translations.tableName} = 'Skills'
+             AND ${Translations.field} = 'description'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Skills.description}) AS description`,
         type: Skills.type,
+        keywords: sql`(
+          SELECT json_group_array(json_object('id', Keywords.id, 'keys', Keywords.keys))
+          FROM SkillsKeywords
+          INNER JOIN Keywords ON Keywords.id = SkillsKeywords.keywordId
+          WHERE SkillsKeywords.skillId = Skills.id
+        ) AS keywords`,
       })
       .from(Skills)
       .innerJoin(
@@ -68,17 +109,42 @@ export const getSkills = async ({
       )
       .where(inArray(WorksTechnicalSkills.workId, worksIds));
 
-    const softSkills = await db
+    const technicalSkills = await technicalSkillsQuery.execute();
+
+    // Consulta para obtener las habilidades blandas con traducciones
+    const softSkillsQuery = db
       .select({
-        id: WorksSoftSkills.skillId,
+        id: Skills.id,
         codeName: Skills.codeName,
-        name: Skills.name,
-        description: Skills.description,
+        name: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Skills.id}
+             AND ${Translations.tableName} = 'Skills'
+             AND ${Translations.field} = 'name'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Skills.name}) AS name`,
+        description: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = ${Skills.id}
+             AND ${Translations.tableName} = 'Skills'
+             AND ${Translations.field} = 'description'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Skills.description}) AS description`,
         type: Skills.type,
+        keywords: sql`(
+          SELECT json_group_array(json_object('id', Keywords.id, 'keys', Keywords.keys))
+          FROM SkillsKeywords
+          INNER JOIN Keywords ON Keywords.id = SkillsKeywords.keywordId
+          WHERE SkillsKeywords.skillId = Skills.id
+        ) AS keywords`,
       })
       .from(Skills)
       .innerJoin(WorksSoftSkills, eq(WorksSoftSkills.skillId, Skills.id))
       .where(inArray(WorksSoftSkills.workId, worksIds));
+
+    const softSkills = await softSkillsQuery.execute();
 
     // Remover duplicados en habilidades técnicas
     const uniqueTechnicalSkills = [
@@ -90,11 +156,23 @@ export const getSkills = async ({
       ...new Map(softSkills.map((skill) => [skill.id, skill])).values(),
     ];
 
+    // Función para analizar las cadenas JSON de palabras clave
+    const safelyParseKeywords = (skills) => {
+      return skills.map((skill) => ({
+        ...skill,
+        keywords: Array.isArray(skill.keywords)
+          ? skill.keywords.map((k) =>
+              typeof k.keys === "string" ? JSON.parse(k.keys) : k.keys
+            )
+          : [],
+      }));
+    };
+
     return {
       isValid: true,
       data: {
-        technical: uniqueTechnicalSkills,
-        soft: uniqueSoftSkills,
+        technical: safelyParseKeywords(uniqueTechnicalSkills),
+        soft: safelyParseKeywords(uniqueSoftSkills),
       },
     };
   } catch (error) {

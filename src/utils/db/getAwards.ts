@@ -1,4 +1,4 @@
-import { db, eq, Awards, sql } from "astro:db";
+import { db, eq, sql, Awards, Translations, Languages } from "astro:db";
 
 /**
  * Consulta que devuelve todos los premios.
@@ -10,20 +10,65 @@ import { db, eq, Awards, sql } from "astro:db";
 export const getAwards = async ({
   status,
   user,
+  languageCode = "en",
 }: {
   status?: string;
   user: { id: string };
+  languageCode?: string;
 }): Promise<ResponseFunction> => {
   try {
+    // Obtener el ID del idioma correspondiente al código de idioma
+    const languageQuery = db
+      .select({ id: Languages.id })
+      .from(Languages)
+      .where(eq(Languages.codeName, languageCode));
+
+    const languageResult = await languageQuery.execute();
+    const languageId = languageResult[0]?.id;
+
+    if (!languageId) {
+      return {
+        isValid: false,
+        error: `Language code ${languageCode} not found`,
+      };
+    }
+
+    console.log("languageCode", languageCode);
+    console.log("Idioma obtenido correctamente", languageId);
+
     let query = db
-      .select()
+      .select({
+        id: Awards.id,
+        title: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+           FROM ${Translations}
+           WHERE ${Translations.recordId} = Awards.${Awards.id}
+             AND ${Translations.tableName} = 'Awards'
+             AND ${Translations.field} = 'title'
+             AND ${Translations.languageId} = ${languageId}),
+          ${Awards.title}) AS title`,
+        summary: sql`COALESCE(
+          (SELECT ${Translations.translatedValue}
+            FROM ${Translations}
+            WHERE ${Translations.recordId} = Awards.${Awards.id}
+              AND ${Translations.tableName} = 'Awards'
+              AND ${Translations.field} = 'summary'
+              AND ${Translations.languageId} = ${languageId}),
+          ${Awards.summary}) AS summary`,
+        date: Awards.date,
+        awarder: Awards.awarder,
+        url: Awards.url,
+      })
       .from(Awards)
       .where(eq(Awards.userId, user.id))
       .orderBy(
         sql`
-        ${Awards.date} DESC
-      `
+          ${Awards.date} DESC
+        `
       );
+
+    const queryToSql = query.toSQL();
+    console.log("queryToSql", queryToSql);
 
     if (status) {
       query = query.where(eq(Awards.status, status));
@@ -31,10 +76,10 @@ export const getAwards = async ({
 
     const awards = await query.execute();
 
-    // console.log(
-    //   "Premios obtenidos correctamente",
-    //   JSON.stringify(awards, null, 2)
-    // );
+    console.log(
+      "Premios obtenidos correctamente",
+      JSON.stringify(awards, null, 2)
+    );
 
     return {
       isValid: true,

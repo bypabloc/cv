@@ -21,6 +21,7 @@ import {
   NetworksUsers,
   Projects,
   Publications,
+  Translations,
   Publishers,
   References,
   Skills,
@@ -327,5 +328,87 @@ export default async function () {
       tables
     ),
     model: WorksTechnicalSkills,
+  };
+
+  // - Keywords
+  // - Works
+  // - Skills
+  // - Educations
+  // - Awards
+  // - Languages
+  // - Interests
+  // - References
+  // - UsersAttributes
+
+  tables["keywordsTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.keywordsTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["interestsTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.interestsTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["worksTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.worksTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["skillsTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.skillsTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["educationsTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.educationsTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["awardsTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.awardsTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["languagesUsersTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.languagesUsersTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["referencesTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.referencesTranslations,
+      tables
+    ),
+    model: Translations,
   };
 }

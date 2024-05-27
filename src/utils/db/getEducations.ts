@@ -43,9 +43,6 @@ export const getEducations = async ({
       };
     }
 
-    console.log("languageCode", languageCode);
-    console.log("Idioma obtenido correctamente", languageId);
-
     // Consulta principal incluyendo las traducciones
     let query = db
       .select({
@@ -91,9 +88,6 @@ export const getEducations = async ({
           ${Educations.startDate} DESC
         `
       );
-
-    const queryToSql = query.toSQL();
-    console.log("getEducations > queryToSql", queryToSql);
 
     if (status) {
       query = query.where(eq(Educations.status, status));

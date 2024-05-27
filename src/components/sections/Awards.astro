@@ -2,10 +2,13 @@
 import Section from "../Section.astro";
 
 import { getAwards } from "@/utils/db/getAwards";
+import { getLangFromUrl } from "@/i18n/utils";
+
+const $lang = getLangFromUrl(Astro.url);
 
 const { user } = Astro.props;
 
-const { isValid, data = {} } = await getAwards({ user });
+const { isValid, data = {} } = await getAwards({ user, languageCode: $lang });
 const awards = isValid ? data?.awards : [];
 
 // Función para formatear la fecha a mes-año

@@ -1,10 +1,13 @@
 ---
 import Section from "../Section.astro";
 import { getProjects } from "@/utils/db/getProjects";
+import { getLangFromUrl } from "@/i18n/utils";
+
+const $lang = getLangFromUrl(Astro.url);
 
 const { user } = Astro.props;
 
-const { isValid, data = {} } = await getProjects({ user });
+const { isValid, data = {} } = await getProjects({ user, languageCode: $lang });
 const projects = isValid ? data?.projects : [];
 ---
 

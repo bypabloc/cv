@@ -1,7 +1,8 @@
 ---
+import { ViewTransitions } from "astro:transitions";
+import { getLangFromUrl } from "@/i18n/utils";
 import { getAttributes } from "@/utils/db/getAttributes";
 import Meta from "@/components/Meta.astro";
-import { getLangFromUrl } from "@/i18n/utils";
 
 interface Props {
   title: string;
@@ -10,7 +11,8 @@ interface Props {
 
 const { title, user } = Astro.props;
 
-const attributesResult = await getAttributes(user);
+const $lang = getLangFromUrl(Astro.url);
+const attributesResult = await getAttributes(user, $lang);
 const attributes = attributesResult.isValid
   ? attributesResult.data?.attributes
   : {};
@@ -32,7 +34,10 @@ const frontmatter = {
 
 <!doctype html>
 <html lang={lang}>
-  <Meta {...frontmatter} />
+  <head>
+    <Meta {...frontmatter} />
+    <ViewTransitions />
+  </head>
   <body>
     <slot />
     <style is:global>

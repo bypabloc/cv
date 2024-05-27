@@ -1,4 +1,5 @@
 ---
+import LanguagePicker from "@/components/ui/LanguagePicker/Index.astro";
 import Basic from "@/components/sections/Basic.astro";
 import About from "@/components/sections/About.astro";
 import Education from "@/components/sections/Education.astro";
@@ -21,6 +22,7 @@ const { user } = Astro.props;
   {
     (
       <>
+        <LanguagePicker />
         <Basic user={user} />
         <About user={user} />
         <Experience user={user} />

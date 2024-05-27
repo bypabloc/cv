@@ -1,10 +1,16 @@
 ---
 import Section from "../Section.astro";
 import { getEducations } from "@/utils/db/getEducations";
+import { getLangFromUrl } from "@/i18n/utils";
+
+const $lang = getLangFromUrl(Astro.url);
 
 const { user } = Astro.props;
 
-const { isValid, data = {} } = await getEducations({ user });
+const { isValid, data = {} } = await getEducations({
+  user,
+  languageCode: $lang,
+});
 const educations = isValid ? data?.educations : [];
 ---
 

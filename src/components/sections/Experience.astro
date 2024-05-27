@@ -2,10 +2,13 @@
 import Section from "@/components/Section.astro";
 import Skill from "@/components/ui/Skill/Skill.vue";
 import { getWorks } from "@/utils/db/getWorks";
+import { getLangFromUrl } from "@/i18n/utils";
+
+const $lang = getLangFromUrl(Astro.url);
 
 const { user } = Astro.props;
 
-const { isValid, data = {} } = await getWorks({ user });
+const { isValid, data = {} } = await getWorks({ user, languageCode: $lang, });
 const worksByEmployer = isValid ? data?.works : {};
 ---
 
@@ -36,7 +39,7 @@ const worksByEmployer = isValid ? data?.works : {};
             <div class="timeline">
               {employerGroup.works.map((work) => (
                 <article key={work.id} class="timeline-item">
-                  <div class="flex f-row">
+                  <div class="d-flex flex-direction-row flex-justify-space-between">
                     <h4>{work.position}</h4>
                     <div>
                       <time
@@ -60,9 +63,9 @@ const worksByEmployer = isValid ? data?.works : {};
                       </time>
                     </div>
                   </div>
-                  <footer class="flex column gap-4">
+                  <footer class="d-flex flex-direction-column gap-4">
                     {work.summary && (
-                      <div class="flex column gap-2">
+                      <div class="d-flex flex-direction-column gap-2">
                         <p>
                           <strong>Resumen:</strong> {work.summary}
                         </p>
@@ -70,7 +73,7 @@ const worksByEmployer = isValid ? data?.works : {};
                     )}
 
                     {work.responsibilitiesNProjects.length > 0 && (
-                      <div class="d-flex flex-column gap-2">
+                      <div class="d-flex flex-direction-column gap-2">
                         <h4>Responsabilidades y proyectos</h4>
                         {work.responsibilitiesNProjects.map(
                           (responsibility) => (
@@ -81,7 +84,7 @@ const worksByEmployer = isValid ? data?.works : {};
                     )}
 
                     {work.achievements.length > 0 && (
-                      <div class="d-flex flex-column gap-2">
+                      <div class="d-flex flex-direction-column gap-2">
                         <h4>Logros</h4>
                         {work.achievements.map((achievement) => (
                           <p key={achievement}>• {achievement}</p>
@@ -89,7 +92,7 @@ const worksByEmployer = isValid ? data?.works : {};
                       </div>
                     )}
 
-                    <div class="d-flex flex-column gap-2">
+                    <div class="d-flex flex-direction-column gap-2">
                       <Skill
                         title="Habilidades técnicas"
                         items={work.technicalSkills}
@@ -133,9 +136,9 @@ const worksByEmployer = isValid ? data?.works : {};
                     </time>
                   </div>
                 </div>
-                <footer class="flex column gap-4">
+                <footer class="d-flex flex-direction-column gap-4">
                   {work.summary && (
-                    <div class="flex column gap-2">
+                    <div class="d-flex flex-direction-column gap-2">
                       <p>
                         <strong>Resumen:</strong> {work.summary}
                       </p>
@@ -143,7 +146,7 @@ const worksByEmployer = isValid ? data?.works : {};
                   )}
 
                   {work.responsibilitiesNProjects.length > 0 && (
-                    <div class="d-flex flex-column gap-2">
+                    <div class="d-flex flex-direction-column gap-2">
                       <h4>Responsabilidades y proyectos</h4>
                       {work.responsibilitiesNProjects.map((responsibility) => (
                         <p key={responsibility}>• {responsibility}</p>
@@ -152,7 +155,7 @@ const worksByEmployer = isValid ? data?.works : {};
                   )}
 
                   {work.achievements.length > 0 && (
-                    <div class="d-flex flex-column gap-2">
+                    <div class="d-flex flex-direction-column gap-2">
                       <h4>Logros</h4>
                       {work.achievements.map((achievement) => (
                         <p key={achievement}>• {achievement}</p>
@@ -160,7 +163,7 @@ const worksByEmployer = isValid ? data?.works : {};
                     </div>
                   )}
 
-                  <div class="d-flex flex-column gap-2">
+                  <div class="d-flex flex-direction-column gap-2">
                     <Skill
                       title="Habilidades técnicas"
                       items={work.technicalSkills}

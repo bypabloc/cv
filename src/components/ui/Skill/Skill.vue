@@ -30,7 +30,7 @@ const toggleKeywords = () => {
 </script>
 
 <template>
-  <div class="flex column gap-2">
+  <div class="d-flex flex-direction-column gap-2">
     <div class="no-print">
       <h4 v-if="title" @click="toggleKeywords" class="clickable">
         <i

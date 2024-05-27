@@ -1446,6 +1446,7 @@ export default {
           value: "names",
         },
       },
+      codeName: "names-bypabloc",
       attributeValue: "Pablo Alexander",
     },
     {
@@ -1461,6 +1462,7 @@ export default {
           value: "lastName",
         },
       },
+      codeName: "lastName-bypabloc",
       attributeValue: "Contreras Guevara",
     },
     {
@@ -1476,6 +1478,7 @@ export default {
           value: "email",
         },
       },
+      codeName: "email-bypabloc",
       attributeValue: "pacg1991@gmail.com",
     },
     {
@@ -1491,6 +1494,7 @@ export default {
           value: "phone",
         },
       },
+      codeName: "phone-bypabloc",
       attributeValue: "+51 918490148",
     },
     {
@@ -1506,6 +1510,7 @@ export default {
           value: "url",
         },
       },
+      codeName: "url-bypabloc",
       attributeValue: "https://pablo-c.com",
     },
     {
@@ -1521,6 +1526,7 @@ export default {
           value: "label",
         },
       },
+      codeName: "label-bypabloc",
       attributeValue: "Ingeniero de software con más de 8 años de experiencia",
     },
     {
@@ -1536,6 +1542,7 @@ export default {
           value: "summary",
         },
       },
+      codeName: "summary-bypabloc",
       attributeValue:
         "Ingeniero de software con más de 8 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.",
     },
@@ -1552,6 +1559,7 @@ export default {
           value: "location",
         },
       },
+      codeName: "location-bypabloc",
       attributeValue: {
         address: "",
         postalCode: "15009",
@@ -7534,7 +7542,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Plataforma de contenedores para el desarrollo de aplicaciones.",
+      translatedValue:
+        "Plataforma de contenedores para el desarrollo de aplicaciones.",
     },
     // Kubernetes
     {
@@ -7571,7 +7580,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Orquestador de contenedores para el despliegue de aplicaciones.",
+      translatedValue:
+        "Orquestador de contenedores para el despliegue de aplicaciones.",
     },
     // React
     {
@@ -7608,7 +7618,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Framework JavaScript para la creación de interfaces de usuario.",
+      translatedValue:
+        "Framework JavaScript para la creación de interfaces de usuario.",
     },
     // Node.js
     {
@@ -7627,7 +7638,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "JavaScript runtime environment for backend development.",
+      translatedValue:
+        "JavaScript runtime environment for backend development.",
     },
     {
       relationship: {
@@ -7645,7 +7657,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Entorno de ejecución de JavaScript para el desarrollo de aplicaciones backend.",
+      translatedValue:
+        "Entorno de ejecución de JavaScript para el desarrollo de aplicaciones backend.",
     },
     // SQL
     {
@@ -7701,7 +7714,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Programming language used in microservices development.",
+      translatedValue:
+        "Programming language used in microservices development.",
     },
     {
       relationship: {
@@ -7719,7 +7733,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Lenguaje de programación utilizado en el desarrollo de microservicios.",
+      translatedValue:
+        "Lenguaje de programación utilizado en el desarrollo de microservicios.",
     },
     // Django
     {
@@ -7756,13 +7771,18 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Framework web para Python utilizado en el desarrollo de backend.",
+      translatedValue:
+        "Framework web para Python utilizado en el desarrollo de backend.",
     },
     // Microservices
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "microservices" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microservices",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -7771,16 +7791,25 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "microservices" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microservices",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Microservices architecture for scalable application development.",
+      translatedValue:
+        "Microservices architecture for scalable application development.",
     },
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "microservices" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microservices",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -7789,11 +7818,16 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "microservices" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microservices",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Arquitectura de microservicios para el desarrollo de aplicaciones escalables.",
+      translatedValue:
+        "Arquitectura de microservicios para el desarrollo de aplicaciones escalables.",
     },
     // AWS
     {
@@ -7812,7 +7846,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Cloud services platform used for deployment and hosting.",
+      translatedValue:
+        "Cloud services platform used for deployment and hosting.",
     },
     {
       relationship: {
@@ -7830,13 +7865,18 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Plataforma de servicios en la nube utilizada para implementación y despliegue.",
+      translatedValue:
+        "Plataforma de servicios en la nube utilizada para implementación y despliegue.",
     },
     // Frontend Architecture
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-architecture",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -7845,7 +7885,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-architecture",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -7854,7 +7898,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-architecture",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -7863,7 +7911,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-architecture",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -7904,7 +7956,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Mejora de la eficiencia y el rendimiento de los sistemas.",
+      translatedValue:
+        "Mejora de la eficiencia y el rendimiento de los sistemas.",
     },
     // Automation
     {
@@ -7984,7 +8037,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "strategic-planning",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -7993,7 +8050,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "strategic-planning",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8002,7 +8063,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "strategic-planning",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8011,11 +8076,16 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "strategic-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "strategic-planning",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Planificación estratégica para la entrega de soluciones.",
+      translatedValue:
+        "Planificación estratégica para la entrega de soluciones.",
     },
     // Vue.js
     {
@@ -8052,7 +8122,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Framework JavaScript para la creación de interfaces de usuario.",
+      translatedValue:
+        "Framework JavaScript para la creación de interfaces de usuario.",
     },
     // Nuxt.js
     {
@@ -8132,7 +8203,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8141,7 +8216,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8150,7 +8229,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8159,17 +8242,26 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "frontend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "frontend-development",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Desarrollo frontend para mejorar la experiencia del usuario.",
+      translatedValue:
+        "Desarrollo frontend para mejorar la experiencia del usuario.",
     },
     // Web Development
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "web-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8178,7 +8270,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "web-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8187,7 +8283,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "web-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8196,7 +8296,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "web-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8206,7 +8310,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "quality-improvement",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8215,7 +8323,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "quality-improvement",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8224,7 +8336,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "quality-improvement",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8233,7 +8349,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "quality-improvement" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "quality-improvement",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8243,7 +8363,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table:"skills", field: "codeName", value: "backend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "backend-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8252,16 +8376,25 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "backend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "backend-development",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Backend application development with Python and Django.",
+      translatedValue:
+        "Backend application development with Python and Django.",
     },
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "backend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "backend-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8270,17 +8403,26 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "backend-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "backend-development",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Desarrollo de aplicaciones backend con Python y Django.",
+      translatedValue:
+        "Desarrollo de aplicaciones backend con Python y Django.",
     },
     // Learning Agility
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "learning-agility",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8289,7 +8431,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "learning-agility",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8298,7 +8444,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "learning-agility",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8307,7 +8457,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "learning-agility" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "learning-agility",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8348,7 +8502,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Desarrollo de sistemas de planificación de recursos empresariales.",
+      translatedValue:
+        "Desarrollo de sistemas de planificación de recursos empresariales.",
     },
     // E-commerce
     {
@@ -8428,7 +8583,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-knowledge",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8437,7 +8596,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-knowledge",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8446,7 +8609,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-knowledge",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8455,7 +8622,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-knowledge" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-knowledge",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8502,7 +8673,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "business-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8511,7 +8686,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "business-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8520,7 +8699,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "business-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8529,7 +8712,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "business-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8539,7 +8726,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-relationship",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8548,7 +8739,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-relationship",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8557,7 +8752,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-relationship",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8566,7 +8765,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "customer-relationship" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-relationship",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8576,7 +8779,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "self-motivation",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8585,16 +8792,25 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "self-motivation",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Self-motivation and ability to manage personal projects.",
+      translatedValue:
+        "Self-motivation and ability to manage personal projects.",
     },
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "self-motivation",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8603,17 +8819,26 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "self-motivation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "self-motivation",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Automotivación y capacidad para gestionar proyectos personales.",
+      translatedValue:
+        "Automotivación y capacidad para gestionar proyectos personales.",
     },
     // Full Stack Development
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "full-stack-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8622,7 +8847,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "full-stack-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8631,7 +8860,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "full-stack-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8640,7 +8873,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "full-stack-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "full-stack-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8681,7 +8918,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Lenguaje de programación utilizado en el desarrollo web.",
+      translatedValue:
+        "Lenguaje de programación utilizado en el desarrollo web.",
     },
     // Vue 3
     {
@@ -8718,7 +8956,8 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Framework JavaScript para la creación de interfaces de usuario.",
+      translatedValue:
+        "Framework JavaScript para la creación de interfaces de usuario.",
     },
     // Scrum
     {
@@ -8798,7 +9037,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "web-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-application",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8807,7 +9050,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "web-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-application",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8816,7 +9063,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "web-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-application",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8825,7 +9076,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "web-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "web-application",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8835,7 +9090,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "adaptability-startups",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8844,7 +9103,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "adaptability-startups",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8853,7 +9116,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "adaptability-startups",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8862,7 +9129,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "adaptability-startups" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "adaptability-startups",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8872,7 +9143,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "problem-solving",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8881,7 +9156,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "problem-solving",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8890,7 +9169,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "problem-solving",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8899,11 +9182,16 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "problem-solving" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "problem-solving",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Habilidad para solucionar problemas técnicos complejos.",
+      translatedValue:
+        "Habilidad para solucionar problemas técnicos complejos.",
     },
     // Teamwork
     {
@@ -8946,7 +9234,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-leadership",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8955,7 +9247,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-leadership",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8964,7 +9260,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-leadership",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8973,7 +9273,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "team-leadership" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-leadership",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -8983,7 +9287,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "aws-deployment",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -8992,7 +9300,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "aws-deployment",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9001,7 +9313,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "aws-deployment",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9010,7 +9326,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "aws-deployment" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "aws-deployment",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9057,7 +9377,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-architecture",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9066,7 +9390,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-architecture",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9075,7 +9403,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-architecture",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9084,7 +9416,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "system-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-architecture",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9094,7 +9430,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microfrontend",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9103,7 +9443,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microfrontend",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9112,7 +9456,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microfrontend",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9121,7 +9469,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "microfrontend" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "microfrontend",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9131,7 +9483,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "ecommerce-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9140,7 +9496,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "ecommerce-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9149,7 +9509,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "ecommerce-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9158,7 +9522,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "ecommerce-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "ecommerce-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9168,7 +9536,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "cloud-computing",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9177,16 +9549,25 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "cloud-computing",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Use of cloud technologies for development and deployment.",
+      translatedValue:
+        "Use of cloud technologies for development and deployment.",
     },
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "cloud-computing",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9195,17 +9576,26 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "cloud-computing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "cloud-computing",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Uso de tecnologías en la nube para el desarrollo y despliegue.",
+      translatedValue:
+        "Uso de tecnologías en la nube para el desarrollo y despliegue.",
     },
     // Agile Methodologies
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "agile-methodologies",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9214,7 +9604,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "agile-methodologies",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9223,7 +9617,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "agile-methodologies",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9232,7 +9630,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "agile-methodologies" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "agile-methodologies",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9242,7 +9644,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "team-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9251,7 +9657,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "team-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9260,7 +9670,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "team-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9269,7 +9683,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "team-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9279,7 +9697,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-oriented",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9288,7 +9710,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-oriented",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9297,7 +9723,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-oriented",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9306,7 +9736,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "customer-oriented" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "customer-oriented",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9316,7 +9750,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "production-monitoring",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9325,7 +9763,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "production-monitoring",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9334,7 +9776,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "production-monitoring",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9343,7 +9789,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "production-monitoring" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "production-monitoring",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9353,7 +9803,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9362,7 +9816,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9371,7 +9829,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9380,7 +9842,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "productivity-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "productivity-analysis",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9390,7 +9856,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "local-network" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "local-network",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9399,7 +9869,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "local-network" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "local-network",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9408,7 +9882,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "local-network" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "local-network",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9417,7 +9895,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "local-network" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "local-network",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9501,7 +9983,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-analytics",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9510,7 +9996,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-analytics",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9519,7 +10009,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-analytics",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9528,7 +10022,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "business-analytics" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "business-analytics",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9538,7 +10036,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "security-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "security-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9547,7 +10049,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "security-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "security-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9556,7 +10062,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "security-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "security-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9565,7 +10075,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "security-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "security-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9575,7 +10089,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-analysis",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9584,7 +10102,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-analysis",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9593,7 +10115,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-analysis",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9602,7 +10128,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "data-analysis" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-analysis",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9612,7 +10142,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-collaboration",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9621,7 +10155,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-collaboration",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9630,7 +10168,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-collaboration",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9639,7 +10181,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "team-collaboration" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "team-collaboration",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9649,7 +10195,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "graduation-project",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9658,7 +10208,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "graduation-project",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9667,7 +10221,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "graduation-project",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9676,7 +10234,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "graduation-project" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "graduation-project",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9686,7 +10248,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-challenges",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9695,7 +10261,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-challenges",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9704,7 +10274,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-challenges",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9713,7 +10287,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-challenges" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-challenges",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9723,7 +10301,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-direction",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9732,7 +10314,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-direction",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9741,7 +10327,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-direction",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9750,7 +10340,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "project-direction" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-direction",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9760,7 +10354,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "solution-implementation",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9769,7 +10367,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "solution-implementation",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9778,7 +10380,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "solution-implementation",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9787,7 +10393,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "solution-implementation" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "solution-implementation",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9797,7 +10407,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-consulting",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9806,7 +10420,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-consulting",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9815,7 +10433,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-consulting",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9824,7 +10446,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-consulting" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-consulting",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9834,7 +10460,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-writing",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9843,7 +10473,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-writing",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9852,7 +10486,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-writing",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9861,7 +10499,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-writing" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-writing",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9871,7 +10513,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "time-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "time-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9880,7 +10526,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "time-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "time-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9889,7 +10539,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "time-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "time-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9898,17 +10552,26 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "time-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "time-management",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Gestión efectiva del tiempo para cumplir con los plazos.",
+      translatedValue:
+        "Gestión efectiva del tiempo para cumplir con los plazos.",
     },
     // Infrastructure Management
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9917,7 +10580,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9926,7 +10593,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9935,7 +10606,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "infrastructure-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "infrastructure-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9945,7 +10620,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "network-architecture",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9954,7 +10633,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "network-architecture",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9963,7 +10646,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "network-architecture",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9972,7 +10659,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "network-architecture" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "network-architecture",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -9982,7 +10673,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-planning",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -9991,7 +10686,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-planning",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10000,7 +10699,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-planning",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10009,7 +10712,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "project-planning" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-planning",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10019,7 +10726,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "work-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "work-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10028,7 +10739,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "work-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "work-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10037,7 +10752,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "work-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "work-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10046,7 +10765,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "work-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "work-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10056,7 +10779,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "budget-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10065,7 +10792,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "budget-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10074,7 +10805,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "budget-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10083,7 +10818,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "budget-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "budget-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10093,7 +10832,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "system-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-design",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10102,7 +10845,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "system-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-design",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10111,7 +10858,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "system-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-design",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10120,7 +10871,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "system-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "system-design",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10130,7 +10885,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "software-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10139,7 +10898,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "software-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10148,7 +10911,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "software-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-development",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10157,7 +10924,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "software-development" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-development",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10167,7 +10938,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "data-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10176,7 +10951,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "data-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10185,7 +10964,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "data-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10194,7 +10977,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "data-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "data-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10204,7 +10991,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "project-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10213,7 +11004,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "project-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10222,7 +11017,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "project-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10231,7 +11030,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "project-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "project-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10241,7 +11044,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "collaborative-work",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10250,7 +11057,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "collaborative-work",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10259,7 +11070,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "collaborative-work",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10268,7 +11083,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "collaborative-work" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "collaborative-work",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10278,7 +11097,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "medical-records",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10287,7 +11110,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "medical-records",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10296,7 +11123,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "medical-records",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10305,7 +11136,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "medical-records" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "medical-records",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10315,7 +11150,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "desktop-application",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10324,7 +11163,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "desktop-application",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10333,7 +11176,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "desktop-application",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10342,7 +11189,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "desktop-application" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "desktop-application",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10383,13 +11234,18 @@ export default {
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Lenguaje de programación para desarrollo de aplicaciones.",
+      translatedValue:
+        "Lenguaje de programación para desarrollo de aplicaciones.",
     },
     // Object Oriented Programming
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10398,7 +11254,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10407,7 +11267,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10416,7 +11280,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "object-oriented-programming" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "object-oriented-programming",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10426,7 +11294,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10435,7 +11307,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10444,7 +11320,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10453,7 +11333,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "requirements-gathering" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "requirements-gathering",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10463,7 +11347,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "software-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-design",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10472,7 +11360,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "software-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-design",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10481,7 +11373,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "software-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-design",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10490,7 +11386,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "software-design" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "software-design",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10500,7 +11400,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-communication",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10509,7 +11413,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-communication",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10518,7 +11426,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-communication",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10527,7 +11439,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "technical-communication" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "technical-communication",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10537,7 +11453,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "analytical-thinking",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10546,7 +11466,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "analytical-thinking",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10555,7 +11479,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "analytical-thinking",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10564,7 +11492,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "analytical-thinking" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "analytical-thinking",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10611,7 +11543,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "inventory-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10620,7 +11556,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "inventory-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10629,7 +11569,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "inventory-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10638,11 +11582,16 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "inventory-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "inventory-management",
+        },
       },
       tableName: "Skills",
       field: "description",
-      translatedValue: "Gestión de inventarios para aplicaciones empresariales.",
+      translatedValue:
+        "Gestión de inventarios para aplicaciones empresariales.",
     },
     // PHP
     {
@@ -10722,7 +11671,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "offline-system",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10731,7 +11684,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "offline-system",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10740,7 +11697,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "offline-system",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10749,7 +11710,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "offline-system" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "offline-system",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10759,7 +11724,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "asset-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10768,7 +11737,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "asset-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10777,7 +11750,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "asset-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10786,7 +11763,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "asset-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "asset-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10833,7 +11814,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "database-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "database-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10842,7 +11827,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "en" },
-        recordId: { table: "skills", field: "codeName", value: "database-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "database-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10851,7 +11840,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "database-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "database-management",
+        },
       },
       tableName: "Skills",
       field: "name",
@@ -10860,7 +11853,11 @@ export default {
     {
       relationship: {
         languageId: { table: "languages", field: "codeName", value: "es" },
-        recordId: { table: "skills", field: "codeName", value: "database-management" },
+        recordId: {
+          table: "skills",
+          field: "codeName",
+          value: "database-management",
+        },
       },
       tableName: "Skills",
       field: "description",
@@ -10870,263 +11867,321 @@ export default {
   educationsTranslations: [
     // Udemy - Web Development
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "udemy-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "learn",
-      "translatedValue": "In Udemy I have taken several web development courses, including: JavaScript, React, Vue, Node, SQL, among others. With the same philosophy of learning at my own pace and in my own time but always learning."
+      tableName: "Educations",
+      field: "learn",
+      translatedValue:
+        "In Udemy I have taken several web development courses, including: JavaScript, React, Vue, Node, SQL, among others. With the same philosophy of learning at my own pace and in my own time but always learning.",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "udemy-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "area",
-      "translatedValue": "Web Development"
+      tableName: "Educations",
+      field: "area",
+      translatedValue: "Web Development",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "udemy-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "learn",
-      "translatedValue": "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros. Con la misma filosofía de aprender a mi ritmo y a mi tiempo pero siempre aprendiendo."
+      tableName: "Educations",
+      field: "learn",
+      translatedValue:
+        "En Udemy he tomado varios cursos de desarrollo web, entre ellos: JavaScript, React, Vue, Node, SQL, entre otros. Con la misma filosofía de aprender a mi ritmo y a mi tiempo pero siempre aprendiendo.",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "udemy-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "udemy-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "area",
-      "translatedValue": "Desarrollo Web"
+      tableName: "Educations",
+      field: "area",
+      translatedValue: "Desarrollo Web",
     },
     // YouTube - Web Development
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "youtube-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "learn",
-      "translatedValue": "When I started getting into programming courses in 2013, I accessed free and paid material available online at that time, and to this day I continue to learn."
+      tableName: "Educations",
+      field: "learn",
+      translatedValue:
+        "When I started getting into programming courses in 2013, I accessed free and paid material available online at that time, and to this day I continue to learn.",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "youtube-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "area",
-      "translatedValue": "Web Development"
+      tableName: "Educations",
+      field: "area",
+      translatedValue: "Web Development",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "youtube-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "learn",
-      "translatedValue": "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender"
+      tableName: "Educations",
+      field: "learn",
+      translatedValue:
+        "Cuando comencé a introducirme en el curso de programación en 2013, accedí a material gratuito y de paga que existía en ese momento en linea, hasta el día de hoy no paro de aprender",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "youtube-web-development-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "youtube-web-development-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "area",
-      "translatedValue": "Desarrollo Web"
+      tableName: "Educations",
+      field: "area",
+      translatedValue: "Desarrollo Web",
     },
     // UPTYAB - Informática
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "uptyab-informatics-engineering-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "learn",
-      "translatedValue": "I studied Informatics Engineering at UPTYAB, where I gained knowledge in programming, databases, networks, operating systems, among others."
+      tableName: "Educations",
+      field: "learn",
+      translatedValue:
+        "I studied Informatics Engineering at UPTYAB, where I gained knowledge in programming, databases, networks, operating systems, among others.",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "en" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "en" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "uptyab-informatics-engineering-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "area",
-      "translatedValue": "Informatics Engineering"
+      tableName: "Educations",
+      field: "area",
+      translatedValue: "Informatics Engineering",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "uptyab-informatics-engineering-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "learn",
-      "translatedValue": "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros."
+      tableName: "Educations",
+      field: "learn",
+      translatedValue:
+        "Estudié Ingeniería Informática en la UPTYAB, donde adquirí conocimientos en programación, bases de datos, redes, sistemas operativos, entre otros.",
     },
     {
-      "relationship": {
-        "languageId": { "table": "languages", "field": "codeName", "value": "es" },
-        "recordId": { "table": "educations", "field": "codeName", "value": "uptyab-informatics-engineering-bypabloc" }
+      relationship: {
+        languageId: { table: "languages", field: "codeName", value: "es" },
+        recordId: {
+          table: "educations",
+          field: "codeName",
+          value: "uptyab-informatics-engineering-bypabloc",
+        },
       },
-      "tableName": "Educations",
-      "field": "area",
-      "translatedValue": "Ingeniería Informática"
-    }
+      tableName: "Educations",
+      field: "area",
+      translatedValue: "Ingeniería Informática",
+    },
   ],
   awardsTranslations: [
     // Innovator Award - Destacame 2023
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "innovator-destacame-2023"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "innovator-destacame-2023",
+        },
       },
-      "tableName": "Awards",
-      "field": "title",
-      "translatedValue": "Innovator of the year 2023 at Destacame"
+      tableName: "Awards",
+      field: "title",
+      translatedValue: "Innovator of the year 2023 at Destacame",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "innovator-destacame-2023"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "innovator-destacame-2023",
+        },
       },
-      "tableName": "Awards",
-      "field": "summary",
-      "translatedValue": "For leading the implementation of innovative technological solutions in the company, significantly improving operational efficiency and user experience."
+      tableName: "Awards",
+      field: "summary",
+      translatedValue:
+        "For leading the implementation of innovative technological solutions in the company, significantly improving operational efficiency and user experience.",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "es"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "innovator-destacame-2023"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "innovator-destacame-2023",
+        },
       },
-      "tableName": "Awards",
-      "field": "title",
-      "translatedValue": "Innovador del año 2023 en Destacame"
+      tableName: "Awards",
+      field: "title",
+      translatedValue: "Innovador del año 2023 en Destacame",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "es"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "innovator-destacame-2023"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "innovator-destacame-2023",
+        },
       },
-      "tableName": "Awards",
-      "field": "summary",
-      "translatedValue": "Por liderar la implementación de soluciones tecnológicas innovadoras en la empresa, mejorando significativamente la eficiencia operativa y la experiencia del usuario."
+      tableName: "Awards",
+      field: "summary",
+      translatedValue:
+        "Por liderar la implementación de soluciones tecnológicas innovadoras en la empresa, mejorando significativamente la eficiencia operativa y la experiencia del usuario.",
     },
     // Triple Alianza Award - Lima 2020
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "triple-alianza-lima-2020"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "triple-alianza-lima-2020",
+        },
       },
-      "tableName": "Awards",
-      "field": "title",
-      "translatedValue": "Triple Alliance Challenge Lima"
+      tableName: "Awards",
+      field: "title",
+      translatedValue: "Triple Alliance Challenge Lima",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "triple-alianza-lima-2020"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "triple-alianza-lima-2020",
+        },
       },
-      "tableName": "Awards",
-      "field": "summary",
-      "translatedValue": "For having obtained 1st place in the Commerce sector of the 'Triple Alliance COVID-19 Challenge', this happened during my experience at DIBAL."
+      tableName: "Awards",
+      field: "summary",
+      translatedValue:
+        "For having obtained 1st place in the Commerce sector of the 'Triple Alliance COVID-19 Challenge', this happened during my experience at DIBAL.",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "es"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "triple-alianza-lima-2020"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "triple-alianza-lima-2020",
+        },
       },
-      "tableName": "Awards",
-      "field": "title",
-      "translatedValue": "Desafío Triple Alianza Lima"
+      tableName: "Awards",
+      field: "title",
+      translatedValue: "Desafío Triple Alianza Lima",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "es"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
         },
-        "recordId": {
-          "table": "awards",
-          "field": "codeName",
-          "value": "triple-alianza-lima-2020"
-        }
+        recordId: {
+          table: "awards",
+          field: "codeName",
+          value: "triple-alianza-lima-2020",
+        },
       },
-      "tableName": "Awards",
-      "field": "summary",
-      "translatedValue": "Por haber obtenido el 1er lugar en el sector Comercio del 'Desafío Triple Alianza COVID-19', esto sucedió en mi experiencia en DIBAL."
-    }
+      tableName: "Awards",
+      field: "summary",
+      translatedValue:
+        "Por haber obtenido el 1er lugar en el sector Comercio del 'Desafío Triple Alianza COVID-19', esto sucedió en mi experiencia en DIBAL.",
+    },
   ],
   languagesUsersTranslations: [
     {
       relationship: {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "es"
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
         },
         recordId: {
           table: "languagesUsers",
@@ -11134,16 +12189,16 @@ export default {
           value: "es-bypabloc",
         },
       },
-      "tableName": "LanguagesUsers",
-      "field": "fluency",
+      tableName: "LanguagesUsers",
+      field: "fluency",
       translatedValue: "Nativo",
     },
     {
       relationship: {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
         recordId: {
           table: "languagesUsers",
@@ -11151,16 +12206,16 @@ export default {
           value: "es-bypabloc",
         },
       },
-      "tableName": "LanguagesUsers",
-      "field": "fluency",
+      tableName: "LanguagesUsers",
+      field: "fluency",
       translatedValue: "Native",
     },
     {
       relationship: {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "es"
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
         },
         recordId: {
           table: "languagesUsers",
@@ -11168,16 +12223,16 @@ export default {
           value: "en-bypabloc",
         },
       },
-      "tableName": "LanguagesUsers",
-      "field": "fluency",
+      tableName: "LanguagesUsers",
+      field: "fluency",
       translatedValue: "Intermedio",
     },
     {
       relationship: {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
         recordId: {
           table: "languagesUsers",
@@ -11185,361 +12240,483 @@ export default {
           value: "en-bypabloc",
         },
       },
-      "tableName": "LanguagesUsers",
-      "field": "fluency",
+      tableName: "LanguagesUsers",
+      field: "fluency",
       translatedValue: "Intermediate",
     },
   ],
   referencesTranslations: [
     // Alan Vergara Bravo
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "alan-vergara-bravo"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "alan-vergara-bravo",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "alan-vergara-bravo"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "alan-vergara-bravo",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Software Architect Developer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "Software Architect Developer",
     },
     // Alejandra Medina Briceño
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "alejandra-medina-briceno"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "alejandra-medina-briceno",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "alejandra-medina-briceno"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "alejandra-medina-briceno",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "UX/UI Designer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "UX/UI Designer",
     },
     // Baldomero Águila
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "baldomero-aguila"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "baldomero-aguila",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "baldomero-aguila"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "baldomero-aguila",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Mobile Developer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "Mobile Developer",
     },
     // Cristian Fuentes
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "cristian-fuentes"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "cristian-fuentes",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "cristian-fuentes"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "cristian-fuentes",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Full Stack Developer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "Full Stack Developer",
     },
     // Helis Montes
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "helis-montes"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "helis-montes",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "helis-montes"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "helis-montes",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Full Stack Developer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "Full Stack Developer",
     },
     // Edder Ramírez
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "edder-ramirez"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "edder-ramirez",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "edder-ramirez"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "edder-ramirez",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Full Stack Developer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "Full Stack Developer",
     },
     // José Namoc
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "jose-namoc"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "jose-namoc",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "jose-namoc"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "jose-namoc",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Full Stack Developer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "Full Stack Developer",
     },
     // Jacnelly Colmenarez
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "jacnelly-colmenarez"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "jacnelly-colmenarez",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Team Member"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Team Member",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "jacnelly-colmenarez"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "jacnelly-colmenarez",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "UI/UX Designer"
+      tableName: "References",
+      field: "position",
+      translatedValue: "UI/UX Designer",
     },
     // Felipe Rivera
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "felipe-rivera"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "felipe-rivera",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Worked at the same company"
+      tableName: "References",
+      field: "reference",
+      translatedValue: "Worked at the same company",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "felipe-rivera"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "felipe-rivera",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Talent Acquisition Lead"
+      tableName: "References",
+      field: "position",
+      translatedValue: "Talent Acquisition Lead",
     },
     // Samuel Esponiza
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "samuel-esponiza"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "samuel-esponiza",
+        },
       },
-      "tableName": "References",
-      "field": "reference",
-      "translatedValue": "Studied at the same university and worked on projects together"
+      tableName: "References",
+      field: "reference",
+      translatedValue:
+        "Studied at the same university and worked on projects together",
     },
     {
-      "relationship": {
-        "languageId": {
-          "table": "languages",
-          "field": "codeName",
-          "value": "en"
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
         },
-        "recordId": {
-          "table": "references",
-          "field": "codeName",
-          "value": "samuel-esponiza"
-        }
+        recordId: {
+          table: "references",
+          field: "codeName",
+          value: "samuel-esponiza",
+        },
       },
-      "tableName": "References",
-      "field": "position",
-      "translatedValue": "Full Stack Developer"
-    }
+      tableName: "References",
+      field: "position",
+      translatedValue: "Full Stack Developer",
+    },
+  ],
+  usersAttributesTranslations: [
+    // Traducciones para el atributo "label"
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "usersAttributes",
+          field: "codeName",
+          value: "label-bypabloc",
+        },
+      },
+      tableName: "UsersAttributes",
+      field: "attributeValue",
+      translatedValue: "Software engineer with over 8 years of experience",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "usersAttributes",
+          field: "codeName",
+          value: "label-bypabloc",
+        },
+      },
+      tableName: "UsersAttributes",
+      field: "attributeValue",
+      translatedValue: "Ingeniero de software con más de 8 años de experiencia",
+    },
+    // Traducciones para el atributo "summary"
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "usersAttributes",
+          field: "codeName",
+          value: "summary-bypabloc",
+        },
+      },
+      tableName: "UsersAttributes",
+      field: "attributeValue",
+      translatedValue:
+        "Software engineer with over 8 years of experience, specialized in Full Stack development with Python and JavaScript. Expert in creating technological solutions with Vue, Django, microservices, and AWS, I have successfully developed and led the implementation of ERP systems and fintech platforms, significantly improving operational efficiency and user experience. Skilled in coordinating and motivating teams, I easily adapt to dynamic and challenging environments, always focused on quality and innovation.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "usersAttributes",
+          field: "codeName",
+          value: "summary-bypabloc",
+        },
+      },
+      tableName: "UsersAttributes",
+      field: "attributeValue",
+      translatedValue:
+        "Ingeniero de software con más de 8 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.",
+    },
+    // Traducciones para el atributo "location"
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "usersAttributes",
+          field: "codeName",
+          value: "location-bypabloc",
+        },
+      },
+      tableName: "UsersAttributes",
+      field: "attributeValue",
+      translatedValue: JSON.stringify({
+        address: "",
+        postalCode: "15009",
+        city: "Lima",
+        countryCode: "PE",
+        region: "Peru",
+      }),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "usersAttributes",
+          field: "codeName",
+          value: "location-bypabloc",
+        },
+      },
+      tableName: "UsersAttributes",
+      field: "attributeValue",
+      translatedValue: JSON.stringify({
+        address: "",
+        postalCode: "15009",
+        city: "Lima",
+        countryCode: "PE",
+        region: "Perú",
+      }),
+    },
   ],
 };

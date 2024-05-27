@@ -82,7 +82,6 @@ export default definePreset((params?: Preset) => {
       // Regla para gap
       [/^gap-(\d+)$/, ([, d]) => ({ gap: `${toValidInt(d) * factor}px` })],
 
-      // fxb fxb-column
       [
         /^d-flex$/,
         () => {
@@ -92,11 +91,60 @@ export default definePreset((params?: Preset) => {
         },
       ],
       [
-        /^flex-(\w+)$/,
-        ([, d]) => {
-          return {
-            "flex-direction": d === "column" ? "column" : "row",
+        /^flex-(direction|justify|content|items)-([\w-]+)$/,
+        ([, property, value]) => {
+          const properties = {
+            direction: "flex-direction",
+            justify: "justify-content",
+            content: "align-content",
+            items: "align-items",
           };
+
+          const validValues = {
+            "flex-direction": [
+              "row",
+              "row-reverse",
+              "column",
+              "column-reverse",
+            ],
+            "justify-content": [
+              "flex-start",
+              "flex-end",
+              "center",
+              "space-between",
+              "space-around",
+              "space-evenly",
+            ],
+            "align-content": [
+              "flex-start",
+              "flex-end",
+              "center",
+              "space-between",
+              "space-around",
+              "stretch",
+            ],
+            "align-items": [
+              "flex-start",
+              "flex-end",
+              "center",
+              "baseline",
+              "stretch",
+            ],
+          };
+
+          console.log("property", property);
+          console.log("value", value);
+
+          const cssProperty = properties[property];
+
+          console.log("cssProperty", cssProperty);
+
+          if (cssProperty && validValues[cssProperty].includes(value)) {
+            return {
+              [cssProperty]: value,
+            };
+          }
+          return {};
         },
       ],
     ],

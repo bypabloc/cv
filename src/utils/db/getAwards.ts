@@ -33,9 +33,6 @@ export const getAwards = async ({
       };
     }
 
-    console.log("languageCode", languageCode);
-    console.log("Idioma obtenido correctamente", languageId);
-
     let query = db
       .select({
         id: Awards.id,
@@ -67,19 +64,16 @@ export const getAwards = async ({
         `
       );
 
-    const queryToSql = query.toSQL();
-    console.log("queryToSql", queryToSql);
-
     if (status) {
       query = query.where(eq(Awards.status, status));
     }
 
     const awards = await query.execute();
 
-    console.log(
-      "Premios obtenidos correctamente",
-      JSON.stringify(awards, null, 2)
-    );
+    // console.log(
+    //   "Premios obtenidos correctamente",
+    //   JSON.stringify(awards, null, 2)
+    // );
 
     return {
       isValid: true,

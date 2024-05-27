@@ -2,10 +2,16 @@
 import Section from "../Section.astro";
 
 import { getReferences } from "@/utils/db/getReferences";
+import { getLangFromUrl } from "@/i18n/utils";
+
+const $lang = getLangFromUrl(Astro.url);
 
 const { user } = Astro.props;
 
-const { isValid, data = {} } = await getReferences({ user });
+const { isValid, data = {} } = await getReferences({
+  user,
+  languageCode: $lang,
+});
 const references = isValid ? data?.references : [];
 ---
 

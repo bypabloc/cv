@@ -32,6 +32,7 @@ export const UsersAttributes = defineTable({
     createdAt: column.date({ default: NOW }),
     updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
     // own
+    codeName: column.text({ unique: true }),
     userId: column.text({
       references: () => Users.columns.id,
       index: true,

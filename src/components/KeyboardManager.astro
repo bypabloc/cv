@@ -1,12 +1,15 @@
 ---
 import "hotkeypad/reset.css";
 import "hotkeypad/index.css";
+import { getLangFromUrl } from "@/i18n/utils";
 import { getAttributes } from "@/utils/db/getAttributes";
 import { getUserNetworks } from "@/utils/db/getUserNetworks";
 
 const { user } = Astro.props;
 
-const attributesResult = await getAttributes(user);
+const $lang = getLangFromUrl(Astro.url);
+
+const attributesResult = await getAttributes(user, $lang);
 const attributes = attributesResult.isValid
   ? attributesResult.data?.attributes
   : {};

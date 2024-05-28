@@ -198,15 +198,6 @@ export default async function () {
     model: UsersAttributes,
   };
 
-  tables["usersAttributesTranslations"] = {
-    records: await registerRecordsWithRelations(
-      Translations,
-      jsonData.usersAttributesTranslations,
-      tables
-    ),
-    model: Translations,
-  };
-
   tables["networksUsers"] = {
     records: await registerRecordsWithRelations(
       NetworksUsers,
@@ -416,6 +407,24 @@ export default async function () {
     records: await registerRecordsWithRelations(
       Translations,
       jsonData.referencesTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["projectsTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.projectsTranslations,
+      tables
+    ),
+    model: Translations,
+  };
+
+  tables["usersAttributesTranslations"] = {
+    records: await registerRecordsWithRelations(
+      Translations,
+      jsonData.usersAttributesTranslations,
       tables
     ),
     model: Translations,

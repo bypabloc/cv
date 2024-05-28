@@ -132,12 +132,7 @@ export default definePreset((params?: Preset) => {
             ],
           };
 
-          console.log("property", property);
-          console.log("value", value);
-
           const cssProperty = properties[property];
-
-          console.log("cssProperty", cssProperty);
 
           if (cssProperty && validValues[cssProperty].includes(value)) {
             return {

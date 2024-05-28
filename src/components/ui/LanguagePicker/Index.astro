@@ -1,13 +1,12 @@
 ---
 import { languages } from "@/i18n/ui";
-import { getLangFromUrl } from "@/i18n/utils";
 
-const $lang = getLangFromUrl(Astro.url);
+const { lang } = Astro.props;
 ---
 
 <language-switcher
   class="d-flex flex-justify-flex-end"
-  data-current-lang={$lang}
+  data-current-lang={lang}
   data-languages={JSON.stringify(languages)}
 >
 </language-switcher>

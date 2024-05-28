@@ -19,7 +19,6 @@ export const getAttributes = async (
   languageCode: string = "es"
 ): Promise<ResponseFunction> => {
   try {
-    console.log("languageCode", languageCode);
     // Obtener el ID del idioma correspondiente al código de idioma
     const languageQuery = db
       .select({ id: Languages.id })

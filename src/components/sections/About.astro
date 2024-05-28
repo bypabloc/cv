@@ -1,7 +1,6 @@
 ---
 // Importa las herramientas y componentes necesarios
 import Section from "@/components/Section.astro";
-import { getLangFromUrl } from "@/i18n/utils";
 import { getAttributes } from "@/utils/db/getAttributes";
 
 interface User {
@@ -11,17 +10,19 @@ interface User {
 // Define las props del componente
 interface Props {
   user: User;
+  lang: string;
 }
 
 const props: Props = Astro.props;
+
+const { user, lang } = props;
 
 // Lógica para obtener los atributos
 let attributes = {};
 let networks = []; // Asume que esto también es necesario en tu lógica, aunque no esté usado en el Vue original
 
 async function fetchAttributes(user: User) {
-  const $lang = getLangFromUrl(Astro.url);
-  const attributesResult = await getAttributes(user, $lang);
+  const attributesResult = await getAttributes(user, lang);
   return attributesResult.isValid ? attributesResult.data?.attributes : {};
 }
 

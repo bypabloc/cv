@@ -1,16 +1,13 @@
 ---
 import Section from "@/components/Section.astro";
-import { getLangFromUrl } from "@/i18n/utils";
 import { getAttributes } from "@/utils/db/getAttributes";
 import { getUserNetworks } from "@/utils/db/getUserNetworks";
 import { getFiles } from "@/utils/db/getFiles";
 import PhotoFlow from "@/components/ui/PhotoFlow/PhotoFlow.vue";
 
-const $lang = getLangFromUrl(Astro.url);
+const { user, lang } = Astro.props;
 
-const { user } = Astro.props;
-
-const attributesResult = await getAttributes(user, $lang);
+const attributesResult = await getAttributes(user, lang);
 const attributes = attributesResult.isValid
   ? attributesResult.data?.attributes
   : {};

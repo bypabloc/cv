@@ -698,12 +698,10 @@ export const Projects = defineTable({
     userId: column.text({
       references: () => Users.columns.id,
     }),
+    codeName: column.text({ unique: true }),
     name: column.text(),
     description: column.text(),
-    highlights: column.json({
-      default: [],
-      defaultFn: () => [],
-    }),
+    highlights: column.text(),
     url: column.text(),
     serviceStatus: column.text({
       default: "active",

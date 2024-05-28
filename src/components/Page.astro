@@ -14,29 +14,32 @@ import Languages from "@/components/sections/Languages.astro";
 import Interests from "@/components/sections/Interests.astro";
 import References from "@/components/sections/References.astro";
 import KeyboardManager from "@/components/KeyboardManager.astro";
+import { getLangFromUrl } from "@/i18n/utils";
 
 const { user } = Astro.props;
+
+const lang = getLangFromUrl(Astro.url);
 ---
 
 <main>
   {
     (
       <>
-        <LanguagePicker />
-        <Basic user={user} />
-        <About user={user} />
-        <Experience user={user} />
-        <Education user={user} />
-        <Projects user={user} />
-        <Awards user={user} />
-        <Certificates user={user} />
-        <Publications user={user} />
-        <TechnicalSkills user={user} />
-        <SoftSkills user={user} />
-        <Languages user={user} />
-        <Interests user={user} />
-        <References user={user} />
-        <KeyboardManager user={user} />
+        <LanguagePicker lang={lang} />
+        <Basic user={user} lang={lang} />
+        <About user={user} lang={lang} />
+        <Experience user={user} lang={lang} />
+        <Education user={user} lang={lang} />
+        <Projects user={user} lang={lang} />
+        <Awards user={user} lang={lang} />
+        <Certificates user={user} lang={lang} />
+        <Publications user={user} lang={lang} />
+        <TechnicalSkills user={user} lang={lang} />
+        <SoftSkills user={user} lang={lang} />
+        <Languages user={user} lang={lang} />
+        <Interests user={user} lang={lang} />
+        <References user={user} lang={lang} />
+        <KeyboardManager user={user} lang={lang} />
       </>
     )
   }

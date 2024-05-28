@@ -2,13 +2,10 @@
 import Section from "@/components/Section.astro";
 import Skill from "@/components/ui/Skill/Skill.vue";
 import { getWorks } from "@/utils/db/getWorks";
-import { getLangFromUrl } from "@/i18n/utils";
 
-const $lang = getLangFromUrl(Astro.url);
+const { user, lang } = Astro.props;
 
-const { user } = Astro.props;
-
-const { isValid, data = {} } = await getWorks({ user, languageCode: $lang, });
+const { isValid, data = {} } = await getWorks({ user, languageCode: lang });
 const worksByEmployer = isValid ? data?.works : {};
 ---
 

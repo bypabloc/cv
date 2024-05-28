@@ -2469,13 +2469,14 @@ export default {
           value: "bypabloc",
         },
       },
+      codeName: "cv-bypabloc",
       name: "Curriculum Vitae",
       description:
         "Desarrollo de un currículum vitae en Astro para mostrar mis habilidades y experiencia laboral.",
-      highlights: [
+      highlights: JSON.stringify([
         "Practicar mis habilidades de desarrollo web con Astro",
         "Mostrar mi experiencia laboral de forma clara y concisa",
-      ],
+      ]),
       url: "https://pablo-c.com",
       serviceStatus: "active",
     },
@@ -2487,13 +2488,14 @@ export default {
           value: "bypabloc",
         },
       },
+      codeName: "appinteli-bypabloc",
       name: "ERP para pequeñas tiendas",
       description:
         "Co-fundador y desarrollador de un ERP enfocado en la automatización de procesos de inventario, ventas y compras para pequeñas tiendas.",
-      highlights: [
+      highlights: JSON.stringify([
         "Desarrollo de una plataforma de comercio electrónico integrada",
         "Gestión de cliente y proyecto desde cero",
-      ],
+      ]),
       url: "https://appinteli.com",
       serviceStatus: "inactive",
     },
@@ -5359,6 +5361,7 @@ export default {
   // - Awards
   // - LanguagesUsers
   // - References
+  // - Projects
   // - UsersAttributes
   keywordsTranslations: [
     {
@@ -12596,6 +12599,160 @@ export default {
       tableName: "References",
       field: "position",
       translatedValue: "Full Stack Developer",
+    },
+  ],
+  projectsTranslations: [
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "cv-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "description",
+      translatedValue:
+        "Desarrollo de un currículum vitae en Astro para mostrar mis habilidades y experiencia laboral.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "cv-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "highlights",
+      translatedValue: JSON.stringify([
+        "Practicar mis habilidades de desarrollo web con Astro",
+        "Mostrar mi experiencia laboral de forma clara y concisa",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "cv-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "description",
+      translatedValue:
+        "Development of a resume in Astro to show my skills and work experience.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "cv-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "highlights",
+      translatedValue: JSON.stringify([
+        "Practice my web development skills with Astro",
+        "Show my work experience clearly and concisely",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "appinteli-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "description",
+      translatedValue:
+        "Co-fundador y desarrollador de un ERP enfocado en la automatización de procesos de inventario, ventas y compras para pequeñas tiendas.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "es",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "appinteli-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "highlights",
+      translatedValue: JSON.stringify([
+        "Desarrollo de una plataforma de comercio electrónico integrada",
+        "Gestión de cliente y proyecto desde cero",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "appinteli-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "description",
+      translatedValue:
+        "Co-founder and developer of an ERP focused on automating inventory, sales, and purchasing processes for small stores.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "appinteli-bypabloc",
+        },
+      },
+      tableName: "Projects",
+      field: "highlights",
+      translatedValue: JSON.stringify([
+        "Development of an integrated e-commerce platform",
+        "Customer and project management from scratch",
+      ]),
     },
   ],
   usersAttributesTranslations: [

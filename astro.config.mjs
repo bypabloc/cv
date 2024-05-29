@@ -19,17 +19,6 @@ export default defineConfig({
     vue(),
     db(),
   ],
-  i18n: {
-    defaultLocale: "es",
-    locales: ["es", "en"],
-    routing: {
-        prefixDefaultLocale: false
-    },
-    fallback: {
-        "es": "en",
-        "en": "es",
-    },
-  },
   output: 'hybrid',
   adapter: node({
     mode: "standalone"

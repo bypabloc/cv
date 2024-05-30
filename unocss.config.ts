@@ -19,6 +19,8 @@ export default defineConfig({
         // https://icon-sets.iconify.design/
         mdi: () =>
           import("@iconify-json/mdi/icons.json").then((i) => i.default),
+        carbon: () =>
+          import("@iconify-json/carbon/icons.json").then((i) => i.default),
         "material-symbols": () =>
           import("@iconify-json/material-symbols/icons.json").then(
             (i) => i.default

@@ -1,5 +1,6 @@
 ---
 import LanguagePicker from "@/components/ui/LanguagePicker/Index.astro";
+import ToggleDarkMode from "@/components/ui/ToggleDarkMode/Index.vue";
 import Basic from "@/components/sections/Basic.astro";
 import About from "@/components/sections/About.astro";
 import Education from "@/components/sections/Education.astro";
@@ -31,6 +32,7 @@ const codeNames = translations?.isValid && translations?.data?.codeNames;
     (
       <>
         <LanguagePicker lang={lang} />
+        <ToggleDarkMode lang={lang} client:only />
         <Basic user={user} lang={lang} />
         <About user={user} lang={lang} langCodeNames={codeNames} />
         <Experience user={user} lang={lang} />

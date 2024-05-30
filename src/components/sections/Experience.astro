@@ -2,6 +2,7 @@
 import Section from "@/components/Section.astro";
 import Skill from "@/components/ui/Skill/Skill.vue";
 import { getWorks } from "@/utils/db/getWorks";
+import { useTranslations } from "@/i18n/utils";
 
 const { user, lang } = Astro.props;
 
@@ -11,11 +12,13 @@ const worksByEmployer = isValid ? data?.works : {};
 const hasWorks = Object.values(worksByEmployer).some(
   (employerGroup) => employerGroup.works.length > 0
 );
+
+const t = useTranslations(lang);
 ---
 
 {
   hasWorks && (
-    <Section title="Experiencia laboral">
+    <Section title={t("work-experience.title")}>
       <ul>
         {Object.values(worksByEmployer).map((employerGroup) => (
           <li key={employerGroup.employer?.id || employerGroup.works[0].id}>

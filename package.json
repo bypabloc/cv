@@ -23,10 +23,10 @@
     "@iconify-json/material-symbols": "^1.1.80",
     "@iconify-json/mdi": "^1.1.66",
     "@unocss/astro": "^0.60.3",
-    "astro": "4.9.1",
+    "astro": "^4.9.2",
     "dotenv": "^16.4.5",
-    "hotkeypad": "0.1.1",
-    "typescript": "5.4.5",
+    "hotkeypad": "^0.1.1",
+    "typescript": "^5.4.5",
     "unocss": "^0.60.3",
     "uuid": "^9.0.1",
     "vue": "^3.4.27"

@@ -1,14 +1,16 @@
 ---
-import Section from "../Section.astro";
-
+import Section from "@/components/Section.astro";
 import { getCertificates } from "@/utils/db/getCertificates";
+import { useTranslations } from "@/i18n/utils";
 
-const { user } = Astro.props;
+const { user, lang } = Astro.props;
 
 const { isValid, data = {} } = await getCertificates({ user });
 const certificates = isValid ? data?.certificates : [];
 
 const hasCertificates = certificates.length > 0;
+
+const t = useTranslations(lang);
 
 // Función para formatear la fecha a mes-año
 function formatDateToMonthYear(dateString) {
@@ -19,7 +21,7 @@ function formatDateToMonthYear(dateString) {
 
 {
   hasCertificates && (
-    <Section title="Certificados">
+    <Section title={t("certifications.title")}>
       <ul class="gap-2">
         {certificates.map(({ date, url, issuer, name, title }) => {
           return (

@@ -2,36 +2,34 @@
 // Importa las herramientas y componentes necesarios
 import Section from "@/components/Section.astro";
 import { getAttributes } from "@/utils/db/getAttributes";
+import { useTranslations } from "@/i18n/utils";
 
-interface User {
-  // Define las propiedades del tipo User como sean necesarias
-}
-
-// Define las props del componente
 interface Props {
-  user: User;
+  user: Record<string, any>;
   lang: string;
+  langCodeNames: string[];
 }
 
 const props: Props = Astro.props;
 
 const { user, lang } = props;
 
-// Lógica para obtener los atributos
-let attributes = {};
-let networks = []; // Asume que esto también es necesario en tu lógica, aunque no esté usado en el Vue original
-
-async function fetchAttributes(user: User) {
+async function fetchAttributes(user: Record<string, any>) {
   const attributesResult = await getAttributes(user, lang);
   return attributesResult.isValid ? attributesResult.data?.attributes : {};
 }
 
-attributes = await fetchAttributes(user);
+const attributes = await fetchAttributes(user);
+
+const {
+  summary: { value: summary },
+} = attributes;
+
+const t = useTranslations(lang);
 ---
 
-<!-- HTML estructura del componente -->
-<Section title="Sobre mí">
+<Section title={t("about-me.title")}>
   <p>
-    {attributes.summary?.value}
+    {summary}
   </p>
 </Section>

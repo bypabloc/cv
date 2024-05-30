@@ -1,5 +1,9 @@
 ---
-import { languages } from "@/i18n/ui";
+import { getTranslations } from "@/utils/db/getTranslations";
+
+const translations = await getTranslations();
+const languages =
+  translations?.isValid && translations?.data?.languagesByCodeName;
 
 const { lang } = Astro.props;
 ---

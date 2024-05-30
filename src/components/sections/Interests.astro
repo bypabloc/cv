@@ -1,6 +1,7 @@
 ---
-import Section from "../Section.astro";
+import Section from "@/components/Section.astro";
 import { getInterests } from "@/utils/db/getInterests";
+import { useTranslations } from "@/i18n/utils";
 
 const { user, lang } = Astro.props;
 
@@ -11,11 +12,13 @@ const { isValid, data = {} } = await getInterests({
 const interests = isValid ? data?.interests : [];
 
 const hasInterests = interests.length > 0;
+
+const t = useTranslations(lang);
 ---
 
 {
   hasInterests && (
-    <Section title="Intereses">
+    <Section title={t("interests.title")}>
       <ul>
         {interests.map(({ name }) => {
           return (

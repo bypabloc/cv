@@ -15,10 +15,15 @@ import Interests from "@/components/sections/Interests.astro";
 import References from "@/components/sections/References.astro";
 import KeyboardManager from "@/components/KeyboardManager.astro";
 import { getLangFromUrl } from "@/i18n/utils";
+import { getTranslations } from "@/utils/db/getTranslations";
 
 const { user } = Astro.props;
 
 const lang = getLangFromUrl(Astro.url);
+
+const translations = await getTranslations();
+
+const codeNames = translations?.isValid && translations?.data?.codeNames;
 ---
 
 <main>
@@ -27,7 +32,7 @@ const lang = getLangFromUrl(Astro.url);
       <>
         <LanguagePicker lang={lang} />
         <Basic user={user} lang={lang} />
-        <About user={user} lang={lang} />
+        <About user={user} lang={lang} langCodeNames={codeNames} />
         <Experience user={user} lang={lang} />
         <Education user={user} lang={lang} />
         <Projects user={user} lang={lang} />

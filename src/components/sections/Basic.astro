@@ -4,6 +4,7 @@ import { getAttributes } from "@/utils/db/getAttributes";
 import { getUserNetworks } from "@/utils/db/getUserNetworks";
 import { getFiles } from "@/utils/db/getFiles";
 import PhotoFlow from "@/components/ui/PhotoFlow/PhotoFlow.vue";
+import { useTranslations } from "@/i18n/utils";
 
 const { user, lang } = Astro.props;
 
@@ -30,6 +31,8 @@ const lastName = attributes?.lastName?.value
 const linksPrint = networks
   .filter((network) => network.printUrl.url)
   .map((network) => network.printUrl);
+
+const t = useTranslations(lang);
 ---
 
 <Section>

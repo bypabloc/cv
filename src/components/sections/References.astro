@@ -1,7 +1,7 @@
 ---
-import Section from "../Section.astro";
-
+import Section from "@/components/Section.astro";
 import { getReferences } from "@/utils/db/getReferences";
+import { useTranslations } from "@/i18n/utils";
 
 const { user, lang } = Astro.props;
 
@@ -12,11 +12,13 @@ const { isValid, data = {} } = await getReferences({
 const references = isValid ? data?.references : [];
 
 const hasReferences = references.length > 0;
+
+const t = useTranslations(lang);
 ---
 
 {
   hasReferences && (
-    <Section title="Referencias">
+    <Section title={t("references.title")}>
       <ul class="gap-2">
         {references.map(({ name, position, reference, url }) => {
           return (

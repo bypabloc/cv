@@ -1,6 +1,7 @@
 ---
-import Section from "../Section.astro";
+import Section from "@/components/Section.astro";
 import { getProjects } from "@/utils/db/getProjects";
+import { useTranslations } from "@/i18n/utils";
 
 const { user, lang } = Astro.props;
 
@@ -8,11 +9,13 @@ const { isValid, data = {} } = await getProjects({ user, languageCode: lang });
 const projects = isValid ? data?.projects : [];
 
 const hasProjects = projects.length > 0;
+
+const t = useTranslations(lang);
 ---
 
 {
   hasProjects && (
-    <Section title="Proyectos">
+    <Section title={t("projects.title")}>
       <ul>
         {projects.map(
           ({ url, description, highlights, name, serviceStatus, github }) => {

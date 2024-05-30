@@ -1,0 +1,52 @@
+---
+import Section from "@/components/Section.astro";
+import { getSkills } from "@/utils/db/getSkills";
+import { useTranslations } from "@/i18n/utils";
+
+const { user, lang } = Astro.props;
+
+const { isValid, data = {} } = await getSkills({
+  user,
+  languageCode: lang,
+});
+const skills = isValid ? data?.technical : [];
+const hasSkills = skills.length > 0;
+
+const t = useTranslations(lang);
+---
+
+{
+  hasSkills && (
+    <Section title={t("technicalSkills.title")}>
+      <ul>
+        {skills.map(({ name, description }) => {
+          return (
+            <li>
+              <span>{name}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
+
+<style>
+  ul {
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  li {
+    align-items: center;
+    background: #eee;
+    border-radius: 6px;
+    color: black;
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 500;
+    gap: 4px;
+    padding: 0.2rem 0.6rem;
+  }
+</style>

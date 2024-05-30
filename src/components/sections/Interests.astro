@@ -1,42 +1,52 @@
 ---
-import Section from "../Section.astro";
+import Section from "@/components/Section.astro";
+import { getInterests } from "@/utils/db/getInterests";
+import { useTranslations } from "@/i18n/utils";
 
-import { interests } from "@cv";
+const { user, lang } = Astro.props;
+
+const { isValid, data = {} } = await getInterests({
+  user,
+  languageCode: lang,
+});
+const interests = isValid ? data?.interests : [];
+
+const hasInterests = interests.length > 0;
+
+const t = useTranslations(lang);
 ---
 
-<Section title="Intereses">
-  <ul>
-    {
-      interests.map(({ keywords, name }) => {
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>{name}</h3>
-                </div>
-              </header>
-
-              <footer>
-                <p>{keywords.join(", ")}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+{
+  hasInterests && (
+    <Section title={t("interests.title")}>
+      <ul>
+        {interests.map(({ name }) => {
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>• {name}</h3>
+                  </div>
+                </header>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 2px;
   }
 
   article h3 {
-    font-weight: 500;
+    font-weight: 400;
     color: #111;
   }
 

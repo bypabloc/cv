@@ -1,160 +1,257 @@
 ---
-import Section from "../Section.astro";
-import { type Work } from "@/types/cv";
+import Section from "@/components/Section.astro";
+import Skill from "@/components/ui/Skill/Skill.vue";
+import { getWorks } from "@/utils/db/getWorks";
+import { useTranslations } from "@/i18n/utils";
 
-import { work } from "@cv";
+const { user, lang } = Astro.props;
 
-const works = work as Work[];
+const { isValid, data = {} } = await getWorks({ user, languageCode: lang });
+const worksByEmployer = isValid ? data?.works : {};
 
+const hasWorks = Object.values(worksByEmployer).some(
+  (employerGroup) => employerGroup.works.length > 0
+);
+
+const t = useTranslations(lang);
 ---
 
-<script>
-  function toggleVisibility(contentDiv: HTMLElement) {
-    if (contentDiv.style.display === 'none') {
-      contentDiv.style.display = 'block';
-    } else {
-      contentDiv.style.display = 'none';
-    }
-  }
-</script>
+{
+  hasWorks && (
+    <Section title={t("work-experience.title")}>
+      <ul>
+        {Object.values(worksByEmployer).map((employerGroup) => (
+          <li key={employerGroup.employer?.id || employerGroup.works[0].id}>
+            <header>
+              <div>
+                {employerGroup.employer ? (
+                  <h3 class="employer-name">
+                    <a
+                      href={employerGroup.employer.url}
+                      title={`Ver ${employerGroup.employer.name}`}
+                      target="_blank"
+                    >
+                      {employerGroup.employer.name}
+                    </a>
+                  </h3>
+                ) : (
+                  <h3 class="employer-name">Freelance</h3>
+                )}
+              </div>
+            </header>
 
-
-<Section title="Experiencia laboral">
-  <div class="flex column gap-8">
-    {
-      works.map(
-        ({
-          name,
-          position,
-          url,
-          startDate,
-          endDate,
-          responsibilitiesNProjects,
-          achievements,
-          technicalSkills,
-          softSkills,
-          aptitudes,
-        }) => {
-          const startYear = new Date(startDate).getFullYear();
-          const endYear =
-            endDate != null ? new Date(endDate).getFullYear() : "Actual";
-
-          return (
-            <div>
-              <article>
-                <header>
-                  <div>
-                    <h3>
-                      <a href={url} title={`Ver ${name}`} target="_blank">
-                        {name}
-                      </a>
-                    </h3>
-                    <h4>{position}</h4>
-                  </div>
-
-                  <div>
-                    <time datetime={startDate} data-title={startDate}>
-                      {startYear}
-                    </time>
-                    {" - "}
-                    <time datetime={endDate} data-title={endDate}>
-                      {endYear}
-                    </time>
-                  </div>
-                </header>
-
-                <footer class="flex column gap-4">
-                  <div class="flex column gap-2">
-                    <h4>Responsabilidades y proyectos</h4>
-                    <div>
-                      {responsibilitiesNProjects.map(
-                        (responsibility, index) => (
-                          <div class="responsibilities-n-projects">
-                            <p data-content={responsibility}>
-                              • {responsibility}
-                            </p>
-                          </div>
-                        )
+            {employerGroup.works.length > 1 ? (
+              <div class="timeline">
+                {employerGroup.works.map((work) => (
+                  <article key={work.id} class="timeline-item">
+                    <div class="d-flex flex-direction-row flex-justify-space-between">
+                      <h4>{work.position}</h4>
+                      <div>
+                        <time
+                          datetime={work.startDate}
+                          title={new Date(work.startDate).toLocaleDateString()}
+                        >
+                          {new Date(work.startDate).getFullYear()}
+                        </time>
+                        {" - "}
+                        <time
+                          datetime={work.endDate}
+                          title={
+                            work.endDate
+                              ? new Date(work.endDate).toLocaleDateString()
+                              : "Actual"
+                          }
+                        >
+                          {work.endDate
+                            ? new Date(work.endDate).getFullYear()
+                            : "Actual"}
+                        </time>
+                      </div>
+                    </div>
+                    <footer class="d-flex flex-direction-column gap-4">
+                      {work.summary && (
+                        <div class="d-flex flex-direction-column gap-2">
+                          <p>
+                            <strong>Resumen:</strong> {work.summary}
+                          </p>
+                        </div>
                       )}
+
+                      {work.responsibilitiesNProjects.length > 0 && (
+                        <div class="d-flex flex-direction-column gap-2">
+                          <h4>Responsabilidades y proyectos</h4>
+                          {work.responsibilitiesNProjects.map(
+                            (responsibility) => (
+                              <p key={responsibility}>• {responsibility}</p>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {work.achievements.length > 0 && (
+                        <div class="d-flex flex-direction-column gap-2">
+                          <h4>Logros</h4>
+                          {work.achievements.map((achievement) => (
+                            <p key={achievement}>• {achievement}</p>
+                          ))}
+                        </div>
+                      )}
+
+                      <div class="d-flex flex-direction-column gap-2">
+                        <Skill
+                          title="Habilidades técnicas"
+                          items={work.technicalSkills}
+                          client:load
+                        />
+
+                        <Skill
+                          title="Habilidades blandas"
+                          items={work.softSkills}
+                          client:load
+                        />
+                      </div>
+                    </footer>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              employerGroup.works.map((work) => (
+                <article key={work.id} class="ml-4">
+                  <div class="flex f-row mt-4">
+                    <h4>{work.position}</h4>
+                    <div>
+                      <time
+                        datetime={work.startDate}
+                        title={new Date(work.startDate).toLocaleDateString()}
+                      >
+                        {new Date(work.startDate).getFullYear()}
+                      </time>
+                      {" - "}
+                      <time
+                        datetime={work.endDate}
+                        title={
+                          work.endDate
+                            ? new Date(work.endDate).toLocaleDateString()
+                            : "Actual"
+                        }
+                      >
+                        {work.endDate
+                          ? new Date(work.endDate).getFullYear()
+                          : "Actual"}
+                      </time>
                     </div>
                   </div>
+                  <footer class="d-flex flex-direction-column gap-4">
+                    {work.summary && (
+                      <div class="d-flex flex-direction-column gap-2">
+                        <p>
+                          <strong>Resumen:</strong> {work.summary}
+                        </p>
+                      </div>
+                    )}
 
-                  <div class="flex column gap-2">
-                    <h4>Logros</h4>
-                    <ul>
-                      {achievements.map((achievement, index) => (
-                        <li>
-                          <p>• {achievement}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                    {work.responsibilitiesNProjects.length > 0 && (
+                      <div class="d-flex flex-direction-column gap-2">
+                        <h4>Responsabilidades y proyectos</h4>
+                        {work.responsibilitiesNProjects.map(
+                          (responsibility) => (
+                            <p key={responsibility}>• {responsibility}</p>
+                          )
+                        )}
+                      </div>
+                    )}
 
-                  <!-- Secciones con funcionalidad de ocultar/mostrar -->
-                  <div class="flex column gap-2">
-                    <button onclick="toggleVisibility(this.nextElementSibling)">Habilidades técnicas</button>
-                    <div class="content" style="display: none;">
-                      {technicalSkills.map((skill, index) => (
-                        <span>{skill + (index < technicalSkills.length - 1 ? ", " : "")}</span>
-                      ))}
+                    {work.achievements.length > 0 && (
+                      <div class="d-flex flex-direction-column gap-2">
+                        <h4>Logros</h4>
+                        {work.achievements.map((achievement) => (
+                          <p key={achievement}>• {achievement}</p>
+                        ))}
+                      </div>
+                    )}
+
+                    <div class="d-flex flex-direction-column gap-2">
+                      <Skill
+                        title="Habilidades técnicas"
+                        items={work.technicalSkills}
+                        client:load
+                      />
+
+                      <Skill
+                        title="Habilidades blandas"
+                        items={work.softSkills}
+                        client:load
+                      />
                     </div>
-                  </div>
-
-                  <div class="flex column gap-2">
-                    <button onclick="toggleVisibility(this.nextElementSibling)">Habilidades blandas</button>
-                    <div class="content" style="display: none;">
-                      {softSkills.map((skill, index) => (
-                        <span>{skill + (index < softSkills.length - 1 ? ", " : "")}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div class="flex column gap-2">
-                    <button onclick="toggleVisibility(this.nextElementSibling)">Aptitudes</button>
-                    <div class="content" style="display: none;">
-                      {aptitudes.map((aptitude, index) => (
-                        <span>{aptitude + (index < aptitudes.length - 1 ? ", " : "")}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                </footer>
-              </article>
-            </div>
-          );
-        }
-      )
-    }
-  </div>
-</Section>
-
+                  </footer>
+                </article>
+              ))
+            )}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
-  .flex {
+  ul {
     display: flex;
+    flex-direction: column;
+    gap: 32px;
   }
 
-  .flex.column {
-    flex-direction: column;
+  .flex.f-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  footer span {
+    border-radius: 6px;
+    background: #eee;
+    color: #444;
+    font-size: 0.6rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+  }
+
+  footer div {
+  }
+
+  .soft-skills {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  .soft-skills li {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    border-radius: 4px;
+  }
+
+  .soft-skills p {
+    margin: 0;
+    font-weight: 500;
+    color: #333;
   }
 
   article h3 {
     font-weight: 700;
     color: #111;
-    font-size: larger;
-  }
-
-  article a {
-    color: #111;
-  }
-
-  article a:hover {
-    text-decoration: underline;
+    margin: 0;
   }
 
   article h4 {
-    color: #222;
-    font-weight: 500;
+    color: #666;
+    margin: 0;
   }
 
   header {
@@ -164,53 +261,67 @@ const works = work as Work[];
     margin-bottom: 4px;
   }
 
+  a {
+    display: inline-block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
   time {
     color: #555;
     font-size: 0.85rem;
     min-width: 102px;
-    cursor: default;
   }
 
-  [data-title]:hover:after {
-    opacity: 1;
-    transition: all 0.1s ease-in-out 0.5s;
-    visibility: visible;
+  .flex {
+    display: flex;
   }
 
-  [data-title]:after {
-    content: attr(data-title);
-    background-color: #333;
-    color: #fff;
-    font-size: 0.75rem;
-    font-family:
-      Menlo,
-      Monaco,
-      Lucida Console,
-      "Courier New",
-      monospace;
-    position: absolute;
-    padding: 0.2rem 0.5rem;
-    bottom: -1.4rem;
-    left: 50%;
-    white-space: nowrap;
-    box-shadow: 1px 1px 1px #222222;
-    opacity: 0;
-    border: 1px solid #111111;
-    z-index: 99999;
-    visibility: hidden;
-    border-radius: 6px;
+  .flex.column {
+    flex-direction: column;
   }
 
-  [data-title] {
+  .timeline {
     position: relative;
+    padding-left: 20px;
   }
 
-  .responsibilities-n-projects {
-    margin: 0;
-    padding: 0;
+  .timeline::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ddd;
   }
 
-  @media (width <= 700px) {
+  .timeline-item {
+    position: relative;
+    margin-left: 20px;
+    padding: 10px 0;
+  }
+
+  .timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -25px; /* Ajustar la posición horizontal para alinear con la línea */
+    top: 10px; /* Centrar el punto verticalmente */
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #444;
+  }
+
+  .employer-name {
+    font-size: 1.2rem; /* Tamaño de fuente más grande */
+    font-weight: bold; /* Texto en negrita */
+  }
+
+  @media (max-width: 700px) {
     time {
       text-align: right;
     }

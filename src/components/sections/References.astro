@@ -1,43 +1,56 @@
 ---
-import Section from "../Section.astro";
+import Section from "@/components/Section.astro";
+import { getReferences } from "@/utils/db/getReferences";
+import { useTranslations } from "@/i18n/utils";
 
-import { references } from "@cv";
+const { user, lang } = Astro.props;
+
+const { isValid, data = {} } = await getReferences({
+  user,
+  languageCode: lang,
+});
+const references = isValid ? data?.references : [];
+
+const hasReferences = references.length > 0;
+
+const t = useTranslations(lang);
 ---
 
-<Section title="Referencias">
-  <ul>
-    {
-      references.map(({ name, position, reference, url }) => {
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>
-                    <a href={url} title={`Ver ${name}`} target="_blank">
-                      {name}
-                    </a>
-                  </h3>
-                  <h4>{position}</h4>
-                </div>
-              </header>
+{
+  hasReferences && (
+    <Section title={t("references.title")}>
+      <ul class="gap-2">
+        {references.map(({ name, position, reference, url }) => {
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>
+                      <a href={url} title={`Ver ${name}`} target="_blank">
+                        {name}
+                      </a>
+                    </h3>
+                    <h4>{position}</h4>
+                  </div>
+                </header>
 
-              <footer>
-                <p>{reference}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+                <footer>
+                  <p>{reference}</p>
+                </footer>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {
     display: flex;
     flex-direction: column;
-    gap: 32px;
   }
 
   article h3 {

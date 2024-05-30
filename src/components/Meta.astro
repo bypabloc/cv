@@ -1,0 +1,60 @@
+---
+import { getWorks } from "@/utils/db/getWorks";
+
+const { title, description, user, attributes } = Astro.props;
+
+const { isValid, data = {} } = await getWorks({ user });
+const worksByEmployer = isValid ? data?.works : {};
+
+const extractKeywords = (data) => {
+  const keywords = new Set();
+
+  const recursiveExtract = (obj) => {
+    if (typeof obj === "object") {
+      for (const key in obj) {
+        if (key === "keywords" && Array.isArray(obj[key])) {
+          obj[key].forEach((kw_group) => {
+            kw_group.forEach((kw) => keywords.add(kw));
+          });
+        } else {
+          recursiveExtract(obj[key]);
+        }
+      }
+    } else if (Array.isArray(obj)) {
+      obj.forEach((item) => recursiveExtract(item));
+    }
+  };
+
+  recursiveExtract(data);
+  return Array.from(keywords);
+};
+
+const worksKeywords = extractKeywords(worksByEmployer);
+
+const keywords = worksKeywords.join(", ");
+
+const {
+  names: { value: names },
+  lastName: { value: lastName },
+  summary: { value: summary },
+  url: { value: url },
+} = attributes || {};
+
+const [firstNames, _secondNames] = names.split(" ");
+const [firstLastName, _secondLastName] = lastName.split(" ");
+
+const fullName = `${firstNames} ${firstLastName}`;
+---
+
+<meta charset="UTF-8" />
+<title>{fullName}</title>
+<meta name="description" content={description} />
+<meta name="keywords" content={keywords} />
+<meta name="viewport" content="width=device-width" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+<meta property="og:url" content={url} />
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={summary} />
+<meta property="og:image" content="" />

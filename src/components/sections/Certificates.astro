@@ -1,48 +1,64 @@
 ---
-import Section from "../Section.astro";
+import Section from "@/components/Section.astro";
+import { getCertificates } from "@/utils/db/getCertificates";
+import { useTranslations } from "@/i18n/utils";
 
-import { certificates } from "@cv";
+const { user, lang } = Astro.props;
+
+const { isValid, data = {} } = await getCertificates({ user });
+const certificates = isValid ? data?.certificates : [];
+
+const hasCertificates = certificates.length > 0;
+
+const t = useTranslations(lang);
+
+// Función para formatear la fecha a mes-año
+function formatDateToMonthYear(dateString) {
+  const options = { year: "numeric", month: "long" };
+  return new Date(dateString).toLocaleDateString("es-ES", options);
+}
 ---
 
-<Section title="Certificados">
-  <ul>
-    {
-      certificates.map(({ date, url, issuer, name }) => {
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>
-                    <a href={url} title={`Ver ${name}`} target="_blank">
-                      {name}
-                    </a>
-                  </h3>
-                </div>
+{
+  hasCertificates && (
+    <Section title={t("certifications.title")}>
+      <ul class="gap-2">
+        {certificates.map(({ date, url, issuer, name, title }) => {
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>
+                      <a href={url} title={`Ver ${name}`} target="_blank">
+                        {title}
+                      </a>
+                    </h3>
+                  </div>
 
-                <div>
-                  <time datetime={date} data-title={date}>
-                    {date}
-                  </time>
-                </div>
-              </header>
+                  <div>
+                    <time datetime={date} data-title={date}>
+                      {formatDateToMonthYear(date)}
+                    </time>
+                  </div>
+                </header>
 
-              <footer>
-                <p>{issuer}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+                <footer>
+                  <p>{issuer.name}</p>
+                </footer>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {
     display: flex;
     flex-direction: column;
-    gap: 32px;
   }
 
   article h3 {

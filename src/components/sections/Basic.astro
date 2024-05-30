@@ -1,0 +1,209 @@
+---
+import Section from "@/components/Section.astro";
+import { getAttributes } from "@/utils/db/getAttributes";
+import { getUserNetworks } from "@/utils/db/getUserNetworks";
+import { getFiles } from "@/utils/db/getFiles";
+import PhotoFlow from "@/components/ui/PhotoFlow/PhotoFlow.vue";
+import { useTranslations } from "@/i18n/utils";
+
+const { user, lang } = Astro.props;
+
+const attributesResult = await getAttributes(user, lang);
+const attributes = attributesResult.isValid
+  ? attributesResult.data?.attributes
+  : {};
+
+const networksResult = await getUserNetworks(user, attributes);
+const networks = networksResult.isValid ? networksResult.data?.networks : [];
+
+const filesResult = await getFiles(user);
+const files = filesResult.isValid ? filesResult.data?.files : [];
+
+const filesProfile = files?.profile || [];
+
+const firstName = attributes?.names?.value
+  ? attributes?.names?.value?.split(" ")[0]
+  : "";
+const lastName = attributes?.lastName?.value
+  ? attributes?.lastName?.value?.split(" ")[0]
+  : "";
+
+const linksPrint = networks
+  .filter((network) => network.printUrl.url)
+  .map((network) => network.printUrl);
+
+const t = useTranslations(lang);
+---
+
+<Section>
+  <div class="container">
+    <div class="info">
+      <h1>
+        {firstName}
+        {lastName}
+      </h1>
+      <h2>{attributes.label.value}</h2>
+      <span>
+        <span
+          class="i-clarity-world-line dark:i-clarity-world-solid"
+          aria-hidden="true"></span>
+        {attributes.location.value.city}, {attributes.location.value.region}
+      </span>
+      <footer class="print">
+        <div>
+          {
+            linksPrint &&
+              linksPrint.map((link, index) =>
+                link.link ? (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.url}
+                    {index < linksPrint.length - 1 ? " • " : ""}
+                  </a>
+                ) : (
+                  <span key={index}>
+                    {link.url}
+                    {index < linksPrint.length - 1 ? " • " : ""}
+                  </span>
+                )
+              )
+          }
+        </div>
+      </footer>
+      <footer class="no-print">
+        {
+          networks.map((network) => (
+            <a
+              key={`network-${network.id}`}
+              href={network.webUrl}
+              title={`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${network.name}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className={network.icons.join(" ")} aria-hidden="true" />
+            </a>
+          ))
+        }
+      </footer>
+    </div>
+    <PhotoFlow
+      images={filesProfile}
+      user={user}
+      type="perfil"
+      attributes={attributes}
+      width="128px"
+      client:load
+    />
+  </div>
+</Section>
+
+<style>
+  .container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-right: 32px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    color: #444;
+    font-weight: 500;
+    font-size: 1.1rem;
+    text-wrap: balance;
+  }
+
+  img {
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    width: 128px;
+    border-radius: 16px;
+  }
+
+  footer.print {
+    font-size: 0.65rem;
+  }
+
+  footer.print a {
+    color: #666;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    letter-spacing: -0.05rem;
+  }
+  span {
+    color: #666;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    letter-spacing: -0.05rem;
+  }
+
+  footer.no-print {
+    color: #555;
+    font-size: 0.65rem;
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  footer.no-print a {
+    color: #777;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #eee;
+    padding: 4px;
+    height: 32px;
+    width: 32px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  footer.no-print a:hover {
+    background: #eee;
+    border: 1px solid #ddd;
+  }
+
+  @media (width <= 700px) {
+    .container {
+      flex-direction: column-reverse;
+    }
+
+    .info {
+      justify-content: center;
+      align-items: center;
+      padding-right: 0;
+      text-align: center;
+    }
+
+    figure {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    h2 {
+      text-wrap: balance;
+    }
+
+    figure {
+      margin: 0 auto;
+    }
+  }
+</style>

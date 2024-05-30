@@ -7,36 +7,114 @@ const { user, lang } = Astro.props;
 
 const { isValid, data = {} } = await getWorks({ user, languageCode: lang });
 const worksByEmployer = isValid ? data?.works : {};
+
+const hasWorks = Object.values(worksByEmployer).some(
+  (employerGroup) => employerGroup.works.length > 0
+);
 ---
 
-<Section title="Experiencia laboral">
-  <ul>
-    {
-      Object.values(worksByEmployer).map((employerGroup) => (
-        <li key={employerGroup.employer?.id || employerGroup.works[0].id}>
-          <header>
-            <div>
-              {employerGroup.employer ? (
-                <h3 class="employer-name">
-                  <a
-                    href={employerGroup.employer.url}
-                    title={`Ver ${employerGroup.employer.name}`}
-                    target="_blank"
-                  >
-                    {employerGroup.employer.name}
-                  </a>
-                </h3>
-              ) : (
-                <h3 class="employer-name">Freelance</h3>
-              )}
-            </div>
-          </header>
+{
+  hasWorks && (
+    <Section title="Experiencia laboral">
+      <ul>
+        {Object.values(worksByEmployer).map((employerGroup) => (
+          <li key={employerGroup.employer?.id || employerGroup.works[0].id}>
+            <header>
+              <div>
+                {employerGroup.employer ? (
+                  <h3 class="employer-name">
+                    <a
+                      href={employerGroup.employer.url}
+                      title={`Ver ${employerGroup.employer.name}`}
+                      target="_blank"
+                    >
+                      {employerGroup.employer.name}
+                    </a>
+                  </h3>
+                ) : (
+                  <h3 class="employer-name">Freelance</h3>
+                )}
+              </div>
+            </header>
 
-          {employerGroup.works.length > 1 ? (
-            <div class="timeline">
-              {employerGroup.works.map((work) => (
-                <article key={work.id} class="timeline-item">
-                  <div class="d-flex flex-direction-row flex-justify-space-between">
+            {employerGroup.works.length > 1 ? (
+              <div class="timeline">
+                {employerGroup.works.map((work) => (
+                  <article key={work.id} class="timeline-item">
+                    <div class="d-flex flex-direction-row flex-justify-space-between">
+                      <h4>{work.position}</h4>
+                      <div>
+                        <time
+                          datetime={work.startDate}
+                          title={new Date(work.startDate).toLocaleDateString()}
+                        >
+                          {new Date(work.startDate).getFullYear()}
+                        </time>
+                        {" - "}
+                        <time
+                          datetime={work.endDate}
+                          title={
+                            work.endDate
+                              ? new Date(work.endDate).toLocaleDateString()
+                              : "Actual"
+                          }
+                        >
+                          {work.endDate
+                            ? new Date(work.endDate).getFullYear()
+                            : "Actual"}
+                        </time>
+                      </div>
+                    </div>
+                    <footer class="d-flex flex-direction-column gap-4">
+                      {work.summary && (
+                        <div class="d-flex flex-direction-column gap-2">
+                          <p>
+                            <strong>Resumen:</strong> {work.summary}
+                          </p>
+                        </div>
+                      )}
+
+                      {work.responsibilitiesNProjects.length > 0 && (
+                        <div class="d-flex flex-direction-column gap-2">
+                          <h4>Responsabilidades y proyectos</h4>
+                          {work.responsibilitiesNProjects.map(
+                            (responsibility) => (
+                              <p key={responsibility}>• {responsibility}</p>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {work.achievements.length > 0 && (
+                        <div class="d-flex flex-direction-column gap-2">
+                          <h4>Logros</h4>
+                          {work.achievements.map((achievement) => (
+                            <p key={achievement}>• {achievement}</p>
+                          ))}
+                        </div>
+                      )}
+
+                      <div class="d-flex flex-direction-column gap-2">
+                        <Skill
+                          title="Habilidades técnicas"
+                          items={work.technicalSkills}
+                          client:load
+                        />
+
+                        <Skill
+                          title="Habilidades blandas"
+                          items={work.softSkills}
+                          client:load
+                        />
+                      </div>
+                    </footer>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              employerGroup.works.map((work) => (
+                <article key={work.id} class="ml-4">
+                  <div class="flex f-row mt-4">
                     <h4>{work.position}</h4>
                     <div>
                       <time
@@ -104,84 +182,14 @@ const worksByEmployer = isValid ? data?.works : {};
                     </div>
                   </footer>
                 </article>
-              ))}
-            </div>
-          ) : (
-            employerGroup.works.map((work) => (
-              <article key={work.id} class="ml-4">
-                <div class="flex f-row mt-4">
-                  <h4>{work.position}</h4>
-                  <div>
-                    <time
-                      datetime={work.startDate}
-                      title={new Date(work.startDate).toLocaleDateString()}
-                    >
-                      {new Date(work.startDate).getFullYear()}
-                    </time>
-                    {" - "}
-                    <time
-                      datetime={work.endDate}
-                      title={
-                        work.endDate
-                          ? new Date(work.endDate).toLocaleDateString()
-                          : "Actual"
-                      }
-                    >
-                      {work.endDate
-                        ? new Date(work.endDate).getFullYear()
-                        : "Actual"}
-                    </time>
-                  </div>
-                </div>
-                <footer class="d-flex flex-direction-column gap-4">
-                  {work.summary && (
-                    <div class="d-flex flex-direction-column gap-2">
-                      <p>
-                        <strong>Resumen:</strong> {work.summary}
-                      </p>
-                    </div>
-                  )}
-
-                  {work.responsibilitiesNProjects.length > 0 && (
-                    <div class="d-flex flex-direction-column gap-2">
-                      <h4>Responsabilidades y proyectos</h4>
-                      {work.responsibilitiesNProjects.map((responsibility) => (
-                        <p key={responsibility}>• {responsibility}</p>
-                      ))}
-                    </div>
-                  )}
-
-                  {work.achievements.length > 0 && (
-                    <div class="d-flex flex-direction-column gap-2">
-                      <h4>Logros</h4>
-                      {work.achievements.map((achievement) => (
-                        <p key={achievement}>• {achievement}</p>
-                      ))}
-                    </div>
-                  )}
-
-                  <div class="d-flex flex-direction-column gap-2">
-                    <Skill
-                      title="Habilidades técnicas"
-                      items={work.technicalSkills}
-                      client:load
-                    />
-
-                    <Skill
-                      title="Habilidades blandas"
-                      items={work.softSkills}
-                      client:load
-                    />
-                  </div>
-                </footer>
-              </article>
-            ))
-          )}
-        </li>
-      ))
-    }
-  </ul>
-</Section>
+              ))
+            )}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

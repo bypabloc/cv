@@ -10,36 +10,40 @@ const { isValid, data = {} } = await getReferences({
   languageCode: lang,
 });
 const references = isValid ? data?.references : [];
+
+const hasReferences = references.length > 0;
 ---
 
-<Section title="Referencias">
-  <ul class="gap-2">
-    {
-      references.map(({ name, position, reference, url }) => {
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>
-                    <a href={url} title={`Ver ${name}`} target="_blank">
-                      {name}
-                    </a>
-                  </h3>
-                  <h4>{position}</h4>
-                </div>
-              </header>
+{
+  hasReferences && (
+    <Section title="Referencias">
+      <ul class="gap-2">
+        {references.map(({ name, position, reference, url }) => {
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>
+                      <a href={url} title={`Ver ${name}`} target="_blank">
+                        {name}
+                      </a>
+                    </h3>
+                    <h4>{position}</h4>
+                  </div>
+                </header>
 
-              <footer>
-                <p>{reference}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+                <footer>
+                  <p>{reference}</p>
+                </footer>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

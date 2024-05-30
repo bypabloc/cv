@@ -10,21 +10,24 @@ const { isValid, data = {} } = await getSkills({
   languageCode: lang,
 });
 const skills = isValid ? data?.soft : [];
+const hasSkills = skills.length > 0;
 ---
 
-<Section title="Habilidades blandas">
-  <ul>
-    {
-      skills.map(({ name, description }) => {
-        return (
-          <li>
-            <span>{name}</span>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+{
+  hasSkills && (
+    <Section title="Habilidades blandas">
+      <ul>
+        {skills.map(({ name, description }) => {
+          return (
+            <li>
+              <span>{name}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

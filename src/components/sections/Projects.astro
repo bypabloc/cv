@@ -6,57 +6,61 @@ const { user, lang } = Astro.props;
 
 const { isValid, data = {} } = await getProjects({ user, languageCode: lang });
 const projects = isValid ? data?.projects : [];
+
+const hasProjects = projects.length > 0;
 ---
 
-<Section title="Proyectos">
-  <ul>
-    {
-      projects.map(
-        ({ url, description, highlights, name, serviceStatus, github }) => {
-          return (
-            <li>
-              <article>
-                <header>
-                  <h3>
-                    <a
-                      href={url}
-                      target="_blank"
-                      title={`Ver el proyecto ${name}`}
-                    >
-                      {name}
-                    </a>
-                    {serviceStatus === "active" && (
-                      <span title="Proyecto activo">🟢</span>
-                    )}
-                    {serviceStatus === "inactive" && (
-                      <span title="Proyecto inactivo">🔴</span>
-                    )}
-                    {github && (
+{
+  hasProjects && (
+    <Section title="Proyectos">
+      <ul>
+        {projects.map(
+          ({ url, description, highlights, name, serviceStatus, github }) => {
+            return (
+              <li>
+                <article>
+                  <header>
+                    <h3>
                       <a
-                        class="github-code-link"
-                        href={github}
+                        href={url}
                         target="_blank"
-                        title={`Ver código fuente del proyecto ${name}`}
+                        title={`Ver el proyecto ${name}`}
                       >
-                        <i class="i-mdi-github" />
+                        {name}
                       </a>
-                    )}
-                  </h3>
-                  <p>{description}</p>
-                </header>
-                <footer>
-                  {highlights.map((highlight) => {
-                    return <span>{highlight}</span>;
-                  })}
-                </footer>
-              </article>
-            </li>
-          );
-        }
-      )
-    }
-  </ul>
-</Section>
+                      {serviceStatus === "active" && (
+                        <span title="Proyecto activo">🟢</span>
+                      )}
+                      {serviceStatus === "inactive" && (
+                        <span title="Proyecto inactivo">🔴</span>
+                      )}
+                      {github && (
+                        <a
+                          class="github-code-link"
+                          href={github}
+                          target="_blank"
+                          title={`Ver código fuente del proyecto ${name}`}
+                        >
+                          <i class="i-mdi-github" />
+                        </a>
+                      )}
+                    </h3>
+                    <p>{description}</p>
+                  </header>
+                  <footer>
+                    {highlights.map((highlight) => {
+                      return <span>{highlight}</span>;
+                    })}
+                  </footer>
+                </article>
+              </li>
+            );
+          }
+        )}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

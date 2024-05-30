@@ -8,6 +8,8 @@ const { user } = Astro.props;
 const { isValid, data = {} } = await getCertificates({ user });
 const certificates = isValid ? data?.certificates : [];
 
+const hasCertificates = certificates.length > 0;
+
 // Función para formatear la fecha a mes-año
 function formatDateToMonthYear(dateString) {
   const options = { year: "numeric", month: "long" };
@@ -15,39 +17,41 @@ function formatDateToMonthYear(dateString) {
 }
 ---
 
-<Section title="Certificados">
-  <ul class="gap-2">
-    {
-      certificates.map(({ date, url, issuer, name, title }) => {
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>
-                    <a href={url} title={`Ver ${name}`} target="_blank">
-                      {title}
-                    </a>
-                  </h3>
-                </div>
+{
+  hasCertificates && (
+    <Section title="Certificados">
+      <ul class="gap-2">
+        {certificates.map(({ date, url, issuer, name, title }) => {
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>
+                      <a href={url} title={`Ver ${name}`} target="_blank">
+                        {title}
+                      </a>
+                    </h3>
+                  </div>
 
-                <div>
-                  <time datetime={date} data-title={date}>
-                    {formatDateToMonthYear(date)}
-                  </time>
-                </div>
-              </header>
+                  <div>
+                    <time datetime={date} data-title={date}>
+                      {formatDateToMonthYear(date)}
+                    </time>
+                  </div>
+                </header>
 
-              <footer>
-                <p>{issuer.name}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+                <footer>
+                  <p>{issuer.name}</p>
+                </footer>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

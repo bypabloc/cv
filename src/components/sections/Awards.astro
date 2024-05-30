@@ -8,6 +8,8 @@ const { user, lang } = Astro.props;
 const { isValid, data = {} } = await getAwards({ user, languageCode: lang });
 const awards = isValid ? data?.awards : [];
 
+const hasAwards = awards.length > 0;
+
 // Función para formatear la fecha a mes-año
 function formatDateToMonthYear(dateString) {
   const options = { year: "numeric", month: "long" };
@@ -15,36 +17,38 @@ function formatDateToMonthYear(dateString) {
 }
 ---
 
-<Section title="Premios">
-  <ul>
-    {
-      awards.map(({ title, date, awarder, summary, url }) => (
-        <li>
-          <article>
-            <header>
-              <div>
-                <h3>
-                  <a href={url} title={`Ver ${title}`} target="_blank">
-                    {title}
-                  </a>
-                </h3>
-                <h4>{awarder}</h4>
-              </div>
-              <div>
-                <time datetime={date} data-title={date}>
-                  {formatDateToMonthYear(date)}
-                </time>
-              </div>
-            </header>
-            <footer>
-              <p>{summary}</p>
-            </footer>
-          </article>
-        </li>
-      ))
-    }
-  </ul>
-</Section>
+{
+  hasAwards && (
+    <Section title="Premios">
+      <ul>
+        {awards.map(({ title, date, awarder, summary, url }) => (
+          <li>
+            <article>
+              <header>
+                <div>
+                  <h3>
+                    <a href={url} title={`Ver ${title}`} target="_blank">
+                      {title}
+                    </a>
+                  </h3>
+                  <h4>{awarder}</h4>
+                </div>
+                <div>
+                  <time datetime={date} data-title={date}>
+                    {formatDateToMonthYear(date)}
+                  </time>
+                </div>
+              </header>
+              <footer>
+                <p>{summary}</p>
+              </footer>
+            </article>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

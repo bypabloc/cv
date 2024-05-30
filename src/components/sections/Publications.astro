@@ -11,6 +11,8 @@ const { isValid, data = {} } = await getPublications({
 });
 const publications = isValid ? data?.publications : [];
 
+const hasPublications = publications.length > 0;
+
 // Función para formatear la fecha a mes-año
 function formatDateToMonthYear(dateString) {
   const options = { year: "numeric", month: "long" };
@@ -18,40 +20,42 @@ function formatDateToMonthYear(dateString) {
 }
 ---
 
-<Section title="Publicaciones">
-  <ul class="gap-2">
-    {
-      publications.map(({ name, publisher, releaseDate, summary, url }) => {
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>
-                    <a href={url} title={`Ver ${name}`} target="_blank">
-                      {name}
-                    </a>
-                  </h3>
-                  <h4>{publisher.name}</h4>
-                </div>
+{
+  hasPublications && (
+    <Section title="Publicaciones">
+      <ul class="gap-2">
+        {publications.map(({ name, publisher, releaseDate, summary, url }) => {
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>
+                      <a href={url} title={`Ver ${name}`} target="_blank">
+                        {name}
+                      </a>
+                    </h3>
+                    <h4>{publisher.name}</h4>
+                  </div>
 
-                <div>
-                  <time datetime={releaseDate} data-title={releaseDate}>
-                    {formatDateToMonthYear(releaseDate)}
-                  </time>
-                </div>
-              </header>
+                  <div>
+                    <time datetime={releaseDate} data-title={releaseDate}>
+                      {formatDateToMonthYear(releaseDate)}
+                    </time>
+                  </div>
+                </header>
 
-              <footer>
-                <p>{summary}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+                <footer>
+                  <p>{summary}</p>
+                </footer>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

@@ -26,7 +26,7 @@ async function fetchAttributes(user: User) {
   return attributesResult.isValid ? attributesResult.data?.attributes : {};
 }
 
-attributes = await fetchAttributes(props.user);
+attributes = await fetchAttributes(user);
 ---
 
 <!-- HTML estructura del componente -->

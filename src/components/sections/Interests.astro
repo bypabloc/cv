@@ -9,27 +9,31 @@ const { isValid, data = {} } = await getInterests({
   languageCode: lang,
 });
 const interests = isValid ? data?.interests : [];
+
+const hasInterests = interests.length > 0;
 ---
 
-<Section title="Intereses">
-  <ul>
-    {
-      interests.map(({ name }) => {
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>• {name}</h3>
-                </div>
-              </header>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+{
+  hasInterests && (
+    <Section title="Intereses">
+      <ul>
+        {interests.map(({ name }) => {
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>• {name}</h3>
+                  </div>
+                </header>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

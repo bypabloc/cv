@@ -9,55 +9,59 @@ const { isValid, data = {} } = await getEducations({
   languageCode: lang,
 });
 const educations = isValid ? data?.educations : [];
+
+const hasEducations = educations.length > 0;
 ---
 
-<Section title="Educación">
-  <ul>
-    {
-      educations.map(({ institution, startDate, endDate, area, learn }) => {
-        const startYear = new Date(startDate).getFullYear();
-        const endYear =
-          endDate != null ? new Date(endDate).getFullYear() : "Actual";
-        const years = `${startYear} - ${endYear}`;
+{
+  hasEducations && (
+    <Section title="Educación">
+      <ul>
+        {educations.map(({ institution, startDate, endDate, area, learn }) => {
+          const startYear = new Date(startDate).getFullYear();
+          const endYear =
+            endDate != null ? new Date(endDate).getFullYear() : "Actual";
+          const years = `${startYear} - ${endYear}`;
 
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>
-                    <a
-                      href={institution.url}
-                      title={`Ver ${institution.name}`}
-                      target="_blank"
-                    >
-                      {institution.name}
-                    </a>
-                  </h3>
-                </div>
+          return (
+            <li>
+              <article>
+                <header>
+                  <div>
+                    <h3>
+                      <a
+                        href={institution.url}
+                        title={`Ver ${institution.name}`}
+                        target="_blank"
+                      >
+                        {institution.name}
+                      </a>
+                    </h3>
+                  </div>
 
-                <div>
-                  <time datetime={startDate} data-title={startDate}>
-                    {startYear}
-                  </time>
-                  {" - "}
-                  <time datetime={endDate} data-title={endDate}>
-                    {endYear}
-                  </time>
-                </div>
-              </header>
+                  <div>
+                    <time datetime={startDate} data-title={startDate}>
+                      {startYear}
+                    </time>
+                    {" - "}
+                    <time datetime={endDate} data-title={endDate}>
+                      {endYear}
+                    </time>
+                  </div>
+                </header>
 
-              <footer>
-                <p>{area}</p>
-                <p>{learn}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+                <footer>
+                  <p>{area}</p>
+                  <p>{learn}</p>
+                </footer>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  )
+}
 
 <style>
   ul {

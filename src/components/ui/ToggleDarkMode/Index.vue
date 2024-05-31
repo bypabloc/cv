@@ -5,14 +5,14 @@
     @click="toggleMode"
     @keydown="handleKeydown"
     aria-label="Toggle dark mode"
+    :title="$isDarkMode ? 'Modo claro' : 'Modo oscuro'"
   >
     <span
       :class="[
         $isDarkMode ? 'i-carbon-moon' : 'i-carbon-sun',
       ]"
       aria-hidden="true"
-    ></span>
-    <span>{{ $isDarkMode ? 'Modo oscuro' : 'Modo claro' }}</span>
+    />
   </div>
 </template>
 

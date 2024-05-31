@@ -2,6 +2,8 @@
 import { ViewTransitions } from "astro:transitions";
 import { getLangFromUrl } from "@/i18n/utils";
 import { getAttributes } from "@/utils/db/getAttributes";
+import ToggleDarkMode from "@/components/ui/ToggleDarkMode/Index.vue";
+import LanguagePicker from "@/components/ui/LanguagePicker/Index.astro";
 import Meta from "@/components/Meta.astro";
 
 interface Props {
@@ -38,7 +40,15 @@ const frontmatter = {
     <ViewTransitions />
   </head>
   <body>
-    <slot />
+    <main>
+      <div
+        class="d-flex flex-direction-row flex-justify-flex-end flex-items-center"
+      >
+        <LanguagePicker lang={lang} />
+        <ToggleDarkMode lang={lang} client:only="vue" />
+      </div>
+      <slot />
+    </main>
     <style is:global>
       html {
         font-family:
@@ -95,6 +105,10 @@ const frontmatter = {
 
       footer div h4 {
         font-weight: 700;
+      }
+
+      main {
+        padding: 4rem 4rem 0 4rem;
       }
 
       p {

@@ -1,10 +1,40 @@
 // unocss.config.ts
 import { defineConfig } from "unocss";
+import { presetMini } from "unocss";
+import { presetTypography } from "unocss";
+import { presetAttributify } from "unocss";
 import { presetIcons } from "unocss";
+import { presetWebFonts } from "unocss";
+import presetUno from "@unocss/preset-uno";
+
 import Styles from "./src/presets/styles";
 
 export default defineConfig({
   presets: [
+    presetAttributify({}),
+    presetUno({}),
+    presetMini({}),
+    presetWebFonts({
+      // provider: "google",
+      fonts: {
+        sans: "Noto Sans",
+        "racing-sans-one": [
+          {
+            name: "Racing Sans One",
+            weights: ["400", "600", "700", "800"],
+            italic: true,
+          },
+        ],
+        "noto-sans": [
+          {
+            name: "Noto Sans",
+            weights: ["400", "600", "700", "800"],
+            italic: true,
+          },
+        ],
+      },
+    }),
+
     Styles({
       // Options
       name: "cv-styles",

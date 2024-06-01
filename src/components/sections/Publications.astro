@@ -2,6 +2,7 @@
 import Section from "@/components/Section.astro";
 import { getPublications } from "@/utils/db/getPublications";
 import { useTranslations } from "@/i18n/utils";
+import { formatDateToMonthYear } from "@/utils/formatDateToMonthYear";
 
 const { user, lang } = Astro.props;
 
@@ -14,11 +15,6 @@ const publications = isValid ? data?.publications : [];
 const hasPublications = publications.length > 0;
 
 const t = useTranslations(lang);
-
-function formatDateToMonthYear(dateString) {
-  const options = { year: "numeric", month: "long" };
-  return new Date(dateString).toLocaleDateString("es-ES", options);
-}
 ---
 
 {

@@ -446,7 +446,7 @@ const colors: ListColor = {
 
 const lightPalette = {
   primary: {
-    base: colors.grey.base,
+    base: colors.grey.lighten["5"],
     on: colors.grey.lighten["5"],
     container: colors.grey.darken["4"],
     onContainer: colors.grey.lighten["5"],
@@ -465,24 +465,11 @@ const lightPalette = {
     base: colors.grey.darken["3"],
     on: colors.grey.lighten["4"],
   },
-  grey: {
-    base: colors.grey.base,
-    lighten_1: colors.grey.lighten["1"],
-    lighten_2: colors.grey.lighten["2"],
-    lighten_3: colors.grey.lighten["3"],
-    lighten_4: colors.grey.lighten["4"],
-    lighten_5: colors.grey.lighten["5"],
-    darken_1: colors.grey.darken["1"],
-    darken_2: colors.grey.darken["2"],
-    darken_3: colors.grey.darken["3"],
-    darken_4: colors.grey.darken["4"],
-    darken_5: colors.grey.darken["5"],
-  },
 };
 
 const darkPalette = {
   primary: {
-    base: colors.grey.base,
+    base: colors.grey.darken["5"],
     on: colors.grey.darken["5"],
     container: colors.grey.lighten["1"],
     onContainer: colors.grey.darken["5"],
@@ -500,19 +487,6 @@ const darkPalette = {
   surface: {
     base: colors.grey.lighten["3"],
     on: colors.grey.darken["2"],
-  },
-  grey: {
-    base: colors.grey.base,
-    lighten_1: colors.grey.lighten["1"],
-    lighten_2: colors.grey.lighten["2"],
-    lighten_3: colors.grey.lighten["3"],
-    lighten_4: colors.grey.lighten["4"],
-    lighten_5: colors.grey.lighten["5"],
-    darken_1: colors.grey.darken["1"],
-    darken_2: colors.grey.darken["2"],
-    darken_3: colors.grey.darken["3"],
-    darken_4: colors.grey.darken["4"],
-    darken_5: colors.grey.darken["5"],
   },
 };
 

@@ -1,11 +1,10 @@
 <template>
-  <div
-    role="button"
-    tabindex="0"
+  <button
     @click="toggleMode"
     @keydown="handleKeydown"
     aria-label="Toggle dark mode"
     :title="!$isDarkMode ? 'Modo claro' : 'Modo oscuro'"
+    class="toggle-button"
   >
     <span
       class="nyx-color2-text-primary-on"
@@ -14,7 +13,7 @@
       ]"
       aria-hidden="true"
     />
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -44,5 +43,18 @@ function handleKeydown(event: KeyboardEvent) {
 </script>
 
 <style scoped>
-/* Añade aquí tus estilos */
+.toggle-button {
+  cursor: pointer;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+}
+
+.toggle-button:focus {
+  outline: 2px solid #000;
+}
+
+.toggle-button:hover {
+  border: 1px solid #000;
+}
 </style>

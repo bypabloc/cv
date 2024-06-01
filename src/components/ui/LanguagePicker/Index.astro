@@ -9,7 +9,7 @@ const { lang } = Astro.props;
 ---
 
 <language-switcher
-  class="d-flex flex-justify-flex-end nyx-color2-text-primary-on"
+  class="d-flex flex-justify-flex-end nyx-color2-text-primary-base"
   data-current-lang={lang}
   data-languages={JSON.stringify(languages)}
 >
@@ -86,17 +86,18 @@ const { lang } = Astro.props;
 
 <style is:inline>
   .dropbtn {
-    /* background-color: #3498db; */
-    /* color: white; */
     padding: 16px;
     font-size: 16px;
     border: none;
     cursor: pointer;
   }
 
-  .dropbtn:hover,
   .dropbtn:focus {
-    /* background-color: #2980b9; */
+    outline: 2px solid #000;
+  }
+
+  .dropbtn:hover {
+    border: 1px solid #000;
   }
 
   .dropdown {

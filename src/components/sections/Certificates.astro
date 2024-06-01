@@ -2,6 +2,7 @@
 import Section from "@/components/Section.astro";
 import { getCertificates } from "@/utils/db/getCertificates";
 import { useTranslations } from "@/i18n/utils";
+import { formatDateToMonthYear } from "@/utils/formatDateToMonthYear";
 
 const { user, lang } = Astro.props;
 
@@ -11,12 +12,6 @@ const certificates = isValid ? data?.certificates : [];
 const hasCertificates = certificates.length > 0;
 
 const t = useTranslations(lang);
-
-// Función para formatear la fecha a mes-año
-function formatDateToMonthYear(dateString) {
-  const options = { year: "numeric", month: "long" };
-  return new Date(dateString).toLocaleDateString("es-ES", options);
-}
 ---
 
 {

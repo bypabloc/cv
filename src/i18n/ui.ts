@@ -4,6 +4,8 @@ export const defaultLang = "es";
 
 export const ui = {
   es: {
+    current: "Actual",
+    summary: "Resumen",
     "about-me": {
       title: "Sobre mí",
     },
@@ -12,6 +14,8 @@ export const ui = {
     },
     "work-experience": {
       title: "Experiencia laboral",
+      responsibilitiesNProjects: "Responsabilidades y proyectos",
+      achievements: "Logros",
     },
     education: {
       title: "Educación",
@@ -42,6 +46,8 @@ export const ui = {
     },
   },
   en: {
+    current: "Current",
+    summary: "Summary",
     "about-me": {
       title: "About me",
     },
@@ -50,6 +56,8 @@ export const ui = {
     },
     "work-experience": {
       title: "Work experience",
+      responsibilitiesNProjects: "Responsibilities and projects",
+      achievements: "Achievements",
     },
     education: {
       title: "Education",

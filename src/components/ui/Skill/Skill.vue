@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useTranslations } from "@/i18n/utils";
 
 const props = defineProps({
   title: {
@@ -10,7 +11,13 @@ const props = defineProps({
     type: Array,
     default: () => ([]),
   },
+  lang: {
+    type: String,
+    default: "es",
+  },
 });
+
+const t = useTranslations(props.lang);
 
 const items = computed(() => {
   return props.items.map((item) => {

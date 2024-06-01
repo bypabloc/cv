@@ -59,12 +59,12 @@ const t = useTranslations(lang);
                           title={
                             work.endDate
                               ? new Date(work.endDate).toLocaleDateString()
-                              : "Actual"
+                              : t("current")
                           }
                         >
                           {work.endDate
                             ? new Date(work.endDate).getFullYear()
-                            : "Actual"}
+                            : t("current")}
                         </time>
                       </div>
                     </div>
@@ -72,14 +72,16 @@ const t = useTranslations(lang);
                       {work.summary && (
                         <div class="d-flex flex-direction-column gap-2">
                           <p>
-                            <strong>Resumen:</strong> {work.summary}
+                            <strong>{t("summary")}:</strong> {work.summary}
                           </p>
                         </div>
                       )}
 
                       {work.responsibilitiesNProjects.length > 0 && (
                         <div class="d-flex flex-direction-column gap-2">
-                          <h4>Responsabilidades y proyectos</h4>
+                          <h4>
+                            {t("work-experience.responsibilitiesNProjects")}
+                          </h4>
                           {work.responsibilitiesNProjects.map(
                             (responsibility) => (
                               <p key={responsibility}>• {responsibility}</p>
@@ -90,7 +92,7 @@ const t = useTranslations(lang);
 
                       {work.achievements.length > 0 && (
                         <div class="d-flex flex-direction-column gap-2">
-                          <h4>Logros</h4>
+                          <h4>{t("work-experience.achievements")}</h4>
                           {work.achievements.map((achievement) => (
                             <p key={achievement}>• {achievement}</p>
                           ))}
@@ -99,13 +101,13 @@ const t = useTranslations(lang);
 
                       <div class="d-flex flex-direction-column gap-2">
                         <Skill
-                          title="Habilidades técnicas"
+                          title={t("technicalSkills.title")}
                           items={work.technicalSkills}
                           client:load
                         />
 
                         <Skill
-                          title="Habilidades blandas"
+                          title={t("softSkills.title")}
                           items={work.softSkills}
                           client:load
                         />
@@ -132,12 +134,12 @@ const t = useTranslations(lang);
                         title={
                           work.endDate
                             ? new Date(work.endDate).toLocaleDateString()
-                            : "Actual"
+                            : t("current")
                         }
                       >
                         {work.endDate
                           ? new Date(work.endDate).getFullYear()
-                          : "Actual"}
+                          : t("current")}
                       </time>
                     </div>
                   </div>
@@ -145,14 +147,16 @@ const t = useTranslations(lang);
                     {work.summary && (
                       <div class="d-flex flex-direction-column gap-2">
                         <p>
-                          <strong>Resumen:</strong> {work.summary}
+                          <strong>{t("summary")}:</strong> {work.summary}
                         </p>
                       </div>
                     )}
 
                     {work.responsibilitiesNProjects.length > 0 && (
                       <div class="d-flex flex-direction-column gap-2">
-                        <h4>Responsabilidades y proyectos</h4>
+                        <h4>
+                          {t("work-experience.responsibilitiesNProjects")}
+                        </h4>
                         {work.responsibilitiesNProjects.map(
                           (responsibility) => (
                             <p key={responsibility}>• {responsibility}</p>
@@ -163,7 +167,7 @@ const t = useTranslations(lang);
 
                     {work.achievements.length > 0 && (
                       <div class="d-flex flex-direction-column gap-2">
-                        <h4>Logros</h4>
+                        <h4>{t("work-experience.achievements")}</h4>
                         {work.achievements.map((achievement) => (
                           <p key={achievement}>• {achievement}</p>
                         ))}
@@ -172,13 +176,13 @@ const t = useTranslations(lang);
 
                     <div class="d-flex flex-direction-column gap-2">
                       <Skill
-                        title="Habilidades técnicas"
+                        title={t("technicalSkills.title")}
                         items={work.technicalSkills}
                         client:load
                       />
 
                       <Skill
-                        title="Habilidades blandas"
+                        title={t("softSkills.title")}
                         items={work.softSkills}
                         client:load
                       />

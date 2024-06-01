@@ -5,9 +5,10 @@
     @click="toggleMode"
     @keydown="handleKeydown"
     aria-label="Toggle dark mode"
-    :title="$isDarkMode ? 'Modo claro' : 'Modo oscuro'"
+    :title="!$isDarkMode ? 'Modo claro' : 'Modo oscuro'"
   >
     <span
+      class="nyx-color2-text-primary-on"
       :class="[
         $isDarkMode ? 'i-carbon-moon' : 'i-carbon-sun',
       ]"

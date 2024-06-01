@@ -8,6 +8,8 @@ import { presetWebFonts } from "unocss";
 import presetUno from "@unocss/preset-uno";
 
 import Styles from "./src/presets/styles";
+import { typography, color } from "./src/presets";
+import { themes } from "./src/presets/colors";
 
 export default defineConfig({
   presets: [
@@ -64,6 +66,18 @@ export default defineConfig({
         "font-size": "1.2em",
         display: "inline-block",
         "vertical-align": "middle",
+      },
+    }),
+    typography({
+      selectorName: "nyx-text",
+      options: {
+        test: "test",
+      },
+    }),
+    color({
+      selectorName: "nyx-color2",
+      options: {
+        themes,
       },
     }),
   ],

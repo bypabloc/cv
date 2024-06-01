@@ -36,14 +36,16 @@ const t = useTranslations(lang);
 ---
 
 <Section>
-  <div class="container">
+  <div class="container nyx-color2-bg-grey-lighten-1">
     <div class="info">
-      <h1>
+      <h1 class="nyx-color2-text-primary-on">
         {firstName}
         {lastName}
       </h1>
-      <h2>{attributes.label.value}</h2>
-      <span>
+      <h2 class="nyx-color2-text-primary-container">
+        {attributes.label.value}
+      </h2>
+      <span class="nyx-color2-text-secondary-base">
         <span
           class="i-clarity-world-line dark:i-clarity-world-solid"
           aria-hidden="true"></span>
@@ -60,12 +62,13 @@ const t = useTranslations(lang);
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    class="nyx-color2-text-background-base"
                   >
                     {link.url}
                     {index < linksPrint.length - 1 ? " • " : ""}
                   </a>
                 ) : (
-                  <span key={index}>
+                  <span key={index} class="nyx-color2-text-background-base">
                     {link.url}
                     {index < linksPrint.length - 1 ? " • " : ""}
                   </span>
@@ -83,6 +86,7 @@ const t = useTranslations(lang);
               title={`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${network.name}`}
               target="_blank"
               rel="noopener noreferrer"
+              class="nyx-color2-text-surface-base"
             >
               <span className={network.icons.join(" ")} aria-hidden="true" />
             </a>
@@ -122,7 +126,6 @@ const t = useTranslations(lang);
   }
 
   h2 {
-    color: #444;
     font-weight: 500;
     font-size: 1.1rem;
     text-wrap: balance;
@@ -140,14 +143,12 @@ const t = useTranslations(lang);
   }
 
   footer.print a {
-    color: #666;
     align-items: center;
     gap: 0.25rem;
     font-size: 0.85rem;
     letter-spacing: -0.05rem;
   }
   span {
-    color: #666;
     align-items: center;
     gap: 0.25rem;
     font-size: 0.85rem;
@@ -155,7 +156,6 @@ const t = useTranslations(lang);
   }
 
   footer.no-print {
-    color: #555;
     font-size: 0.65rem;
     display: flex;
     gap: 4px;
@@ -163,7 +163,6 @@ const t = useTranslations(lang);
   }
 
   footer.no-print a {
-    color: #777;
     display: inline-flex;
     align-items: center;
     justify-content: center;

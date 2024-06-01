@@ -152,6 +152,20 @@ const currentImage = computed(() => {
   text-align: center;
 }
 
+.test {
+  color_darken_5: #000;
+  color_darken_4: #111;
+  color_darken_3: #222;
+  color_darken_2: #333;
+  color_darken_1: #444;
+  color_base: #666;
+  color_lighten_1: #777;
+  color_lighten_2: #888;
+  color_lighten_3: #999;
+  color_lighten_4: #aaa;
+  color_lighten_5: #eee;
+}
+
 .numbertext {
   color: #f2f2f2;
   font-size: 12px;

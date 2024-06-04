@@ -75,7 +75,6 @@ const toggleKeywords = () => {
 
 <style scoped>
 h4 {
-  color: #666;
 }
 
 footer {
@@ -86,8 +85,6 @@ footer {
 
 footer span {
   border-radius: 6px;
-  background: #eee;
-  color: #444;
   font-size: 0.6rem;
   font-weight: 500;
   padding: 0.2rem 0.6rem;
@@ -100,8 +97,7 @@ footer span {
 }
 
 .keywords li {
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
+  border: 1px solid ;
   padding: 5px;
   border-radius: 4px;
   margin-bottom: 5px;

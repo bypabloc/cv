@@ -18,7 +18,7 @@ const t = useTranslations(lang);
 {
   hasSkills && (
     <Section title={t("technicalSkills.title")}>
-      <ul>
+      <ul class="nyx-color2-text-primary-on">
         {skills.map(({ name, description }) => {
           return (
             <li>
@@ -40,9 +40,7 @@ const t = useTranslations(lang);
 
   li {
     align-items: center;
-    background: #eee;
     border-radius: 6px;
-    color: black;
     display: flex;
     font-size: 0.8rem;
     font-weight: 500;

@@ -12,7 +12,6 @@ import SoftSkills from "@/components/sections/SoftSkills.astro";
 import Languages from "@/components/sections/Languages.astro";
 import Interests from "@/components/sections/Interests.astro";
 import References from "@/components/sections/References.astro";
-import KeyboardManager from "@/components/KeyboardManager.astro";
 import { getLangFromUrl } from "@/i18n/utils";
 import { getTranslations } from "@/utils/db/getTranslations";
 
@@ -42,7 +41,6 @@ const codeNames = translations?.isValid && translations?.data?.codeNames;
         <Languages user={user} lang={lang} />
         <Interests user={user} lang={lang} />
         <References user={user} lang={lang} />
-        <KeyboardManager user={user} lang={lang} />
       </>
     )
   }

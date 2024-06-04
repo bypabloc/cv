@@ -125,7 +125,6 @@ const currentImage = computed(() => {
   width: auto;
   margin-top: -22px;
   padding: 16px;
-  color: white;
   font-weight: bold;
   font-size: 18px;
   transition: 0.6s ease;
@@ -139,11 +138,9 @@ const currentImage = computed(() => {
 }
 
 .prev:hover, .next:hover {
-  background-color: rgba(0, 0, 0, 0.8);
 }
 
 .text {
-  color: #f2f2f2;
   font-size: 15px;
   padding: 8px 12px;
   position: absolute;
@@ -152,22 +149,7 @@ const currentImage = computed(() => {
   text-align: center;
 }
 
-.test {
-  color_darken_5: #000;
-  color_darken_4: #111;
-  color_darken_3: #222;
-  color_darken_2: #333;
-  color_darken_1: #444;
-  color_base: #666;
-  color_lighten_1: #777;
-  color_lighten_2: #888;
-  color_lighten_3: #999;
-  color_lighten_4: #aaa;
-  color_lighten_5: #eee;
-}
-
 .numbertext {
-  color: #f2f2f2;
   font-size: 12px;
   padding: 8px 12px;
   position: absolute;
@@ -191,18 +173,15 @@ const currentImage = computed(() => {
   height: 15px;
   width: 15px;
   margin: 0 2px;
-  background-color: #bbb;
   border-radius: 50%;
   display: inline-block;
   transition: background-color 0.6s ease;
 }
 
 .active {
-  background-color: #717171;
 }
 
 .dot:hover {
-  background-color: #717171;
 }
 
 @keyframes fade {

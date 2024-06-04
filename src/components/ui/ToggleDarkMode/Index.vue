@@ -53,6 +53,5 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 .toggle-button:hover {
-  border: 1px solid #000;
 }
 </style>

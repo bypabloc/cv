@@ -20,7 +20,7 @@ const t = useTranslations(lang);
       languages.map(({ fluency, language }) => {
         return (
           <li>
-            <article>
+            <article class="nyx-color2-text-primary-on">
               <header>
                 <div>
                   <h3>{language.name}</h3>
@@ -47,7 +47,6 @@ const t = useTranslations(lang);
 
   article h3 {
     font-weight: 500;
-    color: #111;
   }
 
   header {
@@ -58,7 +57,6 @@ const t = useTranslations(lang);
   }
 
   time {
-    color: #555;
     font-size: 0.85rem;
     min-width: 102px;
   }

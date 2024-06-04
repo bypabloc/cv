@@ -2,6 +2,7 @@
 import { ViewTransitions } from "astro:transitions";
 import { getLangFromUrl } from "@/i18n/utils";
 import { getAttributes } from "@/utils/db/getAttributes";
+import KeyboardManager from "@/components/KeyboardManager.astro";
 import ToggleDarkMode from "@/components/ui/ToggleDarkMode/Index.vue";
 import LanguagePicker from "@/components/ui/LanguagePicker/Index.astro";
 import Meta from "@/components/Meta.astro";
@@ -48,6 +49,7 @@ const frontmatter = {
         <ToggleDarkMode lang={lang} client:only="vue" />
       </div>
       <slot />
+      <KeyboardManager user={user} lang={lang} />
     </main>
     <style is:global>
       html {
@@ -58,7 +60,6 @@ const frontmatter = {
           "Courier New",
           Courier,
           monospace;
-        background: #fff;
         letter-spacing: -0.025rem;
       }
 
@@ -154,12 +155,10 @@ const frontmatter = {
       }
 
       ::-webkit-scrollbar-track {
-        background: #f1f1f1;
         border-radius: 10px;
       }
 
       ::-webkit-scrollbar-thumb {
-        background: #888;
         border-radius: 10px;
         border: 3px solid #f1f1f1;
       }

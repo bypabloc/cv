@@ -55,7 +55,10 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
 });
 ---
 
-<footer id="normal-footer" class="no-print">
+<footer
+  id="normal-footer"
+  class="no-print nyx-color2-bg-background-base nyx-color2-text-primary-base"
+>
   Pulsa <kbd>Cmd</kbd> + <kbd>K</kbd> para abrir la paleta de comandos.
 </footer>
 
@@ -81,6 +84,7 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
 
 <div
   id="hotkeypad"
+  class="nyx-color2-bg-background-base nyx-color2-text-primary-base"
   data-placeholder="Buscar comando"
   data-info={JSON.stringify(profilesInfo)}
 >
@@ -177,9 +181,8 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
     }
 
     #footer-button {
-      background: #fff;
       position: fixed;
-      border: 1px solid #eee;
+      border: 1px solid;
       right: 10px;
       bottom: 10px;
       width: 50px;
@@ -193,8 +196,7 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
   }
 
   footer {
-    background: #fdfdfd;
-    border-top: 1px solid #eee;
+    border-top: 1px solid;
     position: fixed;
     bottom: 0px;
     width: 100%;
@@ -211,7 +213,6 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
   }
 
   kbd {
-    background: #eee;
     border-radius: 4px;
     padding: 2px 4px;
     font-size: 12px;

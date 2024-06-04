@@ -44,14 +44,12 @@ function handleKeydown(event: KeyboardEvent) {
 
 <style scoped>
 .toggle-button {
-  cursor: pointer;
+  position: relative;
+  display: inline-block;
   padding: 16px;
   font-size: 16px;
   border: none;
-}
-
-.toggle-button:focus {
-  outline: 2px solid #000;
+  cursor: pointer;
 }
 
 .toggle-button:hover {

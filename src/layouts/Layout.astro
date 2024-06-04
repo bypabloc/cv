@@ -39,10 +39,10 @@ const frontmatter = {
     <Meta {...frontmatter} />
     <ViewTransitions />
   </head>
-  <body>
+  <body class="light">
     <main class="nyx-color2-bg-background-base">
       <div
-        class="d-flex flex-direction-row flex-justify-flex-end flex-items-center"
+        class="d-flex flex-direction-row flex-justify-flex-end flex-items-center no-print"
       >
         <LanguagePicker lang={lang} />
         <ToggleDarkMode lang={lang} client:only="vue" />

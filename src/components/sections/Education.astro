@@ -28,10 +28,10 @@ const t = useTranslations(lang);
 
           return (
             <li>
-              <article>
+              <article class="nyx-color2-text-primary-on">
                 <header>
                   <div>
-                    <h3>
+                    <h3 class="nyx-color2-text-primary-base">
                       <a
                         href={institution.url}
                         title={`Ver ${institution.name}`}
@@ -54,8 +54,8 @@ const t = useTranslations(lang);
                 </header>
 
                 <footer>
-                  <p>{area}</p>
-                  <p>{learn}</p>
+                  <p class="nyx-color2-text-primary-on">{area}</p>
+                  <p class="nyx-color2-text-primary-on">{learn}</p>
                 </footer>
               </article>
             </li>
@@ -75,7 +75,6 @@ const t = useTranslations(lang);
 
   article h3 {
     font-weight: 500;
-    color: #111;
   }
 
   header {
@@ -86,7 +85,6 @@ const t = useTranslations(lang);
   }
 
   time {
-    color: #555;
     font-size: 0.85rem;
     min-width: 102px;
   }

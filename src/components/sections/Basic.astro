@@ -36,13 +36,13 @@ const t = useTranslations(lang);
 ---
 
 <Section>
-  <div class="container nyx-color2-bg-grey-lighten-1">
+  <div class="container">
     <div class="info">
       <h1 class="nyx-color2-text-primary-base">
         {firstName}
         {lastName}
       </h1>
-      <h2 class="nyx-color2-text-primary-container">
+      <h2 class="nyx-color2-text-primary-on">
         {attributes.label.value}
       </h2>
       <span class="nyx-color2-text-secondary-base">
@@ -62,7 +62,7 @@ const t = useTranslations(lang);
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="nyx-color2-text-background-base"
+                    class="nyx-color2-text-secondary-base"
                   >
                     {link.url}
                     {index < linksPrint.length - 1 ? " • " : ""}
@@ -86,7 +86,7 @@ const t = useTranslations(lang);
               title={`Visitar el perfil de ${attributes.names.value} ${attributes.lastName.value} en ${network.name}`}
               target="_blank"
               rel="noopener noreferrer"
-              class="nyx-color2-text-surface-base"
+              class="nyx-color2-text-secondary-base"
             >
               <span className={network.icons.join(" ")} aria-hidden="true" />
             </a>
@@ -122,6 +122,7 @@ const t = useTranslations(lang);
   }
 
   h1 {
+    font-weight: 700;
     font-size: 2rem;
   }
 
@@ -166,7 +167,7 @@ const t = useTranslations(lang);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #eee;
+    border: 1px solid;
     padding: 4px;
     height: 32px;
     width: 32px;
@@ -176,7 +177,6 @@ const t = useTranslations(lang);
 
   footer.no-print a:hover {
     background: #eee;
-    border: 1px solid #ddd;
   }
 
   @media (width <= 700px) {

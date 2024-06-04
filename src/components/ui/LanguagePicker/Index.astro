@@ -86,23 +86,16 @@ const { lang } = Astro.props;
 
 <style is:inline>
   .dropbtn {
+    position: relative;
+    display: inline-block;
     padding: 16px;
     font-size: 16px;
     border: none;
     cursor: pointer;
   }
 
-  .dropbtn:focus {
-    outline: 2px solid #000;
-  }
-
   .dropbtn:hover {
     border: 1px solid #000;
-  }
-
-  .dropdown {
-    position: relative;
-    display: inline-block;
   }
 
   .dropdown-content {

@@ -20,11 +20,7 @@ const t = useTranslations(lang);
     <Section title={t("technicalSkills.title")}>
       <ul class="nyx-color2-text-primary-on">
         {skills.map(({ name, description }) => {
-          return (
-            <li>
-              <span>{name}</span>
-            </li>
-          );
+          return <li>{name}</li>;
         })}
       </ul>
     </Section>

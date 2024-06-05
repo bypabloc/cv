@@ -19,10 +19,10 @@ const t = useTranslations(lang);
 {
   hasReferences && (
     <Section title={t("references.title")}>
-      <ul class="gap-2">
+      <div class="d-flex flex-direction-column gap-8">
         {references.map(({ name, position, reference, url }) => {
           return (
-            <li>
+            <div>
               <article class="nyx-color2-text-primary-on">
                 <header>
                   <div>
@@ -39,10 +39,10 @@ const t = useTranslations(lang);
                   <p>{reference}</p>
                 </footer>
               </article>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </Section>
   )
 }

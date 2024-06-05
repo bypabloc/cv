@@ -19,7 +19,7 @@ const t = useTranslations(lang);
 {
   hasEducations && (
     <Section title={t("education.title")}>
-      <ul>
+      <div class="d-flex flex-direction-column gap-8">
         {educations.map(({ institution, startDate, endDate, area, learn }) => {
           const startYear = new Date(startDate).getFullYear();
           const endYear =
@@ -27,7 +27,7 @@ const t = useTranslations(lang);
           const years = `${startYear} - ${endYear}`;
 
           return (
-            <li>
+            <div>
               <article class="nyx-color2-text-primary-on">
                 <header>
                   <div>
@@ -58,10 +58,10 @@ const t = useTranslations(lang);
                   <p class="nyx-color2-text-primary-on">{learn}</p>
                 </footer>
               </article>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </Section>
   )
 }

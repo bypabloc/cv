@@ -15,11 +15,11 @@ const t = useTranslations(lang);
 ---
 
 <Section title={t("languages.title")}>
-  <ul>
+  <div class="d-flex flex-direction-column gap-8">
     {
       languages.map(({ fluency, language }) => {
         return (
-          <li>
+          <div>
             <article class="nyx-color2-text-primary-on">
               <header>
                 <div>
@@ -31,15 +31,15 @@ const t = useTranslations(lang);
                 <p>{fluency}</p>
               </footer>
             </article>
-          </li>
+          </div>
         );
       })
     }
-  </ul>
+  </div>
 </Section>
 
 <style>
-  ul {
+  section div {
     display: flex;
     flex-direction: column;
     gap: 32px;

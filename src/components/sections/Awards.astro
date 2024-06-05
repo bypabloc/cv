@@ -18,9 +18,9 @@ const t = useTranslations(lang);
 {
   hasAwards && (
     <Section title={t("awards.title")}>
-      <ul>
+      <div class="d-flex flex-direction-column gap-8">
         {awards.map(({ title, date, awarder, summary, url }) => (
-          <li>
+          <div>
             <article class="nyx-color2-text-primary-on">
               <header>
                 <div>
@@ -41,9 +41,9 @@ const t = useTranslations(lang);
                 <p>{summary}</p>
               </footer>
             </article>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </Section>
   )
 }

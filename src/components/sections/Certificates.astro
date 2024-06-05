@@ -17,10 +17,10 @@ const t = useTranslations(lang);
 {
   hasCertificates && (
     <Section title={t("certifications.title")}>
-      <ul class="gap-2">
+      <div class="d-flex flex-direction-column gap-8">
         {certificates.map(({ date, url, issuer, name, title }) => {
           return (
-            <li>
+            <div>
               <article class="nyx-color2-text-primary-on">
                 <header>
                   <div>
@@ -42,10 +42,10 @@ const t = useTranslations(lang);
                   <p>{issuer.name}</p>
                 </footer>
               </article>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </Section>
   )
 }

@@ -16,11 +16,11 @@ const t = useTranslations(lang);
 {
   hasProjects && (
     <Section title={t("projects.title")}>
-      <ul>
+      <div class="cards">
         {projects.map(
           ({ url, description, highlights, name, serviceStatus, github }) => {
             return (
-              <li>
+              <div>
                 <article class="nyx-color2-text-primary-on">
                   <header>
                     <h3>
@@ -56,17 +56,17 @@ const t = useTranslations(lang);
                     })}
                   </footer>
                 </article>
-              </li>
+              </div>
             );
           }
         )}
-      </ul>
+      </div>
     </Section>
   )
 }
 
 <style>
-  ul {
+  .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;

@@ -18,23 +18,23 @@ const t = useTranslations(lang);
 {
   hasSkills && (
     <Section title={t("softSkills.title")}>
-      <ul class="nyx-color2-text-primary-on">
+      <div class="nyx-color2-text-primary-on">
         {skills.map(({ name, description }) => {
-          return <li>{name}</li>;
+          return <span>{name}</span>;
         })}
-      </ul>
+      </div>
     </Section>
   )
 }
 
 <style>
-  ul {
+  div {
     display: inline-flex;
     gap: 8px;
     flex-wrap: wrap;
   }
 
-  li {
+  span {
     align-items: center;
     border-radius: 6px;
     display: flex;

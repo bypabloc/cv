@@ -19,9 +19,9 @@ const t = useTranslations(lang);
 {
   hasWorks && (
     <Section title={t("work-experience.title")}>
-      <ul>
+      <div>
         {Object.values(worksByEmployer).map((employerGroup) => (
-          <li key={employerGroup.employer?.id || employerGroup.works[0].id}>
+          <div key={employerGroup.employer?.id || employerGroup.works[0].id}>
             <header>
               <div>
                 {employerGroup.employer ? (
@@ -198,9 +198,9 @@ const t = useTranslations(lang);
                 </article>
               ))
             )}
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </Section>
   )
 }

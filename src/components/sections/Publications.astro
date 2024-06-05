@@ -20,10 +20,10 @@ const t = useTranslations(lang);
 {
   hasPublications && (
     <Section title={t("publications.title")}>
-      <ul class="gap-2">
+      <div class="d-flex flex-direction-column gap-8">
         {publications.map(({ name, publisher, releaseDate, summary, url }) => {
           return (
-            <li>
+            <div>
               <article class="nyx-color2-text-primary-on">
                 <header>
                   <div>
@@ -46,10 +46,10 @@ const t = useTranslations(lang);
                   <p>{summary}</p>
                 </footer>
               </article>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </Section>
   )
 }

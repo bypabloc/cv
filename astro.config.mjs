@@ -4,8 +4,11 @@ import vue from '@astrojs/vue';
 import db from "@astrojs/db";
 import node from "@astrojs/node";
 
+import sitemap from "@astrojs/sitemap";
+
 // https://astro.build/config
 export default defineConfig({
+  site: process.env.BASE_URL || "http://localhost:4321",
   vite: {
     define: {
       'process.env': {}
@@ -18,6 +21,7 @@ export default defineConfig({
     }),
     vue(),
     db(),
+    sitemap(),
   ],
   output: 'hybrid',
   adapter: node({

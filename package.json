@@ -17,6 +17,7 @@
     "@astrojs/check": "0.7.0",
     "@astrojs/db": "^0.11.4",
     "@astrojs/node": "^8.2.5",
+    "@astrojs/sitemap": "^3.1.5",
     "@astrojs/vue": "^4.3.0",
     "@iconify-json/ant-design": "^1.1.16",
     "@iconify-json/carbon": "^1.1.34",

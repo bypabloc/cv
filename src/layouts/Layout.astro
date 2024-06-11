@@ -49,8 +49,8 @@ const frontmatter = {
         <ToggleDarkMode lang={lang} client:only="vue" />
       </div>
       <slot />
-      <KeyboardManager user={user} lang={lang} />
     </main>
+    <KeyboardManager user={user} lang={lang} />
     <style is:global>
       html {
         font-family:

@@ -9,7 +9,7 @@ import presetUno from "@unocss/preset-uno";
 
 import Styles from "./src/presets/styles";
 import { typography, color } from "./src/presets";
-import { themes } from "./src/presets/colors";
+import { themes, variables } from "./src/presets/colors";
 
 export default defineConfig({
   presets: [
@@ -78,6 +78,7 @@ export default defineConfig({
       selectorName: "nyx-color2",
       options: {
         themes,
+        variables,
       },
     }),
   ],

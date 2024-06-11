@@ -494,3 +494,24 @@ export const themes = {
   light: lightPalette,
   dark: darkPalette,
 };
+
+export const variables = {
+  light: {
+    "hotkeypad-bg-kbd": "#ff0000",
+    "hotkeypad-bg-backdrop": "#ff0000",
+    "hotkeypad-bg-container": "#ff0000",
+    "hotkeypad-bg-item-hover": "#ff0000",
+    "hotkeypad-border-container": "#ff0000",
+    "hotkeypad-border-container-hover": "#ff0000",
+    "hotkeypad-fg-muted": "#ff0000",
+  },
+  dark: {
+    "hotkeypad-bg-kbd": "#0014ff",
+    "hotkeypad-bg-backdrop": "#0014ff",
+    "hotkeypad-bg-container": "#0014ff",
+    "hotkeypad-bg-item-hover": "#0014ff",
+    "hotkeypad-border-container": "#0014ff",
+    "hotkeypad-border-container-hover": "#0014ff",
+    "hotkeypad-fg-muted": "#0014ff",
+  },
+};

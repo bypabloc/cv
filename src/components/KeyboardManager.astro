@@ -55,10 +55,7 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
 });
 ---
 
-<footer
-  id="normal-footer"
-  class="no-print nyx-color2-bg-background-base nyx-color2-text-primary-base"
->
+<footer id="normal-footer" class="nyx-color2-bg-background-base">
   Pulsa <kbd>Cmd</kbd> + <kbd>K</kbd> para abrir la paleta de comandos.
 </footer>
 
@@ -84,7 +81,6 @@ const profilesInfo = networks.map(({ codeName, name, webUrl, icons }) => {
 
 <div
   id="hotkeypad"
-  class="nyx-color2-bg-background-base nyx-color2-text-primary-base"
   data-placeholder="Buscar comando"
   data-info={JSON.stringify(profilesInfo)}
 >

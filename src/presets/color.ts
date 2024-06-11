@@ -1,6 +1,7 @@
-// Path: web/src/presets/color.ts
+// Path: src/presets/color.ts
 
 import { definePreset } from "unocss";
+import { variables } from "./colors";
 
 function getAvailableThemesForColor(
   colorName: string,
@@ -58,7 +59,7 @@ function getColorFromThemes(
 export default definePreset((params?: PresetParams) => {
   const { selectorName = "nyx-color2", options = {} } = params || {};
 
-  const { themes = {} } = options;
+  const { themes = {}, variables = {} } = options;
 
   const listTypes: string[] = ["bg", "text", "border", "fill", "stroke"];
 
@@ -72,8 +73,29 @@ export default definePreset((params?: PresetParams) => {
     stroke: "stroke",
   };
 
+  const cssVariables: string[] = [];
+
+  for (const [theme, vars] of Object.entries(variables)) {
+    const themeVars = Object.entries(vars)
+      .map(([key, value]) => `--${key}: ${value};`)
+      .join("\n    ");
+
+    cssVariables.push(
+      `.${theme} *, .${theme}::before, .${theme}::after {\n    ${themeVars}\n  }`
+    );
+  }
+
+  const cssVariablesString = cssVariables.join("\n\n");
+
+  console.log("cssVariablesString", cssVariablesString);
+
   return {
     name: selectorName,
+    preflights: [
+      {
+        getCSS: () => cssVariablesString,
+      },
+    ],
     shortcuts: [
       [
         new RegExp(`^${selectorName}-(${listTypesRegex})-(.+)$`),

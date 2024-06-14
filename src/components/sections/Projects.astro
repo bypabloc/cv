@@ -18,38 +18,54 @@ const t = useTranslations(lang);
     <Section title={t("projects.title")}>
       <div class="cards">
         {projects.map(
-          ({ url, description, highlights, name, serviceStatus, github }) => {
+          ({
+            url,
+            description,
+            highlights,
+            name,
+            serviceStatus,
+            github,
+            urls,
+          }) => {
             return (
               <div>
                 <article class="nyx-color2-text-primary-on">
                   <header>
-                    <h3>
-                      <a
-                        href={url}
-                        target="_blank"
-                        title={`Ver el proyecto ${name}`}
-                      >
-                        {name}
-                      </a>
+                    <div class="d-flex flex-direction-row flex-justify-space-between flex-align-items-center">
+                      <h3 class="nyx-color2-text-primary-base">
+                        <p>{name}</p>
+                      </h3>
                       {serviceStatus === "active" && (
-                        <span title="Proyecto activo">🟢</span>
+                        <span title="Proyecto activo"> 🟢</span>
                       )}
                       {serviceStatus === "inactive" && (
-                        <span title="Proyecto inactivo">🔴</span>
+                        <span title="Proyecto inactivo"> 🔴</span>
                       )}
-                      {github && (
-                        <a
-                          class="github-code-link"
-                          href={github}
-                          target="_blank"
-                          title={`Ver código fuente del proyecto ${name}`}
-                        >
-                          <i class="i-mdi-github" />
-                        </a>
-                      )}
-                    </h3>
+                    </div>
                     <p>{description}</p>
                   </header>
+                  <div>
+                    <div>
+                      {urls &&
+                        urls.map(({ type, url, icons }) => {
+                          const iconClasses = Object.entries(icons)
+                            .map(([key, value]) =>
+                              key === "default" ? value : `${key}:${value}`
+                            )
+                            .join(" ");
+                          return (
+                            <a
+                              class={`github-code-link ${iconClasses}`}
+                              href={url}
+                              target="_blank"
+                              title={`Ver ${name}`}
+                            >
+                              <i class={iconClasses} />
+                            </a>
+                          );
+                        })}
+                    </div>
+                  </div>
                   <footer>
                     {highlights.map((highlight) => {
                       return <span>{highlight}</span>;
@@ -98,13 +114,14 @@ const t = useTranslations(lang);
     text-decoration: underline;
   }
 
-  article p {
-    font-size: 0.75rem;
+  article header h3 p {
+    font-size: 1rem;
+    font-weight: 500;
     line-height: 1.2rem;
     margin-bottom: 4px;
   }
 
-  article h3 span {
+  article header div span {
     animation-name: flicker;
     animation-duration: 3s;
     animation-timing-function: ease-in;

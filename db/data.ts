@@ -12876,4 +12876,54 @@ export default {
       }),
     },
   ],
+  projectUrlTypes: [
+    {
+      codeName: "github",
+      name: "GitHub",
+      icons: {
+        default: "i-ant-design-github-outlined",
+        dark: "i-ant-design-github-filled",
+      },
+    },
+    {
+      codeName: "website",
+      name: "Website",
+      icons: {
+        default: "i-clarity-world-line",
+        dark: "i-clarity-world-solid",
+      },
+    },
+  ],
+  projectUrls: [
+    {
+      relationship: {
+        projectId: {
+          table: "projects",
+          field: "codeName",
+          value: "cv-bypabloc",
+        },
+        urlTypeId: {
+          table: "projectUrlTypes",
+          field: "codeName",
+          value: "github",
+        },
+      },
+      url: "https://github.com/bypabloc/cv",
+    },
+    {
+      relationship: {
+        projectId: {
+          table: "projects",
+          field: "codeName",
+          value: "cv-bypabloc",
+        },
+        urlTypeId: {
+          table: "projectUrlTypes",
+          field: "codeName",
+          value: "website",
+        },
+      },
+      url: "https://pablocodes.com",
+    },
+  ],
 };

@@ -87,8 +87,6 @@ export default definePreset((params?: PresetParams) => {
 
   const cssVariablesString = cssVariables.join("\n\n");
 
-  console.log("cssVariablesString", cssVariablesString);
-
   return {
     name: selectorName,
     preflights: [

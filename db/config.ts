@@ -710,6 +710,52 @@ export const Projects = defineTable({
   },
 });
 
+export const ProjectUrlTypes = defineTable({
+  columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
+    // own
+    codeName: column.text({ unique: true }),
+    name: column.text({ unique: true }),
+    icons: column.json(),
+  },
+});
+
+export const ProjectUrls = defineTable({
+  columns: {
+    // standard
+    id: column.text({
+      primaryKey: true,
+      default: sql`gen_random_uuid()`,
+    }),
+    status: column.text({
+      default: "active",
+      enumValues: ["active", "inactive"],
+    }),
+    createdAt: column.date({ default: NOW }),
+    updatedAt: column.date({ optional: true, onUpdateFn: () => NOW }),
+    // own
+    projectId: column.text({
+      references: () => Projects.columns.id,
+      index: true,
+    }),
+    urlTypeId: column.text({
+      references: () => ProjectUrlTypes.columns.id,
+      index: true,
+    }),
+    url: column.text(),
+  },
+});
+
 export const References = defineTable({
   columns: {
     // standard
@@ -762,6 +808,8 @@ export default defineDb({
     Networks,
     NetworksUsers,
     Projects,
+    ProjectUrls,
+    ProjectUrlTypes,
     Publications,
     Publishers,
     References,

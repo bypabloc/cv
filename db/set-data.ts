@@ -30,6 +30,8 @@ import {
   WorksSoftSkills,
   WorksTechnicalSkills,
   InterestsKeywords,
+  ProjectUrls,
+  ProjectUrlTypes,
 } from "astro:db";
 
 import jsonData from "./data";
@@ -428,5 +430,23 @@ export default async function () {
       tables
     ),
     model: Translations,
+  };
+
+  tables["projectUrlTypes"] = {
+    records: await registerRecordsWithRelations(
+      ProjectUrlTypes,
+      jsonData.projectUrlTypes,
+      tables
+    ),
+    model: ProjectUrlTypes,
+  };
+
+  tables["projectUrls"] = {
+    records: await registerRecordsWithRelations(
+      ProjectUrls,
+      jsonData.projectUrls,
+      tables
+    ),
+    model: ProjectUrls,
   };
 }

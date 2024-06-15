@@ -39,7 +39,8 @@ const { lang } = Astro.props;
       };
 
       const dropdownContent = document.createElement("div");
-      dropdownContent.className = "dropdown-content";
+      dropdownContent.className =
+        "dropdown-content nyx-color2-bg-background-on";
 
       // Filtrar el idioma actual para no mostrarlo en la lista
       Object.entries(languages).forEach(([lang, label]) => {

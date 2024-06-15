@@ -459,7 +459,7 @@ const lightPalette = {
   },
   background: {
     base: colors.grey.lighten["5"],
-    on: colors.grey.darken["4"],
+    on: colors.grey.darken["3"],
   },
   surface: {
     base: colors.grey.lighten["3"],
@@ -482,7 +482,7 @@ const darkPalette = {
   },
   background: {
     base: colors.grey.darken["4"],
-    on: colors.grey.lighten["5"],
+    on: colors.grey.darken["5"],
   },
   surface: {
     base: colors.grey.darken["3"],
@@ -504,6 +504,8 @@ export const variables = {
     "hotkeypad-border-container": "#d1d5db",
     "hotkeypad-border-container-hover": "#9ca3af",
     "hotkeypad-fg-muted": "#4b5563",
+    "timeline-bg": "#dfdfdf",
+    "timeline-item-bg": "#9b9b9b",
   },
   dark: {
     "hotkeypad-bg-kbd": "#050607",
@@ -513,5 +515,7 @@ export const variables = {
     "hotkeypad-border-container": "#2e3138",
     "hotkeypad-border-container-hover": "#656b78",
     "hotkeypad-fg-muted": "#bfc5d2",
+    "timeline-bg": "#2d2d2d",
+    "timeline-item-bg": "#9b9b9b",
   },
 };

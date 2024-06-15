@@ -19,7 +19,7 @@ const t = useTranslations(lang);
 {
   hasWorks && (
     <Section title={t("work-experience.title")}>
-      <div>
+      <div class="d-flex flex-direction-column gap-8">
         {Object.values(worksByEmployer).map((employerGroup) => (
           <div key={employerGroup.employer?.id || employerGroup.works[0].id}>
             <header>
@@ -299,7 +299,7 @@ const t = useTranslations(lang);
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #ddd;
+    background: var(--timeline-bg);
   }
 
   .timeline-item {
@@ -316,7 +316,7 @@ const t = useTranslations(lang);
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #444;
+    background: var(--timeline-item-bg);
   }
 
   .employer-name {

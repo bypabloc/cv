@@ -63,7 +63,12 @@ export default definePreset((params?: Preset) => {
       ],
 
       // Regla para padding
-      [/^p-(\d+)$/, ([, d]) => ({ padding: `${toValidInt(d) * factor}px` })],
+      [
+        /^p-(\d+)$/,
+        ([, d]) => {
+          return { padding: `${toValidInt(d) * factor}px` };
+        },
+      ],
       [
         /^px-(\d+)$/,
         ([, d]) => ({

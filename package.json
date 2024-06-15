@@ -3,18 +3,44 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
+    "dev": "astro dev --remote",
+    "db:seed": "astro db execute \"./db/set-data.ts\" --remote",
     "build": "astro check && astro build",
+    "build:no-check": "astro build --remote",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "start:dev": "ENV=development pnpm run start",
+    "start": "node scripts/index.js",
+    "npm:install": "rm -rf node_modules && rm -rf dist && pnpm store prune && pnpm install",
+    "npm:reinstall": "rm -rf node_modules && rm -rf dist && rm -rf .nuxt && rm -f pnpm-lock.yaml && pnpm store prune && pnpm install"
   },
   "dependencies": {
-    "@astrojs/check": "0.4.1",
-    "@unocss/astro": "^0.59.4",
-    "astro": "4.3.2",
-    "hotkeypad": "0.1.0",
-    "typescript": "5.3.3",
-    "unocss": "^0.59.4"
+    "@astrojs/check": "0.7.0",
+    "@astrojs/db": "^0.11.4",
+    "@astrojs/node": "^8.2.6",
+    "@astrojs/sitemap": "^3.1.5",
+    "@astrojs/vue": "^4.4.0",
+    "@iconify-json/ant-design": "^1.1.16",
+    "@iconify-json/carbon": "^1.1.35",
+    "@iconify-json/clarity": "^1.1.13",
+    "@iconify-json/material-symbols": "^1.1.82",
+    "@iconify-json/mdi": "^1.1.66",
+    "@nanostores/vue": "^0.10.0",
+    "@unocss/astro": "^0.60.4",
+    "astro": "^4.10.1",
+    "dotenv": "^16.4.5",
+    "hotkeypad": "^0.1.1",
+    "nanostores": "^0.10.3",
+    "typescript": "^5.4.5",
+    "unocss": "^0.60.4",
+    "uuid": "^10.0.0",
+    "vue": "^3.4.27"
+  },
+  "devDependencies": {
+    "semver": "^7.6.0",
+    "fs-extra": "^11.2.0",
+    "archiver": "^7.0.1",
+    "glob": "^10.3.12",
+    "undici": "^6.15.0"
   }
 }

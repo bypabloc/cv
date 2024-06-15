@@ -1,0 +1,121 @@
+---
+import { getTranslations } from "@/utils/db/getTranslations";
+
+const translations = await getTranslations();
+const languages =
+  translations?.isValid && translations?.data?.languagesByCodeName;
+
+const { lang } = Astro.props;
+---
+
+<language-switcher
+  class="d-flex flex-justify-flex-end nyx-color2-text-primary-on"
+  data-current-lang={lang}
+  data-languages={JSON.stringify(languages)}
+>
+</language-switcher>
+
+<script>
+  import { navigate } from "astro:transitions/client";
+  import { getLangFromUrl } from "@/i18n/utils";
+
+  class LanguageSwitcher extends HTMLElement {
+    constructor() {
+      super();
+
+      const currentLang = this.dataset.currentLang;
+      const languages = JSON.parse(this.dataset.languages);
+
+      // Crear el contenedor del dropdown y su botón
+      const container = document.createElement("div");
+      container.className = "dropdown";
+
+      const button = document.createElement("button");
+      button.className = "dropbtn";
+      button.textContent = languages[currentLang];
+      button.onclick = (event) => {
+        event.stopPropagation(); // Evitar que el clic cierre el dropdown inmediatamente
+        dropdownContent.classList.toggle("show");
+      };
+
+      const dropdownContent = document.createElement("div");
+      dropdownContent.className =
+        "dropdown-content nyx-color2-bg-background-on";
+
+      // Filtrar el idioma actual para no mostrarlo en la lista
+      Object.entries(languages).forEach(([lang, label]) => {
+        if (lang !== currentLang) {
+          const link = document.createElement("a");
+          link.href = `/${lang}/`;
+          link.textContent = label;
+          link.onclick = async (ev) => {
+            ev.preventDefault();
+            await navigate(link.href);
+
+            const url = new URL(window.location.href);
+            const newLang = getLangFromUrl(url);
+
+            button.textContent = languages[newLang];
+            dropdownContent.classList.remove("show");
+          };
+          dropdownContent.appendChild(link);
+        }
+      });
+
+      container.appendChild(button);
+      container.appendChild(dropdownContent);
+      this.appendChild(container);
+
+      // Cerrar el dropdown si se hace clic fuera de él
+      window.onclick = function (event) {
+        if (!event.target.matches(".dropbtn")) {
+          const dropdowns = document.getElementsByClassName("dropdown-content");
+          for (let i = 0; i < dropdowns.length; i++) {
+            const openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains("show")) {
+              openDropdown.classList.remove("show");
+            }
+          }
+        }
+      };
+    }
+  }
+
+  // Definir el elemento personalizado
+  customElements.define("language-switcher", LanguageSwitcher);
+</script>
+
+<style is:inline>
+  .dropbtn {
+    position: relative;
+    display: inline-block;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .dropbtn:hover {
+  }
+
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    overflow: auto;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+
+  .dropdown-content a {
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+  }
+
+  .dropdown-content a:hover {
+  }
+
+  .show {
+    display: block;
+  }
+</style>

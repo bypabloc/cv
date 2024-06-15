@@ -26,37 +26,127 @@ export default definePreset((params?: Preset) => {
       [
         /^mx-(\d+)$/,
         ([, d]) => ({
-          marginLeft: `${toValidInt(d) * factor}px`,
-          marginRight: `${toValidInt(d) * factor}px`,
+          "margin-left": `${toValidInt(d) * factor}px`,
+          "margin-right": `${toValidInt(d) * factor}px`,
+        }),
+      ],
+      [
+        /^mt-(\d+)$/,
+        ([, d]) => ({
+          "margin-top": `${toValidInt(d) * factor}px`,
+        }),
+      ],
+      [
+        /^mb-(\d+)$/,
+        ([, d]) => ({
+          "margin-bottom": `${toValidInt(d) * factor}px`,
+        }),
+      ],
+      [
+        /^ml-(\d+)$/,
+        ([, d]) => ({
+          "margin-left": `${toValidInt(d) * factor}px`,
+        }),
+      ],
+      [
+        /^mr-(\d+)$/,
+        ([, d]) => ({
+          "margin-right": `${toValidInt(d) * factor}px`,
         }),
       ],
       [
         /^my-(\d+)$/,
         ([, d]) => ({
-          marginTop: `${toValidInt(d) * factor}px`,
-          marginBottom: `${toValidInt(d) * factor}px`,
+          "margin-top": `${toValidInt(d) * factor}px`,
+          "margin-bottom": `${toValidInt(d) * factor}px`,
         }),
       ],
 
       // Regla para padding
-      [/^p-(\d+)$/, ([, d]) => ({ padding: `${toValidInt(d) * factor}px` })],
+      [
+        /^p-(\d+)$/,
+        ([, d]) => {
+          return { padding: `${toValidInt(d) * factor}px` };
+        },
+      ],
       [
         /^px-(\d+)$/,
         ([, d]) => ({
-          paddingLeft: `${toValidInt(d) * factor}px`,
-          paddingRight: `${toValidInt(d) * factor}px`,
+          "padding-left": `${toValidInt(d) * factor}px`,
+          "padding-right": `${toValidInt(d) * factor}px`,
         }),
       ],
       [
         /^py-(\d+)$/,
         ([, d]) => ({
-          paddingTop: `${toValidInt(d) * factor}px`,
-          paddingBottom: `${toValidInt(d) * factor}px`,
+          "padding-top": `${toValidInt(d) * factor}px`,
+          "padding-bottom": `${toValidInt(d) * factor}px`,
         }),
       ],
 
       // Regla para gap
       [/^gap-(\d+)$/, ([, d]) => ({ gap: `${toValidInt(d) * factor}px` })],
+
+      [
+        /^d-flex$/,
+        () => {
+          return {
+            display: "flex",
+          };
+        },
+      ],
+      [
+        /^flex-(direction|justify|content|items)-([\w-]+)$/,
+        ([, property, value]) => {
+          const properties = {
+            direction: "flex-direction",
+            justify: "justify-content",
+            content: "align-content",
+            items: "align-items",
+          };
+
+          const validValues = {
+            "flex-direction": [
+              "row",
+              "row-reverse",
+              "column",
+              "column-reverse",
+            ],
+            "justify-content": [
+              "flex-start",
+              "flex-end",
+              "center",
+              "space-between",
+              "space-around",
+              "space-evenly",
+            ],
+            "align-content": [
+              "flex-start",
+              "flex-end",
+              "center",
+              "space-between",
+              "space-around",
+              "stretch",
+            ],
+            "align-items": [
+              "flex-start",
+              "flex-end",
+              "center",
+              "baseline",
+              "stretch",
+            ],
+          };
+
+          const cssProperty = properties[property];
+
+          if (cssProperty && validValues[cssProperty].includes(value)) {
+            return {
+              [cssProperty]: value,
+            };
+          }
+          return {};
+        },
+      ],
     ],
     variants: [
       /* ... */

@@ -1,43 +1,52 @@
 ---
-import Section from "../Section.astro";
+import Section from "@/components/Section.astro";
 
-import { awards } from "@cv";
+import { getAwards } from "@/utils/db/getAwards";
+import { useTranslations } from "@/i18n/utils";
+import { formatDateToMonthYear } from "@/utils/formatDateToMonthYear";
+
+const { user, lang } = Astro.props;
+
+const { isValid, data = {} } = await getAwards({ user, languageCode: lang });
+const awards = isValid ? data?.awards : [];
+
+const hasAwards = awards.length > 0;
+
+const t = useTranslations(lang);
 ---
 
-<Section title="Premios">
-  <ul>
-    {
-      awards.map(({ title, date, awarder, summary, url }) => {
-        return (
-          <li>
-            <article>
+{
+  hasAwards && (
+    <Section title={t("awards.title")}>
+      <div class="d-flex flex-direction-column gap-8">
+        {awards.map(({ title, date, awarder, summary, url }) => (
+          <div>
+            <article class="nyx-color2-text-primary-on">
               <header>
                 <div>
-                  <h3>
+                  <h3 class="nyx-color2-text-primary-base">
                     <a href={url} title={`Ver ${title}`} target="_blank">
                       {title}
                     </a>
                   </h3>
                   <h4>{awarder}</h4>
                 </div>
-
                 <div>
                   <time datetime={date} data-title={date}>
-                    {date}
+                    {formatDateToMonthYear(date)}
                   </time>
                 </div>
               </header>
-
               <footer>
                 <p>{summary}</p>
               </footer>
             </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+          </div>
+        ))}
+      </div>
+    </Section>
+  )
+}
 
 <style>
   ul {
@@ -48,7 +57,6 @@ import { awards } from "@cv";
 
   article h3 {
     font-weight: 500;
-    color: #111;
   }
 
   header {
@@ -59,7 +67,6 @@ import { awards } from "@cv";
   }
 
   time {
-    color: #555;
     font-size: 0.85rem;
     min-width: 102px;
   }

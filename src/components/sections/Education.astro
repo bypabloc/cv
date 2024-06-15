@@ -1,52 +1,70 @@
 ---
-import Section from "../Section.astro";
+import Section from "@/components/Section.astro";
+import { getEducations } from "@/utils/db/getEducations";
+import { useTranslations } from "@/i18n/utils";
 
-import { education } from "@cv";
+const { user, lang } = Astro.props;
+
+const { isValid, data = {} } = await getEducations({
+  user,
+  languageCode: lang,
+});
+const educations = isValid ? data?.educations : [];
+
+const hasEducations = educations.length > 0;
+
+const t = useTranslations(lang);
 ---
 
-<Section title="Educación">
-  <ul>
-    {
-      education.map(({ institution, startDate, url, endDate, area, learn }) => {
-        const startYear = new Date(startDate).getFullYear();
-        const endYear =
-          endDate != null ? new Date(endDate).getFullYear() : "Actual";
-        const years = `${startYear} - ${endYear}`;
+{
+  hasEducations && (
+    <Section title={t("education.title")}>
+      <div class="d-flex flex-direction-column gap-8">
+        {educations.map(({ institution, startDate, endDate, area, learn }) => {
+          const startYear = new Date(startDate).getFullYear();
+          const endYear =
+            endDate != null ? new Date(endDate).getFullYear() : "Actual";
+          const years = `${startYear} - ${endYear}`;
 
-        return (
-          <li>
-            <article>
-              <header>
-                <div>
-                  <h3>
-                    <a href={url} title={`Ver ${institution}`} target="_blank">
-                      {institution}
-                    </a>
-                  </h3>
-                </div>
+          return (
+            <div>
+              <article class="nyx-color2-text-primary-on">
+                <header>
+                  <div>
+                    <h3 class="nyx-color2-text-primary-base">
+                      <a
+                        href={institution.url}
+                        title={`Ver ${institution.name}`}
+                        target="_blank"
+                      >
+                        {institution.name}
+                      </a>
+                    </h3>
+                  </div>
 
-                <div>
-                  <time datetime={startDate} data-title={startDate}>
-                    {startYear}
-                  </time>
-                  {" - "}
-                  <time datetime={endDate} data-title={endDate}>
-                    {endYear}
-                  </time>
-                </div>
-              </header>
+                  <div>
+                    <time datetime={startDate} data-title={startDate}>
+                      {startYear}
+                    </time>
+                    {" - "}
+                    <time datetime={endDate} data-title={endDate}>
+                      {endYear}
+                    </time>
+                  </div>
+                </header>
 
-              <footer>
-                <p>{area}</p>
-                <p>{learn}</p>
-              </footer>
-            </article>
-          </li>
-        );
-      })
-    }
-  </ul>
-</Section>
+                <footer>
+                  <p class="nyx-color2-text-primary-on">{area}</p>
+                  <p class="nyx-color2-text-primary-on">{learn}</p>
+                </footer>
+              </article>
+            </div>
+          );
+        })}
+      </div>
+    </Section>
+  )
+}
 
 <style>
   ul {
@@ -57,7 +75,6 @@ import { education } from "@cv";
 
   article h3 {
     font-weight: 500;
-    color: #111;
   }
 
   header {
@@ -68,7 +85,6 @@ import { education } from "@cv";
   }
 
   time {
-    color: #555;
     font-size: 0.85rem;
     min-width: 102px;
   }

@@ -1,0 +1,61 @@
+---
+import Basic from "@/components/sections/Basic.astro";
+import About from "@/components/sections/About.astro";
+import Education from "@/components/sections/Education.astro";
+import Experience from "@/components/sections/Experience.astro";
+import Awards from "@/components/sections/Awards.astro";
+import Certificates from "@/components/sections/Certificates.astro";
+import Projects from "@/components/sections/Projects.astro";
+import Publications from "@/components/sections/Publications.astro";
+import TechnicalSkills from "@/components/sections/TechnicalSkills.astro";
+import SoftSkills from "@/components/sections/SoftSkills.astro";
+import Languages from "@/components/sections/Languages.astro";
+import Interests from "@/components/sections/Interests.astro";
+import References from "@/components/sections/References.astro";
+import { getLangFromUrl } from "@/i18n/utils";
+import { getTranslations } from "@/utils/db/getTranslations";
+
+const { user } = Astro.props;
+
+const lang = getLangFromUrl(Astro.url);
+
+const translations = await getTranslations();
+
+const codeNames = translations?.isValid && translations?.data?.codeNames;
+---
+
+<div>
+  {
+    (
+      <>
+        <Basic user={user} lang={lang} />
+        <About user={user} lang={lang} langCodeNames={codeNames} />
+        <Experience user={user} lang={lang} />
+        <Education user={user} lang={lang} />
+        <Projects user={user} lang={lang} />
+        <Awards user={user} lang={lang} />
+        <Certificates user={user} lang={lang} />
+        <Publications user={user} lang={lang} />
+        <TechnicalSkills user={user} lang={lang} />
+        <SoftSkills user={user} lang={lang} />
+        <Languages user={user} lang={lang} />
+        <Interests user={user} lang={lang} />
+        <References user={user} lang={lang} />
+      </>
+    )
+  }
+</div>
+
+<style>
+  div {
+    padding: 0 0 4rem 0;
+    margin: auto;
+    width: 100%;
+  }
+
+  @media (width <= 700px) {
+    div {
+      padding: 2rem;
+    }
+  }
+</style>

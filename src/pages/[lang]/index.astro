@@ -1,0 +1,32 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+import { getUser } from "@/utils/db/getUser";
+import Page from "@/components/Page.astro";
+import { getTranslations } from "@/utils/db/getTranslations";
+
+const getUserResult = await getUser("bypabloc");
+
+const user = getUserResult.isValid ? getUserResult.data.user : null;
+
+const { lang } = Astro.params;
+
+export async function getStaticPaths() {
+  const translations = await getTranslations();
+  const codeNames = translations?.isValid && translations?.data?.codeNames;
+
+  const langs = codeNames.map((codeName) => ({
+    lang: codeName,
+  }));
+
+  const paths = langs.map((lang) => ({
+    params: { lang: lang.lang },
+  }));
+
+  return paths;
+}
+---
+
+<Layout title="Portafolio" user={user}>
+  <Page user={user} />
+</Layout>

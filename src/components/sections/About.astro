@@ -1,12 +1,35 @@
 ---
-import Section from "../Section.astro"
+// Importa las herramientas y componentes necesarios
+import Section from "@/components/Section.astro";
+import { getAttributes } from "@/utils/db/getAttributes";
+import { useTranslations } from "@/i18n/utils";
 
-import { basics } from "@cv"
-const { summary } = basics
+interface Props {
+  user: Record<string, any>;
+  lang: string;
+  langCodeNames: string[];
+}
+
+const props: Props = Astro.props;
+
+const { user, lang } = props;
+
+async function fetchAttributes(user: Record<string, any>) {
+  const attributesResult = await getAttributes(user, lang);
+  return attributesResult.isValid ? attributesResult.data?.attributes : {};
+}
+
+const attributes = await fetchAttributes(user);
+
+const {
+  summary: { value: summary },
+} = attributes;
+
+const t = useTranslations(lang);
 ---
 
-<Section title="Sobre mí">
-  <p>
+<Section title={t("about-me.title")}>
+  <p class="nyx-color2-text-primary-on">
     {summary}
   </p>
 </Section>

@@ -1,0 +1,76 @@
+---
+export const prerender = true;
+
+import Layout from "@/layouts/Layout.astro";
+import Page from "@/components/Page.astro";
+
+import { getUsers } from "@/utils/db/getUsers";
+import { getUser } from "@/utils/db/getUser";
+
+export async function getStaticPaths() {
+  const users = await getUsers("active");
+  if (!users.isValid) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const langs = [
+    {
+      lang: "es",
+    },
+    {
+      lang: "en",
+    },
+  ];
+
+  const paths = users.data.users
+    .map((user) => ({
+      params: { username: user.username },
+    }))
+    .reduce((acc, curr) => {
+      return langs.reduce((acc, lang) => {
+        acc.push({
+          params: {
+            ...curr.params,
+            lang: lang.lang,
+          },
+        });
+        return acc;
+      }, acc);
+    }, []);
+
+  // Agregar una ruta por defecto
+  paths.push({
+    params: {
+      username: "bypabloc", // Nombre de usuario por defecto
+      lang: "es", // Idioma por defecto
+    },
+  });
+
+  return paths;
+}
+
+const { username, lang } = Astro.params;
+const getUserResult = await getUser(username);
+
+const user = getUserResult.isValid ? getUserResult.data.user : null;
+---
+
+<Layout title="Portafolio" user={user}>
+  <Page user={user} />
+</Layout>
+
+<style>
+  main {
+    padding: 0 4rem 4rem 4rem;
+    margin: auto;
+    width: 100%;
+  }
+
+  @media (width <= 700px) {
+    main {
+      padding: 2rem;
+    }
+  }
+</style>

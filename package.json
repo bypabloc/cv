@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@astrojs/check": "0.7.0",
-    "@astrojs/db": "^0.11.4",
+    "@astrojs/db": "^0.11.5",
     "@astrojs/node": "^8.2.6",
     "@astrojs/sitemap": "^3.1.5",
     "@astrojs/vue": "^4.4.0",
@@ -37,10 +37,10 @@
     "vue": "^3.4.27"
   },
   "devDependencies": {
-    "semver": "^7.6.0",
-    "fs-extra": "^11.2.0",
     "archiver": "^7.0.1",
+    "fs-extra": "^11.2.0",
     "glob": "^10.3.12",
+    "semver": "^7.6.0",
     "undici": "^6.15.0"
   }
 }

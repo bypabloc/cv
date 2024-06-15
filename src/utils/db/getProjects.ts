@@ -168,10 +168,10 @@ export const getProjects = async ({
       };
     });
 
-    console.log(
-      "Proyectos del usuario obtenidos correctamente:",
-      JSON.stringify(formattedProjects, null, 2)
-    );
+    // console.log(
+    //   "Proyectos del usuario obtenidos correctamente:",
+    //   JSON.stringify(formattedProjects, null, 2)
+    // );
 
     return {
       isValid: true,

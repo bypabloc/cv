@@ -6,13 +6,12 @@ env:
 on:
   push:
     branches:
-      - 'feature/**'
-    #   - main
+      - dev
   pull_request:
     types: [opened, reopened, synchronize]
 
 jobs:
-  DB:
+  build:
     permissions:
       contents: read
       actions: read
@@ -56,3 +55,10 @@ jobs:
         
         - name: Install dependencies
           run: pnpm install
+
+        - name: Run merge build
+          env:
+            ASTRO_STUDIO_APP_TOKEN: ${{ secrets.ASTRO_STUDIO_APP_TOKEN }}
+          run: |
+            source $GITHUB_ENV
+            pnpm run start:dev mergeBuild

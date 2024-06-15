@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "astro dev --remote",
     "db:seed": "astro db execute \"./db/set-data.ts\" --remote",
-    "start": "astro dev",
     "build": "astro check && astro build",
     "build:no-check": "astro build --remote",
     "preview": "astro preview",
     "astro": "astro",
+    "start:dev": "ENV=development pnpm run start",
+    "start": "node scripts/index.js",
     "npm:install": "rm -rf node_modules && rm -rf dist && pnpm store prune && pnpm install",
     "npm:reinstall": "rm -rf node_modules && rm -rf dist && rm -rf .nuxt && rm -f pnpm-lock.yaml && pnpm store prune && pnpm install"
   },
@@ -34,5 +35,12 @@
     "unocss": "^0.60.4",
     "uuid": "^10.0.0",
     "vue": "^3.4.27"
+  },
+  "devDependencies": {
+    "semver": "^7.6.0",
+    "fs-extra": "^11.2.0",
+    "archiver": "^7.0.1",
+    "glob": "^10.3.12",
+    "undici": "^6.15.0"
   }
 }

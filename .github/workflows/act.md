@@ -58,7 +58,7 @@ act --secret MY_SECRET=value
 Comando completo:
 
 ```bash
-act push --action-offline-mode -j build -W .github/workflows/merge-dev.yml -s GITHUB_TOKEN=""
+act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest --action-offline-mode -j build -W .github/workflows/merge-dev.yml -s ASTRO_STUDIO_APP_TOKEN=d575c043e70980eaa9877f241b9f581482e124b5:mgmyvidc4240p5dl3ph6x774xjww:mgmyvidc4240p5dl3ph6x774xjww
 ```
 
 Si quieres eliminar todas las imágenes de catthehacker/ubuntu, podrías usar:

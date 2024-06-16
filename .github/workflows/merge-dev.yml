@@ -2,8 +2,6 @@ name: Astro Studio
 
 env:
   ASTRO_STUDIO_APP_TOKEN: ${{ secrets.ASTRO_STUDIO_APP_TOKEN }}
-  ASTRO_DB_URL: ${{ secrets.ASTRO_DB_URL }}
-  ASTRO_DB_TOKEN: ${{ secrets.ASTRO_DB_TOKEN }}
 
 on:
   push:
@@ -60,13 +58,6 @@ jobs:
       - name: Run merge build
         env:
           ASTRO_STUDIO_APP_TOKEN: ${{ secrets.ASTRO_STUDIO_APP_TOKEN }}
-          ASTRO_DB_URL: ${{ secrets.ASTRO_DB_URL }}
-          ASTRO_DB_TOKEN: ${{ secrets.ASTRO_DB_TOKEN }}
         run: |
           source $GITHUB_ENV
           pnpm run start:dev mergeBuild
-
-      - name: Notify Astro Studio
-        uses: withastro/action-studio@main
-        with:
-          token: ${{ secrets.ASTRO_STUDIO_APP_TOKEN }}

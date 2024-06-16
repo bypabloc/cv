@@ -55,19 +55,20 @@ Si tu workflow necesita secretos, puedes pasarlos a act usando el parámetro --s
 act --secret MY_SECRET=value
 ```
 
+Las credenciales de GitHub se pueden pasar a act usando el parámetro --secret, por ejemplo:
+
+```bash
+ASTRO_STUDIO_APP_TOKEN=<token>
+PORT=4321
+BASE_URL=http://localhost:4321
+```
+
 Comando completo:
 
 ```bash
-act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest -j build -W .github/workflows/merge-dev.yml -s ASTRO_STUDIO_APP_TOKEN=4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww:mgmyvidc4240p5dl3ph6x774xjww
+act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest --action-offline-mode -j build -W .github/workflows/merge-dev.yml --secret-file .github/workflows/.secrets
 ```
-
-4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww:mgmyvidc4240p5dl3ph6x774xjww
-<!-- 4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww -->
-
-Si quieres eliminar todas las imágenes de catthehacker/ubuntu, podrías usar:
 
 ```bash
 docker rmi $(docker images 'catthehacker/ubuntu*' -q) -f
 ```
-
-ASTRO_DB_API_TOKEN=4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww pnpx astro db shell --query "SELECT * FROM Keywords" --remote

@@ -55,13 +55,19 @@ Si tu workflow necesita secretos, puedes pasarlos a act usando el parámetro --s
 act --secret MY_SECRET=value
 ```
 
+Las credenciales de GitHub se pueden pasar a act usando el parámetro --secret, por ejemplo:
+
+```bash
+ASTRO_STUDIO_APP_TOKEN=<token>
+PORT=4321
+BASE_URL=http://localhost:4321
+```
+
 Comando completo:
 
 ```bash
-act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest --action-offline-mode -j build -W .github/workflows/merge-dev.yml -s ASTRO_STUDIO_APP_TOKEN=d575c043e70980eaa9877f241b9f581482e124b5:mgmyvidc4240p5dl3ph6x774xjww:mgmyvidc4240p5dl3ph6x774xjww
+act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest --action-offline-mode -j build -W .github/workflows/merge-dev.yml --secret-file .github/workflows/.secrets
 ```
-
-Si quieres eliminar todas las imágenes de catthehacker/ubuntu, podrías usar:
 
 ```bash
 docker rmi $(docker images 'catthehacker/ubuntu*' -q) -f

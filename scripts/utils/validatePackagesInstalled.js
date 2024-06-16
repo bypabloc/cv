@@ -167,7 +167,7 @@ export const validatePackagesInstalled = async () => {
     return response;
   }
 
-  console.log("Todas las dependencias están correctamente instaladas y con las versiones adecuadas.");
+  // console.log("Todas las dependencias están correctamente instaladas y con las versiones adecuadas.");
 
   response.data = {
     requiredDependencies,

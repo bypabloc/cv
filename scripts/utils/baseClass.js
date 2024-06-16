@@ -6,7 +6,6 @@ import appConfig from "../settings/appConfig.js";
 export class BaseClass {
   constructor() {
     this.appConfig = appConfig;
-    console.log('BaseClass', this.appConfig)
     this.initialized = this.init();
   }
 

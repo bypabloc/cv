@@ -1,12 +1,12 @@
 name: Astro Studio
 
 env:
-  ASTRO_STUDIO_APP_TOKEN: ${{secrets.ASTRO_STUDIO_APP_TOKEN }}
+  ASTRO_STUDIO_APP_TOKEN: ${{ secrets.ASTRO_STUDIO_APP_TOKEN }}
 
 on:
   push:
     branches:
-      - dev
+      - main
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -16,49 +16,48 @@ jobs:
       contents: read
       actions: read
       pull-requests: write
-
     runs-on: ubuntu-latest
 
     steps:
-        - uses: actions/checkout@v4
-    
-        - name: Setup SSH
-          run: |
-            mkdir -p ~/.ssh
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/bypabloc
-            chmod 600 ~/.ssh/bypabloc
-    
-        - name: Install Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: 21.7.1
-    
-        - uses: pnpm/action-setup@v3
-          name: Install pnpm
-          with:
-            version: 9.0.5
-            run_install: true
+      - uses: actions/checkout@v4
 
-        - name: Get pnpm store directory
-          shell: bash
-          run: |
-            echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/bypablo
+          chmod 600 ~/.ssh/bypablo
 
-        - uses: actions/cache@v4
-          name: Setup pnpm cache
-          with:
-            path: ${{ env.STORE_PATH }}
-            key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-            restore-keys: |
-                ${{ runner.os }}-pnpm-store-
-        
-        - name: Install dependencies
-          run: pnpm install
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21.7.1
 
-        - name: Run merge build
-          env:
-            ASTRO_STUDIO_APP_TOKEN: ${{ secrets.ASTRO_STUDIO_APP_TOKEN }}
-          run: |
-            source $GITHUB_ENV
-            pnpm run start:dev mergeBuild
+      - uses: pnpm/action-setup@v3
+        name: Install pnpm
+        with:
+          version: 9.3.0
+          run_install: true
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+              ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run merge build
+        env:
+          ASTRO_STUDIO_APP_TOKEN: ${{ secrets.ASTRO_STUDIO_APP_TOKEN }}
+        run: |
+          source $GITHUB_ENV
+          pnpm run start:dev mergeBuild

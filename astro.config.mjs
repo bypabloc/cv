@@ -20,7 +20,12 @@ export default defineConfig({
       configFilePath: './unocss.config.ts'
     }),
     vue(),
-    db(),
+    db({
+      name: '@astrojs/db',
+      options: {
+        token: process.env.ASTRO_DB_API_TOKEN,
+      },
+    }),
     sitemap(),
   ],
   output: 'hybrid',

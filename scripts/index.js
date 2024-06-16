@@ -1,5 +1,4 @@
-// Path: scripts/index.ts
-
+// index.js
 import fs from "fs";
 import { resolve as pathResolve } from "path";
 import { join as pathJoin } from "path";
@@ -8,10 +7,8 @@ import { validatePnpmVersion } from "./utils/validatePnpmVersion.js";
 import { validatePackagesInstalled } from "./utils/validatePackagesInstalled.js";
 import appConfig from "./settings/appConfig.js";
 
-
 const toPascalCase = (str) =>
   str.replace(/(^\w|-\w)/g, (m) => m.replace("-", "").toUpperCase());
-
 
 const runScript = async ({ scriptName }) => {
   const className = toPascalCase(scriptName);
@@ -33,12 +30,16 @@ const runScript = async ({ scriptName }) => {
     return
   }
 
+  console.log(`Entorno de ejecución: ${process.env.ENV}`);
+
   // Verifica la versión de Node.js
   const nodeVersionValidation = validateNodeVersion();
   if (!nodeVersionValidation.isValid) {
     console.error(nodeVersionValidation.errors)
     return;
   }
+
+  console.log(`Versión de Node.js: ${nodeVersionValidation.data.version}`);
 
   // Verifica la versión de pnpm
   const pnpmVersionValidation = validatePnpmVersion();
@@ -47,6 +48,8 @@ const runScript = async ({ scriptName }) => {
     return;
   }
 
+  console.log(`Versión de pnpm: ${pnpmVersionValidation.data.version}`);
+
   // Verifica las dependencias del proyecto
   const packagesValidation = await validatePackagesInstalled();
   if (!packagesValidation.isValid) {
@@ -54,9 +57,14 @@ const runScript = async ({ scriptName }) => {
     return;
   }
 
+  console.log("Todas las dependencias están instaladas correctamente.");
+
   try {
     const module = await import(scriptPath);
+    console.log(`Importando la clase ${className}...`)
+
     const Class = module[className];
+    console.log(`Clase ${className} importada correctamente.`)
 
     if (!Class) {
       console.log(`No se encontró una clase con el nombre ${className}.`);
@@ -87,9 +95,15 @@ const runScript = async ({ scriptName }) => {
     }
 
     await instance.initialized;
-    await instance.execute();
+    const result = await instance.execute();
+
+    console.log(`Script ${className} ejecutado exitosamente.`);
+
+    if (!result.isValid) {
+      throw new Error("El script no se ejecutó correctamente.", result.errors);
+    }
   } catch (error) {
-    console.error(`Error al importar o ejecutar la clase ${className}:`, error);
+    console.error(error);
     return;
   }
 }

@@ -15,6 +15,8 @@ export class MergeBuild extends BaseClass {
 
   async execute() {
     try {
+      console.log('process.env', process.env);
+
       // Ejecutar el comando de build
       console.log('Running build...');
       execSync('pnpm run build:no-check', { stdio: 'inherit' });
@@ -31,11 +33,21 @@ export class MergeBuild extends BaseClass {
       copySync(this.distDir, this.tmpDir);
       console.log('Files copied successfully.');
 
+      return {
+        isValid: true,
+        message: 'Build and merge completed successfully.'
+      };
+
     } catch (error) {
-      console.error('Error during build or file operations:', error);
+      return {
+        isValid: false,
+        errors: [
+          'Error during build or file operations',
+          error.message || '',
+          error.stack || '',
+          error.toString() || '',
+        ]
+      };
     }
   }
 }
-
-const mergeBuild = new MergeBuild();
-mergeBuild.execute();

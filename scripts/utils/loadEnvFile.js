@@ -40,7 +40,10 @@ const loadEnvFile = async (
   }
 
   // Restaurar las variables de entorno originales
-  process.env = oldEnv;
+  process.env = {
+      ...oldEnv,
+      ...newVars,
+  }
 
   newVars.ENV = env;
 

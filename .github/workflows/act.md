@@ -58,11 +58,16 @@ act --secret MY_SECRET=value
 Comando completo:
 
 ```bash
-act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest --action-offline-mode -j build -W .github/workflows/merge-dev.yml -s ASTRO_STUDIO_APP_TOKEN=d575c043e70980eaa9877f241b9f581482e124b5:mgmyvidc4240p5dl3ph6x774xjww:mgmyvidc4240p5dl3ph6x774xjww
+act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest -j build -W .github/workflows/merge-dev.yml -s ASTRO_STUDIO_APP_TOKEN=4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww:mgmyvidc4240p5dl3ph6x774xjww
 ```
+
+4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww:mgmyvidc4240p5dl3ph6x774xjww
+<!-- 4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww -->
 
 Si quieres eliminar todas las imágenes de catthehacker/ubuntu, podrías usar:
 
 ```bash
 docker rmi $(docker images 'catthehacker/ubuntu*' -q) -f
 ```
+
+ASTRO_DB_API_TOKEN=4892eb7cfbcb120a2e524656c6d7b4aec5854dac:mgmyvidc4240p5dl3ph6x774xjww pnpx astro db shell --query "SELECT * FROM Keywords" --remote

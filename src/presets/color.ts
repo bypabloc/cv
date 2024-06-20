@@ -61,7 +61,7 @@ export default definePreset((params?: PresetParams) => {
 
   const { themes = {}, variables = {} } = options;
 
-  const listTypes: string[] = ["bg", "text", "border", "fill", "stroke"];
+  const listTypes: string[] = ["bg", "text", "border", "fill", "stroke", "ts"];
 
   const listTypesRegex = listTypes.join("|");
 
@@ -71,6 +71,7 @@ export default definePreset((params?: PresetParams) => {
     border: "border-color",
     fill: "fill",
     stroke: "stroke",
+    ts: "text-shadow",
   };
 
   const cssVariables: string[] = [];

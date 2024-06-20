@@ -31,8 +31,13 @@ export const getWorks = async ({
   user: { id: string };
   languageCode?: string;
 } = {}): Promise<ResponseFunction> => {
+  if (!user?.id) {
+    return {
+      isValid: false,
+      error: "User ID is required",
+    };
+  }
   try {
-    // Obtener el ID del idioma correspondiente al código de idioma
     const languageQuery = db
       .select({ id: Languages.id })
       .from(Languages)

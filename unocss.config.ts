@@ -19,18 +19,50 @@ export default defineConfig({
     presetWebFonts({
       // provider: "google",
       fonts: {
-        sans: "Noto Sans",
-        "racing-sans-one": [
+        sans: [
           {
-            name: "Racing Sans One",
-            weights: ["400", "600", "700", "800"],
+            name: "Montserrat",
+            weights: [
+              "100",
+              "200",
+              "300",
+              "400",
+              "500",
+              "600",
+              "700",
+              "800",
+              "900",
+            ],
             italic: true,
           },
-        ],
-        "noto-sans": [
           {
-            name: "Noto Sans",
-            weights: ["400", "600", "700", "800"],
+            name: "Menlo",
+            weights: [
+              "100",
+              "200",
+              "300",
+              "400",
+              "500",
+              "600",
+              "700",
+              "800",
+              "900",
+            ],
+            italic: true,
+          },
+          {
+            name: "Monaco",
+            weights: [
+              "100",
+              "200",
+              "300",
+              "400",
+              "500",
+              "600",
+              "700",
+              "800",
+              "900",
+            ],
             italic: true,
           },
         ],

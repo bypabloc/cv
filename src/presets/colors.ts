@@ -459,7 +459,7 @@ const lightPalette = {
   },
   background: {
     base: colors.grey.lighten["5"],
-    on: colors.grey.darken["3"],
+    on: colors.grey.lighten["3"],
   },
   surface: {
     base: colors.grey.lighten["3"],
@@ -506,6 +506,8 @@ export const variables = {
     "hotkeypad-fg-muted": "#4b5563",
     "timeline-bg": "#dfdfdf",
     "timeline-item-bg": "#9b9b9b",
+    "ts-404": "#aaa",
+    "ts-language-switcher": colors.shades.lighten["1"],
   },
   dark: {
     "hotkeypad-bg-kbd": "#050607",
@@ -517,5 +519,7 @@ export const variables = {
     "hotkeypad-fg-muted": "#bfc5d2",
     "timeline-bg": "#2d2d2d",
     "timeline-item-bg": "#9b9b9b",
+    "ts-404": "#222",
+    "ts-language-switcher": colors.shades.darken["1"],
   },
 };

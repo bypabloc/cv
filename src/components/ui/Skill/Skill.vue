@@ -85,7 +85,7 @@ footer {
 
 footer span {
   border-radius: 6px;
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 500;
   padding: 0.2rem 0.6rem;
 }

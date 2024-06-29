@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@astrojs/check": "0.7.0",
-    "@astrojs/db": "^0.11.6",
-    "@astrojs/node": "^8.3.1",
+    "@astrojs/db": "^0.11.7",
+    "@astrojs/node": "^8.3.2",
     "@astrojs/sitemap": "^3.1.6",
     "@astrojs/vue": "^4.5.0",
     "@iconify-json/ant-design": "^1.1.16",
@@ -27,20 +27,20 @@
     "@iconify-json/mdi": "^1.1.67",
     "@nanostores/vue": "^0.10.0",
     "@unocss/astro": "^0.61.0",
-    "astro": "^4.11.0",
+    "astro": "^4.11.3",
     "dotenv": "^16.4.5",
     "hotkeypad": "^0.1.1",
     "nanostores": "^0.10.3",
     "typescript": "^5.5.2",
     "unocss": "^0.61.0",
     "uuid": "^10.0.0",
-    "vue": "^3.4.29"
+    "vue": "^3.4.30"
   },
   "devDependencies": {
     "archiver": "^7.0.1",
     "fs-extra": "^11.2.0",
     "glob": "^10.4.2",
     "semver": "^7.6.2",
-    "undici": "^6.19.0"
+    "undici": "^6.19.2"
   }
 }

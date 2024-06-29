@@ -21,37 +21,7 @@ export default defineConfig({
       fonts: {
         sans: [
           {
-            name: "Montserrat",
-            weights: [
-              "100",
-              "200",
-              "300",
-              "400",
-              "500",
-              "600",
-              "700",
-              "800",
-              "900",
-            ],
-            italic: true,
-          },
-          {
-            name: "Menlo",
-            weights: [
-              "100",
-              "200",
-              "300",
-              "400",
-              "500",
-              "600",
-              "700",
-              "800",
-              "900",
-            ],
-            italic: true,
-          },
-          {
-            name: "Monaco",
+            name: "Source Sans Pro",
             weights: [
               "100",
               "200",
@@ -83,16 +53,6 @@ export default defineConfig({
         // https://icon-sets.iconify.design/
         mdi: () =>
           import("@iconify-json/mdi/icons.json").then((i) => i.default),
-        carbon: () =>
-          import("@iconify-json/carbon/icons.json").then((i) => i.default),
-        "material-symbols": () =>
-          import("@iconify-json/material-symbols/icons.json").then(
-            (i) => i.default
-          ),
-        "ant-design": () =>
-          import("@iconify-json/ant-design/icons.json").then((i) => i.default),
-        clarity: () =>
-          import("@iconify-json/clarity/icons.json").then((i) => i.default),
       },
       extraProperties: {
         "font-size": "1.2em",

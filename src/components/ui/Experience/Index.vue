@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import Skill from "@/components/ui/Skill/Skill.vue";
 import { useTranslations } from "@/i18n/utils";
 
@@ -16,7 +16,12 @@ const props = defineProps({
 
 const t = useTranslations(props.lang);
 
+const showAll = ref(false);
+
 const employers = computed(() => Object.values(props.works));
+const visibleEmployers = computed(() => {
+  return showAll.value ? employers.value : employers.value.slice(0, 3);
+});
 
 const formatDate = (date) => {
   if (!date) return t("current");
@@ -30,13 +35,17 @@ const formatDate = (date) => {
     },
   );
 };
+
+const toggleShowAll = () => {
+  showAll.value = !showAll.value;
+};
 </script>
 
 <template>
   <section v-if="employers.length > 0">
     <h2>{{ t("work-experience.title") }}</h2>
     <div class="d-flex flex-direction-column gap-8">
-      <div v-for="employerGroup in employers" :key="employerGroup.employer?.id || employerGroup.works[0].id">
+      <div v-for="employerGroup in visibleEmployers" :key="employerGroup.employer?.id || employerGroup.works[0].id">
         <header>
           <div>
             <h3 class="employer-name nyx-color2-text-primary-on">
@@ -121,6 +130,11 @@ const formatDate = (date) => {
         </div>
       </div>
     </div>
+    <div @click="toggleShowAll" class="nyx-color2-text-primary-on clickable flex items-center">
+      <span class="divider"></span>
+      <span class="show-all">{{ showAll ? t('show.less') : t('show.more') }}</span>
+      <span class="divider"></span>
+    </div>
   </section>
 </template>
 
@@ -130,6 +144,15 @@ ul {
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.show-all {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 .flex.f-row {
@@ -142,6 +165,14 @@ footer {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.divider {
+  flex: 1;
+  height: 1px;
+  background-color: var(--divider-color, #ccc); /* Color del divider */
+  margin: 0 8px;
+  opacity: 0.6;
 }
 
 footer span {
@@ -192,4 +223,5 @@ footer span {
     text-align: right;
   }
 }
+
 </style>

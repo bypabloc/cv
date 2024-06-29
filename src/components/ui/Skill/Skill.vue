@@ -74,9 +74,6 @@ const toggleKeywords = () => {
 </template>
 
 <style scoped>
-h4 {
-}
-
 footer {
   display: flex;
   flex-wrap: wrap;

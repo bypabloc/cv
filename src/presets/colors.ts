@@ -508,6 +508,7 @@ export const variables = {
     "timeline-item-bg": "#9b9b9b",
     "ts-404": "#aaa",
     "ts-language-switcher": colors.shades.lighten["1"],
+    "divider-color": colors.grey.lighten["1"],
   },
   dark: {
     "hotkeypad-bg-kbd": "#050607",
@@ -521,5 +522,6 @@ export const variables = {
     "timeline-item-bg": "#9b9b9b",
     "ts-404": "#222",
     "ts-language-switcher": colors.shades.darken["1"],
+    "divider-color": colors.grey.darken["1"],
   },
 };

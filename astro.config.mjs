@@ -3,7 +3,7 @@ import unocss from '@unocss/astro';
 import vue from '@astrojs/vue';
 import db from "@astrojs/db";
 import node from "@astrojs/node";
-
+import Unlighthouse from '@unlighthouse/vite'
 import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
@@ -13,7 +13,11 @@ export default defineConfig({
     define: {
       'process.env': {}
     },
-    plugins: []
+    plugins: [
+      Unlighthouse({
+        // config
+      })
+    ]
   },
   integrations: [
     unocss({

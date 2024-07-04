@@ -121,3 +121,7 @@ Si deseas contribuir al proyecto, por favor sigue estos pasos:
 Si tienes alguna duda o problema, por favor abre un issue en el repositorio.
 
 ---
+
+pnpm run build:no-check
+DEBUG=* unlighthouse-ci --build-static
+pnpx sirv-cli ./.unlighthouse

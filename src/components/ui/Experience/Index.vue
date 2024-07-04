@@ -22,6 +22,9 @@ const employers = computed(() => Object.values(props.works));
 const visibleEmployers = computed(() => {
   return showAll.value ? employers.value : employers.value.slice(0, 3);
 });
+const hiddenEmployers = computed(() => {
+  return employers.value.length - visibleEmployers.value.length;
+});
 
 const formatDate = (date) => {
   if (!date) return t("current");
@@ -132,7 +135,7 @@ const toggleShowAll = () => {
     </div>
     <div @click="toggleShowAll" class="nyx-color2-text-primary-on clickable flex items-center">
       <span class="divider"></span>
-      <span class="show-all">{{ showAll ? t('show.less') : t('show.more') }}</span>
+      <span class="show-all">{{ showAll ? t('show.less') : t('show.more') }} ({{ hiddenEmployers }})</span>
       <span class="divider"></span>
     </div>
   </section>

@@ -1,3 +1,5 @@
+<!-- Path: src/components/ui/Experience/Index.vue -->
+
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import Skill from "@/components/ui/Skill/Skill.vue";
@@ -17,6 +19,7 @@ const props = defineProps({
 const t = useTranslations(props.lang);
 
 const showAll = ref(false);
+const sectionRef = ref<HTMLElement | null>(null);
 
 const employers = computed(() => Object.values(props.works));
 const visibleEmployers = computed(() => {
@@ -41,11 +44,19 @@ const formatDate = (date) => {
 
 const toggleShowAll = () => {
   showAll.value = !showAll.value;
+  if (!showAll.value) {
+    // Si estamos ocultando empleadores, hacemos scroll hacia arriba
+    setTimeout(() => {
+      if (sectionRef.value) {
+        sectionRef.value.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 0);
+  }
 };
 </script>
 
 <template>
-  <section v-if="employers.length > 0">
+  <section v-if="employers.length > 0" ref="sectionRef">
     <h2>{{ t("work-experience.title") }}</h2>
     <div class="d-flex flex-direction-column gap-8">
       <div v-for="employerGroup in visibleEmployers" :key="employerGroup.employer?.id || employerGroup.works[0].id">
@@ -133,9 +144,11 @@ const toggleShowAll = () => {
         </div>
       </div>
     </div>
-    <div @click="toggleShowAll" class="nyx-color2-text-primary-on clickable flex items-center">
+    <div v-if="employers.length > 3" @click="toggleShowAll" class="nyx-color2-text-primary-on clickable flex items-center">
       <span class="divider"></span>
-      <span class="show-all">{{ showAll ? t('show.less') : t('show.more') }} ({{ hiddenEmployers }})</span>
+      <span class="show-all">
+        {{ showAll ? t('show.less') : t('show.more', { count: hiddenEmployers }) }}
+      </span>
       <span class="divider"></span>
     </div>
   </section>

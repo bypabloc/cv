@@ -1,5 +1,8 @@
 ---
+// Path: src/components/sections/Interests.astro
+
 import Section from "@/components/Section.astro";
+import InterestsComponent from "@/components/ui/Interests/Index.vue";
 import { getInterests } from "@/utils/db/getInterests";
 import { useTranslations } from "@/i18n/utils";
 
@@ -19,21 +22,7 @@ const t = useTranslations(lang);
 {
   hasInterests && (
     <Section title={t("interests.title")}>
-      <div>
-        {interests.map(({ name }) => {
-          return (
-            <div>
-              <article class="nyx-color2-text-primary-on">
-                <header>
-                  <div>
-                    <h3>• {name}</h3>
-                  </div>
-                </header>
-              </article>
-            </div>
-          );
-        })}
-      </div>
+      <InterestsComponent interests={interests} lang={lang} client:load />
     </Section>
   )
 }

@@ -1,5 +1,8 @@
 ---
+// Path: src/components/sections/References.astro
+
 import Section from "@/components/Section.astro";
+import ReferencesComponent from "@/components/ui/References/Index.vue";
 import { getReferences } from "@/utils/db/getReferences";
 import { useTranslations } from "@/i18n/utils";
 
@@ -19,30 +22,7 @@ const t = useTranslations(lang);
 {
   hasReferences && (
     <Section title={t("references.title")}>
-      <div class="d-flex flex-direction-column gap-8">
-        {references.map(({ name, position, reference, url }) => {
-          return (
-            <div>
-              <article class="nyx-color2-text-primary-on">
-                <header>
-                  <div>
-                    <h3 class="nyx-color2-text-primary-base">
-                      <a href={url} title={`Ver ${name}`} target="_blank">
-                        {name}
-                      </a>
-                    </h3>
-                    <h4>{position}</h4>
-                  </div>
-                </header>
-
-                <footer>
-                  <p>{reference}</p>
-                </footer>
-              </article>
-            </div>
-          );
-        })}
-      </div>
+      <ReferencesComponent references={references} lang={lang} client:load />
     </Section>
   )
 }

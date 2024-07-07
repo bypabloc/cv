@@ -1,8 +1,10 @@
 ---
+// Path: src/components/sections/Publications.astro
+
 import Section from "@/components/Section.astro";
+import PublicationsComponent from "@/components/ui/Publications/Index.vue";
 import { getPublications } from "@/utils/db/getPublications";
 import { useTranslations } from "@/i18n/utils";
-import { formatDateToMonthYear } from "@/utils/formatDateToMonthYear";
 
 const { user, lang } = Astro.props;
 
@@ -20,36 +22,11 @@ const t = useTranslations(lang);
 {
   hasPublications && (
     <Section title={t("publications.title")}>
-      <div class="d-flex flex-direction-column gap-8">
-        {publications.map(({ name, publisher, releaseDate, summary, url }) => {
-          return (
-            <div>
-              <article class="nyx-color2-text-primary-on">
-                <header>
-                  <div>
-                    <h3 class="nyx-color2-text-primary-base">
-                      <a href={url} title={`Ver ${name}`} target="_blank">
-                        {name}
-                      </a>
-                    </h3>
-                    <h4>{publisher.name}</h4>
-                  </div>
-
-                  <div>
-                    <time datetime={releaseDate} data-title={releaseDate}>
-                      {formatDateToMonthYear(releaseDate)}
-                    </time>
-                  </div>
-                </header>
-
-                <footer>
-                  <p>{summary}</p>
-                </footer>
-              </article>
-            </div>
-          );
-        })}
-      </div>
+      <PublicationsComponent
+        publications={publications}
+        lang={lang}
+        client:load
+      />
     </Section>
   )
 }

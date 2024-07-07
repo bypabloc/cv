@@ -5,8 +5,8 @@ export const defaultLang = "es";
 export const ui = {
   es: {
     show: {
-      more: "Mostrar más",
-      less: "Mostrar menos",
+      more: "Ver {count} más",
+      less: "Ver menos",
     },
     current: "Actual",
     summary: "Resumen",
@@ -56,6 +56,10 @@ export const ui = {
     },
   },
   en: {
+    show: {
+      more: "See {count} more",
+      less: "See less",
+    },
     current: "Current",
     summary: "Summary",
     "about-me": {

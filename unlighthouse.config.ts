@@ -1,6 +1,7 @@
 import { defineConfig } from "unlighthouse";
 
 export default defineConfig({
+  // site: "https://dwaez2drbbqlk.cloudfront.net",
   site: "http://localhost:3000",
   debug: true,
   puppeteerOptions: {

@@ -56,7 +56,7 @@ const toggleShowAll = () => {
         </article>
       </div>
     </div>
-    <div v-if="props.interests.length > 5" @click="toggleShowAll" class="nyx-color2-text-primary-on clickable flex items-center mt-4">
+    <div v-if="props.interests.length > 5" @click="toggleShowAll" class="no-print nyx-color2-text-primary-on clickable flex items-center mt-4">
       <span class="divider"></span>
       <span class="show-all">
         {{ showAll ? t('show.less') : t('show.more', { count: hiddenInterests }) }}

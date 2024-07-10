@@ -22,7 +22,7 @@ const t = useTranslations(lang);
 {
   hasReferences && (
     <Section title={t("references.title")}>
-      <ReferencesComponent references={references} lang={lang} client:load />
+      <ReferencesComponent references={references} lang={lang} client:only />
     </Section>
   )
 }

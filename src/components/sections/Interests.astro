@@ -22,7 +22,7 @@ const t = useTranslations(lang);
 {
   hasInterests && (
     <Section title={t("interests.title")}>
-      <InterestsComponent interests={interests} lang={lang} client:load />
+      <InterestsComponent interests={interests} lang={lang} client:only />
     </Section>
   )
 }

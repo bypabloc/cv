@@ -22,7 +22,11 @@ const t = useTranslations(lang);
 {
   hasReferences && (
     <Section title={t("references.title")}>
-      <ReferencesComponent references={references} lang={lang} client:only />
+      <ReferencesComponent
+        references={references}
+        lang={lang}
+        client:only="vue"
+      />
     </Section>
   )
 }

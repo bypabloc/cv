@@ -21,7 +21,7 @@ const t = useTranslations(lang);
 {
   hasWorks && (
     <Section title={t("work-experience.title")}>
-      <WorkExperience works={worksByEmployer} lang={lang} client:only />
+      <WorkExperience works={worksByEmployer} lang={lang} client:only="vue" />
     </Section>
   )
 }

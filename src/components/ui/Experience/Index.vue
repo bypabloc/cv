@@ -100,8 +100,8 @@ const toggleShowAll = () => {
                 <p v-for="achievement in work.achievements" :key="achievement">• {{ achievement }}</p>
               </div>
               <div class="d-flex flex-direction-column gap-2">
-                <Skill :title="t('technicalSkills.title')" :items="work.technicalSkills" client:only />
-                <Skill :title="t('softSkills.title')" :items="work.softSkills" client:only />
+                <Skill :title="t('technicalSkills.title')" :items="work.technicalSkills" />
+                <Skill :title="t('softSkills.title')" :items="work.softSkills" />
               </div>
             </footer>
           </article>
@@ -136,8 +136,8 @@ const toggleShowAll = () => {
                 <p v-for="achievement in work.achievements" :key="achievement">• {{ achievement }}</p>
               </div>
               <div class="d-flex flex-direction-column gap-2">
-                <Skill :title="t('technicalSkills.title')" :items="work.technicalSkills" client:only />
-                <Skill :title="t('softSkills.title')" :items="work.softSkills" client:only />
+                <Skill :title="t('technicalSkills.title')" :items="work.technicalSkills" />
+                <Skill :title="t('softSkills.title')" :items="work.softSkills" />
               </div>
             </footer>
           </article>

@@ -2469,6 +2469,24 @@ export default {
           value: "bypabloc",
         },
       },
+      codeName: "extension-faststruct",
+      name: "FastStruct",
+      description:
+        "Una extensión de VS Code para visualizar y documentar rápidamente la estructura de archivos de su proyecto. FastStruct le ayuda a crear documentación clara y bien formateada de la estructura de directorios de su proyecto, incluido el contenido de los archivos cuando sea necesario.",
+      highlights: JSON.stringify([
+        "Solo por ocio aprender a hacer una extensión para VS Code y que me simplificara un proceso que tenia que hacer manual a la hora de interactuar con la IA.",
+      ]),
+      url: "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
+      serviceStatus: "active",
+    },
+    {
+      relationship: {
+        userId: {
+          table: "users",
+          field: "username",
+          value: "bypabloc",
+        },
+      },
       codeName: "cv-bypabloc",
       name: "Curriculum Vitae",
       description:
@@ -2477,7 +2495,7 @@ export default {
         "Practicar mis habilidades de desarrollo web con Astro",
         "Mostrar mi experiencia laboral de forma clara y concisa",
       ]),
-      url: "https://pablo-c.com",
+      url: "https://the-full-stack.com/",
       serviceStatus: "active",
     },
     {
@@ -12654,6 +12672,63 @@ export default {
         },
       },
       tableName: "Projects",
+      field: "highlights",
+      translatedValue: JSON.stringify([
+        "Practicing my web development skills with Astro",
+        "Show my work experience clearly and concisely",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "extension-faststruct",
+        },
+      },
+      tableName: "Projects",
+      field: "highlights",
+      translatedValue: JSON.stringify([
+        "Just for fun, I wanted to learn how to make an extension for VS Code that would simplify a process that I had to do manually when interacting with AI.",
+      ]),
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "extension-faststruct",
+        },
+      },
+      tableName: "Projects",
+      field: "description",
+      translatedValue:
+        "A VS Code extension to quickly visualize and document your project's file structure. FastStruct helps you create clear, well-formatted documentation of your project's directory structure, including file contents when needed.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "cv-bypabloc",
+        },
+      },
+      tableName: "Projects",
       field: "description",
       translatedValue:
         "Development of a resume in Astro to show my skills and work experience.",
@@ -12733,6 +12808,24 @@ export default {
       field: "description",
       translatedValue:
         "Co-founder and developer of an ERP focused on automating inventory, sales, and purchasing processes for small stores.",
+    },
+    {
+      relationship: {
+        languageId: {
+          table: "languages",
+          field: "codeName",
+          value: "en",
+        },
+        recordId: {
+          table: "projects",
+          field: "codeName",
+          value: "extension-faststruct",
+        },
+      },
+      tableName: "Projects",
+      field: "description",
+      translatedValue:
+        "Just for fun, I wanted to learn how to make an extension for VS Code that would simplify a process that I had to do manually when interacting with AI.",
     },
     {
       relationship: {
@@ -12909,6 +13002,36 @@ export default {
         },
       },
       url: "https://github.com/bypabloc/cv",
+    },
+    {
+      relationship: {
+        projectId: {
+          table: "projects",
+          field: "codeName",
+          value: "extension-faststruct",
+        },
+        urlTypeId: {
+          table: "projectUrlTypes",
+          field: "codeName",
+          value: "github",
+        },
+      },
+      url: "https://github.com/bypabloc/faststruct",
+    },
+    {
+      relationship: {
+        projectId: {
+          table: "projects",
+          field: "codeName",
+          value: "extension-faststruct",
+        },
+        urlTypeId: {
+          table: "projectUrlTypes",
+          field: "codeName",
+          value: "website",
+        },
+      },
+      url: "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
     },
     {
       relationship: {

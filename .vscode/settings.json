@@ -3,6 +3,7 @@
     "appinteli",
     "astrojs",
     "Attributify",
+    "faststruct",
     "fintech",
     "hotkeypad",
     "iconify",
@@ -14,5 +15,39 @@
     "Udemy",
     "unocss",
     "youtube"
-  ]
+  ],
+  "faststruct.config": {
+    "debug": true,
+    "exclude": {
+      "folders": [
+        "release",
+        "node_modules",
+        ".git",
+        "dist",
+        "build",
+        ".tmp",
+        "out",
+        ".astro",
+        ".unlighthouse"
+      ],
+      "files": [
+        "*.log",
+        "*.lock",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock"
+      ],
+      "advanced": {
+        "patterns": ["**/*.min.js", "**/*.generated.*"],
+        "specificFiles": ["src/config/sensitive.json"],
+        "specificFolders": ["src/utils/", "tests/fixtures/"],
+        "regexPatterns": ["src/.*\\.md$", "docs/.*\\.temp\\.*"]
+      }
+    },
+    "excludeContent": {
+      "files": ["*.config.js", "db/data.ts"],
+      "folders": ["src/config", "tests"],
+      "patterns": ["**/*.secret.*", "**/.secrets**", "**/*/.env**", "**/*.svg"]
+    }
+  }
 }

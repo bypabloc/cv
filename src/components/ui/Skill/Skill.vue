@@ -42,12 +42,12 @@ const toggleKeywords = () => {
       <h4 v-if="title" @click="toggleKeywords" class="clickable">
         <i
           v-if="showKeywords"
-          class="i-mdi-eye dark:i-mdi-eye-outline"
+          class="i-mdi-keyboard-arrow-up dark:i-mdi-keyboard-arrow-up"
           aria-hidden="true"
         />
         <i
           v-else
-          class="i-mdi-eye-off dark:i-mdi-eye-off-outline"
+          class="i-mdi-keyboard-arrow-down dark:i-mdi-keyboard-arrow-down"
           aria-hidden="true"
         />
         {{ title }}

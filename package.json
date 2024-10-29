@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev --remote",
     "db:seed": "astro db execute \"./db/set-data.ts\" --remote",
+    "db:reset": "astro db push --force-reset",
     "build": "astro check && astro build",
     "build:no-check": "astro build --remote",
     "preview": "astro preview",

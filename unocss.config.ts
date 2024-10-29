@@ -1,11 +1,9 @@
-// unocss.config.ts
 import { defineConfig } from "unocss";
 import { presetMini } from "unocss";
-import { presetTypography } from "unocss";
 import { presetAttributify } from "unocss";
 import { presetIcons } from "unocss";
 import { presetWebFonts } from "unocss";
-import presetUno from "@unocss/preset-uno";
+import { presetUno } from "unocss";
 
 import Styles from "./src/presets/styles";
 import { typography, color } from "./src/presets";

@@ -8,7 +8,7 @@ export const ui = {
       more: "Ver {count} más",
       less: "Ver menos",
     },
-    current: "Actual",
+    current: "Actualmente",
     summary: "Resumen",
     "about-me": {
       title: "Sobre mí",
@@ -60,7 +60,7 @@ export const ui = {
       more: "See {count} more",
       less: "See less",
     },
-    current: "Current",
+    current: "Currently",
     summary: "Summary",
     "about-me": {
       title: "About me",

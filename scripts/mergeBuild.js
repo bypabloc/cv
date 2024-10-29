@@ -15,6 +15,8 @@ export class MergeBuild extends BaseClass {
 
   async execute() {
     try {
+      console.log('process.env', process.env);
+
       // Ejecutar el comando de build
       console.log('Running build...');
       execSync('pnpm run build:no-check', { stdio: 'inherit' });

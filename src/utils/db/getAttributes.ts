@@ -66,7 +66,6 @@ export const getAttributes = async (
       .execute();
 
     if (!attributes.length) {
-      console.error("Atributos no encontrados");
       return {
         isValid: false,
         message: "Atributos no encontrados",

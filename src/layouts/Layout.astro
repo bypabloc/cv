@@ -9,22 +9,22 @@ import Meta from "@/components/Meta.astro";
 
 interface Props {
   title: string;
-  user: Record<string, any>;
-  lang: string;
+  user?: Record<string, any>;
+  height?: string;
 }
 
-const { title, user } = Astro.props;
+const { title, user = null, height = "" } = Astro.props as Props;
 const lang = getLangFromUrl(Astro.url);
 
-const attributesResult = await getAttributes(user, lang);
-const attributes = attributesResult.isValid
-  ? attributesResult.data?.attributes
-  : {};
+let attributes: Record<string, any> = {};
+if (user) {
+  const attributesResult = await getAttributes(user, lang);
+  attributes = attributesResult.isValid
+    ? attributesResult.data?.attributes
+    : {};
+}
 
-const {
-  summary: { value: summary },
-  url: { value: url },
-} = attributes || {};
+const { summary: { value: summary = "" } = {} } = attributes || {};
 
 const frontmatter = {
   title,
@@ -35,13 +35,13 @@ const frontmatter = {
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} style={`height: ${height}`}>
   <head>
     <Meta {...frontmatter} />
     <ViewTransitions />
   </head>
-  <body class="light">
-    <main class="nyx-color2-bg-background-base">
+  <body class="light" style={`height: ${height}`}>
+    <main class="nyx-color2-bg-background-base" style={`height: ${height}`}>
       <div
         class="d-flex flex-direction-row flex-justify-flex-end flex-items-center no-print"
       >
@@ -50,8 +50,14 @@ const frontmatter = {
       </div>
       <slot />
     </main>
-    <KeyboardManager user={user} lang={lang} />
+    {user && <KeyboardManager user={user} lang={lang} />}
     <style is:global>
+      html,
+      body,
+      main {
+        margin: 0;
+        padding: 0;
+      }
       html {
         font-family:
           Menlo,
@@ -131,14 +137,14 @@ const frontmatter = {
       }
 
       p {
-        font-size: 0.9rem;
+        font-size: 1rem;
         line-height: 1.5;
         margin: 0;
         text-wrap: pretty;
       }
 
       span {
-        font-size: 0.9rem;
+        font-size: 1rem;
         line-height: 1.5;
         margin: 0;
         text-wrap: pretty;

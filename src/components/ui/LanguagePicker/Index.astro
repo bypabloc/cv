@@ -40,7 +40,7 @@ const { lang } = Astro.props;
 
       const dropdownContent = document.createElement("div");
       dropdownContent.className =
-        "dropdown-content nyx-color2-bg-background-on";
+        "dropdown-content nyx-color2-bg-background-base";
 
       // Filtrar el idioma actual para no mostrarlo en la lista
       Object.entries(languages).forEach(([lang, label]) => {
@@ -50,11 +50,19 @@ const { lang } = Astro.props;
           link.textContent = label;
           link.onclick = async (ev) => {
             ev.preventDefault();
-            await navigate(link.href);
 
             const url = new URL(window.location.href);
-            const newLang = getLangFromUrl(url);
+            const currentPath = url.pathname;
 
+            // Verificar si la URL actual contiene un código de idioma
+            const langPattern = /^\/[a-z]{2}\//;
+            const newPath = langPattern.test(currentPath)
+              ? currentPath.replace(langPattern, `/${lang}/`)
+              : `/${lang}${currentPath}`;
+
+            await navigate(newPath);
+
+            const newLang = getLangFromUrl(new URL(window.location.href));
             button.textContent = languages[newLang];
             dropdownContent.classList.remove("show");
           };
@@ -95,14 +103,11 @@ const { lang } = Astro.props;
     cursor: pointer;
   }
 
-  .dropbtn:hover {
-  }
-
   .dropdown-content {
     display: none;
     position: absolute;
     overflow: auto;
-    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 8px 16px 0px var(--ts-language-switcher);
     z-index: 1;
   }
 

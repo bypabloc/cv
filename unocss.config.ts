@@ -1,11 +1,9 @@
-// unocss.config.ts
 import { defineConfig } from "unocss";
 import { presetMini } from "unocss";
-import { presetTypography } from "unocss";
 import { presetAttributify } from "unocss";
 import { presetIcons } from "unocss";
 import { presetWebFonts } from "unocss";
-import presetUno from "@unocss/preset-uno";
+import { presetUno } from "unocss";
 
 import Styles from "./src/presets/styles";
 import { typography, color } from "./src/presets";
@@ -19,18 +17,20 @@ export default defineConfig({
     presetWebFonts({
       // provider: "google",
       fonts: {
-        sans: "Noto Sans",
-        "racing-sans-one": [
+        sans: [
           {
-            name: "Racing Sans One",
-            weights: ["400", "600", "700", "800"],
-            italic: true,
-          },
-        ],
-        "noto-sans": [
-          {
-            name: "Noto Sans",
-            weights: ["400", "600", "700", "800"],
+            name: "Source Sans Pro",
+            weights: [
+              "100",
+              "200",
+              "300",
+              "400",
+              "500",
+              "600",
+              "700",
+              "800",
+              "900",
+            ],
             italic: true,
           },
         ],
@@ -51,16 +51,6 @@ export default defineConfig({
         // https://icon-sets.iconify.design/
         mdi: () =>
           import("@iconify-json/mdi/icons.json").then((i) => i.default),
-        carbon: () =>
-          import("@iconify-json/carbon/icons.json").then((i) => i.default),
-        "material-symbols": () =>
-          import("@iconify-json/material-symbols/icons.json").then(
-            (i) => i.default
-          ),
-        "ant-design": () =>
-          import("@iconify-json/ant-design/icons.json").then((i) => i.default),
-        clarity: () =>
-          import("@iconify-json/clarity/icons.json").then((i) => i.default),
       },
       extraProperties: {
         "font-size": "1.2em",

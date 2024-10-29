@@ -1,0 +1,30 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import NotFound from "@/components/NotFound.astro";
+import { getLangFromUrl } from "@/i18n/utils";
+import { useTranslations } from "@/i18n/utils";
+import { getTranslations } from "@/utils/db/getTranslations";
+
+const lang = getLangFromUrl(Astro.url);
+
+const t = useTranslations(lang);
+
+export async function getStaticPaths() {
+  const translations = await getTranslations();
+  const codeNames = translations?.isValid && translations?.data?.codeNames;
+
+  const langs = codeNames.map((codeName) => ({
+    lang: codeName,
+  }));
+
+  const paths = langs.map((lang) => ({
+    params: { lang: lang.lang },
+  }));
+
+  return paths;
+}
+---
+
+<Layout title={t("404.title")} height="100%">
+  <NotFound />
+</Layout>

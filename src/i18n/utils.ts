@@ -7,13 +7,13 @@ export function getLangFromUrl(url: URL) {
 }
 
 export function useTranslations(lang: string = defaultLang) {
-  return function t(key: string) {
-    const keys = key.split("."); // Divide la cadena por puntos
-    let translation = ui[lang];
+  return function t(key: string, args: Record<string, any> = {}) {
+    const keys = key.split(".");
+    let translation: any = ui[lang];
 
     for (const k of keys) {
-      if (translation[k] !== undefined) {
-        translation = translation[k]; // Navega por los niveles del objeto
+      if (translation && typeof translation === "object" && k in translation) {
+        translation = translation[k];
       } else {
         translation = undefined;
         break;
@@ -24,7 +24,11 @@ export function useTranslations(lang: string = defaultLang) {
     if (translation === undefined) {
       translation = ui[defaultLang];
       for (const k of keys) {
-        if (translation[k] !== undefined) {
+        if (
+          translation &&
+          typeof translation === "object" &&
+          k in translation
+        ) {
           translation = translation[k];
         } else {
           translation = undefined;
@@ -33,10 +37,15 @@ export function useTranslations(lang: string = defaultLang) {
       }
     }
 
+    if (typeof translation === "string") {
+      return translation.replace(/\{(\w+)\}/g, (match, key) => {
+        return args[key] !== undefined ? args[key] : match;
+      });
+    }
+
     return translation;
   };
 }
-
 
 export function useTranslatedPath(lang: keyof typeof ui) {
   return function translatePath(path: string, l: string = lang) {

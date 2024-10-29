@@ -3,7 +3,7 @@ import { getWorks } from "@/utils/db/getWorks";
 
 const { title, description, user, attributes } = Astro.props;
 
-const { isValid, data = {} } = await getWorks({ user });
+const { isValid, data = {} } = (await getWorks({ user })) || {};
 const worksByEmployer = isValid ? data?.works : {};
 
 const extractKeywords = (data) => {
@@ -34,16 +34,17 @@ const worksKeywords = extractKeywords(worksByEmployer);
 const keywords = worksKeywords.join(", ");
 
 const {
-  names: { value: names },
-  lastName: { value: lastName },
-  summary: { value: summary },
-  url: { value: url },
+  names: { value: names = "" } = {},
+  lastName: { value: lastName = "" } = {},
+  summary: { value: summary = "" } = {},
+  url: { value: url = "" } = {},
 } = attributes || {};
 
 const [firstNames, _secondNames] = names.split(" ");
 const [firstLastName, _secondLastName] = lastName.split(" ");
 
-const fullName = `${firstNames} ${firstLastName}`;
+const fullNameIsDefined = firstNames && firstLastName;
+const fullName = fullNameIsDefined ? `${firstNames} ${firstLastName}` : title;
 ---
 
 <meta charset="UTF-8" />

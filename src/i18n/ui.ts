@@ -4,7 +4,11 @@ export const defaultLang = "es";
 
 export const ui = {
   es: {
-    current: "Actual",
+    show: {
+      more: "Ver {count} más",
+      less: "Ver menos",
+    },
+    current: "Actualmente",
     summary: "Resumen",
     "about-me": {
       title: "Sobre mí",
@@ -44,9 +48,19 @@ export const ui = {
     references: {
       title: "Referencias",
     },
+    404: {
+      title: "Pagina no encontrada",
+      subtitle: "Oops! Pagina no encontrada",
+      message:
+        "Lo sentimos, pero la pagina que buscas no existe, ha sido eliminada o ha cambiado de nombre.",
+    },
   },
   en: {
-    current: "Current",
+    show: {
+      more: "See {count} more",
+      less: "See less",
+    },
+    current: "Currently",
     summary: "Summary",
     "about-me": {
       title: "About me",
@@ -85,6 +99,12 @@ export const ui = {
     },
     references: {
       title: "References",
+    },
+    404: {
+      title: "Page not found",
+      subtitle: "Oops! Page not found",
+      message:
+        "We are sorry, but the page you are looking for does not exist, has been removed, or has changed its name.",
     },
   },
 } as const;

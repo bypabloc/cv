@@ -1,6 +1,8 @@
 ---
+// Path: src/components/sections/Experience.astro
+
 import Section from "@/components/Section.astro";
-import Skill from "@/components/ui/Skill/Skill.vue";
+import WorkExperience from "@/components/ui/Experience/Index.vue";
 import { getWorks } from "@/utils/db/getWorks";
 import { useTranslations } from "@/i18n/utils";
 
@@ -19,188 +21,7 @@ const t = useTranslations(lang);
 {
   hasWorks && (
     <Section title={t("work-experience.title")}>
-      <div class="d-flex flex-direction-column gap-8">
-        {Object.values(worksByEmployer).map((employerGroup) => (
-          <div key={employerGroup.employer?.id || employerGroup.works[0].id}>
-            <header>
-              <div>
-                {employerGroup.employer ? (
-                  <h3 class="employer-name nyx-color2-text-primary-on">
-                    <a
-                      href={employerGroup.employer.url}
-                      title={`Ver ${employerGroup.employer.name}`}
-                      target="_blank"
-                    >
-                      {employerGroup.employer.name}
-                    </a>
-                  </h3>
-                ) : (
-                  <h3 class="employer-name nyx-color2-text-primary-on">
-                    Freelance
-                  </h3>
-                )}
-              </div>
-            </header>
-
-            {employerGroup.works.length > 1 ? (
-              <div class="timeline">
-                {employerGroup.works.map((work) => (
-                  <article
-                    key={work.id}
-                    class="timeline-item nyx-color2-text-primary-on"
-                  >
-                    <div class="d-flex flex-direction-row flex-justify-space-between nyx-color2-text-primary-base">
-                      <h4>{work.position}</h4>
-                      <div>
-                        <time
-                          datetime={work.startDate}
-                          title={new Date(work.startDate).toLocaleDateString()}
-                        >
-                          {new Date(work.startDate).getFullYear()}
-                        </time>
-                        {" - "}
-                        <time
-                          datetime={work.endDate}
-                          title={
-                            work.endDate
-                              ? new Date(work.endDate).toLocaleDateString()
-                              : t("current")
-                          }
-                        >
-                          {work.endDate
-                            ? new Date(work.endDate).getFullYear()
-                            : t("current")}
-                        </time>
-                      </div>
-                    </div>
-                    <footer class="d-flex flex-direction-column gap-4">
-                      {work.summary && (
-                        <div class="d-flex flex-direction-column gap-2">
-                          <p>
-                            <strong>{t("summary")}:</strong> {work.summary}
-                          </p>
-                        </div>
-                      )}
-
-                      {work.responsibilitiesNProjects.length > 0 && (
-                        <div class="d-flex flex-direction-column gap-2">
-                          <h4>
-                            {t("work-experience.responsibilitiesNProjects")}
-                          </h4>
-                          {work.responsibilitiesNProjects.map(
-                            (responsibility) => (
-                              <p key={responsibility}>• {responsibility}</p>
-                            )
-                          )}
-                        </div>
-                      )}
-
-                      {work.achievements.length > 0 && (
-                        <div class="d-flex flex-direction-column gap-2">
-                          <h4>{t("work-experience.achievements")}</h4>
-                          {work.achievements.map((achievement) => (
-                            <p key={achievement}>• {achievement}</p>
-                          ))}
-                        </div>
-                      )}
-
-                      <div class="d-flex flex-direction-column gap-2">
-                        <Skill
-                          title={t("technicalSkills.title")}
-                          items={work.technicalSkills}
-                          client:load
-                        />
-
-                        <Skill
-                          title={t("softSkills.title")}
-                          items={work.softSkills}
-                          client:load
-                        />
-                      </div>
-                    </footer>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              employerGroup.works.map((work) => (
-                <article key={work.id} class="ml-4 nyx-color2-text-primary-on">
-                  <div class="flex f-row mt-4">
-                    <h4 class="nyx-color2-text-primary-base">
-                      {work.position}
-                    </h4>
-                    <div>
-                      <time
-                        datetime={work.startDate}
-                        title={new Date(work.startDate).toLocaleDateString()}
-                      >
-                        {new Date(work.startDate).getFullYear()}
-                      </time>
-                      {" - "}
-                      <time
-                        datetime={work.endDate}
-                        title={
-                          work.endDate
-                            ? new Date(work.endDate).toLocaleDateString()
-                            : t("current")
-                        }
-                      >
-                        {work.endDate
-                          ? new Date(work.endDate).getFullYear()
-                          : t("current")}
-                      </time>
-                    </div>
-                  </div>
-                  <footer class="d-flex flex-direction-column gap-4">
-                    {work.summary && (
-                      <div class="d-flex flex-direction-column gap-2">
-                        <p>
-                          <strong>{t("summary")}:</strong> {work.summary}
-                        </p>
-                      </div>
-                    )}
-
-                    {work.responsibilitiesNProjects.length > 0 && (
-                      <div class="d-flex flex-direction-column gap-2">
-                        <h4>
-                          {t("work-experience.responsibilitiesNProjects")}
-                        </h4>
-                        {work.responsibilitiesNProjects.map(
-                          (responsibility) => (
-                            <p key={responsibility}>• {responsibility}</p>
-                          )
-                        )}
-                      </div>
-                    )}
-
-                    {work.achievements.length > 0 && (
-                      <div class="d-flex flex-direction-column gap-2">
-                        <h4>{t("work-experience.achievements")}</h4>
-                        {work.achievements.map((achievement) => (
-                          <p key={achievement}>• {achievement}</p>
-                        ))}
-                      </div>
-                    )}
-
-                    <div class="d-flex flex-direction-column gap-2">
-                      <Skill
-                        title={t("technicalSkills.title")}
-                        items={work.technicalSkills}
-                        client:load
-                      />
-
-                      <Skill
-                        title={t("softSkills.title")}
-                        items={work.softSkills}
-                        client:load
-                      />
-                    </div>
-                  </footer>
-                </article>
-              ))
-            )}
-          </div>
-        ))}
-      </div>
+      <WorkExperience works={worksByEmployer} lang={lang} client:only="vue" />
     </Section>
   )
 }
@@ -226,7 +47,7 @@ const t = useTranslations(lang);
 
   footer span {
     border-radius: 6px;
-    font-size: 0.6rem;
+    font-size: 0.8rem;
     font-weight: 500;
     padding: 0.2rem 0.6rem;
   }

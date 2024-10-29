@@ -29,7 +29,7 @@ export const validatePnpmVersion = () => {
   };
 
   const minVersion = [9, 3, 0];
-  const maxVersion = [9, 3, 0];
+  const maxVersion = [9, 4, 0];
   const pnpmVersion = getPnpmVersion();
 
   if (!pnpmVersion.isValid) {

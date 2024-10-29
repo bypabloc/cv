@@ -1,15 +1,17 @@
 ---
+// Path: src/components/sections/Certificates.astro
+
 import Section from "@/components/Section.astro";
+import CertificatesComponent from "@/components/ui/Certificates/Index.vue";
 import { getCertificates } from "@/utils/db/getCertificates";
 import { useTranslations } from "@/i18n/utils";
-import { formatDateToMonthYear } from "@/utils/formatDateToMonthYear";
 
 const { user, lang } = Astro.props;
 
 const { isValid, data = {} } = await getCertificates({ user });
 const certificates = isValid ? data?.certificates : [];
 
-const hasCertificates = certificates.length > 0;
+const hasCertificates = isValid && certificates.length > 0;
 
 const t = useTranslations(lang);
 ---
@@ -17,35 +19,11 @@ const t = useTranslations(lang);
 {
   hasCertificates && (
     <Section title={t("certifications.title")}>
-      <div class="d-flex flex-direction-column gap-8">
-        {certificates.map(({ date, url, issuer, name, title }) => {
-          return (
-            <div>
-              <article class="nyx-color2-text-primary-on">
-                <header>
-                  <div>
-                    <h3 class="nyx-color2-text-primary-base">
-                      <a href={url} title={`Ver ${name}`} target="_blank">
-                        {title}
-                      </a>
-                    </h3>
-                  </div>
-
-                  <div>
-                    <time datetime={date} data-title={date}>
-                      {formatDateToMonthYear(date)}
-                    </time>
-                  </div>
-                </header>
-
-                <footer>
-                  <p>{issuer.name}</p>
-                </footer>
-              </article>
-            </div>
-          );
-        })}
-      </div>
+      <CertificatesComponent
+        certificates={certificates}
+        lang={lang}
+        client:only="vue"
+      />
     </Section>
   )
 }

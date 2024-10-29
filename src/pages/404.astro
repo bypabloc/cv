@@ -1,0 +1,14 @@
+---
+import NotFound from "@/components/NotFound.astro";
+import Layout from "@/layouts/Layout.astro";
+import { getLangFromUrl } from "@/i18n/utils";
+import { useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+
+const t = useTranslations(lang);
+---
+
+<Layout title={t("404.title")} height="100%">
+  <NotFound />
+</Layout>

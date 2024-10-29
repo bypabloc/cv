@@ -42,12 +42,12 @@ const toggleKeywords = () => {
       <h4 v-if="title" @click="toggleKeywords" class="clickable">
         <i
           v-if="showKeywords"
-          class="i-mdi-eye dark:i-mdi-eye-outline"
+          class="i-mdi-keyboard-arrow-up dark:i-mdi-keyboard-arrow-up"
           aria-hidden="true"
         />
         <i
           v-else
-          class="i-mdi-eye-off dark:i-mdi-eye-off-outline"
+          class="i-mdi-keyboard-arrow-down dark:i-mdi-keyboard-arrow-down"
           aria-hidden="true"
         />
         {{ title }}
@@ -74,9 +74,6 @@ const toggleKeywords = () => {
 </template>
 
 <style scoped>
-h4 {
-}
-
 footer {
   display: flex;
   flex-wrap: wrap;
@@ -85,7 +82,7 @@ footer {
 
 footer span {
   border-radius: 6px;
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 500;
   padding: 0.2rem 0.6rem;
 }

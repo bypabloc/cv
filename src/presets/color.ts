@@ -34,21 +34,16 @@ function getColorFromThemes(
   const theme = themes[mode];
 
   if (!theme) {
-    console.warn(`Theme '${mode}' not found.`);
     return undefined;
   }
 
   const colorCategory = theme[category as keyof ColorPalette];
   if (!colorCategory) {
-    console.warn(`Category '${category}' not found in theme '${mode}'.`);
     return undefined;
   }
 
   const colorValue = colorCategory[property as keyof typeof colorCategory];
   if (!colorValue) {
-    console.warn(
-      `Property '${property}' not found in category '${category}' for theme '${mode}'.`
-    );
     return undefined;
   }
 
@@ -61,7 +56,7 @@ export default definePreset((params?: PresetParams) => {
 
   const { themes = {}, variables = {} } = options;
 
-  const listTypes: string[] = ["bg", "text", "border", "fill", "stroke"];
+  const listTypes: string[] = ["bg", "text", "border", "fill", "stroke", "ts"];
 
   const listTypesRegex = listTypes.join("|");
 
@@ -71,6 +66,7 @@ export default definePreset((params?: PresetParams) => {
     border: "border-color",
     fill: "fill",
     stroke: "stroke",
+    ts: "text-shadow",
   };
 
   const cssVariables: string[] = [];
@@ -105,7 +101,6 @@ export default definePreset((params?: PresetParams) => {
 
           const availableThemes = getAvailableThemesForColor(colorName, themes);
           if (availableThemes.length === 0) {
-            console.warn(`Color '${colorName}' not found in any theme.`);
             return "";
           }
 

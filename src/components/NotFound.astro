@@ -1,0 +1,99 @@
+---
+import { getLangFromUrl } from "@/i18n/utils";
+import { useTranslations } from "@/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+
+const t = useTranslations(lang);
+---
+
+<div
+  class="notfound d-flex flex-direction-column flex-items-center no-print px-6"
+>
+  <div
+    class="notfound-404 d-flex flex-direction-column flex-items-center nyx-color2-text-primary-base"
+  >
+    <h3>{t("404.subtitle")}</h3>
+    <h1 class="numbers">
+      <span class="nyx-color2-ts-surface-base">4</span>
+      <span>0</span>
+      <span>4</span>
+    </h1>
+    <h2>
+      {t("404.message")}
+    </h2>
+  </div>
+</div>
+
+<style>
+  div.notfound {
+  }
+
+  div.notfound div {
+  }
+
+  .notfound {
+    width: 100%;
+    text-align: center;
+  }
+
+  div.notfound-404 {
+    max-width: 60vh;
+  }
+
+  .notfound .notfound-404 h1 > span {
+    font-family: "Montserrat", sans-serif;
+    font-size: 18vw;
+    font-weight: 900;
+    letter-spacing: -40px;
+    text-shadow: -8px 0px 0px var(--ts-404);
+  }
+
+  .notfound .notfound-404 h3 {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 0;
+    letter-spacing: 3px;
+  }
+
+  .notfound h2 {
+    font-size: 20px;
+    font-weight: 400;
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 25px;
+  }
+
+  @media only screen and (max-width: 99900px) {
+    .notfound .notfound-404 h1 > span {
+      font-size: 12vw;
+      letter-spacing: -40px;
+    }
+  }
+
+  @media only screen and (max-width: 767px) {
+    .notfound .notfound-404 {
+      height: 200px;
+    }
+    .notfound .notfound-404 h1 > span {
+      font-size: 30vw;
+      letter-spacing: -12px;
+    }
+  }
+
+  @media only screen and (max-width: 480px) {
+    .notfound .notfound-404 {
+      height: 162px;
+    }
+    .notfound .notfound-404 h1 {
+    }
+    .notfound h2 {
+      font-size: 16px;
+    }
+    .notfound .notfound-404 h1 > span {
+      font-size: 30vw;
+      letter-spacing: -12px;
+    }
+  }
+</style>

@@ -45,7 +45,6 @@ export async function getAttributesByUsername(
 
     // Si el usuario no se encuentra, devolver un array vacío o manejarlo según sea necesario
     if (!users.length) {
-      console.error("Usuario no encontrado");
       return {
         isValid: false,
         message: "Usuario no encontrado",
@@ -85,7 +84,6 @@ export async function getAttributesByUsername(
       .execute();
 
     if (!attributes.length) {
-      console.error("Atributos no encontrados");
       return {
         isValid: false,
         message: "Atributos no encontrados",
@@ -107,7 +105,6 @@ export async function getAttributesByUsername(
       attributes: attributesObject,
     };
   } catch (error) {
-    console.error("Error al obtener los atributos del usuario:", error);
     throw error; // Rethrow para manejar el error en el nivel superior
   }
 }

@@ -2457,7 +2457,7 @@ export default {
         },
       },
       codeName: "en-bypabloc",
-      fluency: "Intermedio",
+      fluency: "Intermedio en lectura y básico en escritura y habla",
     },
   ],
   projects: [
@@ -12246,7 +12246,7 @@ export default {
       },
       tableName: "LanguagesUsers",
       field: "fluency",
-      translatedValue: "Intermedio",
+      translatedValue: "Intermedio en lectura y básico en escritura y habla",
     },
     {
       relationship: {
@@ -12263,7 +12263,8 @@ export default {
       },
       tableName: "LanguagesUsers",
       field: "fluency",
-      translatedValue: "Intermediate",
+      translatedValue:
+        "Intermediate in reading and basic in writing and speaking",
     },
   ],
   referencesTranslations: [

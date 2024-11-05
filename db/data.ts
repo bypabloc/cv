@@ -12246,7 +12246,7 @@ export default {
       },
       tableName: "LanguagesUsers",
       field: "fluency",
-      translatedValue: "Intermedio",
+      translatedValue: "Intermedio en lectura y básico en escritura y habla",
     },
     {
       relationship: {

@@ -28,6 +28,8 @@
     "@iconify-json/mdi": "^1.1.67",
     "@nanostores/vue": "^0.10.0",
     "@unocss/astro": "^0.61.3",
+    "@vercel/analytics": "^1.4.1",
+    "@vercel/speed-insights": "^1.1.0",
     "astro": "^4.11.5",
     "dotenv": "^16.4.5",
     "hotkeypad": "^0.1.1",

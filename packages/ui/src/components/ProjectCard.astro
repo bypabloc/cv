@@ -1,0 +1,153 @@
+---
+/**
+ * @component ProjectCard
+ * @description Tarjeta de proyecto / case study. Acepta status, stack y enlaces.
+ *
+ * @props {string} name
+ * @props {string} summary
+ * @props {string[]} stack - Tags de tech stack
+ * @props {string} [url]
+ * @props {string} [repo]
+ * @props {'active' | 'inactive' | 'concept'} [status]
+ * @props {boolean} [isConfidential]
+ */
+interface Props {
+  name: string
+  summary: string
+  stack: string[]
+  url?: string
+  repo?: string
+  status?: 'active' | 'inactive' | 'concept'
+  isConfidential?: boolean
+  caseStudyLabel?: string
+}
+
+const {
+  name,
+  summary,
+  stack,
+  url,
+  repo,
+  status = 'active',
+  isConfidential = false,
+  caseStudyLabel,
+} = Astro.props
+---
+
+<article class="proj-card reveal-on-scroll">
+  <header class="proj-card__header">
+    <h3 class="proj-card__name text-h4">{name}</h3>
+    <span class:list={['proj-card__status', `is-${status}`]}>{status}</span>
+  </header>
+  <p class="proj-card__summary text-body text-muted">{summary}</p>
+  {
+    stack.length > 0 && (
+      <ul class="proj-card__stack">
+        {stack.slice(0, 8).map((s) => (
+          <li class="proj-card__stack-item text-caption">{s}</li>
+        ))}
+      </ul>
+    )
+  }
+  <footer class="proj-card__footer">
+    {
+      url && (
+        <a href={url} target="_blank" rel="noopener" class="proj-card__link">
+          Live ↗
+        </a>
+      )
+    }
+    {
+      repo && (
+        <a href={repo} target="_blank" rel="noopener" class="proj-card__link">
+          Repo ↗
+        </a>
+      )
+    }
+    {
+      isConfidential && caseStudyLabel && (
+        <span class="proj-card__nda text-caption">{caseStudyLabel}</span>
+      )
+    }
+  </footer>
+</article>
+
+<style>
+  .proj-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    padding: var(--space-24);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    height: 100%;
+    transition:
+      border-color var(--motion-fast) var(--easing-out),
+      transform var(--motion-fast) var(--easing-out),
+      box-shadow var(--motion-fast) var(--easing-out);
+  }
+  .proj-card:hover {
+    border-color: var(--color-border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+  }
+  .proj-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-12);
+  }
+  .proj-card__status {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-10);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+    padding: var(--space-3) var(--space-8);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+  }
+  .proj-card__status.is-active {
+    color: var(--color-success);
+    border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+  }
+  .proj-card__status.is-inactive {
+    color: var(--color-text-subtle);
+  }
+  .proj-card__status.is-concept {
+    color: var(--color-accent-amber);
+    border-color: color-mix(
+      in srgb,
+      var(--color-accent-amber) 40%,
+      transparent
+    );
+  }
+  .proj-card__stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+  }
+  .proj-card__stack-item {
+    padding: var(--space-3) var(--space-10);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-text-muted);
+  }
+  .proj-card__footer {
+    display: flex;
+    gap: var(--space-12);
+    align-items: center;
+    margin-top: auto;
+    padding-top: var(--space-8);
+  }
+  .proj-card__link {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-12);
+    color: var(--color-primary);
+  }
+  .proj-card__nda {
+    color: var(--color-text-subtle);
+    font-style: italic;
+  }
+</style>

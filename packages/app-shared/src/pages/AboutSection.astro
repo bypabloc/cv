@@ -1,0 +1,140 @@
+---
+import {
+  awards,
+  education,
+  filterByNiche,
+  languages,
+  type Niche,
+  publications,
+  references,
+} from '@portfolio/content'
+/**
+ * @component AboutSection
+ * @description Bloque "Sobre mí" reutilizable por todas las apps. Filtra
+ *   awards y publications por nicho.
+ */
+import SectionHeader from '@portfolio/ui/components/SectionHeader.astro'
+import type { I18nStrings } from '../lib/site-config'
+
+interface Props {
+  niche: Niche
+  locale: 'es' | 'en'
+  strings: I18nStrings
+}
+
+const { niche, locale, strings: t } = Astro.props
+const awds = filterByNiche(awards, niche)
+const pubs = filterByNiche(publications, niche)
+---
+
+<section class="container-medium section">
+  <SectionHeader eyebrow="About" title={t.sections.about.title} />
+
+  <h3 class="text-h4 about-h3">{t.sections.education.title}</h3>
+  <ul class="about-list">
+    {
+      education.map((e) => (
+        <li>
+          <strong>{e.institution}</strong>
+          {e.degree && <> — {e.degree[locale]}</>}
+          <span class="text-mono text-muted">
+            {' '}
+            · {e.start} → {e.end}
+          </span>
+          <p class="text-body text-muted">{e.description[locale]}</p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <h3 class="text-h4 about-h3">{t.sections.languages.title}</h3>
+  <ul class="about-list">
+    {
+      languages.map((l) => (
+        <li>
+          <strong>{l.name[locale]}</strong> — {l.level[locale]}
+        </li>
+      ))
+    }
+  </ul>
+
+  {
+    awds.length > 0 && (
+      <>
+        <h3 class="text-h4 about-h3">{t.sections.awards.title}</h3>
+        <ul class="about-list">
+          {awds.map((a) => (
+            <li>
+              <strong>{a.title[locale]}</strong> — {a.issuer} ·{' '}
+              <span class="text-mono text-muted">{a.date}</span>
+              <p class="text-body text-muted">{a.motivation[locale]}</p>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  {
+    pubs.length > 0 && (
+      <>
+        <h3 class="text-h4 about-h3">{t.sections.publications.title}</h3>
+        <ul class="about-list">
+          {pubs.map((p) => (
+            <li>
+              <a href={p.url} target="_blank" rel="noopener">
+                {p.title}
+              </a>
+              <span class="text-mono text-muted"> · {p.date}</span>
+              <p class="text-body text-muted">{p.summary[locale]}</p>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  {
+    references.length > 0 && (
+      <>
+        <h3 class="text-h4 about-h3">{t.sections.references.title}</h3>
+        <ul class="about-list">
+          {references.map((r) => (
+            <li>
+              <strong>{r.name}</strong> — {r.role}
+              {r.company && <> · {r.company}</>} ·{' '}
+              <a href={r.linkedin} target="_blank" rel="noopener">
+                LinkedIn
+              </a>
+              <span class="text-mono text-muted"> ({r.relation[locale]})</span>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+</section>
+
+<style>
+  .section {
+    padding-block: var(--space-72);
+  }
+  .about-h3 {
+    margin-block: var(--space-32) var(--space-16);
+    color: var(--color-primary);
+  }
+  .about-list {
+    display: grid;
+    gap: var(--space-16);
+  }
+  .about-list li {
+    padding: var(--space-16);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .about-list a {
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-primary);
+  }
+</style>

@@ -1,0 +1,95 @@
+---
+/**
+ * @layout BaseLayout
+ * @description Layout base compartido por TODAS las apps. Define <head>,
+ *   tokens del DS, theme inicial sin FOUC, JSON-LD slot, og:meta, view
+ *   transitions de Astro y init de reveal-on-scroll.
+ *
+ * @props {string} title - <title> y og:title
+ * @props {string} description - meta description
+ * @props {string} canonicalUrl - URL canonical absoluta del sitio actual
+ * @props {string} [locale] - 'es' (default) o 'en'
+ * @props {string} [ogImage] - URL absoluta de la og-image
+ * @props {string} [jsonLd] - JSON-LD stringificado (typeof: Person, BreadcrumbList...)
+ * @props {string} [llmsTxtHref] - href al /llms.txt (default '/llms.txt')
+ */
+import { ClientRouter } from 'astro:transitions'
+import '../styles/tokens.css'
+import '../styles/fonts.css'
+import '../styles/typography.css'
+import '../styles/animations.css'
+import '../styles/global.css'
+
+interface Props {
+  title: string
+  description: string
+  canonicalUrl: string
+  locale?: 'es' | 'en'
+  ogImage?: string
+  jsonLd?: string
+  llmsTxtHref?: string
+}
+
+const {
+  title,
+  description,
+  canonicalUrl,
+  locale = 'es',
+  ogImage,
+  jsonLd,
+  llmsTxtHref = '/llms.txt',
+} = Astro.props
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" type="text/plain" title="llms.txt" href={llmsTxtHref} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    {
+      jsonLd && (
+        <script type="application/ld+json" set:html={jsonLd} />
+      )
+    }
+    <script is:inline>
+      // Aplica el theme inicial ANTES de pintar para evitar FOUC.
+      try {
+        const t = localStorage.getItem('theme')
+        const root = document.documentElement
+        if (t === 'dark') root.classList.add('dark')
+        else if (t === 'light') root.classList.add('light')
+        root.dataset.theme = t === 'dark' || t === 'light' ? t : 'system'
+      } catch (_) {}
+    </script>
+    <ClientRouter />
+  </head>
+  <body>
+    <a class="sr-only" href="#main">Skip to content</a>
+    <slot name="nav" />
+    <main id="main">
+      <slot />
+    </main>
+    <slot name="footer" />
+    <script>
+      import { initRevealOnScroll } from '../lib/reveal-on-scroll'
+      const start = () => initRevealOnScroll()
+      start()
+      document.addEventListener('astro:after-swap', start)
+    </script>
+  </body>
+</html>

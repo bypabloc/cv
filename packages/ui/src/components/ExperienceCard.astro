@@ -1,0 +1,116 @@
+---
+/**
+ * @component ExperienceCard
+ * @description Tarjeta de experiencia laboral. Body via <slot />.
+ *
+ * @props {string} role - Cargo
+ * @props {string} company - Empresa
+ * @props {string} [companyUrl]
+ * @props {string} dateRange - Texto ya formateado (ej. "agosto 2022 — Presente")
+ * @props {string[]} [skills] - Tags de skills (max 6 visibles)
+ */
+interface Props {
+  role: string
+  company: string
+  companyUrl?: string
+  dateRange: string
+  skills?: string[]
+}
+
+const { role, company, companyUrl, dateRange, skills = [] } = Astro.props
+const visibleSkills = skills.slice(0, 6)
+const remaining = Math.max(0, skills.length - visibleSkills.length)
+---
+
+<article class="exp-card reveal-on-scroll">
+  <header class="exp-card__header">
+    <div>
+      <h3 class="exp-card__role text-h4">{role}</h3>
+      <p class="exp-card__company text-body">
+        {
+          companyUrl ? (
+            <a href={companyUrl} target="_blank" rel="noopener">
+              {company}
+            </a>
+          ) : (
+            company
+          )
+        }
+      </p>
+    </div>
+    <p class="exp-card__date text-mono text-muted">{dateRange}</p>
+  </header>
+  <div class="exp-card__body">
+    <slot />
+  </div>
+  {
+    visibleSkills.length > 0 && (
+      <ul class="exp-card__skills">
+        {visibleSkills.map((s) => (
+          <li class="exp-card__skill text-caption">{s}</li>
+        ))}
+        {remaining > 0 && (
+          <li class="exp-card__skill exp-card__skill--more text-caption">
+            +{remaining}
+          </li>
+        )}
+      </ul>
+    )
+  }
+</article>
+
+<style>
+  .exp-card {
+    padding: var(--space-24);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    transition:
+      border-color var(--motion-fast) var(--easing-out),
+      transform var(--motion-fast) var(--easing-out),
+      box-shadow var(--motion-fast) var(--easing-out);
+  }
+  .exp-card:hover {
+    border-color: var(--color-border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+  }
+  .exp-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-16);
+    margin-bottom: var(--space-12);
+    flex-wrap: wrap;
+  }
+  .exp-card__role {
+    margin-bottom: var(--space-3);
+  }
+  .exp-card__company a {
+    color: var(--color-text);
+    border-bottom: 1px solid transparent;
+  }
+  .exp-card__company a:hover {
+    border-bottom-color: var(--color-primary);
+  }
+  .exp-card__body {
+    color: var(--color-text-muted);
+    line-height: var(--line-height-relaxed);
+    font-size: var(--font-size-14);
+  }
+  .exp-card__skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    margin-top: var(--space-16);
+  }
+  .exp-card__skill {
+    padding: var(--space-3) var(--space-10);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+  }
+  .exp-card__skill--more {
+    background: transparent;
+  }
+</style>

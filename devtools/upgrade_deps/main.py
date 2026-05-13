@@ -1,11 +1,12 @@
 """Upgrade dependencies in PEP 621/735 pyproject.toml + package.json manifests
 to the latest stable from PyPI / npm.
 
-Manifestos cubiertos:
-    - server/pyproject.toml      (project.dependencies + dependency-groups)
-    - devtools/pyproject.toml    (project.dependencies + dependency-groups)
-    - dashboard/package.json
-    - landing/package.json
+Manifestos cubiertos (descubrimiento automatico via shared.manifest_discovery):
+    - package.json raiz (workspace orchestrator)
+    - apps/<app>/package.json (6 Astro sites)
+    - packages/<pkg>/package.json (5 workspaces compartidos)
+    - devtools/pyproject.toml (Python CLI)
+    - server/pyproject.toml (si existe)
 
 Comportamiento:
     1. Parsea cada manifest en su esquema nativo (PEP 621/735 TOML o package.json).
@@ -30,6 +31,10 @@ import re
 
 import httpx
 
+from shared.manifest_discovery import Manifest
+from shared.manifest_discovery import discover_npm_manifests
+from shared.manifest_discovery import discover_pypi_manifests
+from shared.paths import PROJECT_ROOT
 from upgrade_deps.parsers import parse_package_json
 from upgrade_deps.parsers import parse_pyproject_toml
 from upgrade_deps.registry import fetch_npm_versions
@@ -44,18 +49,6 @@ from upgrade_deps.versions import format_with_prefix
 from upgrade_deps.versions import is_newer
 from upgrade_deps.versions import pick_latest_stable
 
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-
-PYPI_MANIFESTS = (
-    PROJECT_ROOT / 'server' / 'pyproject.toml',
-    PROJECT_ROOT / 'devtools' / 'pyproject.toml',
-)
-
-NPM_MANIFESTS = (
-    PROJECT_ROOT / 'dashboard' / 'package.json',
-    PROJECT_ROOT / 'landing' / 'package.json',
-)
 
 # Concurrencia: limita a N requests simultáneos al mismo registry para no
 # saturar PyPI/npm si un manifest es grande.
@@ -351,19 +344,19 @@ async def _run(*, dry_run: bool) -> int:
     total_written = 0
 
     async with httpx.AsyncClient() as client:
-        for manifest in PYPI_MANIFESTS:
+        for manifest in discover_pypi_manifests():
             results, written = await _process_pypi_manifest(
                 client,
-                manifest,
+                manifest.path,
                 dry_run,
             )
             all_results.extend(results)
             total_written += written
 
-        for manifest in NPM_MANIFESTS:
+        for manifest in discover_npm_manifests():
             results, written = await _process_npm_manifest(
                 client,
-                manifest,
+                manifest.path,
                 dry_run,
             )
             all_results.extend(results)

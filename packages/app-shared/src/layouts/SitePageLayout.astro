@@ -1,12 +1,15 @@
 ---
 import type { Niche } from '@portfolio/content'
 import { filterByNiche, profile, skills } from '@portfolio/content'
-import { buildPersonSchema } from '@portfolio/seo'
+import { buildProfilePageSchema } from '@portfolio/seo'
+import { nicheTokensToCssVars } from '@portfolio/ui'
 import Footer from '@portfolio/ui/components/Footer.astro'
 import Nav from '@portfolio/ui/components/Nav.astro'
 /**
  * @layout SitePageLayout
  * @description Wrapper compartido. Cada app pasa siteUrl + niche + strings.
+ *   Inyecta tokens visuales del nicho (--niche-accent, --niche-glow, ...)
+ *   en el <main> y bootstrappea magnetic-cursor + number-counters.
  *
  * @props {string} title - title HTML
  * @props {string} description - meta description
@@ -16,6 +19,7 @@ import Nav from '@portfolio/ui/components/Nav.astro'
  * @props {string} siteUrl - base canonical del sitio
  * @props {import('@portfolio/content').Niche} niche
  * @props {Array<{href, label}>} navItems
+ * @props {string} [ogImage]
  */
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
 
@@ -52,13 +56,15 @@ const canonicalUrl = `${siteUrl}${canonicalPath}`
 const knowsAbout = filterByNiche(skills, niche).flatMap((c) =>
   c.skills.slice(0, 5),
 )
-const jsonLd = buildPersonSchema({
+const jsonLd = buildProfilePageSchema({
   profile,
   niche,
   locale,
   canonicalUrl,
   knowsAbout,
 })
+
+const nicheStyle = nicheTokensToCssVars(niche)
 ---
 
 <BaseLayout
@@ -77,11 +83,35 @@ const jsonLd = buildPersonSchema({
     currentLocale={locale}
     otherLocaleHref={otherLocalePath}
   />
-  <slot />
+  <div class="niche-root" data-niche={niche} style={nicheStyle}>
+    <slot />
+  </div>
   <Footer
     slot="footer"
     name="Pablo Contreras"
     contacts={profile.contacts}
     locale={locale}
   />
+  <script>
+    import { initMagneticCursor, initNumberCounters } from '@portfolio/ui'
+
+    let magneticCleanup: (() => void) | undefined
+    let counterCleanup: (() => void) | undefined
+
+    const boot = () => {
+      magneticCleanup?.()
+      counterCleanup?.()
+      magneticCleanup = initMagneticCursor()
+      counterCleanup = initNumberCounters()
+    }
+
+    boot()
+    document.addEventListener('astro:after-swap', boot)
+  </script>
 </BaseLayout>
+
+<style is:global>
+  .niche-root {
+    display: contents;
+  }
+</style>

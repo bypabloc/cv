@@ -18,8 +18,18 @@ export interface I18nStrings {
   nav: NavItem[]
   hero: {
     eyebrow: string
+    headline: string
+    summary: string
+    nicheLabel: string
     ctaPrimary: string
     ctaSecondary: string
+  }
+  stats: {
+    eyebrow: string
+    yearsExperience: string
+    companies: string
+    countries: string
+    certifications: string
   }
   sections: {
     experience: { title: string; subtitle: string }
@@ -29,7 +39,7 @@ export interface I18nStrings {
     contact: { title: string; subtitle: string }
     certificates: { title: string; subtitle: string }
     publications: { title: string }
-    awards: { title: string }
+    awards: { title: string; subtitle: string }
     education: { title: string }
     languages: { title: string }
     references: { title: string }
@@ -40,7 +50,13 @@ export interface I18nStrings {
     confidential: string
     technicalSkills: string
     softSkills: string
+    caseStudyCta: string
+    caseStudyProblem: string
+    caseStudyProcess: string
+    caseStudyResult: string
+    caseStudyMetrics: string
   }
+  atsKeywords: string[]
 }
 
 interface SiteOverrides {
@@ -50,10 +66,17 @@ interface SiteOverrides {
   metaDescriptionEn: string
   heroEyebrowEs?: string
   heroEyebrowEn?: string
+  heroHeadlineEs?: string
+  heroHeadlineEn?: string
+  heroSummaryEs?: string
+  heroSummaryEn?: string
+  nicheLabelEs?: string
+  nicheLabelEn?: string
   experienceSubtitleEs?: string
   experienceSubtitleEn?: string
   projectsSubtitleEs?: string
   projectsSubtitleEn?: string
+  atsKeywords?: string[]
 }
 
 const navEs = (basePrefix: string): NavItem[] => [
@@ -86,8 +109,20 @@ export function buildStrings(
       nav: navEs(''),
       hero: {
         eyebrow: overrides.heroEyebrowEs ?? 'Pablo Contreras · Lima, Perú',
+        headline: overrides.heroHeadlineEs ?? 'Senior Full Stack Engineer',
+        summary:
+          overrides.heroSummaryEs ??
+          'Más de 12 años entregando producto. Especialización en fintech LATAM, microservicios, AWS y plataformas Vue / Django.',
+        nicheLabel: overrides.nicheLabelEs ?? 'Full Stack',
         ctaPrimary: 'Ver experiencia',
         ctaSecondary: 'Descargar CV',
+      },
+      stats: {
+        eyebrow: 'Track record',
+        yearsExperience: 'Años entregando producto',
+        companies: 'Empresas',
+        countries: 'Países LATAM',
+        certifications: 'Certificaciones',
       },
       sections: {
         experience: {
@@ -118,7 +153,10 @@ export function buildStrings(
           subtitle: 'Certificaciones técnicas relevantes para este perfil.',
         },
         publications: { title: 'Publicaciones' },
-        awards: { title: 'Premios' },
+        awards: {
+          title: 'Premios',
+          subtitle: 'Reconocimientos por impacto técnico y de negocio.',
+        },
         education: { title: 'Educación' },
         languages: { title: 'Idiomas' },
         references: { title: 'Referencias' },
@@ -129,7 +167,13 @@ export function buildStrings(
         confidential: 'Bajo NDA — métricas detalladas en privado',
         technicalSkills: 'Técnicas',
         softSkills: 'Blandas',
+        caseStudyCta: 'Ver caso de estudio',
+        caseStudyProblem: 'Problema',
+        caseStudyProcess: 'Proceso',
+        caseStudyResult: 'Resultado',
+        caseStudyMetrics: 'Métricas',
       },
+      atsKeywords: overrides.atsKeywords ?? [],
     },
     en: {
       meta: {
@@ -139,8 +183,20 @@ export function buildStrings(
       nav: navEn('/en'),
       hero: {
         eyebrow: overrides.heroEyebrowEn ?? 'Pablo Contreras · Lima, Peru',
+        headline: overrides.heroHeadlineEn ?? 'Senior Full Stack Engineer',
+        summary:
+          overrides.heroSummaryEn ??
+          '12+ years shipping product. Specialized in LATAM fintech, microservices, AWS and Vue / Django platforms.',
+        nicheLabel: overrides.nicheLabelEn ?? 'Full Stack',
         ctaPrimary: 'View experience',
         ctaSecondary: 'Download CV',
+      },
+      stats: {
+        eyebrow: 'Track record',
+        yearsExperience: 'Years shipping product',
+        companies: 'Companies',
+        countries: 'LATAM countries',
+        certifications: 'Certifications',
       },
       sections: {
         experience: {
@@ -170,7 +226,10 @@ export function buildStrings(
           subtitle: 'Technical certifications relevant for this profile.',
         },
         publications: { title: 'Publications' },
-        awards: { title: 'Awards' },
+        awards: {
+          title: 'Awards',
+          subtitle: 'Recognition for technical and business impact.',
+        },
         education: { title: 'Education' },
         languages: { title: 'Languages' },
         references: { title: 'References' },
@@ -181,7 +240,13 @@ export function buildStrings(
         confidential: 'Under NDA — detailed metrics on request',
         technicalSkills: 'Technical',
         softSkills: 'Soft',
+        caseStudyCta: 'View case study',
+        caseStudyProblem: 'Problem',
+        caseStudyProcess: 'Process',
+        caseStudyResult: 'Result',
+        caseStudyMetrics: 'Metrics',
       },
+      atsKeywords: overrides.atsKeywords ?? [],
     },
   }
 }

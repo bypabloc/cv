@@ -1,5 +1,6 @@
 ---
 import {
+  awards,
   experiences,
   filterByNiche,
   formatRange,
@@ -9,18 +10,38 @@ import {
   skills,
   sortByPriority,
 } from '@portfolio/content'
+import AwardCard from '@portfolio/ui/components/AwardCard.astro'
+import CaseStudyExpander from '@portfolio/ui/components/CaseStudyExpander.astro'
 import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
-import ExperienceCard from '@portfolio/ui/components/ExperienceCard.astro'
+import ExperienceTimeline from '@portfolio/ui/components/ExperienceTimeline.astro'
 /**
  * @component CvSections
- * @description Bloques principales (experience, projects, skills, contact)
- *   ya filtrados por nicho. Recibe locale, niche y strings localizadas.
+ * @description Orquesta los bloques del CV filtrados por nicho:
+ *   HeroImpact + StatsBar + (extras por nicho) + Timeline + Bento + Marquee
+ *   + SkillsGrid + Awards + Contact.
+ *
+ *   Las "extras" se renderizan segun getNicheExtras(niche).
+ *
+ * @props {Niche} niche
+ * @props {'es'|'en'} locale
+ * @props {I18nStrings} strings
+ * @props {string} [cvHref='/cv.html']
  */
-import Hero from '@portfolio/ui/components/Hero.astro'
-import ProjectCard from '@portfolio/ui/components/ProjectCard.astro'
+import HeroImpact from '@portfolio/ui/components/HeroImpact.astro'
+import ProjectBentoCard from '@portfolio/ui/components/ProjectBentoCard.astro'
+import ProjectsBento from '@portfolio/ui/components/ProjectsBento.astro'
 import SectionHeader from '@portfolio/ui/components/SectionHeader.astro'
 import SkillsGrid from '@portfolio/ui/components/SkillsGrid.astro'
+import SkillsMarquee from '@portfolio/ui/components/SkillsMarquee.astro'
+import StatsBar from '@portfolio/ui/components/StatsBar.astro'
+import TimelineItem from '@portfolio/ui/components/TimelineItem.astro'
+import { buildStats } from '../lib/build-stats'
+import { getNicheExtras } from '../lib/get-niche-extras'
 import type { I18nStrings } from '../lib/site-config'
+import AiWorkflowSection from './AiWorkflowSection.astro'
+import ArchitectureDiagram from './ArchitectureDiagram.astro'
+import AtsKeywordsPills from './AtsKeywordsPills.astro'
+import LeadershipStats from './LeadershipStats.astro'
 
 interface Props {
   niche: Niche
@@ -35,13 +56,28 @@ const projs = sortByPriority(filterByNiche(projects, niche), niche)
 const sks = filterByNiche(skills, niche)
 const technicalSkills = sks.filter((s) => s.kind === 'technical')
 const softSkills = sks.filter((s) => s.kind === 'soft')
+const stats = buildStats(profile)
+const extras = getNicheExtras(niche)
+const nicheAwards = filterByNiche(awards, niche)
+
+// Stack para marquee: top 5 skills tecnicas, top 5 dominios/herramientas
+const marqueeRowOne = technicalSkills
+  .slice(0, 2)
+  .flatMap((c) => c.skills.slice(0, 5))
+const marqueeRowTwo = technicalSkills
+  .slice(2, 4)
+  .flatMap((c) => c.skills.slice(0, 5))
+
+// Bento spans: primer project = lg, segundo = md, tercer = md, cuarto = lg, resto md
+const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
 ---
 
 <section class="container-wide">
-  <Hero
+  <HeroImpact
     eyebrow={t.hero.eyebrow}
-    headline={profile.headline[locale]}
-    summary={profile.summary[locale]}
+    headline={t.hero.headline}
+    summary={t.hero.summary}
+    nicheLabel={t.hero.nicheLabel}
     ctas={[
       { href: '#experience', label: t.hero.ctaPrimary, variant: 'primary' },
       { href: cvHref, label: t.hero.ctaSecondary, variant: 'ghost' },
@@ -49,31 +85,100 @@ const softSkills = sks.filter((s) => s.kind === 'soft')
   />
 </section>
 
+{
+  extras.includes('StatsBar') && (
+    <section class="container-wide section section--compact">
+      <StatsBar
+        eyebrow={t.stats.eyebrow}
+        items={[
+          {
+            label: t.stats.yearsExperience,
+            value: stats.yearsExperience,
+            suffix: '+',
+          },
+          { label: t.stats.companies, value: stats.companies },
+          { label: t.stats.countries, value: stats.countries },
+          { label: t.stats.certifications, value: stats.certifications },
+        ]}
+      />
+    </section>
+  )
+}
+
+{
+  extras.includes('AtsKeywordsPills') && t.atsKeywords.length > 0 && (
+    <section class="container-wide">
+      <AtsKeywordsPills locale={locale} keywords={t.atsKeywords} />
+    </section>
+  )
+}
+
+{
+  extras.includes('ArchitectureDiagram') && (
+    <section class="container-wide">
+      <ArchitectureDiagram locale={locale} />
+    </section>
+  )
+}
+
+{
+  extras.includes('LeadershipStats') && (
+    <section class="container-wide">
+      <LeadershipStats locale={locale} />
+    </section>
+  )
+}
+
+{
+  extras.includes('AwardsHighlight') && nicheAwards.length > 0 && (
+    <section id="awards" class="container-wide section">
+      <SectionHeader
+        eyebrow="A1"
+        title={t.sections.awards.title}
+        subtitle={t.sections.awards.subtitle}
+      />
+      <div class="awards-grid">
+        {nicheAwards.map((a, idx) => (
+          <AwardCard
+            title={a.title[locale]}
+            issuer={a.issuer}
+            date={a.date}
+            motivation={a.motivation[locale]}
+            url={a.url}
+            featured={idx === 0}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 <section id="experience" class="container-wide section">
   <SectionHeader
     eyebrow="01"
     title={t.sections.experience.title}
     subtitle={t.sections.experience.subtitle}
   />
-  <div class="experience-list">
+  <ExperienceTimeline ariaLabel={t.sections.experience.title}>
     {
-      exps.map((e) => (
-        <ExperienceCard
+      exps.map((e, idx) => (
+        <TimelineItem
           role={e.role[locale]}
           company={e.company}
           companyUrl={e.companyUrl}
           dateRange={formatRange(e.start, e.end, locale)}
           skills={e.skillsTechnical}
+          current={idx === 0 && !e.end}
         >
           <ul class="exp-bullets">
             {e.responsibilities[locale].slice(0, 3).map((r) => (
               <li>{r}</li>
             ))}
           </ul>
-        </ExperienceCard>
+        </TimelineItem>
       ))
     }
-  </div>
+  </ExperienceTimeline>
 </section>
 
 <section id="projects" class="container-wide section">
@@ -82,10 +187,10 @@ const softSkills = sks.filter((s) => s.kind === 'soft')
     title={t.sections.projects.title}
     subtitle={t.sections.projects.subtitle}
   />
-  <div class="projects-grid">
+  <ProjectsBento ariaLabel={t.sections.projects.title}>
     {
-      projs.map((p) => (
-        <ProjectCard
+      projs.map((p, idx) => (
+        <ProjectBentoCard
           name={p.name}
           summary={p.summary[locale]}
           stack={p.stack}
@@ -93,12 +198,56 @@ const softSkills = sks.filter((s) => s.kind === 'soft')
           repo={p.repo}
           status={p.status}
           isConfidential={p.isConfidential}
+          bentoSpan={bentoSpans[idx % bentoSpans.length] ?? 'md'}
           caseStudyLabel={t.labels.confidential}
         />
       ))
     }
-  </div>
+  </ProjectsBento>
+
+  {
+    projs.filter((p) => p.caseStudyDetailed).length > 0 && (
+      <div class="case-studies">
+        {projs
+          .filter((p) => p.caseStudyDetailed)
+          .map((p) => (
+            <CaseStudyExpander
+              title={p.name}
+              problem={p.caseStudyDetailed!.problem[locale]}
+              process={p.caseStudyDetailed!.process[locale]}
+              result={p.caseStudyDetailed!.result[locale]}
+              metrics={p.metrics ? Object.values(p.metrics) : []}
+              labels={{
+                cta: t.labels.caseStudyCta,
+                problem: t.labels.caseStudyProblem,
+                process: t.labels.caseStudyProcess,
+                result: t.labels.caseStudyResult,
+                metricsTitle: t.labels.caseStudyMetrics,
+              }}
+            />
+          ))}
+      </div>
+    )
+  }
 </section>
+
+{
+  extras.includes('SkillsMarquee') && marqueeRowOne.length > 0 && (
+    <SkillsMarquee
+      rowOne={marqueeRowOne}
+      rowTwo={marqueeRowTwo.length > 0 ? marqueeRowTwo : undefined}
+      ariaLabel={t.sections.skills.title}
+    />
+  )
+}
+
+{
+  extras.includes('AiWorkflowSection') && (
+    <section class="container-wide">
+      <AiWorkflowSection locale={locale} />
+    </section>
+  )
+}
 
 <section id="skills" class="container-wide section">
   <SectionHeader
@@ -159,21 +308,25 @@ const softSkills = sks.filter((s) => s.kind === 'soft')
   .section {
     padding-block: var(--space-72);
   }
-  .experience-list {
-    display: grid;
-    gap: var(--space-20);
+  .section--compact {
+    padding-block: var(--space-40);
   }
   .exp-bullets {
     list-style: disc inside;
     margin-top: var(--space-8);
+    padding: 0;
   }
   .exp-bullets li {
     margin-bottom: var(--space-4);
   }
-  .projects-grid {
+  .awards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: var(--space-20);
+  }
+  .case-studies {
+    display: grid;
+    gap: var(--space-16);
+    margin-top: var(--space-32);
   }
   .skills-block {
     display: grid;

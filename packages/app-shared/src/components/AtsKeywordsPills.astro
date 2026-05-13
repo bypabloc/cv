@@ -1,0 +1,99 @@
+---
+/**
+ * @component AtsKeywordsPills
+ * @description Seccion exclusiva del nicho `fintech`. Pills visibles (no
+ *   hidden text — white-hat) con keywords ATS que los reclutadores buscan
+ *   literal: job title, regulacion, mercados, stack.
+ *
+ *   Cumple recomendacion de modern-portfolios/02-optimizacion-ats.md.
+ *
+ * @props {'es' | 'en'} locale
+ * @props {string[]} keywords - Lista de keywords ATS literales
+ *
+ * @example
+ *   <AtsKeywordsPills locale="es" keywords={['PCI DSS','Chile','Mexico']} />
+ */
+interface Props {
+  locale: 'es' | 'en'
+  keywords: string[]
+}
+
+const { locale, keywords } = Astro.props
+const isEs = locale === 'es'
+
+const title = isEs ? 'Stack & especialidad' : 'Stack & specialty'
+const subtitle = isEs
+  ? 'Job titles, regulaciones, mercados y tecnologias relevantes para reclutadores fintech LATAM.'
+  : 'Job titles, regulations, markets and technologies relevant to LATAM fintech recruiters.'
+---
+
+<section class="ats-pills scroll-reveal" data-section="ats-keywords">
+  <header class="ats-pills__header">
+    <span class="ats-pills__eyebrow text-mono-label">
+      <span class="ats-pills__dot" aria-hidden="true"></span>
+      ATS · LATAM Fintech
+    </span>
+    <h2 class="ats-pills__title text-h2 gradient-text">{title}</h2>
+    <p class="ats-pills__subtitle text-body-lg text-muted">{subtitle}</p>
+  </header>
+  <ul class="ats-pills__list">
+    {
+      keywords.map((kw) => (
+        <li class="ats-pills__pill text-mono">{kw}</li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .ats-pills {
+    padding-block: var(--space-72);
+  }
+  .ats-pills__header {
+    display: grid;
+    gap: var(--space-16);
+    margin-bottom: var(--space-32);
+    max-width: 720px;
+  }
+  .ats-pills__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--niche-accent);
+  }
+  .ats-pills__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--niche-accent);
+    box-shadow: 0 0 12px var(--niche-glow);
+  }
+  .ats-pills__title {
+    margin: 0;
+  }
+  .ats-pills__subtitle {
+    margin: 0;
+  }
+  .ats-pills__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+  }
+  .ats-pills__pill {
+    padding: var(--space-8) var(--space-16);
+    border-radius: var(--radius-pill);
+    background: rgba(var(--niche-accent-rgb), 0.08);
+    border: 1px solid rgba(var(--niche-accent-rgb), 0.3);
+    color: var(--niche-accent);
+    font-size: var(--font-size-13);
+    transition: transform var(--motion-fast) var(--easing-out);
+    cursor: default;
+  }
+  .ats-pills__pill:hover {
+    transform: translateY(-2px);
+    background: rgba(var(--niche-accent-rgb), 0.15);
+  }
+</style>

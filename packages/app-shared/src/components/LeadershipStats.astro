@@ -1,0 +1,185 @@
+---
+/**
+ * @component LeadershipStats
+ * @description Seccion exclusiva del nicho `leader`. Stats de liderazgo +
+ *   contexto de equipos liderados + mentoria + reorganizaciones navegadas.
+ *
+ * @props {'es' | 'en'} locale
+ *
+ * @example
+ *   <LeadershipStats locale="es" />
+ */
+interface Props {
+  locale: 'es' | 'en'
+}
+
+const { locale } = Astro.props
+const isEs = locale === 'es'
+
+const title = isEs ? 'Leadership track record' : 'Leadership track record'
+const subtitle = isEs
+  ? 'Liderazgo de equipos, navegacion de cambios organizacionales y entrega continua en contexto fintech LATAM.'
+  : 'Team leadership, organizational change navigation and continuous delivery in LATAM fintech context.'
+
+const stats = isEs
+  ? [
+      { value: 4, label: 'Roles de liderazgo' },
+      { value: 8, label: 'Equipos liderados' },
+      { value: 11, label: 'Años entregando producto' },
+      { value: 1, label: 'Premio Innovador del Año' },
+    ]
+  : [
+      { value: 4, label: 'Leadership roles' },
+      { value: 8, label: 'Teams led' },
+      { value: 11, label: 'Years shipping product' },
+      { value: 1, label: 'Innovator of the Year award' },
+    ]
+
+const pillars = isEs
+  ? [
+      {
+        title: 'Tech leadership',
+        body: 'Lider del equipo inicial en Dibal (primer dev contratado). Decision de arquitectura, hiring, mentoria a juniors, hand-off a equipos sucesores cuando la empresa crece.',
+      },
+      {
+        title: 'Organizational resilience',
+        body: 'Navegue reducciones de personal en Destacame manteniendo entrega y moral del equipo. Adaptacion entre frontend → microservices → equipo de plataforma sin perder velocidad.',
+      },
+      {
+        title: 'Mentoring + delivery',
+        body: 'Triple Alianza 2020: 1er lugar sector Comercio. Premio Innovador del Año 2023 Destacame por implementar soluciones automatizadas con impacto medible en operaciones.',
+      },
+    ]
+  : [
+      {
+        title: 'Tech leadership',
+        body: 'Led initial team at Dibal (first hire). Architecture decisions, hiring, mentoring juniors, hand-off to successor teams as the company scaled.',
+      },
+      {
+        title: 'Organizational resilience',
+        body: 'Navigated headcount reductions at Destacame while maintaining delivery and team morale. Shifted between frontend → microservices → platform team without losing pace.',
+      },
+      {
+        title: 'Mentoring + delivery',
+        body: 'Triple Alliance 2020: 1st place Commerce sector. Innovator of the Year 2023 Destacame for shipping automated solutions with measurable ops impact.',
+      },
+    ]
+---
+
+<section class="leadership scroll-reveal" data-section="leadership-stats">
+  <header class="leadership__header">
+    <span class="leadership__eyebrow text-mono-label">
+      <span class="leadership__dot" aria-hidden="true"></span>
+      Tech Lead · Engineering Manager
+    </span>
+    <h2 class="leadership__title text-h2 gradient-text">{title}</h2>
+    <p class="leadership__subtitle text-body-lg text-muted">{subtitle}</p>
+  </header>
+
+  <dl class="leadership__stats">
+    {
+      stats.map((s) => (
+        <div class="leadership__stat">
+          <dt class="leadership__stat-label text-mono-label text-muted">{s.label}</dt>
+          <dd class="leadership__stat-value text-display-sm">
+            <span class="stat-number gradient-text" data-target={s.value}>0</span>
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  <div class="leadership__pillars">
+    {
+      pillars.map((p, idx) => (
+        <article class="leadership__pillar">
+          <span class="leadership__pillar-index text-mono-label">
+            {String(idx + 1).padStart(2, '0')}
+          </span>
+          <h3 class="leadership__pillar-title text-h4">{p.title}</h3>
+          <p class="leadership__pillar-body text-body text-muted">{p.body}</p>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .leadership {
+    padding-block: var(--space-72);
+  }
+  .leadership__header {
+    display: grid;
+    gap: var(--space-16);
+    margin-bottom: var(--space-40);
+    max-width: 720px;
+  }
+  .leadership__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--niche-accent);
+  }
+  .leadership__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--niche-accent);
+    box-shadow: 0 0 12px var(--niche-glow);
+  }
+  .leadership__title {
+    margin: 0;
+  }
+  .leadership__subtitle {
+    margin: 0;
+  }
+  .leadership__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-24);
+    margin: 0 0 var(--space-56) 0;
+    padding: var(--space-32);
+    background: var(--color-surface);
+    border: 1px solid rgba(var(--niche-accent-rgb), 0.25);
+    border-radius: var(--radius-md);
+  }
+  .leadership__stat {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .leadership__stat-label {
+    margin: 0;
+  }
+  .leadership__stat-value {
+    margin: 0;
+    font-variation-settings: 'wght' 800;
+  }
+  .leadership__pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-20);
+  }
+  .leadership__pillar {
+    padding: var(--space-24);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-12);
+    transition: border-color var(--motion-slow) var(--easing-out);
+  }
+  .leadership__pillar:hover {
+    border-color: rgba(var(--niche-accent-rgb), 0.4);
+  }
+  .leadership__pillar-index {
+    color: var(--niche-accent);
+    margin: 0;
+  }
+  .leadership__pillar-title {
+    margin: 0;
+  }
+  .leadership__pillar-body {
+    margin: 0;
+    line-height: var(--line-height-relaxed);
+  }
+</style>

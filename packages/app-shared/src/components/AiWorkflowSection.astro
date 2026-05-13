@@ -1,0 +1,225 @@
+---
+/**
+ * @component AiWorkflowSection
+ * @description Seccion exclusiva del nicho `vibe`. Documenta de forma honesta
+ *   el workflow de Pablo con Claude Code, Cursor y subagentes. White-hat:
+ *   prompts reales, narrativa transparente, no marketing.
+ *
+ *   Cumple recomendacion de developer-portfolios-vibe-coding/09-documentacion-uso-ia.md.
+ *
+ * @props {'es' | 'en'} locale
+ * @props {string} [titleOverride]
+ *
+ * @example
+ *   <AiWorkflowSection locale="es" />
+ */
+interface Props {
+  locale: 'es' | 'en'
+  titleOverride?: string
+}
+
+const { locale, titleOverride } = Astro.props
+const isEs = locale === 'es'
+
+const title = titleOverride ?? (isEs ? 'AI workflow' : 'AI workflow')
+const subtitle = isEs
+  ? 'Cómo trabajo con Claude Code, Cursor y subagentes. Sin gimmicks: prompts reales, transparencia sobre el output, métricas concretas.'
+  : 'How I work with Claude Code, Cursor and subagents. No gimmicks: real prompts, transparent output, concrete metrics.'
+
+const cards = isEs
+  ? [
+      {
+        label: 'Historia',
+        title: 'Claude web + FastStruct → Claude Code (mayo 2025)',
+        body: 'Antes de Claude Code usaba la interfaz web de Claude para programar y pasaba contexto con mi propia extensión FastStruct (publicada en VS Code Marketplace). Cuando Claude Code salió en mayo 2025 fui early adopter desde día uno.',
+      },
+      {
+        label: 'Adopción empresarial',
+        title: 'Implementé Claude Code en Destacame',
+        body: 'Fui quien introdujo Claude Code en mi equipo actual en Destacame. Armé estructura de skills, rules y docs para estandarizar el uso entre developers, definir prompts canónicos por tarea, evitar duplicación de descubrimientos y mantener coherencia en quality gates.',
+      },
+      {
+        label: 'CLI tooling',
+        title: 'CLIs propias con Claude Code',
+        body: 'Suelo construir CLIs (orquestador devtools en Python 3.14, scripts de scan/verify/feature tests, etc.) con Claude Code para centralizar procesos repetitivos del equipo. Cada CLI es código revisado, testeado y mantenible — no scripts desechables.',
+      },
+      {
+        label: 'Stack actual',
+        title: 'Claude Code · Cursor · Sub-agentes',
+        body: 'Claude Code como driver principal (91% CSAT, 54 NPS). Cursor para refactors visuales puntuales. Sub-agentes (researcher / Explore / code-reviewer) en outputs largos para no quemar contexto del orquestador.',
+      },
+      {
+        label: 'Prompt real',
+        title: 'Pattern explore → plan → implement → commit',
+        body: '"Explora estos 3 archivos y dime qué componentes son candidatos a refactor por duplicación. Escribe tu reporte en tmp/explore_X.md, responde una sola línea." → Reduce 80% del consumo de tokens en orquestador.',
+      },
+      {
+        label: 'Referencia abierta',
+        title: 'bypabloc/mvp-template-full-stack',
+        body: 'Repositorio público que uso como template y referencia del flujo: estructura .claude/, skills, rules, hooks, devtools CLI, conformance y testing. Sirve como blueprint para nuevos proyectos y para mostrar el workflow de vibe coding completo.',
+      },
+      {
+        label: 'Output reciente',
+        title: 'bypabloc/cv — MVP en una noche (12-13 mayo 2026)',
+        body: 'CV builder construido en una sola noche con Claude Code. Repo público bypabloc/cv. Demuestra que la combinación Claude Code + revisión humana entrega producto sin sacrificar mantenibilidad.',
+      },
+      {
+        label: 'Métricas',
+        title: '5x faster + 0% atribución IA',
+        body: 'Tiempo de instrucción a un LLM cae 5x al usar FastStruct. Zero "Generated with Claude Code" en commits/PRs gracias a hook prepare-commit-msg que escanea y limpia atribución IA por política de empresa.',
+      },
+      {
+        label: 'Reglas',
+        title: 'AI = herramienta, no autor',
+        body: 'Todo el código se revisa, testea (Vitest + Playwright) y mantiene por mí. Quality gates en pre-commit y pre-push (Biome + tsc + astro check + coverage ≥80% + build). Atribución IA prohibida por política — ni en commits, ni en PRs, ni en docs.',
+      },
+    ]
+  : [
+      {
+        label: 'History',
+        title: 'Claude web + FastStruct → Claude Code (May 2025)',
+        body: 'Before Claude Code I used the Claude web interface to code and piped context with my own FastStruct extension (published on the VS Code Marketplace). When Claude Code launched in May 2025 I was an early adopter from day one.',
+      },
+      {
+        label: 'Enterprise adoption',
+        title: 'I rolled out Claude Code at Destacame',
+        body: 'I was the one who introduced Claude Code in my current team at Destacame. I built a skills/rules/docs structure to standardize usage across developers, define canonical prompts per task, avoid duplicated discoveries and keep coherence in quality gates.',
+      },
+      {
+        label: 'CLI tooling',
+        title: 'Custom CLIs built with Claude Code',
+        body: 'I regularly build CLIs (Python 3.14 devtools orchestrator, scan/verify/feature-test scripts, etc.) with Claude Code to centralize repetitive team processes. Each CLI is reviewed, tested and maintainable code — not throwaway scripts.',
+      },
+      {
+        label: 'Current stack',
+        title: 'Claude Code · Cursor · Sub-agents',
+        body: 'Claude Code as primary driver (91% CSAT, 54 NPS). Cursor for targeted visual refactors. Sub-agents (researcher / Explore / code-reviewer) on long outputs to avoid burning the orchestrator context.',
+      },
+      {
+        label: 'Real prompt',
+        title: 'Pattern explore → plan → implement → commit',
+        body: '"Explore these 3 files and tell me which components are refactor candidates due to duplication. Write your report to tmp/explore_X.md, respond a single line." → Cuts 80% of orchestrator token consumption.',
+      },
+      {
+        label: 'Open reference',
+        title: 'bypabloc/mvp-template-full-stack',
+        body: 'Public repository I use as template and reference for the workflow: .claude/ structure, skills, rules, hooks, devtools CLI, conformance and testing. Serves as blueprint for new projects and to showcase the full vibe coding workflow.',
+      },
+      {
+        label: 'Recent output',
+        title: 'bypabloc/cv — MVP in one night (May 12-13, 2026)',
+        body: 'CV builder built in a single night with Claude Code. Public repo bypabloc/cv. Demonstrates that the Claude Code + human review combo ships product without sacrificing maintainability.',
+      },
+      {
+        label: 'Metrics',
+        title: '5x faster + 0% AI attribution',
+        body: 'Time spent instructing an LLM drops 5x with FastStruct. Zero "Generated with Claude Code" in commits/PRs via prepare-commit-msg hook that scans and strips AI attribution by company policy.',
+      },
+      {
+        label: 'Rules',
+        title: 'AI = tool, not author',
+        body: 'All code is reviewed, tested (Vitest + Playwright) and maintained by me. Quality gates in pre-commit and pre-push (Biome + tsc + astro check + coverage ≥80% + build). AI attribution forbidden by policy — not in commits, not in PRs, not in docs.',
+      },
+    ]
+---
+
+<section class="ai-workflow scroll-reveal" data-section="ai-workflow">
+  <header class="ai-workflow__header">
+    <span class="ai-workflow__eyebrow text-mono-label">
+      <span class="ai-workflow__dot" aria-hidden="true"></span>
+      Vibe Coding · 2026
+    </span>
+    <h2 class="ai-workflow__title text-h2 gradient-text">{title}</h2>
+    <p class="ai-workflow__subtitle text-body-lg text-muted">{subtitle}</p>
+  </header>
+  <div class="ai-workflow__grid">
+    {
+      cards.map((c) => (
+        <article class="ai-workflow__card tilt-3d">
+          <div class="tilt-3d__inner ai-workflow__card-inner">
+            <span class="ai-workflow__card-label text-mono-label">{c.label}</span>
+            <h3 class="ai-workflow__card-title text-h4">{c.title}</h3>
+            <p class="ai-workflow__card-body text-body text-muted">{c.body}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+  <p class="ai-workflow__disclaimer text-mono text-subtle">
+    {
+      isEs
+        ? '// Disclosure: todo el codigo es revisado, testeado (Vitest + Playwright) y mantenido por mi. La IA es herramienta, no autor. NUNCA en atribucion de commits.'
+        : '// Disclosure: all code is reviewed, tested (Vitest + Playwright) and maintained by me. AI is a tool, not an author. NEVER in commit attribution.'
+    }
+  </p>
+</section>
+
+<style>
+  .ai-workflow {
+    padding-block: var(--space-72);
+  }
+  .ai-workflow__header {
+    display: grid;
+    gap: var(--space-16);
+    margin-bottom: var(--space-40);
+    max-width: 720px;
+  }
+  .ai-workflow__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--niche-accent);
+  }
+  .ai-workflow__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--niche-accent);
+    box-shadow: 0 0 12px var(--niche-glow);
+  }
+  .ai-workflow__title {
+    margin: 0;
+  }
+  .ai-workflow__subtitle {
+    margin: 0;
+  }
+  .ai-workflow__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-20);
+  }
+  .ai-workflow__card {
+    border: 1px solid rgba(var(--niche-accent-rgb), 0.2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: hidden;
+    isolation: isolate;
+    transition: border-color var(--motion-slow) var(--easing-out);
+  }
+  .ai-workflow__card:hover {
+    border-color: var(--niche-accent);
+  }
+  .ai-workflow__card-inner {
+    display: grid;
+    gap: var(--space-12);
+    padding: var(--space-24);
+  }
+  .ai-workflow__card-label {
+    color: var(--niche-accent);
+  }
+  .ai-workflow__card-title {
+    margin: 0;
+    font-family: var(--font-mono-display);
+    font-size: var(--font-size-16);
+    font-weight: 700;
+  }
+  .ai-workflow__card-body {
+    margin: 0;
+  }
+  .ai-workflow__disclaimer {
+    margin-top: var(--space-32);
+    padding-top: var(--space-24);
+    border-top: 1px dashed var(--color-border);
+    font-family: var(--font-mono);
+  }
+</style>

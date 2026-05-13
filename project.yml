@@ -1,0 +1,12 @@
+# Project identity — single source of truth.
+#
+# Variants:
+#   name:             kebab-case — Docker containers, CI, package.json, URLs
+#   name_snake:       snake_case — Python modules, internal IDs
+#   name_display:     Title Case — UI titles, docs, emails
+#   container_prefix: 2-3 chars  — short prefix for Docker cleanup commands
+
+name: portfolio
+name_snake: portfolio
+name_display: Portfolio
+container_prefix: pf

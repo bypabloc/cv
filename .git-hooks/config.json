@@ -1,8 +1,7 @@
 {
   "_descripcion": "Configuracion de hooks Git compartidos para portfolio (Astro 6 monorepo).",
-  "_documentacion": "Pre-commit liviano (Biome lint sobre staged, <10s). Pre-push estricto (lint + typecheck + tests + coverage + build).",
+  "_documentacion": "Pre-commit liviano (Biome lint sobre staged, <10s). Pre-push estricto (lint + typecheck + tests + coverage + build + feature E2E).",
   "_nota": "Archivo compartido en el repositorio. Cambios afectan a todo el equipo y CI/CD.",
-
   "pre-commit": {
     "_descripcion": "Pre-commit LIVIANO. Solo conformance (Biome) + frontend_purity. Objetivo: <10s.",
     "steps": {
@@ -18,9 +17,8 @@
       }
     }
   },
-
   "pre-push": {
-    "_descripcion": "Pre-push ESTRICTO. Conformance + typecheck + unit tests + coverage per-file >=80% + build.",
+    "_descripcion": "Pre-push ESTRICTO. Conformance + typecheck + unit tests + coverage per-file >=80% + build + feature tests (Playwright E2E via Docker).",
     "steps": {
       "conformance": {
         "name": "Conformance (Biome lint + format check)",
@@ -56,6 +54,11 @@
         "name": "Static Build (pnpm build)",
         "enabled": true,
         "description": "Build estatico de todas las apps Astro. Falla si Astro/Vite no genera dist/."
+      },
+      "feature_tests": {
+        "name": "Feature tests (Playwright E2E via Docker)",
+        "enabled": true,
+        "description": "Levanta stack Docker local (docker up --env=local) y ejecuta Playwright contra los 6 subdominios + services.localhost. Si Docker no esta disponible, se omite con [OMITIDO]. Skipear: SKIP_STEPS=\"feature_tests\" git push."
       }
     }
   }

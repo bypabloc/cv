@@ -1,0 +1,124 @@
+# Portfolio - local compose (HMR, bind mount, puerto 9970).
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: portfolio-nginx-local
+    ports:
+      - "${PROXY_PORT:-9970}:80"
+    volumes:
+      - ../nginx/local.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../nginx/error-pages:/usr/share/nginx/error-pages:ro
+      - ../nginx/services-page:/usr/share/nginx/services-page:ro
+    depends_on:
+      generic:
+        condition: service_started
+      hub:
+        condition: service_started
+      fintech:
+        condition: service_started
+      architect:
+        condition: service_started
+      leader:
+        condition: service_started
+      vibe:
+        condition: service_started
+    restart: unless-stopped
+
+  generic:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/generic/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-generic-local
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  hub:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/hub/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-hub-local
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  fintech:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/fintech/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-fintech-local
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  architect:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/architect/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-architect-local
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  leader:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/leader/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-leader-local
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  vibe:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/vibe/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-vibe-local
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  # Feature tests shared (Playwright). On-demand via `profile: [feature]`.
+  feature:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/feature/Dockerfile
+    container_name: portfolio-feature-local
+    network_mode: host
+    volumes:
+      - ../..:/app
+      - feature_node_modules:/app/tests/feature/node_modules
+    depends_on:
+      nginx:
+        condition: service_started
+    profiles:
+      - feature
+    restart: "no"
+
+volumes:
+  portfolio_node_modules:
+  feature_node_modules:

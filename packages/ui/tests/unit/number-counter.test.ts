@@ -77,9 +77,10 @@ describe('initNumberCounters', () => {
   })
 
   it('Given .stat-number con data-target=0 When intersecting Then marca counted pero no dispara animateCounter', () => {
-    let savedCallback:
-      | ((entries: { isIntersecting: boolean; target: HTMLElement }[]) => void)
-      | null = null
+    type Cb = (
+      entries: { isIntersecting: boolean; target: HTMLElement }[],
+    ) => void
+    let savedCallback: Cb | null = null as Cb | null
     class MockIO {
       constructor(
         cb: (
@@ -109,9 +110,10 @@ describe('initNumberCounters', () => {
   })
 
   it('Given IntersectionObserver callback con isIntersecting=false Then no marca counted', () => {
-    let savedCallback:
-      | ((entries: { isIntersecting: boolean; target: HTMLElement }[]) => void)
-      | null = null
+    type Cb = (
+      entries: { isIntersecting: boolean; target: HTMLElement }[],
+    ) => void
+    let savedCallback: Cb | null = null as Cb | null
     class MockIO {
       constructor(
         cb: (
@@ -141,9 +143,10 @@ describe('initNumberCounters', () => {
   })
 
   it('Given IntersectionObserver callback con isIntersecting Then marca counted y dispara animacion', () => {
-    let savedCallback:
-      | ((entries: { isIntersecting: boolean; target: HTMLElement }[]) => void)
-      | null = null
+    type Cb = (
+      entries: { isIntersecting: boolean; target: HTMLElement }[],
+    ) => void
+    let savedCallback: Cb | null = null as Cb | null
     class MockIO {
       constructor(
         cb: (

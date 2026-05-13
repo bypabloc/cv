@@ -56,6 +56,12 @@ coverage/
 .astro/
 dist/
 
+# CV HTML generados por scripts/build-public-assets.mjs (prebuild)
+# Output puro: cada `astro build` los regenera desde @portfolio/cv-pdf + @portfolio/content
+apps/*/public/cv.html
+apps/*/public/cv-es.html
+apps/*/public/cv-en.html
+
 # Playwright
 playwright-report/
 test-results/

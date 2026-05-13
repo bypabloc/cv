@@ -24,7 +24,9 @@
   "dependencies": {
     "@portfolio/content": "workspace:*",
     "@fontsource/space-grotesk": "^5.1.1",
-    "@fontsource/space-mono": "^5.1.1"
+    "@fontsource/space-mono": "^5.1.1",
+    "@fontsource-variable/space-grotesk": "^5.2.5",
+    "@fontsource-variable/jetbrains-mono": "^5.2.5"
   },
   "peerDependencies": {
     "astro": "^5.0.0"

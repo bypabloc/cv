@@ -1,11 +1,18 @@
 /**
  * @config fonts.css
- * @description Self-hosted fonts via @fontsource. GDPR-friendly + CSP estricto.
+ * @description Self-hosted variable fonts via @fontsource-variable. GDPR-friendly + CSP estricto.
  *   NUNCA importar desde fonts.googleapis.com.
+ *
+ *   Variable fonts: una sola request por familia, weight animable en hover/scroll
+ *   con font-variation-settings.
+ *
+ *   Fallback static fonts mantenidos para navegadores antiguos sin variable support.
  */
-@import "@fontsource/space-grotesk/400.css";
-@import "@fontsource/space-grotesk/500.css";
-@import "@fontsource/space-grotesk/600.css";
-@import "@fontsource/space-grotesk/700.css";
+
+/* Variable fonts (preferidas) */
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* Fallback static (kept for back-compat con Space Mono que no tiene variable) */
 @import "@fontsource/space-mono/400.css";
 @import "@fontsource/space-mono/700.css";

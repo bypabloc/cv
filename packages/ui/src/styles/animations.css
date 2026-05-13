@@ -2,7 +2,169 @@
  * @config animations.css
  * @description Keyframes y animaciones reutilizables, todas respetando
  *   prefers-reduced-motion. Vanilla CSS - cero JS, cero libs externas.
+ *
+ *   Complementado por: mesh-gradients.css, scroll-driven.css.
  */
+
+/* === Variable font weight-shift (hover / loop) === */
+@keyframes weight-shift {
+  0%,
+  100% {
+    font-variation-settings: "wght" 400;
+  }
+  50% {
+    font-variation-settings: "wght" 700;
+  }
+}
+
+.weight-shift-hover {
+  transition: font-variation-settings var(--motion-slow) var(--easing-out);
+}
+
+.weight-shift-hover:hover {
+  font-variation-settings: "wght" 800;
+}
+
+/* === Marquee infinito CSS puro === */
+@keyframes marquee-left {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marquee-right {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.marquee {
+  display: flex;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+
+.marquee__track {
+  display: flex;
+  gap: var(--space-32);
+  white-space: nowrap;
+  animation: marquee-left 40s linear infinite;
+  will-change: transform;
+  flex-shrink: 0;
+}
+
+.marquee__track--reverse {
+  animation-name: marquee-right;
+}
+
+.marquee__track--fast {
+  animation-duration: 22s;
+}
+
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+
+/* === Tilt 3D suave (CSS only, sin JS) === */
+.tilt-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.tilt-3d__inner {
+  transition: transform var(--motion-slow) var(--easing-out);
+  transform: rotateX(0) rotateY(0);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@media (hover: hover) {
+  .tilt-3d:hover .tilt-3d__inner {
+    transform: rotateX(2deg) rotateY(-3deg) translateZ(8px);
+  }
+}
+
+/* === Magnetic hover preparation (vanilla JS lo controla en runtime) === */
+.magnetic {
+  transition: transform var(--motion-fast) var(--easing-out);
+  will-change: transform;
+}
+
+/* === Spotlight cursor (mask + radial gradient seguiendo mouse) === */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    320px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(var(--niche-accent-rgb), 0.18),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--easing-out);
+}
+
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+/* === Animated underline === */
+@keyframes underline-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.anim-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.anim-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--niche-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--motion-slow) var(--easing-out);
+}
+
+.anim-underline:hover::after,
+.anim-underline:focus-visible::after {
+  transform: scaleX(1);
+}
 
 @keyframes fade-in-up {
   from {

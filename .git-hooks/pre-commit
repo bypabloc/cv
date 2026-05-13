@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Pre-commit hook - portfolio Astro 6 monorepo.
+
+Ejecuta validaciones livianas sobre archivos staged:
+  1. Conformance: Biome lint + format check
+  2. Frontend purity: prohibe .js/.jsx/.mjs/.cjs salvo configs en raiz
+
+Objetivo: <10s en commits tipicos. Coverage, typecheck y build se ejecutan
+en pre-push (mas pesado).
+
+Skip por env:
+    SKIP_STEPS="conformance" git commit ...
+    SKIP_STEPS="frontend_purity" git commit ...
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+
+HOOK_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(HOOK_DIR))
+
+from _common import (  # noqa: E402
+    PROJECT_ROOT,
+    err,
+    fail,
+    filter_lintable_files,
+    find_forbidden_js_files,
+    get_staged_files,
+    green,
+    header,
+    info,
+    ok,
+    out,
+    run_pnpm_exec,
+    section,
+    should_run_step,
+    skip,
+    tip,
+)
+
+
+HOOK_NAME = 'pre-commit'
+
+
+def step_conformance(files: list[str], step_label: str) -> int:
+    """Biome lint + format check sobre archivos staged en apps/* y packages/*."""
+    section(f'[PASO {step_label}] Conformance (Biome lint + format)')
+
+    if not files:
+        info('Sin archivos lintables en staging.')
+        ok(f'Paso {step_label}: Conformance')
+        return 0
+
+    info(f'{len(files)} archivo(s) a validar:')
+    for f in files[:10]:
+        out(f'  - {f}')
+    if len(files) > 10:
+        out(f'  ... y {len(files) - 10} mas')
+
+    rc = run_pnpm_exec(['biome', 'check', *files], cwd=PROJECT_ROOT)
+    if rc != 0:
+        return fail(
+            f'Paso {step_label}: Conformance - FALLO',
+            'COMMIT BLOQUEADO',
+            HOOK_NAME,
+        )
+    ok(f'Paso {step_label}: Conformance')
+    return 0
+
+
+def step_purity(files: list[str], step_label: str) -> int:
+    """Detecta .js/.jsx/.mjs/.cjs prohibidos."""
+    section(f'[PASO {step_label}] Frontend Type Purity (TypeScript only)')
+    violations = find_forbidden_js_files(files)
+    if not violations:
+        ok(f'Paso {step_label}: Frontend Purity')
+        return 0
+    err(f'{len(violations)} archivo(s) JavaScript prohibido(s):')
+    for f in violations:
+        out(f'  - {f}')
+    tip('Renombrar a .ts (o .astro). Configs en raiz con sufijo .config.{js,mjs,cjs} estan permitidos.')
+    return fail(
+        f'Paso {step_label}: Frontend Purity - FALLO',
+        'COMMIT BLOQUEADO',
+        HOOK_NAME,
+    )
+
+
+def main() -> int:
+    header('PRE-COMMIT - Validaciones livianas (Astro 6 portfolio)')
+
+    all_staged = get_staged_files()
+    lintable = filter_lintable_files(all_staged)
+
+    if not lintable:
+        info('Sin archivos relevantes en staging (apps/*, packages/*).')
+        out('')
+        out('=' * 80)
+        out(green('  COMMIT permitido (sin cambios en frontend)'))
+        out('=' * 80)
+        return 0
+
+    info(f'{len(lintable)} archivo(s) frontend en staging')
+    out('')
+
+    active_steps: list[tuple[str, callable]] = []
+    if should_run_step('conformance', HOOK_NAME):
+        active_steps.append(('conformance', step_conformance))
+    else:
+        skip('conformance (config.json o SKIP_STEPS)')
+    if should_run_step('frontend_purity', HOOK_NAME):
+        active_steps.append(('frontend_purity', step_purity))
+    else:
+        skip('frontend_purity (config.json o SKIP_STEPS)')
+
+    total = len(active_steps)
+    for i, (_, fn) in enumerate(active_steps, 1):
+        rc = fn(lintable, f'{i}/{total}')
+        if rc != 0:
+            return rc
+        out('')
+
+    out('=' * 80)
+    out(green('  TODAS LAS VALIDACIONES PASARON - Commit permitido'))
+    out('=' * 80)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

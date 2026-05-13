@@ -1,0 +1,102 @@
+# Docker - Portfolio
+
+> Orquestacion multi-ambiente para las 6 apps Astro del portfolio + nginx.
+
+## Ambientes
+
+| Ambiente | Puerto Nginx | Modo Astro | Uso |
+| -------- | ------------ | ---------- | --- |
+| local    | 9970         | `pnpm dev` (HMR) | Desarrollo con hot reload |
+| dev      | 9971         | `pnpm dev` (HMR, code baked) | Desarrollo remoto |
+| test     | 9972         | `pnpm build` + `preview` | E2E tests aislados |
+| prod     | 9973         | `pnpm build` + `preview` | Build de produccion |
+
+## Mapping de subdominios (todos los ambientes)
+
+| Subdominio          | App         | Equivalente en produccion       |
+| ------------------- | ----------- | ------------------------------- |
+| `localhost`         | apps/generic   | the-full-stack.com           |
+| `hub.localhost`     | apps/hub       | hub.the-full-stack.com       |
+| `fintech.localhost` | apps/fintech   | fintech.the-full-stack.com   |
+| `architect.localhost` | apps/architect | architect.the-full-stack.com |
+| `leader.localhost`  | apps/leader    | leader.the-full-stack.com    |
+| `vibe.localhost`    | apps/vibe      | vibe.the-full-stack.com      |
+| `services.localhost` | indice HTML  | (solo local — lista servicios) |
+
+## Estructura
+
+```
+docker/
+├── dockerfiles/{env}/{app}/Dockerfile  # Dockerfile por ambiente y app
+├── dockerfiles/{env}/feature/Dockerfile # Playwright shared (solo local/test)
+├── docker-compose/{env}.yml             # Compose por ambiente
+├── nginx/{env}.conf                     # Nginx config por ambiente
+├── nginx/error-pages/                   # Paginas de error HTML
+├── nginx/services-page/                 # Indice estatico de servicios.localhost
+├── env/.example                         # Template de variables
+├── env/.{env}                           # Variables por ambiente (gitignored)
+└── scripts/                             # Entrypoint scripts
+```
+
+## Inicio rapido
+
+```bash
+# 1. Copiar env template (opcional, valores por default funcionan)
+cp docker/env/.example docker/env/.local
+
+# 2. Build + start (local con HMR)
+docker compose --project-name portfolio \
+  -f docker/docker-compose/local.yml \
+  --env-file docker/env/.local \
+  up -d --build
+
+# 3. Acceder
+# Generic:    http://localhost:9970
+# Hub:        http://hub.localhost:9970
+# Fintech:    http://fintech.localhost:9970
+# Architect:  http://architect.localhost:9970
+# Leader:     http://leader.localhost:9970
+# Vibe:       http://vibe.localhost:9970
+# Servicios:  http://services.localhost:9970
+
+# 4. Logs
+docker compose -p portfolio -f docker/docker-compose/local.yml logs -f
+
+# 5. Stop
+docker compose -p portfolio -f docker/docker-compose/local.yml down
+```
+
+## Servicios
+
+| Servicio   | Imagen        | Descripcion |
+| ---------- | ------------- | ----------- |
+| nginx      | nginx:alpine  | Reverse proxy + subdominios |
+| generic    | node:24-alpine | Astro 6 dev/preview server |
+| hub        | node:24-alpine | Astro 6 dev/preview server |
+| fintech    | node:24-alpine | Astro 6 dev/preview server |
+| architect  | node:24-alpine | Astro 6 dev/preview server |
+| leader     | node:24-alpine | Astro 6 dev/preview server |
+| vibe       | node:24-alpine | Astro 6 dev/preview server |
+| feature    | node:24-slim   | Playwright (solo profile feature) |
+
+## Profiles
+
+- **default** — nginx + las 6 apps Astro
+- **feature** — agrega el container `feature` con Playwright (chromium + webkit)
+
+Levantar feature tests:
+
+```bash
+docker compose -p portfolio -f docker/docker-compose/local.yml \
+  --profile feature up -d --build
+docker compose -p portfolio -f docker/docker-compose/local.yml \
+  exec feature pnpm test
+```
+
+## Notas
+
+- Node 24 (Alpine) + pnpm 11.0.9 (via corepack) en todos los containers
+- Las 6 apps exponen puerto 4321 internamente. Solo nginx publica al host
+- En **local** y **dev**: bind mount del codigo fuente -> HMR funciona
+- En **test** y **prod**: `pnpm build` + `pnpm preview` (sin bind mount, sin HMR)
+- `/etc/hosts` no requiere entradas: `*.localhost` resuelve a 127.0.0.1 por RFC

@@ -1,0 +1,24 @@
+# Portfolio - Variables de ambiente para Docker Compose.
+#
+# Copiar este archivo a .local, .dev, .test o .prod segun corresponda.
+# Los archivos .{env} estan en .gitignore — no committear.
+#
+# Puerto Nginx (puerto unico publicado al host).
+# Defaults:
+#   local: 9970, dev: 9971, test: 9972, prod: 9973
+PROXY_PORT=9970
+
+# UID/GID del usuario host (evita root-owned files en bind mounts).
+# Estos vienen seteados automaticamente por devtools, pero pueden
+# overridearse aqui si es necesario.
+# UID=1000
+# GID=1000
+
+# URLs publicas por app (usadas por Astro al generar canonicals, sitemap).
+# Apuntan a localhost:PROXY_PORT en dev/local; en prod son los dominios reales.
+SITE_URL_GENERIC=http://localhost
+SITE_URL_HUB=http://hub.localhost
+SITE_URL_FINTECH=http://fintech.localhost
+SITE_URL_ARCHITECT=http://architect.localhost
+SITE_URL_LEADER=http://leader.localhost
+SITE_URL_VIBE=http://vibe.localhost

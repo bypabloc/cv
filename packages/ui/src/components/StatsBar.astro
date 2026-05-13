@@ -1,0 +1,102 @@
+---
+/**
+ * @component StatsBar
+ * @description Stats bar con 4 numeros animados (counter on-scroll) y labels.
+ *   Usa el script global initNumberCounters() para activar el conteo.
+ *
+ * @props {Array<{label: string; value: number; suffix?: string}>} items - Hasta 4 stats
+ * @props {string} [eyebrow] - Etiqueta superior opcional
+ *
+ * @example
+ *   <StatsBar
+ *     eyebrow="Track record"
+ *     items={[
+ *       { label: 'Años de experiencia', value: 12, suffix: '+' },
+ *       { label: 'Empresas', value: 8 },
+ *       { label: 'Países LATAM', value: 4 },
+ *       { label: 'Certificaciones', value: 11 },
+ *     ]}
+ *   />
+ */
+interface StatItem {
+  label: string
+  value: number
+  suffix?: string
+}
+
+interface Props {
+  items: StatItem[]
+  eyebrow?: string
+}
+
+const { items, eyebrow } = Astro.props
+---
+
+<section class="stats-bar scroll-reveal" aria-label={eyebrow ?? 'Stats'}>
+  {eyebrow && <p class="stats-bar__eyebrow text-mono-label text-muted">{eyebrow}</p>}
+  <dl class="stats-bar__grid">
+    {
+      items.map((item) => (
+        <div class="stats-bar__item">
+          <dt class="stats-bar__label text-mono-label text-muted">
+            {item.label}
+          </dt>
+          <dd class="stats-bar__value-row">
+            <span
+              class="stats-bar__value stat-number text-display-md gradient-text"
+              data-target={item.value}
+            >
+              0
+            </span>
+            {item.suffix && (
+              <span class="stats-bar__suffix text-display-md">{item.suffix}</span>
+            )}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>
+
+<style>
+  .stats-bar {
+    padding-block: var(--space-56);
+    border-block: 1px solid var(--color-border);
+  }
+  .stats-bar__eyebrow {
+    margin-bottom: var(--space-32);
+  }
+  .stats-bar__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-32);
+    margin: 0;
+  }
+  .stats-bar__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .stats-bar__label {
+    margin: 0;
+  }
+  .stats-bar__value-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    margin: 0;
+  }
+  .stats-bar__value {
+    font-variation-settings: 'wght' 800;
+  }
+  .stats-bar__suffix {
+    color: var(--niche-accent);
+    font-weight: 700;
+  }
+  @media (max-width: 640px) {
+    .stats-bar__grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-24);
+    }
+  }
+</style>

@@ -1,0 +1,171 @@
+---
+/**
+ * @component AwardCard
+ * @description Card destacado de premio/reconocimiento. Diseño "trophy"
+ *   con borde brillante usando --niche-accent y mesh gradient sutil.
+ *
+ * @props {string} title - Nombre del premio
+ * @props {string} issuer - Otorgante
+ * @props {string} date - Fecha (YYYY-MM formateada externamente, ej. "enero 2024")
+ * @props {string} motivation - Motivacion
+ * @props {string} [url] - Link al certificado / fuente
+ * @props {boolean} [featured=true] - Estilo "destacado" con mesh
+ *
+ * @example
+ *   <AwardCard
+ *     title="Innovador del año 2023"
+ *     issuer="Destacame"
+ *     date="enero 2024"
+ *     motivation="..."
+ *     url="https://..."
+ *     featured
+ *   />
+ */
+interface Props {
+  title: string
+  issuer: string
+  date: string
+  motivation: string
+  url?: string
+  featured?: boolean
+}
+
+const { title, issuer, date, motivation, url, featured = true } = Astro.props
+---
+
+<article class:list={['award-card', featured && 'award-card--featured', 'scroll-reveal']}>
+  {featured && <div class="award-card__mesh" aria-hidden="true"></div>}
+  <div class="award-card__inner">
+    <div class="award-card__badge">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 2L20 11L29 12L22 19L24 28L16 23L8 28L10 19L3 12L12 11L16 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <div class="award-card__content">
+      <header class="award-card__header">
+        <h3 class="award-card__title text-h3">{title}</h3>
+        <p class="award-card__meta text-mono-label text-muted">
+          <span class="award-card__issuer">{issuer}</span>
+          <span aria-hidden="true">·</span>
+          <span>{date}</span>
+        </p>
+      </header>
+      <p class="award-card__motivation text-body text-muted">{motivation}</p>
+      {
+        url && (
+          <a href={url} target="_blank" rel="noopener" class="award-card__link magnetic">
+            Ver certificado
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+        )
+      }
+    </div>
+  </div>
+</article>
+
+<style>
+  .award-card {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: hidden;
+    isolation: isolate;
+    transition:
+      border-color var(--motion-slow) var(--easing-out),
+      box-shadow var(--motion-slow) var(--easing-out);
+  }
+  .award-card--featured {
+    border-color: rgba(var(--niche-accent-rgb), 0.45);
+    box-shadow: 0 8px 40px rgba(var(--niche-accent-rgb), 0.18);
+  }
+  .award-card__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(
+        500px circle at 0% 0%,
+        rgba(var(--niche-accent-rgb), 0.2),
+        transparent 60%
+      ),
+      radial-gradient(
+        400px circle at 100% 100%,
+        rgba(var(--niche-accent-rgb), 0.12),
+        transparent 50%
+      );
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .award-card__inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: var(--space-20);
+    padding: var(--space-32);
+    align-items: flex-start;
+  }
+  .award-card__badge {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    background: rgba(var(--niche-accent-rgb), 0.12);
+    border: 1px solid rgba(var(--niche-accent-rgb), 0.3);
+    color: var(--niche-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .award-card__content {
+    flex-grow: 1;
+    display: grid;
+    gap: var(--space-12);
+  }
+  .award-card__title {
+    margin: 0;
+    background: var(--niche-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .award-card__meta {
+    margin: 0;
+    display: flex;
+    gap: var(--space-8);
+    flex-wrap: wrap;
+  }
+  .award-card__issuer {
+    color: var(--niche-accent);
+  }
+  .award-card__motivation {
+    margin: 0;
+    line-height: var(--line-height-relaxed);
+  }
+  .award-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-8) var(--space-16);
+    border-radius: var(--radius-pill);
+    background: var(--niche-accent);
+    color: #0a0a0a;
+    font-size: var(--font-size-13);
+    font-weight: 600;
+    text-decoration: none;
+    align-self: start;
+    margin-top: var(--space-8);
+    transition: box-shadow var(--motion-base) var(--easing-out);
+  }
+  .award-card__link:hover {
+    box-shadow: 0 4px 20px var(--niche-glow);
+  }
+  @media (max-width: 640px) {
+    .award-card__inner {
+      flex-direction: column;
+    }
+  }
+</style>

@@ -1,0 +1,76 @@
+---
+/**
+ * @component SkillsMarquee
+ * @description Marquee infinito de chips (2 filas, direcciones opuestas).
+ *   CSS puro, GPU-friendly. Se pausa con hover y en prefers-reduced-motion.
+ *
+ *   El loop seamless se logra duplicando la lista (aria-hidden la copia).
+ *
+ * @props {string[]} rowOne - Items de la primera fila (mueve a la izquierda)
+ * @props {string[]} [rowTwo] - Items de la segunda fila (mueve a la derecha, default = rowOne reversa)
+ * @props {string} [ariaLabel='Skills marquee'] - Accesibilidad
+ *
+ * @example
+ *   <SkillsMarquee
+ *     rowOne={['Vue 3', 'Nuxt', 'TypeScript', 'Django', 'Python']}
+ *     rowTwo={['AWS', 'Microservicios', 'PostgreSQL', 'Docker']}
+ *   />
+ */
+interface Props {
+  rowOne: string[]
+  rowTwo?: string[]
+  ariaLabel?: string
+}
+
+const { rowOne, rowTwo, ariaLabel = 'Skills marquee' } = Astro.props
+const row2 = rowTwo ?? [...rowOne].reverse()
+---
+
+<section class="skills-marquee" aria-label={ariaLabel}>
+  <div class="marquee">
+    <ul class="marquee__track">
+      {rowOne.map((s) => <li class="skills-marquee__chip">{s}</li>)}
+      {rowOne.map((s) => <li class="skills-marquee__chip" aria-hidden="true">{s}</li>)}
+    </ul>
+  </div>
+  <div class="marquee">
+    <ul class="marquee__track marquee__track--reverse marquee__track--fast">
+      {row2.map((s) => <li class="skills-marquee__chip skills-marquee__chip--accent">{s}</li>)}
+      {row2.map((s) => <li class="skills-marquee__chip skills-marquee__chip--accent" aria-hidden="true">{s}</li>)}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .skills-marquee {
+    display: grid;
+    gap: var(--space-16);
+    padding-block: var(--space-32);
+    border-block: 1px solid var(--color-border);
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(var(--niche-accent-rgb), 0.03) 50%,
+      transparent 100%
+    );
+  }
+  .skills-marquee__chip {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-8) var(--space-20);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-13);
+    color: var(--color-text);
+    background: var(--color-surface);
+    white-space: nowrap;
+    flex-shrink: 0;
+    list-style: none;
+  }
+  .skills-marquee__chip--accent {
+    border-color: rgba(var(--niche-accent-rgb), 0.35);
+    color: var(--niche-accent);
+    background: rgba(var(--niche-accent-rgb), 0.06);
+  }
+</style>

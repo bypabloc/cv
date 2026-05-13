@@ -1,0 +1,167 @@
+---
+/**
+ * @component CaseStudyExpander
+ * @description Expandible 3-bloques Problem -> Process -> Result. Usa
+ *   <details> nativo HTML para accesibilidad y sin JS.
+ *
+ * @props {string} title - Titulo del case study
+ * @props {string} problem - Texto del bloque "Problema"
+ * @props {string} process - Texto del bloque "Proceso"
+ * @props {string} result - Texto del bloque "Resultado"
+ * @props {string[]} [metrics] - Lista de metricas (ej. ["5x faster", "0.1% bug rate"])
+ * @props {Object} [labels] - Override de labels
+ *
+ * @example
+ *   <CaseStudyExpander
+ *     title="Sistema de saldar deudas Chile"
+ *     problem="..."
+ *     process="..."
+ *     result="..."
+ *     metrics={['+30% conversion', '0 incidentes PCI DSS']}
+ *   />
+ */
+interface Props {
+  title: string
+  problem: string
+  process: string
+  result: string
+  metrics?: string[]
+  labels?: {
+    problem?: string
+    process?: string
+    result?: string
+    metricsTitle?: string
+    cta?: string
+  }
+}
+
+const {
+  title,
+  problem,
+  process: processText,
+  result,
+  metrics = [],
+  labels = {},
+} = Astro.props
+
+const l = {
+  problem: labels.problem ?? 'Problema',
+  process: labels.process ?? 'Proceso',
+  result: labels.result ?? 'Resultado',
+  metricsTitle: labels.metricsTitle ?? 'Métricas',
+  cta: labels.cta ?? 'Ver caso de estudio',
+}
+---
+
+<details class="case-study scroll-reveal">
+  <summary class="case-study__summary">
+    <span class="case-study__title text-h4">{title}</span>
+    <span class="case-study__cta text-mono-label">{l.cta}</span>
+    <svg class="case-study__chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </summary>
+  <div class="case-study__body">
+    <div class="case-study__block case-study__block--problem">
+      <h4 class="case-study__heading text-mono-label">01 · {l.problem}</h4>
+      <p>{problem}</p>
+    </div>
+    <div class="case-study__block case-study__block--process">
+      <h4 class="case-study__heading text-mono-label">02 · {l.process}</h4>
+      <p>{processText}</p>
+    </div>
+    <div class="case-study__block case-study__block--result">
+      <h4 class="case-study__heading text-mono-label">03 · {l.result}</h4>
+      <p>{result}</p>
+    </div>
+    {
+      metrics.length > 0 && (
+        <div class="case-study__metrics">
+          <h4 class="case-study__heading text-mono-label">{l.metricsTitle}</h4>
+          <ul>
+            {metrics.map((m) => (
+              <li class="text-mono">{m}</li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </div>
+</details>
+
+<style>
+  .case-study {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    transition:
+      border-color var(--motion-base) var(--easing-out),
+      box-shadow var(--motion-base) var(--easing-out);
+  }
+  .case-study[open] {
+    border-color: rgba(var(--niche-accent-rgb), 0.4);
+    box-shadow: 0 8px 32px rgba(var(--niche-accent-rgb), 0.08);
+  }
+  .case-study__summary {
+    list-style: none;
+    cursor: pointer;
+    padding: var(--space-20) var(--space-24);
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    flex-wrap: wrap;
+  }
+  .case-study__summary::-webkit-details-marker {
+    display: none;
+  }
+  .case-study__title {
+    flex-grow: 1;
+    margin: 0;
+  }
+  .case-study__cta {
+    color: var(--niche-accent);
+  }
+  .case-study__chevron {
+    color: var(--niche-accent);
+    transition: transform var(--motion-base) var(--easing-out);
+  }
+  .case-study[open] .case-study__chevron {
+    transform: rotate(180deg);
+  }
+  .case-study__body {
+    display: grid;
+    gap: var(--space-24);
+    padding: var(--space-20) var(--space-24) var(--space-24);
+    border-top: 1px solid var(--color-border);
+  }
+  .case-study__block,
+  .case-study__metrics {
+    display: grid;
+    gap: var(--space-8);
+  }
+  .case-study__heading {
+    margin: 0;
+    color: var(--niche-accent);
+  }
+  .case-study__body p {
+    margin: 0;
+    color: var(--color-text-muted);
+    line-height: var(--line-height-relaxed);
+  }
+  .case-study__metrics ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .case-study__metrics li {
+    padding: var(--space-6) var(--space-12);
+    border-radius: var(--radius-pill);
+    background: rgba(var(--niche-accent-rgb), 0.08);
+    border: 1px solid rgba(var(--niche-accent-rgb), 0.25);
+    color: var(--niche-accent);
+    font-size: var(--font-size-12);
+  }
+</style>

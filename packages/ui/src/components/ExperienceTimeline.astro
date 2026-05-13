@@ -1,0 +1,57 @@
+---
+/**
+ * @component ExperienceTimeline
+ * @description Timeline vertical de experiencias laborales con dot conector
+ *   animado. Cada item usa scroll-reveal-slide-right para entrar al scroll.
+ *   Slot por item permite renderizar el body custom (bullets de responsabilidades).
+ *
+ *   Espera children renderizados con <TimelineItem> o markup equivalente.
+ *
+ * @props {string} [ariaLabel='Experiencia profesional']
+ *
+ * @example
+ *   <ExperienceTimeline>
+ *     <TimelineItem ... />
+ *   </ExperienceTimeline>
+ */
+interface Props {
+  ariaLabel?: string
+}
+
+const { ariaLabel = 'Experiencia profesional' } = Astro.props
+---
+
+<ol class="timeline" aria-label={ariaLabel}>
+  <slot />
+</ol>
+
+<style>
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    padding-left: var(--space-32);
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 16px;
+    bottom: 16px;
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      var(--niche-accent) 8%,
+      var(--niche-accent) 92%,
+      transparent 100%
+    );
+    opacity: 0.55;
+  }
+  @media (max-width: 640px) {
+    .timeline {
+      padding-left: var(--space-20);
+    }
+  }
+</style>

@@ -1,0 +1,55 @@
+# Temporales
+/tmp/
+*.tmp
+*.log
+
+# Claude Code worktrees efimeros (creados por agentes con isolation: worktree)
+.claude/worktrees/
+
+# Harness Engineering: outputs temporales de subagentes
+# (current.md, history.md, README.md SI se versionan)
+docs/progress/explore_*.md
+docs/progress/impl_*.md
+docs/progress/review_*.md
+docs/progress/optim_*.md
+docs/progress/refactor_*.md
+docs/progress/audit_*.md
+docs/progress/debug_*.md
+docs/progress/.snapshot_*.md
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+.pnpm-store/
+
+# Testing / Coverage
+coverage/
+.nyc_output/
+
+# Astro
+.astro/
+dist/
+
+# Playwright
+playwright-report/
+test-results/
+.playwright/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# act (GitHub Actions local runner)
+.secrets
+
+# Claude Code
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/agent-memory/
+
+# VSCode runtime (server-controller)
+.vscode/.server-controller-port.log

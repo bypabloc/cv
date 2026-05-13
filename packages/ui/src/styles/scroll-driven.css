@@ -1,0 +1,133 @@
+/**
+ * @config scroll-driven.css
+ * @description Scroll-driven animations CSS nativas (animation-timeline: view()).
+ *   Chrome 115+, Safari 18+, Firefox 144+ soportan. Fallback con
+ *   @supports not (animation-timeline: view()) para navegadores antiguos.
+ *
+ *   GPU-friendly: anima opacity y transform, jamas top/left/margin.
+ */
+
+/* Estado base: visible. La animacion overridea para anaadir el reveal cuando hay scroll-timeline. */
+.scroll-reveal,
+.scroll-reveal-fade,
+.scroll-reveal-slide-left,
+.scroll-reveal-slide-right,
+.scroll-scale-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Reveal de cards al entrar en viewport */
+@supports (animation-timeline: view()) {
+  .scroll-reveal {
+    animation: scroll-reveal linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 25%;
+  }
+
+  .scroll-reveal-fade {
+    animation: scroll-reveal-fade linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+
+  .scroll-reveal-slide-left {
+    animation: scroll-reveal-slide-left linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 25%;
+  }
+
+  .scroll-reveal-slide-right {
+    animation: scroll-reveal-slide-right linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 25%;
+  }
+
+  .scroll-scale-in {
+    animation: scroll-scale-in linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 50%;
+  }
+
+  /* Parallax sutil (max 12% de movimiento total) */
+  .scroll-parallax-slow {
+    animation: scroll-parallax-slow linear;
+    animation-timeline: scroll();
+  }
+}
+
+@keyframes scroll-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scroll-reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scroll-reveal-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scroll-reveal-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scroll-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scroll-parallax-slow {
+  from {
+    transform: translate3d(0, -6%, 0);
+  }
+  to {
+    transform: translate3d(0, 6%, 0);
+  }
+}
+
+/* Reduced motion: todo se muestra al instante, sin movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal,
+  .scroll-reveal-fade,
+  .scroll-reveal-slide-left,
+  .scroll-reveal-slide-right,
+  .scroll-scale-in,
+  .scroll-parallax-slow {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,0 +1,20 @@
+# Pablo Contreras — vibe
+
+> Software engineer who documents real workflows with Claude Code and Cursor. Builds developer tools (VS Code extensions, monorepo automation) and shares prompts that ship.
+
+Canonical URL: https://vibe.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Pages
+
+- [Home](https://vibe.the-full-stack.com/): Pablo Contreras — Vibe Coding · Claude Code · Cursor · Dev tools
+- [About](https://vibe.the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://vibe.the-full-stack.com/certificates): Technical certifications relevant to this profile
+- [CV (HTML)](https://vibe.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://vibe.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+
+## Identity
+
+- LinkedIn: https://linkedin.com/in/bypabloc
+- GitHub: https://github.com/bypabloc
+- Medium: https://bypablo.medium.com
+

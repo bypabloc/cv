@@ -1,0 +1,20 @@
+# Pablo Contreras — generic
+
+> Senior Full Stack Engineer with 8+ years of experience in Vue/Nuxt, Django, AWS and fintech (Chile, Mexico).
+
+Canonical URL: https://hub.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Pages
+
+- [Home](https://hub.the-full-stack.com/): Senior Full Stack Engineer (Vue + Django + AWS), 8+ years
+- [About](https://hub.the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://hub.the-full-stack.com/certificates): 11 certifications from Udemy and DevTalles
+- [CV (HTML)](https://hub.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://hub.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+
+## Identity
+
+- LinkedIn: https://linkedin.com/in/bypabloc
+- GitHub: https://github.com/bypabloc
+- Medium: https://bypablo.medium.com
+

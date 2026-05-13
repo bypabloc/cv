@@ -1,0 +1,20 @@
+---
+import CvSections from '@portfolio/app-shared/components/CvSections.astro'
+/**
+ * @page index (es) generic
+ */
+import PageLayout from '../layouts/PageLayout.astro'
+import { NICHE, STRINGS } from '../lib/site-config'
+
+const t = STRINGS.es
+---
+
+<PageLayout
+  title={t.meta.title}
+  description={t.meta.description}
+  canonicalPath="/"
+  locale="es"
+  otherLocalePath="/en/"
+>
+  <CvSections niche={NICHE} locale="es" strings={t} cvHref="/cv.html" />
+</PageLayout>

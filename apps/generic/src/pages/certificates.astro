@@ -1,0 +1,17 @@
+---
+import CertificatesSection from '@portfolio/app-shared/pages/CertificatesSection.astro'
+import PageLayout from '../layouts/PageLayout.astro'
+import { NICHE, STRINGS } from '../lib/site-config'
+
+const t = STRINGS.es
+---
+
+<PageLayout
+  title={`Certificados — ${t.meta.title}`}
+  description={t.sections.certificates.subtitle}
+  canonicalPath="/certificates"
+  locale="es"
+  otherLocalePath="/en/certificates"
+>
+  <CertificatesSection niche={NICHE} locale="es" strings={t} />
+</PageLayout>

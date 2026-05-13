@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://vibe.the-full-stack.com/sitemap.xml
+Sitemap: https://vibe.the-full-stack.com/sitemap-index.xml

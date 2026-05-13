@@ -33,7 +33,7 @@ Para features grandes o requisitos ambiguos, considerar fase de **Interview** pr
 | **Micro** | 1-2 archivos, hotfix | Plan corto: 3 lineas (objetivo + archivo + done). Saltar template. |
 | **Small** | 3-5 archivos | Template completo, secciones condicionales colapsadas |
 | **Medium** | 6-10 archivos | Template completo, todas las secciones aplicables |
-| **Large** | 11+ archivos | Template completo + Seccion 8 (ver `.claude/docs/plan-format-large.md`) |
+| **Large** | 11+ archivos | Template completo + Seccion 8 (ver `.claude/docs/plan-format-large/README.md`) |
 
 Si puedes describir el diff en una oracion, NO uses el template. Anti-pattern: forzar 8 secciones para un cambio de 5 lineas.
 
@@ -186,7 +186,7 @@ Reglas:
 
 Aplicar solo si el plan es Large (11+ archivos) o se planea implementacion con multiples agentes en git worktrees.
 
-**Documento detallado**: `.claude/docs/plan-format-large.md` (plantilla, reglas de paralelizabilidad, granularidad, anti-patrones).
+**Documento detallado**: `.claude/docs/plan-format-large/README.md` (plantilla, reglas de paralelizabilidad, granularidad, anti-patrones).
 
 Resumen: cada tarea debe pasar 3 checks (File Exclusivity, Interface Stability, Bounded Scope) y tener 6 campos (**Archivos**, **AC referenciados**, **Depende de**, **Paralelizable con**, **Verify**, **Done**). Limite practico: 5-7 agentes concurrentes.
 

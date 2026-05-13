@@ -236,6 +236,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Reglas generales | [.claude/rules/general.md](.claude/rules/general.md) | Indice de reglas + estructura del repo |
 | Astro + Biome + TS | [.claude/rules/astro-landing.md](.claude/rules/astro-landing.md) | Antes de crear componente / página / utility |
 | Design System | [.claude/rules/design-system.md](.claude/rules/design-system.md) | Tokens CSS, dark/light, tipografia, fonts |
+| YAML data loading | [.claude/rules/yaml-data-loading.md](.claude/rules/yaml-data-loading.md) | Antes de agregar/modificar entry del CV o tocar plugin yaml |
 | Docstrings | [.claude/rules/docstring-standard.md](.claude/rules/docstring-standard.md) | Antes de documentar cualquier unidad de codigo |
 | Python 3.14 + Ruff | [.claude/rules/python.md](.claude/rules/python.md) | Antes de tocar `.py` en `devtools/` o `.git-hooks/` |
 | Devtools (CLI) | [.claude/rules/devtools.md](.claude/rules/devtools.md) | Antes de agregar/modificar scripts en `devtools/` |

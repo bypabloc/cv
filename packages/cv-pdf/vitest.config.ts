@@ -1,9 +1,15 @@
 /**
  * @config vitest
+ * @description Vitest config para cv-pdf. Registra `vite-plugin-yaml` con
+ *   JSON_SCHEMA para que el package `@portfolio/content` pueda cargar sus
+ *   `.yaml` files al ser importado desde `render-cv-html`.
  */
+import yaml from '@modyfi/vite-plugin-yaml'
+import { JSON_SCHEMA } from 'js-yaml'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  plugins: [yaml({ schema: JSON_SCHEMA })],
   test: {
     globals: true,
     environment: 'node',

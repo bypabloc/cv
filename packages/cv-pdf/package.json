@@ -16,16 +16,21 @@
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "generate": "tsx src/generate.ts"
+    "generate": "vite-node src/generate.ts"
   },
   "dependencies": {
     "@portfolio/content": "workspace:*"
   },
   "devDependencies": {
+    "@modyfi/vite-plugin-yaml": "^1.1.1",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.5",
     "@vitest/coverage-v8": "^2.1.9",
+    "js-yaml": "^4.1.1",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",
+    "vite": "^6.4.2",
+    "vite-node": "^2.1.9",
     "vitest": "^2.1.9"
   }
 }

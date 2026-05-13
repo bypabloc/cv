@@ -22,19 +22,21 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@portfolio/content": "workspace:*",
+    "@fontsource-variable/jetbrains-mono": "^5.2.5",
+    "@fontsource-variable/space-grotesk": "^5.2.5",
     "@fontsource/space-grotesk": "^5.1.1",
     "@fontsource/space-mono": "^5.1.1",
-    "@fontsource-variable/space-grotesk": "^5.2.5",
-    "@fontsource-variable/jetbrains-mono": "^5.2.5"
+    "@portfolio/content": "workspace:*"
   },
   "peerDependencies": {
     "astro": "^5.0.0"
   },
   "devDependencies": {
+    "@modyfi/vite-plugin-yaml": "^1.1.1",
     "@vitest/coverage-v8": "^2.1.9",
     "happy-dom": "^15.11.7",
     "typescript": "^5.9.3",
+    "vite": "^8.0.12",
     "vitest": "^2.1.9"
   }
 }

@@ -1,10 +1,15 @@
 /**
  * @config vitest
- * @description Vitest config para @portfolio/seo.
+ * @description Vitest config para @portfolio/seo. Registra `vite-plugin-yaml`
+ *   con JSON_SCHEMA porque algunos tests importan `@portfolio/content`
+ *   (que carga YAMLs).
  */
+import yaml from '@modyfi/vite-plugin-yaml'
+import { JSON_SCHEMA } from 'js-yaml'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  plugins: [yaml({ schema: JSON_SCHEMA })],
   test: {
     globals: true,
     environment: 'node',

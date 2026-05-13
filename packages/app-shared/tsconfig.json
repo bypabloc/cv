@@ -4,7 +4,11 @@
     "baseUrl": "./",
     "jsx": "preserve",
     "noEmit": true,
-    "types": ["vitest/globals"]
+    "types": [
+      "vitest/globals",
+      "vite/client",
+      "@modyfi/vite-plugin-yaml/modules"
+    ]
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

@@ -237,6 +237,10 @@ Antes de trabajar, identifica que contexto necesitas:
 | Astro + Biome + TS | [.claude/rules/astro-landing.md](.claude/rules/astro-landing.md) | Antes de crear componente / página / utility |
 | Design System | [.claude/rules/design-system.md](.claude/rules/design-system.md) | Tokens CSS, dark/light, tipografia, fonts |
 | Docstrings | [.claude/rules/docstring-standard.md](.claude/rules/docstring-standard.md) | Antes de documentar cualquier unidad de codigo |
+| Python 3.14 + Ruff | [.claude/rules/python.md](.claude/rules/python.md) | Antes de tocar `.py` en `devtools/` o `.git-hooks/` |
+| Devtools (CLI) | [.claude/rules/devtools.md](.claude/rules/devtools.md) | Antes de agregar/modificar scripts en `devtools/` |
+| Django (referencia futura) | [.claude/rules/django.md](.claude/rules/django.md) | Solo si se agrega backend Django |
+| Database (referencia futura) | [.claude/rules/database.md](.claude/rules/database.md) | Solo si se agrega DB (PostgreSQL) |
 | Verify-before-done | [.claude/rules/verify-before-done.md](.claude/rules/verify-before-done.md) | Antes de reportar trabajo completado |
 | Git workflow | [.claude/rules/git-workflow.md](.claude/rules/git-workflow.md) | Antes de commit / push / PR |
 | Git hooks | [.claude/rules/git-hooks.md](.claude/rules/git-hooks.md) | Quality gates pre-commit / pre-push |
@@ -256,6 +260,8 @@ Antes de trabajar, identifica que contexto necesitas:
 Invocables manualmente con `/<nombre>` o automáticamente según keywords del
 prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills.md).
 
+### Activas en el portfolio (frontend Astro)
+
 | Skill | Uso |
 |-------|-----|
 | `astro-portfolio` | Referencia obligatoria para cualquier decisión de estructura, SEO, GEO, ATS, diseño o stack del portfolio |
@@ -268,6 +274,25 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 | `research` | Deep research de tecnologías y librerías (skill con web habilitada) |
 | `spec-workflow` | Descomponer features en specs + tareas atómicas |
 | `tdd-workflow` | TDD obligatorio (Red-Green-Refactor) antes de implementar |
+
+### Referencia futura (backend Python/Django — no aplican hoy)
+
+Estas skills llegaron desde el template `mvp-template-full-stack` para
+preservarlas como referencia. El portfolio actual es Astro estático SIN
+backend, por lo que se activan solo si el prompt menciona explícitamente
+Django/PostgreSQL/Docker-Django. Quedan invocables manualmente con `/<nombre>`.
+
+| Skill | Uso |
+|-------|-----|
+| `django-6` | Referencia Django 6 (API, `@task` decorator, CSP middleware, `AsyncPaginator`, `GeneratedField`) |
+| `django-admin` | Personalización del admin Django (dynamic admin, JS, mixins, widgets, inlines, performance, security) |
+| `django-performance` | ORM performance (N+1, `select_related`, `prefetch_related`, indexes, `EXPLAIN`) |
+| `docker-django` | Containerizar Django + PostgreSQL (multi-stage build, compose, production) |
+| `postgresql-18` | PostgreSQL 18 (AIO, UUIDv7, virtual generated columns, skip scan, `RETURNING OLD/NEW`, psycopg3) |
+| `next-django-integration` | Next.js 16 SPA + Django DRF (JWT via SimpleJWT, `lib/api-client.ts`, refresh interceptor, CORS) |
+
+La arquitectura del server Django del template fuente fue archivada (no como skill) en
+[.claude/docs/templates/server-architecture-from-mvp-template/](.claude/docs/templates/server-architecture-from-mvp-template/) — leerla solo si se planea agregar un backend Django concreto.
 
 ## Convenciones (resumen)
 

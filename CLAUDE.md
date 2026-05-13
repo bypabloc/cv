@@ -2,17 +2,19 @@
 
 > Monorepo de 6 sitios Astro (pnpm workspaces) para el portfolio multi-niche
 > de Pablo Contreras (bypabloc). Output estatico desplegado en Cloudflare Pages.
+> Stack local orquestado por Docker + nginx + devtools (Python 3.14 + uv).
 
 ## Sitios
 
-| App | URL | Posicionamiento |
-|-----|-----|-----------------|
-| `apps/hub` | `the-full-stack.com` | Landing selector con 5 cards |
-| `apps/generic` | `hub.the-full-stack.com` | Full Stack Senior — todas las skills |
-| `apps/fintech` | `fintech.the-full-stack.com` | Senior Full Stack Fintech LATAM |
-| `apps/architect` | `architect.the-full-stack.com` | Frontend Architect + Microservicios |
-| `apps/leader` | `leader.the-full-stack.com` | Tech Lead / Engineering Manager |
-| `apps/vibe` | `vibe.the-full-stack.com` | Vibe Coding / Claude Code / Dev tools |
+| App | URL produccion | Subdominio local (puerto 9970) | Posicionamiento |
+| --- | --- | --- | --- |
+| `apps/generic` | `the-full-stack.com` | `localhost` (apex) | Full Stack Senior — todas las skills |
+| `apps/hub` | `hub.the-full-stack.com` | `hub.localhost` | Selector multi-niche con cards |
+| `apps/fintech` | `fintech.the-full-stack.com` | `fintech.localhost` | Senior Full Stack Fintech LATAM |
+| `apps/architect` | `architect.the-full-stack.com` | `architect.localhost` | Frontend Architect + Microservicios |
+| `apps/leader` | `leader.the-full-stack.com` | `leader.localhost` | Tech Lead / Engineering Manager |
+| `apps/vibe` | `vibe.the-full-stack.com` | `vibe.localhost` | Vibe Coding / Claude Code / Dev tools |
+| — | — | `services.localhost` | Indice estatico de servicios locales |
 
 ## Packages
 
@@ -24,24 +26,135 @@
 | `packages/cv-pdf` | Render CV a HTML (ATS-friendly) + PDF opcional (Puppeteer) |
 | `packages/app-shared` | SitePageLayout + CvSections + AboutSection compartidos |
 
-## Comandos
+## Stack
 
-Root scripts (operan sobre todo el monorepo):
+- Astro 6.x (output: 'static') + TypeScript 6 strict
+- Biome v2 (lint + format unificado)
+- Vitest + happy-dom (unit tests, coverage v8)
+- Playwright (E2E, container aislado con chromium + webkit)
+- Tailwind v4 (via `@tailwindcss/vite`)
+- pnpm **11.0.9** (via corepack)
+- Node **24** (Alpine en Docker)
+- Python **3.14** + uv (devtools)
 
-- `pnpm install` — instalar deps
-- `pnpm run dev` — dev server en paralelo
-- `pnpm run build` — build de todas las apps
-- `pnpm run lint` / `lint:fix` — Biome
-- `pnpm run typecheck` — tsc + astro check
-- `pnpm run test` / `test:coverage` — Vitest en packages
-- `pnpm run clean` — limpia dist, .astro, coverage
+NUNCA mezclar `npm` o `yarn` — solo `pnpm`.
+
+## Comandos pnpm (host, sin Docker)
+
+```bash
+pnpm install              # instalar deps (allowBuilds: esbuild + sharp)
+pnpm run dev              # dev server en paralelo (todas las apps)
+pnpm run build            # build de todas las apps
+pnpm run preview          # preview del build estatico
+pnpm run lint             # Biome check
+pnpm run lint:fix         # Biome con auto-fix
+pnpm run typecheck        # tsc + astro check (recursive)
+pnpm run test             # Vitest recursivo en packages
+pnpm run test:coverage    # Vitest --coverage en packages
+pnpm run clean            # limpia dist, .astro, node_modules/.vite, coverage
+```
 
 Filtrar por workspace: `pnpm --filter @portfolio/<app> run <script>`.
 
-Stack: Astro 5+ + TypeScript strict + Biome v2 + Vitest + Tailwind v4 + pnpm 10.
-E2E opt-in: Playwright (no configurado en v1).
+## Comandos Docker (proyecto: `portfolio`)
 
-NUNCA mezclar `npm` o `yarn` — solo `pnpm`.
+Stack: 6 apps Astro + nginx reverse proxy + container `feature` (Playwright,
+on-demand). Container names: `portfolio-<servicio>-<env>`.
+
+### Quick start
+
+```bash
+pnpm run docker:up         # nginx + 6 apps (modo dev con HMR)
+pnpm run docker:ps         # listar containers
+pnpm run docker:logs       # tail -f de todos los servicios
+pnpm run docker:down       # bajar stack (preserva volumenes)
+
+pnpm run feature:up        # container Playwright (profile feature)
+pnpm run feature:run       # ejecutar specs E2E
+```
+
+### Acceso al stack local
+
+```text
+http://localhost:9970            -> apps/generic
+http://hub.localhost:9970        -> apps/hub
+http://fintech.localhost:9970    -> apps/fintech
+http://architect.localhost:9970  -> apps/architect
+http://leader.localhost:9970     -> apps/leader
+http://vibe.localhost:9970       -> apps/vibe
+http://services.localhost:9970   -> indice de servicios
+```
+
+| Ambiente | Puerto nginx | Modo Astro |
+| --- | --- | --- |
+| local | 9970 | dev (HMR via bind mount) |
+| dev | 9971 | dev (HMR remoto) |
+| test | 9972 | build + preview |
+| prod | 9973 | build + preview |
+
+## Comandos devtools (Python CLI)
+
+Entrypoint: `python devtools/run.py <script> [flags...]`. Bootstrap automatico
+via `uv sync` la primera vez. Ver `python devtools/run.py --help` para
+inventario completo.
+
+### Lifecycle Docker
+
+```bash
+python devtools/run.py docker up --env=local
+python devtools/run.py docker down --env=local
+python devtools/run.py docker rebuild --env=local        # down + build --no-cache + up
+python devtools/run.py docker restart --env=local
+python devtools/run.py docker refresh --env=local        # refresh completo
+python devtools/run.py docker ps --env=local
+python devtools/run.py docker logs --env=local --follow
+python devtools/run.py docker shell --env=local --target=<servicio>
+python devtools/run.py docker exec --env=local --target=<servicio> -- <cmd>
+```
+
+### Quality (lint/format)
+
+```bash
+# Biome en container de la app:
+python devtools/run.py docker lint --module=<app> --env=local
+python devtools/run.py docker lint-fix --module=<app> --env=local
+python devtools/run.py docker format --module=<app> --env=local
+
+# Ruff en host (sin Docker) para devtools/:
+python devtools/run.py docker lint --module=devtools --env=local
+```
+
+Modulos validos:
+
+- Frontend: `hub`, `generic`, `fintech`, `architect`, `leader`, `vibe`
+- Packages: `pkg-app-shared`, `pkg-content`, `pkg-cv-pdf`, `pkg-seo`, `pkg-ui`
+- Python: `devtools`, `server` (stub)
+
+### Tests
+
+```bash
+# Unit + coverage por app/package:
+python devtools/run.py test_runner --module=<app> --type=unit
+python devtools/run.py test_runner --module=<app> --type=coverage
+python devtools/run.py test_runner --module=<app> --type=typecheck
+
+# Para packages: prefijo pkg-
+python devtools/run.py test_runner --module=pkg-content --type=unit
+
+# E2E (Playwright contra el stack local):
+python devtools/run.py test_runner --module=feature --type=feature --env=local
+
+# Devtools unit tests (host, pytest):
+python devtools/run.py test_runner --module=devtools --type=unit
+```
+
+### Scan + verify
+
+```bash
+python devtools/run.py scan --module=<X> --git-mode=all --only-list
+python devtools/run.py verify --all-changed
+python devtools/run.py verify --staged --execute --json
+```
 
 ## Reglas criticas (siempre activas)
 
@@ -51,11 +164,68 @@ NUNCA mezclar `npm` o `yarn` — solo `pnpm`.
 - SIEMPRE fonts self-hosted via `@fontsource/*`, NUNCA Google Fonts CDN
 - SIEMPRE TypeScript strict, NUNCA `any` (usar `unknown` con narrow)
 - SIEMPRE Conventional Commits en espanol (subject + body)
+- SIEMPRE Node 24 + pnpm 11.0.9 (declarado en `package.json` engines)
 - NUNCA atribucion de IA en commits, PRs, issues, ni comentarios
 - NUNCA `find`, `grep -E/-r/-rn` en Bash (aliases rotos en WSL2): usar
   Glob / Grep / Read / Edit tools
 - NUNCA declarar trabajo "listo" sin ejecutar las verificaciones de
   [verify-before-done](.claude/rules/verify-before-done.md)
+
+## Git hooks (pre-commit + pre-push)
+
+Activacion automatica via `pnpm install` (script `prepare` setea
+`core.hooksPath`). Implementados en Python autocontenido (sin dependencia
+de devtools/.venv).
+
+### Pre-commit (liviano, <10s)
+
+- `conformance` — Biome lint + format check sobre archivos staged
+- `frontend_purity` — prohibe `.js/.jsx/.mjs/.cjs` salvo configs en raiz
+
+### Pre-push (estricto)
+
+- `conformance` — Biome check sobre cambios vs base branch
+- `frontend_purity`
+- `typecheck` — astro check (per-app) + tsc --noEmit recursivo
+- `unit_tests` — Vitest --coverage en packages modificados (>=80% per-file)
+- `build` — pnpm build estatico de todas las apps
+
+Skip por env: `SKIP_STEPS="build,unit_tests" git push ...`. Config en
+[.git-hooks/config.json](.git-hooks/config.json).
+
+## CI (GitHub Actions)
+
+Dos jobs en [.github/workflows/ci.yml](.github/workflows/ci.yml):
+
+1. `quality-gates` (sin Docker): lint + typecheck + unit + build estatico
+2. `e2e-tests` (con Docker): levanta stack test + corre Playwright
+
+Trigger: PRs a `main`/`master`/`dev`. Limpieza automatica de atribucion
+de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/clean-pr-attribution.yml).
+
+## Estructura del repo
+
+```text
+.
+├── apps/
+│   └── {generic,hub,fintech,architect,leader,vibe}/  # 6 sitios Astro
+├── packages/
+│   └── {app-shared,content,cv-pdf,seo,ui}/            # 5 workspaces compartidos
+├── tests/feature/        # Playwright E2E (config + fixtures + helpers + specs)
+├── docker/
+│   ├── docker-compose/   # {local,dev,test,prod}.yml
+│   ├── dockerfiles/      # por ambiente x app
+│   ├── nginx/            # configs + error-pages + services-page
+│   ├── env/              # .example + variantes
+│   └── scripts/          # entrypoints sh
+├── devtools/             # Python 3.14 + uv (CLI orquestador)
+├── server/               # Stub placeholder (no hay backend)
+├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
+├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
+├── .claude/              # rules, skills, agents, hooks de Claude Code
+├── docs/                 # documentacion del proyecto
+└── project.yml           # name: portfolio (single source of truth)
+```
 
 ## Arbol de conocimiento
 
@@ -76,6 +246,8 @@ Antes de trabajar, identifica que contexto necesitas:
 | Markdown docs | [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md) | Editar archivos de `docs/` |
 | Skills (frontmatter) | [.claude/rules/skills.md](.claude/rules/skills.md) | Crear / modificar skills |
 | Testing config Claude | [.claude/rules/claude-config-testing.md](.claude/rules/claude-config-testing.md) | Antes de commitear cambios en `.claude/*` |
+| Docker stack | [docker/README.md](docker/README.md) | Levantar local, mapping subdominios, env files |
+| Tests E2E | [tests/feature/README.md](tests/feature/README.md) | Escribir specs Playwright |
 | CV (contenido) | [.claude/docs/cv/README.md](.claude/docs/cv/README.md) | Datos del CV (perfil, experiencia, proyectos) |
 | Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseno |
 
@@ -130,3 +302,11 @@ y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
   contra atribucion de IA.
 - Branches `main`, `master`, `dev`, `release` estan protegidas: el hook
   `protect-branch.sh` bloquea `git push` directo.
+- Subdominios `*.localhost` resuelven a 127.0.0.1 por RFC 6761 (no requiere
+  editar `/etc/hosts` en el host). Dentro de containers Docker con
+  `network_mode: host` tampoco (los containers `feature` y similares
+  inyectan las entradas en su `/etc/hosts` desde el entrypoint).
+- pnpm 11 requiere `allowBuilds` explicito para `esbuild` + `sharp`
+  (ya configurado en `pnpm-workspace.yaml`).
+- `compose_exec` siempre invoca con `--user 1000:1000` en apps Astro para
+  no crear archivos root-owned en `.vite/` y `.astro/` del bind mount.

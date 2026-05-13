@@ -8,6 +8,14 @@
  *   import { applyTheme } from '@portfolio/ui'
  */
 
+export { initMagneticCursor } from './lib/magnetic-cursor'
+export {
+  getNicheTokens,
+  NICHE_TOKENS,
+  type NicheTokens,
+  nicheTokensToCssVars,
+} from './lib/niche-tokens'
+export { initNumberCounters } from './lib/number-counter'
 export { deobfuscateEmail, obfuscateEmail } from './lib/obfuscate-email'
 export { initRevealOnScroll } from './lib/reveal-on-scroll'
 export type { Theme } from './lib/theme-toggle'

@@ -7,10 +7,10 @@
   "author": "Pablo Contreras <pacg1991@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=22",
-    "pnpm": ">=10"
+    "node": ">=24",
+    "pnpm": ">=11"
   },
-  "packageManager": "pnpm@10.23.0",
+  "packageManager": "pnpm@11.0.9",
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
     "build": "pnpm -r run build",
@@ -25,7 +25,16 @@
     "astro:check": "pnpm -r exec astro check",
     "format": "biome format --write .",
     "clean": "pnpm -r exec rm -rf dist .astro node_modules/.vite coverage",
-    "prepare": "git config core.hooksPath .git-hooks 2>/dev/null || true"
+    "prepare": "git config core.hooksPath .git-hooks 2>/dev/null || true",
+    "docker:up": "docker compose --project-name portfolio -f docker/docker-compose/local.yml --env-file docker/env/.local up -d --build",
+    "docker:down": "docker compose --project-name portfolio -f docker/docker-compose/local.yml down",
+    "docker:logs": "docker compose --project-name portfolio -f docker/docker-compose/local.yml logs -f",
+    "docker:ps": "docker compose --project-name portfolio -f docker/docker-compose/local.yml ps",
+    "docker:test:up": "docker compose --project-name portfolio -f docker/docker-compose/test.yml --env-file docker/env/.test up -d --build",
+    "docker:test:down": "docker compose --project-name portfolio -f docker/docker-compose/test.yml down",
+    "feature:up": "docker compose --project-name portfolio -f docker/docker-compose/local.yml --env-file docker/env/.local --profile feature up -d feature",
+    "feature:run": "docker exec portfolio-feature-local pnpm test",
+    "feature:report": "docker exec portfolio-feature-local pnpm exec playwright show-report --host 0.0.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.1",

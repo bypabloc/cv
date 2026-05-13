@@ -1,0 +1,60 @@
+# Build artifacts
+**/node_modules
+**/.next
+**/.astro
+**/dist
+**/build
+**/out
+**/coverage
+
+# Python venvs (devtools)
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Env files (estos viven en docker/env/ y NO se copian al build)
+.env
+.env.local
+.env.*.local
+docker/env/.local
+docker/env/.dev
+docker/env/.test
+docker/env/.prod
+
+# Git
+.git
+.gitignore
+.git-hooks
+
+# CI / GitHub
+.github
+
+# Tests artifacts
+**/playwright-report
+**/test-results
+**/results
+**/blob-report
+**/.playwright-mcp
+
+# Tmp
+tmp/
+.tmp/
+
+# Docs (no se incluyen en builds prod)
+docs/
+
+# pnpm-store
+.pnpm-store
+**/.pnpm-store

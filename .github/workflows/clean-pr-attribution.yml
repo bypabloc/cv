@@ -1,0 +1,54 @@
+name: Clean PR Attribution
+
+# Limpia atribucion de IA del cuerpo del PR cada vez que se crea o edita.
+# Es defensa en profundidad — los hooks locales ya lo previenen para
+# commits y settings.json para PRs creados por Claude Code.
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  clean:
+    name: Strip AI attribution
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Strip AI attribution from PR body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const original = context.payload.pull_request.body || ''
+            let body = original
+
+            // Patrones a eliminar (case-insensitive)
+            const patterns = [
+              /^.*[Cc]o-[Aa]uthored-[Bb]y.*[Cc]laude.*$/gm,
+              /^.*[Cc]o-[Aa]uthored-[Bb]y.*[Cc]ursor.*$/gm,
+              /^.*[Cc]o-[Aa]uthored-[Bb]y.*<noreply@anthropic\.com>.*$/gm,
+              /^.*[Gg]enerated.*[Ww]ith.*[Cc]laude.*$/gm,
+              /^.*🤖.*$/gm,
+              /^.*claude\.ai\/code\/session.*$/gm,
+            ]
+
+            for (const pattern of patterns) {
+              body = body.replace(pattern, '')
+            }
+
+            // Collapse 2+ blank lines + trim trailing whitespace
+            body = body.replace(/\n{3,}/g, '\n\n').trimEnd()
+
+            if (body !== original) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                body,
+              })
+              core.notice('PR body cleaned: AI attribution removed')
+            } else {
+              core.info('No AI attribution detected in PR body')
+            }

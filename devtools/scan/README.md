@@ -2,7 +2,7 @@
 
 Lista archivos del repo con filtros git-aware y, opcionalmente, su
 contenido. Es la pieza que usan los git-hooks (`.git-hooks/_common.py`)
-para clasificar archivos por modulo y purpose, y la que usa
+para clasificar archivos por módulo y purpose, y la que usa
 `test_runner --git-mode=...` para mapear cambios a tests.
 
 ## Uso
@@ -13,18 +13,18 @@ python devtools/run.py scan [flags]
 
 ## Flags principales
 
-| Flag | Descripcion | Default |
+| Flag | Descripción | Default |
 |------|-------------|---------|
 | `--git-mode=<mode>` | `changed`, `staged`, `unstaged`, `stash`, `unmerged`, `all` | none |
 | `--module=<name>` | Limita a `server`, `dashboard`, `landing`, `devtools` | none |
 | `--purpose=<name>` | `conformance` o `coverage` (aplica excludes especificos) | none |
-| `--only-extension=<ext>` | Filtra por extension (ej: `py`, `ts`) | [] |
-| `--excludes-extension=<ext>` | Excluye extensiones | [] |
+| `--only-extensión=<ext>` | Filtra por extensión (ej: `py`, `ts`) | [] |
+| `--excludes-extensión=<ext>` | Excluye extensiones | [] |
 | `--only-list` | Output `;`-separado (machine-readable, para pipe) | false |
-| `--only-folders-root` | Solo lista carpetas raiz | false |
+| `--only-folders-root` | Solo lista carpetas raíz | false |
 | `--include-ignored` | Incluye archivos en .gitignore | false |
 | `--include-deleted` | Incluye archivos eliminados (modo unmerged) | false |
-| `--exclude-empty` | Omite archivos vacios | false |
+| `--exclude-empty` | Omite archivos vacíos | false |
 | `--ignore-patterns=<glob>` | Patterns adicionales (separados por pipe) | [] |
 
 ## Ejemplos
@@ -40,10 +40,10 @@ python devtools/run.py scan --module=server --git-mode=all
 python devtools/run.py scan --module=server --purpose=coverage \
     --git-mode=changed --only-list
 
-# No mergeados vs rama base, solo Python (revision pre-PR)
-python devtools/run.py scan --git-mode=unmerged --only-extension=py
+# No mergeados vs rama base, solo Python (revisión pre-PR)
+python devtools/run.py scan --git-mode=unmerged --only-extensión=py
 
-# Carpetas raiz del proyecto (utilidad para descubrir modulos)
+# Carpetas raíz del proyecto (utilidad para descubrir módulos)
 python devtools/run.py scan --only-folders-root
 ```
 
@@ -62,7 +62,7 @@ Definidos en `devtools/scan/modules.py`:
 
 - **modules**: `server`, `dashboard`, `landing`, `devtools` — cada uno tiene
   extensions, exclude_patterns y opcionalmente `ruff_config`. Limita el
-  scan a archivos bajo el root del modulo.
+  scan a archivos bajo el root del módulo.
 - **purposes**: `conformance` (lint/format) y `coverage` (tests con
   coverage). Cada uno aplica excludes adicionales (ej: coverage excluye
   `__init__.py`, `migrations/`, etc.).
@@ -70,7 +70,7 @@ Definidos en `devtools/scan/modules.py`:
 ## Quien lo usa
 
 - `.git-hooks/_common.py` — clasifica staged files para correr lint/coverage
-  por modulo
+  por módulo
 - `devtools/test_runner` — mapea archivos cambiados a tests via
   path mirroring + per-file coverage
 - Manual / CI — para inspeccionar la estructura del proyecto
@@ -83,5 +83,5 @@ Definidos en `devtools/scan/modules.py`:
 - `files.py` — get_file_content + get_file_dates (filesystem)
 - `structure.py` — assembler que produce el dict final
 - `display.py` — `_display_list_mode` + `_display_detailed_mode`
-- `flags.py` — validacion de flags (incluye `describe()` para introspeccion)
-- `modules.py` — registry de modulos y purposes
+- `flags.py` — validación de flags (incluye `describe()` para introspeccion)
+- `modules.py` — registry de módulos y purposes

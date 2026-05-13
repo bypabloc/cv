@@ -5,7 +5,7 @@ con strings, ints inferidos por el caller, y bools (`--foo` sin valor).
 
 Comportamiento de listas: por defecto, valores con `|` se devuelven COMO
 STRING. Para que un flag se trate como lista (y se haga split por `|`), el
-caller debe declararlo en ``list_flags``. Esta opcion explicita reemplaza
+caller debe declararlo en ``list_flags``. Esta opción explicita reemplaza
 el viejo comportamiento de splittear cualquier valor con ``|`` — que era
 magia silenciosa: si pasabas ``--name="alice|bob"`` esperando un string
 recibias una lista sin saberlo.
@@ -22,7 +22,7 @@ el parser produce ``{'target': 'server', '_passthrough': ['python', '-c',
 'print(1)']}``, y el comando docker concatena ``_passthrough`` a sus
 ``subcommands`` antes de ejecutar.
 
-Migracion: scripts que dependen de listas (scan: ``excludes_extension``,
+Migración: scripts que dependen de listas (scan: ``excludes_extension``,
 ``only_extension``, ``ignore_patterns``) ahora normalizan via su propio
 validador (ej. ``_clean_extensions``) que ya aceptaba ``str | list[str]``.
 """

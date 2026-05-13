@@ -1,17 +1,17 @@
 """Wrapper Python sobre ``.claude/hooks/harness-init.sh``.
 
-Permite invocar el gate de inicio de sesion via la API unificada de devtools::
+Permite invocar el gate de inicio de sesión via la API unificada de devtools::
 
     python devtools/run.py harness_init
     python devtools/run.py harness_init --quiet
 
 Internamente delega al script bash en ``.claude/hooks/harness-init.sh`` (la
-fuente de verdad de la logica del gate). Este wrapper existe para que el gate
+fuente de verdad de la lógica del gate). Este wrapper existe para que el gate
 sea descubrible via ``python devtools/run.py --list-scripts`` y siga la misma
 convencion que ``test_runner``, ``scan``, ``verify``, ``upgrade_deps``.
 
 Salida del shell hook va a stderr (mensajes coloreados [OK]/[WARN]/[FAIL]).
-Exit code 0 si todo OK; 1 si hay errores criticos.
+Exit code 0 si todo OK; 1 si hay errores críticos.
 """
 
 import logging

@@ -17,7 +17,7 @@ pytestmark = pytest.mark.unit
 
 
 class TestClassifyDeletedFiles:
-    """Clasifica una lista plana de paths eliminados por modulo."""
+    """Clasifica una lista plana de paths eliminados por módulo."""
 
     def test_classifies_server_python_files(self):
         from shared.deletion_mirror import classify_deleted_files
@@ -178,7 +178,7 @@ class TestCollectOrphanPairsServer:
         from shared.deletion_mirror import collect_orphan_pairs
 
         # Eliminamos un __init__.py (excluido). No debe haber orphan ni siquiera
-        # si su mirror existiera (lo cual es absurdo, pero verificamos exclusion).
+        # si su mirror existiera (lo cual es absurdo, pero verificamos exclusión).
         self._make_file(tmp_path, 'server/tests/unit/src/apps/foo/__init__.py')
 
         result = collect_orphan_pairs(
@@ -200,7 +200,7 @@ class TestCollectOrphanPairsServer:
 
 
 class TestCollectOrphanPairsApp:
-    """Detecta huerfanos en el modulo dashboard."""
+    """Detecta huerfanos en el módulo dashboard."""
 
     def _make_file(self, root: Path, path: str) -> None:
         target = root / path
@@ -252,7 +252,7 @@ class TestCollectOrphanPairsApp:
         ]
 
     def test_vue_source_excluded_from_deletion_check(self, tmp_path):
-        """Componentes .vue estan excluidos de coverage, no deben triggerear orphan."""
+        """Componentes .vue están excluidos de coverage, no deben triggerear orphan."""
         from shared.deletion_mirror import collect_orphan_pairs
 
         # Aunque borremos el .vue, no debe contar como orphan
@@ -279,7 +279,7 @@ class TestCollectOrphanPairsApp:
 
 
 class TestCollectOrphanPairsLanding:
-    """Detecta huerfanos en el modulo landing."""
+    """Detecta huerfanos en el módulo landing."""
 
     def _make_file(self, root: Path, path: str) -> None:
         target = root / path
@@ -356,7 +356,7 @@ class TestCollectOrphanPairsLanding:
 
 
 class TestCollectOrphanPairsMixed:
-    """Casos combinados: empty inputs, multiples modulos, etc."""
+    """Casos combinados: empty inputs, multiples módulos, etc."""
 
     def test_empty_input_returns_empty_result(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs

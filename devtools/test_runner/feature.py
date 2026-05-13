@@ -1,6 +1,6 @@
 """Feature execution helpers (Playwright para dashboard/landing, pytest para server).
 
-Mayo 2026: reemplaza al historico ``e2e.py``. Cada modulo tiene su
+Mayo 2026: reemplaza al histórico ``e2e.py``. Cada módulo tiene su
 propio ``--type=feature``:
 
   - ``--module=dashboard --type=feature`` -> servicio dashboard-feature (Playwright)
@@ -38,14 +38,14 @@ _FEATURE_READY_PROGRESS_INTERVAL = 30
 def _feature_service_for(module: str) -> str:
     """Map module to its compose service name.
 
-    Portfolio: el servicio Playwright es unico (``feature``) y testea
+    Portfolio: el servicio Playwright es único (``feature``) y testea
     todas las apps Astro a traves de nginx. No hay containers feature
     por-app como en el template fuente.
     """
     if module == 'feature':
         return 'feature'
     raise ValueError(
-        f'Modulo {module!r} no tiene servicio Playwright asociado. '
+        f'Módulo {module!r} no tiene servicio Playwright asociado. '
         'Solo --module=feature soporta Playwright en portfolio.',
     )
 

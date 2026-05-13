@@ -66,9 +66,9 @@ class TestFilesChanged:
         self,
         fake_structure: dict[str, Any],
     ) -> None:
-        """``files_changed`` no debe limitar por modulo ni extensiones.
+        """``files_changed`` no debe limitar por módulo ni extensiones.
 
-        Asi captura archivos de .claude/, docs/, root: todo lo cambiado.
+        Así captura archivos de .claude/, docs/, root: todo lo cambiado.
         """
         fake_structure['return_value'] = {'files': {}}
 
@@ -100,7 +100,7 @@ class TestFilesChanged:
         self,
         fake_structure: dict[str, Any],
     ) -> None:
-        """Estructura vacia o ``None`` -> lista vacia, sin excepciones."""
+        """Estructura vacía o ``None`` -> lista vacía, sin excepciones."""
         fake_structure['return_value'] = {}
 
         assert files_changed(git_mode='staged') == []
@@ -129,7 +129,7 @@ class TestFilesChanged:
 
 
 class TestFilesForModule:
-    """``files_for_module`` filtra por root + extensiones del modulo."""
+    """``files_for_module`` filtra por root + extensiones del módulo."""
 
     @pytest.fixture
     def fake_structure(
@@ -170,7 +170,7 @@ class TestFilesForModule:
         self,
         fake_structure: dict[str, Any],
     ) -> None:
-        """Solo archivos con extensiones validas del modulo deben volver."""
+        """Solo archivos con extensiones válidas del módulo deben volver."""
         fake_structure['return_value'] = {
             'files': {
                 'server/x.py': {},
@@ -199,5 +199,5 @@ class TestFilesForModule:
 
         flags = fake_structure['calls'][0]
         # ignore_patterns debe contener al menos los exclude_patterns base
-        # del modulo + los purpose_excludes (e.g. '**/__init__.py').
+        # del módulo + los purpose_excludes (e.g. '**/__init__.py').
         assert any('__init__.py' in p for p in flags['ignore_patterns'])

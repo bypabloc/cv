@@ -57,7 +57,7 @@ def cmd_test_removed(flags: dict[str, Any]) -> int:
     _err("'docker test' fue removido del CLI.")
     print()
     print(
-        f'{_c(YELLOW, "Migracion:")} usa '
+        f'{_c(YELLOW, "Migración:")} usa '
         f'{_c(CYAN, "python devtools/run.py test_runner")} '
         'para ejecutar tests.'
     )
@@ -77,7 +77,7 @@ def cmd_test_removed(flags: dict[str, Any]) -> int:
         '  docker test --module=landing ... ->  test_runner --module=landing ...'
     )
     print()
-    print('Documentacion: python devtools/run.py test_runner --help')
+    print('Documentación: python devtools/run.py test_runner --help')
     return 1
 
 
@@ -140,7 +140,7 @@ def main(flags: dict[str, Any]) -> int:
         _err('Docker no esta disponible')
         print(
             f'{YELLOW}  Docker Desktop debe estar corriendo '
-            f'con la integracion WSL2 activada.{NC}',
+            f'con la integración WSL2 activada.{NC}',
         )
         print(f'{CYAN}  1. Abrir Docker Desktop en Windows{NC}')
         print(
@@ -157,7 +157,7 @@ def main(flags: dict[str, Any]) -> int:
         return 1
     except KeyboardInterrupt:
         print()
-        _err('Operacion interrumpida por el usuario')
+        _err('Operación interrumpida por el usuario')
         return 130
     except (
         subprocess.SubprocessError,

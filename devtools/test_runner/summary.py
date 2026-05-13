@@ -26,7 +26,7 @@ def print_summary(results: dict[str, int]) -> None:
     print(f'{CYAN}{"=" * 60}{NC}')
     print(f'{CYAN} Resumen{NC}')
     print(f'{CYAN}{"=" * 60}{NC}')
-    print(f'  {"Modulo":<30} {"Estado":>10}')
+    print(f'  {"Módulo":<30} {"Estado":>10}')
     print(f'  {"-" * 30} {"-" * 10}')
 
     for module, exit_code in results.items():
@@ -62,7 +62,7 @@ def evaluate_results(
     all_skipped = all(code == -1 for code in results.values())
     if all_skipped:
         if skip_empty:
-            _warn('Todos los modulos saltados (sin archivos cambiados)')
+            _warn('Todos los módulos saltados (sin archivos cambiados)')
             return 0
         _err('No se ejecutaron tests (sin archivos cambiados)')
         return 1

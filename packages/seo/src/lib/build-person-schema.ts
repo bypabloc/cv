@@ -3,7 +3,7 @@
  * @description Construye un schema.org Person para JSON-LD. Toma el Profile
  *   compartido y ajusta jobTitle/knowsAbout/description al nicho.
  *
- *   Cubre AC-2: cada subdominio tiene JSON-LD Person valido con campos
+ *   Cubre AC-2: cada subdominio tiene JSON-LD Person válido con campos
  *   especificos del nicho.
  *
  * @param input - profile, niche, locale, canonicalUrl, knowsAbout (skills filtradas)

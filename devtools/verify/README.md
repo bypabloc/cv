@@ -2,7 +2,7 @@
 
 Dada una lista de archivos modificados/staged en git, retorna las
 verificaciones que deberian correrse antes de declarar la feature como
-"lista" segun `.claude/rules/verify-before-done.md`.
+"lista" según `.claude/rules/verify-before-done.md`.
 
 API unificada para que agentes (feature-implementer, hook-fixer) sepan que
 correr sin re-parsear las reglas.
@@ -26,10 +26,10 @@ python devtools/run.py verify --staged
 python devtools/run.py verify --staged --execute
 
 # Output JSON estructurado (util para agentes). El JSON va a stdout
-# limpio; banners y bootstrap a stderr, asi puedes pipear:
+# limpio; banners y bootstrap a stderr, así puedes pipear:
 python devtools/run.py verify --staged --json | jq '.files'
 
-# Combinacion comun: staged + execute + JSON.
+# Combinación comun: staged + execute + JSON.
 python devtools/run.py verify --staged --execute --json
 ```
 
@@ -40,14 +40,14 @@ python devtools/run.py verify --staged --execute --json
 | `--staged` | false | Solo archivos en git index (`git diff --cached`) |
 | `--modified` | false | Solo archivos modificados (`git diff`) sin staged |
 | `--all-changed` | true (si ningun otro) | Staged + modified + untracked |
-| `--execute` | false | Correr cada verificacion y capturar exit + output |
+| `--execute` | false | Correr cada verificación y capturar exit + output |
 | `--json` | false | Output como JSON estructurado |
 
 Solo una de `--staged`, `--modified`, `--all-changed` puede usarse.
 
-## Clasificacion de archivos
+## Clasificación de archivos
 
-| Clasificacion | Verificaciones |
+| Clasificación | Verificaciones |
 |---------------|----------------|
 | server_model | makemigrations --dry-run + lint + unit tests |
 | server_admin | manage.py check + lint |
@@ -88,7 +88,7 @@ Ventajas vs invocar `git` directo:
 ## Exit codes
 
 - 0: todas las verificaciones pasaron (o sin --execute)
-- 1: alguna verificacion fallo (solo con --execute)
+- 1: alguna verificación fallo (solo con --execute)
 - 2: error de invocacion
 
 ## Casos de uso
@@ -112,6 +112,6 @@ Si exit != 0, el agente lee el JSON, identifica que falla y aplica fix.
 
 ### En slash command /ship
 
-El comando `/ship` invoca `verify --staged --execute` despues de TDD y
+El comando `/ship` invoca `verify --staged --execute` después de TDD y
 antes de invocar `hook-fixer` para que las verificaciones especificas del
 tipo de cambio se corran primero.

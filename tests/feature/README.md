@@ -18,7 +18,7 @@ tests/feature/
 ├── helpers/
 │   ├── screenshot.ts        # Capture + adjuntar al report
 │   └── inspect-overlay.ts   # Debug overlay (gated by DEBUG_INSPECT=1)
-└── <feature>/<feature>.spec.ts  # Tus specs van aqui
+└── <feature>/<feature>.spec.ts  # Tus specs van aquí
 ```
 
 ## Convencion para escribir tests

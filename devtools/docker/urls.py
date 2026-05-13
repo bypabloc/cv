@@ -2,7 +2,7 @@
 
 Estos helpers introspectan los archivos compose y nginx del proyecto
 portfolio para construir el bloque "Servicios disponibles" que se imprime
-despues de ``docker up`` y ``docker setup``.
+después de ``docker up`` y ``docker setup``.
 """
 
 from __future__ import annotations
@@ -120,7 +120,7 @@ def parse_nginx_subdomains(env: str) -> list[tuple[str, str]]:
         architect.localhost  -> apps/architect
         leader.localhost     -> apps/leader
         vibe.localhost       -> apps/vibe
-        services.localhost   -> indice de servicios estatico
+        services.localhost   -> indice de servicios estático
     """
     nginx_file = DOCKER_DIR / 'nginx' / f'{env}.conf'
     if not nginx_file.exists():

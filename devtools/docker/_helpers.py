@@ -78,7 +78,7 @@ def confirm_destructive(message: str) -> bool:
     short-circuits without doing damage.
     """
     print()
-    _warn(f'{_c(RED, "OPERACION DESTRUCTIVA")}')
+    _warn(f'{_c(RED, "OPERACIÓN DESTRUCTIVA")}')
     print(f'  {message}')
     print()
 
@@ -86,13 +86,13 @@ def confirm_destructive(message: str) -> bool:
         answer = input(
             f'{_c(YELLOW, "Confirmar?")} Escribe {_c(BOLD, "yes")} para continuar: '
         )
-    except (EOFError, KeyboardInterrupt):
+    except EOFError, KeyboardInterrupt:
         print()
-        _info('Operacion cancelada')
+        _info('Operación cancelada')
         return False
 
     if answer.strip().lower() != 'yes':
-        _info('Operacion cancelada')
+        _info('Operación cancelada')
         return False
 
     return True

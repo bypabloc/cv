@@ -1,6 +1,6 @@
 # Portfolio multi-niche — Pablo Contreras (bypabloc)
 
-> Monorepo Astro 5+ con 6 sitios estaticos desplegados en Cloudflare Pages.
+> Monorepo Astro 5+ con 6 sitios estáticos desplegados en Cloudflare Pages.
 > Cada sitio cuenta la misma historia profesional con un acento diferente.
 
 ## Sitios

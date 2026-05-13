@@ -46,9 +46,9 @@ PORTFOLIO_PACKAGES: tuple[str, ...] = (
 # Test E2E shared (Playwright) — root-level, no por-app.
 FEATURE_TESTS_DIR: Path = PROJECT_ROOT / 'tests' / 'feature'
 
-# Aliases legacy: muchos modulos del fuente referencian DASHBOARD_DIR /
+# Aliases legacy: muchos módulos del fuente referencian DASHBOARD_DIR /
 # LANDING_DIR. Los mantenemos como punteros al primer app del portfolio
-# para que imports antiguos no exploten, pero NO se usan en logica nueva.
+# para que imports antiguos no exploten, pero NO se usan en lógica nueva.
 DASHBOARD_DIR: Path = APPS_DIR / 'generic'  # legacy alias
 LANDING_DIR: Path = APPS_DIR / 'generic'  # legacy alias
 E2E_DIR: Path = FEATURE_TESTS_DIR  # legacy alias

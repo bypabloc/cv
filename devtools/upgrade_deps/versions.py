@@ -1,4 +1,4 @@
-"""Comparacion de versiones (PEP 440 / SemVer).
+"""Comparación de versiones (PEP 440 / SemVer).
 
 Usa ``packaging.version`` (incluido en stdlib via setuptools en Python >=3.13;
 fallback a regex propia si no esta disponible). Maneja pre-releases
@@ -32,7 +32,7 @@ def is_prerelease(version: str) -> bool:
 
 
 def _parse_version_tuple(version: str) -> tuple[int, ...]:
-    """Convierte ``1.10.3`` -> (1, 10, 3) para comparacion numerica.
+    """Convierte ``1.10.3`` -> (1, 10, 3) para comparación numerica.
 
     Strips pre-release suffixes y build metadata. Numbers no parseables se
     truncan en el primer componente no-numerico.
@@ -42,7 +42,7 @@ def _parse_version_tuple(version: str) -> tuple[int, ...]:
     # Remove pre-release suffixes (-alpha, .dev0, a1, b2, rc1, etc.)
     base = _PRERELEASE_RE.split(base)[0]
     # Remove trailing .post (treated as same release for ordering purposes —
-    # post-releases siguen al stable, asi que son equivalentes para "es mas
+    # post-releases siguen al stable, así que son equivalentes para "es mas
     # nuevo que").
     base = re.sub(r'\.post\d+$', '', base)
 
@@ -76,5 +76,5 @@ def pick_latest_stable(versions: list[str]) -> str | None:
 
 
 def format_with_prefix(*, prefix: str, version: str) -> str:
-    """Concatena prefijo + version preservando la semantica del manifest."""
+    """Concatena prefijo + version preservando la semántica del manifest."""
     return f'{prefix}{version}'

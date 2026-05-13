@@ -1,12 +1,12 @@
 # portfolio
 
 > Monorepo de 6 sitios Astro (pnpm workspaces) para el portfolio multi-niche
-> de Pablo Contreras (bypabloc). Output estatico desplegado en Cloudflare Pages.
+> de Pablo Contreras (bypabloc). Output estático desplegado en Cloudflare Pages.
 > Stack local orquestado por Docker + nginx + devtools (Python 3.14 + uv).
 
 ## Sitios
 
-| App | URL produccion | Subdominio local (puerto 9970) | Posicionamiento |
+| App | URL producción | Subdominio local (puerto 9970) | Posicionamiento |
 | --- | --- | --- | --- |
 | `apps/generic` | `the-full-stack.com` | `localhost` (apex) | Full Stack Senior — todas las skills |
 | `apps/hub` | `hub.the-full-stack.com` | `hub.localhost` | Selector multi-niche con cards |
@@ -14,7 +14,7 @@
 | `apps/architect` | `architect.the-full-stack.com` | `architect.localhost` | Frontend Architect + Microservicios |
 | `apps/leader` | `leader.the-full-stack.com` | `leader.localhost` | Tech Lead / Engineering Manager |
 | `apps/vibe` | `vibe.the-full-stack.com` | `vibe.localhost` | Vibe Coding / Claude Code / Dev tools |
-| — | — | `services.localhost` | Indice estatico de servicios locales |
+| — | — | `services.localhost` | Indice estático de servicios locales |
 
 ## Packages
 
@@ -45,7 +45,7 @@ NUNCA mezclar `npm` o `yarn` — solo `pnpm`.
 pnpm install              # instalar deps (allowBuilds: esbuild + sharp)
 pnpm run dev              # dev server en paralelo (todas las apps)
 pnpm run build            # build de todas las apps
-pnpm run preview          # preview del build estatico
+pnpm run preview          # preview del build estático
 pnpm run lint             # Biome check
 pnpm run lint:fix         # Biome con auto-fix
 pnpm run typecheck        # tsc + astro check (recursive)
@@ -67,7 +67,7 @@ on-demand). Container names: `portfolio-<servicio>-<env>`.
 pnpm run docker:up         # nginx + 6 apps (modo dev con HMR)
 pnpm run docker:ps         # listar containers
 pnpm run docker:logs       # tail -f de todos los servicios
-pnpm run docker:down       # bajar stack (preserva volumenes)
+pnpm run docker:down       # bajar stack (preserva volúmenes)
 
 pnpm run feature:up        # container Playwright (profile feature)
 pnpm run feature:run       # ejecutar specs E2E
@@ -94,7 +94,7 @@ http://services.localhost:9970   -> indice de servicios
 
 ## Comandos devtools (Python CLI)
 
-Entrypoint: `python devtools/run.py <script> [flags...]`. Bootstrap automatico
+Entrypoint: `python devtools/run.py <script> [flags...]`. Bootstrap automático
 via `uv sync` la primera vez. Ver `python devtools/run.py --help` para
 inventario completo.
 
@@ -124,7 +124,7 @@ python devtools/run.py docker format --module=<app> --env=local
 python devtools/run.py docker lint --module=devtools --env=local
 ```
 
-Modulos validos:
+Módulos válidos:
 
 - Frontend: `hub`, `generic`, `fintech`, `architect`, `leader`, `vibe`
 - Packages: `pkg-app-shared`, `pkg-content`, `pkg-cv-pdf`, `pkg-seo`, `pkg-ui`
@@ -156,16 +156,16 @@ python devtools/run.py verify --all-changed
 python devtools/run.py verify --staged --execute --json
 ```
 
-## Reglas criticas (siempre activas)
+## Reglas críticas (siempre activas)
 
 - SIEMPRE archivos temporales en `./tmp/` del proyecto, NUNCA `/tmp/` del sistema
 - SIEMPRE `rm -f` para eliminar (evita prompts interactivos)
 - SIEMPRE tokens del Design System via `var(--color-*)`, NUNCA hex inline
 - SIEMPRE fonts self-hosted via `@fontsource/*`, NUNCA Google Fonts CDN
 - SIEMPRE TypeScript strict, NUNCA `any` (usar `unknown` con narrow)
-- SIEMPRE Conventional Commits en espanol (subject + body)
+- SIEMPRE Conventional Commits en español (subject + body)
 - SIEMPRE Node 24 + pnpm 11.0.9 (declarado en `package.json` engines)
-- NUNCA atribucion de IA en commits, PRs, issues, ni comentarios
+- NUNCA atribución de IA en commits, PRs, issues, ni comentarios
 - NUNCA `find`, `grep -E/-r/-rn` en Bash (aliases rotos en WSL2): usar
   Glob / Grep / Read / Edit tools
 - NUNCA declarar trabajo "listo" sin ejecutar las verificaciones de
@@ -173,14 +173,14 @@ python devtools/run.py verify --staged --execute --json
 
 ## Git hooks (pre-commit + pre-push)
 
-Activacion automatica via `pnpm install` (script `prepare` setea
+Activación automática via `pnpm install` (script `prepare` setea
 `core.hooksPath`). Implementados en Python autocontenido (sin dependencia
 de devtools/.venv).
 
 ### Pre-commit (liviano, <10s)
 
 - `conformance` — Biome lint + format check sobre archivos staged
-- `frontend_purity` — prohibe `.js/.jsx/.mjs/.cjs` salvo configs en raiz
+- `frontend_purity` — prohibe `.js/.jsx/.mjs/.cjs` salvo configs en raíz
 
 ### Pre-push (estricto)
 
@@ -188,7 +188,7 @@ de devtools/.venv).
 - `frontend_purity`
 - `typecheck` — astro check (per-app) + tsc --noEmit recursivo
 - `unit_tests` — Vitest --coverage en packages modificados (>=80% per-file)
-- `build` — pnpm build estatico de todas las apps
+- `build` — pnpm build estático de todas las apps
 
 Skip por env: `SKIP_STEPS="build,unit_tests" git push ...`. Config en
 [.git-hooks/config.json](.git-hooks/config.json).
@@ -197,10 +197,10 @@ Skip por env: `SKIP_STEPS="build,unit_tests" git push ...`. Config en
 
 Dos jobs en [.github/workflows/ci.yml](.github/workflows/ci.yml):
 
-1. `quality-gates` (sin Docker): lint + typecheck + unit + build estatico
+1. `quality-gates` (sin Docker): lint + typecheck + unit + build estático
 2. `e2e-tests` (con Docker): levanta stack test + corre Playwright
 
-Trigger: PRs a `main`/`master`/`dev`. Limpieza automatica de atribucion
+Trigger: PRs a `main`/`master`/`dev`. Limpieza automática de atribución
 de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/clean-pr-attribution.yml).
 
 ## Estructura del repo
@@ -223,7 +223,7 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
 ├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
 ├── .claude/              # rules, skills, agents, hooks de Claude Code
-├── docs/                 # documentacion del proyecto
+├── docs/                 # documentación del proyecto
 └── project.yml           # name: portfolio (single source of truth)
 ```
 
@@ -234,7 +234,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Tema | Archivo | Cuando leer |
 |------|---------|-------------|
 | Reglas generales | [.claude/rules/general.md](.claude/rules/general.md) | Indice de reglas + estructura del repo |
-| Astro + Biome + TS | [.claude/rules/astro-landing.md](.claude/rules/astro-landing.md) | Antes de crear componente / pagina / utility |
+| Astro + Biome + TS | [.claude/rules/astro-landing.md](.claude/rules/astro-landing.md) | Antes de crear componente / página / utility |
 | Design System | [.claude/rules/design-system.md](.claude/rules/design-system.md) | Tokens CSS, dark/light, tipografia, fonts |
 | Docstrings | [.claude/rules/docstring-standard.md](.claude/rules/docstring-standard.md) | Antes de documentar cualquier unidad de codigo |
 | Verify-before-done | [.claude/rules/verify-before-done.md](.claude/rules/verify-before-done.md) | Antes de reportar trabajo completado |
@@ -249,37 +249,37 @@ Antes de trabajar, identifica que contexto necesitas:
 | Docker stack | [docker/README.md](docker/README.md) | Levantar local, mapping subdominios, env files |
 | Tests E2E | [tests/feature/README.md](tests/feature/README.md) | Escribir specs Playwright |
 | CV (contenido) | [.claude/docs/cv/README.md](.claude/docs/cv/README.md) | Datos del CV (perfil, experiencia, proyectos) |
-| Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseno |
+| Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseño |
 
 ## Skills disponibles
 
-Invocables manualmente con `/<nombre>` o automaticamente segun keywords del
+Invocables manualmente con `/<nombre>` o automáticamente según keywords del
 prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills.md).
 
 | Skill | Uso |
 |-------|-----|
-| `astro-portfolio` | Referencia obligatoria para cualquier decision de estructura, SEO, GEO, ATS, diseno o stack del portfolio |
+| `astro-portfolio` | Referencia obligatoria para cualquier decisión de estructura, SEO, GEO, ATS, diseño o stack del portfolio |
 | `animations-css` | Animaciones CSS (scroll-driven, view transitions, micro-interactions) — NO usar libs como motion / gsap / aos |
 | `codebase-audit` | Auditoria de calidad: dead code, complexity, duplication, tech debt |
 | `dependency-upgrade` | Workflows de upgrade con pnpm (audit, outdated, CVE, majors) |
 | `fix-hooks` | Reparar errores de pre-commit / pre-push iterativamente |
 | `github-actions` | Workflows CI + testing local con `act` (nektos/act) |
 | `mermaid` | Crear / modificar diagramas `.mmd` en `docs/diagrams/` |
-| `research` | Deep research de tecnologias y librerias (skill con web habilitada) |
-| `spec-workflow` | Descomponer features en specs + tareas atomicas |
+| `research` | Deep research de tecnologías y librerías (skill con web habilitada) |
+| `spec-workflow` | Descomponer features en specs + tareas atómicas |
 | `tdd-workflow` | TDD obligatorio (Red-Green-Refactor) antes de implementar |
 
 ## Convenciones (resumen)
 
 - Componentes Astro: `PascalCase.astro` (ej. `ExperienceCard.astro`)
-- Paginas: kebab-case (`user-profile.astro`)
+- Páginas: kebab-case (`user-profile.astro`)
 - Utilities: kebab-case (`format-date.ts`)
 - Branches: `feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/` con `/` obligatorio
 - Tests: mirror de `src/` en `tests/unit/`, BDD-style en `it()` (`Given/When/Then`), asserts EXACTOS
-- Coverage minimo: 80% per-file en archivos modificados
-- Comunicacion: respuestas tecnicas directas, sin validacion emocional ni preambulos
+- Coverage mínimo: 80% per-file en archivos modificados
+- Comunicación: respuestas técnicas directas, sin validación emocional ni preámbulos
 
-## Documentacion (zonas)
+## Documentación (zonas)
 
 `docs/` tiene dos zonas separadas — NO mezclar:
 
@@ -294,13 +294,13 @@ y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
 ## Gotchas
 
 - WSL2: `find` esta aliasado a `fd`, `grep -E/-r/-rn` a `rg`. Cada uso
-  rompe la ejecucion — usar Glob / Grep / Read / Edit tools.
+  rompe la ejecución — usar Glob / Grep / Read / Edit tools.
 - Hooks en `.claude/hooks/` + `.git-hooks/` son enforcement real; CLAUDE.md
   no enforza por si solo. Ver [.claude/hooks/README.md](.claude/hooks/README.md).
-- `attribution.commit` y `attribution.pr` estan vacios en
+- `attribution.commit` y `attribution.pr` están vacíos en
   [.claude/settings.json](.claude/settings.json) — defensa en profundidad
-  contra atribucion de IA.
-- Branches `main`, `master`, `dev`, `release` estan protegidas: el hook
+  contra atribución de IA.
+- Branches `main`, `master`, `dev`, `release` están protegidas: el hook
   `protect-branch.sh` bloquea `git push` directo.
 - Subdominios `*.localhost` resuelven a 127.0.0.1 por RFC 6761 (no requiere
   editar `/etc/hosts` en el host). Dentro de containers Docker con

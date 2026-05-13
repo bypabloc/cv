@@ -1,6 +1,6 @@
 # upgrade_deps
 
-> Bumpea las dependencias de los manifestos del proyecto a la ultima version
+> Bumpea las dependencias de los manifestos del proyecto a la última version
 > estable disponible en PyPI / npm registry.
 
 ## Uso
@@ -54,8 +54,8 @@ python devtools/run.py upgrade_deps
 
 ## Concurrencia
 
-Hasta 10 requests simultaneos por registry. PyPI y npm tienen rate limits
-generosos para manifestos pequenos (<100 paquetes), no deberia haber
+Hasta 10 requests simultáneos por registry. PyPI y npm tienen rate limits
+generosos para manifestos pequeños (<100 paquetes), no deberia haber
 problemas.
 
 ## Lo que NO hace
@@ -65,7 +65,7 @@ problemas.
 - **NO rebuildea** containers Docker.
 - **NO ejecuta tests** post-upgrade.
 
-Despues de correr el script, vos decides:
+Después de correr el script, vos decides:
 
 ```bash
 # Reinstalar deps en containers

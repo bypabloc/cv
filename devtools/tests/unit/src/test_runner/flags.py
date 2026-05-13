@@ -4,8 +4,8 @@ Path mirroring: devtools/test_runner/flags.py -> this file.
 
 Cubre las flags de Playwright (--project, --shard, --shard-total,
 --fail-on-flaky) que requieren --module=dashboard|landing y --type=feature
-(mayo 2026: el modulo top-level `e2e` fue eliminado y cada producto
-tiene su `--type=feature`). La validacion existente de module/type/env
+(mayo 2026: el módulo top-level `e2e` fue eliminado y cada producto
+tiene su `--type=feature`). La validación existente de module/type/env
 ya esta probada implicitamente al usarse en cada invocacion.
 """
 
@@ -194,7 +194,7 @@ class TestDockerEnvDefault:
     """El flag --env honra la env var DOCKER_ENV cuando esta seteada."""
 
     def test_uses_docker_env_var_as_default(self, monkeypatch):
-        # Forzar reload del modulo flags para que recompute _DEFAULT_ENV
+        # Forzar reload del módulo flags para que recompute _DEFAULT_ENV
         import importlib
 
         monkeypatch.setenv('DOCKER_ENV', 'test')

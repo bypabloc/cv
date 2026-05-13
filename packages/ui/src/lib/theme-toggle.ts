@@ -1,6 +1,6 @@
 /**
  * @module theme-toggle
- * @description Logica pura del theme toggle. Cicla system -> dark -> light.
+ * @description Lógica pura del theme toggle. Cicla system -> dark -> light.
  *   Persiste preferencia en localStorage. El BaseLayout debe correr applyTheme()
  *   ANTES de pintar para evitar FOUC.
  *

@@ -10,12 +10,12 @@ python devtools/run.py docker <command> [--env=local] [flags...]
 
 ## Ambientes
 
-| Ambiente | Descripcion | Puerto (default) |
+| Ambiente | Descripción | Puerto (default) |
 | -------- | ----------- | ---------------- |
 | local | Desarrollo con hot reload (default) | 9979 |
 | dev | Desarrollo remoto (code baked) | 9978 |
 | test | Testing aislado | 9977 |
-| prod | Produccion con Gunicorn | 80 |
+| prod | Producción con Gunicorn | 80 |
 
 > El puerto se override via `PROXY_PORT` en `docker/env/.<env>`.
 
@@ -23,11 +23,11 @@ python devtools/run.py docker <command> [--env=local] [flags...]
 
 ### Lifecycle
 
-| Comando | Descripcion | Flags |
+| Comando | Descripción | Flags |
 | ------- | ----------- | ----- |
 | up | Levantar servicios | `--build`, `--detach` (default), `--service=NAME`, `--profile=NAME` |
 | down | Detener servicios | `--volumes` (eliminar datos) |
-| build | Construir imagenes | `--no-cache`, `--service=NAME`, `--profile=NAME` |
+| build | Construir imágenes | `--no-cache`, `--service=NAME`, `--profile=NAME` |
 | rebuild | Clean rebuild | `--service=NAME`, `--profile=NAME` |
 | logs | Ver logs | --tail=50, --follow / -w |
 | shell | Bash en server | |
@@ -38,7 +38,7 @@ python devtools/run.py docker <command> [--env=local] [flags...]
 
 #### Service-scoped operations
 
-`--service=NAME` limita la operacion a un solo container (mas rapido que rebuild completo). El profile se auto-resuelve si el servicio esta gated bajo uno (ej: `e2e` bajo `profiles: [e2e]`).
+`--service=NAME` limita la operación a un solo container (mas rápido que rebuild completo). El profile se auto-resuelve si el servicio esta gated bajo uno (ej: `e2e` bajo `profiles: [e2e]`).
 
 `--profile=NAME` se necesita SOLO para servicios on-demand (ej: levantar
 manualmente el servicio `e2e` requiere `--profile=e2e`).
@@ -61,7 +61,7 @@ python devtools/run.py docker up --env=local --profile=feature
 
 ### Django
 
-| Comando | Descripcion | Flags |
+| Comando | Descripción | Flags |
 | ------- | ----------- | ----- |
 | migrate | Ejecutar migraciones | |
 | makemigrations | Generar migraciones | |
@@ -75,7 +75,7 @@ python devtools/run.py docker up --env=local --profile=feature
 
 ### Calidad
 
-| Comando | Descripcion | Flags |
+| Comando | Descripción | Flags |
 | ------- | ----------- | ----- |
 | lint | Lint (Ruff/Biome) | `--module=server\|devtools\|dashboard\|landing` (default: `server`) |
 | lint-fix | Lint con auto-fix | `--module=server\|devtools\|dashboard\|landing` |
@@ -83,12 +83,12 @@ python devtools/run.py docker up --env=local --profile=feature
 
 > El subcomando `test` fue removido del CLI en 2026-05. Para ejecutar tests
 > usa el script unificado: `python devtools/run.py test_runner [flags]`.
-> Si invocas `docker test` veras un mensaje de migracion con las
+> Si invocas `docker test` veras un mensaje de migración con las
 > equivalencias para tus comandos.
 
 ### Base de datos
 
-| Comando | Descripcion | Flags |
+| Comando | Descripción | Flags |
 | ------- | ----------- | ----- |
 | db-shell | psql interactivo | |
 | db-tables | Listar tablas | `--output=text\|json` |
@@ -97,11 +97,11 @@ python devtools/run.py docker up --env=local --profile=feature
 | db-seed | Cargar fixtures | `--clear`, `--only=<app>`, `--dry-run` |
 | db-reset | Reset completo | `--no-seed`, `--no-superuser`, `--dry-run` |
 
-`--output=json` emite un documento parseable directo con `jq` o `json.load(sys.stdin)`. Disponible tambien en `ps` y `cache-status`.
+`--output=json` emite un documento parseable directo con `jq` o `json.load(sys.stdin)`. Disponible también en `ps` y `cache-status`.
 
 ### Setup
 
-| Comando | Descripcion | Flags |
+| Comando | Descripción | Flags |
 | ------- | ----------- | ----- |
 | setup | Setup inicial completo | --no-seed, --no-superuser |
 | clean | Eliminar todo (containers, images, volumes) | |
@@ -109,7 +109,7 @@ python devtools/run.py docker up --env=local --profile=feature
 
 ### Cache
 
-| Comando | Descripcion |
+| Comando | Descripción |
 | ------- | ----------- |
 | cache-clear-all | Limpiar __pycache__ |
 | cache-status | Estado de cache |
@@ -133,7 +133,7 @@ python devtools/run.py test_runner --module=server --type=integration
 python devtools/run.py docker db-seed --env=local --clear
 python devtools/run.py docker db-count
 
-# Produccion
+# Producción
 python devtools/run.py docker build --env=prod --no-cache
 python devtools/run.py docker up --env=prod
 ```

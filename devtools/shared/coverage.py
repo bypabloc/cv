@@ -4,7 +4,7 @@ Returns structured results so callers (hooks, test_runner) can format output
 according to their own conventions.
 
 Exclusiones globales: archivos sin valor para coverage 80% (no contienen
-logica de negocio que requiera tests unitarios).
+lógica de negocio que requiera tests unitarios).
 """
 
 import json
@@ -15,12 +15,12 @@ COVERAGE_THRESHOLD = 80
 
 
 # Path patterns excluidos del enforcement de coverage 80% (server-side).
-# Estos archivos no contienen logica de negocio que requiera tests unitarios.
+# Estos archivos no contienen lógica de negocio que requiera tests unitarios.
 SERVER_COVERAGE_EXCLUDES: tuple[str, ...] = (
     '__init__.py',  # Re-exports
     '/enums/',  # TextChoices/IntegerChoices declarativas
     '/enums.py',
-    '/constants.py',  # UPPER_SNAKE_CASE constantes estaticas
+    '/constants.py',  # UPPER_SNAKE_CASE constantes estáticas
     '/migrations/',  # Auto-generadas por Django
     '/apps.py',  # AppConfig declarativa (1-2 lineas utiles)
     '/admin/',  # Admin classes (testeadas via integration)
@@ -32,12 +32,12 @@ SERVER_COVERAGE_EXCLUDES: tuple[str, ...] = (
     '/config/wsgi.py',
     '/config/asgi.py',
     'manage.py',
-    '/exceptions.py',  # Definicion de excepciones de dominio (sin logica)
+    '/exceptions.py',  # Definición de excepciones de dominio (sin lógica)
 )
 
 # Frontend (portfolio Astro 6 + packages): exclusiones equivalentes a server.
 # Pages, layouts, .astro y components son JSX-heavy / template-only y se
-# cubren via E2E (Playwright). La logica testeable real esta en src/lib/,
+# cubren via E2E (Playwright). La lógica testeable real esta en src/lib/,
 # packages/<X>/src/, validators y formatters.
 FRONTEND_COVERAGE_EXCLUDES: tuple[str, ...] = (
     '/types/',  # Solo type definitions
@@ -45,15 +45,15 @@ FRONTEND_COVERAGE_EXCLUDES: tuple[str, ...] = (
     '/config.ts',
     'env.d.ts',
     '.astro',  # Componentes Astro (template-only, testeados via E2E)
-    '/layouts/',  # Layouts/templates (estructura JSX, sin logica testeable)
+    '/layouts/',  # Layouts/templates (estructura JSX, sin lógica testeable)
     '/pages/',  # Pages Astro (file-based routing, testeadas via E2E)
-    '/public/',  # Assets estaticos
+    '/public/',  # Assets estáticos
     # Astro config files in apps/<APP> y packages/<PKG>
     '/astro.config.ts',
     '/vitest.config.ts',
     '/uno.config.ts',
     '/tailwind.config.ts',
-    # Scripts auxiliares (build-time, no logica testeable critica)
+    # Scripts auxiliares (build-time, no lógica testeable crítica)
     '/scripts/',
 )
 
@@ -62,7 +62,7 @@ def is_excluded_from_coverage(source: str) -> bool:
     """True si el source esta excluido del coverage 80% per-file.
 
     Aplica patrones SERVER_COVERAGE_EXCLUDES y FRONTEND_COVERAGE_EXCLUDES.
-    Centralizado aqui para que hooks, test_runner y CI usen el mismo criterio.
+    Centralizado aquí para que hooks, test_runner y CI usen el mismo criterio.
     """
     for pattern in SERVER_COVERAGE_EXCLUDES + FRONTEND_COVERAGE_EXCLUDES:
         if pattern in source:

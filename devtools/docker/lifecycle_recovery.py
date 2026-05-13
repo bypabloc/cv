@@ -80,10 +80,10 @@ def cmd_rebuild(flags: dict[str, Any]) -> int:
         _err('Error deteniendo servicios')
         return 1
 
-    _step('Paso 2/3: Reconstruyendo imagenes (sin cache)...')
+    _step('Paso 2/3: Reconstruyendo imágenes (sin cache)...')
     result = run_compose(env, ['build', '--no-cache'], timeout=600)
     if result.returncode != 0:
-        _err('Error construyendo imagenes')
+        _err('Error construyendo imágenes')
         return 1
 
     _step('Paso 3/3: Iniciando servicios...')
@@ -194,6 +194,6 @@ def _print_refresh_plan(
         _step('2/3 Saltar limpieza de cache (--skip-cache)')
     _step('3/3 docker compose up -d --build')
     if not keep_volumes:
-        _info('Despues de healthy: manage.py migrate --noinput')
+        _info('Después de healthy: manage.py migrate --noinput')
     _info('Sin cambios aplicados (--dry-run)')
     return 0

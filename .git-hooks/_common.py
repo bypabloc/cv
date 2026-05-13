@@ -2,11 +2,11 @@
 
 Provee:
   - Output con colores (info, ok, err, skip, tip, header, section)
-  - Configuracion de pasos (config.json + SKIP_STEPS env)
+  - Configuración de pasos (config.json + SKIP_STEPS env)
   - Deteccion de archivos staged/unmerged via git plumbing
   - Helpers para correr pnpm directamente en host (sin Docker)
 
-Diseno: autocontenido. NO depende de devtools/.venv. Solo requiere pnpm y
+Diseño: autocontenido. NO depende de devtools/.venv. Solo requiere pnpm y
 node en PATH (corepack ya lo activa). Esto mantiene el hook ejecutable en
 cualquier entorno (local, CI) sin bootstrap pesado.
 """
@@ -121,7 +121,7 @@ def cyan(msg: str) -> str:
 
 
 # =============================================================================
-# CONFIGURACION DE PASOS
+# CONFIGURACIÓN DE PASOS
 # =============================================================================
 
 def should_run_step(step_name: str, hook_name: str) -> bool:
@@ -250,7 +250,7 @@ def detect_modified_packages(files: list[str]) -> list[str]:
 
 
 # =============================================================================
-# FRONTEND PURITY (no .js/.jsx/.mjs/.cjs salvo configs en raiz)
+# FRONTEND PURITY (no .js/.jsx/.mjs/.cjs salvo configs en raíz)
 # =============================================================================
 
 def find_forbidden_js_files(files: list[str]) -> list[str]:
@@ -271,7 +271,7 @@ def find_forbidden_js_files(files: list[str]) -> list[str]:
 
 
 # =============================================================================
-# EJECUCION DE COMANDOS (pnpm en host)
+# EJECUCIÓN DE COMANDOS (pnpm en host)
 # =============================================================================
 
 def run_pnpm(args: list[str], *, cwd: Path | None = None,

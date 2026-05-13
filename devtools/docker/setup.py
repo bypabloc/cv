@@ -60,10 +60,10 @@ def cmd_setup(flags: dict[str, Any]) -> int:
     step = 0
 
     step += 1
-    _step(f'Paso {step}/{total_steps}: Construyendo imagenes...')
+    _step(f'Paso {step}/{total_steps}: Construyendo imágenes...')
     result = run_compose(env, ['build'], timeout=600)
     if result.returncode != 0:
-        _err('Error construyendo imagenes')
+        _err('Error construyendo imágenes')
         return 1
 
     step += 1
@@ -200,7 +200,7 @@ def cmd_clean(flags: dict[str, Any]) -> int:
         return 0
 
     if not confirm_destructive(
-        f'Se eliminaran TODOS los containers, imagenes y volumes\n'
+        f'Se eliminaran TODOS los containers, imágenes y volumes\n'
         f'  con prefijo "{CONTAINER_PREFIX}" del ambiente {env}.\n'
         f'  Esto incluye la base de datos y datos de cache.'
     ):

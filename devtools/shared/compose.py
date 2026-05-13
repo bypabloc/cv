@@ -235,11 +235,11 @@ def ensure_running(env: str, auto_start: bool = True) -> bool:
         return True
 
     if not auto_start:
-        err(f'Los servicios no estan corriendo en ambiente {env}')
+        err(f'Los servicios no están corriendo en ambiente {env}')
         info(f'Iniciar con: python devtools/run.py docker up --env={env}')
         return False
 
-    warn('Los servicios no estan corriendo. Iniciando...')
+    warn('Los servicios no están corriendo. Iniciando...')
     result = run_compose(env, ['up', '-d'])
     if result.returncode != 0:
         err('No se pudo iniciar los servicios')
@@ -270,7 +270,7 @@ def wait_for_healthy(env: str, timeout: int = HEALTH_CHECK_TIMEOUT) -> bool:
                 break
 
         if all_healthy:
-            ok('Todos los servicios estan saludables')
+            ok('Todos los servicios están saludables')
             return True
 
         elapsed = int(time.time() - start)

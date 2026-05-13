@@ -12,7 +12,7 @@ from types import ModuleType
 from utils.flags_to_dict import flags_to_dict
 
 
-# Anadir el directorio raiz del proyecto al path para que los imports absolutos funcionen
+# Anadir el directorio raíz del proyecto al path para que los imports absolutos funcionen
 project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.append(str(project_root))
@@ -125,10 +125,10 @@ _reexec_in_venv()
 
 
 def load_module_from_path(module_name: str, file_path: str) -> ModuleType:
-    """Carga un modulo desde una ruta especifica."""
+    """Carga un módulo desde una ruta especifica."""
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     if spec is None:
-        msg = f'No se pudo cargar el modulo desde {file_path}'
+        msg = f'No se pudo cargar el módulo desde {file_path}'
         raise ImportError(msg)
 
     module = importlib.util.module_from_spec(spec)
@@ -137,7 +137,7 @@ def load_module_from_path(module_name: str, file_path: str) -> ModuleType:
 
 
 def discover_valid_scripts() -> list[str]:
-    """Descubre todos los scripts validos en el directorio devtools/."""
+    """Descubre todos los scripts válidos en el directorio devtools/."""
     scripts_dir = Path(__file__).parent
     valid_scripts = []
 
@@ -165,7 +165,7 @@ def show_global_help() -> None:
     valid_scripts = discover_valid_scripts()
 
     if not valid_scripts:
-        print('No se encontraron scripts validos.')
+        print('No se encontraron scripts válidos.')
         return
 
     print('Scripts disponibles:')
@@ -192,7 +192,7 @@ def _show_script_help(script_dir: Path, script_folder: str) -> None:
             print(content)
             return
 
-    print(f'Sin documentacion disponible para {script_folder}')
+    print(f'Sin documentación disponible para {script_folder}')
 
 
 def _resolve_script_paths(script_folder: str) -> tuple[Path, Path, Path]:
@@ -232,7 +232,7 @@ def _run_script(
     )
 
     if not hasattr(flags_module, 'flag'):
-        print(f"Error: No se encontro la funcion 'flag' en {flags_py_path}")
+        print(f"Error: No se encontro la función 'flag' en {flags_py_path}")
         sys.exit(1)
 
     # Modo silent: cuando el caller pide --only-list o --output=json,
@@ -250,7 +250,7 @@ def _run_script(
     try:
         parsed_flags = flags_module.flag(flags_dict)
     except ValueError as e:
-        print('\nError en la configuracion:', file=sys.stderr)
+        print('\nError en la configuración:', file=sys.stderr)
         print(f'   {e!s}', file=sys.stderr)
         print('\nPara ver la ayuda completa, usa:', file=sys.stderr)
         print(
@@ -263,7 +263,7 @@ def _run_script(
 
     if not hasattr(main_module, 'main'):
         print(
-            f"Error: No se encontro la funcion 'main' en {main_py_path}",
+            f"Error: No se encontro la función 'main' en {main_py_path}",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -501,7 +501,7 @@ def _handle_introspection(flags_dict: dict, script_folder: str | None) -> bool:
     """Dispatch the introspection flags. Returns True if handled."""
     output = flags_dict.get('output', 'text')
     if output not in ('text', 'json'):
-        print(f"Output invalido: '{output}'. Validos: text, json")
+        print(f"Output inválido: '{output}'. Válidos: text, json")
         sys.exit(1)
 
     if flags_dict.get('list_scripts'):
@@ -547,7 +547,7 @@ def _emit_completion(argv: list[str]) -> None:
         print(_generate_bash_completion(), end='')
     else:
         print(
-            f"Shell invalido: '{shell}'. Validos: zsh, bash",
+            f"Shell inválido: '{shell}'. Válidos: zsh, bash",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -586,7 +586,7 @@ def main() -> None:
     )
 
     # Per-script introspection (--list-commands / --list-flags / --describe)
-    # corre antes de la validacion del script para que funcione incluso con
+    # corre antes de la validación del script para que funcione incluso con
     # scripts que no han migrado todas sus flags.
     introspection_requested = (
         flags_dict.get('list_commands')

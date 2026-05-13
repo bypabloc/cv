@@ -3,7 +3,7 @@
 Path mirroring: devtools/shared/console.py -> this file.
 
 Verifica que header/info/ok/warn/err/step van a STDERR, no stdout. Esto
-mantiene stdout limpio para JSON / data output, asi callers pueden hacer
+mantiene stdout limpio para JSON / data output, así callers pueden hacer
 ``cmd --output=json | jq ...`` sin que los banners contaminen el parse.
 """
 
@@ -20,7 +20,7 @@ pytestmark = pytest.mark.unit
 def captured(
     capsys: pytest.CaptureFixture[str],
 ) -> Callable[..., pytest.CaptureResult[str]]:
-    """Devuelve un closure que ejecuta una funcion y devuelve (out, err)."""
+    """Devuelve un closure que ejecuta una función y devuelve (out, err)."""
 
     def _run(
         fn: Callable[..., Any],
@@ -40,9 +40,9 @@ class TestConsoleGoesToStderr:
     def test_header_to_stderr(self, captured):
         from shared.console import header
 
-        result = captured(header, 'titulo')
+        result = captured(header, 'título')
         assert result.out == ''
-        assert 'titulo' in result.err
+        assert 'título' in result.err
 
     def test_info_to_stderr(self, captured):
         from shared.console import info
@@ -106,7 +106,7 @@ class TestConsoleGoesToStderr:
 
 
 class TestColourReturnsString:
-    """colour() es funcion pura: devuelve string, no escribe a ningun stream."""
+    """colour() es función pura: devuelve string, no escribe a ningun stream."""
 
     def test_colour_returns_string_with_codes(self, capsys):
         from shared.console import CYAN

@@ -2,7 +2,7 @@
 
 Path mirroring: devtools/docker/flags.py -> this file.
 
-Validacion clave: comando posicional requerido (Fase 3 cambio el default
+Validación clave: comando posicional requerido (Fase 3 cambio el default
 de 'help' a error explicito), removido 'docker test' (Fase 3 dejo shim),
 ``describe()`` retorna inventario completo (Fase 4).
 """
@@ -47,7 +47,7 @@ class TestCommandExtraction:
 
     def test_test_command_still_in_registry(self, monkeypatch):
         # Fase 3: 'docker test' fue removido como funcionalidad pero queda
-        # en VALID_COMMANDS para que el shim de migracion (cmd_test_removed)
+        # en VALID_COMMANDS para que el shim de migración (cmd_test_removed)
         # tenga oportunidad de imprimir el mensaje en lugar de un 'comando
         # desconocido'.
         monkeypatch.setattr('sys.argv', ['run.py', 'docker', 'test'])
@@ -76,7 +76,7 @@ class TestEnvFlag:
         )
         from docker.flags import flag
 
-        with pytest.raises(ValueError, match='Ambiente invalido'):
+        with pytest.raises(ValueError, match='Ambiente inválido'):
             flag({'env': 'staging'})
 
 

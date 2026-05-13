@@ -1,6 +1,6 @@
 """``weak_assertion`` script entry point.
 
-Detecta asserts vagos en archivos de test Python via AST. Politica:
+Detecta asserts vagos en archivos de test Python via AST. Política:
 ``.claude/rules/ai-testing-independence.md``.
 
 Modos:
@@ -70,7 +70,7 @@ def _resolve_files(flags: dict[str, Any]) -> list[str]:
 
 
 if __name__ == '__main__':
-    # Permite ejecucion directa: python devtools/weak_assertion/main.py ...
+    # Permite ejecución directa: python devtools/weak_assertion/main.py ...
     sys.path.insert(0, str(_PROJECT_ROOT / 'devtools'))
     from weak_assertion.flags import get_flags
 

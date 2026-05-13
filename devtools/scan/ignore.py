@@ -85,7 +85,7 @@ def _matches_path_pattern(file_path: str, pattern: str) -> bool:
     Common shortcuts handled directly:
     - ``prefix/**``: any file under prefix/
     - ``**/segment/**``: segment appears anywhere as a directory
-    - ``**/*.ext``: files with extension at any depth
+    - ``**/*.ext``: files with extensión at any depth
     - ``**/__init__.py``: file at any depth
     Other patterns delegate to ``matches_ignore_pattern``.
     """

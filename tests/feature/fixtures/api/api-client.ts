@@ -3,8 +3,8 @@ import type { APIRequestContext } from '@playwright/test'
 /**
  * @class ApiClient
  * @description Cliente HTTP reusable para llamadas al backend desde tests E2E.
- *   Stub minimo: el portfolio actual no tiene backend. Cuando se agregue
- *   (form de contacto, analytics, etc.), agregar metodos aqui.
+ *   Stub mínimo: el portfolio actual no tiene backend. Cuando se agregue
+ *   (form de contacto, analytics, etc.), agregar métodos aquí.
  */
 export class ApiClient {
   private readonly request: APIRequestContext

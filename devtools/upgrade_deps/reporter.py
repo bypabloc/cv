@@ -1,6 +1,6 @@
 """Reporte tabular de resultados del upgrade."""
 
-# Colores ANSI minimos (mismos codes que .git-hooks/_common.py)
+# Colores ANSI mínimos (mismos codes que .git-hooks/_common.py)
 _GREEN = '\033[0;32m'
 _YELLOW = '\033[1;33m'
 _CYAN = '\033[0;36m'

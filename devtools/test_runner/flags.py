@@ -4,8 +4,8 @@ Validates and normalizes flags for the unified test runner that
 orchestrates tests across all project modules (server, dashboard, landing,
 devtools).
 
-Mayo 2026: el modulo `e2e` y el tipo `--type=e2e` fueron eliminados.
-Ahora cada modulo expone su propio `--type=feature` (BDD-style):
+Mayo 2026: el módulo `e2e` y el tipo `--type=e2e` fueron eliminados.
+Ahora cada módulo expone su propio `--type=feature` (BDD-style):
   - server: pytest -m feature contra tests/feature/ (DRF APIClient + DB seed)
   - dashboard: Playwright contra dashboard/tests/feature/
   - landing:   Playwright contra landing/tests/feature/
@@ -43,7 +43,7 @@ _PORTFOLIO_PACKAGES = ('app-shared', 'content', 'cv-pdf', 'seo', 'ui')
 
 # Registry of valid test types per module.
 # Portfolio: apps Astro tienen unit+coverage+typecheck; tests E2E son
-# globales (tests/feature/) sin modulo asignado por app.
+# globales (tests/feature/) sin módulo asignado por app.
 MODULE_TEST_TYPES: dict[str, list[str]] = {
     'server': ['unit'],
     'devtools': ['unit'],
@@ -99,18 +99,18 @@ def _validate_module(flags_dict: dict[str, Any]) -> None:
     """Validate --module flag against known modules with tests.
 
     Mayo 2026: rechaza explicitamente ``--module=e2e`` y ``--module=tests``
-    con mensaje de migracion (ya no son modulos validos; cada feature
-    test vive bajo el modulo de su producto: dashboard, landing, server).
+    con mensaje de migración (ya no son módulos válidos; cada feature
+    test vive bajo el módulo de su producto: dashboard, landing, server).
     """
     module = flags_dict.get('module')
     if module is None:
         return
 
-    # Atajos historicos eliminados: dar mensaje claro de migracion.
+    # Atajos históricos eliminados: dar mensaje claro de migración.
     if module in {'e2e', 'tests'}:
         raise ValueError(
             f'--module={module} fue eliminado en mayo 2026.\n'
-            'Usa el modulo del producto y --type=feature:\n'
+            'Usa el módulo del producto y --type=feature:\n'
             '  python devtools/run.py test_runner --module=dashboard --type=feature\n'
             '  python devtools/run.py test_runner --module=landing --type=feature\n'
             '  python devtools/run.py test_runner --module=server --type=feature',
@@ -119,8 +119,8 @@ def _validate_module(flags_dict: dict[str, Any]) -> None:
     valid_modules = [m for m, types in MODULE_TEST_TYPES.items() if types]
     if module not in valid_modules:
         raise ValueError(
-            f"Modulo invalido: '{module}'. "
-            f'Modulos con tests: {", ".join(sorted(valid_modules))}',
+            f"Módulo inválido: '{module}'. "
+            f'Módulos con tests: {", ".join(sorted(valid_modules))}',
         )
 
 
@@ -131,8 +131,8 @@ def _validate_type(flags_dict: dict[str, Any]) -> None:
     If --module is set, validates against that module's types.
     If not, validates that at least one module supports the type.
 
-    Mayo 2026: rechaza ``--type=e2e`` con mensaje de migracion. Antes el
-    tipo `e2e` solo aplicaba al modulo `e2e`; ahora cada producto tiene
+    Mayo 2026: rechaza ``--type=e2e`` con mensaje de migración. Antes el
+    tipo `e2e` solo aplicaba al módulo `e2e`; ahora cada producto tiene
     su `--type=feature` (BDD-style).
     """
     test_type = flags_dict.get('type', 'all')
@@ -142,7 +142,7 @@ def _validate_type(flags_dict: dict[str, Any]) -> None:
     if test_type == 'e2e':
         raise ValueError(
             '--type=e2e fue eliminado en mayo 2026. '
-            'Usa --type=feature por modulo:\n'
+            'Usa --type=feature por módulo:\n'
             '  python devtools/run.py test_runner --module=dashboard --type=feature\n'
             '  python devtools/run.py test_runner --module=landing --type=feature\n'
             '  python devtools/run.py test_runner --module=server --type=feature',
@@ -155,7 +155,7 @@ def _validate_type(flags_dict: dict[str, Any]) -> None:
         if test_type not in valid_types:
             raise ValueError(
                 f"Tipo '{test_type}' no disponible para '{module}'. "
-                f'Tipos validos: all, {", ".join(valid_types)}',
+                f'Tipos válidos: all, {", ".join(valid_types)}',
             )
         return
 
@@ -168,8 +168,8 @@ def _validate_type(flags_dict: dict[str, Any]) -> None:
             {t for types in MODULE_TEST_TYPES.values() for t in types},
         )
         raise ValueError(
-            f"Tipo '{test_type}' no disponible en ningun modulo. "
-            f'Tipos validos: all, {", ".join(all_types)}',
+            f"Tipo '{test_type}' no disponible en ningun módulo. "
+            f'Tipos válidos: all, {", ".join(all_types)}',
         )
 
 
@@ -193,8 +193,8 @@ def _validate_env(flags_dict: dict[str, Any]) -> None:
     env = flags_dict.get('env', 'local')
     if env not in VALID_ENVS:
         raise ValueError(
-            f"Ambiente invalido: '{env}'. "
-            f'Ambientes validos para tests: {", ".join(VALID_ENVS)}',
+            f"Ambiente inválido: '{env}'. "
+            f'Ambientes válidos para tests: {", ".join(VALID_ENVS)}',
         )
 
 
@@ -244,10 +244,10 @@ def _validate_playwright_only_flag(
     key: str,
     present: bool,
 ) -> None:
-    """Valida que un flag de Playwright (sharding/projects) no se use con
+    """Válida que un flag de Playwright (sharding/projects) no se use con
     server o con --type distinto de feature.
 
-    Sharding y projects son features de Playwright, asi que requieren
+    Sharding y projects son features de Playwright, así que requieren
     --module=dashboard|landing y --type=feature.
     """
     if not present:
@@ -263,7 +263,7 @@ def _validate_playwright_only_flag(
 
 
 def _validate_sharding_flags(flags_dict: dict[str, Any]) -> None:
-    """Valida --project, --shard, --shard-total, --fail-on-flaky.
+    """Válida --project, --shard, --shard-total, --fail-on-flaky.
 
     Reglas:
     - Las 4 flags requieren --module=dashboard|landing y --type=feature
@@ -359,7 +359,7 @@ def describe() -> ScriptDescribe:
             'module': {
                 'type': 'choice',
                 'choices': sorted(m for m, t in MODULE_TEST_TYPES.items() if t),
-                'summary': 'Modulo a testear (default: todos los con tests)',
+                'summary': 'Módulo a testear (default: todos los con tests)',
             },
             'type': {
                 'type': 'choice',

@@ -2,7 +2,7 @@
 
 Path mirroring: ``devtools/mutation_testing/config.py`` -> this file.
 
-Politica AI-testing independence: ``.claude/rules/ai-testing-independence.md``.
+Política AI-testing independence: ``.claude/rules/ai-testing-independence.md``.
 """
 
 import pytest
@@ -30,13 +30,13 @@ class TestThresholdConstants:
         """
         Given critical paths cubren codigo con dinero o credenciales,
         When se consulta CRITICAL_THRESHOLD,
-        Then es exactamente 0.85 (85% mutation score minimo).
+        Then es exactamente 0.85 (85% mutation score mínimo).
         """
         assert CRITICAL_THRESHOLD == 0.85
 
     def test_standard_threshold_is_70_percent(self) -> None:
         """
-        Given standard paths cubren logica de negocio core,
+        Given standard paths cubren lógica de negocio core,
         When se consulta STANDARD_THRESHOLD,
         Then es exactamente 0.70.
         """
@@ -136,7 +136,7 @@ class TestIsExcluded:
     )
     def test_infrastructure_paths_are_excluded(self, path: str) -> None:
         """
-        Given paths de infraestructura sin logica de negocio (admin,
+        Given paths de infraestructura sin lógica de negocio (admin,
         migrations, management, __init__, apps, urls, constants, enums),
         When se consulta is_excluded,
         Then retorna True (mutation testing los ignora).
@@ -145,7 +145,7 @@ class TestIsExcluded:
 
     def test_service_path_is_not_excluded(self) -> None:
         """
-        Given un path con logica de negocio (services/),
+        Given un path con lógica de negocio (services/),
         When se consulta is_excluded,
         Then retorna False (mutation testing aplica).
         """
@@ -175,11 +175,11 @@ class TestAllCategories:
 
 
 class TestCriticalPathsCoverage:
-    """Verifica que los paths criticos esperados esten registrados."""
+    """Verifica que los paths críticos esperados esten registrados."""
 
     def test_payments_services_in_critical(self) -> None:
         """
-        Given la politica que apps/payments/services es codigo critico,
+        Given la política que apps/payments/services es codigo crítico,
         When se inspecciona CRITICAL_PATHS,
         Then contiene 'apps/payments/services'.
         """
@@ -187,7 +187,7 @@ class TestCriticalPathsCoverage:
 
     def test_auth_services_in_critical(self) -> None:
         """
-        Given la politica que apps/auth/services es codigo critico,
+        Given la política que apps/auth/services es codigo crítico,
         When se inspecciona CRITICAL_PATHS,
         Then contiene 'apps/auth/services'.
         """
@@ -195,7 +195,7 @@ class TestCriticalPathsCoverage:
 
     def test_security_in_critical(self) -> None:
         """
-        Given la politica que common/security es codigo critico (PCI),
+        Given la política que common/security es codigo crítico (PCI),
         When se inspecciona CRITICAL_PATHS,
         Then contiene 'common/security'.
         """
@@ -205,7 +205,7 @@ class TestCriticalPathsCoverage:
 class TestExcludedFragments:
     def test_admin_fragment_is_excluded(self) -> None:
         """
-        Given que el admin Django no contiene logica testeable por mutmut,
+        Given que el admin Django no contiene lógica testeable por mutmut,
         When se inspecciona EXCLUDED_FRAGMENTS,
         Then '/admin/' esta presente.
         """

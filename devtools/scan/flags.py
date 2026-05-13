@@ -44,12 +44,12 @@ DEFAULTS = {
 
 def get_valid_git_modes() -> list[str]:
     """
-    Obtiene lista de modos git validos.
+    Obtiene lista de modos git válidos.
 
     Returns
     -------
     list[str]
-        Lista de modos git validos como 'changed', 'staged', 'unstaged', etc.
+        Lista de modos git válidos como 'changed', 'staged', 'unstaged', etc.
     """
     return ['changed', 'staged', 'unstaged', 'stash', 'unmerged', 'all']
 
@@ -61,7 +61,7 @@ def _clean_extensions(extensions: str | list[str]) -> list[str]:
     Parameters
     ----------
     extensions : str | list[str]
-        Extension o lista de extensiones a limpiar.
+        Extensión o lista de extensiones a limpiar.
 
     Returns
     -------
@@ -74,7 +74,7 @@ def _clean_extensions(extensions: str | list[str]) -> list[str]:
 
 
 def _validate_git_mode(flags_dict: dict[str, Any]) -> None:
-    """Valida que git_mode sea uno de los valores permitidos."""
+    """Válida que git_mode sea uno de los valores permitidos."""
     git_mode = flags_dict.get('git_mode')
     if not git_mode:
         return
@@ -88,7 +88,7 @@ def _validate_git_mode(flags_dict: dict[str, Any]) -> None:
 
 
 def _validate_extensions(flags_dict: dict[str, Any]) -> None:
-    """Valida y normaliza excludes_extension y only_extension."""
+    """Válida y normaliza excludes_extension y only_extension."""
     if flags_dict.get('excludes_extension'):
         flags_dict['excludes_extension'] = _clean_extensions(
             flags_dict['excludes_extension'],
@@ -101,13 +101,13 @@ def _validate_extensions(flags_dict: dict[str, Any]) -> None:
 
         if flags_dict.get('excludes_extension'):
             raise ValueError(
-                'No se puede usar --only-extension junto con '
-                '--excludes-extension. Use una u otra.'
+                'No se puede usar --only-extensión junto con '
+                '--excludes-extensión. Use una u otra.'
             )
 
 
 def _validate_ignore_patterns(flags_dict: dict[str, Any]) -> None:
-    """Valida y normaliza ignore_patterns."""
+    """Válida y normaliza ignore_patterns."""
     if not flags_dict.get('ignore_patterns'):
         return
 
@@ -126,7 +126,7 @@ def _validate_ignore_patterns(flags_dict: dict[str, Any]) -> None:
 
 
 def _validate_module(flags_dict: dict[str, Any]) -> None:
-    """Valida --module y aplica config del module (extensions, exclude patterns)."""
+    """Válida --module y aplica config del module (extensions, exclude patterns)."""
     if not flags_dict.get('module'):
         return
 
@@ -138,7 +138,7 @@ def _validate_module(flags_dict: dict[str, Any]) -> None:
     except ValueError:
         valid_modules = ', '.join(get_module_names())
         raise ValueError(
-            f'Module invalido: {flags_dict["module"]}. Modules validos: {valid_modules}'
+            f'Module inválido: {flags_dict["module"]}. Modules válidos: {valid_modules}'
         ) from None
 
     # Module sobreescribe extensions y agrega exclude patterns
@@ -154,7 +154,7 @@ def _validate_module(flags_dict: dict[str, Any]) -> None:
 
 
 def _validate_purpose(flags_dict: dict[str, Any]) -> None:
-    """Valida --purpose y agrega sus exclude patterns."""
+    """Válida --purpose y agrega sus exclude patterns."""
     if not flags_dict.get('purpose'):
         return
 
@@ -162,8 +162,8 @@ def _validate_purpose(flags_dict: dict[str, Any]) -> None:
 
     if flags_dict['purpose'] not in VALID_PURPOSES:
         raise ValueError(
-            f'Purpose invalido: {flags_dict["purpose"]}. '
-            f'Validos: {", ".join(VALID_PURPOSES)}'
+            f'Purpose inválido: {flags_dict["purpose"]}. '
+            f'Válidos: {", ".join(VALID_PURPOSES)}'
         )
 
     if not flags_dict.get('module'):
@@ -204,7 +204,7 @@ def _print_processed_flags(flags_dict: dict[str, Any]) -> None:
 
 def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     """
-    Procesa y valida las flags para el script scan.
+    Procesa y válida las flags para el script scan.
 
     Parameters
     ----------
@@ -219,7 +219,7 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     Raises
     ------
     ValueError
-        Si se usan flags no permitidas o valores invalidos
+        Si se usan flags no permitidas o valores inválidos
     """
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, DEFAULTS)
@@ -250,7 +250,7 @@ def describe() -> ScriptDescribe:
             'module': {
                 'type': 'choice',
                 'choices': ['server', 'dashboard', 'landing', 'devtools'],
-                'summary': 'Limita a un modulo del proyecto',
+                'summary': 'Limita a un módulo del proyecto',
             },
             'purpose': {
                 'type': 'choice',
@@ -273,7 +273,7 @@ def describe() -> ScriptDescribe:
             'only_folders_root': {
                 'type': 'bool',
                 'default': False,
-                'summary': 'Solo lista carpetas raiz del proyecto',
+                'summary': 'Solo lista carpetas raíz del proyecto',
             },
             'only_list': {
                 'type': 'bool',
@@ -288,7 +288,7 @@ def describe() -> ScriptDescribe:
             'exclude_empty': {
                 'type': 'bool',
                 'default': False,
-                'summary': 'Omite archivos vacios',
+                'summary': 'Omite archivos vacíos',
             },
             'ignore_patterns': {
                 'type': 'list',

@@ -1,6 +1,6 @@
 # mutation_testing
 
-> Wrapper sobre `mutmut` con thresholds por criticidad. Politica:
+> Wrapper sobre `mutmut` con thresholds por criticidad. Política:
 > `.claude/rules/ai-testing-independence.md`.
 
 ## Concepto
@@ -15,9 +15,9 @@ verifica que los tests fallen. Si la mutacion **sobrevive**, el test es debil.
 |-----------|-----------|---------------|
 | **critical** | 85% | `apps/payments/services`, `apps/auth/services`, `common/security` |
 | **standard** | 70% | `apps/orders/services`, `apps/orders/selectors` |
-| **experimental** | 30% | (vacio; subir progresivo) |
+| **experimental** | 30% | (vacío; subir progresivo) |
 
-Config en [`config.py`](./config.py). Agregar nuevos modulos ahi.
+Config en [`config.py`](./config.py). Agregar nuevos módulos ahí.
 
 ## Uso
 
@@ -48,14 +48,14 @@ python devtools/run.py mutation_testing --all --dry-run
 
 - `0` — todos los paths >= threshold
 - `1` — al menos un path < threshold (o mutmut fallo en algun path)
-- `2` — error interno (config invalido, container no disponible)
+- `2` — error interno (config inválido, container no disponible)
 
-## Integracion con git hooks
+## Integración con git hooks
 
 El step `mutation_testing` del orquestador (`.git-hooks/_common.py`) puede
 correr en pre-push. **Default OFF** porque mutation testing es lento (5-15
 min en suite mediana). Activar via `.git-hooks/config.json` cuando la suite
-del modulo critico este estable. Ver `tmp/git-hooks-patch/README.md`.
+del módulo crítico este estable. Ver `tmp/git-hooks-patch/README.md`.
 
 ## Limitaciones / TODO
 

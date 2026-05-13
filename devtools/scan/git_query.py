@@ -38,7 +38,7 @@ def get_git_ignored_files() -> list[str]:
             )
         ]
     except git.InvalidGitRepositoryError:
-        print('Advertencia: No es un repositorio Git valido')
+        print('Advertencia: No es un repositorio Git válido')
         return []
     else:
         return unique_ignored_files

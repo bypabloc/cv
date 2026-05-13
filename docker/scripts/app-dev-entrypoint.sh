@@ -23,11 +23,11 @@ GID_RUN="${GID:-1000}"
 
 # Fix permisos del bind mount y named volumes.
 # /app                -> bind mount del repo (puede ser root-owned en CI)
-# /app/node_modules   -> named volume vacio (root-owned al primer mount)
+# /app/node_modules   -> named volume vacío (root-owned al primer mount)
 #
 # IMPORTANTE: chown solo de /app (depth 0) y /app/node_modules. NO recursivo
 # en el bind mount porque (a) es caro y (b) lo del host se ve afectado en
-# desarrollo local. pnpm escribe sus _tmp_<n>_<hash> en la raiz del workdir
+# desarrollo local. pnpm escribe sus _tmp_<n>_<hash> en la raíz del workdir
 # (/app/), por eso necesita /app con write para uid app.
 if [ "$(id -u)" = "0" ]; then
   echo "[entrypoint] Ajustando permisos como root..."

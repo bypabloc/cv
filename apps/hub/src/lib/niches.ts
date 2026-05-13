@@ -1,6 +1,6 @@
 /**
  * @module niches
- * @description Definicion de las 5 cards del hub selector.
+ * @description Definición de las 5 cards del hub selector.
  */
 import type { Niche } from '@portfolio/content'
 

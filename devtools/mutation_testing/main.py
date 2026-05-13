@@ -4,7 +4,7 @@ Wrapper sobre ``mutmut`` con thresholds por criticidad. Lee la config en
 ``devtools/mutation_testing/config.py`` para clasificar paths y aplicar
 el threshold correspondiente.
 
-Politica completa: ``.claude/rules/ai-testing-independence.md``.
+Política completa: ``.claude/rules/ai-testing-independence.md``.
 
 Modos:
 - ``--paths=apps/payments,apps/auth`` -> mutar paths explicitos
@@ -12,14 +12,14 @@ Modos:
 - ``--all`` -> mutar todas las categorias
 - ``--dry-run`` -> imprimir plan sin ejecutar
 
-Ejecucion: el wrapper invoca ``mutmut run`` dentro del container del
+Ejecución: el wrapper invoca ``mutmut run`` dentro del container del
 server (Docker es el runtime obligatorio del proyecto). Si el container
-no esta arriba, falla con instruccion de levantarlo.
+no esta arriba, falla con instrucción de levantarlo.
 
 Exit codes:
     0 - todos los paths >= threshold
     1 - al menos un path < threshold (o mutmut fallo)
-    2 - error interno (config invalido, container no disponible)
+    2 - error interno (config inválido, container no disponible)
 """
 
 from __future__ import annotations
@@ -106,7 +106,7 @@ def _print_plan(
     targets: list[tuple[str, str, float]], config: ModuleType
 ) -> int:
     """Imprime que paths se mutarian con que threshold (--dry-run)."""
-    print('[mutation_testing] DRY RUN — plan de ejecucion:\n')
+    print('[mutation_testing] DRY RUN — plan de ejecución:\n')
     print(f'  {"path":50}  {"categoria":12}  threshold')
     print(f'  {"-" * 50}  {"-" * 12}  ---------')
     for path, category, threshold in targets:
@@ -293,7 +293,7 @@ def _parse_mutmut_score() -> float | None:
 
 
 if __name__ == '__main__':
-    # Permite ejecucion directa: python devtools/mutation_testing/main.py ...
+    # Permite ejecución directa: python devtools/mutation_testing/main.py ...
     sys.path.insert(0, str(_PROJECT_ROOT / 'devtools'))
     from mutation_testing.flags import flag
 

@@ -4,7 +4,7 @@
  *   Formato: spec llms.txt (https://llmstxt.org). En INGLES (audiencia: crawlers
  *   de IA en cualquier idioma).
  *
- *   Cubre AC-3: cada subdominio sirve llms.txt con paginas y resumenes.
+ *   Cubre AC-3: cada subdominio sirve llms.txt con páginas y resumenes.
  */
 import type { Niche, Profile } from '@portfolio/content'
 

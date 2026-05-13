@@ -1,0 +1,31 @@
+{
+  "name": "@portfolio/architect",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "architect-focused portfolio site (https://architect.the-full-stack.com)",
+  "scripts": {
+    "dev": "astro dev --port 4324",
+    "build": "astro build",
+    "preview": "astro preview --port 4324",
+    "astro": "astro",
+    "typecheck": "astro check",
+    "prebuild": "tsx scripts/build-public-assets.mjs"
+  },
+  "dependencies": {
+    "@portfolio/app-shared": "workspace:*",
+    "@portfolio/content": "workspace:*",
+    "@portfolio/cv-pdf": "workspace:*",
+    "@portfolio/seo": "workspace:*",
+    "@portfolio/ui": "workspace:*",
+    "@astrojs/sitemap": "^3.4.2",
+    "@tailwindcss/vite": "^4.0.18",
+    "astro": "^5.16.5",
+    "tailwindcss": "^4.0.18"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}

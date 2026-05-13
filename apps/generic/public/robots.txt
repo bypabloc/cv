@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hub.the-full-stack.com/sitemap.xml
+Sitemap: https://hub.the-full-stack.com/sitemap-index.xml

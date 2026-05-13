@@ -1,0 +1,17 @@
+---
+import AboutSection from '@portfolio/app-shared/pages/AboutSection.astro'
+import PageLayout from '../../layouts/PageLayout.astro'
+import { NICHE, STRINGS } from '../../lib/site-config'
+
+const t = STRINGS.en
+---
+
+<PageLayout
+  title={`About — ${t.meta.title}`}
+  description="Education, languages, awards, publications and references of Pablo Contreras."
+  canonicalPath="/en/about"
+  locale="en"
+  otherLocalePath="/about"
+>
+  <AboutSection niche={NICHE} locale="en" strings={t} />
+</PageLayout>

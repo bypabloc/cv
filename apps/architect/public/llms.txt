@@ -1,0 +1,20 @@
+# Pablo Contreras — architect
+
+> Frontend Architect with deep microservices experience. 8+ years designing scalable systems with Vue/Nuxt, Django, AWS and microfrontends.
+
+Canonical URL: https://architect.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Pages
+
+- [Home](https://architect.the-full-stack.com/): Pablo Contreras — Architect · Microservicios · Microfrontends
+- [About](https://architect.the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://architect.the-full-stack.com/certificates): Technical certifications relevant to this profile
+- [CV (HTML)](https://architect.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://architect.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+
+## Identity
+
+- LinkedIn: https://linkedin.com/in/bypabloc
+- GitHub: https://github.com/bypabloc
+- Medium: https://bypablo.medium.com
+

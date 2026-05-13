@@ -1,0 +1,163 @@
+---
+import { profile } from '@portfolio/content'
+import { buildPersonSchema } from '@portfolio/seo'
+import Footer from '@portfolio/ui/components/Footer.astro'
+/**
+ * @page index (en) — hub selector
+ */
+import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
+import { NICHE_CARDS } from '../../lib/niches'
+
+const SITE = 'https://the-full-stack.com'
+const canonicalUrl = `${SITE}/en/`
+const title = 'Pablo Contreras — Five angles. Pick the one that fits.'
+const description =
+  'Senior Full Stack Engineer. 5 specialized portfolios: Full Stack, LATAM Fintech, Architect, Tech Lead, Vibe Coding.'
+
+const jsonLd = buildPersonSchema({
+  profile,
+  niche: 'generic',
+  locale: 'en',
+  canonicalUrl,
+  knowsAbout: [
+    'Vue',
+    'Nuxt',
+    'TypeScript',
+    'Django',
+    'Python',
+    'AWS',
+    'Fintech',
+    'Microservices',
+    'Claude Code',
+    'Cursor',
+  ],
+})
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale="en"
+  jsonLd={jsonLd}
+  ogImage={`${SITE}/og-image.svg`}
+>
+  <section class="container-medium hub-hero">
+    <p class="text-label hub-hero__eyebrow">Pablo Contreras · Lima, Peru</p>
+    <h1 class="text-display-1 hub-hero__title">
+      Five angles.<br />
+      Pick the one that fits.
+    </h1>
+    <p class="text-body-lg text-muted hub-hero__intro">
+      I am a senior Full Stack engineer with 8+ years in Vue, Django and AWS.
+      Each site tells the same story with a different accent. Pick any — all
+      five stay in sync.
+    </p>
+    <p class="text-mono hub-hero__lang">
+      <a href="/">Versión en español →</a>
+    </p>
+  </section>
+
+  <section class="container-medium hub-grid">
+    {
+      NICHE_CARDS.map((card, i) => (
+        <a
+          class="hub-card reveal-on-scroll"
+          href={card.url}
+          style={`--accent: ${card.accent}; --i: ${i};`}
+        >
+          <span class="hub-card__niche text-mono">{card.niche}</span>
+          <h2 class="hub-card__title text-h3">{card.title.en}</h2>
+          <p class="hub-card__blurb text-body text-muted">{card.blurb.en}</p>
+          <span class="hub-card__cta text-mono">Enter →</span>
+        </a>
+      ))
+    }
+  </section>
+
+  <Footer
+    slot="footer"
+    name="Pablo Contreras"
+    contacts={profile.contacts}
+    locale="en"
+  />
+</BaseLayout>
+
+<style>
+  .hub-hero {
+    padding-block: var(--space-100) var(--space-56);
+    text-align: left;
+  }
+  .hub-hero__eyebrow {
+    color: var(--color-primary);
+    margin-bottom: var(--space-16);
+  }
+  .hub-hero__title {
+    margin-bottom: var(--space-24);
+  }
+  .hub-hero__intro {
+    max-width: 56ch;
+    margin-bottom: var(--space-24);
+  }
+  .hub-hero__lang a {
+    color: var(--color-text-muted);
+  }
+  .hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-20);
+    padding-bottom: var(--space-100);
+  }
+  .hub-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    padding: var(--space-32);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    text-decoration: none;
+    transition:
+      border-color var(--motion-fast) var(--easing-out),
+      transform var(--motion-fast) var(--easing-out),
+      box-shadow var(--motion-fast) var(--easing-out);
+    position: relative;
+    overflow: hidden;
+  }
+  .hub-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--motion-base) var(--easing-out);
+  }
+  .hub-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-medium);
+  }
+  .hub-card:hover::before {
+    transform: scaleX(1);
+  }
+  .hub-card__niche {
+    color: var(--accent);
+    font-size: var(--font-size-11);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-widest);
+  }
+  .hub-card__title {
+    color: var(--color-text);
+  }
+  .hub-card__cta {
+    margin-top: auto;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-13);
+  }
+  .hub-card:hover .hub-card__cta {
+    color: var(--color-text);
+  }
+</style>

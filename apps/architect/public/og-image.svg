@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#161613"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <text x="80" y="240" font-family="'Space Grotesk', sans-serif" font-size="60" font-weight="700" fill="#f7f7f5">Pablo Contreras</text>
+  <text x="80" y="320" font-family="'Space Grotesk', sans-serif" font-size="32" font-weight="500" fill="#38d9d6">Architect · Microservicios · Microfrontends</text>
+  <text x="80" y="430" font-family="'Space Grotesk', sans-serif" font-size="24" fill="#9e9e99">Senior Full Stack Engineer · 8+ years</text>
+  <text x="80" y="540" font-family="Menlo, monospace" font-size="22" fill="#38d9d6">architect.the-full-stack.com</text>
+</svg>

@@ -1,0 +1,20 @@
+# Pablo Contreras — leader
+
+> Tech Lead with experience leading multi-disciplinary engineering teams, mentoring junior developers and shipping fintech products at scale.
+
+Canonical URL: https://leader.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Pages
+
+- [Home](https://leader.the-full-stack.com/): Pablo Contreras — Tech Lead · Mentoring · Shipping fintech
+- [About](https://leader.the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://leader.the-full-stack.com/certificates): Technical certifications relevant to this profile
+- [CV (HTML)](https://leader.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://leader.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+
+## Identity
+
+- LinkedIn: https://linkedin.com/in/bypabloc
+- GitHub: https://github.com/bypabloc
+- Medium: https://bypablo.medium.com
+

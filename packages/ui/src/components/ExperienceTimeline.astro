@@ -26,12 +26,13 @@ const { ariaLabel = 'Experiencia profesional' } = Astro.props
 </ol>
 
 <style>
+  /* Mobile-first */
   .timeline {
     list-style: none;
     margin: 0;
     padding: 0;
     position: relative;
-    padding-left: var(--space-32);
+    padding-left: var(--space-20);
   }
   .timeline::before {
     content: '';
@@ -49,9 +50,9 @@ const { ariaLabel = 'Experiencia profesional' } = Astro.props
     );
     opacity: 0.55;
   }
-  @media (max-width: 640px) {
+  @media (min-width: 640px) {
     .timeline {
-      padding-left: var(--space-20);
+      padding-left: var(--space-32);
     }
   }
 </style>

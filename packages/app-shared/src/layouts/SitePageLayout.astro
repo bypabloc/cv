@@ -93,16 +93,23 @@ const nicheStyle = nicheTokensToCssVars(niche)
     locale={locale}
   />
   <script>
-    import { initMagneticCursor, initNumberCounters } from '@portfolio/ui'
+    import {
+      initMagneticCursor,
+      initMobileNav,
+      initNumberCounters,
+    } from '@portfolio/ui'
 
     let magneticCleanup: (() => void) | undefined
     let counterCleanup: (() => void) | undefined
+    let mobileNavCleanup: (() => void) | undefined
 
     const boot = () => {
       magneticCleanup?.()
       counterCleanup?.()
+      mobileNavCleanup?.()
       magneticCleanup = initMagneticCursor()
       counterCleanup = initNumberCounters()
+      mobileNavCleanup = initMobileNav()
     }
 
     boot()

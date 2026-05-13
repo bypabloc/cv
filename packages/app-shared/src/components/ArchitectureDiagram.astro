@@ -116,14 +116,24 @@ const layers = isEs
 </section>
 
 <style>
+  /* Mobile-first */
   .arch {
-    padding-block: var(--space-72);
+    padding-block: var(--space-40);
   }
   .arch__header {
     display: grid;
-    gap: var(--space-16);
-    margin-bottom: var(--space-40);
+    gap: var(--space-12);
+    margin-bottom: var(--space-24);
     max-width: 720px;
+  }
+  @media (min-width: 768px) {
+    .arch {
+      padding-block: var(--space-72);
+    }
+    .arch__header {
+      gap: var(--space-16);
+      margin-bottom: var(--space-40);
+    }
   }
   .arch__eyebrow {
     display: inline-flex;
@@ -144,28 +154,37 @@ const layers = isEs
   .arch__subtitle {
     margin: 0;
   }
+  /* Mobile-first: stack vertical -> dos columnas en >=lg */
   .arch__layout {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: var(--space-32);
+    grid-template-columns: 1fr;
+    gap: var(--space-24);
     align-items: start;
   }
-  @media (max-width: 900px) {
+  @media (min-width: 1024px) {
     .arch__layout {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1.4fr 1fr;
+      gap: var(--space-32);
     }
   }
   .arch__ascii {
     margin: 0;
-    padding: var(--space-24);
+    padding: var(--space-16);
     background: var(--color-surface);
     border: 1px solid rgba(var(--niche-accent-rgb), 0.2);
     border-radius: var(--radius-md);
     overflow-x: auto;
-    font-size: var(--font-size-11);
+    font-size: var(--font-size-10);
     line-height: 1.4;
     color: var(--niche-accent);
     white-space: pre;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (min-width: 640px) {
+    .arch__ascii {
+      padding: var(--space-24);
+      font-size: var(--font-size-11);
+    }
   }
   .arch__layers {
     list-style: none;

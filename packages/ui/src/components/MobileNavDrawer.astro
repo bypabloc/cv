@@ -1,0 +1,233 @@
+---
+/**
+ * @component MobileNavDrawer
+ * @description Drawer mobile (<dialog>) que se abre con el hamburger del Nav.
+ *   En desktop (>= 768px) se oculta por CSS. Recibe los mismos items + locale
+ *   switcher que el Nav inline.
+ *
+ *   El logic JS vive en initMobileNav() del barrel @portfolio/ui y se monta
+ *   en SitePageLayout (despues de view-transitions).
+ *
+ * @props {Array<{href, label}>} items - Items del menu (mismos que Nav)
+ * @props {'es'|'en'} [currentLocale] - locale actual
+ * @props {string} [otherLocaleHref] - path al otro locale
+ * @props {string} [closeLabel] - aria-label del boton cerrar
+ */
+interface NavItem {
+  href: string
+  label: string
+}
+
+interface Props {
+  items: NavItem[]
+  currentLocale?: 'es' | 'en'
+  otherLocaleHref?: string
+  closeLabel?: string
+}
+
+const {
+  items,
+  currentLocale = 'es',
+  otherLocaleHref,
+  closeLabel = currentLocale === 'es' ? 'Cerrar menú' : 'Close menu',
+} = Astro.props
+
+const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
+const navLabel = currentLocale === 'es' ? 'Menú principal' : 'Main menu'
+---
+
+<dialog
+  class="mobile-nav-drawer"
+  data-mobile-nav-dialog
+  aria-label={navLabel}
+>
+  <div class="mobile-nav-drawer__inner">
+    <header class="mobile-nav-drawer__header">
+      <span class="mobile-nav-drawer__title text-mono-label">{navLabel}</span>
+      <button
+        type="button"
+        class="mobile-nav-drawer__close"
+        data-mobile-nav-close
+        aria-label={closeLabel}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 5L15 15M15 5L5 15"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </header>
+    <nav aria-label={navLabel}>
+      <ul class="mobile-nav-drawer__list">
+        {
+          items.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class:list={[
+                  'mobile-nav-drawer__link',
+                  Astro.url.pathname === item.href && 'is-current',
+                ]}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    {
+      otherLocaleHref && (
+        <footer class="mobile-nav-drawer__footer">
+          <a class="mobile-nav-drawer__locale" href={otherLocaleHref}>
+            {otherLocaleLabel}
+          </a>
+        </footer>
+      )
+    }
+  </div>
+</dialog>
+
+<style>
+  .mobile-nav-drawer {
+    /* Reset dialog defaults */
+    padding: 0;
+    border: none;
+    background: var(--color-surface);
+    color: var(--color-text);
+    /* Fullscreen-ish drawer desde derecha */
+    margin: 0 0 0 auto;
+    width: min(100%, 320px);
+    height: 100dvh;
+    max-height: 100dvh;
+    max-width: 100%;
+    border-left: 1px solid var(--color-border);
+  }
+  .mobile-nav-drawer::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .mobile-nav-drawer[open] {
+    animation: drawer-slide-in var(--motion-base) var(--easing-out);
+  }
+  .mobile-nav-drawer[open]::backdrop {
+    animation: drawer-backdrop-fade var(--motion-base) var(--easing-out);
+  }
+  @keyframes drawer-slide-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  @keyframes drawer-backdrop-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-nav-drawer[open],
+    .mobile-nav-drawer[open]::backdrop {
+      animation: none;
+    }
+  }
+  .mobile-nav-drawer__inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: var(--space-24) var(--space-24) var(--space-32);
+    gap: var(--space-24);
+  }
+  .mobile-nav-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+  }
+  .mobile-nav-drawer__title {
+    color: var(--color-text-muted);
+  }
+  .mobile-nav-drawer__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color var(--motion-fast) var(--easing-out);
+  }
+  .mobile-nav-drawer__close:hover,
+  .mobile-nav-drawer__close:focus-visible {
+    border-color: var(--color-border-strong);
+  }
+  .mobile-nav-drawer__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    flex: 1;
+  }
+  .mobile-nav-drawer__link {
+    display: block;
+    padding: var(--space-16) var(--space-12);
+    font-size: var(--font-size-20);
+    font-weight: 600;
+    color: var(--color-text);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--motion-fast) var(--easing-out);
+  }
+  .mobile-nav-drawer__link:hover,
+  .mobile-nav-drawer__link:focus-visible,
+  .mobile-nav-drawer__link.is-current {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+  .mobile-nav-drawer__link.is-current {
+    color: var(--niche-accent, var(--color-primary));
+  }
+  .mobile-nav-drawer__footer {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-16);
+  }
+  .mobile-nav-drawer__locale {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8) var(--space-16);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-12);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--color-border);
+  }
+  .mobile-nav-drawer__locale:hover,
+  .mobile-nav-drawer__locale:focus-visible {
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+  }
+  /* En desktop (>= md) el drawer no se usa */
+  @media (min-width: 768px) {
+    .mobile-nav-drawer[open] {
+      display: none;
+    }
+  }
+</style>

@@ -60,15 +60,22 @@ const remaining = Math.max(0, skills.length - visibleSkills.length)
 </article>
 
 <style>
+  /* Mobile-first */
   .exp-card {
-    padding: var(--space-24);
+    padding: var(--space-20);
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
+    overflow-wrap: break-word;
     transition:
       border-color var(--motion-fast) var(--easing-out),
       transform var(--motion-fast) var(--easing-out),
       box-shadow var(--motion-fast) var(--easing-out);
+  }
+  @media (min-width: 640px) {
+    .exp-card {
+      padding: var(--space-24);
+    }
   }
   .exp-card:hover {
     border-color: var(--color-border-strong);

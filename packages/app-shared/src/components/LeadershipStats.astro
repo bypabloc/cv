@@ -105,14 +105,24 @@ const pillars = isEs
 </section>
 
 <style>
+  /* Mobile-first */
   .leadership {
-    padding-block: var(--space-72);
+    padding-block: var(--space-40);
   }
   .leadership__header {
     display: grid;
-    gap: var(--space-16);
-    margin-bottom: var(--space-40);
+    gap: var(--space-12);
+    margin-bottom: var(--space-24);
     max-width: 720px;
+  }
+  @media (min-width: 768px) {
+    .leadership {
+      padding-block: var(--space-72);
+    }
+    .leadership__header {
+      gap: var(--space-16);
+      margin-bottom: var(--space-40);
+    }
   }
   .leadership__eyebrow {
     display: inline-flex;
@@ -135,13 +145,21 @@ const pillars = isEs
   }
   .leadership__stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: var(--space-24);
-    margin: 0 0 var(--space-56) 0;
-    padding: var(--space-32);
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-16);
+    margin: 0 0 var(--space-32) 0;
+    padding: var(--space-20);
     background: var(--color-surface);
     border: 1px solid rgba(var(--niche-accent-rgb), 0.25);
     border-radius: var(--radius-md);
+  }
+  @media (min-width: 768px) {
+    .leadership__stats {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--space-24);
+      margin-bottom: var(--space-56);
+      padding: var(--space-32);
+    }
   }
   .leadership__stat {
     display: grid;
@@ -156,17 +174,27 @@ const pillars = isEs
   }
   .leadership__pillars {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: var(--space-20);
+    grid-template-columns: 1fr;
+    gap: var(--space-16);
   }
   .leadership__pillar {
-    padding: var(--space-24);
+    padding: var(--space-20);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     display: grid;
     gap: var(--space-12);
+    overflow-wrap: break-word;
     transition: border-color var(--motion-slow) var(--easing-out);
+  }
+  @media (min-width: 640px) {
+    .leadership__pillars {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--space-20);
+    }
+    .leadership__pillar {
+      padding: var(--space-24);
+    }
   }
   .leadership__pillar:hover {
     border-color: rgba(var(--niche-accent-rgb), 0.4);

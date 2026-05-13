@@ -87,21 +87,32 @@ const fallbackLabel = locale === 'es' ? '(habilitar JS)' : '(enable JS)'
 </script>
 
 <style>
+  /* Mobile-first */
   .contact-links {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--space-16);
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
   }
   .contact-links__item {
     display: block;
-    padding: var(--space-20);
+    padding: var(--space-16);
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     color: var(--color-text);
+    overflow-wrap: break-word;
     transition:
       border-color var(--motion-fast) var(--easing-out),
       transform var(--motion-fast) var(--easing-out);
+  }
+  @media (min-width: 640px) {
+    .contact-links {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-16);
+    }
+    .contact-links__item {
+      padding: var(--space-20);
+    }
   }
   .contact-links__item:hover {
     border-color: var(--color-border-strong);

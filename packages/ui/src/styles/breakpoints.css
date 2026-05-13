@@ -1,0 +1,74 @@
+/**
+ * @config breakpoints.css
+ * @description Sistema de breakpoints Tailwind-standard del portfolio.
+ *   Mobile-first: el CSS base es para 320-639px. Cada @media (min-width)
+ *   agrega progresivamente para tablet/desktop/wide.
+ *
+ *   Breakpoints:
+ *     sm  >= 640px   (large mobile / phablet)
+ *     md  >= 768px   (tablet portrait)
+ *     lg  >= 1024px  (tablet landscape / small desktop)
+ *     xl  >= 1280px  (desktop)
+ *     2xl >= 1536px  (wide desktop)
+ *
+ *   Tokens fuente: tokens.css (--bp-sm ... --bp-2xl).
+ *   Utility classes responsive expuestas globalmente.
+ *
+ *   Nota sobre especificidad: las utilities usan selectores de atributo
+ *   `[class~="..."]` para ganar especificidad sobre la clase simple del
+ *   componente, sin recurrir a !important. Equivale en peso al selector
+ *   `.foo` pero combinado en cadena gana naturalmente.
+ *
+ *   IMPORTANTE: breakpoints.css se importa DESPUES de global.css en
+ *   BaseLayout.astro para garantizar cascade final.
+ */
+
+/* === Utilities de visibilidad responsive === */
+
+/* Visible solo en mobile (< md = 768px) */
+.only-mobile {
+  display: revert;
+}
+@media (min-width: 768px) {
+  [class~="only-mobile"] {
+    display: none;
+  }
+}
+
+/* Oculto en mobile (visible >= md) */
+[class~="hidden-mobile"] {
+  display: none;
+}
+@media (min-width: 768px) {
+  [class~="hidden-mobile"] {
+    display: revert;
+  }
+}
+
+/* Visible solo en tablet (>= md y < lg) */
+[class~="only-tablet"] {
+  display: none;
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  [class~="only-tablet"] {
+    display: revert;
+  }
+}
+
+/* Visible solo en desktop (>= lg = 1024px) */
+[class~="only-desktop"] {
+  display: none;
+}
+@media (min-width: 1024px) {
+  [class~="only-desktop"] {
+    display: revert;
+  }
+}
+
+/* === Container fluido (mobile-first) === */
+.container-fluid {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--container-padding-fluid);
+  max-width: var(--container-wide);
+}

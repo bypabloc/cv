@@ -59,17 +59,18 @@ const { items, eyebrow } = Astro.props
 </section>
 
 <style>
+  /* Mobile-first */
   .stats-bar {
-    padding-block: var(--space-56);
+    padding-block: var(--space-40);
     border-block: 1px solid var(--color-border);
   }
   .stats-bar__eyebrow {
-    margin-bottom: var(--space-32);
+    margin-bottom: var(--space-24);
   }
   .stats-bar__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: var(--space-32);
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-20);
     margin: 0;
   }
   .stats-bar__item {
@@ -85,6 +86,7 @@ const { items, eyebrow } = Astro.props
     align-items: baseline;
     gap: var(--space-4);
     margin: 0;
+    overflow-wrap: break-word;
   }
   .stats-bar__value {
     font-variation-settings: 'wght' 800;
@@ -93,10 +95,16 @@ const { items, eyebrow } = Astro.props
     color: var(--niche-accent);
     font-weight: 700;
   }
-  @media (max-width: 640px) {
+  @media (min-width: 768px) {
+    .stats-bar {
+      padding-block: var(--space-56);
+    }
+    .stats-bar__eyebrow {
+      margin-bottom: var(--space-32);
+    }
     .stats-bar__grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--space-24);
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--space-32);
     }
   }
 </style>

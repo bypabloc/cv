@@ -155,14 +155,24 @@ const cards = isEs
 </section>
 
 <style>
+  /* Mobile-first */
   .ai-workflow {
-    padding-block: var(--space-72);
+    padding-block: var(--space-40);
   }
   .ai-workflow__header {
     display: grid;
-    gap: var(--space-16);
-    margin-bottom: var(--space-40);
+    gap: var(--space-12);
+    margin-bottom: var(--space-24);
     max-width: 720px;
+  }
+  @media (min-width: 768px) {
+    .ai-workflow {
+      padding-block: var(--space-72);
+    }
+    .ai-workflow__header {
+      gap: var(--space-16);
+      margin-bottom: var(--space-40);
+    }
   }
   .ai-workflow__eyebrow {
     display: inline-flex;
@@ -185,8 +195,14 @@ const cards = isEs
   }
   .ai-workflow__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-20);
+    grid-template-columns: 1fr;
+    gap: var(--space-16);
+  }
+  @media (min-width: 640px) {
+    .ai-workflow__grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-20);
+    }
   }
   .ai-workflow__card {
     border: 1px solid rgba(var(--niche-accent-rgb), 0.2);
@@ -202,7 +218,13 @@ const cards = isEs
   .ai-workflow__card-inner {
     display: grid;
     gap: var(--space-12);
-    padding: var(--space-24);
+    padding: var(--space-20);
+    overflow-wrap: break-word;
+  }
+  @media (min-width: 640px) {
+    .ai-workflow__card-inner {
+      padding: var(--space-24);
+    }
   }
   .ai-workflow__card-label {
     color: var(--niche-accent);

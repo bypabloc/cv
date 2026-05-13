@@ -9,6 +9,7 @@
  */
 
 export { initMagneticCursor } from './lib/magnetic-cursor'
+export { initMobileNav } from './lib/mobile-nav'
 export {
   getNicheTokens,
   NICHE_TOKENS,

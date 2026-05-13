@@ -99,18 +99,20 @@ const { title, issuer, date, motivation, url, featured = true } = Astro.props
     opacity: 0.6;
     pointer-events: none;
   }
+  /* Mobile-first: stack vertical en <640px */
   .award-card__inner {
     position: relative;
     z-index: 1;
     display: flex;
-    gap: var(--space-20);
-    padding: var(--space-32);
+    flex-direction: column;
+    gap: var(--space-16);
+    padding: var(--space-20);
     align-items: flex-start;
   }
   .award-card__badge {
     flex-shrink: 0;
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-md);
     background: rgba(var(--niche-accent-rgb), 0.12);
     border: 1px solid rgba(var(--niche-accent-rgb), 0.3);
@@ -118,6 +120,26 @@ const { title, issuer, date, motivation, url, featured = true } = Astro.props
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  .award-card__badge svg {
+    width: 24px;
+    height: 24px;
+  }
+  /* >= sm: horizontal layout + tamano completo */
+  @media (min-width: 640px) {
+    .award-card__inner {
+      flex-direction: row;
+      gap: var(--space-20);
+      padding: var(--space-32);
+    }
+    .award-card__badge {
+      width: 64px;
+      height: 64px;
+    }
+    .award-card__badge svg {
+      width: 32px;
+      height: 32px;
+    }
   }
   .award-card__content {
     flex-grow: 1;
@@ -162,10 +184,5 @@ const { title, issuer, date, motivation, url, featured = true } = Astro.props
   }
   .award-card__link:hover {
     box-shadow: 0 4px 20px var(--niche-glow);
-  }
-  @media (max-width: 640px) {
-    .award-card__inner {
-      flex-direction: column;
-    }
   }
 </style>

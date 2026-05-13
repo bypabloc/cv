@@ -105,11 +105,17 @@ const l = {
   .case-study__summary {
     list-style: none;
     cursor: pointer;
-    padding: var(--space-20) var(--space-24);
+    padding: var(--space-16) var(--space-20);
     display: flex;
     align-items: center;
-    gap: var(--space-16);
+    gap: var(--space-12);
     flex-wrap: wrap;
+  }
+  @media (min-width: 640px) {
+    .case-study__summary {
+      padding: var(--space-20) var(--space-24);
+      gap: var(--space-16);
+    }
   }
   .case-study__summary::-webkit-details-marker {
     display: none;
@@ -130,9 +136,15 @@ const l = {
   }
   .case-study__body {
     display: grid;
-    gap: var(--space-24);
-    padding: var(--space-20) var(--space-24) var(--space-24);
+    gap: var(--space-20);
+    padding: var(--space-16) var(--space-20) var(--space-20);
     border-top: 1px solid var(--color-border);
+  }
+  @media (min-width: 640px) {
+    .case-study__body {
+      gap: var(--space-24);
+      padding: var(--space-20) var(--space-24) var(--space-24);
+    }
   }
   .case-study__block,
   .case-study__metrics {

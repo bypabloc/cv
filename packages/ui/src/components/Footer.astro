@@ -50,10 +50,17 @@ const copy =
 </footer>
 
 <style>
+  /* Mobile-first */
   .site-footer {
     border-top: 1px solid var(--color-border);
-    padding-block: var(--space-32);
-    margin-top: var(--space-80);
+    padding-block: var(--space-24);
+    margin-top: var(--space-56);
+  }
+  @media (min-width: 768px) {
+    .site-footer {
+      padding-block: var(--space-32);
+      margin-top: var(--space-80);
+    }
   }
   .site-footer__inner {
     display: flex;

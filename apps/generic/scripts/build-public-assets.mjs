@@ -18,6 +18,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
 const SITE_URL = process.env.SITE_URL ?? 'https://hub.the-full-stack.com'
 const NICHE = 'generic'
+const ATS_KEYWORDS = [
+  'Senior Full Stack Developer',
+  'Senior Software Engineer',
+  'Vue 3',
+  'Nuxt',
+  'TypeScript',
+  'Django',
+  'Python',
+  'AWS',
+  'Microservicios',
+  'PostgreSQL',
+  'Fintech LATAM',
+  'Tech Lead',
+  'Architect',
+  'Claude Code',
+]
 
 async function write(path, content) {
   const full = resolve(PUBLIC_DIR, path)
@@ -64,7 +80,13 @@ async function main() {
       description: 'ATS-friendly CV in English',
     },
   ]
-  const llms = buildLlmsTxt({ siteUrl: SITE_URL, profile, niche: NICHE, pages })
+  const llms = buildLlmsTxt({
+    siteUrl: SITE_URL,
+    profile,
+    niche: NICHE,
+    pages,
+    atsKeywords: ATS_KEYWORDS,
+  })
   await write('llms.txt', llms)
 
   // 3. robots.txt

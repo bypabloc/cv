@@ -1,8 +1,18 @@
 # Pablo Contreras — architect
 
-> Frontend Architect with deep microservices experience. 8+ years designing scalable systems with Vue/Nuxt, Django, AWS and microfrontends.
+> Frontend Architect with deep microservices and distributed systems experience. 12+ years designing scalable architectures: microfrontend (Vue/Nuxt) + 8+ Django microservices + AWS API Gateway + PostgreSQL/Redis/SQS + observability with CloudWatch/Sentry.
 
 Canonical URL: https://architect.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Highlights — architect
+
+- Microfrontend (Vue/Nuxt) + 8+ Django microservices on AWS
+- API Gateway with JWT + rate limiting
+- PostgreSQL 18 + RDS + S3 + Redis + SQS + CloudWatch/Sentry
+
+## Keywords
+
+Frontend Architect · Software Architect · Microservices · Microfrontend · Distributed Systems · System Design · Vue 3 · Nuxt · TypeScript · Django · AWS · API Gateway · PostgreSQL · Clean Architecture
 
 ## Pages
 
@@ -17,4 +27,9 @@ Canonical URL: https://architect.the-full-stack.com. Author: Pablo Contreras (by
 - LinkedIn: https://linkedin.com/in/bypabloc
 - GitHub: https://github.com/bypabloc
 - Medium: https://bypablo.medium.com
+- Website: https://the-full-stack.com
+
+## Disclosure
+
+All code in linked repositories is reviewed, tested and maintained by Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators — never as authors. AI attribution is forbidden in commits and PRs by company policy. This llms.txt is honest white-hat content; no prompt injection or hidden instructions.
 

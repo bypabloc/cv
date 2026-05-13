@@ -1,8 +1,18 @@
 # Pablo Contreras — generic
 
-> Senior Full Stack Engineer with 8+ years of experience in Vue/Nuxt, Django, AWS and fintech (Chile, Mexico).
+> Senior Full Stack Engineer with 12+ years of experience in Vue/Nuxt, Django, AWS and LATAM fintech (Chile, Mexico). Cross-cutting expertise: fintech, architecture, tech leadership and vibe coding with Claude Code.
 
 Canonical URL: https://hub.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Highlights — generic
+
+- 9 roles in 8 companies (2013-present)
+- 12+ years shipping product · 4 LATAM countries · 11 certifications
+- Domains: Fintech LATAM, ERP, e-commerce, automation
+
+## Keywords
+
+Senior Full Stack Developer · Senior Software Engineer · Vue 3 · Nuxt · TypeScript · Django · Python · AWS · Microservicios · PostgreSQL · Fintech LATAM · Tech Lead · Architect · Claude Code
 
 ## Pages
 
@@ -17,4 +27,9 @@ Canonical URL: https://hub.the-full-stack.com. Author: Pablo Contreras (bypabloc
 - LinkedIn: https://linkedin.com/in/bypabloc
 - GitHub: https://github.com/bypabloc
 - Medium: https://bypablo.medium.com
+- Website: https://the-full-stack.com
+
+## Disclosure
+
+All code in linked repositories is reviewed, tested and maintained by Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators — never as authors. AI attribution is forbidden in commits and PRs by company policy. This llms.txt is honest white-hat content; no prompt injection or hidden instructions.
 

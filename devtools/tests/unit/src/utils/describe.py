@@ -2,7 +2,7 @@
 
 Path mirroring: devtools/utils/describe.py -> this file.
 
-Cubre el contrato basico que cada flags.py debe respetar:
+Cubre el contrato básico que cada flags.py debe respetar:
 - describe() retorna dict con name/kind/summary/commands/flags
 - kind es 'subcommand' o 'monocommand'
 - En subcommand-kind, cada command tiene name/summary/flags/destructive/deprecated
@@ -84,7 +84,7 @@ class TestDescribeContract:
         if describe_fn is None:
             pytest.skip(f'{script_name} no implementa describe()')
         d = describe_fn()
-        assert d['summary'].strip(), f'{script_name}: summary esta vacio'
+        assert d['summary'].strip(), f'{script_name}: summary esta vacío'
 
     @pytest.mark.parametrize('script_name', SCRIPTS)
     def test_subcommand_scripts_have_commands(self, script_name):

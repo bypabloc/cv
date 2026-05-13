@@ -1,14 +1,14 @@
 """verify main.
 
 Dada una lista de archivos cambiados (staged/modified/all_changed):
-1. Clasifica cada archivo por modulo y tipo (model, admin, service, view, etc.).
-2. Determina las verificaciones aplicables segun .claude/rules/verify-before-done.md.
-3. Si --execute: corre cada verificacion, captura exit + output truncado.
+1. Clasifica cada archivo por módulo y tipo (model, admin, service, view, etc.).
+2. Determina las verificaciones aplicables según .claude/rules/verify-before-done.md.
+3. Si --execute: corre cada verificación, captura exit + output truncado.
 4. Reporta resultado humano (texto) o JSON estructurado (--json).
 
 Exit codes:
 - 0: todas las verificaciones pasaron (o sin --execute).
-- 1: alguna verificacion fallo (solo con --execute).
+- 1: alguna verificación fallo (solo con --execute).
 - 2: error de invocacion (sin archivos cambiados, etc).
 """
 
@@ -33,7 +33,7 @@ logger = logging.getLogger('verify')
 
 @dataclass
 class Verification:
-    """Una verificacion sugerida para un archivo."""
+    """Una verificación sugerida para un archivo."""
 
     reason: str
     cmd: str
@@ -70,7 +70,7 @@ def collect_changed_files(flags: dict[str, Any]) -> list[str]:
 
     Delegates to ``shared.scan_helper.files_changed``: la deteccion de
     archivos por estado git vive en ``devtools/scan/`` (fuente canonica).
-    Asi heredamos el filtrado de archivos eliminados, respeto a
+    Así heredamos el filtrado de archivos eliminados, respeto a
     ``.gitignore``, y soporte para todos los modos git de scan.
     """
     git_mode = _resolve_git_mode(flags)
@@ -347,7 +347,7 @@ def execute_verifications(verifications: list[Verification]) -> int:
             )
         except subprocess.TimeoutExpired:
             v.exit_code = -1
-            v.output = '<TIMEOUT despues de 120s>'
+            v.output = '<TIMEOUT después de 120s>'
         except OSError as e:
             v.exit_code = -2
             v.output = f'<ERROR ejecutando: {e}>'
@@ -402,11 +402,11 @@ def render_text(
 
     if not verifications:
         logger.info('')
-        logger.info('verify: ninguna verificacion aplica para estos archivos.')
+        logger.info('verify: ninguna verificación aplica para estos archivos.')
         return
 
     logger.info('')
-    logger.info('Verificaciones sugeridas (%d unicas):', len(verifications))
+    logger.info('Verificaciones sugeridas (%d únicas):', len(verifications))
     for v in verifications:
         marker = _verification_marker(v, executed=executed)
         logger.info('  - %s%s', v.reason, marker)

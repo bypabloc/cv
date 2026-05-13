@@ -1,6 +1,6 @@
 /**
  * @config tokens.css
- * @description API publica del DS: CSS vars consumidas por TODOS los componentes.
+ * @description API pública del DS: CSS vars consumidas por TODOS los componentes.
  *   Cambiar un token = cambiar 1 linea, sin recompilar.
  *
  *   Modo base = system (respeta prefers-color-scheme). Toggle aplica clase

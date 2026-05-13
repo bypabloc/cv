@@ -31,7 +31,7 @@ def cmd_help(flags: dict[str, Any]) -> int:
             [
                 ('up', 'Iniciar servicios', '--detach --build --env=<env>'),
                 ('down', 'Detener servicios', '--volumes'),
-                ('build', 'Construir imagenes', '--no-cache'),
+                ('build', 'Construir imágenes', '--no-cache'),
                 (
                     'rebuild',
                     'Reconstruir desde cero',

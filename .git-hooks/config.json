@@ -1,5 +1,5 @@
 {
-  "_descripcion": "Configuracion de hooks Git compartidos para portfolio (Astro 6 monorepo).",
+  "_descripcion": "Configuración de hooks Git compartidos para portfolio (Astro 6 monorepo).",
   "_documentacion": "Pre-commit liviano (Biome lint sobre staged, <10s). Pre-push estricto (lint + typecheck + tests + coverage + build + feature E2E).",
   "_nota": "Archivo compartido en el repositorio. Cambios afectan a todo el equipo y CI/CD.",
   "pre-commit": {
@@ -13,7 +13,7 @@
       "frontend_purity": {
         "name": "Frontend Type Purity (TypeScript only)",
         "enabled": true,
-        "description": "Prohibe archivos .js/.jsx/.mjs/.cjs en apps/* y packages/* excepto allowlist: *.config.{js,mjs,cjs} y vitest.config.{js,mjs,cjs} en raiz del modulo."
+        "description": "Prohibe archivos .js/.jsx/.mjs/.cjs en apps/* y packages/* excepto allowlist: *.config.{js,mjs,cjs} y vitest.config.{js,mjs,cjs} en raíz del módulo."
       }
     }
   },
@@ -28,7 +28,7 @@
       "frontend_purity": {
         "name": "Frontend Type Purity (TypeScript only)",
         "enabled": true,
-        "description": "Prohibe .js/.jsx/.mjs/.cjs en frontend, salvo configs en raiz."
+        "description": "Prohibe .js/.jsx/.mjs/.cjs en frontend, salvo configs en raíz."
       },
       "mirror_enforcement": {
         "name": "TDD Mirror Enforcement (source <-> test)",
@@ -53,7 +53,7 @@
       "build": {
         "name": "Static Build (pnpm build)",
         "enabled": true,
-        "description": "Build estatico de todas las apps Astro. Falla si Astro/Vite no genera dist/."
+        "description": "Build estático de todas las apps Astro. Falla si Astro/Vite no genera dist/."
       },
       "feature_tests": {
         "name": "Feature tests (Playwright E2E via Docker)",

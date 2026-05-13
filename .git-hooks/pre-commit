@@ -3,9 +3,9 @@
 
 Ejecuta validaciones livianas sobre archivos staged:
   1. Conformance: Biome lint + format check
-  2. Frontend purity: prohibe .js/.jsx/.mjs/.cjs salvo configs en raiz
+  2. Frontend purity: prohibe .js/.jsx/.mjs/.cjs salvo configs en raíz
 
-Objetivo: <10s en commits tipicos. Coverage, typecheck y build se ejecutan
+Objetivo: <10s en commits típicos. Coverage, typecheck y build se ejecutan
 en pre-push (mas pesado).
 
 Skip por env:
@@ -81,7 +81,7 @@ def step_purity(files: list[str], step_label: str) -> int:
     err(f'{len(violations)} archivo(s) JavaScript prohibido(s):')
     for f in violations:
         out(f'  - {f}')
-    tip('Renombrar a .ts (o .astro). Configs en raiz con sufijo .config.{js,mjs,cjs} estan permitidos.')
+    tip('Renombrar a .ts (o .astro). Configs en raíz con sufijo .config.{js,mjs,cjs} están permitidos.')
     return fail(
         f'Paso {step_label}: Frontend Purity - FALLO',
         'COMMIT BLOQUEADO',

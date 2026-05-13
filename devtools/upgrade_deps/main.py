@@ -57,7 +57,7 @@ NPM_MANIFESTS = (
     PROJECT_ROOT / 'landing' / 'package.json',
 )
 
-# Concurrencia: limita a N requests simultaneos al mismo registry para no
+# Concurrencia: limita a N requests simultáneos al mismo registry para no
 # saturar PyPI/npm si un manifest es grande.
 _CONCURRENCY = 10
 
@@ -185,7 +185,7 @@ def _write_pyproject_toml(path: Path, results: list[dict]) -> int:
     parser no encontro la linea (`line_no == 0`), se omite — escenario raro
     (e.g. spec en multiples lineas) que no soportamos para no corromper formato.
 
-    Retorna numero de cambios escritos.
+    Retorna número de cambios escritos.
     """
     upgrades = [r for r in results if r['action'] == ACTION_UP]
     if not upgrades:

@@ -1,6 +1,6 @@
 # Docker - Portfolio
 
-> Orquestacion multi-ambiente para las 6 apps Astro del portfolio + nginx.
+> Orquestación multi-ambiente para las 6 apps Astro del portfolio + nginx.
 
 ## Ambientes
 
@@ -9,11 +9,11 @@
 | local    | 9970         | `pnpm dev` (HMR) | Desarrollo con hot reload |
 | dev      | 9971         | `pnpm dev` (HMR, code baked) | Desarrollo remoto |
 | test     | 9972         | `pnpm build` + `preview` | E2E tests aislados |
-| prod     | 9973         | `pnpm build` + `preview` | Build de produccion |
+| prod     | 9973         | `pnpm build` + `preview` | Build de producción |
 
 ## Mapping de subdominios (todos los ambientes)
 
-| Subdominio          | App         | Equivalente en produccion       |
+| Subdominio          | App         | Equivalente en producción       |
 | ------------------- | ----------- | ------------------------------- |
 | `localhost`         | apps/generic   | the-full-stack.com           |
 | `hub.localhost`     | apps/hub       | hub.the-full-stack.com       |
@@ -31,14 +31,14 @@ docker/
 ├── dockerfiles/{env}/feature/Dockerfile # Playwright shared (solo local/test)
 ├── docker-compose/{env}.yml             # Compose por ambiente
 ├── nginx/{env}.conf                     # Nginx config por ambiente
-├── nginx/error-pages/                   # Paginas de error HTML
-├── nginx/services-page/                 # Indice estatico de servicios.localhost
+├── nginx/error-pages/                   # Páginas de error HTML
+├── nginx/services-page/                 # Indice estático de servicios.localhost
 ├── env/.example                         # Template de variables
 ├── env/.{env}                           # Variables por ambiente (gitignored)
 └── scripts/                             # Entrypoint scripts
 ```
 
-## Inicio rapido
+## Inicio rápido
 
 ```bash
 # 1. Copiar env template (opcional, valores por default funcionan)
@@ -68,7 +68,7 @@ docker compose -p portfolio -f docker/docker-compose/local.yml down
 
 ## Servicios
 
-| Servicio   | Imagen        | Descripcion |
+| Servicio   | Imagen        | Descripción |
 | ---------- | ------------- | ----------- |
 | nginx      | nginx:alpine  | Reverse proxy + subdominios |
 | generic    | node:24-alpine | Astro 6 dev/preview server |
@@ -96,7 +96,7 @@ docker compose -p portfolio -f docker/docker-compose/local.yml \
 ## Notas
 
 - Node 24 (Alpine) + pnpm 11.0.9 (via corepack) en todos los containers
-- Las 6 apps exponen puerto 4321 internamente. Solo nginx publica al host
+- Las 6 apps exponen puerto 4321 internamente. Solo nginx pública al host
 - En **local** y **dev**: bind mount del codigo fuente -> HMR funciona
 - En **test** y **prod**: `pnpm build` + `pnpm preview` (sin bind mount, sin HMR)
 - `/etc/hosts` no requiere entradas: `*.localhost` resuelve a 127.0.0.1 por RFC

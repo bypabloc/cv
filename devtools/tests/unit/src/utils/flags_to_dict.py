@@ -3,7 +3,7 @@
 Path mirroring: devtools/utils/flags_to_dict.py -> this file.
 
 Cubre el cambio de comportamiento de Fase 6: el split por ``|`` ahora es
-opt-in via el parametro ``list_flags``. Antes cualquier valor con ``|``
+opt-in via el parámetro ``list_flags``. Antes cualquier valor con ``|``
 se convertia silenciosamente en lista, lo cual sorprendia cuando el
 flag esperaba un string.
 """
@@ -195,7 +195,7 @@ class TestDoubleDashPassthrough:
         }
 
     def test_flags_after_double_dash_kept_verbatim(self):
-        # Esto es el caso clave: '--list' despues del '--' NO se parsea
+        # Esto es el caso clave: '--list' después del '--' NO se parsea
         # como flag CLI; va al subproceso tal cual.
         from utils.flags_to_dict import flags_to_dict
 

@@ -16,7 +16,7 @@ env:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Quality gates: lint + typecheck + unit + build estatico.
+  # Quality gates: lint + typecheck + unit + build estático.
   # E2E (Playwright) NO corre en CI: es lento y los tests reales viven en
   # pre-push del hook local. Ver .claude/rules/verify-before-done.md.
   # --------------------------------------------------------------------------

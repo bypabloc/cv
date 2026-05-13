@@ -1,7 +1,7 @@
 """Module definitions for project scanning.
 
 Each module is a logical region of the project with specific rules for
-file inclusion/exclusion. Modules are NOT necessarily 1:1 with directories —
+file inclusión/exclusión. Modules are NOT necessarily 1:1 with directories —
 they are code-defined profiles that map to scanning behavior.
 
 Purpose-specific excludes allow different tools (conformance, formatter,
@@ -82,7 +82,7 @@ def _package_module(pkg_name: str) -> dict[str, Any]:
 MODULES: dict[str, dict[str, Any]] = {
     # Server stub. NO existe backend en el portfolio; este module se mantiene
     # solo para que devtools/hooks/main.py (que verifica server/manage.py)
-    # no falle. La deteccion de archivos retorna vacio porque no hay .py
+    # no falle. La deteccion de archivos retorna vacío porque no hay .py
     # de production en server/.
     'server': {
         'description': 'Stub placeholder (no backend in portfolio)',
@@ -126,7 +126,7 @@ MODULES: dict[str, dict[str, Any]] = {
     },
 }
 
-# Inyectar dinamicamente las 6 apps Astro y los 5 packages.
+# Inyectar dinámicamente las 6 apps Astro y los 5 packages.
 for _app in PORTFOLIO_APPS:
     MODULES[_app] = _astro_app_module(_app)
 

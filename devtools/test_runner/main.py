@@ -50,14 +50,14 @@ def main(flags: dict[str, Any]) -> int:
     if not modules:
         from shared.console import _warn
 
-        _warn('No hay modulos que soporten ese tipo de test')
+        _warn('No hay módulos que soporten ese tipo de test')
         return 0 if skip_empty else 1
 
     mode_label = f'git-mode={git_mode}' if git_mode else 'full'
     _header(f'test_runner [{test_type}] [{env}] [{mode_label}]')
 
     if verbose:
-        print(f'  Modulos: {", ".join(modules)}')
+        print(f'  Módulos: {", ".join(modules)}')
 
     # Docker es necesario para server, dashboard, landing. Devtools corre en
     # el host (Python 3.14 via uv) y NO depende de Docker — saltar el

@@ -53,8 +53,8 @@ class TestClassifyFrontendFilesDashboard:
     def test_shadcn_ui_source_is_excluded(self, tmp_path):
         """`components/ui/` (shadcn copy-paste) excluido del coverage 80%.
 
-        Razon: shadcn/ui son componentes copy-paste verbatim del registry,
-        no se modifican con logica de negocio. Logica testeable vive en
+        Razón: shadcn/ui son componentes copy-paste verbatim del registry,
+        no se modifican con lógica de negocio. Lógica testeable vive en
         components/features/ y modules/.
         """
         from shared.classification import classify_frontend_files
@@ -104,7 +104,7 @@ class TestClassifyFrontendFilesDashboard:
         ) in result['unit_pairs']
 
     def test_lib_root_is_supported(self, tmp_path):
-        """Sources en dashboard/lib/ tambien tienen mirror obligatorio."""
+        """Sources en dashboard/lib/ también tienen mirror obligatorio."""
         from shared.classification import classify_frontend_files
 
         (tmp_path / 'dashboard' / 'lib' / 'validators').mkdir(parents=True)
@@ -145,8 +145,8 @@ class TestClassifyFrontendFilesDashboard:
     def test_tsx_source_pairs_with_test_ts(self, tmp_path):
         """`.tsx` source mapea a `.test.ts` en mirror (siempre).
 
-        Usa `dashboard/modules/items/schemas/` (logica testeable Zod, NO
-        excluido) en lugar de actions/api/store que estan excluidos por
+        Usa `dashboard/modules/items/schemas/` (lógica testeable Zod, NO
+        excluido) en lugar de actions/api/store que están excluidos por
         ser wrappers thin testeados via E2E.
         """
         from shared.classification import classify_frontend_files
@@ -349,7 +349,7 @@ class TestClassifyFrontendFilesLanding:
     def test_astro_source_excluded_from_coverage(self, tmp_path):
         """`.astro` files (Astro components/pages) excluidos del coverage 80%.
 
-        Razon: Astro es template-only, no business logic. /pages/ es
+        Razón: Astro es template-only, no business logic. /pages/ es
         file-based routing testeado via E2E specs.
         """
         from shared.classification import classify_frontend_files

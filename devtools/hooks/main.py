@@ -66,7 +66,7 @@ def _print_no_changes(hook_type: str) -> None:
     out('=' * 80)
     out(
         green(
-            f'  SIN CAMBIOS EN MODULOS RELEVANTES — {label.upper()} permitido'
+            f'  SIN CAMBIOS EN MÓDULOS RELEVANTES — {label.upper()} permitido'
         )
     )
     out(

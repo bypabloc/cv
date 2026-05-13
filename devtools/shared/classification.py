@@ -110,7 +110,7 @@ def classify_server_files(
             unit_pairs.append((source, f))
             seen_tests.add(f)
 
-    # `feature` reemplaza al historico `integration` (mayo 2026). Aceptamos
+    # `feature` reemplaza al histórico `integration` (mayo 2026). Aceptamos
     # ambas paths para evitar romper checkouts antiguos durante la transicion;
     # el `feature/` es la fuente nueva.
     integration_tests = [
@@ -176,7 +176,7 @@ def _resolve_test_to_source(
     """Reverse mirror: given a test path, find an existing source on disk.
 
     Dashboard tests end in `.test.ts`; landing tests end in `.ts`. We probe
-    each candidate source extension and return the first that exists.
+    each candidate source extensión and return the first that exists.
     """
     relative = test_path.removeprefix(layout['test_prefix'])
     test_ext = layout['test_extension']

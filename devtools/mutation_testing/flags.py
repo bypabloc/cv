@@ -35,7 +35,7 @@ DEFAULTS: dict[str, Any] = {
 
 
 def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
-    """Procesa y valida las flags para el script mutation_testing.
+    """Procesa y válida las flags para el script mutation_testing.
 
     Args:
         flags_dict: Dict de flags ya procesado por ``run.py``.
@@ -44,7 +44,7 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
         Dict con flags validadas y defaults aplicados.
 
     Raises:
-        ValueError: si hay flags no permitidas o combinaciones invalidas.
+        ValueError: si hay flags no permitidas o combinaciones inválidas.
     """
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, DEFAULTS)
@@ -72,7 +72,7 @@ def _validate_category(flags_dict: dict[str, Any]) -> None:
         return
     if value not in VALID_CATEGORIES:
         msg = (
-            f'--category={value} invalido. '
+            f'--category={value} inválido. '
             f'Valores aceptados: {", ".join(VALID_CATEGORIES)}.'
         )
         raise ValueError(msg)

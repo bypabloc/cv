@@ -1,5 +1,5 @@
 #!/bin/sh
-# Entrypoint para apps Astro en modo preview (build estatico + serve).
+# Entrypoint para apps Astro en modo preview (build estático + serve).
 #
 # CORRE COMO ROOT al inicio para fixear permisos, luego cae a user app.
 

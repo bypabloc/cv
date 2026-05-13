@@ -6,7 +6,7 @@
  *   Si prefers-reduced-motion: reduce esta activo, marca todos visibles
  *   inmediatamente y retorna noop.
  *
- * @returns funcion disconnect para limpiar el observer (opcional)
+ * @returns función disconnect para limpiar el observer (opcional)
  *
  * @example
  *   // En BaseLayout.astro <script>:

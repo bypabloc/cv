@@ -6,7 +6,7 @@ delegates to ``shared.test_executors`` (server, dashboard, landing) or the local
 ``feature`` helper (Playwright) — y para ``devtools`` se invoca pytest en
 el host Python 3.14, fuera de Docker.
 
-Mayo 2026: el modulo top-level ``e2e`` fue eliminado. Ahora cada producto
+Mayo 2026: el módulo top-level ``e2e`` fue eliminado. Ahora cada producto
 (dashboard, landing) tiene su ``--type=feature`` mapeado a Playwright via
 ``test_runner.feature.run_feature``. Server tiene ``--type=feature``
 mapeado a pytest -m feature dentro de ``shared.test_executors``.
@@ -116,7 +116,7 @@ def execute_full_suites(
                 results[key] = run_server_tests(env, t, verbose, quiet=quiet)
             elif module in _all_frontend:
                 # Apps Astro o packages: usar el path generico de frontend tests
-                # (vitest run + coverage en cwd del modulo dentro del container).
+                # (vitest run + coverage en cwd del módulo dentro del container).
                 results[key] = _run_portfolio_frontend_tests(
                     env=env,
                     module=module,

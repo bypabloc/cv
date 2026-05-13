@@ -97,7 +97,7 @@ class TestDescribeFlag:
         assert payload['summary'].strip()
 
     def test_describe_does_not_execute_script(self):
-        # Si --describe se procesa antes de la validacion del script,
+        # Si --describe se procesa antes de la validación del script,
         # un script con flags requeridas (hooks --type) no debe explotar.
         payload = _run_cli(['hooks', '--describe', '--output=json'])
         assert payload['name'] == 'hooks'
@@ -126,7 +126,7 @@ class TestListFlags:
         # No top-level metadata, solo flags.
         assert 'name' not in payload
         assert 'commands' not in payload
-        # Contenido tipico de scan flags.
+        # Contenido típico de scan flags.
         assert 'git_mode' in payload
         assert 'module' in payload
 

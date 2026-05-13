@@ -255,7 +255,7 @@ def run_frontend_tests(
     if not pkg_script:
         valid = ', '.join(sorted(frontend_test_types(module)))
         err(
-            f'Tipo de test invalido para {module}: {test_type}. Validos: {valid}',
+            f'Tipo de test inválido para {module}: {test_type}. Válidos: {valid}',
         )
         return 1
 

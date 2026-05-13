@@ -24,14 +24,14 @@ UI_REVIEW_PROMPT = """\
 Eres un auditor senior de UI/UX. Analiza las siguientes capturas de pantalla \
 y detecta inconsistencias, errores visuales y problemas de calidad.
 
-IMAGENES:
+IMÁGENES:
 {image_lines}
 
-EVALUACION REQUERIDA:
+EVALUACIÓN REQUERIDA:
 1. Espaciado: margenes y paddings consistentes entre elementos. Detectar gaps \
 irregulares, espacios desiguales entre campos, secciones o componentes.
 2. Tipografia: consistencia de font-size, font-weight, line-height y \
-font-family entre elementos del mismo tipo. Detectar jerarquias rotas.
+font-family entre elementos del mismo tipo. Detectar jerarquías rotas.
 3. Layout y alineacion: elementos desalineados, centrado incorrecto, anchos \
 inconsistentes, overflow de contenido.
 4. Colores y contraste: uso consistente de la paleta de colores. Contraste \
@@ -42,7 +42,7 @@ consistentes entre todas las capturas. Detectar variaciones no intencionales.
 filled), evaluar si son claros, distinguibles y consistentes.
 7. Responsividad: si hay capturas de diferentes viewports, evaluar que el \
 layout se adapte correctamente sin romper alineacion ni legibilidad.
-8. Accesibilidad visual: touch targets minimo 44x44px en mobile, indicadores \
+8. Accesibilidad visual: touch targets mínimo 44x44px en mobile, indicadores \
 de campos requeridos, visibilidad de mensajes de error.
 9. Artefactos: elementos de debug, overlays de desarrollo, tooltips residuales \
 o cualquier elemento que no deberia estar visible en la UI final.
@@ -52,41 +52,41 @@ contenedor, scrollbars inesperados.
 FORMATO DE SALIDA (por cada hallazgo):
 
 ---
-### [SEVERIDAD] Titulo descriptivo del problema
+### [SEVERIDAD] Título descriptivo del problema
 - **Archivos afectados**: lista completa de paths origen
 - **Elemento**: componente o elemento HTML afectado
-- **Problema**: descripcion tecnica precisa de la inconsistencia detectada
+- **Problema**: descripción técnica precisa de la inconsistencia detectada
 - **Impacto UX**: como afecta al usuario final
-- **Cambio tecnico esperado**:
+- **Cambio técnico esperado**:
   - CSS: propiedad y valor exacto a aplicar o corregir
   - Componente: nombre generico del componente a modificar
-  - Logica: cambio de logica si aplica
-- **Criterio WCAG**: numero y nombre si aplica, o N/A
+  - Lógica: cambio de lógica si aplica
+- **Criterio WCAG**: número y nombre si aplica, o N/A
 ---
 
 SEVERIDADES:
-- CRITICA: bloquea release o rompe funcionalidad/accesibilidad
+- CRÍTICA: bloquea release o rompe funcionalidad/accesibilidad
 - MAYOR: afecta experiencia de usuario significativamente
 - MENOR: inconsistencia visual notable
-- COSMETICA: detalle de polish
+- COSMÉTICA: detalle de polish
 
 FALSOS POSITIVOS CONOCIDOS (NO reportar):
 - Estado de foco (focus ring/border) visible en inputs dentro de screenshots: \
 las capturas son generadas por Playwright que interactua programaticamente con \
-los campos. El ultimo campo editado retiene el foco porque no hay blur \
-explicito. Esto NO es un bug de la aplicacion, es un artefacto del test runner.
+los campos. El último campo editado retiene el foco porque no hay blur \
+explicito. Esto NO es un bug de la aplicación, es un artefacto del test runner.
 - Espaciado responsive diferente entre viewports (ej. gap-4 en mobile vs gap-6 \
 en desktop): variaciones intencionales de spacing entre breakpoints son \
-decisiones de diseno validas, no inconsistencias. Solo reportar si el spacing \
+decisiones de diseño válidas, no inconsistencias. Solo reportar si el spacing \
 rompe la alineacion o legibilidad dentro de un mismo viewport.
 - Campos de formulario sin icono junto a campos con icono: la presencia de \
-iconos decorativos en inputs es opcional por campo segun su contexto semantico. \
+iconos decorativos en inputs es opcional por campo según su contexto semántico. \
 No todos los campos requieren icono. Solo reportar si la ausencia de icono \
-rompe la alineacion horizontal o el tamano del input respecto a los demas.
+rompe la alineacion horizontal o el tamaño del input respecto a los demas.
 
 REGLAS:
-- Responder SOLO en ESPANOL
-- NO incluir introduccion, conclusion ni texto fuera del formato
+- Responder SOLO en ESPAÑOL
+- NO incluir introducción, conclusion ni texto fuera del formato
 - Cada hallazgo debe ser accionable: un desarrollador frontend debe poder \
 implementar el fix sin preguntas
 - Si no hay problemas, responder: Sin hallazgos.

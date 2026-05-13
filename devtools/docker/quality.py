@@ -33,8 +33,8 @@ FRONTEND_MODULES = tuple(_PORTFOLIO_APPS) + tuple(
 )
 PYTHON_MODULES = ('server', 'devtools')
 
-# Modulos Python: cada uno tiene su ruff.toml autocontenido en su raiz.
-# Ruff autodetecta el config cuando el cwd es la raiz del modulo.
+# Módulos Python: cada uno tiene su ruff.toml autocontenido en su raíz.
+# Ruff autodetecta el config cuando el cwd es la raíz del módulo.
 _PYTHON_MODULE_META: dict[str, dict[str, str]] = {
     'server': {'workdir': '/app/server', 'strip_prefix': 'server/'},
     'devtools': {'workdir': '/app/devtools', 'strip_prefix': 'devtools/'},
@@ -72,8 +72,8 @@ def _biome_command(pkg_script: str) -> list[str]:
     """Convierte el nombre de script (lint, lint:fix, format) a cmd Biome real.
 
     Portfolio NO tiene scripts `lint`/`format` por app. Biome corre desde
-    el root del monorepo (la config `biome.json` esta en raiz). Por eso
-    invocamos directamente `npx @biomejs/biome` con el cwd del modulo.
+    el root del monorepo (la config `biome.json` esta en raíz). Por eso
+    invocamos directamente `npx @biomejs/biome` con el cwd del módulo.
     """
     if pkg_script == 'lint':
         return ['npx', '@biomejs/biome', 'check', '.']
@@ -149,7 +149,7 @@ def _run_ruff_on_host(
 ) -> int:
     """Run Ruff directly on host (uses devtools/.venv/bin/ruff).
 
-    Portfolio no tiene container Django; los modulos Python (devtools,
+    Portfolio no tiene container Django; los módulos Python (devtools,
     server stub) corren ruff localmente via el venv ya sincronizado.
     """
     from pathlib import Path

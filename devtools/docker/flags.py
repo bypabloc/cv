@@ -17,7 +17,7 @@ ENV_DESCRIPTIONS = {
     'local': 'Desarrollo local con hot reload',
     'dev': 'Desarrollo remoto (codigo en imagen)',
     'test': 'Ambiente de testing aislado',
-    'prod': 'Produccion con Gunicorn',
+    'prod': 'Producción con Gunicorn',
 }
 
 COMPOSE_FILES = {
@@ -133,7 +133,7 @@ JSON_OUTPUT_COMMANDS = frozenset(
 _COMMAND_SUMMARIES: dict[str, str] = {
     'up': 'Levantar servicios',
     'down': 'Detener servicios',
-    'build': 'Construir imagenes',
+    'build': 'Construir imágenes',
     'rebuild': 'Reconstruir desde cero (down + build --no-cache + up)',
     'logs': 'Ver logs de servicios',
     'shell': 'Bash interactivo en server',
@@ -283,7 +283,7 @@ def describe() -> ScriptDescribe:
                     'pkg-ui',
                 ],
                 'default': 'server',
-                'summary': 'Modulo a procesar',
+                'summary': 'Módulo a procesar',
             },
             'files': {
                 'type': 'string',
@@ -348,12 +348,12 @@ def _extract_command(flags_dict: dict) -> None:
     help`` (texto colorizado) o ``docker --help`` (README).
 
     Pasa todo lo que sigue a ``--`` (separador POSIX) directo a
-    ``subcommands``, asi ``docker exec --target=server -- echo hi`` y
+    ``subcommands``, así ``docker exec --target=server -- echo hi`` y
     ``docker manage migrate -- --plan --verbosity=2`` funcionan sin que
     el validador rechace los flags del subproceso.
     """
     # Argumentos posicionales: todo antes de '--' (separador POSIX) que no
-    # sea una flag. Despues de '--' viene en flags_dict['_passthrough'] via
+    # sea una flag. Después de '--' viene en flags_dict['_passthrough'] via
     # flags_to_dict, lo concatenamos al final de subcommands.
     raw_args = sys.argv[2:]
     pre_double_dash: list[str] = []
@@ -373,14 +373,14 @@ def _extract_command(flags_dict: dict) -> None:
             'Falta el comando. '
             'Ejecuta `docker help` (texto colorizado) o `docker --help` '
             '(README) para ver los comandos disponibles.\n'
-            f'Comandos validos: {", ".join(VALID_COMMANDS)}'
+            f'Comandos válidos: {", ".join(VALID_COMMANDS)}'
         )
 
     command = flags_dict['command']
     if command not in VALID_COMMANDS:
         raise ValueError(
             f"Comando desconocido: '{command}'\n"
-            f'Comandos validos: {", ".join(VALID_COMMANDS)}'
+            f'Comandos válidos: {", ".join(VALID_COMMANDS)}'
         )
 
 
@@ -402,8 +402,8 @@ _FRONTEND_MODULES = (
 def _validate_module(flags_dict: dict) -> None:
     """Validate --module flag for test/lint/format commands.
 
-    Portfolio: modulos validos son las 6 apps Astro (hub, generic, ...)
-    y los packages como `pkg-<name>`, ademas de server/devtools.
+    Portfolio: módulos válidos son las 6 apps Astro (hub, generic, ...)
+    y los packages como `pkg-<name>`, además de server/devtools.
     """
     command = flags_dict['command']
 
@@ -412,8 +412,8 @@ def _validate_module(flags_dict: dict) -> None:
         module = flags_dict.get('module', 'all')
         if module not in valid_modules:
             raise ValueError(
-                f"Modulo invalido: '{module}'\n"
-                f'Modulos validos para test: {", ".join(valid_modules)}'
+                f"Módulo inválido: '{module}'\n"
+                f'Módulos válidos para test: {", ".join(valid_modules)}'
             )
 
     if command in ('lint', 'lint-fix', 'format'):
@@ -423,8 +423,8 @@ def _validate_module(flags_dict: dict) -> None:
         module = flags_dict['module']
         if module not in valid_modules:
             raise ValueError(
-                f"Modulo invalido: '{module}'\n"
-                f'Modulos validos para {command}: {", ".join(valid_modules)}'
+                f"Módulo inválido: '{module}'\n"
+                f'Módulos válidos para {command}: {", ".join(valid_modules)}'
             )
 
     # output-format: solo para lint + server
@@ -433,8 +433,8 @@ def _validate_module(flags_dict: dict) -> None:
         valid_formats = ['console', 'json']
         if output_format not in valid_formats:
             raise ValueError(
-                f"Formato invalido: '{output_format}'\n"
-                f'Formatos validos: {", ".join(valid_formats)}'
+                f"Formato inválido: '{output_format}'\n"
+                f'Formatos válidos: {", ".join(valid_formats)}'
             )
         if command != 'lint':
             raise ValueError(
@@ -471,7 +471,7 @@ def flag(flags_dict: dict) -> dict:
         # Mensaje util cuando el usuario quiso pasar flags al subproceso (manage,
         # exec) y olvido el separador POSIX. Conservamos el error original como
         # contexto y agregamos la pista; otros comandos siguen viendo el error
-        # estandar de "Flags no permitidas: ...".
+        # estándar de "Flags no permitidas: ...".
         if flags_dict.get('command') in ('manage', 'exec'):
             cmd = flags_dict['command']
             example = (
@@ -490,7 +490,7 @@ def flag(flags_dict: dict) -> dict:
     env = flags_dict.get('env', 'local')
     if env not in VALID_ENVS:
         raise ValueError(
-            f"Ambiente invalido: '{env}'\nAmbientes validos: {', '.join(VALID_ENVS)}"
+            f"Ambiente inválido: '{env}'\nAmbientes válidos: {', '.join(VALID_ENVS)}"
         )
 
     flags_dict = set_default_values(

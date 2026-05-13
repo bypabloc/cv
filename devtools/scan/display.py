@@ -58,7 +58,7 @@ def _display_detailed_mode(
 ) -> None:
     """Print the full human-readable view of the structure."""
     if flags.get('only_folders_root'):
-        print('Carpetas raiz del proyecto:')
+        print('Carpetas raíz del proyecto:')
         print('-' * 30)
         for folder in structure['folders']:
             print(f'  {folder}')

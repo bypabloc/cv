@@ -11,7 +11,7 @@ import { ApiClient } from './api/api-client.js'
  * expone para verificaciones contra el backend desde tests.
  *
  * Helpers para URLs por subdominio: `subdomainUrl('hub')` retorna
- * `http://hub.localhost:<PROXY_PORT>` segun la baseURL del config.
+ * `http://hub.localhost:<PROXY_PORT>` según la baseURL del config.
  */
 export interface TestFixtures {
   apiClient: ApiClient

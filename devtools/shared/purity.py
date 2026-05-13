@@ -27,7 +27,7 @@ _DEFAULT_EXCLUDED = ('node_modules/', '.astro/', 'dist/', 'coverage/')
 _PORTFOLIO_APPS = ('hub', 'generic', 'fintech', 'architect', 'leader', 'vibe')
 _PORTFOLIO_PACKAGES = ('app-shared', 'content', 'cv-pdf', 'seo', 'ui')
 
-# Mapeo modulo -> (path prefix, depth-of-module-root).
+# Mapeo módulo -> (path prefix, depth-of-module-root).
 # Depth-of-module-root es la cantidad de path parts ANTES del primer archivo.
 # Para apps/X/foo.ts: depth=2 -> 'apps','X','foo.ts' -> parts[0:2] = module root.
 # Para packages/X/foo.ts: depth=2 igual.

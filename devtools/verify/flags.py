@@ -50,7 +50,7 @@ def _validate_source_flags(flags_dict: dict[str, Any]) -> None:
 
 def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     """
-    Procesa y valida las flags para verify.
+    Procesa y válida las flags para verify.
 
     Parameters
     ----------
@@ -65,7 +65,7 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     Raises
     ------
     ValueError
-        Si se usan flags no permitidas o combinaciones invalidas.
+        Si se usan flags no permitidas o combinaciones inválidas.
     """
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, DEFAULTS)
@@ -78,7 +78,7 @@ def describe() -> ScriptDescribe:
     return {
         'name': 'verify',
         'kind': 'monocommand',
-        'summary': 'Sugerir/ejecutar verificaciones segun archivos cambiados',
+        'summary': 'Sugerir/ejecutar verificaciones según archivos cambiados',
         'commands': [],
         'flags': {
             'staged': {

@@ -1,5 +1,5 @@
 <!--
-Template estandar de PRs del portfolio. Las 4 secciones son obligatorias.
+Template estándar de PRs del portfolio. Las 4 secciones son obligatorias.
 Reglas en .claude/rules/git-workflow.md.
 -->
 
@@ -10,11 +10,11 @@ Que problema resuelve este PR. Conciso. Si son varios, enumerar 1., 2., 3.
 con tarea de tracker al lado si aplica.
 -->
 
-## Solucion
+## Solución
 
 <!--
 Que se hizo. Si arriba enumeraste problemas, mantener la misma numeracion
-paralela (Problema 1 -> Solucion 1) para que el reviewer pueda saltar
+paralela (Problema 1 -> Solución 1) para que el reviewer pueda saltar
 puntualmente.
 -->
 
@@ -31,6 +31,6 @@ Incluir:
 ## TODO
 
 <!--
-Tareas pendientes que escapan del scope pero no afectan la solucion
-(refactors, optimizaciones). Vacio si no aplica.
+Tareas pendientes que escapan del scope pero no afectan la solución
+(refactors, optimizaciones). Vacío si no aplica.
 -->

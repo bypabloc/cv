@@ -7,7 +7,7 @@
 line-length = 80
 # Python real del proyecto: 3.14 (devtools/.venv via uv).
 # Ruff con target=py314 aplica PEP 758: ``except (A, B):`` sin ``as`` se
-# reformatea a ``except A, B:`` (mas conciso, valido en >= 3.14).
+# reformatea a ``except A, B:`` (mas conciso, válido en >= 3.14).
 #
 # Excepcion: archivos del bootstrap que corren ANTES del re-exec a Python
 # 3.14 (devtools/run.py y .git-hooks/*.py) tienen pin a py313 via
@@ -54,7 +54,7 @@ exclude = [
 
 [lint]
 select = [
-    # Estandares basicos
+    # Estándares básicos
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
 

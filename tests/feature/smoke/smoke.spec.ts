@@ -2,7 +2,7 @@
  * @feature Smoke tests - portfolio multi-subdominio
  * @description Verifica que cada uno de los 6 subdominios del stack
  *   local responde HTTP 200 y renderiza al menos el body. Es el smoke
- *   minimo que prueba: nginx + cada app Astro + reverse-proxy.
+ *   mínimo que prueba: nginx + cada app Astro + reverse-proxy.
  */
 import { expect, subdomainUrl, test } from '../fixtures/index.js'
 
@@ -32,7 +32,7 @@ test.describe('Feature: Smoke - 6 apps Astro responden', () => {
       expect(response, `no response from ${url}`).not.toBeNull()
       expect(response?.status(), `status del primer load`).toBeLessThan(400)
 
-      // Assert: el body renderizo (no es pagina de error)
+      // Assert: el body renderizo (no es página de error)
       const body = page.locator('body')
       await expect(body).toBeVisible()
     })

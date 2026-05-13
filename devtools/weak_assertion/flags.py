@@ -33,7 +33,7 @@ VALID_GIT_MODES = ('staged', 'unmerged', 'modified', 'changed')
 
 
 def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
-    """Procesa y valida las flags para el script weak_assertion.
+    """Procesa y válida las flags para el script weak_assertion.
 
     Args:
         flags_dict: Dict de flags ya procesado por ``run.py`` (parser hace
@@ -43,7 +43,7 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
         Dict con flags validadas y defaults aplicados.
 
     Raises:
-        ValueError: si hay flags no permitidas o valores invalidos.
+        ValueError: si hay flags no permitidas o valores inválidos.
     """
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, DEFAULTS)
@@ -70,7 +70,7 @@ def _validate_git_mode(flags_dict: dict[str, Any]) -> None:
         return
     if value not in VALID_GIT_MODES:
         msg = (
-            f'--git-mode={value} invalido. '
+            f'--git-mode={value} inválido. '
             f'Valores aceptados: {", ".join(VALID_GIT_MODES)}.'
         )
         raise ValueError(msg)
@@ -82,7 +82,7 @@ def describe() -> ScriptDescribe:
         'name': 'weak_assertion',
         'kind': 'monocommand',
         'summary': (
-            'Detecta asserts vagos en archivos de test Python (politica '
+            'Detecta asserts vagos en archivos de test Python (política '
             'AI-testing independence). Falla con exit 1 si encuentra '
             'asserts vagos en archivos staged/unmerged.'
         ),
@@ -92,7 +92,7 @@ def describe() -> ScriptDescribe:
                 'type': 'list',
                 'summary': (
                     'Paths separados por coma. Solo se procesan los que '
-                    'estan bajo un directorio tests/ y existen en disco.'
+                    'están bajo un directorio tests/ y existen en disco.'
                 ),
             },
             'git_mode': {

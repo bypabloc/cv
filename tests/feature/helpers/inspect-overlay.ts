@@ -2,8 +2,8 @@ import type { Page } from '@playwright/test'
 
 /**
  * @function inspectOverlay
- * @description Pausa la ejecucion del test e inyecta un overlay
- *   informativo (URL, viewport, browser) sobre la pagina para debugging
+ * @description Pausa la ejecución del test e inyecta un overlay
+ *   informativo (URL, viewport, browser) sobre la página para debugging
  *   manual con `--headed`. Solo activo si DEBUG_INSPECT=1.
  *
  * @example

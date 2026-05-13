@@ -118,14 +118,14 @@ def cmd_build(flags: dict[str, Any]) -> int:
     if service:
         args.append(service)
 
-    _step('Construyendo imagenes...')
+    _step('Construyendo imágenes...')
     result = run_compose(env, args, timeout=600, profile=profile)
 
     if result.returncode != 0:
-        _err('Error construyendo imagenes')
+        _err('Error construyendo imágenes')
         return 1
 
-    _ok('Imagenes construidas')
+    _ok('Imágenes construidas')
     return 0
 
 
@@ -174,7 +174,7 @@ def cmd_shell(flags: dict[str, Any]) -> int:
 def cmd_exec(flags: dict[str, Any]) -> int:
     """Run an arbitrary command in a container.
 
-    Convencion: el comando del subproceso va despues del separador POSIX
+    Convencion: el comando del subproceso va después del separador POSIX
     ``--`` para que el validador del CLI no rechace los flags. Ej:
     ``docker exec --target=dashboard -- pnpm install`` o
     ``docker exec -- python manage.py shell``.
@@ -225,14 +225,14 @@ def cmd_ps(flags: dict[str, Any]) -> int:
             print('[]')
             return 0
         # docker compose ps emite NDJSON (un objeto por linea). Versiones mas
-        # nuevas reportan tambien array JSON; aceptamos ambos. Detectamos el
-        # caso array via el primer caracter no-whitespace para evitar el
+        # nuevas reportan también array JSON; aceptamos ambos. Detectamos el
+        # caso array via el primer carácter no-whitespace para evitar el
         # try/except/pass que Ruff S110 marca como anti-patron.
         if raw.lstrip().startswith('['):
             try:
                 parsed = json.loads(raw)
             except json.JSONDecodeError as exc:
-                _err(f'docker compose ps emitio JSON invalido: {exc}')
+                _err(f'docker compose ps emitio JSON inválido: {exc}')
                 return 1
             print(json.dumps(parsed, indent=2))
             return 0

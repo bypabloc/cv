@@ -3,14 +3,14 @@
 Detecta dos clases de huerfanos cuando un changeset elimina archivos:
 
   - **Orphan test**: source eliminado pero su test mirror sigue en disco.
-    El usuario debe eliminar tambien el test mirror.
+    El usuario debe eliminar también el test mirror.
 
   - **Orphan source**: test eliminado pero su source sigue en disco.
-    El usuario debe restaurar el test (o eliminar tambien el source).
+    El usuario debe restaurar el test (o eliminar también el source).
 
 Se aplica solo al modo pre-push para no penalizar commits intermedios. Los
 renames (delete + add) NO reciben tratamiento especial: si el usuario hace
-``git mv source/foo.ts source/bar.ts`` debe mover tambien el test mirror,
+``git mv source/foo.ts source/bar.ts`` debe mover también el test mirror,
 o el hook lo bloqueara.
 
 Path mirroring (portfolio Astro monorepo):
@@ -80,7 +80,7 @@ def _frontend_source_candidates_from_mirror(
     """Reverse: candidate sources for a frontend mirror test path.
 
     Portfolio uses `.test.ts` mirrors. A test could correspond to a source
-    with extension .ts or .astro (apps) or .ts (packages). Returns all
+    with extensión .ts or .astro (apps) or .ts (packages). Returns all
     candidates and the caller probes which one exists on disk.
     """
     if module not in _FRONTEND_LAYOUT:
@@ -231,7 +231,7 @@ def collect_orphan_pairs(
     Args:
         deleted_by_module: dict con keys 'server', '<app>' (cada app Astro)
             y 'pkg-<package>' (cada package). Valor: lista de paths
-            eliminados en ese modulo.
+            eliminados en ese módulo.
         project_root: project root path (resolved).
 
     Returns:

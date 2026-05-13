@@ -42,7 +42,7 @@ def build_pytest_integration_cmd(
 ) -> list[str]:
     """Build pytest command for feature tests (renombrado de integration).
 
-    Mantenemos el nombre de la funcion ``build_pytest_integration_cmd``
+    Mantenemos el nombre de la función ``build_pytest_integration_cmd``
     para no romper los hooks que la importan; el marker pytest cambia
     de ``integration`` a ``feature`` (mayo 2026) y el target default
     pasa de ``tests/`` a ``tests/feature/``.

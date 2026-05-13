@@ -1,6 +1,6 @@
 /**
  * @function obfuscateEmail
- * @description Codifica un email a base64 url-safe para anti-scraping basico.
+ * @description Codifica un email a base64 url-safe para anti-scraping básico.
  *   El script inline del componente lo decodifica solo en cliente.
  *
  *   Usa btoa/atob (disponibles en browser y Node 22+). El stack del portfolio

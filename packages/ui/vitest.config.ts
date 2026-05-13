@@ -1,8 +1,8 @@
 /**
  * @config vitest
  * @description Vitest config para @portfolio/ui. Cubre lib/ vanilla TS.
- *   Componentes .astro NO se testean aqui (no se renderean en JSDOM); su
- *   verificacion es astro check + E2E.
+ *   Componentes .astro NO se testean aquí (no se renderean en JSDOM); su
+ *   verificación es astro check + E2E.
  */
 import { defineConfig } from 'vitest/config'
 

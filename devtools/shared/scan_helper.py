@@ -18,7 +18,7 @@ Two modes:
 - ``files_for_module(module, git_mode, ...)`` — filtered by the module's
   ``root`` and ``extensions`` config. Use when you need files for a specific
   module (e.g., conformance for ``server/*.py``).
-- ``files_changed(git_mode)`` — every changed file, no module/extension
+- ``files_changed(git_mode)`` — every changed file, no module/extensión
   filter. Use when you need a transversal view (e.g., ``verify`` classifying
   any path).
 """
@@ -76,7 +76,7 @@ def files_for_module(
 
 
 def files_changed(*, git_mode: str = 'changed') -> list[str]:
-    """Every changed file for ``git_mode``, no module/extension filter.
+    """Every changed file for ``git_mode``, no module/extensión filter.
 
     Use this when you need to classify arbitrary paths (``verify`` checks
     server/dashboard/landing/devtools/.claude in one pass). Defaults to

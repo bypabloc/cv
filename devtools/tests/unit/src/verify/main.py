@@ -17,7 +17,7 @@ pytestmark = pytest.mark.unit
 
 
 class TestClassifyFile:
-    """Clasificacion correcta de archivos por path."""
+    """Clasificación correcta de archivos por path."""
 
     @pytest.mark.parametrize(
         'path,expected',
@@ -66,7 +66,7 @@ class TestClassifyFile:
 
 
 class TestVerificationsFor:
-    """Reglas de verificacion por clasificacion."""
+    """Reglas de verificación por clasificación."""
 
     def test_server_model_includes_makemigrations(self) -> None:
         verifs = verifications_for('server_model')
@@ -117,12 +117,12 @@ class TestVerificationsFor:
         self,
         classification: str,
     ) -> None:
-        """Clasificaciones de skip retornan lista vacia."""
+        """Clasificaciones de skip retornan lista vacía."""
         assert verifications_for(classification) == []
 
 
 class TestBuildReports:
-    """Construccion de reportes a partir de lista de archivos."""
+    """Construcción de reportes a partir de lista de archivos."""
 
     def test_builds_one_report_per_file(self) -> None:
         files = [
@@ -165,7 +165,7 @@ class TestDeduplicateCommands:
         reports = build_reports(files)
         unique = deduplicate_commands(reports)
         # Server model: 3 cmds. App TS: 2 cmds. Lint server compartido entre los models.
-        # Total unicos esperado: makemigrations + lint server + unit tests + typecheck dashboard + lint dashboard = 5.
+        # Total únicos esperado: makemigrations + lint server + unit tests + typecheck dashboard + lint dashboard = 5.
         assert len(unique) == 5
 
     def test_empty_reports_returns_empty(self) -> None:
@@ -177,7 +177,7 @@ class TestCollectChangedFilesUsesScan:
 
     Estos tests aseguran el contrato del refactor: verify ya no invoca git
     directo, sino que pasa por scan (la fuente canonica). El mapeo flag ->
-    git_mode es la unica logica que vive en verify.
+    git_mode es la única lógica que vive en verify.
     """
 
     @pytest.fixture
@@ -190,7 +190,7 @@ class TestCollectChangedFilesUsesScan:
             return captured.get('return_value', [])
 
         # Importamos dentro del fixture para asegurar que el monkeypatch
-        # afecta al modulo correcto cuando ``verify.main`` lo importa lazy.
+        # afecta al módulo correcto cuando ``verify.main`` lo importa lazy.
         import verify.main as verify_main
 
         monkeypatch.setattr(
@@ -244,7 +244,7 @@ class TestCollectChangedFilesUsesScan:
         self,
         fake_scan: dict[str, Any],
     ) -> None:
-        """``--all-changed`` explicito tambien mapea a ``changed``."""
+        """``--all-changed`` explicito también mapea a ``changed``."""
         fake_scan['return_value'] = []
 
         result = collect_changed_files({'all_changed': True})
@@ -256,7 +256,7 @@ class TestCollectChangedFilesUsesScan:
         self,
         fake_scan: dict[str, Any],
     ) -> None:
-        """Si scan no detecta nada, verify retorna lista vacia (sin error)."""
+        """Si scan no detecta nada, verify retorna lista vacía (sin error)."""
         fake_scan['return_value'] = []
 
         result = collect_changed_files({'staged': True})
@@ -267,9 +267,9 @@ class TestCollectChangedFilesUsesScan:
         self,
         fake_scan: dict[str, Any],
     ) -> None:
-        """Archivos fuera de modulos de scan (.claude/, root) deben aparecer.
+        """Archivos fuera de módulos de scan (.claude/, root) deben aparecer.
 
-        Como ``files_changed`` no filtra por modulo, archivos en ``.claude/``,
+        Como ``files_changed`` no filtra por módulo, archivos en ``.claude/``,
         ``docs/`` o root del proyecto pasan. verify los clasifica luego.
         """
         fake_scan['return_value'] = [

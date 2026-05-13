@@ -4,20 +4,20 @@ Identifica asserts vagos via AST en archivos de test Python:
 
 - ``assert x > 0`` / ``assert x < N`` / ``assert x >= 0`` / ``assert x <= N``
 - ``assert result is not None`` / ``assert x is None``
-- ``assert isinstance(x, T)`` (cuando es la unica forma de verificar)
+- ``assert isinstance(x, T)`` (cuando es la única forma de verificar)
 - ``assert len(x) > 0`` / ``assert len(x) >= 1``
 - ``assert x``  (truthy check sin valor concreto)
 
 Estos patrones suelen indicar tests que pasan por casualidad (no demuestran
-el comportamiento esperado). Politica completa:
+el comportamiento esperado). Política completa:
 ``.claude/rules/ai-testing-independence.md``.
 
 Bypass:
-- Por linea: agregar ``# noqa: WEAK-ASSERT`` con razon en comentario.
+- Por linea: agregar ``# noqa: WEAK-ASSERT`` con razón en comentario.
 - Por archivo: agregar ``# weak-assert: skip-file`` en una linea.
 - Por step: ``SKIP_STEPS="weak_assertion" git commit ...``
 
-Esta logica se invoca desde:
+Esta lógica se invoca desde:
 - El step ``weak_assertion`` del orquestador de hooks (``.git-hooks/_common.py``).
 - El script ``devtools/run.py weak_assertion`` (CLI manual).
 """
@@ -53,7 +53,7 @@ def _is_compare_with_zero_or_int(node: ast.Compare) -> tuple[bool, str]:
     if not node.comparators or len(node.comparators) != 1:
         return False, ''
     comp = node.comparators[0]
-    # Solo flagear contra Constant numerico (no contra otra expresion)
+    # Solo flagear contra Constant numerico (no contra otra expresión)
     if not isinstance(comp, ast.Constant) or not isinstance(
         comp.value, int | float
     ):
@@ -64,7 +64,7 @@ def _is_compare_with_zero_or_int(node: ast.Compare) -> tuple[bool, str]:
         ast.Lt: '<',
         ast.LtE: '<=',
     }[type(op)]
-    return True, f'comparacion {op_str} {comp.value}'
+    return True, f'comparación {op_str} {comp.value}'
 
 
 def _is_isnone(node: ast.Compare) -> tuple[bool, str]:
@@ -109,11 +109,11 @@ def _classify_assert(test: ast.expr) -> tuple[str, str] | None:
 
     Retorna None si el assert no es weak.
     """
-    # 1) Truthy check standalone: assert x  (Name o Attribute, sin operacion)
+    # 1) Truthy check standalone: assert x  (Name o Attribute, sin operación)
     if isinstance(test, ast.Name | ast.Attribute):
         return (
             'truthy check sin valor concreto',
-            'usar comparacion exacta: assert x == <valor_esperado>',
+            'usar comparación exacta: assert x == <valor_esperado>',
         )
 
     # 2) Comparaciones vagas
@@ -121,7 +121,7 @@ def _classify_assert(test: ast.expr) -> tuple[str, str] | None:
         is_weak, label = _is_compare_with_zero_or_int(test)
         if is_weak:
             return (
-                f'comparacion vaga ({label})',
+                f'comparación vaga ({label})',
                 'usar igualdad exacta: assert x == <valor_esperado>',
             )
         is_weak, label = _is_isnone(test)
@@ -142,8 +142,8 @@ def _classify_assert(test: ast.expr) -> tuple[str, str] | None:
         is_weak, label = _is_isinstance_call(test)
         if is_weak:
             return (
-                f'verificacion de tipo ({label})',
-                'usar igualdad de valor + relegar tipo a typecheck estatico',
+                f'verificación de tipo ({label})',
+                'usar igualdad de valor + relegar tipo a typecheck estático',
             )
 
     return None
@@ -164,7 +164,7 @@ def _has_file_skip(source: str) -> bool:
     )
 
 
-# ── API publica ──────────────────────────────────────────────────────────
+# ── API pública ──────────────────────────────────────────────────────────
 
 
 def is_test_file(path: Path) -> bool:
@@ -232,8 +232,8 @@ def scan_files(
 ) -> list[WeakAssertFinding]:
     """Escanea una lista de paths (relativos o absolutos) y retorna findings.
 
-    Solo se procesan los que estan bajo un directorio ``tests/`` y existen en
-    disco. Paths sin extension ``.py`` se ignoran.
+    Solo se procesan los que están bajo un directorio ``tests/`` y existen en
+    disco. Paths sin extensión ``.py`` se ignoran.
     """
     findings: list[WeakAssertFinding] = []
     for f in files:
@@ -262,7 +262,7 @@ def format_findings(findings: list[WeakAssertFinding]) -> str:
     )
     lines.append(
         '\nBypass:\n'
-        '  - inline: agregar  # noqa: WEAK-ASSERT  con razon en comentario\n'
+        '  - inline: agregar  # noqa: WEAK-ASSERT  con razón en comentario\n'
         '  - archivo: agregar  # weak-assert: skip-file  en una linea\n'
         '  - emergencia: SKIP_STEPS="weak_assertion" git commit ...\n'
         '\nPolitica: .claude/rules/ai-testing-independence.md',

@@ -8,13 +8,13 @@ Wrapper sobre `.claude/hooks/harness-init.sh`. Verifica que el entorno del
 arnes (Harness Engineering) este listo para empezar a trabajar:
 
   1. Archivos base existen (docs/CHECKPOINTS.md, docs/progress/...)
-  2. Cualquier docs/<modulo>/feature_list.json existente es JSON valido y
-     respeta `one_feature_at_a_time` (por modulo)
+  2. Cualquier docs/<módulo>/feature_list.json existente es JSON válido y
+     respeta `one_feature_at_a_time` (por módulo)
   3. Docker daemon corriendo + containers principales up
   4. Branch actual no es protegida (master/dev/release)
   5. docs/progress/ esta limpio (sin temporales viejos)
 
-Exit code 0 si OK, 1 si hay errores criticos.
+Exit code 0 si OK, 1 si hay errores críticos.
 """
 
 from typing import Any
@@ -59,9 +59,9 @@ def describe() -> ScriptDescribe:
         'name': 'harness_init',
         'kind': 'monocommand',
         'summary': (
-            'Gate BLOQUEANTE de inicio de sesion (Harness Engineering): '
+            'Gate BLOQUEANTE de inicio de sesión (Harness Engineering): '
             'verifica archivos base (docs/CHECKPOINTS.md, docs/progress/), '
-            'feature_list.json por modulo, Docker, branch, docs/progress/ limpio'
+            'feature_list.json por módulo, Docker, branch, docs/progress/ limpio'
         ),
         'commands': [],
         'flags': {

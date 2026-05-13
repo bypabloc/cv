@@ -3,7 +3,7 @@
 
 Ejecuta validaciones estrictas vs base branch (origin/main por default):
   1. Conformance: Biome lint + format check sobre todos los archivos modificados
-  2. Frontend purity: prohibe .js/.jsx/.mjs/.cjs salvo configs en raiz
+  2. Frontend purity: prohibe .js/.jsx/.mjs/.cjs salvo configs en raíz
   3. Typecheck: tsc --noEmit + astro check
   4. Unit tests + coverage per-file >= 80% (packages modificados)
   5. Build: pnpm run build (todas las apps)
@@ -109,8 +109,8 @@ def step_typecheck(modified_apps: list[str],
                 HOOK_NAME,
             )
 
-    # tsc --noEmit global (cubre packages tambien)
-    info('tsc --noEmit en raiz (recursivo en workspaces)')
+    # tsc --noEmit global (cubre packages también)
+    info('tsc --noEmit en raíz (recursivo en workspaces)')
     rc = run_pnpm(['run', 'typecheck'], cwd=PROJECT_ROOT)
     if rc != 0:
         return fail(
@@ -166,7 +166,7 @@ def step_unit_tests(modified_packages: list[str], step_label: str) -> int:
 
 def step_build(step_label: str) -> int:
     section(f'[PASO {step_label}] Static Build (pnpm run build)')
-    info('Build estatico de todas las apps Astro')
+    info('Build estático de todas las apps Astro')
     rc = run_pnpm(['run', 'build'], cwd=PROJECT_ROOT, timeout=600)
     if rc != 0:
         return fail(

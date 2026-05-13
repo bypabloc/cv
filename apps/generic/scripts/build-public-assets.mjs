@@ -1,8 +1,8 @@
 /**
  * @script build-public-assets
- * @description Pre-build step que genera assets dinamicos a /public:
+ * @description Pre-build step que genera assets dinámicos a /public:
  *   - cv.html, cv-es.html, cv-en.html (CV ATS-friendly)
- *   - llms.txt (lista de paginas para crawlers de IA)
+ *   - llms.txt (lista de páginas para crawlers de IA)
  *   - robots.txt (allow all + sitemap)
  *
  *   Se ejecuta antes de `astro build` (prebuild en package.json).

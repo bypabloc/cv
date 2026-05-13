@@ -30,7 +30,7 @@ class TestFlagDefaults:
 
 
 class TestFlagValidation:
-    """Validacion de combinaciones de flags."""
+    """Validación de combinaciones de flags."""
 
     def test_staged_only(self) -> None:
         result = flag({'staged': True})
@@ -47,7 +47,7 @@ class TestFlagValidation:
         assert result['all_changed'] is True
 
     def test_two_sources_raises(self) -> None:
-        """Combinar dos fuentes es invalido."""
+        """Combinar dos fuentes es inválido."""
         with pytest.raises(ValueError, match='Solo se permite UNA fuente'):
             flag({'staged': True, 'modified': True})
 

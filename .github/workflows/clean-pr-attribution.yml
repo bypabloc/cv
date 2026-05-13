@@ -1,6 +1,6 @@
 name: Clean PR Attribution
 
-# Limpia atribucion de IA del cuerpo del PR cada vez que se crea o edita.
+# Limpia atribución de IA del cuerpo del PR cada vez que se crea o edita.
 # Es defensa en profundidad — los hooks locales ya lo previenen para
 # commits y settings.json para PRs creados por Claude Code.
 

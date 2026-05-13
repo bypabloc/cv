@@ -1,7 +1,7 @@
-"""Clientes asincronos para PyPI y npm registry.
+"""Clientes asíncronos para PyPI y npm registry.
 
-Cada funcion recibe un ``httpx.AsyncClient`` ya creado y devuelve la lista de
-versiones publicadas. Errores HTTP (404, timeout) retornan lista vacia para
+Cada función recibe un ``httpx.AsyncClient`` ya creado y devuelve la lista de
+versiones publicadas. Errores HTTP (404, timeout) retornan lista vacía para
 que el caller pueda continuar con otros paquetes sin abortar el batch.
 """
 
@@ -25,7 +25,7 @@ async def fetch_pypi_versions(
 
     Returns:
         Lista de versiones que tienen al menos un archivo publicado y no
-        fueron yanked. Lista vacia si 404 o respuesta sin ``releases``.
+        fueron yanked. Lista vacía si 404 o respuesta sin ``releases``.
     """
     url = f'{PYPI_BASE}/{name}/json'
     response = await client.get(url, timeout=DEFAULT_TIMEOUT)

@@ -12,6 +12,7 @@
     "typecheck": "astro check"
   },
   "dependencies": {
+    "@portfolio/app-shared": "workspace:*",
     "@portfolio/content": "workspace:*",
     "@portfolio/seo": "workspace:*",
     "@portfolio/ui": "workspace:*",

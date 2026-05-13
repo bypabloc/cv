@@ -1,7 +1,9 @@
 /**
  * @module niches
- * @description Definición de las 5 cards del hub selector.
+ * @description Definicion de las 5 cards del hub selector. Las URLs se
+ *   derivan de SITE_URLS (env-driven) — NO hardcodear dominios.
  */
+import { SITE_URLS } from '@portfolio/app-shared'
 import type { Niche } from '@portfolio/content'
 
 export interface NicheCard {
@@ -15,7 +17,7 @@ export interface NicheCard {
 export const NICHE_CARDS: NicheCard[] = [
   {
     niche: 'generic',
-    url: 'https://hub.the-full-stack.com',
+    url: SITE_URLS.generic,
     title: { es: 'Full Stack Senior', en: 'Senior Full Stack' },
     blurb: {
       es: 'Vue + Django + AWS · 8 años · todas las skills',
@@ -25,7 +27,7 @@ export const NICHE_CARDS: NicheCard[] = [
   },
   {
     niche: 'fintech',
-    url: 'https://fintech.the-full-stack.com',
+    url: SITE_URLS.fintech,
     title: { es: 'Fintech LATAM', en: 'LATAM Fintech' },
     blurb: {
       es: 'Chile, México · saldar deudas · scoring · créditos',
@@ -35,7 +37,7 @@ export const NICHE_CARDS: NicheCard[] = [
   },
   {
     niche: 'architect',
-    url: 'https://architect.the-full-stack.com',
+    url: SITE_URLS.architect,
     title: { es: 'Architect', en: 'Architect' },
     blurb: {
       es: 'Microservicios · microfrontend · sistemas escalables',
@@ -45,7 +47,7 @@ export const NICHE_CARDS: NicheCard[] = [
   },
   {
     niche: 'leader',
-    url: 'https://leader.the-full-stack.com',
+    url: SITE_URLS.leader,
     title: { es: 'Tech Lead', en: 'Tech Lead' },
     blurb: {
       es: 'Liderazgo de equipos · mentoring · entregar producto',
@@ -55,7 +57,7 @@ export const NICHE_CARDS: NicheCard[] = [
   },
   {
     niche: 'vibe',
-    url: 'https://vibe.the-full-stack.com',
+    url: SITE_URLS.vibe,
     title: { es: 'Vibe Coding', en: 'Vibe Coding' },
     blurb: {
       es: 'Claude Code · Cursor · dev tools · workflows IA',

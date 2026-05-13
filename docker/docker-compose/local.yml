@@ -1,4 +1,12 @@
 # Portfolio - local compose (HMR, bind mount, puerto 9970).
+
+# Bloque de env vars reutilizable. SITE_URLS (en build time) las consume
+# desde packages/app-shared/src/lib/site-urls.ts.
+x-app-environment: &app-environment
+  BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+  BASE_SCHEME: ${BASE_SCHEME:-http}
+  BASE_PORT: ${BASE_PORT:-9970}
+
 services:
   nginx:
     image: nginx:alpine
@@ -32,6 +40,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: portfolio-generic-local
+    environment: *app-environment
     volumes:
       - ../..:/app
       - portfolio_node_modules:/app/node_modules
@@ -45,6 +54,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: portfolio-hub-local
+    environment: *app-environment
     volumes:
       - ../..:/app
       - portfolio_node_modules:/app/node_modules
@@ -58,6 +68,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: portfolio-fintech-local
+    environment: *app-environment
     volumes:
       - ../..:/app
       - portfolio_node_modules:/app/node_modules
@@ -71,6 +82,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: portfolio-architect-local
+    environment: *app-environment
     volumes:
       - ../..:/app
       - portfolio_node_modules:/app/node_modules
@@ -84,6 +96,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: portfolio-leader-local
+    environment: *app-environment
     volumes:
       - ../..:/app
       - portfolio_node_modules:/app/node_modules
@@ -97,6 +110,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: portfolio-vibe-local
+    environment: *app-environment
     volumes:
       - ../..:/app
       - portfolio_node_modules:/app/node_modules

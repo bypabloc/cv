@@ -3,8 +3,9 @@
   "compilerOptions": {
     "baseUrl": "./",
     "jsx": "preserve",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["vitest/globals"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

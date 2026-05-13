@@ -1,24 +1,37 @@
 # Portfolio - Variables de ambiente para Docker Compose.
 #
-# Copiar este archivo a .local, .dev, .test o .prod según corresponda.
-# Los archivos .{env} están en .gitignore — no committear.
+# Copiar este archivo a .local, .dev, .test o .prod segun corresponda.
+# Los archivos .{env} estan en .gitignore — no committear.
 #
-# Puerto Nginx (puerto único publicado al host).
+# Puerto Nginx (puerto unico publicado al host).
 # Defaults:
 #   local: 9970, dev: 9971, test: 9972, prod: 9973
 PROXY_PORT=9970
 
 # UID/GID del usuario host (evita root-owned files en bind mounts).
-# Estos vienen seteados automáticamente por devtools, pero pueden
-# overridearse aquí si es necesario.
+# Estos vienen seteados automaticamente por devtools, pero pueden
+# overridearse aqui si es necesario.
 # UID=1000
 # GID=1000
 
-# URLs públicas por app (usadas por Astro al generar canonicals, sitemap).
-# Apuntan a localhost:PROXY_PORT en dev/local; en prod son los dominios reales.
-SITE_URL_GENERIC=http://localhost
-SITE_URL_HUB=http://hub.localhost
-SITE_URL_FINTECH=http://fintech.localhost
-SITE_URL_ARCHITECT=http://architect.localhost
-SITE_URL_LEADER=http://leader.localhost
-SITE_URL_VIBE=http://vibe.localhost
+# URLs publicas — derivadas de 3 envs compartidas en build time:
+#   BASE_DOMAIN   -> dominio base (sin esquema, sin puerto, sin subdominio)
+#   BASE_SCHEME   -> http | https
+#   BASE_PORT     -> puerto a inyectar (vacio = sin puerto explicito;
+#                    80 con http o 443 con https tambien se omiten)
+#
+# Cada app construye su URL al hacer build:
+#   generic   -> {scheme}://{domain}[:port]
+#   hub       -> {scheme}://hub.{domain}[:port]
+#   fintech   -> {scheme}://fintech.{domain}[:port]
+#   architect -> {scheme}://architect.{domain}[:port]
+#   leader    -> {scheme}://leader.{domain}[:port]
+#   vibe      -> {scheme}://vibe.{domain}[:port]
+#
+# Local (todos los subdominios comparten :9970 via nginx en el host):
+#   BASE_DOMAIN=localhost BASE_SCHEME=http BASE_PORT=9970
+# Prod (sin puerto, https):
+#   BASE_DOMAIN=the-full-stack.com BASE_SCHEME=https BASE_PORT=
+BASE_DOMAIN=localhost
+BASE_SCHEME=http
+BASE_PORT=9970

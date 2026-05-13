@@ -50,6 +50,15 @@ export const PriorityByNicheSchema = z.object({
 })
 export type PriorityByNiche = z.infer<typeof PriorityByNicheSchema>
 
+/** Stats derivados / declarados (cards de StatsBar). */
+export const ProfileStatsSchema = z.object({
+  yearsExperience: z.number().int().nonnegative(),
+  companies: z.number().int().nonnegative(),
+  countries: z.number().int().nonnegative(),
+  certifications: z.number().int().nonnegative(),
+})
+export type ProfileStats = z.infer<typeof ProfileStatsSchema>
+
 /** Profile (singleton). */
 export const ProfileSchema = z.object({
   name: z.string().min(1),
@@ -67,6 +76,7 @@ export const ProfileSchema = z.object({
   }),
   avatarUrl: z.string().url(),
   niches: z.array(NicheSchema).min(1),
+  stats: ProfileStatsSchema.optional(),
 })
 export type Profile = z.infer<typeof ProfileSchema>
 
@@ -108,6 +118,13 @@ export const ProjectSchema = z.object({
   stack: z.array(z.string().min(1)),
   caseStudy: BiLangSchema.optional(),
   metrics: z.record(z.string(), z.string()).optional(),
+  caseStudyDetailed: z
+    .object({
+      problem: BiLangSchema,
+      process: BiLangSchema,
+      result: BiLangSchema,
+    })
+    .optional(),
   isConfidential: z.boolean().default(false),
 })
 export type Project = z.infer<typeof ProjectSchema>

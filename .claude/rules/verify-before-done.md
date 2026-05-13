@@ -56,6 +56,33 @@ Si hay tests relacionados, agregar:
 pnpm exec vitest run --changed
 ```
 
+### Feature tests E2E (OBLIGATORIO antes de push)
+
+Antes de `git push`, cuando los cambios tocan apps/* o packages/*, ejecutar
+SIEMPRE la suite Playwright. NO esta en CI (es lento), vive en el pre-push
+hook + verificacion local explicita.
+
+```bash
+# 1. Stack arriba
+python3 devtools/run.py docker up --env=local
+
+# 2. Feature tests (Playwright contra los 6 subdominios via nginx)
+python3 devtools/run.py test_runner --module=feature --type=feature --env=local
+
+# 3. (opcional) bajar stack si terminaste
+python3 devtools/run.py docker down --env=local
+```
+
+El pre-push hook automatiza estos pasos. Si Docker no esta disponible, el
+hook hace skip con [OMITIDO]. NUNCA usar `SKIP_STEPS="feature_tests"` en
+push final — solo en intermedios o cuando se prueban hooks en si.
+
+Errores comunes que esta verificacion detecta:
+- Subdominios con HTTP 502 (nginx upstream caido)
+- Astro dist sin `index.html` (build silenciosamente roto)
+- View transitions o theme toggle con bug visual
+- Mapping de subdominios mal alineado entre `astro.config.ts` y nginx
+
 ### Configuracion `.claude/`
 
 | Cambio | Verificacion minima |

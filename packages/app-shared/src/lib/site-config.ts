@@ -59,7 +59,7 @@ export interface I18nStrings {
   atsKeywords: string[]
 }
 
-interface SiteOverrides {
+export interface SiteOverrides {
   metaTitleEs: string
   metaTitleEn: string
   metaDescriptionEs: string

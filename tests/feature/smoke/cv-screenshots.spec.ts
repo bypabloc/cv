@@ -30,6 +30,7 @@ const VIEWPORTS = [
 test.describe('Feature: CV screenshots - 6 niches x 3 viewports', () => {
   // El spec controla viewports internamente: skip todos los projects excepto
   // desktop-chromium para evitar duplicar ejecucion x5 projects.
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright beforeEach requires destructuring pattern as first arg even when no fixtures used
   test.beforeEach(({}, testInfo) => {
     test.skip(
       testInfo.project.name !== 'desktop-chromium',

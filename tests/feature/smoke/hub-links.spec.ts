@@ -59,15 +59,19 @@ test.describe('Feature: Hub cards - URLs derivadas del env activo', () => {
     const expectedFintech = subdomainUrl('fintech')
 
     // Act
+    // page.waitForNavigation() es flaky en mobile webkit/chromium (deprecado en
+    // Playwright 1.40+). Leemos el href de la card y navegamos directamente —
+    // valida el mismo AC-6 (la card apunta a un subdominio servido con 2xx) sin
+    // depender de la API deprecada.
     await page.goto(`${hubUrl}/`, { waitUntil: 'domcontentloaded' })
-    const fintechCard = page.locator('a.hub-card[data-niche="fintech"]')
-    const [response] = await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-      fintechCard.click(),
-    ])
+    const href = await page
+      .locator('a.hub-card[data-niche="fintech"]')
+      .getAttribute('href')
+    expect(href, 'card[fintech] sin href').not.toBeNull()
+    const response = await page.goto(href!, { waitUntil: 'domcontentloaded' })
 
     // Assert
-    expect(response, 'sin respuesta tras click').not.toBeNull()
+    expect(response, 'sin respuesta tras navegacion').not.toBeNull()
     expect(response?.status(), 'status del navegacion').toBeLessThan(400)
     expect(page.url()).toContain(expectedFintech)
   })

@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [],
+  "_note": "Root tsconfig delega a tsconfig por workspace. Cada app/package tiene su propio tsconfig.json que extends tsconfig.base.json. tsc en root verifica solo configuracion; el typecheck real corre via 'pnpm -r exec tsc --noEmit' o 'pnpm run typecheck'."
+}

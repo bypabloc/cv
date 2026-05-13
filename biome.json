@@ -1,0 +1,188 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.astro",
+      "!**/coverage",
+      "!**/.pnpm-store",
+      "!**/public",
+      "!**/pnpm-lock.yaml",
+      "!packages/ui/src/styles/global.css"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "jsxQuoteStyle": "double"
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": { "maxAllowedComplexity": 15 }
+        },
+        "noUselessFragments": "error",
+        "noUselessTernary": "error",
+        "useArrowFunction": "error",
+        "useFlatMap": "error",
+        "useSimpleNumberKeys": "error",
+        "useLiteralKeys": "error",
+        "useNumericLiterals": "error"
+      },
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "warn",
+        "noUnusedPrivateClassMembers": "error",
+        "noConstantMathMinMaxClamp": "error",
+        "noSelfAssign": "error"
+      },
+      "style": {
+        "useImportType": "error",
+        "useExportType": "error",
+        "useConst": "error",
+        "useTemplate": "error",
+        "noUselessElse": "error",
+        "useShorthandAssign": "error",
+        "useShorthandFunctionType": "error",
+        "useDefaultParameterLast": "error",
+        "useExponentiationOperator": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noNonNullAssertion": "warn",
+        "noParameterAssign": "error",
+        "noYodaExpression": "error",
+        "useCollapsedElseIf": "error",
+        "useConsistentArrayType": {
+          "level": "error",
+          "options": { "syntax": "shorthand" }
+        }
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsole": {
+          "level": "error",
+          "options": { "allow": ["warn", "error", "info"] }
+        },
+        "noDoubleEquals": "error",
+        "noEmptyBlockStatements": "error",
+        "noShadowRestrictedNames": "error",
+        "noFallthroughSwitchClause": "error",
+        "noMisleadingCharacterClass": "error",
+        "noVar": "error",
+        "useDefaultSwitchClauseLast": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "error",
+        "noDelete": "error"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error",
+        "noGlobalEval": "error"
+      },
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noShadow": "warn"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/tests/e2e/**"],
+      "linter": {
+        "rules": {
+          "complexity": { "noExcessiveCognitiveComplexity": "off" },
+          "suspicious": {
+            "noConsole": "off",
+            "noEmptyBlockStatements": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedFunctionParameters": "off"
+          },
+          "style": { "noNonNullAssertion": "off" },
+          "nursery": { "noFloatingPromises": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/tests/unit/**", "**/*.test.ts", "**/*.spec.ts"],
+      "linter": {
+        "rules": {
+          "complexity": { "noExcessiveCognitiveComplexity": "off" },
+          "suspicious": {
+            "noConsole": "off",
+            "noEmptyBlockStatements": "off"
+          },
+          "style": { "noNonNullAssertion": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
+          },
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.config.{ts,js,mjs,cjs}", "**/astro.config.*"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/styles/animations.css"],
+      "linter": {
+        "rules": {
+          "complexity": { "noImportantStyles": "off" },
+          "style": { "noDescendingSpecificity": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["**/_headers"],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ]
+}

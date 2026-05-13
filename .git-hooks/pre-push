@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+"""Pre-push hook - portfolio Astro 6 monorepo.
+
+Ejecuta validaciones estrictas vs base branch (origin/main por default):
+  1. Conformance: Biome lint + format check sobre todos los archivos modificados
+  2. Frontend purity: prohibe .js/.jsx/.mjs/.cjs salvo configs en raiz
+  3. Typecheck: tsc --noEmit + astro check
+  4. Unit tests + coverage per-file >= 80% (packages modificados)
+  5. Build: pnpm run build (todas las apps)
+
+Skip por env:
+    SKIP_STEPS="build" git push ...
+    SKIP_STEPS="unit_tests" git push ...
+    SKIP_STEPS="typecheck,build" git push ...
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+
+HOOK_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(HOOK_DIR))
+
+from _common import (  # noqa: E402
+    PROJECT_ROOT,
+    PORTFOLIO_APPS,
+    detect_modified_apps,
+    detect_modified_packages,
+    err,
+    fail,
+    filter_lintable_files,
+    find_forbidden_js_files,
+    get_unmerged_files,
+    green,
+    header,
+    info,
+    ok,
+    out,
+    run_pnpm,
+    run_pnpm_exec,
+    section,
+    should_run_step,
+    skip,
+    tip,
+)
+
+
+HOOK_NAME = 'pre-push'
+
+
+def step_conformance(files: list[str], step_label: str) -> int:
+    section(f'[PASO {step_label}] Conformance (Biome lint + format)')
+    if not files:
+        info('Sin archivos para lintear.')
+        ok(f'Paso {step_label}: Conformance')
+        return 0
+    rc = run_pnpm_exec(['biome', 'check', *files], cwd=PROJECT_ROOT)
+    if rc != 0:
+        return fail(
+            f'Paso {step_label}: Conformance - FALLO',
+            'PUSH BLOQUEADO',
+            HOOK_NAME,
+        )
+    ok(f'Paso {step_label}: Conformance')
+    return 0
+
+
+def step_purity(files: list[str], step_label: str) -> int:
+    section(f'[PASO {step_label}] Frontend Type Purity')
+    violations = find_forbidden_js_files(files)
+    if not violations:
+        ok(f'Paso {step_label}: Frontend Purity')
+        return 0
+    err(f'{len(violations)} archivo(s) JavaScript prohibido(s):')
+    for f in violations:
+        out(f'  - {f}')
+    return fail(
+        f'Paso {step_label}: Frontend Purity - FALLO',
+        'PUSH BLOQUEADO',
+        HOOK_NAME,
+    )
+
+
+def step_typecheck(modified_apps: list[str],
+                   modified_packages: list[str],
+                   step_label: str) -> int:
+    section(f'[PASO {step_label}] TypeScript Typecheck (tsc + astro check)')
+
+    if not modified_apps and not modified_packages:
+        info('Sin apps ni packages modificados.')
+        ok(f'Paso {step_label}: Typecheck')
+        return 0
+
+    # Astro check por cada app modificada
+    for app in modified_apps:
+        info(f'astro check en apps/{app}')
+        rc = run_pnpm_exec(
+            ['astro', 'check'],
+            cwd=PROJECT_ROOT / 'apps' / app,
+        )
+        if rc != 0:
+            return fail(
+                f'Paso {step_label}: astro check en apps/{app} - FALLO',
+                'PUSH BLOQUEADO',
+                HOOK_NAME,
+            )
+
+    # tsc --noEmit global (cubre packages tambien)
+    info('tsc --noEmit en raiz (recursivo en workspaces)')
+    rc = run_pnpm(['run', 'typecheck'], cwd=PROJECT_ROOT)
+    if rc != 0:
+        return fail(
+            f'Paso {step_label}: tsc --noEmit - FALLO',
+            'PUSH BLOQUEADO',
+            HOOK_NAME,
+        )
+
+    ok(f'Paso {step_label}: Typecheck')
+    return 0
+
+
+def _package_has_script(pkg: str, script: str) -> bool:
+    """True si packages/<pkg>/package.json define el script dado."""
+    import json
+    pkg_json = PROJECT_ROOT / 'packages' / pkg / 'package.json'
+    if not pkg_json.exists():
+        return False
+    try:
+        data = json.loads(pkg_json.read_text())
+    except json.JSONDecodeError:
+        return False
+    return script in data.get('scripts', {})
+
+
+def step_unit_tests(modified_packages: list[str], step_label: str) -> int:
+    section(f'[PASO {step_label}] Unit Tests + Coverage (>=80%)')
+
+    if not modified_packages:
+        info('Sin packages modificados, omitiendo unit tests.')
+        ok(f'Paso {step_label}: Unit Tests')
+        return 0
+
+    for pkg in modified_packages:
+        if not _package_has_script(pkg, 'test:coverage'):
+            skip(f'packages/{pkg}: sin script test:coverage, omitido')
+            continue
+        info(f'vitest run --coverage en packages/{pkg}')
+        rc = run_pnpm(
+            ['run', 'test:coverage'],
+            cwd=PROJECT_ROOT / 'packages' / pkg,
+        )
+        if rc != 0:
+            return fail(
+                f'Paso {step_label}: tests packages/{pkg} - FALLO',
+                'PUSH BLOQUEADO',
+                HOOK_NAME,
+            )
+
+    ok(f'Paso {step_label}: Unit Tests + Coverage')
+    return 0
+
+
+def step_build(step_label: str) -> int:
+    section(f'[PASO {step_label}] Static Build (pnpm run build)')
+    info('Build estatico de todas las apps Astro')
+    rc = run_pnpm(['run', 'build'], cwd=PROJECT_ROOT, timeout=600)
+    if rc != 0:
+        return fail(
+            f'Paso {step_label}: build - FALLO',
+            'PUSH BLOQUEADO',
+            HOOK_NAME,
+        )
+    ok(f'Paso {step_label}: Build')
+    return 0
+
+
+def main() -> int:
+    header('PRE-PUSH - Quality Gates (Astro 6 portfolio)')
+
+    all_changes = get_unmerged_files()
+    lintable = filter_lintable_files(all_changes)
+    modified_apps = detect_modified_apps(all_changes)
+    modified_packages = detect_modified_packages(all_changes)
+
+    if not lintable and not modified_apps and not modified_packages:
+        info('Sin cambios en apps/* o packages/* vs base branch.')
+        out('')
+        out('=' * 80)
+        out(green('  PUSH permitido (sin cambios en frontend)'))
+        out('=' * 80)
+        return 0
+
+    info(f'lintables  : {len(lintable)}')
+    info(f'apps modif : {modified_apps or "(ninguna)"}')
+    info(f'pkgs modif : {modified_packages or "(ninguno)"}')
+    out('')
+
+    steps = [
+        ('conformance', lambda lbl: step_conformance(lintable, lbl)),
+        ('frontend_purity', lambda lbl: step_purity(lintable, lbl)),
+        ('typecheck', lambda lbl: step_typecheck(modified_apps, modified_packages, lbl)),
+        ('unit_tests', lambda lbl: step_unit_tests(modified_packages, lbl)),
+        ('build', lambda lbl: step_build(lbl)),
+    ]
+
+    active = [(name, fn) for name, fn in steps if should_run_step(name, HOOK_NAME)]
+    for skipped in [name for name, _ in steps if (name, _) not in active]:
+        # Notar — los skipped no se imprimen explicitamente; el config dicta
+        pass
+
+    total = len(active)
+    for i, (_, fn) in enumerate(active, 1):
+        rc = fn(f'{i}/{total}')
+        if rc != 0:
+            return rc
+        out('')
+
+    out('=' * 80)
+    out(green('  TODAS LAS QUALITY GATES PASARON - Push permitido'))
+    out('=' * 80)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

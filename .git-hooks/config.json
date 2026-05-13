@@ -1,0 +1,62 @@
+{
+  "_descripcion": "Configuracion de hooks Git compartidos para portfolio (Astro 6 monorepo).",
+  "_documentacion": "Pre-commit liviano (Biome lint sobre staged, <10s). Pre-push estricto (lint + typecheck + tests + coverage + build).",
+  "_nota": "Archivo compartido en el repositorio. Cambios afectan a todo el equipo y CI/CD.",
+
+  "pre-commit": {
+    "_descripcion": "Pre-commit LIVIANO. Solo conformance (Biome) + frontend_purity. Objetivo: <10s.",
+    "steps": {
+      "conformance": {
+        "name": "Conformance (Biome lint + format check)",
+        "enabled": true,
+        "description": "Ejecuta Biome check sobre archivos staged en apps/* y packages/*."
+      },
+      "frontend_purity": {
+        "name": "Frontend Type Purity (TypeScript only)",
+        "enabled": true,
+        "description": "Prohibe archivos .js/.jsx/.mjs/.cjs en apps/* y packages/* excepto allowlist: *.config.{js,mjs,cjs} y vitest.config.{js,mjs,cjs} en raiz del modulo."
+      }
+    }
+  },
+
+  "pre-push": {
+    "_descripcion": "Pre-push ESTRICTO. Conformance + typecheck + unit tests + coverage per-file >=80% + build.",
+    "steps": {
+      "conformance": {
+        "name": "Conformance (Biome lint + format check)",
+        "enabled": true,
+        "description": "Biome check sobre todos los archivos modificados vs base branch."
+      },
+      "frontend_purity": {
+        "name": "Frontend Type Purity (TypeScript only)",
+        "enabled": true,
+        "description": "Prohibe .js/.jsx/.mjs/.cjs en frontend, salvo configs en raiz."
+      },
+      "mirror_enforcement": {
+        "name": "TDD Mirror Enforcement (source <-> test)",
+        "enabled": false,
+        "description": "Cada source modificado en packages/* DEBE tener su test mirror. DESACTIVADO por defecto."
+      },
+      "deletion_mirror": {
+        "name": "Deletion Mirror Enforcement (no orphan source/test)",
+        "enabled": false,
+        "description": "Bloquea push si delete asimetrico. DESACTIVADO por defecto."
+      },
+      "typecheck": {
+        "name": "TypeScript Typecheck (tsc + astro check)",
+        "enabled": true,
+        "description": "Ejecuta tsc --noEmit en todos los workspaces y astro check en cada app modificada."
+      },
+      "unit_tests": {
+        "name": "Unit Tests + Coverage per-file (>=80%)",
+        "enabled": true,
+        "description": "Vitest sobre packages/* modificados. Coverage per-file >= 80%."
+      },
+      "build": {
+        "name": "Static Build (pnpm build)",
+        "enabled": true,
+        "description": "Build estatico de todas las apps Astro. Falla si Astro/Vite no genera dist/."
+      }
+    }
+  }
+}

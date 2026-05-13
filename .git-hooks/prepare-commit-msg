@@ -1,0 +1,23 @@
+#!/bin/bash
+# prepare-commit-msg - Strips AI tool attribution lines before commit is finalized
+# Removes: Co-Authored-By Claude/Cursor, "Generated with Claude Code", robot emoji,
+#          claude.ai/code/session URLs, and resulting trailing blank lines.
+# Compatible with: Claude Code, Cursor (extend with other AI tools as needed).
+
+set -eu
+
+COMMIT_MSG_FILE="$1"
+
+[ -f "$COMMIT_MSG_FILE" ] || exit 0
+
+sed -i '/[Cc]o-[Aa]uthored-[Bb]y.*[Cc]laude/d' "$COMMIT_MSG_FILE"
+sed -i '/[Cc]o-[Aa]uthored-[Bb]y.*[Cc]ursor/d' "$COMMIT_MSG_FILE"
+sed -i '/[Cc]o-[Aa]uthored-[Bb]y.*<noreply@anthropic\.com>/d' "$COMMIT_MSG_FILE"
+sed -i '/[Gg]enerated.*[Ww]ith.*[Cc]laude/d' "$COMMIT_MSG_FILE"
+sed -i '/^[[:space:]]*🤖/d' "$COMMIT_MSG_FILE"
+sed -i '/claude\.ai\/code\/session/d' "$COMMIT_MSG_FILE"
+
+# Collapse 2+ consecutive blank lines into 1, then strip trailing blank lines.
+sed -i -e '/./,/^$/!d' "$COMMIT_MSG_FILE"
+
+exit 0

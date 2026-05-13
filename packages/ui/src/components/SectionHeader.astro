@@ -1,0 +1,42 @@
+---
+/**
+ * @component SectionHeader
+ * @description Encabezado de seccion con eyebrow + titulo + subtitulo opcional.
+ */
+interface Props {
+  eyebrow?: string
+  title: string
+  subtitle?: string
+  align?: 'left' | 'center'
+}
+
+const { eyebrow, title, subtitle, align = 'left' } = Astro.props
+---
+
+<header class:list={['section-header', `align-${align}`]}>
+  {eyebrow && <p class="section-header__eyebrow text-label">{eyebrow}</p>}
+  <h2 class="section-header__title text-h2">{title}</h2>
+  {subtitle && <p class="section-header__subtitle text-body text-muted">{subtitle}</p>}
+</header>
+
+<style>
+  .section-header {
+    margin-bottom: var(--space-40);
+  }
+  .section-header.align-center {
+    text-align: center;
+  }
+  .section-header__eyebrow {
+    color: var(--color-primary);
+    margin-bottom: var(--space-10);
+  }
+  .section-header__title {
+    margin-bottom: var(--space-10);
+  }
+  .section-header__subtitle {
+    max-width: 56ch;
+  }
+  .align-center .section-header__subtitle {
+    margin-inline: auto;
+  }
+</style>

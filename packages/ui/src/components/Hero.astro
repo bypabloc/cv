@@ -1,0 +1,111 @@
+---
+/**
+ * @component Hero
+ * @description Hero principal con eyebrow + headline + summary + CTAs.
+ *   Usa stagger animation via custom property --i.
+ *
+ * @props {string} eyebrow - Texto pequeno arriba del headline (badge del niche)
+ * @props {string} headline - H1 principal
+ * @props {string} summary - Parrafo descriptivo (1-3 lineas)
+ * @props {Array<{href, label, variant?}>} [ctas] - Hasta 2 CTAs
+ */
+interface Cta {
+  href: string
+  label: string
+  variant?: 'primary' | 'ghost'
+}
+
+interface Props {
+  eyebrow: string
+  headline: string
+  summary: string
+  ctas?: Cta[]
+}
+
+const { eyebrow, headline, summary, ctas = [] } = Astro.props
+---
+
+<section class="hero anim-stagger">
+  <p class="hero__eyebrow text-label anim-fade-in-up" style="--i: 0">
+    {eyebrow}
+  </p>
+  <h1 class="hero__headline text-display-1 anim-fade-in-up" style="--i: 1">
+    {headline}
+  </h1>
+  <p class="hero__summary text-body-lg text-muted anim-fade-in-up" style="--i: 2">
+    {summary}
+  </p>
+  {
+    ctas.length > 0 && (
+      <div class="hero__ctas anim-fade-in-up" style="--i: 3">
+        {ctas.map((cta) => (
+          <a
+            href={cta.href}
+            class:list={['hero__cta', `hero__cta--${cta.variant ?? 'primary'}`]}
+          >
+            {cta.label}
+          </a>
+        ))}
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .hero {
+    padding-block: var(--space-80) var(--space-56);
+    max-width: 720px;
+  }
+  .hero__eyebrow {
+    color: var(--color-primary);
+    margin-bottom: var(--space-16);
+  }
+  .hero__headline {
+    margin-bottom: var(--space-24);
+  }
+  .hero__summary {
+    margin-bottom: var(--space-40);
+    max-width: 56ch;
+  }
+  .hero__ctas {
+    display: flex;
+    gap: var(--space-12);
+    flex-wrap: wrap;
+  }
+  .hero__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-12) var(--space-20);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-14);
+    font-weight: 500;
+    transition:
+      background-color var(--motion-fast) var(--easing-out),
+      border-color var(--motion-fast) var(--easing-out),
+      transform var(--motion-fast) var(--easing-out);
+  }
+  .hero__cta--primary {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+  }
+  .hero__cta--primary:hover {
+    background: var(--color-primary-hover);
+    color: var(--color-primary-contrast);
+    transform: translateY(-1px);
+  }
+  .hero__cta--ghost {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+  .hero__cta--ghost:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface);
+  }
+  @media (max-width: 640px) {
+    .hero {
+      padding-block: var(--space-56) var(--space-40);
+    }
+  }
+</style>

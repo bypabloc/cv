@@ -1,0 +1,93 @@
+/**
+ * @config animations.css
+ * @description Keyframes y animaciones reutilizables, todas respetando
+ *   prefers-reduced-motion. Vanilla CSS - cero JS, cero libs externas.
+ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.anim-fade-in-up {
+  animation: fade-in-up var(--motion-base) var(--easing-out) both;
+}
+
+.anim-fade-in {
+  animation: fade-in var(--motion-base) var(--easing-out) both;
+}
+
+.anim-slide-in-right {
+  animation: slide-in-right var(--motion-base) var(--easing-out) both;
+}
+
+/* Stagger via custom property --i (0,1,2,...). El consumidor setea inline. */
+.anim-stagger > * {
+  animation-delay: calc(var(--motion-fast) * var(--i, 0));
+}
+
+/* Reveal-on-scroll: el estado inicial cuando hay JS habilitado. */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--motion-slow) var(--easing-out),
+    transform var(--motion-slow) var(--easing-out);
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+  }
+}

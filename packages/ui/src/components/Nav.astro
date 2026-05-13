@@ -1,0 +1,154 @@
+---
+/**
+ * @component Nav
+ * @description Barra de navegacion principal. Recibe links y nombre del sitio.
+ *
+ * @props {Array<{href: string, label: string}>} items - Items del menu
+ * @props {string} brand - Texto del logotipo
+ * @props {string} brandHref - Link del logotipo (default "/")
+ * @props {string} [currentLocale] - 'es' o 'en' para mostrar/ocultar items
+ * @props {string} [otherLocaleHref] - Path al equivalente en el otro idioma
+ *
+ * @example
+ *   <Nav
+ *     brand="Pablo Contreras"
+ *     items={[{href: '/experience', label: 'Experiencia'}]}
+ *   />
+ */
+import ThemeToggle from './ThemeToggle.astro'
+
+interface NavItem {
+  href: string
+  label: string
+}
+
+interface Props {
+  brand: string
+  items: NavItem[]
+  brandHref?: string
+  currentLocale?: 'es' | 'en'
+  otherLocaleHref?: string
+}
+
+const {
+  brand,
+  items,
+  brandHref = '/',
+  currentLocale = 'es',
+  otherLocaleHref,
+} = Astro.props
+
+const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
+---
+
+<header class="site-nav">
+  <div class="container-wide site-nav__inner">
+    <a class="site-nav__brand" href={brandHref}>{brand}</a>
+    <nav aria-label="Primary">
+      <ul class="site-nav__list">
+        {
+          items.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class:list={[
+                  'site-nav__link',
+                  Astro.url.pathname === item.href && 'is-current',
+                ]}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="site-nav__actions">
+      {
+        otherLocaleHref && (
+          <a class="site-nav__locale" href={otherLocaleHref}>
+            {otherLocaleLabel}
+          </a>
+        )
+      }
+      <ThemeToggle />
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    backdrop-filter: saturate(180%) blur(10px);
+    -webkit-backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .site-nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-24);
+    padding-block: var(--space-12);
+  }
+  .site-nav__brand {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-16);
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: var(--letter-spacing-snug);
+  }
+  .site-nav__list {
+    display: flex;
+    gap: var(--space-24);
+    align-items: center;
+  }
+  .site-nav__link {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-14);
+    font-weight: 500;
+    padding: var(--space-6) 0;
+    position: relative;
+  }
+  .site-nav__link:hover,
+  .site-nav__link.is-current {
+    color: var(--color-text);
+  }
+  .site-nav__link.is-current::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 -1px;
+    height: 2px;
+    background: var(--color-primary);
+    border-radius: 1px;
+  }
+  .site-nav__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+  }
+  .site-nav__locale {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-12);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+    padding: var(--space-6) var(--space-10);
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--color-border);
+  }
+  .site-nav__locale:hover {
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+  }
+  @media (max-width: 640px) {
+    .site-nav__list {
+      gap: var(--space-16);
+    }
+    .site-nav__link {
+      font-size: var(--font-size-13);
+    }
+  }
+</style>

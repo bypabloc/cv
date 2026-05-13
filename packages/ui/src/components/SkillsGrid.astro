@@ -1,0 +1,63 @@
+---
+/**
+ * @component SkillsGrid
+ * @description Grid de categorias de skills con chips. Acepta categorias ya
+ *   filtradas por nicho.
+ */
+interface SkillCategoryView {
+  slug: string
+  title: string
+  skills: string[]
+}
+
+interface Props {
+  categories: SkillCategoryView[]
+}
+
+const { categories } = Astro.props
+---
+
+<div class="skills-grid">
+  {
+    categories.map((cat) => (
+      <section class="skills-grid__category reveal-on-scroll">
+        <h3 class="skills-grid__title text-h6">{cat.title}</h3>
+        <ul class="skills-grid__list">
+          {cat.skills.map((s) => (
+            <li class="skills-grid__chip text-caption">{s}</li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-24);
+  }
+  .skills-grid__category {
+    padding: var(--space-20);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .skills-grid__title {
+    color: var(--color-primary);
+    margin-bottom: var(--space-16);
+  }
+  .skills-grid__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+  }
+  .skills-grid__chip {
+    padding: var(--space-3) var(--space-10);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+  }
+</style>

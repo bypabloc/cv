@@ -1,0 +1,186 @@
+---
+import {
+  experiences,
+  filterByNiche,
+  formatRange,
+  type Niche,
+  profile,
+  projects,
+  skills,
+  sortByPriority,
+} from '@portfolio/content'
+import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
+import ExperienceCard from '@portfolio/ui/components/ExperienceCard.astro'
+/**
+ * @component CvSections
+ * @description Bloques principales (experience, projects, skills, contact)
+ *   ya filtrados por nicho. Recibe locale, niche y strings localizadas.
+ */
+import Hero from '@portfolio/ui/components/Hero.astro'
+import ProjectCard from '@portfolio/ui/components/ProjectCard.astro'
+import SectionHeader from '@portfolio/ui/components/SectionHeader.astro'
+import SkillsGrid from '@portfolio/ui/components/SkillsGrid.astro'
+import type { I18nStrings } from '../lib/site-config'
+
+interface Props {
+  niche: Niche
+  locale: 'es' | 'en'
+  strings: I18nStrings
+  cvHref?: string
+}
+
+const { niche, locale, strings: t, cvHref = '/cv.html' } = Astro.props
+const exps = sortByPriority(filterByNiche(experiences, niche), niche)
+const projs = sortByPriority(filterByNiche(projects, niche), niche)
+const sks = filterByNiche(skills, niche)
+const technicalSkills = sks.filter((s) => s.kind === 'technical')
+const softSkills = sks.filter((s) => s.kind === 'soft')
+---
+
+<section class="container-wide">
+  <Hero
+    eyebrow={t.hero.eyebrow}
+    headline={profile.headline[locale]}
+    summary={profile.summary[locale]}
+    ctas={[
+      { href: '#experience', label: t.hero.ctaPrimary, variant: 'primary' },
+      { href: cvHref, label: t.hero.ctaSecondary, variant: 'ghost' },
+    ]}
+  />
+</section>
+
+<section id="experience" class="container-wide section">
+  <SectionHeader
+    eyebrow="01"
+    title={t.sections.experience.title}
+    subtitle={t.sections.experience.subtitle}
+  />
+  <div class="experience-list">
+    {
+      exps.map((e) => (
+        <ExperienceCard
+          role={e.role[locale]}
+          company={e.company}
+          companyUrl={e.companyUrl}
+          dateRange={formatRange(e.start, e.end, locale)}
+          skills={e.skillsTechnical}
+        >
+          <ul class="exp-bullets">
+            {e.responsibilities[locale].slice(0, 3).map((r) => (
+              <li>{r}</li>
+            ))}
+          </ul>
+        </ExperienceCard>
+      ))
+    }
+  </div>
+</section>
+
+<section id="projects" class="container-wide section">
+  <SectionHeader
+    eyebrow="02"
+    title={t.sections.projects.title}
+    subtitle={t.sections.projects.subtitle}
+  />
+  <div class="projects-grid">
+    {
+      projs.map((p) => (
+        <ProjectCard
+          name={p.name}
+          summary={p.summary[locale]}
+          stack={p.stack}
+          url={p.url}
+          repo={p.repo}
+          status={p.status}
+          isConfidential={p.isConfidential}
+          caseStudyLabel={t.labels.confidential}
+        />
+      ))
+    }
+  </div>
+</section>
+
+<section id="skills" class="container-wide section">
+  <SectionHeader
+    eyebrow="03"
+    title={t.sections.skills.title}
+    subtitle={t.sections.skills.subtitle}
+  />
+  <div class="skills-block">
+    {
+      technicalSkills.length > 0 && (
+        <div>
+          <h3 class="text-h6 skills-block__heading">
+            {t.labels.technicalSkills}
+          </h3>
+          <SkillsGrid
+            categories={technicalSkills.map((c) => ({
+              slug: c.slug,
+              title: c.name[locale],
+              skills: c.skills,
+            }))}
+          />
+        </div>
+      )
+    }
+    {
+      softSkills.length > 0 && (
+        <div>
+          <h3 class="text-h6 skills-block__heading">{t.labels.softSkills}</h3>
+          <SkillsGrid
+            categories={softSkills.map((c) => ({
+              slug: c.slug,
+              title: c.name[locale],
+              skills: c.skills,
+            }))}
+          />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<section id="contact" class="container-wide section">
+  <SectionHeader
+    eyebrow="04"
+    title={t.sections.contact.title}
+    subtitle={t.sections.contact.subtitle}
+  />
+  <ContactLinks
+    email={profile.contacts.email}
+    linkedin={profile.contacts.linkedin}
+    github={profile.contacts.github}
+    medium={profile.contacts.medium}
+    locale={locale}
+  />
+</section>
+
+<style>
+  .section {
+    padding-block: var(--space-72);
+  }
+  .experience-list {
+    display: grid;
+    gap: var(--space-20);
+  }
+  .exp-bullets {
+    list-style: disc inside;
+    margin-top: var(--space-8);
+  }
+  .exp-bullets li {
+    margin-bottom: var(--space-4);
+  }
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-20);
+  }
+  .skills-block {
+    display: grid;
+    gap: var(--space-40);
+  }
+  .skills-block__heading {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-16);
+  }
+</style>

@@ -1,0 +1,83 @@
+---
+/**
+ * @component Footer
+ * @description Footer minimalista con copyright + links sociales.
+ *
+ * @props {string} name - Nombre del titular del copyright
+ * @props {object} contacts - Links sociales (linkedin, github, medium)
+ * @props {string} [locale] - 'es' o 'en' (afecta copy)
+ */
+interface Props {
+  name: string
+  contacts: {
+    linkedin: string
+    github: string
+    medium?: string
+    email?: string
+  }
+  locale?: 'es' | 'en'
+}
+
+const { name, contacts, locale = 'es' } = Astro.props
+const year = new Date().getUTCFullYear()
+const copy =
+  locale === 'es'
+    ? `© ${year} ${name}. Todos los derechos reservados.`
+    : `© ${year} ${name}. All rights reserved.`
+---
+
+<footer class="site-footer">
+  <div class="container-wide site-footer__inner">
+    <p class="site-footer__copy">{copy}</p>
+    <ul class="site-footer__links">
+      <li>
+        <a href={contacts.linkedin} rel="me" target="_blank">LinkedIn</a>
+      </li>
+      <li>
+        <a href={contacts.github} rel="me" target="_blank">GitHub</a>
+      </li>
+      {
+        contacts.medium && (
+          <li>
+            <a href={contacts.medium} rel="me" target="_blank">
+              Medium
+            </a>
+          </li>
+        )
+      }
+    </ul>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    padding-block: var(--space-32);
+    margin-top: var(--space-80);
+  }
+  .site-footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+    flex-wrap: wrap;
+  }
+  .site-footer__copy {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-13);
+  }
+  .site-footer__links {
+    display: flex;
+    gap: var(--space-16);
+  }
+  .site-footer__links a {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-12);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+  }
+  .site-footer__links a:hover {
+    color: var(--color-text);
+  }
+</style>

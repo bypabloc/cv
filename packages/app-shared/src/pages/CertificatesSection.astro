@@ -1,0 +1,80 @@
+---
+import { certificates, filterByNiche, type Niche } from '@portfolio/content'
+/**
+ * @component CertificatesSection
+ * @description Lista de certificados filtrada por nicho.
+ */
+import SectionHeader from '@portfolio/ui/components/SectionHeader.astro'
+import type { I18nStrings } from '../lib/site-config'
+
+interface Props {
+  niche: Niche
+  locale: 'es' | 'en'
+  strings: I18nStrings
+}
+
+const { niche, locale, strings: t } = Astro.props
+const certs = filterByNiche(certificates, niche)
+const verifyLabel = locale === 'es' ? 'Verificar ↗' : 'Verify ↗'
+---
+
+<section class="container-medium section">
+  <SectionHeader
+    eyebrow="Certs"
+    title={t.sections.certificates.title}
+    subtitle={t.sections.certificates.subtitle}
+  />
+  <ul class="cert-list">
+    {
+      certs.map((c) => (
+        <li class="cert-list__item">
+          <div>
+            <a
+              href={c.url}
+              target="_blank"
+              rel="noopener"
+              class="text-h5 cert-list__title"
+            >
+              {c.title}
+            </a>
+            <p class="text-caption text-muted">
+              {c.issuer} · <time>{c.date}</time>
+            </p>
+          </div>
+          <span class="cert-list__verify text-mono">{verifyLabel}</span>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .section {
+    padding-block: var(--space-72);
+  }
+  .cert-list {
+    display: grid;
+    gap: var(--space-12);
+  }
+  .cert-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding: var(--space-16) var(--space-20);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .cert-list__title {
+    color: var(--color-text);
+    display: block;
+  }
+  .cert-list__title:hover {
+    color: var(--color-primary);
+  }
+  .cert-list__verify {
+    color: var(--color-primary);
+    font-size: var(--font-size-12);
+  }
+</style>

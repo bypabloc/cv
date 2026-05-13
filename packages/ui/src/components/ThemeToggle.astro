@@ -1,0 +1,153 @@
+---
+/**
+ * @component ThemeToggle
+ * @description Boton que cicla system -> dark -> light. Persiste en localStorage.
+ *   El BaseLayout aplica el theme inicial antes de pintar (sin FOUC).
+ *
+ * @example
+ *   <ThemeToggle />
+ */
+interface Props {
+  label?: { system: string; dark: string; light: string }
+}
+
+const {
+  label = {
+    system: 'Tema: Sistema',
+    dark: 'Tema: Oscuro',
+    light: 'Tema: Claro',
+  },
+} = Astro.props
+---
+
+<button
+  type="button"
+  id="theme-toggle"
+  class="theme-toggle"
+  aria-label={label.system}
+  data-label-system={label.system}
+  data-label-dark={label.dark}
+  data-label-light={label.light}
+>
+  <svg
+    class="theme-toggle__icon icon-system"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+    <path d="M8 20h8"></path>
+    <path d="M12 18v2"></path>
+  </svg>
+  <svg
+    class="theme-toggle__icon icon-dark"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+  </svg>
+  <svg
+    class="theme-toggle__icon icon-light"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2"></path>
+    <path d="M12 20v2"></path>
+    <path d="m4.93 4.93 1.41 1.41"></path>
+    <path d="m17.66 17.66 1.41 1.41"></path>
+    <path d="M2 12h2"></path>
+    <path d="M20 12h2"></path>
+    <path d="m6.34 17.66-1.41 1.41"></path>
+    <path d="m19.07 4.93-1.41 1.41"></path>
+  </svg>
+</button>
+
+<script>
+  import {
+    applyTheme,
+    nextTheme,
+    readStoredTheme,
+    storeTheme,
+    type Theme,
+  } from '../lib/theme-toggle'
+
+  const btn = document.getElementById('theme-toggle')
+  if (btn) {
+    const update = (t: Theme) => {
+      btn.dataset.themeState = t
+      const labels = {
+        system: btn.dataset.labelSystem ?? 'Theme: System',
+        dark: btn.dataset.labelDark ?? 'Theme: Dark',
+        light: btn.dataset.labelLight ?? 'Theme: Light',
+      }
+      btn.setAttribute('aria-label', labels[t])
+    }
+
+    const initial = readStoredTheme()
+    applyTheme(initial)
+    update(initial)
+
+    btn.addEventListener('click', () => {
+      const current = (btn.dataset.themeState as Theme) ?? 'system'
+      const next = nextTheme(current)
+      storeTheme(next)
+      update(next)
+    })
+  }
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    transition:
+      background-color var(--motion-fast) var(--easing-out),
+      border-color var(--motion-fast) var(--easing-out),
+      color var(--motion-fast) var(--easing-out);
+  }
+  .theme-toggle:hover,
+  .theme-toggle:focus-visible {
+    background: var(--color-surface-2);
+    border-color: var(--color-border-strong);
+  }
+  .theme-toggle__icon {
+    display: none;
+  }
+  .theme-toggle[data-theme-state='system'] .icon-system {
+    display: block;
+  }
+  .theme-toggle[data-theme-state='dark'] .icon-dark {
+    display: block;
+  }
+  .theme-toggle[data-theme-state='light'] .icon-light {
+    display: block;
+  }
+</style>

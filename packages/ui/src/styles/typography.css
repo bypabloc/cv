@@ -1,0 +1,101 @@
+/**
+ * @config typography.css
+ * @description Utility classes tipograficas globales. Consumen tokens.
+ */
+
+.text-display-1 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-52);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.text-h1 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-40);
+  font-weight: 700;
+  line-height: var(--line-height-snug);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.text-h2 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-32);
+  font-weight: 600;
+  line-height: var(--line-height-snug);
+  letter-spacing: var(--letter-spacing-snug);
+}
+
+.text-h3 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-24);
+  font-weight: 600;
+  line-height: var(--line-height-snug);
+}
+
+.text-h4 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-20);
+  font-weight: 600;
+  line-height: var(--line-height-snug);
+}
+
+.text-h5 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-16);
+  font-weight: 600;
+  line-height: var(--line-height-snug);
+}
+
+.text-h6 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-13);
+  font-weight: 600;
+  line-height: var(--line-height-snug);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-widest);
+}
+
+.text-body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-14);
+  font-weight: 400;
+  line-height: var(--line-height-base);
+}
+
+.text-body-lg {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-16);
+  font-weight: 400;
+  line-height: var(--line-height-relaxed);
+}
+
+.text-caption {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-12);
+  font-weight: 400;
+  line-height: var(--line-height-base);
+}
+
+.text-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-11);
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-13);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-subtle {
+  color: var(--color-text-subtle);
+}

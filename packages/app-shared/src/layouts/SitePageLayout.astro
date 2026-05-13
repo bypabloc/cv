@@ -1,0 +1,87 @@
+---
+import type { Niche } from '@portfolio/content'
+import { filterByNiche, profile, skills } from '@portfolio/content'
+import { buildPersonSchema } from '@portfolio/seo'
+import Footer from '@portfolio/ui/components/Footer.astro'
+import Nav from '@portfolio/ui/components/Nav.astro'
+/**
+ * @layout SitePageLayout
+ * @description Wrapper compartido. Cada app pasa siteUrl + niche + strings.
+ *
+ * @props {string} title - title HTML
+ * @props {string} description - meta description
+ * @props {string} canonicalPath - path relativo (/about, /, /en/about, etc.)
+ * @props {string} otherLocalePath - path equivalente en el otro idioma
+ * @props {'es'|'en'} locale
+ * @props {string} siteUrl - base canonical del sitio
+ * @props {import('@portfolio/content').Niche} niche
+ * @props {Array<{href, label}>} navItems
+ */
+import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
+
+interface NavItem {
+  href: string
+  label: string
+}
+
+interface Props {
+  title: string
+  description: string
+  canonicalPath: string
+  otherLocalePath: string
+  locale: 'es' | 'en'
+  siteUrl: string
+  niche: Niche
+  navItems: NavItem[]
+  ogImage?: string
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  otherLocalePath,
+  locale,
+  siteUrl,
+  niche,
+  navItems,
+  ogImage,
+} = Astro.props
+
+const canonicalUrl = `${siteUrl}${canonicalPath}`
+const knowsAbout = filterByNiche(skills, niche).flatMap((c) =>
+  c.skills.slice(0, 5),
+)
+const jsonLd = buildPersonSchema({
+  profile,
+  niche,
+  locale,
+  canonicalUrl,
+  knowsAbout,
+})
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale={locale}
+  ogImage={ogImage}
+  jsonLd={jsonLd}
+>
+  <Nav
+    slot="nav"
+    brand="Pablo Contreras"
+    brandHref={locale === 'es' ? '/' : '/en/'}
+    items={navItems}
+    currentLocale={locale}
+    otherLocaleHref={otherLocalePath}
+  />
+  <slot />
+  <Footer
+    slot="footer"
+    name="Pablo Contreras"
+    contacts={profile.contacts}
+    locale={locale}
+  />
+</BaseLayout>

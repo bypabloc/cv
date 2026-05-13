@@ -1,0 +1,126 @@
+---
+/**
+ * @component ContactLinks
+ * @description Lista de links de contacto. El email se decodifica solo en
+ *   cliente (anti-scraping basico).
+ *
+ * @props {string} email - Email a obfuscar (b64 en data-attr)
+ * @props {string} linkedin
+ * @props {string} github
+ * @props {string} [medium]
+ * @props {string} [locale] - 'es' o 'en'
+ */
+import { obfuscateEmail } from '../lib/obfuscate-email'
+
+interface Props {
+  email: string
+  linkedin: string
+  github: string
+  medium?: string
+  locale?: 'es' | 'en'
+}
+
+const { email, linkedin, github, medium, locale = 'es' } = Astro.props
+const emailB64 = obfuscateEmail(email)
+const emailLabel = locale === 'es' ? 'Escribime' : 'Email me'
+const fallbackLabel = locale === 'es' ? '(habilitar JS)' : '(enable JS)'
+---
+
+<ul class="contact-links">
+  <li>
+    <a
+      class="contact-links__item"
+      href="#"
+      data-email-b64={emailB64}
+      id="contact-email"
+    >
+      <span class="contact-links__label">{emailLabel}</span>
+      <span class="contact-links__value">
+        <noscript>{fallbackLabel}</noscript>
+      </span>
+    </a>
+  </li>
+  <li>
+    <a class="contact-links__item" href={linkedin} target="_blank" rel="me noopener">
+      <span class="contact-links__label">LinkedIn</span>
+      <span class="contact-links__value">linkedin.com/in/{linkedin.split('/').filter(Boolean).pop()}</span>
+    </a>
+  </li>
+  <li>
+    <a class="contact-links__item" href={github} target="_blank" rel="me noopener">
+      <span class="contact-links__label">GitHub</span>
+      <span class="contact-links__value">github.com/{github.split('/').filter(Boolean).pop()}</span>
+    </a>
+  </li>
+  {
+    medium && (
+      <li>
+        <a
+          class="contact-links__item"
+          href={medium}
+          target="_blank"
+          rel="me noopener"
+        >
+          <span class="contact-links__label">Medium</span>
+          <span class="contact-links__value">
+            {medium.replace(/^https?:\/\//u, '')}
+          </span>
+        </a>
+      </li>
+    )
+  }
+</ul>
+
+<script>
+  import { deobfuscateEmail } from '../lib/obfuscate-email'
+
+  const link = document.getElementById('contact-email') as HTMLAnchorElement | null
+  if (link) {
+    const b64 = link.dataset.emailB64
+    if (b64) {
+      const email = deobfuscateEmail(b64)
+      link.href = `mailto:${email}`
+      const value = link.querySelector('.contact-links__value')
+      if (value) value.textContent = email
+    }
+  }
+</script>
+
+<style>
+  .contact-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-16);
+  }
+  .contact-links__item {
+    display: block;
+    padding: var(--space-20);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    transition:
+      border-color var(--motion-fast) var(--easing-out),
+      transform var(--motion-fast) var(--easing-out);
+  }
+  .contact-links__item:hover {
+    border-color: var(--color-border-strong);
+    transform: translateY(-2px);
+    color: var(--color-text);
+  }
+  .contact-links__label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-11);
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+    margin-bottom: var(--space-6);
+  }
+  .contact-links__value {
+    display: block;
+    font-size: var(--font-size-16);
+    color: var(--color-text);
+    word-break: break-all;
+  }
+</style>

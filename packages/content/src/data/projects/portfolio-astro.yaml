@@ -1,0 +1,33 @@
+slug: portfolio-astro
+name: Portfolio multi-nicho
+summary:
+  es: >-
+    Este mismo portfolio: monorepo Astro 6 con 5 sitios independientes desplegados en Cloudflare
+    Pages, optimizado para GEO/LLM-SEO.
+  en: >-
+    This very portfolio: an Astro 6 monorepo with 5 independent sites deployed to Cloudflare Pages,
+    optimized for GEO/LLM-SEO.
+description:
+  es: >-
+    Arquitectura monorepo con DS unificado, content collections compartidas, filtrado por nicho,
+    dark/light/system theme y JSON-LD Person por sitio. Meta caso de estudio del stack.
+  en: >-
+    Monorepo architecture with a unified DS, shared content collections, niche-based filtering,
+    dark/light/system theming and per-site JSON-LD Person. Meta case study of the stack.
+url: https://the-full-stack.com
+repo: https://github.com/bypabloc/portfolio
+status: active
+niches:
+  - vibe
+  - architect
+  - generic
+priority:
+  architect: 80
+  vibe: 95
+  generic: 75
+stack:
+  - Astro 6
+  - TypeScript
+  - Biome v2
+  - pnpm
+  - Cloudflare Pages

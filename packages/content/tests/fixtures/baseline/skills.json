@@ -1,0 +1,193 @@
+[
+  {
+    "slug": "frontend",
+    "name": {
+      "es": "Frontend",
+      "en": "Frontend"
+    },
+    "skills": [
+      "Vue 3",
+      "Nuxt.js",
+      "TypeScript",
+      "Astro",
+      "Desarrollo Frontend",
+      "Arquitectura Frontend",
+      "Microfrontend",
+      "Desarrollo de E-commerce",
+      "Aplicación Web",
+      "jQuery"
+    ],
+    "kind": "technical",
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
+  },
+  {
+    "slug": "backend",
+    "name": {
+      "es": "Backend",
+      "en": "Backend"
+    },
+    "skills": [
+      "Python",
+      "Django",
+      "Node.js",
+      "NestJS",
+      "Laravel",
+      "PHP",
+      "Java",
+      "Programación Orientada a Objetos",
+      "CRUD"
+    ],
+    "kind": "technical",
+    "niches": ["fintech", "architect", "generic"]
+  },
+  {
+    "slug": "cloud-devops",
+    "name": {
+      "es": "Cloud & DevOps",
+      "en": "Cloud & DevOps"
+    },
+    "skills": [
+      "AWS",
+      "EC2",
+      "RDS",
+      "S3",
+      "Route 53",
+      "SES",
+      "AutoScaling",
+      "LoadBalancer",
+      "Docker",
+      "Computación en la Nube",
+      "Despliegue en AWS",
+      "Gestión de Infraestructura",
+      "Microservicios"
+    ],
+    "kind": "technical",
+    "niches": ["architect", "leader", "generic"]
+  },
+  {
+    "slug": "architecture",
+    "name": {
+      "es": "Arquitectura",
+      "en": "Architecture"
+    },
+    "skills": [
+      "Arquitectura de Sistemas",
+      "Arquitectura Frontend",
+      "Microservicios",
+      "Microfrontend",
+      "Desarrollo Full Stack",
+      "Clean Architecture",
+      "SOLID",
+      "Implementación de Soluciones"
+    ],
+    "kind": "technical",
+    "niches": ["architect", "leader", "generic"]
+  },
+  {
+    "slug": "ai-workflows",
+    "name": {
+      "es": "AI Workflows",
+      "en": "AI Workflows"
+    },
+    "skills": [
+      "Claude Code",
+      "Cursor",
+      "GitHub Copilot",
+      "Prompt Engineering",
+      "Vibe Coding",
+      "Sub-agentes",
+      "MCP Servers",
+      "Skill-based agents"
+    ],
+    "kind": "technical",
+    "niches": ["vibe", "generic"]
+  },
+  {
+    "slug": "data",
+    "name": {
+      "es": "Datos & SQL",
+      "en": "Data & SQL"
+    },
+    "skills": [
+      "PostgreSQL",
+      "SQL",
+      "Análisis de Productividad",
+      "Gestión de Datos"
+    ],
+    "kind": "technical",
+    "niches": ["fintech", "architect", "generic"]
+  },
+  {
+    "slug": "domains",
+    "name": {
+      "es": "Dominios",
+      "en": "Domains"
+    },
+    "skills": [
+      "Fintech (Chile / México)",
+      "Credit Scoring",
+      "Debt Settlement",
+      "ERP",
+      "E-commerce",
+      "Automatización",
+      "Gestión de Activos",
+      "Gestión de Inventarios",
+      "Historias Médicas",
+      "Monitoreo de Producción"
+    ],
+    "kind": "technical",
+    "niches": ["fintech", "generic"]
+  },
+  {
+    "slug": "leadership",
+    "name": {
+      "es": "Liderazgo & Gestión",
+      "en": "Leadership & Management"
+    },
+    "skills": [
+      "Liderazgo de Equipo",
+      "Gestión de Equipos",
+      "Gestión de Proyectos",
+      "Planificación Estratégica",
+      "Planificación de Proyecto",
+      "Metodologías Ágiles",
+      "Consultoría Técnica",
+      "Gestión del Tiempo"
+    ],
+    "kind": "soft",
+    "niches": ["leader", "architect", "generic"]
+  },
+  {
+    "slug": "mindset",
+    "name": {
+      "es": "Mindset & Personal",
+      "en": "Mindset & Personal"
+    },
+    "skills": [
+      "Adaptabilidad",
+      "Agilidad de Aprendizaje",
+      "Auto-motivación",
+      "Pensamiento Analítico",
+      "Resolución de Problemas"
+    ],
+    "kind": "soft",
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
+  },
+  {
+    "slug": "team-client",
+    "name": {
+      "es": "Equipo & Cliente",
+      "en": "Team & Client"
+    },
+    "skills": [
+      "Colaboración de Equipo",
+      "Comunicación Técnica",
+      "Orientado al Cliente",
+      "Relación con el Cliente",
+      "Trabajo Colaborativo",
+      "Trabajo en Equipo"
+    ],
+    "kind": "soft",
+    "niches": ["fintech", "architect", "leader", "generic"]
+  }
+]

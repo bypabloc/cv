@@ -1,0 +1,73 @@
+slug: destacame-architect
+role:
+  es: Arquitecto Frontend y Desarrollador de Microservicios
+  en: Frontend Architect and Microservices Developer
+company: Destacame
+companyUrl: https://destacame.cl
+start: 2022-08
+niches:
+  - fintech
+  - architect
+  - leader
+  - vibe
+  - generic
+priority:
+  fintech: 100
+  architect: 100
+  leader: 100
+  vibe: 100
+  generic: 100
+responsibilities:
+  es:
+    - >-
+      Desarrollo y aprendizaje continuo en tecnologías full stack, incluyendo Python, Django y
+      microservicios, así como en el modelo de microfrontends.
+    - >-
+      Participación en el desarrollo de productos en el sector fintech, como un sistema para ayudar
+      a los usuarios a saldar deudas en Chile y otro proyecto en México para ofrecer créditos con
+      diferentes niveles a los usuarios.
+    - >-
+      Asignación a un equipo de optimización, encargado de desarrollar soluciones para mejorar el
+      trabajo en diferentes áreas de la empresa, como un administrador de campañas que automatiza
+      procesos que antes eran manuales.
+  en:
+    - >-
+      Full stack development and continuous learning across Python, Django, microservices and
+      microfrontends.
+    - >-
+      Built fintech products including a debt settlement platform in Chile and a tiered credit
+      product in Mexico.
+    - >-
+      Joined the optimization team, building internal tools such as a campaign manager that
+      automated previously manual processes.
+achievements:
+  es:
+    - >-
+      Contribuí significativamente al desarrollo de productos financieros, adquiriendo conocimientos
+      específicos del mercado fintech.
+    - >-
+      Desarrollé habilidades en la creación de soluciones automatizadas, mejorando la eficiencia de
+      procesos internos en la empresa.
+    - >-
+      Adaptación a cambios y desafíos, incluyendo reducciones de personal, manteniendo un enfoque en
+      la entrega de soluciones técnicas y estratégicas en mi actual rol en el equipo de plataforma.
+  en:
+    - >-
+      Delivered significant contributions to financial products, acquiring deep fintech domain
+      knowledge.
+    - Built automated solutions that improved internal process efficiency across the company.
+    - >-
+      Adapted through organizational changes and staff reductions while maintaining delivery focus
+      from the platform team.
+skillsTechnical:
+  - Arquitectura Frontend
+  - TypeScript
+  - Desarrollo Frontend
+  - Python
+  - Django
+  - Microservicios
+  - AWS
+skillsSoft:
+  - Fintech
+  - Planificación Estratégica
+  - Adaptabilidad

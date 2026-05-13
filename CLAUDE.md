@@ -1,30 +1,45 @@
 # portfolio
 
-> Portfolio / CV personal de Pablo Contreras (bypabloc). Site estatico (sin
-> backend, sin DB, sin auth) desplegable en cualquier CDN.
-> Stack planeado: Astro 6 + TypeScript 6 strict + Biome v2 + Vitest +
-> Playwright. Package manager: pnpm.
+> Monorepo de 6 sitios Astro (pnpm workspaces) para el portfolio multi-niche
+> de Pablo Contreras (bypabloc). Output estatico desplegado en Cloudflare Pages.
 
-## Estado actual
+## Sitios
 
-El repo esta en fase **pre-bootstrap**: existe `.claude/` (rules, skills,
-agents, hooks, docs) y `docs/` (knowledge tree del CV + research), pero
-todavia no hay `package.json`, `src/` ni `astro.config.ts`. Los comandos
-de abajo aplican una vez que se inicialice el proyecto Astro.
+| App | URL | Posicionamiento |
+|-----|-----|-----------------|
+| `apps/hub` | `the-full-stack.com` | Landing selector con 5 cards |
+| `apps/generic` | `hub.the-full-stack.com` | Full Stack Senior — todas las skills |
+| `apps/fintech` | `fintech.the-full-stack.com` | Senior Full Stack Fintech LATAM |
+| `apps/architect` | `architect.the-full-stack.com` | Frontend Architect + Microservicios |
+| `apps/leader` | `leader.the-full-stack.com` | Tech Lead / Engineering Manager |
+| `apps/vibe` | `vibe.the-full-stack.com` | Vibe Coding / Claude Code / Dev tools |
 
-## Comandos (post-bootstrap)
+## Packages
 
-- Instalar deps: `pnpm install`
-- Dev server: `pnpm run dev`
-- Build estatico: `pnpm run build`
-- Preview del build: `pnpm run preview`
-- Lint + format: `pnpm exec biome check .`
-- Auto-fix: `pnpm exec biome check --write .`
-- Typecheck TS: `pnpm exec tsc --noEmit`
-- Typecheck Astro: `pnpm exec astro check`
-- Unit tests: `pnpm exec vitest run`
-- Coverage: `pnpm exec vitest run --coverage`
-- E2E (opt-in): `pnpm exec playwright test`
+| Package | Responsabilidad |
+|---------|-----------------|
+| `packages/content` | Zod schemas + datos del CV (singleton). Filters + sort por nicho |
+| `packages/ui` | Design system, componentes Astro, theme toggle, animaciones |
+| `packages/seo` | JSON-LD Person, llms.txt, sitemap, robots.txt builders |
+| `packages/cv-pdf` | Render CV a HTML (ATS-friendly) + PDF opcional (Puppeteer) |
+| `packages/app-shared` | SitePageLayout + CvSections + AboutSection compartidos |
+
+## Comandos
+
+Root scripts (operan sobre todo el monorepo):
+
+- `pnpm install` — instalar deps
+- `pnpm run dev` — dev server en paralelo
+- `pnpm run build` — build de todas las apps
+- `pnpm run lint` / `lint:fix` — Biome
+- `pnpm run typecheck` — tsc + astro check
+- `pnpm run test` / `test:coverage` — Vitest en packages
+- `pnpm run clean` — limpia dist, .astro, coverage
+
+Filtrar por workspace: `pnpm --filter @portfolio/<app> run <script>`.
+
+Stack: Astro 5+ + TypeScript strict + Biome v2 + Vitest + Tailwind v4 + pnpm 10.
+E2E opt-in: Playwright (no configurado en v1).
 
 NUNCA mezclar `npm` o `yarn` — solo `pnpm`.
 

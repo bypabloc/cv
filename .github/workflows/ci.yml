@@ -129,46 +129,48 @@ jobs:
         if: steps.detect.outputs.needs_node == 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Create env file (test)
+      - name: Build all apps (host)
+        if: steps.detect.outputs.needs_docker == 'true'
+        run: |
+          # CI E2E: pnpm install + build en host runner (un solo proceso, sin race condition).
+          # Cada apps/<X>/dist queda disponible para que nginx lo monte read-only.
+          pnpm -r --filter "./apps/*" run build
+
+      - name: Create env file (CI)
         if: steps.detect.outputs.needs_docker == 'true'
         run: |
           cat > docker/env/.test << 'EOF'
           PROXY_PORT=9972
-          SITE_URL_GENERIC=http://localhost
-          SITE_URL_HUB=http://hub.localhost
-          SITE_URL_FINTECH=http://fintech.localhost
-          SITE_URL_ARCHITECT=http://architect.localhost
-          SITE_URL_LEADER=http://leader.localhost
-          SITE_URL_VIBE=http://vibe.localhost
           CI=true
           EOF
 
-      - name: Build + start Docker stack (test env)
+      - name: Start nginx serving dist (CI compose)
         if: steps.detect.outputs.needs_docker == 'true'
         run: |
+          # ci-e2e.yml: nginx solo (sin 6 containers Astro) + container feature
           docker compose --project-name portfolio \
-            -f docker/docker-compose/test.yml \
+            -f docker/docker-compose/ci-e2e.yml \
             --env-file docker/env/.test \
-            up -d --build
+            up -d --build nginx
 
-      - name: Wait for apps to be healthy
+      - name: Wait for nginx to serve all subdomains
         if: steps.detect.outputs.needs_docker == 'true'
         run: |
-          echo "Esperando a que las 6 apps respondan via nginx..."
+          echo "Esperando a que nginx responda los 6 subdominios + services..."
           for HOST in localhost hub.localhost fintech.localhost \
-                     architect.localhost leader.localhost vibe.localhost; do
+                     architect.localhost leader.localhost vibe.localhost services.localhost; do
             echo "Probing http://${HOST}:9972/ ..."
-            for i in $(seq 1 60); do
+            for i in $(seq 1 30); do
               if curl -sf -m 5 -H "Host: ${HOST}" "http://localhost:9972/" > /dev/null 2>&1; then
                 echo "  ${HOST} OK (intento $i)"
                 break
               fi
-              if [ "$i" = "60" ]; then
-                echo "  ${HOST} TIMEOUT despues de 60 intentos (300s)"
-                docker compose -p portfolio -f docker/docker-compose/test.yml logs --tail=80 || true
+              if [ "$i" = "30" ]; then
+                echo "  ${HOST} TIMEOUT despues de 30 intentos (60s)"
+                docker compose -p portfolio -f docker/docker-compose/ci-e2e.yml logs --tail=80 || true
                 exit 1
               fi
-              sleep 5
+              sleep 2
             done
           done
 
@@ -176,7 +178,7 @@ jobs:
         if: steps.detect.outputs.needs_docker == 'true'
         run: |
           docker compose --project-name portfolio \
-            -f docker/docker-compose/test.yml \
+            -f docker/docker-compose/ci-e2e.yml \
             --env-file docker/env/.test \
             --profile feature up -d feature
 
@@ -185,13 +187,13 @@ jobs:
         run: |
           echo "Esperando feature container..."
           for i in $(seq 1 60); do
-            if docker exec portfolio-feature-test test -f /tmp/.feature-ready 2>/dev/null; then
+            if docker exec portfolio-feature-ci test -f /tmp/.feature-ready 2>/dev/null; then
               echo "feature ready (intento $i)"
               break
             fi
             if [ "$i" = "60" ]; then
               echo "feature timeout"
-              docker logs portfolio-feature-test 2>&1 | tail -80 || true
+              docker logs portfolio-feature-ci 2>&1 | tail -80 || true
               exit 1
             fi
             sleep 5
@@ -202,14 +204,15 @@ jobs:
         env:
           CI: "true"
         run: |
-          docker exec -e CI=true portfolio-feature-test pnpm test || RC=$?
+          docker exec -e CI=true -w /app/tests/feature portfolio-feature-ci \
+            ./node_modules/.bin/playwright test || RC=$?
           exit ${RC:-0}
 
       - name: Collect Playwright report
         if: always() && steps.detect.outputs.needs_docker == 'true'
         run: |
-          docker cp portfolio-feature-test:/app/tests/feature/report ./playwright-report 2>/dev/null || true
-          docker cp portfolio-feature-test:/app/tests/feature/results ./playwright-results 2>/dev/null || true
+          docker cp portfolio-feature-ci:/app/tests/feature/report ./playwright-report 2>/dev/null || true
+          docker cp portfolio-feature-ci:/app/tests/feature/results ./playwright-results 2>/dev/null || true
 
       - name: Upload Playwright report
         if: always() && steps.detect.outputs.needs_docker == 'true'
@@ -224,4 +227,4 @@ jobs:
         if: always() && steps.detect.outputs.needs_docker == 'true'
         run: |
           docker compose --project-name portfolio \
-            -f docker/docker-compose/test.yml down -v || true
+            -f docker/docker-compose/ci-e2e.yml down -v || true

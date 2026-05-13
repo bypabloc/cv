@@ -21,8 +21,12 @@
     "@portfolio/content": "workspace:*"
   },
   "devDependencies": {
+    "@modyfi/vite-plugin-yaml": "^1.1.1",
+    "@types/js-yaml": "^4.0.9",
     "@vitest/coverage-v8": "^2.1.9",
+    "js-yaml": "^4.1.1",
     "typescript": "^5.9.3",
+    "vite": "^8.0.12",
     "vitest": "^2.1.9"
   }
 }

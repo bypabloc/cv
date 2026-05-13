@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "types": ["vitest/globals"],
+    "types": [
+      "vitest/globals",
+      "vite/client",
+      "@modyfi/vite-plugin-yaml/modules"
+    ],
     "jsx": "preserve",
     "noEmit": true
   },

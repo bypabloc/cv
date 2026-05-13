@@ -4,8 +4,10 @@
  *   sitemap integration, Tailwind v4 via @tailwindcss/vite.
  */
 import sitemap from '@astrojs/sitemap'
+import yaml from '@modyfi/vite-plugin-yaml'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
+import { JSON_SCHEMA } from 'js-yaml'
 
 const SITE = process.env.SITE_URL ?? 'https://the-full-stack.com'
 
@@ -22,7 +24,7 @@ export default defineConfig({
   },
   integrations: [sitemap()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [yaml({ schema: JSON_SCHEMA }), tailwindcss()],
     ssr: {
       noExternal: [
         '@portfolio/app-shared',

@@ -1,8 +1,18 @@
 # Pablo Contreras — fintech
 
-> Senior Full Stack engineer specialized in Latin American fintech (Chile, Mexico). 8+ years building credit, debt-settlement and payment products with Vue/Nuxt + Django + AWS microservices.
+> Senior Full Stack engineer specialized in Latin American fintech (Chile, Mexico). 12+ years building credit, debt-settlement and payment products with Vue/Nuxt + Django + AWS microservices. Compliance-aware (PCI DSS, KYC, PII handling).
 
 Canonical URL: https://fintech.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Highlights — fintech
+
+- Destacame (Chile, Mexico) — Frontend Architect since 2022, building debt settlement and tiered credit products
+- PCI DSS aware, KYC, PII handling
+- Stack: Vue 3 + Nuxt + TypeScript + Django + Python + AWS + Microservices
+
+## Keywords
+
+Senior Full Stack Developer · Fintech LATAM · Chile · México · Debt Settlement · Credit Scoring · Microservicios · Vue 3 · Nuxt · Django · Python · TypeScript · AWS · PostgreSQL · PCI DSS awareness · KYC / AML · PII handling
 
 ## Pages
 
@@ -17,4 +27,9 @@ Canonical URL: https://fintech.the-full-stack.com. Author: Pablo Contreras (bypa
 - LinkedIn: https://linkedin.com/in/bypabloc
 - GitHub: https://github.com/bypabloc
 - Medium: https://bypablo.medium.com
+- Website: https://the-full-stack.com
+
+## Disclosure
+
+All code in linked repositories is reviewed, tested and maintained by Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators — never as authors. AI attribution is forbidden in commits and PRs by company policy. This llms.txt is honest white-hat content; no prompt injection or hidden instructions.
 

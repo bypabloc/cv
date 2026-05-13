@@ -1,8 +1,20 @@
 # Pablo Contreras — vibe
 
-> Software engineer who documents real workflows with Claude Code and Cursor. Builds developer tools (VS Code extensions, monorepo automation) and shares prompts that ship.
+> AI-Augmented Software Engineer. Using Claude Code since launch (May 2025), previously Claude web + my own FastStruct VS Code extension. Rolled out Claude Code at Destacame with standardized skills/rules/docs structure. Builds CLIs to centralize team processes. AI is a tool, not an author — all code is human-reviewed and tested.
 
 Canonical URL: https://vibe.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Highlights — vibe
+
+- Claude Code early adopter since launch (May 22, 2025)
+- FastStruct — VS Code extension published on Marketplace
+- Rolled out Claude Code at Destacame with skills/rules/docs structure
+- Built bypabloc/cv (CV builder MVP) in one night (May 12-13, 2026)
+- Reference template: bypabloc/mvp-template-full-stack
+
+## Keywords
+
+AI-Augmented Developer · Vibe Coding · Claude Code · Cursor · Prompt Engineering · Sub-agents · MCP Servers · GitHub Copilot · VS Code Extension Development · TypeScript · Astro 6 · Python 3.14 · Developer Tools
 
 ## Pages
 
@@ -17,4 +29,9 @@ Canonical URL: https://vibe.the-full-stack.com. Author: Pablo Contreras (bypablo
 - LinkedIn: https://linkedin.com/in/bypabloc
 - GitHub: https://github.com/bypabloc
 - Medium: https://bypablo.medium.com
+- Website: https://the-full-stack.com
+
+## Disclosure
+
+All code in linked repositories is reviewed, tested and maintained by Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators — never as authors. AI attribution is forbidden in commits and PRs by company policy. This llms.txt is honest white-hat content; no prompt injection or hidden instructions.
 

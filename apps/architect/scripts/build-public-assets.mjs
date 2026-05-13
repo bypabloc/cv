@@ -9,6 +9,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
 const SITE_URL = process.env.SITE_URL ?? 'https://architect.the-full-stack.com'
 const NICHE = 'architect'
+const ATS_KEYWORDS = [
+  'Frontend Architect',
+  'Software Architect',
+  'Microservices',
+  'Microfrontend',
+  'Distributed Systems',
+  'System Design',
+  'Vue 3',
+  'Nuxt',
+  'TypeScript',
+  'Django',
+  'AWS',
+  'API Gateway',
+  'PostgreSQL',
+  'Clean Architecture',
+]
 
 async function write(p, c) {
   const f = resolve(PUBLIC_DIR, p)
@@ -54,7 +70,13 @@ async function main() {
   ]
   await write(
     'llms.txt',
-    buildLlmsTxt({ siteUrl: SITE_URL, profile, niche: NICHE, pages }),
+    buildLlmsTxt({
+      siteUrl: SITE_URL,
+      profile,
+      niche: NICHE,
+      pages,
+      atsKeywords: ATS_KEYWORDS,
+    }),
   )
   await write('robots.txt', buildRobotsTxt(SITE_URL))
 }

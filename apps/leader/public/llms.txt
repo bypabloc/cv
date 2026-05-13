@@ -1,8 +1,18 @@
 # Pablo Contreras — leader
 
-> Tech Lead with experience leading multi-disciplinary engineering teams, mentoring junior developers and shipping fintech products at scale.
+> Tech Lead and Engineering Manager. 4 leadership roles, 8 teams led, 11+ years shipping product. Innovator of the Year 2023 at Destacame for automating internal operations. Mentoring + delivery + organizational resilience during reorganizations.
 
 Canonical URL: https://leader.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+
+## Highlights — leader
+
+- Innovator of the Year 2023 at Destacame
+- Triple Alianza Lima 2020 — 1st place Commerce sector
+- First developer hired at Dibal; built and handed off engineering team
+
+## Keywords
+
+Tech Lead · Engineering Manager · Staff Engineer · Team Lead · Mentoring · Hiring · Cross-functional teams · Scrum · Metodologías Ágiles · Innovador del Año 2023 · Triple Alianza 2020 · Strategic Planning
 
 ## Pages
 
@@ -17,4 +27,9 @@ Canonical URL: https://leader.the-full-stack.com. Author: Pablo Contreras (bypab
 - LinkedIn: https://linkedin.com/in/bypabloc
 - GitHub: https://github.com/bypabloc
 - Medium: https://bypablo.medium.com
+- Website: https://the-full-stack.com
+
+## Disclosure
+
+All code in linked repositories is reviewed, tested and maintained by Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators — never as authors. AI attribution is forbidden in commits and PRs by company policy. This llms.txt is honest white-hat content; no prompt injection or hidden instructions.
 

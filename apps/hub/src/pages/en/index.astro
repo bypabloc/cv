@@ -1,7 +1,9 @@
 ---
 import { profile } from '@portfolio/content'
 import { buildPersonSchema } from '@portfolio/seo'
+import { nicheTokensToCssVars } from '@portfolio/ui'
 import Footer from '@portfolio/ui/components/Footer.astro'
+import MeshGradientBg from '@portfolio/ui/components/MeshGradientBg.astro'
 /**
  * @page index (en) — hub selector
  */
@@ -32,6 +34,8 @@ const jsonLd = buildPersonSchema({
     'Cursor',
   ],
 })
+
+const hubStyle = nicheTokensToCssVars('hub')
 ---
 
 <BaseLayout
@@ -42,38 +46,56 @@ const jsonLd = buildPersonSchema({
   jsonLd={jsonLd}
   ogImage={`${SITE}/og-image.svg`}
 >
-  <section class="container-medium hub-hero">
-    <p class="text-label hub-hero__eyebrow">Pablo Contreras · Lima, Peru</p>
-    <h1 class="text-display-1 hub-hero__title">
-      Five angles.<br />
-      Pick the one that fits.
-    </h1>
-    <p class="text-body-lg text-muted hub-hero__intro">
-      I am a senior Full Stack engineer with 8+ years in Vue, Django and AWS.
-      Each site tells the same story with a different accent. Pick any — all
-      five stay in sync.
-    </p>
-    <p class="text-mono hub-hero__lang">
-      <a href="/">Versión en español →</a>
-    </p>
-  </section>
+  <div class="hub-root" data-niche="hub" style={hubStyle}>
+    <section class="container-medium hub-hero">
+      <MeshGradientBg variant="vivid" aurora />
+      <p class="text-mono-label hub-hero__eyebrow">
+        <span class="hub-hero__dot" aria-hidden="true"></span>
+        Pablo Contreras · Lima, Peru
+      </p>
+      <h1 class="text-display-mega hub-hero__title">
+        <span class="gradient-text">Five</span><br />
+        <span>angles.</span><br />
+        <span class="hub-hero__title-light">Pick the one that fits.</span>
+      </h1>
+      <p class="text-body-lg text-muted hub-hero__intro">
+        I am a senior Full Stack engineer with 12+ years in Vue, Django and
+        AWS. Each site tells the same story with a different accent. Pick any
+        — all five stay in sync.
+      </p>
+      <p class="text-mono hub-hero__lang">
+        <a href="/" class="anim-underline">Versión en español →</a>
+      </p>
+    </section>
 
-  <section class="container-medium hub-grid">
-    {
-      NICHE_CARDS.map((card, i) => (
-        <a
-          class="hub-card reveal-on-scroll"
-          href={card.url}
-          style={`--accent: ${card.accent}; --i: ${i};`}
-        >
-          <span class="hub-card__niche text-mono">{card.niche}</span>
-          <h2 class="hub-card__title text-h3">{card.title.en}</h2>
-          <p class="hub-card__blurb text-body text-muted">{card.blurb.en}</p>
-          <span class="hub-card__cta text-mono">Enter →</span>
-        </a>
-      ))
-    }
-  </section>
+    <section class="container-medium hub-grid">
+      {
+        NICHE_CARDS.map((card, i) => (
+          <a
+            class="hub-card tilt-3d scroll-reveal"
+            href={card.url}
+            style={`--accent: ${card.accent}; --i: ${i};`}
+            data-niche={card.niche}
+          >
+            <div class="tilt-3d__inner hub-card__inner">
+              <span class="hub-card__niche text-mono-label">
+                <span class="hub-card__niche-dot" aria-hidden="true"></span>
+                {card.niche}
+              </span>
+              <h2 class="hub-card__title text-h3">{card.title.en}</h2>
+              <p class="hub-card__blurb text-body text-muted">{card.blurb.en}</p>
+              <span class="hub-card__cta text-mono">
+                Enter
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </div>
+          </a>
+        ))
+      }
+    </section>
+  </div>
 
   <Footer
     slot="footer"
@@ -84,16 +106,42 @@ const jsonLd = buildPersonSchema({
 </BaseLayout>
 
 <style>
+  .hub-root {
+    display: contents;
+  }
   .hub-hero {
+    position: relative;
     padding-block: var(--space-100) var(--space-56);
     text-align: left;
+    overflow: hidden;
+    isolation: isolate;
   }
   .hub-hero__eyebrow {
-    color: var(--color-primary);
-    margin-bottom: var(--space-16);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-24);
+  }
+  .hub-hero__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--niche-accent);
+    box-shadow: 0 0 12px var(--niche-glow);
+    animation: hub-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes hub-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
   }
   .hub-hero__title {
-    margin-bottom: var(--space-24);
+    margin: 0 0 var(--space-32) 0;
+    line-height: 0.92;
+  }
+  .hub-hero__title-light {
+    color: var(--color-text-muted);
+    font-variation-settings: 'wght' 600;
   }
   .hub-hero__intro {
     max-width: 56ch;
@@ -101,6 +149,7 @@ const jsonLd = buildPersonSchema({
   }
   .hub-hero__lang a {
     color: var(--color-text-muted);
+    text-decoration: none;
   }
   .hub-grid {
     display: grid;
@@ -109,21 +158,17 @@ const jsonLd = buildPersonSchema({
     padding-bottom: var(--space-100);
   }
   .hub-card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-12);
-    padding: var(--space-32);
+    text-decoration: none;
+    color: var(--color-text);
+    isolation: isolate;
+    overflow: hidden;
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
-    color: var(--color-text);
-    text-decoration: none;
-    transition:
-      border-color var(--motion-fast) var(--easing-out),
-      transform var(--motion-fast) var(--easing-out),
-      box-shadow var(--motion-fast) var(--easing-out);
     position: relative;
-    overflow: hidden;
+    transition:
+      border-color var(--motion-base) var(--easing-out),
+      box-shadow var(--motion-base) var(--easing-out);
   }
   .hub-card::before {
     content: '';
@@ -133,31 +178,69 @@ const jsonLd = buildPersonSchema({
     background: var(--accent);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform var(--motion-base) var(--easing-out);
+    transition: transform var(--motion-slow) var(--easing-out);
+    z-index: 2;
+  }
+  .hub-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      500px circle at 50% 100%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity var(--motion-slow) var(--easing-out);
+    pointer-events: none;
+    z-index: 0;
   }
   .hub-card:hover {
     border-color: var(--accent);
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-medium);
+    box-shadow: 0 12px 48px color-mix(in srgb, var(--accent) 22%, transparent);
   }
   .hub-card:hover::before {
     transform: scaleX(1);
   }
+  .hub-card:hover::after {
+    opacity: 1;
+  }
+  .hub-card__inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    padding: var(--space-32);
+    height: 100%;
+  }
   .hub-card__niche {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
     color: var(--accent);
-    font-size: var(--font-size-11);
-    text-transform: uppercase;
-    letter-spacing: var(--letter-spacing-widest);
+  }
+  .hub-card__niche-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent);
   }
   .hub-card__title {
     color: var(--color-text);
+    margin: 0;
+  }
+  .hub-card__blurb {
+    margin: 0;
+    flex-grow: 1;
   }
   .hub-card__cta {
-    margin-top: auto;
-    color: var(--color-text-muted);
+    margin-top: var(--space-12);
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-6);
     font-size: var(--font-size-13);
-  }
-  .hub-card:hover .hub-card__cta {
-    color: var(--color-text);
   }
 </style>

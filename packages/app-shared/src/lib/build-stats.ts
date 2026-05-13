@@ -6,38 +6,53 @@
  */
 import {
   certificates,
+  type Experience,
   experiences,
   type Profile,
   type ProfileStats,
   profile,
 } from '@portfolio/content'
 
-/**
- * Cuenta companias unicas desde experiences[] (slug company / company name).
- */
-function countCompanies(): number {
-  const unique = new Set(experiences.map((e) => e.company))
-  return unique.size
-}
+const DEFAULT_COUNTRIES = 4
 
 /**
- * Calcula years of experience desde la fecha de inicio mas antigua.
+ * @function calcYearsExperience
+ * @description Calcula years of experience desde la fecha de inicio mas antigua.
+ *
+ * @param {readonly Experience[]} list - Lista de experiencias a analizar
+ * @returns {number} Anos completos desde el primer rol al momento actual
+ *
+ * @example
+ *   calcYearsExperience([{ start: '2013-01', ... }])  // 13
+ *   calcYearsExperience([])  // 0
  */
-function calcYearsExperience(): number {
-  const starts = experiences
-    .map((e) => e.start)
-    .sort((a, b) => a.localeCompare(b))
-  if (starts.length === 0) {
+export function calcYearsExperience(list: readonly Experience[]): number {
+  if (list.length === 0) {
     return 0
   }
-  const [year, month] = (starts[0] ?? '2013-01').split('-').map(Number)
-  const earliest = new Date(year ?? 2013, (month ?? 1) - 1, 1)
+  const starts = list.map((e) => e.start).sort((a, b) => a.localeCompare(b))
+  // starts[0] siempre existe porque list.length > 0 (guard arriba)
+  const earliestStr = starts[0] as string
+  const [yearStr, monthStr] = earliestStr.split('-')
+  const earliest = new Date(Number(yearStr), Number(monthStr) - 1, 1)
   const now = new Date()
   const diffYears =
     now.getFullYear() -
     earliest.getFullYear() +
     (now.getMonth() - earliest.getMonth()) / 12
   return Math.max(0, Math.floor(diffYears))
+}
+
+/**
+ * @function countCompanies
+ * @description Cuenta companias unicas en la lista de experiences (por
+ *   `company` field).
+ *
+ * @param {readonly Experience[]} list - Lista de experiencias
+ * @returns {number} Conteo de companias unicas
+ */
+export function countCompanies(list: readonly Experience[]): number {
+  return new Set(list.map((e) => e.company)).size
 }
 
 /**
@@ -50,16 +65,16 @@ function calcYearsExperience(): number {
  *
  * @example
  *   const stats = buildStats()
- *   // { yearsExperience: 12, companies: 8, countries: 4, certifications: 11 }
+ *   // { yearsExperience: 12, companies: 5, countries: 4, certifications: 11 }
  */
 export function buildStats(p: Profile = profile): ProfileStats {
   if (p.stats) {
     return p.stats
   }
   return {
-    yearsExperience: calcYearsExperience(),
-    companies: countCompanies(),
-    countries: 4,
+    yearsExperience: calcYearsExperience(experiences),
+    companies: countCompanies(experiences),
+    countries: DEFAULT_COUNTRIES,
     certifications: certificates.length,
   }
 }

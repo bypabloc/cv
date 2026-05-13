@@ -1,0 +1,97 @@
+/**
+ * @module references
+ * @description 10 referencias profesionales. Fuente: .claude/docs/cv/11-referencias.md.
+ */
+import { type Reference, ReferenceSchema } from '../schemas'
+
+const raw: Reference[] = [
+  {
+    slug: 'alan-vergara',
+    name: 'Alan Vergara Bravo',
+    role: 'Software Architect Developer',
+    relation: {
+      es: 'Compañero de equipo',
+      en: 'Teammate',
+    },
+    company: 'Destacame',
+    linkedin: 'https://www.linkedin.com/in/alan-vergara-bravo-b17164145',
+  },
+  {
+    slug: 'alejandra-medina',
+    name: 'Alejandra Medina Briceño',
+    role: 'Diseñadora UX/UI',
+    relation: { es: 'Compañera de equipo', en: 'Teammate' },
+    company: 'Destacame',
+    linkedin: 'https://www.linkedin.com/in/alejandra-medinab',
+  },
+  {
+    slug: 'baldomero-aguila',
+    name: 'Baldomero Águila',
+    role: 'Desarrollador Mobile',
+    relation: { es: 'Compañero de equipo', en: 'Teammate' },
+    company: 'Destacame',
+    linkedin: 'https://www.linkedin.com/in/baldomero',
+  },
+  {
+    slug: 'cristian-fuentes',
+    name: 'Cristian Fuentes',
+    role: 'Desarrollador Full Stack',
+    relation: { es: 'Compañero de equipo', en: 'Teammate' },
+    company: 'Destacame',
+    linkedin: 'https://www.linkedin.com/in/csfuente',
+  },
+  {
+    slug: 'helis-montes',
+    name: 'Helis Montes',
+    role: 'Desarrollador Full Stack',
+    relation: { es: 'Compañero de equipo', en: 'Teammate' },
+    company: 'Destacame',
+    linkedin: 'https://www.linkedin.com/in/helis-montes',
+  },
+  {
+    slug: 'edder-ramirez',
+    name: 'Edder Ramírez',
+    role: 'Desarrollador Full Stack',
+    relation: { es: 'Compañero de equipo', en: 'Teammate' },
+    company: 'Destacame',
+    linkedin: 'https://www.linkedin.com/in/edderleonardo',
+  },
+  {
+    slug: 'jose-namoc',
+    name: 'José Namoc',
+    role: 'Desarrollador Full Stack',
+    relation: { es: 'Compañero de equipo', en: 'Teammate' },
+    company: 'Dibal',
+    linkedin: 'https://www.linkedin.com/in/jose-namoc-lopez',
+  },
+  {
+    slug: 'jacnelly-colmenarez',
+    name: 'Jacnelly Colmenarez',
+    role: 'UI/UX Designer',
+    relation: { es: 'Compañera de equipo', en: 'Teammate' },
+    company: 'Dibal',
+    linkedin: 'https://www.linkedin.com/in/jacnelly-colmenarez',
+  },
+  {
+    slug: 'felipe-rivera',
+    name: 'Felipe Rivera',
+    role: 'Talent Acquisition Lead',
+    relation: {
+      es: 'Trabajé en la misma empresa',
+      en: 'Worked at the same company',
+    },
+    linkedin: 'https://www.linkedin.com/in/frtavonatti',
+  },
+  {
+    slug: 'samuel-espinoza',
+    name: 'Samuel Espinoza',
+    role: 'Desarrollador Full Stack',
+    relation: {
+      es: 'Misma universidad y proyectos juntos',
+      en: 'Same university and joint projects',
+    },
+    linkedin: 'https://www.linkedin.com/in/samuelespinozac',
+  },
+]
+
+export const references: Reference[] = raw.map((r) => ReferenceSchema.parse(r))

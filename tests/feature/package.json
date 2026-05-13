@@ -1,0 +1,20 @@
+{
+  "name": "portfolio-feature-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright E2E tests para las 6 apps Astro del portfolio.",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report report",
+    "codegen": "playwright codegen http://localhost:9970"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.2",
+    "typescript": "^5.8.3"
+  }
+}

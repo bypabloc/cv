@@ -2,9 +2,10 @@
 # Entrypoint para apps Astro en modo dev (HMR).
 #
 # CORRE COMO ROOT al inicio:
-#   1. Fixea permisos del named volume node_modules (que viene root-owned)
-#   2. Baja privilegios al user `app` (UID 1000 por default)
-#   3. Ejecuta pnpm install + dev server como `app`
+#   1. Fixea permisos del named volume node_modules (root-owned al primer mount)
+#   2. Hace el directorio /app escribible por uid app (para tmp files de pnpm)
+#   3. Baja privilegios al user `app` (UID 1000 por default)
+#   4. Ejecuta pnpm install + dev server como `app`
 #
 # Variables esperadas:
 #   APP_NAME — hub, generic, fintech, architect, leader, vibe
@@ -21,10 +22,16 @@ UID_RUN="${UID:-1000}"
 GID_RUN="${GID:-1000}"
 
 # Fix permisos del bind mount y named volumes.
-# /app                -> bind mount del repo (con permisos del host)
+# /app                -> bind mount del repo (puede ser root-owned en CI)
 # /app/node_modules   -> named volume vacio (root-owned al primer mount)
+#
+# IMPORTANTE: chown solo de /app (depth 0) y /app/node_modules. NO recursivo
+# en el bind mount porque (a) es caro y (b) lo del host se ve afectado en
+# desarrollo local. pnpm escribe sus _tmp_<n>_<hash> en la raiz del workdir
+# (/app/), por eso necesita /app con write para uid app.
 if [ "$(id -u)" = "0" ]; then
   echo "[entrypoint] Ajustando permisos como root..."
+  chmod 777 /app  # tmp files de pnpm en /app/_tmp_*
   mkdir -p /app/node_modules
   chown ${UID_RUN}:${GID_RUN} /app/node_modules || true
   echo "[entrypoint] Bajando privilegios a uid=${UID_RUN} gid=${GID_RUN}"

@@ -15,6 +15,7 @@ GID_RUN="${GID:-1000}"
 
 if [ "$(id -u)" = "0" ]; then
   echo "[entrypoint] Ajustando permisos como root..."
+  chmod 777 /app  # tmp files de pnpm en /app/_tmp_*
   mkdir -p /app/node_modules
   chown ${UID_RUN}:${GID_RUN} /app/node_modules || true
   echo "[entrypoint] Bajando privilegios a uid=${UID_RUN} gid=${GID_RUN}"

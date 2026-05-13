@@ -8,10 +8,12 @@ fallback a regex propia si no esta disponible). Maneja pre-releases
 import re
 
 
-# Indicadores de pre-release: PEP 440 (a/b/rc/dev) y SemVer (-alpha/-beta/-rc/-pre)
+# Indicadores de pre-release: PEP 440 (a/b/rc/dev) y SemVer (-alpha/-beta/-rc/-pre/-canary/-next/-experimental/-nightly/-snapshot).
+# `canary` y `next` son comunes en npm para builds inestables (ej. zod 4.5.0-canary.X,
+# react 19.0.0-next.X). Tratamos todo como pre-release.
 _PRERELEASE_RE = re.compile(
     r'(?:'
-    r'-(?:alpha|beta|rc|pre|preview|dev)\b'  # SemVer style: 1.0.0-alpha
+    r'-(?:alpha|beta|rc|pre|preview|dev|canary|next|experimental|nightly|snapshot|insiders|edge|unstable)\b'
     r'|'
     r'(?:[abr])(?:c)?\d+\b'  # PEP 440 short: 1.0a1, 1.0b2, 1.0rc1
     r'|'

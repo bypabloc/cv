@@ -28,10 +28,15 @@ const VIEWPORTS = [
 ] as const
 
 test.describe('Feature: CV screenshots - 6 niches x 3 viewports', () => {
+  // El spec controla viewports internamente: skip todos los projects excepto
+  // desktop-chromium para evitar duplicar ejecucion x5 projects.
   test.skip(
-    ({ browserName }) => browserName !== 'chromium',
-    'Solo desktop-chromium para reducir tiempo de captura',
+    ({}, testInfo) => testInfo.project.name !== 'desktop-chromium',
+    'Spec controla viewport internamente; corre solo en desktop-chromium',
   )
+
+  // fullPage screenshots en paginas largas (CV) pueden exceder 15s default
+  test.setTimeout(90_000)
 
   for (const viewport of VIEWPORTS) {
     test.describe(`Viewport: ${viewport.name} (${viewport.width}x${viewport.height})`, () => {

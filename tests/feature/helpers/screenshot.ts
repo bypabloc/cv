@@ -22,6 +22,7 @@ export async function captureScreenshot(
 ): Promise<void> {
   const sanitized = label.replace(/[^a-z0-9-]+/gi, '-').toLowerCase()
   const path = `${testInfo.outputDir}/${sanitized}.png`
-  await page.screenshot({ path, fullPage: true })
+  // 30s para fullPage screenshots de paginas largas (CV) con view-transitions
+  await page.screenshot({ path, fullPage: true, timeout: 30_000 })
   await testInfo.attach(sanitized, { path, contentType: 'image/png' })
 }

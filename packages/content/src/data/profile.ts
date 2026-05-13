@@ -27,4 +27,10 @@ export const profile: Profile = ProfileSchema.parse({
   },
   avatarUrl: 'https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif',
   niches: ['fintech', 'architect', 'leader', 'vibe', 'generic'],
+  stats: {
+    yearsExperience: 12,
+    companies: 8,
+    countries: 4,
+    certifications: 11,
+  },
 })

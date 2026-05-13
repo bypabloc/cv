@@ -1,0 +1,11 @@
+slug: typescript-tipos
+title: Dominando el Mundo de los Tipos en TypeScript
+platform: Medium
+url: https://bypablo.medium.com/dominando-el-mundo-de-los-tipos-en-typescript-e543eb42eb9c
+date: 2023-05-31
+summary:
+  es: "Tour por el sistema de tipos de TypeScript: qué son, cómo usarlos y por qué importan."
+  en: "A tour of the TypeScript type system: what types are, how to use them and why they matter."
+niches:
+  - generic
+  - architect

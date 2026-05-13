@@ -174,6 +174,12 @@ export const EducationSchema = z.object({
   end: z.string().regex(/^\d{4}|Actual|Present/),
   url: z.string().url().optional(),
   description: BiLangSchema,
+  /**
+   * Niches en los que esta entry debe aparecer. Opcional: si se omite, la
+   * entry se renderiza en todos los niches (default actual). Cuando se
+   * define, habilita filtrado por nicho identico a Experience/Project.
+   */
+  niches: z.array(NicheSchema).min(1).optional(),
 })
 export type Education = z.infer<typeof EducationSchema>
 
@@ -185,13 +191,28 @@ export const ReferenceSchema = z.object({
   relation: BiLangSchema,
   company: z.string().min(1).optional(),
   linkedin: z.string().url(),
+  /**
+   * Niches en los que esta reference debe aparecer. Opcional: si se omite,
+   * la reference se renderiza en todos los niches (default actual).
+   */
+  niches: z.array(NicheSchema).min(1).optional(),
 })
 export type Reference = z.infer<typeof ReferenceSchema>
 
 /** Language proficiency. */
 export const LanguageSchema = z.object({
+  /**
+   * Slug opcional (deriva del filename del YAML). Solo presente cuando la
+   * entry vive en un archivo individual (ej. `es.yaml`, `en.yaml`).
+   */
+  slug: z.string().min(1).optional(),
   name: BiLangSchema,
   level: BiLangSchema,
+  /**
+   * Niches en los que esta entry debe aparecer. Opcional: si se omite, la
+   * entry se renderiza en todos los niches (default actual).
+   */
+  niches: z.array(NicheSchema).min(1).optional(),
 })
 export type Language = z.infer<typeof LanguageSchema>
 

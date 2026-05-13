@@ -1,0 +1,36 @@
+slug: ipasme
+role:
+  es: Desarrollador de Software
+  en: Software Developer
+company: Independiente / Académico
+start: 2014-01
+end: 2014-12
+niches:
+  - generic
+priority:
+  generic: 30
+responsibilities:
+  es:
+    - Desarrollo e implementación de un sistema de gestión de historias médicas para pacientes.
+    - Creación de interfaces de escritorio en Java para Windows.
+  en:
+    - Built and deployed a patient medical-records management system.
+    - Created Java desktop interfaces for Windows.
+achievements:
+  es:
+    - Aplicación de conceptos de POO y CRUDs en Java, mejorando mis habilidades técnicas.
+    - Mejora de habilidades de comunicación y levantamiento de requerimientos.
+  en:
+    - Applied OOP and CRUD patterns in Java to strengthen core engineering skills.
+    - Improved technical communication and requirements-gathering skills.
+skillsTechnical:
+  - Historias Médicas
+  - Aplicación de Escritorio
+  - Java
+  - Programación Orientada a Objetos
+  - Levantamiento de Requerimientos
+skillsSoft:
+  - Comunicación Técnica
+  - Pensamiento Analítico
+  - Resolución de Problemas
+  - Adaptabilidad

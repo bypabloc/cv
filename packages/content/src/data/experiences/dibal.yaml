@@ -1,0 +1,74 @@
+slug: dibal
+role:
+  es: Líder de Equipo de Desarrollo y Desarrollador
+  en: Development Team Lead and Developer
+company: Dibal
+companyUrl: https://dibal.pe
+start: 2018-12
+end: 2021-09
+niches:
+  - architect
+  - leader
+  - generic
+priority:
+  architect: 90
+  leader: 95
+  generic: 85
+responsibilities:
+  es:
+    - >-
+      Primer desarrollador contratado en la startup, contribuyendo al desarrollo de un sistema web
+      para múltiples restaurantes usando jQuery y Laravel.
+    - >-
+      Liderazgo del equipo de desarrollo, organizando e implementando arquitecturas adaptadas a las
+      necesidades cambiantes del negocio.
+    - >-
+      Desarrollo de un e-commerce en Vue que integra la gestión de restaurantes con la experiencia
+      del cliente, minimizando la interacción humana.
+    - >-
+      Encargado del despliegue de aplicaciones en AWS, utilizando servicios como EC2, RDS, S3, Route
+      53, SES, AutoScaling y LoadBalancer.
+  en:
+    - >-
+      First developer hired at the startup, building a multi-restaurant web system with jQuery and
+      Laravel.
+    - >-
+      Led the development team, organizing and implementing architectures adapted to evolving
+      business needs.
+    - >-
+      Built a Vue e-commerce that integrates restaurant management with the customer experience,
+      minimizing human interaction.
+    - >-
+      Owned application deployments on AWS using EC2, RDS, S3, Route 53, SES, AutoScaling and
+      LoadBalancer.
+achievements:
+  es:
+    - >-
+      Contribuí al crecimiento de la startup, adaptándome y respondiendo eficazmente a las
+      necesidades de los clientes.
+    - >-
+      Lideré con éxito un equipo de desarrollo, facilitando el crecimiento de la empresa y la
+      implementación de soluciones tecnológicas avanzadas.
+    - >-
+      Implementé soluciones de comercio electrónico que mejoraron significativamente la experiencia
+      del cliente y la eficiencia operativa de los restaurantes asociados.
+  en:
+    - Contributed to the startup growth by adapting to and responding to customer needs effectively.
+    - >-
+      Successfully led a development team, enabling company growth and the rollout of advanced
+      technical solutions.
+    - >-
+      Shipped e-commerce solutions that significantly improved customer experience and partner
+      restaurants efficiency.
+skillsTechnical:
+  - Despliegue en AWS
+  - Laravel
+  - Arquitectura de Sistemas
+  - Microfrontend
+  - Desarrollo de E-commerce
+  - Computación en la Nube
+skillsSoft:
+  - Liderazgo de Equipo
+  - Metodologías Ágiles
+  - Gestión de Equipos
+  - Orientado al Cliente

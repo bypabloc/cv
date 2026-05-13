@@ -1,0 +1,56 @@
+slug: destacame-frontend
+role:
+  es: Desarrollador Web Frontend
+  en: Web Frontend Developer
+company: Destacame
+companyUrl: https://destacame.cl
+start: 2021-12
+end: 2022-08
+niches:
+  - fintech
+  - generic
+priority:
+  fintech: 90
+  generic: 95
+responsibilities:
+  es:
+    - >-
+      Contratado inicialmente para trabajar en el área de frontend debido a habilidades
+      sobresalientes demostradas en pruebas técnicas.
+    - >-
+      Implementación de estándares y nuevas tecnologías en el desarrollo frontend, trabajando con
+      Vue y Nuxt.js para mejorar la experiencia del usuario.
+    - >-
+      Aprendizaje y aplicación progresiva de habilidades en el backend, enfocándome en Python y
+      Django, para expandir mis capacidades como desarrollador full stack.
+  en:
+    - Hired into the frontend team based on outstanding technical assessments.
+    - Introduced new standards and tooling for frontend with Vue and Nuxt.js to improve UX.
+    - Progressively expanded into the backend with Python and Django to grow into a full stack role.
+achievements:
+  es:
+    - >-
+      Mejoré significativamente la calidad y eficiencia del desarrollo frontend mediante la adopción
+      de nuevas tecnologías y estándares.
+    - >-
+      Desarrollé habilidades en Python y Django, superando los desafíos iniciales de falta de
+      experiencia en estas tecnologías.
+    - >-
+      Contribuí a la versatilidad y flexibilidad del equipo de desarrollo, adaptándome a necesidades
+      cambiantes y aprendiendo nuevas habilidades.
+  en:
+    - >-
+      Significantly improved frontend quality and efficiency by adopting modern tooling and
+      standards.
+    - Built solid Python/Django skills despite starting with no prior experience in those stacks.
+    - Contributed to team versatility, adapting to changing needs and learning new skills.
+skillsTechnical:
+  - Vue.js
+  - Nuxt.js
+  - TypeScript
+  - Desarrollo Frontend
+  - Desarrollo Web
+skillsSoft:
+  - Resolución de Problemas
+  - Agilidad de Aprendizaje
+  - Trabajo en Equipo

@@ -1,0 +1,50 @@
+slug: iai
+role:
+  es: Líder de Desarrollo de Software y Arquitectura de Sistemas
+  en: Software Development Lead and Systems Architecture
+company: Independiente / Académico
+start: 2015-01
+end: 2015-12
+niches:
+  - leader
+  - generic
+priority:
+  leader: 55
+  generic: 45
+responsibilities:
+  es:
+    - >-
+      Liderazgo en el desarrollo e implementación de un sistema informático para la gestión de
+      obras.
+    - >-
+      Diseño y desarrollo de una arquitectura de red con una PC como servidor para acceso
+      centralizado a datos.
+  en:
+    - Led the development and implementation of a construction-site management system.
+    - Designed a network architecture using a PC as server for centralized data access.
+achievements:
+  es:
+    - >-
+      Diseño exitoso y desarrollo de la arquitectura del sistema, garantizando una implementación
+      eficiente y adaptada.
+    - >-
+      Mejora significativa en la gestión de obras y presupuestos a través de interfaces de usuario
+      desarrolladas.
+  en:
+    - >-
+      Successfully designed and implemented the system architecture, ensuring efficient and tailored
+      delivery.
+    - Significantly improved site and budget management through the built user interfaces.
+skillsTechnical:
+  - Proyecto de Grado
+  - Implementación de Soluciones
+  - Redacción Técnica
+  - Gestión de Infraestructura
+  - Desarrollo de Software
+  - Gestión de Datos
+skillsSoft:
+  - Planificación de Proyecto
+  - Gestión del Trabajo
+  - Gestión del Presupuesto
+  - Gestión de Proyectos
+  - Trabajo Colaborativo

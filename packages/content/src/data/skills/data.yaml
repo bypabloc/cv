@@ -1,0 +1,14 @@
+slug: data
+name:
+  es: Datos & SQL
+  en: Data & SQL
+skills:
+  - PostgreSQL
+  - SQL
+  - Análisis de Productividad
+  - Gestión de Datos
+kind: technical
+niches:
+  - fintech
+  - architect
+  - generic

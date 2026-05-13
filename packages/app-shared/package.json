@@ -26,7 +26,7 @@
     "@portfolio/ui": "workspace:*"
   },
   "peerDependencies": {
-    "astro": "^5.0.0"
+    "astro": "^6.0.0"
   },
   "devDependencies": {
     "@modyfi/vite-plugin-yaml": "^1.1.1",
@@ -34,7 +34,7 @@
     "@vitest/coverage-v8": "^2.1.9",
     "js-yaml": "^4.1.1",
     "typescript": "^5.9.3",
-    "vite": "^8.0.12",
+    "vite": "^7.3.3",
     "vitest": "^2.1.9"
   }
 }

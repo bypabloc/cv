@@ -1,0 +1,44 @@
+---
+/**
+ * @component MeshGradientBg
+ * @description Fondo mesh gradient animado para hero / secciones impact.
+ *   Usa --niche-accent del SitePageLayout, asi cada nicho tiene tinte propio.
+ *   Pausado automaticamente con prefers-reduced-motion.
+ *
+ * @props {'soft' | 'vivid'} [variant='soft'] - Intensidad del gradient
+ * @props {boolean} [aurora=true] - Agrega capa aurora encima
+ * @props {boolean} [fixed=false] - position: fixed (cuerpo completo) vs absolute
+ *
+ * @example
+ *   <MeshGradientBg variant="vivid" />
+ *   <MeshGradientBg variant="soft" fixed />
+ */
+interface Props {
+  variant?: 'soft' | 'vivid'
+  aurora?: boolean
+  fixed?: boolean
+}
+
+const { variant = 'soft', aurora = true, fixed = false } = Astro.props
+const meshClass =
+  variant === 'vivid' ? 'mesh-bg mesh-bg--vivid' : 'mesh-bg mesh-bg--soft'
+---
+
+<div class:list={['mesh-wrap', fixed && 'mesh-wrap--fixed']} aria-hidden="true">
+  <div class={meshClass}></div>
+  {aurora && <div class="aurora-layer"></div>}
+</div>
+
+<style>
+  .mesh-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .mesh-wrap--fixed {
+    position: fixed;
+    inset: 0;
+  }
+</style>

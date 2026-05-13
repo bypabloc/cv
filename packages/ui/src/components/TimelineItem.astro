@@ -1,0 +1,168 @@
+---
+/**
+ * @component TimelineItem
+ * @description Item individual del ExperienceTimeline. Dot conector +
+ *   role/company/date + body via <slot/> + skills chips.
+ *
+ * @props {string} role - Cargo
+ * @props {string} company - Empresa
+ * @props {string} [companyUrl]
+ * @props {string} dateRange - Texto formateado
+ * @props {string[]} [skills] - Tags (max 8)
+ * @props {boolean} [current=false] - Marca rol actual con animacion adicional
+ *
+ * @example
+ *   <TimelineItem
+ *     role="Frontend Architect"
+ *     company="Destacame"
+ *     dateRange="2022-08 — Actual"
+ *     skills={['Vue', 'Django', 'AWS']}
+ *     current
+ *   >
+ *     <ul><li>Microservicios fintech...</li></ul>
+ *   </TimelineItem>
+ */
+interface Props {
+  role: string
+  company: string
+  companyUrl?: string
+  dateRange: string
+  skills?: string[]
+  current?: boolean
+}
+
+const {
+  role,
+  company,
+  companyUrl,
+  dateRange,
+  skills = [],
+  current = false,
+} = Astro.props
+const visibleSkills = skills.slice(0, 8)
+const remaining = Math.max(0, skills.length - visibleSkills.length)
+---
+
+<li class:list={['timeline-item', 'scroll-reveal-slide-right', current && 'timeline-item--current']}>
+  <span class:list={['timeline-item__dot', current && 'timeline-item__dot--glow']} aria-hidden="true"></span>
+  <article class="timeline-item__card">
+    <header class="timeline-item__header">
+      <div>
+        <h3 class="timeline-item__role text-h4">{role}</h3>
+        <p class="timeline-item__company text-body">
+          {companyUrl ? (
+            <a href={companyUrl} target="_blank" rel="noopener" class="anim-underline">{company}</a>
+          ) : (
+            company
+          )}
+        </p>
+      </div>
+      <p class="timeline-item__date text-mono-label text-muted">{dateRange}</p>
+    </header>
+    <div class="timeline-item__body">
+      <slot />
+    </div>
+    {
+      visibleSkills.length > 0 && (
+        <ul class="timeline-item__skills">
+          {visibleSkills.map((s) => (
+            <li class="timeline-item__skill text-mono">{s}</li>
+          ))}
+          {remaining > 0 && (
+            <li class="timeline-item__skill timeline-item__skill--more text-mono">+{remaining}</li>
+          )}
+        </ul>
+      )
+    }
+  </article>
+</li>
+
+<style>
+  .timeline-item {
+    position: relative;
+    padding-bottom: var(--space-40);
+  }
+  .timeline-item:last-child {
+    padding-bottom: 0;
+  }
+  .timeline-item__dot {
+    position: absolute;
+    left: -32px;
+    top: 22px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-bg);
+    border: 2px solid var(--niche-accent);
+    box-shadow: 0 0 0 4px rgba(var(--niche-accent-rgb), 0.08);
+  }
+  .timeline-item__dot--glow {
+    background: var(--niche-accent);
+    animation: pulse-glow 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 4px rgba(var(--niche-accent-rgb), 0.1);
+    }
+    50% {
+      box-shadow: 0 0 0 12px rgba(var(--niche-accent-rgb), 0);
+    }
+  }
+  .timeline-item__card {
+    padding: var(--space-24);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    transition:
+      border-color var(--motion-base) var(--easing-out),
+      transform var(--motion-base) var(--easing-out),
+      box-shadow var(--motion-base) var(--easing-out);
+  }
+  .timeline-item__card:hover {
+    border-color: rgba(var(--niche-accent-rgb), 0.4);
+    transform: translateX(4px);
+    box-shadow: 0 8px 32px rgba(var(--niche-accent-rgb), 0.12);
+  }
+  .timeline-item__header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-16);
+    margin-bottom: var(--space-16);
+    flex-wrap: wrap;
+  }
+  .timeline-item__role {
+    margin: 0 0 var(--space-4) 0;
+  }
+  .timeline-item__company {
+    color: var(--color-text-muted);
+  }
+  .timeline-item__company a {
+    color: var(--color-text);
+  }
+  .timeline-item__body {
+    color: var(--color-text-muted);
+    line-height: var(--line-height-relaxed);
+    font-size: var(--font-size-14);
+  }
+  .timeline-item__skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    margin: var(--space-16) 0 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .timeline-item__skill {
+    padding: var(--space-3) var(--space-10);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-11);
+  }
+  .timeline-item__skill--more {
+    background: transparent;
+    color: var(--niche-accent);
+    border-color: rgba(var(--niche-accent-rgb), 0.3);
+  }
+</style>

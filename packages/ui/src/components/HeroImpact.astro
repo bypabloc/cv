@@ -1,0 +1,215 @@
+---
+/**
+ * @component HeroImpact
+ * @description Hero moderno 2026: display-mega headline + mesh gradient bg +
+ *   eyebrow badge nicho + summary fluido + 2 CTAs con magnetic + niche
+ *   accent integrado. Reemplazo recomendado de Hero.astro.
+ *
+ * @props {string} eyebrow - Texto pequeño arriba (ej. "Pablo Contreras · Fintech LATAM")
+ * @props {string} headline - H1 principal (clamp 3rem-10vw-12rem)
+ * @props {string} summary - Parrafo descriptivo
+ * @props {Array<{href, label, variant?}>} [ctas] - Hasta 2 CTAs
+ * @props {string} [nicheLabel] - Label del nicho a la derecha del eyebrow
+ * @props {boolean} [mesh=true] - Mostrar fondo mesh gradient
+ *
+ * @example
+ *   <HeroImpact
+ *     eyebrow="Pablo Contreras · Lima, Perú"
+ *     headline="Senior Full Stack Engineer"
+ *     summary="..."
+ *     ctas={[{href:'#projects', label:'Proyectos', variant:'primary'}]}
+ *     nicheLabel="Fintech LATAM"
+ *   />
+ */
+import MeshGradientBg from './MeshGradientBg.astro'
+
+interface Cta {
+  href: string
+  label: string
+  variant?: 'primary' | 'ghost'
+}
+
+interface Props {
+  eyebrow: string
+  headline: string
+  summary: string
+  ctas?: Cta[]
+  nicheLabel?: string
+  mesh?: boolean
+}
+
+const {
+  eyebrow,
+  headline,
+  summary,
+  ctas = [],
+  nicheLabel,
+  mesh = true,
+} = Astro.props
+---
+
+<section class="hero-impact">
+  {mesh && <MeshGradientBg variant="vivid" aurora />}
+  <div class="container-wide hero-impact__inner">
+    <header class="hero-impact__top">
+      <p class="hero-impact__eyebrow text-mono-label">
+        <span class="hero-impact__dot" aria-hidden="true"></span>
+        {eyebrow}
+      </p>
+      {
+        nicheLabel && (
+          <span class="hero-impact__niche-badge text-mono-label">
+            {nicheLabel}
+          </span>
+        )
+      }
+    </header>
+
+    <h1 class="hero-impact__headline text-display-mega" style="view-transition-name: hero-headline;">
+      <span class="hero-impact__headline-text">{headline}</span>
+    </h1>
+
+    <p class="hero-impact__summary text-body-lg text-muted">{summary}</p>
+
+    {
+      ctas.length > 0 && (
+        <div class="hero-impact__ctas">
+          {ctas.map((cta) => (
+            <a
+              href={cta.href}
+              class:list={[
+                'hero-impact__cta',
+                'magnetic',
+                `hero-impact__cta--${cta.variant ?? 'primary'}`,
+              ]}
+            >
+              {cta.label}
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .hero-impact {
+    position: relative;
+    padding-block: var(--space-100) var(--space-72);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .hero-impact__inner {
+    position: relative;
+    z-index: 1;
+  }
+  .hero-impact__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+    margin-bottom: var(--space-32);
+    flex-wrap: wrap;
+  }
+  .hero-impact__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+  .hero-impact__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--niche-accent);
+    box-shadow: 0 0 12px var(--niche-glow);
+    animation: pulse-soft 2.4s ease-in-out infinite;
+  }
+  .hero-impact__niche-badge {
+    color: var(--niche-accent);
+    padding: var(--space-6) var(--space-12);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--niche-accent-rgb), 0.08);
+  }
+  .hero-impact__headline {
+    margin: 0 0 var(--space-32) 0;
+    color: var(--color-text);
+    max-width: 14ch;
+  }
+  .hero-impact__headline-text {
+    background: var(--niche-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-impact__summary {
+    max-width: 56ch;
+    margin: 0 0 var(--space-40) 0;
+  }
+  .hero-impact__ctas {
+    display: flex;
+    gap: var(--space-12);
+    flex-wrap: wrap;
+  }
+  .hero-impact__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-12) var(--space-24);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-14);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      background-color var(--motion-base) var(--easing-out),
+      border-color var(--motion-base) var(--easing-out),
+      box-shadow var(--motion-base) var(--easing-out),
+      color var(--motion-base) var(--easing-out);
+  }
+  .hero-impact__cta--primary {
+    background: var(--niche-accent);
+    color: #0a0a0a;
+    box-shadow: 0 4px 24px var(--niche-glow);
+  }
+  .hero-impact__cta--primary:hover,
+  .hero-impact__cta--primary:focus-visible {
+    background: var(--niche-accent);
+    box-shadow: 0 8px 40px var(--niche-glow);
+  }
+  .hero-impact__cta--ghost {
+    background: rgba(var(--niche-accent-rgb), 0.04);
+    color: var(--color-text);
+    border: 1px solid var(--color-border-strong);
+  }
+  .hero-impact__cta--ghost:hover,
+  .hero-impact__cta--ghost:focus-visible {
+    border-color: var(--niche-accent);
+    color: var(--niche-accent);
+    background: rgba(var(--niche-accent-rgb), 0.08);
+  }
+  @media (max-width: 640px) {
+    .hero-impact {
+      padding-block: var(--space-72) var(--space-56);
+    }
+    .hero-impact__headline {
+      max-width: 100%;
+    }
+  }
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.2);
+    }
+  }
+</style>

@@ -1,0 +1,46 @@
+---
+/**
+ * @component ProjectsBento
+ * @description Bento grid 12-col asimetrico para proyectos. Cada celda usa
+ *   tilt 3D + mesh gradient sutil + scroll-reveal. El span se calcula
+ *   automaticamente: 1ra y 4ta celda (cada 3 items) son "lg", el resto "md".
+ *
+ *   Usa <ProjectBentoCard> como children (no acepta ProjectCard legacy).
+ *
+ * @props {string} [ariaLabel='Proyectos destacados']
+ *
+ * @example
+ *   <ProjectsBento>
+ *     <ProjectBentoCard ... bentoSpan="lg" />
+ *     <ProjectBentoCard ... bentoSpan="md" />
+ *   </ProjectsBento>
+ */
+interface Props {
+  ariaLabel?: string
+}
+
+const { ariaLabel = 'Proyectos destacados' } = Astro.props
+---
+
+<div class="bento-grid" role="list" aria-label={ariaLabel}>
+  <slot />
+</div>
+
+<style>
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--space-20);
+  }
+  @media (max-width: 960px) {
+    .bento-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+  }
+  @media (max-width: 600px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-16);
+    }
+  }
+</style>

@@ -96,9 +96,10 @@ const {
 </section>
 
 <style>
+  /* Mobile-first: base 320-767px */
   .hero-impact {
     position: relative;
-    padding-block: var(--space-100) var(--space-72);
+    padding-block: var(--space-56) var(--space-40);
     overflow: hidden;
     isolation: isolate;
   }
@@ -110,8 +111,8 @@ const {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-16);
-    margin-bottom: var(--space-32);
+    gap: var(--space-12);
+    margin-bottom: var(--space-24);
     flex-wrap: wrap;
   }
   .hero-impact__eyebrow {
@@ -137,9 +138,13 @@ const {
     background: rgba(var(--niche-accent-rgb), 0.08);
   }
   .hero-impact__headline {
-    margin: 0 0 var(--space-32) 0;
+    margin: 0 0 var(--space-24) 0;
     color: var(--color-text);
-    max-width: 14ch;
+    max-width: 100%;
+    /* break-word para evitar overflow horizontal a 320px */
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
   .hero-impact__headline-text {
     background: var(--niche-gradient);
@@ -150,12 +155,37 @@ const {
   }
   .hero-impact__summary {
     max-width: 56ch;
-    margin: 0 0 var(--space-40) 0;
+    margin: 0 0 var(--space-32) 0;
   }
   .hero-impact__ctas {
     display: flex;
     gap: var(--space-12);
     flex-wrap: wrap;
+  }
+  .hero-impact__cta {
+    /* Full width en mobile para mejor touch target */
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  /* >= md: tablet + desktop scaling */
+  @media (min-width: 768px) {
+    .hero-impact {
+      padding-block: var(--space-100) var(--space-72);
+    }
+    .hero-impact__top {
+      gap: var(--space-16);
+      margin-bottom: var(--space-32);
+    }
+    .hero-impact__headline {
+      margin-bottom: var(--space-32);
+      max-width: 14ch;
+    }
+    .hero-impact__summary {
+      margin-bottom: var(--space-40);
+    }
+    .hero-impact__cta {
+      flex: 0 0 auto;
+    }
   }
   .hero-impact__cta {
     display: inline-flex;
@@ -192,14 +222,6 @@ const {
     border-color: var(--niche-accent);
     color: var(--niche-accent);
     background: rgba(var(--niche-accent-rgb), 0.08);
-  }
-  @media (max-width: 640px) {
-    .hero-impact {
-      padding-block: var(--space-72) var(--space-56);
-    }
-    .hero-impact__headline {
-      max-width: 100%;
-    }
   }
   @keyframes pulse-soft {
     0%,

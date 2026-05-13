@@ -109,10 +109,11 @@ const statusLabel = {
 </article>
 
 <style>
+  /* Mobile-first: 1 col en <640, 2 cols en >=640, spans bento en >=1024 */
   .bento-card {
     position: relative;
-    grid-column: span 6;
-    padding: var(--space-32);
+    grid-column: 1 / -1;
+    padding: var(--space-20);
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
@@ -122,19 +123,11 @@ const statusLabel = {
       border-color var(--motion-slow) var(--easing-out),
       box-shadow var(--motion-slow) var(--easing-out);
   }
-  .bento-card--sm {
-    grid-column: span 4;
-  }
-  .bento-card--md {
-    grid-column: span 6;
-  }
-  .bento-card--lg {
-    grid-column: span 8;
-  }
-  .bento-card--xl {
-    grid-column: span 12;
-  }
-  @media (max-width: 960px) {
+  @media (min-width: 640px) {
+    .bento-card {
+      padding: var(--space-24);
+      grid-column: span 6;
+    }
     .bento-card--sm,
     .bento-card--md,
     .bento-card--lg,
@@ -142,12 +135,21 @@ const statusLabel = {
       grid-column: span 6;
     }
   }
-  @media (max-width: 600px) {
-    .bento-card--sm,
-    .bento-card--md,
-    .bento-card--lg,
+  @media (min-width: 1024px) {
+    .bento-card {
+      padding: var(--space-32);
+    }
+    .bento-card--sm {
+      grid-column: span 4;
+    }
+    .bento-card--md {
+      grid-column: span 6;
+    }
+    .bento-card--lg {
+      grid-column: span 8;
+    }
     .bento-card--xl {
-      grid-column: 1 / -1;
+      grid-column: span 12;
     }
   }
   .bento-card__mesh {

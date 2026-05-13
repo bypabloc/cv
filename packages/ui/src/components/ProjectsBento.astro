@@ -27,20 +27,21 @@ const { ariaLabel = 'Proyectos destacados' } = Astro.props
 </div>
 
 <style>
+  /* Mobile-first: 1col -> 2col @ sm -> 6col @ md -> 12col @ lg */
   .bento-grid {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: var(--space-20);
+    grid-template-columns: 1fr;
+    gap: var(--space-16);
   }
-  @media (max-width: 960px) {
+  @media (min-width: 640px) {
     .bento-grid {
       grid-template-columns: repeat(6, 1fr);
+      gap: var(--space-20);
     }
   }
-  @media (max-width: 600px) {
+  @media (min-width: 1024px) {
     .bento-grid {
-      grid-template-columns: 1fr;
-      gap: var(--space-16);
+      grid-template-columns: repeat(12, 1fr);
     }
   }
 </style>

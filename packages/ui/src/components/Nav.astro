@@ -1,7 +1,12 @@
 ---
 /**
  * @component Nav
- * @description Barra de navegación principal. Recibe links y nombre del sitio.
+ * @description Barra de navegación principal. Mobile-first:
+ *   - <768px: muestra brand + theme + hamburger (los items van al MobileNavDrawer)
+ *   - >=768px: muestra brand + items inline + locale + theme
+ *
+ *   El drawer mobile se renderiza junto al Nav y su logica vive en
+ *   initMobileNav() del barrel @portfolio/ui.
  *
  * @props {Array<{href: string, label: string}>} items - Items del menu
  * @props {string} brand - Texto del logotipo
@@ -15,6 +20,7 @@
  *     items={[{href: '/experience', label: 'Experiencia'}]}
  *   />
  */
+import MobileNavDrawer from './MobileNavDrawer.astro'
 import ThemeToggle from './ThemeToggle.astro'
 
 interface NavItem {
@@ -39,12 +45,13 @@ const {
 } = Astro.props
 
 const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
+const menuLabel = currentLocale === 'es' ? 'Abrir menú' : 'Open menu'
 ---
 
 <header class="site-nav">
   <div class="container-wide site-nav__inner">
     <a class="site-nav__brand" href={brandHref}>{brand}</a>
-    <nav aria-label="Primary">
+    <nav class="site-nav__primary" aria-label="Primary">
       <ul class="site-nav__list">
         {
           items.map((item) => (
@@ -72,9 +79,37 @@ const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
         )
       }
       <ThemeToggle />
+      <button
+        type="button"
+        class="site-nav__hamburger"
+        data-mobile-nav-toggle
+        aria-label={menuLabel}
+        aria-haspopup="dialog"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M3 6H17M3 10H17M3 14H17"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
     </div>
   </div>
 </header>
+
+<MobileNavDrawer
+  items={items}
+  currentLocale={currentLocale}
+  otherLocaleHref={otherLocaleHref}
+/>
 
 <style>
   .site-nav {
@@ -90,7 +125,7 @@ const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-24);
+    gap: var(--space-12);
     padding-block: var(--space-12);
   }
   .site-nav__brand {
@@ -99,6 +134,18 @@ const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
     font-weight: 700;
     color: var(--color-text);
     letter-spacing: var(--letter-spacing-snug);
+    /* Truncate en pantallas muy angostas */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  /* Mobile-first: ocultar items inline y locale, mostrar hamburger */
+  .site-nav__primary {
+    display: none;
+  }
+  .site-nav__locale {
+    display: none;
   }
   .site-nav__list {
     display: flex;
@@ -127,28 +174,55 @@ const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
   .site-nav__actions {
     display: flex;
     align-items: center;
-    gap: var(--space-12);
+    gap: var(--space-8);
   }
-  .site-nav__locale {
-    font-family: var(--font-mono);
-    font-size: var(--font-size-12);
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: var(--letter-spacing-wider);
-    padding: var(--space-6) var(--space-10);
-    border-radius: var(--radius-xs);
-    border: 1px solid var(--color-border);
-  }
-  .site-nav__locale:hover {
+  .site-nav__hamburger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
     color: var(--color-text);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color var(--motion-fast) var(--easing-out);
+  }
+  .site-nav__hamburger:hover,
+  .site-nav__hamburger:focus-visible {
     border-color: var(--color-border-strong);
   }
-  @media (max-width: 640px) {
-    .site-nav__list {
-      gap: var(--space-16);
+  /* >= md: mostrar items inline + locale, ocultar hamburger */
+  @media (min-width: 768px) {
+    .site-nav__inner {
+      gap: var(--space-24);
     }
-    .site-nav__link {
-      font-size: var(--font-size-13);
+    .site-nav__primary {
+      display: block;
+    }
+    .site-nav__locale {
+      display: inline-flex;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-12);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-wider);
+      padding: var(--space-6) var(--space-10);
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--color-border);
+    }
+    .site-nav__locale:hover,
+    .site-nav__locale:focus-visible {
+      color: var(--color-text);
+      border-color: var(--color-border-strong);
+    }
+    .site-nav__actions {
+      gap: var(--space-12);
+    }
+    .site-nav__hamburger {
+      display: none;
     }
   }
 </style>

@@ -52,25 +52,41 @@ const { eyebrow, headline, summary, ctas = [] } = Astro.props
 </section>
 
 <style>
+  /* Mobile-first: base 320-767px */
   .hero {
-    padding-block: var(--space-80) var(--space-56);
+    padding-block: var(--space-56) var(--space-40);
     max-width: 720px;
   }
   .hero__eyebrow {
     color: var(--color-primary);
-    margin-bottom: var(--space-16);
+    margin-bottom: var(--space-12);
   }
   .hero__headline {
-    margin-bottom: var(--space-24);
+    margin-bottom: var(--space-20);
   }
   .hero__summary {
-    margin-bottom: var(--space-40);
+    margin-bottom: var(--space-32);
     max-width: 56ch;
   }
   .hero__ctas {
     display: flex;
     gap: var(--space-12);
     flex-wrap: wrap;
+  }
+  /* >= md: tablet + desktop scaling */
+  @media (min-width: 768px) {
+    .hero {
+      padding-block: var(--space-80) var(--space-56);
+    }
+    .hero__eyebrow {
+      margin-bottom: var(--space-16);
+    }
+    .hero__headline {
+      margin-bottom: var(--space-24);
+    }
+    .hero__summary {
+      margin-bottom: var(--space-40);
+    }
   }
   .hero__cta {
     display: inline-flex;
@@ -102,10 +118,5 @@ const { eyebrow, headline, summary, ctas = [] } = Astro.props
   .hero__cta--ghost:hover {
     border-color: var(--color-border-strong);
     background: var(--color-surface);
-  }
-  @media (max-width: 640px) {
-    .hero {
-      padding-block: var(--space-56) var(--space-40);
-    }
   }
 </style>

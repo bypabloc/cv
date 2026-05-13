@@ -73,19 +73,26 @@ const {
 </article>
 
 <style>
+  /* Mobile-first */
   .proj-card {
     display: flex;
     flex-direction: column;
     gap: var(--space-12);
-    padding: var(--space-24);
+    padding: var(--space-20);
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     height: 100%;
+    overflow-wrap: break-word;
     transition:
       border-color var(--motion-fast) var(--easing-out),
       transform var(--motion-fast) var(--easing-out),
       box-shadow var(--motion-fast) var(--easing-out);
+  }
+  @media (min-width: 640px) {
+    .proj-card {
+      padding: var(--space-24);
+    }
   }
   .proj-card:hover {
     border-color: var(--color-border-strong);

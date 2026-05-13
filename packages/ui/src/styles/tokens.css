@@ -138,6 +138,20 @@
   --container-medium: 960px;
   --container-wide: 1120px;
 
+  /* === Breakpoints (Tailwind v4 standard) ===
+   * Documentacion + consumibles via JS (matchMedia/getComputedStyle).
+   * CSS no permite var() en @media queries, pero estos tokens son la
+   * fuente de verdad sincronizada con el modulo packages/ui/src/lib/mobile-nav.ts.
+   */
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --bp-2xl: 1536px;
+
+  /* === Container padding fluido (mobile-first) === */
+  --container-padding-fluid: clamp(1rem, 4vw, 1.5rem);
+
   /* === Motion === */
   --motion-fast: 120ms;
   --motion-base: 220ms;

@@ -46,14 +46,24 @@ const subtitle = isEs
 </section>
 
 <style>
+  /* Mobile-first */
   .ats-pills {
-    padding-block: var(--space-72);
+    padding-block: var(--space-40);
   }
   .ats-pills__header {
     display: grid;
-    gap: var(--space-16);
-    margin-bottom: var(--space-32);
+    gap: var(--space-12);
+    margin-bottom: var(--space-20);
     max-width: 720px;
+  }
+  @media (min-width: 768px) {
+    .ats-pills {
+      padding-block: var(--space-72);
+    }
+    .ats-pills__header {
+      gap: var(--space-16);
+      margin-bottom: var(--space-32);
+    }
   }
   .ats-pills__eyebrow {
     display: inline-flex;

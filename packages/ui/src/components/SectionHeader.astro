@@ -21,7 +21,12 @@ const { eyebrow, title, subtitle, align = 'left' } = Astro.props
 
 <style>
   .section-header {
-    margin-bottom: var(--space-40);
+    margin-bottom: var(--space-32);
+  }
+  @media (min-width: 768px) {
+    .section-header {
+      margin-bottom: var(--space-40);
+    }
   }
   .section-header.align-center {
     text-align: center;

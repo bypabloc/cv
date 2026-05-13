@@ -6,7 +6,7 @@ import sitemap from '@astrojs/sitemap'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
 
-const SITE = process.env.SITE_URL ?? 'https://the-full-stack.com'
+const SITE = process.env.SITE_URL ?? 'https://hub.the-full-stack.com'
 
 export default defineConfig({
   site: SITE,

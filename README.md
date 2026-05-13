@@ -103,4 +103,4 @@ Setup inicial: ver [cloudflare/pages-config.md](cloudflare/pages-config.md).
 - [.claude/docs/cv/](.claude/docs/cv/) — Datos del CV (fuente original)
 - [.claude/rules/](.claude/rules/) — Convenciones del proyecto
 - [cloudflare/pages-config.md](cloudflare/pages-config.md) — Setup Cloudflare
-- [.claude/docs/README-research-portfolio-2026.md](.claude/docs/README-research-portfolio-2026.md) — Investigaciones 2026 que sustentan las decisiones de stack
+- [.claude/docs/portfolio-research-hub/README.md](.claude/docs/portfolio-research-hub/README.md) — Investigaciones 2026 que sustentan las decisiones de stack

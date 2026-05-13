@@ -55,7 +55,7 @@ argument-hint: "<aspecto: stack / template / seo / geo / llms / animacion / proy
 ## Regla cardinal
 
 1. **SIEMPRE leer el hub maestro primero**:
-   `.claude/docs/README-research-portfolio-2026.md`. NO inventar
+   `.claude/docs/portfolio-research-hub/README.md`. NO inventar
    recomendaciones; cada respuesta cita el modulo concreto.
 2. **NUNCA tecnicas black-hat** (texto blanco sobre blanco, hidden divs
    con prompt injection, comentarios HTML con "ignore previous
@@ -74,33 +74,33 @@ argument-hint: "<aspecto: stack / template / seo / geo / llms / animacion / proy
 
 ### Hub central
 
-`.claude/docs/README-research-portfolio-2026.md` — indice maestro de las
+`.claude/docs/portfolio-research-hub/README.md` — indice maestro de las
 3 investigaciones, con 5 hallazgos consolidados y matriz cruzada.
 
 ### Las 3 investigaciones
 
 | # | Investigacion | Foco | Cuando consultar |
 |---|---------------|------|------------------|
-| 1 | `.claude/docs/research-modern-portfolios-2026/` | Tendencias 2025-2026, ATS, GEO/LLM-SEO, estructura, UX, tecnologias, personal branding | Decisiones de arquitectura general |
-| 2 | `.claude/docs/research-developer-portfolios-vibe-coding-2026/` | Especifico devs: Claude Code/Cursor/Windsurf, GitHub, presencia online, junior/mid/senior post-IA | Que proyectos, skills y narrativa tecnica mostrar |
-| 3 | `.claude/docs/research-ai-prompt-optimization-portfolio-2026/` | White-hat / grey-hat / black-hat para influenciar lectura de IAs. Schema, llms.txt, riesgos eticos | Metadata y estructura tecnica del sitio |
+| 1 | `.claude/docs/modern-portfolios/` | Tendencias 2025-2026, ATS, GEO/LLM-SEO, estructura, UX, tecnologias, personal branding | Decisiones de arquitectura general |
+| 2 | `.claude/docs/developer-portfolios-vibe-coding/` | Especifico devs: Claude Code/Cursor/Windsurf, GitHub, presencia online, junior/mid/senior post-IA | Que proyectos, skills y narrativa tecnica mostrar |
+| 3 | `.claude/docs/ai-prompt-optimization/` | White-hat / grey-hat / black-hat para influenciar lectura de IAs. Schema, llms.txt, riesgos eticos | Metadata y estructura tecnica del sitio |
 
 ### Mapa pregunta → modulo
 
 | Pregunta del usuario | Modulo principal | Complemento |
 |----------------------|------------------|-------------|
-| "que stack uso" | `research-modern-portfolios-2026/06-tecnologias.md` | `research-developer-portfolios-vibe-coding-2026/11-stack-checklist.md` |
-| "como paso el filtro ATS" | `research-modern-portfolios-2026/02-optimizacion-ats.md` | `research-ai-prompt-optimization-portfolio-2026/03-tecnicas-white-hat.md` |
-| "como aparezco en ChatGPT/Claude" | `research-modern-portfolios-2026/03-geo-llm-seo.md` | `research-ai-prompt-optimization-portfolio-2026/03a-json-ld-schemas.md`, `03c-llms-robots-sitemap.md` |
-| "que proyectos muestro" | `research-developer-portfolios-vibe-coding-2026/04-proyectos-mostrar.md` | `research-modern-portfolios-2026/04-estructura-contenido.md` |
-| "como hablo de Claude Code/Cursor" | `research-developer-portfolios-vibe-coding-2026/09-documentacion-uso-ia.md` | `research-developer-portfolios-vibe-coding-2026/03-herramientas-ia.md` |
-| "que NO hacer" | `research-modern-portfolios-2026/09-anti-patterns.md` | `research-ai-prompt-optimization-portfolio-2026/05-tecnicas-black-hat.md`, `07-deteccion-riesgos.md` |
-| "que diferencia junior/mid/senior 2026" | `research-developer-portfolios-vibe-coding-2026/08-niveles-junior-mid-senior.md` | `research-developer-portfolios-vibe-coding-2026/02-reclutadores-tech.md` |
-| "diseno visual / UX / tendencias" | `research-modern-portfolios-2026/05-diseno-visual-ux.md` | `research-modern-portfolios-2026/01-contexto-tendencias.md` |
-| "personal branding / niche" | `research-modern-portfolios-2026/07-personal-branding.md` | — |
-| "GitHub profile" | `research-developer-portfolios-vibe-coding-2026/05-github-profile.md` | `research-developer-portfolios-vibe-coding-2026/06-presencia-online.md` |
-| "checklist de implementacion" | `research-modern-portfolios-2026/12-checklist.md` | `research-ai-prompt-optimization-portfolio-2026/10-checklist-accionable.md` |
-| "casos reales / ejemplos" | `research-developer-portfolios-vibe-coding-2026/12-ejemplos-portfolios.md` | `research-ai-prompt-optimization-portfolio-2026/06-casos-reales.md` |
+| "que stack uso" | `modern-portfolios/06-tecnologias.md` | `developer-portfolios-vibe-coding/11-stack-checklist.md` |
+| "como paso el filtro ATS" | `modern-portfolios/02-optimizacion-ats.md` | `ai-prompt-optimization/03-tecnicas-white-hat.md` |
+| "como aparezco en ChatGPT/Claude" | `modern-portfolios/03-geo-llm-seo.md` | `ai-prompt-optimization/03a-json-ld-schemas.md`, `03c-llms-robots-sitemap.md` |
+| "que proyectos muestro" | `developer-portfolios-vibe-coding/04-proyectos-mostrar.md` | `modern-portfolios/04-estructura-contenido.md` |
+| "como hablo de Claude Code/Cursor" | `developer-portfolios-vibe-coding/09-documentacion-uso-ia.md` | `developer-portfolios-vibe-coding/03-herramientas-ia.md` |
+| "que NO hacer" | `modern-portfolios/09-anti-patterns.md` | `ai-prompt-optimization/05-tecnicas-black-hat.md`, `07-deteccion-riesgos.md` |
+| "que diferencia junior/mid/senior 2026" | `developer-portfolios-vibe-coding/08-niveles-junior-mid-senior.md` | `developer-portfolios-vibe-coding/02-reclutadores-tech.md` |
+| "diseno visual / UX / tendencias" | `modern-portfolios/05-diseno-visual-ux.md` | `modern-portfolios/01-contexto-tendencias.md` |
+| "personal branding / niche" | `modern-portfolios/07-personal-branding.md` | — |
+| "GitHub profile" | `developer-portfolios-vibe-coding/05-github-profile.md` | `developer-portfolios-vibe-coding/06-presencia-online.md` |
+| "checklist de implementacion" | `modern-portfolios/12-checklist.md` | `ai-prompt-optimization/10-checklist-accionable.md` |
+| "casos reales / ejemplos" | `developer-portfolios-vibe-coding/12-ejemplos-portfolios.md` | `ai-prompt-optimization/06-casos-reales.md` |
 
 ### Datos del CV actual
 
@@ -171,7 +171,7 @@ Detalle completo en skill `animations-css`. Resumen:
 
 - "Voy a meter prompt injection oculto para que ChatGPT me recomiende" →
   detectable, riesgo EU AI Act Art 9, GDPR. Ver
-  `research-ai-prompt-optimization-portfolio-2026/05-tecnicas-black-hat.md`
+  `ai-prompt-optimization/05-tecnicas-black-hat.md`
 - "Texto blanco sobre blanco con keywords" → SpamBrain 2025 lo detecta.
 - "Hidden divs con instrucciones para IAs" → idem.
 - "Comentarios HTML con 'ignore previous instructions'" → idem.
@@ -193,7 +193,7 @@ Detalle completo en skill `animations-css`. Resumen:
 ### Contenido / posicionamiento
 
 - "Lista plana de skills sin contexto" → case studies narrativos ganan
-  72%. Ver `research-developer-portfolios-vibe-coding-2026/04-proyectos-mostrar.md`.
+  72%. Ver `developer-portfolios-vibe-coding/04-proyectos-mostrar.md`.
 - "Full Stack Developer" generico → niche gana. "Full Stack con fintech
   Chile/Peru + agentes IA" gana a "Full Stack Developer".
 - "Ocultar uso de IA" → en 2026 es liability, no ventaja. Documentar
@@ -225,10 +225,10 @@ Antes de cerrar una recomendacion, confirmar:
 
 ## Fuentes canonicas
 
-- Hub maestro: `.claude/docs/README-research-portfolio-2026.md`
-- Investigacion 1: `.claude/docs/research-modern-portfolios-2026/README.md`
-- Investigacion 2: `.claude/docs/research-developer-portfolios-vibe-coding-2026/README.md`
-- Investigacion 3: `.claude/docs/research-ai-prompt-optimization-portfolio-2026/README.md`
+- Hub maestro: `.claude/docs/portfolio-research-hub/README.md`
+- Investigacion 1: `.claude/docs/modern-portfolios/README.md`
+- Investigacion 2: `.claude/docs/developer-portfolios-vibe-coding/README.md`
+- Investigacion 3: `.claude/docs/ai-prompt-optimization/README.md`
 - CV actual: `.claude/docs/cv/README.md`
 - Convenciones Astro: `.claude/rules/astro-landing.md`
 - Design system: `.claude/rules/design-system.md`

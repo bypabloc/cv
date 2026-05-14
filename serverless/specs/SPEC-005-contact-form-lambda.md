@@ -1,11 +1,26 @@
 # SPEC-005: Lambda `contact_form`
 
-**Estado**: draft
+**Estado**: done
 **Autor**: Pablo Contreras
 **Fecha**: 2026-05-14
-**Areas afectadas**: `serverless/src/contact_form/`, `serverless/template.yaml`
-**Dependencias**: SPEC-002 (common), SPEC-003 (cache), SPEC-004 (rate-limit)
+**Ejecutado**: 2026-05-14
+**Endpoint dev**: `https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev/contact`
+**Endpoint prod**: `https://332ivhahf2.execute-api.us-east-1.amazonaws.com/prod/contact`
+**Areas afectadas**: `serverless/src/contact_form/` (handler/service/schemas/turnstile/persistence/notification + 2 templates), `serverless/src/common/` (movido fuera de layers), `serverless/layers/common_python/` (movido FUERA de src), `serverless/template.yaml` (Lambda + API GW + IAM role CloudWatch)
+**Dependencias**: SPEC-002, SPEC-003, SPEC-004
 **Paralelizable con**: SPEC-006, SPEC-007
+
+## Cambios respecto al draft
+
+- Estructura `src/`: `common/` + `contact_form/` ambos en `src/`. `layers/common_python/` movido FUERA de `src/` (a `serverless/layers/`) para que `CodeUri: src/` no duplique el layer.
+- Handler path completo: `contact_form.handler.lambda_handler`.
+- ReservedConcurrentExecutions removido: cuenta nueva tiene UnreservedConcurrentExecution limit 10, no se puede reservar 5 sin pedir limit increase.
+- API Gateway requirements: agregados `ApiGatewayCloudWatchRole` + `ApiGatewayAccount` (cuenta nueva sin global CloudWatch logs role).
+- MJML compilacion omitida: usado HTML inline + minimustache para render (sin Node dependency).
+- respx en lugar de responses para mockear httpx en tests.
+- email-validator agregado al CommonLayer (pydantic[email]).
+- POWERTOOLS_METRICS_NAMESPACE explicito al instanciar Metrics().
+- Capabilities ampliadas a CAPABILITY_NAMED_IAM por el role custom.
 
 ## 1. Contexto
 

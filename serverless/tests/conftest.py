@@ -37,6 +37,21 @@ def aws_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv('AWS_SESSION_TOKEN', 'testing')
     monkeypatch.setenv('AWS_DEFAULT_REGION', 'us-east-1')
     monkeypatch.setenv('AWS_REGION', 'us-east-1')
+    monkeypatch.setenv('POWERTOOLS_SERVICE_NAME', 'test-service')
+    monkeypatch.setenv('POWERTOOLS_METRICS_NAMESPACE', 'TestNamespace')
+
+
+@pytest.fixture(autouse=True, scope='session')
+def _setup_powertools_env() -> None:
+    """
+    Setea env vars de Powertools ANTES del import de common.metrics.
+
+    pytest carga conftest antes que cualquier test module. Pero common.metrics
+    se importa solo cuando un test hace `from common.metrics import metrics`,
+    asi que setear los env aqui (al import del conftest) es suficiente.
+    """
+    os.environ.setdefault('POWERTOOLS_SERVICE_NAME', 'test-service')
+    os.environ.setdefault('POWERTOOLS_METRICS_NAMESPACE', 'TestNamespace')
 
 
 @pytest.fixture(autouse=True)

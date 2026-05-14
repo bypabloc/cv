@@ -101,7 +101,7 @@ Resources:
     Properties:
       LayerName: !Sub portfolio-common-${Stage}
       Description: Powertools v3 + httpx + pydantic v2 compartido entre Lambdas
-      ContentUri: src/layers/common_python/
+      ContentUri: layers/common_python/
       CompatibleRuntimes:
         - python3.13
       CompatibleArchitectures:
@@ -112,16 +112,125 @@ Resources:
       BuildArchitecture: arm64
 
   # ==========================================================================
-  # API Gateway: se crea en SPEC-005 con la primera Function
+  # API Gateway REST + CloudWatch Access Log Group
   # ==========================================================================
-  # Decision (ADR-002): REST API (no HTTP API) por usage plans + request
-  # validators. REST cuesta 3.5x mas que HTTP pero el portfolio esta dentro
-  # de free tier (1M req/mes primer ano).
-  # CORS, AccessLogSetting, Cors block, etc. se definen en SPEC-005 cuando
-  # se agrega el primer endpoint. CloudFormation requiere al menos un
-  # metodo HTTP para crear un Deployment del REST API; sin eso falla con
-  # "REST API doesn't contain any methods" (InvalidRequest).
+  # IAM role para que API Gateway pueda escribir CloudWatch Logs
+  # (account-level setting, requerido para AccessLogSetting funcione)
+  ApiGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub portfolio-api-cwlogs-role-${Stage}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
+
+  PortfolioApi:
+    Type: AWS::Serverless::Api
+    DependsOn: ApiGatewayAccount
+    Properties:
+      Name: !Sub portfolio-api-${Stage}
+      StageName: !Ref Stage
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: >-
+          {"requestId":"$context.requestId","ip":"$context.identity.sourceIp",
+          "requestTime":"$context.requestTime","method":"$context.httpMethod",
+          "path":"$context.path","status":"$context.status",
+          "responseLength":"$context.responseLength",
+          "integrationLatency":"$context.integrationLatency",
+          "latency":"$context.responseLatency"}
+      Cors:
+        AllowOrigin: "'https://the-full-stack.com'"
+        AllowHeaders: "'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'"
+        AllowMethods: "'GET,POST,OPTIONS'"
+        MaxAge: "'600'"
+        AllowCredentials: false
+      Tags:
+        Project: portfolio
+        ManagedBy: SAM
+        Stage: !Ref Stage
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/portfolio-api-${Stage}
+      RetentionInDays: 7
+
   # ==========================================================================
+  # Lambda: contact_form (POST /contact, SPEC-005)
+  # ==========================================================================
+  ContactFormFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.13
+      BuildArchitecture: arm64
+    Properties:
+      FunctionName: !Sub portfolio-contact-form-${Stage}
+      CodeUri: src/
+      Handler: contact_form.handler.lambda_handler
+      Layers:
+        - !Ref CommonLayer
+      MemorySize: 512
+      Timeout: 30
+      # NOTA: ReservedConcurrentExecutions removido - la cuenta tiene
+      # UnreservedConcurrentExecution limit bajo (10) por ser nueva, lo que
+      # impide reservar. Se puede pedir limit increase a AWS support si se
+      # necesita en el futuro.
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: contact-form
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ContactsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CacheTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitRulesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitBucketsTable
+        - SSMParameterReadPolicy:
+            ParameterName: 'portfolio/turnstile-secret'
+        - SSMParameterReadPolicy:
+            ParameterName: 'portfolio/owner-email'
+        - SSMParameterReadPolicy:
+            ParameterName: 'portfolio/ses-from-address'
+        - Statement:
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource:
+                - !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/the-full-stack.com
+                - !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/no-reply@the-full-stack.com
+      Events:
+        PostContact:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PortfolioApi
+            Path: /contact
+            Method: POST
+      Tags:
+        Project: portfolio
+        ManagedBy: SAM
+        Stage: !Ref Stage
 
   # ==========================================================================
   # DynamoDB: ContactsTable - form de contacto
@@ -301,8 +410,21 @@ Resources:
 # Outputs: usados por devtools y otros stacks dependientes
 # ============================================================================
 Outputs:
-  # NOTA: ApiEndpoint + ApiId se exportan en SPEC-005 cuando se materializa
-  # el AWS::Serverless::Api con su primer metodo HTTP.
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${PortfolioApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-ApiEndpoint
+  ApiId:
+    Description: API Gateway REST ID
+    Value: !Ref PortfolioApi
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-ApiId
+  ContactFormFunctionArn:
+    Description: ARN del Lambda contact_form
+    Value: !GetAtt ContactFormFunction.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-ContactFormFunctionArn
   ContactsTableName:
     Description: Tabla DynamoDB de contacts (form submissions)
     Value: !Ref ContactsTable

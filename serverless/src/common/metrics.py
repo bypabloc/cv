@@ -9,10 +9,17 @@ Uso:
     def lambda_handler(event, context):
         metrics.add_metric(name='FormSubmitted', unit=MetricUnit.Count, value=1)
 
-Namespace: 'Portfolio' (Globals.Function.Environment.POWERTOOLS_METRICS_NAMESPACE).
+Namespace: leido de POWERTOOLS_METRICS_NAMESPACE env var (default 'Portfolio').
 Free tier CloudWatch: 10 metricas custom gratis perpetuo.
 """
 
+import os
+
 from aws_lambda_powertools import Metrics
 
-metrics = Metrics()
+# Inicializar con namespace explicito (fallback 'Portfolio'). Powertools lee
+# POWERTOOLS_METRICS_NAMESPACE pero solo durante la primera invocacion - si
+# el env cambia despues del import el namespace ya esta fijado.
+metrics = Metrics(
+    namespace=os.environ.get('POWERTOOLS_METRICS_NAMESPACE', 'Portfolio')
+)

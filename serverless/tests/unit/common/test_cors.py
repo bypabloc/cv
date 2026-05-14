@@ -47,6 +47,51 @@ class TestIsAllowedOrigin:
         monkeypatch.setenv('STAGE', 'prod')
         assert is_allowed_origin('http://localhost:9970') is False
 
+    @pytest.mark.parametrize(
+        'origin',
+        [
+            'http://hub.localhost:9970',
+            'http://fintech.localhost:9970',
+            'http://architect.localhost:9970',
+            'http://leader.localhost:9970',
+            'http://vibe.localhost:9970',
+            'http://services.localhost:9970',
+            'http://hub.localhost:9971',
+        ],
+    )
+    def test_when_subdomain_localhost_and_stage_dev_then_allowed(
+        self, origin: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Given http://<sub>.localhost:<port> en stage dev, Then allowed."""
+        monkeypatch.delenv('CORS_ALLOWED_ORIGINS', raising=False)
+        monkeypatch.setenv('STAGE', 'dev')
+        assert is_allowed_origin(origin) is True
+
+    def test_when_subdomain_localhost_and_stage_prod_then_denied(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Given http://hub.localhost:9970 en stage prod, Then denied."""
+        monkeypatch.delenv('CORS_ALLOWED_ORIGINS', raising=False)
+        monkeypatch.setenv('STAGE', 'prod')
+        assert is_allowed_origin('http://hub.localhost:9970') is False
+
+    def test_when_https_localhost_subdomain_then_denied(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Given https://<sub>.localhost (no http), Then denied (solo http)."""
+        monkeypatch.delenv('CORS_ALLOWED_ORIGINS', raising=False)
+        monkeypatch.setenv('STAGE', 'dev')
+        assert is_allowed_origin('https://hub.localhost:9970') is False
+
+    def test_when_evil_localhost_subdomain_path_traversal_then_denied(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Given origin malformado tipo http://evil.com.localhost.evil, Then denied."""
+        monkeypatch.delenv('CORS_ALLOWED_ORIGINS', raising=False)
+        monkeypatch.setenv('STAGE', 'dev')
+        assert is_allowed_origin('http://evil.localhost.attacker.com') is False
+        assert is_allowed_origin('http://localhost.evil.com:9970') is False
+
     def test_when_evil_origin_then_denied(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

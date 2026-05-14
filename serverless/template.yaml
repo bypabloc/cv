@@ -233,6 +233,53 @@ Resources:
         Stage: !Ref Stage
 
   # ==========================================================================
+  # Lambda: turnstile_validator (POST /validate-turnstile, SPEC-007)
+  # ==========================================================================
+  TurnstileValidatorFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.13
+      BuildArchitecture: arm64
+    Properties:
+      FunctionName: !Sub portfolio-turnstile-validator-${Stage}
+      CodeUri: src/
+      Handler: turnstile_validator.handler.lambda_handler
+      Layers:
+        - !Ref CommonLayer
+      MemorySize: 256
+      Timeout: 10
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: turnstile-validator
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CacheTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitRulesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitBucketsTable
+        - SSMParameterReadPolicy:
+            ParameterName: 'portfolio/turnstile-secret'
+        - Statement:
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+      Events:
+        PostValidateTurnstile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PortfolioApi
+            Path: /validate-turnstile
+            Method: POST
+      Tags:
+        Project: portfolio
+        ManagedBy: SAM
+        Stage: !Ref Stage
+
+  # ==========================================================================
   # Lambda: tracking_pixel (POST /track, SPEC-006)
   # ==========================================================================
   TrackingPixelFunction:

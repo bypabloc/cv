@@ -16,7 +16,16 @@
       "!**/.pnpm-store",
       "!**/public",
       "!**/pnpm-lock.yaml",
-      "!packages/ui/src/styles/global.css"
+      "!packages/ui/src/styles/global.css",
+      "!serverless/.aws-sam",
+      "!serverless/.venv",
+      "!serverless/uv.lock",
+      "!serverless/src/**/templates",
+      "!serverless/src/**/__pycache__",
+      "!serverless/**/*.py",
+      "!serverless/**/*.txt",
+      "!serverless/**/*.toml",
+      "!serverless/**/Makefile"
     ]
   },
   "formatter": {

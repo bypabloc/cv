@@ -137,18 +137,17 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   )
 }
 
-<section class="container-wide">
-  <HeroImpact
-    eyebrow={t.hero.eyebrow}
-    headline={t.hero.headline}
-    summary={t.hero.summary}
-    nicheLabel={t.hero.nicheLabel}
-    ctas={[
-      { href: '#experience', label: t.hero.ctaPrimary, variant: 'primary' },
-      { href: cvHref, label: t.hero.ctaSecondary, variant: 'ghost' },
-    ]}
-  />
-</section>
+<!-- HeroImpact es full-bleed: ya hace su propio centering interno -->
+<HeroImpact
+  eyebrow={t.hero.eyebrow}
+  headline={t.hero.headline}
+  summary={t.hero.summary}
+  nicheLabel={t.hero.nicheLabel}
+  ctas={[
+    { href: '#experience', label: t.hero.ctaPrimary, variant: 'primary' },
+    { href: cvHref, label: t.hero.ctaSecondary, variant: 'ghost' },
+  ]}
+/>
 
 {
   extras.includes('StatsBar') && (

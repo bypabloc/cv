@@ -136,8 +136,12 @@ type FilterBarLabels = {
 }
 
 /**
- * Renderiza la barra de filtros (chips) cuando `enableFilters` es true.
- * Default `hidden` (cv-filters.js lo revela). Sin JS = invisible (ATS-safe).
+ * Renderiza el filter shell (toggle FAB + panel colapsado) cuando
+ * `enableFilters` es true. Default `hidden` (cv-filters.js lo revela). Sin
+ * JS = invisible (ATS-safe).
+ *
+ * Mismo contrato de markup que `packages/app-shared/src/components/FilterChips.astro`
+ * para que el bundle vanilla los maneje identicos.
  */
 function renderFilterBar(
   t: FilterBarLabels,
@@ -164,23 +168,45 @@ function renderFilterBar(
     )
     .join('')
   return `
-<aside class="filter-bar" data-filter-bar hidden aria-label="${escapeHtml(t.filterBar)}">
-  <div class="filter-group">
-    <span class="filter-group-label">${escapeHtml(t.filterTechLabel)}</span>
-    ${techChips}
+<aside class="filter-shell" data-filter-bar hidden aria-label="${escapeHtml(t.filterBar)}">
+  <button type="button" class="filter-toggle" data-filter-toggle aria-expanded="false" aria-controls="filter-panel">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="4" y1="6" x2="20" y2="6"></line>
+      <line x1="7" y1="12" x2="17" y2="12"></line>
+      <line x1="10" y1="18" x2="14" y2="18"></line>
+    </svg>
+    <span>${escapeHtml(t.filterBar)}</span>
+    <span class="filter-toggle__badge" data-filter-count hidden>0</span>
+  </button>
+
+  <div class="filter-panel" id="filter-panel" data-filter-panel role="dialog" aria-modal="false" aria-label="${escapeHtml(t.filterBar)}" hidden>
+    <header class="filter-panel__header">
+      <strong>${escapeHtml(t.filterBar)}</strong>
+      <button type="button" class="filter-panel__close" data-filter-toggle aria-label="Close">×</button>
+    </header>
+    <div class="filter-panel__body">
+      <div class="filter-group">
+        <span class="filter-group-label">${escapeHtml(t.filterTechLabel)}</span>
+        <div class="filter-group__chips">${techChips}</div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-group-label">${escapeHtml(t.filterSeniorityLabel)}</span>
+        <div class="filter-group__chips">${seniorityChips}</div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-group-label">${escapeHtml(t.filterTypeLabel)}</span>
+        <div class="filter-group__chips">${typeChips}</div>
+      </div>
+      <div class="filter-group">
+        <button type="button" class="filter-chip" data-filter-chip="hideConfidential" data-filter-value="1" aria-pressed="false">${escapeHtml(t.filterConfidentialLabel)}</button>
+      </div>
+    </div>
+    <footer class="filter-panel__footer">
+      <button type="button" class="filter-clear" data-filter-clear="all">${escapeHtml(t.filterClear)}</button>
+    </footer>
   </div>
-  <div class="filter-group">
-    <span class="filter-group-label">${escapeHtml(t.filterSeniorityLabel)}</span>
-    ${seniorityChips}
-  </div>
-  <div class="filter-group">
-    <span class="filter-group-label">${escapeHtml(t.filterTypeLabel)}</span>
-    ${typeChips}
-  </div>
-  <div class="filter-group">
-    <button type="button" class="filter-chip" data-filter-chip="hideConfidential" data-filter-value="1" aria-pressed="false">${escapeHtml(t.filterConfidentialLabel)}</button>
-    <button type="button" class="filter-clear" data-filter-clear="all">${escapeHtml(t.filterClear)}</button>
-  </div>
+
+  <button type="button" class="filter-backdrop" data-filter-backdrop data-filter-toggle aria-hidden="true" tabindex="-1" hidden></button>
 </aside>
 `
 }
@@ -214,16 +240,37 @@ a { color: #2046d3; text-decoration: none; }
 .contact { color: #555; font-size: 10pt; margin-bottom: 12px; }
 .exp-meta, .proj-meta { color: #666; font-size: 10pt; margin-bottom: 4px; }
 .tag { display: inline-block; padding: 1px 6px; font-size: 9pt; border: 1px solid #ddd; border-radius: 999px; margin-right: 4px; color: #555; }
-.filter-bar { background: #f7f7f5; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; margin: 12px 0 16px; font-size: 10pt; }
-.filter-group { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
-.filter-group-label { font-weight: 600; color: #555; margin-right: 8px; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.04em; }
-.filter-chip { background: #fff; border: 1px solid #ccc; border-radius: 999px; padding: 2px 10px; font-size: 9pt; color: #333; cursor: pointer; font-family: inherit; }
+/* Filter shell (toggle FAB + panel) — coincide con FilterChips.astro de app-shared */
+.filter-shell { position: fixed; inset: 0; pointer-events: none; z-index: 60; font-size: 10pt; }
+.filter-toggle { position: fixed; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: #2046d3; color: #fff; border: 1px solid #2046d3; border-radius: 999px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; pointer-events: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.filter-toggle:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
+.filter-toggle__badge { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4em; height: 1.4em; padding: 0 6px; border-radius: 999px; background: #fff; color: #2046d3; font-size: 0.75rem; font-weight: 700; line-height: 1; }
+.filter-toggle__badge[hidden] { display: none; }
+.filter-shell.is-open .filter-toggle { display: none; }
+.filter-backdrop { position: fixed; inset: 0; background: rgba(10,10,10,0.5); border: none; cursor: pointer; pointer-events: auto; padding: 0; z-index: 1; }
+.filter-backdrop[hidden] { display: none; }
+.filter-shell.is-open .filter-backdrop { display: block; }
+.filter-panel { position: fixed; right: 16px; bottom: 16px; width: min(420px, calc(100vw - 32px)); max-height: calc(100vh - 32px); background: #fff; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.25); pointer-events: auto; display: flex; flex-direction: column; overflow: hidden; z-index: 2; }
+.filter-panel[hidden] { display: none; }
+.filter-shell.is-open .filter-panel { display: flex; }
+.filter-panel__header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #ddd; }
+.filter-panel__close { background: transparent; border: none; font-size: 18pt; line-height: 1; color: #555; cursor: pointer; padding: 0 6px; }
+.filter-panel__body { padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.filter-panel__footer { padding: 12px 16px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; }
+.filter-group { display: flex; flex-direction: column; gap: 6px; }
+.filter-group-label { font-weight: 600; color: #555; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.04em; }
+.filter-group__chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.filter-chip { background: #f7f7f5; border: 1px solid #ccc; border-radius: 999px; padding: 3px 10px; font-size: 9pt; color: #333; cursor: pointer; font-family: inherit; }
 .filter-chip:hover { border-color: #888; }
 .filter-chip.is-active { background: #2046d3; color: #fff; border-color: #2046d3; }
-.filter-clear { background: transparent; border: 1px solid #c33; color: #c33; border-radius: 999px; padding: 2px 10px; font-size: 9pt; cursor: pointer; font-family: inherit; margin-left: auto; }
+.filter-clear { background: transparent; border: 1px solid #c33; color: #c33; border-radius: 999px; padding: 6px 16px; font-size: 9pt; cursor: pointer; font-family: inherit; }
 .filter-empty { color: #888; font-style: italic; padding: 8px 0; }
+@media (max-width: 640px) {
+  .filter-toggle { right: 12px; bottom: 12px; padding: 8px 12px; font-size: 0.8rem; }
+  .filter-panel { right: 0; bottom: 0; left: 0; width: 100%; max-height: 80vh; border-radius: 12px 12px 0 0; }
+}
 @page { size: A4; margin: 16mm 14mm; }
-@media print { body { margin: 0; max-width: none; } .filter-bar { display: none; } }
+@media print { body { margin: 0; max-width: none; } .filter-shell { display: none; } }
 </style>
 </head>
 <body>`

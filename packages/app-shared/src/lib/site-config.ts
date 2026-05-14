@@ -8,6 +8,8 @@ import type { Niche } from '@portfolio/content'
 export interface NavItem {
   href: string
   label: string
+  /** Si true, abre en otra pestaña / dominio (ej. link al hub desde una app niche). */
+  external?: boolean
 }
 
 export interface I18nStrings {
@@ -77,25 +79,44 @@ export interface SiteOverrides {
   projectsSubtitleEs?: string
   projectsSubtitleEn?: string
   atsKeywords?: string[]
+  /**
+   * Si presente, agrega un item "Otras vistas" / "Other views" al final del
+   * nav que apunta al hub multi-niche. Las 5 apps especializadas
+   * (fintech, architect, leader, vibe, generic) deben pasar este valor; la
+   * app hub debe omitirlo (no se enlaza a si misma).
+   */
+  hubHref?: string
 }
 
-const navEs = (basePrefix: string): NavItem[] => [
-  { href: `${basePrefix}/#experience`, label: 'Experiencia' },
-  { href: `${basePrefix}/#projects`, label: 'Proyectos' },
-  { href: `${basePrefix}/#skills`, label: 'Skills' },
-  { href: `${basePrefix}/about`, label: 'Sobre mí' },
-  { href: `${basePrefix}/certificates`, label: 'Certificados' },
-  { href: `${basePrefix}/#contact`, label: 'Contacto' },
-]
+const navEs = (basePrefix: string, hubHref?: string): NavItem[] => {
+  const items: NavItem[] = [
+    { href: `${basePrefix}/#experience`, label: 'Experiencia' },
+    { href: `${basePrefix}/#projects`, label: 'Proyectos' },
+    { href: `${basePrefix}/#skills`, label: 'Skills' },
+    { href: `${basePrefix}/about`, label: 'Sobre mí' },
+    { href: `${basePrefix}/certificates`, label: 'Certificados' },
+    { href: `${basePrefix}/#contact`, label: 'Contacto' },
+  ]
+  if (hubHref !== undefined) {
+    items.push({ href: hubHref, label: 'Otras vistas', external: true })
+  }
+  return items
+}
 
-const navEn = (basePrefix: string): NavItem[] => [
-  { href: `${basePrefix}/#experience`, label: 'Experience' },
-  { href: `${basePrefix}/#projects`, label: 'Projects' },
-  { href: `${basePrefix}/#skills`, label: 'Skills' },
-  { href: `${basePrefix}/about`, label: 'About' },
-  { href: `${basePrefix}/certificates`, label: 'Certificates' },
-  { href: `${basePrefix}/#contact`, label: 'Contact' },
-]
+const navEn = (basePrefix: string, hubHref?: string): NavItem[] => {
+  const items: NavItem[] = [
+    { href: `${basePrefix}/#experience`, label: 'Experience' },
+    { href: `${basePrefix}/#projects`, label: 'Projects' },
+    { href: `${basePrefix}/#skills`, label: 'Skills' },
+    { href: `${basePrefix}/about`, label: 'About' },
+    { href: `${basePrefix}/certificates`, label: 'Certificates' },
+    { href: `${basePrefix}/#contact`, label: 'Contact' },
+  ]
+  if (hubHref !== undefined) {
+    items.push({ href: hubHref, label: 'Other views', external: true })
+  }
+  return items
+}
 
 export function buildStrings(
   overrides: SiteOverrides,
@@ -106,7 +127,7 @@ export function buildStrings(
         title: overrides.metaTitleEs,
         description: overrides.metaDescriptionEs,
       },
-      nav: navEs(''),
+      nav: navEs('', overrides.hubHref),
       hero: {
         eyebrow:
           overrides.heroEyebrowEs ??
@@ -182,7 +203,7 @@ export function buildStrings(
         title: overrides.metaTitleEn,
         description: overrides.metaDescriptionEn,
       },
-      nav: navEn('/en'),
+      nav: navEn('/en', overrides.hubHref),
       hero: {
         eyebrow:
           overrides.heroEyebrowEn ??

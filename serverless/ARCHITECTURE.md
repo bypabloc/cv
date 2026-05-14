@@ -4,7 +4,7 @@
 > backend del form de contacto y tracking pixel del portfolio. Basado en
 > la investigacion consolidada en `.claude/docs/{aws-lambda,aws-api-gateway,aws-dynamodb,aws-ses,cloudflare-turnstile,postgresql-18-analytics,neon}/`.
 >
-> **Region**: us-west-2 (Oregon)
+> **Region**: us-east-1 (Oregon)
 > **Runtime**: Python 3.13 (managed runtime, arm64 Graviton2)
 > **IaC**: AWS SAM
 > **Storage hibrido**: DynamoDB (hot path, writes) + Neon PostgreSQL 18 (analytics, queries)
@@ -257,7 +257,7 @@ serverless/
                               | 3. HTTPS request
                               v
             ===================================================
-            |             AWS CLOUD - us-west-2               |
+            |             AWS CLOUD - us-east-1               |
             ===================================================
                               |
                               v
@@ -498,7 +498,7 @@ CAPA 5 transversal: CloudWatch Logs + X-Ray traces (sin alarmas)
                     | 4. HTTPS request
                     v
         ===================================================
-        |             AWS CLOUD - us-west-2               |
+        |             AWS CLOUD - us-east-1               |
         ===================================================
                     |
                     v
@@ -854,7 +854,7 @@ POR QUE 03:00 UTC:
                                 v
                        +-----------------+
                        |  Neon PG 18     |
-                       |  (us-west-2)    |
+                       |  (us-east-1)    |
                        |  Free tier:     |
                        |   0.5GB +       |
                        |   192h compute  |
@@ -1794,7 +1794,7 @@ NOT in template.yaml (manual via CLI o consola, una vez):
   - SSM Parameter: /portfolio/owner-email (String)
   - SSM Parameter: /portfolio/ses-from-address (String)
   - SES Domain Identity: the-full-stack.com (DKIM CNAMEs en Cloudflare)
-  - ACM Certificate para api.the-full-stack.com (us-west-2)
+  - ACM Certificate para api.the-full-stack.com (us-east-1)
   - API Gateway Custom Domain + BasePathMapping
   - Neon project + database + branches (via neonctl o dashboard)
   - Neon DB schema (via `serverless db-migrate` despues del deploy)

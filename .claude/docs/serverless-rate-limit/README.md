@@ -13,7 +13,7 @@ last-reviewed: 2026-05-14
 
 ## Contexto del portfolio
 
-- **Stack**: 5 Lambdas Python 3.13 arm64 en us-west-2 (contact_form, tracking_pixel, turnstile_validator, stream_processor, aggregator)
+- **Stack**: 5 Lambdas Python 3.13 arm64 en us-east-1 (contact_form, tracking_pixel, turnstile_validator, stream_processor, aggregator)
 - **Upstream CDN**: Cloudflare Pages (gratis, defensa edge basica)
 - **Antes**: AWS WAF con rate-based rules = $7/mes
 - **Ahora**: Rate-limit self-managed con DynamoDB = $0/mes

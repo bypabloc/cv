@@ -21,8 +21,8 @@ VALID_STAGES = ['local', 'dev', 'prod']
 
 STAGE_DESCRIPTIONS = {
     'local': 'sam local invoke / start-api con moto mocks (sin AWS)',
-    'dev': 'Stack desplegado en us-west-2 (cuenta dev / sandbox)',
-    'prod': 'Stack desplegado en us-west-2 (cuenta productiva)',
+    'dev': 'Stack desplegado en us-east-1 (cuenta dev / sandbox)',
+    'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
 }
 
 # Funciones Lambda del modulo. Coinciden con el LogicalId del template.yaml.

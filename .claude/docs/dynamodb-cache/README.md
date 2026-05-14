@@ -75,7 +75,7 @@ def get_top_countries():
     return results
 ```
 
-## Estimacion de costo (2026, us-west-2)
+## Estimacion de costo (2026, us-east-1)
 
 Para ~1000 cache reads/min + ~100 writes/min + ~25GB storage:
 

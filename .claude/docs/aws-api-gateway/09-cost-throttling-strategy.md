@@ -1,11 +1,11 @@
 # Cost y estrategia de defense in depth
 
-> Pricing 2026 us-west-2. Estimado <$20/mes total. Defense in depth:
+> Pricing 2026 us-east-1. Estimado <$20/mes total. Defense in depth:
 > WAF (capa 1) → API GW (capa 2) → Lambda (capa 3).
 
 [← Monitoring](./08-monitoring-logs.md) | [README](./README.md)
 
-## Pricing desglosado (Mayo 2026, us-west-2)
+## Pricing desglosado (Mayo 2026, us-east-1)
 
 ### REST API Gateway
 

@@ -5,7 +5,7 @@
 
 ## SES Reputation Dashboard (AWS Console)
 
-Acceso: AWS SES Console (us-west-2) → Account dashboard → Reputation metrics
+Acceso: AWS SES Console (us-east-1) → Account dashboard → Reputation metrics
 
 ### Metricas principales
 
@@ -36,7 +36,7 @@ SES publica automaticamente metricas a CloudWatch en namespace `AWS/SES`.
 # Listar metricas disponibles
 aws cloudwatch list-metrics \
   --namespace AWS/SES \
-  --region us-west-2
+  --region us-east-1
 
 # Output (parcial):
 # MetricName: Send, Bounce, Complaint, Delivery, Open, Click
@@ -53,7 +53,7 @@ aws cloudwatch get-metric-statistics \
   --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
   --period 3600 \
   --statistics Average \
-  --region us-west-2
+  --region us-east-1
 
 # Response:
 # {
@@ -73,7 +73,7 @@ Configurar alarms para notificaciones cuando rates suben:
 ```python
 import boto3
 
-cloudwatch = boto3.client('cloudwatch', region_name='us-west-2')
+cloudwatch = boto3.client('cloudwatch', region_name='us-east-1')
 
 cloudwatch.put_metric_alarm(
     AlarmName='SES-BounceRate-High',
@@ -84,7 +84,7 @@ cloudwatch.put_metric_alarm(
     EvaluationPeriods=1,  # Evaluar 1 periodo consecutivo
     Threshold=3.0,  # 3% (conservative, AWS legal limit 5%)
     ComparisonOperator='GreaterThanThreshold',
-    AlarmActions=['arn:aws:sns:us-west-2:123456:alerts'],
+    AlarmActions=['arn:aws:sns:us-east-1:123456:alerts'],
     AlarmDescription='Alert if SES bounce rate exceeds 3%',
     TreatMissingData='notBreaching',  # No alertar si no hay data
 )
@@ -102,7 +102,7 @@ cloudwatch.put_metric_alarm(
     EvaluationPeriods=1,
     Threshold=0.05,  # 0.05% (aggressive, AWS legal limit 0.1%)
     ComparisonOperator='GreaterThanThreshold',
-    AlarmActions=['arn:aws:sns:us-west-2:123456:alerts'],
+    AlarmActions=['arn:aws:sns:us-east-1:123456:alerts'],
     AlarmDescription='Alert if SES complaint rate exceeds 0.05%',
     TreatMissingData='notBreaching',
 )
@@ -120,7 +120,7 @@ cloudwatch.put_metric_alarm(
     EvaluationPeriods=1,
     Threshold=0,  # 0 emails en 24h (para detectar silencio)
     ComparisonOperator='LessThanOrEqualToThreshold',
-    AlarmActions=['arn:aws:sns:us-west-2:123456:alerts'],
+    AlarmActions=['arn:aws:sns:us-east-1:123456:alerts'],
     AlarmDescription='Alert if no emails sent in 24h (possible Lambda failure)',
 )
 ```
@@ -133,17 +133,17 @@ Configurar SNS para recibir notificaciones de alarmas:
 # Crear SNS topic
 aws sns create-topic \
   --name ses-alerts \
-  --region us-west-2
+  --region us-east-1
 
 # Output:
-# TopicArn: arn:aws:sns:us-west-2:123456:ses-alerts
+# TopicArn: arn:aws:sns:us-east-1:123456:ses-alerts
 
 # Subscribir email
 aws sns subscribe \
-  --topic-arn arn:aws:sns:us-west-2:123456:ses-alerts \
+  --topic-arn arn:aws:sns:us-east-1:123456:ses-alerts \
   --protocol email \
   --notification-endpoint pacg1991@gmail.com \
-  --region us-west-2
+  --region us-east-1
 
 # Confirmar subscription (click link en email)
 ```
@@ -156,7 +156,7 @@ Crear dashboard para visualizar todas las metricas:
 import boto3
 import json
 
-cloudwatch = boto3.client('cloudwatch', region_name='us-west-2')
+cloudwatch = boto3.client('cloudwatch', region_name='us-east-1')
 
 cloudwatch.put_dashboard(
     DashboardName='SES-Reputation',
@@ -173,7 +173,7 @@ cloudwatch.put_dashboard(
                     ],
                     'period': 3600,
                     'stat': 'Sum',
-                    'region': 'us-west-2',
+                    'region': 'us-east-1',
                     'title': 'Email Delivery Overview',
                 },
             },
@@ -186,7 +186,7 @@ cloudwatch.put_dashboard(
                     ],
                     'period': 3600,
                     'stat': 'Average',
-                    'region': 'us-west-2',
+                    'region': 'us-east-1',
                     'title': 'Bounce & Complaint Rates',
                     'yAxis': {'left': {'min': 0, 'max': 10}},
                 },
@@ -205,7 +205,7 @@ print('Dashboard created: SES-Reputation')
 ```bash
 # CLI command para resumen semanal
 aws sesv2 get-account \
-  --region us-west-2 \
+  --region us-east-1 \
   --query 'Account.[ReputationMetricsEnabled,SendingQuotaPercentage]'
 
 # Response:
@@ -221,7 +221,7 @@ import boto3
 import json
 from datetime import datetime, timedelta
 
-cloudwatch = boto3.client('cloudwatch', region_name='us-west-2')
+cloudwatch = boto3.client('cloudwatch', region_name='us-east-1')
 
 def get_ses_metrics():
     """Obtiene metricas SES de ultimas 24 horas."""
@@ -278,7 +278,7 @@ aws cloudwatch get-metric-statistics \
   --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
   --period 86400 \
   --statistics Average \
-  --region us-west-2
+  --region us-east-1
 ```
 
 Expected output:

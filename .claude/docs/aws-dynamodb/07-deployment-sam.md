@@ -279,17 +279,17 @@ sam build
 sam deploy --guided
 # Responder:
 #   Stack name: portfolio-dynamodb
-#   Region: us-west-2
+#   Region: us-east-1
 #   Environment: dev
 #   Confirmar cambios
 
 # Deploy (CLI, conocidos)
-sam deploy --stack-name portfolio-dynamodb --region us-west-2 --parameter-overrides Environment=prod
+sam deploy --stack-name portfolio-dynamodb --region us-east-1 --parameter-overrides Environment=prod
 
 # Ver outputs
 aws cloudformation describe-stacks \
   --stack-name portfolio-dynamodb \
-  --region us-west-2 \
+  --region us-east-1 \
   --query 'Stacks[0].Outputs'
 ```
 
@@ -297,15 +297,15 @@ aws cloudformation describe-stacks \
 
 ```bash
 # Listar tablas
-aws dynamodb list-tables --region us-west-2
+aws dynamodb list-tables --region us-east-1
 
 # Describir tabla contacts
 aws dynamodb describe-table \
   --table-name portfolio-dev-contacts \
-  --region us-west-2
+  --region us-east-1
 
 # Test API (si creaste Gateway)
-curl -X POST https://xxx.execute-api.us-west-2.amazonaws.com/dev/contact \
+curl -X POST https://xxx.execute-api.us-east-1.amazonaws.com/dev/contact \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","name":"Test","message":"Hello"}'
 ```
@@ -320,7 +320,7 @@ version = 0.1
 watch_exclude = [".git", "*.pyc"]
 
 [default.deploy]
-region = "us-west-2"
+region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = [

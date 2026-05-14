@@ -11,12 +11,12 @@ from decimal import Decimal
 import time
 
 # High-level Resource API (recomendado)
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 contacts_table = dynamodb.Table('contacts')
 tracking_table = dynamodb.Table('tracking')
 
 # Low-level Client API (menos usado, mas control)
-client = boto3.client('dynamodb', region_name='us-west-2')
+client = boto3.client('dynamodb', region_name='us-east-1')
 ```
 
 ## Operaciones Basicas
@@ -203,7 +203,7 @@ import uuid
 import time
 from decimal import Decimal
 
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 contacts_table = dynamodb.Table('contacts')
 
 def lambda_handler(event, context):
@@ -246,7 +246,7 @@ import boto3
 import uuid
 import time
 
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 tracking_table = dynamodb.Table('tracking')
 
 def lambda_handler(event, context):

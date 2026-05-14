@@ -148,7 +148,7 @@ aws ssm put-parameter \
   --type SecureString \
   --value "$TURNSTILE" \
   --key-id alias/portfolio-lambdas \
-  --region us-west-2
+  --region us-east-1
 
 # Limpiar
 unset TURNSTILE

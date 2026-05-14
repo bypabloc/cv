@@ -650,7 +650,7 @@ def test_cache_set_get():
     Then valor retorna correctamente.
     """
     # Setup tabla mock
-    dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
     dynamodb.create_table(
         TableName='cache',
         KeySchema=[{'AttributeName': 'cache_key', 'KeyType': 'HASH'}],
@@ -675,7 +675,7 @@ def test_cache_invalidate_by_tag():
     When invalidate invocado con tag,
     Then todos los items con ese tag expiran.
     """
-    dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
     dynamodb.create_table(
         TableName='cache',
         KeySchema=[{'AttributeName': 'cache_key', 'KeyType': 'HASH'}],

@@ -34,7 +34,7 @@ def cmd_metrics(flags: dict[str, Any]) -> int:
     output = flags.get('output', 'text')
 
     # Suma de invocations en la ultima hora
-    print(_c(CYAN, 'Metricas ultima hora (us-west-2):'))
+    print(_c(CYAN, 'Metricas ultima hora (us-east-1):'))
     print()
 
     namespaces = [
@@ -65,7 +65,7 @@ def cmd_metrics(flags: dict[str, Any]) -> int:
             '--statistics',
             'Sum',
             '--region',
-            'us-west-2',
+            'us-east-1',
             '--output',
             'text',
             '--query',
@@ -95,7 +95,7 @@ def cmd_alarms(flags: dict[str, Any]) -> int:
         'cloudwatch',
         'describe-alarms',
         '--region',
-        'us-west-2',
+        'us-east-1',
         '--alarm-name-prefix',
         'portfolio-',
         '--query',

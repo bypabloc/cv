@@ -27,7 +27,7 @@ Globals:
     Environment:
       Variables:
         ENVIRONMENT: !Ref EnvironmentName
-        SES_REGION: us-west-2
+        SES_REGION: us-east-1
         SES_FROM: no-reply@the-full-stack.com
         OWNER_EMAIL: pacg1991@gmail.com
 
@@ -171,7 +171,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 
-ses = boto3.client('ses', region_name=os.getenv('SES_REGION', 'us-west-2'))
+ses = boto3.client('ses', region_name=os.getenv('SES_REGION', 'us-east-1'))
 
 SES_FROM = os.getenv('SES_FROM', 'no-reply@the-full-stack.com')
 OWNER_EMAIL = os.getenv('OWNER_EMAIL', 'pacg1991@gmail.com')
@@ -354,7 +354,7 @@ sam build
 sam deploy --guided
 # Parametros:
 # - Stack name: portfolio-contact-dev
-# - Region: us-west-2
+# - Region: us-east-1
 # - Parameter EnvironmentName: dev
 # - Capabilities: CAPABILITY_IAM
 
@@ -364,14 +364,14 @@ sam deploy --no-confirm-changeset
 # 4. Ver outputs
 aws cloudformation describe-stacks \
   --stack-name portfolio-contact-dev \
-  --region us-west-2 \
+  --region us-east-1 \
   --query 'Stacks[0].Outputs'
 
 # 5. Test local
 sam local start-api
 
 # 6. Cleanup (borrar stack)
-aws cloudformation delete-stack --stack-name portfolio-contact-dev --region us-west-2
+aws cloudformation delete-stack --stack-name portfolio-contact-dev --region us-east-1
 ```
 
 ## Estructura del proyecto
@@ -440,7 +440,7 @@ aws cloudwatch get-metric-statistics \
   --statistics Sum \
   --start-time 2026-05-13T00:00:00Z \
   --end-time 2026-05-14T00:00:00Z \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ## Fuentes

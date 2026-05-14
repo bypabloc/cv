@@ -21,7 +21,7 @@ Email authentication en 2026 requiere 3 capas para maxima deliverability:
 
 ## Paso 1: Verificar dominio en SES
 
-### En AWS SES Console (us-west-2)
+### En AWS SES Console (us-east-1)
 
 1. Navigate to "Verified Identities"
 2. Click "Create Identity"

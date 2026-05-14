@@ -364,7 +364,7 @@ sam deploy --guided
 
 # Prompts:
 # Stack name: portfolio-lambdas
-# AWS Region: us-west-2
+# AWS Region: us-east-1
 # Parameter SenderEmail: pablo@example.com
 # Parameter TurnstileSecretSSMPath: /portfolio/turnstile-secret
 # Confirm changes before deploy: Y
@@ -378,7 +378,7 @@ Genera `samconfig.toml`:
 stack_name = "portfolio-lambdas"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-xxx"
 s3_prefix = "portfolio-lambdas"
-region = "us-west-2"
+region = "us-east-1"
 confirm_changeset = true
 ```
 
@@ -387,7 +387,7 @@ Deploy subsecuentes:
 ```bash
 sam deploy  # Usa samconfig.toml
 # o
-sam deploy --stack-name portfolio-lambdas --region us-west-2
+sam deploy --stack-name portfolio-lambdas --region us-east-1
 ```
 
 ### 4. Invocar local (sin deployment)

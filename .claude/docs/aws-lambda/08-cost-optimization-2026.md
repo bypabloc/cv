@@ -30,7 +30,7 @@ SES **NO tiene free tier permanente** (0.10 per 1000 emails).
 | Servicio | Pricing |
 |----------|---------|
 | Lambda requests | $0.20 per 1M requests |
-| Lambda compute | $0.0000166667 per GB-second (us-west-2) |
+| Lambda compute | $0.0000166667 per GB-second (us-east-1) |
 | DynamoDB write | $1.25 per 1M writes |
 | DynamoDB read | $0.25 per 1M reads |
 | SES | $0.10 per 1000 emails |
@@ -247,7 +247,7 @@ Alertar si bill > expected threshold.
    - DynamoDB provisioned si trafico predecible
 4. **SES**: pedir production access si >200 emails/dia
 
-Verificado a fecha 2026-05-13 (pricing us-west-2, Mayo 2026).
+Verificado a fecha 2026-05-13 (pricing us-east-1, Mayo 2026).
 
 Sources:
 - [AWS Lambda Pricing](https://aws.amazon.com/lambda/pricing/)

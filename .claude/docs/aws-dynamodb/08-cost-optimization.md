@@ -1,8 +1,8 @@
-# Cost Optimization y Pricing us-west-2 (Mayo 2026)
+# Cost Optimization y Pricing us-east-1 (Mayo 2026)
 
 > Desglose de costos reales para las tablas contacts y tracking. Estimaciones basadas en volumen esperado.
 
-## Pricing Actual us-west-2 (Verificado Mayo 2026)
+## Pricing Actual us-east-1 (Verificado Mayo 2026)
 
 | Recurso | Precio |
 |---------|--------|

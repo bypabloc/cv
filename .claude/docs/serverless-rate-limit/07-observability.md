@@ -210,7 +210,7 @@ dashboard_body = {
                 ],
                 'period': 60,
                 'stat': 'Sum',
-                'region': 'us-west-2',
+                'region': 'us-east-1',
                 'title': 'Rate-Limit Overview',
             }
         },
@@ -222,7 +222,7 @@ dashboard_body = {
                     | filter level = "WARNING"
                     | stats count() by endpoint
                 ''',
-                'region': 'us-west-2',
+                'region': 'us-east-1',
                 'title': 'Rate-Limit Blocks by Endpoint',
             }
         },
@@ -234,7 +234,7 @@ dashboard_body = {
                 ],
                 'period': 60,
                 'stat': 'Average',
-                'region': 'us-west-2',
+                'region': 'us-east-1',
                 'title': 'Check Latency (p50, p99)',
             }
         },
@@ -265,7 +265,7 @@ cloudwatch.put_metric_alarm(
     Threshold=5,
     ActionsEnabled=True,
     AlarmActions=[
-        'arn:aws:sns:us-west-2:ACCOUNT:alerts',
+        'arn:aws:sns:us-east-1:ACCOUNT:alerts',
     ],
     TreatMissingData='notBreaching',
 )
@@ -299,7 +299,7 @@ cloudwatch.put_metric_alarm(
     ],
     EvaluationPeriods=1,
     ComparisonOperator='LessThanLowerOrGreaterThanUpperThreshold',
-    AlarmActions=['arn:aws:sns:us-west-2:ACCOUNT:alerts'],
+    AlarmActions=['arn:aws:sns:us-east-1:ACCOUNT:alerts'],
 )
 ```
 
@@ -316,7 +316,7 @@ cloudwatch.put_metric_alarm(
     Statistic='Sum',
     Threshold=1,
     ComparisonOperator='GreaterThanOrEqualToThreshold',
-    AlarmActions=['arn:aws:sns:us-west-2:ACCOUNT:alerts'],
+    AlarmActions=['arn:aws:sns:us-east-1:ACCOUNT:alerts'],
 )
 ```
 

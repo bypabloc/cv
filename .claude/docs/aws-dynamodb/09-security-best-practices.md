@@ -247,7 +247,7 @@ aws dynamodb restore-table-to-point-in-time \
   --source-table-name portfolio-dev-contacts \
   --target-table-name portfolio-dev-contacts-restore \
   --restore-date-time 2026-05-10T14:30:00Z \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ## 6. Monitoring y Logging

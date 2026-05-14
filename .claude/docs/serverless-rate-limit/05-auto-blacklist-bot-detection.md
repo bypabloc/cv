@@ -255,7 +255,7 @@ def blacklist_ip(self, ip: str, ...):
         ],
         "period": 60,
         "stat": "Sum",
-        "region": "us-west-2",
+        "region": "us-east-1",
         "title": "Rate-Limit Dashboard"
       }
     }
@@ -283,7 +283,7 @@ cloudwatch.put_metric_alarm(
     Statistic='Sum',
     Threshold=5,
     ActionsEnabled=True,
-    AlarmActions=['arn:aws:sns:us-west-2:ACCOUNT:alerts'],
+    AlarmActions=['arn:aws:sns:us-east-1:ACCOUNT:alerts'],
 )
 ```
 

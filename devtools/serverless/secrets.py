@@ -101,7 +101,7 @@ def cmd_setup_ssm(flags: dict[str, Any]) -> int:
         value,
         '--overwrite',
         '--region',
-        'us-west-2',
+        'us-east-1',
     ]
     if kind == 'SecureString':
         args.extend(['--key-id', key_id])
@@ -132,7 +132,7 @@ def cmd_rotate_secret(flags: dict[str, Any]) -> int:
 def cmd_verify_ses_dns(flags: dict[str, Any]) -> int:
     """dig CNAMEs DKIM + TXT SPF/DMARC contra Cloudflare DNS.
 
-    El SES Domain Identity expone 3 CNAMEs DKIM en us-west-2. Esta
+    El SES Domain Identity expone 3 CNAMEs DKIM en us-east-1. Esta
     funcion los lee del template.yaml (o el output de sam deploy) y
     verifica con dig que existen en Cloudflare.
     """

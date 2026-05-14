@@ -51,7 +51,7 @@ def _get_neon_url(stage: str) -> str | None:
             '--output',
             'text',
             '--region',
-            'us-west-2',
+            'us-east-1',
         ],
         capture_output=True,
         text=True,

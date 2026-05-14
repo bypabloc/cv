@@ -30,6 +30,16 @@ import {
 interface RenderInput {
   locale: 'es' | 'en'
   niche?: Niche
+  /**
+   * Si true, inyecta el script `/cv-filters.js` + chips de UI + `data-*`
+   * attrs en cada item filtrable. Por default `false` para mantener
+   * compatibilidad con consumers que esperan HTML ATS plano.
+   *
+   * Cuando el CV se sirve en una app cuya `public/` contiene
+   * `cv-filters.js`, pasar `enableFilters: true` para activar la capa
+   * interactiva.
+   */
+  enableFilters?: boolean
 }
 
 const LABELS = {
@@ -47,6 +57,13 @@ const LABELS = {
     present: 'Presente',
     role: 'Cargo',
     stack: 'Stack',
+    filterBar: 'Filtros',
+    filterClear: 'Limpiar filtros',
+    filterEmpty: 'No hay items con estos filtros',
+    filterTechLabel: 'Tecnologías',
+    filterSeniorityLabel: 'Seniority',
+    filterTypeLabel: 'Tipo de proyecto',
+    filterConfidentialLabel: 'Ocultar confidenciales',
   },
   en: {
     summary: 'Summary',
@@ -62,6 +79,13 @@ const LABELS = {
     present: 'Present',
     role: 'Role',
     stack: 'Stack',
+    filterBar: 'Filters',
+    filterClear: 'Clear filters',
+    filterEmpty: 'No items match these filters',
+    filterTechLabel: 'Technologies',
+    filterSeniorityLabel: 'Seniority',
+    filterTypeLabel: 'Project type',
+    filterConfidentialLabel: 'Hide confidential',
   },
 } as const
 
@@ -77,8 +101,92 @@ function renderList(items: string[]): string {
   return `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`
 }
 
+/** Recopila tecnologias unicas de experiences + projects para chips. */
+function collectTechs(
+  exps: readonly { skillsTechnical: readonly string[] }[],
+  projs: readonly { stack: readonly string[] }[],
+): string[] {
+  const set = new Set<string>()
+  for (const e of exps) {
+    for (const s of e.skillsTechnical) {
+      set.add(s)
+    }
+  }
+  for (const p of projs) {
+    for (const s of p.stack) {
+      set.add(s)
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
+}
+
+/** Recopila seniorities y projectTypes unicos para chips. */
+function collectUnique<T extends string>(values: readonly T[]): T[] {
+  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))
+}
+
+/** Subset de LABELS usado por la filter bar. */
+type FilterBarLabels = {
+  readonly filterBar: string
+  readonly filterClear: string
+  readonly filterTechLabel: string
+  readonly filterSeniorityLabel: string
+  readonly filterTypeLabel: string
+  readonly filterConfidentialLabel: string
+}
+
+/**
+ * Renderiza la barra de filtros (chips) cuando `enableFilters` es true.
+ * Default `hidden` (cv-filters.js lo revela). Sin JS = invisible (ATS-safe).
+ */
+function renderFilterBar(
+  t: FilterBarLabels,
+  techs: string[],
+  seniorities: string[],
+  projectTypes: string[],
+): string {
+  const techChips = techs
+    .map(
+      (tech) =>
+        `<button type="button" class="filter-chip" data-filter-chip="tech" data-filter-value="${escapeHtml(tech)}" aria-pressed="false">${escapeHtml(tech)}</button>`,
+    )
+    .join('')
+  const seniorityChips = seniorities
+    .map(
+      (s) =>
+        `<button type="button" class="filter-chip" data-filter-chip="seniority" data-filter-value="${escapeHtml(s)}" aria-pressed="false">${escapeHtml(s)}</button>`,
+    )
+    .join('')
+  const typeChips = projectTypes
+    .map(
+      (s) =>
+        `<button type="button" class="filter-chip" data-filter-chip="projectType" data-filter-value="${escapeHtml(s)}" aria-pressed="false">${escapeHtml(s)}</button>`,
+    )
+    .join('')
+  return `
+<aside class="filter-bar" data-filter-bar hidden aria-label="${escapeHtml(t.filterBar)}">
+  <div class="filter-group">
+    <span class="filter-group-label">${escapeHtml(t.filterTechLabel)}</span>
+    ${techChips}
+  </div>
+  <div class="filter-group">
+    <span class="filter-group-label">${escapeHtml(t.filterSeniorityLabel)}</span>
+    ${seniorityChips}
+  </div>
+  <div class="filter-group">
+    <span class="filter-group-label">${escapeHtml(t.filterTypeLabel)}</span>
+    ${typeChips}
+  </div>
+  <div class="filter-group">
+    <button type="button" class="filter-chip" data-filter-chip="hideConfidential" data-filter-value="1" aria-pressed="false">${escapeHtml(t.filterConfidentialLabel)}</button>
+    <button type="button" class="filter-clear" data-filter-clear="all">${escapeHtml(t.filterClear)}</button>
+  </div>
+</aside>
+`
+}
+
 export function renderCvHtml(input: RenderInput): string {
-  const { locale, niche = 'generic' } = input
+  const { locale, niche = 'generic', enableFilters = false } = input
   const t = LABELS[locale]
 
   const exps = sortByPriority(filterByNiche(experiences, niche), niche)
@@ -106,8 +214,16 @@ a { color: #2046d3; text-decoration: none; }
 .contact { color: #555; font-size: 10pt; margin-bottom: 12px; }
 .exp-meta, .proj-meta { color: #666; font-size: 10pt; margin-bottom: 4px; }
 .tag { display: inline-block; padding: 1px 6px; font-size: 9pt; border: 1px solid #ddd; border-radius: 999px; margin-right: 4px; color: #555; }
+.filter-bar { background: #f7f7f5; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; margin: 12px 0 16px; font-size: 10pt; }
+.filter-group { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
+.filter-group-label { font-weight: 600; color: #555; margin-right: 8px; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.04em; }
+.filter-chip { background: #fff; border: 1px solid #ccc; border-radius: 999px; padding: 2px 10px; font-size: 9pt; color: #333; cursor: pointer; font-family: inherit; }
+.filter-chip:hover { border-color: #888; }
+.filter-chip.is-active { background: #2046d3; color: #fff; border-color: #2046d3; }
+.filter-clear { background: transparent; border: 1px solid #c33; color: #c33; border-radius: 999px; padding: 2px 10px; font-size: 9pt; cursor: pointer; font-family: inherit; margin-left: auto; }
+.filter-empty { color: #888; font-style: italic; padding: 8px 0; }
 @page { size: A4; margin: 16mm 14mm; }
-@media print { body { margin: 0; max-width: none; } }
+@media print { body { margin: 0; max-width: none; } .filter-bar { display: none; } }
 </style>
 </head>
 <body>`
@@ -125,44 +241,57 @@ a { color: #2046d3; text-decoration: none; }
 <p>${escapeHtml(profile.summary[locale])}</p>
 `
 
-  const expsHtml = `<h2>${t.experience}</h2>${exps
+  const expsHtml = `<section data-filter-section="experience"><h2>${t.experience}</h2>${exps
     .map((e) => {
       const range = formatRange(e.start, e.end, locale)
+      const techCsv = e.skillsTechnical.join(',')
       return `
+<article data-filterable data-tech="${escapeHtml(techCsv)}" data-seniority="${escapeHtml(e.seniority)}" data-start="${escapeHtml(e.start)}" data-end="${escapeHtml(e.end ?? '')}" data-company="${escapeHtml(e.company)}">
 <h3>${escapeHtml(e.role[locale])} — ${escapeHtml(e.company)}</h3>
 <p class="exp-meta">${escapeHtml(range)}</p>
 ${renderList(e.responsibilities[locale])}
 ${e.achievements[locale].length > 0 ? renderList(e.achievements[locale]) : ''}
 <p>${e.skillsTechnical.map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</p>
+</article>
 `
     })
-    .join('')}`
+    .join(
+      '',
+    )}<p class="filter-empty" data-filter-empty hidden>${escapeHtml(t.filterEmpty)}</p></section>`
 
   const projsHtml =
     projs.length > 0
-      ? `<h2>${t.projects}</h2>${projs
+      ? `<section data-filter-section="project"><h2>${t.projects}</h2>${projs
           .map(
             (p) => `
+<article data-filterable data-tech="${escapeHtml(p.stack.join(','))}" data-project-type="${escapeHtml(p.projectType)}" data-confidential="${p.isConfidential ? 'true' : 'false'}">
 <h3>${escapeHtml(p.name)}</h3>
 <p>${escapeHtml(p.summary[locale])}</p>
 <p class="proj-meta">${t.stack}: ${p.stack.map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</p>
 ${p.url ? `<p class="proj-meta"><a href="${escapeHtml(p.url)}">${escapeHtml(p.url)}</a></p>` : ''}
 ${p.repo ? `<p class="proj-meta"><a href="${escapeHtml(p.repo)}">${escapeHtml(p.repo)}</a></p>` : ''}
+</article>
 `,
           )
-          .join('')}`
+          .join(
+            '',
+          )}<p class="filter-empty" data-filter-empty hidden>${escapeHtml(t.filterEmpty)}</p></section>`
       : ''
 
   const sksHtml =
     sks.length > 0
-      ? `<h2>${t.skills}</h2>${sks
+      ? `<section data-filter-section="skill"><h2>${t.skills}</h2>${sks
           .map(
             (cat) => `
+<article data-filterable data-skill-kind="${escapeHtml(cat.kind)}">
 <h3>${escapeHtml(cat.name[locale])}</h3>
 <p>${cat.skills.map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</p>
+</article>
 `,
           )
-          .join('')}`
+          .join(
+            '',
+          )}<p class="filter-empty" data-filter-empty hidden>${escapeHtml(t.filterEmpty)}</p></section>`
       : ''
 
   const eduHtml =
@@ -180,12 +309,14 @@ ${p.repo ? `<p class="proj-meta"><a href="${escapeHtml(p.repo)}">${escapeHtml(p.
 
   const certsHtml =
     certs.length > 0
-      ? `<h2>${t.certificates}</h2><ul>${certs
+      ? `<section data-filter-section="certificate"><h2>${t.certificates}</h2><ul>${certs
           .map(
             (c) =>
-              `<li><a href="${escapeHtml(c.url)}">${escapeHtml(c.title)}</a> — ${escapeHtml(c.issuer)} (${escapeHtml(c.date)})</li>`,
+              `<li data-filterable data-start="${escapeHtml(c.date.slice(0, 7))}" data-end="${escapeHtml(c.date.slice(0, 7))}"><a href="${escapeHtml(c.url)}">${escapeHtml(c.title)}</a> — ${escapeHtml(c.issuer)} (${escapeHtml(c.date)})</li>`,
           )
-          .join('')}</ul>`
+          .join(
+            '',
+          )}</ul><p class="filter-empty" data-filter-empty hidden>${escapeHtml(t.filterEmpty)}</p></section>`
       : ''
 
   const pubsHtml =
@@ -218,5 +349,18 @@ ${p.repo ? `<p class="proj-meta"><a href="${escapeHtml(p.repo)}">${escapeHtml(p.
           .join('')}</ul>`
       : ''
 
-  return `${head}${header}${expsHtml}${projsHtml}${sksHtml}${eduHtml}${certsHtml}${pubsHtml}${awdsHtml}${refsHtml}</body></html>`
+  // Filter bar + script tag (solo cuando enableFilters=true).
+  const filterBar = enableFilters
+    ? renderFilterBar(
+        t,
+        collectTechs(exps, projs),
+        collectUnique(exps.map((e) => e.seniority)),
+        collectUnique(projs.map((p) => p.projectType)),
+      )
+    : ''
+  const filterScript = enableFilters
+    ? '<script src="/cv-filters.js" defer></script>'
+    : ''
+
+  return `${head}${filterScript}${header}${filterBar}${expsHtml}${projsHtml}${sksHtml}${eduHtml}${certsHtml}${pubsHtml}${awdsHtml}${refsHtml}</body></html>`
 }

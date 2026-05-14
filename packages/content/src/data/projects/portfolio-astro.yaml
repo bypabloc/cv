@@ -31,3 +31,4 @@ stack:
   - Biome v2
   - pnpm
   - Cloudflare Pages
+projectType: web

@@ -1,5 +1,92 @@
 [
   {
+    "slug": "cofasa",
+    "role": {
+      "es": "Desarrollador de Sistemas Web",
+      "en": "Web Systems Developer"
+    },
+    "company": "Laboratorio Cofasa S.A.",
+    "companyUrl": "https://laboratoriocofasa.com",
+    "start": "2017-01",
+    "end": "2018-11",
+    "niches": ["generic"],
+    "priority": {
+      "generic": 70
+    },
+    "responsibilities": {
+      "es": [
+        "Desarrollo de un sistema web para el monitoreo del proceso de producción, registrando paradas en las máquinas para análisis de productividad.",
+        "Implementación del sistema en toda la empresa en red local, con acceso seguro mediante usuario y contraseña para cada empleado.",
+        "Trabajo con tecnologías como jQuery y Laravel para crear una plataforma eficiente y fácil de usar."
+      ],
+      "en": [
+        "Built a web system to monitor production processes and record machine stops for productivity analysis.",
+        "Deployed the system company-wide over the LAN, with secure per-user authentication.",
+        "Implemented with jQuery and Laravel to deliver an efficient, easy-to-use platform."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Contribuí al aumento de la productividad mediante el análisis de datos generados por el sistema, permitiendo a la empresa tomar decisiones informadas para mejorar procesos.",
+        "Entendí la verdadera importancia del trabajo en equipo, lo que resultó en una colaboración más efectiva y un proyecto exitoso."
+      ],
+      "en": [
+        "Improved productivity through data analysis from the system, enabling informed process-improvement decisions.",
+        "Deeply understood the value of teamwork, leading to more effective collaboration and a successful project."
+      ]
+    },
+    "skillsTechnical": [
+      "Monitoreo de Producción",
+      "Análisis de Productividad",
+      "Red Local",
+      "jQuery",
+      "Plataforma Web"
+    ],
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
+    "seniority": "mid"
+  },
+  {
+    "slug": "corpoelec",
+    "role": {
+      "es": "Desarrollador Web",
+      "en": "Web Developer"
+    },
+    "company": "Independiente / Académico",
+    "start": "2013-01",
+    "end": "2013-12",
+    "niches": ["generic"],
+    "priority": {
+      "generic": 20
+    },
+    "responsibilities": {
+      "es": [
+        "Implementación y mantenimiento de un sistema de inventario usando PHP y jQuery.",
+        "Desarrollo de funcionalidades CRUD y asociación de equipos a personas."
+      ],
+      "en": [
+        "Implemented and maintained an inventory system using PHP and jQuery.",
+        "Built CRUD features and equipment-to-person assignment."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Implementación exitosa del sistema en tres estados del país, operando de manera offline."
+      ],
+      "en": [
+        "Successfully deployed the system in three states of the country, operating fully offline."
+      ]
+    },
+    "skillsTechnical": [
+      "Gestión de Inventarios",
+      "PHP",
+      "CRUD",
+      "Sistema Offline",
+      "Gestión de Activos"
+    ],
+    "skillsSoft": ["Resolución de Problemas", "Colaboración de Equipo"],
+    "seniority": "intern"
+  },
+  {
     "slug": "destacame-architect",
     "role": {
       "es": "Arquitecto Frontend y Desarrollador de Microservicios",
@@ -49,7 +136,8 @@
       "Microservicios",
       "AWS"
     ],
-    "skillsSoft": ["Fintech", "Planificación Estratégica", "Adaptabilidad"]
+    "skillsSoft": ["Fintech", "Planificación Estratégica", "Adaptabilidad"],
+    "seniority": "lead"
   },
   {
     "slug": "destacame-frontend",
@@ -101,59 +189,8 @@
       "Resolución de Problemas",
       "Agilidad de Aprendizaje",
       "Trabajo en Equipo"
-    ]
-  },
-  {
-    "slug": "goodmeal",
-    "role": {
-      "es": "Desarrollador Web Full Stack",
-      "en": "Full Stack Web Developer"
-    },
-    "company": "GoodMeal",
-    "companyUrl": "https://www.goodmeal.app",
-    "start": "2021-05",
-    "end": "2021-12",
-    "niches": ["fintech", "generic"],
-    "priority": {
-      "fintech": 70,
-      "generic": 90
-    },
-    "responsibilities": {
-      "es": [
-        "Integración en una startup en crecimiento, trabajando bajo presión para satisfacer las demandas de los Project Managers y resolver bugs de manera eficiente.",
-        "Colaboración estrecha con un equipo talentoso, adoptando prácticas de Scrum, realizando reuniones diarias y mejorando las habilidades de trabajo en equipo.",
-        "Restructuración del frontend de la aplicación web, migrándolo a Vue 3 y utilizando tecnologías de vanguardia para mejorar la eficiencia y rendimiento."
-      ],
-      "en": [
-        "Joined a fast-growing startup, delivering under pressure for PMs and resolving bugs efficiently.",
-        "Worked closely with a strong team, adopting Scrum with daily standups and refining teamwork.",
-        "Restructured the frontend, migrating to Vue 3 and modern tooling to improve performance."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Superé los retos de trabajar en un ambiente de startup dinámico y en rápido crecimiento, entregando soluciones eficientes bajo plazos ajustados.",
-        "Lideré la migración y reestructuración del frontend hacia tecnologías más modernas, mejorando significativamente la experiencia de usuario y la eficiencia de la aplicación."
-      ],
-      "en": [
-        "Delivered efficient solutions under tight deadlines in a fast-paced startup environment.",
-        "Led the frontend migration and restructure to modern stacks, significantly improving UX and app efficiency."
-      ]
-    },
-    "skillsTechnical": [
-      "Desarrollo Full Stack",
-      "Vue 3",
-      "Scrum",
-      "Corrección de Errores",
-      "Aplicación Web"
     ],
-    "skillsSoft": [
-      "Gestión de Proyectos",
-      "Gestión del Tiempo",
-      "Adaptabilidad",
-      "Resolución de Problemas",
-      "Trabajo en Equipo"
-    ]
+    "seniority": "senior"
   },
   {
     "slug": "dibal",
@@ -210,94 +247,61 @@
       "Metodologías Ágiles",
       "Gestión de Equipos",
       "Orientado al Cliente"
-    ]
+    ],
+    "seniority": "senior"
   },
   {
-    "slug": "cofasa",
+    "slug": "goodmeal",
     "role": {
-      "es": "Desarrollador de Sistemas Web",
-      "en": "Web Systems Developer"
+      "es": "Desarrollador Web Full Stack",
+      "en": "Full Stack Web Developer"
     },
-    "company": "Laboratorio Cofasa S.A.",
-    "companyUrl": "https://laboratoriocofasa.com",
-    "start": "2017-01",
-    "end": "2018-11",
-    "niches": ["generic"],
+    "company": "GoodMeal",
+    "companyUrl": "https://www.goodmeal.app",
+    "start": "2021-05",
+    "end": "2021-12",
+    "niches": ["fintech", "generic"],
     "priority": {
-      "generic": 70
+      "fintech": 70,
+      "generic": 90
     },
     "responsibilities": {
       "es": [
-        "Desarrollo de un sistema web para el monitoreo del proceso de producción, registrando paradas en las máquinas para análisis de productividad.",
-        "Implementación del sistema en toda la empresa en red local, con acceso seguro mediante usuario y contraseña para cada empleado.",
-        "Trabajo con tecnologías como jQuery y Laravel para crear una plataforma eficiente y fácil de usar."
+        "Integración en una startup en crecimiento, trabajando bajo presión para satisfacer las demandas de los Project Managers y resolver bugs de manera eficiente.",
+        "Colaboración estrecha con un equipo talentoso, adoptando prácticas de Scrum, realizando reuniones diarias y mejorando las habilidades de trabajo en equipo.",
+        "Restructuración del frontend de la aplicación web, migrándolo a Vue 3 y utilizando tecnologías de vanguardia para mejorar la eficiencia y rendimiento."
       ],
       "en": [
-        "Built a web system to monitor production processes and record machine stops for productivity analysis.",
-        "Deployed the system company-wide over the LAN, with secure per-user authentication.",
-        "Implemented with jQuery and Laravel to deliver an efficient, easy-to-use platform."
+        "Joined a fast-growing startup, delivering under pressure for PMs and resolving bugs efficiently.",
+        "Worked closely with a strong team, adopting Scrum with daily standups and refining teamwork.",
+        "Restructured the frontend, migrating to Vue 3 and modern tooling to improve performance."
       ]
     },
     "achievements": {
       "es": [
-        "Contribuí al aumento de la productividad mediante el análisis de datos generados por el sistema, permitiendo a la empresa tomar decisiones informadas para mejorar procesos.",
-        "Entendí la verdadera importancia del trabajo en equipo, lo que resultó en una colaboración más efectiva y un proyecto exitoso."
+        "Superé los retos de trabajar en un ambiente de startup dinámico y en rápido crecimiento, entregando soluciones eficientes bajo plazos ajustados.",
+        "Lideré la migración y reestructuración del frontend hacia tecnologías más modernas, mejorando significativamente la experiencia de usuario y la eficiencia de la aplicación."
       ],
       "en": [
-        "Improved productivity through data analysis from the system, enabling informed process-improvement decisions.",
-        "Deeply understood the value of teamwork, leading to more effective collaboration and a successful project."
+        "Delivered efficient solutions under tight deadlines in a fast-paced startup environment.",
+        "Led the frontend migration and restructure to modern stacks, significantly improving UX and app efficiency."
       ]
     },
     "skillsTechnical": [
-      "Monitoreo de Producción",
-      "Análisis de Productividad",
-      "Red Local",
-      "jQuery",
-      "Plataforma Web"
+      "Desarrollo Full Stack",
+      "Vue 3",
+      "Scrum",
+      "Corrección de Errores",
+      "Aplicación Web"
     ],
-    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"]
-  },
-  {
-    "slug": "projects-degrees",
-    "role": {
-      "es": "Líder, Arquitecto y Desarrollador",
-      "en": "Leader, Architect and Developer"
-    },
-    "company": "Independiente / Académico",
-    "start": "2015-01",
-    "end": "2015-12",
-    "niches": ["leader", "generic"],
-    "priority": {
-      "leader": 60,
-      "generic": 50
-    },
-    "responsibilities": {
-      "es": [
-        "Reestructuración y finalización del proyecto de grado de dos equipos que enfrentaron dificultades técnicas.",
-        "Dirección e implementación completa de las soluciones necesarias para cumplir con los objetivos del proyecto."
-      ],
-      "en": [
-        "Restructured and finished the thesis projects of two teams that had hit technical roadblocks.",
-        "Led and fully implemented the solutions required to meet project objectives."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Completé el proyecto que dos equipos no pudieron en meses en una semana, instruyendo sobre cada implementación y sus razones."
-      ],
-      "en": [
-        "Delivered in one week what two teams could not finish in months, mentoring on each implementation and the reasoning behind it."
-      ]
-    },
-    "skillsTechnical": [],
     "skillsSoft": [
-      "Dirección de Proyecto",
-      "Colaboración de Equipo",
-      "Consultoría Técnica",
+      "Gestión de Proyectos",
       "Gestión del Tiempo",
+      "Adaptabilidad",
       "Resolución de Problemas",
-      "Adaptabilidad"
-    ]
+      "Trabajo en Equipo"
+    ],
+    "seniority": "mid"
   },
   {
     "slug": "iai",
@@ -347,7 +351,8 @@
       "Gestión del Presupuesto",
       "Gestión de Proyectos",
       "Trabajo Colaborativo"
-    ]
+    ],
+    "seniority": "mid"
   },
   {
     "slug": "ipasme",
@@ -394,46 +399,50 @@
       "Pensamiento Analítico",
       "Resolución de Problemas",
       "Adaptabilidad"
-    ]
+    ],
+    "seniority": "junior"
   },
   {
-    "slug": "corpoelec",
+    "slug": "projects-degrees",
     "role": {
-      "es": "Desarrollador Web",
-      "en": "Web Developer"
+      "es": "Líder, Arquitecto y Desarrollador",
+      "en": "Leader, Architect and Developer"
     },
     "company": "Independiente / Académico",
-    "start": "2013-01",
-    "end": "2013-12",
-    "niches": ["generic"],
+    "start": "2015-01",
+    "end": "2015-12",
+    "niches": ["leader", "generic"],
     "priority": {
-      "generic": 20
+      "leader": 60,
+      "generic": 50
     },
     "responsibilities": {
       "es": [
-        "Implementación y mantenimiento de un sistema de inventario usando PHP y jQuery.",
-        "Desarrollo de funcionalidades CRUD y asociación de equipos a personas."
+        "Reestructuración y finalización del proyecto de grado de dos equipos que enfrentaron dificultades técnicas.",
+        "Dirección e implementación completa de las soluciones necesarias para cumplir con los objetivos del proyecto."
       ],
       "en": [
-        "Implemented and maintained an inventory system using PHP and jQuery.",
-        "Built CRUD features and equipment-to-person assignment."
+        "Restructured and finished the thesis projects of two teams that had hit technical roadblocks.",
+        "Led and fully implemented the solutions required to meet project objectives."
       ]
     },
     "achievements": {
       "es": [
-        "Implementación exitosa del sistema en tres estados del país, operando de manera offline."
+        "Completé el proyecto que dos equipos no pudieron en meses en una semana, instruyendo sobre cada implementación y sus razones."
       ],
       "en": [
-        "Successfully deployed the system in three states of the country, operating fully offline."
+        "Delivered in one week what two teams could not finish in months, mentoring on each implementation and the reasoning behind it."
       ]
     },
-    "skillsTechnical": [
-      "Gestión de Inventarios",
-      "PHP",
-      "CRUD",
-      "Sistema Offline",
-      "Gestión de Activos"
+    "skillsTechnical": [],
+    "skillsSoft": [
+      "Dirección de Proyecto",
+      "Colaboración de Equipo",
+      "Consultoría Técnica",
+      "Gestión del Tiempo",
+      "Resolución de Problemas",
+      "Adaptabilidad"
     ],
-    "skillsSoft": ["Resolución de Problemas", "Colaboración de Equipo"]
+    "seniority": "mid"
   }
 ]

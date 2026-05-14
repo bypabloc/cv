@@ -66,3 +66,4 @@ caseStudyDetailed:
     en: >-
       Working MVP in a single night, public repo at bypabloc/cv. Demonstrates that Claude Code +
       human review combo ships product without sacrificing maintainability.
+projectType: web

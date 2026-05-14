@@ -1,24 +1,41 @@
 [
   {
-    "slug": "frontend",
+    "slug": "ai-workflows",
     "name": {
-      "es": "Frontend",
-      "en": "Frontend"
+      "es": "AI Workflows",
+      "en": "AI Workflows"
     },
     "skills": [
-      "Vue 3",
-      "Nuxt.js",
-      "TypeScript",
-      "Astro",
-      "Desarrollo Frontend",
-      "Arquitectura Frontend",
-      "Microfrontend",
-      "Desarrollo de E-commerce",
-      "Aplicación Web",
-      "jQuery"
+      "Claude Code",
+      "Cursor",
+      "GitHub Copilot",
+      "Prompt Engineering",
+      "Vibe Coding",
+      "Sub-agentes",
+      "MCP Servers",
+      "Skill-based agents"
     ],
     "kind": "technical",
-    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
+    "niches": ["vibe", "generic"]
+  },
+  {
+    "slug": "architecture",
+    "name": {
+      "es": "Arquitectura",
+      "en": "Architecture"
+    },
+    "skills": [
+      "Arquitectura de Sistemas",
+      "Arquitectura Frontend",
+      "Microservicios",
+      "Microfrontend",
+      "Desarrollo Full Stack",
+      "Clean Architecture",
+      "SOLID",
+      "Implementación de Soluciones"
+    ],
+    "kind": "technical",
+    "niches": ["architect", "leader", "generic"]
   },
   {
     "slug": "backend",
@@ -65,44 +82,6 @@
     "niches": ["architect", "leader", "generic"]
   },
   {
-    "slug": "architecture",
-    "name": {
-      "es": "Arquitectura",
-      "en": "Architecture"
-    },
-    "skills": [
-      "Arquitectura de Sistemas",
-      "Arquitectura Frontend",
-      "Microservicios",
-      "Microfrontend",
-      "Desarrollo Full Stack",
-      "Clean Architecture",
-      "SOLID",
-      "Implementación de Soluciones"
-    ],
-    "kind": "technical",
-    "niches": ["architect", "leader", "generic"]
-  },
-  {
-    "slug": "ai-workflows",
-    "name": {
-      "es": "AI Workflows",
-      "en": "AI Workflows"
-    },
-    "skills": [
-      "Claude Code",
-      "Cursor",
-      "GitHub Copilot",
-      "Prompt Engineering",
-      "Vibe Coding",
-      "Sub-agentes",
-      "MCP Servers",
-      "Skill-based agents"
-    ],
-    "kind": "technical",
-    "niches": ["vibe", "generic"]
-  },
-  {
     "slug": "data",
     "name": {
       "es": "Datos & SQL",
@@ -137,6 +116,27 @@
     ],
     "kind": "technical",
     "niches": ["fintech", "generic"]
+  },
+  {
+    "slug": "frontend",
+    "name": {
+      "es": "Frontend",
+      "en": "Frontend"
+    },
+    "skills": [
+      "Vue 3",
+      "Nuxt.js",
+      "TypeScript",
+      "Astro",
+      "Desarrollo Frontend",
+      "Arquitectura Frontend",
+      "Microfrontend",
+      "Desarrollo de E-commerce",
+      "Aplicación Web",
+      "jQuery"
+    ],
+    "kind": "technical",
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
   },
   {
     "slug": "leadership",

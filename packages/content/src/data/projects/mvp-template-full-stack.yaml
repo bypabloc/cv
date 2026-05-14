@@ -47,3 +47,4 @@ metrics:
   coverage: Skills + Rules + Hooks + Devtools
   role: Reference for Destacame Claude Code rollout
   stack: Astro + Django + Python 3.14 + uv
+projectType: library

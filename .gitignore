@@ -62,6 +62,10 @@ apps/*/public/cv.html
 apps/*/public/cv-es.html
 apps/*/public/cv-en.html
 
+# CV filters JS bundle copiado por build-public-assets.mjs desde @portfolio/cv-filters
+# Output puro: cada build regenera el bundle en packages/cv-filters/dist y copia
+apps/*/public/cv-filters.js
+
 # Playwright
 playwright-report/
 test-results/

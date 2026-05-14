@@ -26,6 +26,9 @@ importers:
       '@portfolio/content':
         specifier: workspace:*
         version: link:../../packages/content
+      '@portfolio/cv-filters':
+        specifier: workspace:*
+        version: link:../../packages/cv-filters
       '@portfolio/cv-pdf':
         specifier: workspace:*
         version: link:../../packages/cv-pdf
@@ -81,6 +84,9 @@ importers:
       '@portfolio/content':
         specifier: workspace:*
         version: link:../../packages/content
+      '@portfolio/cv-filters':
+        specifier: workspace:*
+        version: link:../../packages/cv-filters
       '@portfolio/cv-pdf':
         specifier: workspace:*
         version: link:../../packages/cv-pdf
@@ -136,6 +142,9 @@ importers:
       '@portfolio/content':
         specifier: workspace:*
         version: link:../../packages/content
+      '@portfolio/cv-filters':
+        specifier: workspace:*
+        version: link:../../packages/cv-filters
       '@portfolio/cv-pdf':
         specifier: workspace:*
         version: link:../../packages/cv-pdf
@@ -240,6 +249,9 @@ importers:
       '@portfolio/content':
         specifier: workspace:*
         version: link:../../packages/content
+      '@portfolio/cv-filters':
+        specifier: workspace:*
+        version: link:../../packages/cv-filters
       '@portfolio/cv-pdf':
         specifier: workspace:*
         version: link:../../packages/cv-pdf
@@ -295,6 +307,9 @@ importers:
       '@portfolio/content':
         specifier: workspace:*
         version: link:../../packages/content
+      '@portfolio/cv-filters':
+        specifier: workspace:*
+        version: link:../../packages/cv-filters
       '@portfolio/cv-pdf':
         specifier: workspace:*
         version: link:../../packages/cv-pdf
@@ -403,6 +418,31 @@ importers:
       vitest:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@24.12.4)(happy-dom@15.11.7)(lightningcss@1.32.0)
+
+  packages/cv-filters:
+    dependencies:
+      '@portfolio/content':
+        specifier: workspace:*
+        version: link:../content
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.19.19
+      '@vitest/coverage-v8':
+        specifier: ^2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(lightningcss@1.32.0))
+      happy-dom:
+        specifier: ^15.11.7
+        version: 15.11.7
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.3
+        version: 7.3.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.9.0)
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(lightningcss@1.32.0)
 
   packages/cv-pdf:
     dependencies:

@@ -28,6 +28,50 @@ export const YearMonthSchema = z
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'expected YYYY-MM')
 export type YearMonth = z.infer<typeof YearMonthSchema>
 
+/**
+ * Seniority del rol de una experience. 5 niveles ordenados de menor a mayor.
+ *
+ * - `intern`: pasantia / practica academica
+ * - `junior`: primeros 1-2 anos de carrera profesional
+ * - `mid`: 2-4 anos, autonomia tecnica
+ * - `senior`: 4+ anos, ownership tecnico, mentoria
+ * - `lead`: people management o tech lead / architect
+ *
+ * Habilita el filtro `?seniority=` del CV (ver docs/specs/cv-filters-query-params.md).
+ */
+export const SENIORITIES = [
+  'intern',
+  'junior',
+  'mid',
+  'senior',
+  'lead',
+] as const
+export const SeniorityValueSchema = z.enum(SENIORITIES)
+export type SeniorityValue = z.infer<typeof SeniorityValueSchema>
+
+/**
+ * Tipo de un project. 6 categorias.
+ *
+ * - `web`: aplicacion / sitio web (Astro, Vue, Next, etc.)
+ * - `mobile`: aplicacion movil (nativa o hibrida)
+ * - `cli`: herramienta de linea de comandos
+ * - `library`: paquete reutilizable / template / boilerplate
+ * - `ai`: proyectos LLM / ML / vibe coding tooling
+ * - `fintech-platform`: plataforma fintech (pagos, creditos, scoring)
+ *
+ * Habilita el filtro `?type=` del CV (ver docs/specs/cv-filters-query-params.md).
+ */
+export const PROJECT_TYPES = [
+  'web',
+  'mobile',
+  'cli',
+  'library',
+  'ai',
+  'fintech-platform',
+] as const
+export const ProjectTypeValueSchema = z.enum(PROJECT_TYPES)
+export type ProjectTypeValue = z.infer<typeof ProjectTypeValueSchema>
+
 /** YYYY-MM-DD. */
 export const DateSchema = z
   .string()
@@ -100,6 +144,11 @@ export const ExperienceSchema = z.object({
   }),
   skillsTechnical: z.array(z.string().min(1)),
   skillsSoft: z.array(z.string().min(1)),
+  /**
+   * Seniority del rol. Habilita el filtro `?seniority=` del CV.
+   * Ver SENIORITIES para valores y semantica.
+   */
+  seniority: SeniorityValueSchema,
 })
 export type Experience = z.infer<typeof ExperienceSchema>
 
@@ -126,6 +175,11 @@ export const ProjectSchema = z.object({
     })
     .optional(),
   isConfidential: z.boolean().default(false),
+  /**
+   * Tipo de proyecto. Habilita el filtro `?type=` del CV.
+   * Ver PROJECT_TYPES para valores y semantica.
+   */
+  projectType: ProjectTypeValueSchema,
 })
 export type Project = z.infer<typeof ProjectSchema>
 

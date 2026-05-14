@@ -1,0 +1,216 @@
+---
+/**
+ * @component FilterChips
+ * @description Barra de chips de filtrado del CV. Renderiza chips por
+ *   dimension: tech, seniority, projectType, skills, hideConfidential, plus
+ *   un boton "Limpiar filtros".
+ *
+ *   Default `hidden`: el JS de `@portfolio/cv-filters` la revela al cargar
+ *   (sin JS = invisible). Cada chip declara `data-filter-chip="<dim>"` y
+ *   `data-filter-value="<val>"` para que el bundle vanilla pueda detectar
+ *   clicks y togglear estado.
+ *
+ * @props {string[]} techs - Tecnologias unicas para chips tech
+ * @props {string[]} seniorities - Niveles unicos
+ * @props {string[]} projectTypes - Tipos de proyecto unicos
+ * @props {{ bar, clear, tech, seniority, type, confidential, skillsTechnical, skillsSoft }} labels - Strings i18n
+ *
+ * @example
+ *   <FilterChips
+ *     techs={['Vue', 'Django', 'AWS']}
+ *     seniorities={['senior', 'lead']}
+ *     projectTypes={['web', 'fintech-platform']}
+ *     labels={{ bar: 'Filtros', clear: 'Limpiar', ... }}
+ *   />
+ */
+interface Props {
+  techs: string[]
+  seniorities: string[]
+  projectTypes: string[]
+  labels: {
+    bar: string
+    clear: string
+    tech: string
+    seniority: string
+    type: string
+    confidential: string
+    skillsTechnical: string
+    skillsSoft: string
+  }
+}
+
+const { techs, seniorities, projectTypes, labels } = Astro.props
+---
+
+<aside class="filter-bar" data-filter-bar hidden aria-label={labels.bar}>
+  <div class="filter-bar__inner container-wide">
+    <div class="filter-group">
+      <span class="filter-group__label text-mono-label">{labels.tech}</span>
+      <div class="filter-group__chips">
+        {
+          techs.map((tech) => (
+            <button
+              type="button"
+              class="filter-chip text-mono"
+              data-filter-chip="tech"
+              data-filter-value={tech}
+              aria-pressed="false"
+            >
+              {tech}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-group__label text-mono-label">{labels.seniority}</span>
+      <div class="filter-group__chips">
+        {
+          seniorities.map((s) => (
+            <button
+              type="button"
+              class="filter-chip text-mono"
+              data-filter-chip="seniority"
+              data-filter-value={s}
+              aria-pressed="false"
+            >
+              {s}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-group__label text-mono-label">{labels.type}</span>
+      <div class="filter-group__chips">
+        {
+          projectTypes.map((t) => (
+            <button
+              type="button"
+              class="filter-chip text-mono"
+              data-filter-chip="projectType"
+              data-filter-value={t}
+              aria-pressed="false"
+            >
+              {t}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-group__label text-mono-label">Skills</span>
+      <div class="filter-group__chips">
+        <button
+          type="button"
+          class="filter-chip text-mono"
+          data-filter-chip="skills"
+          data-filter-value="technical"
+          aria-pressed="false"
+        >
+          {labels.skillsTechnical}
+        </button>
+        <button
+          type="button"
+          class="filter-chip text-mono"
+          data-filter-chip="skills"
+          data-filter-value="soft"
+          aria-pressed="false"
+        >
+          {labels.skillsSoft}
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-group filter-group--actions">
+      <button
+        type="button"
+        class="filter-chip text-mono"
+        data-filter-chip="hideConfidential"
+        data-filter-value="1"
+        aria-pressed="false"
+      >
+        {labels.confidential}
+      </button>
+      <button
+        type="button"
+        class="filter-clear text-mono"
+        data-filter-clear="all"
+      >
+        {labels.clear}
+      </button>
+    </div>
+  </div>
+</aside>
+
+<style>
+  .filter-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding-block: var(--space-12);
+    backdrop-filter: blur(8px);
+  }
+  .filter-bar__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-12);
+    align-items: center;
+  }
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    align-items: center;
+  }
+  .filter-group__label {
+    color: var(--color-text-muted);
+    margin-right: var(--space-6);
+  }
+  .filter-group__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+  .filter-group--actions {
+    margin-left: auto;
+  }
+  .filter-chip {
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    padding: var(--space-3) var(--space-10);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .filter-chip:hover {
+    border-color: var(--color-border-strong);
+    color: var(--color-text);
+  }
+  .filter-chip.is-active {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+    border-color: var(--color-primary);
+  }
+  .filter-clear {
+    background: transparent;
+    border: 1px solid var(--color-danger);
+    border-radius: var(--radius-pill);
+    padding: var(--space-3) var(--space-10);
+    color: var(--color-danger);
+    cursor: pointer;
+  }
+  .filter-clear:hover {
+    background: var(--color-danger);
+    color: var(--color-primary-contrast);
+  }
+</style>

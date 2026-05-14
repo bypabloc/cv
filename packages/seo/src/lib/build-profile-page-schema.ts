@@ -58,9 +58,6 @@ export function buildProfilePageSchema(
   const description = profile.summary[locale]
 
   const sameAs = [profile.contacts.linkedin, profile.contacts.github]
-  if (profile.contacts.medium) {
-    sameAs.push(profile.contacts.medium)
-  }
   if (profile.contacts.website) {
     sameAs.push(profile.contacts.website)
   }

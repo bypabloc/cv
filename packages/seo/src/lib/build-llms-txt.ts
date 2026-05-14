@@ -110,9 +110,6 @@ export function buildLlmsTxt(input: BuildLlmsTxtInput): string {
   lines.push('')
   lines.push(`- LinkedIn: ${profile.contacts.linkedin}`)
   lines.push(`- GitHub: ${profile.contacts.github}`)
-  if (profile.contacts.medium) {
-    lines.push(`- Medium: ${profile.contacts.medium}`)
-  }
   if (profile.contacts.website) {
     lines.push(`- Website: ${profile.contacts.website}`)
   }

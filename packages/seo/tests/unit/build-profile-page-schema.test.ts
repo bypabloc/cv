@@ -151,7 +151,7 @@ describe('buildProfilePageSchema', () => {
     })
   })
 
-  it('Given build Then sameAs contiene linkedin, github y medium', () => {
+  it('Given build Then sameAs contiene linkedin y github', () => {
     const ld = buildProfilePageSchema({
       profile,
       niche: 'generic',
@@ -164,7 +164,6 @@ describe('buildProfilePageSchema', () => {
       'https://linkedin.com/in/bypabloc',
     )
     expect(parsed.mainEntity.sameAs).toContain('https://github.com/bypabloc')
-    expect(parsed.mainEntity.sameAs).toContain('https://bypablo.medium.com')
   })
 
   it('Given build Then dateModified es ISO date YYYY-MM-DD', () => {
@@ -179,7 +178,7 @@ describe('buildProfilePageSchema', () => {
     expect(parsed.dateModified).toMatch(/^\d{4}-\d{2}-\d{2}$/u)
   })
 
-  it('Given profile sin medium ni website When build Then sameAs solo tiene linkedin+github', () => {
+  it('Given profile sin website When build Then sameAs solo tiene linkedin+github', () => {
     const profileMinimal = {
       ...profile,
       contacts: {

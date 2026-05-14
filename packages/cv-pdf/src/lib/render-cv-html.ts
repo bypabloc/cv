@@ -285,7 +285,6 @@ a { color: #2046d3; text-decoration: none; }
   <a href="mailto:${escapeHtml(profile.contacts.email)}">${escapeHtml(profile.contacts.email)}</a>
   · <a href="${escapeHtml(profile.contacts.linkedin)}">LinkedIn</a>
   · <a href="${escapeHtml(profile.contacts.github)}">GitHub</a>
-  ${profile.contacts.medium ? `· <a href="${escapeHtml(profile.contacts.medium)}">Medium</a>` : ''}
 </p>
 <h2>${t.summary}</h2>
 <p>${escapeHtml(profile.summary[locale])}</p>

@@ -1,0 +1,85 @@
+---
+import ContactForm from '@portfolio/ui/components/ContactForm.astro'
+import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
+
+const apiEndpoint = (import.meta.env.PUBLIC_API_ENDPOINT || '') as string
+const turnstileSitekey = (import.meta.env.PUBLIC_TURNSTILE_SITEKEY ||
+  '') as string
+const contactEndpoint = apiEndpoint ? `${apiEndpoint}/contact` : ''
+---
+
+<BaseLayout
+  title="Contacto — Pablo Contreras"
+  description="Hablemos de tu proyecto. Respondo en menos de 24h."
+  canonicalUrl="https://hub.the-full-stack.com/contact"
+>
+  <main class="contact-page">
+    <section class="contact-section">
+      <header class="contact-header">
+        <h1>Contacto</h1>
+        <p>
+          Si querés contratarme, colaborar o consultar algo técnico, dejame
+          un mensaje. Te respondo en menos de 24h.
+        </p>
+      </header>
+
+      {
+        contactEndpoint && turnstileSitekey ? (
+          <ContactForm
+            apiEndpoint={contactEndpoint}
+            turnstileSitekey={turnstileSitekey}
+            niche="hub"
+          />
+        ) : (
+          <div class="contact-fallback">
+            <p>
+              El formulario aún no está configurado en este ambiente. Mientras
+              tanto, escribime directo a{' '}
+              <a href="mailto:pacg1991@gmail.com">pacg1991@gmail.com</a>.
+            </p>
+          </div>
+        )
+      }
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .contact-page {
+    min-height: 60vh;
+    padding-block: var(--space-56);
+  }
+
+  .contact-section {
+    max-width: var(--container-medium);
+    margin-inline: auto;
+    padding-inline: var(--space-24);
+  }
+
+  .contact-header {
+    margin-bottom: var(--space-40);
+    text-align: center;
+  }
+
+  .contact-header h1 {
+    font-size: var(--font-size-32);
+    font-weight: 700;
+    margin-bottom: var(--space-12);
+  }
+
+  .contact-header p {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-14);
+  }
+
+  .contact-fallback {
+    text-align: center;
+    padding: var(--space-32);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+
+  .contact-fallback a {
+    color: var(--color-primary);
+  }
+</style>

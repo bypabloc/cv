@@ -12,6 +12,7 @@ Whitelist: 6 subdominios bajo the-full-stack.com (apex + 5 niches).
 from __future__ import annotations
 
 import os
+import re
 from typing import Final
 
 # Origins permitidos. Sobrescribible via env var CORS_ALLOWED_ORIGINS
@@ -25,13 +26,23 @@ _DEFAULT_WHITELIST: Final[tuple[str, ...]] = (
     'https://vibe.the-full-stack.com',
 )
 
-# Localhost para dev local (Docker stack ports 9970-9973)
+# Localhost apex para dev local (Docker stack ports 9970-9973 + Astro dev 4321).
+# Los subdominios (hub.localhost, architect.localhost, etc.) se matchean por
+# pattern aparte (ver _LOCAL_SUBDOMAIN_PATTERN). RFC 6761 garantiza que
+# *.localhost siempre resuelve a 127.0.0.1, por lo que cualquier subdomain
+# en stage dev es seguro.
 _LOCAL_WHITELIST: Final[tuple[str, ...]] = (
     'http://localhost:9970',
     'http://localhost:9971',
     'http://localhost:9972',
     'http://localhost:9973',
-    'http://localhost:4321',  # Astro dev default
+    'http://localhost:4321',
+)
+
+# Pattern para subdominios localhost: http://<word>.localhost:<port>.
+# Solo aplica en stage=dev (ver is_allowed_origin).
+_LOCAL_SUBDOMAIN_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r'^http://[a-z0-9-]+\.localhost(:\d+)?$',
 )
 
 
@@ -51,6 +62,10 @@ def is_allowed_origin(origin: str | None) -> bool:
     """
     True si el origin esta en la whitelist.
 
+    En stage=dev, ademas acepta cualquier `http://<subdomain>.localhost[:port]`
+    via pattern (RFC 6761 garantiza que *.localhost resuelve a 127.0.0.1, asi
+    que es seguro permitir subdominios arbitrarios localmente).
+
     Examples:
         >>> import os
         >>> os.environ.pop('CORS_ALLOWED_ORIGINS', None)
@@ -61,10 +76,26 @@ def is_allowed_origin(origin: str | None) -> bool:
         False
         >>> is_allowed_origin(None)
         False
+        >>> os.environ['STAGE'] = 'dev'
+        >>> is_allowed_origin('http://architect.localhost:9970')
+        True
+        >>> is_allowed_origin('http://hub.localhost:9970')
+        True
+        >>> os.environ['STAGE'] = 'prod'
+        >>> is_allowed_origin('http://architect.localhost:9970')
+        False
     """
     if not origin:
         return False
-    return origin in _load_whitelist()
+    if origin in _load_whitelist():
+        return True
+    # En dev permitimos cualquier subdominio *.localhost (RFC 6761 seguro)
+    if (
+        os.environ.get('STAGE', 'dev') == 'dev'
+        and _LOCAL_SUBDOMAIN_PATTERN.match(origin)
+    ):
+        return True
+    return False
 
 
 def resolve_origin(headers: dict[str, str] | None) -> str:

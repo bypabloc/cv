@@ -1,0 +1,133 @@
+---
+/**
+ * @component TrackingPixel
+ * @description Tracking pixel client-side: envia evento al backend
+ * tracking_pixel SOLO si el user dio consent en CookieBanner.
+ *
+ * Implementacion: client:idle (post page load), envia 1 POST /track con
+ * session_id (UUIDv4 persisted en localStorage) + page metadata + UTMs.
+ *
+ * @props {string} apiEndpoint - URL base del API Gateway
+ * @props {string} [niche] - niche del subdominio
+ *
+ * @example
+ *   <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="generic" />
+ */
+interface Props {
+  apiEndpoint: string
+  niche?: string
+}
+const { apiEndpoint, niche = 'generic' } = Astro.props
+---
+
+<script
+  is:inline
+  data-api-endpoint={apiEndpoint}
+  data-niche={niche}
+  define:vars={{ apiEndpoint, niche }}
+>
+  ;(() => {
+    if (!apiEndpoint) return
+
+    const STORAGE_CONSENT = 'cf_consent'
+    const STORAGE_SESSION = 'cf_session'
+
+    // Solo enviar si el user acepto
+    function hasConsent() {
+      try {
+        return localStorage.getItem(STORAGE_CONSENT) === 'accepted'
+      } catch {
+        return false
+      }
+    }
+
+    function getSessionId() {
+      try {
+        let sid = localStorage.getItem(STORAGE_SESSION)
+        if (!sid || sid.length < 20) {
+          // UUID v4 fallback (sin crypto.randomUUID en browsers viejos)
+          sid =
+            typeof crypto !== 'undefined' && crypto.randomUUID
+              ? crypto.randomUUID().replace(/-/g, '')
+              : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random()
+                  .toString(36)
+                  .slice(2)}`
+          localStorage.setItem(STORAGE_SESSION, sid)
+        }
+        return sid
+      } catch {
+        return `nostorage-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      }
+    }
+
+    function getUTMs() {
+      const params = new URLSearchParams(window.location.search)
+      const utms = {}
+      ;[
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'utm_term',
+      ].forEach((k) => {
+        const v = params.get(k)
+        if (v) utms[k] = v.slice(0, 100)
+      })
+      return utms
+    }
+
+    function track() {
+      if (!hasConsent()) return
+
+      const payload = {
+        session_id: getSessionId(),
+        page_url: window.location.href.slice(0, 500),
+        page_title: document.title.slice(0, 200),
+        page_path: window.location.pathname.slice(0, 300),
+        referrer: document.referrer ? document.referrer.slice(0, 500) : undefined,
+        viewport_width: window.innerWidth,
+        viewport_height: window.innerHeight,
+        niche,
+        ...getUTMs(),
+      }
+
+      // sendBeacon es preferible (sigue funcionando si user cierra la tab)
+      const url = `${apiEndpoint}/track`
+      const body = JSON.stringify(payload)
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: 'application/json' })
+          navigator.sendBeacon(url, blob)
+          return
+        }
+      } catch {
+        // continua con fetch fallback
+      }
+
+      // Fallback fetch
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true,
+      }).catch(() => {
+        // silently ignore - tracking es fire-and-forget
+      })
+    }
+
+    // Lanzar despues que la pagina termine de cargar + idle
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(track, { timeout: 2000 })
+    } else {
+      setTimeout(track, 100)
+    }
+
+    // Re-track si consent cambia despues
+    document.addEventListener('portfolio:consent-changed', (e) => {
+      const detail = e.detail
+      if (detail && detail.value === 'accepted') {
+        track()
+      }
+    })
+  })()
+</script>

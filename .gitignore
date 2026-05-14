@@ -85,3 +85,4 @@ Thumbs.db
 
 # VSCode runtime (server-controller)
 .vscode/.server-controller-port.log
+tmp/

@@ -255,6 +255,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Tests E2E | [tests/feature/README.md](tests/feature/README.md) | Escribir specs Playwright |
 | CV (contenido) | [.claude/docs/cv/README.md](.claude/docs/cv/README.md) | Datos del CV (perfil, experiencia, proyectos) |
 | Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseño |
+| Deploy Cloudflare Pages | [.claude/docs/cloudflare/README.md](.claude/docs/cloudflare/README.md) o skill `cloudflare-deploy` | Deploy, custom domains, DNS, gotchas, troubleshoot del setup actual |
 
 ## Skills disponibles
 
@@ -267,6 +268,7 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 |-------|-----|
 | `astro-portfolio` | Referencia obligatoria para cualquier decisión de estructura, SEO, GEO, ATS, diseño o stack del portfolio |
 | `animations-css` | Animaciones CSS (scroll-driven, view transitions, micro-interactions) — NO usar libs como motion / gsap / aos |
+| `cloudflare-deploy` | Deploy a Cloudflare Pages: REST API, custom domains, DNS, gotchas, comparacion vs Vercel/Netlify |
 | `codebase-audit` | Auditoria de calidad: dead code, complexity, duplication, tech debt |
 | `dependency-upgrade` | Workflows de upgrade con pnpm (audit, outdated, CVE, majors) |
 | `fix-hooks` | Reparar errores de pre-commit / pre-push iterativamente |

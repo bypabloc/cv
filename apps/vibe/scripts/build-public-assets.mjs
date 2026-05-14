@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { profile } from '@portfolio/content'
@@ -34,11 +34,29 @@ async function write(p, c) {
 
 async function main() {
   await mkdir(PUBLIC_DIR, { recursive: true })
-  const cvEs = renderCvHtml({ locale: 'es', niche: NICHE })
-  const cvEn = renderCvHtml({ locale: 'en', niche: NICHE })
+  const cvEs = renderCvHtml({ locale: 'es', niche: NICHE, enableFilters: true })
+  const cvEn = renderCvHtml({ locale: 'en', niche: NICHE, enableFilters: true })
   await write('cv.html', cvEs)
   await write('cv-es.html', cvEs)
   await write('cv-en.html', cvEn)
+
+  // 1b. Copy cv-filters.js bundle (built by @portfolio/cv-filters) to public/
+  const cvFiltersBundleSrc = resolve(
+    __dirname,
+    '../../../packages/cv-filters/dist/cv-filters.js',
+  )
+  const cvFiltersBundleDest = resolve(PUBLIC_DIR, 'cv-filters.js')
+  try {
+    await copyFile(cvFiltersBundleSrc, cvFiltersBundleDest)
+    console.info('[public] copied cv-filters.js')
+  } catch (err) {
+    console.warn(
+      '[public] cv-filters.js bundle not found at ' +
+        cvFiltersBundleSrc +
+        '. Run `pnpm --filter @portfolio/cv-filters build` first.',
+    )
+    throw err
+  }
   const pages = [
     {
       path: '/',

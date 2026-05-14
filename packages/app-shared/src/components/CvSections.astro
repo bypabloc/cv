@@ -41,6 +41,7 @@ import type { I18nStrings } from '../lib/site-config'
 import AiWorkflowSection from './AiWorkflowSection.astro'
 import ArchitectureDiagram from './ArchitectureDiagram.astro'
 import AtsKeywordsPills from './AtsKeywordsPills.astro'
+import FilterChips from './FilterChips.astro'
 import LeadershipStats from './LeadershipStats.astro'
 
 interface Props {
@@ -48,9 +49,20 @@ interface Props {
   locale: 'es' | 'en'
   strings: I18nStrings
   cvHref?: string
+  /**
+   * Si true, agrega data-* attrs filterables a items + monta FilterChips
+   * + carga /cv-filters.js. Default false (CV estatico, sin interactividad).
+   */
+  enableFilters?: boolean
 }
 
-const { niche, locale, strings: t, cvHref = '/cv.html' } = Astro.props
+const {
+  niche,
+  locale,
+  strings: t,
+  cvHref = '/cv.html',
+  enableFilters = false,
+} = Astro.props
 const exps = sortByPriority(filterByNiche(experiences, niche), niche)
 const projs = sortByPriority(filterByNiche(projects, niche), niche)
 const sks = filterByNiche(skills, niche)
@@ -59,6 +71,45 @@ const softSkills = sks.filter((s) => s.kind === 'soft')
 const stats = buildStats(profile)
 const extras = getNicheExtras(niche)
 const nicheAwards = filterByNiche(awards, niche)
+
+// Para FilterChips: extrae valores unicos visibles para chips
+const uniqueTechs = enableFilters
+  ? Array.from(
+      new Set([
+        ...exps.flatMap((e) => e.skillsTechnical),
+        ...projs.flatMap((p) => p.stack),
+      ]),
+    ).sort((a, b) => a.localeCompare(b))
+  : []
+const uniqueSeniorities = enableFilters
+  ? Array.from(new Set(exps.map((e) => e.seniority))).sort()
+  : []
+const uniqueProjectTypes = enableFilters
+  ? Array.from(new Set(projs.map((p) => p.projectType))).sort()
+  : []
+
+const filterLabels =
+  locale === 'es'
+    ? {
+        bar: 'Filtros',
+        clear: 'Limpiar filtros',
+        tech: 'Tecnologias',
+        seniority: 'Seniority',
+        type: 'Tipo',
+        confidential: 'Ocultar confidenciales',
+        skillsTechnical: 'Tecnicas',
+        skillsSoft: 'Blandas',
+      }
+    : {
+        bar: 'Filters',
+        clear: 'Clear filters',
+        tech: 'Technologies',
+        seniority: 'Seniority',
+        type: 'Type',
+        confidential: 'Hide confidential',
+        skillsTechnical: 'Technical',
+        skillsSoft: 'Soft',
+      }
 
 // Stack para marquee: top 5 skills tecnicas, top 5 dominios/herramientas
 const marqueeRowOne = technicalSkills
@@ -71,6 +122,20 @@ const marqueeRowTwo = technicalSkills
 // Bento spans: primer project = lg, segundo = md, tercer = md, cuarto = lg, resto md
 const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
 ---
+
+{
+  enableFilters && (
+    <>
+      <FilterChips
+        techs={uniqueTechs}
+        seniorities={uniqueSeniorities}
+        projectTypes={uniqueProjectTypes}
+        labels={filterLabels}
+      />
+      <script is:inline src="/cv-filters.js" defer />
+    </>
+  )
+}
 
 <section class="container-wide">
   <HeroImpact
@@ -87,7 +152,10 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
 
 {
   extras.includes('StatsBar') && (
-    <section class="container-wide section section--compact">
+    <section
+      class="container-wide section section--compact"
+      data-stats-host={enableFilters ? '' : undefined}
+    >
       <StatsBar
         eyebrow={t.stats.eyebrow}
         items={[
@@ -95,10 +163,23 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
             label: t.stats.yearsExperience,
             value: stats.yearsExperience,
             suffix: '+',
+            dataStat: 'years',
           },
-          { label: t.stats.companies, value: stats.companies },
-          { label: t.stats.countries, value: stats.countries },
-          { label: t.stats.certifications, value: stats.certifications },
+          {
+            label: t.stats.companies,
+            value: stats.companies,
+            dataStat: 'companies',
+          },
+          {
+            label: t.stats.countries,
+            value: stats.countries,
+            dataStat: 'countries',
+          },
+          {
+            label: t.stats.certifications,
+            value: stats.certifications,
+            dataStat: 'certifications',
+          },
         ]}
       />
     </section>
@@ -153,7 +234,11 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   )
 }
 
-<section id="experience" class="container-wide section">
+<section
+  id="experience"
+  class="container-wide section"
+  data-filter-section={enableFilters ? 'experience' : undefined}
+>
   <SectionHeader
     eyebrow="01"
     title={t.sections.experience.title}
@@ -169,6 +254,11 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           dateRange={formatRange(e.start, e.end, locale)}
           skills={e.skillsTechnical}
           current={idx === 0 && !e.end}
+          filterable={enableFilters}
+          dataTech={e.skillsTechnical.join(',')}
+          dataSeniority={e.seniority}
+          dataStart={e.start}
+          dataEnd={e.end ?? ''}
         >
           <ul class="exp-bullets">
             {e.responsibilities[locale].slice(0, 3).map((r) => (
@@ -179,9 +269,22 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
       ))
     }
   </ExperienceTimeline>
+  {
+    enableFilters && (
+      <p class="filter-empty text-muted" data-filter-empty hidden>
+        {locale === 'es'
+          ? 'No hay experiencias con estos filtros.'
+          : 'No experiences match these filters.'}
+      </p>
+    )
+  }
 </section>
 
-<section id="projects" class="container-wide section">
+<section
+  id="projects"
+  class="container-wide section"
+  data-filter-section={enableFilters ? 'project' : undefined}
+>
   <SectionHeader
     eyebrow="02"
     title={t.sections.projects.title}
@@ -200,10 +303,21 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           isConfidential={p.isConfidential}
           bentoSpan={bentoSpans[idx % bentoSpans.length] ?? 'md'}
           caseStudyLabel={t.labels.confidential}
+          filterable={enableFilters}
+          dataProjectType={p.projectType}
         />
       ))
     }
   </ProjectsBento>
+  {
+    enableFilters && (
+      <p class="filter-empty text-muted" data-filter-empty hidden>
+        {locale === 'es'
+          ? 'No hay proyectos con estos filtros.'
+          : 'No projects match these filters.'}
+      </p>
+    )
+  }
 
   {
     projs.filter((p) => p.caseStudyDetailed).length > 0 && (

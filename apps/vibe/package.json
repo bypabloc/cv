@@ -16,6 +16,7 @@
     "@astrojs/sitemap": "^3.7.2",
     "@portfolio/app-shared": "workspace:*",
     "@portfolio/content": "workspace:*",
+    "@portfolio/cv-filters": "workspace:*",
     "@portfolio/cv-pdf": "workspace:*",
     "@portfolio/seo": "workspace:*",
     "@portfolio/ui": "workspace:*",

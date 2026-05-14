@@ -44,17 +44,6 @@
     "linkedin": "https://www.linkedin.com/in/csfuente"
   },
   {
-    "slug": "helis-montes",
-    "name": "Helis Montes",
-    "role": "Desarrollador Full Stack",
-    "relation": {
-      "es": "Compañero de equipo",
-      "en": "Teammate"
-    },
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/helis-montes"
-  },
-  {
     "slug": "edder-ramirez",
     "name": "Edder Ramírez",
     "role": "Desarrollador Full Stack",
@@ -66,15 +55,25 @@
     "linkedin": "https://www.linkedin.com/in/edderleonardo"
   },
   {
-    "slug": "jose-namoc",
-    "name": "José Namoc",
+    "slug": "felipe-rivera",
+    "name": "Felipe Rivera",
+    "role": "Talent Acquisition Lead",
+    "relation": {
+      "es": "Trabajé en la misma empresa",
+      "en": "Worked at the same company"
+    },
+    "linkedin": "https://www.linkedin.com/in/frtavonatti"
+  },
+  {
+    "slug": "helis-montes",
+    "name": "Helis Montes",
     "role": "Desarrollador Full Stack",
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
     },
-    "company": "Dibal",
-    "linkedin": "https://www.linkedin.com/in/jose-namoc-lopez"
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/helis-montes"
   },
   {
     "slug": "jacnelly-colmenarez",
@@ -88,14 +87,15 @@
     "linkedin": "https://www.linkedin.com/in/jacnelly-colmenarez"
   },
   {
-    "slug": "felipe-rivera",
-    "name": "Felipe Rivera",
-    "role": "Talent Acquisition Lead",
+    "slug": "jose-namoc",
+    "name": "José Namoc",
+    "role": "Desarrollador Full Stack",
     "relation": {
-      "es": "Trabajé en la misma empresa",
-      "en": "Worked at the same company"
+      "es": "Compañero de equipo",
+      "en": "Teammate"
     },
-    "linkedin": "https://www.linkedin.com/in/frtavonatti"
+    "company": "Dibal",
+    "linkedin": "https://www.linkedin.com/in/jose-namoc-lopez"
   },
   {
     "slug": "samuel-espinoza",

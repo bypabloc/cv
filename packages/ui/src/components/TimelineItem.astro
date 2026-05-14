@@ -29,6 +29,16 @@ interface Props {
   dateRange: string
   skills?: string[]
   current?: boolean
+  /** Opt-in: marca el item como filterable y expone data-* attrs. */
+  filterable?: boolean
+  /** Tech CSV usado por `data-tech`. */
+  dataTech?: string
+  /** Seniority usado por `data-seniority`. */
+  dataSeniority?: string
+  /** Fecha YYYY-MM usado por `data-start`. */
+  dataStart?: string
+  /** Fecha YYYY-MM o vacio (presente) usado por `data-end`. */
+  dataEnd?: string
 }
 
 const {
@@ -38,12 +48,29 @@ const {
   dateRange,
   skills = [],
   current = false,
+  filterable = false,
+  dataTech,
+  dataSeniority,
+  dataStart,
+  dataEnd,
 } = Astro.props
 const visibleSkills = skills.slice(0, 8)
 const remaining = Math.max(0, skills.length - visibleSkills.length)
 ---
 
-<li class:list={['timeline-item', 'scroll-reveal-slide-right', current && 'timeline-item--current']}>
+<li
+  class:list={[
+    'timeline-item',
+    'scroll-reveal-slide-right',
+    current && 'timeline-item--current',
+  ]}
+  data-filterable={filterable ? '' : undefined}
+  data-tech={filterable ? dataTech : undefined}
+  data-seniority={filterable ? dataSeniority : undefined}
+  data-start={filterable ? dataStart : undefined}
+  data-end={filterable ? dataEnd : undefined}
+  data-company={filterable ? company : undefined}
+>
   <span class:list={['timeline-item__dot', current && 'timeline-item__dot--glow']} aria-hidden="true"></span>
   <article class="timeline-item__card">
     <header class="timeline-item__header">

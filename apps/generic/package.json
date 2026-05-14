@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Generic portfolio site — hub.the-full-stack.com",
+  "description": "Generic portfolio site \u2014 hub.the-full-stack.com",
   "scripts": {
     "dev": "astro dev --port 4321",
     "build": "astro build",
@@ -17,6 +17,7 @@
     "@astrojs/sitemap": "^3.7.2",
     "@portfolio/app-shared": "workspace:*",
     "@portfolio/content": "workspace:*",
+    "@portfolio/cv-filters": "workspace:*",
     "@portfolio/cv-pdf": "workspace:*",
     "@portfolio/seo": "workspace:*",
     "@portfolio/ui": "workspace:*",

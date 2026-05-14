@@ -22,6 +22,12 @@ interface StatItem {
   label: string
   value: number
   suffix?: string
+  /**
+   * Si presente, agrega `data-stat="<name>"` al `<span>` con el numero. El
+   * filter engine de CV usa este selector para recalcular el valor cuando
+   * el usuario aplica filtros.
+   */
+  dataStat?: string
 }
 
 interface Props {
@@ -45,6 +51,7 @@ const { items, eyebrow } = Astro.props
             <span
               class="stats-bar__value stat-number text-display-md gradient-text"
               data-target={item.value}
+              data-stat={item.dataStat}
             >
               0
             </span>

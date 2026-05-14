@@ -35,6 +35,10 @@ interface Props {
   isConfidential?: boolean
   bentoSpan?: 'sm' | 'md' | 'lg' | 'xl'
   caseStudyLabel?: string
+  /** Opt-in: marca el item como filterable y expone data-* attrs. */
+  filterable?: boolean
+  /** projectType para `data-project-type`. */
+  dataProjectType?: string
 }
 
 const {
@@ -47,6 +51,8 @@ const {
   isConfidential = false,
   bentoSpan = 'md',
   caseStudyLabel = 'Caso bajo NDA',
+  filterable = false,
+  dataProjectType,
 } = Astro.props
 
 const visibleStack = stack.slice(0, 6)
@@ -56,11 +62,16 @@ const statusLabel = {
   inactive: 'Inactivo',
   concept: 'Concepto',
 }[status]
+const techCsv = stack.join(',')
 ---
 
 <article
   class:list={['bento-card', `bento-card--${bentoSpan}`, 'tilt-3d', 'scroll-reveal']}
   role="listitem"
+  data-filterable={filterable ? '' : undefined}
+  data-tech={filterable ? techCsv : undefined}
+  data-project-type={filterable ? dataProjectType : undefined}
+  data-confidential={filterable ? (isConfidential ? 'true' : 'false') : undefined}
 >
   <div class="bento-card__mesh" aria-hidden="true"></div>
   <div class="tilt-3d__inner bento-card__inner">

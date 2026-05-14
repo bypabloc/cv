@@ -1,11 +1,51 @@
 [
   {
+    "slug": "docker-2023",
+    "title": "Docker — Guía práctica de uso para desarrolladores",
+    "issuer": "DevTalles",
+    "date": "2023-04-20",
+    "url": "https://cursos.devtalles.com/certificates/f7qc3ju28w",
+    "niches": ["architect", "generic"]
+  },
+  {
+    "slug": "javascript-moderno-2023",
+    "title": "JavaScript moderno: Guía para dominar el lenguaje",
+    "issuer": "Udemy",
+    "date": "2023-07-29",
+    "url": "http://ude.my/UC-516bd9e6-59a0-4f28-b3bf-db2539d158d9",
+    "niches": ["generic"]
+  },
+  {
+    "slug": "nestjs-2023",
+    "title": "Nest: Desarrollo backend escalable con Node",
+    "issuer": "Udemy",
+    "date": "2023-02-12",
+    "url": "http://ude.my/UC-810baa94-7f51-4c54-b631-d62b4af77806",
+    "niches": ["architect", "generic"]
+  },
+  {
     "slug": "nextjs-udemy-2024",
     "title": "Next.js: El framework de React para producción",
     "issuer": "Udemy",
     "date": "2024-01-04",
     "url": "http://ude.my/UC-8297be13-d656-4e62-b64b-642819930c71",
     "niches": ["generic", "vibe"]
+  },
+  {
+    "slug": "node-clean-architecture-2023",
+    "title": "Node — Autenticación Rest con Clean Architecture",
+    "issuer": "DevTalles",
+    "date": "2023-08-15",
+    "url": "https://cursos.devtalles.com/certificates/91cxyahzil",
+    "niches": ["architect", "generic"]
+  },
+  {
+    "slug": "nodejs-zero-experto-2023",
+    "title": "NodeJS: De cero a experto",
+    "issuer": "Udemy",
+    "date": "2023-02-12",
+    "url": "http://ude.my/UC-9acb44f1-27c6-402e-9dae-8a04bf3d424b",
+    "niches": ["generic"]
   },
   {
     "slug": "react-zero-experto-2023",
@@ -24,35 +64,11 @@
     "niches": ["architect", "leader", "generic"]
   },
   {
-    "slug": "node-clean-architecture-2023",
-    "title": "Node — Autenticación Rest con Clean Architecture",
-    "issuer": "DevTalles",
-    "date": "2023-08-15",
-    "url": "https://cursos.devtalles.com/certificates/91cxyahzil",
-    "niches": ["architect", "generic"]
-  },
-  {
-    "slug": "javascript-moderno-2023",
-    "title": "JavaScript moderno: Guía para dominar el lenguaje",
+    "slug": "sql-postgresql-2023",
+    "title": "SQL de cero: Tu guía práctica con PostgreSQL",
     "issuer": "Udemy",
-    "date": "2023-07-29",
-    "url": "http://ude.my/UC-516bd9e6-59a0-4f28-b3bf-db2539d158d9",
-    "niches": ["generic"]
-  },
-  {
-    "slug": "vuejs-zero-experto-2023",
-    "title": "Vue.js: De cero a experto",
-    "issuer": "Udemy",
-    "date": "2023-05-30",
-    "url": "http://ude.my/UC-a217906e-84eb-40dc-9303-36de5b71e0cc",
-    "niches": ["generic", "fintech", "architect"]
-  },
-  {
-    "slug": "docker-2023",
-    "title": "Docker — Guía práctica de uso para desarrolladores",
-    "issuer": "DevTalles",
-    "date": "2023-04-20",
-    "url": "https://cursos.devtalles.com/certificates/f7qc3ju28w",
+    "date": "2023-02-12",
+    "url": "http://ude.my/UC-afb98ee6-8704-4b20-9e1f-15bdacf2c76d",
     "niches": ["architect", "generic"]
   },
   {
@@ -64,27 +80,11 @@
     "niches": ["generic"]
   },
   {
-    "slug": "sql-postgresql-2023",
-    "title": "SQL de cero: Tu guía práctica con PostgreSQL",
+    "slug": "vuejs-zero-experto-2023",
+    "title": "Vue.js: De cero a experto",
     "issuer": "Udemy",
-    "date": "2023-02-12",
-    "url": "http://ude.my/UC-afb98ee6-8704-4b20-9e1f-15bdacf2c76d",
-    "niches": ["architect", "generic"]
-  },
-  {
-    "slug": "nodejs-zero-experto-2023",
-    "title": "NodeJS: De cero a experto",
-    "issuer": "Udemy",
-    "date": "2023-02-12",
-    "url": "http://ude.my/UC-9acb44f1-27c6-402e-9dae-8a04bf3d424b",
-    "niches": ["generic"]
-  },
-  {
-    "slug": "nestjs-2023",
-    "title": "Nest: Desarrollo backend escalable con Node",
-    "issuer": "Udemy",
-    "date": "2023-02-12",
-    "url": "http://ude.my/UC-810baa94-7f51-4c54-b631-d62b4af77806",
-    "niches": ["architect", "generic"]
+    "date": "2023-05-30",
+    "url": "http://ude.my/UC-a217906e-84eb-40dc-9303-36de5b71e0cc",
+    "niches": ["generic", "fintech", "architect"]
   }
 ]

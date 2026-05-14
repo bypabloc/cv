@@ -233,6 +233,46 @@ Resources:
         Stage: !Ref Stage
 
   # ==========================================================================
+  # Lambda: tracking_pixel (POST /track, SPEC-006)
+  # ==========================================================================
+  TrackingPixelFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.13
+      BuildArchitecture: arm64
+    Properties:
+      FunctionName: !Sub portfolio-tracking-pixel-${Stage}
+      CodeUri: src/
+      Handler: tracking_pixel.handler.lambda_handler
+      Layers:
+        - !Ref CommonLayer
+      MemorySize: 256
+      Timeout: 10
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: tracking-pixel
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TrackingTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CacheTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitRulesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitBucketsTable
+      Events:
+        PostTrack:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PortfolioApi
+            Path: /track
+            Method: POST
+      Tags:
+        Project: portfolio
+        ManagedBy: SAM
+        Stage: !Ref Stage
+
+  # ==========================================================================
   # DynamoDB: ContactsTable - form de contacto
   # ==========================================================================
   # PK: id (UUIDv7 hex) - sorted by time naturally (ADR-004)
@@ -425,6 +465,11 @@ Outputs:
     Value: !GetAtt ContactFormFunction.Arn
     Export:
       Name: !Sub portfolio-backend-${Stage}-ContactFormFunctionArn
+  TrackingPixelFunctionArn:
+    Description: ARN del Lambda tracking_pixel
+    Value: !GetAtt TrackingPixelFunction.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-TrackingPixelFunctionArn
   ContactsTableName:
     Description: Tabla DynamoDB de contacts (form submissions)
     Value: !Ref ContactsTable

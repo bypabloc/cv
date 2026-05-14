@@ -15,6 +15,7 @@ docs/progress/optim_*.md
 docs/progress/refactor_*.md
 docs/progress/audit_*.md
 docs/progress/debug_*.md
+docs/progress/validate_*.md
 docs/progress/.snapshot_*.md
 
 # Environment

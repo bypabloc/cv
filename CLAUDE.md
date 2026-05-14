@@ -256,6 +256,11 @@ Antes de trabajar, identifica que contexto necesitas:
 | CV (contenido) | [.claude/docs/cv/README.md](.claude/docs/cv/README.md) | Datos del CV (perfil, experiencia, proyectos) |
 | Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseño |
 | Deploy Cloudflare Pages | [.claude/docs/cloudflare/README.md](.claude/docs/cloudflare/README.md) o skill `cloudflare-deploy` | Deploy, custom domains, DNS, gotchas, troubleshoot del setup actual |
+| AWS Lambda Python 3.13 | [.claude/docs/aws-lambda/README.md](.claude/docs/aws-lambda/README.md) o skill `aws-lambda-python` | Backend serverless: runtime, Powertools v3, cold start, SAM deploy, IAM, costs |
+| AWS API Gateway | [.claude/docs/aws-api-gateway/README.md](.claude/docs/aws-api-gateway/README.md) o skill `aws-api-gateway` | REST vs HTTP, throttling per-IP via WAF, CORS, request validation, deploy |
+| AWS DynamoDB | [.claude/docs/aws-dynamodb/README.md](.claude/docs/aws-dynamodb/README.md) o skill `aws-dynamodb` | On-demand, TTL, boto3, single-table, GSI, pricing 2026 |
+| AWS SES | [.claude/docs/aws-ses/README.md](.claude/docs/aws-ses/README.md) o skill `aws-ses` | Email transaccional v2: DKIM/SPF/DMARC, sandbox→prod, bounces, costos |
+| Cloudflare Turnstile | [.claude/docs/cloudflare-turnstile/README.md](.claude/docs/cloudflare-turnstile/README.md) o skill `cloudflare-turnstile` | CAPTCHA alternativa: Managed mode, frontend Astro, validation backend |
 
 ## Skills disponibles
 
@@ -278,12 +283,29 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 | `spec-workflow` | Descomponer features en specs + tareas atómicas |
 | `tdd-workflow` | TDD obligatorio (Red-Green-Refactor) antes de implementar |
 
+### Backend AWS serverless (form contacto + tracking pixel)
+
+Skills consolidadas para el backend del portfolio: 3 Lambdas Python 3.13
+en us-west-2 (contact-form, tracking-pixel, turnstile-validator) detras
+de API Gateway REST + WAF rate-based, persistencia en DynamoDB
+On-Demand, notificacion via SES, anti-bot con Cloudflare Turnstile.
+Stack IaC: AWS SAM. Costo estimado: ~$7/mes (dominado por WAF Web ACL).
+
+| Skill | Uso |
+|-------|-----|
+| `aws-lambda-python` | Lambda Python 3.13 (managed runtime, Powertools v3, SnapStart, arm64, SAM deploy, IAM least privilege, observability, costs) |
+| `aws-api-gateway` | REST API + WAF rate-based per-IP, usage plans, request validators, CORS multi-subdomain, ACM custom domain, defense in depth 5 capas |
+| `aws-dynamodb` | 2 tablas (contacts + tracking), On-Demand, TTL 60d, boto3 Decimal/ConditionExpression, IAM scoped, pricing 2026 |
+| `aws-ses` | Email transaccional v2 desde Lambda (DKIM/SPF/DMARC en Cloudflare DNS, sandbox→prod approval, bounce/complaint, MJML HTML, free tier 62k/mes) |
+| `cloudflare-turnstile` | CAPTCHA alternativa privacy-preserving: 1 sitekey para 6 subdominios, Managed mode form + Invisible tracking, idempotency_key, CSP directives |
+
 ### Referencia futura (backend Python/Django — no aplican hoy)
 
 Estas skills llegaron desde el template `mvp-template-full-stack` para
 preservarlas como referencia. El portfolio actual es Astro estático SIN
-backend, por lo que se activan solo si el prompt menciona explícitamente
-Django/PostgreSQL/Docker-Django. Quedan invocables manualmente con `/<nombre>`.
+backend Django, por lo que se activan solo si el prompt menciona
+explícitamente Django/PostgreSQL/Docker-Django. Quedan invocables
+manualmente con `/<nombre>`.
 
 | Skill | Uso |
 |-------|-----|

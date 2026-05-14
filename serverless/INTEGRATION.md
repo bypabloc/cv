@@ -18,7 +18,7 @@
 
 - **Volumen bajo-medio**: 200 contacts/mes + 15.000 tracking events/mes
 - **Latencia hot path importa**: form submit no debe pasar de 800ms total (Turnstile siteverify domina)
-- **Costo objetivo**: ~$0.81/mes (sin WAF; rate-limit self-managed con DynamoDB free tier perpetuo)
+- **Costo objetivo**: $0/mes (sin WAF, sin CloudWatch Alarms, retention logs 7d, todo en free tier perpetuo)
 - **Solo developer**: zero-ops, no managed instances, no VPC, no fine-tuning de capacity
 - **Analytics CRM-style requeridos**: contacts por mes/niche, conversion rate, top landing pages, session journey, daily metrics
 
@@ -244,42 +244,58 @@ recomputar valor).
 
 ## 5. Costos consolidados (us-west-2, Mayo 2026)
 
-Arquitectura SIN AWS WAF: rate-limit self-managed con DynamoDB.
+Arquitectura SIN AWS WAF, SIN CloudWatch Alarms, retention logs 7 dias.
+Objetivo: $0/mes operacional.
 
 | Componente | Cost/mes |
 |------------|----------|
-| API Gateway REST (~30k req/mo) | $0.10 |
-| Lambda invocations (5 funciones, ~50k total) | $0 (free tier 1M/mo) |
-| Lambda compute GB-sec | $0 (free tier 400k GB-sec/mo) |
-| DynamoDB writes (~60k/mo, 5 tablas incl. rate_limit_buckets) | $0 (free tier 1M/mo) |
-| DynamoDB reads (cache + Lambdas + rate-limit, ~250k/mo) | $0 (free tier 2.5M/mo) |
-| DynamoDB storage (~5GB total 5 tablas) | $0 (free tier 25 GB) |
-| DynamoDB Streams (~30k records/mo) | $0 (free tier 2.5M GetRecords) |
-| SES emails (~200/mo) | $0 (free tier 62k Lambda outbound) |
-| CloudWatch Logs (10 GB/mo) | ~$0.50 |
-| CloudWatch Alarms (~12 incl. AutoBlacklist) | $1.20 |
-| CloudWatch metrics custom (rate-limit) | $0 (free tier 10 metrics) |
-| X-Ray traces sampled | <$0.01 |
-| SQS DLQ (StreamProcessor) | $0 |
-| SNS notifications | $0 |
+| API Gateway REST (~30k req/mo) | $0 (free tier 1M req/mo primer ano; despues $0.10) |
+| Lambda invocations (5 funciones, ~50k total) | $0 (free tier 1M/mo PERPETUO) |
+| Lambda compute GB-sec | $0 (free tier 400k GB-sec/mo PERPETUO) |
+| DynamoDB writes (~60k/mo, 5 tablas) | $0 (free tier 1M/mo PERPETUO) |
+| DynamoDB reads (~250k/mo) | $0 (free tier 2.5M/mo PERPETUO) |
+| DynamoDB storage (~5GB total) | $0 (free tier 25GB PERPETUO) |
+| DynamoDB Streams (~30k records/mo) | $0 (free tier 2.5M GetRecords PERPETUO) |
+| SES emails (~200/mo, desde Lambda) | $0 (free tier 62k/mo PERPETUO) |
+| CloudWatch Logs ingest (~1-2GB/mo con retention 7d + INFO level) | $0 (free tier 5GB ingest/mo PERPETUO) |
+| CloudWatch Logs storage | $0 (retention 7d mantiene <0.5GB; free tier 5GB) |
+| CloudWatch metrics custom Powertools | $0 (free tier 10 metrics PERPETUO) |
+| CloudWatch Alarms | $0 (NINGUNA configurada; solo AWS Billing Alarm global, gratis) |
+| X-Ray traces sampled | $0 (free tier 100k traces/mo PERPETUO) |
+| SQS DLQ (StreamProcessor) | $0 (free tier 1M req/mo PERPETUO) |
+| SNS notifications | $0 (free tier 1M publishes/mo PERPETUO) |
 | Neon free tier (0.5GB + 191.9h compute) | $0 |
 | Cloudflare Turnstile (unlimited free) | $0 |
-| **TOTAL estimado** | **~$1.71/mes** |
+| Cloudflare Pages + DDoS (upstream del browser) | $0 |
+| **TOTAL operacional** | **$0/mes** |
 
-Si el portfolio escala 10x (~300k req/mo):
+A escala 10x (~300k req/mo):
 
-- Lambda $0 (aun en free tier hasta 1M invocations/mes)
-- DynamoDB $0 (aun en free tier; buckets crece a ~300k pero TTL lo limpia)
-- CloudWatch Logs sube a ~$2/mo
-- Neon $0 (Free) o $19 si pasa a Launch plan
-- **Total escala-10x**: ~$4/mes o $23/mes con Neon Launch
+- Lambda $0 (aun free tier 1M invocations/mes)
+- DynamoDB $0 (aun free tier; rate_limit_buckets crece a ~300k pero TTL lo limpia)
+- CloudWatch Logs $0 (1-2GB con retention 7d sigue dentro de 5GB free)
+- API Gateway: $0.30 si pasaste el primer ano (despues del free tier inicial)
+- Neon $0 (Free tier) o $19 si pasa a Launch plan
+- **Total escala-10x**: $0.30/mes o $19.30/mes con Neon Launch
 
-### Ahorro vs arquitectura con AWS WAF
+### Ahorro vs arquitectura inicial con AWS WAF + Alarmas
 
 | Configuracion | Cost/mes | Ahorro |
 |---------------|----------|--------|
-| Con WAF (Web ACL $5 + 2 rules $1.20 + requests $0.01) | ~$7.81 | - |
-| Sin WAF (este diseno, rate-limit en DynamoDB) | ~$1.71 | **$6.10/mes** ($73/ano) |
+| Con WAF Web ACL + 12 Alarms + Logs 30d | ~$7.81 | - |
+| Sin WAF (rate-limit DynamoDB) + 12 Alarms + Logs 30d | ~$1.71 | $6.10 |
+| Sin WAF + sin Alarms + Logs 7d (ESTE) | **$0** | **$7.81/mes** ($94/ano) |
+
+### Decisiones de costo-cero
+
+1. **NO AWS WAF**: rate-limit en middleware Lambda + DynamoDB ($0 vs $7/mes)
+2. **NO CloudWatch Alarms operacionales**: solo AWS Billing Alarm global gratis ($0 vs $1.20/mes)
+3. **CloudWatch Logs retention 7d + INFO level**: cabe en 5GB free tier vs $0.50/mes con retention 30d + DEBUG
+4. **Lambda arm64 Graviton2**: -20% costo + +19% performance (relevante cuando se sale del free tier)
+5. **DynamoDB On-Demand**: free tier perpetuo lo cubre; Provisioned daria $12/mes minimo
+6. **Reserved concurrency baja**: contiene gastos en caso de ataque sostenido (5 contact_form / 20 tracking)
+7. **Sin VPC, sin NAT Gateway**: NAT Gateway cuesta $32/mes + GB transferido. Evitado.
+8. **Sin ACM cert para API custom domain en MVP**: usar API Gateway default URL (postpone custom domain a fase 7)
 
 ### Trade-offs vs WAF
 

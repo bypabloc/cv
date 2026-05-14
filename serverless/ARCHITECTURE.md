@@ -9,7 +9,7 @@
 > **IaC**: AWS SAM
 > **Storage hibrido**: DynamoDB (hot path, writes) + Neon PostgreSQL 18 (analytics, queries)
 > **CLI**: `python devtools/run.py serverless <command>` (ver devtools/serverless/README.md)
-> **Costo estimado**: ~$0.81/mes (sin WAF; rate-limit self-managed con DynamoDB; Neon free tier perpetuo)
+> **Costo estimado**: ~$0/mes (sin WAF, sin CloudWatch Alarms, sin Logs retention >7d; todo dentro de free tier perpetuo)
 
 ---
 
@@ -421,11 +421,13 @@ serverless/
                        + turnstile.reset()
                        + form.reset()
 
-CAPA 5 transversal: CloudWatch Logs + X-Ray traces + Alarms
-  - Cada step emite logs estructurados JSON (Powertools @logger)
+CAPA 5 transversal: CloudWatch Logs + X-Ray traces (sin alarmas)
+  - Logs estructurados JSON via Powertools @logger (LOG_LEVEL=INFO)
+  - Retention 7 dias (free tier 5GB ingest/mes perpetuo cubre todo)
   - X-Ray traza el path completo (API GW -> Lambda -> DynamoDB -> SES -> CF)
-  - Alarm si ThrottledRequests > 10 en 5min (posible ataque)
-  - Alarm si 5XXError > 1 en 5min (Lambda crash)
+  - Sin AWS::CloudWatch::Alarm (costo \$0.10/alarma/mes evitado)
+  - Solo AWS Billing Alarm global gratis: trigger si bill > \$50/mes
+  - Monitoring on-demand: `serverless metrics --since=24h`
 ```
 
 ---
@@ -577,7 +579,7 @@ PERIODICO (no implementado MVP, futuro):
   - Cron Lambda lee tracking + agrega -> CloudWatch dashboard
   - O direct query desde un dashboard Astro stub
 
-CAPA 5 transversal: CloudWatch Logs + X-Ray (mismo que contact form)
+CAPA 5 transversal: CloudWatch Logs (retention 7d, free tier) + X-Ray (mismo que contact form, sin alarmas)
 ```
 
 ---
@@ -669,9 +671,9 @@ CAPA 5 transversal: CloudWatch Logs + X-Ray (mismo que contact form)
                         +----------------------+
                         | DLQ (SQS)            |
                         | StreamProcessorDLQ   |
-                        | CloudWatch Alarm     |
-                        |   ApproximateNumber  |
-                        |   OfMessages > 0     |
+                        | (sin alarma, revisar |
+                        |  con serverless      |
+                        |  metrics on-demand)  |
                         +----------------------+
 
 CAPACIDAD:
@@ -777,10 +779,11 @@ CAPACIDAD:
             | -> CloudWatch        |
             +----------------------+
 
-OBSERVABILIDAD:
+OBSERVABILIDAD (sin alarmas):
   - X-Ray trace: Lambda -> psycopg3 -> Neon (cada query como segment)
-  - CloudWatch Alarm: AggregatorErrors >= 1 en 24h -> SNS owner
-  - CloudWatch Alarm: AggregatorDuration > 4min (caso degradacion) -> SNS
+  - Logs estructurados JSON via Powertools @logger
+  - Retention 7d en CloudWatch Logs (free tier 5GB ingest/mes perpetuo)
+  - Monitoring on-demand: `serverless metrics --since=24h`
 
 POR QUE 03:00 UTC:
   - Hora de bajo trafico (LATAM dormida, EU empezando)
@@ -1228,7 +1231,7 @@ CARACTERISTICAS:
       Layer 2: API Gateway throttle global
       Layer 3: Request validator JSON Schema
       Layer 4: Business logic (Turnstile validation)
-      Layer 5: CloudWatch alarms + auto-blacklist
+      Layer 5: CloudWatch Logs 7d + X-Ray (sin alarms) + auto-blacklist
 
 COSTO:
   - 0 WCU/RCU consumidos (free tier 25 + 25 perpetuos cubren todo)
@@ -1255,7 +1258,8 @@ COSTO:
 ```
 +---------------------------------------------------------------+
 |  Layer 5: Observability (transversal)                         |
-|    CloudWatch Logs + X-Ray Traces + Alarms + SNS              |
+|    CloudWatch Logs (retention 7d, free tier) + X-Ray Traces    |
+|    Sin alarmas (solo AWS Billing Alarm global gratis)          |
 +---------------------------------------------------------------+
               ^                                ^
               |                                |
@@ -1670,13 +1674,6 @@ template.yaml (resources)
 |     MessageRetentionPeriod: 1209600       # 14 dias
 |     VisibilityTimeout: 60
 |
-+-- AWS::CloudWatch::Alarm              StreamDLQAlarm
-|     MetricName: ApproximateNumberOfMessagesVisible
-|     Namespace: AWS/SQS
-|     Dimensions: [QueueName: !GetAtt StreamProcessorDLQ.QueueName]
-|     Threshold: 1
-|     AlarmActions: [!Ref AlertsTopic]
-|
 +-- AWS::Serverless::Api                PortfolioApi
 |     EndpointConfiguration: REGIONAL
 |     StageName: prod
@@ -1777,28 +1774,19 @@ template.yaml (resources)
 |     (Subscribe owner email)
 |
 +-- AWS::Logs::LogGroup                 AccessLogGroup
-|     RetentionInDays: 30
+|     RetentionInDays: 7                # Free tier 5GB ingest perpetuo
+|     # Lambda crea automaticamente LogGroups /aws/lambda/<FunctionName>
+|     # con RetentionInDays default sin limite. SAM Global Function:
+|     Globals.Function.Environment.Variables:
+|       POWERTOOLS_LOG_LEVEL: INFO       # ERROR/WARN/INFO (NO DEBUG en prod)
+|     # Para forzar retention 7d en cada Lambda log group:
+|     # Crear LogGroup explicito por funcion antes de la Function, con
+|     # RetentionInDays: 7
 |
-+-- AWS::Logs::LogGroup                 ContactFormLogGroup
-|     LogGroupName: /aws/lambda/contact-form
-|     RetentionInDays: 30
-|
-+-- AWS::Logs::LogGroup                 TrackingPixelLogGroup
-|     RetentionInDays: 14
-|
-+-- AWS::CloudWatch::Alarm              ThrottleAnomalyAlarm
-|     MetricName: ThrottledRequests
-|     Threshold: 10
-|     Period: 300
-|     AlarmActions: [!Ref AlertsTopic]
-|
-+-- AWS::CloudWatch::Alarm              ContactErrorAlarm
-|     MetricName: 5XXError
-|     Threshold: 1
-|     Period: 300
-|
-+-- AWS::SNS::Topic                     AlertsTopic
-      (Subscribe owner email)
+# Alarmas: NO definimos AWS::CloudWatch::Alarm en el template.
+# Costo: \$0.10/alarma/mes. Decision del proyecto: usar AWS billing alarm
+# global (gratis, las primeras 10) en lugar de alarms operacionales.
+# Monitoring on-demand via `serverless metrics --since=24h`.
 
 NOT in template.yaml (manual via CLI o consola, una vez):
   - SSM Parameter: /portfolio/turnstile-secret (SecureString + KMS)
@@ -1813,6 +1801,8 @@ NOT in template.yaml (manual via CLI o consola, una vez):
   - Cloudflare DNS: 3 CNAMEs DKIM + 1 TXT SPF + 1 TXT DMARC
   - Cloudflare Turnstile widget creado en dashboard
     + 6 hostnames registrados (the-full-stack.com + 5 subdominios)
+  - AWS Billing Alarm global gratis: trigger si bill total > \$50/mes
+    (consola Billing > Billing preferences > Receive alerts; gratis hasta 10)
 ```
 
 ---

@@ -64,6 +64,9 @@ jobs:
           path: packages/*/coverage
           if-no-files-found: ignore
 
+      - name: Build cv-filters bundle (needed by apps prebuild)
+        run: pnpm --filter @portfolio/cv-filters run build
+
       - name: Build all apps (matrix-free)
         run: pnpm -r --filter "./apps/*" run build
 

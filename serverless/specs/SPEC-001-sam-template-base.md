@@ -1,12 +1,30 @@
 # SPEC-001: SAM template base + 3 tablas DynamoDB hot path
 
-**Estado**: draft
+**Estado**: done
 **Autor**: Pablo Contreras
 **Fecha**: 2026-05-14
+**Ejecutado**: 2026-05-14
 **Areas afectadas**: `serverless/template.yaml`, `serverless/samconfig.toml`,
-`serverless/pyproject.toml`, `serverless/Makefile`
+`serverless/pyproject.toml`, `serverless/Makefile`, `serverless/.gitignore`,
+`serverless/src/layers/common_python/`, `serverless/docs/deployment-outputs-*.md`
 **Dependencias**: SPEC-000
 **Paralelizable con**: SPEC-011
+
+## Cambios respecto al draft original
+
+- **Region**: us-east-1 (no us-west-2). Heredado de SPEC-000.
+- **`AWS::Serverless::Api` postponed a SPEC-005**: CloudFormation rechaza
+  crear un REST API sin metodos HTTP (`HandlerErrorCode: InvalidRequest`,
+  "The REST API doesn't contain any methods"). En esta spec solo se crean
+  las 3 tablas + Layer. El API GW se materializa al agregar la primera
+  Function con `Events: Api` (SPEC-005 contact_form).
+- **Deployed**: stacks `portfolio-backend-dev` y `portfolio-backend-prod`
+  ambos en `CREATE_COMPLETE` en `us-east-1` (account `637423614564`).
+- **Outputs**: documentados en `serverless/docs/deployment-outputs-{dev,prod}.md`
+  (committeados, no contienen secretos).
+- **SAM CLI 1.160.0** instalado via `uv tool install aws-sam-cli`.
+- **AC-6 (CORS preflight)**: N/A en esta spec porque el API GW se crea
+  en SPEC-005. Se verifica alli.
 
 ## 1. Contexto
 

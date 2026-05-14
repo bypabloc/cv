@@ -1,0 +1,32 @@
+# SAM build artifacts
+.aws-sam/
+samconfig.toml.local
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# uv
+.uv-cache/
+
+# Lambda zips locales
+*.zip
+
+# Env files
+env/.env.dev
+env/.env.prod
+env/.env.local
+
+# Outputs de deploy (committeados como referencia post-deploy)
+# Se regeneran con: python devtools/run.py serverless outputs --stage={dev,prod}
+
+# tmp local del developer
+tmp/

@@ -1,11 +1,25 @@
 # SPEC-003: Cache module en `common/cache/` + tabla `cache`
 
-**Estado**: draft
+**Estado**: done
 **Autor**: Pablo Contreras
 **Fecha**: 2026-05-14
-**Areas afectadas**: `serverless/src/common/cache/`, tabla DynamoDB `cache`
+**Ejecutado**: 2026-05-14
+**Areas afectadas**: `serverless/src/common/cache/` (9 archivos), tabla DynamoDB cache (ya creada en SPEC-001)
 **Dependencias**: SPEC-002
-**Paralelizable con**: SPEC-007 (no dependen)
+**Paralelizable con**: SPEC-007
+
+## Resumen ejecucion
+
+- 9 archivos creados en `src/common/cache/`: `__init__.py`, `client.py`, `decorator.py`, `swr.py`, `stampede.py`, `invalidation.py`, `serializers.py`, `types.py`, `README.md`
+- 5 archivos de tests con 46 tests, 86.62% coverage del cache module (88.45% total con common/)
+- DynamoDB Resource instanciado por cache (no module-scope) para compatibilidad con moto en tests
+- `@cached` decorator funciona con namespace, ttl, stale_for, tags, lock_timeout
+
+## Cambios respecto al draft original
+
+- AC-2 (SWR async refresh): cambiado a "return stale sync; proximo invocador refresca". En Lambda async refresh es fragil (asyncio thread daemon puede no completar antes del shutdown del runtime). Patron mas simple y robusto.
+- AC-3 (10 Lambdas concurrentes): verificado con tests de lock distribuido (6 tests pasados). Concurrencia real se valida en SPECs 005+ con stress test.
+- StrEnum (Python 3.11+) en lugar de `Enum + str` para CacheStatus.
 
 ## 1. Contexto
 

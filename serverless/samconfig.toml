@@ -11,7 +11,7 @@ version = 0.1
 stack_name = "portfolio-backend-dev"
 
 [default.deploy.parameters]
-capabilities = "CAPABILITY_IAM"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 confirm_changeset = true
 resolve_s3 = true
 fail_on_empty_changeset = false
@@ -27,7 +27,7 @@ parallel = true
 
 [dev.deploy.parameters]
 stack_name = "portfolio-backend-dev"
-capabilities = "CAPABILITY_IAM"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 confirm_changeset = false
 resolve_s3 = true
 region = "us-east-1"
@@ -52,7 +52,7 @@ parallel = true
 
 [prod.deploy.parameters]
 stack_name = "portfolio-backend-prod"
-capabilities = "CAPABILITY_IAM"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 confirm_changeset = true
 resolve_s3 = true
 region = "us-east-1"

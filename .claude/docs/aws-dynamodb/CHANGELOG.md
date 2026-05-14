@@ -65,7 +65,7 @@
 
 ### Pricing Verified
 
-- **us-west-2 On-Demand (Mayo 2026):**
+- **us-east-1 On-Demand (Mayo 2026):**
   - Write: $1.25 / 1M RU
   - Read: $0.25 / 1M RU
   - Storage: $0.25 / GB-month

@@ -68,7 +68,7 @@ API Gateway aplica throttling en este orden. Si una capa rechaza, devuelve 429:
 
 3. **Account-level throttling**
    - Limites de toda la cuenta en la region
-   - Ejemplo: max 10K req/s total en us-west-2
+   - Ejemplo: max 10K req/s total en us-east-1
    - Fallback si no hay limites especificos
 
 4. **AWS Regional hard limits**
@@ -230,7 +230,7 @@ aws cloudwatch put-metric-alarm \
   --period 60 \
   --threshold 10 \
   --comparison-operator GreaterThanThreshold \
-  --alarm-actions arn:aws:sns:us-west-2:ACCOUNT:AlertTopic
+  --alarm-actions arn:aws:sns:us-east-1:ACCOUNT:AlertTopic
 ```
 
 ## Common gotchas

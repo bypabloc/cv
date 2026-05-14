@@ -84,18 +84,18 @@ CU-hours budget 100/mes >> 0.0033 usado → FREE TIER FOREVER
 
 ## Regiones disponibles 2026
 
-Neon soporta (principal en us-west-2, Oregon para este portfolio):
+Neon soporta (principal en us-east-1, Oregon para este portfolio):
 
 | Region | AWS equiv | Neon name | Disponibilidad |
 |--------|-----------|-----------|----------------|
-| us-west-2 | Oregon | us-west-2 | ✓ (recomendado) |
+| us-east-1 | Oregon | us-east-1 | ✓ (recomendado) |
 | us-east-1 | N. Virginia | us-east-1 | ✓ |
 | us-east-2 | Ohio | us-east-2 | ✓ |
 | eu-west-1 | Ireland | eu-west-1 | ✓ |
 | ap-southeast-1 | Singapore | ap-southeast-1 | ✓ |
 | azure-eastus2 | ❌ deprecated | — | ❌ migrar antes Aug 2026 |
 
-Portfolio esta en us-west-2 (Lambdas) → Neon us-west-2 (mismo region, min latency).
+Portfolio esta en us-east-1 (Lambdas) → Neon us-east-1 (mismo region, min latency).
 
 ## PostgreSQL version support
 
@@ -133,7 +133,7 @@ Para este portfolio, idle 95% del tiempo, asi que mostly re-resuming (200-500ms 
 ## Summary para este proyecto
 
 ✓ Free tier indefinido (cambio post-Databricks)
-✓ us-west-2 disponible
+✓ us-east-1 disponible
 ✓ PG18 GA + asynchronous I/O
 ✓ Scale-to-zero ahorra costo en idle
 ✓ Branching para testing (10 branches incluidas)

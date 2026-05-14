@@ -218,12 +218,12 @@ API debe servirse por HTTPS, no HTTP.
 ```yaml
 Domain:
   DomainName: api.the-full-stack.com
-  CertificateArn: arn:aws:acm:us-west-2:ACCOUNT:certificate/abc123
+  CertificateArn: arn:aws:acm:us-east-1:ACCOUNT:certificate/abc123
   BasePath:
     - /
 ```
 
-ACM cert debe estar en la misma region (us-west-2).
+ACM cert debe estar en la misma region (us-east-1).
 
 Certificado se valida una vez y se renueva automaticamente.
 

@@ -320,19 +320,19 @@ Outputs:
 # Build
 sam build
 
-# Desplegar a us-west-2
+# Desplegar a us-east-1
 sam deploy \
   --stack-name portfolio-rate-limit-prod \
-  --region us-west-2 \
+  --region us-east-1 \
   --parameter-overrides Environment=prod
 
 # Verificar tablas creadas
-aws dynamodb list-tables --region us-west-2
+aws dynamodb list-tables --region us-east-1
 
 # Ver detalles
 aws dynamodb describe-table \
   --table-name rate_limit_rules-prod \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ## IAM Least Privilege (CRITICO)

@@ -136,7 +136,7 @@ Las keys se rotan periodicamente por seguridad:
 aws apigateway create-api-key \
   --name client-a-key-v2 \
   --enabled \
-  --region us-west-2
+  --region us-east-1
 
 # Asociar a usage plan (nueva key)
 aws apigateway create-usage-plan-key \

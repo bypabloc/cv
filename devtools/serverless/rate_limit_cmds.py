@@ -45,7 +45,7 @@ from shared.console import _err
 
 _RULES_TABLE = 'rate_limit_rules'
 _BUCKETS_TABLE = 'rate_limit_buckets'
-_REGION = 'us-west-2'
+_REGION = 'us-east-1'
 
 _VALID_ACTIONS = [
     'list',
@@ -450,7 +450,7 @@ def _rate_limit_stats(flags: dict[str, Any]) -> int:
         ('AutoBlacklistTriggered', 'IPs auto-blacklisted por patron bot'),
     ]
 
-    print(_c(CYAN, f'Stats ultimos {since} (us-west-2):'))
+    print(_c(CYAN, f'Stats ultimos {since} (us-east-1):'))
     print()
 
     results = {}

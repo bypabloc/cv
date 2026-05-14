@@ -208,7 +208,7 @@ sam build
 sam deploy --guided
 
 # Verificar WAF creado
-aws wafv2 list-web-acls --scope REGIONAL --region us-west-2
+aws wafv2 list-web-acls --scope REGIONAL --region us-east-1
 ```
 
 ## Comportamiento detallado de la rate-based rule
@@ -248,7 +248,7 @@ scope-down statement que valide el proxy conocido:
 # Solo contar requests que vienen de Cloudflare
 ScopeDownStatement:
   IPSetReferenceStatement:
-    Arn: arn:aws:wafv2:us-west-2:ACCOUNT:regional/ipset/cloudflare-ips/...
+    Arn: arn:aws:wafv2:us-east-1:ACCOUNT:regional/ipset/cloudflare-ips/...
 ```
 
 (Obtener IPs de Cloudflare desde https://www.cloudflare.com/ips/)
@@ -260,7 +260,7 @@ Comando para ver que IPs estan siendo bloqueadas ahora:
 ```bash
 aws wafv2 list-ip-sets \
   --scope REGIONAL \
-  --region us-west-2 \
+  --region us-east-1 \
   --query 'IPSets[?Name==`portfolio-waf-acl`]' \
   --output table
 
@@ -307,7 +307,7 @@ Contenido `dashboard.json`:
         ],
         "period": 300,
         "stat": "Sum",
-        "region": "us-west-2",
+        "region": "us-east-1",
         "title": "WAF Traffic"
       }
     }

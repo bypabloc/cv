@@ -7,7 +7,7 @@
 
 ## Contexto del proyecto
 
-- 5 Lambdas Python 3.13 arm64 en us-west-2
+- 5 Lambdas Python 3.13 arm64 en us-east-1
 - Volumen: ~1000 cache reads/min (picos), ~100 writes/min
 - Use cases: SSM Parameter Store secrets, Turnstile siteverify, queries Neon,
   GeoIP lookups, config del proyecto
@@ -35,7 +35,7 @@
 - TTL deletion es GRATIS (no consume WCU)
 - Cold start: <500ms (socket SSL a DynamoDB regional)
 
-**Latencia**: 5-10ms promedio (red roundtrip us-west-2).
+**Latencia**: 5-10ms promedio (red roundtrip us-east-1).
 - Aceptable para: config, SSM Parameter Store caching, queries Neon (tolera 30min staleness)
 - Inaceptable para: real-time game leaderboards, financial ticks
 

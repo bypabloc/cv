@@ -172,7 +172,7 @@ Estimado effort: 4-8 horas por función.
 
 ## Benchmark real: latencies
 
-Test con mocked payloads (Mayo 2026, us-west-2):
+Test con mocked payloads (Mayo 2026, us-east-1):
 
 ```
 Lambda (cold): 300-500ms (init + handler)

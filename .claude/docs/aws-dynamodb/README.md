@@ -4,7 +4,7 @@
 
 ## Contexto
 
-El portfolio de Pablo Contreras (Astro 6 monorepo pnpm) integra dos tablas DynamoDB en us-west-2:
+El portfolio de Pablo Contreras (Astro 6 monorepo pnpm) integra dos tablas DynamoDB en us-east-1:
 
 1. **`contacts`** — Almacena envios del formulario de contacto (50-200 items/mes)
 2. **`tracking`** — Almacena page views (5000-15000 items/mes con TTL 60 dias)
@@ -16,7 +16,7 @@ Backend: Lambda Python 3.13 + boto3. IaC: AWS SAM.
 | Capitulo | Tema | Cuando leer |
 |----------|------|-------------|
 | [01-architecture.md](01-architecture.md) | Modelo NoSQL key-value, tablas, PK/SK, items, atributos | Antes de diseñar schema |
-| [02-capacity-modes.md](02-capacity-modes.md) | On-Demand vs Provisioned, pricing us-west-2 | Para decidir modelo de facturacion |
+| [02-capacity-modes.md](02-capacity-modes.md) | On-Demand vs Provisioned, pricing us-east-1 | Para decidir modelo de facturacion |
 | [03-single-table-design.md](03-single-table-design.md) | Single-table pattern (Rick Houlihan), cuándo aplica | Para arquitectura avanzada (opcional) |
 | [04-ttl-tracking.md](04-ttl-tracking.md) | Time To Live, configuracion, costos | Para tabla `tracking` con retencion limitada |
 | [05-gsi-patterns.md](05-gsi-patterns.md) | Global Secondary Index, sparse indexes, costos | Para queries que no usan partition key |
@@ -44,7 +44,7 @@ Backend: Lambda Python 3.13 + boto3. IaC: AWS SAM.
 
 ## Datos de Referencia
 
-- **Region:** us-west-2 (Oregon)
+- **Region:** us-east-1 (Oregon)
 - **Modo:** On-Demand (PAY_PER_REQUEST)
 - **Pricing (Mayo 2026):** Writes $1.25/M RU, Reads $0.25/M RU, Storage $0.25/GB-month
 - **Free Tier:** 25GB storage + 25 WCU + 25 RCU (provisioned) O 200M requests/month (on-demand)

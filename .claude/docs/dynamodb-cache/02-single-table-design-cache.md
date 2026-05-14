@@ -113,7 +113,7 @@ CacheTable:
 ### Validar con AWS CLI
 
 ```bash
-aws dynamodb describe-table --table-name cache --region us-west-2
+aws dynamodb describe-table --table-name cache --region us-east-1
 
 # Output includes:
 # - BillingMode: PAY_PER_REQUEST
@@ -155,7 +155,7 @@ Con volumen esperado (~1000 reads/min, ~100 writes/min):
   {
     "Effect": "Allow",
     "Action": ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
-    "Resource": "arn:aws:dynamodb:us-west-2:*:table/cache"
+    "Resource": "arn:aws:dynamodb:us-east-1:*:table/cache"
   }
   ```
 

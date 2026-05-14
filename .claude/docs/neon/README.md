@@ -28,7 +28,7 @@
 
 ```bash
 # 1. Crear proyecto (free tier indefinido)
-# Acceso a https://console.neon.tech → create project → us-west-2 (Oregon)
+# Acceso a https://console.neon.tech → create project → us-east-1 (Oregon)
 
 # 2. DB URL llega como: postgresql://user:pass@host/dbname
 # Guardar en SSM Parameter Store (AWS Secrets Manager alternativa):
@@ -48,7 +48,7 @@ aws ssm put-parameter \
 - **Scale tier**: $0.222/CU-hour. Hasta 56 CU. Private networking. HIPAA/SOC2.
 - **Storage**: $0.35/GB-mes (post-free tier)
 - **Compute**: 1 CU = 1 vCPU + 4 GB RAM
-- **Regions**: us-west-2 (Oregon) disponible. Migrar de Azure deprecado Aug 2026.
+- **Regions**: us-east-1 (Oregon) disponible. Migrar de Azure deprecado Aug 2026.
 - **PG version**: 14, 15, 16, 17, 18 GA (asynchronous I/O enabled)
 
 ## Para este portfolio
@@ -62,7 +62,7 @@ aws ssm put-parameter \
 ## Arquitectura blockchain
 
 ```
-DynamoDB Streams → Lambda processor → Neon PostgreSQL (us-west-2)
+DynamoDB Streams → Lambda processor → Neon PostgreSQL (us-east-1)
                                      ↓
                             CRM queries (analytics)
                             

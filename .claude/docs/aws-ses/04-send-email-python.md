@@ -9,7 +9,7 @@
 import boto3
 from botocore.exceptions import ClientError
 
-ses = boto3.client('ses', region_name='us-west-2')
+ses = boto3.client('ses', region_name='us-east-1')
 
 def send_contact_notification(name: str, email: str, message: str) -> dict:
     """
@@ -128,7 +128,7 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 
-ses = boto3.client('ses', region_name='us-west-2')
+ses = boto3.client('ses', region_name='us-east-1')
 
 def lambda_handler(event, context):
     """
@@ -336,7 +336,7 @@ from moto import mock_ses
 
 @mock_ses
 def test_send_email():
-    client = boto3.client('ses', region_name='us-west-2')
+    client = boto3.client('ses', region_name='us-east-1')
     
     # Pre-verify la direccion en mock
     client.verify_email_identity(EmailAddress='no-reply@the-full-stack.com')

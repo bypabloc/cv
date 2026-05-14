@@ -39,7 +39,7 @@ Antes de solicitar production access, **verifica el dominio** desde el cual
 vas a enviar emails:
 
 ```bash
-# En AWS SES Console (us-west-2):
+# En AWS SES Console (us-east-1):
 # 1. Navigate to "Verified Identities"
 # 2. Click "Create Identity"
 # 3. Select "Domain"
@@ -94,7 +94,7 @@ aws sesv2 put-account-details \
   --website-url "https://the-full-stack.com" \
   --additional-contact-email-addresses "pacg1991@gmail.com" \
   --contact-language EN \
-  --region us-west-2
+  --region us-east-1
 ```
 
 Resultado: Output JSON con confirmacion de request enviado.

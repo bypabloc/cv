@@ -37,7 +37,7 @@
 
 ```bash
 # 1. Instalar SAM CLI
-curl https://aws-serverless-tools-telemetry.us-west-2.amazonaws.com/linux/x86_64/latest/aws-sam-cli-linux-x86_64.zip -o sam-cli.zip
+curl https://aws-serverless-tools-telemetry.us-east-1.amazonaws.com/linux/x86_64/latest/aws-sam-cli-linux-x86_64.zip -o sam-cli.zip
 unzip sam-cli.zip -d sam-installation
 ./sam-installation/install --update
 
@@ -61,7 +61,7 @@ sam logs -n ContactFormFunction --stack-name my-stack --tail
 ## Estado actual (Mayo 2026)
 
 - 3 Lambdas planeadas: contact-form, turnstile-validator, tracking-pixel
-- Region: us-west-2 (Oregon)
+- Region: us-east-1 (Oregon)
 - Runtime: Python 3.13.x (managed)
 - IaC: AWS SAM (template.yaml)
 - Deployment: local via `sam deploy` (no CI todavia)

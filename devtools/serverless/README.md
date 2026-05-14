@@ -1,7 +1,7 @@
 # Serverless CLI
 
 > Gestion del backend SAM del portfolio (Lambdas Python 3.13 arm64 + API
-> Gateway + DynamoDB + SES + Neon PostgreSQL en us-west-2).
+> Gateway + DynamoDB + SES + Neon PostgreSQL en us-east-1).
 
 ## Uso
 
@@ -14,8 +14,8 @@ python devtools/run.py serverless <command> [--stage=local] [flags...]
 | Stage | Descripcion |
 | ----- | ----------- |
 | `local` | sam local invoke / start-api con moto mocks (sin AWS) |
-| `dev` | Stack desplegado en us-west-2 (sandbox / dev account) |
-| `prod` | Stack desplegado en us-west-2 (productiva) |
+| `dev` | Stack desplegado en us-east-1 (sandbox / dev account) |
+| `prod` | Stack desplegado en us-east-1 (productiva) |
 
 > `local` no es un stage AWS real. Para ese path, los commands llaman
 > `sam local invoke` y `sam local start-api` apuntando a `events/` y

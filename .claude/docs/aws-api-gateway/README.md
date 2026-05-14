@@ -16,7 +16,7 @@
 | Request validation con JSON Schema | [06-request-validation.md](./06-request-validation.md) | Validar request body/headers ANTES de invocar Lambda. Ahorra dinero |
 | Deployment con SAM template completo | [07-deployment-sam.md](./07-deployment-sam.md) | Ejemplo SAM: API + Lambdas + WAF + custom domain + samconfig.toml |
 | Monitoring: CloudWatch Logs, X-Ray, metricas | [08-monitoring-logs.md](./08-monitoring-logs.md) | Access logs JSON, alertas para 429 anormal, distributed tracing |
-| Cost y estrategia de defense in depth | [09-cost-throttling-strategy.md](./09-cost-throttling-strategy.md) | Pricing 2026 us-west-2. Estimado <$20/mes. Capas: WAF → API GW → Lambda |
+| Cost y estrategia de defense in depth | [09-cost-throttling-strategy.md](./09-cost-throttling-strategy.md) | Pricing 2026 us-east-1. Estimado <$20/mes. Capas: WAF → API GW → Lambda |
 
 ## Reglas criticas
 
@@ -41,7 +41,7 @@
   para incluir CORS headers, si no el cliente rechaza la respuesta.
 
 - **Custom domain + ACM cert obligatorio para produccion**: nunca exponer
-  execute-api endpoint publicamente. Usar ACM cert en us-west-2 (mismo
+  execute-api endpoint publicamente. Usar ACM cert en us-east-1 (mismo
   region que API Gateway).
 
 ## Quick start: desplegar el API
@@ -56,15 +56,15 @@
 aws acm request-certificate \
   --domain-name api.the-full-stack.com \
   --validation-method DNS \
-  --region us-west-2
+  --region us-east-1
 
 # 3. Build + deploy
 sam build
 sam deploy --guided  # samconfig.toml crea la primera vez
 
 # 4. Verificar
-aws apigateway get-rest-apis --region us-west-2
-aws wafv2 list-web-acls --scope REGIONAL --region us-west-2
+aws apigateway get-rest-apis --region us-east-1
+aws wafv2 list-web-acls --scope REGIONAL --region us-east-1
 
 # 5. Test endpoints con curl o Postman
 curl -X POST https://api.the-full-stack.com/contact \
@@ -79,7 +79,7 @@ curl -X POST https://api.the-full-stack.com/contact \
 - **Endpoints**: 3 (POST /contact, POST /track, POST /validate-turnstile)
 - **Backends**: 3 Lambdas Python 3.13 independientes
 - **API Type**: REST API (decision justificada en 01-architecture.md)
-- **Region**: us-west-2 (Oregon)
+- **Region**: us-east-1 (Oregon)
 - **CORS**: Restringido a 6 subdominios portfolio + CloudflarePages origin
 - **WAF**: Rate-based rule per-IP. /contact: 3 req/min, /track: 30 req/min
 - **Monitoring**: CloudWatch Logs (JSON), X-Ray tracing activo, alarmas para 429
@@ -96,7 +96,7 @@ curl -X POST https://api.the-full-stack.com/contact \
 ## Verificacion obligatoria pre-deployment
 
 - [ ] SAM template valido (`sam validate`)
-- [ ] ACM cert en us-west-2 emitido y validado
+- [ ] ACM cert en us-east-1 emitido y validado
 - [ ] CORS origins son los 6 subdominios + CloudflarePages
 - [ ] Request validators definidos para /contact (/track es telemetria, validacion minima)
 - [ ] Usage plans con throttle/quota correctos

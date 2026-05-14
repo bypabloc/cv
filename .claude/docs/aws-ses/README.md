@@ -1,7 +1,7 @@
 # AWS SES knowledge base
 
 > Conocimiento consolidado sobre AWS Simple Email Service para enviar
-> notificaciones transaccionales desde Lambda en us-west-2. Cada nodo
+> notificaciones transaccionales desde Lambda en us-east-1. Cada nodo
 > cubre un tema; navegar por relevancia.
 
 ## Cuando leer cada archivo
@@ -52,7 +52,7 @@
 - Tipo: Transactional (notificacion al owner)
 - From: no-reply@the-full-stack.com (domain verificado)
 - To: pacg1991@gmail.com (owner personal)
-- Region: us-west-2 (Oregon)
+- Region: us-east-1 (Oregon)
 - Costo estimado: $0.02/mes ($0.10 per 1000 emails, free tier 3000/mes)
 - Alternative considerada: Resend (mejor DX, pero SES integra con AWS)
 

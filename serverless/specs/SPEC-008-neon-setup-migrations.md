@@ -27,7 +27,7 @@ Pre-requisito de SPEC-009 (stream_processor) y SPEC-010 (aggregator).
 ### Setup Neon (manual)
 
 1. Crear cuenta Neon (si no existe) en https://console.neon.tech
-2. Crear project `portfolio-backend` region `us-west-2`
+2. Crear project `portfolio-backend` region `us-east-1`
 3. Habilitar extensions: `pg_partman` (para partitioning tracking_events)
 4. Crear branch `main` (default) + `dev` para staging
 5. Copiar connection string -> `serverless setup-ssm --name=/portfolio/neon-url`

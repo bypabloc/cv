@@ -6,7 +6,7 @@
 
 Pagas solo por lo que usas. Ideal para **workloads impredecibles o esporádicos**.
 
-### Pricing us-west-2 (Mayo 2026)
+### Pricing us-east-1 (Mayo 2026)
 
 - **Write:** $1.25 por 1 millón de Write Request Units (WRU)
 - **Read:** $0.25 por 1 millón de Read Request Units (RRU)
@@ -39,7 +39,7 @@ Pagas solo por lo que usas. Ideal para **workloads impredecibles o esporádicos*
 
 Reservas capacidad de antemano. Más barato si sabes exactamente cuanta necesitas, pero pagas aunque no uses.
 
-### Pricing us-west-2 (Mayo 2026)
+### Pricing us-east-1 (Mayo 2026)
 
 - **WCU:** $0.97 por WCU/mes (25 WCU gratuitos)
 - **RCU:** $0.19 por RCU/mes (25 RCU gratuitos)

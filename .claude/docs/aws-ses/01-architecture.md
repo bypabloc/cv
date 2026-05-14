@@ -29,7 +29,7 @@ cuotas, y suppression lists.
 | Region | Endpoint | Uso |
 |--------|----------|-----|
 | us-east-1 | ses.us-east-1.amazonaws.com | Primary, US East Coast |
-| **us-west-2** | ses.us-west-2.amazonaws.com | **Portfolio: Oregon (bajo latency a La Costa)** |
+| **us-east-1** | ses.us-east-1.amazonaws.com | **Portfolio: Oregon (bajo latency a La Costa)** |
 | eu-west-1 | ses.eu-west-1.amazonaws.com | Europa (Irlanda) |
 | eu-central-1 | ses.eu-central-1.amazonaws.com | Europa (Frankfurt) |
 | ap-southeast-1 | ses.ap-southeast-1.amazonaws.com | Asia Pacifico (Singapur) |
@@ -40,9 +40,9 @@ cuotas, y suppression lists.
 | us-gov-west-1 | ses.us-gov-west-1.amazonaws.com | AWS GovCloud (US Government) |
 | cn-north-1 | ses.cn-north-1.amazonaws.com | AWS China |
 
-**Para este portfolio**: us-west-2 es ideal (bajo latency, infraestructura
+**Para este portfolio**: us-east-1 es ideal (bajo latency, infraestructura
 madura, soporte SES completo). La Consola de SES y todas las features estan
-disponibles en us-west-2.
+disponibles en us-east-1.
 
 ## Tipos de envio de email
 
@@ -134,7 +134,7 @@ para separar template de logica de envio.
 | Sandbox daily limit | 200 emails/24h | Hasta solicitar production |
 | Sandbox rate limit | 1 email/segundo | |
 
-## Pricing (us-west-2, Mayo 2026)
+## Pricing (us-east-1, Mayo 2026)
 
 | Item | Costo |
 |------|-------|
@@ -154,7 +154,7 @@ API Gateway / Lambda Handler
     ↓
 Validar form data (email, nombre, mensaje)
     ↓
-boto3 SES Client (us-west-2)
+boto3 SES Client (us-east-1)
     ↓
 SendEmail({
   From: no-reply@the-full-stack.com,

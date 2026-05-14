@@ -188,7 +188,7 @@ aws cloudwatch put-dashboard \
         ],
         "period": 300,
         "stat": "Average",
-        "region": "us-west-2",
+        "region": "us-east-1",
         "title": "Portfolio API Overview"
       }
     },
@@ -201,7 +201,7 @@ aws cloudwatch put-dashboard \
         ],
         "period": 300,
         "stat": "Sum",
-        "region": "us-west-2",
+        "region": "us-east-1",
         "title": "WAF Traffic"
       }
     }
@@ -223,7 +223,7 @@ aws cloudwatch put-metric-alarm \
   --period 300 \
   --threshold 10 \
   --comparison-operator GreaterThanThreshold \
-  --alarm-actions arn:aws:sns:us-west-2:ACCOUNT:AlertTopic
+  --alarm-actions arn:aws:sns:us-east-1:ACCOUNT:AlertTopic
 ```
 
 Interpretacion:
@@ -243,7 +243,7 @@ aws cloudwatch put-metric-alarm \
   --period 300 \
   --threshold 1 \
   --comparison-operator GreaterThanOrEqualToThreshold \
-  --alarm-actions arn:aws:sns:us-west-2:ACCOUNT:AlertTopic
+  --alarm-actions arn:aws:sns:us-east-1:ACCOUNT:AlertTopic
 ```
 
 Causa: Lambda crash, timeout, bad code deploy.
@@ -260,7 +260,7 @@ aws cloudwatch put-metric-alarm \
   --period 60 \
   --threshold 5000 \
   --comparison-operator GreaterThanThreshold \
-  --alarm-actions arn:aws:sns:us-west-2:ACCOUNT:AlertTopic
+  --alarm-actions arn:aws:sns:us-east-1:ACCOUNT:AlertTopic
 ```
 
 Causa: Lambda cold start, DB query lenta, DDoS.
@@ -313,7 +313,7 @@ curl -X POST https://api.the-full-stack.com/contact \
 # Despues de algunos minutos, alarma se debe disparar
 aws cloudwatch describe-alarms \
   --alarm-names portfolio-api-errors \
-  --region us-west-2 \
+  --region us-east-1 \
   --query 'MetricAlarms[0].StateValue'
 # Esperado: ALARM
 ```
@@ -369,7 +369,7 @@ A veces API Gateway no crea el log group automaticamente. Crear manual:
 ```bash
 aws logs create-log-group \
   --log-group-name /aws/apigateway/portfolio/prod \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ### Gotcha 3: Costo de logs en high-volume
@@ -381,7 +381,7 @@ costar significante. Limitar retention a 7 dias temporalmente:
 aws logs put-retention-policy \
   --log-group-name /aws/apigateway/portfolio/prod \
   --retention-in-days 7 \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ## Next steps

@@ -54,7 +54,7 @@ Nunca mas enviar a ese recipient (SES rechaza automaticamente)
 
 ### Habilitar account-level suppression
 
-En SES Console (us-west-2):
+En SES Console (us-east-1):
 
 1. Navigate to "Account dashboard"
 2. Under "Suppression list", toggle "Enable account-level suppression"
@@ -69,7 +69,7 @@ Intentos de envio a esos emails se rechazan con error `MessageRejected`.
 # CLI command
 aws sesv2 get-suppressed-destination \
   --email-address "user@example.com" \
-  --region us-west-2
+  --region us-east-1
 
 # Response (si esta suppressed)
 {
@@ -94,22 +94,22 @@ Para aplicaciones criticas (auditar todos los bounces), configurar SNS topics:
 ```bash
 aws sesv2 create-configuration-set \
   --configuration-set-name portfolio-contact \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ### Crear SNS topic y subscribir Lambda
 
 ```bash
 # Crear topic
-aws sns create-topic --name ses-bounces-complaints --region us-west-2
-# Output: TopicArn: arn:aws:sns:us-west-2:123456:ses-bounces-complaints
+aws sns create-topic --name ses-bounces-complaints --region us-east-1
+# Output: TopicArn: arn:aws:sns:us-east-1:123456:ses-bounces-complaints
 
 # Subscribir Lambda handler
 aws sns subscribe \
-  --topic-arn arn:aws:sns:us-west-2:123456:ses-bounces-complaints \
+  --topic-arn arn:aws:sns:us-east-1:123456:ses-bounces-complaints \
   --protocol lambda \
-  --notification-endpoint arn:aws:lambda:us-west-2:123456:function:handle-ses-events \
-  --region us-west-2
+  --notification-endpoint arn:aws:lambda:us-east-1:123456:function:handle-ses-events \
+  --region us-east-1
 ```
 
 ### Agregar event destination en configuration set
@@ -119,8 +119,8 @@ aws sesv2 create-configuration-set-event-destination \
   --configuration-set-name portfolio-contact \
   --event-destination-name bounces-topic \
   --event-types BOUNCE COMPLAINT \
-  --sns-destination TopicArn=arn:aws:sns:us-west-2:123456:ses-bounces-complaints \
-  --region us-west-2
+  --sns-destination TopicArn=arn:aws:sns:us-east-1:123456:ses-bounces-complaints \
+  --region us-east-1
 ```
 
 ### Lambda handler para procesar eventos
@@ -240,7 +240,7 @@ SES publica automaticamente metricas a CloudWatch:
 # Ver metrics disponibles
 aws cloudwatch list-metrics \
   --namespace AWS/SES \
-  --region us-west-2
+  --region us-east-1
 ```
 
 Metricas importantes:
@@ -272,7 +272,7 @@ cloudwatch.put_metric_alarm(
     EvaluationPeriods=1,
     Threshold=5.0,  # 5%
     ComparisonOperator='GreaterThanThreshold',
-    AlarmActions=['arn:aws:sns:us-west-2:123456:alerts'],
+    AlarmActions=['arn:aws:sns:us-east-1:123456:alerts'],
 )
 ```
 

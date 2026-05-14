@@ -16,7 +16,7 @@ aws ssm put-parameter \
   --name /portfolio/neon-database-url \
   --value "postgresql://user:password@host/dbname?sslmode=require&channel_binding=require" \
   --type SecureString \
-  --region us-west-2
+  --region us-east-1
 ```
 
 Nota: usar **pooled connection string** de Neon (sufijo `-pooler`). Sin pooling, Lambdas exhaust max connections.
@@ -30,7 +30,7 @@ Nota: usar **pooled connection string** de Neon (sufijo `-pooler`). Sin pooling,
     {
       "Effect": "Allow",
       "Action": ["ssm:GetParameter"],
-      "Resource": "arn:aws:ssm:us-west-2:ACCOUNT:parameter/portfolio/neon-database-url"
+      "Resource": "arn:aws:ssm:us-east-1:ACCOUNT:parameter/portfolio/neon-database-url"
     }
   ]
 }
@@ -65,7 +65,7 @@ import boto3
 import psycopg
 
 # Clientes AWS en module scope (reutilizables)
-ssm_client = boto3.client('ssm', region_name='us-west-2')
+ssm_client = boto3.client('ssm', region_name='us-east-1')
 
 # Placeholder para conexion (lazy-loaded)
 _db_conn: psycopg.Connection | None = None

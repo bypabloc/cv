@@ -415,7 +415,7 @@ Para este portfolio: **window_seconds=60** es standard (1 bucket por minuto).
 
 ```
 DynamoDB latency (warm):
-  GET + UpdateItem: ~10-15ms (us-west-2)
+  GET + UpdateItem: ~10-15ms (us-east-1)
   
 Lambda latency:
   Rate-check middleware: <1ms (calculo local)

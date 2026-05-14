@@ -94,7 +94,7 @@ Memory  | vCPU aprox | GB-seconds / 1M invokes
 - turnstile-validator (HTTP + cached): 256 MB (tiempo ~100ms)
 - tracking-pixel (DynamoDB PutItem): 256 MB (tiempo ~50ms)
 
-Pricing: $0.20 per 1M requests + $0.0000166667 per GB-second (us-west-2).
+Pricing: $0.20 per 1M requests + $0.0000166667 per GB-second (us-east-1).
 Con 100 invokes/dia contact-form (512MB, 150ms):
 - ~3000 invokes/mes = free tier (1M/mes)
 - GB-seconds: 3000 * 0.512 * 0.15 / 3600 = 0.064 GB-seconds

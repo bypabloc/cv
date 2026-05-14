@@ -1,6 +1,6 @@
 # serverless/
 
-> Backend serverless del portfolio: 3 Lambdas Python 3.13 en us-west-2
+> Backend serverless del portfolio: 3 Lambdas Python 3.13 en us-east-1
 > que reciben el form de contacto, tracking pixel y validan Turnstile.
 > Stack IaC: AWS SAM. Costo estimado ~$7/mes (dominado por WAF Web ACL).
 

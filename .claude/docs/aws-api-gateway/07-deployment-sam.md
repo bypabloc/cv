@@ -52,7 +52,7 @@ Parameters:
   
   CertificateArn:
     Type: String
-    Description: ACM certificate ARN in us-west-2
+    Description: ACM certificate ARN in us-east-1
   
   AlertEmail:
     Type: String
@@ -411,7 +411,7 @@ version = 0.1
 
 [default]
 [default.deploy]
-region = "us-west-2"
+region = "us-east-1"
 stack_name = "portfolio-api-stack"
 s3_prefix = "portfolio-api"
 confirm_changeset = false
@@ -425,14 +425,14 @@ parallel = true
 
 [prod]
 [prod.deploy]
-region = "us-west-2"
+region = "us-east-1"
 stack_name = "portfolio-api-prod"
 s3_bucket = "portfolio-sam-artifacts-prod"
 s3_prefix = "portfolio-api"
 parameter_overrides = [
   "Environment=prod",
   "ApiDomainName=api.the-full-stack.com",
-  "CertificateArn=arn:aws:acm:us-west-2:ACCOUNT:certificate/abc123",
+  "CertificateArn=arn:aws:acm:us-east-1:ACCOUNT:certificate/abc123",
   "AlertEmail=pablo@the-full-stack.com"
 ]
 ```
@@ -451,13 +451,13 @@ sam deploy --config-env prod
 # 3. Verificar stack en CloudFormation
 aws cloudformation describe-stacks \
   --stack-name portfolio-api-prod \
-  --region us-west-2 \
+  --region us-east-1 \
   --query 'Stacks[0].[StackStatus,CreationTime]'
 
 # 4. Ver outputs
 aws cloudformation describe-stacks \
   --stack-name portfolio-api-prod \
-  --region us-west-2 \
+  --region us-east-1 \
   --query 'Stacks[0].Outputs'
 
 # 5. Test endpoint
@@ -471,7 +471,7 @@ sam logs -n ContactFunction --stack-name portfolio-api-prod --tail
 # 7. Borrar stack (cleanup)
 aws cloudformation delete-stack \
   --stack-name portfolio-api-prod \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ## Troubleshooting
@@ -483,13 +483,13 @@ Parameter validation failed: Invalid ARN: arn:aws:acm:...
 ```
 
 Causa: certificate no existe o esta en region diferente.
-Solucion: crear cert en us-west-2:
+Solucion: crear cert en us-east-1:
 
 ```bash
 aws acm request-certificate \
   --domain-name api.the-full-stack.com \
   --validation-method DNS \
-  --region us-west-2
+  --region us-east-1
 ```
 
 ### Error: Stack already exists

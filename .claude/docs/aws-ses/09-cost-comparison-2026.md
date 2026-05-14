@@ -3,7 +3,7 @@
 > Breakdown de precios para 200 emails/mes (caso portfolio).
 > Comparacion con alternativas. Recomendacion.
 
-## AWS SES Pricing (us-west-2, Mayo 2026)
+## AWS SES Pricing (us-east-1, Mayo 2026)
 
 ### Breakdown basico
 

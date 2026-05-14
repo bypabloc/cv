@@ -66,7 +66,7 @@ Las features valen la pena.
                       [ACM Certificate]
                             |
                    [REST API Gateway]
-                    (us-west-2, prod)
+                    (us-east-1, prod)
                             |
           +-------------------+-------------------+
           |                   |                   |
@@ -100,7 +100,7 @@ Las features valen la pena.
 ## Configuracion de dominios
 
 - **Apex**: no. API en subdominio `api.the-full-stack.com`.
-- **Certificate**: ACM en us-west-2, validacion DNS via Route 53.
+- **Certificate**: ACM en us-east-1, validacion DNS via Route 53.
 - **Registrar**: AWS Route 53 (donde esta registrado el dominio).
 - **DNS**: Usar Route 53 (mismo registrar) o CF DNS si migras zona.
 - **Hotlinks permitidos**: solo 6 subdominios portfolio + localhost dev.
@@ -118,7 +118,7 @@ CORS whitelist:
 
 ## Region y multi-region (futuro)
 
-**Region actual**: us-west-2 (Oregon). Decisiones:
+**Region actual**: us-east-1 (Oregon). Decisiones:
 
 1. **Una region es suficiente**: el portfolio es estatico en Cloudflare Pages
    (edge worldwide). El API es backend de bajo volumen. No necesita multi-region.

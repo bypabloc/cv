@@ -242,7 +242,7 @@ recomputar valor).
 
 ---
 
-## 5. Costos consolidados (us-west-2, Mayo 2026)
+## 5. Costos consolidados (us-east-1, Mayo 2026)
 
 Arquitectura SIN AWS WAF, SIN CloudWatch Alarms, retention logs 7 dias.
 Objetivo: $0/mes operacional.

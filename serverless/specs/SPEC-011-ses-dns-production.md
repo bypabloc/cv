@@ -3,7 +3,7 @@
 **Estado**: draft
 **Autor**: Pablo Contreras
 **Fecha**: 2026-05-14
-**Areas afectadas**: AWS SES (us-west-2), Cloudflare DNS, ticket de
+**Areas afectadas**: AWS SES (us-east-1), Cloudflare DNS, ticket de
 production access
 **Dependencias**: SPEC-000
 **Paralelizable con**: TODAS las otras specs (DNS setup no bloquea
@@ -130,14 +130,14 @@ serverless verify-ses-dns
 # 2. Verificar SES status
 aws sesv2 get-email-identity \
   --email-identity the-full-stack.com \
-  --region us-west-2
+  --region us-east-1
 
 # 3. Smoke test send (sandbox o post-prod)
 aws sesv2 send-email \
   --from-email-address no-reply@the-full-stack.com \
   --destination 'ToAddresses=pacg1991@gmail.com' \
   --content '{"Simple":{"Subject":{"Data":"Test SES"},"Body":{"Text":{"Data":"Hola desde SES"}}}}' \
-  --region us-west-2
+  --region us-east-1
 
 # 4. Mail Tester
 # Enviar a test-XXX@mail-tester.com (genera URL temporal)
@@ -160,7 +160,7 @@ aws sesv2 send-email \
 
 ### Configuraciones externas (no archivos)
 
-- AWS SES Console (us-west-2)
+- AWS SES Console (us-east-1)
 - Cloudflare DNS dashboard
 - AWS SES production access ticket (formulario web)
 

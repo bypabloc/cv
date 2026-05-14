@@ -168,7 +168,7 @@ N/A — frontend, sin schema.
 
 ### Env vars (build-time, exposed al cliente con PUBLIC_ prefix)
 
-- `PUBLIC_API_ENDPOINT` — ej. `https://abc123.execute-api.us-west-2.amazonaws.com/prod`
+- `PUBLIC_API_ENDPOINT` — ej. `https://abc123.execute-api.us-east-1.amazonaws.com/prod`
 - `PUBLIC_TURNSTILE_SITEKEY` — del widget creado en SPEC-000
 
 ## 8. Descomposicion para Paralelizacion

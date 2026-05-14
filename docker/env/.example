@@ -220,3 +220,24 @@ KMS_KEY_ALIAS=alias/portfolio-lambdas
 #   - playwright corre con --reporter=github
 #   - sam invoke usa eventos mock predefinidos
 CI=
+
+# ===========================================================================
+# Frontend env vars publicas (build-time, expuestas al browser)
+# ===========================================================================
+# Estas se inyectan al build de Astro como `import.meta.env.PUBLIC_*`.
+# El frontend ContactForm.astro las lee para configurar el endpoint y
+# el Turnstile sitekey.
+#
+# IMPORTANTE: PUBLIC_TURNSTILE_SITEKEY es la sitekey publica (no es secreta).
+# El secret de Turnstile vive en SSM (no aqui).
+
+# Base URL del API Gateway (sin trailing slash).
+# La pagina /contact arma el endpoint final como `${PUBLIC_API_ENDPOINT}/contact`.
+# dev: https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev
+# prod: https://332ivhahf2.execute-api.us-east-1.amazonaws.com/prod
+PUBLIC_API_ENDPOINT=
+
+# Cloudflare Turnstile sitekey publica del widget Portfolio Backend.
+# Mismo valor que TURNSTILE_SITE_KEY arriba (se duplica con prefijo PUBLIC_
+# porque Astro requiere ese prefijo para exponer al browser).
+PUBLIC_TURNSTILE_SITEKEY=

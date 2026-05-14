@@ -1,0 +1,466 @@
+---
+/**
+ * @component ContactForm
+ * @description Form de contacto con Turnstile (Managed) + POST al backend serverless.
+ *
+ * Backend: api/contact (Lambda contact_form + DynamoDB + SES)
+ * Anti-bot: Cloudflare Turnstile widget Managed mode
+ * Validation: client + server (Pydantic)
+ *
+ * @props {string} apiEndpoint - Full URL del POST /contact (ej: 'https://xxx.execute-api.us-east-1.amazonaws.com/dev/contact')
+ * @props {string} turnstileSitekey - Sitekey publica del widget Turnstile
+ * @props {string} [niche] - 'generic' | 'hub' | 'fintech' | 'architect' | 'leader' | 'vibe'
+ *
+ * @example
+ *   ---
+ *   import ContactForm from '@portfolio/ui/components/ContactForm.astro'
+ *   const API = import.meta.env.PUBLIC_API_ENDPOINT
+ *   const SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITEKEY
+ *   ---
+ *   <ContactForm apiEndpoint={`${API}/contact`} turnstileSitekey={SITE_KEY} niche="fintech" />
+ */
+interface Props {
+  apiEndpoint: string
+  turnstileSitekey: string
+  niche?: string
+}
+const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
+---
+
+<form
+  class="contact-form"
+  data-api-endpoint={apiEndpoint}
+  data-niche={niche}
+  novalidate
+>
+  <div class="form-row">
+    <label for="contact-name">
+      Nombre <span aria-hidden="true">*</span>
+    </label>
+    <input
+      type="text"
+      id="contact-name"
+      name="name"
+      required
+      minlength="2"
+      maxlength="200"
+      autocomplete="name"
+    />
+  </div>
+
+  <div class="form-row">
+    <label for="contact-email">
+      Email <span aria-hidden="true">*</span>
+    </label>
+    <input
+      type="email"
+      id="contact-email"
+      name="email"
+      required
+      maxlength="254"
+      autocomplete="email"
+    />
+  </div>
+
+  <details class="form-optional">
+    <summary>Datos opcionales (para conocerte mejor)</summary>
+
+    <div class="form-row">
+      <label for="contact-company">Empresa</label>
+      <input
+        type="text"
+        id="contact-company"
+        name="company"
+        maxlength="200"
+        autocomplete="organization"
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="contact-role">Cargo / Rol</label>
+      <input
+        type="text"
+        id="contact-role"
+        name="role"
+        maxlength="100"
+        autocomplete="organization-title"
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="contact-service-type">Tipo de servicio</label>
+      <select id="contact-service-type" name="service_type">
+        <option value="">(sin especificar)</option>
+        <option value="consulting">Consultoria</option>
+        <option value="fulltime">Full-time</option>
+        <option value="contract">Contrato / freelance</option>
+        <option value="other">Otro</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="contact-budget">Presupuesto</label>
+      <input
+        type="text"
+        id="contact-budget"
+        name="budget"
+        maxlength="100"
+        placeholder="Ej: USD 5k-15k / mes"
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="contact-timeline">Timeline</label>
+      <input
+        type="text"
+        id="contact-timeline"
+        name="timeline"
+        maxlength="100"
+        placeholder="Ej: empieza en 2 semanas"
+      />
+    </div>
+  </details>
+
+  <div class="form-row">
+    <label for="contact-message">
+      Mensaje <span aria-hidden="true">*</span>
+    </label>
+    <textarea
+      id="contact-message"
+      name="message"
+      required
+      minlength="10"
+      maxlength="5000"
+      rows="6"
+    ></textarea>
+  </div>
+
+  <input type="hidden" name="niche" value={niche} />
+
+  <!-- Cloudflare Turnstile widget (Managed mode) -->
+  <div
+    class="cf-turnstile"
+    data-sitekey={turnstileSitekey}
+    data-callback="onContactTurnstileSuccess"
+    data-error-callback="onContactTurnstileError"
+  >
+  </div>
+
+  <button type="submit" class="contact-submit">
+    <span class="submit-label">Enviar</span>
+    <span class="submit-spinner" aria-hidden="true"></span>
+  </button>
+
+  <p class="form-status" role="status" aria-live="polite"></p>
+</form>
+
+<!-- Turnstile script (cargado async) -->
+<script
+  src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+  async
+  defer
+></script>
+
+<script>
+  /**
+   * Frontend logic: validacion client + POST al Lambda contact_form.
+   *
+   * NOTA: este script vive en module scope. Se ejecuta una sola vez por
+   * pagina, registra event listeners en todos los <form.contact-form>.
+   */
+
+  type ContactFormElements = {
+    form: HTMLFormElement
+    submit: HTMLButtonElement
+    status: HTMLParagraphElement
+    apiEndpoint: string
+  }
+
+  function getFormElements(form: HTMLFormElement): ContactFormElements {
+    return {
+      form,
+      submit: form.querySelector('.contact-submit') as HTMLButtonElement,
+      status: form.querySelector('.form-status') as HTMLParagraphElement,
+      apiEndpoint: form.dataset.apiEndpoint || '',
+    }
+  }
+
+  function showStatus(
+    el: HTMLParagraphElement,
+    message: string,
+    kind: 'success' | 'error' | 'info' = 'info',
+  ): void {
+    el.textContent = message
+    el.dataset.kind = kind
+  }
+
+  function getTurnstileToken(form: HTMLFormElement): string | null {
+    const input = form.querySelector<HTMLInputElement>(
+      'input[name="cf-turnstile-response"]',
+    )
+    return input?.value || null
+  }
+
+  async function handleSubmit(event: SubmitEvent): Promise<void> {
+    event.preventDefault()
+    const form = event.currentTarget as HTMLFormElement
+    const { submit, status, apiEndpoint } = getFormElements(form)
+
+    if (!apiEndpoint) {
+      showStatus(status, 'API endpoint no configurado', 'error')
+      return
+    }
+
+    const cfToken = getTurnstileToken(form)
+    if (!cfToken) {
+      showStatus(
+        status,
+        'Por favor completa el captcha antes de enviar.',
+        'error',
+      )
+      return
+    }
+
+    submit.disabled = true
+    submit.classList.add('is-loading')
+    showStatus(status, 'Enviando...', 'info')
+
+    const formData = new FormData(form)
+    const payload: Record<string, string | undefined> = {}
+
+    for (const [key, value] of formData.entries()) {
+      const str = (value as string).trim()
+      if (str) payload[key] = str
+    }
+    payload.cf_token = cfToken
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (response.status === 201) {
+        showStatus(
+          status,
+          'Mensaje enviado. Te respondere en menos de 24h.',
+          'success',
+        )
+        form.reset()
+        // Reset Turnstile widget
+        const tsWidget = window.turnstile
+        if (tsWidget && typeof tsWidget.reset === 'function') {
+          tsWidget.reset(form.querySelector('.cf-turnstile'))
+        }
+      } else if (response.status === 400) {
+        showStatus(
+          status,
+          'Hay datos invalidos en el formulario. Revisa los campos marcados con *.',
+          'error',
+        )
+      } else if (response.status === 403) {
+        showStatus(
+          status,
+          'Captcha invalido. Por favor recargá la pagina e intentá nuevamente.',
+          'error',
+        )
+      } else if (response.status === 429) {
+        showStatus(
+          status,
+          'Demasiados intentos. Esperá unos minutos antes de reintentar.',
+          'error',
+        )
+      } else {
+        showStatus(
+          status,
+          'Error del servidor. Intentá nuevamente en unos minutos.',
+          'error',
+        )
+      }
+    } catch (error) {
+      console.error('contact form error', error)
+      showStatus(
+        status,
+        'Error de red. Verificá tu conexion y reintentá.',
+        'error',
+      )
+    } finally {
+      submit.disabled = false
+      submit.classList.remove('is-loading')
+    }
+  }
+
+  function initContactForms(): void {
+    const forms = document.querySelectorAll<HTMLFormElement>('.contact-form')
+    forms.forEach((form) => {
+      form.addEventListener('submit', handleSubmit as EventListener)
+    })
+  }
+
+  // Turnstile callbacks globales (window-level porque el script CF los llama)
+  ;(window as unknown as Record<string, unknown>).onContactTurnstileSuccess = (
+    _token: string,
+  ): void => {
+    // Token se lee del input cf-turnstile-response al submit
+  }
+  ;(window as unknown as Record<string, unknown>).onContactTurnstileError = (): void => {
+    document.querySelectorAll<HTMLParagraphElement>('.form-status').forEach((el) => {
+      showStatus(el, 'Error cargando el captcha. Recargá la pagina.', 'error')
+    })
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initContactForms)
+  } else {
+    initContactForms()
+  }
+
+  // turnstile global (CF lo expone)
+  declare global {
+    interface Window {
+      turnstile?: {
+        reset: (widget?: Element | null) => void
+      }
+    }
+  }
+</script>
+
+<style>
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    max-width: var(--container-narrow);
+    margin-inline: auto;
+  }
+
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .form-row label {
+    font-size: var(--font-size-13);
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .form-row label span[aria-hidden] {
+    color: var(--color-primary);
+  }
+
+  .form-row input,
+  .form-row select,
+  .form-row textarea {
+    padding: var(--space-10) var(--space-12);
+    font-size: var(--font-size-14);
+    font-family: var(--font-sans);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    transition: border-color 150ms ease;
+  }
+
+  .form-row input:focus,
+  .form-row select:focus,
+  .form-row textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .form-row textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  .form-optional {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-12);
+  }
+
+  .form-optional summary {
+    font-size: var(--font-size-13);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .form-optional[open] summary {
+    margin-bottom: var(--space-12);
+  }
+
+  .form-optional .form-row + .form-row {
+    margin-top: var(--space-12);
+  }
+
+  .contact-submit {
+    align-self: flex-start;
+    padding: var(--space-10) var(--space-24);
+    font-size: var(--font-size-14);
+    font-weight: 600;
+    color: var(--color-primary-contrast);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .contact-submit:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+
+  .contact-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .submit-spinner {
+    display: none;
+    width: 12px;
+    height: 12px;
+    margin-left: var(--space-8);
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+  }
+
+  .contact-submit.is-loading .submit-spinner {
+    display: inline-block;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .form-status {
+    min-height: 1.2em;
+    margin: 0;
+    font-size: var(--font-size-13);
+  }
+
+  .form-status[data-kind='success'] {
+    color: var(--color-success, #16a34a);
+  }
+
+  .form-status[data-kind='error'] {
+    color: var(--color-danger, #dc2626);
+  }
+
+  .form-status[data-kind='info'] {
+    color: var(--color-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .submit-spinner {
+      animation: none;
+    }
+  }
+</style>

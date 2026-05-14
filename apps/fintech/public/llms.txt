@@ -2,7 +2,7 @@
 
 > Senior Full Stack engineer specialized in Latin American fintech (Chile, Mexico). 12+ years building credit, debt-settlement and payment products with Vue/Nuxt + Django + AWS microservices. Compliance-aware (PCI DSS, KYC, PII handling).
 
-Canonical URL: https://fintech.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+Canonical URL: https://fintech.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
 
 ## Highlights — fintech
 

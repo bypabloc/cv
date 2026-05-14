@@ -46,6 +46,18 @@ describe('renderCvHtml', () => {
     expect(html).toContain('github.com/bypabloc')
   })
 
+  it('Given locale es When render Then header shows location y availability ES concatenados', () => {
+    const html = renderCvHtml({ locale: 'es', niche: 'generic' })
+    expect(html).toContain(
+      'Lima, Perú · Disponible remoto · zona horaria LATAM/US',
+    )
+  })
+
+  it('Given locale en When render Then header shows location y availability EN concatenados', () => {
+    const html = renderCvHtml({ locale: 'en', niche: 'generic' })
+    expect(html).toContain('Lima, Perú · Remote-friendly · LATAM/US timezone')
+  })
+
   it('Given any input When render Then escapes potentially unsafe chars', () => {
     const html = renderCvHtml({ locale: 'es', niche: 'generic' })
     // No raw < or > that could break the HTML inside text nodes.

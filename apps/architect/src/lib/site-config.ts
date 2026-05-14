@@ -15,8 +15,8 @@ export const { NICHE, SITE_URL, OG_IMAGE, STRINGS } = defineSiteConfig({
       'Arquitecto Frontend con experiencia en microservicios, microfrontends y sistemas escalables. Vue/Nuxt + Django + AWS. Decisiones de diseño y arquitectura documentadas.',
     metaDescriptionEn:
       'Frontend Architect experienced in microservices, microfrontends and scalable systems. Vue/Nuxt + Django + AWS. Documented design and architecture decisions.',
-    heroEyebrowEs: 'Pablo Contreras · Architect · Lima, Perú',
-    heroEyebrowEn: 'Pablo Contreras · Architect · Lima, Peru',
+    heroEyebrowEs: 'Pablo Contreras · Architect · Lima, Perú · Remoto LATAM/US',
+    heroEyebrowEn: 'Pablo Contreras · Architect · Lima, Peru · Remote LATAM/US',
     heroHeadlineEs: 'Frontend Architect & Microservicios',
     heroHeadlineEn: 'Frontend Architect & Microservices',
     heroSummaryEs:

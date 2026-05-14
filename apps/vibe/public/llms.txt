@@ -2,7 +2,7 @@
 
 > AI-Augmented Software Engineer. Using Claude Code since launch (May 2025), previously Claude web + my own FastStruct VS Code extension. Rolled out Claude Code at Destacame with standardized skills/rules/docs structure. Builds CLIs to centralize team processes. AI is a tool, not an author — all code is human-reviewed and tested.
 
-Canonical URL: https://vibe.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+Canonical URL: https://vibe.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
 
 ## Highlights — vibe
 

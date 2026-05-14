@@ -15,8 +15,10 @@ export const { NICHE, SITE_URL, OG_IMAGE, STRINGS } = defineSiteConfig({
       'Senior Full Stack especializado en fintech Chile/México. Saldar deudas, scoring crediticio, productos de crédito con Vue + Django + AWS. 8+ años entregando producto.',
     metaDescriptionEn:
       'Senior Full Stack specialized in LATAM fintech (Chile, Mexico). Debt settlement, credit scoring and credit products with Vue + Django + AWS. 8+ years shipping product.',
-    heroEyebrowEs: 'Pablo Contreras · Fintech LATAM · Lima, Perú',
-    heroEyebrowEn: 'Pablo Contreras · LATAM Fintech · Lima, Peru',
+    heroEyebrowEs:
+      'Pablo Contreras · Fintech LATAM · Lima, Perú · Remoto LATAM/US',
+    heroEyebrowEn:
+      'Pablo Contreras · LATAM Fintech · Lima, Peru · Remote LATAM/US',
     heroHeadlineEs: 'Senior Full Stack Fintech LATAM',
     heroHeadlineEn: 'Senior Full Stack LATAM Fintech',
     heroSummaryEs:

@@ -2,7 +2,7 @@
 
 > Frontend Architect with deep microservices and distributed systems experience. 12+ years designing scalable architectures: microfrontend (Vue/Nuxt) + 8+ Django microservices + AWS API Gateway + PostgreSQL/Redis/SQS + observability with CloudWatch/Sentry.
 
-Canonical URL: https://architect.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Contact: pacg1991@gmail.com.
+Canonical URL: https://architect.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
 
 ## Highlights — architect
 

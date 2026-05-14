@@ -79,7 +79,7 @@ describe('buildProfilePageSchema', () => {
     expect(parsed.mainEntity.hasOccupation.skills).toBe('Vue, Django, AWS')
   })
 
-  it('Given locale es When build Then occupationLocation country es "Perú"', () => {
+  it('Given locale es When build Then occupationLocation incluye Country "Perú" y VirtualLocation remoto', () => {
     const ld = buildProfilePageSchema({
       profile,
       niche: 'generic',
@@ -88,10 +88,19 @@ describe('buildProfilePageSchema', () => {
       knowsAbout: [],
     })
     const parsed = JSON.parse(ld)
-    expect(parsed.mainEntity.hasOccupation.occupationLocation.name).toBe('Perú')
+    const loc = parsed.mainEntity.hasOccupation.occupationLocation as Array<{
+      '@type': string
+      name: string
+    }>
+    expect(loc).toHaveLength(2)
+    expect(loc[0]).toStrictEqual({ '@type': 'Country', name: 'Perú' })
+    expect(loc[1]).toStrictEqual({
+      '@type': 'VirtualLocation',
+      name: 'Remoto · zona horaria LATAM/US',
+    })
   })
 
-  it('Given locale en When build Then occupationLocation country es "Peru"', () => {
+  it('Given locale en When build Then occupationLocation incluye Country "Peru" y VirtualLocation remote', () => {
     const ld = buildProfilePageSchema({
       profile,
       niche: 'generic',
@@ -100,7 +109,46 @@ describe('buildProfilePageSchema', () => {
       knowsAbout: [],
     })
     const parsed = JSON.parse(ld)
-    expect(parsed.mainEntity.hasOccupation.occupationLocation.name).toBe('Peru')
+    const loc = parsed.mainEntity.hasOccupation.occupationLocation as Array<{
+      '@type': string
+      name: string
+    }>
+    expect(loc).toHaveLength(2)
+    expect(loc[0]).toStrictEqual({ '@type': 'Country', name: 'Peru' })
+    expect(loc[1]).toStrictEqual({
+      '@type': 'VirtualLocation',
+      name: 'Remote · LATAM/US timezone',
+    })
+  })
+
+  it('Given locale es When build Then mainEntity.seeks indica roles remotos LATAM/US en espanol', () => {
+    const ld = buildProfilePageSchema({
+      profile,
+      niche: 'generic',
+      locale: 'es',
+      canonicalUrl: 'https://x.example/',
+      knowsAbout: [],
+    })
+    const parsed = JSON.parse(ld)
+    expect(parsed.mainEntity.seeks).toStrictEqual({
+      '@type': 'Demand',
+      name: 'Roles full stack senior remotos (LATAM/US)',
+    })
+  })
+
+  it('Given locale en When build Then mainEntity.seeks indica remote senior full stack en ingles', () => {
+    const ld = buildProfilePageSchema({
+      profile,
+      niche: 'generic',
+      locale: 'en',
+      canonicalUrl: 'https://x.example/',
+      knowsAbout: [],
+    })
+    const parsed = JSON.parse(ld)
+    expect(parsed.mainEntity.seeks).toStrictEqual({
+      '@type': 'Demand',
+      name: 'Remote senior full stack roles (LATAM/US)',
+    })
   })
 
   it('Given build Then sameAs contiene linkedin, github y medium', () => {

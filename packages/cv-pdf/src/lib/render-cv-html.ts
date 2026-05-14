@@ -228,9 +228,12 @@ a { color: #2046d3; text-decoration: none; }
 </head>
 <body>`
 
+  const locationLine = profile.availability
+    ? `${escapeHtml(profile.location)} · ${escapeHtml(profile.availability[locale])}`
+    : escapeHtml(profile.location)
   const header = `
 <h1>${escapeHtml(profile.name)}</h1>
-<p class="contact">${escapeHtml(profile.headline[locale])} · ${escapeHtml(profile.location)}</p>
+<p class="contact">${escapeHtml(profile.headline[locale])} · ${locationLine}</p>
 <p class="contact">
   <a href="mailto:${escapeHtml(profile.contacts.email)}">${escapeHtml(profile.contacts.email)}</a>
   · <a href="${escapeHtml(profile.contacts.linkedin)}">LinkedIn</a>

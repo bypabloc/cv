@@ -74,8 +74,11 @@ export function buildLlmsTxt(input: BuildLlmsTxtInput): string {
   lines.push('')
   lines.push(`> ${NICHE_DESCRIPTION[niche]}`)
   lines.push('')
+  const availabilityFragment = profile.availability
+    ? ` Availability: ${profile.availability.en}.`
+    : ''
   lines.push(
-    `Canonical URL: ${siteUrl}. Author: ${profile.name} (${profile.handle}). Location: ${profile.location}. Contact: ${profile.contacts.email}.`,
+    `Canonical URL: ${siteUrl}. Author: ${profile.name} (${profile.handle}). Location: ${profile.location}.${availabilityFragment} Contact: ${profile.contacts.email}.`,
   )
   lines.push('')
 

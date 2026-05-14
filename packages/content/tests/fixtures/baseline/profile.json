@@ -10,6 +10,10 @@
     "en": "Software engineer with over 8 years of experience, specialized in Full Stack development with Python and JavaScript. Expert in building technology solutions with Vue, Django, microservices and AWS, I have successfully delivered and led the implementation of ERP systems and fintech platforms, significantly improving operational efficiency and user experience. Skilled in coordinating and motivating teams, I adapt easily to dynamic and challenging environments, always focused on quality and innovation."
   },
   "location": "Lima, Perú",
+  "availability": {
+    "es": "Disponible remoto · zona horaria LATAM/US",
+    "en": "Remote-friendly · LATAM/US timezone"
+  },
   "contacts": {
     "email": "pacg1991@gmail.com",
     "phone": "+51 918490148",

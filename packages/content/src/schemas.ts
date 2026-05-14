@@ -109,7 +109,19 @@ export const ProfileSchema = z.object({
   handle: z.string().min(1),
   headline: BiLangSchema,
   summary: BiLangSchema,
+  /**
+   * Ciudad y pais en formato limpio (ej. "Lima, Perú"). Se usa tal cual en
+   * schema.org `PostalAddress.addressLocality` y en `llms.txt`. NO mezclar
+   * con marketing copy ("disponible remoto"); para eso usar `availability`.
+   */
   location: z.string().min(1),
+  /**
+   * Marketing copy bilingüe sobre disponibilidad (ej. "Disponible remoto
+   * · zona LATAM/US"). Opcional. Display-only: se concatena al
+   * `location` en hero/CV/about para señal ATS + GEO, pero NO se mete
+   * en JSON-LD ni en `llms.txt`.
+   */
+  availability: BiLangSchema.optional(),
   contacts: z.object({
     email: z.string().email(),
     phone: z.string().optional(),

@@ -67,4 +67,25 @@ describe('buildLlmsTxt', () => {
     })
     expect(out).not.toMatch(/Medium:/u)
   })
+
+  it('Given profile con availability When build Then incluye Availability en metadata header', () => {
+    const out = buildLlmsTxt({
+      siteUrl: 'https://x.example/',
+      profile,
+      niche: 'generic',
+      pages: [],
+    })
+    expect(out).toContain('Availability: Remote-friendly · LATAM/US timezone.')
+  })
+
+  it('Given profile sin availability When build Then omite Availability', () => {
+    const stripped = { ...profile, availability: undefined }
+    const out = buildLlmsTxt({
+      siteUrl: 'https://x.example/',
+      profile: stripped,
+      niche: 'generic',
+      pages: [],
+    })
+    expect(out).not.toMatch(/Availability:/u)
+  })
 })

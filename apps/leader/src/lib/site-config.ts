@@ -15,8 +15,8 @@ export const { NICHE, SITE_URL, OG_IMAGE, STRINGS } = defineSiteConfig({
       'Tech Lead con experiencia liderando equipos multidisciplinarios, mentoring y entrega de producto fintech a escala. Premio Innovador del Año en Destacame.',
     metaDescriptionEn:
       'Tech Lead experienced in leading cross-functional engineering teams, mentoring and shipping fintech products at scale. Innovator of the Year award at Destacame.',
-    heroEyebrowEs: 'Pablo Contreras · Tech Lead · Lima, Perú',
-    heroEyebrowEn: 'Pablo Contreras · Tech Lead · Lima, Peru',
+    heroEyebrowEs: 'Pablo Contreras · Tech Lead · Lima, Perú · Remoto LATAM/US',
+    heroEyebrowEn: 'Pablo Contreras · Tech Lead · Lima, Peru · Remote LATAM/US',
     heroHeadlineEs: 'Tech Lead & Engineering Manager',
     heroHeadlineEn: 'Tech Lead & Engineering Manager',
     heroSummaryEs:

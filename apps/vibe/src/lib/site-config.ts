@@ -15,8 +15,10 @@ export const { NICHE, SITE_URL, OG_IMAGE, STRINGS } = defineSiteConfig({
       'Ingeniero que documenta workflows reales con Claude Code (desde el lanzamiento, mayo 2025) y antes Claude web + FastStruct. FastStruct (VS Code), monorepo Astro de este portfolio y un CV builder construido en una sola noche.',
     metaDescriptionEn:
       'Engineer documenting real workflows with Claude Code (since launch, May 2025) and previously Claude web + FastStruct. FastStruct (VS Code), Astro monorepo of this portfolio and a CV builder shipped in a single night.',
-    heroEyebrowEs: 'Pablo Contreras · Vibe Coding · Lima, Perú',
-    heroEyebrowEn: 'Pablo Contreras · Vibe Coding · Lima, Peru',
+    heroEyebrowEs:
+      'Pablo Contreras · Vibe Coding · Lima, Perú · Remoto LATAM/US',
+    heroEyebrowEn:
+      'Pablo Contreras · Vibe Coding · Lima, Peru · Remote LATAM/US',
     heroHeadlineEs: 'AI-Augmented Full Stack · Claude Code',
     heroHeadlineEn: 'AI-Augmented Full Stack · Claude Code',
     heroSummaryEs:

@@ -108,7 +108,9 @@ export function buildStrings(
       },
       nav: navEs(''),
       hero: {
-        eyebrow: overrides.heroEyebrowEs ?? 'Pablo Contreras · Lima, Perú',
+        eyebrow:
+          overrides.heroEyebrowEs ??
+          'Pablo Contreras · Lima, Perú · Disponible remoto LATAM/US',
         headline: overrides.heroHeadlineEs ?? 'Senior Full Stack Engineer',
         summary:
           overrides.heroSummaryEs ??
@@ -182,7 +184,9 @@ export function buildStrings(
       },
       nav: navEn('/en'),
       hero: {
-        eyebrow: overrides.heroEyebrowEn ?? 'Pablo Contreras · Lima, Peru',
+        eyebrow:
+          overrides.heroEyebrowEn ??
+          'Pablo Contreras · Lima, Peru · Remote-friendly LATAM/US',
         headline: overrides.heroHeadlineEn ?? 'Senior Full Stack Engineer',
         summary:
           overrides.heroSummaryEn ??

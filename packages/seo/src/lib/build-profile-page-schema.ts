@@ -87,11 +87,27 @@ export function buildProfilePageSchema(
       hasOccupation: {
         '@type': 'Occupation',
         name: jobTitle,
-        occupationLocation: {
-          '@type': 'Country',
-          name: locale === 'es' ? 'Perú' : 'Peru',
-        },
+        occupationLocation: [
+          {
+            '@type': 'Country',
+            name: locale === 'es' ? 'Perú' : 'Peru',
+          },
+          {
+            '@type': 'VirtualLocation',
+            name:
+              locale === 'es'
+                ? 'Remoto · zona horaria LATAM/US'
+                : 'Remote · LATAM/US timezone',
+          },
+        ],
         skills: knowsAbout.join(', '),
+      },
+      seeks: {
+        '@type': 'Demand',
+        name:
+          locale === 'es'
+            ? 'Roles full stack senior remotos (LATAM/US)'
+            : 'Remote senior full stack roles (LATAM/US)',
       },
     },
   }

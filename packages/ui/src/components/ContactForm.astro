@@ -294,7 +294,7 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
   function initContactForms(): void {
     const forms = document.querySelectorAll<HTMLFormElement>('.contact-form')
     forms.forEach((form) => {
-      form.addEventListener('submit', handleSubmit as EventListener)
+      form.addEventListener('submit', handleSubmit as unknown as EventListener)
     })
   }
 

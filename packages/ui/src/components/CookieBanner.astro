@@ -1,0 +1,170 @@
+---
+/**
+ * @component CookieBanner
+ * @description Banner GDPR opt-in para tracking. Persiste consent en
+ * localStorage ('cf_consent' = 'accepted' | 'rejected'). NO usa cookies
+ * (no cookie banner = simpler GDPR + no cookies = no banner needed
+ * tecnicamente, pero por buena practica pedimos opt-in explicito para
+ * el tracking pixel).
+ *
+ * @example
+ *   <CookieBanner />
+ */
+---
+
+<div id="cookie-banner" class="cookie-banner" hidden>
+  <div class="cookie-banner__content">
+    <p class="cookie-banner__text">
+      Este sitio usa <strong>analytics propios privacy-friendly</strong> (sin
+      cookies de terceros, datos auto-borran en 60 dias). ¿Permitis recolectar
+      tu visita para mejorar el contenido?
+    </p>
+    <div class="cookie-banner__actions">
+      <button
+        type="button"
+        class="cookie-banner__btn cookie-banner__btn--accept"
+        data-action="accept"
+      >
+        Aceptar
+      </button>
+      <button
+        type="button"
+        class="cookie-banner__btn cookie-banner__btn--reject"
+        data-action="reject"
+      >
+        Rechazar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'cf_consent'
+
+  type ConsentValue = 'accepted' | 'rejected'
+
+  function readConsent(): ConsentValue | null {
+    try {
+      const value = localStorage.getItem(STORAGE_KEY)
+      if (value === 'accepted' || value === 'rejected') return value
+    } catch {
+      // localStorage no disponible (Safari private mode)
+    }
+    return null
+  }
+
+  function writeConsent(value: ConsentValue): void {
+    try {
+      localStorage.setItem(STORAGE_KEY, value)
+    } catch {
+      // localStorage no disponible
+    }
+    document.dispatchEvent(
+      new CustomEvent('portfolio:consent-changed', { detail: { value } }),
+    )
+  }
+
+  function initCookieBanner(): void {
+    const banner = document.getElementById('cookie-banner') as HTMLDivElement | null
+    if (!banner) return
+
+    const consent = readConsent()
+    if (consent !== null) {
+      // Ya respondio - no mostrar
+      return
+    }
+
+    banner.hidden = false
+
+    banner.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action as ConsentValue
+        writeConsent(action)
+        banner.hidden = true
+      })
+    })
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCookieBanner)
+  } else {
+    initCookieBanner()
+  }
+</script>
+
+<style>
+  .cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    padding: var(--space-16) var(--space-24);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    box-shadow: var(--shadow-medium);
+  }
+
+  .cookie-banner__content {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    align-items: stretch;
+  }
+
+  @media (min-width: 768px) {
+    .cookie-banner__content {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-24);
+    }
+  }
+
+  .cookie-banner__text {
+    margin: 0;
+    font-size: var(--font-size-13);
+    color: var(--color-text-muted);
+    flex: 1;
+  }
+
+  .cookie-banner__text strong {
+    color: var(--color-text);
+  }
+
+  .cookie-banner__actions {
+    display: flex;
+    gap: var(--space-8);
+    flex-shrink: 0;
+  }
+
+  .cookie-banner__btn {
+    padding: var(--space-8) var(--space-16);
+    font-size: var(--font-size-13);
+    font-weight: 500;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+
+  .cookie-banner__btn--accept {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+    border-color: var(--color-primary);
+  }
+
+  .cookie-banner__btn--accept:hover {
+    background: var(--color-primary-hover);
+  }
+
+  .cookie-banner__btn--reject {
+    background: transparent;
+    color: var(--color-text);
+  }
+
+  .cookie-banner__btn--reject:hover {
+    background: var(--color-surface-2, var(--color-grey-15));
+  }
+</style>

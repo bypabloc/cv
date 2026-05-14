@@ -1,19 +1,27 @@
 ---
 /**
  * @component FilterChips
- * @description Barra de chips de filtrado del CV. Renderiza chips por
- *   dimension: tech, seniority, projectType, skills, hideConfidential, plus
- *   un boton "Limpiar filtros".
+ * @description UI de filtrado del CV con dos estados:
  *
- *   Default `hidden`: el JS de `@portfolio/cv-filters` la revela al cargar
- *   (sin JS = invisible). Cada chip declara `data-filter-chip="<dim>"` y
- *   `data-filter-value="<val>"` para que el bundle vanilla pueda detectar
- *   clicks y togglear estado.
+ *   1. **Colapsado (default)**: boton flotante "Filtros" sticky bottom-right
+ *      con badge contador de filtros activos. Ocupa cero espacio en el flujo.
+ *
+ *   2. **Expandido**: panel modal-like con chips por dimension. Click fuera
+ *      o boton X cierra. Mismos data-filter-chip="<dim>" + data-filter-value
+ *      del bundle vanilla `@portfolio/cv-filters`.
+ *
+ *   Sin JS el `[data-filter-bar]` queda con `hidden` y el toggle no aparece.
+ *   El bundle vanilla revela el toggle al cargar (`revealBar()`).
+ *
+ *   El bundle se encarga de:
+ *   - Toggle expand/collapse via click en `[data-filter-toggle]`
+ *   - Cerrar panel al click fuera
+ *   - Actualizar badge contador
  *
  * @props {string[]} techs - Tecnologias unicas para chips tech
  * @props {string[]} seniorities - Niveles unicos
  * @props {string[]} projectTypes - Tipos de proyecto unicos
- * @props {{ bar, clear, tech, seniority, type, confidential, skillsTechnical, skillsSoft }} labels - Strings i18n
+ * @props {labels} labels - Strings i18n
  *
  * @example
  *   <FilterChips
@@ -36,105 +44,185 @@ interface Props {
     confidential: string
     skillsTechnical: string
     skillsSoft: string
+    open?: string
+    close?: string
+    activeCountSingular?: string
+    activeCountPlural?: string
   }
 }
 
 const { techs, seniorities, projectTypes, labels } = Astro.props
+const t = {
+  open: labels.open ?? 'Filtros',
+  close: labels.close ?? 'Cerrar',
+  one: labels.activeCountSingular ?? 'filtro',
+  many: labels.activeCountPlural ?? 'filtros',
+  ...labels,
+}
 ---
 
-<aside class="filter-bar" data-filter-bar hidden aria-label={labels.bar}>
-  <div class="filter-bar__inner container-wide">
-    <div class="filter-group">
-      <span class="filter-group__label text-mono-label">{labels.tech}</span>
-      <div class="filter-group__chips">
-        {
-          techs.map((tech) => (
-            <button
-              type="button"
-              class="filter-chip text-mono"
-              data-filter-chip="tech"
-              data-filter-value={tech}
-              aria-pressed="false"
-            >
-              {tech}
-            </button>
-          ))
-        }
-      </div>
-    </div>
+<aside class="filter-shell" data-filter-bar hidden aria-label={labels.bar}>
+  <!-- Toggle button (siempre visible cuando JS activo) -->
+  <button
+    type="button"
+    class="filter-toggle"
+    data-filter-toggle
+    aria-expanded="false"
+    aria-controls="filter-panel"
+  >
+    <svg
+      class="filter-toggle__icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="4" y1="6" x2="20" y2="6"></line>
+      <line x1="7" y1="12" x2="17" y2="12"></line>
+      <line x1="10" y1="18" x2="14" y2="18"></line>
+    </svg>
+    <span class="filter-toggle__label">{t.open}</span>
+    <span class="filter-toggle__badge" data-filter-count hidden>0</span>
+  </button>
 
-    <div class="filter-group">
-      <span class="filter-group__label text-mono-label">{labels.seniority}</span>
-      <div class="filter-group__chips">
-        {
-          seniorities.map((s) => (
-            <button
-              type="button"
-              class="filter-chip text-mono"
-              data-filter-chip="seniority"
-              data-filter-value={s}
-              aria-pressed="false"
-            >
-              {s}
-            </button>
-          ))
-        }
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <span class="filter-group__label text-mono-label">{labels.type}</span>
-      <div class="filter-group__chips">
-        {
-          projectTypes.map((t) => (
-            <button
-              type="button"
-              class="filter-chip text-mono"
-              data-filter-chip="projectType"
-              data-filter-value={t}
-              aria-pressed="false"
-            >
-              {t}
-            </button>
-          ))
-        }
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <span class="filter-group__label text-mono-label">Skills</span>
-      <div class="filter-group__chips">
-        <button
-          type="button"
-          class="filter-chip text-mono"
-          data-filter-chip="skills"
-          data-filter-value="technical"
-          aria-pressed="false"
-        >
-          {labels.skillsTechnical}
-        </button>
-        <button
-          type="button"
-          class="filter-chip text-mono"
-          data-filter-chip="skills"
-          data-filter-value="soft"
-          aria-pressed="false"
-        >
-          {labels.skillsSoft}
-        </button>
-      </div>
-    </div>
-
-    <div class="filter-group filter-group--actions">
+  <!-- Panel expandible (oculto por default, JS toggles `is-open` class) -->
+  <div
+    class="filter-panel"
+    id="filter-panel"
+    data-filter-panel
+    role="dialog"
+    aria-modal="false"
+    aria-label={labels.bar}
+    hidden
+  >
+    <header class="filter-panel__header">
+      <h2 class="filter-panel__title text-h6">{labels.bar}</h2>
       <button
         type="button"
-        class="filter-chip text-mono"
-        data-filter-chip="hideConfidential"
-        data-filter-value="1"
-        aria-pressed="false"
+        class="filter-panel__close"
+        data-filter-toggle
+        aria-label={t.close}
       >
-        {labels.confidential}
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
       </button>
+    </header>
+
+    <div class="filter-panel__body">
+      <div class="filter-group">
+        <span class="filter-group__label text-mono-label">{labels.tech}</span>
+        <div class="filter-group__chips">
+          {
+            techs.map((tech) => (
+              <button
+                type="button"
+                class="filter-chip text-mono"
+                data-filter-chip="tech"
+                data-filter-value={tech}
+                aria-pressed="false"
+              >
+                {tech}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-group__label text-mono-label"
+          >{labels.seniority}</span
+        >
+        <div class="filter-group__chips">
+          {
+            seniorities.map((s) => (
+              <button
+                type="button"
+                class="filter-chip text-mono"
+                data-filter-chip="seniority"
+                data-filter-value={s}
+                aria-pressed="false"
+              >
+                {s}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-group__label text-mono-label">{labels.type}</span>
+        <div class="filter-group__chips">
+          {
+            projectTypes.map((tp) => (
+              <button
+                type="button"
+                class="filter-chip text-mono"
+                data-filter-chip="projectType"
+                data-filter-value={tp}
+                aria-pressed="false"
+              >
+                {tp}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-group__label text-mono-label">Skills</span>
+        <div class="filter-group__chips">
+          <button
+            type="button"
+            class="filter-chip text-mono"
+            data-filter-chip="skills"
+            data-filter-value="technical"
+            aria-pressed="false"
+          >
+            {labels.skillsTechnical}
+          </button>
+          <button
+            type="button"
+            class="filter-chip text-mono"
+            data-filter-chip="skills"
+            data-filter-value="soft"
+            aria-pressed="false"
+          >
+            {labels.skillsSoft}
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <button
+          type="button"
+          class="filter-chip filter-chip--toggle text-mono"
+          data-filter-chip="hideConfidential"
+          data-filter-value="1"
+          aria-pressed="false"
+        >
+          {labels.confidential}
+        </button>
+      </div>
+    </div>
+
+    <footer class="filter-panel__footer">
       <button
         type="button"
         class="filter-clear text-mono"
@@ -142,44 +230,191 @@ const { techs, seniorities, projectTypes, labels } = Astro.props
       >
         {labels.clear}
       </button>
-    </div>
+    </footer>
   </div>
+
+  <!-- Backdrop para cerrar al click fuera -->
+  <button
+    type="button"
+    class="filter-backdrop"
+    data-filter-backdrop
+    data-filter-toggle
+    aria-hidden="true"
+    tabindex="-1"
+    hidden></button>
 </aside>
 
 <style>
-  .filter-bar {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
-    padding-block: var(--space-12);
-    backdrop-filter: blur(8px);
+  .filter-shell {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 60;
   }
-  .filter-bar__inner {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-12);
+
+  /* Toggle: boton flotante bottom-right cuando el panel esta cerrado */
+  .filter-toggle {
+    position: fixed;
+    right: var(--space-16);
+    bottom: var(--space-16);
+    display: inline-flex;
     align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-10) var(--space-16);
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-pill);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: var(--shadow-medium);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
   }
+  .filter-toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  }
+  .filter-toggle:focus-visible {
+    outline: 2px solid var(--color-primary-contrast);
+    outline-offset: 2px;
+  }
+  .filter-toggle__icon {
+    flex-shrink: 0;
+  }
+  .filter-toggle__label {
+    white-space: nowrap;
+  }
+  .filter-toggle__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4em;
+    height: 1.4em;
+    padding: 0 var(--space-6);
+    border-radius: var(--radius-pill);
+    background: var(--color-primary-contrast);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .filter-toggle__badge[hidden] {
+    display: none;
+  }
+
+  /* Cuando el panel esta abierto, el toggle bottom-right desaparece y aparece el close en el panel */
+  .filter-shell.is-open .filter-toggle {
+    display: none;
+  }
+
+  /* Backdrop: detras del panel pero encima del resto */
+  .filter-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.5);
+    backdrop-filter: blur(2px);
+    border: none;
+    cursor: pointer;
+    pointer-events: auto;
+    padding: 0;
+    z-index: 1;
+  }
+  .filter-backdrop[hidden] {
+    display: none;
+  }
+  .filter-shell.is-open .filter-backdrop {
+    display: block;
+  }
+
+  /* Panel: encima del backdrop para recibir clicks */
+  .filter-panel {
+    position: fixed;
+    right: var(--space-16);
+    bottom: var(--space-16);
+    width: min(420px, calc(100vw - var(--space-32)));
+    max-height: calc(100vh - var(--space-32));
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 2;
+  }
+  .filter-panel[hidden] {
+    display: none;
+  }
+  .filter-shell.is-open .filter-panel {
+    display: flex;
+  }
+
+  .filter-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-12) var(--space-16);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .filter-panel__title {
+    margin: 0;
+    color: var(--color-text);
+  }
+  .filter-panel__close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .filter-panel__close:hover {
+    color: var(--color-text);
+    background: var(--color-surface-2);
+  }
+  .filter-panel__close:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .filter-panel__body {
+    padding: var(--space-12) var(--space-16);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  .filter-panel__footer {
+    padding: var(--space-12) var(--space-16);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+  }
+
   .filter-group {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: var(--space-6);
-    align-items: center;
   }
   .filter-group__label {
     color: var(--color-text-muted);
-    margin-right: var(--space-6);
   }
   .filter-group__chips {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-4);
   }
-  .filter-group--actions {
-    margin-left: auto;
-  }
+
   .filter-chip {
     background: var(--color-surface-2);
     border: 1px solid var(--color-border);
@@ -187,6 +422,7 @@ const { techs, seniorities, projectTypes, labels } = Astro.props
     padding: var(--space-3) var(--space-10);
     color: var(--color-text-muted);
     cursor: pointer;
+    font-family: inherit;
     transition:
       background-color 0.15s ease,
       color 0.15s ease,
@@ -201,16 +437,53 @@ const { techs, seniorities, projectTypes, labels } = Astro.props
     color: var(--color-primary-contrast);
     border-color: var(--color-primary);
   }
+  .filter-chip:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
   .filter-clear {
     background: transparent;
     border: 1px solid var(--color-danger);
     border-radius: var(--radius-pill);
-    padding: var(--space-3) var(--space-10);
+    padding: var(--space-6) var(--space-16);
     color: var(--color-danger);
     cursor: pointer;
+    font-family: inherit;
   }
   .filter-clear:hover {
     background: var(--color-danger);
     color: var(--color-primary-contrast);
+  }
+  .filter-clear:focus-visible {
+    outline: 2px solid var(--color-danger);
+    outline-offset: 2px;
+  }
+
+  /* Mobile: panel ocupa todo el ancho desde abajo */
+  @media (max-width: 640px) {
+    .filter-toggle {
+      right: var(--space-12);
+      bottom: var(--space-12);
+      padding: var(--space-8) var(--space-12);
+      font-size: 0.8rem;
+    }
+    .filter-panel {
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 80vh;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .filter-toggle,
+    .filter-chip,
+    .filter-panel__close {
+      transition: none;
+    }
   }
 </style>

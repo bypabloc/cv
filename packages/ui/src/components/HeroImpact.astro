@@ -99,13 +99,38 @@ const {
   /* Mobile-first: base 320-767px */
   .hero-impact {
     position: relative;
-    padding-block: var(--space-56) var(--space-40);
+    padding-block: var(--space-56) var(--space-72);
     overflow: hidden;
     isolation: isolate;
+    /* Full-bleed: escapa cualquier wrapper con padding/max-width */
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+  /* Degradado de transicion al siguiente bloque (StatsBar). Va por encima
+     del mesh y por debajo del contenido. Fade desde transparente hasta el
+     color de fondo del body para que el siguiente bloque se funda. */
+  .hero-impact::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: clamp(64px, 12vh, 160px);
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--color-bg) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
   }
   .hero-impact__inner {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    max-width: var(--container-wide, 1120px);
+    margin-inline: auto;
+    padding-inline: clamp(var(--space-16), 4vw, var(--space-40));
   }
   .hero-impact__top {
     display: flex;

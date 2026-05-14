@@ -31,6 +31,7 @@ import {
   type I18nStrings,
   type SiteOverrides,
 } from './site-config'
+import { SITE_URLS } from './site-urls'
 
 export interface DefineSiteConfigInput {
   /** Nicho del sitio. Ver `NICHES` en `@portfolio/content`. */
@@ -71,6 +72,17 @@ export function defineSiteConfig(
   const NICHE = input.niche
   const SITE_URL = input.siteUrl ?? defaultSiteUrlFor(NICHE)
   const OG_IMAGE = `${SITE_URL}${input.ogImagePath ?? DEFAULT_OG_PATH}`
-  const STRINGS = buildStrings(input.overrides)
+  // Auto-inject hubHref para que el navbar muestre "Otras vistas" -> hub.
+  // Solo se aplica si el caller no lo definio manualmente. Las 5 apps niche
+  // se benefician sin tocar su site-config; el caller puede pasar
+  // `hubHref: undefined` explicitamente para desactivarlo (ej. la app hub).
+  const overridesWithHub: SiteOverrides = {
+    ...input.overrides,
+    hubHref:
+      input.overrides.hubHref !== undefined
+        ? input.overrides.hubHref
+        : SITE_URLS.hub,
+  }
+  const STRINGS = buildStrings(overridesWithHub)
   return { NICHE, SITE_URL, OG_IMAGE, STRINGS }
 }

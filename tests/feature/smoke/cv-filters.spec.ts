@@ -7,6 +7,9 @@
  *   Cubre AC-4 (tech filter), AC-6 (date range), AC-11 (URL update sin
  *   reload), AC-13 (clear filters), AC-16 (JS disabled = todo visible),
  *   AC-19 (filtros persisten al cambiar locale), AC-20 (funciona en 5 apps).
+ *
+ *   UI model: toggle FAB siempre visible (cuando JS activo) + panel
+ *   colapsable con chips. Click en toggle abre panel.
  */
 
 import { expect, subdomainUrl, test } from '../fixtures/index.js'
@@ -35,8 +38,8 @@ test.describe('Feature: CV filters via query params', () => {
       await page.goto(`${subdomainUrl()}?tech=Vue`, {
         waitUntil: 'networkidle',
       })
-      // Wait for filter bar to appear (means JS booted)
-      await expect(page.locator('[data-filter-bar]')).toBeVisible({
+      // Toggle button visible = JS booted
+      await expect(page.locator('[data-filter-toggle]').first()).toBeVisible({
         timeout: 10_000,
       })
       // Cualquier item filterable sin Vue debe estar hidden
@@ -47,6 +50,15 @@ test.describe('Feature: CV filters via query params', () => {
       expect(visible).toBeLessThan(total)
       expect(visible).toBeGreaterThan(0)
     })
+
+    test('Given ?tech=Vue Then badge counter shows 1', async ({ page }) => {
+      await page.goto(`${subdomainUrl()}?tech=Vue`, {
+        waitUntil: 'networkidle',
+      })
+      const badge = page.locator('[data-filter-count]').first()
+      await expect(badge).toBeVisible({ timeout: 10_000 })
+      await expect(badge).toHaveText('1')
+    })
   })
 
   test.describe('AC-11: chip click updates URL without reload', () => {
@@ -56,10 +68,11 @@ test.describe('Feature: CV filters via query params', () => {
       await page.goto(subdomainUrl(), {
         waitUntil: 'networkidle',
       })
-      await expect(page.locator('[data-filter-bar]')).toBeVisible()
+      // Abrir panel para acceder a chips
+      await page.locator('[data-filter-toggle]').first().click()
+      await expect(page.locator('[data-filter-panel]').first()).toBeVisible()
 
-      // Inyectar un "marcador" en window para detectar reload completo:
-      // si hay reload, el marcador desaparece.
+      // Marcador para detectar full reload
       await page.evaluate(() => {
         ;(
           window as unknown as { __filterTestMarker: boolean }
@@ -73,7 +86,7 @@ test.describe('Feature: CV filters via query params', () => {
       // URL incluye el param
       await expect.poll(() => page.url(), { timeout: 5000 }).toContain('tech=')
 
-      // Marcador sigue vivo (no hubo full reload, history.replaceState lo preserva)
+      // Marcador vivo: no hubo full reload
       const markerStillThere = await page.evaluate(
         () =>
           (window as unknown as { __filterTestMarker?: boolean })
@@ -90,34 +103,38 @@ test.describe('Feature: CV filters via query params', () => {
       await page.goto(`${subdomainUrl()}?tech=Vue`, {
         waitUntil: 'networkidle',
       })
-      await expect(page.locator('[data-filter-bar]')).toBeVisible()
+      // Abrir panel para acceder al clear button
+      await page.locator('[data-filter-toggle]').first().click()
+      await expect(page.locator('[data-filter-panel]').first()).toBeVisible()
 
       await page.locator('[data-filter-clear="all"]').click()
-      // URL must lose query
+      // URL pierde query
       await expect.poll(() => page.url()).not.toContain('tech=')
-      // All items must be visible again
+      // Todos los items visibles otra vez
       const totalItems = await page.locator('[data-filterable]').count()
       const visibleItems = await page
         .locator('[data-filterable]:not([hidden])')
         .count()
       expect(visibleItems).toBe(totalItems)
+      // Badge oculto
+      await expect(page.locator('[data-filter-count]').first()).toBeHidden()
     })
   })
 
   test.describe('AC-16: ATS-safe fallback (JS disabled)', () => {
     test.use({ javaScriptEnabled: false })
 
-    test('Given JS disabled When load home Then filter bar is hidden and all items visible', async ({
+    test('Given JS disabled When load home Then filter shell is hidden and all items visible', async ({
       page,
     }) => {
       await page.goto(subdomainUrl(), { waitUntil: 'domcontentloaded' })
-      // Filter bar should still have `hidden` attribute (since JS never ran)
-      const filterBar = page.locator('[data-filter-bar]')
-      await expect(filterBar).toBeAttached()
-      const hidden = await filterBar.getAttribute('hidden')
+      // Shell con `hidden` (JS nunca lo removio)
+      const filterShell = page.locator('[data-filter-bar]')
+      await expect(filterShell).toBeAttached()
+      const hidden = await filterShell.getAttribute('hidden')
       expect(hidden).not.toBeNull()
 
-      // All items must be in the DOM (no hidden applied by JS)
+      // Todos los items en el DOM, ninguno hidden (JS no aplico filtros)
       const allItems = await page.locator('[data-filterable]').count()
       expect(allItems).toBeGreaterThan(0)
       const visibleItems = await page
@@ -128,39 +145,44 @@ test.describe('Feature: CV filters via query params', () => {
   })
 
   test.describe('AC-19: filters persist across locale switch', () => {
-    test('Given /?tech=Vue and click EN link Then /en?tech=Vue preserves param', async ({
+    test('Given /?tech=Vue and navigate to /en?tech=Vue Then filters apply', async ({
       page,
     }) => {
-      // Navigate with filter active
       await page.goto(`${subdomainUrl()}?tech=Vue`, {
         waitUntil: 'networkidle',
       })
-      // Manually navigate to EN keeping the query string
       await page.goto(`${subdomainUrl()}/en?tech=Vue`, {
         waitUntil: 'networkidle',
       })
-      await expect(page.locator('[data-filter-bar]')).toBeVisible()
+      await expect(page.locator('[data-filter-toggle]').first()).toBeVisible()
       const url = page.url()
       expect(url).toContain('/en')
       expect(url).toContain('tech=Vue')
+      // Y al menos un item visible despues del filtro
+      const visibleItems = await page
+        .locator('[data-filterable]:not([hidden])')
+        .count()
+      expect(visibleItems).toBeGreaterThan(0)
     })
   })
 
   test.describe('AC-20: filters work across 5 apps', () => {
     for (const app of APPS_WITH_FILTERS) {
-      test(`Given ${app.name} home with ?tech=TypeScript Then filter bar appears`, async ({
+      test(`Given ${app.name} home with ?tech=TypeScript Then filter toggle appears with active count`, async ({
         page,
       }) => {
         const baseUrl = subdomainUrl(app.host)
         await page.goto(`${baseUrl}/?tech=TypeScript`, {
           waitUntil: 'networkidle',
         })
-        await expect(page.locator('[data-filter-bar]')).toBeVisible({
+        // Toggle visible
+        await expect(page.locator('[data-filter-toggle]').first()).toBeVisible({
           timeout: 10_000,
         })
-        // At least one chip must be marked active
-        const activeChips = page.locator('[data-filter-chip].is-active')
-        await expect(activeChips.first()).toBeVisible({ timeout: 5_000 })
+        // Badge con 1
+        const badge = page.locator('[data-filter-count]').first()
+        await expect(badge).toBeVisible({ timeout: 5_000 })
+        await expect(badge).toHaveText('1')
       })
     }
   })
@@ -175,7 +197,18 @@ test.describe('Feature: CV filters via query params', () => {
       expect(contentType).toMatch(/javascript|application\/javascript/u)
       const body = await response.text()
       expect(body.length).toBeGreaterThan(1000)
-      expect(body.length).toBeLessThan(15_000) // sanity check: < 15kb minified
+      expect(body.length).toBeLessThan(15_000)
+    })
+  })
+
+  test.describe('Hub link in nav', () => {
+    test('Given generic app When inspecting nav Then includes external link to hub', async ({
+      page,
+    }) => {
+      await page.goto(subdomainUrl(), { waitUntil: 'domcontentloaded' })
+      // Link external al hub (target=_blank, href apunta a hub.localhost)
+      const hubLink = page.locator('a[target="_blank"][href*="hub."]').first()
+      await expect(hubLink).toBeVisible({ timeout: 10_000 })
     })
   })
 })

@@ -1,11 +1,24 @@
 # SPEC-000: Setup inicial del backend serverless
 
-**Estado**: draft
+**Estado**: done
 **Autor**: Pablo Contreras
 **Fecha**: 2026-05-14
-**Areas afectadas**: AWS account, Cloudflare account, SSM Parameter Store
+**Ejecutado**: 2026-05-14
+**Areas afectadas**: AWS account 637423614564, Cloudflare account, SSM Parameter Store, KMS, CloudWatch Alarms, SNS
 **Dependencias**: ninguna
 **Paralelizable con**: SPEC-011 (SES DNS)
+
+## Cambios respecto al draft original
+
+- **Region**: us-east-1 (no us-west-2). SES ya tiene Production Access GRANTED
+  en us-east-1 (case `173472640000887`), evitamos 24-48h de espera.
+- **Cuentas**: AWS `637423614564` (IAM user `dev` con Administrator),
+  Cloudflare account `f009aedf484e283f64a758dbcd725e9a`, Neon (project propio
+  con `DB_URL` en `docker/env/.dev`).
+- **Turnstile widget nuevo**: `Portfolio Backend` (sitekey `0x4AAAAAADPSoiQA_-LcRafo`)
+  con 8 hostnames (6 subdominios + `localhost` + `127.0.0.1`).
+- **Estrategia hibrida secrets**: solo `turnstile-secret` y `neon-url` en SSM
+  con KMS. Resto en env vars del SAM template (ver `serverless/docs/secrets.md`).
 
 ## 1. Contexto
 
@@ -26,7 +39,7 @@ template.yaml"). Este setup es prerequisito de todas las otras specs.
 
 Setup en 5 pasos manuales documentados, todos idempotentes:
 
-1. Verificar credenciales AWS CLI (perfil + region us-west-2)
+1. Verificar credenciales AWS CLI (perfil + region us-east-1)
 2. Crear KMS key custom + alias `alias/portfolio-lambdas` para encryption
    de SSM SecureStrings
 3. Crear SSM Parameters base (Turnstile secret, Neon URL placeholder,
@@ -44,18 +57,18 @@ Setup en 5 pasos manuales documentados, todos idempotentes:
   rotar individualmente sin perder los demas + IAM scope granular.
 - **Decision 3: AWS Billing Alarm en region us-east-1** — el billing
   service AWS solo emite metricas en us-east-1. La alarma se configura
-  alli aunque el resto del stack vive en us-west-2.
+  alli aunque el resto del stack vive en us-east-1.
 
 ## 3. Criterios de Aceptacion (AC)
 
 - **AC-1**: Given AWS CLI configurado con perfil correcto, When ejecuto
-  `aws sts get-caller-identity --region us-west-2`, Then retorna el
+  `aws sts get-caller-identity --region us-east-1`, Then retorna el
   account ID esperado del owner del portfolio
 - **AC-2**: Given KMS key creada, When ejecuto `aws kms describe-key
-  --key-id alias/portfolio-lambdas --region us-west-2`, Then retorna
+  --key-id alias/portfolio-lambdas --region us-east-1`, Then retorna
   KeyMetadata con `KeyState: Enabled` y `KeyUsage: ENCRYPT_DECRYPT`
 - **AC-3**: Given los 4 SSM Parameters creados, When ejecuto `aws ssm
-  describe-parameters --region us-west-2 --filters
+  describe-parameters --region us-east-1 --filters
   "Key=Name,Values=/portfolio"`, Then retorna 4 parameters
   (`/portfolio/turnstile-secret`, `/portfolio/neon-url`,
   `/portfolio/owner-email`, `/portfolio/ses-from-address`)
@@ -116,20 +129,20 @@ N/A.
 
 ```bash
 # 1. Verificar AWS CLI
-aws sts get-caller-identity --region us-west-2
+aws sts get-caller-identity --region us-east-1
 # Verificar: AC-1
 
 # 2. Crear KMS key
 aws kms create-key \
   --description "Portfolio backend Lambdas SSM encryption" \
-  --region us-west-2 \
+  --region us-east-1 \
   --tags TagKey=Project,TagValue=portfolio
 
 # Anotar el KeyId del output, luego crear alias:
 aws kms create-alias \
   --alias-name alias/portfolio-lambdas \
   --target-key-id <KEY_ID_DEL_OUTPUT> \
-  --region us-west-2
+  --region us-east-1
 # Verificar: AC-2
 
 # 3. Crear SSM Parameters (placeholder values, se rotan despues)

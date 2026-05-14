@@ -8,7 +8,7 @@
 
 | Spec | Titulo | Estado | Estimacion | Dependencias |
 |------|--------|--------|------------|--------------|
-| [SPEC-000](SPEC-000-setup-inicial.md) | Setup inicial (AWS account, SSM secrets, Cloudflare Turnstile widget) | draft | 0.5 dia | — |
+| [SPEC-000](SPEC-000-setup-inicial.md) | Setup inicial (AWS account, SSM secrets, Cloudflare Turnstile widget) | done | 0.5 dia | — |
 | [SPEC-001](SPEC-001-sam-template-base.md) | SAM template base + 3 tablas DynamoDB hot path | draft | 1 dia | SPEC-000 |
 | [SPEC-002](SPEC-002-common-module.md) | Modulo `src/common/` compartido (config, logger, types, clients) | draft | 0.5 dia | SPEC-001 |
 | [SPEC-003](SPEC-003-cache-module.md) | Cache module en `common/cache/` + tabla cache | draft | 1 dia | SPEC-002 |

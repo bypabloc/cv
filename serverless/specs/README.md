@@ -16,7 +16,7 @@
 | [SPEC-005](SPEC-005-contact-form-lambda.md) | Lambda `contact_form` (POST /contact + Turnstile + SES + rate-limit) | done | 1 dia | SPEC-002, SPEC-003, SPEC-004 |
 | [SPEC-006](SPEC-006-tracking-pixel-lambda.md) | Lambda `tracking_pixel` (POST /track + enrichment + rate-limit) | done | 0.5 dia | SPEC-002, SPEC-003, SPEC-004 |
 | [SPEC-007](SPEC-007-turnstile-validator-lambda.md) | Lambda `turnstile_validator` (POST /validate-turnstile) | done | 0.5 dia | SPEC-002, SPEC-003 |
-| [SPEC-008](SPEC-008-neon-setup-migrations.md) | Neon project + migrations SQL 001-005 + psycopg3 layer | draft | 1 dia | SPEC-001 |
+| [SPEC-008](SPEC-008-neon-setup-migrations.md) | Neon project + migrations SQL 001-005 + psycopg3 layer | done | 1 dia | SPEC-001 |
 | [SPEC-009](SPEC-009-stream-processor-lambda.md) | Lambda `stream_processor` (Streams -> Neon) + DLQ | draft | 1-2 dias | SPEC-005, SPEC-006, SPEC-008 |
 | [SPEC-010](SPEC-010-aggregator-lambda.md) | Lambda `aggregator` (cron 03:00 UTC) + materialized views | draft | 1-2 dias | SPEC-008, SPEC-009 |
 | [SPEC-011](SPEC-011-ses-dns-production.md) | SES domain verification (DKIM/SPF/DMARC) + production access | draft | 0.5 dia + 24-48h espera | SPEC-000 |

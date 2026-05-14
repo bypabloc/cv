@@ -1,0 +1,277 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+# ============================================================================
+# Portfolio backend serverless (form contacto + tracking pixel + analytics)
+# Region: us-east-1 | Runtime: Python 3.13 | Architecture: arm64 Graviton2
+# ============================================================================
+# SPEC-001: SAM template base con 3 tablas DynamoDB hot path, Layer Powertools
+# y API Gateway REST. Lambdas se agregan en SPECs 005/006/007/009/010/014.
+# ============================================================================
+
+Description: >
+  Portfolio backend serverless: 3 tablas DynamoDB hot path (contacts, tracking,
+  cache), 1 Lambda Layer compartido (Powertools v3 + httpx + pydantic) y
+  1 API Gateway REST con CORS multi-subdomain.
+  SPEC-001 - serverless/specs/SPEC-001-sam-template-base.md
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Ambiente del stack (dev | prod). Define naming + log level.
+  LogLevel:
+    Type: String
+    Default: INFO
+    AllowedValues:
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
+    Description: Powertools log level (default INFO; prod recomendado WARNING).
+  CorsAllowedOrigins:
+    Type: CommaDelimitedList
+    Default: 'https://the-full-stack.com,https://hub.the-full-stack.com,https://fintech.the-full-stack.com,https://architect.the-full-stack.com,https://leader.the-full-stack.com,https://vibe.the-full-stack.com'
+    Description: >
+      Whitelist de origins para CORS. La Lambda valida el Origin header y
+      hace echo del valor matcheado en Access-Control-Allow-Origin (no usar
+      '*' por compatibilidad con credentials: include en futuro).
+
+# ============================================================================
+# Globals: configuracion compartida por TODAS las Lambdas del stack
+# ============================================================================
+# Decision (ADR-001): Python 3.13 oficial desde Nov 2024, LTS hasta Oct 2029
+# Decision (ADR-006): arm64 Graviton2 da -20% costo + +19% perf vs x86_64
+# Tracing: Active habilita X-Ray para todo el stack (free tier 100k traces/mes)
+# LogRetentionInDays: 7 cabe en 5 GB/mes free tier de CloudWatch Logs
+# ============================================================================
+Globals:
+  Function:
+    Runtime: python3.13
+    Architectures:
+      - arm64
+    Timeout: 30
+    MemorySize: 512
+    Tracing: Active
+    Environment:
+      Variables:
+        # Powertools v3 envs (logger / tracer / metrics)
+        POWERTOOLS_SERVICE_NAME: portfolio-backend
+        POWERTOOLS_METRICS_NAMESPACE: Portfolio
+        POWERTOOLS_LOG_LEVEL: !Ref LogLevel
+        LOG_LEVEL: !Ref LogLevel
+        # Nombres de tablas (las Lambdas las leen via os.environ)
+        CONTACTS_TABLE_NAME: !Ref ContactsTable
+        TRACKING_TABLE_NAME: !Ref TrackingTable
+        CACHE_TABLE_NAME: !Ref CacheTable
+        # SSM paths (las Lambdas resuelven valores con boto3 SSM client)
+        SSM_TURNSTILE_SECRET_PATH: /portfolio/turnstile-secret
+        SSM_NEON_URL_PATH: /portfolio/neon-url
+        SSM_OWNER_EMAIL_PATH: /portfolio/owner-email
+        SSM_SES_FROM_PATH: /portfolio/ses-from-address
+        # KMS key alias para decryption de SSM SecureStrings
+        KMS_KEY_ALIAS: alias/portfolio-lambdas
+        # Stage marker para conditional behavior (ej: skip Turnstile en test)
+        STAGE: !Ref Stage
+    Tags:
+      Project: portfolio
+      ManagedBy: SAM
+      Stage: !Ref Stage
+
+  # NOTA: Globals.Api se agrega en SPEC-005 con la primera Function que tenga
+  # Events: Api. CloudFormation no acepta crear un AWS::Serverless::Api sin
+  # metodos (HandlerErrorCode: InvalidRequest "REST API doesn't contain any
+  # methods"). El API se materializa cuando aparece el primer endpoint.
+
+Resources:
+  # ==========================================================================
+  # Lambda Layer compartido: Powertools v3 + httpx + pydantic
+  # ==========================================================================
+  # Decision: 1 layer para todas las Lambdas, separado de psycopg3 layer
+  # (este queda para SPEC-008 con compilacion arm64 cross-platform).
+  # Layer en lugar de requirements.txt por Lambda reduce cold start ~80ms.
+  # ==========================================================================
+  CommonLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub portfolio-common-${Stage}
+      Description: Powertools v3 + httpx + pydantic v2 compartido entre Lambdas
+      ContentUri: src/layers/common_python/
+      CompatibleRuntimes:
+        - python3.13
+      CompatibleArchitectures:
+        - arm64
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.13
+      BuildArchitecture: arm64
+
+  # ==========================================================================
+  # API Gateway: se crea en SPEC-005 con la primera Function
+  # ==========================================================================
+  # Decision (ADR-002): REST API (no HTTP API) por usage plans + request
+  # validators. REST cuesta 3.5x mas que HTTP pero el portfolio esta dentro
+  # de free tier (1M req/mes primer ano).
+  # CORS, AccessLogSetting, Cors block, etc. se definen en SPEC-005 cuando
+  # se agrega el primer endpoint. CloudFormation requiere al menos un
+  # metodo HTTP para crear un Deployment del REST API; sin eso falla con
+  # "REST API doesn't contain any methods" (InvalidRequest).
+  # ==========================================================================
+
+  # ==========================================================================
+  # DynamoDB: ContactsTable - form de contacto
+  # ==========================================================================
+  # PK: id (UUIDv7 hex) - sorted by time naturally (ADR-004)
+  # Streams: NEW_AND_OLD_IMAGES para SPEC-009 stream_processor -> Neon PG
+  # PITR: enabled para recovery <35d
+  # Capacity: On-Demand (free tier 25 WCU + 25 RCU + 25 GB perpetuo)
+  # ==========================================================================
+  ContactsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-contacts-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+  # ==========================================================================
+  # DynamoDB: TrackingTable - eventos de tracking pixel
+  # ==========================================================================
+  # PK + SK composite: (session_id, page_id) permite query "session journey"
+  # TTL: expires_at (Unix epoch) - AWS borra automaticamente sin WCU cost
+  # Retention 60d via expires_at = now + 60 dias en cada PutItem
+  # Streams: NEW_AND_OLD_IMAGES (REMOVE events vienen de TTL expirations)
+  # ==========================================================================
+  TrackingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-tracking-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: session_id
+          AttributeType: S
+        - AttributeName: page_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: session_id
+          KeyType: HASH
+        - AttributeName: page_id
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+  # ==========================================================================
+  # DynamoDB: CacheTable - cache key-value (SPEC-003)
+  # ==========================================================================
+  # PK: cache_key (string)
+  # TTL: expires_at (Unix epoch) - AWS borra hasta 48h despues sin WCU cost
+  # NO Streams - los eventos de cache no son interesantes para replicar
+  # Patron documentado en .claude/docs/dynamodb-cache/
+  # ==========================================================================
+  CacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-cache-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: cache_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: cache_key
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      # NO PITR para cache (datos ephemeral por diseno)
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+# ============================================================================
+# Outputs: usados por devtools y otros stacks dependientes
+# ============================================================================
+Outputs:
+  # NOTA: ApiEndpoint + ApiId se exportan en SPEC-005 cuando se materializa
+  # el AWS::Serverless::Api con su primer metodo HTTP.
+  ContactsTableName:
+    Description: Tabla DynamoDB de contacts (form submissions)
+    Value: !Ref ContactsTable
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-ContactsTable
+  ContactsTableArn:
+    Description: ARN de ContactsTable para IAM policies de Lambdas
+    Value: !GetAtt ContactsTable.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-ContactsTableArn
+  ContactsStreamArn:
+    Description: Stream ARN de ContactsTable para SPEC-009 stream_processor
+    Value: !GetAtt ContactsTable.StreamArn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-ContactsStreamArn
+  TrackingTableName:
+    Description: Tabla DynamoDB de tracking pixel (TTL 60d)
+    Value: !Ref TrackingTable
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-TrackingTable
+  TrackingTableArn:
+    Value: !GetAtt TrackingTable.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-TrackingTableArn
+  TrackingStreamArn:
+    Value: !GetAtt TrackingTable.StreamArn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-TrackingStreamArn
+  CacheTableName:
+    Description: Tabla DynamoDB de cache key-value
+    Value: !Ref CacheTable
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-CacheTable
+  CacheTableArn:
+    Value: !GetAtt CacheTable.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-CacheTableArn
+  CommonLayerArn:
+    Description: ARN del CommonLayer para reusar en otros stacks
+    Value: !Ref CommonLayer
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-CommonLayerArn

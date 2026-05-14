@@ -67,6 +67,8 @@ Globals:
         CONTACTS_TABLE_NAME: !Ref ContactsTable
         TRACKING_TABLE_NAME: !Ref TrackingTable
         CACHE_TABLE_NAME: !Ref CacheTable
+        RATE_LIMIT_RULES_TABLE_NAME: !Ref RateLimitRulesTable
+        RATE_LIMIT_BUCKETS_TABLE_NAME: !Ref RateLimitBucketsTable
         # SSM paths (las Lambdas resuelven valores con boto3 SSM client)
         SSM_TURNSTILE_SECRET_PATH: /portfolio/turnstile-secret
         SSM_NEON_URL_PATH: /portfolio/neon-url
@@ -227,6 +229,74 @@ Resources:
         - Key: Stage
           Value: !Ref Stage
 
+  # ==========================================================================
+  # DynamoDB: RateLimitRulesTable - rules per-endpoint/IP/country (SPEC-004)
+  # ==========================================================================
+  # PK: rule_key (string), SK: kind (string)
+  # rule_key examples: 'endpoint#/contact', 'ip#1.2.3.4', 'country#CN'
+  # kind: 'endpoint' | 'ip_whitelist' | 'ip_blacklist' | 'country'
+  # TTL: expires_at (para auto-blacklist con 24h expiry)
+  # ==========================================================================
+  RateLimitRulesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-rate-limit-rules-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: rule_key
+          AttributeType: S
+        - AttributeName: kind
+          AttributeType: S
+      KeySchema:
+        - AttributeName: rule_key
+          KeyType: HASH
+        - AttributeName: kind
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+  # ==========================================================================
+  # DynamoDB: RateLimitBucketsTable - sliding window counters (SPEC-004)
+  # ==========================================================================
+  # PK: bucket_key (string)
+  # bucket_key format: 'ip#<IP>#endpoint#<PATH>#window#<TIMESTAMP>'
+  # Atomic ADD :inc para count + turnstile_tokens
+  # TTL: window_start + window_seconds * 2 (mantener previous window)
+  # ==========================================================================
+  RateLimitBucketsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-rate-limit-buckets-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: bucket_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: bucket_key
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
 # ============================================================================
 # Outputs: usados por devtools y otros stacks dependientes
 # ============================================================================
@@ -275,3 +345,21 @@ Outputs:
     Value: !Ref CommonLayer
     Export:
       Name: !Sub portfolio-backend-${Stage}-CommonLayerArn
+  RateLimitRulesTableName:
+    Description: Tabla DynamoDB de rate-limit rules (per-IP/endpoint/country)
+    Value: !Ref RateLimitRulesTable
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-RateLimitRulesTable
+  RateLimitRulesTableArn:
+    Value: !GetAtt RateLimitRulesTable.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-RateLimitRulesTableArn
+  RateLimitBucketsTableName:
+    Description: Tabla DynamoDB de rate-limit sliding window counters
+    Value: !Ref RateLimitBucketsTable
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-RateLimitBucketsTable
+  RateLimitBucketsTableArn:
+    Value: !GetAtt RateLimitBucketsTable.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-RateLimitBucketsTableArn

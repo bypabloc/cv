@@ -1,12 +1,25 @@
 # SPEC-004: Rate-limit module en `common/rate_limit/` + 2 tablas
 
-**Estado**: draft
+**Estado**: done
 **Autor**: Pablo Contreras
 **Fecha**: 2026-05-14
-**Areas afectadas**: `serverless/src/common/rate_limit/`,
-`rate_limit_rules`, `rate_limit_buckets`, `serverless/template.yaml`
-**Dependencias**: SPEC-002 (common), SPEC-003 (cache para rules cacheadas)
-**Paralelizable con**: ninguna del nivel (es la base de contact_form y tracking_pixel)
+**Ejecutado**: 2026-05-14
+**Areas afectadas**: `serverless/src/common/rate_limit/` (8 archivos), `serverless/template.yaml` (+2 tablas)
+**Dependencias**: SPEC-002, SPEC-003
+**Paralelizable con**: ninguna del nivel
+
+## Resumen ejecucion
+
+- 8 archivos creados en `src/common/rate_limit/`
+- 2 tablas DynamoDB agregadas al SAM template: RateLimitRulesTable (PK+SK) + RateLimitBucketsTable (PK only)
+- Tablas deployadas en stacks dev + prod (us-east-1, status ACTIVE)
+- 3 archivos de tests con 20 tests, 94% coverage del rate_limit module (90.22% total proyecto)
+- Reglas iniciales NO cargadas en esta spec (se hace post-deploy via CLI)
+
+## Cambios respecto al draft original
+
+- DynamoDB UpdateExpression: solo UNA seccion `ADD` permitida. Combinado `count` y `turnstile_tokens` en el mismo ADD cuando turnstile_validated=True.
+- Sin tests de concurrencia (race conditions) con threading: el atomic ADD de DynamoDB se confia en la implementacion AWS. Se valida con stress test en SPECs 005+.
 
 ## 1. Contexto
 

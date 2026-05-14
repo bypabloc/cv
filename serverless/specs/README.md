@@ -12,7 +12,7 @@
 | [SPEC-001](SPEC-001-sam-template-base.md) | SAM template base + 3 tablas DynamoDB hot path | done | 1 dia | SPEC-000 |
 | [SPEC-002](SPEC-002-common-module.md) | Modulo `src/common/` compartido (config, logger, types, clients) | done | 0.5 dia | SPEC-001 |
 | [SPEC-003](SPEC-003-cache-module.md) | Cache module en `common/cache/` + tabla cache | done | 1 dia | SPEC-002 |
-| [SPEC-004](SPEC-004-rate-limit-module.md) | Rate-limit module en `common/rate_limit/` + 2 tablas | draft | 1 dia | SPEC-002, SPEC-003 |
+| [SPEC-004](SPEC-004-rate-limit-module.md) | Rate-limit module en `common/rate_limit/` + 2 tablas | done | 1 dia | SPEC-002, SPEC-003 |
 | [SPEC-005](SPEC-005-contact-form-lambda.md) | Lambda `contact_form` (POST /contact + Turnstile + SES + rate-limit) | draft | 1 dia | SPEC-002, SPEC-003, SPEC-004 |
 | [SPEC-006](SPEC-006-tracking-pixel-lambda.md) | Lambda `tracking_pixel` (POST /track + enrichment + rate-limit) | draft | 0.5 dia | SPEC-002, SPEC-003, SPEC-004 |
 | [SPEC-007](SPEC-007-turnstile-validator-lambda.md) | Lambda `turnstile_validator` (POST /validate-turnstile) | draft | 0.5 dia | SPEC-002, SPEC-003 |

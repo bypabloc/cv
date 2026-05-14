@@ -261,6 +261,11 @@ Antes de trabajar, identifica que contexto necesitas:
 | AWS DynamoDB | [.claude/docs/aws-dynamodb/README.md](.claude/docs/aws-dynamodb/README.md) o skill `aws-dynamodb` | On-demand, TTL, boto3, single-table, GSI, pricing 2026 |
 | AWS SES | [.claude/docs/aws-ses/README.md](.claude/docs/aws-ses/README.md) o skill `aws-ses` | Email transaccional v2: DKIM/SPF/DMARC, sandbox→prod, bounces, costos |
 | Cloudflare Turnstile | [.claude/docs/cloudflare-turnstile/README.md](.claude/docs/cloudflare-turnstile/README.md) o skill `cloudflare-turnstile` | CAPTCHA alternativa: Managed mode, frontend Astro, validation backend |
+| Neon PostgreSQL | [.claude/docs/neon/README.md](.claude/docs/neon/README.md) o skill `neon` | Serverless PG 18, scale-to-zero, branching git-style, psycopg3 en Lambda, vs RDS/Supabase |
+| PostgreSQL 18 Analytics | [.claude/docs/postgresql-18-analytics/README.md](.claude/docs/postgresql-18-analytics/README.md) | Schema de las 4 tablas del backend, window functions, partitioning, JSONB, queries dashboard. Complementa skill `postgresql-18` |
+| DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/src/common/cache/` |
+| Backend serverless | [serverless/ARCHITECTURE.md](serverless/ARCHITECTURE.md) + [INTEGRATION.md](serverless/INTEGRATION.md) | Estructura + diagramas ASCII + propuesta hibrida DynamoDB+Neon+Cache |
+| Devtools serverless CLI | [devtools/serverless/README.md](devtools/serverless/README.md) | `python devtools/run.py serverless <command>` — build, deploy, invoke, logs, db-migrate, db-branch, cache, smoke |
 
 ## Skills disponibles
 
@@ -298,6 +303,8 @@ Stack IaC: AWS SAM. Costo estimado: ~$7/mes (dominado por WAF Web ACL).
 | `aws-dynamodb` | 2 tablas (contacts + tracking), On-Demand, TTL 60d, boto3 Decimal/ConditionExpression, IAM scoped, pricing 2026 |
 | `aws-ses` | Email transaccional v2 desde Lambda (DKIM/SPF/DMARC en Cloudflare DNS, sandbox→prod approval, bounce/complaint, MJML HTML, free tier 62k/mes) |
 | `cloudflare-turnstile` | CAPTCHA alternativa privacy-preserving: 1 sitekey para 6 subdominios, Managed mode form + Invisible tracking, idempotency_key, CSP directives |
+| `neon` | Neon serverless PostgreSQL: scale-to-zero, branching git-style, integracion con AWS Lambda Python via psycopg3, free tier 0.5GB + 191.9h compute/mes, vs RDS/Supabase/PlanetScale |
+| `dynamodb-cache` | Sistema de cache con DynamoDB TTL: `@cached(ttl)` decorator, lock distribuido (cache stampede prevention), stale-while-revalidate, tag invalidation. Vive en `serverless/src/common/cache/` y se usa desde todas las Lambdas |
 
 ### Referencia futura (backend Python/Django — no aplican hoy)
 

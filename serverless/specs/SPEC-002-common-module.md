@@ -1,11 +1,32 @@
 # SPEC-002: Modulo `src/common/` compartido
 
-**Estado**: draft
+**Estado**: done
 **Autor**: Pablo Contreras
 **Fecha**: 2026-05-14
-**Areas afectadas**: `serverless/src/common/`
+**Ejecutado**: 2026-05-14
+**Areas afectadas**: `serverless/src/common/` (14 archivos), `serverless/tests/`
 **Dependencias**: SPEC-001
 **Paralelizable con**: SPEC-008
+
+## Resumen ejecucion
+
+- 14 archivos creados en `src/common/`: config, logger, tracer, metrics,
+  responses, cors, exceptions, dynamodb_client, ses_client, ssm_client,
+  ip_extractor, ulid, validators, types
+- 7 archivos de tests con 93 tests, 89.44% coverage en `src/common/`
+- `conftest.py` global con fixtures `aws_credentials`, `reset_settings_cache`,
+  `api_gw_event` factory
+- ruff lint pasa sin errores
+- Coverage no aplica a logger/tracer/metrics/dynamodb_client/ses_client
+  porque son boto3 instances que se inicializan al import (mocks en tests
+  de Lambdas que los usan en SPECs 005-014)
+
+## Cambios respecto al draft original
+
+- AC-1 (logger inject_lambda_context): N/A test unitario, se verifica en
+  SPEC-005 con handler completo
+- AC-6 (ssm cache hit): test verificado modificando SSM directamente y
+  comprobando que get_secret retorna el valor cacheado
 
 ## 1. Contexto
 

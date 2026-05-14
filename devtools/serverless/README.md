@@ -94,8 +94,56 @@ python devtools/run.py serverless <command> [--stage=local] [flags...]
 
 | Comando | Descripcion | Flags |
 | ------- | ----------- | ----- |
-| `metrics` | Resumen CloudWatch (Lambda + API GW + WAF) | `--stage`, `--since`, `--output` |
+| `metrics` | Resumen CloudWatch (Lambda + API GW) | `--stage`, `--since`, `--output` |
 | `alarms` | Lista alarmas + estado | `--stage`, `--output` |
+
+### Rate-limit (alternativa $0 a AWS WAF, DynamoDB self-managed)
+
+Toman una sub-accion como segundo positional. Gestionan las tablas
+`rate_limit_rules` y `rate_limit_buckets`. Detalle completo en
+[.claude/docs/serverless-rate-limit/](../../.claude/docs/serverless-rate-limit/)
++ skill `serverless-rate-limit`.
+
+| Comando | Descripcion | Flags |
+| ------- | ----------- | ----- |
+| `rate-limit list` | Lista todas las reglas (endpoint, IP, country) | `--output=text\|json` |
+| `rate-limit show <rule_key>` | Detalle de una regla | |
+| `rate-limit set` | Crear/actualizar regla endpoint o country | `--endpoint=/X` o `--country=XX`, `--limit=N`, `--window=N`, `--action=throttle\|block`, `--reason="..."`, `--dry-run` |
+| `rate-limit allow` | Agregar IP a whitelist | `--ip=X.X.X.X`, `--reason="..."` |
+| `rate-limit block` | Agregar IP a blacklist (TTL opcional) | `--ip=X.X.X.X`, `--ttl=86400`, `--reason="..."` |
+| `rate-limit unblock` | Eliminar IP de listas (DESTRUCTIVO) | `--ip=X.X.X.X`, `--confirm`, `--dry-run` |
+| `rate-limit stats` | Top IPs throttled + auto-blacklists | `--since=1h\|6h\|24h\|7d`, `--output` |
+| `rate-limit clear-buckets` | Reset counters (DESTRUCTIVO, solo debugging) | `--confirm`, `--dry-run` |
+
+Ejemplos:
+
+```bash
+# Listar reglas
+python devtools/run.py serverless rate-limit list
+
+# Configurar limits del form de contacto
+python devtools/run.py serverless rate-limit set \
+    --endpoint=/contact --limit=3 --window=300 \
+    --action=throttle --reason="MVP launch"
+
+# Whitelist tu IP de testing
+python devtools/run.py serverless rate-limit allow --ip=200.110.50.5
+
+# Blacklist temporal (24h) de IP atacante
+python devtools/run.py serverless rate-limit block \
+    --ip=203.0.113.42 --ttl=86400 --reason="brute force form"
+
+# Bloquear pais entero
+python devtools/run.py serverless rate-limit set \
+    --country=XX --action=block --reason="ataques sostenidos"
+
+# Stats ultimas 24h
+python devtools/run.py serverless rate-limit stats --since=24h --output=json
+
+# Desbloquear IP
+python devtools/run.py serverless rate-limit unblock \
+    --ip=203.0.113.42 --confirm
+```
 
 ### Maintenance
 

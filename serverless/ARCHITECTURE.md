@@ -9,7 +9,7 @@
 > **IaC**: AWS SAM
 > **Storage hibrido**: DynamoDB (hot path, writes) + Neon PostgreSQL 18 (analytics, queries)
 > **CLI**: `python devtools/run.py serverless <command>` (ver devtools/serverless/README.md)
-> **Costo estimado**: ~$7/mes (dominado por WAF Web ACL; Neon free tier perpetuo)
+> **Costo estimado**: ~$0.81/mes (sin WAF; rate-limit self-managed con DynamoDB; Neon free tier perpetuo)
 
 ---
 
@@ -23,7 +23,7 @@ serverless/
 ├── DEPLOYMENT.md                        # Pasos exactos para deploy primera vez
 ├── RUNBOOK.md                           # Operaciones (rotar secrets, ver logs, alarms)
 │
-├── template.yaml                        # SAM template: 3 Lambdas + API GW + WAF + 2 tablas + SES + IAM
+├── template.yaml                        # SAM template: 5 Lambdas + API GW + DynamoDB tables + SES + IAM (sin WAF)
 ├── samconfig.toml                       # Config SAM por ambiente (dev, prod)
 ├── pyproject.toml                       # Dependencias compartidas (uv-managed)
 ├── uv.lock                              # Lockfile reproducible
@@ -48,16 +48,25 @@ serverless/
 │   │   ├── ulid.py                      # UUIDv7 generator (sorted by time)
 │   │   ├── validators.py                # Email regex + sanitizers (length, html-escape)
 │   │   ├── types.py                     # TypedDicts compartidos (Event, Context, Response)
-│   │   └── cache/                       # Sistema de cache con DynamoDB TTL (reusable)
-│   │       ├── __init__.py              # Exports: DynamoDBCache, cached, CacheStatus
-│   │       ├── client.py                # class DynamoDBCache (get/set/delete/invalidate/lock)
-│   │       ├── decorator.py             # @cached(ttl, namespace, stale_for, tags)
-│   │       ├── swr.py                   # Stale-while-revalidate: fresh|stale|expired states
-│   │       ├── stampede.py              # Lock distribuido + XFetch probabilistic refresh
-│   │       ├── invalidation.py          # Tag-based bulk invalidation (Scan + UpdateItem)
-│   │       ├── serializers.py           # JSON + bytes_b64 fallback (Pydantic)
-│   │       ├── types.py                 # TypedDicts: CacheEntry, CacheKey, CacheStatus
-│   │       └── README.md                # Quick start + patterns + cuando usar SWR vs sync
+│   │   ├── cache/                       # Sistema de cache con DynamoDB TTL (reusable)
+│   │   │   ├── __init__.py              # Exports: DynamoDBCache, cached, CacheStatus
+│   │   │   ├── client.py                # class DynamoDBCache (get/set/delete/invalidate/lock)
+│   │   │   ├── decorator.py             # @cached(ttl, namespace, stale_for, tags)
+│   │   │   ├── swr.py                   # Stale-while-revalidate: fresh|stale|expired states
+│   │   │   ├── stampede.py              # Lock distribuido + XFetch probabilistic refresh
+│   │   │   ├── invalidation.py          # Tag-based bulk invalidation (Scan + UpdateItem)
+│   │   │   ├── serializers.py           # JSON + bytes_b64 fallback (Pydantic)
+│   │   │   ├── types.py                 # TypedDicts: CacheEntry, CacheKey, CacheStatus
+│   │   │   └── README.md                # Quick start + patterns + cuando usar SWR vs sync
+│   │   └── rate_limit/                  # Rate-limit per-IP con DynamoDB (alternativa $0 a WAF)
+│   │       ├── __init__.py              # Exports: check_or_raise, RateLimitExceededError
+│   │       ├── check.py                 # API principal check_or_raise(ip, endpoint, country, turnstile_validated)
+│   │       ├── rules.py                 # Lee rate_limit_rules table (cached via common.cache TTL 60s)
+│   │       ├── buckets.py               # Sliding window weighted + atomic INCREMENT en rate_limit_buckets
+│   │       ├── auto_blacklist.py        # Bot detection: 3+ tokens Turnstile validos en 60s -> blacklist 24h
+│   │       ├── decisions.py             # TypedDict Decision(allowed, reason, retry_after, status_code)
+│   │       ├── exceptions.py            # RateLimitExceededError, IPBlacklistedError, CountryBlockedError
+│   │       └── README.md                # Algoritmo + integracion en handlers
 │   │
 │   ├── contact_form/                    # Lambda 1: POST /contact
 │   │   ├── __init__.py
@@ -180,12 +189,12 @@ serverless/
 │   ├── data-model.md                    # Schema de las 2 tablas DynamoDB (contacts, tracking)
 │   ├── secrets.md                       # Inventario de SSM Parameters + KMS keys
 │   ├── monitoring.md                    # Dashboards, alarms, queries Logs Insights
-│   ├── waf-rules.md                     # Detalle de cada rate-based rule + ScopeDownStatement
+│   ├── rate-limit-rules.md              # Esquema de rate_limit_rules + auto-blacklist patterns
 │   ├── ses-setup.md                     # DKIM/SPF/DMARC records exactos para Cloudflare DNS
 │   └── adr/                             # Architecture Decision Records
 │       ├── 001-python-3.13-vs-3.14.md
 │       ├── 002-rest-api-vs-http-api.md
-│       ├── 003-waf-rate-based-no-api-gw-native.md
+│       ├── 003-dynamodb-rate-limit-no-waf.md     # Decision: self-managed rate-limit en lugar de WAF ($0 vs $7/mes)
 │       ├── 004-on-demand-no-provisioned.md
 │       ├── 005-two-tables-no-single-table.md
 │       ├── 006-arm64-graviton2.md
@@ -253,21 +262,13 @@ serverless/
                               |
                               v
                        +----------------------+
-                       |    AWS WAF v2        |   Capa 1: Defense
-                       |  rate-based rule     |   - Limit 3 req/5min/IP
-                       |  per-IP aggregation  |   - Bloquea volumetria
-                       +----------------------+   - $5/mo Web ACL fijo
+                       |  Cloudflare upstream |   Capa 1: Defense edge (free)
+                       |  DDoS L3/L4/L7       |   - Mitigation ilimitada
+                       |  Bot Fight Mode      |   - Bloquea bots conocidos
+                       |  CF-Connecting-IP    |   - Inyecta headers reales
+                       +----------------------+
                               |
-                  +-----------+-----------+
-                  | IP bajo limit?        |
-                  +-----------+-----------+
-                  | YES                   | NO
-                  v                       v
-                  PASS               +--------+
-                                     | 403    |  WAF block (atacante)
-                                     +--------+
-                  |
-                  v
+                              v
                        +----------------------+
                        |  API Gateway REST    |   Capa 2: Throttling global
                        |  POST /contact       |   - Burst 5, steady 1/s
@@ -500,9 +501,8 @@ CAPA 5 transversal: CloudWatch Logs + X-Ray traces + Alarms
                     |
                     v
             +----------------------+
-            |    AWS WAF v2        |   Capa 1
-            |  rate-based rule     |   Limit 30 req/5min/IP
-            |  /track endpoint     |   (mas permisivo que contact)
+            |  Cloudflare upstream |   Capa 1 (free)
+            |  DDoS + Bot Fight    |
             +----------------------+
                     |
                     v
@@ -800,8 +800,9 @@ POR QUE 03:00 UTC:
         |                                          |
         v                                          v
    +-------------+                          +-------------+
-   | WAF rate-   |                          | WAF rate-   |
-   | based 3/5m  |                          | based 30/5m |
+   | Cloudflare  |                          | Cloudflare  |
+   | DDoS+Bot    |                          | DDoS+Bot    |
+   | (free)      |                          | (free)      |
    +-------------+                          +-------------+
         |                                          |
         v                                          v
@@ -815,8 +816,11 @@ POR QUE 03:00 UTC:
    +-------------+                          +-------------+
    | Lambda:     |                          | Lambda:     |
    | contact_form|                          | tracking_   |
-   | (valida CF  |                          | pixel       |
-   |  turnstile) |                          | (enrich CF) |
+   | reserved=5  |                          | pixel       |
+   | 1. Turnstile|                          | reserved=20 |
+   | 2. Rate-    |                          | 1. Rate-    |
+   |    limit MW |                          |    limit MW |
+   | 3. Persist  |                          | 2. Enrich CF|
    +------+------+                          +------+------+
           |                                        |
           | put_item                               | put_item
@@ -1073,6 +1077,179 @@ CUANDO NO USAR cache:
 - Stream processing (cada record es unico)
 - Operaciones con side effects (writes a Dynamo/SES/PG)
 
+## 4.9. Diagrama de flujo: rate-limit middleware (common/rate_limit/)
+
+Reemplaza la funcionalidad de AWS WAF rate-based rules con un middleware
+self-managed en cada Lambda. Costo: $0/mes (DynamoDB free tier perpetuo).
+Detalle completo en `.claude/docs/serverless-rate-limit/` + skill
+`serverless-rate-limit`.
+
+```
+            Lambda (contact_form o tracking_pixel)
+                    |
+                    | 1. Turnstile YA validado (capa anterior)
+                    v
+            +----------------------+
+            | extract_ip(event)    |   Prioridad:
+            |                      |   1. CF-Connecting-IP
+            |                      |   2. X-Forwarded-For[0]
+            |                      |   3. requestContext.identity
+            +----------------------+
+                    |
+                    | 2. country = headers.get('CF-IPCountry', '')
+                    v
+            +----------------------+
+            | check_or_raise(      |
+            |   ip,                |
+            |   endpoint,          |
+            |   country,           |
+            |   turnstile_         |
+            |     validated=True   |
+            | )                    |
+            +----------------------+
+                    |
+                    | Step A: read rules (cached 60s)
+                    v
+            +----------------------+
+            | rate_limit_rules     |
+            | (cached via          |
+            |  common/cache)       |
+            |  - endpoint rule     |   limit + window_seconds
+            |  - ip whitelist      |   skip rate-limit
+            |  - ip blacklist      |   immediate 403
+            |  - country rule      |   block/throttle por pais
+            +----------------------+
+                    |
+            +-------+-------+
+            | Decision?     |
+            +-------+-------+
+            |       |       |
+            | IP    | IP    | continue
+            | white | black |
+            | -list | list  |
+            v       v       v
+        SKIP   +-------+   +------------+
+        check  | 403   |   | country    |
+               | inmed |   | rule check |
+               +-------+   +------------+
+                                |
+                                v
+            +----------------------+
+            | Step B: sliding      |
+            |  window weighted     |
+            |                      |
+            | now = time.time()    |
+            | window_start =       |
+            |   (now // ws) * ws   |
+            | prev_start =         |
+            |   window_start - ws  |
+            +----------------------+
+                    |
+                    v
+            +----------------------+
+            | GetItem 2x batch:    |
+            |   current bucket     |
+            |   previous bucket    |
+            +----------------------+
+                    |
+                    v
+            +----------------------+
+            | elapsed =            |
+            |   now - window_start |
+            | prev_weight =        |
+            |   (ws - elapsed) / ws|
+            | effective_count =    |
+            |   current_count +    |
+            |   (prev_count *      |
+            |    prev_weight)      |
+            +----------------------+
+                    |
+            +-------+-------+
+            | effective_    |
+            |  count >=     |
+            |  limit?       |
+            +-------+-------+
+            |               |
+            | YES (deny)    | NO (allow)
+            v               v
+        +-------+       +----------------------+
+        | 429 + |       | Step C: atomic       |
+        | Retry-|       |   increment          |
+        | After |       |                      |
+        +-------+       | UpdateItem ADD       |
+                       |   count :one          |
+                       |   turnstile_tokens    |
+                       |     :one (si valido)  |
+                       |                      |
+                       | SET expires_at = if_  |
+                       |   not_exists(...)     |
+                       +----------------------+
+                                |
+                                v
+                       +----------------------+
+                       | Step D: auto-        |
+                       |   blacklist check    |
+                       |                      |
+                       | IF turnstile_tokens  |
+                       |   >= 3 AND           |
+                       |   window <= 60s:     |
+                       |                      |
+                       |   PUT rate_limit_    |
+                       |    rules             |
+                       |     rule_key:        |
+                       |       "ip#<addr>"    |
+                       |     kind: blacklist  |
+                       |     expires_at:      |
+                       |       now + 86400    |
+                       |     reason: "auto"   |
+                       |                      |
+                       |   logger.warning     |
+                       |   metric Auto        |
+                       |     Blacklist        |
+                       |     Triggered        |
+                       +----------------------+
+                                |
+                                v
+                       +----------------------+
+                       | Continue handler:    |
+                       |   persist contact    |
+                       |   send email SES     |
+                       +----------------------+
+
+CARACTERISTICAS:
+  - Atomic: DynamoDB UpdateItem ADD es atomic, sin race conditions
+  - No lock distribuido necesario (a diferencia de cache)
+  - TTL nativo elimina buckets viejos a costo 0
+  - Cache de rules (60s) reduce reads en hot path
+  - Defensa en profundidad:
+      Layer 0: Cloudflare DDoS edge (free)
+      Layer 1: Middleware rate-limit (este)
+      Layer 1.5: Reserved concurrency Lambda (defensa pasiva)
+      Layer 2: API Gateway throttle global
+      Layer 3: Request validator JSON Schema
+      Layer 4: Business logic (Turnstile validation)
+      Layer 5: CloudWatch alarms + auto-blacklist
+
+COSTO:
+  - 0 WCU/RCU consumidos (free tier 25 + 25 perpetuos cubren todo)
+  - ~30k items vivos en buckets (free tier 25GB storage)
+  - Total: $0/mes vs $7/mes WAF
+```
+
+### Que se rate-limita
+
+| Endpoint | Limit | Window | Action | Endpoint rule_key |
+|----------|-------|--------|--------|-------------------|
+| POST /contact | 3 | 300s | throttle (429) | `endpoint#/contact` |
+| POST /track | 30 | 300s | throttle (429) | `endpoint#/track` |
+| POST /validate-turnstile | 5 | 60s | throttle (429) | `endpoint#/validate-turnstile` |
+| Default (sin regla explicita) | 10 | 60s | throttle | `endpoint#*` (fallback) |
+
+### Que se cachea
+
+- `rate_limit_rules` con `@cached(ttl=60, stale_for=300, namespace='rate-rules')` — reduce GetItem en hot path
+- Buckets NO se cachean (counter atomic, debe ser fresh)
+
 ## 5. Diagrama de capas (defense in depth)
 
 ```
@@ -1114,17 +1291,29 @@ CUANDO NO USAR cache:
               |                                |
 +-------------+---------+        +-------------+---------------+
 |                                                              |
-|  Layer 1: AWS WAF rate-based rules                           |
-|    Per-IP aggregation (UNICA forma nativa en API GW)         |
-|    - /contact: 3 req/5min/IP                                 |
-|    - /track:   30 req/5min/IP                                |
-|    - $5/mo Web ACL fijo                                      |
+|  Layer 1.5: Lambda Reserved Concurrency                      |
+|    contact_form max 5 concurrent invocations                 |
+|    tracking_pixel max 20 concurrent invocations              |
+|    AWS retorna 429 sin invocar Lambda si excede              |
+|    (defensa pasiva contra DDoS volumetrico, costo $0)        |
 +-------------+--------------------------------+---------------+
               ^                                |
               |                                |
 +-------------+---------+        +-------------+---------------+
 |                                                              |
-|  Layer 0: Cloudflare (upstream del cliente)                  |
+|  Layer 1: Middleware rate-limit per-IP (DynamoDB)            |
+|    Sliding window weighted en common/rate_limit/             |
+|    - /contact: 3 req/5min/IP                                 |
+|    - /track:   30 req/5min/IP                                |
+|    - IP whitelist + blacklist + country rules                |
+|    - Auto-blacklist si 3+ tokens validos en 60s              |
+|    - Costo: $0 (free tier DynamoDB perpetuo)                 |
++-------------+--------------------------------+---------------+
+              ^                                |
+              |                                |
++-------------+---------+        +-------------+---------------+
+|                                                              |
+|  Layer 0: Cloudflare (upstream del cliente, FREE)            |
 |    - DDoS L3/L4/L7 mitigation (free tier ilimitado)          |
 |    - Bot Fight Mode (gratis)                                 |
 |    - Inyecta CF-Connecting-IP, CF-IPCountry headers          |
@@ -1195,6 +1384,48 @@ CUANDO NO USAR cache:
 | source_subdomain (S)
 | created_at      (S, ISO8601)
 | expires_at      (N, Unix epoch seconds)  -> AUTO DELETE +60d
++-------------------------------+
+
++-------------------------------+
+|    Tabla: rate_limit_rules    |
+|    BillingMode: PAY_PER_REQUEST
+|    SSE: enabled               |
+|    TTL: expires_at (blacklist auto)
++-------------------------------+
+| PK (HASH): rule_key (S)       |  patrones:
+|                               |    "endpoint#/contact"
+|                               |    "endpoint#/track"
+|                               |    "endpoint#*" (default fallback)
+|                               |    "ip#X.X.X.X" (white o blacklist)
+|                               |    "country#XX" (ISO 3166-1 alpha-2)
++-------------------------------+
+| kind            (S)           |  'endpoint' | 'ip_whitelist'
+|                               |  'ip_blacklist' | 'country'
+| limit           (N, optional) |  Max requests en window
+| window_seconds  (N, optional) |  Tamano ventana (300 = 5min)
+| action          (S)           |  'allow' | 'block' | 'throttle'
+| expires_at      (N, optional) |  TTL para blacklist auto +24h
+| reason          (S)           |  Texto descriptivo (audit)
+| created_at      (S, ISO8601)  |
+| created_by      (S)           |  'manual' | 'cli' | 'auto-detected'
++-------------------------------+
+
++-------------------------------+
+|    Tabla: rate_limit_buckets  |
+|    BillingMode: PAY_PER_REQUEST
+|    TTL: expires_at (cleanup ventanas pasadas)
++-------------------------------+
+| PK (HASH): bucket_key (S)     |  patron:
+|                               |    "<ip>#<endpoint>#<window_start_epoch>"
+|                               |  ej. "203.0.113.42#/contact#1715688600"
++-------------------------------+
+| count           (N)           |  Atomic counter (UpdateItem ADD)
+| window_start    (N, epoch)    |  Inicio de la ventana
+| window_seconds  (N)           |  Duracion (300 = 5min)
+| first_request   (S, ISO8601)  |  Primera request del bucket
+| last_request    (S, ISO8601)  |  Ultima request
+| turnstile_tokens (N)          |  Counter de tokens validos (bot detection)
+| expires_at      (N, epoch)    |  window_start + window_seconds + 60s grace
 +-------------------------------+
 ```
 
@@ -1345,9 +1576,13 @@ template.yaml (resources)
 |     MemorySize: 512
 |     Timeout: 30
 |     Tracing: Active
+|     ReservedConcurrentExecutions: 5         # Defensa pasiva DDoS volumetrico
 |     Layers: [!Ref CommonLayer]
 |     Policies:
 |       - DynamoDBWritePolicy: contacts
+|       - DynamoDBReadPolicy: rate_limit_rules     # Lee endpoint/IP/country rules
+|       - DynamoDBCrudPolicy: rate_limit_buckets   # Atomic increment counters + write auto-blacklist
+|       - DynamoDBCrudPolicy: cache                # Cache de rules + SSM
 |       - Statement (ses:SendEmail con condition FromAddress)
 |       - Statement (ssm:GetParameter /portfolio/turnstile-secret)
 |       - Statement (kms:Decrypt alias/portfolio-lambdas)
@@ -1359,7 +1594,13 @@ template.yaml (resources)
 |         Method: POST
 |
 +-- AWS::Serverless::Function           TrackingPixelFunction
-|     (similar, smaller memory 256MB, tabla tracking)
+|     (similar, 256MB, tabla tracking)
+|     ReservedConcurrentExecutions: 20         # Tracking acepta mas concurrency
+|     Policies:
+|       - DynamoDBWritePolicy: tracking
+|       - DynamoDBReadPolicy: rate_limit_rules
+|       - DynamoDBCrudPolicy: rate_limit_buckets
+|       - DynamoDBCrudPolicy: cache
 |
 +-- AWS::Serverless::Function           TurnstileValidatorFunction
 |     (similar, sin DynamoDB ni SES)
@@ -1465,26 +1706,31 @@ template.yaml (resources)
 |       DestinationArn: !GetAtt AccessLogGroup.Arn
 |       Format: <JSON format with $context.identity.sourceIp, ...>
 |
-+-- AWS::WAFv2::WebACL                  PortfolioWebACL
-|     Scope: REGIONAL
-|     DefaultAction: Allow
-|     Rules:
-|       - ContactPerIPRateLimit (Priority 1)
-|           Statement.RateBasedStatement:
-|             Limit: 30          # min 10, ventana 5 min
-|             AggregateKeyType: IP
-|             ScopeDownStatement: /contact path
-|           Action: { Block: {} }
-|       - TrackPerIPRateLimit (Priority 2)
-|           Statement.RateBasedStatement:
-|             Limit: 150         # 30 req/min equiv en 5 min
-|             ScopeDownStatement: /track path
-|           Action: { Block: {} }
-|       - AWS Managed Rule: CommonRuleSet (OWASP)
++-- AWS::DynamoDB::Table                RateLimitRulesTable
+|     TableName: rate_limit_rules
+|     BillingMode: PAY_PER_REQUEST
+|     AttributeDefinitions: [rule_key: S]
+|     KeySchema: [rule_key: HASH]
+|     TimeToLiveSpecification:                 # Para blacklist auto con TTL
+|       AttributeName: expires_at
+|       Enabled: true
+|     SSESpecification: { SSEEnabled: true }
+|     # Items: "endpoint#/contact" + "endpoint#/track" + "ip#X.X.X.X" (white/blacklist)
+|     #        + "country#CN" (country rules)
+|     # Volumen ~10-50 items. Cacheable via common/cache @cached(ttl=60)
 |
-+-- AWS::WAFv2::WebACLAssociation       PortfolioWebACLAssoc
-|     WebACLArn: !GetAtt PortfolioWebACL.Arn
-|     ResourceArn: !Sub "arn:aws:apigateway:${AWS::Region}::/restapis/${PortfolioApi}/stages/prod"
++-- AWS::DynamoDB::Table                RateLimitBucketsTable
+|     TableName: rate_limit_buckets
+|     BillingMode: PAY_PER_REQUEST
+|     AttributeDefinitions: [bucket_key: S]
+|     KeySchema: [bucket_key: HASH]
+|     TimeToLiveSpecification:                 # Auto-cleanup de ventanas pasadas
+|       AttributeName: expires_at
+|       Enabled: true
+|     # Items: "<ip>#<endpoint>#<window_start_epoch>"
+|     # Atomic INCREMENT counter via UpdateItem ADD
+|     # TTL = window_start + window_seconds + 60s grace
+|     # Volumen ~30k items vivos rotando. Free tier perpetuo lo cubre
 |
 +-- AWS::DynamoDB::Table                ContactsTable
 |     BillingMode: PAY_PER_REQUEST
@@ -1663,7 +1909,7 @@ Developer local
 | Sin emojis | `.claude/rules/markdown-docs.md` | Solo ASCII en este doc |
 | IAM least privilege | `.claude/docs/aws-lambda/06-iam-security.md` | Cada Lambda tiene solo los permisos minimos en template.yaml |
 | Secrets en SSM + KMS | `.claude/docs/aws-lambda/06-iam-security.md` | Turnstile secret NUNCA en env vars planos |
-| Defense in depth | `.claude/docs/aws-api-gateway/09-cost-throttling-strategy.md` | 5 capas (WAF + API GW + validator + Lambda + alarms) |
+| Defense in depth | `.claude/docs/serverless-rate-limit/01-why-not-waf.md` | 5 capas (Cloudflare upstream + middleware DynamoDB + reserved concurrency + API GW + validator + alarms) |
 
 ---
 

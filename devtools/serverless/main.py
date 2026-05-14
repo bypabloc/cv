@@ -41,6 +41,7 @@ from serverless.quality import cmd_format
 from serverless.quality import cmd_lint
 from serverless.quality import cmd_lint_fix
 from serverless.quality import cmd_typecheck
+from serverless.rate_limit_cmds import cmd_rate_limit
 from serverless.secrets import cmd_request_ses_prod
 from serverless.secrets import cmd_rotate_secret
 from serverless.secrets import cmd_setup_ssm
@@ -88,6 +89,8 @@ COMMAND_REGISTRY: dict[str, Any] = {
     # Observability
     'metrics': cmd_metrics,
     'alarms': cmd_alarms,
+    # Rate-limit management (alternativa $0 a AWS WAF)
+    'rate-limit': cmd_rate_limit,
     # Maintenance
     'smoke': cmd_smoke,
     'clean': cmd_clean,

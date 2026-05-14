@@ -18,7 +18,7 @@
 
 - **Volumen bajo-medio**: 200 contacts/mes + 15.000 tracking events/mes
 - **Latencia hot path importa**: form submit no debe pasar de 800ms total (Turnstile siteverify domina)
-- **Costo objetivo**: ~$7/mes (WAF Web ACL fijo); el resto debe caber en free tier perpetuo
+- **Costo objetivo**: ~$0.81/mes (sin WAF; rate-limit self-managed con DynamoDB free tier perpetuo)
 - **Solo developer**: zero-ops, no managed instances, no VPC, no fine-tuning de capacity
 - **Analytics CRM-style requeridos**: contacts por mes/niche, conversion rate, top landing pages, session journey, daily metrics
 
@@ -65,28 +65,32 @@
 
 ## 2. Modelo de datos: que vive donde
 
-| Workload | DynamoDB | Neon PG | Cache |
-|----------|----------|---------|-------|
-| Form submission save (hot path) | source of truth | replica via Stream | NO |
-| Tracking pixel save (hot path) | source of truth (TTL 60d) | replica via Stream | NO |
-| TTL auto-delete tracking | YES (60d) | drop partition mensual | NO |
-| Turnstile secret SSM lookup | NO | NO | YES (300s) |
-| Neon URL SSM lookup | NO | NO | YES (300s) |
-| Country lookup (IP -> country) | NO | NO | YES (24h) |
-| User-Agent parsing | NO | NO | YES (24h) |
-| Daily metrics query | NO | YES (computed nightly) | YES (30min SWR) |
-| Top landing pages | NO | YES (materialized view) | YES (30min SWR) |
-| Session journey (LAG/LEAD) | NO | YES (mv refresh nightly) | NO |
-| Contacts CRM filtering | NO | YES (CITEXT + GIN) | NO |
-| Full-text search en messages | NO | YES (to_tsvector spanish + GIN) | NO |
-| Joins entre contacts + tracking | NO | YES | NO |
-| Conversion rate dashboard | NO | YES (daily_metrics tabla) | YES (30min SWR) |
+| Workload | DynamoDB | Neon PG | Cache | Rate-limit |
+|----------|----------|---------|-------|------------|
+| Form submission save (hot path) | source of truth | replica via Stream | NO | check antes |
+| Tracking pixel save (hot path) | source of truth (TTL 60d) | replica via Stream | NO | check antes |
+| TTL auto-delete tracking | YES (60d) | drop partition mensual | NO | NO |
+| Turnstile secret SSM lookup | NO | NO | YES (300s) | NO |
+| Neon URL SSM lookup | NO | NO | YES (300s) | NO |
+| Country lookup (IP -> country) | NO | NO | YES (24h) | NO |
+| User-Agent parsing | NO | NO | YES (24h) | NO |
+| Rate-limit rules (endpoint, IP, country) | dedicated table | NO | cached 60s | source |
+| Rate-limit counters (per IP+window) | dedicated table | NO | NEVER cache | source |
+| Auto-blacklist (3+ tokens en 60s) | rule kind=ip_blacklist TTL 24h | NO | NO | write |
+| Daily metrics query | NO | YES (computed nightly) | YES (30min SWR) | NO |
+| Top landing pages | NO | YES (materialized view) | YES (30min SWR) | NO |
+| Session journey (LAG/LEAD) | NO | YES (mv refresh nightly) | NO | NO |
+| Contacts CRM filtering | NO | YES (CITEXT + GIN) | NO | NO |
+| Full-text search en messages | NO | YES (to_tsvector spanish + GIN) | NO | NO |
+| Joins entre contacts + tracking | NO | YES | NO | NO |
+| Conversion rate dashboard | NO | YES (daily_metrics tabla) | YES (30min SWR) | NO |
 
 Regla mnemotecnica:
 
 - **Lambda escribe** -> DynamoDB
 - **Owner consulta para CRM/analytics** -> Neon
 - **Lambda lee valores caros que se repiten** -> Cache
+- **Lambda valida limite per-IP** -> Rate-limit module
 
 ---
 
@@ -98,7 +102,7 @@ Regla mnemotecnica:
 Browser  POST /contact + Turnstile token
     |
     v
-WAF rate-limit 3 req/5min/IP
+Cloudflare DDoS + Bot Fight (free upstream)
     |
     v
 API Gateway REST + JSON validator
@@ -157,7 +161,7 @@ Browser onLoad (consent cookie YES)
 POST /track con signals (UA, viewport, UTMs, etc.)
     |
     v
-WAF rate-limit 30 req/5min/IP
+Cloudflare DDoS + Bot Fight (free upstream)
     |
     v
 API Gateway REST
@@ -240,35 +244,63 @@ recomputar valor).
 
 ## 5. Costos consolidados (us-west-2, Mayo 2026)
 
+Arquitectura SIN AWS WAF: rate-limit self-managed con DynamoDB.
+
 | Componente | Cost/mes |
 |------------|----------|
-| AWS WAF Web ACL (fijo) | $5.00 |
-| AWS WAF rate-based rules (2) | $1.20 |
-| AWS WAF requests | ~$0.01 |
 | API Gateway REST (~30k req/mo) | $0.10 |
 | Lambda invocations (5 funciones, ~50k total) | $0 (free tier 1M/mo) |
 | Lambda compute GB-sec | $0 (free tier 400k GB-sec/mo) |
-| DynamoDB writes (~25k/mo total 3 tablas) | $0 (free tier 1M/mo) |
-| DynamoDB reads (cache + Lambdas, ~200k/mo) | $0 (free tier 2.5M/mo) |
-| DynamoDB storage | $0 (free tier 25 GB) |
+| DynamoDB writes (~60k/mo, 5 tablas incl. rate_limit_buckets) | $0 (free tier 1M/mo) |
+| DynamoDB reads (cache + Lambdas + rate-limit, ~250k/mo) | $0 (free tier 2.5M/mo) |
+| DynamoDB storage (~5GB total 5 tablas) | $0 (free tier 25 GB) |
 | DynamoDB Streams (~30k records/mo) | $0 (free tier 2.5M GetRecords) |
 | SES emails (~200/mo) | $0 (free tier 62k Lambda outbound) |
 | CloudWatch Logs (10 GB/mo) | ~$0.50 |
-| CloudWatch Alarms (~10) | $1.00 |
+| CloudWatch Alarms (~12 incl. AutoBlacklist) | $1.20 |
+| CloudWatch metrics custom (rate-limit) | $0 (free tier 10 metrics) |
 | X-Ray traces sampled | <$0.01 |
 | SQS DLQ (StreamProcessor) | $0 |
 | SNS notifications | $0 |
 | Neon free tier (0.5GB + 191.9h compute) | $0 |
 | Cloudflare Turnstile (unlimited free) | $0 |
-| **TOTAL estimado** | **~$7.81/mes** |
+| **TOTAL estimado** | **~$1.71/mes** |
 
 Si el portfolio escala 10x (~300k req/mo):
 
-- WAF sigue $7.21 (fijo + rules)
-- Lambda $0 (aun en free tier)
-- DynamoDB $0 (aun en free tier)
+- Lambda $0 (aun en free tier hasta 1M invocations/mes)
+- DynamoDB $0 (aun en free tier; buckets crece a ~300k pero TTL lo limpia)
+- CloudWatch Logs sube a ~$2/mo
 - Neon $0 (Free) o $19 si pasa a Launch plan
-- **Total escala-10x**: ~$8/mes o $27/mes con Neon Launch
+- **Total escala-10x**: ~$4/mes o $23/mes con Neon Launch
+
+### Ahorro vs arquitectura con AWS WAF
+
+| Configuracion | Cost/mes | Ahorro |
+|---------------|----------|--------|
+| Con WAF (Web ACL $5 + 2 rules $1.20 + requests $0.01) | ~$7.81 | - |
+| Sin WAF (este diseno, rate-limit en DynamoDB) | ~$1.71 | **$6.10/mes** ($73/ano) |
+
+### Trade-offs vs WAF
+
+| Aspecto | Con WAF | Sin WAF (este) |
+|---------|---------|----------------|
+| Costo | $7/mes | $0 (free tier) |
+| Defense edge (rechaza antes de Lambda) | YES | NO (siempre invoca) |
+| Per-IP rate-limit | nativo | middleware en Lambda |
+| Algoritmo | fixed window | sliding window weighted (mejor smoothing) |
+| Whitelist/blacklist IP custom | manual via WAF | en `rate_limit_rules` table |
+| Auto-blacklist bot detection | NO | YES (3+ tokens validos en 60s) |
+| Country rules dinamicas | WAF GeoMatch | en `rate_limit_rules` table |
+| OWASP managed rules | YES (gratis bundle) | NO (mitigado por Turnstile + JSON Schema) |
+| Scale bajo DDoS sostenido | infinito | depende de Cloudflare upstream + reserved concurrency |
+| Latencia agregada al hot path | <5ms | ~10-20ms warm (2 GetItem + 1 UpdateItem) |
+| Logs/dashboards | nativos en consola | CloudWatch Logs + queries custom |
+
+**Cuando migrar de vuelta a WAF**: si el portfolio recibe ataques DDoS
+sostenidos >10k req/s por horas y CloudWatch billing dispara alarma de
+Lambda invocations. El primer indicador sera la metrica `AutoBlacklistTriggered`
+> 100/hora.
 
 ---
 
@@ -276,7 +308,8 @@ Si el portfolio escala 10x (~300k req/mo):
 
 | Fase | Deliverable | Estimacion |
 |------|-------------|------------|
-| Fase 1 | SAM template + 3 Lambdas hot path (contact_form, tracking_pixel, turnstile_validator) + WAF + API GW + 2 tablas Dynamo + SES | 1-2 dias |
+| Fase 1 | SAM template + 3 Lambdas hot path (contact_form, tracking_pixel, turnstile_validator) + API GW + 2 tablas Dynamo + SES (sin WAF) | 1-2 dias |
+| Fase 1.5 | Modulo `common/rate_limit/` + 2 tablas rate_limit + reglas iniciales + integracion en contact_form/tracking_pixel | 1 dia |
 | Fase 2 | Cache module en `src/common/cache/` + tabla `cache` + tests + integracion en 3 Lambdas existentes | 1 dia |
 | Fase 3 | Neon project setup + migrations 001-005 + connection via psycopg3 layer | 1 dia |
 | Fase 4 | stream_processor Lambda + Streams enabled en Dynamo tables + DLQ + idempotency log | 1-2 dias |
@@ -313,7 +346,8 @@ Para preguntas sobre cada pieza, la skill correspondiente tiene la
 respuesta consolidada del proyecto:
 
 - `/aws-lambda-python` — handlers, Powertools, IAM
-- `/aws-api-gateway` — REST API, throttling, WAF
+- `/aws-api-gateway` — REST API, throttling global (sin per-IP en este diseno)
+- `/serverless-rate-limit` — Rate-limit per-IP self-managed con DynamoDB (alternativa $0 a WAF)
 - `/aws-dynamodb` — tablas, On-Demand, TTL, boto3
 - `/aws-ses` — DKIM/SPF/DMARC, transactional email
 - `/cloudflare-turnstile` — captcha widget + siteverify

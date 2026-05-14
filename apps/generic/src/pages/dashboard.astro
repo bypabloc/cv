@@ -1,0 +1,387 @@
+---
+import PageLayout from '../layouts/PageLayout.astro'
+
+const apiEndpoint = (import.meta.env.PUBLIC_API_ENDPOINT || '') as string
+const dashboardEndpoint = apiEndpoint ? `${apiEndpoint}/dashboard` : ''
+---
+
+<PageLayout
+  title="Dashboard - Pablo Contreras"
+  description="Analytics privado (solo owner)."
+  canonicalPath="/dashboard"
+  locale="es"
+  otherLocalePath="/dashboard"
+>
+  <section class="dashboard-section">
+    <header class="dashboard-header">
+      <h1>Dashboard</h1>
+      <p>Stats privadas del portfolio. Requiere autenticación.</p>
+    </header>
+
+    <div
+      id="dashboard-app"
+      class="dashboard-app"
+      data-endpoint={dashboardEndpoint}
+    >
+      <div class="dashboard-loading">Cargando...</div>
+    </div>
+  </section>
+</PageLayout>
+
+<script>
+  type Summary = {
+    period_days: number
+    contacts: { total: number; converted: number; new: number }
+    tracking: { total_events: number; unique_sessions: number }
+  }
+
+  type Contact = {
+    id: string
+    created_at: string | null
+    name: string
+    email: string
+    niche: string | null
+    service_type: string | null
+    status: string
+  }
+
+  type PageRow = {
+    page_path: string
+    visits: number
+    unique_sessions: number
+  }
+
+  const STORAGE_AUTH = 'cf_dashboard_auth'
+
+  function getStoredAuth(): string | null {
+    try {
+      return sessionStorage.getItem(STORAGE_AUTH)
+    } catch {
+      return null
+    }
+  }
+
+  function setStoredAuth(value: string): void {
+    try {
+      sessionStorage.setItem(STORAGE_AUTH, value)
+    } catch {
+      // sessionStorage no disponible
+    }
+  }
+
+  function clearStoredAuth(): void {
+    try {
+      sessionStorage.removeItem(STORAGE_AUTH)
+    } catch {
+      // no-op
+    }
+  }
+
+  async function fetchJSON<T>(url: string, auth: string): Promise<T> {
+    const response = await fetch(url, {
+      headers: { Authorization: `Basic ${auth}` },
+    })
+    if (response.status === 401) {
+      throw new Error('UNAUTHORIZED')
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    return (await response.json()) as T
+  }
+
+  function renderLogin(container: HTMLElement): void {
+    container.innerHTML = `
+      <form id="dashboard-login" class="dashboard-login">
+        <h2>Login</h2>
+        <input type="text" name="user" placeholder="Usuario" required autocomplete="username" />
+        <input type="password" name="password" placeholder="Password" required autocomplete="current-password" />
+        <button type="submit">Acceder</button>
+        <p class="login-error" hidden></p>
+      </form>
+    `
+    const form = container.querySelector<HTMLFormElement>('#dashboard-login')!
+    const error = container.querySelector<HTMLParagraphElement>('.login-error')!
+    form.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const fd = new FormData(form)
+      const user = (fd.get('user') as string).trim()
+      const pass = (fd.get('password') as string).trim()
+      const auth = btoa(`${user}:${pass}`)
+      setStoredAuth(auth)
+      error.hidden = true
+      void initDashboard()
+    })
+  }
+
+  function renderDashboard(
+    container: HTMLElement,
+    data: { summary: Summary; contacts: Contact[]; pages: PageRow[] },
+  ): void {
+    const { summary, contacts, pages } = data
+    container.innerHTML = `
+      <div class="dashboard-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Contacts (30d)</div>
+          <div class="kpi-value">${summary.contacts.total}</div>
+          <div class="kpi-sub">new: ${summary.contacts.new} · converted: ${summary.contacts.converted}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Tracking events (30d)</div>
+          <div class="kpi-value">${summary.tracking.total_events}</div>
+          <div class="kpi-sub">unique sessions: ${summary.tracking.unique_sessions}</div>
+        </div>
+      </div>
+      <section class="data-section">
+        <h2>Contacts recientes</h2>
+        ${
+          contacts.length === 0
+            ? '<p>(sin contacts aun)</p>'
+            : `<table>
+                <thead><tr><th>Fecha</th><th>Nombre</th><th>Email</th><th>Niche</th><th>Status</th></tr></thead>
+                <tbody>
+                  ${contacts
+                    .map(
+                      (c) => `
+                    <tr>
+                      <td>${c.created_at?.slice(0, 16).replace('T', ' ') || ''}</td>
+                      <td>${c.name}</td>
+                      <td>${c.email}</td>
+                      <td>${c.niche || '-'}</td>
+                      <td>${c.status}</td>
+                    </tr>`,
+                    )
+                    .join('')}
+                </tbody>
+              </table>`
+        }
+      </section>
+      <section class="data-section">
+        <h2>Top landing pages (30d)</h2>
+        ${
+          pages.length === 0
+            ? '<p>(sin paginas con visitas)</p>'
+            : `<table>
+                <thead><tr><th>Path</th><th>Visits</th><th>Unique sessions</th></tr></thead>
+                <tbody>
+                  ${pages
+                    .map(
+                      (p) => `
+                    <tr>
+                      <td><code>${p.page_path}</code></td>
+                      <td>${p.visits}</td>
+                      <td>${p.unique_sessions}</td>
+                    </tr>`,
+                    )
+                    .join('')}
+                </tbody>
+              </table>`
+        }
+      </section>
+      <button id="dashboard-logout" class="dashboard-logout">Cerrar sesion</button>
+    `
+    container
+      .querySelector<HTMLButtonElement>('#dashboard-logout')
+      ?.addEventListener('click', () => {
+        clearStoredAuth()
+        void initDashboard()
+      })
+  }
+
+  async function initDashboard(): Promise<void> {
+    const container = document.getElementById('dashboard-app') as HTMLDivElement
+    const endpoint = container.dataset.endpoint
+    if (!endpoint) {
+      container.innerHTML =
+        '<p>API endpoint no configurado. Setea PUBLIC_API_ENDPOINT en Cloudflare Pages env vars.</p>'
+      return
+    }
+
+    const auth = getStoredAuth()
+    if (!auth) {
+      renderLogin(container)
+      return
+    }
+
+    container.innerHTML = '<div class="dashboard-loading">Cargando datos...</div>'
+
+    try {
+      const [summary, contactsData, pagesData] = await Promise.all([
+        fetchJSON<Summary>(`${endpoint}/summary?days=30`, auth),
+        fetchJSON<{ items: Contact[] }>(`${endpoint}/contacts?limit=20`, auth),
+        fetchJSON<{ items: PageRow[] }>(`${endpoint}/pages?days=30&limit=20`, auth),
+      ])
+      renderDashboard(container, {
+        summary,
+        contacts: contactsData.items,
+        pages: pagesData.items,
+      })
+    } catch (e) {
+      if ((e as Error).message === 'UNAUTHORIZED') {
+        clearStoredAuth()
+        renderLogin(container)
+        const errEl = container.querySelector<HTMLParagraphElement>('.login-error')
+        if (errEl) {
+          errEl.textContent = 'Credenciales invalidas'
+          errEl.hidden = false
+        }
+      } else {
+        container.innerHTML = `<p>Error: ${(e as Error).message}</p>`
+      }
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => void initDashboard())
+  } else {
+    void initDashboard()
+  }
+</script>
+
+<style>
+  .dashboard-section {
+    max-width: var(--container-wide);
+    margin: var(--space-32) auto;
+    padding-inline: var(--space-24);
+  }
+
+  .dashboard-header h1 {
+    font-size: var(--font-size-32);
+    margin-bottom: var(--space-8);
+  }
+
+  .dashboard-header p {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-32);
+  }
+
+  .dashboard-app {
+    min-height: 60vh;
+  }
+
+  .dashboard-loading {
+    text-align: center;
+    padding: var(--space-56);
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-login {
+    max-width: 320px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    padding: var(--space-24);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .dashboard-login h2 {
+    text-align: center;
+    margin: 0 0 var(--space-12) 0;
+  }
+
+  .dashboard-login input,
+  .dashboard-login button {
+    padding: var(--space-10) var(--space-12);
+    font-size: var(--font-size-14);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+  }
+
+  .dashboard-login button {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+    border-color: var(--color-primary);
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .login-error {
+    color: var(--color-danger, #dc2626);
+    font-size: var(--font-size-13);
+    margin: 0;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-16);
+    margin-bottom: var(--space-32);
+  }
+
+  .kpi-card {
+    padding: var(--space-20);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .kpi-label {
+    font-size: var(--font-size-12);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .kpi-value {
+    font-size: var(--font-size-40);
+    font-weight: 700;
+    margin: var(--space-8) 0;
+  }
+
+  .kpi-sub {
+    font-size: var(--font-size-12);
+    color: var(--color-text-muted);
+  }
+
+  .data-section {
+    margin-bottom: var(--space-32);
+  }
+
+  .data-section h2 {
+    font-size: var(--font-size-20);
+    margin-bottom: var(--space-12);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  th, td {
+    padding: var(--space-8) var(--space-12);
+    text-align: left;
+    font-size: var(--font-size-13);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    background: var(--color-surface-2, var(--color-grey-10));
+    font-weight: 600;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-12);
+  }
+
+  .dashboard-logout {
+    margin-top: var(--space-24);
+    padding: var(--space-8) var(--space-16);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-13);
+  }
+</style>

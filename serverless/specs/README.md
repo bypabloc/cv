@@ -22,7 +22,7 @@
 | [SPEC-011](SPEC-011-ses-dns-production.md) | SES domain verification (DKIM/SPF/DMARC) + production access | done | 0.5 dia + 24-48h espera | SPEC-000 |
 | [SPEC-012](SPEC-012-frontend-contact-form.md) | Componente `ContactForm.astro` en `packages/ui` + integracion 6 apps | done | 1 dia | SPEC-005 |
 | [SPEC-013](SPEC-013-frontend-tracking-pixel.md) | Componentes `TrackingPixel.astro` + `CookieBanner.astro` + GDPR opt-in | done | 1 dia | SPEC-006, SPEC-012 |
-| [SPEC-014](SPEC-014-dashboard-analytics.md) | Dashboard Astro protegido que consulta Neon (basic auth) | draft | 2-3 dias | SPEC-010 |
+| [SPEC-014](SPEC-014-dashboard-analytics.md) | Dashboard Astro protegido que consulta Neon (basic auth) | done | 2-3 dias | SPEC-010 |
 | [SPEC-015](SPEC-015-observability-runbook.md) | RUNBOOK + DEPLOYMENT + smoke tests + AWS Billing Alarm | draft | 0.5 dia | TODAS |
 
 **Total estimado**: 12-18 dias de trabajo no full-time (depende de paralelizacion).

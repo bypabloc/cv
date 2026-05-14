@@ -1,0 +1,2 @@
+# dashboard_api requiere bcrypt para basic auth + psycopg3 (PostgresLayer).
+bcrypt>=4.0,<5.0

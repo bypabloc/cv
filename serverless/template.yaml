@@ -336,6 +336,58 @@ Resources:
         Stage: !Ref Stage
 
   # ==========================================================================
+  # Lambda: dashboard_api (basic auth + queries Neon, SPEC-014)
+  # ==========================================================================
+  DashboardApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.13
+      BuildArchitecture: arm64
+    Properties:
+      FunctionName: !Sub portfolio-dashboard-api-${Stage}
+      CodeUri: src/
+      Handler: dashboard_api.handler.lambda_handler
+      Layers:
+        - !Ref CommonLayer
+        - !Ref PostgresLayer
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: dashboard-api
+          SSM_NEON_URL_PATH: /portfolio/neon-url
+          SSM_DASHBOARD_HASH_PATH: /portfolio/dashboard-password-hash
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CacheTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitRulesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitBucketsTable
+        - SSMParameterReadPolicy:
+            ParameterName: 'portfolio/neon-url'
+        - SSMParameterReadPolicy:
+            ParameterName: 'portfolio/dashboard-password-hash'
+        - Statement:
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+      Events:
+        GetDashboard:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PortfolioApi
+            Path: /dashboard/{action}
+            Method: GET
+      Tags:
+        Project: portfolio
+        ManagedBy: SAM
+        Stage: !Ref Stage
+
+  # ==========================================================================
   # Lambda: aggregator (cron 03:00 UTC daily, SPEC-010)
   # ==========================================================================
   AggregatorFunction:

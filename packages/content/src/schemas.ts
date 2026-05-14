@@ -127,7 +127,6 @@ export const ProfileSchema = z.object({
     phone: z.string().optional(),
     linkedin: z.string().url(),
     github: z.string().url(),
-    medium: z.string().url().optional(),
     website: z.string().url().optional(),
   }),
   avatarUrl: z.string().url(),

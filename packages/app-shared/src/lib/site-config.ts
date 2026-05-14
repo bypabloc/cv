@@ -95,10 +95,10 @@ const navEs = (basePrefix: string, hubHref?: string): NavItem[] => {
     { href: `${basePrefix}/#skills`, label: 'Skills' },
     { href: `${basePrefix}/about`, label: 'Sobre mí' },
     { href: `${basePrefix}/certificates`, label: 'Certificados' },
-    { href: `${basePrefix}/#contact`, label: 'Contacto' },
+    { href: `${basePrefix}/contact`, label: 'Contacto' },
   ]
   if (hubHref !== undefined) {
-    items.push({ href: hubHref, label: 'Otras vistas', external: true })
+    items.push({ href: hubHref, label: 'Otras vistas' })
   }
   return items
 }
@@ -110,10 +110,10 @@ const navEn = (basePrefix: string, hubHref?: string): NavItem[] => {
     { href: `${basePrefix}/#skills`, label: 'Skills' },
     { href: `${basePrefix}/about`, label: 'About' },
     { href: `${basePrefix}/certificates`, label: 'Certificates' },
-    { href: `${basePrefix}/#contact`, label: 'Contact' },
+    { href: `${basePrefix}/contact`, label: 'Contact' },
   ]
   if (hubHref !== undefined) {
-    items.push({ href: hubHref, label: 'Other views', external: true })
+    items.push({ href: hubHref, label: 'Other views' })
   }
   return items
 }

@@ -4,7 +4,7 @@
  * @description Footer minimalista con copyright + links sociales.
  *
  * @props {string} name - Nombre del titular del copyright
- * @props {object} contacts - Links sociales (linkedin, github, medium)
+ * @props {object} contacts - Links sociales (linkedin, github)
  * @props {string} [locale] - 'es' o 'en' (afecta copy)
  */
 interface Props {
@@ -12,7 +12,6 @@ interface Props {
   contacts: {
     linkedin: string
     github: string
-    medium?: string
     email?: string
   }
   locale?: 'es' | 'en'
@@ -36,15 +35,6 @@ const copy =
       <li>
         <a href={contacts.github} rel="me" target="_blank">GitHub</a>
       </li>
-      {
-        contacts.medium && (
-          <li>
-            <a href={contacts.medium} rel="me" target="_blank">
-              Medium
-            </a>
-          </li>
-        )
-      }
     </ul>
   </div>
 </footer>

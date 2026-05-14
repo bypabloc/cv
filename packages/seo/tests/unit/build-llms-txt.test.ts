@@ -56,18 +56,6 @@ describe('buildLlmsTxt', () => {
     )
   })
 
-  it('Given no medium contact When build Then omits medium line', () => {
-    const trimmed = { ...profile, contacts: { ...profile.contacts } }
-    trimmed.contacts.medium = undefined as unknown as string
-    const out = buildLlmsTxt({
-      siteUrl: 'https://x.example/',
-      profile: trimmed,
-      niche: 'generic',
-      pages: [],
-    })
-    expect(out).not.toMatch(/Medium:/u)
-  })
-
   it('Given profile con availability When build Then incluye Availability en metadata header', () => {
     const out = buildLlmsTxt({
       siteUrl: 'https://x.example/',

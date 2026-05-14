@@ -1,5 +1,7 @@
 ---
+import { profile } from '@portfolio/content'
 import ContactForm from '@portfolio/ui/components/ContactForm.astro'
+import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
 import PageLayout from '../layouts/PageLayout.astro'
 import { NICHE, STRINGS } from '../lib/site-config'
 
@@ -45,6 +47,16 @@ const contactEndpoint = apiEndpoint ? `${apiEndpoint}/contact` : ''
         </div>
       )
     }
+
+    <div class="contact-direct">
+      <h2 class="contact-direct__title">Otros canales</h2>
+      <ContactLinks
+        email={profile.contacts.email}
+        linkedin={profile.contacts.linkedin}
+        github={profile.contacts.github}
+        locale="es"
+      />
+    </div>
   </section>
 </PageLayout>
 
@@ -80,5 +92,18 @@ const contactEndpoint = apiEndpoint ? `${apiEndpoint}/contact` : ''
 
   .contact-fallback a {
     color: var(--color-primary);
+  }
+
+  .contact-direct {
+    margin-top: var(--space-40);
+    padding-top: var(--space-32);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .contact-direct__title {
+    font-size: var(--font-size-20);
+    font-weight: 600;
+    margin-bottom: var(--space-16);
+    text-align: center;
   }
 </style>

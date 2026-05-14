@@ -26,7 +26,6 @@ Frontend Architect · Software Architect · Microservices · Microfrontend · Di
 
 - LinkedIn: https://linkedin.com/in/bypabloc
 - GitHub: https://github.com/bypabloc
-- Medium: https://bypablo.medium.com
 - Website: https://the-full-stack.com
 
 ## Disclosure

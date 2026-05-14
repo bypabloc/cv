@@ -1,14 +1,16 @@
 ---
 /**
  * @component ContactLinks
- * @description Lista de links de contacto. El email se decodifica solo en
- *   cliente (anti-scraping básico).
+ * @description Tarjetas de contacto con email + LinkedIn + GitHub:
+ *   - Email: link mailto + boton copiar (clipboard API) con feedback visual.
+ *     El email se obfusca (b64) y se decodifica en cliente (anti-scraping).
+ *   - LinkedIn / GitHub: muestran solo el @username, click abre la URL
+ *     completa en nueva pestana.
  *
  * @props {string} email - Email a obfuscar (b64 en data-attr)
- * @props {string} linkedin
- * @props {string} github
- * @props {string} [medium]
- * @props {string} [locale] - 'es' o 'en'
+ * @props {string} linkedin - URL completa al perfil
+ * @props {string} github - URL completa al perfil
+ * @props {'es'|'en'} [locale='es']
  */
 import { obfuscateEmail } from '../lib/obfuscate-email'
 
@@ -16,72 +18,159 @@ interface Props {
   email: string
   linkedin: string
   github: string
-  medium?: string
   locale?: 'es' | 'en'
 }
 
-const { email, linkedin, github, medium, locale = 'es' } = Astro.props
+const { email, linkedin, github, locale = 'es' } = Astro.props
 const emailB64 = obfuscateEmail(email)
-const emailLabel = locale === 'es' ? 'Escribime' : 'Email me'
-const fallbackLabel = locale === 'es' ? '(habilitar JS)' : '(enable JS)'
+
+const extractUsername = (url: string): string => {
+  const last = url.split('/').filter(Boolean).pop() ?? ''
+  return `@${last}`
+}
+
+const linkedinUser = extractUsername(linkedin)
+const githubUser = extractUsername(github)
+
+const t = {
+  es: {
+    email: 'Email',
+    emailFallback: '(habilitar JS)',
+    copy: 'Copiar email',
+    copied: 'Copiado',
+    copyError: 'Error al copiar',
+  },
+  en: {
+    email: 'Email',
+    emailFallback: '(enable JS)',
+    copy: 'Copy email',
+    copied: 'Copied',
+    copyError: 'Copy failed',
+  },
+}[locale]
 ---
 
 <ul class="contact-links">
-  <li>
-    <a
-      class="contact-links__item"
-      href="#"
-      data-email-b64={emailB64}
-      id="contact-email"
-    >
-      <span class="contact-links__label">{emailLabel}</span>
-      <span class="contact-links__value">
-        <noscript>{fallbackLabel}</noscript>
-      </span>
-    </a>
-  </li>
-  <li>
-    <a class="contact-links__item" href={linkedin} target="_blank" rel="me noopener">
-      <span class="contact-links__label">LinkedIn</span>
-      <span class="contact-links__value">linkedin.com/in/{linkedin.split('/').filter(Boolean).pop()}</span>
-    </a>
-  </li>
-  <li>
-    <a class="contact-links__item" href={github} target="_blank" rel="me noopener">
-      <span class="contact-links__label">GitHub</span>
-      <span class="contact-links__value">github.com/{github.split('/').filter(Boolean).pop()}</span>
-    </a>
-  </li>
-  {
-    medium && (
-      <li>
-        <a
-          class="contact-links__item"
-          href={medium}
-          target="_blank"
-          rel="me noopener"
+  <li class="contact-links__item contact-links__item--email">
+    <span class="contact-links__label">{t.email}</span>
+    <div class="contact-links__email-row">
+      <a
+        class="contact-links__value contact-links__email-link"
+        href="#"
+        data-email-b64={emailB64}
+        data-email-link
+      >
+        <noscript>{t.emailFallback}</noscript>
+      </a>
+      <button
+        type="button"
+        class="contact-links__copy"
+        data-email-copy
+        aria-label={t.copy}
+        title={t.copy}
+        data-label-copy={t.copy}
+        data-label-copied={t.copied}
+        data-label-error={t.copyError}
+      >
+        <svg
+          class="contact-links__copy-icon contact-links__copy-icon--default"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
-          <span class="contact-links__label">Medium</span>
-          <span class="contact-links__value">
-            {medium.replace(/^https?:\/\//u, '')}
-          </span>
-        </a>
-      </li>
-    )
-  }
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+          ></path>
+        </svg>
+        <svg
+          class="contact-links__copy-icon contact-links__copy-icon--ok"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span class="sr-only" data-copy-status aria-live="polite"></span>
+      </button>
+    </div>
+  </li>
+
+  <li class="contact-links__item">
+    <a
+      class="contact-links__link"
+      href={linkedin}
+      target="_blank"
+      rel="me noopener noreferrer"
+    >
+      <span class="contact-links__label">LinkedIn</span>
+      <span class="contact-links__value">{linkedinUser}</span>
+    </a>
+  </li>
+
+  <li class="contact-links__item">
+    <a
+      class="contact-links__link"
+      href={github}
+      target="_blank"
+      rel="me noopener noreferrer"
+    >
+      <span class="contact-links__label">GitHub</span>
+      <span class="contact-links__value">{githubUser}</span>
+    </a>
+  </li>
+
 </ul>
 
 <script>
   import { deobfuscateEmail } from '../lib/obfuscate-email'
 
-  const link = document.getElementById('contact-email') as HTMLAnchorElement | null
-  if (link) {
+  const link = document.querySelector<HTMLAnchorElement>('[data-email-link]')
+  const button = document.querySelector<HTMLButtonElement>('[data-email-copy]')
+  if (!(link && button)) {
+    // No hay ContactLinks en esta pagina
+  } else {
     const b64 = link.dataset.emailB64
     if (b64) {
       const email = deobfuscateEmail(b64)
       link.href = `mailto:${email}`
-      const value = link.querySelector('.contact-links__value')
-      if (value) value.textContent = email
+      link.textContent = email
+
+      const status = button.querySelector<HTMLSpanElement>('[data-copy-status]')
+      const labelCopy = button.dataset.labelCopy ?? 'Copy email'
+      const labelCopied = button.dataset.labelCopied ?? 'Copied'
+      const labelError = button.dataset.labelError ?? 'Copy failed'
+      let resetTimer: number | undefined
+
+      const setState = (state: 'idle' | 'ok' | 'error', message: string) => {
+        button.dataset.state = state
+        button.setAttribute('aria-label', message)
+        button.title = message
+        if (status) status.textContent = message
+      }
+      setState('idle', labelCopy)
+
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(email)
+          setState('ok', labelCopied)
+        } catch {
+          setState('error', labelError)
+        }
+        if (resetTimer) window.clearTimeout(resetTimer)
+        resetTimer = window.setTimeout(() => setState('idle', labelCopy), 2000)
+      })
     }
   }
 </script>
@@ -92,9 +181,17 @@ const fallbackLabel = locale === 'es' ? '(habilitar JS)' : '(enable JS)'
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-12);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  @media (min-width: 640px) {
+    .contact-links {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-16);
+    }
   }
   .contact-links__item {
-    display: block;
     padding: var(--space-16);
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
@@ -106,18 +203,17 @@ const fallbackLabel = locale === 'es' ? '(habilitar JS)' : '(enable JS)'
       transform var(--motion-fast) var(--easing-out);
   }
   @media (min-width: 640px) {
-    .contact-links {
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: var(--space-16);
-    }
     .contact-links__item {
       padding: var(--space-20);
     }
   }
+  .contact-links__link {
+    display: block;
+    color: var(--color-text);
+  }
   .contact-links__item:hover {
     border-color: var(--color-border-strong);
     transform: translateY(-2px);
-    color: var(--color-text);
   }
   .contact-links__label {
     display: block;
@@ -133,5 +229,71 @@ const fallbackLabel = locale === 'es' ? '(habilitar JS)' : '(enable JS)'
     font-size: var(--font-size-16);
     color: var(--color-text);
     word-break: break-all;
+  }
+  .contact-links__email-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+  }
+  .contact-links__email-link {
+    flex: 1 1 auto;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  .contact-links__email-link:hover,
+  .contact-links__email-link:focus-visible {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+  .contact-links__copy {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition:
+      border-color var(--motion-fast) var(--easing-out),
+      color var(--motion-fast) var(--easing-out),
+      background var(--motion-fast) var(--easing-out);
+  }
+  .contact-links__copy:hover,
+  .contact-links__copy:focus-visible {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  .contact-links__copy[data-state='ok'] {
+    border-color: var(--color-success, var(--color-primary));
+    color: var(--color-success, var(--color-primary));
+  }
+  .contact-links__copy[data-state='error'] {
+    border-color: var(--color-danger, var(--color-primary));
+    color: var(--color-danger, var(--color-primary));
+  }
+  .contact-links__copy-icon--ok {
+    display: none;
+  }
+  .contact-links__copy[data-state='ok'] .contact-links__copy-icon--default {
+    display: none;
+  }
+  .contact-links__copy[data-state='ok'] .contact-links__copy-icon--ok {
+    display: inline-block;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 </style>

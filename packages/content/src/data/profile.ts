@@ -26,7 +26,6 @@ export const profile: Profile = ProfileSchema.parse({
     phone: '+51 918490148',
     linkedin: 'https://linkedin.com/in/bypabloc',
     github: 'https://github.com/bypabloc',
-    medium: 'https://bypablo.medium.com',
     website: 'https://the-full-stack.com',
   },
   avatarUrl: 'https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif',

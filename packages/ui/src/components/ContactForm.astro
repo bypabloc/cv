@@ -45,7 +45,13 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
       minlength="2"
       maxlength="200"
       autocomplete="name"
+      aria-describedby="contact-name-error"
     />
+    <small
+      class="field-error"
+      id="contact-name-error"
+      data-field="name"
+      hidden></small>
   </div>
 
   <div class="form-row">
@@ -59,7 +65,13 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
       required
       maxlength="254"
       autocomplete="email"
+      aria-describedby="contact-email-error"
     />
+    <small
+      class="field-error"
+      id="contact-email-error"
+      data-field="email"
+      hidden></small>
   </div>
 
   <details class="form-optional">
@@ -73,7 +85,13 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
         name="company"
         maxlength="200"
         autocomplete="organization"
+        aria-describedby="contact-company-error"
       />
+      <small
+        class="field-error"
+        id="contact-company-error"
+        data-field="company"
+        hidden></small>
     </div>
 
     <div class="form-row">
@@ -84,18 +102,33 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
         name="role"
         maxlength="100"
         autocomplete="organization-title"
+        aria-describedby="contact-role-error"
       />
+      <small
+        class="field-error"
+        id="contact-role-error"
+        data-field="role"
+        hidden></small>
     </div>
 
     <div class="form-row">
       <label for="contact-service-type">Tipo de servicio</label>
-      <select id="contact-service-type" name="service_type">
+      <select
+        id="contact-service-type"
+        name="service_type"
+        aria-describedby="contact-service-type-error"
+      >
         <option value="">(sin especificar)</option>
         <option value="consulting">Consultoria</option>
         <option value="fulltime">Full-time</option>
         <option value="contract">Contrato / freelance</option>
         <option value="other">Otro</option>
       </select>
+      <small
+        class="field-error"
+        id="contact-service-type-error"
+        data-field="service_type"
+        hidden></small>
     </div>
 
     <div class="form-row">
@@ -106,7 +139,13 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
         name="budget"
         maxlength="100"
         placeholder="Ej: USD 5k-15k / mes"
+        aria-describedby="contact-budget-error"
       />
+      <small
+        class="field-error"
+        id="contact-budget-error"
+        data-field="budget"
+        hidden></small>
     </div>
 
     <div class="form-row">
@@ -117,7 +156,13 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
         name="timeline"
         maxlength="100"
         placeholder="Ej: empieza en 2 semanas"
+        aria-describedby="contact-timeline-error"
       />
+      <small
+        class="field-error"
+        id="contact-timeline-error"
+        data-field="timeline"
+        hidden></small>
     </div>
   </details>
 
@@ -132,7 +177,13 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
       minlength="10"
       maxlength="5000"
       rows="6"
+      aria-describedby="contact-message-error"
     ></textarea>
+    <small
+      class="field-error"
+      id="contact-message-error"
+      data-field="message"
+      hidden></small>
   </div>
 
   <input type="hidden" name="niche" value={niche} />
@@ -176,6 +227,26 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
     apiEndpoint: string
   }
 
+  /**
+   * Estructura de error devuelta por el Lambda (Pydantic ValidationError).
+   * Espejo de pydantic.ValidationError.errors() del backend.
+   */
+  type PydanticFieldError = {
+    type: string
+    loc: (string | number)[]
+    msg: string
+    input?: unknown
+    ctx?: Record<string, unknown>
+  }
+
+  type ApiErrorBody = {
+    error?: string
+    code?: string
+    extra?: {
+      errors?: PydanticFieldError[]
+    }
+  }
+
   function getFormElements(form: HTMLFormElement): ContactFormElements {
     return {
       form,
@@ -201,10 +272,98 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
     return input?.value || null
   }
 
+  /**
+   * Traduce un PydanticFieldError a un mensaje legible en espanol.
+   *
+   * Cubre los codigos Pydantic v2 mas comunes que devuelve el Lambda:
+   * `string_too_short`, `string_too_long`, `missing`, `value_error`,
+   * `string_type`, `email`, `int_parsing`, etc. Si el codigo no esta
+   * mapeado, usa el `msg` original como fallback.
+   */
+  function humanizeError(err: PydanticFieldError): string {
+    const min = err.ctx?.min_length
+    const max = err.ctx?.max_length
+    switch (err.type) {
+      case 'missing':
+        return 'Este campo es obligatorio.'
+      case 'string_too_short':
+        return `Minimo ${min ?? '?'} caracteres.`
+      case 'string_too_long':
+        return `Maximo ${max ?? '?'} caracteres.`
+      case 'value_error':
+      case 'value_error.email':
+        return 'Email invalido. Revisa el formato.'
+      case 'string_type':
+      case 'string_pattern_mismatch':
+        return 'Formato invalido.'
+      case 'literal_error':
+        return 'Valor no permitido.'
+      default:
+        return err.msg || 'Valor invalido.'
+    }
+  }
+
+  /**
+   * Limpia todos los `<small.field-error>` del form y des-marca inputs.
+   */
+  function clearFieldErrors(form: HTMLFormElement): void {
+    const slots = form.querySelectorAll<HTMLElement>('.field-error')
+    slots.forEach((slot) => {
+      slot.textContent = ''
+      slot.hidden = true
+    })
+    const inputs = form.querySelectorAll<HTMLElement>('[aria-invalid="true"]')
+    inputs.forEach((el) => el.removeAttribute('aria-invalid'))
+  }
+
+  /**
+   * Pinta cada error Pydantic en su `<small data-field="<name>">`.
+   *
+   * Retorna el primer input que recibio error (para auto-scroll/focus),
+   * o `null` si ningun error matcheo un slot (caso raro: campo
+   * inexistente en el form).
+   */
+  function setFieldErrors(
+    form: HTMLFormElement,
+    errors: PydanticFieldError[],
+  ): HTMLElement | null {
+    let firstInvalid: HTMLElement | null = null
+
+    for (const err of errors) {
+      // loc puede ser ['body', 'message'] o ['message']. Tomamos el
+      // ultimo segmento que sea string como nombre del campo.
+      const field = [...err.loc]
+        .reverse()
+        .find((seg): seg is string => typeof seg === 'string')
+      if (!field) continue
+
+      const slot = form.querySelector<HTMLElement>(
+        `.field-error[data-field="${CSS.escape(field)}"]`,
+      )
+      if (!slot) continue
+
+      slot.textContent = humanizeError(err)
+      slot.hidden = false
+
+      const input = form.querySelector<HTMLElement>(
+        `[name="${CSS.escape(field)}"]`,
+      )
+      if (input) {
+        input.setAttribute('aria-invalid', 'true')
+        if (!firstInvalid) firstInvalid = input
+      }
+    }
+
+    return firstInvalid
+  }
+
   async function handleSubmit(event: SubmitEvent): Promise<void> {
     event.preventDefault()
     const form = event.currentTarget as HTMLFormElement
     const { submit, status, apiEndpoint } = getFormElements(form)
+
+    // Limpiar errores previos antes de cualquier nuevo intento
+    clearFieldErrors(form)
 
     if (!apiEndpoint) {
       showStatus(status, 'API endpoint no configurado', 'error')
@@ -241,6 +400,13 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
         body: JSON.stringify(payload),
       })
 
+      // Body solo se intenta parsear si es JSON (los 4xx del Lambda lo son)
+      let body: ApiErrorBody | null = null
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        body = (await response.json().catch(() => null)) as ApiErrorBody | null
+      }
+
       if (response.status === 201) {
         showStatus(
           status,
@@ -254,11 +420,28 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
           tsWidget.reset(form.querySelector('.cf-turnstile'))
         }
       } else if (response.status === 400) {
-        showStatus(
-          status,
-          'Hay datos invalidos en el formulario. Revisa los campos marcados con *.',
-          'error',
-        )
+        const errors = body?.extra?.errors ?? []
+        if (errors.length > 0) {
+          const firstInvalid = setFieldErrors(form, errors)
+          showStatus(
+            status,
+            'Hay datos invalidos en el formulario. Revisa los campos marcados.',
+            'error',
+          )
+          if (firstInvalid) {
+            firstInvalid.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            })
+            firstInvalid.focus({ preventScroll: true })
+          }
+        } else {
+          showStatus(
+            status,
+            body?.error || 'Hay datos invalidos en el formulario.',
+            'error',
+          )
+        }
       } else if (response.status === 403) {
         showStatus(
           status,
@@ -369,6 +552,24 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
   .form-row textarea:focus {
     outline: none;
     border-color: var(--color-primary);
+  }
+
+  .form-row input[aria-invalid='true'],
+  .form-row select[aria-invalid='true'],
+  .form-row textarea[aria-invalid='true'] {
+    border-color: var(--color-danger, #dc2626);
+  }
+
+  .field-error {
+    display: block;
+    margin-top: var(--space-4);
+    color: var(--color-danger, #dc2626);
+    font-size: var(--font-size-12);
+    line-height: 1.4;
+  }
+
+  .field-error[hidden] {
+    display: none;
   }
 
   .form-row textarea {

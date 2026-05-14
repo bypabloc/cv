@@ -264,6 +264,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Neon PostgreSQL | [.claude/docs/neon/README.md](.claude/docs/neon/README.md) o skill `neon` | Serverless PG 18, scale-to-zero, branching git-style, psycopg3 en Lambda, vs RDS/Supabase |
 | PostgreSQL 18 Analytics | [.claude/docs/postgresql-18-analytics/README.md](.claude/docs/postgresql-18-analytics/README.md) | Schema de las 4 tablas del backend, window functions, partitioning, JSONB, queries dashboard. Complementa skill `postgresql-18` |
 | DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/src/common/cache/` |
+| Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/src/common/rate_limit/` |
 | Backend serverless | [serverless/ARCHITECTURE.md](serverless/ARCHITECTURE.md) + [INTEGRATION.md](serverless/INTEGRATION.md) | Estructura + diagramas ASCII + propuesta hibrida DynamoDB+Neon+Cache |
 | Devtools serverless CLI | [devtools/serverless/README.md](devtools/serverless/README.md) | `python devtools/run.py serverless <command>` — build, deploy, invoke, logs, db-migrate, db-branch, cache, smoke |
 
@@ -305,6 +306,7 @@ Stack IaC: AWS SAM. Costo estimado: ~$7/mes (dominado por WAF Web ACL).
 | `cloudflare-turnstile` | CAPTCHA alternativa privacy-preserving: 1 sitekey para 6 subdominios, Managed mode form + Invisible tracking, idempotency_key, CSP directives |
 | `neon` | Neon serverless PostgreSQL: scale-to-zero, branching git-style, integracion con AWS Lambda Python via psycopg3, free tier 0.5GB + 191.9h compute/mes, vs RDS/Supabase/PlanetScale |
 | `dynamodb-cache` | Sistema de cache con DynamoDB TTL: `@cached(ttl)` decorator, lock distribuido (cache stampede prevention), stale-while-revalidate, tag invalidation. Vive en `serverless/src/common/cache/` y se usa desde todas las Lambdas |
+| `serverless-rate-limit` | Rate-limiting per-IP self-managed con DynamoDB (alternativa $0/mes a AWS WAF Web ACL que cuesta $7/mes). Sliding window weighted, atomic counters, auto-blacklist bot detection (3+ tokens Turnstile validos en 60s -> blacklist 24h), IP whitelist/blacklist, country rules. Vive en `serverless/src/common/rate_limit/` + 2 tablas DynamoDB |
 
 ### Referencia futura (backend Python/Django — no aplican hoy)
 

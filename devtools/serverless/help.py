@@ -43,6 +43,7 @@ _GROUPS: dict[str, list[str]] = {
         'db-tables',
     ],
     'Observability': ['metrics', 'alarms'],
+    'Rate-limit (DynamoDB self-managed, alternativa $0 a WAF)': ['rate-limit'],
     'Maintenance': ['smoke', 'clean', 'help'],
 }
 

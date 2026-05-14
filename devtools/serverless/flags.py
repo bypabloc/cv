@@ -75,6 +75,8 @@ VALID_COMMANDS = [
     'tail',  # sam logs -n <function> --tail (alias verbose de `logs --follow`)
     'metrics',  # CloudWatch metrics summary del stack
     'alarms',  # Lista alarmas y su estado
+    # Rate-limit management (alternativa $0 a AWS WAF)
+    'rate-limit',  # Dispatcher: list|show|set|allow|block|unblock|stats|clear-buckets
     # Smoke / Maintenance
     'smoke',  # scripts/smoke_test.sh (curl contra endpoint real)
     'clean',  # rm -rf .aws-sam/ + __pycache__ + .pytest_cache
@@ -121,6 +123,15 @@ ALLOWED_FLAGS = [
     'parent',  # --parent=main (parent branch)
     'sql_file',  # --sql-file=migrations/001_init.sql
     'dry_run',  # No aplica, solo imprime acciones
+    # Rate-limit management
+    'endpoint',  # --endpoint=/contact (rate-limit set)
+    'country',  # --country=CL (ISO 3166-1 alpha-2)
+    'limit',  # --limit=3 (max requests per window)
+    'window',  # --window=300 (seconds)
+    'action',  # --action=throttle|block|allow
+    'ip',  # --ip=X.X.X.X
+    'ttl',  # --ttl=86400 (seconds, blacklist temporal)
+    'reason',  # --reason="why" (audit string)
     # Cross-cutting
     'output',  # json|text
     # Internal
@@ -183,6 +194,7 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'tail': 'sam logs --tail (alias verbose de logs --follow)',
     'metrics': 'Resumen CloudWatch metrics del stack',
     'alarms': 'Lista alarmas + estado',
+    'rate-limit': 'Gestion de reglas rate-limit (list|set|allow|block|stats|...)',
     'smoke': 'curl contra endpoint deployed (smoke test)',
     'clean': 'Eliminar .aws-sam/ + caches Python',
     'help': 'Ayuda colorizada',
@@ -220,6 +232,22 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'tail': ['function', 'since', 'filter'],
     'metrics': ['stage', 'since', 'output'],
     'alarms': ['stage', 'output'],
+    'rate-limit': [
+        'subcommands',
+        'endpoint',
+        'country',
+        'limit',
+        'window',
+        'action',
+        'ip',
+        'ttl',
+        'reason',
+        'output',
+        'since',
+        'confirm',
+        'dry_run',
+        'name',
+    ],
     'smoke': ['stage'],
     'clean': ['dry_run'],
     'help': [],

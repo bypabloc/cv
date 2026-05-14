@@ -88,6 +88,17 @@ Globals:
   # metodos (HandlerErrorCode: InvalidRequest "REST API doesn't contain any
   # methods"). El API se materializa cuando aparece el primer endpoint.
 
+# ============================================================================
+# Conditions: stage-based behavior
+# ============================================================================
+# IsDev: en dev permitimos CORS '*' en preflight para poder testear desde
+# localhost:9970-9973 (Docker stack del frontend). Prod mantiene whitelist
+# estricta. La Lambda igual valida Turnstile token, asi que '*' en preflight
+# no permite enviar form sin captcha resuelto.
+# ============================================================================
+Conditions:
+  IsDev: !Equals [!Ref Stage, 'dev']
+
 Resources:
   # ==========================================================================
   # Lambda Layer compartido: Powertools v3 + httpx + pydantic
@@ -167,7 +178,13 @@ Resources:
           "integrationLatency":"$context.integrationLatency",
           "latency":"$context.responseLatency"}
       Cors:
-        AllowOrigin: "'https://the-full-stack.com'"
+        # En dev permitimos '*' para testear desde localhost:9970-9973 (Docker
+        # stack). En prod mantenemos whitelist estricta (apex). La Lambda igual
+        # valida Turnstile token: '*' en preflight no permite spammear sin captcha.
+        AllowOrigin: !If
+          - IsDev
+          - "'*'"
+          - "'https://the-full-stack.com'"
         AllowHeaders: "'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'"
         AllowMethods: "'GET,POST,OPTIONS'"
         MaxAge: "'600'"

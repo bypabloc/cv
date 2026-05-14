@@ -5,6 +5,10 @@ x-app-environment: &app-environment
   BASE_DOMAIN: ${BASE_DOMAIN:-the-full-stack.com}
   BASE_SCHEME: ${BASE_SCHEME:-https}
   BASE_PORT: ${BASE_PORT-}
+  # Backend serverless (vienen de docker/env/.prod). Astro los lee
+  # como import.meta.env.PUBLIC_* y los inlinea en el bundle del browser.
+  PUBLIC_API_ENDPOINT: ${PUBLIC_API_ENDPOINT:-}
+  PUBLIC_TURNSTILE_SITEKEY: ${PUBLIC_TURNSTILE_SITEKEY:-}
 
 services:
   nginx:

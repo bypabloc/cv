@@ -1,0 +1,5 @@
+BEGIN;
+DROP MATERIALIZED VIEW IF EXISTS mv_session_journey;
+DROP MATERIALIZED VIEW IF EXISTS mv_top_landing_pages;
+DROP MATERIALIZED VIEW IF EXISTS mv_contacts_by_month_niche;
+COMMIT;

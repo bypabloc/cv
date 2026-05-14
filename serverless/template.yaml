@@ -111,6 +111,22 @@ Resources:
       BuildMethod: python3.13
       BuildArchitecture: arm64
 
+  # Layer separado para psycopg3 (Lambdas que tocan Neon: SPEC-009/010)
+  PostgresLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub portfolio-postgres-${Stage}
+      Description: psycopg3 binary arm64 para Lambdas que tocan Neon PostgreSQL
+      ContentUri: layers/postgres_python/
+      CompatibleRuntimes:
+        - python3.13
+      CompatibleArchitectures:
+        - arm64
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.13
+      BuildArchitecture: arm64
+
   # ==========================================================================
   # API Gateway REST + CloudWatch Access Log Group
   # ==========================================================================

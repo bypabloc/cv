@@ -88,6 +88,88 @@ class TestVerifyTurnstileToken:
 
         assert exc_info.value.code == 'CAPTCHA_HOSTNAME_MISMATCH'
 
+    @respx.mock
+    @pytest.mark.parametrize(
+        'hostname',
+        [
+            'hub.localhost',
+            'fintech.localhost',
+            'architect.localhost',
+            'leader.localhost',
+            'vibe.localhost',
+        ],
+    )
+    def test_when_localhost_subdomain_in_stage_dev_then_allowed(
+        self,
+        contact_form_aws: None,
+        monkeypatch: pytest.MonkeyPatch,
+        hostname: str,
+    ) -> None:
+        """
+        Given hostname *.localhost + STAGE=dev,
+        When verify,
+        Then aceptado (RFC 6761 garantiza resolucion local).
+        """
+        monkeypatch.setenv('STAGE', 'dev')
+        respx.post(TURNSTILE_SITEVERIFY_URL).mock(
+            return_value=httpx.Response(
+                200,
+                json={'success': True, 'hostname': hostname},
+            )
+        )
+
+        result = verify_turnstile_token('cf-response-value', remote_ip='1.2.3.4')
+
+        assert result['success'] is True
+        assert result['hostname'] == hostname
+
+    @respx.mock
+    def test_when_localhost_subdomain_in_stage_prod_then_rejected(
+        self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given hostname *.localhost + STAGE=prod,
+        When verify,
+        Then rechazado (subdominios localhost solo en dev).
+        """
+        monkeypatch.setenv('STAGE', 'prod')
+        respx.post(TURNSTILE_SITEVERIFY_URL).mock(
+            return_value=httpx.Response(
+                200,
+                json={'success': True, 'hostname': 'architect.localhost'},
+            )
+        )
+
+        with pytest.raises(TurnstileError) as exc_info:
+            verify_turnstile_token('cf-response-value', remote_ip='1.2.3.4')
+
+        assert exc_info.value.code == 'CAPTCHA_HOSTNAME_MISMATCH'
+
+    @respx.mock
+    def test_when_evil_localhost_subdomain_then_rejected(
+        self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given hostname disfrazado tipo evil.localhost.attacker.com,
+        When verify,
+        Then rechazado (pattern enforce $ anclado).
+        """
+        monkeypatch.setenv('STAGE', 'dev')
+        respx.post(TURNSTILE_SITEVERIFY_URL).mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    'success': True,
+                    'hostname': 'evil.localhost.attacker.com',
+                },
+            )
+        )
+
+        with pytest.raises(TurnstileError) as exc_info:
+            verify_turnstile_token('cf-response-value', remote_ip='1.2.3.4')
+
+        assert exc_info.value.code == 'CAPTCHA_HOSTNAME_MISMATCH'
+
     def test_when_bypass_secret_matches_then_skip_verify(
         self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -3,6 +3,7 @@
  *   errores. Refleja las mismas reglas del Pydantic backend.
  */
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 import {
   ContactFormSchema,
   emptyValues,
@@ -123,6 +124,40 @@ describe('ContactFormSchema', () => {
       expect(fieldErrors.email).toBe('Email invalido. Revisa el formato.')
       expect(fieldErrors.message).toBe('Minimo 10 caracteres.')
     }
+  })
+})
+
+describe('getFieldErrors', () => {
+  it('Given issue con path[0] no-string When mapeo Then se ignora', () => {
+    // ZodError con path no-string (e.g. raiz). Branch coverage de
+    // contact-form-schema.ts L80 (`if (typeof field !== 'string') continue`).
+    const error = z.ZodError.create([
+      {
+        code: 'custom',
+        path: [],
+        message: 'error en raiz',
+      },
+    ])
+    const result = getFieldErrors(error)
+    expect(result).toEqual({})
+  })
+
+  it('Given dos issues en mismo campo When mapeo Then se queda el primer mensaje', () => {
+    // Branch coverage de L81 (`if (result[field]) continue`).
+    const error = z.ZodError.create([
+      {
+        code: 'custom',
+        path: ['email'],
+        message: 'primer error',
+      },
+      {
+        code: 'custom',
+        path: ['email'],
+        message: 'segundo error',
+      },
+    ])
+    const result = getFieldErrors(error)
+    expect(result.email).toBe('primer error')
   })
 })
 

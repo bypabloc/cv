@@ -275,6 +275,34 @@ _DEFAULTS: dict[str, Any] = {
 }
 
 
+def _extract_positionals(flags_dict: dict[str, Any]) -> None:
+    """Extract positional args from sys.argv into flags_dict['subcommands'].
+
+    `flags_to_dict` solo parsea `--key=value`; los positionals (e.g.
+    `serverless build`, `serverless db-branch create --branch=X`) se
+    pierden. Este helper los reconstruye desde `sys.argv[2:]` (saltando
+    el nombre del script) tomando todo lo que NO arranque con `--`.
+
+    Mismo patron que `devtools/docker/flags.py::_extract_command`.
+    """
+    import sys as _sys
+
+    raw_args = _sys.argv[2:]
+    positionals: list[str] = []
+    for arg in raw_args:
+        if arg == '--':
+            break
+        if not arg.startswith('--'):
+            positionals.append(arg)
+
+    if positionals:
+        # Si `flags_dict['subcommands']` ya viene (e.g. de tests), lo
+        # respetamos; sino lo poblamos desde sys.argv.
+        existing = flags_dict.get('subcommands')
+        if not existing:
+            flags_dict['subcommands'] = positionals
+
+
 def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     """Validate and normalize flags for serverless commands.
 
@@ -282,6 +310,8 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     receives raw flags dict from flags_to_dict, returns normalized dict,
     raises ValueError on validation error (loader catches + prints).
     """
+    _extract_positionals(flags_dict)
+
     # Extraer comando posicional (primer token sin --) desde subcommands
     subcommands = flags_dict.get('subcommands', []) or []
     command = subcommands[0] if subcommands else 'help'

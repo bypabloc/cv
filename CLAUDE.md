@@ -256,6 +256,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | CV (contenido) | [.claude/docs/cv/README.md](.claude/docs/cv/README.md) | Datos del CV (perfil, experiencia, proyectos) |
 | Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseño |
 | Deploy Cloudflare Pages | [.claude/docs/cloudflare/README.md](.claude/docs/cloudflare/README.md) o skill `cloudflare-deploy` | Deploy, custom domains, DNS, gotchas, troubleshoot del setup actual |
+| Estandar subdominios | [.claude/docs/subdomain-standard/README.md](.claude/docs/subdomain-standard/README.md) o skill `subdomain-standard` | Patron `[{component}.]{product}.{env}.{domain}` para products, components y envs (dev/stage/prod) bajo the-full-stack.com. Reservados, wildcards SSL, plan de migracion del backend |
 | AWS Lambda Python 3.13 | [.claude/docs/aws-lambda/README.md](.claude/docs/aws-lambda/README.md) o skill `aws-lambda-python` | Backend serverless: runtime, Powertools v3, cold start, SAM deploy, IAM, costs |
 | AWS API Gateway | [.claude/docs/aws-api-gateway/README.md](.claude/docs/aws-api-gateway/README.md) o skill `aws-api-gateway` | REST vs HTTP, throttling per-IP via WAF, CORS, request validation, deploy |
 | AWS DynamoDB | [.claude/docs/aws-dynamodb/README.md](.claude/docs/aws-dynamodb/README.md) o skill `aws-dynamodb` | On-demand, TTL, boto3, single-table, GSI, pricing 2026 |

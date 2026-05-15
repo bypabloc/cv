@@ -12,6 +12,7 @@ Response: {success: bool, hostname, error-codes, action, cdata, ...}
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 import httpx
@@ -22,7 +23,10 @@ from common.ssm_client import get_secret
 
 TURNSTILE_SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
-# Lista de hostnames esperados (debe matchear el widget del Cloudflare dashboard)
+# Lista de hostnames esperados (debe matchear el widget del Cloudflare dashboard).
+# 'localhost' apex se acepta siempre (compat con dev). Subdominios *.localhost
+# se aceptan solo en stage=dev via _LOCAL_SUBDOMAIN_PATTERN (RFC 6761 garantiza
+# que resuelven a 127.0.0.1).
 _EXPECTED_HOSTNAMES = frozenset({
     'the-full-stack.com',
     'hub.the-full-stack.com',
@@ -33,6 +37,24 @@ _EXPECTED_HOSTNAMES = frozenset({
     'localhost',
     '127.0.0.1',
 })
+
+# Pattern para subdominios *.localhost. Turnstile envia solo el hostname
+# (sin scheme ni puerto), por eso no incluimos http:// ni :port aqui.
+_LOCAL_SUBDOMAIN_PATTERN: re.Pattern[str] = re.compile(
+    r'^[a-z0-9-]+\.localhost$',
+)
+
+
+def _hostname_allowed(hostname: str) -> bool:
+    """True si hostname esta en whitelist apex o es *.localhost en stage dev."""
+    if hostname in _EXPECTED_HOSTNAMES:
+        return True
+    if (
+        os.environ.get('STAGE', 'dev') == 'dev'
+        and _LOCAL_SUBDOMAIN_PATTERN.match(hostname)
+    ):
+        return True
+    return False
 
 
 def verify_turnstile_token(
@@ -108,9 +130,10 @@ def verify_turnstile_token(
             extra={'error_codes': error_codes},
         )
 
-    # Validar hostname (defensa en profundidad contra widget hijacking)
+    # Validar hostname (defensa en profundidad contra widget hijacking).
+    # En stage=dev se permite cualquier *.localhost (ver _hostname_allowed).
     hostname = result.get('hostname', '').lower()
-    if hostname and hostname not in _EXPECTED_HOSTNAMES:
+    if hostname and not _hostname_allowed(hostname):
         logger.warning(
             'turnstile hostname mismatch',
             extra={'received_hostname': hostname, 'remote_ip': remote_ip},

@@ -43,8 +43,13 @@ from shared.console import _c
 from shared.console import _err
 
 
-_RULES_TABLE = 'rate_limit_rules'
-_BUCKETS_TABLE = 'rate_limit_buckets'
+# Las tablas DynamoDB siguen el patron `portfolio-<recurso>-<stage>` definido
+# en serverless/template.yaml. El stage por default es `dev` (lo unico que existe
+# hoy ademas de prod). Si se necesita gestionar otro stage, agregar flag --stage
+# y resolver el sufijo aqui.
+_STAGE = 'dev'
+_RULES_TABLE = f'portfolio-rate-limit-rules-{_STAGE}'
+_BUCKETS_TABLE = f'portfolio-rate-limit-buckets-{_STAGE}'
 _REGION = 'us-east-1'
 
 _VALID_ACTIONS = [

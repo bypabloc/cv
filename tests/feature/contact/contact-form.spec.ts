@@ -26,7 +26,9 @@ const BYPASS_SECRET = process.env.TURNSTILE_BYPASS_SECRET ?? ''
  * `domcontentloaded`. Esperar al input[name=name] garantiza estado interactivo.
  */
 async function gotoContactReady(page: Page): Promise<void> {
-  await page.goto(`${subdomainUrl()}/contact`, { waitUntil: 'domcontentloaded' })
+  await page.goto(`${subdomainUrl()}/contact`, {
+    waitUntil: 'domcontentloaded',
+  })
   await expect(page.getByTestId('contact-form')).toBeVisible()
   await expect(page.locator('input[name="name"]')).toBeVisible()
 }

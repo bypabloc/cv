@@ -45,10 +45,14 @@ class TestContactFormInput:
         with pytest.raises(PydanticValidationError):
             ContactFormInput(**self._valid_payload(email='not-an-email'))
 
-    def test_when_cf_token_too_short_then_raises(self) -> None:
-        """Given cf_token < 20 chars, When parse, Then ValidationError."""
-        with pytest.raises(PydanticValidationError):
-            ContactFormInput(**self._valid_payload(cf_token='short'))  # noqa: S106
+    def test_when_cf_token_empty_then_accepts(self) -> None:
+        """
+        Given cf_token vacio (default), When parse, Then accepts.
+        El backend valida cf_token vs Turnstile en service layer; el schema
+        permite vacio porque el bypass de tests E2E lo requiere.
+        """
+        parsed = ContactFormInput(**self._valid_payload(cf_token=''))
+        assert parsed.cf_token == ''
 
     def test_when_message_has_html_then_sanitized(self) -> None:
         """Given message con HTML, When parse, Then escapado (XSS prevention)."""

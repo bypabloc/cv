@@ -170,18 +170,25 @@ class TestVerifyTurnstileToken:
 
         assert exc_info.value.code == 'CAPTCHA_HOSTNAME_MISMATCH'
 
-    def test_when_bypass_secret_matches_then_skip_verify(
-        self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
+    def test_when_cf_response_empty_and_bypass_matches_in_dev_then_skip(
+        self,
+        contact_form_aws: None,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
-        Given TURNSTILE_BYPASS_SECRET seteado + header matchea,
+        Given cf_response vacio + STAGE=dev + bypass_secret matchea SSM,
         When verify,
-        Then skip Cloudflare API (no HTTP call).
+        Then bypass aplica (no HTTP call a Cloudflare).
         """
-        monkeypatch.setenv('TURNSTILE_BYPASS_SECRET', 'test-bypass-123')
+        monkeypatch.setenv('STAGE', 'dev')
+        monkeypatch.setenv('SSM_TURNSTILE_BYPASS_PATH', '/portfolio/dev/turnstile-bypass-secret')
+        monkeypatch.setattr(
+            'contact_form.turnstile.get_secret',
+            lambda _path: 'test-bypass-123',
+        )
 
         result = verify_turnstile_token(
-            'any-cf-response',
+            '',
             remote_ip='1.2.3.4',
             bypass_secret='test-bypass-123',  # noqa: S106
         )
@@ -189,21 +196,66 @@ class TestVerifyTurnstileToken:
         assert result['success'] is True
         assert result.get('bypassed') is True
 
-    def test_when_bypass_secret_wrong_then_does_not_skip(
-        self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
+    def test_when_cf_response_not_empty_bypass_is_ignored(
+        self,
+        contact_form_aws: None,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
-        Given bypass_secret no matchea,
+        Given cf_response NO vacio + bypass_secret presente,
         When verify,
-        Then NO skip (intenta llamar a Cloudflare).
+        Then ignora el bypass y llama a Cloudflare (regla #1: bypass solo
+        si cf_response vacio).
         """
-        monkeypatch.setenv('TURNSTILE_BYPASS_SECRET', 'real-secret')
+        monkeypatch.setenv('STAGE', 'dev')
+        monkeypatch.setenv('SSM_TURNSTILE_BYPASS_PATH', '/portfolio/dev/turnstile-bypass-secret')
+        monkeypatch.setattr(
+            'contact_form.turnstile.get_secret',
+            lambda _path: 'test-bypass-123',
+        )
 
-        # respx no activado -> la llamada HTTP es real y falla. Cae en
-        # TurnstileError CAPTCHA_FAILED por connection error.
+        # Sin respx activo, la llamada HTTP real falla -> CAPTCHA_FAILED.
         with pytest.raises(TurnstileError):
             verify_turnstile_token(
-                'any-cf-response',
+                'some-real-cf-token',
                 remote_ip='1.2.3.4',
-                bypass_secret='wrong-secret',  # noqa: S106
+                bypass_secret='test-bypass-123',  # noqa: S106
             )
+
+    def test_when_cf_response_empty_in_prod_then_reject(
+        self,
+        contact_form_aws: None,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """
+        Given cf_response vacio + STAGE=prod (incluso con bypass_secret),
+        When verify,
+        Then CAPTCHA_INVALID (regla #2: bypass solo en dev/local).
+        """
+        monkeypatch.setenv('STAGE', 'prod')
+
+        with pytest.raises(TurnstileError) as exc_info:
+            verify_turnstile_token(
+                '',
+                remote_ip='1.2.3.4',
+                bypass_secret='any-secret',  # noqa: S106
+            )
+
+        assert exc_info.value.code == 'CAPTCHA_INVALID'
+
+    def test_when_cf_response_empty_and_no_bypass_secret_then_reject(
+        self,
+        contact_form_aws: None,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """
+        Given cf_response vacio + STAGE=dev + sin bypass_secret,
+        When verify,
+        Then CAPTCHA_INVALID.
+        """
+        monkeypatch.setenv('STAGE', 'dev')
+
+        with pytest.raises(TurnstileError) as exc_info:
+            verify_turnstile_token('', remote_ip='1.2.3.4', bypass_secret=None)
+
+        assert exc_info.value.code == 'CAPTCHA_INVALID'

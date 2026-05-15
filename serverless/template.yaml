@@ -223,6 +223,12 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: contact-form
+          # Bypass secret para tests E2E (solo dev):
+          # - El SSM param `/portfolio/dev/turnstile-bypass-secret` debe existir
+          #   solo en stage=dev. La Lambda resuelve el valor en runtime via SSM.
+          # - turnstile.py corta el bypass por STAGE (defense-in-depth): aunque
+          #   alguien setee el secret en prod, la funcion lo ignora.
+          SSM_TURNSTILE_BYPASS_PATH: /portfolio/dev/turnstile-bypass-secret
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ContactsTable
@@ -234,6 +240,12 @@ Resources:
             TableName: !Ref RateLimitBucketsTable
         - SSMParameterReadPolicy:
             ParameterName: 'portfolio/turnstile-secret'
+        # SSM bypass secret: la IAM policy se concede siempre pero la Lambda
+        # solo lee el param si STAGE in {dev,local} (defense-in-depth en codigo).
+        # En stage=prod el SSM param no debe existir, lo que falla la lectura
+        # con ParameterNotFound y el bypass queda inerte.
+        - SSMParameterReadPolicy:
+            ParameterName: 'portfolio/dev/turnstile-bypass-secret'
         - SSMParameterReadPolicy:
             ParameterName: 'portfolio/owner-email'
         - SSMParameterReadPolicy:

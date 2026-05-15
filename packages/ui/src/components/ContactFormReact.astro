@@ -1,0 +1,215 @@
+---
+/**
+ * @component ContactFormReact (Astro wrapper)
+ * @description Monta ContactFormReact.tsx con `client:load`. Hidrata en el
+ *   cliente y comparte estilos globales del form (tokens del DS).
+ *
+ * @props {string} apiEndpoint - Full URL del POST /contact
+ * @props {string} turnstileSitekey - Sitekey publica del widget Turnstile
+ * @props {string} [niche] - Nicho del subdominio
+ */
+import ContactFormReact from './ContactFormReact.tsx'
+
+interface Props {
+  apiEndpoint: string
+  turnstileSitekey: string
+  niche?: string
+}
+const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
+---
+
+<ContactFormReact
+  apiEndpoint={apiEndpoint}
+  turnstileSitekey={turnstileSitekey}
+  niche={niche}
+  client:load
+/>
+
+<style is:global>
+  .contact-form-wrapper {
+    width: 100%;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    max-width: var(--container-narrow);
+    margin-inline: auto;
+  }
+
+  .contact-form .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .contact-form .form-row label {
+    font-size: var(--font-size-13);
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .contact-form .form-row label span[aria-hidden] {
+    color: var(--color-primary);
+  }
+
+  .contact-form .form-row input,
+  .contact-form .form-row select,
+  .contact-form .form-row textarea {
+    padding: var(--space-10) var(--space-12);
+    font-size: var(--font-size-14);
+    font-family: var(--font-sans);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    transition: border-color 150ms ease;
+  }
+
+  .contact-form .form-row input:focus,
+  .contact-form .form-row select:focus,
+  .contact-form .form-row textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .contact-form .form-row input[aria-invalid='true'],
+  .contact-form .form-row select[aria-invalid='true'],
+  .contact-form .form-row textarea[aria-invalid='true'] {
+    border-color: var(--color-danger, #dc2626);
+  }
+
+  .contact-form .form-row textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  .contact-form .field-error {
+    display: block;
+    margin-top: var(--space-4);
+    color: var(--color-danger, #dc2626);
+    font-size: var(--font-size-12);
+    line-height: 1.4;
+  }
+
+  .contact-form .form-optional {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-12);
+  }
+
+  .contact-form .form-optional summary {
+    font-size: var(--font-size-13);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .contact-form .form-optional[open] summary {
+    margin-bottom: var(--space-12);
+  }
+
+  .contact-form .form-optional .form-row + .form-row {
+    margin-top: var(--space-12);
+  }
+
+  .contact-submit {
+    align-self: flex-start;
+    padding: var(--space-10) var(--space-24);
+    font-size: var(--font-size-14);
+    font-weight: 600;
+    color: var(--color-primary-contrast);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .contact-submit:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+
+  .contact-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .form-status {
+    min-height: 1.2em;
+    margin: 0;
+    font-size: var(--font-size-13);
+  }
+
+  .form-status[data-kind='success'] {
+    color: var(--color-success, #16a34a);
+  }
+
+  .form-status[data-kind='error'] {
+    color: var(--color-danger, #dc2626);
+  }
+
+  .form-status[data-kind='submitting'] {
+    color: var(--color-text-muted);
+  }
+
+  .contact-sent-card {
+    max-width: var(--container-narrow);
+    margin-inline: auto;
+    padding: var(--space-24);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  .contact-sent-card__title {
+    margin: 0;
+    font-size: var(--font-size-20);
+    font-weight: 600;
+    color: var(--color-success, #16a34a);
+  }
+
+  .contact-sent-card__body {
+    margin: 0;
+    font-size: var(--font-size-14);
+    color: var(--color-text);
+    line-height: var(--line-height-base);
+  }
+
+  .contact-sent-card__ref {
+    margin: 0;
+    font-size: var(--font-size-12);
+    color: var(--color-text-muted);
+  }
+
+  .contact-sent-card__ref code {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-12);
+    color: var(--color-text-subtle);
+    word-break: break-all;
+  }
+
+  .contact-sent-card__resend {
+    align-self: flex-start;
+    margin-top: var(--space-6);
+    padding: var(--space-8) var(--space-16);
+    font-size: var(--font-size-13);
+    font-weight: 500;
+    color: var(--color-text);
+    background-color: transparent;
+    border: 1px solid var(--color-border-strong, var(--color-border));
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .contact-sent-card__resend:hover {
+    background-color: var(--color-surface-2, var(--color-surface));
+    border-color: var(--color-primary);
+  }
+</style>

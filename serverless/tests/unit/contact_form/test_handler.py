@@ -160,23 +160,31 @@ class TestLambdaHandler:
         body = json.loads(response['body'])
         assert body['code'] == 'CAPTCHA_INVALID'
 
-    def test_when_bypass_secret_matches_then_201(
+    def test_when_bypass_secret_matches_in_dev_then_201(
         self,
         contact_form_aws: None,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
-        Given header X-Turnstile-Bypass-Secret matchea,
+        Given STAGE=dev + cf_token vacio + header X-Turnstile-Bypass-Secret
+        matchea el SSM bypass param,
         When invoke handler,
         Then 201 (skip Turnstile, no HTTP call a CF).
         """
-        monkeypatch.setenv('TURNSTILE_BYPASS_SECRET', 'test-bypass-key')
+        monkeypatch.setenv('STAGE', 'dev')
+        monkeypatch.setenv(
+            'SSM_TURNSTILE_BYPASS_PATH', '/portfolio/dev/turnstile-bypass-secret'
+        )
+        monkeypatch.setattr(
+            'contact_form.turnstile.get_secret',
+            lambda _path: 'test-bypass-key',
+        )
 
         event = _build_event(body={
             'name': 'Pablo Test',
             'email': 'user@example.com',
             'message': 'Bypass test message',
-            'cf_token': 'x' * 30,
+            'cf_token': '',
         })
         event['headers']['X-Turnstile-Bypass-Secret'] = 'test-bypass-key'
 

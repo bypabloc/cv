@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import base64
 import json
+from decimal import Decimal
 from typing import Any
 
 from common.cache.types import CacheEntry
@@ -25,12 +26,39 @@ class SerializationError(ValueError):
     """Raised cuando un valor no es serializable o decode falla."""
 
 
+class _CacheJSONEncoder(json.JSONEncoder):
+    """
+    JSON encoder que maneja tipos comunes de DynamoDB:
+
+    - `Decimal`: serializa a int si es entero, sino a float. DynamoDB siempre
+      retorna numericos como `Decimal` desde boto3 Resource. Convertir a tipo
+      Python nativo perdiendo precision esta OK aqui porque la cache es para
+      valores observables (counters, scores), no para money.
+    - `set` / `frozenset`: serializa a list (DynamoDB tiene tipo `SS`/`NS`/`BS`
+      pero al deserializar boto3 lo da como `set`).
+    - `bytes`: la rama bytes ya se cubre en `serialize()` antes de llegar a
+      JSON, pero un bytes anidado dentro de un dict tambien necesita un fallback
+      aqui (base64).
+    """
+
+    def default(self, o: Any) -> Any:  # noqa: D401 - JSONEncoder protocol
+        if isinstance(o, Decimal):
+            # Decimal('3') -> 3, Decimal('3.5') -> 3.5
+            return int(o) if o == o.to_integral_value() else float(o)
+        if isinstance(o, (set, frozenset)):
+            return list(o)
+        if isinstance(o, bytes):
+            return base64.b64encode(o).decode('ascii')
+        return super().default(o)
+
+
 def serialize(value: Any) -> tuple[str, str]:
     """
     Serializa value a (string_value, encoding).
 
     Args:
-        value: cualquier Python type JSON-serializable o bytes.
+        value: cualquier Python type JSON-serializable, bytes, Decimal, set o
+            dicts/lists anidados que contengan esos tipos.
 
     Returns:
         Tuple (string serializado, encoding marker).
@@ -42,7 +70,15 @@ def serialize(value: Any) -> tuple[str, str]:
         return base64.b64encode(value).decode('ascii'), 'bytes_b64'
 
     try:
-        return json.dumps(value, ensure_ascii=False, separators=(',', ':')), 'json'
+        return (
+            json.dumps(
+                value,
+                ensure_ascii=False,
+                separators=(',', ':'),
+                cls=_CacheJSONEncoder,
+            ),
+            'json',
+        )
     except (TypeError, ValueError) as e:
         msg = f'Cannot serialize type {type(value).__name__}: {e}'
         raise SerializationError(msg) from e

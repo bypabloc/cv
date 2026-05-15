@@ -17,8 +17,11 @@ class ContactFormInput(BaseModel):
     email: EmailStr
     message: str = Field(..., min_length=10, max_length=5000)
 
-    # Captcha token (Cloudflare Turnstile)
-    cf_token: str = Field(..., min_length=20, max_length=2048)
+    # Captcha token (Cloudflare Turnstile).
+    # Opcional intencionalmente: si viene vacio, el handler de Turnstile evalua
+    # el header X-Turnstile-Bypass-Secret. Solo es valido en stage in {dev,local}.
+    # En stage/prod, vacio o invalido -> CAPTCHA_INVALID (Turnstile lo rechaza).
+    cf_token: str = Field(default='', max_length=2048)
 
     # Campos opcionales (form progresivo)
     company: str | None = Field(default=None, max_length=200)

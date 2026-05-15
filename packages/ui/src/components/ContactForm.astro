@@ -27,6 +27,26 @@ interface Props {
 const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
 ---
 
+<div class="contact-form-wrapper">
+  <!-- Card de confirmacion (oculta por default; el script la muestra si hay registro vivo) -->
+  <div class="contact-sent-card" data-contact-sent-card hidden>
+    <p class="contact-sent-card__title">Mensaje enviado</p>
+    <p class="contact-sent-card__body">
+      Ya enviaste un mensaje
+      <span data-contact-sent-date></span>. Te respondere en menos de 24h.
+    </p>
+    <p class="contact-sent-card__ref">
+      Ref: <code data-contact-sent-id></code>
+    </p>
+    <button
+      type="button"
+      class="contact-sent-card__resend"
+      data-contact-resend
+    >
+      Enviar otro mensaje
+    </button>
+  </div>
+
 <form
   class="contact-form"
   data-api-endpoint={apiEndpoint}
@@ -204,6 +224,7 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
 
   <p class="form-status" role="status" aria-live="polite"></p>
 </form>
+</div>
 
 <!-- Turnstile script (cargado async) -->
 <script
@@ -219,12 +240,26 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
    * NOTA: este script vive en module scope. Se ejecuta una sola vez por
    * pagina, registra event listeners en todos los <form.contact-form>.
    */
+  import {
+    clearContactRecord,
+    formatSentDate,
+    readContactRecord,
+    saveContactRecord,
+  } from '../lib/contact-storage'
 
   type ContactFormElements = {
     form: HTMLFormElement
     submit: HTMLButtonElement
     status: HTMLParagraphElement
     apiEndpoint: string
+  }
+
+  /**
+   * Body de respuesta 201 del Lambda contact_form.
+   */
+  type ContactSuccessBody = {
+    contact_id?: string
+    created_at?: string
   }
 
   /**
@@ -400,11 +435,14 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
         body: JSON.stringify(payload),
       })
 
-      // Body solo se intenta parsear si es JSON (los 4xx del Lambda lo son)
-      let body: ApiErrorBody | null = null
+      // Body solo se intenta parsear si es JSON (los 4xx del Lambda lo son
+      // y el 201 tambien)
+      let body: (ApiErrorBody & ContactSuccessBody) | null = null
       const contentType = response.headers.get('content-type') || ''
       if (contentType.includes('application/json')) {
-        body = (await response.json().catch(() => null)) as ApiErrorBody | null
+        body = (await response.json().catch(() => null)) as
+          | (ApiErrorBody & ContactSuccessBody)
+          | null
       }
 
       if (response.status === 201) {
@@ -418,6 +456,12 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
         const tsWidget = window.turnstile
         if (tsWidget && typeof tsWidget.reset === 'function') {
           tsWidget.reset(form.querySelector('.cf-turnstile'))
+        }
+        // Persistir contact_id + cookie compartida + ocultar form
+        const contactId = body?.contact_id
+        if (typeof contactId === 'string' && contactId.length > 0) {
+          const record = saveContactRecord(contactId)
+          renderSentCard(form, record.contactId, record.sentAt)
         }
       } else if (response.status === 400) {
         const errors = body?.extra?.errors ?? []
@@ -474,10 +518,70 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
     }
   }
 
+  /**
+   * Muestra la card de confirmacion y oculta el form.
+   */
+  function renderSentCard(
+    form: HTMLFormElement,
+    contactId: string,
+    sentAt: number,
+  ): void {
+    const wrapper = form.closest('.contact-form-wrapper')
+    if (!wrapper) return
+    const card = wrapper.querySelector<HTMLElement>('[data-contact-sent-card]')
+    if (!card) return
+
+    const dateEl = card.querySelector<HTMLElement>('[data-contact-sent-date]')
+    if (dateEl) {
+      const formatted = formatSentDate(sentAt)
+      dateEl.textContent = `el ${formatted}`
+    }
+    const idEl = card.querySelector<HTMLElement>('[data-contact-sent-id]')
+    if (idEl) idEl.textContent = contactId
+
+    form.hidden = true
+    card.hidden = false
+  }
+
+  /**
+   * Inversa: borra storage + cookie y vuelve a mostrar el form vacio.
+   */
+  function hideSentCard(form: HTMLFormElement): void {
+    const wrapper = form.closest('.contact-form-wrapper')
+    if (!wrapper) return
+    const card = wrapper.querySelector<HTMLElement>('[data-contact-sent-card]')
+    if (!card) return
+
+    clearContactRecord()
+    card.hidden = true
+    form.hidden = false
+
+    // Reset Turnstile para forzar nuevo challenge
+    const tsWidget = window.turnstile
+    if (tsWidget && typeof tsWidget.reset === 'function') {
+      tsWidget.reset(form.querySelector('.cf-turnstile'))
+    }
+  }
+
   function initContactForms(): void {
     const forms = document.querySelectorAll<HTMLFormElement>('.contact-form')
     forms.forEach((form) => {
       form.addEventListener('submit', handleSubmit as unknown as EventListener)
+
+      // Rehidratar UI desde localStorage/cookie si el user ya envio antes
+      const record = readContactRecord()
+      if (record) {
+        renderSentCard(form, record.contactId, record.sentAt)
+      }
+
+      // Wire del boton "Enviar otro mensaje" del card
+      const wrapper = form.closest('.contact-form-wrapper')
+      const resendBtn = wrapper?.querySelector<HTMLButtonElement>(
+        '[data-contact-resend]',
+      )
+      if (resendBtn) {
+        resendBtn.addEventListener('click', () => hideSentCard(form))
+      }
     })
   }
 
@@ -663,5 +767,72 @@ const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
     .submit-spinner {
       animation: none;
     }
+  }
+
+  .contact-form-wrapper {
+    width: 100%;
+  }
+
+  .contact-sent-card {
+    max-width: var(--container-narrow);
+    margin-inline: auto;
+    padding: var(--space-24);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  .contact-sent-card[hidden] {
+    display: none;
+  }
+
+  .contact-sent-card__title {
+    margin: 0;
+    font-size: var(--font-size-20);
+    font-weight: 600;
+    color: var(--color-success, #16a34a);
+  }
+
+  .contact-sent-card__body {
+    margin: 0;
+    font-size: var(--font-size-14);
+    color: var(--color-text);
+    line-height: var(--line-height-base);
+  }
+
+  .contact-sent-card__ref {
+    margin: 0;
+    font-size: var(--font-size-12);
+    color: var(--color-text-muted);
+  }
+
+  .contact-sent-card__ref code {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-12);
+    color: var(--color-text-subtle);
+    word-break: break-all;
+  }
+
+  .contact-sent-card__resend {
+    align-self: flex-start;
+    margin-top: var(--space-6);
+    padding: var(--space-8) var(--space-16);
+    font-size: var(--font-size-13);
+    font-weight: 500;
+    color: var(--color-text);
+    background-color: transparent;
+    border: 1px solid var(--color-border-strong, var(--color-border));
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .contact-sent-card__resend:hover {
+    background-color: var(--color-surface-2, var(--color-surface));
+    border-color: var(--color-primary);
   }
 </style>

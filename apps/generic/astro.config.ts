@@ -3,6 +3,8 @@
  * @description Astro config para apps/generic. Site URL, i18n (es default + en),
  *   sitemap integration, Tailwind v4 via @tailwindcss/vite.
  */
+
+import react from '@astrojs/react'
 import sitemap from '@astrojs/sitemap'
 import yaml from '@modyfi/vite-plugin-yaml'
 import tailwindcss from '@tailwindcss/vite'
@@ -22,9 +24,18 @@ export default defineConfig({
       prefixDefaultLocale: false,
     },
   },
-  integrations: [sitemap()],
+  integrations: [sitemap(), react()],
   vite: {
     plugins: [yaml({ schema: JSON_SCHEMA }), tailwindcss()],
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+      ],
+    },
     ssr: {
       noExternal: [
         '@portfolio/app-shared',

@@ -1,5 +1,0 @@
-# Redirect 301: portfolio.the-full-stack.com -> apex the-full-stack.com
-# El hostname portfolio.the-full-stack.com existe por consistencia del
-# estandar de subdominios, pero el apex es la URL canonica de generic.
-# Preserva el path completo via :splat.
-https://portfolio.the-full-stack.com/*  https://the-full-stack.com/:splat  301

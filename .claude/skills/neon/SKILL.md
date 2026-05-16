@@ -31,7 +31,6 @@ argument-hint: "topic (pricing|lambda|branching|comparison|architecture)"
 ## Cuando NO invocar
 
 - Usuario pregunta sobre PostgreSQL en general (sin mencionar Neon) → use `postgresql-18` skill si existe
-- Usuario pregunta sobre Django ORM (sin DB) → usar `django-6` skill
 - Usuario pregunta sobre AWS Lambda sin DB context → usar `aws-lambda-*` si existe
 - Usuario pregunta sobre Vercel (no Neon) → usar deployment skill
 
@@ -120,7 +119,6 @@ R: Git-style clone instant (1 sec) con copy-on-write (sin costo storage). Perfec
 |-----------------|-------|
 | "Postgres en general" (no specific provider) | `postgresql-18` |
 | "Neon serverless" | `neon` ← este |
-| "Django ORM models" | django-6 |
 | "RDS Postgres setup" | `neon` (comparativa) |
 | "Branching database" | `neon` (Neon es unico) |
 

@@ -1,5 +1,5 @@
 ---
-description: "Estandares para scripts de desarrollo en devtools/: estructura de scripts, flags pattern, ruff config separado, sin Django"
+description: "Estandares para scripts de desarrollo en devtools/: estructura de scripts, flags pattern, ruff config autocontenido"
 globs: "devtools/**/*.py"
 ---
 
@@ -28,7 +28,7 @@ Convencion fija para que el CLI sea predecible:
 - **Scripts mono-comando con parametrizacion** (`scan`, `test_runner`,
   `verify`, `upgrade_deps`, `init`, `hooks`, `e2e`) usan SOLO flags. No
   exponen subcomandos: el script es la unidad. Ej: `test_runner
-  --module=server --type=unit`.
+  --module=pkg-content --type=unit`.
 
 ## Comando unico para tests
 
@@ -40,7 +40,8 @@ y exit 1. NUNCA se vuelve a anadir como atajo: una sola fuente de verdad.
 ## Convenciones de codigo
 
 - Python 3.14 (se ejecuta en local via `devtools/.venv`, NO en Docker)
-- NUNCA importar Django — devtools es independiente del server
+- devtools es un CLI Python autocontenido: sin acoplamiento al resto del
+  monorepo, sin dependencias de las apps Astro ni de sus toolchains
 - Ruff config propio: `devtools/ruff.toml` (autocontenido, sin extends, autodetectado cuando cwd=`/app/devtools/`)
 - Dependencias propias en `devtools/pyproject.toml` + `devtools/uv.lock` (gestionado por uv)
 - Bootstrap automatico: `devtools/run.py` ejecuta `uv sync --frozen --project devtools` la primera vez (o cuando el lockfile cambia) y se re-exec en `devtools/.venv/bin/python`

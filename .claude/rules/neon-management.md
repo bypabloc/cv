@@ -273,5 +273,3 @@ python devtools/run.py serverless db-branch delete --branch=test-verify --confir
   `.claude/docs/postgresql-18-analytics/README.md`
 - Secretos en SSM (patron general): `serverless/docs/secrets.md`
 - PostgreSQL 18 (features del motor): skill `postgresql-18`
-- `database.md` aplica a un eventual backend Django (NO al backend serverless
-  actual) — no confundir las dos rules.

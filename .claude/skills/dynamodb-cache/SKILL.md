@@ -271,7 +271,6 @@ aws dynamodb describe-table --table-name cache \
 - Pregunta sobre Redis específicamente (skill aws-elasticache futuro)
 - Pregunta sobre Elasticsearch / OpenSearch (search engine, no cache)
 - Pregunta sobre S3 / CloudFront caching (object storage, no key-value)
-- Pregunta sobre Django ORM caching (otro stack, no Lambda serverless)
 - Pregunta sobre in-memory caching DENTRO de una invocacion (use functools.lru_cache)
 
 ## Ejemplos completos

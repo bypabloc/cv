@@ -149,8 +149,8 @@ def _run_ruff_on_host(
 ) -> int:
     """Run Ruff directly on host (uses devtools/.venv/bin/ruff).
 
-    Portfolio no tiene container Django; los módulos Python (devtools,
-    server stub) corren ruff localmente via el venv ya sincronizado.
+    Portfolio no tiene backend en container; los módulos Python (devtools)
+    corren ruff localmente via el venv ya sincronizado.
     """
     from pathlib import Path
     import subprocess

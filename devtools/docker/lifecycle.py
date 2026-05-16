@@ -1,9 +1,9 @@
 """Docker lifecycle commands: up, down, build, logs, shell, exec, ps, restart.
 
 These commands manipulate the container lifecycle but never run code
-inside existing containers (that lives in ``django.py`` and
-``quality.py``). ``cmd_rebuild`` and ``cmd_refresh`` live in
-``lifecycle_recovery.py`` because they are multi-step orchestrations.
+inside existing containers (that lives in ``quality.py``).
+``cmd_rebuild`` and ``cmd_refresh`` live in ``lifecycle_recovery.py``
+because they are multi-step orchestrations.
 """
 
 from __future__ import annotations

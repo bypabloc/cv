@@ -133,7 +133,7 @@ Módulos válidos:
 
 - Frontend: `hub`, `generic`, `fintech`, `architect`, `leader`, `vibe`
 - Packages: `pkg-app-shared`, `pkg-content`, `pkg-cv-pdf`, `pkg-seo`, `pkg-ui`
-- Python: `devtools`, `server` (stub)
+- Python: `devtools`
 
 ### Tests
 
@@ -224,7 +224,6 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 │   ├── env/              # .example + variantes
 │   └── scripts/          # entrypoints sh
 ├── devtools/             # Python 3.14 + uv (CLI orquestador)
-├── server/               # Stub placeholder (no hay backend)
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
 ├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
 ├── .claude/              # rules, skills, agents, hooks de Claude Code
@@ -245,8 +244,6 @@ Antes de trabajar, identifica que contexto necesitas:
 | Docstrings | [.claude/rules/docstring-standard.md](.claude/rules/docstring-standard.md) | Antes de documentar cualquier unidad de codigo |
 | Python 3.14 + Ruff | [.claude/rules/python.md](.claude/rules/python.md) | Antes de tocar `.py` en `devtools/` o `.git-hooks/` |
 | Devtools (CLI) | [.claude/rules/devtools.md](.claude/rules/devtools.md) | Antes de agregar/modificar scripts en `devtools/` |
-| Django (referencia futura) | [.claude/rules/django.md](.claude/rules/django.md) | Solo si se agrega backend Django |
-| Database (referencia futura) | [.claude/rules/database.md](.claude/rules/database.md) | Solo si se agrega DB (PostgreSQL) |
 | Verify-before-done | [.claude/rules/verify-before-done.md](.claude/rules/verify-before-done.md) | Antes de reportar trabajo completado |
 | Git workflow | [.claude/rules/git-workflow.md](.claude/rules/git-workflow.md) | Antes de commit / push / PR |
 | Git hooks | [.claude/rules/git-hooks.md](.claude/rules/git-hooks.md) | Quality gates pre-commit / pre-push |
@@ -313,28 +310,9 @@ Stack IaC: AWS SAM. Costo estimado: ~$7/mes (dominado por WAF Web ACL).
 | `aws-ses` | Email transaccional v2 desde Lambda (DKIM/SPF/DMARC en Cloudflare DNS, sandbox→prod approval, bounce/complaint, MJML HTML, free tier 62k/mes) |
 | `cloudflare-turnstile` | CAPTCHA alternativa privacy-preserving: 1 sitekey para 6 subdominios, Managed mode form + Invisible tracking, idempotency_key, CSP directives |
 | `neon` | Neon serverless PostgreSQL: scale-to-zero, branching git-style, integracion con AWS Lambda Python via psycopg3, free tier 0.5GB + 191.9h compute/mes, vs RDS/Supabase/PlanetScale |
+| `postgresql-18` | PostgreSQL 18 (AIO, UUIDv7, virtual generated columns, skip scan, `RETURNING OLD/NEW`, psycopg3) — referencia del motor que usa Neon |
 | `dynamodb-cache` | Sistema de cache con DynamoDB TTL: `@cached(ttl)` decorator, lock distribuido (cache stampede prevention), stale-while-revalidate, tag invalidation. Vive en `serverless/src/common/cache/` y se usa desde todas las Lambdas |
 | `serverless-rate-limit` | Rate-limiting per-IP self-managed con DynamoDB (alternativa $0/mes a AWS WAF Web ACL que cuesta $7/mes). Sliding window weighted, atomic counters, auto-blacklist bot detection (3+ tokens Turnstile validos en 60s -> blacklist 24h), IP whitelist/blacklist, country rules. Vive en `serverless/src/common/rate_limit/` + 2 tablas DynamoDB |
-
-### Referencia futura (backend Python/Django — no aplican hoy)
-
-Estas skills llegaron desde el template `mvp-template-full-stack` para
-preservarlas como referencia. El portfolio actual es Astro estático SIN
-backend Django, por lo que se activan solo si el prompt menciona
-explícitamente Django/PostgreSQL/Docker-Django. Quedan invocables
-manualmente con `/<nombre>`.
-
-| Skill | Uso |
-|-------|-----|
-| `django-6` | Referencia Django 6 (API, `@task` decorator, CSP middleware, `AsyncPaginator`, `GeneratedField`) |
-| `django-admin` | Personalización del admin Django (dynamic admin, JS, mixins, widgets, inlines, performance, security) |
-| `django-performance` | ORM performance (N+1, `select_related`, `prefetch_related`, indexes, `EXPLAIN`) |
-| `docker-django` | Containerizar Django + PostgreSQL (multi-stage build, compose, production) |
-| `postgresql-18` | PostgreSQL 18 (AIO, UUIDv7, virtual generated columns, skip scan, `RETURNING OLD/NEW`, psycopg3) |
-| `next-django-integration` | Next.js 16 SPA + Django DRF (JWT via SimpleJWT, `lib/api-client.ts`, refresh interceptor, CORS) |
-
-La arquitectura del server Django del template fuente fue archivada (no como skill) en
-[.claude/docs/templates/server-architecture-from-mvp-template/](.claude/docs/templates/server-architecture-from-mvp-template/) — leerla solo si se planea agregar un backend Django concreto.
 
 ## Convenciones (resumen)
 

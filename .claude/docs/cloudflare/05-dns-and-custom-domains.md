@@ -16,7 +16,7 @@ providers (Route 53 lo emula con "Alias records").
 ```
 the-full-stack.com         CNAME → generic-3ab.pages.dev   (proxied)
 www.the-full-stack.com     CNAME → generic-3ab.pages.dev   (proxied)
-hub.the-full-stack.com     CNAME → hub-9sd.pages.dev       (proxied)
+hub.portfolio.the-full-stack.com     CNAME → hub-9sd.pages.dev       (proxied)
 ...
 ```
 
@@ -94,7 +94,7 @@ curl -s "https://api.cloudflare.com/client/v4/zones?name=the-full-stack.com" \
 ```json
 {
   "type": "CNAME",
-  "name": "hub.the-full-stack.com",
+  "name": "hub.portfolio.the-full-stack.com",
   "content": "hub-9sd.pages.dev",
   "proxied": true,
   "ttl": 1
@@ -172,8 +172,8 @@ tardar mas. Workaround: usar `--resolve` en curl o forzar query a
 nameservers de CF:
 
 ```bash
-curl --resolve hub.the-full-stack.com:443:104.21.59.192 https://hub.the-full-stack.com
-dig @1.1.1.1 hub.the-full-stack.com
+curl --resolve hub.portfolio.the-full-stack.com:443:104.21.59.192 https://hub.portfolio.the-full-stack.com
+dig @1.1.1.1 hub.portfolio.the-full-stack.com
 ```
 
 ## DNS records preexistentes (Vercel, otros)

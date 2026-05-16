@@ -182,9 +182,11 @@ import os
 
 TURNSTILE_SECRET = os.environ['TURNSTILE_SECRET']
 EXPECTED_HOSTNAMES = {
-    'the-full-stack.com', 'hub.the-full-stack.com',
-    'fintech.the-full-stack.com', 'architect.the-full-stack.com',
-    'leader.the-full-stack.com', 'vibe.the-full-stack.com',
+    'the-full-stack.com', 'hub.portfolio.the-full-stack.com',
+    'fintech.portfolio.the-full-stack.com',
+    'architect.portfolio.the-full-stack.com',
+    'leader.portfolio.the-full-stack.com',
+    'vibe.portfolio.the-full-stack.com',
 }
 
 def validate_turnstile(token: str, remote_ip: str) -> bool:

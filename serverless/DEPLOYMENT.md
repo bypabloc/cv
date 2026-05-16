@@ -36,9 +36,9 @@ Antes de empezar el deploy, completar estos pasos manuales (una vez):
    - Crear widget en https://dash.cloudflare.com -> Turnstile -> Add site
    - Mode: **Managed**
    - Hostnames: los 6 subdominios del portfolio (`the-full-stack.com`,
-     `hub.the-full-stack.com`, `fintech.the-full-stack.com`,
-     `architect.the-full-stack.com`, `leader.the-full-stack.com`,
-     `vibe.the-full-stack.com`)
+     `hub.portfolio.the-full-stack.com`, `fintech.portfolio.the-full-stack.com`,
+     `architect.portfolio.the-full-stack.com`, `leader.portfolio.the-full-stack.com`,
+     `vibe.portfolio.the-full-stack.com`)
    - Anotar `TURNSTILE_SITEKEY` y `TURNSTILE_SECRET`
 3. **Neon PostgreSQL**
    - Crear proyecto serverless en https://console.neon.tech

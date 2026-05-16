@@ -7,7 +7,8 @@ import { buildLlmsTxt, buildRobotsTxt } from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
-const SITE_URL = process.env.SITE_URL ?? 'https://vibe.the-full-stack.com'
+const SITE_URL =
+  process.env.SITE_URL ?? 'https://vibe.portfolio.the-full-stack.com'
 const NICHE = 'vibe'
 const ATS_KEYWORDS = [
   'AI-Augmented Developer',

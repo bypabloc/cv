@@ -22,7 +22,7 @@
 - **Quien lo lee**: Lambda `contact_form` para validar tokens contra
   `https://challenges.cloudflare.com/turnstile/v0/siteverify`. Tambien
   Lambda `turnstile_validator` (SPEC-007).
-- **Hostnames cubiertos**: `the-full-stack.com`, `hub/fintech/architect/leader/vibe.the-full-stack.com`,
+- **Hostnames cubiertos**: `the-full-stack.com`, `hub/fintech/architect/leader/vibe.portfolio.the-full-stack.com`,
   `localhost`, `127.0.0.1`.
 - **Rotacion**: cuando el widget Turnstile se regenera en Cloudflare dashboard
   (o cuando se sospecha leak). Comando:

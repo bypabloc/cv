@@ -2,7 +2,7 @@
 
 > Senior Full Stack Engineer with 12+ years of experience in Vue/Nuxt, Django, AWS and LATAM fintech (Chile, Mexico). Cross-cutting expertise: fintech, architecture, tech leadership and vibe coding with Claude Code.
 
-Canonical URL: https://hub.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
+Canonical URL: https://the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
 
 ## Highlights — generic
 
@@ -16,11 +16,11 @@ Senior Full Stack Developer · Senior Software Engineer · Vue 3 · Nuxt · Type
 
 ## Pages
 
-- [Home](https://hub.the-full-stack.com/): Senior Full Stack Engineer (Vue + Django + AWS), 8+ years
-- [About](https://hub.the-full-stack.com/about): Education, languages, awards, publications, references
-- [Certificates](https://hub.the-full-stack.com/certificates): 11 certifications from Udemy and DevTalles
-- [CV (HTML)](https://hub.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
-- [CV (EN)](https://hub.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+- [Home](https://the-full-stack.com/): Senior Full Stack Engineer (Vue + Django + AWS), 8+ years
+- [About](https://the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://the-full-stack.com/certificates): 11 certifications from Udemy and DevTalles
+- [CV (HTML)](https://the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://the-full-stack.com/cv-en.html): ATS-friendly CV in English
 
 ## Identity
 

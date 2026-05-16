@@ -9,12 +9,17 @@
 | App | URL producción | Subdominio local (puerto 9970) | Posicionamiento |
 | --- | --- | --- | --- |
 | `apps/generic` | `the-full-stack.com` | `localhost` (apex) | Full Stack Senior — todas las skills |
-| `apps/hub` | `hub.the-full-stack.com` | `hub.localhost` | Selector multi-niche con cards |
-| `apps/fintech` | `fintech.the-full-stack.com` | `fintech.localhost` | Senior Full Stack Fintech LATAM |
-| `apps/architect` | `architect.the-full-stack.com` | `architect.localhost` | Frontend Architect + Microservicios |
-| `apps/leader` | `leader.the-full-stack.com` | `leader.localhost` | Tech Lead / Engineering Manager |
-| `apps/vibe` | `vibe.the-full-stack.com` | `vibe.localhost` | Vibe Coding / Claude Code / Dev tools |
+| `apps/hub` | `hub.portfolio.the-full-stack.com` | `hub.localhost` | Selector multi-niche con cards |
+| `apps/fintech` | `fintech.portfolio.the-full-stack.com` | `fintech.localhost` | Senior Full Stack Fintech LATAM |
+| `apps/architect` | `architect.portfolio.the-full-stack.com` | `architect.localhost` | Frontend Architect + Microservicios |
+| `apps/leader` | `leader.portfolio.the-full-stack.com` | `leader.localhost` | Tech Lead / Engineering Manager |
+| `apps/vibe` | `vibe.portfolio.the-full-stack.com` | `vibe.localhost` | Vibe Coding / Claude Code / Dev tools |
 | — | — | `services.localhost` | Indice estático de servicios locales |
+
+> Prod: el apex `the-full-stack.com` (+ `www`) es generic; los 5 niches
+> cuelgan del product `portfolio`. dev/stage usan
+> `{niche}.portfolio.{env}.the-full-stack.com`. Ver
+> [.claude/docs/subdomain-standard/](.claude/docs/subdomain-standard/).
 
 ## Packages
 

@@ -30,7 +30,9 @@ class Settings(BaseSettings):
     )
 
     # ---- Stage / runtime markers ------------------------------------------
-    stage: str = Field(default='dev', description='Ambiente: dev | prod')
+    stage: str = Field(
+        default='dev', description='Ambiente: dev | stage | prod'
+    )
     aws_region: str = Field(default='us-east-1', alias='AWS_REGION')
     log_level: str = Field(default='INFO')
 
@@ -62,6 +64,10 @@ class Settings(BaseSettings):
     @property
     def is_prod(self) -> bool:
         return self.stage == 'prod'
+
+    @property
+    def is_stage(self) -> bool:
+        return self.stage == 'stage'
 
     @property
     def is_dev(self) -> bool:

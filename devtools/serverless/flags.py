@@ -17,11 +17,12 @@ from utils.flags_to_dict import validate_allowed_flags
 # Stages soportados por el backend SAM. Se mapean a samconfig.toml
 # environments. ``local`` no es un stage AWS real — apunta a sam local
 # invoke + sam local start-api + moto mocks.
-VALID_STAGES = ['local', 'dev', 'prod']
+VALID_STAGES = ['local', 'dev', 'stage', 'prod']
 
 STAGE_DESCRIPTIONS = {
     'local': 'sam local invoke / start-api con moto mocks (sin AWS)',
     'dev': 'Stack desplegado en us-east-1 (cuenta dev / sandbox)',
+    'stage': 'Stack de pre-produccion en us-east-1 (replica prod)',
     'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
 }
 

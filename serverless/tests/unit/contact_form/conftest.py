@@ -37,6 +37,17 @@ def contact_form_aws(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     )
     monkeypatch.setenv('POWERTOOLS_SERVICE_NAME', 'contact-form-test')
     monkeypatch.setenv('POWERTOOLS_METRICS_NAMESPACE', 'PortfolioTest')
+    # Whitelist CORS/Turnstile (en runtime la inyecta Mappings.StageConfig).
+    monkeypatch.setenv(
+        'CORS_ALLOWED_ORIGINS',
+        'https://the-full-stack.com,'
+        'https://www.the-full-stack.com,'
+        'https://hub.portfolio.the-full-stack.com,'
+        'https://fintech.portfolio.the-full-stack.com,'
+        'https://architect.portfolio.the-full-stack.com,'
+        'https://leader.portfolio.the-full-stack.com,'
+        'https://vibe.portfolio.the-full-stack.com',
+    )
 
     with mock_aws():
         # DynamoDB tables

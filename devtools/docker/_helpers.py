@@ -43,8 +43,12 @@ DB_DEFAULTS = {
 
 
 def get_db_credentials(env: str) -> dict[str, str]:
-    """Read Postgres credentials from the env file, falling back to defaults."""
-    env_file = DOCKER_DIR / 'env' / f'.{env}'
+    """Read Postgres credentials from the env file, falling back to defaults.
+
+    Los campos de DB no sensibles viven en la categoria ``server`` desde el
+    refactor de env files por sensibilidad (client / server / dev-cli).
+    """
+    env_file = DOCKER_DIR / 'env' / 'server' / f'.{env}'
     creds = dict(DB_DEFAULTS)
 
     if not env_file.exists():

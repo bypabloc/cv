@@ -22,7 +22,7 @@ jobs:
       - Setup uv 0.9.30 (astral-sh/setup-uv@v3, cachea wheels via devtools/uv.lock)
       - Install devtools dependencies (uv sync --frozen --project devtools)
       - Detect changed areas (uv run --project devtools python .git-hooks/_ci_detect.py)
-      - Create Docker env file (docker/env/.test)
+      - Create Docker env files (docker/env/{client,server,dev-cli}/.test)
       - Build and start Docker services (test env)
       - Run quality gates (uv run --project devtools python .git-hooks/pre-push)
       - Stop Docker services (always)
@@ -41,7 +41,7 @@ Job: quality-gates (ubuntu-latest, 30min timeout)
     |
     +-- 1. Checkout repo completo (fetch-depth: 0 para diff)
     +-- 2. uv 0.9.30 + uv sync --frozen --project devtools (Python 3.14 nativo)
-    +-- 3. Crear docker/env/.test con credenciales CI
+    +-- 3. Crear docker/env/{client,server,dev-cli}/.test (copia de cada .example)
     +-- 4. docker compose up (test env, puerto 9977)
     +-- 5. python3 .git-hooks/pre-push
     |       +-- Conformance (Ruff lint)
@@ -66,8 +66,9 @@ env:
 ```
 
 No hay credenciales de DB ni secrets de runtime: el CI compila sitios
-estaticos. El job `e2e-tests` que levanta Docker usa los `docker/env/.test`
-versionados, sin secretos sensibles.
+estaticos. El job `e2e-tests` que levanta Docker copia cada
+`docker/env/{client,server,dev-cli}/.example` a su `.test`, sin secretos
+sensibles (los `.example` se versionan; los `.test` no).
 
 ## Probar CI localmente con act
 

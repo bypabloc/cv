@@ -1,0 +1,37 @@
+# Portfolio - Variables de categoria CLIENT.
+#
+# Valores PUBLICOS: acaban en el bundle del browser via import.meta.env.PUBLIC_*
+# o configuran infra local (puertos, dominios). NO contienen secretos.
+#
+# Copiar a docker/env/client/.{local,dev,stage,test,prod}.
+# Los archivos .{env} estan en .gitignore; este .example si se versiona.
+
+# Puerto Nginx publicado al host.
+# Defaults: local 9970, dev 9971, test 9972, prod 9973, stage 9974
+PROXY_PORT=
+
+# URLs publicas — derivadas en build time:
+#   BASE_DOMAIN  -> dominio base (sin esquema, sin puerto, sin subdominio)
+#   BASE_SCHEME  -> http | https
+#   BASE_PORT    -> puerto a inyectar (vacio = sin puerto explicito)
+BASE_DOMAIN=
+BASE_SCHEME=
+BASE_PORT=
+
+# Flag de CI mode (solo .test y .stage). Vacio fuera de CI.
+CI=
+
+# Base URL del API Gateway (sin trailing slash). La pagina /contact arma
+# el endpoint final como `${PUBLIC_API_ENDPOINT}/contact`.
+PUBLIC_API_ENDPOINT=
+
+# Cloudflare Turnstile sitekey publica del widget Portfolio Backend.
+# Es publica (no es secreto): se inyecta en el HTML del frontend.
+PUBLIC_TURNSTILE_SITEKEY=
+
+# Sitekey publica del widget Turnstile (mismo valor que PUBLIC_TURNSTILE_SITEKEY;
+# se mantiene sin prefijo para consumidores server-side que la referencian).
+TURNSTILE_SITE_KEY=
+
+# Toggle de validacion Turnstile: `true` (validar) | `false` (skip, solo dev/test).
+TURNSTILE_ENABLED=

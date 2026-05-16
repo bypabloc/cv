@@ -221,7 +221,7 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 │   ├── docker-compose/   # {local,dev,test,prod}.yml
 │   ├── dockerfiles/      # por ambiente x app
 │   ├── nginx/            # configs + error-pages + services-page
-│   ├── env/              # .example + variantes
+│   ├── env/{client,server,dev-cli}/  # env vars por categoria de sensibilidad
 │   └── scripts/          # entrypoints sh
 ├── devtools/             # Python 3.14 + uv (CLI orquestador)
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
@@ -242,12 +242,13 @@ Antes de trabajar, identifica que contexto necesitas:
 | Design System | [.claude/rules/design-system.md](.claude/rules/design-system.md) | Tokens CSS, dark/light, tipografia, fonts |
 | YAML data loading | [.claude/rules/yaml-data-loading.md](.claude/rules/yaml-data-loading.md) | Antes de agregar/modificar entry del CV o tocar plugin yaml |
 | Docstrings | [.claude/rules/docstring-standard.md](.claude/rules/docstring-standard.md) | Antes de documentar cualquier unidad de codigo |
-| Python 3.14 + Ruff | [.claude/rules/python.md](.claude/rules/python.md) | Antes de tocar `.py` en `devtools/` o `.git-hooks/` |
+| Python 3.14 + Ruff | [.claude/rules/python.md](.claude/rules/python.md) o skill `python-devtools` | Antes de tocar `.py` en `devtools/`, `.git-hooks/` o `serverless/`. La skill `python-devtools` tiene el detalle: interprete correcto (`.venv` 3.14 vs `python3` del shell), politica de versiones, PEP 758, estructura |
 | Devtools (CLI) | [.claude/rules/devtools.md](.claude/rules/devtools.md) | Antes de agregar/modificar scripts en `devtools/` |
 | Verify-before-done | [.claude/rules/verify-before-done.md](.claude/rules/verify-before-done.md) | Antes de reportar trabajo completado |
 | Git workflow | [.claude/rules/git-workflow.md](.claude/rules/git-workflow.md) | Antes de commit / push / PR |
 | Git hooks | [.claude/rules/git-hooks.md](.claude/rules/git-hooks.md) | Quality gates pre-commit / pre-push |
 | Security | [.claude/rules/security.md](.claude/rules/security.md) | Secrets, CSP, headers, supply chain |
+| Archivos .env | [.claude/rules/env-files.md](.claude/rules/env-files.md) | NUNCA leer/importar `.env` (incl. `docker/env/**`): extraer solo la key con bash e inyectarla inline al comando |
 | Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) | En plan mode o al planificar features |
 | Harness protocol | [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md) | Subagentes, feature_list, current/history |
 | Markdown docs | [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md) | Editar archivos de `docs/` |
@@ -290,6 +291,7 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 | `fix-hooks` | Reparar errores de pre-commit / pre-push iterativamente |
 | `github-actions` | Workflows CI + testing local con `act` (nektos/act) |
 | `mermaid` | Crear / modificar diagramas `.mmd` en `docs/diagrams/` |
+| `python-devtools` | Entorno Python del proyecto (`devtools/` + `.git-hooks/`): interprete correcto (`.venv` 3.14 vs `python3` 3.12 del shell), PEP 758, estructura de paquetes, comandos. Invocar ANTES de tocar/verificar cualquier `.py` |
 | `research` | Deep research de tecnologías y librerías (skill con web habilitada) |
 | `spec-workflow` | Descomponer features en specs + tareas atómicas |
 | `tdd-workflow` | TDD obligatorio (Red-Green-Refactor) antes de implementar |

@@ -37,13 +37,21 @@ argument-hint: "topic (pricing|lambda|branching|comparison|architecture)"
 
 ## Knowledge base
 
-Documentacion en `.claude/docs/neon/`:
+Documentacion de referencia en `.claude/docs/neon/`:
 
 1. **README.md** — Quick start, pricing 2026, reglas criticas, entorno actual
 2. **01-architecture-pricing.md** — Que es Neon, scale-to-zero, planes Free/Launch/Scale, regiones
 3. **02-aws-lambda-integration-python.md** — psycopg3 + pooling + SSM + codigo real + cold start analysis
 4. **03-branching-workflow.md** — Git-style branching, testing per PR, data recovery, CLI commands
 5. **04-vs-rds-supabase-planetscale.md** — Comparativa honesta, decision tree, performance, pricing
+
+Gestion operativa concreta del proyecto: `.claude/rules/neon-management.md`
+— connection string en SSM, runner de migrations versionado
+(`serverless/scripts/migrate.py` + `serverless/migrations/`), comandos
+`python devtools/run.py serverless db-*`, branches Neon, rollback, seguridad.
+Para CUALQUIER pregunta de "como gestiono / como aplico migration / como
+roleo back / como creo un branch" en este portfolio, esa rule es la fuente
+de verdad operativa; los docs cubren el "que es / por que / cuanto cuesta".
 
 ## Reglas criticas SIEMPRE/NUNCA
 

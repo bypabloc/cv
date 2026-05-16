@@ -14,7 +14,7 @@
   en us-east-1 (case `173472640000887`), evitamos 24-48h de espera.
 - **Cuentas**: AWS `637423614564` (IAM user `dev` con Administrator),
   Cloudflare account `f009aedf484e283f64a758dbcd725e9a`, Neon (project propio
-  con `DB_URL` en `docker/env/.dev`).
+  con `DB_URL` en `docker/env/server/.dev` — categoria `server`).
 - **Turnstile widget nuevo**: `Portfolio Backend` (sitekey `0x4AAAAAADPSoiQA_-LcRafo`)
   con 8 hostnames (6 subdominios + `localhost` + `127.0.0.1`).
 - **Estrategia hibrida secrets**: solo `turnstile-secret` y `neon-url` en SSM

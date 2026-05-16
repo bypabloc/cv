@@ -11,7 +11,8 @@ prod   https://332ivhahf2.execute-api.us-east-1.amazonaws.com/prod
 dev    https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev
 ```
 
-Frontend lo consume via `PUBLIC_API_ENDPOINT` en `docker/env/.{dev,prod}`.
+Frontend lo consume via `PUBLIC_API_ENDPOINT` en
+`docker/env/client/.{dev,prod}` (categoria `client`).
 
 ## Estado objetivo
 
@@ -126,13 +127,13 @@ Gateway. Hay un small overhead pero gana WAF + DDoS + rate limit en el edge.
 
 ### Paso 6 — Actualizar frontend
 
-Editar `docker/env/.dev`:
+Editar `docker/env/client/.dev`:
 
 ```bash
 PUBLIC_API_ENDPOINT=https://api.portfolio.dev.the-full-stack.com
 ```
 
-Editar `docker/env/.prod`:
+Editar `docker/env/client/.prod`:
 
 ```bash
 PUBLIC_API_ENDPOINT=https://api.portfolio.the-full-stack.com

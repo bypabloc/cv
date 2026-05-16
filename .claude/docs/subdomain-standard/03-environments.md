@@ -137,16 +137,18 @@ Servido condicionalmente segun hostname (detectar `.dev.` o `.stage.`).
 
 ## Variables de entorno asociadas
 
-Sugerencia para mantener consistencia con `docker/env/.{local,dev,test,prod}`:
+Sugerencia para mantener consistencia con
+`docker/env/client/.{local,dev,test,prod}` (las vars `BASE_*` son de la
+categoria `client`):
 
 ```bash
-# .dev
+# client/.dev
 BASE_DOMAIN=the-full-stack.com
 BASE_SCHEME=https
 ENV_LABEL=dev          # se inserta entre product y domain
 # Resultado: api.faststruct.dev.the-full-stack.com
 
-# .prod
+# client/.prod
 BASE_DOMAIN=the-full-stack.com
 BASE_SCHEME=https
 ENV_LABEL=              # vacio -> prod

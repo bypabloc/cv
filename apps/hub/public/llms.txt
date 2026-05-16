@@ -2,15 +2,15 @@
 
 > Pablo Contreras is a senior Full Stack engineer (Vue + Django + AWS) with 8+ years of experience, specialized in LATAM fintech (Chile, Mexico). This is the entry point to 5 specialized portfolio sites — pick the angle that matches your need.
 
-Canonical: https://the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Peru. Contact: pacg1991@gmail.com.
+Canonical: https://hub.portfolio.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Peru. Contact: pacg1991@gmail.com.
 
 ## Sites
 
-- [Generic Full Stack](https://hub.the-full-stack.com): all 8+ years of experience, all skills.
-- [Fintech LATAM](https://fintech.the-full-stack.com): Chile, Mexico, debt settlement, credit scoring.
-- [Architect](https://architect.the-full-stack.com): microservices, microfrontend, scalable systems.
-- [Tech Lead](https://leader.the-full-stack.com): team leadership, mentoring, shipping product.
-- [Vibe Coding](https://vibe.the-full-stack.com): Claude Code, Cursor, dev tools, AI workflows.
+- [Generic Full Stack](https://the-full-stack.com): all 8+ years of experience, all skills.
+- [Fintech LATAM](https://fintech.portfolio.the-full-stack.com): Chile, Mexico, debt settlement, credit scoring.
+- [Architect](https://architect.portfolio.the-full-stack.com): microservices, microfrontend, scalable systems.
+- [Tech Lead](https://leader.portfolio.the-full-stack.com): team leadership, mentoring, shipping product.
+- [Vibe Coding](https://vibe.portfolio.the-full-stack.com): Claude Code, Cursor, dev tools, AI workflows.
 
 ## Identity
 

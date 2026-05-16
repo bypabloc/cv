@@ -2,7 +2,7 @@
 
 > AI-Augmented Software Engineer. Using Claude Code since launch (May 2025), previously Claude web + my own FastStruct VS Code extension. Rolled out Claude Code at Destacame with standardized skills/rules/docs structure. Builds CLIs to centralize team processes. AI is a tool, not an author — all code is human-reviewed and tested.
 
-Canonical URL: https://vibe.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
+Canonical URL: https://vibe.portfolio.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
 
 ## Highlights — vibe
 
@@ -18,11 +18,11 @@ AI-Augmented Developer · Vibe Coding · Claude Code · Cursor · Prompt Enginee
 
 ## Pages
 
-- [Home](https://vibe.the-full-stack.com/): Pablo Contreras — Vibe Coding · Claude Code · Cursor · Dev tools
-- [About](https://vibe.the-full-stack.com/about): Education, languages, awards, publications, references
-- [Certificates](https://vibe.the-full-stack.com/certificates): Technical certifications relevant to this profile
-- [CV (HTML)](https://vibe.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
-- [CV (EN)](https://vibe.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+- [Home](https://vibe.portfolio.the-full-stack.com/): Pablo Contreras — Vibe Coding · Claude Code · Cursor · Dev tools
+- [About](https://vibe.portfolio.the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://vibe.portfolio.the-full-stack.com/certificates): Technical certifications relevant to this profile
+- [CV (HTML)](https://vibe.portfolio.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://vibe.portfolio.the-full-stack.com/cv-en.html): ATS-friendly CV in English
 
 ## Identity
 

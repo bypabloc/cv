@@ -4,8 +4,9 @@ x-app-environment: &app-environment
   BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
   BASE_SCHEME: ${BASE_SCHEME:-http}
   BASE_PORT: ${BASE_PORT:-9972}
-  # Backend serverless (vienen de docker/env/.test). Astro los lee
-  # como import.meta.env.PUBLIC_* y los inlinea en el bundle del browser.
+  # Backend serverless (vienen de docker/env/client/.test — categoria
+  # client, valores publicos). Astro los lee como import.meta.env.PUBLIC_*
+  # y los inlinea en el bundle del browser.
   PUBLIC_API_ENDPOINT: ${PUBLIC_API_ENDPOINT:-}
   PUBLIC_TURNSTILE_SITEKEY: ${PUBLIC_TURNSTILE_SITEKEY:-}
 

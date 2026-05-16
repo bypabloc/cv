@@ -11,7 +11,7 @@
 | Rotables (Turnstile, Neon) | SSM Parameter Store + KMS | Lambdas en runtime (boto3) | Manual via `serverless setup-ssm` |
 | Constantes (emails, addresses) | SSM Parameter Store (plain String) | Lambdas en runtime (boto3) | Manual (raro) |
 | Build-time vars (CORS, hostnames) | SAM template Globals | Lambdas en runtime (env var) | Cambio en `template.yaml` + redeploy |
-| AWS auth (deploy) | `docker/env/.{dev,local,prod}` (gitignored) | devtools en local | Manual cuando expira IAM key |
+| AWS auth (deploy) | `docker/env/dev-cli/.{dev,local,prod}` (gitignored) | devtools en local | Manual cuando expira IAM key |
 
 ## SSM Parameter Store - inventario completo
 
@@ -33,7 +33,8 @@
   python devtools/run.py serverless setup-ssm \
     --name=/portfolio/turnstile-secret \
     --key-id=alias/portfolio-lambdas --env=dev
-  # 3. Actualizar TURNSTILE_SITE_KEY + TURNSTILE_SECRET_KEY en docker/env/.{dev,local,prod}
+  # 3. Actualizar TURNSTILE_SITE_KEY en docker/env/client/.{dev,local,prod}
+  #    y TURNSTILE_SECRET_KEY en docker/env/server/.{dev,local,prod}
   # 4. Redeploy frontend para nuevo sitekey publico
   ```
 
@@ -55,7 +56,7 @@
   python devtools/run.py serverless setup-ssm \
     --name=/portfolio/neon-url \
     --key-id=alias/portfolio-lambdas --env=dev
-  # 4. Actualizar DB_URL en docker/env/.{dev,local,prod}
+  # 4. Actualizar DB_URL en docker/env/server/.{dev,local,prod}
   ```
 
 - **IAM scope**: solo Lambdas `stream_processor` y `aggregator` tienen
@@ -157,20 +158,22 @@ Las siguientes constantes se inyectan al template SAM directamente (Lambda
 ## Credenciales de deploy (no SSM)
 
 Las credenciales que devtools usa para sam deploy NO viven en AWS — son
-credenciales del IAM user `dev` en `docker/env/.dev` (gitignored).
+credenciales del IAM user `dev` en la categoria `dev-cli`:
+`docker/env/dev-cli/.dev` (gitignored).
 
 ### `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`
 
 - **IAM user**: `dev` en account `637423614564`.
 - **Permisos**: grupo `Admin` con policy `AdministratorAccess` attached.
-- **Donde vive**: `docker/env/.{dev,local,prod}` (gitignored).
+- **Donde vive**: `docker/env/dev-cli/.{dev,local,prod}` (gitignored,
+  categoria `dev-cli`).
 - **Rotacion**: cuando IAM detecta key activa > 90 dias (politica AWS) o
   cuando sospecha leak. Comando:
 
   ```bash
   # 1. AWS Console > IAM > Users > dev > Security credentials > Create access key
   # 2. Disable la key antigua (no delete inmediato; mantener 24h para detectar usos)
-  # 3. Actualizar docker/env/.{dev,local,prod}
+  # 3. Actualizar docker/env/dev-cli/.{dev,local,prod}
   # 4. Despues de 24h sin uso, delete la antigua
   ```
 

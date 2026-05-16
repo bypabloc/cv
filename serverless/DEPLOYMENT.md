@@ -255,7 +255,8 @@ sam deploy --config-env prod --profile tfs-dev
 
 ### 1. Configurar env vars publicas
 
-En `docker/env/.dev` y `docker/env/.prod`:
+Las vars `PUBLIC_*` son de la categoria `client`. En
+`docker/env/client/.dev` y `docker/env/client/.prod`:
 
 ```bash
 PUBLIC_API_ENDPOINT=https://<api-id>.execute-api.us-east-1.amazonaws.com/dev

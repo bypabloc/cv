@@ -96,7 +96,8 @@ serverless/migrations/
 
 ### Como funciona `serverless/scripts/migrate.py`
 
-- Lee `DB_URL` de env (lo inyecta devtools desde `docker/env/.{stage}`).
+- Lee `DB_URL` de env (lo inyecta devtools desde
+  `docker/env/server/.{stage}` — categoria `server`).
 - Itera `migrations/*.sql` en orden numerico ascendente.
 - Mantiene la tabla `schema_migrations` (`version`, `checksum`, `duration_ms`)
   para no re-aplicar. Una migration ya registrada se salta.
@@ -224,8 +225,10 @@ Patron obligatorio (detalle completo en
   parametro especifico (`ssm:GetParameter` sobre el ARN exacto, no `ssm:*`).
 - NUNCA logear la `DATABASE_URL` ni la password. En logs, referirse al host
   o al stage, nunca a la URL completa.
-- NUNCA commitear la URL en `docker/env/.*` versionados — solo en los `.env`
-  locales ignorados por git, o resuelta en runtime desde SSM.
+- NUNCA commitear la URL. `DB_URL` es categoria `server`: vive en
+  `docker/env/server/.{stage}` (gitignored) como placeholder, o resuelta en
+  runtime desde SSM. Solo el `docker/env/server/.example` se versiona, sin
+  valores reales.
 - Rotacion: regenerar la password en la consola Neon, actualizar el parametro
   SSM. Las Lambdas la releen en el siguiente cold start.
 

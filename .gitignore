@@ -23,12 +23,14 @@ docs/progress/.snapshot_*.md
 .env.*
 !.env.example
 
-# Docker env files (gitignored, copy .example)
-docker/env/.local
-docker/env/.dev
-docker/env/.stage
-docker/env/.test
-docker/env/.prod
+# Docker env files por categoria (gitignored, copy .example).
+# Categorias: client (publicas), server (backend + secretos), dev-cli
+# (credenciales del CLI). Solo los .example se versionan.
+docker/env/*/.local
+docker/env/*/.dev
+docker/env/*/.stage
+docker/env/*/.test
+docker/env/*/.prod
 
 # Python (devtools, .git-hooks)
 __pycache__/

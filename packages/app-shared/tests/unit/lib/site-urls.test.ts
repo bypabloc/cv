@@ -52,26 +52,34 @@ describe('SITE_URLS', () => {
     })
   })
 
-  describe('prod env (BASE_DOMAIN=the-full-stack.com, BASE_SCHEME=https, BASE_PORT empty)', () => {
+  describe('prod env component-based (BASE_DOMAIN=portfolio.the-full-stack.com, APEX_DOMAIN=the-full-stack.com)', () => {
     beforeEach(() => {
-      vi.stubEnv('BASE_DOMAIN', 'the-full-stack.com')
+      vi.stubEnv('BASE_DOMAIN', 'portfolio.the-full-stack.com')
+      vi.stubEnv('APEX_DOMAIN', 'the-full-stack.com')
       vi.stubEnv('BASE_SCHEME', 'https')
       vi.stubEnv('BASE_PORT', '')
     })
 
-    it('Given env prod When read SITE_URLS.generic Then returns "https://the-full-stack.com" [AC-2]', async () => {
+    it('Given env prod When read SITE_URLS.generic Then returns the apex "https://the-full-stack.com" [AC-2]', async () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
       expect(SITE_URLS.generic).toBe('https://the-full-stack.com')
     })
 
-    it('Given env prod When read SITE_URLS.hub Then returns "https://hub.the-full-stack.com" [AC-2]', async () => {
+    it('Given env prod When read SITE_URLS.hub Then returns "https://hub.portfolio.the-full-stack.com" [AC-2]', async () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
-      expect(SITE_URLS.hub).toBe('https://hub.the-full-stack.com')
+      expect(SITE_URLS.hub).toBe('https://hub.portfolio.the-full-stack.com')
     })
 
-    it('Given env prod When read SITE_URLS.fintech Then returns "https://fintech.the-full-stack.com" [AC-2]', async () => {
+    it('Given env prod When read SITE_URLS.fintech Then returns "https://fintech.portfolio.the-full-stack.com" [AC-2]', async () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
-      expect(SITE_URLS.fintech).toBe('https://fintech.the-full-stack.com')
+      expect(SITE_URLS.fintech).toBe(
+        'https://fintech.portfolio.the-full-stack.com',
+      )
+    })
+
+    it('Given env prod When read SITE_URLS.vibe Then returns "https://vibe.portfolio.the-full-stack.com" [AC-2]', async () => {
+      const { SITE_URLS } = await import('../../../src/lib/site-urls')
+      expect(SITE_URLS.vibe).toBe('https://vibe.portfolio.the-full-stack.com')
     })
   })
 
@@ -82,14 +90,14 @@ describe('SITE_URLS', () => {
       vi.stubEnv('BASE_PORT', '')
     })
 
-    it('Given no env vars When read SITE_URLS.generic Then falls back to prod "https://the-full-stack.com" [AC-3]', async () => {
+    it('Given no env vars When read SITE_URLS.generic Then falls back to the apex "https://the-full-stack.com" [AC-3]', async () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
       expect(SITE_URLS.generic).toBe('https://the-full-stack.com')
     })
 
-    it('Given no env vars When read SITE_URLS.vibe Then falls back to prod "https://vibe.the-full-stack.com" [AC-3]', async () => {
+    it('Given no env vars When read SITE_URLS.vibe Then falls back to "https://vibe.portfolio.the-full-stack.com" [AC-3]', async () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
-      expect(SITE_URLS.vibe).toBe('https://vibe.the-full-stack.com')
+      expect(SITE_URLS.vibe).toBe('https://vibe.portfolio.the-full-stack.com')
     })
   })
 

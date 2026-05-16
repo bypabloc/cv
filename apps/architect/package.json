@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "architect-focused portfolio site (https://architect.the-full-stack.com)",
+  "description": "architect-focused portfolio site (https://architect.portfolio.the-full-stack.com)",
   "scripts": {
     "dev": "astro dev --port 4324",
     "build": "astro build",

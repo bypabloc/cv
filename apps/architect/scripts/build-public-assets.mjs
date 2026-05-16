@@ -7,7 +7,8 @@ import { buildLlmsTxt, buildRobotsTxt } from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
-const SITE_URL = process.env.SITE_URL ?? 'https://architect.the-full-stack.com'
+const SITE_URL =
+  process.env.SITE_URL ?? 'https://architect.portfolio.the-full-stack.com'
 const NICHE = 'architect'
 const ATS_KEYWORDS = [
   'Frontend Architect',

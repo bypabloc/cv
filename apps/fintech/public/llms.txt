@@ -2,7 +2,7 @@
 
 > Senior Full Stack engineer specialized in Latin American fintech (Chile, Mexico). 12+ years building credit, debt-settlement and payment products with Vue/Nuxt + Django + AWS microservices. Compliance-aware (PCI DSS, KYC, PII handling).
 
-Canonical URL: https://fintech.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
+Canonical URL: https://fintech.portfolio.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
 
 ## Highlights — fintech
 
@@ -16,11 +16,11 @@ Senior Full Stack Developer · Fintech LATAM · Chile · México · Debt Settlem
 
 ## Pages
 
-- [Home](https://fintech.the-full-stack.com/): Pablo Contreras — Fintech LATAM · Vue · Django · AWS
-- [About](https://fintech.the-full-stack.com/about): Education, languages, awards, publications, references
-- [Certificates](https://fintech.the-full-stack.com/certificates): Technical certifications relevant to this profile
-- [CV (HTML)](https://fintech.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
-- [CV (EN)](https://fintech.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+- [Home](https://fintech.portfolio.the-full-stack.com/): Pablo Contreras — Fintech LATAM · Vue · Django · AWS
+- [About](https://fintech.portfolio.the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://fintech.portfolio.the-full-stack.com/certificates): Technical certifications relevant to this profile
+- [CV (HTML)](https://fintech.portfolio.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://fintech.portfolio.the-full-stack.com/cv-en.html): ATS-friendly CV in English
 
 ## Identity
 

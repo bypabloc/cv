@@ -13,7 +13,7 @@
  * @example
  *   const ld = buildProfilePageSchema({
  *     profile, niche: 'fintech', locale: 'es',
- *     canonicalUrl: 'https://fintech.the-full-stack.com/',
+ *     canonicalUrl: 'https://fintech.portfolio.the-full-stack.com/',
  *     knowsAbout: ['Vue', 'Django']
  *   })
  */

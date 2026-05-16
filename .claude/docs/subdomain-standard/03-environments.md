@@ -80,23 +80,21 @@ Si tu flujo no necesita stage (proyectos chicos), omitir el ambiente.
 Pero NO inventar variantes (`pre-prod`, `release-candidate`, `beta`).
 Las 3 etiquetas (dev/stage/prod) son la lista cerrada.
 
-## Caso portfolio: dev/stage del frontend (excepcion solo en prod)
+## Caso portfolio: los 3 envs del frontend
 
-El portfolio personal (apex + www + 5 niches) es excepcion permanente del
-estandar SOLO en prod: los niches van flat (`fintech.the-full-stack.com`).
-Esa excepcion NO se propaga a dev/stage — ahi SI se aplica el patron
-component-based con `product = portfolio`.
+El portfolio sigue el patron component-based con `product = portfolio`
+en los 3 ambientes. La unica excepcion es el apex en prod
+(`the-full-stack.com`), que ES el niche `generic`.
 
 | Env | apex (generic) | niches (hub/fintech/architect/leader/vibe) |
 |-----|----------------|---------------------------------------------|
-| prod | `the-full-stack.com` | `<niche>.the-full-stack.com` |
+| prod | `the-full-stack.com` (+ `www`) | `<niche>.portfolio.the-full-stack.com` |
 | stage | `portfolio.stage.the-full-stack.com` | `<niche>.portfolio.stage.the-full-stack.com` |
 | dev | `portfolio.dev.the-full-stack.com` | `<niche>.portfolio.dev.the-full-stack.com` |
 
-Razon: en dev/stage los hostnames son tecnicos (no marketing), conviene
-que sigan el estandar para no chocar con productos futuros que quieran
-nombrarse como un niche y para que `*.portfolio.dev.*` salte a la vista
-en logs. El backend del portfolio sigue la misma logica:
+En prod tambien existe `portfolio.the-full-stack.com`, que hace redirect
+301 al apex (consistencia de patron; el apex es la URL canonica de
+generic). El backend sigue la misma logica:
 `api.portfolio.{env}.the-full-stack.com` (ver
 [06-migration-backend-api](./06-migration-backend-api.md)).
 

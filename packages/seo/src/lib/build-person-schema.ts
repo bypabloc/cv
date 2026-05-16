@@ -14,7 +14,7 @@
  *     profile,
  *     niche: 'fintech',
  *     locale: 'en',
- *     canonicalUrl: 'https://fintech.the-full-stack.com/',
+ *     canonicalUrl: 'https://fintech.portfolio.the-full-stack.com/',
  *     knowsAbout: ['Vue', 'Django', 'AWS', 'Fintech'],
  *   })
  *   //  '{"@context":"https://schema.org","@type":"Person",...}'

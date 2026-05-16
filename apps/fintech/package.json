@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "fintech-focused portfolio site (https://fintech.the-full-stack.com)",
+  "description": "fintech-focused portfolio site (https://fintech.portfolio.the-full-stack.com)",
   "scripts": {
     "dev": "astro dev --port 4323",
     "build": "astro build",

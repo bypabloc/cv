@@ -8,8 +8,10 @@ description: >
   prod/test/localhost/infra/internal/private/vpn/tunnel + portfolio niches
   hub/fintech/architect/leader/vibe/generic), environment conventions
   (dev/stage/prod only — qa/uat/beta/preview prohibited, use stage or
-  pages.dev), portfolio personal exception (apex + www + 5 niches are
-  permanent exception that does NOT follow the pattern), wildcard SSL
+  pages.dev), portfolio personal exception (ONLY the apex the-full-stack.com
+  + www is a permanent exception; the 5 niches follow the standard as
+  components of product portfolio: {niche}.portfolio.the-full-stack.com),
+  wildcard SSL
   strategies (1-level limit, Universal SSL covers *.the-full-stack.com,
   Pages auto-cert per hostname, ACM cert for API Gateway, Advanced
   Certificate for 2-level wildcards), migration plan for the current
@@ -96,19 +98,21 @@ dev     [{component}.]{product}.dev.the-full-stack.com
   `staging`, `prod`, `production`, `test`, `qa`, `uat`, `local`,
   `localhost`, `infra`, `internal`, `private`, `vpn`, `tunnel`, `hub`,
   `fintech`, `architect`, `leader`, `vibe`, `generic`.
-- SIEMPRE el portfolio (apex + www + 5 niches) es excepcion permanente.
-  El estandar aplica solo a products + servicios NUEVOS.
+- SIEMPRE la unica excepcion permanente es el apex `the-full-stack.com`
+  + `www`. Los 5 niches del portfolio siguen el estandar como components
+  del product `portfolio` (`{niche}.portfolio.{env}.the-full-stack.com`).
 - SIEMPRE solo 3 envs formales: `dev`, `stage`, prod. Previews por PR
   usan default `<hash>.<project>.pages.dev`.
 
 ## Quick decision flow
 
 ```text
-1. Es portfolio personal? -> usar nicho existente (excepcion)
-2. Es servicio de infra atomico? -> {service}.{env}.{domain}
-3. Es product con 1 frontend? -> {product}.{env}.{domain}
-4. Es product con varios components? -> {component}.{product}.{env}.{domain}
-5. Es env temporal de PR? -> default pages.dev (NO extender estandar)
+1. Es el apex del portfolio? -> the-full-stack.com (unica excepcion)
+2. Es un niche del portfolio? -> {niche}.portfolio.{env}.{domain}
+3. Es servicio de infra atomico? -> {service}.{env}.{domain}
+4. Es product con 1 frontend? -> {product}.{env}.{domain}
+5. Es product con varios components? -> {component}.{product}.{env}.{domain}
+6. Es env temporal de PR? -> default pages.dev (NO extender estandar)
 ```
 
 ## Ejemplos clave
@@ -141,8 +145,9 @@ Mas: nombres reservados a rechazar adicionalmente segun
 ## Estado del estandar
 
 - **Adopcion**: 2026-05-15
-- **Excepciones existentes**: portfolio (7 hostnames: apex + www + 5
-  niches) — permanente.
-- **Migraciones pendientes**: backend serverless
-  (`execute-api.amazonaws.com` -> `api.portfolio.{env}.the-full-stack.com`).
-  Plan en [06-migration-backend-api.md](../../docs/subdomain-standard/06-migration-backend-api.md).
+- **Excepcion permanente**: solo el apex `the-full-stack.com` + `www`.
+  Los 5 niches del portfolio siguen el estandar como
+  `{niche}.portfolio.the-full-stack.com` (prod) + dev/stage.
+- **Migraciones pendientes**: ninguna. El backend ya usa custom domains
+  `api.portfolio.{env}.the-full-stack.com` y el frontend prod los
+  `{niche}.portfolio.the-full-stack.com`.

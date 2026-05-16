@@ -2,97 +2,110 @@
 
 > [<- 03-environments](./03-environments.md) | [05-wildcards-and-certs ->](./05-wildcards-and-certs.md)
 
-## Por que es excepcion
+## Que es excepcion (y que no)
 
-El portfolio personal (`the-full-stack.com`) precede al estandar y es
-parte del branding del owner. Migrarlo bajo el patron
-`portfolio.the-full-stack.com` o `cv.the-full-stack.com` rompe SEO,
-links externos y la narrativa del dominio (que ES el portfolio).
+El portfolio personal usa `the-full-stack.com` como dominio raiz. La
+**unica excepcion permanente** del estandar es el apex:
 
-Decision: dejarlo como excepcion permanente. El estandar aplica solo
-a productos y servicios NUEVOS bajo el dominio.
+| Hostname                 | Que es                                       | Excepcion                       |
+|--------------------------|----------------------------------------------|---------------------------------|
+| `the-full-stack.com`     | Apex — portfolio generic (full stack senior) | SI — apex no lleva `{product}`  |
+| `www.the-full-stack.com` | Alias del apex                               | SI — alias del apex             |
 
-## Subdominios reservados por el portfolio
+Todo lo demas del portfolio **sigue el estandar** con `product = portfolio`.
+Los 5 niches no son una excepcion: cuelgan de `portfolio` como components.
 
-Estos 7 hostnames NO siguen el patron y NO pueden reusarse para otros
-productos:
+## Niches bajo el estandar (product = portfolio)
 
-| Hostname | Que es |
-|----------|--------|
-| `the-full-stack.com` | Apex — portfolio generic (full stack senior) |
-| `www.the-full-stack.com` | Alias del apex |
-| `hub.the-full-stack.com` | Selector multi-niche con cards |
-| `fintech.the-full-stack.com` | Niche fintech LATAM |
-| `architect.the-full-stack.com` | Niche frontend architect |
-| `leader.the-full-stack.com` | Niche tech lead / engineering manager |
-| `vibe.the-full-stack.com` | Niche vibe coding / Claude Code |
+Los niches del portfolio son components del product `portfolio`, en los
+3 ambientes:
 
-Adicionalmente, los nichos como words (`hub`, `fintech`, `architect`,
-`leader`, `vibe`, `generic`) estan reservados como product names
-(ver [02-naming-rules.md](./02-naming-rules.md)) para evitar
-colisiones futuras.
+```text
+prod    hub.portfolio.the-full-stack.com
+        fintech.portfolio.the-full-stack.com
+        architect.portfolio.the-full-stack.com
+        leader.portfolio.the-full-stack.com
+        vibe.portfolio.the-full-stack.com
 
-## Como interactua con el estandar
+stage   hub.portfolio.stage.the-full-stack.com
+        fintech.portfolio.stage.the-full-stack.com
+        ...
 
-### Apex / www
+dev     hub.portfolio.dev.the-full-stack.com
+        fintech.portfolio.dev.the-full-stack.com
+        ...
+```
+
+El apex `the-full-stack.com` ES el niche `generic` en prod. En dev/stage
+el apex del ambiente es `portfolio.dev.the-full-stack.com` /
+`portfolio.stage.the-full-stack.com` (no hay apex desnudo en no-prod).
+
+`portfolio.the-full-stack.com` existe (consistencia de patron) y hace
+redirect 301 al apex `the-full-stack.com` — el apex es la URL canonica
+de generic.
+
+## Apex / www
 
 `the-full-stack.com` y `www.the-full-stack.com` apuntan al sitio
-portfolio generic. El apex NO esta disponible para `{product}` propio.
+portfolio generic. El apex NO esta disponible para `{product}` propio:
+es la cara del portfolio.
 
 Si en algun momento se quiere un sitio "raiz" del dominio que no sea el
 portfolio, opciones:
 
 1. Rediseñar el portfolio como hub/landing y mover el niche generic a
-   `generic.the-full-stack.com` (rompe el modelo actual).
+   un subdomain coherente con el estandar.
 2. Mantener el portfolio en el apex y poner el nuevo sitio en un
    subdomain coherente con el estandar.
 
-### Backend del portfolio
+## Backend del portfolio
 
 El backend serverless del portfolio (form de contacto, tracking pixel)
-debe migrarse al estandar como product `portfolio`:
+sigue el estandar como component `api` del product `portfolio`:
 
 ```text
 prod    api.portfolio.the-full-stack.com
+stage   api.portfolio.stage.the-full-stack.com
 dev     api.portfolio.dev.the-full-stack.com
 ```
 
-Ver [06-migration-backend-api.md](./06-migration-backend-api.md) para
-el plan concreto.
+Ver [06-migration-backend-api.md](./06-migration-backend-api.md).
 
-Notar que `portfolio.the-full-stack.com` (sin component) NO se crea —
-el portfolio "es" el dominio, no necesita una landing dedicada bajo
-ese slug.
+## Nombres reservados
 
-## Que pasa si quiero un product que choca con un nicho
+Los niches como words (`hub`, `fintech`, `architect`, `leader`, `vibe`,
+`generic`) y `portfolio` estan reservados como component/product names
+(ver [02-naming-rules.md](./02-naming-rules.md)) para evitar colisiones.
 
-Ejemplo: quiero lanzar un product comercial llamado `fintech`.
+### Que pasa si quiero un product que choca con un nicho
 
-NO podes usar `fintech.the-full-stack.com` (ya es el niche fintech del
-portfolio). Opciones:
+Ejemplo: quiero lanzar un product comercial llamado `fintech`. Ya no
+hay colision con `fintech.the-full-stack.com` (ese hostname es del
+portfolio), porque el niche del portfolio vive en
+`fintech.portfolio.the-full-stack.com`. Un product nuevo `fintech`
+usaria `fintech.the-full-stack.com` (prod) bajo el estandar.
 
-1. Renombrar el product comercialmente.
-2. Comprar otro dominio para ese product.
-3. Renombrar el niche del portfolio (rompe SEO + branding actual).
-
-La opcion 1 es la recomendada. El portfolio gana en branding y los
-products pueden tener nombres distintivos.
+Aun asi, conviene nombres distintivos para products comerciales para no
+confundir con los niches del portfolio.
 
 ## Resumen visual
 
 ```text
-EXCEPCION (portfolio):
-  the-full-stack.com               ← portfolio generic
+EXCEPCION (solo apex):
+  the-full-stack.com               ← portfolio generic (canonico)
   www.the-full-stack.com           ← alias apex
-  hub.the-full-stack.com           ← niche hub
-  fintech.the-full-stack.com       ← niche fintech
-  architect.the-full-stack.com     ← niche architect
-  leader.the-full-stack.com        ← niche leader
-  vibe.the-full-stack.com          ← niche vibe
 
-ESTANDAR (todo lo demas):
+ESTANDAR — portfolio (product = portfolio):
+  portfolio.the-full-stack.com         ← 301 -> apex
+  hub.portfolio.the-full-stack.com     ← niche hub
+  fintech.portfolio.the-full-stack.com ← niche fintech
+  architect.portfolio.the-full-stack.com
+  leader.portfolio.the-full-stack.com
+  vibe.portfolio.the-full-stack.com
+  api.portfolio.the-full-stack.com     ← backend prod
+
+ESTANDAR — otros products/servicios:
   faststruct.the-full-stack.com    ← product faststruct prod
-  api.portfolio.the-full-stack.com ← backend portfolio prod
   status.the-full-stack.com        ← servicio infra prod
   faststruct.dev.the-full-stack.com ← product faststruct dev
   ...

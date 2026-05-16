@@ -29,7 +29,6 @@ CATEGORY_MAP: dict[str, str] = {
     'BLE': 'blind_except',
     'A': 'builtins_issues',
     'COM': 'comma_issues',
-    'DJ': 'django_issues',
     'PT': 'pytest_issues',
     'ERA': 'commented_code',
     'T20': 'debug_prints',

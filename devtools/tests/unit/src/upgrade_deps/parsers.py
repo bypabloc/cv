@@ -26,9 +26,9 @@ class TestParseRequirementsTxt:
         req = tmp_path / 'requirements.txt'
         req.write_text(
             textwrap.dedent("""\
-            # Django
-            Django==6.0.4
-            djangorestframework==3.17.1
+            # Python deps
+            httpx==0.28.1
+            boto3==1.40.0
         """)
         )
 
@@ -36,16 +36,16 @@ class TestParseRequirementsTxt:
 
         assert result == [
             {
-                'name': 'Django',
+                'name': 'httpx',
                 'operator': '==',
-                'version': '6.0.4',
+                'version': '0.28.1',
                 'extras': '',
                 'line_no': 2,
             },
             {
-                'name': 'djangorestframework',
+                'name': 'boto3',
                 'operator': '==',
-                'version': '3.17.1',
+                'version': '1.40.0',
                 'extras': '',
                 'line_no': 3,
             },
@@ -55,7 +55,7 @@ class TestParseRequirementsTxt:
         from upgrade_deps.parsers import parse_requirements_txt
 
         req = tmp_path / 'requirements.txt'
-        req.write_text('psycopg[binary]==3.3.4\nsentry-sdk[django]==2.58.0\n')
+        req.write_text('psycopg[binary]==3.3.4\nsentry-sdk[http]==2.58.0\n')
 
         result = parse_requirements_txt(req)
 
@@ -71,7 +71,7 @@ class TestParseRequirementsTxt:
                 'name': 'sentry-sdk',
                 'operator': '==',
                 'version': '2.58.0',
-                'extras': '[django]',
+                'extras': '[http]',
                 'line_no': 2,
             },
         ]
@@ -109,7 +109,7 @@ class TestParseRequirementsTxt:
             textwrap.dedent("""\
             # comment line
 
-            Django==6.0.4
+            httpx==0.28.1
             # another comment
             pytest==9.0.3
         """)
@@ -117,7 +117,7 @@ class TestParseRequirementsTxt:
 
         result = parse_requirements_txt(req)
 
-        assert [pkg['name'] for pkg in result] == ['Django', 'pytest']
+        assert [pkg['name'] for pkg in result] == ['httpx', 'pytest']
 
     def test_returns_empty_when_no_packages(self, tmp_path):
         from upgrade_deps.parsers import parse_requirements_txt

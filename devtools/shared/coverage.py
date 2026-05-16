@@ -21,13 +21,11 @@ SERVER_COVERAGE_EXCLUDES: tuple[str, ...] = (
     '/enums/',  # TextChoices/IntegerChoices declarativas
     '/enums.py',
     '/constants.py',  # UPPER_SNAKE_CASE constantes estáticas
-    '/migrations/',  # Auto-generadas por Django
     '/apps.py',  # AppConfig declarativa (1-2 lineas utiles)
     '/admin/',  # Admin classes (testeadas via integration)
     '/serializers/',  # Serializers DRF (testeados via integration views)
     '/urls.py',  # URL patterns declarativos
     '/views/',  # Views thin (testeados via integration)
-    '/config/settings/',  # Django settings (declarativas)
     '/config/urls.py',
     '/config/wsgi.py',
     '/config/asgi.py',

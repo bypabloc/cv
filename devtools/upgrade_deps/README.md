@@ -48,7 +48,7 @@ python devtools/run.py upgrade_deps
 
 5. **Preserva el prefijo original** al escribir:
    - `astro: "^6.1.0"` -> `astro: "^6.2.1"` (mantiene `^`)
-   - `Django==6.0.4` -> `Django==6.0.5` (mantiene `==`)
+   - `httpx>=0.28.1` -> `httpx>=0.28.2` (mantiene `>=`)
    - `ruff>=0.15.12` -> `ruff>=0.15.13` (mantiene `>=`)
    - `typescript: "~6.0.2"` -> `typescript: "~6.0.3"` (mantiene `~`)
 

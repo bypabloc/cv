@@ -152,9 +152,9 @@ flowchart TD
 
 ```
 flowchart TD
-    subgraph Docker["Docker Network"]
-        A[Django] --> B[(PostgreSQL)]
-        A --> C[(Redis)]
+    subgraph AWS["AWS us-west-2"]
+        A[Lambda API] --> B[(DynamoDB)]
+        A --> C[(Neon PostgreSQL)]
     end
     D[Usuario] --> A
 ```
@@ -213,34 +213,35 @@ Funciones disponibles en C4Context:
 
 ```
 C4Container
-    title Contenedores portfolio
+    title Contenedores backend serverless del portfolio
 
     Person(user, "Usuario")
 
-    Container_Boundary(app, "portfolio") {
-        Container(web, "Django", "Python 3.14", "API REST")
-        Container(worker, "Worker", "Python", "Background tasks")
-        ContainerDb(db, "PostgreSQL 18", "SQL", "Datos principales")
-        ContainerDb(cache, "Redis 7", "In-memory", "Broker + cache")
+    Container_Boundary(app, "backend serverless") {
+        Container(api, "API Gateway", "AWS", "REST API")
+        Container(fn, "Lambda", "Python 3.13", "Handlers contact / tracking")
+        ContainerDb(ddb, "DynamoDB", "NoSQL", "Contacts + tracking events")
+        ContainerDb(pg, "Neon PostgreSQL 18", "SQL", "Capa analitica")
     }
 
-    System_Ext(s3, "AWS S3")
-    Rel(user, web, "HTTP/REST")
-    Rel(web, worker, "Enqueue tasks")
-    Rel(web, db, "Reads/Writes")
-    Rel(worker, s3, "Upload files")
+    System_Ext(ses, "AWS SES")
+    Rel(user, api, "HTTP/REST")
+    Rel(api, fn, "Invoke")
+    Rel(fn, ddb, "Reads/Writes")
+    Rel(fn, pg, "Reads/Writes")
+    Rel(fn, ses, "Envia email")
 ```
 
-### Opcion C: graph LR (para diagramas de servicios Docker)
+### Opcion C: graph LR (para diagramas de servicios)
 
 ```
 graph LR
-    nginx[nginx\nreverse proxy] --> django[Django\n:8000]
-    django --> pg[(PostgreSQL 18)]
-    django --> redis[(Redis 7)]
-    django --> worker[Worker\ntasks]
-    worker --> s3[AWS S3]
-    worker --> extApi[External\nAPI]
+    api[API Gateway\nREST] --> fn[Lambda\nPython 3.13]
+    fn --> ddb[(DynamoDB)]
+    fn --> stream[DynamoDB\nStreams]
+    stream --> proc[Lambda\nstream_processor]
+    proc --> pg[(Neon\nPostgreSQL 18)]
+    fn --> ses[AWS SES]
 ```
 
 > NOTA: `architecture-beta` existe en Mermaid v11+ pero tiene sintaxis inestable.

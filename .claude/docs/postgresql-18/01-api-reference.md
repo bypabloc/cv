@@ -1,4 +1,4 @@
-[Volver al indice](README.md) | [Siguiente: Django Integration](02-django-integration.md)
+[Volver al indice](README.md)
 
 # PostgreSQL 18 - API Reference
 
@@ -270,4 +270,4 @@ with pool.connection() as conn:
 
 ---
 
-[Volver al indice](README.md) | [Siguiente: Django Integration](02-django-integration.md)
+[Volver al indice](README.md)

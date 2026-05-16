@@ -4,22 +4,24 @@
 
 ---
 
-## erDiagram para modelos Django
+## erDiagram para modelos de datos
 
-### Convencion de mapeo Django -> Mermaid
+### Convencion de mapeo de tipos -> Mermaid
 
-| Tipo Django | Tipo Mermaid | Notas |
-|-------------|-------------|-------|
-| `UUIDField` / UUIDv7 | `string id PK` | My-project usa UUIDv7 nativo de PG18 |
-| `ForeignKey` | `string <modelo>_id FK` | Solo el campo FK, no la relacion |
-| `CharField` / `TextField` | `string` | |
-| `IntegerField` / `BigIntegerField` | `int` | |
-| `FloatField` / `DecimalField` | `float` | |
-| `BooleanField` | `boolean` | |
-| `DateTimeField` | `datetime` | |
-| `JSONField` | `string` | Representar como string, no hay tipo JSON |
-| `EmailField` | `string` | |
-| `PositiveIntegerField` | `int` | |
+Aplica tanto a tablas SQL de Neon PostgreSQL como a content collections Zod
+del portfolio. Mermaid `erDiagram` no tiene tipo JSON: representar como string.
+
+| Tipo origen (SQL / Zod) | Tipo Mermaid | Notas |
+| --- | --- | --- |
+| `uuid` / UUIDv7 | `string id PK` | El backend usa UUIDv7 nativo de PG18 |
+| FK a otra tabla | `string <tabla>_id FK` | Solo el campo FK, no la relacion |
+| `text` / `varchar` / `z.string()` | `string` | |
+| `integer` / `bigint` / `z.number().int()` | `int` | |
+| `numeric` / `real` / `z.number()` | `float` | |
+| `boolean` / `z.boolean()` | `boolean` | |
+| `timestamptz` / `z.date()` | `datetime` | |
+| `jsonb` / `z.object()` | `string` | Representar como string, no hay tipo JSON |
+| email (string + regex) | `string` | |
 
 ### Ejemplo: modelos principales
 
@@ -145,9 +147,9 @@ flowchart LR
         user[Usuario]
     end
 
-    subgraph Django["Django API"]
-        auth[Auth middleware]
-        view[ProcessingView]
+    subgraph Backend["Backend serverless"]
+        auth[API Gateway\nrequest validator]
+        fn[Lambda handler]
         factory[ProviderFactory]
     end
 
@@ -161,7 +163,7 @@ flowchart LR
         s3[AWS S3]
     end
 
-    user --> auth --> view --> factory
+    user --> auth --> fn --> factory
     factory --> job
     job --> providerA & providerB
     job --> s3
@@ -207,18 +209,17 @@ C4Container
 
 ```
 graph LR
-    dev[Developer] --> nginx
+    user[Visitante] --> api
 
-    subgraph Docker["Docker Network"]
-        nginx[Nginx\n:9976] --> django[Django\n:8000]
-        django --> pg[(PG18\n:5532)]
-        django --> redis[(Redis\n:6379)]
-        django -.-> worker[Worker\ntasks]
-        worker --> redis
+    subgraph AWS["AWS us-west-2"]
+        api[API Gateway\nREST] --> fn[Lambda\nPython 3.13]
+        fn --> ddb[(DynamoDB)]
+        ddb -.-> stream[DynamoDB Streams]
+        stream --> proc[Lambda\nstream_processor]
+        proc --> pg[(Neon\nPostgreSQL 18)]
     end
 
-    worker --> extApi[External API]
-    worker --> s3[AWS S3]
+    fn --> ses[AWS SES]
 ```
 
 ---
@@ -268,8 +269,8 @@ sequenceDiagram
 ```
 sequenceDiagram
     participant user as Usuario
-    participant api as Django API
-    participant db as PostgreSQL
+    participant api as Lambda API
+    participant db as Neon PostgreSQL
 
     user ->> api: POST /auth/login\n{email, password}
     activate api

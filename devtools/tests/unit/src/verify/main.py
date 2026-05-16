@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-
 from verify.main import build_reports
 from verify.main import classify_file
 from verify.main import collect_changed_files
@@ -24,8 +23,6 @@ class TestClassifyFile:
         [
             ('server/apps/products/models/product.py', 'server_model'),
             ('server/apps/products/models.py', 'server_model'),
-            ('server/apps/products/admin/product.py', 'server_admin'),
-            ('server/apps/products/admin.py', 'server_admin'),
             ('server/apps/products/services/creation.py', 'server_service'),
             ('server/apps/products/selectors/queries.py', 'server_selector'),
             ('server/apps/products/views/list.py', 'server_view'),
@@ -72,11 +69,6 @@ class TestVerificationsFor:
         verifs = verifications_for('server_model')
         cmds = [v.cmd for v in verifs]
         assert any('makemigrations --dry-run' in c for c in cmds)
-
-    def test_server_admin_includes_django_check(self) -> None:
-        verifs = verifications_for('server_admin')
-        cmds = [v.cmd for v in verifs]
-        assert any('manage.py check' in c for c in cmds)
 
     def test_server_view_includes_integration(self) -> None:
         verifs = verifications_for('server_view')

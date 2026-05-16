@@ -23,20 +23,10 @@ from common.ssm_client import get_secret
 
 TURNSTILE_SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
-# Lista de hostnames esperados (debe matchear el widget del Cloudflare dashboard).
-# 'localhost' apex se acepta siempre (compat con dev). Subdominios *.localhost
+# Hostnames siempre aceptados (compat con dev local). Subdominios *.localhost
 # se aceptan solo en stage=dev via _LOCAL_SUBDOMAIN_PATTERN (RFC 6761 garantiza
 # que resuelven a 127.0.0.1).
-_EXPECTED_HOSTNAMES = frozenset({
-    'the-full-stack.com',
-    'hub.the-full-stack.com',
-    'fintech.the-full-stack.com',
-    'architect.the-full-stack.com',
-    'leader.the-full-stack.com',
-    'vibe.the-full-stack.com',
-    'localhost',
-    '127.0.0.1',
-})
+_BASE_HOSTNAMES = frozenset({'localhost', '127.0.0.1'})
 
 # Pattern para subdominios *.localhost. Turnstile envia solo el hostname
 # (sin scheme ni puerto), por eso no incluimos http:// ni :port aqui.
@@ -45,9 +35,32 @@ _LOCAL_SUBDOMAIN_PATTERN: re.Pattern[str] = re.compile(
 )
 
 
+def _expected_hostnames() -> frozenset[str]:
+    """
+    Hostnames validos del widget Turnstile para el stage actual.
+
+    Se derivan de la env var CORS_ALLOWED_ORIGINS (la misma whitelist que
+    usa cors.py, definida por stage en Mappings.StageConfig del SAM
+    template): se extrae el host de cada origin `https://<host>`. Asi un
+    solo lugar (`StageConfig`) define los hostnames del ambiente y no hay
+    listas hardcodeadas que se desincronicen al cambiar de subdominio.
+    """
+    origins = os.environ.get('CORS_ALLOWED_ORIGINS', '').strip()
+    hosts = set(_BASE_HOSTNAMES)
+    for origin in origins.split(','):
+        origin = origin.strip()
+        if not origin:
+            continue
+        # `https://host` -> `host` (Turnstile reporta hostname sin scheme).
+        host = origin.split('://', 1)[-1].split('/', 1)[0].split(':', 1)[0]
+        if host:
+            hosts.add(host)
+    return frozenset(hosts)
+
+
 def _hostname_allowed(hostname: str) -> bool:
-    """True si hostname esta en whitelist apex o es *.localhost en stage dev."""
-    if hostname in _EXPECTED_HOSTNAMES:
+    """True si hostname esta en whitelist del stage o es *.localhost en dev."""
+    if hostname in _expected_hostnames():
         return True
     if (
         os.environ.get('STAGE', 'dev') == 'dev'

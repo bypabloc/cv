@@ -42,7 +42,7 @@ Parameters:
 # (CSV). cors.py la lee para validar el Origin header y hacer echo del valor
 # matcheado en Access-Control-Allow-Origin.
 #
-# - prod:  niches flat sobre el apex (excepcion del estandar de subdominios).
+# - prod:  apex the-full-stack.com (+ www) + niches {niche}.portfolio.the-full-stack.com.
 # - stage: patron component-based {niche}.portfolio.stage.the-full-stack.com.
 # - dev:   patron component-based {niche}.portfolio.dev.the-full-stack.com.
 #          cors.py ademas acepta *.localhost por pattern cuando STAGE=dev.
@@ -54,7 +54,7 @@ Mappings:
     stage:
       CorsAllowedOrigins: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
     prod:
-      CorsAllowedOrigins: 'https://the-full-stack.com,https://hub.the-full-stack.com,https://fintech.the-full-stack.com,https://architect.the-full-stack.com,https://leader.the-full-stack.com,https://vibe.the-full-stack.com'
+      CorsAllowedOrigins: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'
 
 # ============================================================================
 # Globals: configuracion compartida por TODAS las Lambdas del stack

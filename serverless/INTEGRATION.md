@@ -295,7 +295,7 @@ A escala 10x (~300k req/mo):
 5. **DynamoDB On-Demand**: free tier perpetuo lo cubre; Provisioned daria $12/mes minimo
 6. **Reserved concurrency baja**: contiene gastos en caso de ataque sostenido (5 contact_form / 20 tracking)
 7. **Sin VPC, sin NAT Gateway**: NAT Gateway cuesta $32/mes + GB transferido. Evitado.
-8. **Sin ACM cert para API custom domain en MVP**: usar API Gateway default URL (postpone custom domain a fase 7)
+8. **Custom domain del API via ACM + Cloudflare**: `api.portfolio.{env}.the-full-stack.com` (dev/stage) y `api.portfolio.the-full-stack.com` (prod). Un cert ACM regional con 3 SANs (us-east-1, $0) + custom domain names en API Gateway + CNAMEs DNS-only en Cloudflare. Las URLs raw `*.execute-api.amazonaws.com` quedan operativas como soft-rollback
 
 ### Trade-offs vs WAF
 

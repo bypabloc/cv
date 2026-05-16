@@ -27,7 +27,7 @@
 | `admin.the-full-stack.com` | `admin` es reservado como product | `admin.{product}.the-full-stack.com` |
 | `dev.the-full-stack.com` como product propio | `dev` reservado para env | usar otro nombre |
 | `prod.the-full-stack.com` como product propio | `prod` reservado para env | usar otro nombre |
-| `fintech.the-full-stack.com` como product propio | reservado para portfolio niche | usar otro nombre |
+| `portfolio.the-full-stack.com` como product propio | reservado: es el product del portfolio (301 al apex) | usar otro nombre |
 | `tunnel.the-full-stack.com` como product propio | reservado para infra | si es CF tunnel, scope a env: `vpn.{env}.the-full-stack.com` |
 | Product `Status` | colision con servicio infra `status` | renombrar comercialmente |
 

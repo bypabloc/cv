@@ -16,12 +16,12 @@ const baseOverrides = {
 describe('defineSiteConfig', () => {
   it('Given niche fintech without siteUrl When invoked Then SITE_URL derives from niche', () => {
     const r = defineSiteConfig({ niche: 'fintech', overrides: baseOverrides })
-    expect(r.SITE_URL).toBe('https://fintech.the-full-stack.com')
+    expect(r.SITE_URL).toBe('https://fintech.portfolio.the-full-stack.com')
   })
 
   it('Given niche architect Then SITE_URL uses architect subdomain', () => {
     const r = defineSiteConfig({ niche: 'architect', overrides: baseOverrides })
-    expect(r.SITE_URL).toBe('https://architect.the-full-stack.com')
+    expect(r.SITE_URL).toBe('https://architect.portfolio.the-full-stack.com')
   })
 
   it('Given niche generic Then SITE_URL is the apex domain (env-driven default)', () => {
@@ -40,7 +40,9 @@ describe('defineSiteConfig', () => {
 
   it('Given default ogImagePath When invoked Then OG_IMAGE is SITE_URL + /og-image.svg', () => {
     const r = defineSiteConfig({ niche: 'vibe', overrides: baseOverrides })
-    expect(r.OG_IMAGE).toBe('https://vibe.the-full-stack.com/og-image.svg')
+    expect(r.OG_IMAGE).toBe(
+      'https://vibe.portfolio.the-full-stack.com/og-image.svg',
+    )
   })
 
   it('Given custom ogImagePath When invoked Then OG_IMAGE uses the custom path', () => {
@@ -49,7 +51,9 @@ describe('defineSiteConfig', () => {
       ogImagePath: '/custom-og.png',
       overrides: baseOverrides,
     })
-    expect(r.OG_IMAGE).toBe('https://fintech.the-full-stack.com/custom-og.png')
+    expect(r.OG_IMAGE).toBe(
+      'https://fintech.portfolio.the-full-stack.com/custom-og.png',
+    )
   })
 
   it('Given valid input When invoked Then NICHE === niche', () => {

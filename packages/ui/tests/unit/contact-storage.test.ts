@@ -81,7 +81,7 @@ describe('buildCookieString', () => {
   it('Given the-full-stack.com hostname When build Then includes Domain=.the-full-stack.com', () => {
     const result = buildCookieString('value-x', {
       maxAgeSeconds: 604800,
-      hostname: 'fintech.the-full-stack.com',
+      hostname: 'fintech.portfolio.the-full-stack.com',
       protocol: 'https:',
     })
     expect(result).toBe(
@@ -131,7 +131,7 @@ describe('buildCookieString', () => {
 describe('buildExpiredCookieString', () => {
   it('Given hostname When build expired Then uses Max-Age=0 and same Domain', () => {
     const result = buildExpiredCookieString({
-      hostname: 'fintech.the-full-stack.com',
+      hostname: 'fintech.portfolio.the-full-stack.com',
       protocol: 'https:',
     })
     expect(result).toBe(

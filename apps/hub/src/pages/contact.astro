@@ -8,12 +8,15 @@ const apiEndpoint = (import.meta.env.PUBLIC_API_ENDPOINT || '') as string
 const turnstileSitekey = (import.meta.env.PUBLIC_TURNSTILE_SITEKEY ||
   '') as string
 const contactEndpoint = apiEndpoint ? `${apiEndpoint}/contact` : ''
+// Hostname propio del env (Pages inyecta SITE_URL; fallback prod).
+const siteUrl = (import.meta.env.SITE_URL ||
+  'https://hub.portfolio.the-full-stack.com') as string
 ---
 
 <BaseLayout
   title="Contacto — Pablo Contreras"
   description="Hablemos de tu proyecto. Respondo en menos de 24h."
-  canonicalUrl="https://hub.the-full-stack.com/contact"
+  canonicalUrl={`${siteUrl}/contact`}
 >
   <main class="contact-page">
     <section class="contact-section">

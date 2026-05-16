@@ -13,7 +13,7 @@ describe('buildProfilePageSchema', () => {
       profile,
       niche: 'fintech',
       locale: 'en',
-      canonicalUrl: 'https://fintech.the-full-stack.com/',
+      canonicalUrl: 'https://fintech.portfolio.the-full-stack.com/',
       knowsAbout: ['Vue', 'Django'],
     })
     const parsed = JSON.parse(ld)
@@ -29,7 +29,7 @@ describe('buildProfilePageSchema', () => {
       profile,
       niche: 'fintech',
       locale: 'en',
-      canonicalUrl: 'https://fintech.the-full-stack.com/',
+      canonicalUrl: 'https://fintech.portfolio.the-full-stack.com/',
       knowsAbout: ['Vue', 'Django'],
     })
     const parsed = JSON.parse(ld)
@@ -43,7 +43,7 @@ describe('buildProfilePageSchema', () => {
       profile,
       niche: 'architect',
       locale: 'es',
-      canonicalUrl: 'https://architect.the-full-stack.com/',
+      canonicalUrl: 'https://architect.portfolio.the-full-stack.com/',
       knowsAbout: [],
     })
     const parsed = JSON.parse(ld)
@@ -57,7 +57,7 @@ describe('buildProfilePageSchema', () => {
       profile,
       niche: 'vibe',
       locale: 'en',
-      canonicalUrl: 'https://vibe.the-full-stack.com/',
+      canonicalUrl: 'https://vibe.portfolio.the-full-stack.com/',
       knowsAbout: [],
     })
     const parsed = JSON.parse(ld)

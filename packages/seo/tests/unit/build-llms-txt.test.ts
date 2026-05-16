@@ -9,7 +9,7 @@ import { buildLlmsTxt } from '../../src/lib/build-llms-txt'
 describe('buildLlmsTxt', () => {
   it('Given fintech niche When build Then contains H1, summary and pages', () => {
     const out = buildLlmsTxt({
-      siteUrl: 'https://fintech.the-full-stack.com/',
+      siteUrl: 'https://fintech.portfolio.the-full-stack.com/',
       profile,
       niche: 'fintech',
       pages: [
@@ -29,10 +29,10 @@ describe('buildLlmsTxt', () => {
     expect(out).toMatch(/Latin American fintech/u)
     expect(out).toMatch(/## Pages/u)
     expect(out).toContain(
-      '- [Home](https://fintech.the-full-stack.com/): Senior fintech engineer for LATAM',
+      '- [Home](https://fintech.portfolio.the-full-stack.com/): Senior fintech engineer for LATAM',
     )
     expect(out).toContain(
-      '- [Experience](https://fintech.the-full-stack.com/experience): 9 roles in 8 employers',
+      '- [Experience](https://fintech.portfolio.the-full-stack.com/experience): 9 roles in 8 employers',
     )
     expect(out).toContain('LinkedIn: https://linkedin.com/in/bypabloc')
     expect(out).toContain('GitHub: https://github.com/bypabloc')

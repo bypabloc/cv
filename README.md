@@ -5,14 +5,14 @@
 
 ## Sitios
 
-| App | URL | Posicionamiento |
-|-----|-----|-----------------|
-| [apps/hub](apps/hub) | `the-full-stack.com` | Landing selector con 5 cards |
-| [apps/generic](apps/generic) | `hub.the-full-stack.com` | Full Stack Senior — todas las skills |
-| [apps/fintech](apps/fintech) | `fintech.the-full-stack.com` | Senior Full Stack Fintech LATAM |
-| [apps/architect](apps/architect) | `architect.the-full-stack.com` | Frontend Architect + Microservicios |
-| [apps/leader](apps/leader) | `leader.the-full-stack.com` | Tech Lead / Engineering Manager |
-| [apps/vibe](apps/vibe) | `vibe.the-full-stack.com` | Vibe Coding / Claude Code / Dev tools |
+| App | URL producción | Posicionamiento |
+| --- | --- | --- |
+| [apps/generic](apps/generic) | `the-full-stack.com` | Full Stack Senior — todas las skills |
+| [apps/hub](apps/hub) | `hub.portfolio.the-full-stack.com` | Landing selector con 5 cards |
+| [apps/fintech](apps/fintech) | `fintech.portfolio.the-full-stack.com` | Senior Full Stack Fintech LATAM |
+| [apps/architect](apps/architect) | `architect.portfolio.the-full-stack.com` | Frontend Architect + Microservicios |
+| [apps/leader](apps/leader) | `leader.portfolio.the-full-stack.com` | Tech Lead / Engineering Manager |
+| [apps/vibe](apps/vibe) | `vibe.portfolio.the-full-stack.com` | Vibe Coding / Claude Code / Dev tools |
 
 ## Stack
 
@@ -28,12 +28,12 @@
 ```
 .
 ├── apps/
-│   ├── hub/         # the-full-stack.com (selector)
-│   ├── generic/     # hub.the-full-stack.com
-│   ├── fintech/     # fintech.the-full-stack.com
-│   ├── architect/   # architect.the-full-stack.com
-│   ├── leader/      # leader.the-full-stack.com
-│   └── vibe/        # vibe.the-full-stack.com
+│   ├── generic/     # the-full-stack.com (apex)
+│   ├── hub/         # hub.portfolio.the-full-stack.com (selector)
+│   ├── fintech/     # fintech.portfolio.the-full-stack.com
+│   ├── architect/   # architect.portfolio.the-full-stack.com
+│   ├── leader/      # leader.portfolio.the-full-stack.com
+│   └── vibe/        # vibe.portfolio.the-full-stack.com
 ├── packages/
 │   ├── content/     # Zod schemas + datos del CV + filters/sort por nicho
 │   ├── ui/          # Design system, componentes Astro, theme toggle

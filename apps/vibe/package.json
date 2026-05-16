@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "vibe-focused portfolio site (https://vibe.the-full-stack.com)",
+  "description": "vibe-focused portfolio site (https://vibe.portfolio.the-full-stack.com)",
   "scripts": {
     "dev": "astro dev --port 4326",
     "build": "astro build",

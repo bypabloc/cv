@@ -12,7 +12,7 @@ describe('buildPersonSchema', () => {
       profile,
       niche: 'fintech',
       locale: 'en',
-      canonicalUrl: 'https://fintech.the-full-stack.com/',
+      canonicalUrl: 'https://fintech.portfolio.the-full-stack.com/',
       knowsAbout: ['Vue', 'Django', 'AWS', 'Fintech'],
     })
     const parsed = JSON.parse(ld)
@@ -22,7 +22,7 @@ describe('buildPersonSchema', () => {
     expect(parsed.alternateName).toBe('bypabloc')
     expect(parsed.jobTitle).toMatch(/Fintech/u)
     expect(parsed.email).toBe('pacg1991@gmail.com')
-    expect(parsed.url).toBe('https://fintech.the-full-stack.com/')
+    expect(parsed.url).toBe('https://fintech.portfolio.the-full-stack.com/')
     expect(parsed.knowsAbout).toEqual(['Vue', 'Django', 'AWS', 'Fintech'])
     expect(parsed.address.addressLocality).toBe('Lima, Perú')
     expect(parsed.sameAs).toContain('https://linkedin.com/in/bypabloc')
@@ -34,7 +34,7 @@ describe('buildPersonSchema', () => {
       profile,
       niche: 'architect',
       locale: 'es',
-      canonicalUrl: 'https://architect.the-full-stack.com/',
+      canonicalUrl: 'https://architect.portfolio.the-full-stack.com/',
       knowsAbout: ['Microservicios'],
     })
     const parsed = JSON.parse(ld)

@@ -53,8 +53,9 @@ Cloudflare emite automaticamente un cert wildcard `*.the-full-stack.com`
 
 - `faststruct.the-full-stack.com` ✅
 - `status.the-full-stack.com` ✅
-- `hub.the-full-stack.com` ✅
+- `portfolio.the-full-stack.com` ✅
 - `api.faststruct.the-full-stack.com` ❌ (2 niveles)
+- `hub.portfolio.the-full-stack.com` ❌ (2 niveles)
 
 **Cuando usar**: ya esta activo por default. Cubre los products sin
 component automaticamente. No requiere nada.

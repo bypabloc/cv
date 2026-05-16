@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "leader-focused portfolio site (https://leader.the-full-stack.com)",
+  "description": "leader-focused portfolio site (https://leader.portfolio.the-full-stack.com)",
   "scripts": {
     "dev": "astro dev --port 4325",
     "build": "astro build",

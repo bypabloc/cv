@@ -41,11 +41,6 @@ VALID_COMMANDS = [
     'ps',
     'restart',
     'refresh',
-    # Django
-    'migrate',
-    'makemigrations',
-    'createsuperuser',
-    'manage',
     # Quality
     'lint',
     'lint-fix',
@@ -142,12 +137,8 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'exec': 'Ejecutar comando en container',
     'ps': 'Listar containers',
     'restart': 'Reiniciar servicios',
-    'refresh': 'Refresh completo (down + caches + up + migrate)',
-    'migrate': 'Ejecutar migraciones Django',
-    'makemigrations': 'Generar migraciones Django',
-    'createsuperuser': 'Crear superusuario (usa env vars)',
-    'manage': 'Pass-through a manage.py',
-    'lint': 'Lint (Ruff server, Biome dashboard/landing)',
+    'refresh': 'Refresh completo (down + caches + up)',
+    'lint': 'Lint (Biome apps/packages, Ruff devtools)',
     'lint-fix': 'Lint con auto-fix',
     'format': 'Format (Ruff/Biome)',
     'test': 'Removido — usa test_runner',
@@ -179,10 +170,6 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'ps': ['env', 'output'],
     'restart': ['env'],
     'refresh': ['env', 'keep_volumes', 'skip_cache', 'dry_run'],
-    'migrate': ['env'],
-    'makemigrations': ['env'],
-    'createsuperuser': ['env'],
-    'manage': ['env'],
     'lint': ['env', 'module', 'files', 'output_format'],
     'lint-fix': ['env', 'module', 'files'],
     'format': ['env', 'module', 'files'],
@@ -350,9 +337,8 @@ def _extract_command(flags_dict: dict) -> None:
     help`` (texto colorizado) o ``docker --help`` (README).
 
     Pasa todo lo que sigue a ``--`` (separador POSIX) directo a
-    ``subcommands``, así ``docker exec --target=server -- echo hi`` y
-    ``docker manage migrate -- --plan --verbosity=2`` funcionan sin que
-    el validador rechace los flags del subproceso.
+    ``subcommands``, así ``docker exec --target=generic -- echo hi``
+    funciona sin que el validador rechace los flags del subproceso.
     """
     # Argumentos posicionales: todo antes de '--' (separador POSIX) que no
     # sea una flag. Después de '--' viene en flags_dict['_passthrough'] via
@@ -470,20 +456,15 @@ def flag(flags_dict: dict) -> dict:
     try:
         validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     except ValueError as exc:
-        # Mensaje util cuando el usuario quiso pasar flags al subproceso (manage,
-        # exec) y olvido el separador POSIX. Conservamos el error original como
-        # contexto y agregamos la pista; otros comandos siguen viendo el error
-        # estándar de "Flags no permitidas: ...".
-        if flags_dict.get('command') in ('manage', 'exec'):
-            cmd = flags_dict['command']
-            example = (
-                f'docker {cmd} <subcommand> -- <flags-del-subproceso>'
-                if cmd == 'manage'
-                else f'docker {cmd} --target=<service> -- <comando-y-flags>'
-            )
+        # Mensaje util cuando el usuario quiso pasar flags al subproceso
+        # (exec) y olvido el separador POSIX. Conservamos el error original
+        # como contexto y agregamos la pista; otros comandos siguen viendo el
+        # error estándar de "Flags no permitidas: ...".
+        if flags_dict.get('command') == 'exec':
+            example = 'docker exec --target=<service> -- <comando-y-flags>'
             raise ValueError(
                 f'{exc}\n\n'
-                f"Hint: '{cmd}' delega al subproceso. Para pasarle flags "
+                "Hint: 'exec' delega al subproceso. Para pasarle flags "
                 'desconocidos al CLI, usa el separador POSIX `--`:\n'
                 f'    {example}'
             ) from exc

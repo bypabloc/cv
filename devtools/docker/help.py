@@ -58,39 +58,22 @@ def cmd_help(flags: dict[str, Any]) -> int:
             ],
         ),
         (
-            'Django',
-            [
-                ('migrate', 'Ejecutar migraciones', ''),
-                ('makemigrations', 'Generar migraciones', '[app_name]'),
-                (
-                    'createsuperuser',
-                    'Crear superusuario',
-                    '(usa env vars)',
-                ),
-                (
-                    'manage',
-                    'Pass-through a manage.py',
-                    '<command> [-- --django-flags]',
-                ),
-            ],
-        ),
-        (
             'Quality',
             [
                 (
                     'lint',
-                    'Lint (Ruff server, Biome dashboard/landing)',
-                    '--module=dashboard|landing',
+                    'Lint (Biome apps/packages, Ruff devtools)',
+                    '--module=<app|pkg-*|devtools>',
                 ),
                 (
                     'lint-fix',
-                    'Lint auto-fix (Ruff/Biome)',
-                    '--module=dashboard|landing',
+                    'Lint auto-fix (Biome/Ruff)',
+                    '--module=<app|pkg-*|devtools>',
                 ),
                 (
                     'format',
-                    'Format (Ruff/Biome)',
-                    '--module=dashboard|landing',
+                    'Format (Biome/Ruff)',
+                    '--module=<app|pkg-*|devtools>',
                 ),
             ],
         ),

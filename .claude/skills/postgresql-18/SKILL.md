@@ -11,12 +11,12 @@ description: >
   columns", "generated column", "generated columns", "columnas generadas",
   "STORED column", "VIRTUAL column", "GeneratedField", "computed column",
   "skip scan", "RETURNING OLD NEW", "RETURNING OLD", "RETURNING NEW",
-  "psycopg3", "psycopg2 to psycopg3", "django postgres", "como configurar
-  postgres", "postgres async io". More keywords:
+  "psycopg3", "psycopg2 to psycopg3", "como configurar postgres",
+  "postgres async io". More keywords:
   .claude/docs/skills/postgresql-18.md
 user-invocable: true
 allowed-tools: Read, Glob, Grep
-argument-hint: "tema: api | django | todo"
+argument-hint: "tema: api | todo"
 metadata:
   version: "2.0"
 ---
@@ -35,7 +35,6 @@ Lee la documentacion de PostgreSQL 18 desde `.claude/docs/postgresql-18/` y pres
 | Argumento / Tema | Archivo a leer |
 |-----------------|----------------|
 | `api`, `reference`, `features`, `aio`, `uuidv7`, `columns`, `skip`, `returning`, `oauth`, `breaking`, `config`, `pgdata` | `.claude/docs/postgresql-18/01-api-reference.md` |
-| `django`, `integration`, `psycopg`, `orm`, `models`, `fields`, `search`, `indices`, `performance`, `integracion` | `.claude/docs/postgresql-18/02-django-integration.md` |
 | `todo`, `completo`, `all` | Todos los archivos |
 
 3. Si no hay argumento, lee el README: `.claude/docs/postgresql-18/README.md` y presenta el indice

@@ -5,8 +5,6 @@ Path mirroring: ``devtools/mutation_testing/config.py`` -> this file.
 Política AI-testing independence: ``.claude/rules/ai-testing-independence.md``.
 """
 
-import pytest
-
 from mutation_testing.config import CRITICAL_PATHS
 from mutation_testing.config import CRITICAL_THRESHOLD
 from mutation_testing.config import EXCLUDED_FRAGMENTS
@@ -18,6 +16,7 @@ from mutation_testing.config import all_categories
 from mutation_testing.config import category_for_path
 from mutation_testing.config import is_excluded
 from mutation_testing.config import threshold_for_path
+import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -205,7 +204,7 @@ class TestCriticalPathsCoverage:
 class TestExcludedFragments:
     def test_admin_fragment_is_excluded(self) -> None:
         """
-        Given que el admin Django no contiene lógica testeable por mutmut,
+        Given que el admin no contiene lógica testeable por mutmut,
         When se inspecciona EXCLUDED_FRAGMENTS,
         Then '/admin/' esta presente.
         """

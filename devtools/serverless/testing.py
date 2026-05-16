@@ -1,8 +1,8 @@
 """Test commands for the SAM backend.
 
 pytest unit + integration con moto + responses para mockear AWS y httpx.
-Sigue el patron python.md/django.md: BDD-style en docstrings, AAA en
-cuerpo, asserts EXACTOS, coverage >= 80% per-file.
+Sigue el patron python.md: BDD-style en docstrings, AAA en cuerpo,
+asserts EXACTOS, coverage >= 80% per-file.
 """
 
 from __future__ import annotations

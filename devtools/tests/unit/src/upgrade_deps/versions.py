@@ -77,7 +77,7 @@ class TestPickLatestStable:
     def test_handles_pep440_pre_releases(self):
         from upgrade_deps.versions import pick_latest_stable
 
-        # Django pattern: 6.0.4 stable, 6.1a1 alpha
+        # PEP 440 pattern: 6.0.4 stable, 6.1a1 alpha
         result = pick_latest_stable(['6.0.4', '6.1a1', '5.2.0'])
         assert result == '6.0.4'
 

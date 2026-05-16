@@ -56,19 +56,18 @@ El CI ejecuta el mismo script que el hook local: `.git-hooks/pre-push`. Cambios 
 
 ## Variables de entorno del CI
 
-```env
-# (no DB en portfolio estatico)
-POSTGRES_USER=portfolio
-POSTGRES_PASSWORD=portfolio
-DJANGO_SECRET_KEY=ci-test-secret-key
-DJANGO_DEBUG=False
-DJANGO_SETTINGS_MODULE=config.settings.test
-FERNET_KEY=dGVzdC1mZXJuZXQta2V5LWZvci1jaS1vbmx5LTEyMzQ=
-IMAGE_STORAGE_BACKEND=local
-CELERY_BROKER_URL=redis://redis:6379/0
-CELERY_RESULT_BACKEND=redis://redis:6379/0
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+El portfolio es un monorepo Astro estatico sin backend ni DB. El workflow
+solo pinea las versiones del toolchain en el bloque `env` global:
+
+```yaml
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "11.0.9"
 ```
+
+No hay credenciales de DB ni secrets de runtime: el CI compila sitios
+estaticos. El job `e2e-tests` que levanta Docker usa los `docker/env/.test`
+versionados, sin secretos sensibles.
 
 ## Probar CI localmente con act
 

@@ -85,40 +85,40 @@ Un CLAUDE.md efectivo cubre tres dimensiones: **QUE** (stack, estructura), **POR
 ### Template de produccion (equipo)
 
 ```markdown
-# Payment Service
-Backend de pagos para mercados CL/MX. Django 5 + DRF + PostgreSQL.
+# portfolio
+Monorepo de 6 sitios Astro estaticos (pnpm workspaces) + backend serverless.
 
 ## Commands
-- Dev server: `python manage.py runserver`
-- Test single: `pytest path/to/test.py -v`
-- Test all: `pytest --cov --tb=short`
-- Lint: `ruff check .`
-- Format: `black . && isort .`
-- Migrations: `python manage.py makemigrations && python manage.py migrate`
+- Dev server: `pnpm run dev`
+- Test single: `pnpm exec vitest run path/to/test.test.ts`
+- Test all: `pnpm run test:coverage`
+- Lint: `pnpm run lint`
+- Typecheck: `pnpm run typecheck`
+- Build: `pnpm run build`
 
 ## Architecture
-- apps/payments/ - Procesamiento de pagos (Getnet, Transbank)
-- apps/users/ - Autenticacion y perfiles
-- apps/webhooks/ - Handlers de notificaciones
-- libs/validators/ - Validaciones RUT, RFC, tarjetas
+- apps/ - 6 sitios Astro (generic, hub, fintech, architect, leader, vibe)
+- packages/ - workspaces compartidos (content, ui, seo, cv-pdf, app-shared)
+- serverless/ - backend AWS Lambda (contact-form, tracking-pixel)
+- devtools/ - CLI Python 3.14 orquestador del stack local
 
 ## Stack
-- Python 3.14 + Django 6 + DRF
-- PostgreSQL 18
-- pytest + factory_boy para testing
+- Astro 6 + TypeScript 6 strict + Biome v2
+- Backend: AWS Lambda Python 3.13 + DynamoDB + Neon PostgreSQL 18
+- Vitest + happy-dom (unit), Playwright (E2E)
 
 ## Conventions
-- Branches: feature/, hotfix/, bugfix/ (separador / obligatorio)
-- Commits: Conventional Commits en ingles
-- Code: black (line-length 80) + isort (profile black)
-- Views: siempre select_related/prefetch_related
-- Tests: pytest con AAA pattern, coverage > 80%
+- Branches: feature/, fix/, chore/, docs/ (separador / obligatorio)
+- Commits: Conventional Commits en espanol
+- Code: Biome (line-length 80, single quotes, sin semicolons)
+- Componentes Astro: PascalCase; utilities: kebab-case
+- Tests: Vitest con AAA + BDD-style, coverage >= 80% per-file
 
 ## Security (CRITICAL)
-- NUNCA loguear passwords, tokens JWT, codes de verificacion, RUT/RUC completo
-- Validar inputs en fronteras de controller (serializers DRF)
-- Mercado Pago: tokenizar tarjetas via MP SDK (nunca guardar PAN/CVV)
-- Audit logs obligatorios en cambios de estado de Appointment, Payment, Refund
+- NUNCA hardcodear secretos: usar SSM Parameter Store o `.env` ignorado
+- Solo `import.meta.env.PUBLIC_*` se expone al bundle del browser
+- Validar input del form de contacto en cliente y en el Lambda handler
+- CSP estricta; fonts self-hosted (nunca Google Fonts CDN)
 
 ## Git
 - Base branches: master (prod), release (pre-prod), dev
@@ -301,8 +301,8 @@ claude --resume      # Seleccionar de sesiones recientes
 shared-rules/                        # Repo central de reglas
 ├── shared/
 │   ├── rules/                       # Reglas por stack
-│   │   ├── react-nextjs.md
-│   │   ├── python-django.md
+│   │   ├── astro-frontend.md
+│   │   ├── python-devtools.md
 │   │   └── general.md
 │   └── templates/                   # Templates CLAUDE.md por tipo de repo
 │       ├── frontend.claude.md
@@ -517,18 +517,18 @@ Lee [docs/architecture.md](docs/architecture.md) para entender la estructura.
 ### Ejemplo Completo: CLAUDE.md Raiz con Knowledge Tree
 
 ```markdown
-# payment-service
+# portfolio
 
-Backend de pagos para mercados CL/MX. Django 5 + DRF + PostgreSQL.
+Monorepo de 6 sitios Astro estaticos + backend serverless AWS.
 
 ## Comandos
-- Test: `pytest path/to/test.py -v`
-- Lint: `ruff check .`
-- Dev: `python manage.py runserver`
+- Test: `pnpm exec vitest run path/to/test.test.ts`
+- Lint: `pnpm run lint`
+- Dev: `pnpm run dev`
 
 ## Stack
-- Python 3.14, Django 6, DRF
-- PostgreSQL 18
+- Astro 6 + TypeScript 6 strict + Biome v2
+- Backend: AWS Lambda Python 3.13 + DynamoDB + Neon PostgreSQL 18
 
 ## Arbol de conocimiento
 
@@ -536,11 +536,11 @@ Antes de trabajar, identifica que contexto necesitas:
 
 | Tema | Archivo | Cuando leer |
 |------|---------|-------------|
-| Arquitectura | [docs/architecture.md](docs/architecture.md) | Crear servicios, entender estructura |
+| Arquitectura | [docs/architecture.md](docs/architecture.md) | Crear componentes, entender estructura |
 | Testing | [docs/testing.md](docs/testing.md) | Escribir o modificar tests |
 | Seguridad | [docs/security.md](docs/security.md) | Manejar secrets, inputs, logging |
-| Dominio | [docs/domain.md](docs/domain.md) | Entender flujos de booking/appointment/pago |
-| API Providers | [docs/providers.md](docs/providers.md) | Integrar con Mercado Pago, AWS SES, WhatsApp, etc. |
+| Design System | [docs/design-system.md](docs/design-system.md) | Tokens CSS, dark/light, tipografia |
+| Deploy | [docs/deploy.md](docs/deploy.md) | Cloudflare Pages, custom domains, DNS |
 
 ## Gotchas
 - Archivos temporales en `./tmp/`, nunca `/tmp/`

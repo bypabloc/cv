@@ -1,7 +1,8 @@
 """
 Aplica migrations SQL contra Neon PostgreSQL.
 
-Lee DB_URL desde env (cargado por devtools desde docker/env/.{stage}).
+Lee DB_URL desde env (cargado por devtools desde
+docker/env/server/.{stage} — categoria server).
 Itera migrations/*.sql en orden y aplica las que no esten en schema_migrations.
 
 Uso:
@@ -26,7 +27,7 @@ def _connect():
 
     db_url = os.environ.get('DB_URL')
     if not db_url:
-        msg = 'DB_URL no esta seteada (esperado en docker/env/.{stage})'
+        msg = 'DB_URL no esta seteada (esperado en docker/env/server/.{stage})'
         raise SystemExit(msg)
     return psycopg.connect(db_url)
 

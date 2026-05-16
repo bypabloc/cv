@@ -5,13 +5,30 @@ globs: "**/*.py"
 
 # Python Development Standards
 
-> El unico Python del portfolio vive en `devtools/` (CLI orquestador) y
-> `.git-hooks/` (quality gates autocontenidos). El proyecto NO tiene backend:
-> es un monorepo Astro estatico. Estas reglas aplican a esos dos arboles.
+> El Python del portfolio vive en tres arboles: `devtools/` (CLI orquestador),
+> `.git-hooks/` (quality gates autocontenidos) y `serverless/` (Lambdas AWS).
+> El frontend es un monorepo Astro estatico sin backend. Estas reglas aplican
+> a los tres arboles Python.
+
+## Version de Python e interprete (resumen — detalle en skill)
+
+Reglas duras, siempre activas:
+
+- El proyecto usa **Python 3.14 exclusivo**. Codigo nuevo se escribe para 3.14.
+- Unica excepcion: las Lambdas de `serverless/` corren en runtime AWS **3.13**
+  (AWS aun no ofrece 3.14) — excepcion externa, no eleccion del proyecto.
+- `devtools/run.py` y `.git-hooks/**/*.py` no usan sintaxis exclusiva de 3.14:
+  corren en el `python3` del shell antes del re-exec al `.venv`.
+- **SIEMPRE** verificar codigo de `devtools/` con `devtools/.venv/bin/python`,
+  NUNCA con `python3` pelado. El `python3` del shell (3.12) reporta
+  `SyntaxError` falsos en sintaxis 3.14 (PEP 758).
+
+Detalle completo (tabla de interpretes, PEP 758, comandos canonicos,
+estructura de paquetes): invocar la skill `python-devtools`.
 
 ## Estilo
 
-- Python 3.14 estricto (target-version `py314` en Ruff). Excepciones de bootstrap (`devtools/run.py`, `.git-hooks/*.py`) pinneadas a `py313` via `per-file-target-version` para preservar sintaxis con parentesis en `except`.
+- Python 3.14 estricto (target-version `py314` en Ruff). El pin `py313` de `devtools/run.py` y `.git-hooks/*.py` via `per-file-target-version` es por compatibilidad de bootstrap (corren en el Python del shell antes del re-exec al `.venv` 3.14), NO una version soportada del proyecto.
 - Ruff como linter y formatter. `devtools/` lleva su propio `ruff.toml` autocontenido (CLI + bootstrap py313): sin base compartida, declara reglas, ignores y formatter completos. Ruff lo autodetecta cuando el cwd es la raiz del modulo.
 - line-length 80, indent 4, line-ending lf, single quotes (`flake8-quotes` + formatter), trailing commas habilitadas (no auto-agregadas — ver nota abajo).
 - Type hints requeridos en todas las funciones publicas (`ANN`).

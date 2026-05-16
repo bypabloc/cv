@@ -31,7 +31,7 @@ import {
   type I18nStrings,
   type SiteOverrides,
 } from './site-config'
-import { SITE_URLS } from './site-urls'
+import { buildSiteUrl, SITE_URLS } from './site-urls'
 
 export interface DefineSiteConfigInput {
   /** Nicho del sitio. Ver `NICHES` en `@portfolio/content`. */
@@ -58,12 +58,16 @@ export interface DefineSiteConfigOutput {
 
 const DEFAULT_OG_PATH = '/og-image.svg'
 
+/**
+ * Deriva el SITE_URL default del niche cuando el caller no pasa `siteUrl`.
+ *
+ * Usa `buildSiteUrl` (env-driven via BASE_DOMAIN/SCHEME/PORT), de modo que
+ * el default respeta el ambiente activo (prod / stage / dev / local) sin
+ * hardcodear `the-full-stack.com`. En prod el niche `generic` mapea al apex
+ * del dominio; en dev/stage al apex del env (`portfolio.{env}.the-full-stack.com`).
+ */
 function defaultSiteUrlFor(niche: Niche): string {
-  if (niche === 'generic') {
-    // generic vive en hub.the-full-stack.com por convencion del proyecto
-    return 'https://hub.the-full-stack.com'
-  }
-  return `https://${niche}.the-full-stack.com`
+  return buildSiteUrl(niche)
 }
 
 export function defineSiteConfig(

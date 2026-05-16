@@ -18,20 +18,29 @@ Frontend lo consume via `PUBLIC_API_ENDPOINT` en `docker/env/.{dev,prod}`.
 Aplicando el estandar (product = `portfolio`, component = `api`):
 
 ```text
-prod   https://api.portfolio.the-full-stack.com
-dev    https://api.portfolio.dev.the-full-stack.com
+prod    https://api.portfolio.the-full-stack.com
+stage   https://api.portfolio.stage.the-full-stack.com
+dev     https://api.portfolio.dev.the-full-stack.com
 ```
+
+> Nota: el stack SAM `stage` (`portfolio-backend-stage`) se despliega como
+> parte de esta migracion — el `template.yaml` agrega `stage` a los
+> `AllowedValues` del parametro `Stage` y `samconfig.toml` un bloque
+> `[stage.*]`. Cada env tiene su REST API independiente.
 
 ## Plan de migracion
 
 ### Paso 1 — Cert ACM en us-east-1
 
 API Gateway REST API requiere cert ACM en la misma region (us-east-1).
+Un solo cert con 3 SANs cubre los 3 envs:
 
 ```bash
 aws acm request-certificate \
   --domain-name api.portfolio.the-full-stack.com \
-  --subject-alternative-names api.portfolio.dev.the-full-stack.com \
+  --subject-alternative-names \
+      api.portfolio.dev.the-full-stack.com \
+      api.portfolio.stage.the-full-stack.com \
   --validation-method DNS \
   --region us-east-1 \
   --output json
@@ -58,7 +67,8 @@ Esperar el `Status: ISSUED` del cert (~5-30min).
 
 ### Paso 3 — Custom Domain Names en API Gateway
 
-Crear 2 entries (prod + dev):
+Crear 3 entries (prod + stage + dev). El bloque de abajo muestra prod+dev;
+para stage repetir con `api.portfolio.stage.the-full-stack.com`:
 
 ```bash
 # prod

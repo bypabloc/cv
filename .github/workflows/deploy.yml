@@ -2,7 +2,7 @@ name: Deploy to Cloudflare Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, stage, dev]
   workflow_dispatch:
     inputs:
       app:
@@ -21,6 +21,43 @@ env:
   PNPM_VERSION: '10.23.0'
 
 jobs:
+  resolve-env:
+    name: Resolve deploy environment
+    runs-on: ubuntu-24.04
+    outputs:
+      env: ${{ steps.env.outputs.env }}
+      base_domain: ${{ steps.env.outputs.base_domain }}
+      project_suffix: ${{ steps.env.outputs.project_suffix }}
+    steps:
+      - id: env
+        name: Map branch to environment
+        run: |
+          set -euo pipefail
+          case "${{ github.ref_name }}" in
+            main)
+              # prod: niches flat sobre el apex (excepcion del estandar)
+              echo "env=prod" >> "$GITHUB_OUTPUT"
+              echo "base_domain=the-full-stack.com" >> "$GITHUB_OUTPUT"
+              echo "project_suffix=" >> "$GITHUB_OUTPUT"
+              ;;
+            stage)
+              # stage: patron component-based {niche}.portfolio.stage.the-full-stack.com
+              echo "env=stage" >> "$GITHUB_OUTPUT"
+              echo "base_domain=portfolio.stage.the-full-stack.com" >> "$GITHUB_OUTPUT"
+              echo "project_suffix=-stage" >> "$GITHUB_OUTPUT"
+              ;;
+            dev)
+              # dev: patron component-based {niche}.portfolio.dev.the-full-stack.com
+              echo "env=dev" >> "$GITHUB_OUTPUT"
+              echo "base_domain=portfolio.dev.the-full-stack.com" >> "$GITHUB_OUTPUT"
+              echo "project_suffix=-dev" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Branch ${{ github.ref_name }} no mapea a ningun env de deploy" >&2
+              exit 1
+              ;;
+          esac
+
   detect-changes:
     name: Detect which apps changed
     runs-on: ubuntu-24.04
@@ -64,8 +101,8 @@ jobs:
           echo "apps=$JSON" >> "$GITHUB_OUTPUT"
 
   deploy:
-    name: Deploy ${{ matrix.app }}
-    needs: detect-changes
+    name: Deploy ${{ matrix.app }} (${{ needs.resolve-env.outputs.env }})
+    needs: [resolve-env, detect-changes]
     if: needs.detect-changes.outputs.apps != '[]'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -91,7 +128,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Resolve SITE_URL for ${{ matrix.app }}
+        id: site
+        run: |
+          set -euo pipefail
+          APP="${{ matrix.app }}"
+          BASE="${{ needs.resolve-env.outputs.base_domain }}"
+          # generic mapea al apex del env; el resto a <app>.<base_domain>
+          if [ "$APP" = "generic" ]; then
+            echo "site_url=https://${BASE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "site_url=https://${APP}.${BASE}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build apps/${{ matrix.app }}
+        env:
+          # SITE_URL: hostname propio de esta app en este env (sitemap/JSON-LD/OG).
+          SITE_URL: ${{ steps.site.outputs.site_url }}
+          # BASE_DOMAIN/SCHEME: usados por SITE_URLS para enlazar a las otras apps.
+          BASE_DOMAIN: ${{ needs.resolve-env.outputs.base_domain }}
+          BASE_SCHEME: https
+          BASE_PORT: ''
         run: pnpm --filter "@portfolio/${{ matrix.app }}" run build
 
       - name: Deploy to Cloudflare Pages
@@ -99,4 +156,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/${{ matrix.app }}/dist --project-name=portfolio-${{ matrix.app }} --branch=main
+          command: >-
+            pages deploy apps/${{ matrix.app }}/dist
+            --project-name=portfolio-${{ matrix.app }}${{ needs.resolve-env.outputs.project_suffix }}
+            --branch=${{ github.ref_name }}

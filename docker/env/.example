@@ -233,8 +233,15 @@ CI=
 
 # Base URL del API Gateway (sin trailing slash).
 # La pagina /contact arma el endpoint final como `${PUBLIC_API_ENDPOINT}/contact`.
-# dev: https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev
-# prod: https://332ivhahf2.execute-api.us-east-1.amazonaws.com/prod
+#
+# Custom domains (estandar de subdominios, post-migracion):
+#   dev:   https://api.portfolio.dev.the-full-stack.com
+#   stage: https://api.portfolio.stage.the-full-stack.com
+#   prod:  https://api.portfolio.the-full-stack.com
+#
+# URLs raw de API Gateway (deprecadas, soft-rollback 30 dias):
+#   dev:  https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev
+#   prod: https://332ivhahf2.execute-api.us-east-1.amazonaws.com/prod
 PUBLIC_API_ENDPOINT=
 
 # Cloudflare Turnstile sitekey publica del widget Portfolio Backend.

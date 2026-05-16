@@ -24,9 +24,9 @@ describe('defineSiteConfig', () => {
     expect(r.SITE_URL).toBe('https://architect.the-full-stack.com')
   })
 
-  it('Given niche generic Then SITE_URL is hub subdomain (project convention)', () => {
+  it('Given niche generic Then SITE_URL is the apex domain (env-driven default)', () => {
     const r = defineSiteConfig({ niche: 'generic', overrides: baseOverrides })
-    expect(r.SITE_URL).toBe('https://hub.the-full-stack.com')
+    expect(r.SITE_URL).toBe('https://the-full-stack.com')
   })
 
   it('Given explicit siteUrl When invoked Then SITE_URL is the provided value', () => {

@@ -80,6 +80,29 @@ Si tu flujo no necesita stage (proyectos chicos), omitir el ambiente.
 Pero NO inventar variantes (`pre-prod`, `release-candidate`, `beta`).
 Las 3 etiquetas (dev/stage/prod) son la lista cerrada.
 
+## Caso portfolio: dev/stage del frontend (excepcion solo en prod)
+
+El portfolio personal (apex + www + 5 niches) es excepcion permanente del
+estandar SOLO en prod: los niches van flat (`fintech.the-full-stack.com`).
+Esa excepcion NO se propaga a dev/stage — ahi SI se aplica el patron
+component-based con `product = portfolio`.
+
+| Env | apex (generic) | niches (hub/fintech/architect/leader/vibe) |
+|-----|----------------|---------------------------------------------|
+| prod | `the-full-stack.com` | `<niche>.the-full-stack.com` |
+| stage | `portfolio.stage.the-full-stack.com` | `<niche>.portfolio.stage.the-full-stack.com` |
+| dev | `portfolio.dev.the-full-stack.com` | `<niche>.portfolio.dev.the-full-stack.com` |
+
+Razon: en dev/stage los hostnames son tecnicos (no marketing), conviene
+que sigan el estandar para no chocar con productos futuros que quieran
+nombrarse como un niche y para que `*.portfolio.dev.*` salte a la vista
+en logs. El backend del portfolio sigue la misma logica:
+`api.portfolio.{env}.the-full-stack.com` (ver
+[06-migration-backend-api](./06-migration-backend-api.md)).
+
+El branch dispara el env: `dev` -> dev, `stage` -> stage, `main` -> prod
+(ver `.github/workflows/deploy.yml`).
+
 ## Acceso restringido en no-prod
 
 Recomendado para dev y stage:

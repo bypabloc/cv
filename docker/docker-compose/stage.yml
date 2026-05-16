@@ -1,0 +1,126 @@
+# Portfolio - stage compose (build + preview, puerto 9974).
+#
+# Stage es un ambiente de pre-produccion: replica el comportamiento de prod
+# (astro build + preview, sin HMR) para detectar errores antes del cutover
+# a produccion.
+
+x-app-environment: &app-environment
+  BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+  BASE_SCHEME: ${BASE_SCHEME:-http}
+  BASE_PORT: ${BASE_PORT:-9974}
+  # Backend serverless (vienen de docker/env/.stage). Astro los lee
+  # como import.meta.env.PUBLIC_* y los inlinea en el bundle del browser.
+  PUBLIC_API_ENDPOINT: ${PUBLIC_API_ENDPOINT:-}
+  PUBLIC_TURNSTILE_SITEKEY: ${PUBLIC_TURNSTILE_SITEKEY:-}
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: portfolio-nginx-stage
+    ports:
+      - "${PROXY_PORT:-9974}:80"
+    volumes:
+      - ../nginx/stage.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../nginx/error-pages:/usr/share/nginx/error-pages:ro
+      - ../nginx/services-page:/usr/share/nginx/services-page:ro
+    depends_on:
+      generic:
+        condition: service_started
+      hub:
+        condition: service_started
+      fintech:
+        condition: service_started
+      architect:
+        condition: service_started
+      leader:
+        condition: service_started
+      vibe:
+        condition: service_started
+    restart: unless-stopped
+
+  generic:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/stage/generic/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-generic-stage
+    environment: *app-environment
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  hub:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/stage/hub/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-hub-stage
+    environment: *app-environment
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  fintech:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/stage/fintech/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-fintech-stage
+    environment: *app-environment
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  architect:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/stage/architect/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-architect-stage
+    environment: *app-environment
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  leader:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/stage/leader/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-leader-stage
+    environment: *app-environment
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  vibe:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/stage/vibe/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-vibe-stage
+    environment: *app-environment
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+volumes:
+  portfolio_node_modules:

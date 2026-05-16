@@ -2,7 +2,7 @@
 
 > Tech Lead and Engineering Manager. 4 leadership roles, 8 teams led, 11+ years shipping product. Innovator of the Year 2023 at Destacame for automating internal operations. Mentoring + delivery + organizational resilience during reorganizations.
 
-Canonical URL: https://leader.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
+Canonical URL: https://leader.portfolio.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
 
 ## Highlights — leader
 
@@ -16,11 +16,11 @@ Tech Lead · Engineering Manager · Staff Engineer · Team Lead · Mentoring · 
 
 ## Pages
 
-- [Home](https://leader.the-full-stack.com/): Pablo Contreras — Tech Lead · Mentoring · Shipping fintech
-- [About](https://leader.the-full-stack.com/about): Education, languages, awards, publications, references
-- [Certificates](https://leader.the-full-stack.com/certificates): Technical certifications relevant to this profile
-- [CV (HTML)](https://leader.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
-- [CV (EN)](https://leader.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+- [Home](https://leader.portfolio.the-full-stack.com/): Pablo Contreras — Tech Lead · Mentoring · Shipping fintech
+- [About](https://leader.portfolio.the-full-stack.com/about): Education, languages, awards, publications, references
+- [Certificates](https://leader.portfolio.the-full-stack.com/certificates): Technical certifications relevant to this profile
+- [CV (HTML)](https://leader.portfolio.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
+- [CV (EN)](https://leader.portfolio.the-full-stack.com/cv-en.html): ATS-friendly CV in English
 
 ## Identity
 

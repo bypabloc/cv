@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://leader.the-full-stack.com/sitemap.xml
-Sitemap: https://leader.the-full-stack.com/sitemap-index.xml
+Sitemap: https://leader.portfolio.the-full-stack.com/sitemap.xml
+Sitemap: https://leader.portfolio.the-full-stack.com/sitemap-index.xml

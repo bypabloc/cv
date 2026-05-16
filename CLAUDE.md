@@ -195,10 +195,12 @@ Skip por env: `SKIP_STEPS="build,unit_tests" git push ...`. Config en
 
 ## CI (GitHub Actions)
 
-Dos jobs en [.github/workflows/ci.yml](.github/workflows/ci.yml):
+Un job en [.github/workflows/ci.yml](.github/workflows/ci.yml):
 
 1. `quality-gates` (sin Docker): lint + typecheck + unit + build estático
-2. `e2e-tests` (con Docker): levanta stack test + corre Playwright
+
+E2E (Playwright) NO corre en CI (es lento): vive en el pre-push hook
+local. Ver [.claude/rules/verify-before-done.md](.claude/rules/verify-before-done.md).
 
 Trigger: PRs a `main`/`master`/`dev`. Limpieza automática de atribución
 de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/clean-pr-attribution.yml).

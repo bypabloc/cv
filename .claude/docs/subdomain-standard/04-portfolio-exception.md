@@ -42,7 +42,11 @@ el apex del ambiente es `portfolio.dev.the-full-stack.com` /
 
 `portfolio.the-full-stack.com` existe (consistencia de patron) y hace
 redirect 301 al apex `the-full-stack.com` — el apex es la URL canonica
-de generic.
+de generic. El redirect se implementa con una Cloudflare Redirect Rule
+a nivel de zona (`http.host eq "portfolio.the-full-stack.com"`), NO con
+un `_redirects` de Pages: el proyecto `generic` sirve tanto el apex como
+`portfolio.*`, asi que un `_redirects` por path redirigiria tambien el
+apex. La Redirect Rule discrimina por hostname.
 
 ## Apex / www
 

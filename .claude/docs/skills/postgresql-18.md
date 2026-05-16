@@ -10,8 +10,6 @@ para mantenerla bajo 500 chars. Esta es la lista completa.
 - `RETURNING OLD NEW`
 - `async io postgres`
 - `database`
-- `django postgres`
-- `django postgresql`
 - `pg config`
 - `pg18`
 - `postgres`

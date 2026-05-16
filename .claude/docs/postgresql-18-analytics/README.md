@@ -73,8 +73,8 @@ SELECT * FROM contacts_by_month_niche LIMIT 10;
 
 ## Referencias relacionadas
 
-- `.claude/docs/postgresql-18/` — Referencia tecnica de PG18 (features, Django ORM, config)
-- `.claude/rules/database.md` — Estandares de DB (constraints, indexes, QuerySets custom, N+1)
+- `.claude/docs/postgresql-18/` — Referencia tecnica de PG18 (features del motor, config)
+- `.claude/rules/neon-management.md` — Gestion operativa de Neon (migrations, branches, SSM)
 - `.claude/rules/python.md` — Code style para devtools que orquesten PG (psycopg3, type hints)
 
 ## Tabla de contenidos

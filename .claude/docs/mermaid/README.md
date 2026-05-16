@@ -26,7 +26,7 @@
 
 | Tipo | Keyword | Uso |
 |------|---------|-----|
-| Entity-Relationship | `erDiagram` | Modelos de datos Django, esquemas de BD |
+| Entity-Relationship | `erDiagram` | Modelos de datos, esquemas de BD |
 | Flowchart | `flowchart TD` / `flowchart LR` | Pipelines, procesos, flujos de decision |
 | Architecture | `graph LR` / C4Context | Servicios Docker, sistemas distribuidos |
 | Sequence | `sequenceDiagram` | Llamadas a APIs, flujos de autenticacion |

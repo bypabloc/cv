@@ -79,7 +79,6 @@ def collect_changed_files(flags: dict[str, Any]) -> list[str]:
 
 _SERVER_PATTERNS: list[tuple[str, str]] = [
     (r'apps/[^/]+/models(/|\.py$)', 'server_model'),
-    (r'apps/[^/]+/admin(/|\.py$)', 'server_admin'),
     (r'apps/[^/]+/services/', 'server_service'),
     (r'apps/[^/]+/selectors/', 'server_selector'),
     (r'apps/[^/]+/views(/|\.py$)', 'server_view'),
@@ -168,18 +167,6 @@ def verifications_for(classification: str) -> list[Verification]:
             Verification(
                 reason='Modelo modificado: unit tests del modelo',
                 cmd=f'{devtools_run} test_runner --module=server --type=unit',
-            ),
-        ],
-        'server_admin': [
-            Verification(
-                reason='Admin modificado: Django check',
-                cmd=(
-                    'docker exec portfolio-server-local python manage.py check'
-                ),
-            ),
-            Verification(
-                reason='Admin modificado: lint Python',
-                cmd=f'{devtools_run} docker lint',
             ),
         ],
         'server_service': [

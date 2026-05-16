@@ -1885,12 +1885,12 @@ Developer local
 
 | Convencion | Origen | Aplicacion en `serverless/` |
 |------------|--------|-----------------------------|
-| Carpetas por dominio (services, selectors, handlers) | `.claude/rules/python.md` + `.claude/rules/django.md` | `src/<lambda>/` con `handler.py` + `service.py` + `persistence.py` + `schemas.py` |
+| Carpetas por dominio (services, selectors, handlers) | `.claude/rules/python.md` | `src/<lambda>/` con `handler.py` + `service.py` + `persistence.py` + `schemas.py` |
 | Un archivo por entidad < 300 lineas | `.claude/rules/python.md` | Cada Lambda esta dividida en handler/service/persistence/schemas |
 | Type hints obligatorios | `.claude/rules/python.md` | `src/common/types.py` con TypedDicts compartidos |
 | Single quotes para strings tecnicos | `.claude/rules/python.md` | Codigo Python en todo el modulo |
 | Trailing commas | `.claude/rules/python.md` | Minimiza git diff en multilinea |
-| pytest path-mirroring | `.claude/rules/python.md` + `.claude/rules/django.md` | `tests/unit/<X>/test_<Y>.py` mirror de `src/<X>/<Y>.py` |
+| pytest path-mirroring | `.claude/rules/python.md` | `tests/unit/<X>/test_<Y>.py` mirror de `src/<X>/<Y>.py` |
 | BDD-style en docstring | `.claude/rules/python.md` | Tests con Given/When/Then en docstring + AAA en cuerpo |
 | Asserts EXACTOS | `.claude/rules/python.md` | `assert response == {...}`, no rangos |
 | ADR para cada decision estructural | nuevo en este proyecto | `docs/adr/<N>-*.md` numerado, formato corto |

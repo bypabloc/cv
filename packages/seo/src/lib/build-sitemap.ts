@@ -56,18 +56,85 @@ function escapeXml(s: string): string {
     .replace(/'/g, '&apos;')
 }
 
+/** Crawlers de IA que se permiten explicitamente en prod (GEO white-hat). */
+const AI_CRAWLERS = [
+  'GPTBot',
+  'OAI-SearchBot',
+  'ChatGPT-User',
+  'ClaudeBot',
+  'Claude-Web',
+  'Google-Extended',
+  'PerplexityBot',
+  'CCBot',
+] as const
+
+/**
+ * @function isNonProdHost
+ * @description Detecta si un siteUrl corresponde a un entorno no productivo
+ *   (dev / stage / local). Esos entornos NO deben indexarse.
+ *
+ * @param {string} siteUrl - URL absoluta del sitio
+ * @returns {boolean} true si el host es dev/stage/localhost/pages.dev
+ *
+ * @example
+ *   isNonProdHost('https://portfolio.dev.the-full-stack.com')  // true
+ *   isNonProdHost('http://hub.localhost:9970')                 // true
+ *   isNonProdHost('https://the-full-stack.com')                // false
+ */
+export function isNonProdHost(siteUrl: string): boolean {
+  let host: string
+  try {
+    host = new URL(siteUrl).hostname
+  } catch {
+    host = siteUrl
+  }
+  return (
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.pages.dev') ||
+    host.includes('.dev.') ||
+    host.includes('.stage.')
+  )
+}
+
 /**
  * @function buildRobotsTxt
- * @description Genera /robots.txt.
+ * @description Genera /robots.txt segun el entorno del siteUrl.
+ *
+ *   - Prod: indexable. Permite `*` + lista explicita de crawlers de IA
+ *     (GPTBot, ClaudeBot, Google-Extended, PerplexityBot, CCBot...) para
+ *     maximizar GEO. Apunta a los sitemaps.
+ *   - dev / stage / localhost / pages.dev: `Disallow: /` total. Evita que
+ *     Google y los crawlers de IA indexen entornos no productivos.
+ *
+ * @param {string} siteUrl - URL absoluta del sitio (define el entorno)
+ * @returns {string} contenido de robots.txt
+ *
+ * @example
+ *   buildRobotsTxt('https://the-full-stack.com')        // indexable + AI crawlers
+ *   buildRobotsTxt('https://portfolio.dev.the-full-stack.com')  // Disallow: /
  */
 export function buildRobotsTxt(siteUrl: string): string {
+  if (isNonProdHost(siteUrl)) {
+    return 'User-agent: *\nDisallow: /\n'
+  }
+
   const u = siteUrl.replace(/\/$/, '')
-  return [
-    'User-agent: *',
-    'Allow: /',
-    '',
-    `Sitemap: ${u}/sitemap.xml`,
-    `Sitemap: ${u}/sitemap-index.xml`,
-    '',
-  ].join('\n')
+  const lines: string[] = []
+
+  for (const crawler of AI_CRAWLERS) {
+    lines.push(`User-agent: ${crawler}`)
+    lines.push('Allow: /')
+    lines.push('')
+  }
+
+  lines.push('User-agent: *')
+  lines.push('Allow: /')
+  lines.push('Disallow:')
+  lines.push('')
+  lines.push(`Sitemap: ${u}/sitemap.xml`)
+  lines.push(`Sitemap: ${u}/sitemap-index.xml`)
+  lines.push('')
+
+  return lines.join('\n')
 }

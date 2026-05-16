@@ -1,7 +1,10 @@
 ---
 import type { Niche } from '@portfolio/content'
 import { filterByNiche, profile, skills } from '@portfolio/content'
-import { buildProfilePageSchema } from '@portfolio/seo'
+import {
+  buildProfilePageSchema,
+  buildSiteNavigationSchema,
+} from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
 import Footer from '@portfolio/ui/components/Footer.astro'
 import Nav from '@portfolio/ui/components/Nav.astro'
@@ -56,13 +59,52 @@ const canonicalUrl = `${siteUrl}${canonicalPath}`
 const knowsAbout = filterByNiche(skills, niche).flatMap((c) =>
   c.skills.slice(0, 5),
 )
-const jsonLd = buildProfilePageSchema({
+const profilePageLd = buildProfilePageSchema({
   profile,
   niche,
   locale,
   canonicalUrl,
   knowsAbout,
 })
+
+// SiteNavigationElement: declara las paginas principales del sitio para que
+// Google entienda la jerarquia (favorece sitelinks en busquedas de marca).
+const navSchemaItems = [
+  {
+    name: locale === 'es' ? 'Inicio' : 'Home',
+    path: locale === 'es' ? '/' : '/en/',
+  },
+  {
+    name: locale === 'es' ? 'Sobre mí' : 'About',
+    path: locale === 'es' ? '/about' : '/en/about',
+  },
+  {
+    name: locale === 'es' ? 'Certificados' : 'Certificates',
+    path: locale === 'es' ? '/certificates' : '/en/certificates',
+  },
+  {
+    name: locale === 'es' ? 'Contacto' : 'Contact',
+    path: locale === 'es' ? '/contact' : '/en/contact',
+  },
+]
+const siteNavigationLd = buildSiteNavigationSchema({
+  siteUrl,
+  items: navSchemaItems,
+})
+
+const jsonLd = [profilePageLd, siteNavigationLd]
+
+// hreflang: par es <-> en de la pagina actual, URLs absolutas.
+const alternates = [
+  {
+    hreflang: 'es',
+    href: `${siteUrl}${locale === 'es' ? canonicalPath : otherLocalePath}`,
+  },
+  {
+    hreflang: 'en',
+    href: `${siteUrl}${locale === 'en' ? canonicalPath : otherLocalePath}`,
+  },
+]
 
 const nicheStyle = nicheTokensToCssVars(niche)
 ---
@@ -74,6 +116,7 @@ const nicheStyle = nicheTokensToCssVars(niche)
   locale={locale}
   ogImage={ogImage}
   jsonLd={jsonLd}
+  alternates={alternates}
 >
   <Nav
     slot="nav"

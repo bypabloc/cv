@@ -100,8 +100,10 @@ en logs. El backend del portfolio sigue la misma logica:
 `api.portfolio.{env}.the-full-stack.com` (ver
 [06-migration-backend-api](./06-migration-backend-api.md)).
 
-El branch dispara el env: `dev` -> dev, `stage` -> stage, `main` -> prod
-(ver `.github/workflows/deploy.yml`).
+El branch dispara el env via la integracion git nativa de Cloudflare
+Pages: `dev` -> proyectos `<app>-dev`, `stage` -> `<app>-stage`,
+`main` -> `<app>`. Cada proyecto Pages tiene su `BASE_DOMAIN` y
+`SITE_URL` como build env vars (no hay workflow de deploy).
 
 ## Acceso restringido en no-prod
 

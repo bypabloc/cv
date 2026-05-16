@@ -1,0 +1,33 @@
+# Portfolio - Variables de categoria DEV-CLI.
+#
+# Credenciales que usa el devtools CLI en la maquina del dev para gestionar
+# infra: deploy a AWS (sam), gestion de branches/proyectos Neon, deploy a
+# Cloudflare Pages, DNS. NO las consume el frontend ni las Lambdas en runtime.
+#
+# IMPORTANTE: contienen SECRETOS. NO se escriben crudos en estos archivos —
+# placeholder vacio. El valor real lo provee el dev en su entorno local
+# (export, gestor de secretos, o resuelto desde SSM/keychain). Ver
+# .claude/rules/security.md.
+#
+# Copiar a docker/env/dev-cli/.{local,dev,stage,test,prod}.
+# Los archivos .{env} estan en .gitignore; este .example si se versiona.
+
+# --- AWS (IAM user `dev`, account the-full-stack) -------------------------
+# Usadas por devtools/serverless/* para sam deploy/build y boto3 local.
+# Las Lambdas en cloud usan IAM Role del SAM template (no estas keys).
+# El ACCESS_KEY_ID no es secreto; el SECRET_ACCESS_KEY si lo es.
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+
+# --- Neon (gestion de proyecto/branches via CLI) --------------------------
+# API key de la cuenta Neon. La usa devtools para crear/listar/borrar
+# branches y leer connection strings. Controla TODA la cuenta Neon.
+NEON_DB_API_KEY=
+
+# --- Cloudflare (deploy Pages + DNS + Turnstile management) ---------------
+# API token con scopes: Pages:Edit, Turnstile:Edit, SSL:Read, User:Read.
+CLOUDFLARE_API_TOKEN=
+# Account ID (no secreto).
+CLOUDFLARE_ACCOUNT_ID=
+# Alias para devtools/cloudflare_setup (script legacy). Mismo valor que CLOUDFLARE_ACCOUNT_ID.
+ACCOUNT_ID=

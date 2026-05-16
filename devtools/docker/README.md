@@ -17,7 +17,9 @@ python devtools/run.py docker <command> [--env=local] [flags...]
 | test | Testing aislado | 9977 |
 | prod | Producción con Gunicorn | 80 |
 
-> El puerto se override via `PROXY_PORT` en `docker/env/.<env>`.
+> El puerto se override via `PROXY_PORT` en `docker/env/client/.<env>`
+> (categoria `client` — las env vars se reparten en 3 categorias:
+> `client`, `server`, `dev-cli`, cada una con su subcarpeta y su `.example`).
 
 ## Comandos
 

@@ -12,8 +12,6 @@ import shutil
 import subprocess
 from typing import Any
 
-from docker._helpers import confirm_destructive
-from docker.urls import print_service_urls
 from shared.compose import compose_exec
 from shared.compose import run_cmd
 from shared.compose import run_compose
@@ -27,6 +25,9 @@ from shared.console import _warn
 from shared.paths import DOCKER_DIR
 from shared.paths import PROJECT_ROOT
 from shared.project_config import CONTAINER_PREFIX
+
+from docker._helpers import confirm_destructive
+from docker.urls import print_service_urls
 
 
 def cmd_setup(flags: dict[str, Any]) -> int:
@@ -43,13 +44,21 @@ def cmd_setup(flags: dict[str, Any]) -> int:
 
     _header(f'Setup completo [{env}]')
 
-    env_file = DOCKER_DIR / 'env' / f'.{env}'
-    if not env_file.exists():
-        _err(f'Archivo de entorno no encontrado: {env_file}')
-        _info(
-            f'Copiar el archivo de ejemplo:\n'
-            f'  cp {DOCKER_DIR / "env" / ".example"} {env_file}'
-        )
+    # Env vars repartidas en 3 archivos por categoria de sensibilidad.
+    env_dir = DOCKER_DIR / 'env'
+    missing = [
+        category
+        for category in ('client', 'server', 'dev-cli')
+        if not (env_dir / category / f'.{env}').exists()
+    ]
+    if missing:
+        for category in missing:
+            env_file = env_dir / category / f'.{env}'
+            _err(f'Archivo de entorno no encontrado: {env_file}')
+            _info(
+                f'Copiar el archivo de ejemplo:\n'
+                f'  cp {env_dir / category / ".example"} {env_file}'
+            )
         return 1
 
     total_steps = 6

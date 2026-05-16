@@ -46,7 +46,6 @@ def get_compose_cmd(env: str, profile: str | None = None) -> list[str]:
         List of command tokens for subprocess.
     """
     compose_file = DOCKER_DIR / 'docker-compose' / f'{env}.yml'
-    env_file = DOCKER_DIR / 'env' / f'.{env}'
 
     cmd = [
         'docker',
@@ -60,8 +59,16 @@ def get_compose_cmd(env: str, profile: str | None = None) -> list[str]:
     if profile:
         cmd.extend(['--profile', profile])
 
-    if env_file.exists():
-        cmd.extend(['--env-file', str(env_file)])
+    # Env vars repartidas en 3 archivos por categoria de sensibilidad:
+    #   client  -> valores publicos (PUBLIC_*, puertos, dominios)
+    #   server  -> config del backend + secretos de runtime
+    #   dev-cli -> credenciales del devtools CLI
+    # docker compose fusiona multiples --env-file en orden; las categorias
+    # no comparten nombres de variable, asi que no hay colision.
+    for category in ('client', 'server', 'dev-cli'):
+        env_file = DOCKER_DIR / 'env' / category / f'.{env}'
+        if env_file.exists():
+            cmd.extend(['--env-file', str(env_file)])
 
     return cmd
 

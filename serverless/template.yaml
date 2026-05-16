@@ -21,8 +21,11 @@ Parameters:
     Default: dev
     AllowedValues:
       - dev
+      - stage
       - prod
-    Description: Ambiente del stack (dev | prod). Define naming + log level.
+    Description: >
+      Ambiente del stack (dev | stage | prod). Define naming, log level
+      y la whitelist CORS (ver Mappings StageConfig).
   LogLevel:
     Type: String
     Default: INFO
@@ -32,13 +35,26 @@ Parameters:
       - WARNING
       - ERROR
     Description: Powertools log level (default INFO; prod recomendado WARNING).
-  CorsAllowedOrigins:
-    Type: CommaDelimitedList
-    Default: 'https://the-full-stack.com,https://hub.the-full-stack.com,https://fintech.the-full-stack.com,https://architect.the-full-stack.com,https://leader.the-full-stack.com,https://vibe.the-full-stack.com'
-    Description: >
-      Whitelist de origins para CORS. La Lambda valida el Origin header y
-      hace echo del valor matcheado en Access-Control-Allow-Origin (no usar
-      '*' por compatibilidad con credentials: include en futuro).
+# ============================================================================
+# Mappings: configuracion por stage
+# ============================================================================
+# CorsAllowedOrigins se inyecta a las Lambdas como env var CORS_ALLOWED_ORIGINS
+# (CSV). cors.py la lee para validar el Origin header y hacer echo del valor
+# matcheado en Access-Control-Allow-Origin.
+#
+# - prod:  niches flat sobre el apex (excepcion del estandar de subdominios).
+# - stage: patron component-based {niche}.portfolio.stage.the-full-stack.com.
+# - dev:   patron component-based {niche}.portfolio.dev.the-full-stack.com.
+#          cors.py ademas acepta *.localhost por pattern cuando STAGE=dev.
+# ============================================================================
+Mappings:
+  StageConfig:
+    dev:
+      CorsAllowedOrigins: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
+    stage:
+      CorsAllowedOrigins: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
+    prod:
+      CorsAllowedOrigins: 'https://the-full-stack.com,https://hub.the-full-stack.com,https://fintech.the-full-stack.com,https://architect.the-full-stack.com,https://leader.the-full-stack.com,https://vibe.the-full-stack.com'
 
 # ============================================================================
 # Globals: configuracion compartida por TODAS las Lambdas del stack
@@ -78,6 +94,8 @@ Globals:
         KMS_KEY_ALIAS: alias/portfolio-lambdas
         # Stage marker para conditional behavior (ej: skip Turnstile en test)
         STAGE: !Ref Stage
+        # Whitelist CORS por stage (cors.py la lee como CSV)
+        CORS_ALLOWED_ORIGINS: !FindInMap [StageConfig, !Ref Stage, CorsAllowedOrigins]
     Tags:
       Project: portfolio
       ManagedBy: SAM
@@ -97,7 +115,12 @@ Globals:
 # no permite enviar form sin captcha resuelto.
 # ============================================================================
 Conditions:
-  IsDev: !Equals [!Ref Stage, 'dev']
+  # IsNotProd: dev y stage. Usado para el AllowOrigin del preflight CORS:
+  # ambos permiten '*' en OPTIONS porque la Lambda valida el Origin real
+  # (CORS_ALLOWED_ORIGINS) + el token Turnstile. Prod mantiene whitelist.
+  # El bypass de Turnstile NO usa una Condition CloudFormation: se gatea
+  # en codigo (turnstile.py _BYPASS_ALLOWED_STAGES = {dev, local}).
+  IsNotProd: !Not [!Equals [!Ref Stage, 'prod']]
 
 Resources:
   # ==========================================================================
@@ -178,11 +201,13 @@ Resources:
           "integrationLatency":"$context.integrationLatency",
           "latency":"$context.responseLatency"}
       Cors:
-        # En dev permitimos '*' para testear desde localhost:9970-9973 (Docker
-        # stack). En prod mantenemos whitelist estricta (apex). La Lambda igual
-        # valida Turnstile token: '*' en preflight no permite spammear sin captcha.
+        # En dev/stage permitimos '*' para el preflight OPTIONS (testear desde
+        # localhost y desde *.portfolio.{env}.the-full-stack.com). En prod
+        # mantenemos whitelist estricta (apex). La Lambda igual valida el Origin
+        # real (CORS_ALLOWED_ORIGINS) + el token Turnstile, asi que '*' en
+        # preflight no permite spammear el form sin captcha resuelto.
         AllowOrigin: !If
-          - IsDev
+          - IsNotProd
           - "'*'"
           - "'https://the-full-stack.com'"
         AllowHeaders: "'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'"

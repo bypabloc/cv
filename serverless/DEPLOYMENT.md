@@ -222,7 +222,22 @@ psql "<NEON_URL_DEV>" -c "\dt portfolio.*"
 # Espera "All smoke tests PASSED" + exit code 0
 ```
 
-### 6. Deploy a prod
+### 6. Deploy a stage
+
+Stage es un ambiente de pre-produccion (replica prod). Comparte la config
+SSM con dev/prod (`/portfolio/neon-url`, `/portfolio/turnstile-secret`).
+
+```bash
+sam deploy --config-env stage --profile tfs-dev
+./serverless/scripts/smoke_test.sh stage
+```
+
+Crea el stack `portfolio-backend-stage` (REST API `portfolio-api-stage`,
+6 Lambdas, 5 tablas DynamoDB con sufijo `-stage`). El parametro `Stage`
+de `template.yaml` acepta `dev | stage | prod` y `Mappings.StageConfig`
+define la whitelist CORS por ambiente.
+
+### 7. Deploy a prod
 
 Repetir paso 3 con `--config-env prod`. Antes:
 

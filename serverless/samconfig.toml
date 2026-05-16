@@ -42,6 +42,31 @@ region = "us-east-1"
 parameter_overrides = "Stage=dev LogLevel=DEBUG"
 watch = true
 
+# ---- Stage: stage ---------------------------------------------------------
+[stage.global.parameters]
+stack_name = "portfolio-backend-stage"
+
+[stage.build.parameters]
+cached = true
+parallel = true
+
+[stage.deploy.parameters]
+stack_name = "portfolio-backend-stage"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+resolve_s3 = true
+region = "us-east-1"
+fail_on_empty_changeset = false
+parameter_overrides = "Stage=stage LogLevel=INFO"
+tags = "Project=portfolio Stage=stage ManagedBy=SAM"
+
+[stage.sync.parameters]
+stack_name = "portfolio-backend-stage"
+resolve_s3 = true
+region = "us-east-1"
+parameter_overrides = "Stage=stage LogLevel=DEBUG"
+watch = true
+
 # ---- Stage: prod ----------------------------------------------------------
 [prod.global.parameters]
 stack_name = "portfolio-backend-prod"

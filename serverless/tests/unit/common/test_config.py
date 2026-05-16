@@ -86,6 +86,22 @@ class TestSettings:
         assert s.is_dev is True
         assert s.is_prod is False
 
+    def test_is_stage_helper(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given STAGE=stage,
+        When settings.is_stage,
+        Then True y is_dev/is_prod son False.
+        """
+        monkeypatch.setenv('STAGE', 'stage')
+        get_settings.cache_clear()
+        s = Settings()
+
+        assert s.is_stage is True
+        assert s.is_dev is False
+        assert s.is_prod is False
+
 
 class TestGetSettingsCache:
     """get_settings - singleton LRU cache."""

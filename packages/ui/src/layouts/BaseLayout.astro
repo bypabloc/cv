@@ -10,8 +10,14 @@
  * @props {string} canonicalUrl - URL canonical absoluta del sitio actual
  * @props {string} [locale] - 'es' (default) o 'en'
  * @props {string} [ogImage] - URL absoluta de la og-image
- * @props {string} [jsonLd] - JSON-LD stringificado (typeof: Person, BreadcrumbList...)
+ * @props {string|string[]} [jsonLd] - JSON-LD stringificado (uno o varios:
+ *   Person, ProfilePage, ItemList...). Cada string se emite en su propio
+ *   <script type="application/ld+json">.
  * @props {string} [llmsTxtHref] - href al /llms.txt (default '/llms.txt')
+ * @props {string} [siteName] - og:site_name (default 'Pablo Contreras')
+ * @props {Array<{hreflang, href}>} [alternates] - URLs absolutas por locale
+ *   para los <link rel="alternate" hreflang>. Incluir el locale actual y el
+ *   alterno; se agrega x-default automaticamente apuntando al primero.
  */
 import { ClientRouter } from 'astro:transitions'
 import '../styles/tokens.css'
@@ -23,14 +29,21 @@ import '../styles/scroll-driven.css'
 import '../styles/global.css'
 import '../styles/breakpoints.css'
 
+interface Alternate {
+  hreflang: string
+  href: string
+}
+
 interface Props {
   title: string
   description: string
   canonicalUrl: string
   locale?: 'es' | 'en'
   ogImage?: string
-  jsonLd?: string
+  jsonLd?: string | string[]
   llmsTxtHref?: string
+  siteName?: string
+  alternates?: Alternate[]
 }
 
 const {
@@ -41,7 +54,13 @@ const {
   ogImage,
   jsonLd,
   llmsTxtHref = '/llms.txt',
+  siteName = 'Pablo Contreras',
+  alternates,
 } = Astro.props
+
+const ogLocale = locale === 'es' ? 'es_ES' : 'en_US'
+const ogLocaleAlternate = locale === 'es' ? 'en_US' : 'es_ES'
+const jsonLdBlocks = jsonLd === undefined ? [] : [jsonLd].flat()
 ---
 
 <!doctype html>
@@ -53,9 +72,22 @@ const {
     <meta name="color-scheme" content="dark light" />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="alternate" type="text/plain" title="llms.txt" href={llmsTxtHref} />
+    {
+      alternates?.map((alt) => (
+        <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+      ))
+    }
+    {
+      alternates && alternates.length > 0 && (
+        <link rel="alternate" hreflang="x-default" href={alternates[0].href} />
+      )
+    }
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta property="og:type" content="profile" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogLocaleAlternate} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
@@ -65,9 +97,9 @@ const {
     <meta name="twitter:description" content={description} />
     {ogImage && <meta name="twitter:image" content={ogImage} />}
     {
-      jsonLd && (
-        <script type="application/ld+json" set:html={jsonLd} />
-      )
+      jsonLdBlocks.map((block) => (
+        <script type="application/ld+json" set:html={block} />
+      ))
     }
     <script is:inline>
       // Aplica el theme inicial ANTES de pintar para evitar FOUC.

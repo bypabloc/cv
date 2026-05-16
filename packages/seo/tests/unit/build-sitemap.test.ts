@@ -54,16 +54,49 @@ describe('buildSitemap', () => {
 })
 
 describe('buildRobotsTxt', () => {
-  it('Given a site URL When build Then returns valid robots.txt with sitemap', () => {
-    const txt = buildRobotsTxt('https://x.example/')
+  it('Given a prod site URL When build Then returns valid robots.txt with sitemap', () => {
+    const txt = buildRobotsTxt('https://the-full-stack.com/')
     expect(txt).toContain('User-agent: *')
     expect(txt).toContain('Allow: /')
-    expect(txt).toContain('Sitemap: https://x.example/sitemap.xml')
-    expect(txt).toContain('Sitemap: https://x.example/sitemap-index.xml')
+    expect(txt).toContain('Sitemap: https://the-full-stack.com/sitemap.xml')
+    expect(txt).toContain(
+      'Sitemap: https://the-full-stack.com/sitemap-index.xml',
+    )
   })
 
   it('Given URL without trailing slash When build Then strips correctly', () => {
-    const txt = buildRobotsTxt('https://x.example')
-    expect(txt).toContain('Sitemap: https://x.example/sitemap.xml')
+    const txt = buildRobotsTxt('https://the-full-stack.com')
+    expect(txt).toContain('Sitemap: https://the-full-stack.com/sitemap.xml')
+  })
+
+  it('Given a prod URL When build Then allows AI crawlers explicitly', () => {
+    const txt = buildRobotsTxt('https://the-full-stack.com')
+    expect(txt).toContain('User-agent: GPTBot')
+    expect(txt).toContain('User-agent: ClaudeBot')
+    expect(txt).toContain('User-agent: Google-Extended')
+    expect(txt).toContain('User-agent: PerplexityBot')
+  })
+
+  it('Given a dev hostname When build Then disallows all crawlers', () => {
+    const txt = buildRobotsTxt('https://portfolio.dev.the-full-stack.com')
+    expect(txt).toBe('User-agent: *\nDisallow: /\n')
+  })
+
+  it('Given a stage hostname When build Then disallows all crawlers', () => {
+    const txt = buildRobotsTxt(
+      'https://fintech.portfolio.stage.the-full-stack.com',
+    )
+    expect(txt).toBe('User-agent: *\nDisallow: /\n')
+  })
+
+  it('Given a localhost URL When build Then disallows all crawlers', () => {
+    const txt = buildRobotsTxt('http://hub.localhost:9970')
+    expect(txt).toBe('User-agent: *\nDisallow: /\n')
+  })
+
+  it('Given a prod niche URL When build Then is indexable', () => {
+    const txt = buildRobotsTxt('https://fintech.portfolio.the-full-stack.com')
+    expect(txt).toContain('Disallow:\n')
+    expect(txt).not.toContain('Disallow: /\n')
   })
 })

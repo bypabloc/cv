@@ -86,7 +86,9 @@ Globals:
         RATE_LIMIT_RULES_TABLE_NAME: !Ref RateLimitRulesTable
         RATE_LIMIT_BUCKETS_TABLE_NAME: !Ref RateLimitBucketsTable
         # SSM paths (las Lambdas resuelven valores con boto3 SSM client)
-        SSM_TURNSTILE_SECRET_PATH: /portfolio/turnstile-secret
+        # turnstile-secret es por stage: cada ambiente tiene su widget
+        # Cloudflare Turnstile (limite de 10 dominios por widget).
+        SSM_TURNSTILE_SECRET_PATH: !Sub /portfolio/${Stage}/turnstile-secret
         SSM_NEON_URL_PATH: /portfolio/neon-url
         SSM_OWNER_EMAIL_PATH: /portfolio/owner-email
         SSM_SES_FROM_PATH: /portfolio/ses-from-address
@@ -264,7 +266,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref RateLimitBucketsTable
         - SSMParameterReadPolicy:
-            ParameterName: 'portfolio/turnstile-secret'
+            ParameterName: !Sub 'portfolio/${Stage}/turnstile-secret'
         # SSM bypass secret: la IAM policy se concede siempre pero la Lambda
         # solo lee el param si STAGE in {dev,local} (defense-in-depth en codigo).
         # En stage=prod el SSM param no debe existir, lo que falla la lectura
@@ -329,7 +331,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref RateLimitBucketsTable
         - SSMParameterReadPolicy:
-            ParameterName: 'portfolio/turnstile-secret'
+            ParameterName: !Sub 'portfolio/${Stage}/turnstile-secret'
         - Statement:
             - Effect: Allow
               Action: kms:Decrypt

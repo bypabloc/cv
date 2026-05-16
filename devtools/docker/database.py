@@ -206,7 +206,7 @@ def cmd_db_count(flags: dict[str, Any]) -> int:
 
 
 def cmd_db_seed(flags: dict[str, Any]) -> int:
-    """Run database seeds via Django management command.
+    """Run database seeds via the backend management command.
 
     ``--dry-run`` imprime el comando sin ejecutarlo. Util para verificar
     que ``--clear`` no se cuela accidentalmente.

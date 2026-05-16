@@ -167,15 +167,12 @@ globs: "src/**/*.ts,lib/**/*.ts,tests/**/*.test.ts"
 ```text
 .claude/rules/
 ├── general.md              # Sin paths — siempre cargado
-├── code-style.md           # Sin paths — siempre cargado
-├── frontend/
-│   ├── vue.md              # globs: **/*.vue,**/*.ts
-│   └── styles.md           # globs: **/*.css,**/*.scss
-├── backend/
-│   ├── api.md              # globs: src/api/**/*
-│   └── database.md         # globs: **/migrations/**,**/*.sql
-├── security.md             # globs: src/auth/**,src/payments/**
-└── testing.md              # globs: **/*.test.*,**/tests/**
+├── astro-landing.md        # globs: **/*.astro,**/*.ts
+├── design-system.md        # globs: **/*.css,**/*.astro
+├── python.md               # globs: **/*.py
+├── devtools.md             # globs: devtools/**/*.py
+├── security.md             # Sin paths — siempre cargado
+└── git-workflow.md         # Sin paths — siempre cargado
 ```
 
 ### Rule de Python (`python.md`)
@@ -188,37 +185,30 @@ globs: "**/*.py"
 # Python Development Standards
 
 ## Estilo
-- Black formatter con line-length 80
-- isort con profile='black'
-- Type hints requeridos en todas las funciones
+- Ruff como linter y formatter, line-length 80
+- Type hints requeridos en todas las funciones publicas
+- Union syntax moderna (`str | None`), sin `from __future__ import annotations`
+
+## Estructura
+- Un archivo por responsabilidad, max 300 lineas
+- `__init__.py` solo re-exporta, nunca contiene logica
+- `flags.py` parsea/valida; `main.py` orquesta
 
 ## Testing
-- pytest con coverage >= 80%
-- pytest-mock para mocking
-- Doctests obligatorios en funciones utilitarias
+- pytest con coverage >= 80% per-file
+- Patron AAA + docstring BDD (Given/When/Then)
+- Asserts EXACTOS (enforced por hook weak_assertion)
 
-## Django
-- Optimizar queries con select_related/prefetch_related
-- Nunca usar .all() sin paginacion en views
-- Usar F() y Q() para queries complejas
-
-## Ejemplo de view correcta
+## Ejemplo de funcion correcta
 
 ```python
-class PaymentViewSet(viewsets.ModelViewSet):
-    """ViewSet para operaciones de pago."""
-
-    queryset = Payment.objects.select_related(
-        'user', 'provider'
-    ).prefetch_related('transactions')
-    serializer_class = PaymentSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = StandardPagination
-
-    def get_queryset(self):
-        return super().get_queryset().filter(
-            user=self.request.user
-        )
+def build_targets(
+    *,
+    modules: list[str],
+    env: str,
+) -> list[str]:
+    """Resuelve los nombres de container para los modulos pedidos."""
+    return [f'portfolio-{m}-{env}' for m in modules]
 ```
 ```
 
@@ -310,24 +300,23 @@ globs: "src/auth/**/*,src/payments/**/*,**/validators.py"
 ## Ejemplo de validacion segura
 
 ```python
-from django.core.validators import RegexValidator
+import re
 
-rut_validator = RegexValidator(
-    regex=r'^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$',
-    message='RUT invalido. Formato: XX.XXX.XXX-X'
-)
+EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
-def validate_payment_input(data: dict) -> dict:
-    """Valida input de pago en frontera del controller."""
-    amount = data.get('amount')
-    if not isinstance(amount, (int, float)) or amount <= 0:
-        raise ValidationError('Monto debe ser positivo')
-    if amount > 999999999:
-        raise ValidationError('Monto excede limite')
-    # Nunca loguear datos sensibles
-    logger.info('Payment validated', extra={
-        'amount': amount,
-        'card_last_four': data.get('card_number', '')[-4:],
+
+def validate_contact_input(data: dict) -> dict:
+    """Valida input del form de contacto en la frontera del handler."""
+    email = data.get('email', '')
+    if not EMAIL_RE.match(email):
+        raise ValidationError('Email invalido')
+    message = data.get('message', '')
+    if not 1 <= len(message) <= 2000:
+        raise ValidationError('Mensaje fuera del rango permitido')
+    # Nunca loguear el contenido del mensaje ni el email completo
+    logger.info('Contact validated', extra={
+        'email_domain': email.rsplit('@', 1)[-1],
+        'message_len': len(message),
     })
     return data
 ```
@@ -397,45 +386,28 @@ class TestPaymentValidator:
 
 ```yaml
 ---
-globs: "**/migrations/**/*,**/*.sql"
+globs: "serverless/migrations/**/*.sql"
 ---
 
 # Migration Safety Rules
 
-- Siempre incluir instrucciones de rollback
-- Testear migraciones en copia de datos de produccion primero
-- Nunca eliminar columnas en la misma migracion que remueve codigo dependiente
-- Agregar constraints NOT NULL con valores default en pasos separados
-- Nunca modificar migraciones ya aplicadas en produccion
+- Cada migration es un par numerado `NNN_<nombre>.sql` + `NNN_<nombre>.down.sql`
+- El `.down.sql` debe revertir EXACTAMENTE el forward
+- Probar forward + rollback en un branch Neon antes de tocar dev/prod
+- Nunca modificar una migration ya aplicada en produccion (rompe el checksum)
+- Cambios destructivos (`DROP COLUMN`/`DROP TABLE`) en migration separada
 
 ## Ejemplo de migracion segura
 
-```python
-# migrations/0042_add_payment_status.py
-from django.db import migrations, models
+```sql
+-- serverless/migrations/006_add_contact_status.sql
+ALTER TABLE contacts
+    ADD COLUMN status text NOT NULL DEFAULT 'pending';
+```
 
-class Migration(migrations.Migration):
-    dependencies = [
-        ('payments', '0041_previous'),
-    ]
-
-    operations = [
-        # Paso 1: Agregar columna con default
-        migrations.AddField(
-            model_name='payment',
-            name='status',
-            field=models.CharField(
-                max_length=20,
-                default='pending',
-                choices=[
-                    ('pending', 'Pending'),
-                    ('completed', 'Completed'),
-                    ('failed', 'Failed'),
-                ],
-            ),
-        ),
-        # Paso 2: Backfill en migracion de datos separada
-    ]
+```sql
+-- serverless/migrations/006_add_contact_status.down.sql
+ALTER TABLE contacts DROP COLUMN status;
 ```
 ```
 

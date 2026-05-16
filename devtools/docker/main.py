@@ -1,8 +1,8 @@
 """Docker CLI entry point.
 
 Dispatches the parsed flags to the right command handler. Command
-implementations live in domain modules (lifecycle, django, quality,
-database, setup, cache, help) so this file stays small and the
+implementations live in domain modules (lifecycle, quality, database,
+setup, cache, help) so this file stays small and the
 ``COMMAND_REGISTRY`` reads as the canonical inventory of subcommands.
 
 The ``test`` subcommand was removed in Fase 3 of the CLI refactor;
@@ -25,10 +25,6 @@ from docker.database import cmd_db_reset
 from docker.database import cmd_db_seed
 from docker.database import cmd_db_shell
 from docker.database import cmd_db_tables
-from docker.django import cmd_createsuperuser
-from docker.django import cmd_makemigrations
-from docker.django import cmd_manage
-from docker.django import cmd_migrate
 from docker.help import cmd_help
 from docker.lifecycle import cmd_build
 from docker.lifecycle import cmd_down
@@ -64,17 +60,16 @@ def cmd_test_removed(flags: dict[str, Any]) -> int:
     print()
     print('Equivalencias:')
     print(
-        '  docker test --type=unit          ->  test_runner --module=server --type=unit'
+        '  docker test --type=unit            ->  '
+        'test_runner --module=pkg-content --type=unit'
     )
     print(
-        '  docker test --type=integration   ->  '
-        'test_runner --module=server --type=integration'
+        '  docker test --module=generic ...   ->  '
+        'test_runner --module=generic ...'
     )
     print(
-        '  docker test --module=dashboard ... ->  test_runner --module=dashboard ...'
-    )
-    print(
-        '  docker test --module=landing ... ->  test_runner --module=landing ...'
+        '  docker test --module=feature ...   ->  '
+        'test_runner --module=feature --type=feature'
     )
     print()
     print('Documentación: python devtools/run.py test_runner --help')
@@ -93,11 +88,6 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'ps': cmd_ps,
     'restart': cmd_restart,
     'refresh': cmd_refresh,
-    # Django
-    'migrate': cmd_migrate,
-    'makemigrations': cmd_makemigrations,
-    'createsuperuser': cmd_createsuperuser,
-    'manage': cmd_manage,
     # Quality
     'lint': cmd_lint,
     'lint-fix': cmd_lint_fix,

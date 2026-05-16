@@ -50,7 +50,6 @@ Solo una de `--staged`, `--modified`, `--all-changed` puede usarse.
 | Clasificación | Verificaciones |
 |---------------|----------------|
 | server_model | makemigrations --dry-run + lint + unit tests |
-| server_admin | manage.py check + lint |
 | server_service | lint + unit tests |
 | server_selector | lint + unit tests |
 | server_view | lint + integration tests |

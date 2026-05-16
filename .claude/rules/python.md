@@ -1,14 +1,18 @@
 ---
-description: "Estandares de desarrollo Python 3.14: estilo, estructura de archivos, services/selectors, testing y complejidad"
+description: "Estandares de desarrollo Python 3.14 para devtools/ y .git-hooks/: estilo, estructura de archivos, type hints, testing y complejidad"
 globs: "**/*.py"
 ---
 
 # Python Development Standards
 
+> El unico Python del portfolio vive en `devtools/` (CLI orquestador) y
+> `.git-hooks/` (quality gates autocontenidos). El proyecto NO tiene backend:
+> es un monorepo Astro estatico. Estas reglas aplican a esos dos arboles.
+
 ## Estilo
 
 - Python 3.14 estricto (target-version `py314` en Ruff). Excepciones de bootstrap (`devtools/run.py`, `.git-hooks/*.py`) pinneadas a `py313` via `per-file-target-version` para preservar sintaxis con parentesis en `except`.
-- Ruff como linter y formatter. Cada modulo lleva su propio `ruff.toml` autocontenido: `server/ruff.toml` (Django + Python 3.14) y `devtools/ruff.toml` (CLI + bootstrap py313). Sin base compartida: cada archivo declara reglas, ignores y formatter completos. Ruff los autodetecta cuando el cwd es la raiz del modulo.
+- Ruff como linter y formatter. `devtools/` lleva su propio `ruff.toml` autocontenido (CLI + bootstrap py313): sin base compartida, declara reglas, ignores y formatter completos. Ruff lo autodetecta cuando el cwd es la raiz del modulo.
 - line-length 80, indent 4, line-ending lf, single quotes (`flake8-quotes` + formatter), trailing commas habilitadas (no auto-agregadas — ver nota abajo).
 - Type hints requeridos en todas las funciones publicas (`ANN`).
 - NO usar `from __future__ import annotations` (PEP 649: Python 3.14 tiene lazy annotations nativo).
@@ -17,7 +21,7 @@ globs: "**/*.py"
 
 ### Conflictos formatter vs linter (ignorados intencionalmente)
 
-Estas reglas estan en `ignore` del base porque chocan con el comportamiento del formatter:
+Estas reglas estan en `ignore` porque chocan con el comportamiento del formatter:
 
 - `E501` (line too long): el formatter ya gestiona el corte de lineas
 - `E203` (whitespace before `:`): el formatter ya respeta PEP 8
@@ -35,7 +39,7 @@ Estas reglas estan en `ignore` del base porque chocan con el comportamiento del 
 ```python
 # Correcto: distincion semantica clara
 record['status'] = 'pending'
-config = {'host': 'localhost', 'port': 9979}
+config = {'host': 'localhost', 'port': 9970}
 logger.error("No se pudo conectar al provider, reintentando")
 raise ValueError("El monto debe ser positivo")
 
@@ -103,139 +107,78 @@ Ruff `ANN` rules hacen enforce de annotations en funciones publicas.
 - Usar `__init__.py` para re-exportar los nombres publicos del modulo
 - `__init__.py` solo contiene imports y re-exports, NUNCA logica
 
-### Patron correcto (un archivo por entidad)
+### Patron correcto (un archivo por responsabilidad)
+
+Cada script de `devtools/` es un paquete con un dominio acotado. Cuando un
+modulo supera ~300 lineas se parte por dominio logico (ver `docker/`, `scan/`,
+`test_runner/` en el repo como ejemplo de referencia):
 
 ```
-server/apps/<app_name>/
-├── models/
-│   ├── __init__.py          # from .appointment import Appointment; from .appointment_event import AppointmentEvent
-│   ├── appointment.py       # class Appointment + AppointmentQuerySet + AppointmentManager
-│   └── appointment_event.py # class AppointmentEvent
-├── services/
-│   ├── __init__.py          # re-exports
-│   ├── creation.py          # def create_appointment(*, business, consumer, service, staff, ...)
-│   └── update.py            # def cancel_appointment(*, appointment, actor, reason, ...)
-├── selectors/
-│   ├── __init__.py          # re-exports
-│   ├── appointment_queries.py  # def get_business_appointments(*, business, ...) -> QuerySet
-│   └── slot_queries.py         # def get_available_slots(*, business, service, staff, date, ...)
-├── admin/
-│   ├── __init__.py          # re-exports
-│   ├── appointment.py       # @admin.register(Appointment) class AppointmentAdmin
-│   └── appointment_event.py # @admin.register(AppointmentEvent) class AppointmentEventAdmin
-├── serializers/
-│   ├── __init__.py
-│   ├── input.py             # Serializers de validacion (Serializer puro, no ModelSerializer)
-│   └── output.py            # Serializers de respuesta (ModelSerializer read-only)
-├── enums/
-│   ├── __init__.py
-│   ├── status.py            # class AppointmentStatus(models.TextChoices)
-│   └── payment_status.py    # class PaymentStatus(models.TextChoices)
-├── tasks/
-│   ├── __init__.py
-│   └── reminders.py         # @shared_task def send_appointment_reminder(appointment_id)
-├── exceptions.py            # Custom exceptions de la app
-├── constants.py             # Constantes de la app (UPPER_SNAKE_CASE)
-├── urls.py
-└── apps.py
+devtools/<script>/
+├── __init__.py          # re-exports de los nombres publicos
+├── main.py              # entry point: def main(flags: dict)
+├── flags.py             # parsing + validacion de flags
+├── <dominio_1>.py       # un archivo por dominio logico
+├── <dominio_2>.py
+└── README.md            # documentacion del script
 ```
 
 ### Patron incorrecto (archivos monoliticos)
 
 ```
-server/apps/<app_name>/
-├── models.py       # Todos los modelos en un solo archivo
-├── admin.py        # Todos los admins en un solo archivo
-├── services.py     # Toda la logica en un solo archivo
-├── enums.py        # Todos los enums en un solo archivo
-└── apps.py
+devtools/<script>/
+├── main.py       # parsing + validacion + toda la logica en un solo archivo
+└── README.md
 ```
 
 ### Reglas de division
 
 - Si un archivo supera 300 lineas, dividirlo inmediatamente
-- Cada modelo Django en su propio archivo dentro de `models/`
-- Cada admin class en su propio archivo dentro de `admin/`
-- Cada enum en su propio archivo dentro de `enums/`
-- Services, selectors, serializers, views, tasks: un archivo por dominio logico
+- Un archivo por dominio logico (no mezclar parsing de flags con ejecucion)
+- `flags.py` solo parsing/validacion; `main.py` solo orquestacion
 
-## Services y Selectors (patron obligatorio)
+## Funciones puras y keyword-only args (patron recomendado)
 
-### Services (operaciones de escritura)
-
-- Funciones, NO clases (a menos que se necesite estado complejo)
-- SIEMPRE usar `*` para forzar keyword-only arguments
-- Un service function = una operacion de negocio
-- Usar `@transaction.atomic` para operaciones multi-modelo
-- Retornar la instancia creada/actualizada
-- Lanzar excepciones custom para violaciones de reglas de negocio
+- Preferir funciones sobre clases (a menos que se necesite estado complejo)
+- Usar `*` para forzar keyword-only arguments en funciones con varios params
+- Una funcion = una responsabilidad clara
+- Retornar valores serializables (dict, list, primitivos), no objetos opacos
+- Lanzar excepciones custom para errores de usuario (exit code 1)
 
 ```python
-from django.db import transaction
-
-def create_appointment(
+def build_targets(
     *,
-    business: Business,
-    consumer: User,
-    service: Service,
-    staff: StaffMember,
-    start: datetime,
-) -> Appointment:
-    appointment = Appointment(
-        business=business,
-        consumer=consumer,
-        service=service,
-        staff=staff,
-        start=start,
-        end=start + timedelta(minutes=service.duration_minutes),
-    )
-    appointment.full_clean()
-    appointment.save()
-    return appointment
+    modules: list[str],
+    env: str,
+    dry_run: bool = False,
+) -> list[str]:
+    """Resuelve los targets Docker a construir para los modulos pedidos."""
+    targets = [f'portfolio-{m}-{env}' for m in modules]
+    if dry_run:
+        logger.info('Targets resueltos (dry-run): %s', targets)
+    return targets
 ```
 
-### Selectors (operaciones de lectura)
-
-- Retornar `QuerySet` (permite encadenamiento) o tipos primitivos
-- NUNCA realizar escrituras
-- Aplicar `select_related`/`prefetch_related` aqui, no en views
+## Excepciones custom (patron recomendado)
 
 ```python
-from django.db.models import QuerySet
+# devtools/shared/exceptions.py
+class DevtoolsError(Exception):
+    """Error de usuario en un script de devtools (exit code 1)."""
 
-def get_business_appointments(
-    *,
-    business: Business,
-    active_only: bool = True,
-) -> QuerySet[Appointment]:
-    qs = Appointment.objects.filter(business=business)
-    if active_only:
-        qs = qs.exclude(status=AppointmentStatus.CANCELLED)
-    return qs.select_related('consumer', 'service', 'staff')
-```
-
-## Excepciones custom (patron obligatorio)
-
-```python
-# common/exceptions.py
-class ApplicationError(Exception):
     def __init__(self, message: str = '', extra: dict | None = None) -> None:
         super().__init__(message)
         self.message = message
         self.extra = extra or {}
 
-# apps/<app>/exceptions.py
-from common.exceptions import ApplicationError
 
-class BookingConflictError(ApplicationError): ...
-class SlotTakenError(ApplicationError): ...
-class BusinessNotActiveError(ApplicationError): ...
-class AppointmentNotCancellableError(ApplicationError): ...
+class InvalidFlagError(DevtoolsError): ...
+class TargetNotFoundError(DevtoolsError): ...
 ```
 
 - NUNCA usar `except:` o `except Exception:` sin re-raise
 - Usar `raise ... from e` para preservar cadena de excepciones
-- Manejar en la capa view/API, no dentro de services
+- Manejar en la capa de entry point (`main.py`), no en helpers profundos
 
 ## Logging
 
@@ -244,70 +187,61 @@ class AppointmentNotCancellableError(ApplicationError): ...
 
 ```python
 # Correcto
-logger.info('Record created', extra={'record_id': str(record.id)})
+logger.info('Target built', extra={'target': target_name})
 logger.warning('Attempt %d failed: %s', attempt, error)
 
 # Incorrecto
-logger.info(f'Record created: {record.id}')
+logger.info(f'Target built: {target_name}')
 ```
+
+`print()` esta permitido SOLO como salida de CLI (`T20` ignorado en
+`devtools/`). Para info de ejecucion interna usar `logging`.
 
 ## Estructura de scripts
 
 - Incluir `if __name__ == "__main__":` en scripts ejecutables
-- Usar `logging` module, nunca `print()` para info de ejecucion
+- Usar `logging` module para info de ejecucion interna
+- Exit codes: 0 (ok), 1 (error de usuario), 2 (error interno)
 
 ## APIs externas
 
 - Retry con backoff exponencial para llamadas a APIs
 - Timeout explicito en todas las requests (default: 30s)
 - Validar respuestas antes de procesar
-- Nunca hardcodear API keys — usar `.env` con `python-dotenv`
+- Nunca hardcodear API keys — usar `.env` o variables de entorno
 
 ## Testing
 
-- Framework: pytest (+ `pytest-bdd` para feature tests del server)
+- Framework: pytest
 - Coverage minimo: 80% per-file (enforced en pre-push)
 - Patron AAA en el cuerpo + **BDD-style en el docstring** (Given/When/Then)
 - Un concepto de assertion por test (multiples `assert` ok si validan lo mismo)
-- factory-boy sobre fixtures para datos de test
 - Nomenclatura metodos: `test_<unit>_<scenario>_<expected>`
-- Nomenclatura archivos: SIN prefijo `test_` (path mirroring, descubiertos via hook)
-- `pytestmark = pytest.mark.unit` o `pytest.mark.integration` obligatorio por archivo
 - `@pytest.mark.parametrize` para multiples escenarios de input
-- Server: `cd server && python tests/run.py --type unit|integration`
-- Coverage: `python devtools/run.py test_runner --module=server --type=coverage`
-- Mutation testing (calidad de tests): `python devtools/run.py mutation_testing --paths=apps/<app>` (ver `ai-testing-independence.md`)
+- Tests en `devtools/tests/` (espejan la estructura de `devtools/`)
+- Ejecutar: `python devtools/run.py test_runner --module=devtools --type=unit`
 
 ### BDD-style obligatorio en el docstring
 
 Mantener AAA como estructura del cuerpo. El docstring describe el
 comportamiento en formato Given/When/Then — facilita lectura sin contexto
-IA y traza el test al AC humano.
+IA y traza el test al criterio de aceptacion humano.
 
 ```python
-def test_create_appointment_when_slot_taken_raises_booking_conflict():
+def test_build_targets_when_dry_run_returns_resolved_names():
     """
-    Given un negocio con un profesional que ya tiene cita a las 10:00,
-    When un consumer intenta reservar el mismo slot,
-    Then lanza BookingConflictError con codigo SLOT_TAKEN.
+    Given una lista de modulos y env='local',
+    When se invoca build_targets con dry_run=True,
+    Then retorna los nombres de container con prefijo portfolio-.
     """
     # Arrange
-    business = BusinessFactory.create()
-    staff = StaffMemberFactory.create(business=business)
-    service = ServiceFactory.create(business=business, duration_minutes=60)
-    start = datetime(2026, 6, 1, 10, 0, tzinfo=UTC)
-    AppointmentFactory.create(business=business, staff=staff, start=start)
+    modules = ['hub', 'generic']
 
-    # Act / Assert
-    with pytest.raises(BookingConflictError) as exc:
-        create_appointment(
-            business=business,
-            consumer=UserFactory.create(),
-            service=service,
-            staff=staff,
-            start=start,
-        )
-    assert exc.value.extra['code'] == 'SLOT_TAKEN'
+    # Act
+    targets = build_targets(modules=modules, env='local', dry_run=True)
+
+    # Assert
+    assert targets == ['portfolio-hub-local', 'portfolio-generic-local']
 ```
 
 ### Asserts EXACTOS, no rangos (enforced en pre-commit)
@@ -333,39 +267,28 @@ inline (con razon en comentario).
 
 ### Que mockear vs que no
 
-- MOCKEAR: APIs HTTP externas, email, file storage (S3), time/datetime
-- NO MOCKEAR: Base de datos, Django ORM, services/selectors propios, request/response Django
+- MOCKEAR: APIs HTTP externas, file storage, subprocess hacia Docker, time/datetime
+- NO MOCKEAR: parsing de flags propio, transformaciones puras, helpers dentro del scope del test
 
 ### Property-based testing (Hypothesis)
 
-Para algoritmos puros + validaciones criticas (RUT chileno, RUC peruano,
-calculos de slots de disponibilidad), preferir `hypothesis` sobre tests
-parametrizados manuales. Es agnostico al modelo IA y deriva tests de los
-type hints.
+Para algoritmos puros (parsing de flags, resolucion de paths, transformaciones)
+se puede preferir `hypothesis` sobre tests parametrizados manuales. Deriva
+los tests de los type hints.
 
 ```python
 from hypothesis import given, strategies as st
 
 
-@given(duration=st.integers(min_value=15, max_value=240))
-def test_slot_end_is_consistent_with_duration(duration: int) -> None:
+@given(env=st.sampled_from(['local', 'dev', 'test', 'prod']))
+def test_container_name_includes_env(env: str) -> None:
     """
-    Property: el slot end = start + duration_minutes, para cualquier duracion valida.
-    Given una cita con duracion arbitraria,
-    When calcular el end,
-    Then end - start == duration en minutos.
+    Property: el nombre del container siempre termina con el env pedido,
+    para cualquier env valido.
     """
-    start = datetime(2026, 6, 1, 9, 0, tzinfo=UTC)
-    slot = calculate_slot_end(start=start, duration_minutes=duration)
-    assert (slot - start).seconds // 60 == duration
+    name = container_name(module='hub', env=env)
+    assert name.endswith(f'-{env}')
 ```
-
-### AI-testing independence
-
-Cualquier test (humano o AI-asistido) debe ser mantenible si la IA
-desaparece manana. Politica completa, workflow Three Amigos + AI, mutation
-testing thresholds (70% standard / 85% critical) y compliance EU AI Act:
-ver `ai-testing-independence.md`.
 
 ## Complejidad
 
@@ -376,8 +299,8 @@ ver `ai-testing-independence.md`.
 
 ## Dependencias
 
-- Server: `server/pyproject.toml` (PEP 621 `[project.dependencies]` para prod, PEP 735 `[dependency-groups.dev]` para test/lint) + `server/uv.lock`
 - Devtools: `devtools/pyproject.toml` (ruff, GitPython, httpx, pytest) + `devtools/uv.lock`
-- Pinear versiones exactas en produccion (`==X.Y.Z`); `>=` aceptable para tooling de devtools
+- `>=` aceptable para tooling de devtools (no es codigo de produccion)
 - Gestionar via uv: `uv add <pkg>` para agregar, `uv lock --upgrade-package <pkg>` para actualizar uno solo, `uv sync --frozen` para reproducir; `python devtools/run.py upgrade_deps --dry-run` para ver el cuadro completo de upgrades disponibles
-- En containers: `uv sync --frozen --no-install-project --no-dev` para prod; sin `--no-dev` para dev/local/test
+</content>
+</invoke>

@@ -59,19 +59,9 @@ python devtools/run.py docker up --env=local --service=dashboard-feature
 python devtools/run.py docker up --env=local --profile=feature
 ```
 
-### Django
-
-| Comando | Descripción | Flags |
-| ------- | ----------- | ----- |
-| migrate | Ejecutar migraciones | |
-| makemigrations | Generar migraciones | |
-| createsuperuser | Crear admin (non-interactive, lee env vars) | |
-| manage | Pass-through a manage.py | `<subcommand> [-- --flag]` |
-
-> `manage` y `exec` son pass-through: para reenviar flags al subproceso,
-> usa el separador POSIX `--`. Ej: `docker manage migrate -- --plan` o
-> `docker exec --target=dashboard -- pnpm install`. Sin `--` el validador
-> sugiere el ejemplo correcto.
+> `exec` es pass-through: para reenviar flags al subproceso, usa el
+> separador POSIX `--`. Ej: `docker exec --target=generic -- pnpm install`.
+> Sin `--` el validador sugiere el ejemplo correcto.
 
 ### Calidad
 

@@ -265,4 +265,4 @@ aws dynamodb describe-table --table-name tracking \
 - Pregunta sobre Elasticsearch / OpenSearch (search, no key-value)
 - Pregunta sobre S3 (object storage, no DB)
 - Pregunta sobre Neptune o DocumentDB (graph / mongo-compat)
-- Pregunta sobre Django ORM o Prisma (otros stacks, no DynamoDB)
+- Pregunta sobre Prisma u otro ORM (otros stacks, no DynamoDB)

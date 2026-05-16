@@ -220,7 +220,7 @@ fields @timestamp, $context.identity.sourceIp, $context.status
 
 ## Cuando NO invocar esta skill
 
-- Pregunta sobre API REST framework (FastAPI, Flask, Django REST) — esos son backends, no API Gateway
+- Pregunta sobre API REST framework (FastAPI, Flask, Express) — esos son backends, no API Gateway
 - Pregunta sobre Cloudflare Workers como API (es otro entorno completo)
 - Pregunta sobre GraphQL en AWS (usar AppSync, no API Gateway)
 - Pregunta sobre WebSocket APIs en AWS (subset diferente de API Gateway)

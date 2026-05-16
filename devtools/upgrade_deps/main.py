@@ -6,7 +6,7 @@ Manifestos cubiertos (descubrimiento automatico via shared.manifest_discovery):
     - apps/<app>/package.json (6 Astro sites)
     - packages/<pkg>/package.json (5 workspaces compartidos)
     - devtools/pyproject.toml (Python CLI)
-    - server/pyproject.toml (si existe)
+    - serverless/pyproject.toml (si existe)
 
 Comportamiento:
     1. Parsea cada manifest en su esquema nativo (PEP 621/735 TOML o package.json).
@@ -21,7 +21,6 @@ Flags:
     --dry-run   No escribe los manifestos; solo muestra que cambiaria.
 
 Tras correr el script, regenerar lockfiles para que `uv sync --frozen` funcione:
-    uv lock --project server
     uv lock --project devtools
 """
 
@@ -173,8 +172,8 @@ def _decide_npm(pkg: dict, versions: list[str]) -> dict:
 def _write_pyproject_toml(path: Path, results: list[dict]) -> int:
     """Reescribe pyproject.toml aplicando upgrades. Preserva formato.
 
-    Sustituye la spec original (`pkg['original']`, e.g. `"Django==6.0.4"`)
-    por la nueva (`Django==6.0.5`) en la linea exacta donde aparecia. Si el
+    Sustituye la spec original (`pkg['original']`, e.g. `"httpx>=0.28.1"`)
+    por la nueva (`httpx>=0.28.2`) en la linea exacta donde aparecia. Si el
     parser no encontro la linea (`line_no == 0`), se omite — escenario raro
     (e.g. spec en multiples lineas) que no soportamos para no corromper formato.
 

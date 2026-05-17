@@ -1,8 +1,8 @@
 ---
 description: >
   Push de la rama actual, crea PR con gh, espera GitHub Actions, mergea
-  rebase a la base (default dev) y deja al usuario en dev con el pull
-  aplicado. Flujo end-to-end de cierre de feature.
+  con merge commit a la base (default dev) y deja al usuario en dev con el
+  pull aplicado. Flujo end-to-end de cierre de feature.
 argument-hint: "[base=dev] [--draft]"
 ---
 
@@ -159,11 +159,20 @@ Si el PR es draft, NO mergees — reporta que esta listo para revision y termina
 Si NO es draft:
 
 ```bash
-gh pr merge "$PR_NUMBER" --rebase --delete-branch 2>&1 | tail -10
+# Feature -> dev: merge commit + borrar la feature branch (es efimera).
+# Promocion dev -> stage / stage -> main: merge commit SIN --delete-branch
+# (las ramas de entorno son permanentes).
+if [ "$BASE" = "stage" ] || [ "$BASE" = "main" ] || [ "$BASE" = "master" ]; then
+  gh pr merge "$PR_NUMBER" --merge 2>&1 | tail -10
+else
+  gh pr merge "$PR_NUMBER" --merge --delete-branch 2>&1 | tail -10
+fi
 ```
 
-`--rebase` mantiene historia lineal (regla del proyecto en
-`.claude/rules/git-workflow.md`). `--delete-branch` limpia origin.
+`--merge` (merge commit) preserva los SHAs y evita la divergencia entre
+`dev`/`stage`/`main` — regla del proyecto en `.claude/rules/git-workflow.md`.
+El proyecto es **merge-commit-only**: `--rebase` y `--squash` estan
+deshabilitados en GitHub.
 
 ### 7. Switch a base + pull
 
@@ -215,8 +224,10 @@ git branch -d "$BRANCH" 2>&1 || true
 - NUNCA `git push --no-verify` (rompe quality gates del proyecto).
 - NUNCA mergear sin CI verde. Si fuerza el merge, reportar que el usuario
   debe usar `gh pr merge --admin` manualmente.
-- NUNCA usar `--squash` ni `--merge` (commits de merge). El proyecto es
-  rebase-only (`.claude/rules/git-workflow.md`).
+- SIEMPRE mergear con `--merge` (merge commit). NUNCA `--rebase` ni
+  `--squash`: el proyecto es merge-commit-only — el merge commit preserva
+  los SHAs y evita la divergencia entre `dev`/`stage`/`main`
+  (`.claude/rules/git-workflow.md`).
 - NUNCA atribucion de IA en titulo, body, ni comentarios del PR (politica
   global, hook `prepare-commit-msg` la elimina si se cuela).
 - NUNCA mergear si el PR es draft — solo reportar.

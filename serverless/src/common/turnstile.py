@@ -1,5 +1,10 @@
 """
-Cloudflare Turnstile siteverify integration.
+Cloudflare Turnstile siteverify integration (modulo compartido).
+
+Validacion de tokens Turnstile reutilizable por cualquier Lambda del backend
+(hoy: contact_form). Centralizado en `common/` para que exista una sola
+fuente de verdad — `common/` se incluye en el deploy zip de todas las
+Lambdas, no requiere acoplamiento ni un Lambda Layer dedicado.
 
 Decision: usar httpx (sincrono) con timeout 5s. Si falla -> raise TurnstileError.
 
@@ -21,7 +26,9 @@ from common.exceptions import TurnstileError
 from common.logger import logger
 from common.ssm_client import get_secret
 
-TURNSTILE_SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+TURNSTILE_SITEVERIFY_URL = (
+    'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+)
 
 # Hostnames siempre aceptados (compat con dev local). Subdominios *.localhost
 # se aceptan solo en stage=dev via _LOCAL_SUBDOMAIN_PATTERN (RFC 6761 garantiza
@@ -62,12 +69,8 @@ def _hostname_allowed(hostname: str) -> bool:
     """True si hostname esta en whitelist del stage o es *.localhost en dev."""
     if hostname in _expected_hostnames():
         return True
-    if (
-        os.environ.get('STAGE', 'dev') == 'dev'
-        and _LOCAL_SUBDOMAIN_PATTERN.match(hostname)
-    ):
-        return True
-    return False
+    is_dev = os.environ.get('STAGE', 'dev') == 'dev'
+    return is_dev and _LOCAL_SUBDOMAIN_PATTERN.match(hostname) is not None
 
 
 _BYPASS_ALLOWED_STAGES = frozenset({'dev', 'local'})
@@ -85,7 +88,7 @@ def _load_bypass_secret() -> str:
         return ''
     try:
         return get_secret(bypass_path)
-    except Exception:  # noqa: BLE001  (SSM ParameterNotFound, ClientError, etc.)
+    except Exception:  # SSM ParameterNotFound, ClientError, etc.
         logger.info(
             'bypass secret not configured in SSM; bypass disabled',
             extra={'path': bypass_path},
@@ -183,9 +186,7 @@ def verify_turnstile_token(
         ) from e
     except httpx.HTTPStatusError as e:
         msg = f'Turnstile siteverify HTTP {e.response.status_code}'
-        raise TurnstileError(
-            msg, code='CAPTCHA_HTTP_ERROR'
-        ) from e
+        raise TurnstileError(msg, code='CAPTCHA_HTTP_ERROR') from e
     except (httpx.HTTPError, ValueError) as e:
         msg = f'Turnstile siteverify failed: {e}'
         raise TurnstileError(msg, code='CAPTCHA_FAILED') from e

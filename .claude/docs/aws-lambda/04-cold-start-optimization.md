@@ -90,8 +90,8 @@ Runtime combina ambos antes de invocacion. Benefit:
 - Layer cachea en Lambda, re-usar no duplica init time
 
 **Para este proyecto**: 1 layer con `boto3`, `requests`, `pydantic`,
-`aws-lambda-powertools`. Reusable en contact-form, turnstile-validator,
-tracking-pixel.
+`aws-lambda-powertools`. Reusable en contact-form, tracking-pixel,
+stream-processor.
 
 Desventaja: max 5 layers por function, max size 250MB total (uncompressed).
 
@@ -204,8 +204,9 @@ Para 512MB memory:
 **Recomendacion para este caso**: 
 - contact-form: MAYBE (si cold start es critico, los form submissions son
   esporadicos asi que el cost extra vale pena)
-- turnstile-validator: NO (HTTP request es rapido, add cost no justificado)
 - tracking-pixel: NO (bajo latency requirement)
+- stream-processor: NO (invocacion async desde DynamoDB Streams, cold start
+  no es percibido por el usuario)
 
 ## Connection pooling y reutilizacion global
 

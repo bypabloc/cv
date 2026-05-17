@@ -6,16 +6,13 @@
 
 ## Inventario de recursos
 
-### Lambdas (5, region us-east-1)
+### Lambdas (3, region us-east-1)
 
 | Funcion | Endpoint / Trigger | Memoria | Timeout |
 |---------|-------------------|---------|---------|
 | `ContactFormFunction` | `POST /contact` | 512 MB | 10s |
 | `TrackingPixelFunction` | `POST /track` | 256 MB | 5s |
-| `TurnstileValidatorFunction` | `POST /validate-turnstile` | 256 MB | 5s |
 | `StreamProcessorFunction` | DynamoDB Streams (contacts, tracking) | 512 MB | 60s |
-| `AggregatorFunction` | EventBridge cron `cron(0 3 * * ? *)` | 512 MB | 300s |
-| `DashboardApiFunction` | `GET /dashboard/{action}` | 256 MB | 10s |
 
 ### DynamoDB (5 tablas x 2 stages)
 
@@ -97,29 +94,7 @@ aws ssm put-parameter --profile tfs-dev --region us-east-1 \
   --overwrite
 
 # 3. Revocar credencial vieja en Neon console (despues de validar)
-# 4. Smoke test pipeline E2E: POST /track -> dashboard summary
-```
-
-### Rotar password del dashboard
-
-```bash
-# Generar nuevo password + hash
-NEW_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(16))")
-NEW_HASH=$(python3 -c "import bcrypt; print(bcrypt.hashpw('$NEW_PASSWORD'.encode(), bcrypt.gensalt(rounds=12)).decode())")
-echo "Nuevo password (guardar): $NEW_PASSWORD"
-
-# Actualizar SSM
-aws ssm put-parameter --profile tfs-dev --region us-east-1 \
-  --name /portfolio/dashboard-password-hash \
-  --type SecureString --key-id alias/portfolio-lambdas \
-  --value "$NEW_HASH" \
-  --overwrite
-
-# Test login (espera 200)
-AUTH=$(echo -n "owner:$NEW_PASSWORD" | base64)
-curl -sw '\n%{http_code}\n' \
-  -H "Authorization: Basic $AUTH" \
-  https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/dashboard/summary
+# 4. Smoke test pipeline E2E: POST /track -> verificar row en Neon
 ```
 
 ### Aplicar migrations Postgres sin downtime
@@ -213,27 +188,6 @@ aws dynamodb delete-item --profile tfs-dev --region us-east-1 \
 python scripts/cache_invalidate.py --stage dev --tag user:abc123
 ```
 
-### Verificar cron Aggregator corrio
-
-```bash
-# Logs de la ultima ejecucion (03:00 UTC)
-aws logs tail /aws/lambda/portfolio-backend-dev-AggregatorFunction \
-  --profile tfs-dev --region us-east-1 \
-  --since 12h --follow false
-
-# Verificar daily_metrics tiene row del dia
-psql "<NEON_URL_DEV>" -c "
-  SELECT date, total_contacts, total_events, unique_sessions
-  FROM portfolio.daily_metrics
-  ORDER BY date DESC LIMIT 7;
-"
-
-# Si no corrio: invocar manualmente
-aws lambda invoke --profile tfs-dev --region us-east-1 \
-  --function-name portfolio-backend-dev-AggregatorFunction \
-  --payload '{}' /tmp/agg.json
-```
-
 ### Re-deploy de una sola Lambda
 
 ```bash
@@ -281,12 +235,6 @@ aws cloudwatch describe-alarms --profile tfs-dev --region us-east-1 \
 - Revisar `transformers.py` vs migration SQL nueva
 - Re-procesar despues de fix con script de redrive
 
-### Dashboard `401` con credenciales correctas
-
-- Verificar `/portfolio/dashboard-password-hash` esta actualizado
-- Lambda lee SSM on cold start; forzar refresh con redeploy o esperar
-  expiracion natural del cache
-
 ### Email no llega (form contact)
 
 ```bash
@@ -333,7 +281,7 @@ aws sesv2 list-suppressed-destinations --profile tfs-dev --region us-east-1
 
 - **Cloudflare support**: DDoS L7 con bot pool > 10k IPs / min
 - **AWS support (Business plan)**: SES bounce rate > 10% sostenido
-- **Neon support**: queries del aggregator tardan > 60s sostenido
+- **Neon support**: queries del stream_processor tardan > 60s sostenido
 
 ## Decisiones operacionales
 

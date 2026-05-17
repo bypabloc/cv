@@ -30,17 +30,19 @@ portfolio-lambdas/
 ├── events/                    # Test events para sam local invoke
 │   ├── contact.json
 │   ├── tracking-pixel.json
-│   └── turnstile-validator.json
+│   └── stream-processor.json
 ├── src/
 │   ├── contact_form/
 │   │   ├── handler.py         # Contact form handler
 │   │   └── requirements.txt
-│   ├── turnstile_validator/
-│   │   ├── handler.py
-│   │   └── requirements.txt
 │   ├── tracking_pixel/
 │   │   ├── handler.py
 │   │   └── requirements.txt
+│   ├── stream_processor/
+│   │   ├── handler.py
+│   │   └── requirements.txt
+│   ├── common/
+│   │   └── turnstile.py       # Validacion Turnstile (compartida)
 │   └── layers/
 │       ├── python-deps/       # Shared dependencies (layer)
 │       │   ├── requirements.txt
@@ -62,7 +64,7 @@ Ejemplo completo con 3 Lambdas + API Gateway + DynamoDB + SES + KMS:
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
-Description: Portfolio contact form, tracking pixel, Turnstile validator
+Description: Portfolio contact form, tracking pixel, stream processor
 
 Globals:
   Function:
@@ -215,28 +217,6 @@ Resources:
             Auth:
               ApiKeyRequired: false
 
-  TurnstileValidatorFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub '${AWS::StackName}-turnstile-validator'
-      CodeUri: src/turnstile_validator/
-      Handler: handler.lambda_handler
-      MemorySize: 256
-      Timeout: 10
-      Layers:
-        - !Ref PythonDepsLayer
-      Environment:
-        Variables:
-          TURNSTILE_SECRET_PATH: !Ref TurnstileSecretSSMPath
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${TurnstileSecretSSMPath}'
-      TracingConfig:
-        Mode: Active
-
   TrackingPixelFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -264,6 +244,27 @@ Resources:
             Path: /pixel
             Method: post
             RestApiId: !Ref PortfolioApi
+
+  StreamProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-stream-processor'
+      CodeUri: src/stream_processor/
+      Handler: handler.lambda_handler
+      MemorySize: 256
+      Timeout: 30
+      Layers:
+        - !Ref PythonDepsLayer
+        - !Ref UtilsLayer
+      TracingConfig:
+        Mode: Active
+      Events:
+        TrackingStream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt TrackingPixelTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 100
 
   # ==================== API GATEWAY ====================
   

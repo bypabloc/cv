@@ -2,7 +2,7 @@
 name: aws-lambda-python
 description: >
   AWS Lambda reference for Python 3.13 runtime in this portfolio (us-west-2,
-  contact-form + tracking-pixel + turnstile-validator handlers). Covers
+  contact-form + tracking-pixel + stream-processor handlers). Covers
   managed runtime support (Python 3.13 official since Nov 2024, LTS to Oct
   2029), SnapStart for Python (Nov 2025, ~10x cold start reduction),
   Graviton2 arm64 (-20% cost +19% perf vs x86_64), AWS Lambda Powertools
@@ -45,7 +45,7 @@ metadata:
 
 > Conocimiento consolidado sobre AWS Lambda con Python 3.13 para el
 > backend del portfolio (3 funciones en us-west-2: contact-form,
-> tracking-pixel, turnstile-validator). Toda decision, gotcha y
+> tracking-pixel, stream-processor). Toda decision, gotcha y
 > procedimiento esta en `.claude/docs/aws-lambda/`.
 
 ## Pre-requisito OBLIGATORIO
@@ -231,10 +231,10 @@ aws accessanalyzer list-findings --analyzer-arn <arn>
 
 ## Relacion con otras skills/rules
 
-- `aws-api-gateway` — el trigger de las 3 Lambdas
+- `aws-api-gateway` — el trigger de contact-form y tracking-pixel
 - `aws-dynamodb` — el storage que escriben contact-form y tracking-pixel
 - `aws-ses` — el servicio de email que invoca contact-form
-- `cloudflare-turnstile` — el servicio que valida turnstile-validator
+- `cloudflare-turnstile` — el servicio que valida contact-form (via `common/turnstile.py`)
 - [.claude/rules/python.md](../../rules/python.md) — convenciones Python del proyecto
 - [.claude/rules/security.md](../../rules/security.md) — secrets, IAM, encryption
 - [.claude/rules/verify-before-done.md](../../rules/verify-before-done.md) — gates antes de deploy

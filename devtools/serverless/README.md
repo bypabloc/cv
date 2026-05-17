@@ -27,9 +27,7 @@ python devtools/run.py serverless <command> [--stage=local] [flags...]
 | -------- | ----------- | ------- |
 | `contact-form` | `src/contact_form/` | API GW POST /contact |
 | `tracking-pixel` | `src/tracking_pixel/` | API GW POST /track |
-| `turnstile-validator` | `src/turnstile_validator/` | API GW POST /validate-turnstile (interno) |
 | `stream-processor` | `src/stream_processor/` | DynamoDB Streams (contacts + tracking) -> Neon PG |
-| `aggregator` | `src/aggregator/` | EventBridge cron diario -> agregaciones a Neon PG |
 
 ## Comandos
 

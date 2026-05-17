@@ -8,12 +8,12 @@ last-reviewed: 2026-05-14
 # Rate-Limiting per-IP con DynamoDB en Serverless Lambda
 
 > Patron completo de rate-limiting per-IP implementado con DynamoDB On-Demand
-> en 5 Lambdas Python 3.13 del backend del portfolio. Alternativa $0 a AWS WAF
+> en 3 Lambdas Python 3.13 del backend del portfolio. Alternativa $0 a AWS WAF
 > ($7/mes). Costo: gratis perpetuo (free tier DynamoDB), defensa en Lambda.
 
 ## Contexto del portfolio
 
-- **Stack**: 5 Lambdas Python 3.13 arm64 en us-east-1 (contact_form, tracking_pixel, turnstile_validator, stream_processor, aggregator)
+- **Stack**: 3 Lambdas Python 3.13 arm64 en us-east-1 (contact_form, tracking_pixel, stream_processor)
 - **Upstream CDN**: Cloudflare Pages (gratis, defensa edge basica)
 - **Antes**: AWS WAF con rate-based rules = $7/mes
 - **Ahora**: Rate-limit self-managed con DynamoDB = $0/mes

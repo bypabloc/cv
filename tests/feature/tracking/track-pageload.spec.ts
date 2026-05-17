@@ -74,7 +74,6 @@ async function captureTrackRequests(page: Page): Promise<TrackPayload[]> {
  * Espera (poll) hasta que `captured` tenga al menos `min` elementos.
  */
 async function waitForCount(
-  page: Page,
   captured: TrackPayload[],
   min: number,
 ): Promise<void> {
@@ -96,7 +95,7 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
       await page.goto(`${subdomainUrl(host)}/?cf_track=force`, {
         waitUntil: 'domcontentloaded',
       })
-      await waitForCount(page, captured, 1)
+      await waitForCount(captured, 1)
 
       // Assert
       const payload = captured[0]
@@ -119,11 +118,11 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
     await page.goto(`${base}/?cf_track=force`, {
       waitUntil: 'domcontentloaded',
     })
-    await waitForCount(page, captured, 1)
+    await waitForCount(captured, 1)
     await page.goto(`${base}/about?cf_track=force`, {
       waitUntil: 'domcontentloaded',
     })
-    await waitForCount(page, captured, 2)
+    await waitForCount(captured, 2)
 
     // Assert
     expect(captured[0].session_id).toBe(captured[1].session_id)
@@ -141,7 +140,7 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
     await page.goto(`${subdomainUrl()}/?cf_track=force`, {
       waitUntil: 'domcontentloaded',
     })
-    await waitForCount(page, captured, 1)
+    await waitForCount(captured, 1)
 
     await page.evaluate(() => {
       const nav = (window as unknown as { navigate?: (href: string) => void })
@@ -153,7 +152,7 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
         window.location.href = '/about?cf_track=force'
       }
     })
-    await waitForCount(page, captured, 2)
+    await waitForCount(captured, 2)
 
     // Assert: el ultimo evento es de /about, con event_id propio
     const last = captured[captured.length - 1]

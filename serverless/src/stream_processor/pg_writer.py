@@ -41,7 +41,9 @@ def is_event_processed(event_id: str) -> bool:
         return cur.fetchone() is not None
 
 
-def mark_event_processed(event_id: str, *, event_type: str, table_name: str) -> None:
+def mark_event_processed(
+    event_id: str, *, event_type: str, table_name: str
+) -> None:
     """Inserta el event_id en processed_stream_events (idempotente)."""
     conn = _get_connection()
     with conn.cursor() as cur:
@@ -84,7 +86,8 @@ def upsert_tracking(payload: dict[str, Any]) -> None:
                 session_id, page_id, stream_event_id, created_at, expires_at,
                 page_url, page_title, page_path, referrer,
                 utm_source, utm_medium, utm_campaign, utm_content, utm_term,
-                viewport_width, viewport_height, niche, ip, country,
+                viewport_width, viewport_height, niche,
+                event_id, event_type_id, ip, country,
                 user_agent, browser, browser_version, os, device_type
             ) VALUES (
                 %(session_id)s, %(page_id)s, %(stream_event_id)s,
@@ -93,6 +96,7 @@ def upsert_tracking(payload: dict[str, Any]) -> None:
                 %(utm_source)s, %(utm_medium)s, %(utm_campaign)s,
                 %(utm_content)s, %(utm_term)s,
                 %(viewport_width)s, %(viewport_height)s, %(niche)s,
+                %(event_id)s, %(event_type_id)s,
                 %(ip)s::inet, %(country)s, %(user_agent)s,
                 %(browser)s, %(browser_version)s, %(os)s, %(device_type)s
             )

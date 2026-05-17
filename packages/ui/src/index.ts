@@ -1,9 +1,11 @@
 /**
  * @module @portfolio/ui
- * @description Barrel TS del paquete. Componentes Astro se importan directo:
+ * @description Barrel TS del paquete. Los componentes Astro NO se re-exportan
+ *   desde este barrel (un .astro no es un modulo TS) — se importan directo:
  *
  *   import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
  *   import Hero from '@portfolio/ui/components/Hero.astro'
+ *   import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
  *
  *   import { applyTheme } from '@portfolio/ui'
  */

@@ -83,7 +83,7 @@ def cmd_db_shell(flags: dict[str, Any]) -> int:
 
     branch = flags.get('branch')
     if branch:
-        # Neon branch via URL path o param. Documentar en serverless/docs/secrets.md
+        # Neon branch via URL path o param. Ver .claude/rules/neon-management.md
         print(_c(YELLOW, f'Conectando a branch Neon: {branch}'))
 
     print(_c(CYAN, '$ psql <neon-url>'))

@@ -25,7 +25,7 @@ from shared.console import _err
 _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
 # Inventario de SSM Parameters que el modulo gestiona.
-# Mantener sincronizado con serverless/docs/secrets.md.
+# Mantener sincronizado con .claude/rules/serverless-secrets.md.
 _SSM_PARAMETERS: dict[str, dict[str, str]] = {
     '/portfolio/turnstile-secret': {
         'description': 'Cloudflare Turnstile secret key (siteverify)',
@@ -66,7 +66,7 @@ def cmd_setup_ssm(flags: dict[str, Any]) -> int:
     if name not in _SSM_PARAMETERS:
         print(
             f'{YELLOW}  Aviso:{NC} {name!r} no esta en el inventario conocido. '
-            f'Actualiza serverless/docs/secrets.md.'
+            f'Actualiza _SSM_PARAMETERS y .claude/rules/serverless-secrets.md.'
         )
 
     kind = _SSM_PARAMETERS.get(name, {}).get('kind', 'SecureString')
@@ -178,7 +178,10 @@ def cmd_verify_ses_dns(flags: dict[str, Any]) -> int:
             f'(leer de aws sesv2 get-email-identity)'
         )
     else:
-        _err('Faltan records DNS — ver serverless/docs/ses-setup.md')
+        _err(
+            'Faltan records DNS — ver .claude/rules/serverless-secrets.md '
+            '(seccion AWS SES) y el skill aws-ses'
+        )
 
     return 0 if all_ok else 1
 

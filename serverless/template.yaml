@@ -13,7 +13,7 @@ Description: >
   Portfolio backend serverless: 3 tablas DynamoDB hot path (contacts, tracking,
   cache), 1 Lambda Layer compartido (Powertools v3 + httpx + pydantic) y
   1 API Gateway REST con CORS multi-subdomain.
-  SPEC-001 - serverless/specs/SPEC-001-sam-template-base.md
+  Arquitectura: serverless/ARCHITECTURE.md
 
 Parameters:
   Stage:

@@ -250,6 +250,10 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: contact-form
+          # Region de SES explicita: notification.py defaultea a us-east-1 si
+          # falta, pero declararla evita depender del default de boto3 (que
+          # podria resolver otra region del entorno de ejecucion).
+          AWS_SES_REGION: us-east-1
           # Bypass secret para tests E2E (solo dev):
           # - El SSM param `/portfolio/dev/turnstile-bypass-secret` debe existir
           #   solo en stage=dev. La Lambda resuelve el valor en runtime via SSM.

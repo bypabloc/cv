@@ -29,6 +29,7 @@ def _render_mustache_lite(template: str, context: dict[str, Any]) -> str:
     NO uses Jinja2 (peso adicional al Layer). Esto es suficiente para nuestro
     template plano. Si el value es None/empty, el bloque se omite.
     """
+
     # Conditional blocks: {{#var}}...{{/var}}
     def conditional_replacer(match: re.Match[str]) -> str:
         var = match.group(1)
@@ -55,6 +56,27 @@ def _render_mustache_lite(template: str, context: dict[str, Any]) -> str:
     return rendered
 
 
+def parse_recipients(raw: str) -> list[str]:
+    """
+    Parsea el parametro SSM `owner-email` como lista CSV de destinatarios.
+
+    El parametro puede contener uno o varios correos separados por coma. Se
+    aplica trim a cada entrada y se descartan las vacias (tolera comas
+    sobrantes o espacios alrededor).
+
+    Args:
+        raw: valor crudo del parametro SSM (ej. " a@x.com , b@y.com ").
+
+    Returns:
+        Lista de direcciones limpias, sin entradas vacias.
+
+    Example:
+        parse_recipients(' a@x.com , b@y.com ')  # ['a@x.com', 'b@y.com']
+        parse_recipients('a@x.com,,b@y.com,')    # ['a@x.com', 'b@y.com']
+    """
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
 def send_owner_email(contact: dict[str, Any]) -> str:
     """
     Envia un email transaccional al owner del portfolio.
@@ -73,21 +95,25 @@ def send_owner_email(contact: dict[str, Any]) -> str:
     )
 
     from_address = get_parameter(from_address_path)
-    owner_email = get_parameter(owner_email_path)
+    recipients = parse_recipients(get_parameter(owner_email_path))
 
     # Render templates
-    html_template = (_TEMPLATES_DIR / 'owner_email.html').read_text(encoding='utf-8')
-    text_template = (_TEMPLATES_DIR / 'owner_email.txt').read_text(encoding='utf-8')
+    html_template = (_TEMPLATES_DIR / 'owner_email.html').read_text(
+        encoding='utf-8'
+    )
+    text_template = (_TEMPLATES_DIR / 'owner_email.txt').read_text(
+        encoding='utf-8'
+    )
 
     context = {**contact, 'niche': contact.get('niche', 'generic')}
     html_body = _render_mustache_lite(html_template, context)
     text_body = _render_mustache_lite(text_template, context)
 
-    subject = f"Portfolio · Nuevo contacto de {contact.get('name', '')} ({contact.get('niche', 'generic')})"
+    subject = f'Portfolio · Nuevo contacto de {contact.get("name", "")} ({contact.get("niche", "generic")})'
 
     response = _ses_client().send_email(
-        FromEmailAddress=f"The Full Stack <{from_address}>",
-        Destination={'ToAddresses': [owner_email]},
+        FromEmailAddress=f'The Full Stack <{from_address}>',
+        Destination={'ToAddresses': recipients},
         ReplyToAddresses=[contact.get('email', from_address)],
         Content={
             'Simple': {
@@ -106,7 +132,7 @@ def send_owner_email(contact: dict[str, Any]) -> str:
         extra={
             'message_id': message_id,
             'contact_id': contact.get('contact_id'),
-            'owner_email': owner_email,
+            'recipient_count': len(recipients),
         },
     )
     return message_id

@@ -13,6 +13,11 @@ export { projects } from './data/projects/index'
 export { publications } from './data/publications/index'
 export { references } from './data/references/index'
 export { skills } from './data/skills/index'
+export {
+  EVENT_TYPES,
+  type EventTypeCode,
+  type EventTypeId,
+} from './lib/event-types'
 export { filterByNiche } from './lib/filter-by-niche'
 export { formatRange, formatYearMonth } from './lib/format-date'
 export { sortByPriority } from './lib/sort-by-priority'

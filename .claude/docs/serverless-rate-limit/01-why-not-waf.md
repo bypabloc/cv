@@ -14,12 +14,10 @@ last-reviewed: 2026-05-14
 
 ## Contexto de la decision
 
-Portfolio personal de Pablo Contreras con 5 Lambdas Python 3.13 en us-east-1:
+Portfolio personal de Pablo Contreras con 3 Lambdas Python 3.13 en us-east-1:
 - `contact_form`: contacto del site
 - `tracking_pixel`: analittica
-- `turnstile_validator`: validacion de tokens CAPTCHA
 - `stream_processor`: procesamiento async
-- `aggregator`: agregacion de datos
 
 **Anterior arquitectura**: API Gateway + AWS WAF con 2 rate-based rules = $7/mes.
 

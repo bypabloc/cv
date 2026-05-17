@@ -1,4 +1,4 @@
-"""Tests para contact_form.turnstile (httpx con respx)."""
+"""Tests para common.turnstile (httpx con respx)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import pytest
 import respx
 
 from common.exceptions import TurnstileError
-from contact_form.turnstile import (
+from common.turnstile import (
     TURNSTILE_SITEVERIFY_URL,
     verify_turnstile_token,
 )
@@ -20,7 +20,7 @@ class TestVerifyTurnstileToken:
 
     @respx.mock
     def test_when_success_then_returns_response(
-        self, contact_form_aws: None
+        self, turnstile_env: None
     ) -> None:
         """
         Given Cloudflare retorna success=true + hostname valido,
@@ -38,14 +38,16 @@ class TestVerifyTurnstileToken:
             )
         )
 
-        result = verify_turnstile_token('valid-cf-response', remote_ip='1.2.3.4')
+        result = verify_turnstile_token(
+            'valid-cf-response', remote_ip='1.2.3.4'
+        )
 
         assert result['success'] is True
         assert result['hostname'] == 'the-full-stack.com'
 
     @respx.mock
     def test_when_success_false_then_raises_captcha_invalid(
-        self, contact_form_aws: None
+        self, turnstile_env: None
     ) -> None:
         """Given success=false, When verify, Then TurnstileError CAPTCHA_INVALID."""
         respx.post(TURNSTILE_SITEVERIFY_URL).mock(
@@ -66,7 +68,7 @@ class TestVerifyTurnstileToken:
 
     @respx.mock
     def test_when_hostname_mismatch_then_raises(
-        self, contact_form_aws: None
+        self, turnstile_env: None
     ) -> None:
         """
         Given hostname no esta en whitelist,
@@ -101,7 +103,7 @@ class TestVerifyTurnstileToken:
     )
     def test_when_localhost_subdomain_in_stage_dev_then_allowed(
         self,
-        contact_form_aws: None,
+        turnstile_env: None,
         monkeypatch: pytest.MonkeyPatch,
         hostname: str,
     ) -> None:
@@ -118,14 +120,16 @@ class TestVerifyTurnstileToken:
             )
         )
 
-        result = verify_turnstile_token('cf-response-value', remote_ip='1.2.3.4')
+        result = verify_turnstile_token(
+            'cf-response-value', remote_ip='1.2.3.4'
+        )
 
         assert result['success'] is True
         assert result['hostname'] == hostname
 
     @respx.mock
     def test_when_localhost_subdomain_in_stage_prod_then_rejected(
-        self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
+        self, turnstile_env: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """
         Given hostname *.localhost + STAGE=prod,
@@ -147,7 +151,7 @@ class TestVerifyTurnstileToken:
 
     @respx.mock
     def test_when_evil_localhost_subdomain_then_rejected(
-        self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
+        self, turnstile_env: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """
         Given hostname disfrazado tipo evil.localhost.attacker.com,
@@ -172,7 +176,7 @@ class TestVerifyTurnstileToken:
 
     def test_when_cf_response_empty_and_bypass_matches_in_dev_then_skip(
         self,
-        contact_form_aws: None,
+        turnstile_env: None,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
@@ -181,9 +185,12 @@ class TestVerifyTurnstileToken:
         Then bypass aplica (no HTTP call a Cloudflare).
         """
         monkeypatch.setenv('STAGE', 'dev')
-        monkeypatch.setenv('SSM_TURNSTILE_BYPASS_PATH', '/portfolio/dev/turnstile-bypass-secret')
+        monkeypatch.setenv(
+            'SSM_TURNSTILE_BYPASS_PATH',
+            '/portfolio/dev/turnstile-bypass-secret',
+        )
         monkeypatch.setattr(
-            'contact_form.turnstile.get_secret',
+            'common.turnstile.get_secret',
             lambda _path: 'test-bypass-123',
         )
 
@@ -198,7 +205,7 @@ class TestVerifyTurnstileToken:
 
     def test_when_cf_response_not_empty_bypass_is_ignored(
         self,
-        contact_form_aws: None,
+        turnstile_env: None,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
@@ -208,9 +215,12 @@ class TestVerifyTurnstileToken:
         si cf_response vacio).
         """
         monkeypatch.setenv('STAGE', 'dev')
-        monkeypatch.setenv('SSM_TURNSTILE_BYPASS_PATH', '/portfolio/dev/turnstile-bypass-secret')
+        monkeypatch.setenv(
+            'SSM_TURNSTILE_BYPASS_PATH',
+            '/portfolio/dev/turnstile-bypass-secret',
+        )
         monkeypatch.setattr(
-            'contact_form.turnstile.get_secret',
+            'common.turnstile.get_secret',
             lambda _path: 'test-bypass-123',
         )
 
@@ -224,7 +234,7 @@ class TestVerifyTurnstileToken:
 
     def test_when_cf_response_empty_in_prod_then_reject(
         self,
-        contact_form_aws: None,
+        turnstile_env: None,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
@@ -245,7 +255,7 @@ class TestVerifyTurnstileToken:
 
     def test_when_cf_response_empty_and_no_bypass_secret_then_reject(
         self,
-        contact_form_aws: None,
+        turnstile_env: None,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """

@@ -134,7 +134,6 @@ aws apigateway update-stage \
 **Limites nuestros**:
 - `/contact`: 3 req/sec steady, 5 req burst (form contacto, super estricto)
 - `/track`: 30 req/sec steady, 60 req burst (telemetria pixel, mas permisivo)
-- `/validate-turnstile`: 30 req/sec steady, 60 req burst (validacion interna)
 
 Nota: estos limites son **globales** (no per-IP). Para per-IP, necesitas WAF.
 

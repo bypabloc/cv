@@ -7,9 +7,9 @@
 
 ## Decision: REST API (no HTTP API)
 
-Para este portfolio con 3 endpoints (contact, track, validate-turnstile) que
-requieren throttling granular por-IP y validacion de request, **REST API es
-la eleccion correcta**, aunque sea mas cara que HTTP API.
+Para este portfolio con 2 endpoints (contact, track) que requieren throttling
+granular por-IP y validacion de request, **REST API es la eleccion correcta**,
+aunque sea mas cara que HTTP API.
 
 ### Por que REST API
 
@@ -80,13 +80,13 @@ Las features valen la pena.
           |                   |                   |
           +-------------------+-------------------+
                             |
-                      [3 Lambda Functions]
+                      [2 Lambda Functions]
                             |
-          +-------------------+-------------------+
-          |                   |                   |
-      [Lambda]            [Lambda]            [Lambda]
-      /contact            /track          /validate-turnstile
-      (strict)            (moderate)       (moderate)
+              +-------------------+-------------------+
+              |                                       |
+          [Lambda]                                [Lambda]
+          /contact                                /track
+          (strict)                                (moderate)
 ```
 
 ## Endpoints y limites de throttling
@@ -95,7 +95,6 @@ Las features valen la pena.
 |----------|-----------|-------|-------------|---------|
 | `POST /contact` | 3 req/min per IP | 5 requests | 50/dia per IP | contact.py |
 | `POST /track` | 30 req/min per IP | 60 requests | 1000/dia per IP | track.py |
-| `POST /validate-turnstile` | 30 req/min per IP | 60 requests | 1000/dia per IP | validate.py |
 
 ## Configuracion de dominios
 

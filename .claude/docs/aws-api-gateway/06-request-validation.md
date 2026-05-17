@@ -145,18 +145,14 @@ MethodSettings:
       ValidateRequestParameters: true  # Validar headers y query
 ```
 
-Ejemplo: requerir header `x-api-key` para /validate-turnstile:
+Ejemplo: requerir header `Content-Type` para /contact:
 
 ```yaml
-Models:
-  TurnstileRequest:
-    type: object
-    required:
-      - token
-    properties:
-      token:
-        type: string
-        minLength: 10
+MethodSettings:
+  - ResourcePath: /contact
+    HttpMethod: POST
+    RequestParameters:
+      method.request.header.Content-Type: true  # Requerido
 ```
 
 Headers requeridos se declaran en OpenAPI inline (SAM DefinitionBody).
@@ -199,19 +195,6 @@ Models:
       referrer:
         type: string
         format: uri
-  
-  TurnstileValidationRequest:
-    type: object
-    required:
-      - token
-      - ip_address
-    properties:
-      token:
-        type: string
-        minLength: 87  # Turnstile token length
-      ip_address:
-        type: string
-        format: ipv4
 
 MethodSettings:
   - ResourcePath: /contact
@@ -222,10 +205,6 @@ MethodSettings:
     HttpMethod: POST
     RequestParameters:
       method.request.querystring.campaign_id: true
-  - ResourcePath: /validate-turnstile
-    HttpMethod: POST
-    RequestParameters:
-      method.request.header.Authorization: true
 ```
 
 ## Validacion de tipos de datos

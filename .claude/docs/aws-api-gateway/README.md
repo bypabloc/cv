@@ -76,8 +76,8 @@ curl -X POST https://api.the-full-stack.com/contact \
 
 ## Estado actual del API (2026-05-13)
 
-- **Endpoints**: 3 (POST /contact, POST /track, POST /validate-turnstile)
-- **Backends**: 3 Lambdas Python 3.13 independientes
+- **Endpoints**: 2 (POST /contact, POST /track)
+- **Backends**: 2 Lambdas Python 3.13 independientes
 - **API Type**: REST API (decision justificada en 01-architecture.md)
 - **Region**: us-east-1 (Oregon)
 - **CORS**: Restringido a 6 subdominios portfolio + CloudflarePages origin
@@ -91,7 +91,7 @@ curl -X POST https://api.the-full-stack.com/contact \
 - samconfig.toml: configuracion de regiones, stages, parametros
 - `.aws/policies/cors-origins.json`: whitelist de 6 subdominios
 - `.aws/waf/rules.yaml`: definicion de rate-based rules per endpoint
-- Lambda handlers: `functions/contact.py`, `functions/track.py`, `functions/validate-turnstile.py`
+- Lambda handlers: `functions/contact.py`, `functions/track.py`
 
 ## Verificacion obligatoria pre-deployment
 

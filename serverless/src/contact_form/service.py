@@ -10,9 +10,9 @@ from __future__ import annotations
 from typing import Any
 
 from common.logger import logger
+from common.turnstile import verify_turnstile_token
 from contact_form.notification import send_owner_email
 from contact_form.persistence import save_contact
-from contact_form.turnstile import verify_turnstile_token
 
 
 def process_contact_form(

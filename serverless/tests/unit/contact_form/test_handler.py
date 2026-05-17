@@ -10,8 +10,8 @@ import httpx
 import pytest
 import respx
 
+from common.turnstile import TURNSTILE_SITEVERIFY_URL
 from contact_form.handler import lambda_handler
-from contact_form.turnstile import TURNSTILE_SITEVERIFY_URL
 
 pytestmark = pytest.mark.unit
 
@@ -22,7 +22,9 @@ class MockLambdaContext:
 
     function_name: str = 'test-fn'
     memory_limit_in_mb: int = 512
-    invoked_function_arn: str = 'arn:aws:lambda:us-east-1:000000000000:function:test'
+    invoked_function_arn: str = (
+        'arn:aws:lambda:us-east-1:000000000000:function:test'
+    )
     aws_request_id: str = 'test-request-id'
 
     def get_remaining_time_in_millis(self) -> int:
@@ -79,13 +81,15 @@ class TestLambdaHandler:
             )
         )
 
-        event = _build_event(body={
-            'name': 'Pablo Contreras',
-            'email': 'user@example.com',
-            'message': 'Hola, me interesa colaborar contigo.',
-            'cf_token': 'x' * 30,
-            'niche': 'fintech',
-        })
+        event = _build_event(
+            body={
+                'name': 'Pablo Contreras',
+                'email': 'user@example.com',
+                'message': 'Hola, me interesa colaborar contigo.',
+                'cf_token': 'x' * 30,
+                'niche': 'fintech',
+            }
+        )
 
         response = lambda_handler(event, _ctx())
 
@@ -93,7 +97,10 @@ class TestLambdaHandler:
         body = json.loads(response['body'])
         assert 'contact_id' in body
         assert len(body['contact_id']) == 36
-        assert response['headers']['Access-Control-Allow-Origin'] == 'https://the-full-stack.com'
+        assert (
+            response['headers']['Access-Control-Allow-Origin']
+            == 'https://the-full-stack.com'
+        )
 
     def test_when_invalid_json_then_400(self, contact_form_aws: None) -> None:
         """
@@ -116,11 +123,13 @@ class TestLambdaHandler:
         When invoke handler,
         Then 400 con code INVALID_INPUT.
         """
-        event = _build_event(body={
-            'email': 'user@example.com',
-            'message': 'Mensaje sin nombre',
-            'cf_token': 'x' * 30,
-        })
+        event = _build_event(
+            body={
+                'email': 'user@example.com',
+                'message': 'Mensaje sin nombre',
+                'cf_token': 'x' * 30,
+            }
+        )
 
         response = lambda_handler(event, _ctx())
 
@@ -147,12 +156,14 @@ class TestLambdaHandler:
             )
         )
 
-        event = _build_event(body={
-            'name': 'Pablo',
-            'email': 'user@example.com',
-            'message': 'Mensaje de prueba',
-            'cf_token': 'x' * 30,
-        })
+        event = _build_event(
+            body={
+                'name': 'Pablo',
+                'email': 'user@example.com',
+                'message': 'Mensaje de prueba',
+                'cf_token': 'x' * 30,
+            }
+        )
 
         response = lambda_handler(event, _ctx())
 
@@ -173,19 +184,22 @@ class TestLambdaHandler:
         """
         monkeypatch.setenv('STAGE', 'dev')
         monkeypatch.setenv(
-            'SSM_TURNSTILE_BYPASS_PATH', '/portfolio/dev/turnstile-bypass-secret'
+            'SSM_TURNSTILE_BYPASS_PATH',
+            '/portfolio/dev/turnstile-bypass-secret',
         )
         monkeypatch.setattr(
-            'contact_form.turnstile.get_secret',
+            'common.turnstile.get_secret',
             lambda _path: 'test-bypass-key',
         )
 
-        event = _build_event(body={
-            'name': 'Pablo Test',
-            'email': 'user@example.com',
-            'message': 'Bypass test message',
-            'cf_token': '',
-        })
+        event = _build_event(
+            body={
+                'name': 'Pablo Test',
+                'email': 'user@example.com',
+                'message': 'Bypass test message',
+                'cf_token': '',
+            }
+        )
         event['headers']['X-Turnstile-Bypass-Secret'] = 'test-bypass-key'
 
         response = lambda_handler(event, _ctx())

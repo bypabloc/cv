@@ -91,8 +91,8 @@ Memory  | vCPU aprox | GB-seconds / 1M invokes
 
 **Estrategia para este proyecto**:
 - contact-form (form + SES + DynamoDB): 512 MB (tiempo ~150ms)
-- turnstile-validator (HTTP + cached): 256 MB (tiempo ~100ms)
 - tracking-pixel (DynamoDB PutItem): 256 MB (tiempo ~50ms)
+- stream-processor (DynamoDB Streams + Neon): 256 MB (tiempo ~100ms)
 
 Pricing: $0.20 per 1M requests + $0.0000166667 per GB-second (us-east-1).
 Con 100 invokes/dia contact-form (512MB, 150ms):

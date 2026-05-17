@@ -86,10 +86,6 @@ serverless/migrations/
 ├── 001_init_schema.down.sql      # rollback
 ├── 002_indexes.sql
 ├── 002_indexes.down.sql
-├── 003_materialized_views.sql
-├── 003_materialized_views.down.sql
-├── 004_aggregates_tables.sql
-├── 004_aggregates_tables.down.sql
 ├── 005_migrations_log.sql        # crea la tabla schema_migrations
 └── 005_migrations_log.down.sql
 ```
@@ -216,8 +212,8 @@ Patron obligatorio (detalle completo en
   mismo contenedor.
 - `psycopg` v3, `sslmode=require&channel_binding=require`.
 - El Lambda que escribe a Neon es el `stream_processor` (consume DynamoDB
-  Streams) y el `aggregator` (cron). El form de contacto y el tracking pixel
-  escriben primero a DynamoDB; Neon es la capa analitica downstream.
+  Streams). El form de contacto y el tracking pixel escriben primero a
+  DynamoDB; Neon es la capa analitica downstream.
 
 ## Seguridad
 

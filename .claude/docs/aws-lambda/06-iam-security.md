@@ -81,27 +81,6 @@ ContactFormFunction:
           Resource: !Ref KmsKey.Arn
 ```
 
-### turnstile-validator
-
-Necesita SOLO:
-- SSM: GetParameter para Turnstile
-
-```yaml
-TurnstileValidatorFunction:
-  Policies:
-    - Statement:
-        - Effect: Allow
-          Action: ssm:GetParameter
-          Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/portfolio/turnstile-*'
-    
-    - Statement:
-        - Effect: Allow
-          Action: kms:Decrypt
-          Resource: !Ref KmsKey.Arn
-```
-
-**No tiene acceso a DynamoDB, SES**. Solo HTTP outbound.
-
 ### tracking-pixel
 
 Necesita SOLO:

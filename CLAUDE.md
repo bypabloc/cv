@@ -271,7 +271,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/src/common/cache/` |
 | Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/src/common/rate_limit/` |
 | Backend serverless | [serverless/ARCHITECTURE.md](serverless/ARCHITECTURE.md) + [INTEGRATION.md](serverless/INTEGRATION.md) | Estructura + diagramas ASCII + propuesta hibrida DynamoDB+Neon+Cache. Costo $0/mes (todo free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
-| Specs serverless | [serverless/specs/README.md](serverless/specs/README.md) | Plan de implementacion atomico en 16 specs (SPEC-000 a SPEC-015): setup, SAM base, common, cache, rate-limit, 5 Lambdas, Neon, frontend, dashboard, runbook. Cada spec con AC BDD + dependencias + verify commands + DoD |
+| Specs serverless | [serverless/specs/README.md](serverless/specs/README.md) | Plan de implementacion atomico en 13 specs: setup, SAM base, common, cache, rate-limit, 3 Lambdas (contact_form, tracking_pixel, stream_processor), Neon, frontend, runbook. Cada spec con AC BDD + dependencias + verify commands + DoD |
 | Devtools serverless CLI | [devtools/serverless/README.md](devtools/serverless/README.md) | `python devtools/run.py serverless <command>` — build, deploy, invoke, logs, db-migrate, db-branch, rate-limit, cache, smoke |
 
 ## Skills disponibles
@@ -299,10 +299,11 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 ### Backend AWS serverless (form contacto + tracking pixel)
 
 Skills consolidadas para el backend del portfolio: 3 Lambdas Python 3.13
-en us-west-2 (contact-form, tracking-pixel, turnstile-validator) detras
-de API Gateway REST + WAF rate-based, persistencia en DynamoDB
-On-Demand, notificacion via SES, anti-bot con Cloudflare Turnstile.
-Stack IaC: AWS SAM. Costo estimado: ~$7/mes (dominado por WAF Web ACL).
+(contact-form, tracking-pixel, stream-processor) detras de API Gateway
+REST + rate-limit per-IP con DynamoDB (sin WAF), persistencia en DynamoDB
+On-Demand, replica analitica en Neon PostgreSQL, notificacion via SES,
+anti-bot con Cloudflare Turnstile. Stack IaC: AWS SAM. Costo: $0/mes
+(todo free tier perpetuo).
 
 | Skill | Uso |
 |-------|-----|

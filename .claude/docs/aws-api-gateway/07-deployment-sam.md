@@ -19,10 +19,7 @@ portfolio/
 │   ├── contact/
 │   │   ├── handler.py         # Lambda handler
 │   │   └── requirements.txt
-│   ├── track/
-│   │   ├── handler.py
-│   │   └── requirements.txt
-│   └── validate_turnstile/
+│   └── track/
 │       ├── handler.py
 │       └── requirements.txt
 └── tests/
@@ -37,7 +34,7 @@ portfolio/
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'Portfolio API: contact form, tracking pixel, turnstile validation'
+Description: 'Portfolio API: contact form, tracking pixel'
 
 Parameters:
   Environment:
@@ -79,7 +76,7 @@ Resources:
     Properties:
       StageName: !Ref Environment
       Name: portfolio-api
-      Description: Portfolio contact, tracking, and validation APIs
+      Description: Portfolio contact and tracking APIs
       TracingEnabled: true
       EndpointConfiguration:
         Type: REGIONAL
@@ -124,17 +121,6 @@ Resources:
               pattern: '^[a-f0-9\-]{36}$'
             referrer:
               type: string
-        
-        TurnstileRequest:
-          type: object
-          required: [token, ip_address]
-          properties:
-            token:
-              type: string
-              minLength: 87
-            ip_address:
-              type: string
-              format: ipv4
       
       # Method settings: throttling + validation
       MethodSettings:
@@ -147,13 +133,6 @@ Resources:
           DataTraceEnabled: true
         
         - ResourcePath: /track
-          HttpMethod: POST
-          ThrottleSettings:
-            RateLimit: 30
-            BurstLimit: 60
-          LoggingLevel: INFO
-        
-        - ResourcePath: /validate-turnstile
           HttpMethod: POST
           ThrottleSettings:
             RateLimit: 30
@@ -301,25 +280,6 @@ Resources:
           Properties:
             RestApiId: !Ref PortfolioApi
             Path: /track
-            Method: POST
-
-  ValidateTurnstileFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub portfolio-validate-turnstile-${Environment}
-      CodeUri: functions/validate_turnstile/
-      Description: Valida Turnstile token
-      Policies:
-        - AWSXRayDaemonWriteAccess
-      Environment:
-        Variables:
-          TURNSTILE_SECRET_KEY: !Sub '{{resolve:secretsmanager:portfolio/turnstile:SecretString:secret_key}}'
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref PortfolioApi
-            Path: /validate-turnstile
             Method: POST
 
   # ===== DynamoDB para contacts =====

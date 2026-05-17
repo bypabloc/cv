@@ -99,10 +99,10 @@ class AutoBlacklistDetector:
         
         now = int(time.time())
         window_start = (now // 60) * 60  # ventana 60s
-        bucket_key_template = f"{ip}#/turnstile_validator#{window_start}"
+        bucket_key_template = f"{ip}#/contact#{window_start}"
         
         # Buscar bucket en ventana actual
-        # (Note: aqui hay un problema - no tenemos exacta ventana para /turnstile_validator)
+        # (Note: aqui hay un problema - no tenemos exacta ventana para los tokens)
         # Solucion: buscar todos los buckets de esta IP en ventana
         
         # ALTERNATIVA mas simple: usar contador separado en tabla especial

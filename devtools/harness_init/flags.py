@@ -11,7 +11,7 @@ arnes (Harness Engineering) este listo para empezar a trabajar:
   2. Cualquier docs/<módulo>/feature_list.json existente es JSON válido y
      respeta `one_feature_at_a_time` (por módulo)
   3. Docker daemon corriendo + containers principales up
-  4. Branch actual no es protegida (master/dev/release)
+  4. Branch actual no es protegida (master/main/dev/stage)
   5. docs/progress/ esta limpio (sin temporales viejos)
 
 Exit code 0 si OK, 1 si hay errores críticos.

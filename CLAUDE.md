@@ -347,7 +347,7 @@ y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
 - `attribution.commit` y `attribution.pr` están vacíos en
   [.claude/settings.json](.claude/settings.json) — defensa en profundidad
   contra atribución de IA.
-- Branches `main`, `master`, `dev`, `release` están protegidas: el hook
+- Branches `main`, `master`, `dev`, `stage` están protegidas: el hook
   `protect-branch.sh` bloquea `git push` directo.
 - Subdominios `*.localhost` resuelven a 127.0.0.1 por RFC 6761 (no requiere
   editar `/etc/hosts` en el host). Dentro de containers Docker con

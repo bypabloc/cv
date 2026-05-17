@@ -1,7 +1,7 @@
 #!/bin/bash
 # PreToolUse hook (matcher: Bash).
 # Bloquea git commit y git push directos cuando HEAD esta en una rama
-# protegida (master/main/dev/stage/release).
+# protegida (master/main/dev/stage).
 #
 # Politica: trabajo siempre en feature/fix/chore branches, merge via PR.
 
@@ -27,7 +27,7 @@ BRANCH="$(current_branch)"
 
 # Lista de ramas protegidas.
 case "$BRANCH" in
-  master|main|dev|stage|release) ;;
+  master|main|dev|stage) ;;
   *) exit 0 ;;
 esac
 
@@ -39,13 +39,13 @@ case "$CMD" in
   *"git merge"*) OP="merge" ;;
 esac
 
-# Excepcion: git push origin master/main/dev/stage/release ya esta en deny list de Bash.
+# Excepcion: git push origin master/main/dev/stage ya esta en deny list de Bash.
 # Pero git push (sin args) en rama protegida tambien debe bloquearse.
 
 echo "Bloqueado por protect-branch: estas en rama protegida '$BRANCH'." >&2
 echo "Operacion rechazada: $OP" >&2
 echo "Politica del proyecto (.claude/rules/git-workflow.md):" >&2
-echo "  - NUNCA $OP directo en master/main/dev/stage/release." >&2
+echo "  - NUNCA $OP directo en master/main/dev/stage." >&2
 echo "  - Crea feature/fix/chore branch primero:" >&2
 echo "      git checkout -b feature/<nombre>" >&2
 echo "  - Despues abre PR con /pr-create o gh pr create." >&2

@@ -9,7 +9,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from aws_lambda_powertools.metrics import MetricUnit
+
 from common.logger import logger
+from common.metrics import metrics
 from common.turnstile import verify_turnstile_token
 from contact_form.notification import send_owner_email
 from contact_form.persistence import save_contact
@@ -71,7 +74,13 @@ def process_contact_form(
             'failed to send owner email (contact already persisted)',
             extra={'contact_id': result['contact_id']},
         )
-        # NO re-raise: el form se guardo en DynamoDB; el stream_processor
-        # podra reintentar o el owner puede consultar el dashboard.
+        # NO re-raise: el form se guardo en DynamoDB y el lead no se pierde.
+        # El fallo se hace VISIBLE con una metrica CloudWatch para poder
+        # detectarlo sin romper la respuesta 201 del usuario.
+        metrics.add_metric(
+            name='OwnerEmailFailed',
+            unit=MetricUnit.Count,
+            value=1,
+        )
 
     return result

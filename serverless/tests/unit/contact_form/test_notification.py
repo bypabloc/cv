@@ -2,11 +2,56 @@
 
 from __future__ import annotations
 
+import boto3
 import pytest
 
-from contact_form.notification import _render_mustache_lite, send_owner_email
+from contact_form.notification import (
+    _render_mustache_lite,
+    parse_recipients,
+    send_owner_email,
+)
 
 pytestmark = pytest.mark.unit
+
+
+class TestParseRecipients:
+    """parse_recipients - parsing CSV del parametro SSM owner-email."""
+
+    def test_when_two_emails_then_two_entries(self) -> None:
+        """
+        Given owner-email con dos correos separados por coma,
+        When se parsea,
+        Then retorna una lista con las dos direcciones.
+        """
+        result = parse_recipients('pacg1991@gmail.com,bypabloc@gmail.com')
+        assert result == ['pacg1991@gmail.com', 'bypabloc@gmail.com']
+
+    def test_when_single_email_then_one_entry(self) -> None:
+        """
+        Given owner-email con un solo correo (sin comas),
+        When se parsea,
+        Then retorna una lista de un elemento.
+        """
+        result = parse_recipients('owner@example.com')
+        assert result == ['owner@example.com']
+
+    def test_when_whitespace_around_then_trimmed(self) -> None:
+        """
+        Given owner-email con espacios alrededor de cada correo [AC-2],
+        When se parsea,
+        Then cada entrada queda sin espacios.
+        """
+        result = parse_recipients(' a@x.com , b@y.com ')
+        assert result == ['a@x.com', 'b@y.com']
+
+    def test_when_empty_entries_then_discarded(self) -> None:
+        """
+        Given owner-email con comas sobrantes que generan entradas vacias [AC-3],
+        When se parsea,
+        Then las entradas vacias se descartan.
+        """
+        result = parse_recipients('a@x.com,,b@y.com,')
+        assert result == ['a@x.com', 'b@y.com']
 
 
 class TestRenderMustacheLite:
@@ -67,15 +112,46 @@ class TestSendOwnerEmail:
         validamos que NO lanza excepcion.
         """
         # No raise -> success path
-        result = send_owner_email({
-            'contact_id': 'abc-123',
-            'created_at': '2026-05-14T15:00:00Z',
-            'name': 'Pablo',
-            'email': 'p@example.com',
-            'message': 'Hola mundo',
-            'niche': 'generic',
-            'ip': '1.2.3.4',
-        })
+        result = send_owner_email(
+            {
+                'contact_id': 'abc-123',
+                'created_at': '2026-05-14T15:00:00Z',
+                'name': 'Pablo',
+                'email': 'p@example.com',
+                'message': 'Hola mundo',
+                'niche': 'generic',
+                'ip': '1.2.3.4',
+            }
+        )
 
         # message_id puede ser string vacio si moto no lo retorna
+        assert isinstance(result, str)
+
+    def test_when_owner_email_is_csv_then_sends_to_all(
+        self, contact_form_aws: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given el SSM owner-email con dos correos en CSV [AC-1],
+        When send_owner_email se invoca,
+        Then SES recibe la llamada con los dos destinatarios (no excepcion).
+        """
+        ssm = boto3.client('ssm', region_name='us-east-1')
+        ssm.put_parameter(
+            Name='/portfolio-test/owner-email',
+            Value='pacg1991@gmail.com,bypabloc@gmail.com',
+            Type='String',
+            Overwrite=True,
+        )
+
+        result = send_owner_email(
+            {
+                'contact_id': 'abc-123',
+                'created_at': '2026-05-17T15:00:00Z',
+                'name': 'Pablo',
+                'email': 'p@example.com',
+                'message': 'Hola mundo',
+                'niche': 'generic',
+            }
+        )
+
         assert isinstance(result, str)

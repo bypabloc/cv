@@ -105,6 +105,36 @@ class TestParseTrackingRecord:
         }
         assert parse_tracking_record(record) is None
 
+    def test_when_insert_with_event_ids_then_payload_includes_them(
+        self,
+    ) -> None:
+        """
+        Given INSERT tracking con event_id y event_type_id en el image [AC-7],
+        When parse_tracking_record,
+        Then el payload incluye ambos campos con su valor.
+        """
+        record = {
+            'eventID': 'evt-101',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'session_id': {'S': 'sess-2'},
+                    'page_id': {'S': 'page-uuid-2'},
+                    'page_url': {'S': 'https://x.com'},
+                    'event_id': {'S': 'a1b2c3d4e5f60718293a4b5c6d7e8f90'},
+                    'event_type_id': {
+                        'S': '019e372b-e0a7-7154-8279-8829bcf6a08c'
+                    },
+                },
+            },
+        }
+        result = parse_tracking_record(record)
+        assert result is not None
+        assert result['event_id'] == 'a1b2c3d4e5f60718293a4b5c6d7e8f90'
+        assert result['event_type_id'] == (
+            '019e372b-e0a7-7154-8279-8829bcf6a08c'
+        )
+
 
 class TestDetectTable:
     def test_when_contacts_arn_then_contacts(self) -> None:
@@ -120,5 +150,7 @@ class TestDetectTable:
         assert detect_table(record) == 'tracking'
 
     def test_when_unknown_arn_then_unknown(self) -> None:
-        record = {'eventSourceARN': 'arn:aws:dynamodb:us-east-1:123:table/other/stream/x'}
+        record = {
+            'eventSourceARN': 'arn:aws:dynamodb:us-east-1:123:table/other/stream/x'
+        }
         assert detect_table(record) == 'unknown'

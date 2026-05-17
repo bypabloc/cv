@@ -15,9 +15,8 @@ dependencies = [
   "pydantic[email]>=2.5,<3.0",
   "pydantic-settings>=2.0,<3.0",
   "boto3>=1.34.0,<2.0",
-  # psycopg para SPEC-008 (stream_processor + aggregator)
+  # psycopg para SPEC-008 (stream_processor)
   "psycopg[binary]>=3.2,<4.0",
-  "bcrypt>=4.0,<5.0",
 ]
 
 [dependency-groups]

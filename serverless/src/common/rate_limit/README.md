@@ -68,7 +68,6 @@ Esto evita el bug del fixed window:
 ```bash
 serverless rate-limit set --endpoint=/contact --limit=3 --window=300 --action=throttle
 serverless rate-limit set --endpoint=/track --limit=30 --window=300 --action=throttle
-serverless rate-limit set --endpoint=/validate-turnstile --limit=5 --window=60 --action=throttle
 ```
 
 ## Auto-blacklist por bot detection

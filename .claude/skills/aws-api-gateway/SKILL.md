@@ -2,8 +2,8 @@
 name: aws-api-gateway
 description: >
   AWS API Gateway reference for this portfolio (us-west-2, REST API with
-  3 endpoints: POST /contact 3 req/min/IP, POST /track 30 req/min/IP,
-  POST /validate-turnstile internal). Covers REST API vs HTTP API
+  2 endpoints: POST /contact 3 req/min/IP, POST /track 30 req/min/IP).
+  Covers REST API vs HTTP API
   decision (REST chosen for usage plans + request validators despite
   3.5x cost), the CRITICAL gotcha that API Gateway throttling is GLOBAL
   not per-IP (per-IP rate limiting REQUIRES AWS WAF rate-based rules,
@@ -51,7 +51,7 @@ metadata:
 # AWS API Gateway — knowledge reference
 
 > Conocimiento consolidado sobre API Gateway para el portfolio (REST API
-> en us-west-2 con 3 endpoints + WAF rate-based rules por IP). Todo
+> en us-west-2 con 2 endpoints + WAF rate-based rules por IP). Todo
 > decision, gotcha y precio en `.claude/docs/aws-api-gateway/`.
 
 ## Pre-requisito OBLIGATORIO

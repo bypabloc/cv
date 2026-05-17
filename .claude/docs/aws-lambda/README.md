@@ -1,7 +1,7 @@
 # AWS Lambda knowledge base
 
 > Conocimiento consolidado sobre como desplegar y mantener Lambdas Python 3.13
-> para el portfolio (contact-form, turnstile-validator, tracking-pixel). Cada
+> para el portfolio (contact-form, tracking-pixel, stream-processor). Cada
 > nodo cubre un tema; navegar por relevancia, no leer linealmente.
 
 ## Cuando leer cada archivo
@@ -60,7 +60,7 @@ sam logs -n ContactFormFunction --stack-name my-stack --tail
 
 ## Estado actual (Mayo 2026)
 
-- 3 Lambdas planeadas: contact-form, turnstile-validator, tracking-pixel
+- 3 Lambdas planeadas: contact-form, tracking-pixel, stream-processor
 - Region: us-east-1 (Oregon)
 - Runtime: Python 3.13.x (managed)
 - IaC: AWS SAM (template.yaml)

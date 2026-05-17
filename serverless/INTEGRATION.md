@@ -77,13 +77,10 @@
 | Rate-limit rules (endpoint, IP, country) | dedicated table | NO | cached 60s | source |
 | Rate-limit counters (per IP+window) | dedicated table | NO | NEVER cache | source |
 | Auto-blacklist (3+ tokens en 60s) | rule kind=ip_blacklist TTL 24h | NO | NO | write |
-| Daily metrics query | NO | YES (computed nightly) | YES (30min SWR) | NO |
-| Top landing pages | NO | YES (materialized view) | YES (30min SWR) | NO |
-| Session journey (LAG/LEAD) | NO | YES (mv refresh nightly) | NO | NO |
 | Contacts CRM filtering | NO | YES (CITEXT + GIN) | NO | NO |
 | Full-text search en messages | NO | YES (to_tsvector spanish + GIN) | NO | NO |
 | Joins entre contacts + tracking | NO | YES | NO | NO |
-| Conversion rate dashboard | NO | YES (daily_metrics tabla) | YES (30min SWR) | NO |
+| Session journey (LAG/LEAD) | NO | YES (window funcs sobre tracking_events) | NO | NO |
 
 Regla mnemotecnica:
 
@@ -140,15 +137,6 @@ Lambda stream_processor
     |
     v
 PG contacts table updated (lag total ~10-30s)
-    |
-    | === ASINC nightly 03:00 UTC ===
-    v
-Lambda aggregator
-    |
-    +--(i)--> SELECT count, group by date+niche FROM contacts
-    +--(ii)-> UPSERT daily_metrics
-    +--(iii)-> REFRESH MATERIALIZED VIEW mv_contacts_by_month_niche
-    +--(iv)-> Cache.invalidate(tag='analytics')
 ```
 
 ### 3.2. Tracking pixel (consent dado)
@@ -193,7 +181,7 @@ PG tracking_events table updated
     v
 Lambda stream_processor
     |
-    +--(no-op para PG: la particion mensual se drop por aggregator)
+    +--(no-op para PG: las particiones mensuales viejas se drop manualmente)
     |
     v
 DynamoDB row eliminado por TTL service de AWS
@@ -311,7 +299,7 @@ A escala 10x (~300k req/mo):
 | OWASP managed rules | YES (gratis bundle) | NO (mitigado por Turnstile + JSON Schema) |
 | Scale bajo DDoS sostenido | infinito | depende de Cloudflare upstream + reserved concurrency |
 | Latencia agregada al hot path | <5ms | ~10-20ms warm (2 GetItem + 1 UpdateItem) |
-| Logs/dashboards | nativos en consola | CloudWatch Logs + queries custom |
+| Logs/observabilidad | nativos en consola | CloudWatch Logs + queries custom |
 
 **Cuando migrar de vuelta a WAF**: si el portfolio recibe ataques DDoS
 sostenidos >10k req/s por horas y CloudWatch billing dispara alarma de
@@ -324,21 +312,19 @@ Lambda invocations. El primer indicador sera la metrica `AutoBlacklistTriggered`
 
 | Fase | Deliverable | Estimacion |
 |------|-------------|------------|
-| Fase 1 | SAM template + 3 Lambdas hot path (contact_form, tracking_pixel, turnstile_validator) + API GW + 2 tablas Dynamo + SES (sin WAF) | 1-2 dias |
+| Fase 1 | SAM template + 2 Lambdas hot path (contact_form, tracking_pixel) + API GW + 2 tablas Dynamo + SES (sin WAF) | 1-2 dias |
 | Fase 1.5 | Modulo `common/rate_limit/` + 2 tablas rate_limit + reglas iniciales + integracion en contact_form/tracking_pixel | 1 dia |
-| Fase 2 | Cache module en `src/common/cache/` + tabla `cache` + tests + integracion en 3 Lambdas existentes | 1 dia |
-| Fase 3 | Neon project setup + migrations 001-005 + connection via psycopg3 layer | 1 dia |
+| Fase 2 | Cache module en `src/common/cache/` + tabla `cache` + tests + integracion en Lambdas existentes | 1 dia |
+| Fase 3 | Neon project setup + migrations + connection via psycopg3 layer | 1 dia |
 | Fase 4 | stream_processor Lambda + Streams enabled en Dynamo tables + DLQ + idempotency log | 1-2 dias |
-| Fase 5 | aggregator Lambda + EventBridge cron + materialized views + daily_metrics | 1-2 dias |
-| Fase 6 | Frontend integration (ContactForm.astro + TrackingPixel.astro + CookieBanner.astro en packages/ui) | 1-2 dias |
-| Fase 7 | Dashboard (Astro page protegida con basic auth o magic link) que consulta Neon | 2-3 dias |
-| Fase 8 | Observability dashboard + alarms + smoke tests + runbook | 1 dia |
+| Fase 5 | Frontend integration (ContactForm.astro + TrackingPixel.astro + CookieBanner.astro en packages/ui) | 1-2 dias |
+| Fase 6 | Smoke tests + runbook + observability on-demand | 1 dia |
 
-**Total estimado**: 9-15 dias de trabajo (no full-time).
+**Total estimado**: 6-10 dias de trabajo (no full-time).
 
-Cada fase es deployable independientemente. La fase 1 + 6 ya es un MVP
-funcional (sin analytics, solo form de contacto). Las fases 2-5 son
-incrementales y no rompen la 1.
+Cada fase es deployable independientemente. La fase 1 + 5 ya es un MVP
+funcional (solo form de contacto). Las fases 2-4 son incrementales y no
+rompen la 1.
 
 ---
 

@@ -34,7 +34,6 @@ AWS WAF es un Web Application Firewall que puede bloquear IPs por volumetria.
 |----------|-----------|---------|--------|
 | `/contact` | 3 req/5min per IP | 5 min | Estricto: max 3 requests en 5 minutos |
 | `/track` | 30 req/5min per IP | 5 min | Permisivo: telemetria de tracking pixel |
-| `/validate-turnstile` | 30 req/5min per IP | 5 min | Validacion interna, mismo que /track |
 
 WAF cuenta **dentro de la ventana de 5 min**. Luego resetea.
 

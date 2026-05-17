@@ -19,9 +19,9 @@
 
 - **Que es**: Secret key del widget Cloudflare Turnstile `Portfolio Backend`
   (sitekey publica `0x4AAAAAADPSoiQA_-LcRafo`).
-- **Quien lo lee**: Lambda `contact_form` para validar tokens contra
-  `https://challenges.cloudflare.com/turnstile/v0/siteverify`. Tambien
-  Lambda `turnstile_validator` (SPEC-007).
+- **Quien lo lee**: Lambda `contact_form` (via el modulo compartido
+  `common/turnstile.py`) para validar tokens contra
+  `https://challenges.cloudflare.com/turnstile/v0/siteverify`.
 - **Hostnames cubiertos**: `the-full-stack.com`, `hub/fintech/architect/leader/vibe.portfolio.the-full-stack.com`,
   `localhost`, `127.0.0.1`.
 - **Rotacion**: cuando el widget Turnstile se regenera en Cloudflare dashboard
@@ -38,14 +38,14 @@
   # 4. Redeploy frontend para nuevo sitekey publico
   ```
 
-- **IAM scope**: solo Lambdas `contact_form` y `turnstile_validator`
-  tienen `ssm:GetParameter` sobre este ARN especifico.
+- **IAM scope**: solo la Lambda `contact_form` tiene `ssm:GetParameter`
+  sobre este ARN especifico.
 
 ### `/portfolio/neon-url` (SecureString + KMS)
 
 - **Que es**: Connection string PostgreSQL del proyecto Neon
   (`postgresql://neondb_owner:***@ep-***.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require`).
-- **Quien lo lee**: Lambdas `stream_processor` y `aggregator` (SPEC-009 + SPEC-010).
+- **Quien lo lee**: Lambda `stream_processor` (SPEC-009).
 - **Rotacion**: cuando se rota el password del usuario `neondb_owner` en
   Neon Console > Roles. Comando:
 
@@ -59,8 +59,7 @@
   # 4. Actualizar DB_URL en docker/env/server/.{dev,local,prod}
   ```
 
-- **IAM scope**: solo Lambdas `stream_processor` y `aggregator` tienen
-  acceso a este ARN.
+- **IAM scope**: solo la Lambda `stream_processor` tiene acceso a este ARN.
 
 ### `/portfolio/owner-email` (String)
 
@@ -81,21 +80,6 @@
 - **Quien lo lee**: Lambda `contact_form` para `SendEmail.FromEmailAddress`.
 - **Rotacion**: solo si se cambia el domain o el alias. Requiere
   re-verificar la nueva address en SES.
-
-### `/portfolio/dashboard-password-hash` (SecureString + KMS) - SPEC-014
-
-- **Que es**: Hash bcrypt del password de acceso al dashboard analytics.
-- **Quien lo lee**: Lambda `dashboard_api` (SPEC-014) para validar basic auth.
-- **Rotacion**: manual cuando se rota el password del owner. Comando:
-
-  ```bash
-  # 1. Generar nuevo hash:
-  python -c "import bcrypt; print(bcrypt.hashpw(b'NUEVO_PASS', bcrypt.gensalt()).decode())"
-  # 2. Cargar a SSM:
-  python devtools/run.py serverless setup-ssm \
-    --name=/portfolio/dashboard-password-hash \
-    --key-id=alias/portfolio-lambdas
-  ```
 
 ## KMS key
 
@@ -125,7 +109,7 @@ aws kms update-alias --alias-name alias/portfolio-lambdas \
   --target-key-id "$NEW_KEY_ID" --region us-east-1
 
 # 3. Re-cifrar todos los SSM SecureStrings (cada parameter usando el nuevo KMS)
-for p in turnstile-secret neon-url dashboard-password-hash; do
+for p in turnstile-secret neon-url; do
   current=$(aws ssm get-parameter --name "/portfolio/$p" \
     --with-decryption --region us-east-1 --query 'Parameter.Value' --output text)
   aws ssm put-parameter --name "/portfolio/$p" \
@@ -195,10 +179,7 @@ Cada Lambda solo lee los parameters que necesita (least privilege).
 |--------|---------------|-------------|
 | `contact_form` | `/portfolio/turnstile-secret`, `/portfolio/owner-email`, `/portfolio/ses-from-address` | Si (solo turnstile-secret) |
 | `tracking_pixel` | ninguno | No |
-| `turnstile_validator` | `/portfolio/turnstile-secret` | Si |
 | `stream_processor` | `/portfolio/neon-url` | Si |
-| `aggregator` | `/portfolio/neon-url` | Si |
-| `dashboard_api` (SPEC-014) | `/portfolio/neon-url`, `/portfolio/dashboard-password-hash` | Si (ambos) |
 
 ## Politica de retencion CloudWatch Logs
 

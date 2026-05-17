@@ -39,8 +39,12 @@ import {
   saveContactRecord,
 } from '../lib/contact-storage'
 
+// `?render=explicit`: desactiva el render implicito de Turnstile (el que
+// escanea el DOM buscando `.cf-turnstile`). El widget se monta solo via
+// turnstile.render() explicito — evita el doble render y el warning
+// "a widget already exists in this container".
 const TURNSTILE_SCRIPT_URL =
-  'https://challenges.cloudflare.com/turnstile/v0/api.js'
+  'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 
 interface TurnstileGlobal {
   render?: (
@@ -576,10 +580,14 @@ export default function ContactFormReact({
           )}
         </div>
 
-        {/* Turnstile widget: solo se renderiza si NO hay bypass de tests */}
+        {/* Turnstile widget: solo se renderiza si NO hay bypass de tests.
+            La clase NO es `cf-turnstile`: esa clase dispara el render
+            implicito de Turnstile (que necesita data-sitekey en el div y
+            choca con el render explicito de mas abajo). El widget se monta
+            con turnstile.render() explicito sobre este ref. */}
         {!bypassTokenRef.current && (
           <div
-            className="cf-turnstile"
+            className="turnstile-widget"
             ref={turnstileContainerRef}
             data-testid="turnstile-container"
           />

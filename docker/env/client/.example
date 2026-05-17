@@ -27,6 +27,20 @@ PUBLIC_API_ENDPOINT=
 
 # Cloudflare Turnstile sitekey publica del widget Portfolio Backend.
 # Es publica (no es secreto): se inyecta en el HTML del frontend.
+#
+# IMPORTANTE: hay UN widget Turnstile POR ENTORNO (dev / stage / prod), cada
+# uno con su propio par sitekey + secret. El sitekey que va aqui DEBE emparejar
+# con el secret en SSM `/portfolio/{stage}/turnstile-secret` del mismo entorno;
+# si no emparejan, `siteverify` devuelve `invalid-input-secret` y el backend
+# responde 403 al form de contacto. Mapeo de los widgets "Portfolio Backend":
+#   .local  -> reusa el widget de dev   (su allowlist incluye localhost)
+#   .dev    -> widget "Portfolio Backend (dev)"
+#   .stage  -> widget "Portfolio Backend (stage)"
+#   .prod   -> widget "Portfolio Backend (prod)"
+# El sitekey de cada widget se ve en el dashboard de Cloudflare Turnstile;
+# el secret se rota con `serverless setup-ssm` (ver serverless-secrets.md).
+# En los deploys de Cloudflare Pages el sitekey vive como env var del proyecto
+# Pages (uno por app x entorno), no en estos archivos.
 PUBLIC_TURNSTILE_SITEKEY=
 
 # Sitekey publica del widget Turnstile (mismo valor que PUBLIC_TURNSTILE_SITEKEY;

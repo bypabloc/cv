@@ -296,6 +296,12 @@ Resources:
               Resource:
                 - !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/the-full-stack.com
                 - !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/no-reply@the-full-stack.com
+                # La domain identity the-full-stack.com tiene un default
+                # configuration set. SES v2 lo aplica a todo SendEmail desde
+                # esa identidad y exige permiso sobre el ARN del config set
+                # ademas del de la identidad — sin esto SES devuelve
+                # AccessDeniedException sobre el configuration-set.
+                - !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:configuration-set/my-first-configuration-set
       Events:
         PostContact:
           Type: Api

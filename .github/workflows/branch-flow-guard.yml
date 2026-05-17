@@ -1,0 +1,64 @@
+# @config branch-flow-guard.yml
+# @description Enforce del flujo de promocion dev -> stage -> main.
+#   Falla si un PR tiene como base una rama de entorno (main/stage) pero su
+#   head NO es la rama de origen permitida. Evita el salto dev -> main
+#   directo, que causa divergencia de hashes al promover luego dev -> stage.
+# @triggers pull_request (opened, reopened, synchronize, edited) a main o stage
+#
+# Reglas:
+#   - PR a `main`  -> head debe ser `stage` o `release/*`
+#   - PR a `stage` -> head debe ser `dev`
+#
+# Marcar este job como required status check en el ruleset de main y stage
+# para que el enforce sea real (no se puede mergear sin el check verde).
+name: Branch Flow Guard
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+    branches: [main, master, stage]
+
+jobs:
+  guard:
+    name: Validate promotion source
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check PR head matches the allowed promotion source
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          echo "PR: $HEAD -> $BASE"
+          case "$BASE" in
+            main|master)
+              # A produccion solo se promueve desde stage (o una release/* rebaseada desde stage).
+              case "$HEAD" in
+                stage|release/*)
+                  echo "OK: '$HEAD' es un origen valido para '$BASE'."
+                  ;;
+                *)
+                  echo "::error::PR a '$BASE' debe venir de 'stage' o 'release/*', no de '$HEAD'."
+                  echo "Flujo correcto: dev -> stage -> main. NUNCA dev -> main directo."
+                  echo "Ver .claude/rules/git-workflow.md (Branching strategy)."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            stage)
+              # A stage solo se promueve desde dev (o una release/* preparada desde dev).
+              case "$HEAD" in
+                dev|release/*)
+                  echo "OK: '$HEAD' es un origen valido para 'stage'."
+                  ;;
+                *)
+                  echo "::error::PR a 'stage' debe venir de 'dev' o 'release/*', no de '$HEAD'."
+                  echo "Flujo correcto: feature -> dev -> stage -> main."
+                  echo "Ver .claude/rules/git-workflow.md (Branching strategy)."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            *)
+              echo "OK: '$BASE' no es una rama de entorno; sin restriccion de origen."
+              ;;
+          esac

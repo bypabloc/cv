@@ -25,7 +25,7 @@ python devtools/run.py harness_init --quiet
    marketplace, cross). JSON válido y respeta `one_feature_at_a_time` por
    módulo. Si un módulo no tiene archivo, no es error (solo aviso).
 3. **Docker** — daemon corriendo y containers principales up
-4. **Branch** — la actual no debe ser protegida (master/dev/release)
+4. **Branch** — la actual no debe ser protegida (master/main/dev/stage)
 5. **`docs/progress/`** — limpio, sin temporales viejos de subagentes
 
 ## Cuando usarlo

@@ -23,7 +23,7 @@ serverless/
 ├── DEPLOYMENT.md                        # Pasos exactos para deploy primera vez
 ├── RUNBOOK.md                           # Operaciones (rotar secrets, ver logs, alarms)
 │
-├── template.yaml                        # SAM template: 5 Lambdas + API GW + DynamoDB tables + SES + IAM (sin WAF)
+├── template.yaml                        # SAM template: 3 Lambdas + API GW + DynamoDB tables + SES + IAM (sin WAF)
 ├── samconfig.toml                       # Config SAM por ambiente (dev, prod)
 ├── pyproject.toml                       # Dependencias compartidas (uv-managed)
 ├── uv.lock                              # Lockfile reproducible
@@ -47,6 +47,7 @@ serverless/
 │   │   ├── ip_extractor.py              # Lee CF-Connecting-IP (priority) o X-Forwarded-For
 │   │   ├── ulid.py                      # UUIDv7 generator (sorted by time)
 │   │   ├── validators.py                # Email regex + sanitizers (length, html-escape)
+│   │   ├── turnstile.py                 # Validacion Turnstile contra siteverify (modulo compartido)
 │   │   ├── types.py                     # TypedDicts compartidos (Event, Context, Response)
 │   │   ├── cache/                       # Sistema de cache con DynamoDB TTL (reusable)
 │   │   │   ├── __init__.py              # Exports: DynamoDBCache, cached, CacheStatus
@@ -73,7 +74,6 @@ serverless/
 │   │   ├── handler.py                   # def lambda_handler(event, context)
 │   │   ├── service.py                   # Logica de negocio (valida turnstile, persiste, envia email)
 │   │   ├── schemas.py                   # JSON Schema input + Pydantic models output
-│   │   ├── turnstile.py                 # Validacion del token contra siteverify
 │   │   ├── persistence.py               # save_contact(payload) -> contact_id
 │   │   ├── notification.py              # send_owner_email(contact)
 │   │   ├── templates/
@@ -91,14 +91,7 @@ serverless/
 │   │   ├── enrichment.py                # CF-IPCountry, CF-Connecting-IP, parse User-Agent
 │   │   └── requirements.txt
 │   │
-│   ├── turnstile_validator/             # Lambda 3: POST /validate-turnstile (interno)
-│   │   ├── __init__.py
-│   │   ├── handler.py                   # Endpoint dedicado para validar tokens (uso futuro)
-│   │   ├── service.py                   # POST a challenges.cloudflare.com/turnstile/v0/siteverify
-│   │   ├── schemas.py
-│   │   └── requirements.txt
-│   │
-│   ├── stream_processor/                # Lambda 4: DynamoDB Streams -> Neon PG
+│   ├── stream_processor/                # Lambda 3: DynamoDB Streams -> Neon PG
 │   │   ├── __init__.py
 │   │   ├── handler.py                   # Procesa event['Records'][i] del Stream
 │   │   ├── service.py                   # Parsea NewImage/OldImage, batch UPSERT a PG
@@ -106,13 +99,6 @@ serverless/
 │   │   ├── pg_writer.py                 # psycopg3 conn cached + UPSERT prepared statements
 │   │   ├── retries.py                   # DLQ + idempotency key (event_id) para reprocessing
 │   │   └── requirements.txt             # psycopg[binary]>=3.2 + powertools + boto3
-│   │
-│   ├── aggregator/                      # Lambda 5: EventBridge cron diario -> PG aggregates
-│   │   ├── __init__.py
-│   │   ├── handler.py                   # Scheduled trigger 03:00 UTC daily
-│   │   ├── service.py                   # Compute daily metrics, refresh materialized views
-│   │   ├── queries.py                   # SQL queries para agregar tracking_events
-│   │   └── requirements.txt
 │   │
 │   └── layers/
 │       ├── common_python/               # Lambda Layer compartido (Powertools + httpx)
@@ -123,12 +109,12 @@ serverless/
 │           └── README.md
 │
 ├── migrations/                          # SQL migrations para Neon PostgreSQL
-│   ├── 001_init_schema.sql              # CREATE TABLE contacts, tracking_events (partitioned)
+│   ├── 001_init_schema.sql              # CREATE TABLE contacts, tracking_events, processed_stream_events
 │   ├── 001_init_schema.down.sql         # Rollback (DROP TABLE)
 │   ├── 002_indexes.sql                  # GIN, BRIN, B-tree compuestos
-│   ├── 003_materialized_views.sql       # mv_contacts_by_month_niche, etc.
-│   ├── 004_aggregates_tables.sql        # tracking_daily_aggregates, daily_metrics
-│   └── 005_pg_partman_setup.sql         # Auto-create partitions mensuales para tracking_events
+│   ├── 002_indexes.down.sql             # Rollback de indices
+│   ├── 005_migrations_log.sql           # Tabla schema_migrations (auditoria del runner)
+│   └── 005_migrations_log.down.sql      # Rollback
 │
 ├── events/                              # Sample events para sam local invoke
 │   ├── contact_form_valid.json          # POST /contact con token Turnstile valido (mocked)
@@ -138,11 +124,9 @@ serverless/
 │   ├── tracking_pixel_valid.json
 │   ├── tracking_pixel_with_utm.json
 │   ├── tracking_pixel_no_session.json
-│   ├── turnstile_validator_internal.json
 │   ├── stream_record_contact_insert.json    # Sample DynamoDB Streams record (INSERT contacts)
 │   ├── stream_record_tracking_insert.json   # Sample Stream record (INSERT tracking)
-│   ├── stream_record_tracking_remove.json   # TTL-driven REMOVE event
-│   └── aggregator_scheduled.json            # Sample EventBridge scheduled event
+│   └── stream_record_tracking_remove.json   # TTL-driven REMOVE event
 │
 ├── tests/                               # pytest + moto (mock AWS) + responses (mock httpx)
 │   ├── conftest.py                      # Fixtures globales (mock_dynamodb, mock_ses, mock_ssm)
@@ -154,21 +138,18 @@ serverless/
 │   │   │   ├── test_ip_extractor.py
 │   │   │   ├── test_responses.py
 │   │   │   ├── test_validators.py
+│   │   │   ├── test_turnstile.py
 │   │   │   └── test_ulid.py
 │   │   ├── contact_form/
 │   │   │   ├── test_handler.py
 │   │   │   ├── test_service.py
-│   │   │   ├── test_turnstile.py
 │   │   │   ├── test_persistence.py
 │   │   │   └── test_notification.py
-│   │   ├── tracking_pixel/
-│   │   │   ├── test_handler.py
-│   │   │   ├── test_service.py
-│   │   │   ├── test_enrichment.py
-│   │   │   └── test_persistence.py
-│   │   └── turnstile_validator/
+│   │   └── tracking_pixel/
 │   │       ├── test_handler.py
-│   │       └── test_service.py
+│   │       ├── test_service.py
+│   │       ├── test_enrichment.py
+│   │       └── test_persistence.py
 │   │
 │   └── integration/                     # E2E contra sam local start-api + moto
 │       ├── test_contact_flow.py         # POST /contact -> DynamoDB write + SES send
@@ -683,115 +664,7 @@ CAPACIDAD:
   - Lag esperado: 5-30s entre write a Dynamo y read en PG
 ```
 
-## 4.6. Diagrama de flujo: aggregator (EventBridge cron diario)
-
-```
-            EventBridge Scheduled Rule
-                    "cron(0 3 * * ? *)"
-                    (todos los dias 03:00 UTC)
-                    |
-                    | 1. Scheduled trigger
-                    v
-            +----------------------+
-            | Lambda:              |
-            | aggregator           |   Python 3.13 arm64
-            | 1024MB, 5min timeout |   Layer: postgres_python
-            +----------------------+
-                    |
-                    | 2. Calcula rango temporal
-                    |    yesterday = today - 1 day
-                    v
-            +----------------------+
-            | queries.py           |
-            | Multiple SQL queries |
-            | sobre tracking_events|
-            +----------------------+
-                    |
-                    | 3a. Daily aggregates por (date, page, utm)
-                    v
-            +----------------------+
-            | INSERT INTO          |
-            | tracking_daily_      |
-            | aggregates           |   (PK: date+page+utm_source)
-            | SELECT               |
-            |   date_trunc('day',  |
-            |     created_at),     |
-            |   path,              |
-            |   utm_source,        |
-            |   COUNT(*),          |
-            |   COUNT(DISTINCT     |
-            |     session_id),     |
-            |   COUNT(DISTINCT ip) |
-            | FROM tracking_events |
-            | WHERE created_at >=  |
-            |   yesterday          |
-            | GROUP BY 1,2,3       |
-            | ON CONFLICT DO UPDATE|
-            +----------------------+
-                    |
-                    | 3b. Daily metrics (1 row/dia con KPIs)
-                    v
-            +----------------------+
-            | INSERT INTO          |
-            | daily_metrics        |   (PK: date)
-            | SELECT               |
-            |   date,              |
-            |   total_pageviews,   |
-            |   unique_sessions,   |
-            |   total_contacts,    |
-            |   conversion_rate,   |
-            |   bounce_rate,       |
-            |   avg_session_dur,   |
-            |   top_landing_page,  |
-            |   top_utm_source     |
-            | FROM ...             |
-            +----------------------+
-                    |
-                    | 3c. Refresh materialized views
-                    v
-            +----------------------+
-            | REFRESH MATERIALIZED |
-            | VIEW CONCURRENTLY    |
-            |   mv_contacts_by_    |
-            |     month_niche;     |
-            | REFRESH MATERIALIZED |
-            | VIEW CONCURRENTLY    |
-            |   mv_session_journey;|
-            +----------------------+
-                    |
-                    | 4. Drop partitions viejas (>60d)
-                    v
-            +----------------------+
-            | SELECT               |
-            |   partman.run_       |
-            |   maintenance_proc();|
-            | (pg_partman          |
-            |  auto-creates next   |
-            |  month partition +   |
-            |  drops > retention)  |
-            +----------------------+
-                    |
-                    v
-            +----------------------+
-            | logger.metric        |
-            | AggregationDuration  |
-            | AggregationRows      |
-            | -> CloudWatch        |
-            +----------------------+
-
-OBSERVABILIDAD (sin alarmas):
-  - X-Ray trace: Lambda -> psycopg3 -> Neon (cada query como segment)
-  - Logs estructurados JSON via Powertools @logger
-  - Retention 7d en CloudWatch Logs (free tier 5GB ingest/mes perpetuo)
-  - Monitoring on-demand: `serverless metrics --since=24h`
-
-POR QUE 03:00 UTC:
-  - Hora de bajo trafico (LATAM dormida, EU empezando)
-  - Permite ETL de las ultimas 24h de eventos
-  - Neon scale-up automatico al cron, scale-to-zero despues
-```
-
-## 4.7. Arquitectura completa hibrida (overview)
+## 4.6. Arquitectura completa hibrida (overview)
 
 ```
                        BROWSER (Astro page)
@@ -859,25 +732,11 @@ POR QUE 03:00 UTC:
                        |   0.5GB +       |
                        |   192h compute  |
                        |  Scale to zero  |
-                       +--------+--------+
-                                ^
-                                |
-                                | refresh materialized views
-                                | + insert daily_metrics
-                                |
-                       +--------+--------+
-                       | Lambda:         |
-                       | aggregator      |  <----- EventBridge
-                       | (cron 03:00 UTC)|         daily schedule
                        +-----------------+
 
 TABLAS EN Neon PG:
   - contacts (normalizada con CHECK + GIN to_tsvector)
-  - tracking_events (range partitioned por mes via pg_partman)
-  - tracking_daily_aggregates (PK: date+page+utm_source)
-  - daily_metrics (1 row/dia, KPIs derivados)
-  - mv_contacts_by_month_niche (materialized view)
-  - mv_session_journey (materialized view, LAG/LEAD)
+  - tracking_events (range partitioned por mes)
   - processed_stream_events (idempotency log)
 
 QUE VIVE DONDE:
@@ -893,8 +752,6 @@ QUE VIVE DONDE:
   | Window funcs / LAG/LEAD  | NO        | YES     |
   | Joins entre tablas       | NO        | YES     |
   | Full-text search msg     | NO        | YES GIN |
-  | Daily KPIs dashboard     | NO        | YES     |
-  | Session journey          | NO        | YES MV  |
   +--------------------------+-----------+---------+
 
 LATENCIA HOT PATH (form submit -> response):
@@ -907,9 +764,8 @@ LATENCIA STREAM REPLICA (DynamoDB write -> visible en PG):
 ## 4.8. Diagrama de flujo: cache module (src/common/cache/)
 
 Sistema de cache de proposito general con DynamoDB TTL. Cualquier Lambda
-del modulo (contact-form, tracking-pixel, turnstile-validator,
-stream-processor, aggregator) puede usarlo via import desde
-`src/common/cache/`. Detalle en
+del modulo (contact-form, tracking-pixel, stream-processor) puede usarlo
+via import desde `src/common/cache/`. Detalle en
 `.claude/docs/dynamodb-cache/` (8 docs) + skill `dynamodb-cache`.
 
 ```
@@ -1039,12 +895,10 @@ COSTO ESTIMADO (este portfolio):
 
 | Use case | Lambda(s) | Namespace | TTL | stale_for | Tags |
 |----------|-----------|-----------|-----|-----------|------|
-| Turnstile secret (SSM) | contact-form, turnstile-validator | `ssm` | 300s | 600s | `[secrets]` |
-| Neon connection URL (SSM) | stream-processor, aggregator | `ssm` | 300s | 600s | `[secrets]` |
+| Turnstile secret (SSM) | contact-form | `ssm` | 300s | 600s | `[secrets]` |
+| Neon connection URL (SSM) | stream-processor | `ssm` | 300s | 600s | `[secrets]` |
 | Owner email (SSM) | contact-form | `ssm` | 3600s | 7200s | `[config]` |
 | Country lookups (IP -> country) | tracking-pixel | `geo` | 86400s | 172800s | `[geo]` |
-| Daily metrics (Neon agg) | dashboard futuro | `pg-query` | 1800s | 3600s | `[analytics, daily]` |
-| Top landing pages (Neon mv) | dashboard futuro | `pg-query` | 1800s | 3600s | `[analytics, mv]` |
 | User-Agent parsed (UA -> device/browser) | tracking-pixel | `ua-parse` | 86400s | 172800s | `[parsing]` |
 
 USO TIPICO en contact_form:
@@ -1245,7 +1099,6 @@ COSTO:
 |----------|-------|--------|--------|-------------------|
 | POST /contact | 3 | 300s | throttle (429) | `endpoint#/contact` |
 | POST /track | 30 | 300s | throttle (429) | `endpoint#/track` |
-| POST /validate-turnstile | 5 | 60s | throttle (429) | `endpoint#/validate-turnstile` |
 | Default (sin regla explicita) | 10 | 60s | throttle | `endpoint#*` (fallback) |
 
 ### Que se cachea
@@ -1435,9 +1288,9 @@ COSTO:
 
 ## 6.5. Diagrama de datos: tablas Neon PostgreSQL 18
 
-Replicado desde DynamoDB Streams + agregado por aggregator cron. Las
-tablas en PG son normalizadas, tipadas y con CHECK constraints. Ver
-detalle completo en `.claude/docs/postgresql-18-analytics/02-schema-design-this-project.md`.
+Replicado desde DynamoDB Streams por el stream_processor. Las tablas en
+PG son normalizadas, tipadas y con CHECK constraints. Ver detalle completo
+en `.claude/docs/postgresql-18-analytics/02-schema-design-this-project.md`.
 
 ```
 +--------------------------------------------+
@@ -1506,39 +1359,6 @@ Partitions (auto-creadas por pg_partman):
   - Drop automatico despues de 60d
 
 +--------------------------------------------+
-|  Tabla: tracking_daily_aggregates          |
-|  (computada por aggregator Lambda diario)  |
-+--------------------------------------------+
-| date            DATE NOT NULL              |  PK part
-| path            TEXT NOT NULL              |  PK part
-| utm_source      TEXT NOT NULL DEFAULT ''   |  PK part
-| pageviews       INTEGER NOT NULL           |
-| unique_sessions INTEGER NOT NULL           |
-| unique_ips      INTEGER NOT NULL           |
-| countries       INTEGER NOT NULL           |
-| device_breakdown JSONB                     |  {desktop:N, mobile:N, tablet:N}
-| computed_at     TIMESTAMPTZ NOT NULL       |
-| PRIMARY KEY (date, path, utm_source)       |
-+--------------------------------------------+
-
-+--------------------------------------------+
-|  Tabla: daily_metrics                      |
-|  (1 row por dia con KPIs derivados)        |
-+--------------------------------------------+
-| date            DATE PRIMARY KEY           |
-| total_pageviews    INTEGER                 |
-| unique_sessions    INTEGER                 |
-| total_contacts     INTEGER                 |
-| conversion_rate    NUMERIC(5,4)            |  contacts / sessions
-| bounce_rate        NUMERIC(5,4)            |  sessions con 1 sola pagina
-| avg_session_secs   INTEGER                 |
-| top_landing_page   TEXT                    |
-| top_utm_source     TEXT                    |
-| top_country        CHAR(2)                 |
-| computed_at        TIMESTAMPTZ             |
-+--------------------------------------------+
-
-+--------------------------------------------+
 |  Tabla: processed_stream_events            |
 |  (idempotency log del stream_processor)    |
 +--------------------------------------------+
@@ -1547,11 +1367,6 @@ Partitions (auto-creadas por pg_partman):
 | event_name      TEXT NOT NULL              |  INSERT|MODIFY|REMOVE
 | processed_at    TIMESTAMPTZ NOT NULL       |
 +--------------------------------------------+
-
-Materialized views (refreshed por aggregator):
-  - mv_contacts_by_month_niche
-  - mv_session_journey (LAG/LEAD reconstruction)
-  - mv_top_landing_pages
 ```
 
 ---
@@ -1606,9 +1421,6 @@ template.yaml (resources)
 |       - DynamoDBCrudPolicy: rate_limit_buckets
 |       - DynamoDBCrudPolicy: cache
 |
-+-- AWS::Serverless::Function           TurnstileValidatorFunction
-|     (similar, sin DynamoDB ni SES)
-|
 +-- AWS::Serverless::Function           StreamProcessorFunction
 |     CodeUri: src/stream_processor/
 |     Runtime: python3.13
@@ -1648,27 +1460,6 @@ template.yaml (resources)
 |           DestinationConfig:
 |             OnFailure:
 |               Destination: !GetAtt StreamProcessorDLQ.Arn
-|
-+-- AWS::Serverless::Function           AggregatorFunction
-|     CodeUri: src/aggregator/
-|     Runtime: python3.13
-|     Architectures: [arm64]
-|     MemorySize: 1024
-|     Timeout: 300                          # 5 min para agregaciones diarias
-|     Layers: [!Ref CommonLayer, !Ref PostgresLayer]
-|     Environment:
-|       Variables:
-|         NEON_URL_PARAM: /portfolio/neon-url
-|         CACHE_TABLE: !Ref CacheTable
-|     Policies:
-|       - Statement (ssm:GetParameter /portfolio/neon-url + kms:Decrypt)
-|       - DynamoDBCrudPolicy: cache         # Invalida pg-query tags
-|     Events:
-|       DailySchedule:
-|         Type: Schedule
-|         Properties:
-|           Schedule: cron(0 3 * * ? *)     # 03:00 UTC daily
-|           Enabled: true
 |
 +-- AWS::SQS::Queue                     StreamProcessorDLQ
 |     MessageRetentionPeriod: 1209600       # 14 dias

@@ -30,9 +30,7 @@ STAGE_DESCRIPTIONS = {
 VALID_FUNCTIONS = [
     'contact-form',
     'tracking-pixel',
-    'turnstile-validator',
     'stream-processor',  # DynamoDB Streams -> Neon PG
-    'aggregator',  # Cron diario agregaciones a Neon PG
 ]
 
 # Tablas DynamoDB administradas por el modulo. Usadas por subcomandos

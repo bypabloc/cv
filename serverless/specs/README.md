@@ -1,6 +1,6 @@
 # Specs del backend serverless
 
-> Descomposicion atomica del backend del portfolio (5 Lambdas + API GW +
+> Descomposicion atomica del backend del portfolio (3 Lambdas + API GW +
 > 5 tablas DynamoDB + Neon PG + SES + Turnstile) en specs ejecutables
 > independientemente.
 
@@ -15,17 +15,28 @@
 | [SPEC-004](SPEC-004-rate-limit-module.md) | Rate-limit module en `common/rate_limit/` + 2 tablas | done | 1 dia | SPEC-002, SPEC-003 |
 | [SPEC-005](SPEC-005-contact-form-lambda.md) | Lambda `contact_form` (POST /contact + Turnstile + SES + rate-limit) | done | 1 dia | SPEC-002, SPEC-003, SPEC-004 |
 | [SPEC-006](SPEC-006-tracking-pixel-lambda.md) | Lambda `tracking_pixel` (POST /track + enrichment + rate-limit) | done | 0.5 dia | SPEC-002, SPEC-003, SPEC-004 |
-| [SPEC-007](SPEC-007-turnstile-validator-lambda.md) | Lambda `turnstile_validator` (POST /validate-turnstile) | done | 0.5 dia | SPEC-002, SPEC-003 |
-| [SPEC-008](SPEC-008-neon-setup-migrations.md) | Neon project + migrations SQL 001-005 + psycopg3 layer | done | 1 dia | SPEC-001 |
+| [SPEC-008](SPEC-008-neon-setup-migrations.md) | Neon project + migrations SQL + psycopg3 layer | done | 1 dia | SPEC-001 |
 | [SPEC-009](SPEC-009-stream-processor-lambda.md) | Lambda `stream_processor` (Streams -> Neon) + DLQ | done | 1-2 dias | SPEC-005, SPEC-006, SPEC-008 |
-| [SPEC-010](SPEC-010-aggregator-lambda.md) | Lambda `aggregator` (cron 03:00 UTC) + materialized views | done | 1-2 dias | SPEC-008, SPEC-009 |
 | [SPEC-011](SPEC-011-ses-dns-production.md) | SES domain verification (DKIM/SPF/DMARC) + production access | done | 0.5 dia + 24-48h espera | SPEC-000 |
 | [SPEC-012](SPEC-012-frontend-contact-form.md) | Componente `ContactForm.astro` en `packages/ui` + integracion 6 apps | done | 1 dia | SPEC-005 |
 | [SPEC-013](SPEC-013-frontend-tracking-pixel.md) | Componentes `TrackingPixel.astro` + `CookieBanner.astro` + GDPR opt-in | done | 1 dia | SPEC-006, SPEC-012 |
-| [SPEC-014](SPEC-014-dashboard-analytics.md) | Dashboard Astro protegido que consulta Neon (basic auth) | done | 2-3 dias | SPEC-010 |
 | [SPEC-015](SPEC-015-observability-runbook.md) | RUNBOOK + DEPLOYMENT + smoke tests + AWS Billing Alarm | done | 0.5 dia | TODAS |
 
-**Total estimado**: 12-18 dias de trabajo no full-time (depende de paralelizacion).
+**Total estimado**: 9-13 dias de trabajo no full-time (depende de paralelizacion).
+
+## Specs descartadas
+
+Tres specs se descartaron y sus componentes se eliminaron del backend
+(las specs individuales `SPEC-007`, `SPEC-010` y `SPEC-014` ya no existen):
+
+| Spec | Componente | Razon del descarte |
+| --- | --- | --- |
+| SPEC-007 | Lambda `turnstile_validator` (`POST /validate-turnstile`) | Endpoint sin consumidor. La validacion Turnstile vive ahora en `src/common/turnstile.py` como modulo compartido (lo usa `contact_form`). |
+| SPEC-014 | Lambda `dashboard_api` (`GET /dashboard/{action}`) | El dashboard de analytics se descarto. |
+| SPEC-010 | Lambda `aggregator` (cron diario + materialized views) | Su unico consumidor era el dashboard (SPEC-014). Sin dashboard, queda sin proposito. Se eliminaron tambien las migrations `003`/`004` (materialized views + tablas de agregados). |
+
+`stream_processor` (SPEC-009) se mantiene: sigue replicando `contacts` y
+`tracking_events` crudos a Neon.
 
 ## Grafo de dependencias
 
@@ -42,16 +53,10 @@ SPEC-000 (setup)
     |       |       |       |       |
     |       |       |       |       +--> SPEC-005 (contact_form)
     |       |       |       |       +--> SPEC-006 (tracking_pixel)
-    |       |       |       |
-    |       |       |       +--> SPEC-007 (turnstile_validator)
     |       |       |
     |       |       +-------------------> SPEC-008 (Neon + migrations)
     |       |                                 |
     |       |                                 +--> SPEC-009 (stream_processor)
-    |       |                                 |        |
-    |       |                                 |        +--> SPEC-010 (aggregator)
-    |       |                                 |                   |
-    |       |                                 |                   +--> SPEC-014 (dashboard)
     |       |                                 |
     |       |   SPEC-005 ----------------------+
     |       |   SPEC-006 ----------------------+ (escriben a Dynamo, alimentan Stream)
@@ -74,9 +79,8 @@ SPEC-015 (RUNBOOK + smoke) depende de todas, ejecuta al final
 | Grupo | Specs que se pueden ejecutar en paralelo | Razon |
 |-------|------------------------------------------|-------|
 | Grupo A | SPEC-000, SPEC-011 (DNS) | DNS de SES no bloquea setup AWS |
-| Grupo B | SPEC-003, SPEC-007 | Cache no depende del Turnstile validator y viceversa |
-| Grupo C | SPEC-005, SPEC-006, SPEC-007 | Las 3 Lambdas hot path despues de common + cache + rate-limit |
-| Grupo D | SPEC-012, SPEC-013 | Frontends de form y tracking se pueden hacer en paralelo |
+| Grupo B | SPEC-005, SPEC-006 | Las 2 Lambdas hot path despues de common + cache + rate-limit |
+| Grupo C | SPEC-012, SPEC-013 | Frontends de form y tracking se pueden hacer en paralelo |
 
 ## Definition of Done (transversal a TODAS las specs)
 

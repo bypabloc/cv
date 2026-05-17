@@ -63,7 +63,7 @@ _VALID_ACTIONS = [
     'clear-buckets',
 ]
 
-_VALID_ENDPOINTS = ['/contact', '/track', '/validate-turnstile', '*']
+_VALID_ENDPOINTS = ['/contact', '/track', '*']
 
 
 def _ensure_aws_cli() -> bool:

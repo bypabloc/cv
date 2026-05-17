@@ -102,7 +102,9 @@ CREATE TABLE IF NOT EXISTS tracking_events_default PARTITION OF tracking_events 
 -- =============================================================================
 -- Cada DynamoDB Stream record tiene un eventID unico. El stream_processor
 -- verifica este eventID antes de insertar en contacts/tracking_events.
--- TTL implicito via cleanup nightly por aggregator (>30 dias).
+-- Sin TTL automatico: la tabla crece con cada evento procesado. Volumen
+-- bajo (~200 contacts/mes + ~15k tracking/mes), aceptable en el free tier
+-- de Neon. Si crece, hacer un cleanup manual de filas >30 dias.
 CREATE TABLE IF NOT EXISTS processed_stream_events (
     event_id TEXT PRIMARY KEY,
     processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),

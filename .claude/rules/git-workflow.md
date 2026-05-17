@@ -78,20 +78,63 @@ style(components): unifica spacing del Footer con tokens del DS
 
 ## Branching strategy
 
-- `main` (o `master`) — produccion / live site desplegado
-- `dev` — desarrollo, rama base para features (opcional en proyectos solo)
+Ramas de entorno (protegidas, deploy automatico a Cloudflare Pages):
+
+- `main` — produccion / live site desplegado (`the-full-stack.com`)
+- `stage` — release candidate (`*.portfolio.stage.the-full-stack.com`)
+- `dev` — desarrollo, rama base para features (`*.portfolio.dev.the-full-stack.com`)
+
+Ramas de trabajo (efimeras, separador `/` obligatorio para VS Code):
+
 - `feature/<nombre>` — nuevas funcionalidades / paginas
 - `fix/<nombre>` — correcciones
 - `chore/<nombre>` — mantenimiento, deps, configs
 - `docs/<nombre>` — solo cambios de documentacion
-- Separador `/` obligatorio para VS Code
+- `release/<nombre>` — promocion de entorno (ver flujo abajo)
+
+## Flujo de promocion dev -> stage -> main (OBLIGATORIO)
+
+Las ramas de entorno se promueven SIEMPRE en cadena, nunca salteando:
+
+```text
+feature/* --PR--> dev --PR--> stage --PR--> main
+```
+
+Reglas duras:
+
+- Un PR a `main` SOLO puede tener como head `stage` (o una `release/*`
+  rebaseada desde `stage`). NUNCA `dev -> main` directo.
+- Un PR a `stage` SOLO puede tener como head `dev` (o una `release/*`).
+- Enforced por el workflow `branch-flow-guard.yml` + ruleset de GitHub.
+
+**Por que NUNCA `dev -> main` directo**: si un commit llega a `main` sin
+pasar por `stage`, la siguiente promocion `dev -> stage` (merge rebase)
+le reescribe el hash. Resultado: el mismo cambio con SHA distinto en
+`main` y en `stage` -> el PR `stage -> main` da conflicto fantasma.
+
+### Como promover
+
+1. `dev -> stage`: `gh pr create --base stage --head dev`.
+2. `stage -> main`: `gh pr create --base main --head stage`.
+3. Si el PR `stage -> main` da conflicto (commits que llegaron a `main`
+   sin pasar por `stage`): crear `release/promote-stage-to-main` desde
+   `origin/stage`, `git rebase origin/main` (git salta los commits ya
+   aplicados por patch-id), abrir el PR desde esa `release/*`.
+
+### Resincronizar tras un hotfix directo a main
+
+Si por emergencia un fix entra directo a `main`, propagarlo el MISMO dia
+a `stage` y `dev` para evitar la divergencia: PR `main -> stage` y
+`stage -> dev` (o cherry-pick controlado). No dejar ramas divergentes.
 
 ## Merge strategy
 
-- **Rebase-only** — no merge commits, no squash
-- Historial lineal entre `dev` y `main`
+- **Rebase-only** — no merge commits, no squash. Configurado en GitHub:
+  solo `allow_rebase_merge` habilitado.
+- Historial lineal entre `dev`, `stage` y `main`
 - NUNCA force push en ramas compartidas
 - Resolver conflictos con rebase, no merge
+- `delete_branch_on_merge` activo: las ramas de trabajo se borran al mergear
 
 ## Antes de cada commit
 
@@ -113,7 +156,9 @@ style(components): unifica spacing del Footer con tokens del DS
 
 ## Pull Requests
 
-- Target: `dev` (features), `main` (releases) — o `main` directo si no hay rama `dev`
+- Target: `dev` para features/fixes/chores. Promocion a `stage` y `main`
+  solo via el flujo en cadena (ver "Flujo de promocion" arriba) — NUNCA
+  un PR de feature directo a `stage` o `main`.
 - CI ejecuta mismos quality gates que pre-push
 - Trigger: PRs a `main`/`master`/`dev`
 - Template automatico: `.github/pull_request_template.md` (si existe)

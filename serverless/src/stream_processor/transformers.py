@@ -119,6 +119,9 @@ def parse_tracking_record(record: dict[str, Any]) -> dict[str, Any] | None:
         'viewport_width': _to_int(image.get('viewport_width')),
         'viewport_height': _to_int(image.get('viewport_height')),
         'niche': image.get('niche'),
+        # Identificadores del evento (SPEC-102)
+        'event_id': image.get('event_id'),
+        'event_type_id': image.get('event_type_id'),
         'ip': image.get('ip'),
         'country': image.get('country'),
         'user_agent': image.get('user_agent'),

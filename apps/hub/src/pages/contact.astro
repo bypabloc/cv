@@ -2,6 +2,7 @@
 import { profile } from '@portfolio/content'
 import ContactForm from '@portfolio/ui/components/ContactFormReact.astro'
 import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
+import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
 
 const apiEndpoint = (import.meta.env.PUBLIC_API_ENDPOINT || '') as string
@@ -57,6 +58,10 @@ const siteUrl = (import.meta.env.SITE_URL ||
       </div>
     </section>
   </main>
+  <TrackingPixel
+    apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
+    niche="hub"
+  />
 </BaseLayout>
 
 <style>

@@ -4,6 +4,7 @@ import { buildPersonSchema } from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
 import Footer from '@portfolio/ui/components/Footer.astro'
 import MeshGradientBg from '@portfolio/ui/components/MeshGradientBg.astro'
+import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
 /**
  * @page index (es) — hub selector
  * @description Landing en the-full-stack.com. 5 cards para los 5 sitios.
@@ -104,6 +105,10 @@ const hubStyle = nicheTokensToCssVars('hub')
     name="Pablo Contreras"
     contacts={profile.contacts}
     locale="es"
+  />
+  <TrackingPixel
+    apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
+    niche="hub"
   />
 </BaseLayout>
 

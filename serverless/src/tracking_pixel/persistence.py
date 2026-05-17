@@ -43,13 +43,23 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
         'created_at': created_at,
         'expires_at': expires_at,
         'page_url': payload['page_url'],
+        # Identificadores del evento (SPEC-102): event_id da idempotencia,
+        # event_type_id es el tipo del catalogo event_types.
+        'event_id': payload['event_id'],
+        'event_type_id': payload['event_type_id'],
     }
 
     # Campos opcionales (solo si tienen valor)
     for optional_field in (
-        'page_title', 'page_path', 'referrer',
-        'utm_source', 'utm_medium', 'utm_campaign',
-        'utm_content', 'utm_term', 'niche',
+        'page_title',
+        'page_path',
+        'referrer',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'utm_term',
+        'niche',
     ):
         value = payload.get(optional_field)
         if value:
@@ -63,8 +73,13 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
 
     # Metadata enrichment
     for meta_field in (
-        'ip', 'country', 'user_agent',
-        'browser', 'browser_version', 'os', 'device_type',
+        'ip',
+        'country',
+        'user_agent',
+        'browser',
+        'browser_version',
+        'os',
+        'device_type',
     ):
         if payload.get(meta_field):
             item[meta_field] = payload[meta_field]

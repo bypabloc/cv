@@ -74,8 +74,11 @@ else
   log_fail "OPTIONS /contact => ${HTTP_CODE} (esperado 200/204)"
 fi
 
-# 3. Test POST /contact sin Turnstile token (espera 400 INVALID_INPUT)
-log_info "Test POST /contact sin cf_token (espera 400)..."
+# 3. Test POST /contact sin Turnstile token (espera 403 CAPTCHA_INVALID)
+#    cf_token es opcional en el schema Pydantic (default ''); un token vacio
+#    sin bypass valido NO es un error de input (400) sino un rechazo de
+#    captcha -> TurnstileError, status_code 403 (ver common/exceptions.py).
+log_info "Test POST /contact sin cf_token (espera 403)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
   -X POST "${API_ENDPOINT}/contact" \
   -H "Content-Type: application/json" \
@@ -88,10 +91,10 @@ RESPONSE=$(curl -s -w "\n%{http_code}" \
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | head -n -1)
 
-if [[ "$HTTP_CODE" == "400" ]]; then
-  log_pass "POST /contact sin token => 400 (validacion correcta)"
+if [[ "$HTTP_CODE" == "403" ]]; then
+  log_pass "POST /contact sin token => 403 (captcha rechazado correctamente)"
 else
-  log_fail "POST /contact sin token => ${HTTP_CODE} (esperado 400). Body: ${BODY}"
+  log_fail "POST /contact sin token => ${HTTP_CODE} (esperado 403). Body: ${BODY}"
 fi
 
 # 4. Test POST /track con body valido post-Fase 1 (espera 204)

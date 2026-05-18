@@ -29,7 +29,12 @@ const remaining = Math.max(0, skills.length - visibleSkills.length)
       <p class="exp-card__company text-body">
         {
           companyUrl ? (
-            <a href={companyUrl} target="_blank" rel="noopener">
+            <a
+              href={companyUrl}
+              target="_blank"
+              rel="noopener"
+              data-track="experience_link_click"
+            >
               {company}
             </a>
           ) : (

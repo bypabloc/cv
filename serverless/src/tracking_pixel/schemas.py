@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import json
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
+
+# Tamano maximo del event_props serializado a JSON. event_props es un dict
+# libre con datos especificos por tipo de evento (href del link, scroll %,
+# campo del form). 2 KB acota el volumen y evita payloads abusivos.
+EVENT_PROPS_MAX_BYTES = 2048
 
 
 class TrackingEventInput(BaseModel):
@@ -43,6 +50,36 @@ class TrackingEventInput(BaseModel):
 
     # Opcional: cf_token de Turnstile invisible (best-effort, no enforced)
     cf_token: str | None = Field(default=None, max_length=2048)
+
+    # Datos especificos por tipo de evento (SPEC-200): href del link
+    # clickeado, profundidad de scroll, campo del form, codigo de error.
+    # Dict libre acotado en tamano; se replica a la columna jsonb de Neon.
+    event_props: dict[str, Any] | None = Field(default=None)
+
+    @field_validator('event_props')
+    @classmethod
+    def validate_event_props_size(
+        cls, v: dict[str, Any] | None
+    ) -> dict[str, Any] | None:
+        """
+        Valida que event_props serializado a JSON no exceda el limite.
+
+        event_props es un dict libre; un payload abusivo inflaria el item de
+        DynamoDB y la fila de Neon. Se serializa a JSON y se mide en bytes.
+        Si excede EVENT_PROPS_MAX_BYTES, lanza ValueError que Pydantic
+        convierte en ValidationError -> el handler responde 400 INVALID_INPUT.
+        """
+        if v is None:
+            return None
+        serialized = json.dumps(v, separators=(',', ':'))
+        size = len(serialized.encode('utf-8'))
+        if size > EVENT_PROPS_MAX_BYTES:
+            msg = (
+                f'event_props excede el tamano maximo '
+                f'({size} > {EVENT_PROPS_MAX_BYTES} bytes)'
+            )
+            raise ValueError(msg)
+        return v
 
     @field_validator('event_id', 'event_type_id')
     @classmethod

@@ -84,6 +84,12 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get(meta_field):
             item[meta_field] = payload[meta_field]
 
+    # event_props (SPEC-200): datos especificos por tipo de evento. Se guarda
+    # como atributo Map de DynamoDB. Nullable: solo si el cliente lo envio.
+    event_props = payload.get('event_props')
+    if event_props:
+        item['event_props'] = event_props
+
     table.put_item(Item=item)
 
     return {

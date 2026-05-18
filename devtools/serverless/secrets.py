@@ -32,7 +32,15 @@ _SSM_PARAMETERS: dict[str, dict[str, str]] = {
         'kind': 'SecureString',
     },
     '/portfolio/neon-url': {
-        'description': 'Neon PostgreSQL connection string (psycopg3)',
+        'description': 'Neon PostgreSQL connection string (legacy, fallback)',
+        'kind': 'SecureString',
+    },
+    '/portfolio/dev/neon-url': {
+        'description': 'Neon connection string del stage dev (psycopg3)',
+        'kind': 'SecureString',
+    },
+    '/portfolio/prod/neon-url': {
+        'description': 'Neon connection string del stage prod (psycopg3)',
         'kind': 'SecureString',
     },
     '/portfolio/owner-email': {

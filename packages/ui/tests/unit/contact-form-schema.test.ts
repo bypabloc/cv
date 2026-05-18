@@ -5,9 +5,11 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import {
+  buildContactPayload,
   ContactFormSchema,
   emptyValues,
   getFieldErrors,
+  SessionIdSchema,
 } from '../../src/lib/contact-form-schema'
 
 describe('ContactFormSchema', () => {
@@ -174,5 +176,121 @@ describe('emptyValues', () => {
       budget: '',
       timeline: '',
     })
+  })
+})
+
+describe('SessionIdSchema (SPEC-202)', () => {
+  it('Given session_id ausente When parse Then success (es opcional)', () => {
+    const result = SessionIdSchema.safeParse(undefined)
+    expect(result.success).toBe(true)
+  })
+
+  it('Given session_id de 32 chars When parse Then success', () => {
+    const result = SessionIdSchema.safeParse('a'.repeat(32))
+    expect(result.success).toBe(true)
+  })
+
+  it('Given session_id en el limite de 20 chars When parse Then success', () => {
+    const result = SessionIdSchema.safeParse('a'.repeat(20))
+    expect(result.success).toBe(true)
+  })
+
+  it('Given session_id en el limite de 64 chars When parse Then success', () => {
+    const result = SessionIdSchema.safeParse('a'.repeat(64))
+    expect(result.success).toBe(true)
+  })
+
+  it('Given session_id de 19 chars When parse Then error de minimo', () => {
+    const result = SessionIdSchema.safeParse('a'.repeat(19))
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        'session_id invalido (minimo 20 caracteres).',
+      )
+    }
+  })
+
+  it('Given session_id de 65 chars When parse Then error de maximo', () => {
+    const result = SessionIdSchema.safeParse('a'.repeat(65))
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        'session_id invalido (maximo 64 caracteres).',
+      )
+    }
+  })
+})
+
+describe('buildContactPayload (SPEC-202)', () => {
+  const baseValues = {
+    ...emptyValues(),
+    name: 'Pablo',
+    email: 'pacg1991@gmail.com',
+    message: 'Mensaje suficientemente largo para pasar.',
+  }
+
+  it('Given sessionId presente When build Then el payload incluye session_id [AC-1]', () => {
+    // Arrange
+    const sessionId = 'a'.repeat(32)
+
+    // Act
+    const payload = buildContactPayload(baseValues, {
+      niche: 'generic',
+      cfToken: 'tok',
+      sessionId,
+    })
+
+    // Assert
+    expect(payload.session_id).toBe(sessionId)
+    expect(payload.niche).toBe('generic')
+    expect(payload.cf_token).toBe('tok')
+    expect(payload.name).toBe('Pablo')
+  })
+
+  it('Given sessionId ausente When build Then el payload NO tiene la clave session_id [AC-2]', () => {
+    // Act
+    const payload = buildContactPayload(baseValues, {
+      niche: 'generic',
+      cfToken: 'tok',
+    })
+
+    // Assert
+    expect('session_id' in payload).toBe(false)
+  })
+
+  it('Given sessionId string vacio When build Then el payload NO tiene la clave session_id [AC-2]', () => {
+    // Act
+    const payload = buildContactPayload(baseValues, {
+      niche: 'generic',
+      cfToken: 'tok',
+      sessionId: '',
+    })
+
+    // Assert
+    expect('session_id' in payload).toBe(false)
+  })
+
+  it('Given campos opcionales vacios When build Then se descartan del payload', () => {
+    // Act
+    const payload = buildContactPayload(baseValues, {
+      niche: 'fintech',
+      cfToken: 'tok',
+    })
+
+    // Assert
+    expect('company' in payload).toBe(false)
+    expect('role' in payload).toBe(false)
+    expect('service_type' in payload).toBe(false)
+  })
+
+  it('Given campos con espacios When build Then se recortan los valores', () => {
+    // Act
+    const payload = buildContactPayload(
+      { ...baseValues, company: '  Acme  ' },
+      { niche: 'generic', cfToken: 'tok', sessionId: 'a'.repeat(20) },
+    )
+
+    // Assert
+    expect(payload.company).toBe('Acme')
   })
 })

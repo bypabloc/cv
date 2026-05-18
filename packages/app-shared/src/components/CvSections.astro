@@ -144,7 +144,12 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   nicheLabel={t.hero.nicheLabel}
   ctas={[
     { href: '#experience', label: t.hero.ctaPrimary, variant: 'primary' },
-    { href: cvHref, label: t.hero.ctaSecondary, variant: 'ghost' },
+    {
+      href: cvHref,
+      label: t.hero.ctaSecondary,
+      variant: 'ghost',
+      dataTrack: 'cv_download',
+    },
   ]}
 />
 

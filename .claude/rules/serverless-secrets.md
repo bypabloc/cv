@@ -64,19 +64,27 @@ Aplica SIEMPRE que se trabaje con:
   # y redeploy del frontend para el nuevo sitekey publico
   ```
 
-### `/portfolio/neon-url` (SecureString + KMS)
+### `/portfolio/{stage}/neon-url` (SecureString + KMS)
 
 - **Que es**: connection string PostgreSQL del proyecto Neon (pooled,
-  `sslmode=require`).
+  `sslmode=require`), una por stage para aislamiento dev/prod a nivel DB.
+- **Parametros**: `/portfolio/dev/neon-url` y `/portfolio/prod/neon-url`. El
+  `template.yaml` resuelve `SSM_NEON_URL_PATH: !Sub /portfolio/${Stage}/neon-url`
+  (SPEC-202, Fase 2). El `/portfolio/neon-url` plano queda como legacy/fallback.
 - **Quien lo lee**: Lambda `stream_processor`.
 - **Rotacion**: cuando se rota el password de `neondb_owner` en Neon Console:
 
   ```bash
   python devtools/run.py serverless setup-ssm \
-    --name=/portfolio/neon-url \
+    --name=/portfolio/dev/neon-url \
     --key-id=alias/portfolio-lambdas --env=dev
   # luego actualizar DB_URL en docker/env/server/.{dev,local,prod}
   ```
+
+> Pendiente operativo: `/portfolio/dev/neon-url` y `/portfolio/prod/neon-url`
+> se crearon en Fase 2 copiando el valor del `/portfolio/neon-url` legacy (que
+> apunta al branch Neon `production`). Para aislamiento real, rotar
+> `/portfolio/dev/neon-url` a la connection string del branch Neon `dev`.
 
   Detalle operativo de Neon: ver [neon-management.md](neon-management.md).
 

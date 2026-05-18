@@ -52,14 +52,26 @@ const {
   <footer class="proj-card__footer">
     {
       url && (
-        <a href={url} target="_blank" rel="noopener" class="proj-card__link">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener"
+          class="proj-card__link"
+          data-track="project_link_click"
+        >
           Live ↗
         </a>
       )
     }
     {
       repo && (
-        <a href={repo} target="_blank" rel="noopener" class="proj-card__link">
+        <a
+          href={repo}
+          target="_blank"
+          rel="noopener"
+          class="proj-card__link"
+          data-track="project_link_click"
+        >
           Repo ↗
         </a>
       )

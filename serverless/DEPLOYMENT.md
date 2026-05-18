@@ -85,16 +85,6 @@ aws kms create-alias --profile tfs-dev --region us-east-1 \
 
 ### 3. Cargar secrets a SSM Parameter Store
 
-Generar password del dashboard:
-
-```bash
-DASHBOARD_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(16))")
-DASHBOARD_HASH=$(python3 -c "import bcrypt; print(bcrypt.hashpw('$DASHBOARD_PASSWORD'.encode(), bcrypt.gensalt(rounds=12)).decode())")
-echo "Password (GUARDAR ESTE VALOR): $DASHBOARD_PASSWORD"
-```
-
-Guardar parametros:
-
 ```bash
 PROFILE=tfs-dev
 REGION=us-east-1
@@ -118,11 +108,6 @@ aws ssm put-parameter --profile $PROFILE --region $REGION \
   --name /portfolio/ses-from-address \
   --type String \
   --value "no-reply@<dominio-verificado>"
-
-aws ssm put-parameter --profile $PROFILE --region $REGION \
-  --name /portfolio/dashboard-password-hash \
-  --type SecureString --key-id alias/portfolio-lambdas \
-  --value "$DASHBOARD_HASH"
 ```
 
 Verificar:
@@ -211,8 +196,9 @@ DATABASE_URL="<NEON_URL_DEV>" python scripts/migrate.py up
 Verificar tablas:
 
 ```bash
-psql "<NEON_URL_DEV>" -c "\dt portfolio.*"
-# Espera: contacts, tracking_events, daily_metrics, top_pages_daily, migrations_log
+psql "<NEON_URL_DEV>" -c "\dt"
+# Espera: contacts, tracking_events, event_types,
+#         processed_stream_events, migrations_log
 ```
 
 ### 5. Smoke test
@@ -279,24 +265,15 @@ Cada app es un proyecto Pages separado. Configurado por Wrangler / API
 token (ver `.claude/docs/cloudflare/`). En CI/CD el push a `main`
 dispara el deploy.
 
-### 4. Activar dashboard
-
-URL: `https://the-full-stack.com/dashboard`
-Credenciales:
-
-- Usuario: `owner`
-- Password: el valor `DASHBOARD_PASSWORD` generado en Setup 3
-
 ## Post-deploy checklist
 
 - [ ] Stack `portfolio-backend-dev` en `CREATE_COMPLETE`
-- [ ] 5 Lambdas en estado `Active`
+- [ ] 3 Lambdas en estado `Active`
 - [ ] 5 tablas DynamoDB con `Status: ACTIVE`
 - [ ] API GW retorna 200 al `OPTIONS /contact`
 - [ ] Smoke test pasa (`scripts/smoke_test.sh dev`)
-- [ ] Migrations aplicadas en Neon (5 migrations en `migrations_log`)
+- [ ] Migrations aplicadas en Neon (registradas en `migrations_log`)
 - [ ] Email de prueba llega al `owner-email`
-- [ ] Dashboard accesible con basic auth
 - [ ] AWS Billing Alarm creada
 - [ ] Outputs actualizados en `docs/deployment-outputs-{dev,prod}.md`
 
@@ -309,7 +286,8 @@ Credenciales:
 | `No module named 'common'` en Lambda | `CodeUri`/`Handler` mal | Ver `template.yaml`: `CodeUri: src/`, `Handler: contact_form.handler.lambda_handler` |
 | `email-validator` import error | Layer no incluye `pydantic[email]` | Re-build layer con `pip install pydantic[email]` en `requirements.txt` |
 | Smoke test 502 en `/contact` | Lambda timeout o env var missing | Tail logs: `sam logs -n ContactFormFunction --stack-name portfolio-backend-dev --tail` |
-| Dashboard 500 en `/dashboard/summary` | Neon connection failed | Verificar `/portfolio/neon-url` apunta al branch correcto |
+| `POST /track` => 400 `INVALID_INPUT` | Body sin `event_type_id` o UUID malformado | Enviar `event_id` + `event_type_id` UUID validos (ver SPEC-102) |
+| `tracking_events` row sin replicar a Neon | StreamProcessor falla / Neon connection | Verificar `/portfolio/neon-url`; tail logs de `StreamProcessorFunction` |
 
 Mas casos en [RUNBOOK.md](RUNBOOK.md#troubleshooting).
 

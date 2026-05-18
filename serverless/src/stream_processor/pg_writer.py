@@ -54,8 +54,32 @@ def mark_event_processed(
         )
 
 
+def _adapt_event_props(payload: dict[str, Any]) -> dict[str, Any]:
+    """
+    Adapta event_props del payload al tipo jsonb de psycopg.
+
+    psycopg v3 no adapta un dict plano a jsonb por si solo: hay que envolverlo
+    con psycopg.types.json.Jsonb. Retorna una copia del payload con
+    event_props envuelto (o None si el evento no trae event_props).
+    """
+    from psycopg.types.json import Jsonb
+
+    adapted = dict(payload)
+    raw = adapted.get('event_props')
+    adapted['event_props'] = Jsonb(raw) if raw is not None else None
+    return adapted
+
+
 def upsert_contact(payload: dict[str, Any]) -> None:
-    """UPSERT en Neon.contacts."""
+    """
+    UPSERT en Neon.contacts.
+
+    session_id enlaza el contacto con tracking_events (correlacion via JOIN).
+    ip/country/user_agent siguen en el INSERT por compatibilidad de schema,
+    pero los contactos nuevos los reciben en NULL: contacts deja de duplicar
+    datos de origen (SPEC-202). Las columnas legacy conservan filas
+    historicas; solo se dejan de poblar.
+    """
     conn = _get_connection()
     with conn.cursor() as cur:
         cur.execute(
@@ -63,12 +87,12 @@ def upsert_contact(payload: dict[str, Any]) -> None:
             INSERT INTO contacts (
                 id, stream_event_id, created_at, name, email, message,
                 company, role, service_type, budget, timeline, niche,
-                ip, country, user_agent
+                session_id, ip, country, user_agent
             ) VALUES (
                 %(id)s, %(stream_event_id)s, %(created_at)s, %(name)s,
                 %(email)s, %(message)s, %(company)s, %(role)s,
                 %(service_type)s, %(budget)s, %(timeline)s, %(niche)s,
-                %(ip)s::inet, %(country)s, %(user_agent)s
+                %(session_id)s, %(ip)s::inet, %(country)s, %(user_agent)s
             )
             ON CONFLICT (id) DO NOTHING
             """,
@@ -87,7 +111,7 @@ def upsert_tracking(payload: dict[str, Any]) -> None:
                 page_url, page_title, page_path, referrer,
                 utm_source, utm_medium, utm_campaign, utm_content, utm_term,
                 viewport_width, viewport_height, niche,
-                event_id, event_type_id, ip, country,
+                event_id, event_type_id, event_props, ip, country,
                 user_agent, browser, browser_version, os, device_type
             ) VALUES (
                 %(session_id)s, %(page_id)s, %(stream_event_id)s,
@@ -96,12 +120,12 @@ def upsert_tracking(payload: dict[str, Any]) -> None:
                 %(utm_source)s, %(utm_medium)s, %(utm_campaign)s,
                 %(utm_content)s, %(utm_term)s,
                 %(viewport_width)s, %(viewport_height)s, %(niche)s,
-                %(event_id)s, %(event_type_id)s,
+                %(event_id)s, %(event_type_id)s, %(event_props)s,
                 %(ip)s::inet, %(country)s, %(user_agent)s,
                 %(browser)s, %(browser_version)s, %(os)s, %(device_type)s
             )
             """,
-            payload,
+            _adapt_event_props(payload),
         )
 
 

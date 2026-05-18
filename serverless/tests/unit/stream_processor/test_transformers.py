@@ -72,6 +72,83 @@ class TestParseContactRecord:
         }
         assert parse_contact_record(record) is None
 
+    def test_when_insert_with_session_id_then_payload_includes_it(
+        self,
+    ) -> None:
+        """
+        Given INSERT contacts con session_id en el image [AC-6],
+        When parse_contact_record,
+        Then el payload incluye session_id con ese valor (correlacion).
+        """
+        record = {
+            'eventID': 'evt-003',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'id': {'S': 'abc-uuid'},
+                    'name': {'S': 'Pablo'},
+                    'email': {'S': 'p@example.com'},
+                    'message': {'S': 'hola'},
+                    'session_id': {'S': 'a' * 32},
+                },
+            },
+        }
+        result = parse_contact_record(record)
+        assert result is not None
+        assert result['session_id'] == 'a' * 32
+
+    def test_when_insert_then_legacy_origin_fields_are_null(self) -> None:
+        """
+        Given INSERT contacts (un image que aun trae ip/country/UA) [AC-6],
+        When parse_contact_record,
+        Then ip/country/user_agent del payload quedan None: contacts deja
+        de poblar las columnas legacy para contactos nuevos.
+        """
+        record = {
+            'eventID': 'evt-004',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'id': {'S': 'abc-uuid'},
+                    'name': {'S': 'Pablo'},
+                    'email': {'S': 'p@example.com'},
+                    'message': {'S': 'hola'},
+                    'ip': {'S': '203.0.113.7'},
+                    'country': {'S': 'CL'},
+                    'user_agent': {'S': 'Mozilla/5.0'},
+                },
+            },
+        }
+        result = parse_contact_record(record)
+        assert result is not None
+        assert result['ip'] is None
+        assert result['country'] is None
+        assert result['user_agent'] is None
+
+    def test_when_insert_without_session_id_then_payload_session_id_none(
+        self,
+    ) -> None:
+        """
+        Given INSERT contacts sin session_id en el image [AC-6],
+        When parse_contact_record,
+        Then session_id del payload queda None (contacto sin correlacion).
+        """
+        record = {
+            'eventID': 'evt-005',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'id': {'S': 'abc-uuid'},
+                    'name': {'S': 'Pablo'},
+                    'email': {'S': 'p@example.com'},
+                    'message': {'S': 'hola'},
+                },
+            },
+        }
+        result = parse_contact_record(record)
+        assert result is not None
+        assert result['session_id'] is None
+
 
 class TestParseTrackingRecord:
     def test_when_insert_then_returns_payload(self) -> None:
@@ -134,6 +211,55 @@ class TestParseTrackingRecord:
         assert result['event_type_id'] == (
             '019e372b-e0a7-7154-8279-8829bcf6a08c'
         )
+
+    def test_when_insert_with_event_props_then_payload_includes_them(
+        self,
+    ) -> None:
+        """
+        Given INSERT tracking con event_props (Map de DynamoDB) [AC-10],
+        When parse_tracking_record,
+        Then el payload incluye event_props como dict Python.
+        """
+        record = {
+            'eventID': 'evt-102',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'session_id': {'S': 'sess-4'},
+                    'page_id': {'S': 'page-uuid-4'},
+                    'page_url': {'S': 'https://x.com'},
+                    'event_props': {
+                        'M': {'href': {'S': 'https://github.com/bypabloc'}}
+                    },
+                },
+            },
+        }
+        result = parse_tracking_record(record)
+        assert result is not None
+        assert result['event_props'] == {'href': 'https://github.com/bypabloc'}
+
+    def test_when_insert_without_event_props_then_payload_has_none(
+        self,
+    ) -> None:
+        """
+        Given INSERT tracking sin event_props en el image [AC-10],
+        When parse_tracking_record,
+        Then el payload tiene event_props en None (columna jsonb nullable).
+        """
+        record = {
+            'eventID': 'evt-103',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'session_id': {'S': 'sess-5'},
+                    'page_id': {'S': 'page-uuid-5'},
+                    'page_url': {'S': 'https://x.com'},
+                },
+            },
+        }
+        result = parse_tracking_record(record)
+        assert result is not None
+        assert result['event_props'] is None
 
 
 class TestDetectTable:

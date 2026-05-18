@@ -24,6 +24,7 @@ import {
   useState,
 } from 'react'
 import {
+  buildContactPayload,
   type ContactFieldErrors,
   type ContactFormFieldName,
   ContactFormSchema,
@@ -38,6 +39,7 @@ import {
   readContactRecord,
   saveContactRecord,
 } from '../lib/contact-storage'
+import { configureTracking, trackEvent } from '../lib/track-event'
 
 // `?render=explicit`: desactiva el render implicito de Turnstile (el que
 // escanea el DOM buscando `.cf-turnstile`). El widget se monta solo via
@@ -71,10 +73,25 @@ declare global {
   }
 }
 
+/**
+ * UUID del catalogo `event_types` para los 5 eventos del embudo de contacto.
+ * Se resuelven en `ContactFormReact.astro` (server-side, desde
+ * `@portfolio/content`) y se pasan como prop: asi el bundle del island no
+ * importa `@portfolio/content` y Vite no re-optimiza el island en dev.
+ */
+interface FunnelEventTypes {
+  contactView: string
+  contactFormStart: string
+  contactFormSubmit: string
+  contactFormSuccess: string
+  contactFormError: string
+}
+
 interface ContactFormReactProps {
   apiEndpoint: string
   turnstileSitekey: string
   niche?: string
+  funnelEventTypes: FunnelEventTypes
 }
 
 interface ApiErrorBody {
@@ -103,19 +120,19 @@ const ERROR_MESSAGES: Record<number | 'default', string> = {
   default: 'Error del servidor. Intenta nuevamente en unos minutos.',
 }
 
-function buildPayload(
-  data: ContactFormValues,
-  ctx: { niche: string; cfToken: string },
-): Record<string, string> {
-  const payload: Record<string, string> = {
-    niche: ctx.niche,
-    cf_token: ctx.cfToken,
+/**
+ * Lee `localStorage.cf_session` (la misma key que usa el TrackingPixel) para
+ * enlazar el contacto con su journey de tracking (SPEC-202). Devuelve
+ * `undefined` si no hay sesion (visitante que rechazo el tracking) o si el
+ * acceso a localStorage falla — el form NUNCA debe romperse por esto.
+ */
+function readSessionId(): string | undefined {
+  try {
+    const sid = localStorage.getItem('cf_session')
+    return sid && sid.length >= 20 ? sid : undefined
+  } catch {
+    return undefined
   }
-  for (const [key, raw] of Object.entries(data)) {
-    const value = typeof raw === 'string' ? raw.trim() : ''
-    if (value) payload[key] = value
-  }
-  return payload
 }
 
 function buildHeaders(bypassSecret: string): Record<string, string> {
@@ -181,6 +198,7 @@ export default function ContactFormReact({
   apiEndpoint,
   turnstileSitekey,
   niche = 'generic',
+  funnelEventTypes,
 }: ContactFormReactProps) {
   const reactId = useId()
   const [values, setValues] = useState<ContactFormValues>(emptyValues)
@@ -200,6 +218,21 @@ export default function ContactFormReact({
       bypassTokenRef.current = window.__playwrightTurnstileBypass
     }
   }, [])
+
+  // Embudo de contacto (SPEC-200): el primer foco en cualquier campo emite
+  // `contact_form_start` una sola vez. Este flag evita repeticiones en focos
+  // posteriores [AC-5].
+  const formStartedRef = useRef<boolean>(false)
+
+  // Configura la emision de eventos con el endpoint base + niche, y emite
+  // `contact_view` al montar la pagina /contact [AC-4]. El gating de
+  // consentimiento lo resuelve `trackEvent` internamente: si el visitante no
+  // acepto el tracking, las llamadas son no-op.
+  useEffect(() => {
+    const base = apiEndpoint.replace(/\/contact$/, '')
+    configureTracking({ apiEndpoint: base, niche })
+    trackEvent(funnelEventTypes.contactView)
+  }, [apiEndpoint, niche, funnelEventTypes.contactView])
 
   // Rehidratar estado "ya envio" desde localStorage/cookie
   useEffect(() => {
@@ -319,7 +352,19 @@ export default function ContactFormReact({
     [validateField, values],
   )
 
+  /**
+   * Foco delegado en el `<form>`: el primer foco en cualquier campo emite
+   * `contact_form_start` una sola vez (el flag bloquea repeticiones) [AC-5].
+   */
+  const handleFormFocus = useCallback((): void => {
+    if (formStartedRef.current) return
+    formStartedRef.current = true
+    trackEvent(funnelEventTypes.contactFormStart)
+  }, [funnelEventTypes.contactFormStart])
+
   function handleSuccess(contactId: string): void {
+    // Embudo: la respuesta fue 201. Emite `contact_form_success` [AC-6].
+    trackEvent(funnelEventTypes.contactFormSuccess)
     const record = saveContactRecord(contactId)
     setSentRecord(record)
     setValues(emptyValues())
@@ -339,6 +384,9 @@ export default function ContactFormReact({
     httpStatus: number,
     body: (ApiErrorBody & ApiSuccessBody) | null,
   ): void {
+    // Embudo: el envio fallo (4XX/5XX). Emite `contact_form_error` con el
+    // codigo HTTP en `event_props` [AC-7].
+    trackEvent(funnelEventTypes.contactFormError, { code: String(httpStatus) })
     if (httpStatus === 400) {
       const fieldErrors = mapPydanticErrors(body?.extra?.errors ?? [])
       if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors)
@@ -385,7 +433,16 @@ export default function ContactFormReact({
     setStatus('submitting')
     setStatusMessage('Enviando...')
 
-    const payload = buildPayload(pre.data, { niche, cfToken: pre.cfToken })
+    // Embudo: el form se envia. Emite `contact_form_submit` [AC-6].
+    trackEvent(funnelEventTypes.contactFormSubmit)
+
+    // SPEC-202: enlaza el contacto con su journey via `session_id`. Ausente
+    // si el visitante no tiene `cf_session` (rechazo el tracking) [AC-2].
+    const payload = buildContactPayload(pre.data, {
+      niche,
+      cfToken: pre.cfToken,
+      sessionId: readSessionId(),
+    })
     const headers = buildHeaders(pre.bypassSecret)
 
     try {
@@ -401,6 +458,9 @@ export default function ContactFormReact({
       }
       handleApiError(response.status, body)
     } catch (_error) {
+      // Error de red: no hay codigo HTTP. Emite `contact_form_error` con
+      // `code: 'network'` para distinguirlo de los fallos 4XX/5XX [AC-7].
+      trackEvent(funnelEventTypes.contactFormError, { code: 'network' })
       setStatus('error')
       setStatusMessage('Error de red. Verifica tu conexion y reintenta.')
     }
@@ -450,6 +510,7 @@ export default function ContactFormReact({
         className="contact-form"
         noValidate
         onSubmit={handleSubmit}
+        onFocus={handleFormFocus}
         data-testid="contact-form"
         data-niche={niche}
       >

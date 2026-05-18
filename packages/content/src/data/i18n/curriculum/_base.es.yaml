@@ -1,0 +1,24 @@
+# @i18n curriculum/_base.es
+# Defaults del curriculum (textos del CV) en espanol. Declara TODAS las
+# claves: cada app override-a solo las que difieren (merge con fallback).
+# Validado por CurriculumStringsSchema (estricto, todas las claves).
+
+meta:
+  title: "Pablo Contreras — Senior Full Stack Engineer"
+  description: "Más de 12 años entregando producto. Especialización en fintech LATAM, microservicios, AWS y plataformas Vue / Django."
+
+hero:
+  eyebrow: "Pablo Contreras · Lima, Perú · Disponible remoto LATAM/US"
+  headline: "Senior Full Stack Engineer"
+  summary: "Más de 12 años entregando producto. Especialización en fintech LATAM, microservicios, AWS y plataformas Vue / Django."
+  nicheLabel: "Full Stack"
+
+sections:
+  experienceSubtitle: "9 puestos en 8 empleadores. Especialización en fintech LATAM y plataformas full stack."
+  projectsSubtitle: "Side projects abiertos y case studies bajo NDA con métricas reales."
+  skillsSubtitle: "Stack actual + dominios donde he entregado producto en producción."
+  contactSubtitle: "Mejor por email o LinkedIn. Suelo responder en menos de 24 h."
+  certificatesSubtitle: "Certificaciones técnicas relevantes para este perfil."
+  awardsSubtitle: "Reconocimientos por impacto técnico y de negocio."
+
+atsKeywords: []

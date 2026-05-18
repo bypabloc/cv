@@ -8,19 +8,13 @@
  *   import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
  *   import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
  *
- *   import { applyTheme, getManageConsentLabel } from '@portfolio/ui'
+ *   import { applyTheme, readConsent } from '@portfolio/ui'
  */
 
 export { buildClickProps, initClickTracking } from './lib/click-tracking'
-export type {
-  BannerCopy,
-  BannerLocale,
-  ConsentValue,
-} from './lib/cookie-consent'
+export type { ConsentValue } from './lib/cookie-consent'
 export {
   CONSENT_CHANGED_EVENT,
-  getBannerCopy,
-  getManageConsentLabel,
   isConsentValue,
   REOPEN_BANNER_EVENT,
   readConsent,

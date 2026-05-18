@@ -1,0 +1,31 @@
+# @i18n curriculum/leader.en
+# CV override for the leader app (Tech Lead / Engineering Manager).
+
+meta:
+  title: "Pablo Contreras — Tech Lead / Engineering Manager"
+  description: "Tech Lead experienced in leading cross-functional engineering teams, mentoring and shipping fintech products at scale. Innovator of the Year award at Destacame."
+
+hero:
+  eyebrow: "Pablo Contreras · Tech Lead · Lima, Peru · Remote LATAM/US"
+  headline: "Tech Lead & Engineering Manager"
+  summary: "I lead engineering teams from my first role at Dibal (first hire) to fintech platform at Destacame. Innovator of the Year 2023 for automating internal operations with measurable impact. Mentoring + delivery + organizational resilience."
+  nicheLabel: "Tech Lead"
+
+sections:
+  experienceSubtitle: "Leadership roles first: Tech Lead at Destacame, first developer and lead at Dibal."
+  projectsSubtitle: "Projects where I led the team (Dibal, Destacame) and awards."
+
+atsKeywords:
+  - "Tech Lead"
+  - "Engineering Manager"
+  - "Staff Engineer"
+  - "Team Lead"
+  - "Mentoring"
+  - "Hiring"
+  - "Cross-functional teams"
+  - "Scrum"
+  - "Metodologías Ágiles"
+  - "Innovador del Año 2023"
+  - "Triple Alianza 2020"
+  - "Strategic Planning"
+  - "Stakeholder Management"

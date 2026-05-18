@@ -1,17 +1,35 @@
 /**
  * @module site-config
- * @description Helpers compartidos por TODAS las niche apps + generic.
- *   Cada app pasa su SITE_URL + NICHE y obtiene strings localizadas + meta.
+ * @description Compone las strings localizadas de un sitio del portfolio a
+ *   partir de los YAML i18n de `@portfolio/content`:
+ *
+ *   - `elements`   -> labels reutilizables (nav, stats, secciones, labels)
+ *   - `curriculum` -> textos del CV especificos de la app (meta, hero)
+ *
+ *   `buildStrings(app, locale)` los funde en el objeto `I18nStrings` que
+ *   consumen `PageLayout`, `CvSections` y los componentes. Los textos NO
+ *   viven aqui: viven en `packages/content/src/data/i18n/*.yaml`.
  */
-import type { Niche } from '@portfolio/content'
+import {
+  type CurriculumApp,
+  type ElementsStrings,
+  getCurriculum,
+  getElements,
+  type Niche,
+} from '@portfolio/content'
 
+/** Item de navegacion ya resuelto (con href listo para render). */
 export interface NavItem {
   href: string
   label: string
-  /** Si true, abre en otra pestaña / dominio (ej. link al hub desde una app niche). */
+  /** Si true, abre en otra pestaña / dominio (ej. link al hub). */
   external?: boolean
 }
 
+/**
+ * Strings localizadas que consume un sitio. La forma se mantiene estable
+ * para no romper los componentes; las fuentes son los YAML i18n.
+ */
 export interface I18nStrings {
   meta: {
     title: string
@@ -26,13 +44,7 @@ export interface I18nStrings {
     ctaPrimary: string
     ctaSecondary: string
   }
-  stats: {
-    eyebrow: string
-    yearsExperience: string
-    companies: string
-    countries: string
-    certifications: string
-  }
+  stats: ElementsStrings['stats']
   sections: {
     experience: { title: string; subtitle: string }
     projects: { title: string; subtitle: string }
@@ -47,6 +59,7 @@ export interface I18nStrings {
     references: { title: string }
   }
   labels: {
+    home: string
     downloadCv: string
     viewAllExperience: string
     confidential: string
@@ -58,222 +71,146 @@ export interface I18nStrings {
     caseStudyResult: string
     caseStudyMetrics: string
   }
+  /** Strings de los componentes interactivos (form, footer, nav, ...). */
+  components: ElementsStrings['components']
+  /** Meta de las paginas secundarias (about, certificates, contact). */
+  pages: ElementsStrings['pages']
   atsKeywords: string[]
 }
 
-export interface SiteOverrides {
-  metaTitleEs: string
-  metaTitleEn: string
-  metaDescriptionEs: string
-  metaDescriptionEn: string
-  heroEyebrowEs?: string
-  heroEyebrowEn?: string
-  heroHeadlineEs?: string
-  heroHeadlineEn?: string
-  heroSummaryEs?: string
-  heroSummaryEn?: string
-  nicheLabelEs?: string
-  nicheLabelEn?: string
-  experienceSubtitleEs?: string
-  experienceSubtitleEn?: string
-  projectsSubtitleEs?: string
-  projectsSubtitleEn?: string
-  atsKeywords?: string[]
-  /**
-   * Si presente, agrega un item "Otras vistas" / "Other views" al final del
-   * nav que apunta al hub multi-niche. Las 5 apps especializadas
-   * (fintech, architect, leader, vibe, generic) deben pasar este valor; la
-   * app hub debe omitirlo (no se enlaza a si misma).
-   */
-  hubHref?: string
+/** Path absoluto/relativo de cada item de nav segun su `key` + prefijo. */
+function navHrefFor(key: string, basePrefix: string, hubHref?: string): string {
+  switch (key) {
+    case 'experience':
+      return `${basePrefix}/#experience`
+    case 'projects':
+      return `${basePrefix}/#projects`
+    case 'skills':
+      return `${basePrefix}/#skills`
+    case 'about':
+      return `${basePrefix}/about`
+    case 'certificates':
+      return `${basePrefix}/certificates`
+    case 'contact':
+      return `${basePrefix}/contact`
+    case 'hub':
+      return hubHref ?? ''
+    default:
+      return `${basePrefix}/`
+  }
 }
 
-const navEs = (basePrefix: string, hubHref?: string): NavItem[] => {
-  const items: NavItem[] = [
-    { href: `${basePrefix}/#experience`, label: 'Experiencia' },
-    { href: `${basePrefix}/#projects`, label: 'Proyectos' },
-    { href: `${basePrefix}/#skills`, label: 'Skills' },
-    { href: `${basePrefix}/about`, label: 'Sobre mí' },
-    { href: `${basePrefix}/certificates`, label: 'Certificados' },
-    { href: `${basePrefix}/contact`, label: 'Contacto' },
-  ]
-  if (hubHref !== undefined) {
-    items.push({ href: hubHref, label: 'Otras vistas' })
+/**
+ * Construye los items de nav resueltos. El item `hub` solo se incluye si la
+ * app pasa `hubHref` (las 5 apps niche lo pasan; la app hub lo omite).
+ */
+function buildNav(
+  elements: ElementsStrings,
+  locale: 'es' | 'en',
+  hubHref?: string,
+): NavItem[] {
+  const basePrefix = locale === 'es' ? '' : '/en'
+  const items: NavItem[] = []
+  for (const item of elements.nav) {
+    if (item.key === 'hub') {
+      if (hubHref === undefined) continue
+      items.push({
+        href: hubHref,
+        label: item.label,
+        external: true,
+      })
+      continue
+    }
+    items.push({ href: navHrefFor(item.key, basePrefix), label: item.label })
   }
   return items
 }
 
-const navEn = (basePrefix: string, hubHref?: string): NavItem[] => {
-  const items: NavItem[] = [
-    { href: `${basePrefix}/#experience`, label: 'Experience' },
-    { href: `${basePrefix}/#projects`, label: 'Projects' },
-    { href: `${basePrefix}/#skills`, label: 'Skills' },
-    { href: `${basePrefix}/about`, label: 'About' },
-    { href: `${basePrefix}/certificates`, label: 'Certificates' },
-    { href: `${basePrefix}/contact`, label: 'Contact' },
-  ]
-  if (hubHref !== undefined) {
-    items.push({ href: hubHref, label: 'Other views' })
-  }
-  return items
-}
-
+/**
+ * @function buildStrings
+ * @description Compone el `I18nStrings` de una app en ambos idiomas, fundiendo
+ *   los `elements` (labels reutilizables) con el `curriculum` de la app
+ *   (textos del CV). El `hubHref` agrega el item "Otras vistas" al nav.
+ *
+ * @param app - App del monorepo (generic | hub | fintech | architect | leader | vibe)
+ * @param hubHref - URL del hub. Si se pasa, el nav incluye el item al hub.
+ *
+ * @returns Record es/en con las strings completas de la app.
+ *
+ * @example
+ *   const STRINGS = buildStrings('fintech', SITE_URLS.hub)
+ *   STRINGS.es.hero.headline   // del curriculum/fintech.es.yaml
+ *   STRINGS.es.sections.experience.title  // del elements.es.yaml
+ */
 export function buildStrings(
-  overrides: SiteOverrides,
+  app: CurriculumApp,
+  hubHref?: string,
 ): Record<'es' | 'en', I18nStrings> {
-  return {
-    es: {
-      meta: {
-        title: overrides.metaTitleEs,
-        description: overrides.metaDescriptionEs,
-      },
-      nav: navEs('', overrides.hubHref),
+  const compose = (locale: 'es' | 'en'): I18nStrings => {
+    const el = getElements(locale)
+    const cv = getCurriculum(app, locale)
+    return {
+      meta: { ...cv.meta },
+      nav: buildNav(el, locale, hubHref),
       hero: {
-        eyebrow:
-          overrides.heroEyebrowEs ??
-          'Pablo Contreras · Lima, Perú · Disponible remoto LATAM/US',
-        headline: overrides.heroHeadlineEs ?? 'Senior Full Stack Engineer',
-        summary:
-          overrides.heroSummaryEs ??
-          'Más de 12 años entregando producto. Especialización en fintech LATAM, microservicios, AWS y plataformas Vue / Django.',
-        nicheLabel: overrides.nicheLabelEs ?? 'Full Stack',
-        ctaPrimary: 'Ver experiencia',
-        ctaSecondary: 'Descargar CV',
+        eyebrow: cv.hero.eyebrow,
+        headline: cv.hero.headline,
+        summary: cv.hero.summary,
+        nicheLabel: cv.hero.nicheLabel,
+        ctaPrimary: el.labels.ctaPrimary,
+        ctaSecondary: el.labels.ctaSecondary,
       },
-      stats: {
-        eyebrow: 'Track record',
-        yearsExperience: 'Años entregando producto',
-        companies: 'Empresas',
-        countries: 'Países LATAM',
-        certifications: 'Certificaciones',
-      },
+      stats: el.stats,
       sections: {
         experience: {
-          title: 'Experiencia',
-          subtitle:
-            overrides.experienceSubtitleEs ??
-            '9 puestos en 8 empleadores. Especialización en fintech LATAM y plataformas full stack.',
+          title: el.sections.experience.title,
+          subtitle: cv.sections.experienceSubtitle,
         },
         projects: {
-          title: 'Proyectos destacados',
-          subtitle:
-            overrides.projectsSubtitleEs ??
-            'Side projects abiertos y case studies bajo NDA con métricas reales.',
+          title: el.sections.projects.title,
+          subtitle: cv.sections.projectsSubtitle,
         },
         skills: {
-          title: 'Skills técnicas',
-          subtitle:
-            'Stack actual + dominios donde he entregado producto en producción.',
+          title: el.sections.skills.title,
+          subtitle: cv.sections.skillsSubtitle,
         },
-        about: { title: 'Sobre mí' },
+        about: { title: el.sections.about.title },
         contact: {
-          title: 'Contacto',
-          subtitle:
-            'Mejor por email o LinkedIn. Suelo responder en menos de 24 h.',
+          title: el.sections.contact.title,
+          subtitle: cv.sections.contactSubtitle,
         },
         certificates: {
-          title: 'Certificados',
-          subtitle: 'Certificaciones técnicas relevantes para este perfil.',
+          title: el.sections.certificates.title,
+          subtitle: cv.sections.certificatesSubtitle,
         },
-        publications: { title: 'Publicaciones' },
+        publications: { title: el.sections.publications.title },
         awards: {
-          title: 'Premios',
-          subtitle: 'Reconocimientos por impacto técnico y de negocio.',
+          title: el.sections.awards.title,
+          subtitle: cv.sections.awardsSubtitle,
         },
-        education: { title: 'Educación' },
-        languages: { title: 'Idiomas' },
-        references: { title: 'Referencias' },
+        education: { title: el.sections.education.title },
+        languages: { title: el.sections.languages.title },
+        references: { title: el.sections.references.title },
       },
       labels: {
-        downloadCv: 'Descargar CV',
-        viewAllExperience: 'Ver toda la experiencia',
-        confidential: 'Bajo NDA — métricas detalladas en privado',
-        technicalSkills: 'Técnicas',
-        softSkills: 'Blandas',
-        caseStudyCta: 'Ver caso de estudio',
-        caseStudyProblem: 'Problema',
-        caseStudyProcess: 'Proceso',
-        caseStudyResult: 'Resultado',
-        caseStudyMetrics: 'Métricas',
+        home: el.labels.home,
+        downloadCv: el.labels.downloadCv,
+        viewAllExperience: el.labels.viewAllExperience,
+        confidential: el.labels.confidential,
+        technicalSkills: el.labels.technicalSkills,
+        softSkills: el.labels.softSkills,
+        caseStudyCta: el.labels.caseStudyCta,
+        caseStudyProblem: el.labels.caseStudyProblem,
+        caseStudyProcess: el.labels.caseStudyProcess,
+        caseStudyResult: el.labels.caseStudyResult,
+        caseStudyMetrics: el.labels.caseStudyMetrics,
       },
-      atsKeywords: overrides.atsKeywords ?? [],
-    },
-    en: {
-      meta: {
-        title: overrides.metaTitleEn,
-        description: overrides.metaDescriptionEn,
-      },
-      nav: navEn('/en', overrides.hubHref),
-      hero: {
-        eyebrow:
-          overrides.heroEyebrowEn ??
-          'Pablo Contreras · Lima, Peru · Remote-friendly LATAM/US',
-        headline: overrides.heroHeadlineEn ?? 'Senior Full Stack Engineer',
-        summary:
-          overrides.heroSummaryEn ??
-          '12+ years shipping product. Specialized in LATAM fintech, microservices, AWS and Vue / Django platforms.',
-        nicheLabel: overrides.nicheLabelEn ?? 'Full Stack',
-        ctaPrimary: 'View experience',
-        ctaSecondary: 'Download CV',
-      },
-      stats: {
-        eyebrow: 'Track record',
-        yearsExperience: 'Years shipping product',
-        companies: 'Companies',
-        countries: 'LATAM countries',
-        certifications: 'Certifications',
-      },
-      sections: {
-        experience: {
-          title: 'Experience',
-          subtitle:
-            overrides.experienceSubtitleEn ??
-            '9 roles in 8 employers. Focus on LATAM fintech and full stack platforms.',
-        },
-        projects: {
-          title: 'Featured projects',
-          subtitle:
-            overrides.projectsSubtitleEn ??
-            'Open side projects and case studies under NDA with real metrics.',
-        },
-        skills: {
-          title: 'Technical skills',
-          subtitle:
-            'Current stack + domains where I have shipped to production.',
-        },
-        about: { title: 'About' },
-        contact: {
-          title: 'Contact',
-          subtitle: 'Email or LinkedIn work best. Typical response under 24h.',
-        },
-        certificates: {
-          title: 'Certificates',
-          subtitle: 'Technical certifications relevant for this profile.',
-        },
-        publications: { title: 'Publications' },
-        awards: {
-          title: 'Awards',
-          subtitle: 'Recognition for technical and business impact.',
-        },
-        education: { title: 'Education' },
-        languages: { title: 'Languages' },
-        references: { title: 'References' },
-      },
-      labels: {
-        downloadCv: 'Download CV',
-        viewAllExperience: 'View full experience',
-        confidential: 'Under NDA — detailed metrics on request',
-        technicalSkills: 'Technical',
-        softSkills: 'Soft',
-        caseStudyCta: 'View case study',
-        caseStudyProblem: 'Problem',
-        caseStudyProcess: 'Process',
-        caseStudyResult: 'Result',
-        caseStudyMetrics: 'Metrics',
-      },
-      atsKeywords: overrides.atsKeywords ?? [],
-    },
+      components: el.components,
+      pages: el.pages,
+      atsKeywords: [...cv.atsKeywords],
+    }
   }
+  return { es: compose('es'), en: compose('en') }
 }
 
 export interface SiteContext {

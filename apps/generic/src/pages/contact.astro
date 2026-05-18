@@ -1,4 +1,7 @@
 ---
+/**
+ * @page contact (es) generic
+ */
 import { profile } from '@portfolio/content'
 import ContactForm from '@portfolio/ui/components/ContactFormReact.astro'
 import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
@@ -6,28 +9,27 @@ import PageLayout from '../layouts/PageLayout.astro'
 import { NICHE, STRINGS } from '../lib/site-config'
 
 const t = STRINGS.es
+const cp = t.components.contactPage
 
 // API endpoint y Turnstile sitekey desde env vars (publicas, ok exponer)
 const apiEndpoint = (import.meta.env.PUBLIC_API_ENDPOINT || '') as string
 const turnstileSitekey = (import.meta.env.PUBLIC_TURNSTILE_SITEKEY ||
   '') as string
 const contactEndpoint = apiEndpoint ? `${apiEndpoint}/contact` : ''
+const fallbackParts = cp.fallback.split('{email}')
 ---
 
 <PageLayout
-  title={`Contacto — ${t.meta.title}`}
-  description="Hablemos de tu proyecto. Respondo en menos de 24h."
+  title={`${t.pages.contact.titlePrefix} — ${t.meta.title}`}
+  description={t.pages.contact.description}
   canonicalPath="/contact"
   locale="es"
   otherLocalePath="/en/contact"
 >
   <section class="contact-section">
     <header class="contact-header">
-      <h1>Contacto</h1>
-      <p>
-        Si querés contratarme, colaborar o consultar algo técnico, dejame un
-        mensaje. Te respondo en menos de 24h.
-      </p>
+      <h1>{cp.heading}</h1>
+      <p>{cp.intro}</p>
     </header>
 
     {
@@ -36,25 +38,28 @@ const contactEndpoint = apiEndpoint ? `${apiEndpoint}/contact` : ''
           apiEndpoint={contactEndpoint}
           turnstileSitekey={turnstileSitekey}
           niche={NICHE}
+          strings={t.components.contactForm}
         />
       ) : (
         <div class="contact-fallback">
           <p>
-            El formulario aún no está configurado en este ambiente. Mientras
-            tanto, escribime directo a{' '}
-            <a href="mailto:pacg1991@gmail.com">pacg1991@gmail.com</a>.
+            {fallbackParts[0]}
+            <a href={`mailto:${profile.contacts.email}`}>
+              {profile.contacts.email}
+            </a>
+            {fallbackParts[1]}
           </p>
         </div>
       )
     }
 
     <div class="contact-direct">
-      <h2 class="contact-direct__title">Otros canales</h2>
+      <h2 class="contact-direct__title">{cp.otherChannels}</h2>
       <ContactLinks
         email={profile.contacts.email}
         linkedin={profile.contacts.linkedin}
         github={profile.contacts.github}
-        locale="es"
+        strings={t.components.contactLinks}
       />
     </div>
   </section>

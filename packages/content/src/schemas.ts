@@ -290,3 +290,287 @@ export const SkillCategorySchema = z.object({
   niches: z.array(NicheSchema).min(1),
 })
 export type SkillCategory = z.infer<typeof SkillCategorySchema>
+
+// --------------------------------------------------------------------------
+// i18n — textos de UI (NO datos del CV). Una fuente de verdad para los
+// strings que renderiza cada app. Cargados desde `data/i18n/*.yaml` por
+// idioma (es/en). Ver `.claude/rules/yaml-data-loading.md`.
+//
+// Dos familias:
+//   - ElementsStrings  -> labels reutilizables, identicos para las 6 apps
+//   - CurriculumStrings -> textos del CV especificos por app (hero, meta)
+// --------------------------------------------------------------------------
+
+/** Item del menu de navegacion. */
+export const NavItemSchema = z.object({
+  /** Clave estable del item (home, experience, about, ...). */
+  key: z.string().min(1),
+  /** Texto visible del link. */
+  label: z.string().min(1),
+})
+export type NavItem = z.infer<typeof NavItemSchema>
+
+/** Strings de los componentes interactivos (form, nav, footer, theme...). */
+export const ComponentsStringsSchema = z.object({
+  /** Form de contacto: labels, placeholders, mensajes de validacion y status. */
+  contactForm: z.object({
+    labelName: z.string().min(1),
+    labelEmail: z.string().min(1),
+    labelCompany: z.string().min(1),
+    labelRole: z.string().min(1),
+    labelServiceType: z.string().min(1),
+    labelBudget: z.string().min(1),
+    labelTimeline: z.string().min(1),
+    labelMessage: z.string().min(1),
+    optionalSummary: z.string().min(1),
+    serviceTypeUnset: z.string().min(1),
+    serviceTypeConsulting: z.string().min(1),
+    serviceTypeFulltime: z.string().min(1),
+    serviceTypeContract: z.string().min(1),
+    serviceTypeOther: z.string().min(1),
+    budgetPlaceholder: z.string().min(1),
+    timelinePlaceholder: z.string().min(1),
+    submit: z.string().min(1),
+    submitting: z.string().min(1),
+    sentCardTitle: z.string().min(1),
+    /** Usa `{date}` como marcador para la fecha de envio. */
+    sentCardBody: z.string().min(1),
+    sentCardRefLabel: z.string().min(1),
+    sentCardResend: z.string().min(1),
+    statusSuccess: z.string().min(1),
+    statusInvalidFields: z.string().min(1),
+    statusCaptchaMissing: z.string().min(1),
+    errorEndpointMissing: z.string().min(1),
+    errorCaptchaInvalid: z.string().min(1),
+    errorTooManyAttempts: z.string().min(1),
+    errorServer: z.string().min(1),
+    errorNetwork: z.string().min(1),
+    errorCaptchaLoad: z.string().min(1),
+    /** Mensajes de validacion Pydantic. `{min}` / `{max}` son marcadores. */
+    validationRequired: z.string().min(1),
+    validationTooShort: z.string().min(1),
+    validationTooLong: z.string().min(1),
+    validationEmail: z.string().min(1),
+    validationFormat: z.string().min(1),
+    validationNotAllowed: z.string().min(1),
+    validationInvalid: z.string().min(1),
+  }),
+  /** Footer: copyright y boton de consentimiento. `{year}` / `{name}`. */
+  footer: z.object({
+    copyright: z.string().min(1),
+    linkedin: z.string().min(1),
+    github: z.string().min(1),
+    manageConsent: z.string().min(1),
+  }),
+  /** Navbar + drawer movil. */
+  nav: z.object({
+    openMenu: z.string().min(1),
+    closeMenu: z.string().min(1),
+    mainMenu: z.string().min(1),
+    /** Texto del switch de idioma hacia el OTRO locale. */
+    switchToOtherLocale: z.string().min(1),
+  }),
+  /** Theme toggle: aria-labels de los 3 estados. */
+  themeToggle: z.object({
+    system: z.string().min(1),
+    dark: z.string().min(1),
+    light: z.string().min(1),
+  }),
+  /** Banner de cookies / consentimiento. */
+  cookieBanner: z.object({
+    ariaLabel: z.string().min(1),
+    bodyLead: z.string().min(1),
+    bodyStrong: z.string().min(1),
+    bodyTail: z.string().min(1),
+    accept: z.string().min(1),
+    reject: z.string().min(1),
+  }),
+  /** Links de contacto con boton "copiar email". */
+  contactLinks: z.object({
+    emailLabel: z.string().min(1),
+    enableJs: z.string().min(1),
+    copyEmail: z.string().min(1),
+    copied: z.string().min(1),
+    copyFailed: z.string().min(1),
+    linkedin: z.string().min(1),
+    github: z.string().min(1),
+  }),
+  /** Chips de filtrado del CV + mensajes de lista vacia. */
+  filters: z.object({
+    bar: z.string().min(1),
+    clear: z.string().min(1),
+    tech: z.string().min(1),
+    seniority: z.string().min(1),
+    type: z.string().min(1),
+    confidential: z.string().min(1),
+    skillsTechnical: z.string().min(1),
+    skillsSoft: z.string().min(1),
+    emptyExperiences: z.string().min(1),
+    emptyProjects: z.string().min(1),
+  }),
+  /** Pagina de contacto: encabezado + fallback. `{email}` es marcador. */
+  contactPage: z.object({
+    heading: z.string().min(1),
+    intro: z.string().min(1),
+    otherChannels: z.string().min(1),
+    fallback: z.string().min(1),
+  }),
+  /** Layout base. */
+  layout: z.object({
+    skipToContent: z.string().min(1),
+  }),
+})
+export type ComponentsStrings = z.infer<typeof ComponentsStringsSchema>
+
+/** Meta de una pagina secundaria: prefijo del <title> + meta description. */
+export const PageMetaSchema = z.object({
+  titlePrefix: z.string().min(1),
+  description: z.string().min(1),
+})
+
+/** Meta i18n de las paginas secundarias (about / certificates / contact). */
+export const PagesStringsSchema = z.object({
+  about: PageMetaSchema,
+  certificates: PageMetaSchema,
+  contact: PageMetaSchema,
+})
+export type PagesStrings = z.infer<typeof PagesStringsSchema>
+
+/**
+ * Strings de "elementos": labels reutilizables identicos para las 6 apps
+ * (nav, stats, titulos de seccion del CV, labels genericos, componentes).
+ */
+export const ElementsStringsSchema = z.object({
+  nav: z.array(NavItemSchema).min(1),
+  stats: z.object({
+    eyebrow: z.string().min(1),
+    yearsExperience: z.string().min(1),
+    companies: z.string().min(1),
+    countries: z.string().min(1),
+    certifications: z.string().min(1),
+  }),
+  sections: z.object({
+    experience: z.object({ title: z.string().min(1) }),
+    projects: z.object({ title: z.string().min(1) }),
+    skills: z.object({ title: z.string().min(1) }),
+    about: z.object({ title: z.string().min(1) }),
+    contact: z.object({ title: z.string().min(1) }),
+    certificates: z.object({ title: z.string().min(1) }),
+    publications: z.object({ title: z.string().min(1) }),
+    awards: z.object({ title: z.string().min(1) }),
+    education: z.object({ title: z.string().min(1) }),
+    languages: z.object({ title: z.string().min(1) }),
+    references: z.object({ title: z.string().min(1) }),
+  }),
+  labels: z.object({
+    home: z.string().min(1),
+    downloadCv: z.string().min(1),
+    viewAllExperience: z.string().min(1),
+    confidential: z.string().min(1),
+    technicalSkills: z.string().min(1),
+    softSkills: z.string().min(1),
+    caseStudyCta: z.string().min(1),
+    caseStudyProblem: z.string().min(1),
+    caseStudyProcess: z.string().min(1),
+    caseStudyResult: z.string().min(1),
+    caseStudyMetrics: z.string().min(1),
+    ctaPrimary: z.string().min(1),
+    ctaSecondary: z.string().min(1),
+  }),
+  components: ComponentsStringsSchema,
+  pages: PagesStringsSchema,
+})
+export type ElementsStrings = z.infer<typeof ElementsStringsSchema>
+
+/**
+ * Strings del "curriculum": textos del CV especificos por app. El archivo
+ * `_base` declara todas las claves; cada `<app>` puede omitir las que no
+ * cambia (merge con fallback al base).
+ */
+export const CurriculumSectionOverridesSchema = z.object({
+  experienceSubtitle: z.string().min(1),
+  projectsSubtitle: z.string().min(1),
+  skillsSubtitle: z.string().min(1),
+  contactSubtitle: z.string().min(1),
+  certificatesSubtitle: z.string().min(1),
+  awardsSubtitle: z.string().min(1),
+})
+
+/** Forma completa del curriculum (la que produce `_base` + merge). */
+export const CurriculumStringsSchema = z.object({
+  meta: z.object({
+    title: z.string().min(1),
+    description: z.string().min(1),
+  }),
+  hero: z.object({
+    eyebrow: z.string().min(1),
+    headline: z.string().min(1),
+    summary: z.string().min(1),
+    nicheLabel: z.string().min(1),
+  }),
+  sections: CurriculumSectionOverridesSchema,
+  atsKeywords: z.array(z.string().min(1)),
+})
+export type CurriculumStrings = z.infer<typeof CurriculumStringsSchema>
+
+/**
+ * Forma PARCIAL del curriculum: la que puede declarar un archivo `<app>`.
+ * Todas las ramas son opcionales — lo ausente cae al `_base`. Solo `_base`
+ * debe cumplir `CurriculumStringsSchema` completo.
+ */
+export const CurriculumOverrideSchema = z.object({
+  meta: z
+    .object({
+      title: z.string().min(1).optional(),
+      description: z.string().min(1).optional(),
+    })
+    .optional(),
+  hero: z
+    .object({
+      eyebrow: z.string().min(1).optional(),
+      headline: z.string().min(1).optional(),
+      summary: z.string().min(1).optional(),
+      nicheLabel: z.string().min(1).optional(),
+    })
+    .optional(),
+  sections: CurriculumSectionOverridesSchema.partial().optional(),
+  atsKeywords: z.array(z.string().min(1)).optional(),
+})
+export type CurriculumOverride = z.infer<typeof CurriculumOverrideSchema>
+
+/** Card del selector del hub: titulo + blurb por niche. */
+export const HubSelectorCardSchema = z.object({
+  /** Niche al que apunta la card (la URL se deriva de SITE_URLS). */
+  niche: NicheSchema,
+  title: z.string().min(1),
+  blurb: z.string().min(1),
+})
+export type HubSelectorCard = z.infer<typeof HubSelectorCardSchema>
+
+/**
+ * Strings exclusivos del selector multi-niche de la app `hub`. El hub no
+ * renderiza `CvSections` (no usa `ElementsStrings`), por eso sus textos del
+ * landing viven en un archivo i18n propio (`data/i18n/hub-selector/`).
+ */
+export const HubSelectorStringsSchema = z.object({
+  /** Eyebrow del hero del selector. */
+  heroEyebrow: z.string().min(1),
+  /**
+   * Mega-headline del hero, partido en 3 segmentos visuales: el primero va
+   * con gradiente, el ultimo atenuado. El render concatena los 3.
+   */
+  heroHeadline: z.object({
+    lead: z.string().min(1),
+    mid: z.string().min(1),
+    tail: z.string().min(1),
+  }),
+  /** Parrafo introductorio del hero. */
+  heroIntro: z.string().min(1),
+  /** Etiqueta CTA de cada card del selector ("Entrar" / "Enter"). */
+  cardCta: z.string().min(1),
+  /** Texto del link al otro idioma ("English version →"). */
+  otherLocaleLink: z.string().min(1),
+  /** Las 5 cards del selector, en orden de render. */
+  cards: z.array(HubSelectorCardSchema).min(1),
+})
+export type HubSelectorStrings = z.infer<typeof HubSelectorStringsSchema>

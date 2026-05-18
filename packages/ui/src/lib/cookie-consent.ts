@@ -9,11 +9,13 @@
  *   `accepted` | `rejected`). NO se usan cookies. La key NO debe cambiar:
  *   `TrackingPixel.astro` la lee para decidir si emite eventos.
  *
+ *   Los textos del banner NO viven aqui: estan en el YAML i18n
+ *   (`elements.<lang>.yaml`, rama `components.cookieBanner`) y se pasan al
+ *   componente como prop.
+ *
  *   API:
  *     readConsent(storage?)        - lee el consentimiento persistido
  *     writeConsent(value, ...)     - persiste y despacha consent-changed
- *     getBannerCopy(locale)        - textos i18n del banner por locale
- *     getManageConsentLabel(...)   - etiqueta del enlace del Footer por locale
  */
 
 /**
@@ -21,31 +23,6 @@
  * @description Valor del consentimiento persistido en localStorage.
  */
 export type ConsentValue = 'accepted' | 'rejected'
-
-/**
- * @type BannerLocale
- * @description Locale soportado por los textos del banner.
- */
-export type BannerLocale = 'es' | 'en'
-
-/**
- * @type BannerCopy
- * @description Conjunto de strings i18n que renderiza el banner.
- */
-export interface BannerCopy {
-  /** Etiqueta accesible del dialog (aria-label). */
-  ariaLabel: string
-  /** Texto del cuerpo del banner (parte previa al fragmento destacado). */
-  bodyLead: string
-  /** Fragmento destacado dentro del cuerpo (va en <strong>). */
-  bodyStrong: string
-  /** Texto del cuerpo posterior al fragmento destacado. */
-  bodyTail: string
-  /** Etiqueta del boton de aceptacion. */
-  accept: string
-  /** Etiqueta del boton de rechazo. */
-  reject: string
-}
 
 /** Key de localStorage. NO cambiar: TrackingPixel.astro la lee. */
 export const STORAGE_KEY = 'cf_consent'
@@ -55,34 +32,6 @@ export const CONSENT_CHANGED_EVENT = 'portfolio:consent-changed'
 
 /** Nombre del evento que pide reabrir el banner (lo emite el Footer). */
 export const REOPEN_BANNER_EVENT = 'portfolio:consent-reopen'
-
-const BANNER_COPY: Record<BannerLocale, BannerCopy> = {
-  es: {
-    ariaLabel: 'Consentimiento de analytics',
-    bodyLead: 'Este sitio usa ',
-    bodyStrong: 'analytics propios privacy-friendly',
-    bodyTail:
-      ' (sin cookies de terceros, los datos se auto-borran en 60 dias). ' +
-      '¿Permitis recolectar tu visita para mejorar el contenido?',
-    accept: 'Aceptar',
-    reject: 'Rechazar',
-  },
-  en: {
-    ariaLabel: 'Analytics consent',
-    bodyLead: 'This site uses ',
-    bodyStrong: 'privacy-friendly first-party analytics',
-    bodyTail:
-      ' (no third-party cookies, data auto-deletes after 60 days). ' +
-      'May we collect your visit to improve the content?',
-    accept: 'Accept',
-    reject: 'Reject',
-  },
-}
-
-const MANAGE_CONSENT_LABEL: Record<BannerLocale, string> = {
-  es: 'Gestionar consentimiento',
-  en: 'Manage consent',
-}
 
 /**
  * @function isConsentValue
@@ -134,29 +83,4 @@ export function writeConsent(
       detail: { value },
     }),
   )
-}
-
-/**
- * @function getBannerCopy
- * @description Devuelve los textos i18n del banner para el locale dado.
- *   Cualquier locale no soportado cae a 'es'.
- *
- * @example
- *   getBannerCopy('en').accept   // "Accept"
- *   getBannerCopy('es').accept   // "Aceptar"
- */
-export function getBannerCopy(locale: BannerLocale): BannerCopy {
-  return BANNER_COPY[locale] ?? BANNER_COPY.es
-}
-
-/**
- * @function getManageConsentLabel
- * @description Etiqueta del enlace del Footer que reabre el banner.
- *
- * @example
- *   getManageConsentLabel('es')  // "Gestionar consentimiento"
- *   getManageConsentLabel('en')  // "Manage consent"
- */
-export function getManageConsentLabel(locale: BannerLocale): string {
-  return MANAGE_CONSENT_LABEL[locale] ?? MANAGE_CONSENT_LABEL.es
 }

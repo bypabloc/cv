@@ -1,0 +1,36 @@
+# @i18n hub-selector.es
+# Textos exclusivos del selector multi-niche de la app hub (espanol).
+# Validado por HubSelectorStringsSchema. Su par es hub-selector.en.yaml.
+
+heroEyebrow: "Pablo Contreras · Lima, Perú · Remoto LATAM/US"
+
+# Mega-headline partido en 3 segmentos visuales (lead con gradiente,
+# tail atenuado). El render los concatena con saltos de linea.
+heroHeadline:
+  lead: "Cinco"
+  mid: "enfoques."
+  tail: "Elige el que conecta."
+
+heroIntro: "Soy ingeniero Full Stack senior con 12+ años en Vue, Django y AWS. Cada sitio cuenta la misma historia con un acento diferente. Entra por el que te interese — las cinco versiones están al día."
+
+cardCta: "Entrar"
+otherLocaleLink: "English version →"
+
+# Las 5 cards del selector, en orden de render. El accent y la URL se
+# resuelven en codigo (SITE_URLS + tokens del DS) — aqui solo el texto.
+cards:
+  - niche: generic
+    title: "Full Stack Senior"
+    blurb: "Vue + Django + AWS · 8 años · todas las skills"
+  - niche: fintech
+    title: "Fintech LATAM"
+    blurb: "Chile, México · saldar deudas · scoring · créditos"
+  - niche: architect
+    title: "Architect"
+    blurb: "Microservicios · microfrontend · sistemas escalables"
+  - niche: leader
+    title: "Tech Lead"
+    blurb: "Liderazgo de equipos · mentoring · entregar producto"
+  - niche: vibe
+    title: "Vibe Coding"
+    blurb: "Claude Code · Cursor · dev tools · workflows IA"

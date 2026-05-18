@@ -7,6 +7,15 @@ export { awards } from './data/awards/index'
 export { certificates } from './data/certificates/index'
 export { education } from './data/education/index'
 export { experiences } from './data/experiences/index'
+export {
+  CURRICULUM_APPS,
+  type CurriculumApp,
+  elements,
+  getCurriculum,
+  getElements,
+  getHubSelector,
+  hubSelector,
+} from './data/i18n/index'
 export { languages } from './data/languages/index'
 export { profile } from './data/profile'
 export { projects } from './data/projects/index'

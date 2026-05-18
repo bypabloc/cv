@@ -1,15 +1,4 @@
 ---
-import type { Niche } from '@portfolio/content'
-import { filterByNiche, profile, skills } from '@portfolio/content'
-import {
-  buildProfilePageSchema,
-  buildSiteNavigationSchema,
-} from '@portfolio/seo'
-import { nicheTokensToCssVars } from '@portfolio/ui'
-import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
-import Footer from '@portfolio/ui/components/Footer.astro'
-import Nav from '@portfolio/ui/components/Nav.astro'
-import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
 /**
  * @layout SitePageLayout
  * @description Wrapper compartido. Cada app pasa siteUrl + niche + strings.
@@ -23,15 +12,22 @@ import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
  * @props {'es'|'en'} locale
  * @props {string} siteUrl - base canonical del sitio
  * @props {import('@portfolio/content').Niche} niche
- * @props {Array<{href, label}>} navItems
+ * @props {object} strings - I18nStrings de la app (nav, components, ...)
  * @props {string} [ogImage]
  */
+import type { I18nStrings } from '@portfolio/app-shared'
+import type { Niche } from '@portfolio/content'
+import { filterByNiche, profile, skills } from '@portfolio/content'
+import {
+  buildProfilePageSchema,
+  buildSiteNavigationSchema,
+} from '@portfolio/seo'
+import { nicheTokensToCssVars } from '@portfolio/ui'
+import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
+import Footer from '@portfolio/ui/components/Footer.astro'
+import Nav from '@portfolio/ui/components/Nav.astro'
+import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
-
-interface NavItem {
-  href: string
-  label: string
-}
 
 interface Props {
   title: string
@@ -41,7 +37,7 @@ interface Props {
   locale: 'es' | 'en'
   siteUrl: string
   niche: Niche
-  navItems: NavItem[]
+  strings: I18nStrings
   ogImage?: string
 }
 
@@ -53,9 +49,11 @@ const {
   locale,
   siteUrl,
   niche,
-  navItems,
+  strings,
   ogImage,
 } = Astro.props
+
+const navItems = strings.nav
 
 const canonicalUrl = `${siteUrl}${canonicalPath}`
 const knowsAbout = filterByNiche(skills, niche).flatMap((c) =>
@@ -71,23 +69,16 @@ const profilePageLd = buildProfilePageSchema({
 
 // SiteNavigationElement: declara las paginas principales del sitio para que
 // Google entienda la jerarquia (favorece sitelinks en busquedas de marca).
+// Los nombres salen del YAML i18n; el path se deriva del locale.
+const prefix = locale === 'es' ? '' : '/en'
 const navSchemaItems = [
+  { name: strings.labels.home, path: `${prefix}/` },
+  { name: strings.sections.about.title, path: `${prefix}/about` },
   {
-    name: locale === 'es' ? 'Inicio' : 'Home',
-    path: locale === 'es' ? '/' : '/en/',
+    name: strings.sections.certificates.title,
+    path: `${prefix}/certificates`,
   },
-  {
-    name: locale === 'es' ? 'Sobre mí' : 'About',
-    path: locale === 'es' ? '/about' : '/en/about',
-  },
-  {
-    name: locale === 'es' ? 'Certificados' : 'Certificates',
-    path: locale === 'es' ? '/certificates' : '/en/certificates',
-  },
-  {
-    name: locale === 'es' ? 'Contacto' : 'Contact',
-    path: locale === 'es' ? '/contact' : '/en/contact',
-  },
+  { name: strings.sections.contact.title, path: `${prefix}/contact` },
 ]
 const siteNavigationLd = buildSiteNavigationSchema({
   siteUrl,
@@ -119,29 +110,32 @@ const nicheStyle = nicheTokensToCssVars(niche)
   ogImage={ogImage}
   jsonLd={jsonLd}
   alternates={alternates}
+  skipToContentLabel={strings.components.layout.skipToContent}
 >
   <Nav
     slot="nav"
-    brand="Pablo Contreras"
+    brand={profile.name}
     brandHref={locale === 'es' ? '/' : '/en/'}
     items={navItems}
     currentLocale={locale}
     otherLocaleHref={otherLocalePath}
+    strings={strings.components.nav}
+    themeStrings={strings.components.themeToggle}
   />
   <div class="niche-root" data-niche={niche} style={nicheStyle}>
     <slot />
   </div>
   <Footer
     slot="footer"
-    name="Pablo Contreras"
+    name={profile.name}
     contacts={profile.contacts}
-    locale={locale}
+    strings={strings.components.footer}
   />
   <TrackingPixel
     apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
     niche={niche}
   />
-  <CookieBanner locale={locale} />
+  <CookieBanner strings={strings.components.cookieBanner} />
   <script>
     import {
       initMagneticCursor,

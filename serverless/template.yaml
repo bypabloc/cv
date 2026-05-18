@@ -110,22 +110,6 @@ Globals:
   # metodos (HandlerErrorCode: InvalidRequest "REST API doesn't contain any
   # methods"). El API se materializa cuando aparece el primer endpoint.
 
-# ============================================================================
-# Conditions: stage-based behavior
-# ============================================================================
-# IsDev: en dev permitimos CORS '*' en preflight para poder testear desde
-# localhost:9970-9973 (Docker stack del frontend). Prod mantiene whitelist
-# estricta. La Lambda igual valida Turnstile token, asi que '*' en preflight
-# no permite enviar form sin captcha resuelto.
-# ============================================================================
-Conditions:
-  # IsNotProd: dev y stage. Usado para el AllowOrigin del preflight CORS:
-  # ambos permiten '*' en OPTIONS porque la Lambda valida el Origin real
-  # (CORS_ALLOWED_ORIGINS) + el token Turnstile. Prod mantiene whitelist.
-  # El bypass de Turnstile NO usa una Condition CloudFormation: se gatea
-  # en codigo (turnstile.py _BYPASS_ALLOWED_STAGES = {dev, local}).
-  IsNotProd: !Not [!Equals [!Ref Stage, 'prod']]
-
 Resources:
   # ==========================================================================
   # Lambda Layer compartido: Powertools v3 + httpx + pydantic
@@ -205,15 +189,15 @@ Resources:
           "integrationLatency":"$context.integrationLatency",
           "latency":"$context.responseLatency"}
       Cors:
-        # En dev/stage permitimos '*' para el preflight OPTIONS (testear desde
-        # localhost y desde *.portfolio.{env}.the-full-stack.com). En prod
-        # mantenemos whitelist estricta (apex). La Lambda igual valida el Origin
-        # real (CORS_ALLOWED_ORIGINS) + el token Turnstile, asi que '*' en
-        # preflight no permite spammear el form sin captcha resuelto.
-        AllowOrigin: !If
-          - IsNotProd
-          - "'*'"
-          - "'https://the-full-stack.com'"
+        # AllowOrigin '*' en TODOS los stages para el preflight OPTIONS. El
+        # preflight de API Gateway no puede hacer echo dinamico del Origin
+        # (es un valor estatico), asi que un valor fijo (ej. el apex) rompe
+        # cualquier otro origin valido — incluido www.the-full-stack.com.
+        # '*' es seguro: la Lambda valida el Origin real contra
+        # CORS_ALLOWED_ORIGINS en la respuesta del POST, el form de contacto
+        # exige token Turnstile y /track esta protegido por rate-limit per-IP.
+        # El preflight '*' solo afecta a OPTIONS, no autoriza el POST.
+        AllowOrigin: "'*'"
         AllowHeaders: "'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'"
         AllowMethods: "'GET,POST,OPTIONS'"
         MaxAge: "'600'"

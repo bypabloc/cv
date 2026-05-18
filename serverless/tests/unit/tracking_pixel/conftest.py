@@ -8,6 +8,8 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from common.dynamodb_client import reset_resource_cache
+
 
 @pytest.fixture
 def tracking_aws(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
@@ -22,6 +24,9 @@ def tracking_aws(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     )
 
     with mock_aws():
+        # El resource DynamoDB singleton se recrea bajo este mock_aws():
+        # si quedo cacheado de un test anterior apuntaria a otro mock.
+        reset_resource_cache()
         ddb = boto3.client('dynamodb', region_name='us-east-1')
 
         ddb.create_table(

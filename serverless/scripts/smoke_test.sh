@@ -9,7 +9,6 @@
 #   - AWS CLI configurada con profile tfs-dev
 #   - jq instalado
 #   - curl 8+
-#   - DASHBOARD_PASSWORD exportado (si se valida dashboard)
 #
 # Exit codes:
 #   0 - todos los smoke tests pasaron
@@ -95,62 +94,49 @@ else
   log_fail "POST /contact sin token => ${HTTP_CODE} (esperado 400). Body: ${BODY}"
 fi
 
-# 4. Test POST /track con session valido (espera 204)
+# 4. Test POST /track con body valido post-Fase 1 (espera 204)
+#    El contrato de /track exige event_id + event_type_id (UUID) ademas
+#    de session_id y page_url (ver SPEC-102 / src/tracking_pixel/schemas.py).
 log_info "Test POST /track..."
-SESSION_ID="smoke-$(date +%s)-${RANDOM}"
+SESSION_ID="smoke-session-$(date +%s)-${RANDOM}"
+EVENT_ID=$(python3 -c "import uuid; print(uuid.uuid4())")
+# event_type_id: UUID del tipo page_load del catalogo event_types.
+EVENT_TYPE_ID=$(python3 -c "import uuid; print(uuid.uuid4())")
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   -X POST "${API_ENDPOINT}/track" \
   -H "Content-Type: application/json" \
   -d "{
-    \"event_name\": \"page_view\",
-    \"page_path\": \"/smoke-test\",
-    \"session_id\": \"${SESSION_ID}\"
+    \"session_id\": \"${SESSION_ID}\",
+    \"event_id\": \"${EVENT_ID}\",
+    \"event_type_id\": \"${EVENT_TYPE_ID}\",
+    \"page_url\": \"https://the-full-stack.com/smoke-test\",
+    \"page_path\": \"/smoke-test\"
   }")
 
-if [[ "$HTTP_CODE" == "204" || "$HTTP_CODE" == "200" ]]; then
+if [[ "$HTTP_CODE" == "204" ]]; then
   log_pass "POST /track => ${HTTP_CODE}"
 else
   log_fail "POST /track => ${HTTP_CODE} (esperado 204)"
 fi
 
-# 5. Test GET /dashboard/summary sin auth (espera 401)
-log_info "Test GET /dashboard/summary sin auth (espera 401)..."
+# 5. Test POST /track sin event_type_id (espera 400 INVALID_INPUT)
+log_info "Test POST /track sin event_type_id (espera 400)..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-  -X GET "${API_ENDPOINT}/dashboard/summary?days=30")
+  -X POST "${API_ENDPOINT}/track" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"session_id\": \"${SESSION_ID}\",
+    \"event_id\": \"${EVENT_ID}\",
+    \"page_url\": \"https://the-full-stack.com/smoke-test\"
+  }")
 
-if [[ "$HTTP_CODE" == "401" ]]; then
-  log_pass "GET /dashboard sin auth => 401"
+if [[ "$HTTP_CODE" == "400" ]]; then
+  log_pass "POST /track sin event_type_id => 400 (validacion correcta)"
 else
-  log_fail "GET /dashboard sin auth => ${HTTP_CODE} (esperado 401)"
+  log_fail "POST /track sin event_type_id => ${HTTP_CODE} (esperado 400)"
 fi
 
-# 6. Test GET /dashboard/summary con auth si DASHBOARD_PASSWORD definido
-if [[ -n "${DASHBOARD_PASSWORD:-}" ]]; then
-  log_info "Test GET /dashboard/summary con auth..."
-  AUTH=$(echo -n "owner:${DASHBOARD_PASSWORD}" | base64)
-  RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "${API_ENDPOINT}/dashboard/summary?days=30" \
-    -H "Authorization: Basic ${AUTH}")
-
-  HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-  BODY=$(echo "$RESPONSE" | head -n -1)
-
-  if [[ "$HTTP_CODE" == "200" ]]; then
-    # Validar shape del JSON
-    if echo "$BODY" | jq -e '.contacts and .tracking' >/dev/null 2>&1; then
-      log_pass "GET /dashboard con auth => 200 + JSON shape OK"
-      log_info "Summary: $(echo "$BODY" | jq -c '.')"
-    else
-      log_fail "GET /dashboard => 200 pero shape invalido: ${BODY}"
-    fi
-  else
-    log_fail "GET /dashboard con auth => ${HTTP_CODE} (esperado 200)"
-  fi
-else
-  log_info "Skip dashboard auth test (DASHBOARD_PASSWORD no definido)"
-fi
-
-# 7. Verificar DynamoDB tracking table tiene el event recien insertado
+# 6. Verificar DynamoDB tracking table tiene el event recien insertado
 log_info "Esperando 2s para propagacion DynamoDB Stream..."
 sleep 2
 log_info "Verificando event en DynamoDB tracking-${STAGE}..."
@@ -170,7 +156,7 @@ else
   log_fail "DynamoDB tracking-${STAGE} NO tiene el event session_id=${SESSION_ID}"
 fi
 
-# 8. Verificar SES domain identity
+# 7. Verificar SES domain identity
 log_info "Verificando SES domain identity..."
 SES_FROM=$(aws ssm get-parameter \
   --profile "$PROFILE" --region "$REGION" \

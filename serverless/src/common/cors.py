@@ -125,6 +125,26 @@ def resolve_origin(headers: dict[str, str] | None) -> str:
     return _DEFAULT_WHITELIST[0]
 
 
+def public_cors_origin() -> str:
+    """
+    Origin para endpoints publicos sin credenciales: siempre `'*'`.
+
+    `navigator.sendBeacon` (modo `ping`) — usado por el tracking pixel —
+    exige `Access-Control-Allow-Origin: *` literal en la respuesta. Un echo
+    del Origin (aunque este en whitelist) hace fallar la request `ping` con
+    CORS error. El endpoint `/track` es tracking anonimo: NUNCA usa cookies
+    ni `credentials: include`, asi que `'*'` es correcto y seguro.
+
+    NO usar en `/contact`: ese endpoint hace `fetch` normal y podria
+    necesitar credentials a futuro — ahi va `resolve_origin()` (echo).
+
+    Examples:
+        >>> public_cors_origin()
+        '*'
+    """
+    return '*'
+
+
 def cors_headers(origin: str) -> dict[str, str]:
     """
     Build headers CORS para una respuesta JSON.

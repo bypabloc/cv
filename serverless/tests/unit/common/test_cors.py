@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from common.cors import cors_headers, is_allowed_origin, resolve_origin
+from common.cors import (
+    cors_headers,
+    is_allowed_origin,
+    public_cors_origin,
+    resolve_origin,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -136,6 +141,18 @@ class TestResolveOrigin:
         """Given headers vacios, When resolve, Then apex default."""
         assert resolve_origin(None) == 'https://the-full-stack.com'
         assert resolve_origin({}) == 'https://the-full-stack.com'
+
+
+class TestPublicCorsOrigin:
+    """public_cors_origin - siempre '*' para endpoints sin credenciales."""
+
+    def test_returns_wildcard(self) -> None:
+        """
+        Given un endpoint publico sin credenciales (ej. /track via sendBeacon),
+        When se invoca public_cors_origin,
+        Then retorna '*' literal (sendBeacon en modo ping lo exige).
+        """
+        assert public_cors_origin() == '*'
 
 
 class TestCorsHeaders:

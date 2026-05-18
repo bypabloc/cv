@@ -16,7 +16,7 @@ from typing import Any
 from aws_lambda_powertools.metrics import MetricUnit
 from pydantic import ValidationError as PydanticValidationError
 
-from common.cors import resolve_origin
+from common.cors import public_cors_origin
 from common.exceptions import ApplicationError, ValidationError
 from common.ip_extractor import extract_country, extract_ip
 from common.logger import logger
@@ -34,7 +34,11 @@ from tracking_pixel.service import process_tracking_event
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Entry point Lambda tracking_pixel."""
     headers = event.get('headers') or {}
-    origin = resolve_origin(headers)
+    # /track lo invoca navigator.sendBeacon (modo `ping`), que exige
+    # Access-Control-Allow-Origin: '*' literal. Un echo del Origin hace
+    # fallar la request con CORS error. /track es tracking anonimo sin
+    # credenciales, asi que '*' es correcto (ver common.cors).
+    origin = public_cors_origin()
     ip = extract_ip(event)
     country = extract_country(event)
     user_agent = next(

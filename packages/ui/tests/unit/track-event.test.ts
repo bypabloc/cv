@@ -202,6 +202,13 @@ describe('track-event', () => {
       expect(body.event_props).toEqual({ href: '/contact' })
     })
 
+    it('Given consent When trackEvent Then the beacon Blob is text/plain (CORS-safelisted, no preflight)', () => {
+      localStorage.setItem('cf_consent', 'accepted')
+      trackEvent(PAGE_LOAD)
+      const [, blob] = vi.mocked(navigator.sendBeacon).mock.calls[0] ?? []
+      expect((blob as Blob).type).toBe('text/plain')
+    })
+
     it('Given no consent but ?cf_track=force When trackEvent Then sends the beacon (QA bypass)', () => {
       setSearch('?cf_track=force')
       const result = trackEvent(PAGE_LOAD)

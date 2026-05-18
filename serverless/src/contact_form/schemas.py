@@ -33,6 +33,11 @@ class ContactFormInput(BaseModel):
     # Niche del subdominio (apex/generic | hub | fintech | architect | leader | vibe)
     niche: str | None = Field(default=None, max_length=50)
 
+    # Session de tracking (cf_session del TrackingPixel). Opcional: un
+    # visitante que rechazo el tracking no tiene cf_session -> el contacto
+    # se guarda igual sin correlacion. Validado 20-64 chars cuando viene.
+    session_id: str | None = Field(default=None, min_length=20, max_length=64)
+
     @field_validator('name', 'message', 'company', 'role', 'budget', 'timeline')
     @classmethod
     def sanitize_strings(cls, v: str | None) -> str | None:

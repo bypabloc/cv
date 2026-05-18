@@ -72,9 +72,14 @@ def parse_contact_record(record: dict[str, Any]) -> dict[str, Any] | None:
         'budget': image.get('budget'),
         'timeline': image.get('timeline'),
         'niche': image.get('niche'),
-        'ip': image.get('ip'),
-        'country': image.get('country'),
-        'user_agent': image.get('user_agent'),
+        # session_id: clave de correlacion con tracking_events (SPEC-202).
+        'session_id': image.get('session_id'),
+        # ip/country/user_agent: columnas legacy. contacts ya no las
+        # duplica - el contact_form dejo de escribirlas en DynamoDB, asi
+        # que el image no las trae y el INSERT en Neon las recibe NULL.
+        'ip': None,
+        'country': None,
+        'user_agent': None,
     }
 
 
@@ -122,6 +127,10 @@ def parse_tracking_record(record: dict[str, Any]) -> dict[str, Any] | None:
         # Identificadores del evento (SPEC-102)
         'event_id': image.get('event_id'),
         'event_type_id': image.get('event_type_id'),
+        # Datos especificos por tipo de evento (SPEC-200): el cliente lo
+        # envia como dict; DynamoDB lo guarda como Map y el TypeDeserializer
+        # lo devuelve como dict Python. Se replica a la columna jsonb de Neon.
+        'event_props': image.get('event_props'),
         'ip': image.get('ip'),
         'country': image.get('country'),
         'user_agent': image.get('user_agent'),

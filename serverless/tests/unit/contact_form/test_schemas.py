@@ -80,3 +80,74 @@ class TestContactFormInput:
         assert parsed.budget is None
         assert parsed.timeline is None
         assert parsed.niche is None
+        assert parsed.session_id is None
+
+    def test_when_session_id_omitted_then_none(self) -> None:
+        """
+        Given payload sin session_id [AC-2],
+        When ContactFormInput parsea,
+        Then session_id queda None (un visitante sin cf_session se acepta).
+        """
+        parsed = ContactFormInput(**self._valid_payload())
+
+        assert parsed.session_id is None
+
+    def test_when_session_id_valid_then_accepted(self) -> None:
+        """
+        Given un session_id de 32 chars (formato valido) [AC-1],
+        When ContactFormInput parsea,
+        Then session_id se acepta con ese valor exacto.
+        """
+        session_id = 'a' * 32
+
+        parsed = ContactFormInput(
+            **self._valid_payload(session_id=session_id)
+        )
+
+        assert parsed.session_id == session_id
+
+    def test_when_session_id_min_length_then_accepted(self) -> None:
+        """
+        Given un session_id de exactamente 20 chars (limite inferior) [AC-1],
+        When ContactFormInput parsea,
+        Then se acepta.
+        """
+        session_id = 'b' * 20
+
+        parsed = ContactFormInput(
+            **self._valid_payload(session_id=session_id)
+        )
+
+        assert parsed.session_id == session_id
+
+    def test_when_session_id_max_length_then_accepted(self) -> None:
+        """
+        Given un session_id de exactamente 64 chars (limite superior) [AC-1],
+        When ContactFormInput parsea,
+        Then se acepta.
+        """
+        session_id = 'c' * 64
+
+        parsed = ContactFormInput(
+            **self._valid_payload(session_id=session_id)
+        )
+
+        assert parsed.session_id == session_id
+
+    def test_when_session_id_too_short_then_raises(self) -> None:
+        """
+        Given un session_id de 19 chars (< 20, formato invalido) [AC-4],
+        When ContactFormInput parsea,
+        Then ValidationError.
+        """
+        with pytest.raises(PydanticValidationError):
+            ContactFormInput(**self._valid_payload(session_id='d' * 19))
+
+    def test_when_session_id_too_long_then_raises(self) -> None:
+        """
+        Given un session_id de 65 chars (> 64, formato invalido) [AC-4],
+        When ContactFormInput parsea,
+        Then ValidationError.
+        """
+        with pytest.raises(PydanticValidationError):
+            ContactFormInput(**self._valid_payload(session_id='e' * 65))

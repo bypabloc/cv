@@ -70,6 +70,7 @@ const menuLabel = currentLocale === 'es' ? 'Abrir menú' : 'Open menu'
                 ]}
                 target={item.external ? '_blank' : undefined}
                 rel={item.external ? 'noopener noreferrer' : undefined}
+                data-track="nav_click"
               >
                 {item.label}
                 {item.external && (

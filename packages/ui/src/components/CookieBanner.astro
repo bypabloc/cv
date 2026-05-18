@@ -1,88 +1,146 @@
 ---
 /**
  * @component CookieBanner
- * @description Banner GDPR opt-in para tracking. Persiste consent en
- * localStorage ('cf_consent' = 'accepted' | 'rejected'). NO usa cookies
- * (no cookie banner = simpler GDPR + no cookies = no banner needed
- * tecnicamente, pero por buena practica pedimos opt-in explicito para
- * el tracking pixel).
+ * @description Banner GDPR opt-in para el tracking. Persiste el consentimiento
+ * en localStorage (`cf_consent` = 'accepted' | 'rejected') — NO usa cookies.
+ * Solo se muestra mientras el usuario no respondio; el enlace "Gestionar
+ * consentimiento" del Footer lo reabre (evento `portfolio:consent-reopen`)
+ * para que revocar sea tan facil como otorgar (requisito GDPR).
+ *
+ * Accesibilidad: el banner es un `role="dialog"` con `aria-modal` y
+ * `aria-label`; al abrir, el foco entra al boton Aceptar; Tab cicla entre
+ * ambos botones (focus trap); Escape no cierra (decision deliberada: el
+ * usuario debe responder explicitamente). El foco vuelve al disparador al
+ * cerrar si el banner fue reabierto desde el Footer.
+ *
+ * @props {'es' | 'en'} [locale] - idioma de los textos (default: 'es')
  *
  * @example
- *   <CookieBanner />
+ *   <CookieBanner locale={locale} />
  */
+import { getBannerCopy } from '../lib/cookie-consent'
+
+interface Props {
+  locale?: 'es' | 'en'
+}
+
+const { locale = 'es' } = Astro.props
+const copy = getBannerCopy(locale)
 ---
 
-<div id="cookie-banner" class="cookie-banner" hidden>
+<div
+  id="cookie-banner"
+  class="cookie-banner"
+  role="dialog"
+  aria-modal="true"
+  aria-label={copy.ariaLabel}
+  aria-describedby="cookie-banner-text"
+  hidden
+>
   <div class="cookie-banner__content">
-    <p class="cookie-banner__text">
-      Este sitio usa <strong>analytics propios privacy-friendly</strong> (sin
-      cookies de terceros, datos auto-borran en 60 dias). ¿Permitis recolectar
-      tu visita para mejorar el contenido?
+    <p id="cookie-banner-text" class="cookie-banner__text">
+      {copy.bodyLead}<strong>{copy.bodyStrong}</strong>{copy.bodyTail}
     </p>
     <div class="cookie-banner__actions">
       <button
         type="button"
         class="cookie-banner__btn cookie-banner__btn--accept"
         data-action="accept"
+        data-testid="cookie-accept"
       >
-        Aceptar
+        {copy.accept}
       </button>
       <button
         type="button"
         class="cookie-banner__btn cookie-banner__btn--reject"
         data-action="reject"
+        data-testid="cookie-reject"
       >
-        Rechazar
+        {copy.reject}
       </button>
     </div>
   </div>
 </div>
 
 <script>
-  const STORAGE_KEY = 'cf_consent'
-
-  type ConsentValue = 'accepted' | 'rejected'
-
-  function readConsent(): ConsentValue | null {
-    try {
-      const value = localStorage.getItem(STORAGE_KEY)
-      if (value === 'accepted' || value === 'rejected') return value
-    } catch {
-      // localStorage no disponible (Safari private mode)
-    }
-    return null
-  }
-
-  function writeConsent(value: ConsentValue): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, value)
-    } catch {
-      // localStorage no disponible
-    }
-    document.dispatchEvent(
-      new CustomEvent('portfolio:consent-changed', { detail: { value } }),
-    )
-  }
+  import {
+    readConsent,
+    writeConsent,
+    REOPEN_BANNER_EVENT,
+  } from '../lib/cookie-consent'
 
   function initCookieBanner(): void {
-    const banner = document.getElementById('cookie-banner') as HTMLDivElement | null
-    if (!banner) return
+    const banner = document.getElementById('cookie-banner')
+    if (!(banner instanceof HTMLElement)) return
 
-    const consent = readConsent()
-    if (consent !== null) {
-      // Ya respondio - no mostrar
-      return
+    // Con View Transitions el modulo se re-ejecuta en cada navegacion.
+    // Un flag en el dataset evita registrar los listeners dos veces.
+    if (banner.dataset.cfBannerInit === '1') return
+    banner.dataset.cfBannerInit = '1'
+
+    const buttons = Array.from(
+      banner.querySelectorAll<HTMLButtonElement>('[data-action]'),
+    )
+    const acceptBtn = buttons.find((b) => b.dataset.action === 'accept')
+
+    // Elemento al que devolver el foco al cerrar (cuando se reabrio desde
+    // el Footer); null en la primera visita.
+    let returnFocusTo: HTMLElement | null = null
+
+    function openBanner(opener: HTMLElement | null): void {
+      returnFocusTo = opener
+      banner.hidden = false
+      // Mover el foco al primer boton para que el teclado lo alcance.
+      acceptBtn?.focus()
     }
 
-    banner.hidden = false
+    function closeBanner(): void {
+      banner.hidden = true
+      if (returnFocusTo) {
+        returnFocusTo.focus()
+        returnFocusTo = null
+      }
+    }
 
-    banner.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const action = btn.dataset.action as ConsentValue
-        writeConsent(action)
-        banner.hidden = true
-      })
+    // Focus trap: Tab/Shift+Tab cicla solo entre los botones del banner.
+    banner.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || buttons.length === 0) return
+      const active = document.activeElement
+      const idx = buttons.indexOf(active as HTMLButtonElement)
+      event.preventDefault()
+      const last = buttons.length - 1
+      const next = event.shiftKey
+        ? idx <= 0
+          ? last
+          : idx - 1
+        : idx >= last
+          ? 0
+          : idx + 1
+      buttons[next]?.focus()
     })
+
+    for (const btn of buttons) {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action
+        if (action !== 'accept' && action !== 'reject') return
+        // data-action es 'accept'/'reject'; el consentimiento persistido es
+        // 'accepted'/'rejected' (ConsentValue). TrackingPixel lee esa key.
+        writeConsent(action === 'accept' ? 'accepted' : 'rejected')
+        closeBanner()
+      })
+    }
+
+    // El Footer (u otro disparador) pide reabrir el banner para revocar.
+    document.addEventListener(REOPEN_BANNER_EVENT, (event: Event) => {
+      const opener = (event as CustomEvent<{ opener?: HTMLElement }>).detail
+        ?.opener
+      openBanner(opener instanceof HTMLElement ? opener : null)
+    })
+
+    // Primera visita: mostrar solo si el usuario no respondio aun.
+    if (readConsent() === null) {
+      openBanner(null)
+    }
   }
 
   if (document.readyState === 'loading') {
@@ -125,12 +183,15 @@
   .cookie-banner__text {
     margin: 0;
     font-size: var(--font-size-13);
-    color: var(--color-text-muted);
+    /* text-muted/40 fallan WCAG AA sobre surface; text es el principal */
+    color: var(--color-text);
+    line-height: var(--line-height-snug);
     flex: 1;
   }
 
   .cookie-banner__text strong {
     color: var(--color-text);
+    font-weight: 600;
   }
 
   .cookie-banner__actions {
@@ -146,7 +207,15 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 150ms ease;
+    transition:
+      background var(--motion-base, 150ms) ease,
+      border-color var(--motion-base, 150ms) ease;
+  }
+
+  /* Foco siempre visible (navegacion con teclado, WCAG 2.4.7) */
+  .cookie-banner__btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
   }
 
   .cookie-banner__btn--accept {

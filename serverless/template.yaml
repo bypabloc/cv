@@ -89,7 +89,9 @@ Globals:
         # turnstile-secret es por stage: cada ambiente tiene su widget
         # Cloudflare Turnstile (limite de 10 dominios por widget).
         SSM_TURNSTILE_SECRET_PATH: !Sub /portfolio/${Stage}/turnstile-secret
-        SSM_NEON_URL_PATH: /portfolio/neon-url
+        # neon-url es por stage: cada ambiente apunta a su propio branch Neon
+        # (aislamiento dev/prod a nivel DB).
+        SSM_NEON_URL_PATH: !Sub /portfolio/${Stage}/neon-url
         SSM_OWNER_EMAIL_PATH: /portfolio/owner-email
         SSM_SES_FROM_PATH: /portfolio/ses-from-address
         # KMS key alias para decryption de SSM SecureStrings
@@ -381,7 +383,7 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: stream-processor
-          SSM_NEON_URL_PATH: /portfolio/neon-url
+          SSM_NEON_URL_PATH: !Sub /portfolio/${Stage}/neon-url
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt StreamProcessorDLQ.Arn
@@ -389,7 +391,7 @@ Resources:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt StreamProcessorDLQ.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: 'portfolio/neon-url'
+            ParameterName: !Sub 'portfolio/${Stage}/neon-url'
         - Statement:
             - Effect: Allow
               Action: kms:Decrypt

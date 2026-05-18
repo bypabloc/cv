@@ -1,15 +1,18 @@
 ---
 /**
  * @component TrackingPixel
- * @description Tracking pixel client-side: envia un evento `page_load` al
- * backend tracking_pixel SOLO si el user dio consent en CookieBanner (o si
- * la pagina lleva el flag de QA `?cf_track=force`).
+ * @description Cableado de tracking client-side del portfolio. Monta UN punto
+ * de entrada que: emite `page_load` (carga inicial + cada navegacion SPA via
+ * `astro:after-swap` como `spa_navigation`), inicializa el tracking delegado
+ * de clicks (`initClickTracking`) y el de scroll depth (`initScrollDepth`), y
+ * emite `page_exit` cuando la pestana pasa a `hidden`.
  *
- * Implementacion: client:idle (post page load). Cada carga genera un
- * `event_id` (UUIDv4) propio para idempotencia y envia `POST /track` con
- * `event_type_id` = EVENT_TYPES.PAGE_LOAD, `session_id` + page metadata +
- * UTMs. Re-dispara en `astro:after-swap` para trackear navegacion SPA con
- * View Transitions (cada navegacion = un page_load nuevo).
+ * Toda emision pasa por `track-event.ts`: gating de consentimiento
+ * (`localStorage.cf_consent === 'accepted'`) con bypass de QA `?cf_track=force`.
+ * Sin consentimiento ni flag: cero eventos (GDPR por defecto).
+ *
+ * El flag `window.__cfTrackingPixelInit` evita registrar listeners dos veces
+ * cuando View Transitions re-ejecuta el script en cada navegacion.
  *
  * @props {string} apiEndpoint - URL base del API Gateway
  * @props {string} [niche] - niche del subdominio
@@ -17,156 +20,86 @@
  * @example
  *   <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="generic" />
  */
-import { EVENT_TYPES } from '@portfolio/content'
+import { EVENT_TYPES } from '@portfolio/content/lib/event-types'
 
 interface Props {
   apiEndpoint: string
   niche?: string
 }
 const { apiEndpoint, niche = 'generic' } = Astro.props
-const pageLoadEventTypeId = EVENT_TYPES.PAGE_LOAD
 ---
 
-<script
-  is:inline
+<div
+  id="cf-tracking-pixel"
+  hidden
   data-api-endpoint={apiEndpoint}
   data-niche={niche}
-  define:vars={{ apiEndpoint, niche, pageLoadEventTypeId }}
+  data-page-load={EVENT_TYPES.PAGE_LOAD}
+  data-spa-navigation={EVENT_TYPES.SPA_NAVIGATION}
+  data-page-exit={EVENT_TYPES.PAGE_EXIT}
 >
-  ;(() => {
-    if (!apiEndpoint) return
+</div>
 
-    // Con View Transitions el script is:inline se re-ejecuta en cada
-    // navegacion. Guardar un flag en window evita registrar los listeners
-    // (after-swap, consent-changed) mas de una vez y disparar tracking
-    // duplicado. La navegacion SPA ya la cubre el listener astro:after-swap.
-    if (window.__cfTrackingPixelInit) return
-    window.__cfTrackingPixelInit = true
+<script>
+  import { initClickTracking } from '../lib/click-tracking'
+  import { initScrollDepth } from '../lib/scroll-depth'
+  import { configureTracking, trackEvent } from '../lib/track-event'
 
-    const STORAGE_CONSENT = 'cf_consent'
-    const STORAGE_SESSION = 'cf_session'
+  interface CfTrackingWindow extends Window {
+    __cfTrackingPixelInit?: boolean
+  }
 
-    // UUID v4 (con fallback para browsers sin crypto.randomUUID)
-    function uuid() {
-      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID()
-      }
-      return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random()
-        .toString(36)
-        .slice(2)}`
+  const host = document.getElementById('cf-tracking-pixel')
+  const apiEndpoint = host?.dataset.apiEndpoint ?? ''
+
+  if (host && apiEndpoint) {
+    const win = window as CfTrackingWindow
+    const pageLoadId = host.dataset.pageLoad ?? ''
+    const spaNavigationId = host.dataset.spaNavigation ?? ''
+    const pageExitId = host.dataset.pageExit ?? ''
+
+    configureTracking({
+      apiEndpoint,
+      niche: host.dataset.niche ?? 'generic',
+    })
+
+    // page_load de la carga actual. requestIdleCallback evita competir con
+    // el render inicial; fallback setTimeout para browsers sin la API.
+    const emitPageLoad = (): void => {
+      trackEvent(pageLoadId, { page_path: window.location.pathname })
     }
-
-    // QA bypass: ?cf_track=force permite trackear sin cf_consent (solo E2E).
-    function isForced() {
-      try {
-        return new URLSearchParams(window.location.search).get('cf_track') === 'force'
-      } catch {
-        return false
-      }
-    }
-
-    // Solo enviar si el user acepto, o si esta forzado por el flag de QA.
-    function canTrack() {
-      if (isForced()) return true
-      try {
-        return localStorage.getItem(STORAGE_CONSENT) === 'accepted'
-      } catch {
-        return false
-      }
-    }
-
-    function getSessionId() {
-      try {
-        let sid = localStorage.getItem(STORAGE_SESSION)
-        if (!sid || sid.length < 20) {
-          sid = uuid().replace(/-/g, '')
-          localStorage.setItem(STORAGE_SESSION, sid)
-        }
-        return sid
-      } catch {
-        return `nostorage-${Date.now()}-${Math.random().toString(36).slice(2)}`
-      }
-    }
-
-    function getUTMs() {
-      const params = new URLSearchParams(window.location.search)
-      const utms = {}
-      ;[
-        'utm_source',
-        'utm_medium',
-        'utm_campaign',
-        'utm_content',
-        'utm_term',
-      ].forEach((k) => {
-        const v = params.get(k)
-        if (v) utms[k] = v.slice(0, 100)
-      })
-      return utms
-    }
-
-    function track() {
-      if (!canTrack()) return
-
-      const payload = {
-        session_id: getSessionId(),
-        // event_id: UUIDv4 propio de ESTE evento (idempotencia en reintentos
-        // de sendBeacon). Sin guiones para encajar en el limite del backend.
-        event_id: uuid().replace(/-/g, ''),
-        // event_type_id: tipo del catalogo event_types (page_load).
-        event_type_id: pageLoadEventTypeId,
-        page_url: window.location.href.slice(0, 500),
-        page_title: document.title.slice(0, 200),
-        page_path: window.location.pathname.slice(0, 300),
-        referrer: document.referrer ? document.referrer.slice(0, 500) : undefined,
-        viewport_width: window.innerWidth,
-        viewport_height: window.innerHeight,
-        niche,
-        ...getUTMs(),
-      }
-
-      // sendBeacon es preferible (sigue funcionando si user cierra la tab)
-      const url = `${apiEndpoint}/track`
-      const body = JSON.stringify(payload)
-      try {
-        if (navigator.sendBeacon) {
-          const blob = new Blob([body], { type: 'application/json' })
-          navigator.sendBeacon(url, blob)
-          return
-        }
-      } catch {
-        // continua con fetch fallback
-      }
-
-      // Fallback fetch
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-        keepalive: true,
-      }).catch(() => {
-        // silently ignore - tracking es fire-and-forget
-      })
-    }
-
-    // Lanzar despues que la pagina termine de cargar + idle
     if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(track, { timeout: 2000 })
+      window.requestIdleCallback(emitPageLoad, { timeout: 2000 })
     } else {
-      setTimeout(track, 100)
+      setTimeout(emitPageLoad, 100)
     }
 
-    // Navegacion SPA (View Transitions): cada after-swap es un page_load
-    // nuevo con su propio event_id.
-    document.addEventListener('astro:after-swap', () => {
-      track()
-    })
+    // Con View Transitions el script se re-ejecuta en cada navegacion. El
+    // flag en window evita registrar los listeners (after-swap, click,
+    // scroll, visibilitychange, consent) mas de una vez.
+    if (!win.__cfTrackingPixelInit) {
+      win.__cfTrackingPixelInit = true
 
-    // Re-track si consent cambia despues (el user acepta el banner)
-    document.addEventListener('portfolio:consent-changed', (e) => {
-      const detail = e.detail
-      if (detail && detail.value === 'accepted') {
-        track()
-      }
-    })
-  })()
+      initClickTracking()
+      initScrollDepth()
+
+      // Navegacion SPA: cada after-swap es una navegacion nueva.
+      document.addEventListener('astro:after-swap', () => {
+        trackEvent(spaNavigationId, { page_path: window.location.pathname })
+      })
+
+      // page_exit: el usuario deja la pestana (cambio de app, cierre).
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          trackEvent(pageExitId, { page_path: window.location.pathname })
+        }
+      })
+
+      // Re-emite page_load si el consentimiento cambia despues (banner).
+      document.addEventListener('portfolio:consent-changed', (e) => {
+        const detail = (e as CustomEvent<{ value?: string }>).detail
+        if (detail?.value === 'accepted') emitPageLoad()
+      })
+    }
+  }
 </script>

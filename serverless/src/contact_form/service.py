@@ -32,11 +32,13 @@ def process_contact_form(
 
     Args:
         validated_input: dict del Pydantic ContactFormInput (sin cf_token).
+            Incluye `session_id` opcional, clave de correlacion con tracking.
         cf_response: token Turnstile separado de los campos del form.
-        ip: IP del cliente (CF-Connecting-IP).
+        ip: IP del cliente (CF-Connecting-IP). Se usa para Turnstile y
+            rate-limit; NO se persiste en contacts.
         bypass_secret: header X-Turnstile-Bypass-Secret (opcional, tests).
-        country: country code (CF-IPCountry).
-        user_agent: user-agent de la request.
+        country: country code (CF-IPCountry). Ya no se persiste en contacts.
+        user_agent: user-agent de la request. Ya no se persiste en contacts.
 
     Returns:
         Dict con `contact_id` y `created_at` ISO 8601.
@@ -44,21 +46,23 @@ def process_contact_form(
     Raises:
         TurnstileError: si el captcha falla.
         ClientError: si DynamoDB o SES fallan.
+
+    Note:
+        country y user_agent llegan por compatibilidad de interfaz con el
+        handler, pero contacts ya no duplica datos de origen (SPEC-202): se
+        consultan en tracking_events via JOIN por session_id.
     """
-    # 1. Verify Turnstile token
+    # 1. Verify Turnstile token (la IP se usa para anti-abuso, no se persiste)
     verify_turnstile_token(
         cf_response,
         remote_ip=ip,
         bypass_secret=bypass_secret,
     )
 
-    # 2. Persist en DynamoDB (incluir metadata de la request)
-    payload = {**validated_input, 'ip': ip}
-    if country:
-        payload['country'] = country
-    if user_agent:
-        payload['user_agent'] = user_agent
-
+    # 2. Persist en DynamoDB. NO se inyecta ip/country/user_agent al payload:
+    # contacts deja de duplicar datos de origen, se enlazan con
+    # tracking_events via session_id (incluido en validated_input).
+    payload = dict(validated_input)
     result = save_contact(payload)
     logger.info(
         'contact persisted',

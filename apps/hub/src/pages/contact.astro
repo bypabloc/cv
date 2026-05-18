@@ -2,6 +2,7 @@
 import { profile } from '@portfolio/content'
 import ContactForm from '@portfolio/ui/components/ContactFormReact.astro'
 import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
+import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
 import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
 
@@ -62,6 +63,7 @@ const siteUrl = (import.meta.env.SITE_URL ||
     apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
     niche="hub"
   />
+  <CookieBanner locale="es" />
 </BaseLayout>
 
 <style>

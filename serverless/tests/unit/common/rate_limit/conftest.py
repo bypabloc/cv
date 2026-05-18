@@ -8,6 +8,8 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from common.dynamodb_client import reset_resource_cache
+
 
 @pytest.fixture
 def rate_limit_tables() -> Generator[dict[str, str]]:
@@ -18,6 +20,8 @@ def rate_limit_tables() -> Generator[dict[str, str]]:
     - portfolio-rate-limit-buckets-test
     """
     with mock_aws():
+        # El resource DynamoDB singleton se recrea bajo este mock_aws().
+        reset_resource_cache()
         client = boto3.client('dynamodb', region_name='us-east-1')
 
         # Cache table

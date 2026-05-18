@@ -8,6 +8,8 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from common.dynamodb_client import reset_resource_cache
+
 
 @pytest.fixture
 def contact_form_aws(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
@@ -50,6 +52,8 @@ def contact_form_aws(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     )
 
     with mock_aws():
+        # El resource DynamoDB singleton se recrea bajo este mock_aws().
+        reset_resource_cache()
         # DynamoDB tables
         ddb = boto3.client('dynamodb', region_name='us-east-1')
         ddb.create_table(

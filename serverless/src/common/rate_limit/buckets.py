@@ -27,15 +27,16 @@ import os
 import time
 from typing import Any
 
-import boto3
+from common.dynamodb_client import get_table
 
 
 def _buckets_table() -> Any:
-    region = os.environ.get('AWS_REGION', 'us-east-1')
+    # get_table reusa el resource DynamoDB module-scope (common.dynamodb_client)
+    # en vez de crear uno nuevo por llamada (~150ms cold start por invocacion).
     table_name = os.environ.get(
         'RATE_LIMIT_BUCKETS_TABLE_NAME', 'portfolio-rate-limit-buckets-dev'
     )
-    return boto3.resource('dynamodb', region_name=region).Table(table_name)
+    return get_table(table_name)
 
 
 def _window_start(now: int, window_seconds: int) -> int:

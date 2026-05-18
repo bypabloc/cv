@@ -1,5 +1,5 @@
 ---
-description: "Workflow de Git: conventional commits, branching strategy, PR process, merge strategy rebase-only, y quality gates obligatorios"
+description: "Workflow de Git: conventional commits, branching strategy, PR process, merge strategy merge-commit-only, y quality gates obligatorios"
 ---
 
 # Git Workflow Standards - Portfolio
@@ -90,7 +90,11 @@ Ramas de trabajo (efimeras, separador `/` obligatorio para VS Code):
 - `fix/<nombre>` — correcciones
 - `chore/<nombre>` — mantenimiento, deps, configs
 - `docs/<nombre>` — solo cambios de documentacion
-- `release/<nombre>` — promocion de entorno (ver flujo abajo)
+
+> Las promociones de entorno se hacen con un PR directo `dev -> stage` y
+> `stage -> main` (merge commit). NO se usan ramas `release/*`: con merge
+> commit las ramas no divergen, asi que no hace falta una rama puente
+> rebaseada (ver "Flujo de promocion" abajo).
 
 ## Flujo de promocion dev -> stage -> main (OBLIGATORIO)
 
@@ -100,41 +104,68 @@ Las ramas de entorno se promueven SIEMPRE en cadena, nunca salteando:
 feature/* --PR--> dev --PR--> stage --PR--> main
 ```
 
+TODOS los PRs se mergean con **merge commit** (una sola estrategia, ver
+"Merge strategy" abajo).
+
 Reglas duras:
 
-- Un PR a `main` SOLO puede tener como head `stage` (o una `release/*`
-  rebaseada desde `stage`). NUNCA `dev -> main` directo.
-- Un PR a `stage` SOLO puede tener como head `dev` (o una `release/*`).
+- Un PR a `main` SOLO puede tener como head `stage`. NUNCA `dev -> main`
+  directo.
+- Un PR a `stage` SOLO puede tener como head `dev`.
 - Enforced por el workflow `branch-flow-guard.yml` + ruleset de GitHub.
-
-**Por que NUNCA `dev -> main` directo**: si un commit llega a `main` sin
-pasar por `stage`, la siguiente promocion `dev -> stage` (merge rebase)
-le reescribe el hash. Resultado: el mismo cambio con SHA distinto en
-`main` y en `stage` -> el PR `stage -> main` da conflicto fantasma.
 
 ### Como promover
 
-1. `dev -> stage`: `gh pr create --base stage --head dev`.
-2. `stage -> main`: `gh pr create --base main --head stage`.
-3. Si el PR `stage -> main` da conflicto (commits que llegaron a `main`
-   sin pasar por `stage`): crear `release/promote-stage-to-main` desde
-   `origin/stage`, `git rebase origin/main` (git salta los commits ya
-   aplicados por patch-id), abrir el PR desde esa `release/*`.
+1. `dev -> stage`: `gh pr create --base stage --head dev`, mergear con
+   `gh pr merge --merge` (NUNCA `--delete-branch`: `dev` es permanente).
+2. `stage -> main`: `gh pr create --base main --head stage`, mergear con
+   `gh pr merge --merge`.
+
+El PR de promocion es directo `dev -> stage` y `stage -> main`: sin
+conflictos, sin `release/*` branches, sin rebase manual. El merge commit
+preserva los SHAs de los commits promovidos, asi que las tres ramas
+comparten exactamente los mismos commits (mas un merge commit por
+promocion). No hay divergencia.
 
 ### Resincronizar tras un hotfix directo a main
 
 Si por emergencia un fix entra directo a `main`, propagarlo el MISMO dia
-a `stage` y `dev` para evitar la divergencia: PR `main -> stage` y
-`stage -> dev` (o cherry-pick controlado). No dejar ramas divergentes.
+a `stage` y `dev` con merge commit (PR `main -> stage`, luego
+`stage -> dev`). No dejar ramas divergentes.
 
 ## Merge strategy
 
-- **Rebase-only** — no merge commits, no squash. Configurado en GitHub:
-  solo `allow_rebase_merge` habilitado.
-- Historial lineal entre `dev`, `stage` y `main`
-- NUNCA force push en ramas compartidas
-- Resolver conflictos con rebase, no merge
-- `delete_branch_on_merge` activo: las ramas de trabajo se borran al mergear
+**Merge commit para TODOS los PRs** — una sola estrategia, sin excepciones:
+
+- Feature -> `dev`: `gh pr merge --merge --delete-branch` (la feature
+  branch es efimera, se borra al mergear).
+- Promocion `dev -> stage` y `stage -> main`: `gh pr merge --merge`
+  (SIN `--delete-branch` — las ramas de entorno son permanentes).
+
+En GitHub solo esta habilitado `allow_merge_commit`; `allow_rebase_merge`
+y `allow_squash_merge` estan deshabilitados.
+
+### Por que merge commit y NO rebase
+
+El rebase RE-APLICA cada commit con un SHA nuevo. Si se rebasea al
+promover `dev -> stage`, el commit `feat: X` que estaba en `dev` como
+`abc123` aparece en `stage` como `def456`: mismo contenido, hash distinto.
+git identifica commits por SHA, no por contenido — entonces el siguiente
+PR `dev -> stage` ve `abc123` y `def456` como commits diferentes que
+tocan las mismas lineas y da **conflicto fantasma**.
+
+El merge commit PRESERVA los SHAs: el commit `abc123` de `dev` se mergea
+a `stage` siendo `abc123`. `stage` y `dev` comparten el SHA -> cero
+divergencia, cero conflicto. Por eso TODO se mergea con merge commit.
+
+Trade-off aceptado: la historia tiene un merge commit por cada PR (no es
+100% lineal), a cambio de cero divergencia entre `dev`/`stage`/`main` y
+un unico metodo de merge para todos los PRs.
+
+- NUNCA force push en ramas compartidas (`dev`, `stage`, `main`)
+- Conflictos en una feature branch se resuelven con `git merge origin/dev`
+  (o `git rebase origin/dev` dentro de la propia feature branch antes de
+  abrir el PR — el rebase local de una feature no afecta la divergencia)
 
 ## Antes de cada commit
 
@@ -183,14 +214,14 @@ Si por urgencia se mergea con comentarios pendientes, registrar issue separado y
 ## Workflow diario
 
 ```bash
-git checkout main && git pull --rebase
+git checkout dev && git pull         # dev es la rama base de features
 git checkout -b feature/nueva-funcionalidad
 # ... desarrollo + tests ...
-pnpm exec biome check .             # antes de stage
+pnpm exec biome check .
 pnpm exec tsc --noEmit
 pnpm exec vitest run
-git add -p                          # staging selectivo
+git add -p                           # staging selectivo
 git commit -m "feat(scope): subject en espanol"
 git push origin feature/nueva-funcionalidad
-# crear PR → main (o dev si existe)
+# crear PR -> dev, mergear con merge commit (gh pr merge --merge --delete-branch)
 ```

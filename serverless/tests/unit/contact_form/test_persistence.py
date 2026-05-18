@@ -90,3 +90,75 @@ class TestSaveContact:
         item = table.get_item(Key={'id': result['contact_id']}).get('Item')
         assert 'company' not in item  # type: ignore[operator]
         assert 'role' not in item  # type: ignore[operator]
+
+    def test_when_session_id_present_then_stored(
+        self, contact_form_aws: None
+    ) -> None:
+        """
+        Given payload con session_id valido [AC-3],
+        When save_contact,
+        Then el item de contacts incluye session_id con ese valor.
+        """
+        session_id = 'a' * 32
+
+        result = save_contact({
+            'name': 'Pablo',
+            'email': 'p@example.com',
+            'message': 'Test',
+            'session_id': session_id,
+        })
+
+        table = boto3.resource('dynamodb', region_name='us-east-1').Table(
+            'portfolio-contacts-test'
+        )
+        item = table.get_item(Key={'id': result['contact_id']}).get('Item')
+        assert item is not None
+        assert item['session_id'] == session_id
+
+    def test_when_session_id_absent_then_not_stored(
+        self, contact_form_aws: None
+    ) -> None:
+        """
+        Given payload sin session_id [AC-2],
+        When save_contact,
+        Then el item de contacts NO incluye session_id (se guarda igual).
+        """
+        result = save_contact({
+            'name': 'Pablo',
+            'email': 'p@example.com',
+            'message': 'Test sin sesion',
+        })
+
+        table = boto3.resource('dynamodb', region_name='us-east-1').Table(
+            'portfolio-contacts-test'
+        )
+        item = table.get_item(Key={'id': result['contact_id']}).get('Item')
+        assert item is not None
+        assert 'session_id' not in item
+
+    def test_when_payload_has_origin_metadata_then_not_stored(
+        self, contact_form_aws: None
+    ) -> None:
+        """
+        Given payload que aun trae ip/country/user_agent [AC-3],
+        When save_contact,
+        Then el item de contacts NO incluye ninguno: contacts deja de
+        duplicar datos de origen (se consultan via tracking_events).
+        """
+        result = save_contact({
+            'name': 'Pablo',
+            'email': 'p@example.com',
+            'message': 'Test sin metadata de origen',
+            'ip': '203.0.113.7',
+            'country': 'CL',
+            'user_agent': 'Mozilla/5.0',
+        })
+
+        table = boto3.resource('dynamodb', region_name='us-east-1').Table(
+            'portfolio-contacts-test'
+        )
+        item = table.get_item(Key={'id': result['contact_id']}).get('Item')
+        assert item is not None
+        assert 'ip' not in item
+        assert 'country' not in item
+        assert 'user_agent' not in item

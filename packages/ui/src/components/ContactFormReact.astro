@@ -4,10 +4,16 @@
  * @description Monta ContactFormReact.tsx con `client:load`. Hidrata en el
  *   cliente y comparte estilos globales del form (tokens del DS).
  *
+ *   Los UUID del embudo de contacto (`EVENT_TYPES`) se resuelven aqui, en el
+ *   frontmatter Astro (server-side), y se pasan como props. Asi el bundle del
+ *   island React NO importa `@portfolio/content` — evita que Vite re-optimice
+ *   dependencias del island en dev (mismo patron que TrackingPixel.astro).
+ *
  * @props {string} apiEndpoint - Full URL del POST /contact
  * @props {string} turnstileSitekey - Sitekey publica del widget Turnstile
  * @props {string} [niche] - Nicho del subdominio
  */
+import { EVENT_TYPES } from '@portfolio/content'
 import ContactFormReact from './ContactFormReact.tsx'
 
 interface Props {
@@ -16,12 +22,21 @@ interface Props {
   niche?: string
 }
 const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
+
+const funnelEventTypes = {
+  contactView: EVENT_TYPES.CONTACT_VIEW,
+  contactFormStart: EVENT_TYPES.CONTACT_FORM_START,
+  contactFormSubmit: EVENT_TYPES.CONTACT_FORM_SUBMIT,
+  contactFormSuccess: EVENT_TYPES.CONTACT_FORM_SUCCESS,
+  contactFormError: EVENT_TYPES.CONTACT_FORM_ERROR,
+}
 ---
 
 <ContactFormReact
   apiEndpoint={apiEndpoint}
   turnstileSitekey={turnstileSitekey}
   niche={niche}
+  funnelEventTypes={funnelEventTypes}
   client:load
 />
 

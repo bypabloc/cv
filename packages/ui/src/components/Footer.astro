@@ -1,12 +1,15 @@
 ---
 /**
  * @component Footer
- * @description Footer minimalista con copyright + links sociales.
+ * @description Footer minimalista con copyright + links sociales + boton de
+ *   gestion de consentimiento (GDPR: revocar debe ser tan facil como otorgar).
  *
  * @props {string} name - Nombre del titular del copyright
  * @props {object} contacts - Links sociales (linkedin, github)
  * @props {string} [locale] - 'es' o 'en' (afecta copy)
  */
+import { getManageConsentLabel } from '../lib/cookie-consent'
+
 interface Props {
   name: string
   contacts: {
@@ -23,6 +26,7 @@ const copy =
   locale === 'es'
     ? `© ${year} ${name}. Todos los derechos reservados.`
     : `© ${year} ${name}. All rights reserved.`
+const manageConsentLabel = getManageConsentLabel(locale)
 ---
 
 <footer class="site-footer">
@@ -35,9 +39,42 @@ const copy =
       <li>
         <a href={contacts.github} rel="me" target="_blank">GitHub</a>
       </li>
+      <li>
+        <button
+          type="button"
+          class="site-footer__consent"
+          data-action="reopen-consent"
+          data-testid="manage-consent"
+        >
+          {manageConsentLabel}
+        </button>
+      </li>
     </ul>
   </div>
 </footer>
+
+<script>
+  import { REOPEN_BANNER_EVENT } from '../lib/cookie-consent'
+
+  function initManageConsent(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      '[data-action="reopen-consent"]',
+    )
+    for (const btn of buttons) {
+      if (btn.dataset.cfConsentInit === '1') continue
+      btn.dataset.cfConsentInit = '1'
+      btn.addEventListener('click', () => {
+        // El banner devuelve el foco a este boton al cerrarse.
+        document.dispatchEvent(
+          new CustomEvent(REOPEN_BANNER_EVENT, { detail: { opener: btn } }),
+        )
+      })
+    }
+  }
+
+  initManageConsent()
+  document.addEventListener('astro:after-swap', initManageConsent)
+</script>
 
 <style>
   /* Mobile-first */
@@ -65,16 +102,31 @@ const copy =
   }
   .site-footer__links {
     display: flex;
+    align-items: center;
     gap: var(--space-16);
   }
-  .site-footer__links a {
+  .site-footer__links a,
+  .site-footer__consent {
     font-family: var(--font-mono);
     font-size: var(--font-size-12);
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wider);
   }
-  .site-footer__links a:hover {
+  .site-footer__links a:hover,
+  .site-footer__consent:hover {
     color: var(--color-text);
+  }
+  /* El boton de consentimiento se ve como un link del footer */
+  .site-footer__consent {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .site-footer__consent:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
   }
 </style>

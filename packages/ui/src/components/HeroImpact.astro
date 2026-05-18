@@ -27,6 +27,8 @@ interface Cta {
   href: string
   label: string
   variant?: 'primary' | 'ghost'
+  /** Code de tracking (`data-track`) — ej. `cv_download` para la descarga del CV. */
+  dataTrack?: string
 }
 
 interface Props {
@@ -82,6 +84,7 @@ const {
                 'magnetic',
                 `hero-impact__cta--${cta.variant ?? 'primary'}`,
               ]}
+              data-track={cta.dataTrack}
             >
               {cta.label}
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">

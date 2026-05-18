@@ -89,3 +89,83 @@ class TestProcessContactFormEmailMetric:
 
         assert result == saved
         assert 'OwnerEmailFailed' not in captured
+
+
+class TestProcessContactFormPayload:
+    """process_contact_form - shape del payload que llega a save_contact."""
+
+    def test_when_processed_then_payload_omits_origin_metadata(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        _no_turnstile: None,
+    ) -> None:
+        """
+        Given un contacto con ip/country/user_agent en la request [AC-3],
+        When process_contact_form arma el payload,
+        Then save_contact NO recibe ip/country/user_agent: contacts deja
+        de duplicar datos de origen.
+        """
+        captured_payload: dict = {}
+
+        def _capture(payload: dict) -> dict:
+            captured_payload.update(payload)
+            return {'contact_id': 'c-1', 'created_at': '2026-05-17T00:00:00Z'}
+
+        monkeypatch.setattr(service, 'save_contact', _capture)
+        monkeypatch.setattr(
+            service, 'send_owner_email', lambda _contact: 'msg-id'
+        )
+        service.metrics.clear_metrics()
+
+        process_contact_form(
+            validated_input={
+                'name': 'Pablo',
+                'email': 'p@example.com',
+                'message': 'Hola mundo largo',
+            },
+            cf_response='token',
+            ip='203.0.113.9',
+            country='CL',
+            user_agent='Mozilla/5.0',
+        )
+
+        assert 'ip' not in captured_payload
+        assert 'country' not in captured_payload
+        assert 'user_agent' not in captured_payload
+
+    def test_when_session_id_present_then_payload_keeps_it(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        _no_turnstile: None,
+    ) -> None:
+        """
+        Given validated_input con session_id [AC-3],
+        When process_contact_form arma el payload,
+        Then save_contact recibe session_id con ese valor (clave de
+        correlacion con tracking_events).
+        """
+        captured_payload: dict = {}
+
+        def _capture(payload: dict) -> dict:
+            captured_payload.update(payload)
+            return {'contact_id': 'c-2', 'created_at': '2026-05-17T00:00:00Z'}
+
+        monkeypatch.setattr(service, 'save_contact', _capture)
+        monkeypatch.setattr(
+            service, 'send_owner_email', lambda _contact: 'msg-id'
+        )
+        service.metrics.clear_metrics()
+
+        session_id = 'a' * 32
+        process_contact_form(
+            validated_input={
+                'name': 'Pablo',
+                'email': 'p@example.com',
+                'message': 'Hola mundo largo',
+                'session_id': session_id,
+            },
+            cf_response='token',
+            ip='203.0.113.9',
+        )
+
+        assert captured_payload['session_id'] == session_id

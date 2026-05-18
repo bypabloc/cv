@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import re
 
+from common.cache import cached
+
+# TTL del cache de UA parsing: 24h. Un mismo User-Agent string repetido en
+# invocaciones warm no re-ejecuta el regex (SPEC-204).
+_UA_CACHE_TTL_SECONDS = 24 * 60 * 60
+
 # Simple UA parser - regex patterns (sin dependencia externa para evitar bloat)
 _BROWSER_PATTERNS = (
     ('Chrome', re.compile(r'Chrome/(\d+)')),
@@ -21,9 +27,14 @@ _OS_PATTERNS = (
 )
 
 
+@cached(ttl=_UA_CACHE_TTL_SECONDS, namespace='ua', tags=['user-agent'])
 def parse_user_agent(user_agent: str | None) -> dict[str, str]:
     """
     Parse User-Agent minimalista: browser + os + device type.
+
+    El resultado se cachea 24h via DynamoDB (`@cached`): la cache key se
+    deriva del string User-Agent, asi UA repetidos en invocaciones warm no
+    re-ejecutan el regex y UA distintos no colisionan (SPEC-204).
 
     Returns:
         Dict con `browser`, `browser_version`, `os`, `device_type`.

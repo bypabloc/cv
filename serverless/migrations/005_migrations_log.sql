@@ -11,11 +11,12 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 );
 
 -- Auto-registrar las migrations corridas (idempotente: ON CONFLICT DO NOTHING)
+-- Las migrations 003/004 nunca existieron (servian al dashboard descartado);
+-- se quitan de este INSERT. Para los stages donde el 005 ya corrio con esas
+-- filas, la migration 008 las borra (ver SPEC-204).
 INSERT INTO schema_migrations (version) VALUES
     ('001_init_schema'),
     ('002_indexes'),
-    ('003_materialized_views'),
-    ('004_aggregates_tables'),
     ('005_migrations_log')
 ON CONFLICT (version) DO NOTHING;
 

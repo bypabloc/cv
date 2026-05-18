@@ -71,6 +71,51 @@ SELECT * FROM contacts_by_month_niche LIMIT 10;
 - **Retention**: Drop partitions > 60d automaticamente
 - **Volumen esperado**: ~200 contacts/mes, ~15k tracking events/mes (< 2MB diarios)
 
+## Correlacion contacts <-> tracking_events por session_id
+
+Desde SPEC-202 la tabla `contacts` NO duplica los datos de origen
+(`ip`/`country`/`user_agent`): guarda una columna `session_id` que enlaza
+al visitante con sus `tracking_events`. El origen del contacto (de donde
+viene, que paginas vio, que navegador uso) se consulta con un `JOIN` por
+`session_id`, una sola fuente de verdad.
+
+- `contacts.session_id` es la misma key `cf_session` que emite el
+  `TrackingPixel`. Es OPCIONAL: un visitante que rechazo el tracking no
+  tiene `cf_session` y su `session_id` queda `NULL` — el contacto se guarda
+  igual, sin correlacion.
+- NO hay FK `contacts.session_id -> tracking_events.session_id`:
+  `tracking_events` tiene TTL de 60 dias (drop de particiones) y un
+  contacto puede sobrevivir a sus eventos. La correlacion es logica, via
+  `JOIN`, no por constraint.
+- Las columnas legacy `ip`/`country`/`user_agent` de `contacts` se
+  conservan (datos historicos) pero los contactos nuevos las dejan en
+  `NULL`.
+
+### Query: journey de navegacion de un contacto
+
+Obtiene la secuencia de paginas que vio el visitante antes de contactar,
+ordenada cronologicamente:
+
+```sql
+-- Journey completo del contacto :contact_id (paginas en orden de visita).
+SELECT
+  t.created_at,
+  t.page_path,
+  t.page_title,
+  t.referrer,
+  ROW_NUMBER() OVER (ORDER BY t.created_at) AS page_sequence
+FROM contacts c
+JOIN tracking_events t ON t.session_id = c.session_id
+WHERE c.id = :contact_id
+  AND c.session_id IS NOT NULL
+ORDER BY t.created_at;
+```
+
+`c.session_id IS NOT NULL` evita el caso de un contacto sin sesion (el
+`JOIN` no haria match igual, pero el filtro explicita la intencion). Para
+el journey con `LAG`/`LEAD` (pagina previa/siguiente) ver
+[04-window-functions-analytics.md](./04-window-functions-analytics.md).
+
 ## Referencias relacionadas
 
 - `.claude/docs/postgresql-18/` — Referencia tecnica de PG18 (features del motor, config)

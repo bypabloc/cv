@@ -9,6 +9,7 @@
  *   - message: 10..5000 chars
  *   - company/role/budget/timeline: opcionales con max length
  *   - service_type: literal o vacio
+ *   - session_id: opcional, 20..64 chars cuando esta presente (SPEC-202)
  */
 import { z } from 'zod'
 
@@ -70,6 +71,23 @@ export type ContactFormFieldName = keyof ContactFormValues
 export type ContactFieldErrors = Partial<Record<ContactFormFieldName, string>>
 
 /**
+ * @schema SessionIdSchema
+ * @description Validacion del `session_id` opcional del `POST /contact`
+ *   (SPEC-202). Espejo del Pydantic backend: cuando esta presente debe medir
+ *   20..64 chars; ausente es valido (visitante sin `cf_session`).
+ *
+ * @example
+ *   SessionIdSchema.safeParse(undefined)            // success (ausente)
+ *   SessionIdSchema.safeParse('a'.repeat(32))       // success
+ *   SessionIdSchema.safeParse('short')              // error: min 20
+ */
+export const SessionIdSchema = z
+  .string()
+  .min(20, 'session_id invalido (minimo 20 caracteres).')
+  .max(64, 'session_id invalido (maximo 64 caracteres).')
+  .optional()
+
+/**
  * @function getFieldErrors
  * @description Convierte un ZodError a un dict `{field: firstMessage}`.
  */
@@ -99,4 +117,56 @@ export function emptyValues(): ContactFormValues {
     budget: '',
     timeline: '',
   }
+}
+
+/**
+ * @type ContactPayloadContext
+ * @description Contexto que `buildContactPayload` adjunta al body del POST,
+ *   ademas de los campos del form: `niche`, token Turnstile y el
+ *   `session_id` opcional de tracking (SPEC-202).
+ */
+export interface ContactPayloadContext {
+  niche: string
+  cfToken: string
+  /** `session_id` de `localStorage.cf_session`. Ausente si no hay sesion. */
+  sessionId?: string
+}
+
+/**
+ * @function buildContactPayload
+ * @description Funcion pura: arma el body del `POST /contact` desde los
+ *   valores del form + el contexto. Recorta strings y descarta campos vacios.
+ *   El `session_id` (SPEC-202) se agrega SOLO si viene un valor no vacio: un
+ *   visitante sin `cf_session` produce un body sin la clave `session_id`.
+ *
+ * @param {ContactFormValues} data - Valores validados del formulario
+ * @param {ContactPayloadContext} ctx - niche + token Turnstile + session_id
+ *
+ * @returns {Record<string, string>} Body listo para `JSON.stringify`
+ *
+ * @example
+ *   buildContactPayload(values, { niche: 'generic', cfToken: 't' })
+ *   // -> { niche: 'generic', cf_token: 't', name: '...', ... }  (sin session_id)
+ *   buildContactPayload(values, {
+ *     niche: 'generic', cfToken: 't', sessionId: 'a'.repeat(32),
+ *   })
+ *   // -> { ..., session_id: 'aaaa...' }
+ */
+export function buildContactPayload(
+  data: ContactFormValues,
+  ctx: ContactPayloadContext,
+): Record<string, string> {
+  const payload: Record<string, string> = {
+    niche: ctx.niche,
+    cf_token: ctx.cfToken,
+  }
+  for (const [key, raw] of Object.entries(data)) {
+    const value = typeof raw === 'string' ? raw.trim() : ''
+    if (value) payload[key] = value
+  }
+  // session_id opcional: nunca enviar la clave si no hay sesion (AC-2).
+  if (ctx.sessionId) {
+    payload.session_id = ctx.sessionId
+  }
+  return payload
 }

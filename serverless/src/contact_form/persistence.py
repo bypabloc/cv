@@ -35,18 +35,17 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
         'email': payload['email'],
         'message': payload['message'],
     }
-    # Campos opcionales: solo agregar si tienen valor (DynamoDB no permite empty strings)
+    # Campos opcionales: solo agregar si tienen valor (DynamoDB no permite
+    # empty strings). session_id enlaza el contacto con tracking_events; el
+    # origen (ip/country/user_agent) ya no se duplica aqui - se consulta en
+    # tracking via JOIN por session_id.
     for optional_field in (
         'company', 'role', 'service_type', 'budget', 'timeline', 'niche',
+        'session_id',
     ):
         value = payload.get(optional_field)
         if value:
             item[optional_field] = value
-
-    # Metadata de la request (IP, country, user-agent) para auditoria
-    for meta_field in ('ip', 'country', 'user_agent'):
-        if payload.get(meta_field):
-            item[meta_field] = payload[meta_field]
 
     table.put_item(Item=item)
 

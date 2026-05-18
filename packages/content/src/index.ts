@@ -14,9 +14,11 @@ export { publications } from './data/publications/index'
 export { references } from './data/references/index'
 export { skills } from './data/skills/index'
 export {
+  EVENT_TYPE_BY_CODE,
   EVENT_TYPES,
   type EventTypeCode,
   type EventTypeId,
+  eventTypeIdFromCode,
 } from './lib/event-types'
 export { filterByNiche } from './lib/filter-by-niche'
 export { formatRange, formatYearMonth } from './lib/format-date'

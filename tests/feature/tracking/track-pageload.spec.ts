@@ -152,12 +152,22 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
         window.location.href = '/about?cf_track=force'
       }
     })
-    await waitForCount(captured, 2)
 
-    // Assert: el ultimo evento es de /about, con event_id propio
-    const last = captured[captured.length - 1]
-    expect(last.page_url).toContain('/about')
-    expect(last.event_id).not.toBe(captured[0].event_id)
+    // Esperar el evento de /about. Segun el browser, entre el page_load del
+    // home y el evento de /about puede colarse un spa_navigation intermedio
+    // (ClientRouter dispara astro:after-swap antes de que location refleje la
+    // ruta nueva en WebKit). Por eso se poll-ea por el evento cuya page_url ya
+    // apunta a /about en vez de asumir un orden/conteo fijo.
+    await expect
+      .poll(() => captured.some((p) => p.page_url.includes('/about')), {
+        timeout: 10000,
+      })
+      .toBe(true)
+
+    // Assert: existe un evento de /about con event_id propio
+    const aboutEvent = captured.find((p) => p.page_url.includes('/about'))
+    expect(aboutEvent?.page_url).toContain('/about')
+    expect(aboutEvent?.event_id).not.toBe(captured[0].event_id)
   })
 
   test('Given pagina sin consentimiento y sin flag When carga Then NO se emite /track [AC-8]', async ({

@@ -44,7 +44,7 @@ sam logs -n StreamProcessorFunction --stack-name portfolio-backend-dev \
   --profile tfs-dev --filter "ERROR"
 
 # Rango de tiempo
-sam logs -n AggregatorFunction --stack-name portfolio-backend-dev \
+sam logs -n TrackingPixelFunction --stack-name portfolio-backend-dev \
   --profile tfs-dev --start-time '10min ago'
 ```
 
@@ -57,7 +57,7 @@ sam local invoke ContactFormFunction \
 
 # Remoto (stage real)
 aws lambda invoke --profile tfs-dev --region us-east-1 \
-  --function-name portfolio-backend-dev-AggregatorFunction \
+  --function-name portfolio-backend-dev-StreamProcessorFunction \
   --payload '{}' /tmp/response.json
 cat /tmp/response.json
 ```
@@ -229,6 +229,17 @@ aws cloudwatch describe-alarms --profile tfs-dev --region us-east-1 \
   warm-up con CloudWatch Events cada 5min si critico)
 - Logs: buscar `psycopg.OperationalError: timeout`
 
+### `POST /track` responde `400 INVALID_INPUT`
+
+- El body de `/track` exige `event_type_id` (UUID del catalogo
+  `event_types`, FK) y `event_id` (UUID del evento). Un body sin
+  `event_type_id` o con un UUID malformado falla la validacion Pydantic
+  de `TrackingEventInput` y la Lambda responde `400 INVALID_INPUT`.
+- Verificar que el frontend (`TrackingPixel.astro`, ver SPEC-102) envia
+  ambos campos: `event_id` como UUIDv4 por evento y `event_type_id` con
+  el UUID de `page_load` del modulo de constantes de `@portfolio/content`.
+- Confirmar el contrato del body con `src/tracking_pixel/schemas.py`.
+
 ### DLQ recibe mensajes constantes
 
 - Probable schema mismatch despues de migration
@@ -264,8 +275,8 @@ aws sesv2 list-suppressed-destinations --profile tfs-dev --region us-east-1
 
 ### Ataque DDoS sostenido
 
-1. Confirmar via API GW dashboard (`Count` metric explota)
-2. Identificar IPs origen via `tracking_events.ip_address` en Neon
+1. Confirmar via la consola de API Gateway (`Count` metric explota)
+2. Identificar IPs origen via `tracking_events.ip` en Neon
 3. Bloquear IPs en `portfolio-rate-limit-rules-{stage}` (ver
    "Agregar regla de rate-limit")
 4. Si bot pool grande, activar AWS WAF temporal:
@@ -274,7 +285,7 @@ aws sesv2 list-suppressed-destinations --profile tfs-dev --region us-east-1
    # (no esta IaC porque es opcional/temporal)
    ```
 5. Si Cloudflare cubre el frontend, activar "Under Attack Mode" en
-   Cloudflare dashboard (5 segundos challenge)
+   la consola de Cloudflare (5 segundos challenge)
 6. Logear el incidente con cantidad de IPs + ventana de tiempo
 
 ## Cuando escalar
@@ -286,7 +297,7 @@ aws sesv2 list-suppressed-destinations --profile tfs-dev --region us-east-1
 ## Decisiones operacionales
 
 - **0 AWS::CloudWatch::Alarm operacionales** — logs son la fuente
-  de verdad. Filtros de log + dashboards manuales con CW Logs Insights
+  de verdad. Filtros de log + consultas manuales con CW Logs Insights
 - **Billing alarm como unica alarma** — la mas barata y la unica que
   importa para un portfolio personal sin SLA
 - **Sin PagerDuty/Opsgenie** — proyecto personal, no hay on-call

@@ -87,8 +87,43 @@ class TestGetConnection:
         assert calls == ['postgres://x']
 
 
+def _tracking_payload(**overrides: Any) -> dict[str, Any]:
+    """Payload de tracking minimo para upsert_tracking, con overrides."""
+    payload: dict[str, Any] = {
+        'session_id': 'sess-3',
+        'page_id': 'page-uuid-3',
+        'stream_event_id': 'evt-200',
+        'created_at': '2026-05-17T00:00:00Z',
+        'expires_at': 1750000000,
+        'page_url': 'https://the-full-stack.com/',
+        'page_title': None,
+        'page_path': None,
+        'referrer': None,
+        'utm_source': None,
+        'utm_medium': None,
+        'utm_campaign': None,
+        'utm_content': None,
+        'utm_term': None,
+        'viewport_width': None,
+        'viewport_height': None,
+        'niche': 'generic',
+        'event_id': 'a1b2c3d4e5f60718293a4b5c6d7e8f90',
+        'event_type_id': '019e372b-e0a7-7154-8279-8829bcf6a08c',
+        'event_props': None,
+        'ip': None,
+        'country': None,
+        'user_agent': None,
+        'browser': None,
+        'browser_version': None,
+        'os': None,
+        'device_type': None,
+    }
+    payload.update(overrides)
+    return payload
+
+
 class TestUpsertTracking:
-    """upsert_tracking - el INSERT incluye event_id y event_type_id."""
+    """upsert_tracking - el INSERT incluye event_id, event_type_id, props."""
 
     def test_when_payload_has_event_ids_then_insert_includes_columns(
         self, monkeypatch: pytest.MonkeyPatch
@@ -101,43 +136,74 @@ class TestUpsertTracking:
         fake_conn = _FakeConnection()
         monkeypatch.setattr(pg_writer, '_get_connection', lambda: fake_conn)
 
-        payload = {
-            'session_id': 'sess-3',
-            'page_id': 'page-uuid-3',
-            'stream_event_id': 'evt-200',
-            'created_at': '2026-05-17T00:00:00Z',
-            'expires_at': 1750000000,
-            'page_url': 'https://the-full-stack.com/',
-            'page_title': None,
-            'page_path': None,
-            'referrer': None,
-            'utm_source': None,
-            'utm_medium': None,
-            'utm_campaign': None,
-            'utm_content': None,
-            'utm_term': None,
-            'viewport_width': None,
-            'viewport_height': None,
-            'niche': 'generic',
-            'event_id': 'a1b2c3d4e5f60718293a4b5c6d7e8f90',
-            'event_type_id': '019e372b-e0a7-7154-8279-8829bcf6a08c',
-            'ip': None,
-            'country': None,
-            'user_agent': None,
-            'browser': None,
-            'browser_version': None,
-            'os': None,
-            'device_type': None,
-        }
+        payload = _tracking_payload()
 
         pg_writer.upsert_tracking(payload)
 
         sql = fake_conn.cursor_obj.sql
+        params = fake_conn.cursor_obj.params
         assert 'event_id' in sql
         assert 'event_type_id' in sql
         assert '%(event_id)s' in sql
         assert '%(event_type_id)s' in sql
-        assert fake_conn.cursor_obj.params == payload
+        assert params['event_id'] == 'a1b2c3d4e5f60718293a4b5c6d7e8f90'
+        assert params['event_type_id'] == (
+            '019e372b-e0a7-7154-8279-8829bcf6a08c'
+        )
+
+    def test_when_payload_has_event_props_then_insert_includes_column(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given un payload de tracking con event_props (dict de contexto) [AC-10],
+        When upsert_tracking arma el INSERT,
+        Then la sentencia nombra la columna event_props con su placeholder.
+        """
+        fake_conn = _FakeConnection()
+        monkeypatch.setattr(pg_writer, '_get_connection', lambda: fake_conn)
+
+        pg_writer.upsert_tracking(
+            _tracking_payload(event_props={'href': 'https://x.com'})
+        )
+
+        sql = fake_conn.cursor_obj.sql
+        assert 'event_props' in sql
+        assert '%(event_props)s' in sql
+
+    def test_when_event_props_present_then_param_wrapped_as_jsonb(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given event_props como dict en el payload [AC-10],
+        When upsert_tracking adapta los params,
+        Then event_props viaja envuelto en psycopg Jsonb (adaptacion jsonb).
+        """
+        from psycopg.types.json import Jsonb
+
+        fake_conn = _FakeConnection()
+        monkeypatch.setattr(pg_writer, '_get_connection', lambda: fake_conn)
+        props = {'depth': 50, 'href': 'https://x.com'}
+
+        pg_writer.upsert_tracking(_tracking_payload(event_props=props))
+
+        param = fake_conn.cursor_obj.params['event_props']
+        assert isinstance(param, Jsonb)
+        assert param.obj == props
+
+    def test_when_event_props_none_then_param_stays_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given un payload sin event_props (None) [AC-10],
+        When upsert_tracking adapta los params,
+        Then event_props se pasa como None (columna jsonb nullable).
+        """
+        fake_conn = _FakeConnection()
+        monkeypatch.setattr(pg_writer, '_get_connection', lambda: fake_conn)
+
+        pg_writer.upsert_tracking(_tracking_payload(event_props=None))
+
+        assert fake_conn.cursor_obj.params['event_props'] is None
 
 
 class TestUpsertContact:
@@ -157,6 +223,65 @@ class TestUpsertContact:
         pg_writer.upsert_contact({'id': 'contact-uuid'})
 
         assert 'ON CONFLICT (id) DO NOTHING' in fake_conn.cursor_obj.sql
+
+    def test_when_payload_has_session_id_then_insert_includes_column(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given un payload de contacto con session_id [AC-6],
+        When upsert_contact arma el INSERT,
+        Then la sentencia nombra la columna session_id y su placeholder.
+        """
+        fake_conn = _FakeConnection()
+        monkeypatch.setattr(pg_writer, '_get_connection', lambda: fake_conn)
+
+        pg_writer.upsert_contact({
+            'id': 'contact-uuid',
+            'session_id': 'a' * 32,
+        })
+
+        sql = fake_conn.cursor_obj.sql
+        assert 'session_id' in sql
+        assert '%(session_id)s' in sql
+
+    def test_when_legacy_fields_null_then_insert_keeps_columns(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given un payload de contacto con ip/country/user_agent en NULL [AC-6],
+        When upsert_contact arma el INSERT,
+        Then las columnas legacy siguen en la sentencia (no se eliminan) y
+        los params se pasan con valor None.
+        """
+        fake_conn = _FakeConnection()
+        monkeypatch.setattr(pg_writer, '_get_connection', lambda: fake_conn)
+
+        payload = {
+            'id': 'contact-uuid',
+            'stream_event_id': 'evt-1',
+            'created_at': '2026-05-17T00:00:00Z',
+            'name': 'Pablo',
+            'email': 'p@example.com',
+            'message': 'hola',
+            'company': None,
+            'role': None,
+            'service_type': None,
+            'budget': None,
+            'timeline': None,
+            'niche': 'generic',
+            'session_id': 'a' * 32,
+            'ip': None,
+            'country': None,
+            'user_agent': None,
+        }
+
+        pg_writer.upsert_contact(payload)
+
+        sql = fake_conn.cursor_obj.sql
+        assert 'ip' in sql
+        assert 'country' in sql
+        assert 'user_agent' in sql
+        assert fake_conn.cursor_obj.params == payload
 
 
 class TestIdempotencyLog:

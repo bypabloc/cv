@@ -150,19 +150,25 @@ def cors_headers(origin: str) -> dict[str, str]:
     Build headers CORS para una respuesta JSON.
 
     Args:
-        origin: el origin a echo en Access-Control-Allow-Origin (debe
-                ser uno valido, no se valida aqui — se asume llamada via
-                resolve_origin()).
+        origin: el origin a echo en Access-Control-Allow-Origin. Puede ser
+                un origin concreto (echo via `resolve_origin()`) o `'*'`
+                (endpoints publicos via `public_cors_origin()`).
 
     Returns:
-        Dict con los 5 headers CORS estandar.
+        Dict con los headers CORS. `Vary: Origin` se incluye SOLO cuando el
+        origin es un echo concreto — la respuesta varia segun el Origin. Con
+        `'*'` la respuesta NO varia, y mandar `Vary: Origin` junto a `'*'`
+        es contradictorio: `navigator.sendBeacon` (modo `ping`) rechaza esa
+        combinacion con CORS error. Por eso con `'*'` se omite el `Vary`.
     """
-    return {
+    headers = {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
         'Access-Control-Allow-Headers': (
             'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'
         ),
         'Access-Control-Max-Age': '600',
-        'Vary': 'Origin',
     }
+    if origin != '*':
+        headers['Vary'] = 'Origin'
+    return headers

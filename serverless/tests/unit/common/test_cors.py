@@ -168,3 +168,25 @@ class TestCorsHeaders:
         assert 'X-Turnstile-Token' in headers['Access-Control-Allow-Headers']
         assert headers['Access-Control-Max-Age'] == '600'
         assert headers['Vary'] == 'Origin'
+
+    def test_concrete_origin_includes_vary_origin(self) -> None:
+        """
+        Given un origin concreto (echo),
+        When cors_headers,
+        Then incluye Vary: Origin (la respuesta varia segun el Origin).
+        """
+        headers = cors_headers('https://hub.the-full-stack.com')
+
+        assert headers['Vary'] == 'Origin'
+
+    def test_wildcard_origin_omits_vary_origin(self) -> None:
+        """
+        Given origin '*' (endpoint publico),
+        When cors_headers,
+        Then NO incluye Vary: Origin — la combinacion '*' + Vary: Origin
+        rompe navigator.sendBeacon (modo ping) con CORS error.
+        """
+        headers = cors_headers('*')
+
+        assert headers['Access-Control-Allow-Origin'] == '*'
+        assert 'Vary' not in headers

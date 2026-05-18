@@ -21,9 +21,8 @@ import os
 import time
 from typing import Any, TypedDict
 
-import boto3
-
 from common.cache.decorator import cached
+from common.dynamodb_client import get_table
 
 
 class RateLimitRule(TypedDict, total=False):
@@ -40,12 +39,15 @@ class RateLimitRule(TypedDict, total=False):
 
 
 def _rules_table() -> Any:
-    """Lazy boto3 Resource para rate_limit_rules table."""
-    region = os.environ.get('AWS_REGION', 'us-east-1')
+    """Table reference de rate_limit_rules.
+
+    Usa get_table (resource DynamoDB module-scope, common.dynamodb_client):
+    se reusa entre invocaciones warm en vez de re-crearse por llamada.
+    """
     table_name = os.environ.get(
         'RATE_LIMIT_RULES_TABLE_NAME', 'portfolio-rate-limit-rules-dev'
     )
-    return boto3.resource('dynamodb', region_name=region).Table(table_name)
+    return get_table(table_name)
 
 
 @cached(ttl=60, stale_for=300, namespace='rate_limit', tags=['rate-limit-rules'])

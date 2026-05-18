@@ -164,6 +164,13 @@ export function buildTrackPayload(
  *   (sigue funcionando si el usuario cierra la pestana), con fallback a
  *   `fetch` keepalive. Fire-and-forget: cualquier error se ignora.
  *
+ *   El Blob va con `type: 'text/plain'` a proposito: `text/plain` es un
+ *   Content-Type CORS-safelisted, asi que `sendBeacon` envia una request
+ *   SIMPLE (sin preflight). Con `application/json` el browser dispara
+ *   preflight y el modo `ping` de sendBeacon falla con CORS error tras el
+ *   preflight. El body sigue siendo JSON serializado; el backend `/track`
+ *   parsea con `json.loads()` sin mirar el Content-Type.
+ *
  * @returns {boolean} true si se entrego (a beacon o fetch), false si no
  */
 export function sendBeaconPayload(payload: TrackEventPayload): boolean {
@@ -172,16 +179,19 @@ export function sendBeaconPayload(payload: TrackEventPayload): boolean {
   const body = JSON.stringify(payload)
   try {
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      const blob = new Blob([body], { type: 'application/json' })
+      // text/plain evita el preflight CORS que rompe el modo `ping`.
+      const blob = new Blob([body], { type: 'text/plain' })
       return navigator.sendBeacon(url, blob)
     }
   } catch {
     // continua con el fallback fetch
   }
   try {
+    // El fallback fetch tambien usa text/plain: mismo motivo (request
+    // simple, sin preflight). El backend parsea el body como JSON.
     void fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body,
       keepalive: true,
     }).catch(() => {

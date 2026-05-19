@@ -262,6 +262,31 @@ python devtools/run.py serverless db-branch delete --branch=test-verify --confir
 | Crear/borrar el branch `main` | Es la produccion | Branches efimeros desde `main` |
 | Preocuparse por el auto-suspend de 5 min | Es normal y gratis | Ignorar; el resume es transparente |
 
+## Schema del CV — Alembic (segundo sistema de migraciones)
+
+El Neon del portfolio aloja DOS schemas con DOS sistemas de migracion
+distintos sobre el MISMO schema `public`:
+
+| Dominio | Tablas | Sistema | Tabla de versiones |
+|---------|--------|---------|--------------------|
+| Backend serverless | `contacts`, `tracking_events`, ... | runner SQL versionado (`serverless/scripts/migrate.py`) | `schema_migrations` |
+| CV | `experiences`, `projects`, `translations`, ... | SQLAlchemy + Alembic (`db/cv/`) | `cv_alembic_version` |
+
+Reglas duras para que NO se pisen:
+
+- El CV usa Alembic con `version_table='cv_alembic_version'` — NUNCA
+  `alembic_version` ni `schema_migrations`.
+- El `env.py` del CV filtra el autogenerate con `include_name` /
+  `include_object`: Alembic SOLO ve las tablas de `models.Base.metadata`.
+  Sin ese filtro, `alembic revision --autogenerate` genera
+  `DROP TABLE contacts` (destructivo) porque las tablas del backend no
+  estan en su metadata.
+- El runner SQL del backend NO debe tocar tablas del CV y viceversa.
+- La connection string del CV es la misma `CV_DATABASE_URL` resuelta desde
+  SSM (mismo patron de secretos que el resto).
+
+Detalle operativo: `db/cv/README.md`.
+
 ## Referencias cruzadas
 
 - Arquitectura, pricing, comparativas, integracion Lambda detallada:
@@ -270,5 +295,6 @@ python devtools/run.py serverless db-branch delete --branch=test-verify --confir
   `serverless/ARCHITECTURE.md` + `serverless/INTEGRATION.md`
 - Schema de las tablas + queries analiticas:
   `.claude/docs/postgresql-18-analytics/README.md`
+- Schema relacional del CV (SQLAlchemy + Alembic + seed): `db/cv/README.md`
 - Secretos en SSM (patron general): `serverless/docs/secrets.md`
 - PostgreSQL 18 (features del motor): skill `postgresql-18`

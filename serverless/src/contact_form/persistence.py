@@ -8,7 +8,7 @@ from typing import Any
 
 import boto3
 
-from common.ulid import new_uuidv7
+from _shared.ulid import new_uuidv7
 
 
 def save_contact(payload: dict[str, Any]) -> dict[str, str]:

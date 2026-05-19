@@ -224,7 +224,8 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 │   ├── env/{client,server,dev-cli}/  # env vars por categoria de sensibilidad
 │   └── scripts/          # entrypoints sh
 ├── devtools/             # Python 3.14 + uv (CLI orquestador)
-├── db/cv/                # schema relacional del CV (SQLAlchemy + Alembic)
+├── db/cv/                # [legacy] solo seed/ — el schema se unifico en
+│                         #   serverless/src/_shared/db/ (ver alla)
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
 ├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
 ├── .claude/              # rules, skills, agents, hooks de Claude Code
@@ -275,7 +276,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Backend serverless | [serverless/ARCHITECTURE.md](serverless/ARCHITECTURE.md) + [INTEGRATION.md](serverless/INTEGRATION.md) | Estructura + diagramas ASCII + propuesta hibrida DynamoDB+Neon+Cache. Costo $0/mes (todo free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
 | Specs tracking + SES | [docs/specs/tracking-and-ses/README.md](docs/specs/tracking-and-ses/README.md) | Plan en 2 fases: activar el email del form de contacto (SES) y el sistema de tracking de eventos. 8 specs (SPEC-100..204) con AC BDD + archivos afectados + verify commands + DoD. Incluye el historial de migracion del antiguo `serverless/specs/` (eliminado) |
 | Devtools serverless CLI | [devtools/serverless/README.md](devtools/serverless/README.md) | `python devtools/run.py serverless <command>` — build, deploy, invoke, logs, db-migrate, db-branch, rate-limit, cache, smoke |
-| Schema relacional del CV | [db/cv/README.md](db/cv/README.md) + [docs/diagrams/cv-er.mmd](docs/diagrams/cv-er.mmd) | Migracion del CV de YAML a PostgreSQL 3NF: modelos SQLAlchemy 2.x, migraciones Alembic, seed idempotente, diagrama ER. La DB es fuente de verdad; el frontend la consumira en build-time (script de build pendiente) |
+| Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/src/_shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. El `stream_processor` usa el ORM. `db/cv/` quedo como legacy (solo su `seed/` falta migrar) |
 
 ## Skills disponibles
 

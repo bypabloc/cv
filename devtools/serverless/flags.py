@@ -63,10 +63,12 @@ VALID_COMMANDS = [
     'rotate-secret',  # Rotar valor de un SSM Parameter
     'verify-ses-dns',  # dig DKIM/SPF/DMARC contra Cloudflare
     'request-ses-prod',  # Imprime plantilla del ticket SES production access
-    # Database (Neon PostgreSQL)
+    # Database (Neon PostgreSQL) — migraciones via la Lambda `db` (Alembic)
     'db-shell',  # psql interactivo contra Neon (lee connection string de SSM)
-    'db-migrate',  # Aplica migrations SQL desde serverless/migrations/
-    'db-rollback',  # Rollback de la ultima migration
+    'db-migrate',  # alembic upgrade via Lambda db (aplica migraciones)
+    'db-rollback',  # alembic downgrade via Lambda db (DESTRUCTIVO)
+    'db-current',  # alembic current via Lambda db (revision aplicada)
+    'db-show-migrations',  # alembic history via Lambda db
     'db-seed',  # Carga data de prueba en Neon
     'db-branch',  # Crea / lista / borra branches de Neon (neon CLI)
     'db-tables',  # Lista tablas + row counts
@@ -120,7 +122,7 @@ ALLOWED_FLAGS = [
     'table',  # --table=contacts
     'branch',  # --branch=dev-feature-X (Neon branching)
     'parent',  # --parent=main (parent branch)
-    'sql_file',  # --sql-file=migrations/001_init.sql
+    'target',  # --target=head|-1|base|<revision> (Alembic, via Lambda db)
     'dry_run',  # No aplica, solo imprime acciones
     # Rate-limit management
     'endpoint',  # --endpoint=/contact (rate-limit set)
@@ -185,8 +187,10 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
     'request-ses-prod': 'Plantilla del ticket de production access SES',
     'db-shell': 'psql contra Neon (lee URL de SSM)',
-    'db-migrate': 'Aplicar migrations SQL pendientes',
-    'db-rollback': 'Rollback ultima migration (DESTRUCTIVO)',
+    'db-migrate': 'alembic upgrade via Lambda db (aplica migraciones)',
+    'db-rollback': 'alembic downgrade via Lambda db (DESTRUCTIVO)',
+    'db-current': 'Revision Alembic aplicada en la DB',
+    'db-show-migrations': 'Historial de migraciones Alembic',
     'db-seed': 'Cargar data de prueba',
     'db-branch': 'CRUD de branches Neon (create/list/delete)',
     'db-tables': 'Listar tablas Neon + row counts',
@@ -223,8 +227,10 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'verify-ses-dns': [],
     'request-ses-prod': [],
     'db-shell': ['stage', 'branch'],
-    'db-migrate': ['stage', 'sql_file', 'dry_run'],
-    'db-rollback': ['stage', 'confirm', 'dry_run'],
+    'db-migrate': ['stage', 'target', 'dry_run'],
+    'db-rollback': ['stage', 'target', 'confirm', 'dry_run'],
+    'db-current': ['stage'],
+    'db-show-migrations': ['stage'],
     'db-seed': ['stage', 'dry_run'],
     'db-branch': ['parent', 'branch', 'subcommands'],
     'db-tables': ['stage', 'output'],

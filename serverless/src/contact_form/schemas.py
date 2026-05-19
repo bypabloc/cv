@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from common.validators import sanitize_text
+from _shared.validators import sanitize_text
 
 
 class ContactFormInput(BaseModel):

@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 
 from stream_processor.transformers import (
+    _parse_iso,
+    _to_int,
     deserialize_image,
     detect_table,
     parse_contact_record,
@@ -12,6 +16,44 @@ from stream_processor.transformers import (
 )
 
 pytestmark = pytest.mark.unit
+
+
+class TestToInt:
+    """_to_int - convierte valores de DynamoDB a int."""
+
+    def test_when_decimal_then_returns_int(self) -> None:
+        """Given un valor numerico, When _to_int, Then el int."""
+        assert _to_int('1920') == 1920
+
+    def test_when_none_then_returns_none(self) -> None:
+        """Given None, When _to_int, Then None."""
+        assert _to_int(None) is None
+
+    def test_when_non_numeric_then_returns_none(self) -> None:
+        """
+        Given un valor no convertible a int,
+        When _to_int lo procesa,
+        Then devuelve None (no rompe — campo numerico opcional).
+        """
+        assert _to_int('not-a-number') is None
+
+
+class TestParseIso:
+    """_parse_iso - normaliza un timestamp a datetime aware."""
+
+    def test_when_already_datetime_then_returned_as_is(self) -> None:
+        """
+        Given un valor que ya es datetime,
+        When _parse_iso lo procesa,
+        Then lo devuelve sin reparsearlo.
+        """
+        dt = datetime(2026, 5, 17, 12, 0, 0, tzinfo=UTC)
+
+        assert _parse_iso(dt) is dt
+
+    def test_when_empty_then_returns_none(self) -> None:
+        """Given un valor vacio, When _parse_iso, Then None."""
+        assert _parse_iso('') is None
 
 
 class TestDeserializeImage:
@@ -53,6 +95,31 @@ class TestParseContactRecord:
         assert result['id'] == 'abc-uuid'
         assert result['stream_event_id'] == 'evt-001'
         assert result['name'] == 'Pablo'
+
+    def test_when_insert_then_created_at_is_datetime(self) -> None:
+        """
+        Given INSERT contacts con created_at string ISO,
+        When parse_contact_record,
+        Then created_at del payload es un datetime aware (lo exige el ORM).
+        """
+        record = {
+            'eventID': 'evt-006',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'id': {'S': 'abc-uuid'},
+                    'name': {'S': 'Pablo'},
+                    'email': {'S': 'p@example.com'},
+                    'message': {'S': 'hola'},
+                    'created_at': {'S': '2026-05-14T15:00:00Z'},
+                },
+            },
+        }
+        result = parse_contact_record(record)
+        assert result is not None
+        assert result['created_at'] == datetime(
+            2026, 5, 14, 15, 0, 0, tzinfo=UTC
+        )
 
     def test_when_modify_event_then_returns_none(self) -> None:
         """Given MODIFY event, When parse, Then None (no procesamos)."""
@@ -152,7 +219,11 @@ class TestParseContactRecord:
 
 class TestParseTrackingRecord:
     def test_when_insert_then_returns_payload(self) -> None:
-        """Given INSERT tracking, When parse, Then payload + viewport int."""
+        """Given INSERT tracking, When parse, Then payload con tipos Python.
+
+        `created_at` (string ISO) y `expires_at` (epoch) se convierten a
+        `datetime` aware — el ORM exige objetos datetime, no strings ni ints.
+        """
         record = {
             'eventID': 'evt-100',
             'eventName': 'INSERT',
@@ -171,7 +242,12 @@ class TestParseTrackingRecord:
         assert result is not None
         assert result['session_id'] == 'sess-1'
         assert result['viewport_width'] == 1920
-        assert result['expires_at'] == 1750000000
+        assert result['expires_at'] == datetime.fromtimestamp(
+            1750000000, tz=UTC
+        )
+        assert result['created_at'] == datetime(
+            2026, 5, 14, 15, 0, 0, tzinfo=UTC
+        )
 
     def test_when_remove_event_then_returns_none(self) -> None:
         """Given REMOVE (TTL fired), When parse, Then None."""
@@ -238,6 +314,76 @@ class TestParseTrackingRecord:
         assert result is not None
         assert result['event_props'] == {'href': 'https://github.com/bypabloc'}
 
+    def test_when_event_props_has_numbers_then_decimals_lowered(
+        self,
+    ) -> None:
+        """
+        Given INSERT tracking con event_props que trae numeros (DynamoDB los
+        deserializa como Decimal),
+        When parse_tracking_record,
+        Then los Decimal del payload bajan a int/float (json.dumps de la
+        columna JSONB no serializa Decimal).
+        """
+        record = {
+            'eventID': 'evt-106',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'session_id': {'S': 'sess-8'},
+                    'page_id': {'S': 'page-uuid-8'},
+                    'page_url': {'S': 'https://x.com'},
+                    'event_props': {
+                        'M': {
+                            'depth': {'N': '50'},
+                            'ratio': {'N': '0.75'},
+                            'nested': {'M': {'count': {'N': '3'}}},
+                        }
+                    },
+                },
+            },
+        }
+        result = parse_tracking_record(record)
+        assert result is not None
+        assert result['event_props'] == {
+            'depth': 50,
+            'ratio': 0.75,
+            'nested': {'count': 3},
+        }
+        # Tipos exactos: int para enteros, float para fraccionarios.
+        assert isinstance(result['event_props']['depth'], int)
+        assert isinstance(result['event_props']['ratio'], float)
+        assert isinstance(result['event_props']['nested']['count'], int)
+
+    def test_when_event_props_has_list_then_decimals_lowered_in_list(
+        self,
+    ) -> None:
+        """
+        Given INSERT tracking con event_props que trae una lista de numeros,
+        When parse_tracking_record,
+        Then los Decimal dentro de la lista tambien bajan a int.
+        """
+        record = {
+            'eventID': 'evt-107',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'session_id': {'S': 'sess-9'},
+                    'page_id': {'S': 'page-uuid-9'},
+                    'page_url': {'S': 'https://x.com'},
+                    'event_props': {
+                        'M': {
+                            'steps': {
+                                'L': [{'N': '25'}, {'N': '50'}, {'N': '75'}]
+                            }
+                        }
+                    },
+                },
+            },
+        }
+        result = parse_tracking_record(record)
+        assert result is not None
+        assert result['event_props'] == {'steps': [25, 50, 75]}
+
     def test_when_insert_without_event_props_then_payload_has_none(
         self,
     ) -> None:
@@ -260,6 +406,52 @@ class TestParseTrackingRecord:
         result = parse_tracking_record(record)
         assert result is not None
         assert result['event_props'] is None
+
+
+class TestParseTrackingRecordEdgeCases:
+    """parse_tracking_record - conversiones de tipo en casos limite."""
+
+    def test_when_no_expires_at_then_payload_expires_at_none(self) -> None:
+        """
+        Given INSERT tracking sin expires_at en el image,
+        When parse_tracking_record,
+        Then expires_at del payload queda None (columna nullable).
+        """
+        record = {
+            'eventID': 'evt-104',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'session_id': {'S': 'sess-6'},
+                    'page_id': {'S': 'page-uuid-6'},
+                    'page_url': {'S': 'https://x.com'},
+                },
+            },
+        }
+        result = parse_tracking_record(record)
+        assert result is not None
+        assert result['expires_at'] is None
+
+    def test_when_no_created_at_then_payload_created_at_none(self) -> None:
+        """
+        Given INSERT tracking sin created_at en el image,
+        When parse_tracking_record,
+        Then created_at del payload queda None (el server_default lo cubre).
+        """
+        record = {
+            'eventID': 'evt-105',
+            'eventName': 'INSERT',
+            'dynamodb': {
+                'NewImage': {
+                    'session_id': {'S': 'sess-7'},
+                    'page_id': {'S': 'page-uuid-7'},
+                    'page_url': {'S': 'https://x.com'},
+                },
+            },
+        }
+        result = parse_tracking_record(record)
+        assert result is not None
+        assert result['created_at'] is None
 
 
 class TestDetectTable:

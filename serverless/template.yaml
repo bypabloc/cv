@@ -5,14 +5,15 @@ Transform: AWS::Serverless-2016-10-31
 # Portfolio backend serverless (form contacto + tracking pixel + analytics)
 # Region: us-east-1 | Runtime: Python 3.13 | Architecture: arm64 Graviton2
 # ============================================================================
-# SPEC-001: SAM template base con 3 tablas DynamoDB hot path, Layer Powertools
-# y API Gateway REST. Lambdas se agregan en SPECs 005/006/007/009/010/014.
+# SAM template: 3 tablas DynamoDB hot path + 2 de rate-limit, API Gateway REST
+# y 4 Lambdas (contact_form, tracking_pixel, stream_processor, db). Sin Lambda
+# Layers — cada Lambda declara sus deps en src/<lambda>/requirements.txt.
 # ============================================================================
 
 Description: >
-  Portfolio backend serverless: 3 tablas DynamoDB hot path (contacts, tracking,
-  cache), 1 Lambda Layer compartido (Powertools v3 + httpx + pydantic) y
-  1 API Gateway REST con CORS multi-subdomain.
+  Portfolio backend serverless: tablas DynamoDB hot path (contacts, tracking,
+  cache) + rate-limit, API Gateway REST con CORS multi-subdomain, y 4 Lambdas.
+  El schema PostgreSQL (Neon) lo gestiona la Lambda db via Alembic.
   Arquitectura: serverless/ARCHITECTURE.md
 
 Parameters:
@@ -112,44 +113,6 @@ Globals:
 
 Resources:
   # ==========================================================================
-  # Lambda Layer compartido: Powertools v3 + httpx + pydantic
-  # ==========================================================================
-  # Decision: 1 layer para todas las Lambdas, separado de psycopg3 layer
-  # (este queda para SPEC-008 con compilacion arm64 cross-platform).
-  # Layer en lugar de requirements.txt por Lambda reduce cold start ~80ms.
-  # ==========================================================================
-  CommonLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub portfolio-common-${Stage}
-      Description: Powertools v3 + httpx + pydantic v2 compartido entre Lambdas
-      ContentUri: layers/common_python/
-      CompatibleRuntimes:
-        - python3.13
-      CompatibleArchitectures:
-        - arm64
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: python3.13
-      BuildArchitecture: arm64
-
-  # Layer separado para psycopg3 (Lambdas que tocan Neon: SPEC-009/010)
-  PostgresLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub portfolio-postgres-${Stage}
-      Description: psycopg3 binary arm64 para Lambdas que tocan Neon PostgreSQL
-      ContentUri: layers/postgres_python/
-      CompatibleRuntimes:
-        - python3.13
-      CompatibleArchitectures:
-        - arm64
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: python3.13
-      BuildArchitecture: arm64
-
-  # ==========================================================================
   # API Gateway REST + CloudWatch Access Log Group
   # ==========================================================================
   # IAM role para que API Gateway pueda escribir CloudWatch Logs
@@ -225,8 +188,6 @@ Resources:
       FunctionName: !Sub portfolio-contact-form-${Stage}
       CodeUri: src/
       Handler: contact_form.handler.lambda_handler
-      Layers:
-        - !Ref CommonLayer
       MemorySize: 512
       Timeout: 30
       # NOTA: ReservedConcurrentExecutions removido - la cuenta tiene
@@ -312,8 +273,6 @@ Resources:
       FunctionName: !Sub portfolio-tracking-pixel-${Stage}
       CodeUri: src/
       Handler: tracking_pixel.handler.lambda_handler
-      Layers:
-        - !Ref CommonLayer
       MemorySize: 256
       Timeout: 10
       Environment:
@@ -359,9 +318,6 @@ Resources:
       FunctionName: !Sub portfolio-stream-processor-${Stage}
       CodeUri: src/
       Handler: stream_processor.handler.lambda_handler
-      Layers:
-        - !Ref CommonLayer
-        - !Ref PostgresLayer
       MemorySize: 512
       Timeout: 60
       Environment:
@@ -418,6 +374,45 @@ Resources:
             DestinationConfig:
               OnFailure:
                 Destination: !GetAtt StreamProcessorDLQ.Arn
+      Tags:
+        Project: portfolio
+        ManagedBy: SAM
+        Stage: !Ref Stage
+
+  # ==========================================================================
+  # Lambda db: gestion del schema PostgreSQL (Alembic)
+  # ==========================================================================
+  # Estructura factory: el payload trae `command` (migrate / show-migrations
+  # / current / stamp / downgrade); el handler lo resuelve contra el registry
+  # `COMMANDS`. NO esta detras de API Gateway — se invoca directo (deploy
+  # hook / `aws lambda invoke`). Los modelos de `common/db/` son la unica
+  # fuente de verdad del schema.
+  # ==========================================================================
+  DbFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.13
+      BuildArchitecture: arm64
+    Properties:
+      FunctionName: !Sub portfolio-db-${Stage}
+      CodeUri: src/
+      Handler: db.handler.lambda_handler
+      MemorySize: 512
+      Timeout: 120
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: db
+          SSM_NEON_URL_PATH: !Sub /portfolio/${Stage}/neon-url
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub 'portfolio/${Stage}/neon-url'
+        - Statement:
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
       Tags:
         Project: portfolio
         ManagedBy: SAM
@@ -621,6 +616,16 @@ Outputs:
     Value: !GetAtt TrackingPixelFunction.Arn
     Export:
       Name: !Sub portfolio-backend-${Stage}-TrackingPixelFunctionArn
+  DbFunctionName:
+    Description: Nombre del Lambda db (gestion de schema) — devtools lo invoca
+    Value: !Ref DbFunction
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-DbFunctionName
+  DbFunctionArn:
+    Description: ARN del Lambda db
+    Value: !GetAtt DbFunction.Arn
+    Export:
+      Name: !Sub portfolio-backend-${Stage}-DbFunctionArn
   ContactsTableName:
     Description: Tabla DynamoDB de contacts (form submissions)
     Value: !Ref ContactsTable
@@ -658,11 +663,6 @@ Outputs:
     Value: !GetAtt CacheTable.Arn
     Export:
       Name: !Sub portfolio-backend-${Stage}-CacheTableArn
-  CommonLayerArn:
-    Description: ARN del CommonLayer para reusar en otros stacks
-    Value: !Ref CommonLayer
-    Export:
-      Name: !Sub portfolio-backend-${Stage}-CommonLayerArn
   RateLimitRulesTableName:
     Description: Tabla DynamoDB de rate-limit rules (per-IP/endpoint/country)
     Value: !Ref RateLimitRulesTable

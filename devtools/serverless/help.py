@@ -38,6 +38,8 @@ _GROUPS: dict[str, list[str]] = {
         'db-shell',
         'db-migrate',
         'db-rollback',
+        'db-current',
+        'db-show-migrations',
         'db-seed',
         'db-branch',
         'db-tables',

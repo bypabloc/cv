@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-# Permitir imports de `common.*` directamente (src/ esta en path)
+# Permitir imports de `_shared.*` directamente (src/ esta en path)
 _SRC = Path(__file__).parent.parent / 'src'
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
@@ -44,10 +44,10 @@ def aws_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture(autouse=True, scope='session')
 def _setup_powertools_env() -> None:
     """
-    Setea env vars de Powertools ANTES del import de common.metrics.
+    Setea env vars de Powertools ANTES del import de _shared.metrics.
 
-    pytest carga conftest antes que cualquier test module. Pero common.metrics
-    se importa solo cuando un test hace `from common.metrics import metrics`,
+    pytest carga conftest antes que cualquier test module. Pero _shared.metrics
+    se importa solo cuando un test hace `from _shared.metrics import metrics`,
     asi que setear los env aqui (al import del conftest) es suficiente.
     """
     os.environ.setdefault('POWERTOOLS_SERVICE_NAME', 'test-service')
@@ -55,13 +55,13 @@ def _setup_powertools_env() -> None:
 
 
 @pytest.fixture(autouse=True)
-def reset_settings_cache() -> Generator[None, None, None]:
+def reset_settings_cache() -> Generator[None]:
     """Resetea el singleton de Settings entre tests (autouse)."""
     yield
     # Limpiar cache al final del test (no al inicio: otros fixtures pueden
     # haber seteado env vars que el test quiere ver).
     try:
-        from common.config import get_settings  # noqa: PLC0415
+        from _shared.config import get_settings
         get_settings.cache_clear()
     except ImportError:
         pass

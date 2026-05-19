@@ -10,7 +10,7 @@ import httpx
 import pytest
 import respx
 
-from common.turnstile import TURNSTILE_SITEVERIFY_URL
+from _shared.turnstile import TURNSTILE_SITEVERIFY_URL
 from contact_form.handler import lambda_handler
 
 pytestmark = pytest.mark.unit
@@ -188,7 +188,7 @@ class TestLambdaHandler:
             '/portfolio/dev/turnstile-bypass-secret',
         )
         monkeypatch.setattr(
-            'common.turnstile.get_secret',
+            '_shared.turnstile.get_secret',
             lambda _path: 'test-bypass-key',
         )
 

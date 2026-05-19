@@ -247,7 +247,7 @@ class TestParseUserAgentCache:
         Then existe una entry bajo el namespace 'ua' con el resultado.
         """
         # Arrange
-        from common.cache import DynamoDBCache
+        from _shared.cache import DynamoDBCache
 
         # Act
         parse_user_agent(_FIREFOX_UA)

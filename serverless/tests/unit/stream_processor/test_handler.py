@@ -1,7 +1,9 @@
-"""Tests del handler stream_processor (batch + batchItemFailures)."""
+"""Tests del handler stream_processor (batch + batchItemFailures + ORM)."""
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -66,7 +68,7 @@ def _tracking_record(event_id: str) -> dict[str, Any]:
         'dynamodb': {
             'NewImage': {
                 'session_id': {'S': f'sess-{event_id}'},
-                'page_id': {'S': f'page-{event_id}'},
+                'page_id': {'S': '019e372b-e0a7-7154-8279-8829bcf6a08c'},
                 'page_url': {'S': 'https://the-full-stack.com/'},
                 'created_at': {'S': '2026-05-17T00:00:00Z'},
             },
@@ -75,57 +77,75 @@ def _tracking_record(event_id: str) -> dict[str, Any]:
 
 
 class _Recorder:
-    """Captura las llamadas a pg_writer mockeadas + simula fallos."""
+    """Captura las llamadas a pg_writer + db_session, simula fallos.
+
+    `db_session()` real abre una Session y hace commit/rollback. Aqui el
+    context manager fake cuenta commits (salida limpia) y rollbacks
+    (salida por excepcion) para verificar el control de transaccion.
+    """
 
     def __init__(self, fail_on: set[str] | None = None) -> None:
         self.processed_log: set[str] = set()
-        self.upserts: list[dict[str, Any]] = []
+        self.inserts: list[dict[str, Any]] = []
         self.commits = 0
         self.rollbacks = 0
         self.marked: list[str] = []
         self._fail_on = fail_on or set()
 
-    def is_event_processed(self, event_id: str) -> bool:
+    @contextmanager
+    def db_session(self) -> Iterator[object]:
+        """Context manager fake: commit al salir limpio, rollback si excepcion."""
+        session = object()
+        try:
+            yield session
+            self.commits += 1
+        except Exception:
+            self.rollbacks += 1
+            raise
+
+    def is_event_processed(self, _session: object, event_id: str) -> bool:
         return event_id in self.processed_log
 
-    def upsert_contact(self, payload: dict[str, Any]) -> None:
+    def insert_contact(
+        self, _session: object, payload: dict[str, Any]
+    ) -> None:
         if payload.get('id') in self._fail_on:
             raise RuntimeError('simulated contact write failure')
-        self.upserts.append(payload)
+        self.inserts.append(payload)
 
-    def upsert_tracking(self, payload: dict[str, Any]) -> None:
+    def insert_tracking(
+        self, _session: object, payload: dict[str, Any]
+    ) -> None:
         if payload.get('session_id') in self._fail_on:
             raise RuntimeError('simulated tracking write failure')
-        self.upserts.append(payload)
+        self.inserts.append(payload)
 
     def mark_event_processed(
-        self, event_id: str, *, event_type: str, table_name: str
+        self,
+        _session: object,
+        event_id: str,
+        *,
+        event_type: str,
+        table_name: str,
     ) -> None:
         _ = (event_type, table_name)
         self.marked.append(event_id)
         self.processed_log.add(event_id)
 
-    def commit(self) -> None:
-        self.commits += 1
-
-    def rollback(self) -> None:
-        self.rollbacks += 1
-
 
 def _wire_recorder(
     monkeypatch: pytest.MonkeyPatch, recorder: _Recorder
 ) -> None:
-    """Sustituye las funciones pg_writer importadas por el handler."""
+    """Sustituye db_session + las funciones pg_writer del handler."""
+    monkeypatch.setattr(handler, 'db_session', recorder.db_session)
     monkeypatch.setattr(
         handler, 'is_event_processed', recorder.is_event_processed
     )
-    monkeypatch.setattr(handler, 'upsert_contact', recorder.upsert_contact)
-    monkeypatch.setattr(handler, 'upsert_tracking', recorder.upsert_tracking)
+    monkeypatch.setattr(handler, 'insert_contact', recorder.insert_contact)
+    monkeypatch.setattr(handler, 'insert_tracking', recorder.insert_tracking)
     monkeypatch.setattr(
         handler, 'mark_event_processed', recorder.mark_event_processed
     )
-    monkeypatch.setattr(handler, 'commit', recorder.commit)
-    monkeypatch.setattr(handler, 'rollback', recorder.rollback)
 
 
 class TestStreamHandlerHappyPath:
@@ -137,7 +157,8 @@ class TestStreamHandlerHappyPath:
         """
         Given un batch con un record INSERT de contacts [AC-4],
         When lambda_handler lo procesa,
-        Then el contacto se upsertea, se commitea y no hay batchItemFailures.
+        Then el contacto se inserta, la Session commitea y no hay
+        batchItemFailures.
         """
         # Arrange
         recorder = _Recorder()
@@ -158,7 +179,8 @@ class TestStreamHandlerHappyPath:
         """
         Given un batch con un record INSERT de tracking [AC-4],
         When lambda_handler lo procesa,
-        Then el evento se upsertea, se commitea y no hay batchItemFailures.
+        Then el evento se inserta, la Session commitea y no hay
+        batchItemFailures.
         """
         # Arrange
         recorder = _Recorder()
@@ -171,7 +193,7 @@ class TestStreamHandlerHappyPath:
         # Assert
         assert response == {'batchItemFailures': []}
         assert recorder.commits == 1
-        assert len(recorder.upserts) == 1
+        assert len(recorder.inserts) == 1
 
     def test_when_empty_batch_then_no_failures(
         self, monkeypatch: pytest.MonkeyPatch
@@ -202,7 +224,7 @@ class TestStreamHandlerIdempotency:
         """
         Given un event_id ya registrado en processed_stream_events [AC-5],
         When el handler lo recibe de nuevo,
-        Then NO se upsertea de nuevo (la fila no se duplica).
+        Then NO se inserta de nuevo (la fila no se duplica).
         """
         # Arrange
         recorder = _Recorder()
@@ -213,10 +235,10 @@ class TestStreamHandlerIdempotency:
         # Act
         response = lambda_handler(event, _ctx())
 
-        # Assert: ningun upsert, ningun commit -> sin duplicado
+        # Assert: ningun insert; la Session abrio y cerro limpia (commit
+        # de un no-op) pero no se duplico la fila.
         assert response == {'batchItemFailures': []}
-        assert recorder.upserts == []
-        assert recorder.commits == 0
+        assert recorder.inserts == []
 
     def test_when_same_record_twice_then_second_pass_does_not_duplicate(
         self, monkeypatch: pytest.MonkeyPatch
@@ -224,7 +246,8 @@ class TestStreamHandlerIdempotency:
         """
         Given el mismo record entregado en dos invocaciones [AC-5],
         When lambda_handler procesa la 2a vez,
-        Then solo hay un upsert total (la 2a pasada lo saltea por idempotencia).
+        Then solo hay un insert total (la 2a pasada lo saltea por
+        idempotencia).
         """
         # Arrange
         recorder = _Recorder()
@@ -236,8 +259,7 @@ class TestStreamHandlerIdempotency:
         lambda_handler(event, _ctx())
 
         # Assert: el mark de la 1a pasada hace que la 2a lo saltee
-        assert len(recorder.upserts) == 1
-        assert recorder.commits == 1
+        assert len(recorder.inserts) == 1
 
 
 class TestStreamHandlerBatchFailures:
@@ -268,8 +290,8 @@ class TestStreamHandlerBatchFailures:
         assert response == {
             'batchItemFailures': [{'itemIdentifier': 'evt-bad'}]
         }
-        # el OK avanzo: 1 upsert + 1 commit; el fallido hizo rollback
-        assert len(recorder.upserts) == 1
+        # el OK avanzo: 1 insert + 1 commit; el fallido hizo rollback
+        assert len(recorder.inserts) == 1
         assert recorder.commits == 1
         assert recorder.rollbacks == 1
 
@@ -279,7 +301,7 @@ class TestStreamHandlerBatchFailures:
         """
         Given un record cuya escritura a PG lanza excepcion [AC-4],
         When lambda_handler lo procesa,
-        Then se invoca rollback() y el record entra en batchItemFailures.
+        Then la Session hace rollback y el record entra en batchItemFailures.
         """
         # Arrange
         recorder = _Recorder(fail_on={'sess-evt-fail'})
@@ -306,7 +328,8 @@ class TestStreamHandlerSkippedRecords:
         """
         Given un record sin eventID [AC-4],
         When lambda_handler lo procesa,
-        Then se saltea (no se procesa) y no entra en batchItemFailures.
+        Then se saltea (ni siquiera abre Session) y no entra en
+        batchItemFailures.
         """
         # Arrange
         recorder = _Recorder()
@@ -338,10 +361,9 @@ class TestStreamHandlerSkippedRecords:
         # Act
         response = lambda_handler({'Records': [record]}, _ctx())
 
-        # Assert: MODIFY -> parse devuelve None -> sin upsert ni commit
+        # Assert: MODIFY -> parse devuelve None -> sin insert
         assert response == {'batchItemFailures': []}
-        assert recorder.upserts == []
-        assert recorder.commits == 0
+        assert recorder.inserts == []
 
     def test_when_record_arn_unknown_then_skipped(
         self, monkeypatch: pytest.MonkeyPatch
@@ -364,7 +386,7 @@ class TestStreamHandlerSkippedRecords:
 
         # Assert
         assert response == {'batchItemFailures': []}
-        assert recorder.commits == 0
+        assert recorder.inserts == []
 
     def test_when_tracking_record_missing_keys_then_skipped(
         self, monkeypatch: pytest.MonkeyPatch
@@ -385,5 +407,4 @@ class TestStreamHandlerSkippedRecords:
 
         # Assert
         assert response == {'batchItemFailures': []}
-        assert recorder.upserts == []
-        assert recorder.commits == 0
+        assert recorder.inserts == []

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from common.logger import logger
+from _shared.logger import logger
 from tracking_pixel.enrichment import parse_user_agent
 from tracking_pixel.persistence import save_tracking_event
 

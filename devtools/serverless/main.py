@@ -18,10 +18,12 @@ from typing import Any
 from shared.console import _err
 
 from serverless.database import cmd_db_branch
+from serverless.database import cmd_db_current
 from serverless.database import cmd_db_migrate
 from serverless.database import cmd_db_rollback
 from serverless.database import cmd_db_seed
 from serverless.database import cmd_db_shell
+from serverless.database import cmd_db_show_migrations
 from serverless.database import cmd_db_tables
 from serverless.help import cmd_help
 from serverless.lifecycle import cmd_build
@@ -79,10 +81,12 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'rotate-secret': cmd_rotate_secret,
     'verify-ses-dns': cmd_verify_ses_dns,
     'request-ses-prod': cmd_request_ses_prod,
-    # Database (Neon)
+    # Database (Neon) — migraciones via la Lambda `db` (Alembic)
     'db-shell': cmd_db_shell,
     'db-migrate': cmd_db_migrate,
     'db-rollback': cmd_db_rollback,
+    'db-current': cmd_db_current,
+    'db-show-migrations': cmd_db_show_migrations,
     'db-seed': cmd_db_seed,
     'db-branch': cmd_db_branch,
     'db-tables': cmd_db_tables,

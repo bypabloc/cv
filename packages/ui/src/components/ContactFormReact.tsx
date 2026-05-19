@@ -12,7 +12,9 @@
  * @props {string} apiEndpoint - Full URL del POST /contact
  * @props {string} turnstileSitekey - Sitekey publica del widget Turnstile
  * @props {string} [niche] - Nicho del subdominio (generic | hub | fintech | ...)
+ * @props {object} strings - Textos del form (components.contactForm del i18n)
  */
+import type { ComponentsStrings } from '@portfolio/content'
 import {
   type ChangeEvent,
   type FocusEvent,
@@ -87,11 +89,15 @@ interface FunnelEventTypes {
   contactFormError: string
 }
 
+/** Textos i18n del form de contacto (rama `components.contactForm`). */
+type ContactFormStrings = ComponentsStrings['contactForm']
+
 interface ContactFormReactProps {
   apiEndpoint: string
   turnstileSitekey: string
   niche?: string
   funnelEventTypes: FunnelEventTypes
+  strings: ContactFormStrings
 }
 
 interface ApiErrorBody {
@@ -114,10 +120,14 @@ interface ApiSuccessBody {
 
 type StatusKind = 'idle' | 'submitting' | 'success' | 'error'
 
-const ERROR_MESSAGES: Record<number | 'default', string> = {
-  403: 'Captcha invalido. Recarga la pagina e intenta nuevamente.',
-  429: 'Demasiados intentos. Espera unos minutos antes de reintentar.',
-  default: 'Error del servidor. Intenta nuevamente en unos minutos.',
+/** Mensaje de error HTTP segun el status, desde el YAML i18n. */
+function errorMessageFor(
+  httpStatus: number,
+  strings: ContactFormStrings,
+): string {
+  if (httpStatus === 403) return strings.errorCaptchaInvalid
+  if (httpStatus === 429) return strings.errorTooManyAttempts
+  return strings.errorServer
 }
 
 /**
@@ -156,11 +166,12 @@ async function parseJsonSafe(
 }
 
 /**
- * Mapea errores Pydantic del backend a `ContactFieldErrors`. Espejo del
- * humanizeError() del componente Astro original.
+ * Mapea errores Pydantic del backend a `ContactFieldErrors`. Los mensajes
+ * salen del YAML i18n; `{min}` / `{max}` se interpolan con el `ctx` del error.
  */
 function mapPydanticErrors(
   errors: NonNullable<NonNullable<ApiErrorBody['extra']>['errors']>,
+  strings: ContactFormStrings,
 ): ContactFieldErrors {
   const result: ContactFieldErrors = {}
   for (const err of errors) {
@@ -169,25 +180,25 @@ function mapPydanticErrors(
       .find((seg): seg is string => typeof seg === 'string')
     if (!field) continue
     if (result[field as ContactFormFieldName]) continue
-    const min = err.ctx?.min_length
-    const max = err.ctx?.max_length
+    const min = String(err.ctx?.min_length ?? '?')
+    const max = String(err.ctx?.max_length ?? '?')
     let msg: string
     switch (err.type) {
       case 'missing':
-        msg = 'Este campo es obligatorio.'
+        msg = strings.validationRequired
         break
       case 'string_too_short':
-        msg = `Minimo ${min ?? '?'} caracteres.`
+        msg = strings.validationTooShort.replace('{min}', min)
         break
       case 'string_too_long':
-        msg = `Maximo ${max ?? '?'} caracteres.`
+        msg = strings.validationTooLong.replace('{max}', max)
         break
       case 'value_error':
       case 'value_error.email':
-        msg = 'Email invalido. Revisa el formato.'
+        msg = strings.validationEmail
         break
       default:
-        msg = err.msg || 'Valor invalido.'
+        msg = err.msg || strings.validationInvalid
     }
     result[field as ContactFormFieldName] = msg
   }
@@ -199,6 +210,7 @@ export default function ContactFormReact({
   turnstileSitekey,
   niche = 'generic',
   funnelEventTypes,
+  strings,
 }: ContactFormReactProps) {
   const reactId = useId()
   const [values, setValues] = useState<ContactFormValues>(emptyValues)
@@ -262,7 +274,7 @@ export default function ContactFormReact({
         'error-callback': () => {
           setTurnstileToken('')
           setStatus('error')
-          setStatusMessage('Error cargando el captcha. Recarga la pagina.')
+          setStatusMessage(strings.errorCaptchaLoad)
         },
         'expired-callback': () => {
           setTurnstileToken('')
@@ -298,7 +310,7 @@ export default function ContactFormReact({
         widgetIdRef.current = null
       }
     }
-  }, [sentRecord, turnstileSitekey])
+  }, [sentRecord, turnstileSitekey, strings.errorCaptchaLoad])
 
   /**
    * Valida un solo campo y actualiza errors[field]. Se llama on blur o
@@ -313,12 +325,13 @@ export default function ContactFormReact({
         if (result.success) {
           delete next[field]
         } else {
-          next[field] = result.error.issues[0]?.message ?? 'Valor invalido.'
+          next[field] =
+            result.error.issues[0]?.message ?? strings.validationInvalid
         }
         return next
       })
     },
-    [],
+    [strings.validationInvalid],
   )
 
   const handleChange = useCallback(
@@ -370,7 +383,7 @@ export default function ContactFormReact({
     setValues(emptyValues())
     setErrors({})
     setStatus('success')
-    setStatusMessage('Mensaje enviado. Te respondere en menos de 24h.')
+    setStatusMessage(strings.statusSuccess)
     if (window.turnstile?.reset && widgetIdRef.current) {
       try {
         window.turnstile.reset(widgetIdRef.current)
@@ -388,16 +401,14 @@ export default function ContactFormReact({
     // codigo HTTP en `event_props` [AC-7].
     trackEvent(funnelEventTypes.contactFormError, { code: String(httpStatus) })
     if (httpStatus === 400) {
-      const fieldErrors = mapPydanticErrors(body?.extra?.errors ?? [])
+      const fieldErrors = mapPydanticErrors(body?.extra?.errors ?? [], strings)
       if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors)
       setStatus('error')
-      setStatusMessage(
-        body?.error || 'Hay datos invalidos. Revisa los campos marcados.',
-      )
+      setStatusMessage(body?.error || strings.statusInvalidFields)
       return
     }
     setStatus('error')
-    setStatusMessage(ERROR_MESSAGES[httpStatus] ?? ERROR_MESSAGES.default)
+    setStatusMessage(errorMessageFor(httpStatus, strings))
   }
 
   function preflightCheck():
@@ -412,14 +423,14 @@ export default function ContactFormReact({
     if (!parsed.success) {
       setErrors(getFieldErrors(parsed.error))
       setStatus('error')
-      setStatusMessage('Hay datos invalidos. Revisa los campos marcados.')
+      setStatusMessage(strings.statusInvalidFields)
       return { ok: false }
     }
     const bypassSecret = bypassTokenRef.current
     const cfToken = bypassSecret ? '' : turnstileToken
     if (!bypassSecret && !cfToken) {
       setStatus('error')
-      setStatusMessage('Por favor completa el captcha antes de enviar.')
+      setStatusMessage(strings.statusCaptchaMissing)
       return { ok: false }
     }
     return { ok: true, data: parsed.data, bypassSecret, cfToken }
@@ -431,7 +442,7 @@ export default function ContactFormReact({
     if (!pre.ok) return
 
     setStatus('submitting')
-    setStatusMessage('Enviando...')
+    setStatusMessage(strings.submitting)
 
     // Embudo: el form se envia. Emite `contact_form_submit` [AC-6].
     trackEvent(funnelEventTypes.contactFormSubmit)
@@ -462,7 +473,7 @@ export default function ContactFormReact({
       // `code: 'network'` para distinguirlo de los fallos 4XX/5XX [AC-7].
       trackEvent(funnelEventTypes.contactFormError, { code: 'network' })
       setStatus('error')
-      setStatusMessage('Error de red. Verifica tu conexion y reintenta.')
+      setStatusMessage(strings.errorNetwork)
     }
   }
 
@@ -477,16 +488,17 @@ export default function ContactFormReact({
 
   // Card de confirmacion: el form esta oculto
   if (sentRecord) {
+    const sentBody = strings.sentCardBody.replace(
+      '{date}',
+      formatSentDate(sentRecord.sentAt),
+    )
     return (
       <div className="contact-form-wrapper" data-testid="contact-sent-card">
         <div className="contact-sent-card">
-          <p className="contact-sent-card__title">Mensaje enviado</p>
-          <p className="contact-sent-card__body">
-            Ya enviaste un mensaje el {formatSentDate(sentRecord.sentAt)}. Te
-            respondere en menos de 24h.
-          </p>
+          <p className="contact-sent-card__title">{strings.sentCardTitle}</p>
+          <p className="contact-sent-card__body">{sentBody}</p>
           <p className="contact-sent-card__ref">
-            Ref:{' '}
+            {strings.sentCardRefLabel}{' '}
             <code data-testid="contact-sent-id">{sentRecord.contactId}</code>
           </p>
           <button
@@ -495,7 +507,7 @@ export default function ContactFormReact({
             data-testid="contact-resend-btn"
             onClick={handleResend}
           >
-            Enviar otro mensaje
+            {strings.sentCardResend}
           </button>
         </div>
       </div>
@@ -516,7 +528,7 @@ export default function ContactFormReact({
       >
         <Field
           id={idFor('name')}
-          label="Nombre"
+          label={strings.labelName}
           required
           name="name"
           autoComplete="name"
@@ -528,7 +540,7 @@ export default function ContactFormReact({
 
         <Field
           id={idFor('email')}
-          label="Email"
+          label={strings.labelEmail}
           required
           type="email"
           name="email"
@@ -540,11 +552,11 @@ export default function ContactFormReact({
         />
 
         <details className="form-optional">
-          <summary>Datos opcionales (para conocerte mejor)</summary>
+          <summary>{strings.optionalSummary}</summary>
 
           <Field
             id={idFor('company')}
-            label="Empresa"
+            label={strings.labelCompany}
             name="company"
             autoComplete="organization"
             value={values.company ?? ''}
@@ -555,7 +567,7 @@ export default function ContactFormReact({
 
           <Field
             id={idFor('role')}
-            label="Cargo / Rol"
+            label={strings.labelRole}
             name="role"
             autoComplete="organization-title"
             value={values.role ?? ''}
@@ -565,7 +577,9 @@ export default function ContactFormReact({
           />
 
           <div className="form-row">
-            <label htmlFor={idFor('service_type')}>Tipo de servicio</label>
+            <label htmlFor={idFor('service_type')}>
+              {strings.labelServiceType}
+            </label>
             <select
               id={idFor('service_type')}
               name="service_type"
@@ -575,11 +589,13 @@ export default function ContactFormReact({
               aria-describedby={`${idFor('service_type')}-error`}
               aria-invalid={errors.service_type ? 'true' : undefined}
             >
-              <option value="">(sin especificar)</option>
-              <option value="consulting">Consultoria</option>
-              <option value="fulltime">Full-time</option>
-              <option value="contract">Contrato / freelance</option>
-              <option value="other">Otro</option>
+              <option value="">{strings.serviceTypeUnset}</option>
+              <option value="consulting">
+                {strings.serviceTypeConsulting}
+              </option>
+              <option value="fulltime">{strings.serviceTypeFulltime}</option>
+              <option value="contract">{strings.serviceTypeContract}</option>
+              <option value="other">{strings.serviceTypeOther}</option>
             </select>
             {errors.service_type && (
               <small
@@ -594,9 +610,9 @@ export default function ContactFormReact({
 
           <Field
             id={idFor('budget')}
-            label="Presupuesto"
+            label={strings.labelBudget}
             name="budget"
-            placeholder="Ej: USD 5k-15k / mes"
+            placeholder={strings.budgetPlaceholder}
             value={values.budget ?? ''}
             error={errors.budget}
             onChange={handleChange}
@@ -605,9 +621,9 @@ export default function ContactFormReact({
 
           <Field
             id={idFor('timeline')}
-            label="Timeline"
+            label={strings.labelTimeline}
             name="timeline"
-            placeholder="Ej: empieza en 2 semanas"
+            placeholder={strings.timelinePlaceholder}
             value={values.timeline ?? ''}
             error={errors.timeline}
             onChange={handleChange}
@@ -617,7 +633,7 @@ export default function ContactFormReact({
 
         <div className="form-row">
           <label htmlFor={idFor('message')}>
-            Mensaje <span aria-hidden>*</span>
+            {strings.labelMessage} <span aria-hidden>*</span>
           </label>
           <textarea
             id={idFor('message')}
@@ -661,7 +677,7 @@ export default function ContactFormReact({
           data-testid="contact-submit"
         >
           <span className="submit-label">
-            {status === 'submitting' ? 'Enviando...' : 'Enviar'}
+            {status === 'submitting' ? strings.submitting : strings.submit}
           </span>
         </button>
 

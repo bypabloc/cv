@@ -1,33 +1,39 @@
 ---
+/**
+ * @page contact (es) hub
+ */
 import { profile } from '@portfolio/content'
 import ContactForm from '@portfolio/ui/components/ContactFormReact.astro'
 import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
 import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
 import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
+import { STRINGS } from '../lib/site-config'
+
+const t = STRINGS.es
+const cp = t.components.contactPage
 
 const apiEndpoint = (import.meta.env.PUBLIC_API_ENDPOINT || '') as string
 const turnstileSitekey = (import.meta.env.PUBLIC_TURNSTILE_SITEKEY ||
   '') as string
 const contactEndpoint = apiEndpoint ? `${apiEndpoint}/contact` : ''
+const fallbackParts = cp.fallback.split('{email}')
 // Hostname propio del env (Pages inyecta SITE_URL; fallback prod).
 const siteUrl = (import.meta.env.SITE_URL ||
   'https://hub.portfolio.the-full-stack.com') as string
 ---
 
 <BaseLayout
-  title="Contacto — Pablo Contreras"
-  description="Hablemos de tu proyecto. Respondo en menos de 24h."
+  title={`${t.pages.contact.titlePrefix} — ${t.meta.title}`}
+  description={t.pages.contact.description}
   canonicalUrl={`${siteUrl}/contact`}
+  skipToContentLabel={t.components.layout.skipToContent}
 >
   <main class="contact-page">
     <section class="contact-section">
       <header class="contact-header">
-        <h1>Contacto</h1>
-        <p>
-          Si querés contratarme, colaborar o consultar algo técnico, dejame
-          un mensaje. Te respondo en menos de 24h.
-        </p>
+        <h1>{cp.heading}</h1>
+        <p>{cp.intro}</p>
       </header>
 
       {
@@ -36,34 +42,34 @@ const siteUrl = (import.meta.env.SITE_URL ||
             apiEndpoint={contactEndpoint}
             turnstileSitekey={turnstileSitekey}
             niche="hub"
+            strings={t.components.contactForm}
           />
         ) : (
           <div class="contact-fallback">
             <p>
-              El formulario aún no está configurado en este ambiente. Mientras
-              tanto, escribime directo a{' '}
-              <a href="mailto:pacg1991@gmail.com">pacg1991@gmail.com</a>.
+              {fallbackParts[0]}
+              <a href={`mailto:${profile.contacts.email}`}>
+                {profile.contacts.email}
+              </a>
+              {fallbackParts[1]}
             </p>
           </div>
         )
       }
 
       <div class="contact-direct">
-        <h2 class="contact-direct__title">Otros canales</h2>
+        <h2 class="contact-direct__title">{cp.otherChannels}</h2>
         <ContactLinks
           email={profile.contacts.email}
           linkedin={profile.contacts.linkedin}
           github={profile.contacts.github}
-          locale="es"
+          strings={t.components.contactLinks}
         />
       </div>
     </section>
   </main>
-  <TrackingPixel
-    apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
-    niche="hub"
-  />
-  <CookieBanner locale="es" />
+  <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="hub" />
+  <CookieBanner strings={t.components.cookieBanner} />
 </BaseLayout>
 
 <style>

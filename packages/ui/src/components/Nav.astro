@@ -13,13 +13,18 @@
  * @props {string} brandHref - Link del logotipo (default "/")
  * @props {string} [currentLocale] - 'es' o 'en' para mostrar/ocultar items
  * @props {string} [otherLocaleHref] - Path al equivalente en el otro idioma
+ * @props {object} strings - Textos del nav (components.nav del i18n)
+ * @props {object} themeStrings - aria-labels del theme toggle
  *
  * @example
  *   <Nav
  *     brand="Pablo Contreras"
  *     items={[{href: '/experience', label: 'Experiencia'}]}
+ *     strings={t.components.nav}
+ *     themeStrings={t.components.themeToggle}
  *   />
  */
+import type { ComponentsStrings } from '@portfolio/content'
 import MobileNavDrawer from './MobileNavDrawer.astro'
 import ThemeToggle from './ThemeToggle.astro'
 
@@ -39,6 +44,8 @@ interface Props {
   brandHref?: string
   currentLocale?: 'es' | 'en'
   otherLocaleHref?: string
+  strings: ComponentsStrings['nav']
+  themeStrings: ComponentsStrings['themeToggle']
 }
 
 const {
@@ -47,10 +54,12 @@ const {
   brandHref = '/',
   currentLocale = 'es',
   otherLocaleHref,
+  strings,
+  themeStrings,
 } = Astro.props
 
-const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
-const menuLabel = currentLocale === 'es' ? 'Abrir menú' : 'Open menu'
+const otherLocaleLabel = strings.switchToOtherLocale
+const menuLabel = strings.openMenu
 ---
 
 <header class="site-nav">
@@ -105,7 +114,7 @@ const menuLabel = currentLocale === 'es' ? 'Abrir menú' : 'Open menu'
           </a>
         )
       }
-      <ThemeToggle />
+      <ThemeToggle label={themeStrings} />
       <button
         type="button"
         class="site-nav__hamburger"
@@ -136,6 +145,7 @@ const menuLabel = currentLocale === 'es' ? 'Abrir menú' : 'Open menu'
   items={items}
   currentLocale={currentLocale}
   otherLocaleHref={otherLocaleHref}
+  strings={strings}
 />
 
 <style>

@@ -1,5 +1,5 @@
 ---
-import { profile } from '@portfolio/content'
+import { getHubSelector, profile } from '@portfolio/content'
 import { buildPersonSchema } from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
 import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
@@ -10,13 +10,14 @@ import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
  * @page index (en) — hub selector
  */
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
-import { NICHE_CARDS } from '../../lib/niches'
+import { getNicheCards } from '../../lib/niches'
+import { STRINGS } from '../../lib/site-config'
 
 const SITE = 'https://the-full-stack.com'
 const canonicalUrl = `${SITE}/en/`
-const title = 'Pablo Contreras — Five angles. Pick the one that fits.'
-const description =
-  'Senior Full Stack Engineer. 5 specialized portfolios: Full Stack, LATAM Fintech, Architect, Tech Lead, Vibe Coding.'
+const t = STRINGS.en
+const sel = getHubSelector('en')
+const cards = getNicheCards('en')
 
 const jsonLd = buildPersonSchema({
   profile,
@@ -41,38 +42,37 @@ const hubStyle = nicheTokensToCssVars('hub')
 ---
 
 <BaseLayout
-  title={title}
-  description={description}
+  title={t.meta.title}
+  description={t.meta.description}
   canonicalUrl={canonicalUrl}
   locale="en"
   jsonLd={jsonLd}
   ogImage={`${SITE}/og-image.svg`}
+  skipToContentLabel={t.components.layout.skipToContent}
 >
   <div class="hub-root" data-niche="hub" style={hubStyle}>
     <section class="container-medium hub-hero">
       <MeshGradientBg variant="vivid" aurora />
       <p class="text-mono-label hub-hero__eyebrow">
         <span class="hub-hero__dot" aria-hidden="true"></span>
-        Pablo Contreras · Lima, Peru · Remote LATAM/US
+        {sel.heroEyebrow}
       </p>
       <h1 class="text-display-mega hub-hero__title">
-        <span class="gradient-text">Five</span><br />
-        <span>angles.</span><br />
-        <span class="hub-hero__title-light">Pick the one that fits.</span>
+        <span class="gradient-text">{sel.heroHeadline.lead}</span><br />
+        <span>{sel.heroHeadline.mid}</span><br />
+        <span class="hub-hero__title-light">{sel.heroHeadline.tail}</span>
       </h1>
       <p class="text-body-lg text-muted hub-hero__intro">
-        I am a senior Full Stack engineer with 12+ years in Vue, Django and
-        AWS. Each site tells the same story with a different accent. Pick any
-        — all five stay in sync.
+        {sel.heroIntro}
       </p>
       <p class="text-mono hub-hero__lang">
-        <a href="/" class="anim-underline">Versión en español →</a>
+        <a href="/" class="anim-underline">{sel.otherLocaleLink}</a>
       </p>
     </section>
 
     <section class="container-medium hub-grid">
       {
-        NICHE_CARDS.map((card, i) => (
+        cards.map((card, i) => (
           <a
             class="hub-card tilt-3d scroll-reveal"
             href={card.url}
@@ -81,13 +81,13 @@ const hubStyle = nicheTokensToCssVars('hub')
           >
             <div class="tilt-3d__inner hub-card__inner">
               <span class="hub-card__niche text-mono-label">
-                <span class="hub-card__niche-dot" aria-hidden="true"></span>
+                <span class="hub-card__niche-dot" aria-hidden="true" />
                 {card.niche}
               </span>
-              <h2 class="hub-card__title text-h3">{card.title.en}</h2>
-              <p class="hub-card__blurb text-body text-muted">{card.blurb.en}</p>
+              <h2 class="hub-card__title text-h3">{card.title}</h2>
+              <p class="hub-card__blurb text-body text-muted">{card.blurb}</p>
               <span class="hub-card__cta text-mono">
-                Enter
+                {sel.cardCta}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                   <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
@@ -101,15 +101,12 @@ const hubStyle = nicheTokensToCssVars('hub')
 
   <Footer
     slot="footer"
-    name="Pablo Contreras"
+    name={profile.name}
     contacts={profile.contacts}
-    locale="en"
+    strings={t.components.footer}
   />
-  <TrackingPixel
-    apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
-    niche="hub"
-  />
-  <CookieBanner locale="en" />
+  <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="hub" />
+  <CookieBanner strings={t.components.cookieBanner} />
 </BaseLayout>
 
 <style>

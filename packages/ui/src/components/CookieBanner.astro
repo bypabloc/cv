@@ -13,19 +13,20 @@
  * usuario debe responder explicitamente). El foco vuelve al disparador al
  * cerrar si el banner fue reabierto desde el Footer.
  *
- * @props {'es' | 'en'} [locale] - idioma de los textos (default: 'es')
+ * Los textos vienen del YAML i18n (`components.cookieBanner`).
+ *
+ * @props {object} strings - Textos del banner (components.cookieBanner)
  *
  * @example
- *   <CookieBanner locale={locale} />
+ *   <CookieBanner strings={t.components.cookieBanner} />
  */
-import { getBannerCopy } from '../lib/cookie-consent'
+import type { ComponentsStrings } from '@portfolio/content'
 
 interface Props {
-  locale?: 'es' | 'en'
+  strings: ComponentsStrings['cookieBanner']
 }
 
-const { locale = 'es' } = Astro.props
-const copy = getBannerCopy(locale)
+const { strings: copy } = Astro.props
 ---
 
 <div

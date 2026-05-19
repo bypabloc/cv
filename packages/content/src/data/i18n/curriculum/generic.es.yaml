@@ -1,0 +1,28 @@
+# @i18n curriculum/generic.es
+# Override del CV para la app generic (Full Stack senior). Solo declara lo
+# que difiere del _base.es.yaml; lo ausente cae al base.
+
+meta:
+  title: "Pablo Contreras — Ingeniero Full Stack senior"
+  description: "Ingeniero Full Stack con 12+ años en Vue, Nuxt, Django, AWS y fintech LATAM (Chile, México). Portfolio + experiencia + proyectos."
+
+hero:
+  headline: "Senior Full Stack Engineer"
+  summary: "Más de 12 años entregando producto fintech LATAM, sistemas ERP y e-commerce. Stack actual: Vue 3 + Nuxt + Django + AWS + microservicios. Especialización transversal: fintech, arquitectura, tech leadership y vibe coding con Claude Code."
+  nicheLabel: "Full Stack"
+
+atsKeywords:
+  - "Senior Full Stack Developer"
+  - "Senior Software Engineer"
+  - "Vue 3"
+  - "Nuxt"
+  - "TypeScript"
+  - "Django"
+  - "Python"
+  - "AWS"
+  - "Microservicios"
+  - "PostgreSQL"
+  - "Fintech LATAM"
+  - "Tech Lead"
+  - "Architect"
+  - "Claude Code"

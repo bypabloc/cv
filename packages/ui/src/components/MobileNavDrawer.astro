@@ -11,8 +11,10 @@
  * @props {Array<{href, label}>} items - Items del menu (mismos que Nav)
  * @props {'es'|'en'} [currentLocale] - locale actual
  * @props {string} [otherLocaleHref] - path al otro locale
- * @props {string} [closeLabel] - aria-label del boton cerrar
+ * @props {object} strings - Textos del nav (components.nav del i18n)
  */
+import type { ComponentsStrings } from '@portfolio/content'
+
 interface NavItem {
   href: string
   label: string
@@ -24,18 +26,14 @@ interface Props {
   items: NavItem[]
   currentLocale?: 'es' | 'en'
   otherLocaleHref?: string
-  closeLabel?: string
+  strings: ComponentsStrings['nav']
 }
 
-const {
-  items,
-  currentLocale = 'es',
-  otherLocaleHref,
-  closeLabel = currentLocale === 'es' ? 'Cerrar menú' : 'Close menu',
-} = Astro.props
+const { items, currentLocale = 'es', otherLocaleHref, strings } = Astro.props
 
-const otherLocaleLabel = currentLocale === 'es' ? 'EN' : 'ES'
-const navLabel = currentLocale === 'es' ? 'Menú principal' : 'Main menu'
+const closeLabel = strings.closeMenu
+const otherLocaleLabel = strings.switchToOtherLocale
+const navLabel = strings.mainMenu
 ---
 
 <dialog

@@ -1,0 +1,36 @@
+# @i18n curriculum/fintech.es
+# Override del CV para la app fintech (Senior Full Stack Fintech LATAM).
+
+meta:
+  title: "Pablo Contreras — Senior Full Stack Fintech LATAM"
+  description: "Senior Full Stack especializado en fintech Chile/México. Saldar deudas, scoring crediticio, productos de crédito con Vue + Django + AWS. 8+ años entregando producto."
+
+hero:
+  eyebrow: "Pablo Contreras · Fintech LATAM · Lima, Perú · Remoto LATAM/US"
+  headline: "Senior Full Stack Fintech LATAM"
+  summary: "Entrego productos fintech en Chile y México desde Destacame: saldar deudas, scoring crediticio y créditos por tramos. Vue + Nuxt + Django + AWS + microservicios con foco en compliance y experiencia del usuario."
+  nicheLabel: "Fintech LATAM"
+
+sections:
+  experienceSubtitle: "Roles fintech destacados primero: Destacame (Chile, México) y GoodMeal."
+  projectsSubtitle: "Case studies de productos fintech LATAM (bajo NDA) + side projects."
+
+atsKeywords:
+  - "Senior Full Stack Developer"
+  - "Fintech LATAM"
+  - "Chile"
+  - "México"
+  - "Debt Settlement"
+  - "Credit Scoring"
+  - "Tiered Credit Products"
+  - "Microservicios"
+  - "Vue 3"
+  - "Nuxt"
+  - "Django"
+  - "Python"
+  - "TypeScript"
+  - "AWS"
+  - "PostgreSQL"
+  - "PCI DSS awareness"
+  - "KYC / AML"
+  - "PII handling"

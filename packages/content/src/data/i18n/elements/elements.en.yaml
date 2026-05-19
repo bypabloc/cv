@@ -1,0 +1,174 @@
+# @i18n elements.en
+# Reusable UI labels in English. Identical for all 6 apps.
+# Validated by ElementsStringsSchema. Its pair is elements.es.yaml — both
+# files MUST have exactly the same keys (parity test).
+
+# Navigation menu items. `key` is stable; `label` is the visible text.
+# The href is built in code (depends on locale and basePrefix).
+nav:
+  - key: experience
+    label: "Experience"
+  - key: projects
+    label: "Projects"
+  - key: skills
+    label: "Skills"
+  - key: about
+    label: "About"
+  - key: certificates
+    label: "Certificates"
+  - key: contact
+    label: "Contact"
+  - key: hub
+    label: "Other views"
+
+# StatsBar labels.
+stats:
+  eyebrow: "Track record"
+  yearsExperience: "Years shipping product"
+  companies: "Companies"
+  countries: "LATAM countries"
+  certifications: "Certifications"
+
+# Title of each CV block. Subtitles are app-specific (they live in
+# curriculum/), here only the generic title.
+sections:
+  experience:
+    title: "Experience"
+  projects:
+    title: "Featured projects"
+  skills:
+    title: "Technical skills"
+  about:
+    title: "About"
+  contact:
+    title: "Contact"
+  certificates:
+    title: "Certificates"
+  publications:
+    title: "Publications"
+  awards:
+    title: "Awards"
+  education:
+    title: "Education"
+  languages:
+    title: "Languages"
+  references:
+    title: "References"
+
+# Generic labels reused across components and sections.
+labels:
+  home: "Home"
+  downloadCv: "Download CV"
+  viewAllExperience: "View full experience"
+  confidential: "Under NDA — detailed metrics on request"
+  technicalSkills: "Technical"
+  softSkills: "Soft"
+  caseStudyCta: "View case study"
+  caseStudyProblem: "Problem"
+  caseStudyProcess: "Process"
+  caseStudyResult: "Result"
+  caseStudyMetrics: "Metrics"
+  ctaPrimary: "View experience"
+  ctaSecondary: "Download CV"
+
+# Interactive component strings.
+components:
+  contactForm:
+    labelName: "Name"
+    labelEmail: "Email"
+    labelCompany: "Company"
+    labelRole: "Title / Role"
+    labelServiceType: "Service type"
+    labelBudget: "Budget"
+    labelTimeline: "Timeline"
+    labelMessage: "Message"
+    optionalSummary: "Optional details (to get to know you better)"
+    serviceTypeUnset: "(unspecified)"
+    serviceTypeConsulting: "Consulting"
+    serviceTypeFulltime: "Full-time"
+    serviceTypeContract: "Contract / freelance"
+    serviceTypeOther: "Other"
+    budgetPlaceholder: "e.g. USD 5k-15k / month"
+    timelinePlaceholder: "e.g. starts in 2 weeks"
+    submit: "Send"
+    submitting: "Sending..."
+    sentCardTitle: "Message sent"
+    sentCardBody: "You already sent a message on {date}. I will reply within 24h."
+    sentCardRefLabel: "Ref:"
+    sentCardResend: "Send another message"
+    statusSuccess: "Message sent. I will reply within 24h."
+    statusInvalidFields: "There are invalid fields in the form. Check the marked fields."
+    statusCaptchaMissing: "Please complete the captcha before sending."
+    errorEndpointMissing: "API endpoint not configured"
+    errorCaptchaInvalid: "Invalid captcha. Please reload the page and try again."
+    errorTooManyAttempts: "Too many attempts. Wait a few minutes before retrying."
+    errorServer: "Server error. Try again in a few minutes."
+    errorNetwork: "Network error. Check your connection and retry."
+    errorCaptchaLoad: "Error loading the captcha. Reload the page."
+    validationRequired: "This field is required."
+    validationTooShort: "Minimum {min} characters."
+    validationTooLong: "Maximum {max} characters."
+    validationEmail: "Invalid email. Check the format."
+    validationFormat: "Invalid format."
+    validationNotAllowed: "Value not allowed."
+    validationInvalid: "Invalid value."
+  footer:
+    copyright: "© {year} {name}. All rights reserved."
+    linkedin: "LinkedIn"
+    github: "GitHub"
+    manageConsent: "Manage consent"
+  nav:
+    openMenu: "Open menu"
+    closeMenu: "Close menu"
+    mainMenu: "Main menu"
+    switchToOtherLocale: "ES"
+  themeToggle:
+    system: "Theme: System"
+    dark: "Theme: Dark"
+    light: "Theme: Light"
+  cookieBanner:
+    ariaLabel: "Analytics consent"
+    bodyLead: "This site uses "
+    bodyStrong: "privacy-friendly first-party analytics"
+    bodyTail: " (no third-party cookies, data auto-deletes after 60 days). May we collect your visit to improve the content?"
+    accept: "Accept"
+    reject: "Reject"
+  contactLinks:
+    emailLabel: "Email"
+    enableJs: "(enable JS)"
+    copyEmail: "Copy email"
+    copied: "Copied"
+    copyFailed: "Copy failed"
+    linkedin: "LinkedIn"
+    github: "GitHub"
+  filters:
+    bar: "Filters"
+    clear: "Clear filters"
+    tech: "Technologies"
+    seniority: "Seniority"
+    type: "Type"
+    confidential: "Hide confidential"
+    skillsTechnical: "Technical"
+    skillsSoft: "Soft"
+    emptyExperiences: "No experiences match these filters."
+    emptyProjects: "No projects match these filters."
+  contactPage:
+    heading: "Contact"
+    intro: "If you want to hire me, collaborate or ask something technical, leave me a message. I reply within 24h."
+    otherChannels: "Other channels"
+    fallback: "The form is not configured in this environment yet. In the meantime, write me directly at {email}."
+  layout:
+    skipToContent: "Skip to content"
+
+# Secondary page meta. `titlePrefix` is concatenated with the curriculum
+# title: "{titlePrefix} — {meta.title}".
+pages:
+  about:
+    titlePrefix: "About"
+    description: "Education, languages, awards, publications and references of Pablo Contreras."
+  certificates:
+    titlePrefix: "Certificates"
+    description: "Technical certifications relevant for this profile."
+  contact:
+    titlePrefix: "Contact"
+    description: "Let's talk about your project. I reply within 24h."

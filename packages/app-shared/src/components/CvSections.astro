@@ -87,28 +87,16 @@ const uniqueProjectTypes = enableFilters
   ? Array.from(new Set(projs.map((p) => p.projectType))).sort()
   : []
 
-const filterLabels =
-  locale === 'es'
-    ? {
-        bar: 'Filtros',
-        clear: 'Limpiar filtros',
-        tech: 'Tecnologias',
-        seniority: 'Seniority',
-        type: 'Tipo',
-        confidential: 'Ocultar confidenciales',
-        skillsTechnical: 'Tecnicas',
-        skillsSoft: 'Blandas',
-      }
-    : {
-        bar: 'Filters',
-        clear: 'Clear filters',
-        tech: 'Technologies',
-        seniority: 'Seniority',
-        type: 'Type',
-        confidential: 'Hide confidential',
-        skillsTechnical: 'Technical',
-        skillsSoft: 'Soft',
-      }
+const filterLabels = {
+  bar: t.components.filters.bar,
+  clear: t.components.filters.clear,
+  tech: t.components.filters.tech,
+  seniority: t.components.filters.seniority,
+  type: t.components.filters.type,
+  confidential: t.components.filters.confidential,
+  skillsTechnical: t.components.filters.skillsTechnical,
+  skillsSoft: t.components.filters.skillsSoft,
+}
 
 // Stack para marquee: top 5 skills tecnicas, top 5 dominios/herramientas
 const marqueeRowOne = technicalSkills
@@ -275,9 +263,7 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   {
     enableFilters && (
       <p class="filter-empty text-muted" data-filter-empty hidden>
-        {locale === 'es'
-          ? 'No hay experiencias con estos filtros.'
-          : 'No experiences match these filters.'}
+        {t.components.filters.emptyExperiences}
       </p>
     )
   }
@@ -315,9 +301,7 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   {
     enableFilters && (
       <p class="filter-empty text-muted" data-filter-empty hidden>
-        {locale === 'es'
-          ? 'No hay proyectos con estos filtros.'
-          : 'No projects match these filters.'}
+        {t.components.filters.emptyProjects}
       </p>
     )
   }

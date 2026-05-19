@@ -4,11 +4,15 @@
  * @description Footer minimalista con copyright + links sociales + boton de
  *   gestion de consentimiento (GDPR: revocar debe ser tan facil como otorgar).
  *
+ *   Los textos vienen del YAML i18n (`elements.<lang>.yaml`, rama
+ *   `components.footer`). El `copyright` usa los marcadores `{year}` y
+ *   `{name}`, que este componente interpola.
+ *
  * @props {string} name - Nombre del titular del copyright
  * @props {object} contacts - Links sociales (linkedin, github)
- * @props {string} [locale] - 'es' o 'en' (afecta copy)
+ * @props {object} strings - Textos del footer (components.footer del i18n)
  */
-import { getManageConsentLabel } from '../lib/cookie-consent'
+import type { ComponentsStrings } from '@portfolio/content'
 
 interface Props {
   name: string
@@ -17,16 +21,14 @@ interface Props {
     github: string
     email?: string
   }
-  locale?: 'es' | 'en'
+  strings: ComponentsStrings['footer']
 }
 
-const { name, contacts, locale = 'es' } = Astro.props
+const { name, contacts, strings } = Astro.props
 const year = new Date().getUTCFullYear()
-const copy =
-  locale === 'es'
-    ? `© ${year} ${name}. Todos los derechos reservados.`
-    : `© ${year} ${name}. All rights reserved.`
-const manageConsentLabel = getManageConsentLabel(locale)
+const copy = strings.copyright
+  .replace('{year}', String(year))
+  .replace('{name}', name)
 ---
 
 <footer class="site-footer">
@@ -34,10 +36,12 @@ const manageConsentLabel = getManageConsentLabel(locale)
     <p class="site-footer__copy">{copy}</p>
     <ul class="site-footer__links">
       <li>
-        <a href={contacts.linkedin} rel="me" target="_blank">LinkedIn</a>
+        <a href={contacts.linkedin} rel="me" target="_blank"
+          >{strings.linkedin}</a
+        >
       </li>
       <li>
-        <a href={contacts.github} rel="me" target="_blank">GitHub</a>
+        <a href={contacts.github} rel="me" target="_blank">{strings.github}</a>
       </li>
       <li>
         <button
@@ -46,7 +50,7 @@ const manageConsentLabel = getManageConsentLabel(locale)
           data-action="reopen-consent"
           data-testid="manage-consent"
         >
-          {manageConsentLabel}
+          {strings.manageConsent}
         </button>
       </li>
     </ul>

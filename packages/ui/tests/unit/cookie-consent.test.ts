@@ -1,12 +1,11 @@
 /**
  * @description Tests para cookie-consent (logica del CookieBanner GDPR).
- *   Cubre AC-2, AC-3, AC-6 (gating) y AC-8 (i18n). Usa happy-dom.
+ *   Cubre AC-2, AC-3, AC-6 (gating). Usa happy-dom. Los textos del banner
+ *   ya no viven aqui (estan en el YAML i18n) — su test es de paridad.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   CONSENT_CHANGED_EVENT,
-  getBannerCopy,
-  getManageConsentLabel,
   isConsentValue,
   REOPEN_BANNER_EVENT,
   readConsent,
@@ -164,52 +163,5 @@ describe('writeConsent', () => {
     writeConsent('rejected', s)
     document.removeEventListener(CONSENT_CHANGED_EVENT, handler)
     expect(received).toEqual(['rejected'])
-  })
-})
-
-describe('getBannerCopy', () => {
-  it('Given locale "es" When get copy Then accept button is "Aceptar"', () => {
-    expect(getBannerCopy('es').accept).toBe('Aceptar')
-  })
-
-  it('Given locale "es" When get copy Then reject button is "Rechazar"', () => {
-    expect(getBannerCopy('es').reject).toBe('Rechazar')
-  })
-
-  it('Given locale "en" When get copy Then accept button is "Accept"', () => {
-    expect(getBannerCopy('en').accept).toBe('Accept')
-  })
-
-  it('Given locale "en" When get copy Then reject button is "Reject"', () => {
-    expect(getBannerCopy('en').reject).toBe('Reject')
-  })
-
-  it('Given locale "es" When get copy Then ariaLabel is in Spanish', () => {
-    expect(getBannerCopy('es').ariaLabel).toBe('Consentimiento de analytics')
-  })
-
-  it('Given locale "en" When get copy Then ariaLabel is in English', () => {
-    expect(getBannerCopy('en').ariaLabel).toBe('Analytics consent')
-  })
-
-  it('Given an unknown locale When get copy Then falls back to Spanish', () => {
-    const copy = getBannerCopy('fr' as unknown as 'es')
-    expect(copy.accept).toBe('Aceptar')
-  })
-})
-
-describe('getManageConsentLabel', () => {
-  it('Given locale "es" When get label Then is "Gestionar consentimiento"', () => {
-    expect(getManageConsentLabel('es')).toBe('Gestionar consentimiento')
-  })
-
-  it('Given locale "en" When get label Then is "Manage consent"', () => {
-    expect(getManageConsentLabel('en')).toBe('Manage consent')
-  })
-
-  it('Given an unknown locale When get label Then falls back to Spanish', () => {
-    expect(getManageConsentLabel('de' as unknown as 'es')).toBe(
-      'Gestionar consentimiento',
-    )
   })
 })

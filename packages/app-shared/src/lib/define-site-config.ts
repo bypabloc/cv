@@ -1,12 +1,11 @@
 /**
  * @function defineSiteConfig
  * @description Factory que produce el config completo de un site del portfolio
- *   (NICHE + SITE_URL + OG_IMAGE + STRINGS) a partir de los overrides especificos.
+ *   (NICHE + SITE_URL + OG_IMAGE + STRINGS).
  *
- *   Cada app del monorepo (generic, fintech, architect, leader, vibe) declara
- *   los strings que la diferencian (meta titles, ATS keywords, etc.) en una
- *   sola llamada — sin necesidad de exportar manualmente `NICHE`, `SITE_URL`,
- *   `OG_IMAGE` y `STRINGS` por separado.
+ *   Las strings ya NO se declaran inline: se cargan de los YAML i18n de
+ *   `@portfolio/content` (`buildStrings(app)`). Cada app solo declara su
+ *   `niche` — los textos especificos viven en `curriculum/<app>.<lang>.yaml`.
  *
  *   El siteUrl default cubre el caso comun (`https://<niche>.the-full-stack.com`).
  *   Las apps pueden pasarlo explicito si el dominio es distinto (ej. apex
@@ -18,26 +17,22 @@
  *
  *   export const { NICHE, SITE_URL, OG_IMAGE, STRINGS } = defineSiteConfig({
  *     niche: 'fintech',
- *     overrides: {
- *       metaTitleEs: 'Pablo Contreras — Senior Fintech Engineer',
- *       metaTitleEn: 'Pablo Contreras — Senior Fintech Engineer',
- *       // ... resto de overrides
- *     },
+ *     siteUrl: import.meta.env.SITE_URL ?? undefined,
  *   })
  */
-import type { Niche } from '@portfolio/content'
-import {
-  buildStrings,
-  type I18nStrings,
-  type SiteOverrides,
-} from './site-config'
+import type { CurriculumApp, Niche } from '@portfolio/content'
+import { buildStrings, type I18nStrings } from './site-config'
 import { buildSiteUrl, SITE_URLS } from './site-urls'
 
 export interface DefineSiteConfigInput {
   /** Nicho del sitio. Ver `NICHES` en `@portfolio/content`. */
   niche: Niche
-  /** Strings especificas del sitio (meta, hero, ATS). */
-  overrides: SiteOverrides
+  /**
+   * App del monorepo cuyo curriculum se carga. Por defecto coincide con el
+   * niche; la app hub lo pasa explicito porque su niche es `generic` pero su
+   * curriculum es `hub`.
+   */
+  app?: CurriculumApp
   /**
    * URL absoluta del sitio. Si se omite, se deriva de `https://<niche>.the-full-stack.com`.
    * Para sobrescribir en runtime usar `import.meta.env.SITE_URL` en el caller.
@@ -47,6 +42,11 @@ export interface DefineSiteConfigInput {
    * Path del og-image relativo al SITE_URL. Default: `/og-image.svg`.
    */
   ogImagePath?: string
+  /**
+   * URL del hub para el item "Otras vistas" del nav. Si se omite, se usa
+   * `SITE_URLS.hub`. La app hub debe pasar `null` para NO enlazarse a si misma.
+   */
+  hubHref?: string | null
 }
 
 export interface DefineSiteConfigOutput {
@@ -63,8 +63,7 @@ const DEFAULT_OG_PATH = '/og-image.svg'
  *
  * Usa `buildSiteUrl` (env-driven via BASE_DOMAIN/SCHEME/PORT), de modo que
  * el default respeta el ambiente activo (prod / stage / dev / local) sin
- * hardcodear `the-full-stack.com`. En prod el niche `generic` mapea al apex
- * del dominio; en dev/stage al apex del env (`portfolio.{env}.the-full-stack.com`).
+ * hardcodear `the-full-stack.com`.
  */
 function defaultSiteUrlFor(niche: Niche): string {
   return buildSiteUrl(niche)
@@ -74,19 +73,13 @@ export function defineSiteConfig(
   input: DefineSiteConfigInput,
 ): DefineSiteConfigOutput {
   const NICHE = input.niche
+  const app: CurriculumApp = input.app ?? (NICHE as CurriculumApp)
   const SITE_URL = input.siteUrl ?? defaultSiteUrlFor(NICHE)
   const OG_IMAGE = `${SITE_URL}${input.ogImagePath ?? DEFAULT_OG_PATH}`
   // Auto-inject hubHref para que el navbar muestre "Otras vistas" -> hub.
-  // Solo se aplica si el caller no lo definio manualmente. Las 5 apps niche
-  // se benefician sin tocar su site-config; el caller puede pasar
-  // `hubHref: undefined` explicitamente para desactivarlo (ej. la app hub).
-  const overridesWithHub: SiteOverrides = {
-    ...input.overrides,
-    hubHref:
-      input.overrides.hubHref !== undefined
-        ? input.overrides.hubHref
-        : SITE_URLS.hub,
-  }
-  const STRINGS = buildStrings(overridesWithHub)
+  // `hubHref: null` desactiva el item (la app hub no se enlaza a si misma).
+  const hubHref =
+    input.hubHref === null ? undefined : (input.hubHref ?? SITE_URLS.hub)
+  const STRINGS = buildStrings(app, hubHref)
   return { NICHE, SITE_URL, OG_IMAGE, STRINGS }
 }

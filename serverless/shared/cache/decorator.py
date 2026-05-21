@@ -42,7 +42,7 @@ from shared.cache.serializers import deserialize
 from shared.cache.stampede import acquire_lock, release_lock
 from shared.cache.swr import classify_status
 from shared.cache.types import CacheStatus
-from shared.logger import logger
+from shared.observability.logger import logger
 
 F = TypeVar('F', bound=Callable[..., Any])
 

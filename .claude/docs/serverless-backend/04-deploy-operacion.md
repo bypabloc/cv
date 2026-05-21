@@ -82,13 +82,16 @@ python devtools/run.py serverless deploy --path=serverless/src/stream_processor 
 python devtools/run.py serverless db-migrate --stage=dev
 ```
 
-Para `stage` y `prod`: mismos comandos cambiando `--stage`. `deploy` hace
-`sam build` + `sam deploy` del Lambda (su propio stack); `--guided` en el
+Para `stage` y `prod`: mismos comandos cambiando `--stage`. `deploy` arma
+el artefacto `build/` del Lambda con uv (`uv pip install --target
+build/`) + vendoring selectivo de `shared/`, y luego `sam deploy` solo
+sube ese artefacto — NO corre `sam build` ni `pip`. `--guided` en el
 primer deploy de cada uno.
 
-`deploy`, `run-local`, `test-unit` y `test-integration` vendorizan
-`serverless/shared/` en `<lambda>/core/shared/` antes de ejecutar (el
-vendor es efimero, se limpia al terminar).
+`deploy`, `run-local`, `test-unit` y `test-integration` regeneran el
+`build/` del Lambda (deps con uv + vendoring selectivo de los subpaquetes
+de `serverless/shared/` que el Lambda usa, en `build/core/shared/`) antes
+de ejecutar; `build/` es efimero y se limpia al terminar.
 
 ### Delete (orden inverso)
 
@@ -131,7 +134,7 @@ colorizado: `serverless help`.
 |---------|----------|
 | `sam-generate` | `lambda.yaml` -> `template.yaml` SAM efimero |
 | `run-local` | `sam local invoke` del Lambda |
-| `deploy` | `sam build` + `sam deploy` del Lambda (su stack) |
+| `deploy` | Arma `build/` con uv + vendoring selectivo de `shared/`, luego `sam deploy` del artefacto (su stack) |
 | `invoke-remote` | `aws lambda invoke` contra un stage deployado |
 | `test-unit` | `pytest <lambda>/tests/unit` |
 | `test-integration` | `pytest <lambda>/tests/integration` |
@@ -147,7 +150,7 @@ colorizado: `serverless help`.
 | Comando | Que hace |
 |---------|----------|
 | `init` | Setup inicial (uv sync + verifica sam + aws CLI) |
-| `clean` | Borra caches + artefactos efimeros (`template.yaml`, `core/shared/`, `.aws-sam/`) |
+| `clean` | Borra caches + artefactos efimeros (`template.yaml`, `build/`, `.aws-sam/`) |
 | `lint` / `lint-fix` / `format` | Ruff sobre `shared/` + `src/` |
 | `typecheck` | mypy --strict |
 | `test` / `test-coverage` | pytest de la libreria comun `shared/` |
@@ -220,7 +223,7 @@ python devtools/run.py serverless rotate-secret \
 | `Export ... cannot be deleted` | Se intenta borrar infra antes que los Lambdas | Borrar los 4 stacks de Lambda primero |
 | `No export named portfolio-infra-...` al deployar un Lambda | El stack de infra no esta deployado en ese stage | `deploy-infra --stage=<stage>` primero |
 | Stack en `ROLLBACK_COMPLETE` | Recurso no creado en un deploy previo | `aws cloudformation delete-stack` + re-deploy |
-| `ImportModuleError` / `No module named 'shared'` | Vendor `core/shared/` no copiado | Redeployar (devtools vendoriza en cada `deploy`) — no editar `core/shared/` a mano |
+| `ImportModuleError` / `No module named 'shared'` | Subpaquete de `shared/` no vendorizado en `build/core/shared/` (el AST scan no detecto el import) | Verificar que el import es `from shared.<sub>...` explicito; redeployar (devtools regenera `build/` en cada `deploy`) — no editar `build/` a mano |
 | `POST /contact` responde 502 | Lambda timeout o env var faltante | Revisar logs del Lambda en CloudWatch; `serverless metrics --stage=<stage>` |
 | `POST /track` responde 400 | Body invalido segun el JSON Schema / Pydantic | Revisar el payload contra `models/` del `tracking_pixel` |
 | Fila no replicada a Neon | `stream_processor` falla o Neon caido | Revisar logs del `stream_processor`; verificar `/portfolio/<stage>/neon-url`; revisar la DLQ |

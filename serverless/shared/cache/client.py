@@ -9,6 +9,12 @@ API:
 - invalidate(tag)
 
 Por defecto usa la table `portfolio-cache-{stage}` derivada de env vars.
+
+Internamente delega la persistencia al ORM (`shared.dynamodb.CacheItem`):
+asi reusa el resource boto3 singleton y la conversion `Decimal`
+transparente. La API publica de esta clase NO cambia — `get_entry`
+sigue devolviendo un `CacheEntry` (TypedDict) que `swr`/`stampede`
+consumen.
 """
 
 from __future__ import annotations
@@ -17,12 +23,11 @@ import os
 import time
 from typing import Any
 
-import boto3
-
 from shared.cache.invalidation import invalidate_by_tag, invalidate_key
-from shared.cache.serializers import deserialize, serialize, serialize_entry
+from shared.cache.serializers import deserialize, serialize
 from shared.cache.swr import classify_status
 from shared.cache.types import CacheEntry, CacheStatus
+from shared.dynamodb import CacheItem
 
 
 class DynamoDBCache:
@@ -34,15 +39,30 @@ class DynamoDBCache:
             table_name: nombre fisico de la tabla; default leido de env
                         CACHE_TABLE_NAME.
         """
-        resolved = table_name or os.environ.get(
+        self.table_name = table_name or os.environ.get(
             'CACHE_TABLE_NAME', 'portfolio-cache-dev'
         )
-        # Instanciar boto3 Resource aqui (no module-scope) para que cada
-        # invocacion en Lambda warm reuse la conexion HTTP via _session_cache,
-        # pero los tests con moto pueden interceptar.
-        region = os.environ.get('AWS_REGION', 'us-east-1')
-        self._table = boto3.resource('dynamodb', region_name=region).Table(resolved)
-        self.table_name = resolved
+
+    def _model_table(self) -> Any:
+        """boto3 Table del ORM (para invalidation/stampede que usan scan)."""
+        # CacheItem resuelve el nombre via env var; si el caller paso un
+        # table_name explicito distinto, respetar ese.
+        if self.table_name == CacheItem.table_name():
+            return CacheItem._table()
+        from shared.aws.dynamodb import get_table
+
+        return get_table(self.table_name)
+
+    def _resolve(self, key: str) -> dict[str, Any] | None:
+        """Lee el item crudo de DynamoDB (o None) usando el ORM."""
+        if self.table_name == CacheItem.table_name():
+            item = CacheItem.get(key)
+        else:
+            # table_name override (poco comun): leer via Table directo.
+            result = self._model_table().get_item(Key={'cache_key': key})
+            raw = result.get('Item')
+            return None if raw is None else dict(raw)
+        return None if item is None else item.model_dump(exclude_none=True)
 
     def get_entry(self, key: str) -> CacheEntry | None:
         """
@@ -51,11 +71,10 @@ class DynamoDBCache:
         Returns:
             CacheEntry o None si no existe.
         """
-        result = self._table.get_item(Key={'cache_key': key})
-        item = result.get('Item')
+        item = self._resolve(key)
         if item is None:
             return None
-        # DynamoDB devuelve Decimal para numeros; convertir a int
+        # El ORM ya convirtio Decimal -> int; asegurar las claves de SWR.
         item['expires_at'] = int(item.get('expires_at', 0))
         item['stale_until'] = int(item.get('stale_until', item['expires_at']))
         return item  # type: ignore[return-value]
@@ -105,23 +124,26 @@ class DynamoDBCache:
 
         ser_value, encoding = serialize(value)
 
-        entry: CacheEntry = {
-            'cache_key': key,
-            'value': ser_value,
-            'encoding': encoding,
-            'expires_at': expires_at,
-            'stale_until': stale_until,
-        }
-        if tags:
-            entry['tags'] = tags
-        if metadata:
-            entry['metadata'] = metadata
-
-        self._table.put_item(Item=serialize_entry(entry))
+        item = CacheItem(
+            cache_key=key,
+            value=ser_value,
+            encoding=encoding,
+            expires_at=expires_at,
+            stale_until=stale_until,
+            tags=tags or None,
+            metadata=metadata or None,
+        )
+        if self.table_name == CacheItem.table_name():
+            item.save()
+        else:
+            self._model_table().put_item(Item=item.to_item())
 
     def delete(self, key: str) -> None:
         """Elimina el key del cache (hard delete)."""
-        self._table.delete_item(Key={'cache_key': key})
+        if self.table_name == CacheItem.table_name():
+            CacheItem.delete(key)
+        else:
+            self._model_table().delete_item(Key={'cache_key': key})
 
     def invalidate(self, *, tag: str | None = None, key: str | None = None) -> int:
         """
@@ -142,12 +164,12 @@ class DynamoDBCache:
             raise ValueError(msg)
 
         if tag is not None:
-            return invalidate_by_tag(self._table, tag)
+            return invalidate_by_tag(self._model_table(), tag)
 
-        invalidate_key(self._table, key)  # type: ignore[arg-type]
+        invalidate_key(self._model_table(), key)  # type: ignore[arg-type]
         return 1
 
     @property
     def table(self) -> Any:
         """Acceso al boto3 Table (para uso avanzado en stampede.py)."""
-        return self._table
+        return self._model_table()

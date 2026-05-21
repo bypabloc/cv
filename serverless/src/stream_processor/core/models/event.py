@@ -7,9 +7,7 @@ el controller correspondiente.
 import json
 from typing import Any
 
-from pydantic import BaseModel
-from pydantic import Field
-
+from pydantic import BaseModel, Field
 from utils.import_controller import import_controller
 
 

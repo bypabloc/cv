@@ -17,18 +17,19 @@ import shutil
 import subprocess
 from typing import Any
 
-from shared.console import CYAN
-from shared.console import GREEN
-from shared.console import YELLOW
-from shared.console import _c
-from shared.console import _err
-
+from serverless.packaging import PackagingError
+from serverless.packaging import packaged_lambda
 from serverless.resolve import ManifestError
 from serverless.resolve import ResolvedLambda
 from serverless.resolve import resolve_lambda
 from serverless.sam_generate import generate_sam_file
 from serverless.vendoring import VendoringError
 from serverless.vendoring import vendored_shared
+from shared.console import CYAN
+from shared.console import GREEN
+from shared.console import YELLOW
+from shared.console import _c
+from shared.console import _err
 
 
 # Python del `.venv` del backend serverless del portfolio. Tiene la union
@@ -70,9 +71,18 @@ def _require_lambda_controller(flags: dict[str, Any]) -> ResolvedLambda:
     return resolved
 
 
-def _regenerate_sam(resolved: ResolvedLambda, stage: str) -> Path:
-    """Regenera el template.yaml efimero del lambda para un stage."""
-    template = generate_sam_file(resolved, stage=stage)
+def _regenerate_sam(
+    resolved: ResolvedLambda,
+    stage: str,
+    *,
+    code_uri: str = 'build',
+) -> Path:
+    """Regenera el template.yaml efimero del lambda para un stage.
+
+    `code_uri` es el directorio del codigo: `build/` para deploy (el
+    artefacto que devtools arma con uv) o `.` para run-local.
+    """
+    template = generate_sam_file(resolved, stage=stage, code_uri=code_uri)
     print(_c(CYAN, f'SAM generado: {template} (stage {stage})'))
     return template
 
@@ -122,8 +132,10 @@ def cmd_run_local(flags: dict[str, Any]) -> int:
     # `local` no es un stage de env vars; usamos dev para el bloque de env.
     env_stage = 'dev' if stage == 'local' else stage
 
+    # run-local empaqueta con `core/shared/` vendorizado en la raiz del
+    # lambda: el CodeUri del template apunta a `.`, no a `build/`.
     try:
-        _regenerate_sam(resolved, env_stage)
+        _regenerate_sam(resolved, env_stage, code_uri='.')
     except ManifestError as exc:
         _err(str(exc))
         return 1
@@ -157,7 +169,18 @@ def cmd_run_local(flags: dict[str, Any]) -> int:
 
 
 def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
-    """Deploya un lambda-controller a un stage (sam build + sam deploy)."""
+    """Deploya un lambda-controller a un stage.
+
+    devtools arma el artefacto (`build/`) con uv: instala las deps del
+    lambda + de los subpaquetes de `shared/` que usa, copia `core/` y
+    vendoriza el cierre de subpaquetes resuelto. SAM solo deploya: el
+    template apunta `CodeUri` a `build/` y, al no tener
+    `Metadata.BuildMethod`, `sam deploy` zipea ese directorio tal cual
+    sin correr `pip`.
+    """
+    _ensure_tool(
+        'uv', 'Instalar: curl -LsSf https://astral.sh/uv/install.sh | sh'
+    )
     _ensure_tool(
         'sam',
         'Instalar: brew install aws-sam-cli  o  pip install aws-sam-cli',
@@ -169,14 +192,15 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
         _err('Stage `local` no se deploya — usa `run-local`')
         return 1
 
+    # El template de deploy apunta CodeUri a build/ (el artefacto uv).
     try:
-        _regenerate_sam(resolved, stage)
+        _regenerate_sam(resolved, stage, code_uri='build')
     except ManifestError as exc:
         _err(str(exc))
         return 1
 
     if flags.get('dry_run'):
-        print(_c(YELLOW, f'[dry-run] sam build + sam deploy stage {stage}'))
+        print(_c(YELLOW, f'[dry-run] uv package + sam deploy stage {stage}'))
         return 0
 
     stack_name = f'portfolio-{resolved.manifest["name"]}-{stage}'
@@ -199,18 +223,21 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
     if flags.get('guided'):
         deploy_args.append('--guided')
 
-    # Vendoriza serverless/shared/ en core/shared/ para que el zip que
-    # `sam build` empaqueta incluya la libreria comun. El vendor se limpia
-    # al salir del bloque (build + deploy ya consumieron el codigo).
-    try:
-        with vendored_shared(resolved.root):
-            build_rc = _run(
-                ['sam', 'build', '--use-container'], cwd=resolved.root
-            )
-            if build_rc != 0:
-                _err('sam build fallo')
-                return build_rc
+    runtime = str(resolved.manifest['runtime'])
+    print(_c(CYAN, f'Runtime del artefacto: {runtime}'))
 
+    # devtools arma build/ con uv (deps + core/ + shared/ selectivo). El
+    # build/ se limpia al salir del bloque (sam deploy ya lo subio).
+    try:
+        with packaged_lambda(resolved.root, runtime=runtime) as packaged:
+            _, closure, all_deps = packaged
+            print(
+                _c(
+                    CYAN,
+                    f'Artefacto: shared/{{{", ".join(sorted(closure))}}} '
+                    f'+ {len(all_deps)} deps',
+                )
+            )
             print(
                 _c(
                     YELLOW,
@@ -218,7 +245,7 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
                 )
             )
             return _run(deploy_args, cwd=resolved.root)
-    except VendoringError as exc:
+    except PackagingError as exc:
         _err(str(exc))
         return 1
 

@@ -121,11 +121,28 @@ Resources:
           AttributeType: S
         - AttributeName: page_id
           AttributeType: S
+        # Atributos del GSI niche-created_at-index.
+        - AttributeName: niche
+          AttributeType: S
+        - AttributeName: created_at
+          AttributeType: S
       KeySchema:
         - AttributeName: session_id
           KeyType: HASH
         - AttributeName: page_id
           KeyType: RANGE
+      # GSI: queries de dashboard por nicho ordenadas por fecha sin full
+      # scan. El esquema lo declara tambien TrackingEventItem.Meta (ORM);
+      # `check_schema` verifica que ambos no diverjan.
+      GlobalSecondaryIndexes:
+        - IndexName: niche-created_at-index
+          KeySchema:
+            - AttributeName: niche
+              KeyType: HASH
+            - AttributeName: created_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
       TimeToLiveSpecification:
         AttributeName: expires_at
         Enabled: true

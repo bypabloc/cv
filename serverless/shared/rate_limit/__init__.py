@@ -6,7 +6,7 @@ Patron documentado en `.claude/docs/serverless-rate-limit/` (10 docs).
 Uso ergonomico:
 
     from shared.rate_limit import check_or_raise
-    from shared.ip_extractor import extract_ip, extract_country
+    from shared.http.ip_extractor import extract_ip, extract_country
 
     @logger.inject_lambda_context
     def lambda_handler(event, context):

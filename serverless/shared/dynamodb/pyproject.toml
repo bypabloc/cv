@@ -1,0 +1,18 @@
+# @config: shared/dynamodb/pyproject.toml
+# @description: manifiesto de dependencias del subpaquete shared.dynamodb
+#   (ORM minimalista para DynamoDB, modelos Pydantic). Ver
+#   shared/core/pyproject.toml para el formato. NO es un paquete publicable.
+
+[project]
+name = "shared-dynamodb"
+version = "0"
+description = "ORM minimalista para DynamoDB (modelos Pydantic + boto3)."
+requires-python = ">=3.13"
+dependencies = [
+  "boto3>=1.34.0,<2.0",
+  "pydantic>=2.5,<3.0",
+]
+
+[tool.shared]
+# base.py usa el singleton Resource de shared.aws.dynamodb.
+internal-deps = ["aws"]

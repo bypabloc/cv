@@ -44,6 +44,11 @@ legolambda-stacks).
   archivo por escenario, en `tests/unit/` o `tests/integration/`.
 - **SIEMPRE** el lambda trae un `lambda.yaml` (manifiesto simple con la
   config). devtools genera el `template.yaml` SAM a partir de el.
+- **SIEMPRE** las dependencias se declaran en un `pyproject.toml` (PEP 621)
+  en la raiz del lambda: deps de runtime en `[project.dependencies]`, deps
+  de testing en `[dependency-groups]` dev. NUNCA usar `requirements*.txt`
+  ni `pytest.ini` — la config de pytest del backend vive en
+  `serverless/pyproject.toml` (`[tool.pytest.ini_options]`).
 - **SIEMPRE** el lambda se opera con el script `serverless` de devtools
   (`run-local`, `deploy`, `invoke-remote`, `test-unit`,
   `test-integration`) — ver "Operacion con devtools" abajo.
@@ -63,10 +68,10 @@ legolambda-stacks).
 <lambda-name>/
 ├── lambda.yaml                   # MANIFIESTO: fuente de verdad de la config
 ├── template.yaml                 # SAM generado (EFIMERO, en .gitignore)
-├── .gitignore                    # excluye template.yaml + .aws-sam/
-├── requirements.txt              # deps de runtime
-├── requirements-dev.txt          # + pytest, coverage
-├── pytest.ini                    # rootdir = raiz del lambda
+├── .gitignore                    # excluye template.yaml + build/ + .aws-sam/
+├── pyproject.toml                # PEP 621: deps de runtime + grupo dev
+│                                 #   (pytest, coverage). Reemplaza los
+│                                 #   requirements*.txt y el pytest.ini.
 ├── core/
 │   ├── handler.py                # ENTRYPOINT (router delgado)
 │   ├── controllers/<operation>/  # ORQUESTADORES por operation
@@ -106,28 +111,47 @@ Lambdas de un mismo backend pueden COMPARTIR codigo (clientes AWS,
 logger, helpers de dominio) sin duplicarlo.
 
 La libreria comun vive UNA sola vez en el repo (en el backend del
-portfolio: `serverless/shared/`, hermano de `src/`). devtools la
-**vendoriza** — la copia dentro de `<lambda>/core/shared/` — antes de
-cada accion que necesita el codigo completo:
+portfolio: `serverless/shared/`, hermano de `src/`). NO es un arbol
+plano de `.py`: esta organizada en **subpaquetes por dominio**, cada
+uno con su propio `pyproject.toml` que declara sus deps externas en
+`[project.dependencies]` y sus deps internas a otros subpaquetes en
+`[tool.shared]` `internal-deps`. La raiz de `shared/` solo tiene un
+`__init__.py` (no re-exporta nada). Subpaquetes actuales:
 
-- `run-local` / `test-unit` / `test-integration`: copia `shared/` a
-  `core/shared/` para que `sam local invoke` y `pytest` la resuelvan.
-- `deploy`: copia `shared/` a `core/shared/` antes de `sam build`, asi
-  el zip la incluye.
+- `shared/core/` — config, exceptions, types, ulid.
+- `shared/aws/` — clientes AWS: dynamodb, ses, ssm.
+- `shared/observability/` — logger, tracer, metrics.
+- `shared/http/` — cors, responses, ip_extractor, turnstile, validators.
+- `shared/db/`, `shared/dynamodb/`, `shared/cache/`, `shared/rate_limit/`.
+
+devtools **vendoriza** la libreria — la copia dentro de
+`<lambda>/build/core/shared/` — pero de forma **selectiva**: solo copia
+los subpaquetes que el Lambda realmente usa. `shared_resolver.py`
+escanea el AST del `core/` del Lambda, detecta los
+`from shared.<subpaquete>` y resuelve el **cierre transitivo** leyendo
+los `internal-deps` de cada `pyproject.toml`. Un Lambda que no usa
+`shared.db` no recibe ese subpaquete ni su dep `sqlalchemy` en el zip.
+
+- `run-local` / `test-unit` / `test-integration`: la libreria se
+  resuelve via el `sys.path` del backend (la copia maestra).
+- `deploy`: `packaging.py` instala las deps con uv y vendoriza SOLO los
+  subpaquetes del cierre transitivo en `build/core/shared/`.
 
 Reglas del vendoring:
 
-- **SIEMPRE** `core/shared/` esta en el `.gitignore` del Lambda: es
-  EFIMERO, se regenera en cada accion y se limpia despues. La fuente de
-  verdad unica es la copia maestra (`serverless/shared/`).
-- **SIEMPRE** el codigo del Lambda importa la libreria comun como
-  `from shared...` — resuelve igual en la copia maestra (via el
-  `sys.path` del backend) y en el vendor (`core/` esta en el `sys.path`
-  del handler).
-- **NUNCA** se edita `core/shared/`: es una copia. El cambio va en la
-  copia maestra.
-- **NUNCA** se commitea `core/shared/`.
-- Un Lambda que no comparte codigo simplemente no tiene `core/shared/`.
+- **SIEMPRE** `build/` esta en el `.gitignore` del Lambda: es EFIMERO,
+  se regenera en cada `deploy` y contiene el artefacto vendorizado. La
+  fuente de verdad unica es la copia maestra (`serverless/shared/`).
+- **SIEMPRE** el codigo del Lambda importa la libreria comun apuntando
+  al subpaquete explicito: `from shared.observability.logger import
+  logger`, `from shared.aws.dynamodb import get_table`,
+  `from shared.core.exceptions import ...`. NUNCA importar desde la
+  raiz de `shared` (el `__init__.py` no re-exporta).
+- **NUNCA** se edita `build/core/shared/`: es una copia. El cambio va
+  en la copia maestra.
+- **NUNCA** se commitea `build/`.
+- El vendoring es selectivo: solo los subpaquetes del cierre transitivo
+  llegan al zip. Un Lambda que no comparte codigo no tiene `core/shared/`.
 
 Asi se concilian las dos propiedades: los Lambdas son **independientes**
 (deploy por separado, un stack cada uno) y a la vez **comparten** la
@@ -216,7 +240,7 @@ python devtools/run.py serverless sam-generate --path=<dir> --stage=dev
 python devtools/run.py serverless run-local \
   --path=<dir> --event=events/create.json
 
-# Deployar a un entorno (sam build + sam deploy)
+# Deployar a un entorno (uv arma el zip en build/, luego sam deploy)
 python devtools/run.py serverless deploy --path=<dir> --stage=dev
 python devtools/run.py serverless deploy --path=<dir> --stage=stage
 python devtools/run.py serverless deploy --path=<dir> --stage=prod
@@ -242,11 +266,11 @@ Detalle completo:
 
 ```bash
 python -m compileall -q core            # sintaxis de todo el codigo
-pip install -r requirements-dev.txt
+uv sync                                  # instala deps de runtime + grupo dev
 pytest tests/unit                        # suite unitaria verde
 pytest tests/unit --cov=core --cov-report=term-missing
 
-# o via devtools (resuelve cwd + deps):
+# o via devtools (resuelve cwd + deps con uv):
 python devtools/run.py serverless test-unit --path=<dir>
 ```
 
@@ -267,6 +291,9 @@ python devtools/run.py serverless test-unit --path=<dir>
 | Editar el `template.yaml` a mano | Es efimero, se pierde al regenerar | Cambiar `lambda.yaml` |
 | Commitear el `template.yaml` generado | Drift con `lambda.yaml` | Esta en `.gitignore` |
 | Escribir el SAM sin `lambda.yaml` | No hay fuente de verdad simple | `lambda.yaml` + `sam-generate` |
+| `requirements.txt` / `pytest.ini` en el lambda | Formato viejo pre-uv | `pyproject.toml` (PEP 621) en la raiz |
+| `from shared.logger import logger` (raiz) | El `__init__.py` ya no re-exporta | Import al subpaquete: `from shared.observability.logger import logger` |
+| Commitear `build/` | Es el artefacto efimero del deploy | Esta en `.gitignore` |
 
 ## Referencias cruzadas
 

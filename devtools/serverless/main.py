@@ -15,8 +15,6 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
-from shared.console import _err
-
 from serverless.database import cmd_db_branch
 from serverless.database import cmd_db_current
 from serverless.database import cmd_db_migrate
@@ -48,6 +46,7 @@ from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
 from serverless.testing import cmd_test
 from serverless.testing import cmd_test_coverage
+from shared.console import _err
 
 
 COMMAND_REGISTRY: dict[str, Any] = {

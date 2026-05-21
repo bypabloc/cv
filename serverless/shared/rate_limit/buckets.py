@@ -19,24 +19,16 @@ Bucket schema:
     count: number             # incrementado con UpdateItem ADD
     turnstile_tokens: number  # contador separado para auto-blacklist
     expires_at: number (TTL)  # window_start + window_seconds * 2 (mantener prev)
+
+La persistencia la hace el ORM (`shared.dynamodb.RateLimitBucketItem`):
+`get()` para leer un bucket, `increment()` para el `ADD` atomico.
 """
 
 from __future__ import annotations
 
-import os
 import time
-from typing import Any
 
-from shared.dynamodb_client import get_table
-
-
-def _buckets_table() -> Any:
-    # get_table reusa el resource DynamoDB module-scope (shared.dynamodb_client)
-    # en vez de crear uno nuevo por llamada (~150ms cold start por invocacion).
-    table_name = os.environ.get(
-        'RATE_LIMIT_BUCKETS_TABLE_NAME', 'portfolio-rate-limit-buckets-dev'
-    )
-    return get_table(table_name)
+from shared.dynamodb import RateLimitBucketItem
 
 
 def _window_start(now: int, window_seconds: int) -> int:
@@ -66,19 +58,22 @@ def get_effective_count(
         float (puede ser fraccional por el weighted).
     """
     current_time = now if now is not None else int(time.time())
-    table = _buckets_table()
     current_start = _window_start(current_time, window_seconds)
     previous_start = current_start - window_seconds
 
     # Leer current bucket
-    current_key = _bucket_key(ip=ip, endpoint=endpoint, window_start=current_start)
-    current_item = table.get_item(Key={'bucket_key': current_key}).get('Item') or {}
-    current_count = int(current_item.get('count', 0))
+    current_key = _bucket_key(
+        ip=ip, endpoint=endpoint, window_start=current_start
+    )
+    current = RateLimitBucketItem.get(current_key)
+    current_count = current.count if current is not None else 0
 
     # Leer previous bucket
-    previous_key = _bucket_key(ip=ip, endpoint=endpoint, window_start=previous_start)
-    previous_item = table.get_item(Key={'bucket_key': previous_key}).get('Item') or {}
-    previous_count = int(previous_item.get('count', 0))
+    previous_key = _bucket_key(
+        ip=ip, endpoint=endpoint, window_start=previous_start
+    )
+    previous = RateLimitBucketItem.get(previous_key)
+    previous_count = previous.count if previous is not None else 0
 
     # Fraction del current window transcurrido
     elapsed_in_current = current_time - current_start
@@ -110,36 +105,24 @@ def increment_bucket(
         Dict con `count` y `turnstile_tokens` actualizados.
     """
     current_time = now if now is not None else int(time.time())
-    table = _buckets_table()
     current_start = _window_start(current_time, window_seconds)
     key = _bucket_key(ip=ip, endpoint=endpoint, window_start=current_start)
     # TTL: borrar el bucket 2 ventanas despues (para que el next bucket
     # tenga "previous" correcto disponible)
     expires_at = current_start + window_seconds * 2
 
-    # DynamoDB UpdateExpression: solo UNA section ADD, una SET, etc.
-    # Combinar ambos increments en el mismo ADD.
+    # ADD atomico de count (+ turnstile_tokens si aplica) y SET expires_at,
+    # todo en el mismo UpdateExpression (lo arma RateLimitBucketItem).
+    deltas: dict[str, int] = {'count': 1}
     if turnstile_validated:
-        update_expr = 'ADD #count :inc, turnstile_tokens :tt SET expires_at = :exp'
-        expr_values: dict[str, Any] = {
-            ':inc': 1,
-            ':tt': 1,
-            ':exp': expires_at,
-        }
-    else:
-        update_expr = 'ADD #count :inc SET expires_at = :exp'
-        expr_values = {':inc': 1, ':exp': expires_at}
-    expr_names = {'#count': 'count'}
+        deltas['turnstile_tokens'] = 1
 
-    result = table.update_item(
-        Key={'bucket_key': key},
-        UpdateExpression=update_expr,
-        ExpressionAttributeNames=expr_names,
-        ExpressionAttributeValues=expr_values,
-        ReturnValues='ALL_NEW',
+    result = RateLimitBucketItem.increment(
+        key,
+        set_fields={'expires_at': expires_at},
+        **deltas,
     )
-    attrs = result.get('Attributes', {})
     return {
-        'count': int(attrs.get('count', 0)),
-        'turnstile_tokens': int(attrs.get('turnstile_tokens', 0)),
+        'count': result.get('count', 0),
+        'turnstile_tokens': result.get('turnstile_tokens', 0),
     }

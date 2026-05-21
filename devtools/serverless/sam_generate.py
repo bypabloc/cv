@@ -532,6 +532,7 @@ def build_template(
     manifest: dict[str, Any],
     *,
     stage: str = 'dev',
+    code_uri: str = 'build',
 ) -> dict[str, Any]:
     """Construye el dict del SAM template desde el manifiesto formato dev.
 
@@ -541,6 +542,12 @@ def build_template(
         Manifiesto `lambda.yaml` ya validado y con defaults aplicados.
     stage : str
         Stage objetivo (dev | stage | prod).
+    code_uri : str
+        Directorio del codigo a empaquetar. Para deploy es `build/` (el
+        artefacto que devtools construye con uv); SAM lo zipea tal cual,
+        sin `Metadata.BuildMethod`, asi `sam deploy` NO corre pip. Para
+        `run-local` se pasa `.` (la raiz del lambda, con shared/
+        vendorizado completo).
 
     Returns
     -------
@@ -552,7 +559,7 @@ def build_template(
 
     function_props: dict[str, Any] = {
         'FunctionName': f'portfolio-{name}-{stage}',
-        'CodeUri': '.',
+        'CodeUri': code_uri,
         'Handler': manifest['handler'],
         'Runtime': manifest['runtime'],
         'Architectures': [manifest.get('architecture', 'arm64')],
@@ -578,12 +585,11 @@ def build_template(
         'Stage': stage,
     }
 
+    # SIN Metadata.BuildMethod: el artefacto (build/) ya viene con las
+    # deps instaladas por uv. SAM zipea CodeUri tal cual, no corre pip.
     resources: dict[str, Any] = {
         logical_id: {
             'Type': 'AWS::Serverless::Function',
-            'Metadata': {
-                'BuildMethod': manifest['runtime'],
-            },
             'Properties': function_props,
         },
     }
@@ -617,6 +623,7 @@ def generate_sam_file(
     resolved: ResolvedLambda,
     *,
     stage: str = 'dev',
+    code_uri: str = 'build',
 ) -> Path:
     """Genera `<root>/template.yaml` desde el manifiesto del lambda.
 
@@ -626,6 +633,9 @@ def generate_sam_file(
         Lambda objetivo (modo lambda-controller).
     stage : str
         Stage objetivo del template.
+    code_uri : str
+        Directorio del codigo (`build/` para deploy, `.` para run-local).
+        Ver `build_template`.
 
     Returns
     -------
@@ -648,7 +658,7 @@ def generate_sam_file(
     except ImportError as exc:  # pragma: no cover - PyYAML esta en devtools
         raise ManifestError('PyYAML no esta instalado') from exc
 
-    template = build_template(resolved.manifest, stage=stage)
+    template = build_template(resolved.manifest, stage=stage, code_uri=code_uri)
     out_path = resolved.root / 'template.yaml'
 
     header = (

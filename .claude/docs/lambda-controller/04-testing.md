@@ -21,9 +21,11 @@ tests/
     └── test_<escenario>_e2e.py
 ```
 
-`pytest.ini` en la raiz del lambda fija el `rootdir`, lo que permite
-que los tests importen `from tests.unit._helpers import ...` y
-`from tests.integration._fixtures.<x> import ...`.
+La config de pytest del backend vive en `serverless/pyproject.toml`
+(`[tool.pytest.ini_options]`) y fija el `rootdir`, lo que permite que
+los tests importen `from tests.unit._helpers import ...` y
+`from tests.integration._fixtures.<x> import ...`. Cada lambda ya no
+trae su propio `pytest.ini`.
 
 ## Regla 1: un archivo por escenario
 
@@ -187,7 +189,7 @@ assert result == {'is_valid': True, 'data': {...}}   # SI: dict completo
 ## Comandos
 
 ```bash
-pip install -r requirements-dev.txt
+uv sync                                             # deps de runtime + grupo dev
 
 pytest tests/unit                                   # rapido, sin red
 pytest tests/integration                            # requiere AWS / red

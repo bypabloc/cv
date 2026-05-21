@@ -4,17 +4,11 @@ Define el ciclo de vida estandar: preload -> validate -> execute.
 Cada controller concreto solo implementa execute().
 """
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any
 
-from pydantic import BaseModel
-from pydantic import ValidationError
-
-from settings.config import ErrorCode
-from settings.config import LogMetricType
-from settings.config import app_config
-from settings.config import logger
+from pydantic import BaseModel, ValidationError
+from settings.config import ErrorCode, LogMetricType, app_config, logger
 
 
 class BaseController(ABC):
@@ -81,7 +75,7 @@ class BaseController(ABC):
                 },
                 'code': ErrorCode.VALIDATION_ERROR.value,
             }
-        except Exception as exc:  # noqa: BLE001 - se reporta como error
+        except Exception as exc:
             return {
                 'is_valid': False,
                 'data': {

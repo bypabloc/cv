@@ -11,8 +11,9 @@ lo importe desde un solo lugar, como pide el estandar lambda-controller.
 
 from enum import Enum
 
-from shared.logger import logger
 from utils.base_settings import BaseSettings
+
+from shared.observability.logger import logger
 
 __all__ = ['AppConfig', 'ErrorCode', 'LogMetricType', 'app_config', 'logger']
 
@@ -117,7 +118,7 @@ class AppConfig(BaseSettings):
 
     # Paths SSM de los secretos / parametros (la Lambda los resuelve en
     # runtime via boto3; NUNCA se guarda el valor del secreto aqui).
-    ssm_turnstile_secret_path: str = '/portfolio/turnstile-secret'
+    ssm_turnstile_secret_path: str = '/portfolio/turnstile-secret'  # noqa: S105 - path SSM, no es el valor del secreto
     ssm_turnstile_bypass_path: str = ''
     ssm_owner_email_path: str = '/portfolio/owner-email'
     ssm_ses_from_path: str = '/portfolio/ses-from-address'

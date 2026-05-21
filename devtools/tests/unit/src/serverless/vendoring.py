@@ -20,6 +20,19 @@ def _make_lambda(tmp_path):
     return lambda_dir
 
 
+def _make_lambda_importing(tmp_path, imports: str):
+    """Crea un lambda con core/handler.py que importa lo dado.
+
+    Los imports deben referenciar subpaquetes reales de serverless/shared/
+    porque vendor_shared_selective resuelve contra la fuente maestra.
+    """
+    lambda_dir = tmp_path / 'my-lambda'
+    core = lambda_dir / 'core'
+    core.mkdir(parents=True)
+    (core / 'handler.py').write_text(imports, encoding='utf-8')
+    return lambda_dir
+
+
 class TestVendorTarget:
     """vendor_target resuelve el destino del vendor."""
 
@@ -52,14 +65,14 @@ class TestVendorShared:
 
         assert (target / '__init__.py').is_file()
 
-    def test_vendored_dir_contains_shared_logger(self, tmp_path):
+    def test_vendored_dir_contains_observability_subpackage(self, tmp_path):
         from serverless.vendoring import vendor_shared
 
         lambda_root = _make_lambda(tmp_path)
 
         target = vendor_shared(lambda_root)
 
-        assert (target / 'logger.py').is_file()
+        assert (target / 'observability' / 'logger.py').is_file()
 
     def test_raises_when_lambda_has_no_core_dir(self, tmp_path):
         from serverless.vendoring import VendoringError
@@ -163,3 +176,62 @@ class TestVendoredSharedContextManager:
                 raise ValueError('boom')
 
         assert not vendor_target(lambda_root).exists()
+
+
+class TestVendorSharedSelective:
+    """vendor_shared_selective copia solo el cierre de subpaquetes."""
+
+    def test_copies_only_resolved_closure(self, tmp_path):
+        from serverless.vendoring import vendor_shared_selective
+
+        lambda_root = _make_lambda_importing(
+            tmp_path, 'from shared.observability.logger import logger\n'
+        )
+
+        _, closure = vendor_shared_selective(lambda_root)
+
+        assert closure == {'observability'}
+
+    def test_vendor_has_resolved_subpackage(self, tmp_path):
+        from serverless.vendoring import vendor_shared_selective
+
+        lambda_root = _make_lambda_importing(
+            tmp_path, 'from shared.observability.logger import logger\n'
+        )
+
+        target, _ = vendor_shared_selective(lambda_root)
+
+        assert (target / 'observability' / 'logger.py').is_file()
+
+    def test_vendor_omits_unused_subpackage(self, tmp_path):
+        from serverless.vendoring import vendor_shared_selective
+
+        lambda_root = _make_lambda_importing(
+            tmp_path, 'from shared.observability.logger import logger\n'
+        )
+
+        target, _ = vendor_shared_selective(lambda_root)
+
+        assert not (target / 'db').exists()
+
+    def test_vendor_always_includes_root_init(self, tmp_path):
+        from serverless.vendoring import vendor_shared_selective
+
+        lambda_root = _make_lambda_importing(
+            tmp_path, 'from shared.core.exceptions import ApplicationError\n'
+        )
+
+        target, _ = vendor_shared_selective(lambda_root)
+
+        assert (target / '__init__.py').is_file()
+
+    def test_transitive_closure_pulls_internal_deps(self, tmp_path):
+        from serverless.vendoring import vendor_shared_selective
+
+        lambda_root = _make_lambda_importing(
+            tmp_path, 'from shared.http.responses import json_response\n'
+        )
+
+        _, closure = vendor_shared_selective(lambda_root)
+
+        assert closure == {'http', 'core', 'aws', 'observability'}

@@ -28,13 +28,13 @@ from services.contact_service import process_contact_form
 from settings.config import logger
 from utils.base_controller import BaseController
 
+from shared.http.turnstile import verify_turnstile_token
 from shared.rate_limit import check_or_raise
 from shared.rate_limit.auto_blacklist import (
     create_blacklist_rule,
     should_auto_blacklist,
 )
 from shared.rate_limit.buckets import increment_bucket
-from shared.turnstile import verify_turnstile_token
 
 _ENDPOINT = '/contact'
 _WINDOW_SECONDS = 60

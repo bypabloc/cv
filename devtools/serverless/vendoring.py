@@ -1,24 +1,33 @@
 """Vendoring de la libreria comun `shared/` dentro de cada lambda.
 
 Los lambdas del backend del portfolio son autonomos en el artefacto
-desplegado, pero comparten codigo de `serverless/shared/` (cors, logger,
-rate_limit, db ORM, turnstile, cache). En vez de un Lambda Layer o de
-duplicar el codigo en el repo, devtools **vendoriza** `serverless/shared/`
-dentro del lambda antes de cada accion que necesite el codigo completo:
+desplegado, pero comparten codigo de `serverless/shared/`, organizado en
+subpaquetes por dominio (`core`, `aws`, `observability`, `http`, `db`,
+`dynamodb`, `cache`, `rate_limit`). En vez de un Lambda Layer o de
+duplicar el codigo en el repo, devtools **vendoriza** los subpaquetes que
+el lambda usa dentro de `<lambda>/core/shared/` antes de cada accion que
+necesite el codigo completo:
 
   - `run-local` / `test-unit` / `test-integration`: copia `shared/` a
     `<lambda>/core/shared/` para que `sam local invoke` y `pytest` lo
     resuelvan.
-  - `deploy`: idem, antes de `sam build` (el zip lo incluye).
+  - `deploy`: idem, antes de armar el zip (el artefacto lo incluye).
+
+El vendoring es **selectivo**: `shared_resolver` escanea el AST del
+lambda y resuelve el cierre transitivo de subpaquetes que importa. Solo
+ese cierre se copia. Un lambda que no usa `shared.db` no recibe ese
+subpaquete ni su codigo en el zip. `vendor_shared` (sin selectividad)
+queda para casos que necesitan la libreria completa (ej. tests que
+importan subpaquetes via fallback de path).
 
 `core/shared/` es **efimero**: esta en el `.gitignore` de cada lambda, se
 regenera en cada accion y se limpia despues. La fuente de verdad unica es
 `serverless/shared/`.
 
-Los imports del codigo del lambda son siempre `from shared...`: resuelven
-igual en la fuente maestra (`serverless/shared/`, via el `sys.path` del
-backend) y en el vendor (`<lambda>/core/shared/`, porque `core/` esta en
-el `sys.path` del handler).
+Los imports del codigo del lambda son siempre `from shared.<subpaquete>`:
+resuelven igual en la fuente maestra (`serverless/shared/`, via el
+`sys.path` del backend) y en el vendor (`<lambda>/core/shared/`, porque
+`core/` esta en el `sys.path` del handler).
 """
 
 from __future__ import annotations
@@ -27,6 +36,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 import shutil
+
+from serverless.shared_resolver import resolve_lambda_shared
 
 
 # Raiz del backend serverless del portfolio (contiene shared/).
@@ -138,14 +149,76 @@ def clean_shared(lambda_root: Path) -> bool:
     return True
 
 
+def vendor_shared_selective(lambda_root: Path) -> tuple[Path, set[str]]:
+    """Vendoriza SOLO los subpaquetes de `shared/` que el lambda usa.
+
+    A diferencia de `vendor_shared` (que copia toda la libreria),
+    `shared_resolver` escanea el AST del lambda, resuelve el cierre
+    transitivo de subpaquetes y copia unicamente ese conjunto. Asi el
+    artefacto desplegado no arrastra codigo de dominios que el lambda no
+    importa.
+
+    El `__init__.py` raiz de `shared/` siempre se copia (es el marcador
+    de paquete; sin el `import shared.<sub>` no resuelve).
+
+    Parameters
+    ----------
+    lambda_root : Path
+        Directorio raiz del lambda.
+
+    Returns
+    -------
+    tuple[Path, set[str]]
+        `(vendor_path, closure)` — el path del vendor y el conjunto de
+        subpaquetes copiados.
+
+    Raises
+    ------
+    VendoringError
+        Si la fuente no existe o el lambda no tiene `core/`.
+    """
+    source = shared_source()
+
+    core_dir = lambda_root / 'core'
+    if not core_dir.is_dir():
+        raise VendoringError(
+            f'El lambda {lambda_root} no tiene core/. '
+            f'Un lambda-controller debe tener core/ (ver el estandar).',
+        )
+
+    closure, _ = resolve_lambda_shared(lambda_root)
+
+    target = vendor_target(lambda_root)
+    if target.exists():
+        shutil.rmtree(target)
+    target.mkdir(parents=True)
+
+    # __init__.py raiz: marcador de paquete, siempre necesario.
+    shutil.copy2(source / '__init__.py', target / '__init__.py')
+
+    # Solo los subpaquetes del cierre transitivo.
+    for subpackage in sorted(closure):
+        shutil.copytree(
+            source / subpackage,
+            target / subpackage,
+            ignore=_IGNORE,
+        )
+    return target, closure
+
+
 @contextmanager
 def vendored_shared(lambda_root: Path) -> Iterator[Path]:
-    """Context manager: vendoriza `shared/`, limpia al salir.
+    """Context manager: vendoriza `shared/` completo, limpia al salir.
 
-    Uso tipico en los comandos `run-local` / `test-unit`:
+    Uso tipico en los comandos `run-local` / `test-unit`: los tests
+    pueden importar cualquier subpaquete via el fallback de path del
+    conftest, asi que se vendoriza la libreria completa.
 
         with vendored_shared(resolved.root):
             run_pytest(...)
+
+    Para el empaquetado de deploy usar `vendored_shared_selective`, que
+    copia solo el cierre que el lambda realmente importa.
 
     El vendor se limpia incluso si el bloque lanza una excepcion.
 
@@ -162,5 +235,33 @@ def vendored_shared(lambda_root: Path) -> Iterator[Path]:
     target = vendor_shared(lambda_root)
     try:
         yield target
+    finally:
+        clean_shared(lambda_root)
+
+
+@contextmanager
+def vendored_shared_selective(
+    lambda_root: Path,
+) -> Iterator[tuple[Path, set[str]]]:
+    """Context manager: vendoriza el cierre de subpaquetes, limpia al salir.
+
+    Variante selectiva de `vendored_shared`: copia unicamente los
+    subpaquetes de `shared/` que el lambda importa (cierre transitivo
+    resuelto por AST). Pensado para el empaquetado de deploy.
+
+    Parameters
+    ----------
+    lambda_root : Path
+        Directorio raiz del lambda.
+
+    Yields
+    ------
+    tuple[Path, set[str]]
+        `(vendor_path, closure)` — el vendor activo y los subpaquetes
+        copiados.
+    """
+    target, closure = vendor_shared_selective(lambda_root)
+    try:
+        yield target, closure
     finally:
         clean_shared(lambda_root)

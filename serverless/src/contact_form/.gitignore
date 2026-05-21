@@ -3,7 +3,15 @@
 # SAM template generado desde lambda.yaml (sam-generate).
 template.yaml
 
-# Build de SAM.
+# Artefacto de deploy: devtools lo arma con uv (deps + core/ + shared/).
+build/
+function.zip
+
+# requirements.txt efimero (si alguna herramienta lo genera desde uv).
+requirements.txt
+requirements-dev.txt
+
+# Build de SAM (legacy / sam local).
 .aws-sam/
 
 # Libreria comun vendorizada por devtools (fuente: serverless/shared/).

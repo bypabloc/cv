@@ -99,9 +99,9 @@ def contact_form_aws(
     )
 
     with mock_aws():
-        # El resource DynamoDB singleton de shared.dynamodb_client se
+        # El resource DynamoDB singleton de shared.aws.dynamodb se
         # recrea bajo este mock_aws() para aislar el estado entre tests.
-        from shared.dynamodb_client import reset_resource_cache
+        from shared.aws.dynamodb import reset_resource_cache
 
         reset_resource_cache()
 

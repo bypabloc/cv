@@ -10,8 +10,8 @@ import httpx
 import pytest
 import respx
 
-from shared.exceptions import TurnstileError
-from shared.turnstile import TURNSTILE_SITEVERIFY_URL
+from shared.core.exceptions import TurnstileError
+from shared.http.turnstile import TURNSTILE_SITEVERIFY_URL
 
 pytestmark = pytest.mark.unit
 

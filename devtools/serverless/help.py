@@ -5,6 +5,11 @@ Renders a colourised inventory of subcommands grouped by domain.
 
 from typing import Any
 
+from serverless.flags import _COMMAND_FLAGS
+from serverless.flags import _COMMAND_SUMMARIES
+from serverless.flags import DESTRUCTIVE_COMMANDS
+from serverless.flags import VALID_COMMANDS
+from serverless.flags import VALID_STAGES
 from shared.console import BOLD
 from shared.console import CYAN
 from shared.console import DIM
@@ -13,12 +18,6 @@ from shared.console import NC
 from shared.console import RED
 from shared.console import YELLOW
 from shared.console import _c
-
-from serverless.flags import _COMMAND_FLAGS
-from serverless.flags import _COMMAND_SUMMARIES
-from serverless.flags import DESTRUCTIVE_COMMANDS
-from serverless.flags import VALID_COMMANDS
-from serverless.flags import VALID_STAGES
 
 
 # Mapeo comando -> grupo para render organizado

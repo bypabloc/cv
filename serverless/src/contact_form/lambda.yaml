@@ -1,190 +1,57 @@
-# Manifiesto del Lambda `contact_form` — fuente de verdad de la config.
+# Manifiesto del Lambda `contact_form` — fuente de verdad de su config.
 #
-# devtools genera el template.yaml SAM a partir de este archivo:
-#   python devtools/run.py serverless sam-generate --path=serverless/src/contact_form
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
+# devtools traduce este manifiesto al template SAM efimero:
+#   python devtools/run.py serverless sam-generate \
+#     --path=serverless/src/contact_form
 #
 # El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
 # edita a mano: se cambia este lambda.yaml y se regenera.
-#
-# El Lambda `contact_form` atiende el endpoint HTTP `POST /contact`:
-# valida el form, aplica rate-limit per-IP, valida Cloudflare Turnstile,
-# persiste en DynamoDB y notifica al owner por email (SES). Cuelga de la
-# API Gateway REST y de las tablas DynamoDB del stack de infra
-# (portfolio-infra-${stage}).
 
-# --- Obligatorios ---
-name: portfolio-contact-form
+# --- Identidad ---
+name: contact-form
+description: Atiende el form de contacto (valida, rate-limit, Turnstile, email).
+
+# --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 30       # segundos
 
-# --- Opcionales (con defaults) ---
-memory: 512
-timeout: 30
-region: us-east-1
-architecture: arm64
-
-# Trigger: el Lambda agrega el metodo POST /contact sobre la API Gateway
-# REST que provee el stack de infra. No crea su propia API: importa el
-# RestApiId (y el root resource) ya existentes para enganchar el evento.
+# --- Como se invoca este Lambda ---
+# http: expone un endpoint en la API del backend.
 trigger:
-  type: api
+  type: http
   method: POST
   path: /contact
-  # La API Gateway no es propia: la expone el stack portfolio-infra.
-  # devtools resuelve estos imports al generar el SAM (Fn::ImportValue).
-  rest_api:
-    stack: portfolio-infra-${stage}
-    imports:
-      api_id: ApiId
-      api_root_resource_id: ApiRootResourceId
 
-# Recursos del stack de infra que la Lambda consume (tablas DynamoDB).
-# Se importan por nombre/ARN exportado del stack portfolio-infra-${stage}.
-imports:
-  stack: portfolio-infra-${stage}
-  values:
-    - ContactsTableName
-    - ContactsTableArn
-    - CacheTableName
-    - CacheTableArn
-    - RateLimitRulesTableName
-    - RateLimitRulesTableArn
-    - RateLimitBucketsTableName
-    - RateLimitBucketsTableArn
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  tables:
+    contacts: read-write           # persiste el form recibido
+    cache: read-write              # @cached
+    rate-limit-rules: read-write   # rate-limit per-IP
+    rate-limit-buckets: read-write
+  # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
+  secrets:
+    - turnstile-secret        # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
+    - owner-email             # destinatario de la notificacion
+    - ses-from-address        # remitente verificado en SES
+  # Envia email transaccional por SES al recibir un form.
+  sends-email: true
 
-# IAM: copiado 1:1 de las Policies del recurso ContactFormFunction del
-# template.yaml actual del backend.
-#   - DynamoDB CRUD sobre contacts, cache, rate-limit rules y buckets.
-#   - SSM GetParameter de turnstile-secret (por stage), turnstile-bypass
-#     (dev), owner-email y ses-from-address.
-#   - KMS Decrypt restringido a ssm.${region}.amazonaws.com (los
-#     SecureString se descifran con la KMS key del proyecto).
-#   - SES SendEmail/SendRawEmail sobre la identidad the-full-stack.com,
-#     la address no-reply@ y el configuration-set por defecto.
-iam_statements:
-  # DynamoDB CRUD — contacts
-  - effect: Allow
-    actions:
-      - dynamodb:GetItem
-      - dynamodb:PutItem
-      - dynamodb:UpdateItem
-      - dynamodb:DeleteItem
-      - dynamodb:Query
-      - dynamodb:Scan
-      - dynamodb:BatchGetItem
-      - dynamodb:BatchWriteItem
-      - dynamodb:ConditionCheckItem
-    resource:
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-contacts-${stage}'
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-contacts-${stage}/index/*'
-  # DynamoDB CRUD — cache
-  - effect: Allow
-    actions:
-      - dynamodb:GetItem
-      - dynamodb:PutItem
-      - dynamodb:UpdateItem
-      - dynamodb:DeleteItem
-      - dynamodb:Query
-      - dynamodb:Scan
-      - dynamodb:BatchGetItem
-      - dynamodb:BatchWriteItem
-      - dynamodb:ConditionCheckItem
-    resource:
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-cache-${stage}'
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-cache-${stage}/index/*'
-  # DynamoDB CRUD — rate-limit rules
-  - effect: Allow
-    actions:
-      - dynamodb:GetItem
-      - dynamodb:PutItem
-      - dynamodb:UpdateItem
-      - dynamodb:DeleteItem
-      - dynamodb:Query
-      - dynamodb:Scan
-      - dynamodb:BatchGetItem
-      - dynamodb:BatchWriteItem
-      - dynamodb:ConditionCheckItem
-    resource:
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-rate-limit-rules-${stage}'
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-rate-limit-rules-${stage}/index/*'
-  # DynamoDB CRUD — rate-limit buckets
-  - effect: Allow
-    actions:
-      - dynamodb:GetItem
-      - dynamodb:PutItem
-      - dynamodb:UpdateItem
-      - dynamodb:DeleteItem
-      - dynamodb:Query
-      - dynamodb:Scan
-      - dynamodb:BatchGetItem
-      - dynamodb:BatchWriteItem
-      - dynamodb:ConditionCheckItem
-    resource:
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-rate-limit-buckets-${stage}'
-      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-rate-limit-buckets-${stage}/index/*'
-  # SSM — turnstile secret (por stage)
-  - effect: Allow
-    actions:
-      - ssm:GetParameter
-    resource: 'arn:aws:ssm:${region}:${account_id}:parameter/portfolio/${stage}/turnstile-secret'
-  # SSM — turnstile bypass secret (solo dev; en prod el param no existe y
-  # la lectura falla con ParameterNotFound — bypass inerte).
-  - effect: Allow
-    actions:
-      - ssm:GetParameter
-    resource: 'arn:aws:ssm:${region}:${account_id}:parameter/portfolio/dev/turnstile-bypass-secret'
-  # SSM — owner-email y ses-from-address (parametros plain String).
-  - effect: Allow
-    actions:
-      - ssm:GetParameter
-    resource:
-      - 'arn:aws:ssm:${region}:${account_id}:parameter/portfolio/owner-email'
-      - 'arn:aws:ssm:${region}:${account_id}:parameter/portfolio/ses-from-address'
-  # KMS Decrypt — descifrado de los SSM SecureString via la KMS key.
-  - effect: Allow
-    actions:
-      - kms:Decrypt
-    resource: 'arn:aws:kms:${region}:${account_id}:key/*'
-    condition:
-      StringEquals:
-        kms:ViaService: 'ssm.${region}.amazonaws.com'
-  # SES — envio del email transaccional al owner.
-  - effect: Allow
-    actions:
-      - ses:SendEmail
-      - ses:SendRawEmail
-    resource:
-      - 'arn:aws:ses:${region}:${account_id}:identity/the-full-stack.com'
-      - 'arn:aws:ses:${region}:${account_id}:identity/no-reply@the-full-stack.com'
-      # La domain identity the-full-stack.com tiene un default
-      # configuration set; SES v2 lo aplica a todo SendEmail desde esa
-      # identidad y exige permiso sobre el ARN del config set.
-      - 'arn:aws:ses:${region}:${account_id}:configuration-set/my-first-configuration-set'
-
-# Variables de entorno por stage. 'default' aplica a todos los stages;
-# las claves de un stage especifico sobrescriben las de 'default'.
-environment:
+# --- Variables de entorno por stage ---
+env:
   default:
-    POWERTOOLS_SERVICE_NAME: contact-form
-    POWERTOOLS_METRICS_NAMESPACE: Portfolio
     LOG_LEVEL: INFO
-    ENVIRONMENT: dev
     AWS_SES_REGION: us-east-1
-    CONTACTS_TABLE_NAME: portfolio-contacts-${stage}
-    CACHE_TABLE_NAME: portfolio-cache-${stage}
-    RATE_LIMIT_RULES_TABLE_NAME: portfolio-rate-limit-rules-${stage}
-    RATE_LIMIT_BUCKETS_TABLE_NAME: portfolio-rate-limit-buckets-${stage}
-    SSM_TURNSTILE_SECRET_PATH: /portfolio/${stage}/turnstile-secret
-    SSM_OWNER_EMAIL_PATH: /portfolio/owner-email
-    SSM_SES_FROM_PATH: /portfolio/ses-from-address
   dev:
-    ENVIRONMENT: dev
-    # Bypass secret para tests E2E (solo dev). turnstile.py corta el
-    # bypass por STAGE (defense-in-depth): aunque el secret exista en
-    # prod, la funcion lo ignora.
-    SSM_TURNSTILE_BYPASS_PATH: /portfolio/dev/turnstile-bypass-secret
+    LOG_LEVEL: INFO
   stage:
-    ENVIRONMENT: stage
+    LOG_LEVEL: INFO
   prod:
-    ENVIRONMENT: prod
     LOG_LEVEL: WARNING

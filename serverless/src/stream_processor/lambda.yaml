@@ -1,114 +1,48 @@
-# Manifiesto del Lambda `stream_processor` — fuente de verdad de la config.
+# Manifiesto del Lambda `stream_processor` — fuente de verdad de su config.
 #
-# devtools genera el template.yaml SAM a partir de este archivo:
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
+# devtools traduce este manifiesto al template SAM efimero:
 #   python devtools/run.py serverless sam-generate \
 #     --path=serverless/src/stream_processor
 #
 # El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
 # edita a mano: se cambia este lambda.yaml y se regenera.
-#
-# El Lambda `stream_processor` consume los DynamoDB Streams de las tablas
-# `contacts` y `tracking` y replica cada record (INSERT) a Neon
-# PostgreSQL. NO esta detras de API Gateway: lo disparan dos Event
-# Source Mappings sobre los Streams de esas tablas.
 
-# --- Obligatorios ---
-name: portfolio-stream-processor
+# --- Identidad ---
+name: stream-processor
+description: Replica los cambios de DynamoDB (contacts, tracking) a Neon PostgreSQL.
+
+# --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 60       # segundos
 
-# --- Opcionales (con defaults) ---
-memory: 512
-timeout: 60
-region: us-east-1
-architecture: arm64
-
-# --- Triggers: DynamoDB Streams ---
-# El Lambda se dispara por DOS Event Source Mappings, uno por tabla.
-# Los ARNs de los Streams y de la DLQ los exporta el stack de infra
-# `portfolio-infra-${stage}` — se importan, NO se hardcodean.
+# --- Como se invoca este Lambda ---
+# on-table-changes: reacciona a cada cambio (INSERT/MODIFY/REMOVE) de las
+# tablas listadas. devtools conecta el DynamoDB Stream de cada tabla y la
+# cola de errores (DLQ) automaticamente.
 trigger:
-  type: dynamodb_stream
-  # ARN de la cola SQS donde caen los batches que agotan los reintentos.
-  dlq:
-    import: StreamProcessorDLQArn
-    stack: portfolio-infra-${stage}
-  # Una entrada por Stream consumido. devtools genera un
-  # AWS::Lambda::EventSourceMapping por cada `event_sources[*]`.
-  event_sources:
-    - name: contacts
-      # ARN del Stream de la tabla contacts (exportado por infra).
-      stream_arn:
-        import: ContactsStreamArn
-        stack: portfolio-infra-${stage}
-      starting_position: LATEST
-      batch_size: 100
-      maximum_batching_window_in_seconds: 10
-      # El handler devuelve `batchItemFailures`: solo se reintenta el
-      # record fallido, no el batch completo.
-      function_response_types:
-        - ReportBatchItemFailures
-    - name: tracking
-      # ARN del Stream de la tabla tracking (exportado por infra).
-      stream_arn:
-        import: TrackingStreamArn
-        stack: portfolio-infra-${stage}
-      starting_position: LATEST
-      batch_size: 100
-      maximum_batching_window_in_seconds: 10
-      function_response_types:
-        - ReportBatchItemFailures
+  type: on-table-changes
+  tables:
+    - contacts
+    - tracking
 
-# --- IAM ---
-# - SQS SendMessage al DLQ (batches que agotan reintentos).
-# - SSM GetParameter de la connection string de Neon por stage.
-# - KMS Decrypt del SecureString de SSM.
-# - DynamoDB Streams read sobre los ARNs de los Streams consumidos.
-iam_statements:
-  - effect: Allow
-    actions:
-      - sqs:SendMessage
-    resource:
-      import: StreamProcessorDLQArn
-      stack: portfolio-infra-${stage}
-  - effect: Allow
-    actions:
-      - ssm:GetParameter
-    resource: 'arn:aws:ssm:${region}:${account_id}:parameter/portfolio/${stage}/neon-url'
-  - effect: Allow
-    actions:
-      - kms:Decrypt
-    resource: 'arn:aws:kms:${region}:${account_id}:key/*'
-    condition:
-      StringEquals:
-        kms:ViaService: 'ssm.${region}.amazonaws.com'
-  - effect: Allow
-    actions:
-      - dynamodb:DescribeStream
-      - dynamodb:GetRecords
-      - dynamodb:GetShardIterator
-      - dynamodb:ListStreams
-    resource:
-      - import: ContactsStreamArn
-        stack: portfolio-infra-${stage}
-      - import: TrackingStreamArn
-        stack: portfolio-infra-${stage}
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # El Lambda lee los Streams de contacts/tracking (declarado en trigger);
+  # no necesita leer/escribir el contenido de ninguna tabla directamente.
+  tables: []
+  # Secretos que el Lambda lee (de SSM).
+  secrets:
+    - neon-url
+  sends-email: false
 
-# Variables de entorno por stage. 'default' aplica a todos los stages;
-# las claves de un stage especifico sobrescriben las de 'default'.
-environment:
+# --- Variables de entorno por stage ---
+env:
   default:
-    POWERTOOLS_SERVICE_NAME: stream-processor
-    POWERTOOLS_METRICS_NAMESPACE: Portfolio
     LOG_LEVEL: INFO
-    ENVIRONMENT: dev
-  dev:
-    ENVIRONMENT: dev
-    SSM_NEON_URL_PATH: /portfolio/dev/neon-url
-  stage:
-    ENVIRONMENT: stage
-    SSM_NEON_URL_PATH: /portfolio/stage/neon-url
   prod:
-    ENVIRONMENT: prod
     LOG_LEVEL: WARNING
-    SSM_NEON_URL_PATH: /portfolio/prod/neon-url

@@ -1,60 +1,46 @@
-# Manifiesto del Lambda `db` — fuente de verdad de la configuracion.
+# Manifiesto del Lambda `db` — fuente de verdad de su configuracion.
 #
-# devtools genera el template.yaml SAM a partir de este archivo:
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
+# devtools traduce este manifiesto al template SAM efimero:
 #   python devtools/run.py serverless sam-generate --path=serverless/src/db
 #
 # El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
 # edita a mano: se cambia este lambda.yaml y se regenera.
-#
-# El Lambda `db` gestiona el schema PostgreSQL del portfolio (Alembic).
-# NO esta detras de API Gateway ni de DynamoDB Streams: se invoca directo
-# (deploy hook / `aws lambda invoke`). Su stack es independiente y no
-# importa nada del stack de infra.
 
-# --- Obligatorios ---
-name: portfolio-db
+# --- Identidad ---
+name: db
+description: Gestiona el schema PostgreSQL del portfolio (migraciones Alembic).
+
+# --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 120      # segundos
 
-# --- Opcionales (con defaults) ---
-memory: 512
-timeout: 120
-region: us-east-1
-architecture: arm64
-
-# Sin triggers: el Lambda db se invoca directo (no API GW, no Streams).
+# --- Como se invoca este Lambda ---
+# direct  : se invoca directo (aws lambda invoke / deploy hook). Sin HTTP.
+# http    : expone un endpoint en la API del backend.
+# on-table-changes : reacciona a cambios en tablas DynamoDB.
 trigger:
-  type: none
+  type: direct
 
-# IAM: SSM read del parametro neon-url por stage + KMS decrypt.
-iam_statements:
-  - effect: Allow
-    actions:
-      - ssm:GetParameter
-    resource: 'arn:aws:ssm:${region}:${account_id}:parameter/portfolio/${stage}/neon-url'
-  - effect: Allow
-    actions:
-      - kms:Decrypt
-    resource: 'arn:aws:kms:${region}:${account_id}:key/*'
-    condition:
-      StringEquals:
-        kms:ViaService: 'ssm.${region}.amazonaws.com'
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # Tablas DynamoDB que el Lambda lee/escribe. El Lambda db no usa.
+  tables: []
+  # Secretos que el Lambda lee (de SSM). Solo el nombre corto: devtools
+  # resuelve el path completo y el permiso de descifrado.
+  secrets:
+    - neon-url
+  # true si el Lambda envia email (SES).
+  sends-email: false
 
-# Variables de entorno por stage. 'default' aplica a todos los stages;
-# las claves de un stage especifico sobrescriben las de 'default'.
-environment:
+# --- Variables de entorno por stage ---
+# 'default' aplica a todos; un stage especifico sobrescribe esas claves.
+env:
   default:
-    POWERTOOLS_SERVICE_NAME: db
-    POWERTOOLS_METRICS_NAMESPACE: Portfolio
     LOG_LEVEL: INFO
-    ENVIRONMENT: dev
-  dev:
-    ENVIRONMENT: dev
-    SSM_NEON_URL_PATH: /portfolio/dev/neon-url
-  stage:
-    ENVIRONMENT: stage
-    SSM_NEON_URL_PATH: /portfolio/stage/neon-url
   prod:
-    ENVIRONMENT: prod
     LOG_LEVEL: WARNING
-    SSM_NEON_URL_PATH: /portfolio/prod/neon-url

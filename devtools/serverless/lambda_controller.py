@@ -17,15 +17,31 @@ import shutil
 import subprocess
 from typing import Any
 
-from serverless.resolve import ManifestError
-from serverless.resolve import ResolvedLambda
-from serverless.resolve import resolve_lambda
-from serverless.sam_generate import generate_sam_file
 from shared.console import CYAN
 from shared.console import GREEN
 from shared.console import YELLOW
 from shared.console import _c
 from shared.console import _err
+
+from serverless.resolve import ManifestError
+from serverless.resolve import ResolvedLambda
+from serverless.resolve import resolve_lambda
+from serverless.sam_generate import generate_sam_file
+from serverless.vendoring import VendoringError
+from serverless.vendoring import vendored_shared
+
+
+# Python del `.venv` del backend serverless del portfolio. Tiene la union
+# de las deps de runtime de los 4 lambdas (Powertools, pydantic, boto3,
+# SQLAlchemy, etc.) — se usa para correr los tests de un lambda cuando
+# este no trae su propio `.venv`.
+_PORTFOLIO_SERVERLESS_VENV = (
+    Path(__file__).resolve().parents[2]
+    / 'serverless'
+    / '.venv'
+    / 'bin'
+    / 'python'
+)
 
 
 def _ensure_tool(tool: str, install_hint: str) -> None:
@@ -125,7 +141,14 @@ def cmd_run_local(flags: dict[str, Any]) -> int:
     if flags.get('debug'):
         args.append('--debug')
 
-    return _run(args, cwd=resolved.root)
+    # Vendoriza serverless/shared/ en core/shared/ para que el codigo del
+    # lambda resuelva `import shared...` durante la invocacion local.
+    try:
+        with vendored_shared(resolved.root):
+            return _run(args, cwd=resolved.root)
+    except VendoringError as exc:
+        _err(str(exc))
+        return 1
 
 
 # ---------------------------------------------------------------------------
@@ -156,28 +179,45 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
         print(_c(YELLOW, f'[dry-run] sam build + sam deploy stage {stage}'))
         return 0
 
-    build_rc = _run(['sam', 'build', '--use-container'], cwd=resolved.root)
-    if build_rc != 0:
-        _err('sam build fallo')
-        return build_rc
-
+    stack_name = f'portfolio-{resolved.manifest["name"]}-{stage}'
     deploy_args = [
         'sam',
         'deploy',
         '--stack-name',
-        f'{resolved.manifest["name"]}-{stage}',
+        stack_name,
         '--resolve-s3',
         '--capabilities',
         'CAPABILITY_IAM',
         '--no-confirm-changeset',
+        '--no-fail-on-empty-changeset',
         '--region',
         str(resolved.manifest.get('region', 'us-east-1')),
     ]
     if flags.get('guided'):
         deploy_args.append('--guided')
 
-    print(_c(YELLOW, f'Deploy de {resolved.manifest["name"]} a {stage}...'))
-    return _run(deploy_args, cwd=resolved.root)
+    # Vendoriza serverless/shared/ en core/shared/ para que el zip que
+    # `sam build` empaqueta incluya la libreria comun. El vendor se limpia
+    # al salir del bloque (build + deploy ya consumieron el codigo).
+    try:
+        with vendored_shared(resolved.root):
+            build_rc = _run(
+                ['sam', 'build', '--use-container'], cwd=resolved.root
+            )
+            if build_rc != 0:
+                _err('sam build fallo')
+                return build_rc
+
+            print(
+                _c(
+                    YELLOW,
+                    f'Deploy de {resolved.manifest["name"]} a {stage}...',
+                )
+            )
+            return _run(deploy_args, cwd=resolved.root)
+    except VendoringError as exc:
+        _err(str(exc))
+        return 1
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +281,27 @@ def cmd_invoke_remote(flags: dict[str, Any]) -> int:
 # ---------------------------------------------------------------------------
 
 
+def _resolve_pytest_python(resolved: ResolvedLambda) -> str:
+    """Resuelve el interprete Python para correr los tests del lambda.
+
+    Los tests del lambda necesitan las deps de runtime (Powertools,
+    pydantic, etc.) que el `.venv` de devtools NO tiene. Busca un `.venv`
+    con esas deps, en orden:
+      1. `<lambda>/.venv` (el propio lambda, si lo tiene).
+      2. El `.venv` del backend serverless (`serverless/.venv`), que ya
+         instala la union de deps de los 4 lambdas.
+      3. `python3` del PATH (fallback; puede no tener las deps).
+    """
+    candidates = [
+        resolved.root / '.venv' / 'bin' / 'python',
+        _PORTFOLIO_SERVERLESS_VENV,
+    ]
+    for python in candidates:
+        if python.is_file():
+            return str(python)
+    return 'python3'
+
+
 def _run_pytest(resolved: ResolvedLambda, subdir: str, flags: dict) -> int:
     """Corre pytest sobre tests/<subdir> con cwd en la raiz del lambda."""
     tests_dir = resolved.root / 'tests' / subdir
@@ -252,13 +313,21 @@ def _run_pytest(resolved: ResolvedLambda, subdir: str, flags: dict) -> int:
         )
         return 1
 
-    args = ['pytest', f'tests/{subdir}']
+    python = _resolve_pytest_python(resolved)
+    args = [python, '-m', 'pytest', f'tests/{subdir}', '-o', 'addopts=']
     if flags.get('verbose') or flags.get('v'):
         args.append('-v')
     if flags.get('quiet'):
         args.append('-q')
 
-    return _run(args, cwd=resolved.root)
+    # Vendoriza serverless/shared/ en core/shared/ para que los tests
+    # resuelvan `import shared...` igual que en el artefacto desplegado.
+    try:
+        with vendored_shared(resolved.root):
+            return _run(args, cwd=resolved.root)
+    except VendoringError as exc:
+        _err(str(exc))
+        return 1
 
 
 def cmd_test_unit_lambda(flags: dict[str, Any]) -> int:

@@ -43,7 +43,14 @@ dev = [
 [tool.ruff]
 line-length = 80
 target-version = "py313"
-extend-exclude = [".aws-sam/", ".venv/", "events/*.json"]
+# migrations/_archive/: runner SQL legacy archivado (ver
+# .claude/rules/neon-management.md) — referencia historica, no se aplica.
+extend-exclude = [
+  ".aws-sam/",
+  ".venv/",
+  "events/*.json",
+  "migrations/_archive/",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "B", "C4", "PIE", "SIM", "UP", "ANN", "S", "RUF"]
@@ -53,6 +60,17 @@ ignore = [
   "S101",   # asserts ok en tests
   "S311",   # random no-cryptographic ok
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests: el nombre del test es el contrato; las firmas no necesitan
+# anotaciones de tipo. S105/S106 son falsos positivos (cf_token de
+# Turnstile, no es un password).
+"**/tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S105", "S106"]
+# El handler vive dentro de core/ y ajusta sys.path antes de importar
+# (models./services./settings./utils./shared. resuelven en AWS y en
+# invoke local). Los imports tras ese setup son intencionales: E402 no
+# aplica.
+"**/core/handler.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "single"

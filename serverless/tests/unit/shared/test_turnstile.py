@@ -197,7 +197,7 @@ class TestVerifyTurnstileToken:
         result = verify_turnstile_token(
             '',
             remote_ip='1.2.3.4',
-            bypass_secret='test-bypass-123',  # noqa: S106
+            bypass_secret='test-bypass-123',
         )
 
         assert result['success'] is True
@@ -229,7 +229,7 @@ class TestVerifyTurnstileToken:
             verify_turnstile_token(
                 'some-real-cf-token',
                 remote_ip='1.2.3.4',
-                bypass_secret='test-bypass-123',  # noqa: S106
+                bypass_secret='test-bypass-123',
             )
 
     def test_when_cf_response_empty_in_prod_then_reject(
@@ -248,7 +248,7 @@ class TestVerifyTurnstileToken:
             verify_turnstile_token(
                 '',
                 remote_ip='1.2.3.4',
-                bypass_secret='any-secret',  # noqa: S106
+                bypass_secret='any-secret',
             )
 
         assert exc_info.value.code == 'CAPTCHA_INVALID'

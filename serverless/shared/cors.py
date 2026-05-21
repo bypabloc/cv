@@ -90,12 +90,10 @@ def is_allowed_origin(origin: str | None) -> bool:
     if origin in _load_whitelist():
         return True
     # En dev permitimos cualquier subdominio *.localhost (RFC 6761 seguro)
-    if (
+    return bool(
         os.environ.get('STAGE', 'dev') == 'dev'
         and _LOCAL_SUBDOMAIN_PATTERN.match(origin)
-    ):
-        return True
-    return False
+    )
 
 
 def resolve_origin(headers: dict[str, str] | None) -> str:

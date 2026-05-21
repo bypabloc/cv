@@ -101,7 +101,13 @@ def main() -> int:
     print(f'Insertado contacto {item["id"]["S"]} en {table_name}')
     print('Stream debera replicarlo a Neon en ~2-5 segundos.')
     print('Verificar:')
-    print(f'  psql $NEON_URL -c "SELECT id, email, niche FROM portfolio.contacts WHERE id = \'{item["id"]["S"]}\';"')
+    # No es una query ejecutada: es un print() que sugiere al usuario un
+    # comando psql de verificacion manual; el id es un UUIDv7 generado.
+    verify_sql = (
+        f'  psql $NEON_URL -c "SELECT id, email, niche FROM '  # noqa: S608
+        f'portfolio.contacts WHERE id = \'{item["id"]["S"]}\';"'
+    )
+    print(verify_sql)
     return 0
 
 

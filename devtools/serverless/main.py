@@ -15,6 +15,8 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
+from shared.console import _err
+
 from serverless.database import cmd_db_branch
 from serverless.database import cmd_db_current
 from serverless.database import cmd_db_migrate
@@ -24,6 +26,7 @@ from serverless.database import cmd_db_shell
 from serverless.database import cmd_db_show_migrations
 from serverless.database import cmd_db_tables
 from serverless.help import cmd_help
+from serverless.infra_deploy import cmd_deploy_infra
 from serverless.lambda_controller import cmd_deploy_lambda
 from serverless.lambda_controller import cmd_invoke_remote
 from serverless.lambda_controller import cmd_run_local
@@ -56,7 +59,6 @@ from serverless.testing import cmd_test
 from serverless.testing import cmd_test_coverage
 from serverless.testing import cmd_test_integration
 from serverless.testing import cmd_test_unit
-from shared.console import _err
 
 
 def _has_lambda_path(flags: dict[str, Any]) -> bool:
@@ -111,6 +113,7 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'sam-generate': cmd_sam_generate,
     'run-local': cmd_run_local,
     'invoke-remote': cmd_invoke_remote,
+    'deploy-infra': cmd_deploy_infra,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
     'rotate-secret': cmd_rotate_secret,

@@ -193,6 +193,9 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
         '--region',
         str(resolved.manifest.get('region', 'us-east-1')),
     ]
+    profile = flags.get('profile')
+    if profile:
+        deploy_args += ['--profile', str(profile)]
     if flags.get('guided'):
         deploy_args.append('--guided')
 
@@ -238,7 +241,9 @@ def cmd_invoke_remote(flags: dict[str, Any]) -> int:
         _err('Stage `local` no esta deployado — usa `run-local`')
         return 1
 
-    function_name = f'{resolved.manifest["name"]}-{stage}'
+    # El FunctionName fisico lleva el prefijo `portfolio-` (ver
+    # sam_generate.build_template) y el sufijo de stage.
+    function_name = f'portfolio-{resolved.manifest["name"]}-{stage}'
     region = str(resolved.manifest.get('region', 'us-east-1'))
 
     args = [
@@ -252,6 +257,9 @@ def cmd_invoke_remote(flags: dict[str, Any]) -> int:
         '--cli-binary-format',
         'raw-in-base64-out',
     ]
+    profile = flags.get('profile')
+    if profile:
+        args += ['--profile', str(profile)]
 
     event = flags.get('event')
     if event:

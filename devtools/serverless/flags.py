@@ -63,6 +63,7 @@ VALID_COMMANDS = [
     'sam-generate',  # lambda.yaml -> template.yaml (SAM efimero)
     'run-local',  # sam local invoke del lambda-controller
     'invoke-remote',  # aws lambda invoke contra un stage deployado
+    'deploy-infra',  # deploya el stack de infra compartida (5-stacks)
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
@@ -143,6 +144,7 @@ ALLOWED_FLAGS = [
     'reason',  # --reason="why" (audit string)
     # Cross-cutting
     'output',  # json|text
+    'profile',  # --profile=tfs-dev (perfil AWS CLI)
     # Internal
     'command',
     'subcommands',

@@ -86,6 +86,7 @@ legolambda-stacks).
 │       ├── invoker.py            # invocacion de Lambdas downstream (boto3)
 │       ├── logger.py             # logger JSON estructurado
 │       └── validation/event.py   # validate_event: wrapper con manejo de errores
+├── core/shared/                  # LIBRERIA COMUN VENDORIZADA (EFIMERA)
 └── tests/
     ├── conftest.py               # mocks unit + env vars + sys.path
     ├── unit/                     # 1 archivo = 1 escenario
@@ -96,6 +97,41 @@ legolambda-stacks).
         ├── _fixtures/            # builders de integracion (prefijo _)
         └── test_<escenario>_e2e.py
 ```
+
+## Lambdas autonomos + libreria comun vendorizada
+
+Cada Lambda es **autonomo en el artefacto desplegado**: el zip que sube
+a AWS contiene TODO lo que el Lambda necesita. Pero en el repo, los
+Lambdas de un mismo backend pueden COMPARTIR codigo (clientes AWS,
+logger, helpers de dominio) sin duplicarlo.
+
+La libreria comun vive UNA sola vez en el repo (en el backend del
+portfolio: `serverless/shared/`, hermano de `src/`). devtools la
+**vendoriza** — la copia dentro de `<lambda>/core/shared/` — antes de
+cada accion que necesita el codigo completo:
+
+- `run-local` / `test-unit` / `test-integration`: copia `shared/` a
+  `core/shared/` para que `sam local invoke` y `pytest` la resuelvan.
+- `deploy`: copia `shared/` a `core/shared/` antes de `sam build`, asi
+  el zip la incluye.
+
+Reglas del vendoring:
+
+- **SIEMPRE** `core/shared/` esta en el `.gitignore` del Lambda: es
+  EFIMERO, se regenera en cada accion y se limpia despues. La fuente de
+  verdad unica es la copia maestra (`serverless/shared/`).
+- **SIEMPRE** el codigo del Lambda importa la libreria comun como
+  `from shared...` — resuelve igual en la copia maestra (via el
+  `sys.path` del backend) y en el vendor (`core/` esta en el `sys.path`
+  del handler).
+- **NUNCA** se edita `core/shared/`: es una copia. El cambio va en la
+  copia maestra.
+- **NUNCA** se commitea `core/shared/`.
+- Un Lambda que no comparte codigo simplemente no tiene `core/shared/`.
+
+Asi se concilian las dos propiedades: los Lambdas son **independientes**
+(deploy por separado, un stack cada uno) y a la vez **comparten** la
+libreria comun sin copiar-pegar codigo en el repo.
 
 ## Separacion de responsabilidades
 

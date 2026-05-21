@@ -165,7 +165,7 @@ NO eliminar nada de API Gateway. Solo el frontend deja de apuntar ahi.
 
 Despues de 30 dias sin issues:
 - Confirmar que ningun cliente externo usa la URL raw.
-- Documentar la URL raw como deprecated en INTEGRATION.md.
+- Documentar la URL raw como deprecated en `.claude/docs/serverless-backend/`.
 
 ### Paso 9 — Eventual cleanup (opcional, post-validacion)
 

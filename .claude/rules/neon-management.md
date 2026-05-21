@@ -290,8 +290,8 @@ Detalle operativo: `serverless/shared/db/` (modelos + Alembic) y
 
 - Arquitectura, pricing, comparativas, integracion Lambda detallada:
   skill `neon` + `.claude/docs/neon/` (5 archivos)
-- Backend serverless (estructura, diagramas, propuesta hibrida):
-  `serverless/ARCHITECTURE.md` + `serverless/INTEGRATION.md`
+- Backend serverless (5 stacks, estructura, diagramas, datos):
+  `.claude/docs/serverless-backend/`
 - Schema de las tablas + queries analiticas:
   `.claude/docs/postgresql-18-analytics/README.md`
 - Schema PostgreSQL unificado (modelos SQLAlchemy + Alembic):

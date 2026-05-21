@@ -121,10 +121,7 @@ def _invoke_db_lambda(
             check=False,
         )
         if result.returncode != 0:
-            _err(
-                f'No se pudo invocar {function_name}: '
-                f'{result.stderr.strip()}'
-            )
+            _err(f'No se pudo invocar {function_name}: {result.stderr.strip()}')
             return None
         try:
             response: dict[str, Any] = json.loads(out_path.read_text())
@@ -250,7 +247,9 @@ def cmd_db_show_migrations(flags: dict[str, Any]) -> int:
     stage = flags.get('stage', 'local')
     print(_c(CYAN, f'$ invoke portfolio-db-{stage} command=show-migrations'))
     response = _invoke_db_lambda(stage, 'show-migrations')
-    return _report_db_response(response, ok_label='OK  historial de migraciones')
+    return _report_db_response(
+        response, ok_label='OK  historial de migraciones'
+    )
 
 
 def cmd_db_seed(flags: dict[str, Any]) -> int:
@@ -259,7 +258,8 @@ def cmd_db_seed(flags: dict[str, Any]) -> int:
     if not seed_script.exists():
         _err(f'No existe: {seed_script}')
         print(
-            f'{YELLOW}  Crear con sample data. Ver serverless/ARCHITECTURE.md{NC}'
+            f'{YELLOW}  Crear con sample data. '
+            f'Ver .claude/docs/serverless-backend/{NC}'
         )
         return 1
 

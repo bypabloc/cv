@@ -2,8 +2,10 @@
 
 Path mirroring: devtools/serverless/flags.py -> this file.
 
-Cubre los comandos nuevos (sam-generate, run-local, invoke-remote), la
-exigencia de --path y la coexistencia con el modo legacy del backend SAM.
+Cubre los comandos del modo lambda-controller (sam-generate, run-local,
+deploy, invoke-remote, test-unit, test-integration) y la exigencia de
+--path. El backend del portfolio son 5 stacks; cada Lambda se opera con
+--path. NO hay modo legacy de SAM monolitico.
 """
 
 import pytest
@@ -22,27 +24,44 @@ class TestNewCommandsRegistered:
 
     @pytest.mark.parametrize(
         'command',
-        ['sam-generate', 'run-local', 'invoke-remote'],
+        [
+            'sam-generate',
+            'run-local',
+            'deploy',
+            'invoke-remote',
+            'test-unit',
+            'test-integration',
+            'deploy-infra',
+        ],
     )
     def test_command_is_valid(self, command):
         from serverless.flags import VALID_COMMANDS
 
         assert command in VALID_COMMANDS
 
-    def test_legacy_commands_still_valid(self):
+    @pytest.mark.parametrize(
+        'command',
+        ['build', 'validate', 'invoke', 'start-api', 'logs', 'smoke'],
+    )
+    def test_legacy_sam_commands_removed(self, command):
         from serverless.flags import VALID_COMMANDS
 
-        assert 'deploy' in VALID_COMMANDS
-        assert 'test-unit' in VALID_COMMANDS
-        assert 'build' in VALID_COMMANDS
+        assert command not in VALID_COMMANDS
 
 
 class TestPathRequired:
-    """sam-generate / run-local / invoke-remote exigen --path."""
+    """Los comandos lambda-controller exigen --path."""
 
     @pytest.mark.parametrize(
         'command',
-        ['sam-generate', 'run-local', 'invoke-remote'],
+        [
+            'sam-generate',
+            'run-local',
+            'deploy',
+            'invoke-remote',
+            'test-unit',
+            'test-integration',
+        ],
     )
     def test_command_without_path_raises(self, monkeypatch, command):
         _argv(monkeypatch, command)
@@ -70,22 +89,21 @@ class TestPathRequired:
         assert result['command'] == 'run-local'
 
 
-class TestLegacyModeUnaffected:
-    """El modo legacy (backend SAM del portfolio) sigue sin --path."""
+class TestDeployRequiresPath:
+    """deploy y test-unit operan un Lambda: exigen --path (no hay legacy)."""
 
-    def test_deploy_without_path_is_valid_legacy(self, monkeypatch):
+    def test_deploy_without_path_raises(self, monkeypatch):
         _argv(monkeypatch, 'deploy', '--stage=dev')
         from serverless.flags import flag
 
-        result = flag({})
+        with pytest.raises(ValueError, match='--path'):
+            flag({})
 
-        assert result['command'] == 'deploy'
-        assert result.get('path') is None
-
-    def test_test_unit_without_path_is_valid_legacy(self, monkeypatch):
-        _argv(monkeypatch, 'test-unit')
+    def test_deploy_with_path_accepted(self, monkeypatch):
+        _argv(monkeypatch, 'deploy', '--stage=dev')
         from serverless.flags import flag
 
-        result = flag({})
+        result = flag({'path': 'serverless/src/db'})
 
-        assert result['command'] == 'test-unit'
+        assert result['command'] == 'deploy'
+        assert result['path'] == 'serverless/src/db'

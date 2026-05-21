@@ -33,17 +33,8 @@ from serverless.lambda_controller import cmd_run_local
 from serverless.lambda_controller import cmd_sam_generate
 from serverless.lambda_controller import cmd_test_integration_lambda
 from serverless.lambda_controller import cmd_test_unit_lambda
-from serverless.lifecycle import cmd_build
 from serverless.lifecycle import cmd_clean
-from serverless.lifecycle import cmd_delete
-from serverless.lifecycle import cmd_deploy
 from serverless.lifecycle import cmd_init
-from serverless.lifecycle import cmd_invoke
-from serverless.lifecycle import cmd_logs
-from serverless.lifecycle import cmd_smoke
-from serverless.lifecycle import cmd_start_api
-from serverless.lifecycle import cmd_tail
-from serverless.lifecycle import cmd_validate
 from serverless.observability import cmd_alarms
 from serverless.observability import cmd_metrics
 from serverless.quality import cmd_format
@@ -57,62 +48,28 @@ from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
 from serverless.testing import cmd_test
 from serverless.testing import cmd_test_coverage
-from serverless.testing import cmd_test_integration
-from serverless.testing import cmd_test_unit
-
-
-def _has_lambda_path(flags: dict[str, Any]) -> bool:
-    """True si los flags traen --path/--module (modo lambda-controller)."""
-    return bool(flags.get('path') or flags.get('module'))
-
-
-def _dispatch_deploy(flags: dict[str, Any]) -> int:
-    """deploy: lambda-controller si hay --path, backend SAM si no."""
-    if _has_lambda_path(flags):
-        return cmd_deploy_lambda(flags)
-    return cmd_deploy(flags)
-
-
-def _dispatch_test_unit(flags: dict[str, Any]) -> int:
-    """test-unit: lambda-controller si hay --path, backend SAM si no."""
-    if _has_lambda_path(flags):
-        return cmd_test_unit_lambda(flags)
-    return cmd_test_unit(flags)
-
-
-def _dispatch_test_integration(flags: dict[str, Any]) -> int:
-    """test-integration: lambda-controller si hay --path, SAM si no."""
-    if _has_lambda_path(flags):
-        return cmd_test_integration_lambda(flags)
-    return cmd_test_integration(flags)
 
 
 COMMAND_REGISTRY: dict[str, Any] = {
-    # Lifecycle
+    # Setup / Maintenance
     'init': cmd_init,
-    'validate': cmd_validate,
-    'build': cmd_build,
-    'deploy': _dispatch_deploy,
-    'delete': cmd_delete,
-    # Local development
-    'invoke': cmd_invoke,
-    'start-api': cmd_start_api,
-    'logs': cmd_logs,
-    'tail': cmd_tail,
-    # Quality
+    'clean': cmd_clean,
+    # Quality (Ruff + mypy sobre serverless/shared/ y serverless/src/)
     'lint': cmd_lint,
     'lint-fix': cmd_lint_fix,
     'format': cmd_format,
     'typecheck': cmd_typecheck,
-    # Tests
+    # Tests de la libreria comun (serverless/tests/, cubre shared/)
     'test': cmd_test,
-    'test-unit': _dispatch_test_unit,
-    'test-integration': _dispatch_test_integration,
     'test-coverage': cmd_test_coverage,
-    # lambda-controller dinamico (lambdas con lambda.yaml, --path requerido)
+    # lambda-controller: ciclo de vida de cada Lambda (--path requerido)
     'sam-generate': cmd_sam_generate,
     'run-local': cmd_run_local,
     'invoke-remote': cmd_invoke_remote,
+    'deploy': cmd_deploy_lambda,
+    'test-unit': cmd_test_unit_lambda,
+    'test-integration': cmd_test_integration_lambda,
+    # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
     'deploy-infra': cmd_deploy_infra,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
@@ -133,9 +90,7 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'alarms': cmd_alarms,
     # Rate-limit management (alternativa $0 a AWS WAF)
     'rate-limit': cmd_rate_limit,
-    # Maintenance
-    'smoke': cmd_smoke,
-    'clean': cmd_clean,
+    # Help
     'help': cmd_help,
 }
 

@@ -12,28 +12,21 @@ Implementacion:
   rule_key='ip#<addr>' kind='ip_blacklist' con TTL = now + 86400.
 
 La rule blacklist se respeta en la siguiente request (lookup en rules.get_ip_rule).
+
+La persistencia la hace el ORM (`shared.dynamodb.RateLimitRuleItem`):
+`save()` para crear la rule, reusando el resource boto3 singleton.
 """
 
 from __future__ import annotations
 
-import os
 import time
-from typing import Any
 
-import boto3
+from shared.dynamodb import RateLimitRuleItem
 
 # Threshold: 3+ tokens validos en 60s = sospechoso
 AUTO_BLACKLIST_THRESHOLD = 3
 AUTO_BLACKLIST_WINDOW_SECONDS = 60
 AUTO_BLACKLIST_DURATION_SECONDS = 86400  # 24h
-
-
-def _rules_table() -> Any:
-    region = os.environ.get('AWS_REGION', 'us-east-1')
-    table_name = os.environ.get(
-        'RATE_LIMIT_RULES_TABLE_NAME', 'portfolio-rate-limit-rules-dev'
-    )
-    return boto3.resource('dynamodb', region_name=region).Table(table_name)
 
 
 def should_auto_blacklist(turnstile_tokens_count: int) -> bool:
@@ -65,20 +58,17 @@ def create_blacklist_rule(
         duration_seconds: cuanto durar el bloqueo (default 24h).
         reason: texto humano para auditoria.
     """
-    table = _rules_table()
     expires_at = int(time.time()) + duration_seconds
 
-    table.put_item(
-        Item={
-            'rule_key': f'ip#{ip}',
-            'kind': 'ip_blacklist',
-            'action': 'block',
-            'expires_at': expires_at,
-            'reason': reason,
-            'metadata': {
-                'auto_created': True,
-                'threshold': AUTO_BLACKLIST_THRESHOLD,
-                'window_seconds': AUTO_BLACKLIST_WINDOW_SECONDS,
-            },
+    RateLimitRuleItem(
+        rule_key=f'ip#{ip}',
+        kind='ip_blacklist',
+        action='block',
+        expires_at=expires_at,
+        reason=reason,
+        metadata={
+            'auto_created': True,
+            'threshold': AUTO_BLACKLIST_THRESHOLD,
+            'window_seconds': AUTO_BLACKLIST_WINDOW_SECONDS,
         },
-    )
+    ).save()

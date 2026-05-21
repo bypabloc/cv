@@ -3,9 +3,11 @@
  *
  *   Cubre tres cosas:
  *   1. Formato: cada valor de `EVENT_TYPES` es un UUID string valido.
- *   2. Paridad SQL <-> TS: los seeds de `serverless/migrations/` (006 +
- *      008) y `EVENT_TYPES` deben usar exactamente los mismos UUID. Si
- *      alguien edita uno sin el otro, este test falla y atrapa el drift.
+ *   2. Paridad SQL <-> TS: los seeds de `serverless/migrations/_archive/`
+ *      (006 + 008) y `EVENT_TYPES` deben usar exactamente los mismos
+ *      UUID. Si alguien edita uno sin el otro, este test falla y atrapa
+ *      el drift. El schema se gestiona ahora con Alembic; los .sql
+ *      quedaron archivados como referencia historica de los seeds.
  *   3. Mapa por code_name: `EVENT_TYPE_BY_CODE` mapea el snake_case del
  *      catalogo SQL al UUID; `eventTypeIdFromCode` resuelve un code.
  *
@@ -25,7 +27,10 @@ import {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const MIGRATIONS_DIR = resolve(__dirname, '../../../../serverless/migrations')
+const MIGRATIONS_DIR = resolve(
+  __dirname,
+  '../../../../serverless/migrations/_archive',
+)
 
 /**
  * Catalogo esperado: code_name del seed SQL -> clave de `EVENT_TYPES`.

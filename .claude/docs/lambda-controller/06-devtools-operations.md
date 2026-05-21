@@ -4,7 +4,8 @@
 
 Un lambda-controller se opera con el script `serverless` de devtools:
 ejecutar en local, deployar a los entornos, invocar el Lambda deployado
-y correr los tests. El comando resuelve el lambda objetivo via `--path`.
+y correr los tests. El comando resuelve el lambda objetivo via
+`--lambda=<nombre>` (o `--path=<dir>`).
 
 ## El manifiesto `lambda.yaml`
 
@@ -50,20 +51,24 @@ lambda.yaml  --(devtools sam-generate)-->  template.yaml  --(sam)-->  AWS
 Si necesitas ver el SAM que se va a usar:
 
 ```bash
-python devtools/run.py serverless sam-generate --path=<dir> --stage=dev
+python devtools/run.py serverless sam-generate --lambda=<nombre> --stage=dev
 ```
 
 ## Comandos
 
-Todos los comandos de lambda-controller requieren `--path=<dir>` (el
-directorio raiz del lambda, el que contiene `lambda.yaml`). `--module`
-es alias de `--path`.
+Todos los comandos de lambda-controller requieren apuntar al lambda.
+La forma recomendada es `--lambda=<nombre>`: el nombre corto se resuelve
+contra `serverless/src/<nombre>/` y devtools valida que la carpeta cumpla
+la estructura lambda-controller (que exista y traiga `lambda.yaml`); si
+no, lanza un error listando los lambdas validos. Como alternativa,
+`--path=<dir>` apunta a un directorio explicito en cualquier ubicacion
+(`--module` es alias de `--path`).
 
 ### Ejecutar en local
 
 ```bash
 python devtools/run.py serverless run-local \
-  --path=<dir> --event=events/create.json
+  --lambda=<nombre> --event=events/create.json
 ```
 
 Regenera el SAM y corre `sam local invoke` con el event JSON indicado.
@@ -73,9 +78,9 @@ lambda.
 ### Deployar a un entorno
 
 ```bash
-python devtools/run.py serverless deploy --path=<dir> --stage=dev
-python devtools/run.py serverless deploy --path=<dir> --stage=stage
-python devtools/run.py serverless deploy --path=<dir> --stage=prod
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod
 ```
 
 Regenera el SAM para ese stage (selecciona su bloque de env vars), corre
@@ -86,7 +91,7 @@ Regenera el SAM para ese stage (selecciona su bloque de env vars), corre
 
 ```bash
 python devtools/run.py serverless invoke-remote \
-  --path=<dir> --stage=dev --event=events/create.json
+  --lambda=<nombre> --stage=dev --event=events/create.json
 ```
 
 Invoca via `aws lambda invoke` la funcion `<name>-<stage>` ya desplegada
@@ -95,48 +100,49 @@ e imprime el payload de respuesta. Requiere AWS CLI + credenciales.
 ### Tests
 
 ```bash
-python devtools/run.py serverless test-unit --path=<dir>
-python devtools/run.py serverless test-integration --path=<dir>
+python devtools/run.py serverless test-unit --lambda=<nombre>
+python devtools/run.py serverless test-integration --lambda=<nombre>
 ```
 
 `test-unit` corre `pytest tests/unit` y `test-integration` corre
 `pytest tests/integration`, ambos con cwd en la raiz del lambda. Sin
-`--path`, estos comandos operan sobre el backend SAM del portfolio
-(modo legacy).
+`--lambda` ni `--path`, estos comandos operan sobre el backend SAM del
+portfolio (modo legacy).
 
 ## Ciclo de trabajo tipico
 
 ```bash
 # 1. Desarrollar + tests
-python devtools/run.py serverless test-unit --path=<dir>
+python devtools/run.py serverless test-unit --lambda=<nombre>
 
 # 2. Probar en local
 python devtools/run.py serverless run-local \
-  --path=<dir> --event=events/create.json
+  --lambda=<nombre> --event=events/create.json
 
 # 3. Deployar a dev y verificar
-python devtools/run.py serverless deploy --path=<dir> --stage=dev
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev
 python devtools/run.py serverless invoke-remote \
-  --path=<dir> --stage=dev --event=events/create.json
+  --lambda=<nombre> --stage=dev --event=events/create.json
 
 # 4. Promover a stage y prod
-python devtools/run.py serverless deploy --path=<dir> --stage=stage
-python devtools/run.py serverless deploy --path=<dir> --stage=prod
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod
 ```
 
 ## Modo legacy vs lambda-controller
 
-El script `serverless` opera en dos modos segun la presencia de `--path`:
+El script `serverless` opera en dos modos segun la presencia de
+`--lambda` (o `--path`):
 
-| Sin `--path` | Con `--path=<dir>` |
-|--------------|--------------------|
-| Backend SAM del portfolio (`serverless/`) | lambda-controller en `<dir>` |
+| Sin `--lambda` ni `--path` | Con `--lambda=<nombre>` (o `--path=<dir>`) |
+|----------------------------|--------------------------------------------|
+| Backend SAM del portfolio (`serverless/`) | lambda-controller resuelto |
 | `template.yaml` escrito a mano | `template.yaml` generado de `lambda.yaml` |
 | 3 funciones fijas | cualquier lambda con `lambda.yaml` |
 
 Los comandos `sam-generate`, `run-local`, `invoke-remote` SOLO existen
-en modo lambda-controller (exigen `--path`). `deploy`, `test-unit`,
-`test-integration` funcionan en ambos modos.
+en modo lambda-controller (exigen `--lambda` o `--path`). `deploy`,
+`test-unit`, `test-integration` funcionan en ambos modos.
 
 ---
 

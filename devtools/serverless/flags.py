@@ -78,8 +78,9 @@ VALID_COMMANDS = [
 ALLOWED_FLAGS = [
     # Stage
     'stage',
-    # lambda-controller: --path=<dir> del lambda (dir con lambda.yaml)
-    'path',
+    # lambda-controller: como apuntar al lambda objetivo
+    'lambda',  # --lambda=<nombre> resuelto contra serverless/src/* (recomendado)
+    'path',  # --path=<dir> del lambda (dir con lambda.yaml, cualquier ubicacion)
     'module',  # alias de --path
     # Deploy
     'guided',  # sam deploy --guided
@@ -135,8 +136,8 @@ DESTRUCTIVE_COMMANDS = frozenset(
 )
 
 
-# Comandos del modo lambda-controller: requieren --path=<dir> (la raiz
-# del lambda, con lambda.yaml).
+# Comandos del modo lambda-controller: requieren apuntar a un lambda con
+# --lambda=<nombre> (resuelto contra serverless/src/*) o --path=<dir>.
 PATH_REQUIRED_COMMANDS = frozenset(
     {
         'sam-generate',
@@ -169,12 +170,12 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'typecheck': 'mypy strict sobre shared/ y src/',
     'test': 'pytest tests/ (cubre la libreria comun shared/)',
     'test-coverage': 'pytest --cov + HTML report (threshold 80%)',
-    'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--path)',
-    'run-local': 'sam local invoke de un lambda (--path)',
-    'deploy': 'sam build + sam deploy del lambda a un stage (--path)',
-    'invoke-remote': 'aws lambda invoke contra un stage deployado (--path)',
-    'test-unit': 'pytest <lambda>/tests/unit (--path)',
-    'test-integration': 'pytest <lambda>/tests/integration (--path)',
+    'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--lambda)',
+    'run-local': 'sam local invoke de un lambda (--lambda)',
+    'deploy': 'Empaqueta con uv + sam deploy del lambda a un stage (--lambda)',
+    'invoke-remote': 'aws lambda invoke contra un stage deployado (--lambda)',
+    'test-unit': 'pytest <lambda>/tests/unit (--lambda)',
+    'test-integration': 'pytest <lambda>/tests/integration (--lambda)',
     'deploy-infra': 'Deploya el stack de infra compartida (idempotente)',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
@@ -205,12 +206,20 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'typecheck': ['module_path'],
     'test': ['verbose', 'coverage_threshold'],
     'test-coverage': ['coverage_threshold'],
-    'sam-generate': ['path', 'module', 'stage'],
-    'run-local': ['path', 'module', 'stage', 'event', 'debug'],
-    'deploy': ['path', 'module', 'stage', 'guided', 'profile', 'dry_run'],
-    'invoke-remote': ['path', 'module', 'stage', 'event', 'profile'],
-    'test-unit': ['path', 'module', 'verbose'],
-    'test-integration': ['path', 'module', 'verbose'],
+    'sam-generate': ['lambda', 'path', 'module', 'stage'],
+    'run-local': ['lambda', 'path', 'module', 'stage', 'event', 'debug'],
+    'deploy': [
+        'lambda',
+        'path',
+        'module',
+        'stage',
+        'guided',
+        'profile',
+        'dry_run',
+    ],
+    'invoke-remote': ['lambda', 'path', 'module', 'stage', 'event', 'profile'],
+    'test-unit': ['lambda', 'path', 'module', 'verbose'],
+    'test-integration': ['lambda', 'path', 'module', 'verbose'],
     'deploy-infra': ['stage', 'profile', 'dry_run'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
@@ -326,11 +335,14 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
         )
 
     if command in PATH_REQUIRED_COMMANDS and not (
-        flags_dict.get('path') or flags_dict.get('module')
+        flags_dict.get('lambda')
+        or flags_dict.get('path')
+        or flags_dict.get('module')
     ):
         raise ValueError(
             f'{command!r} opera sobre un lambda-controller: requiere '
-            f'--path=<dir> (directorio con lambda.yaml).',
+            f'--lambda=<nombre> (resuelto contra serverless/src/*) '
+            f'o --path=<dir> (directorio con lambda.yaml).',
         )
 
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
@@ -346,7 +358,7 @@ def describe() -> ScriptDescribe:
         'kind': 'subcommand',
         'summary': (
             'Backend serverless del portfolio: 5 stacks (infra + 4 Lambdas '
-            'lambda-controller). Cada Lambda se opera con --path=<dir>'
+            'lambda-controller). Cada Lambda se opera con --lambda=<nombre>'
         ),
         'commands': [
             {
@@ -365,11 +377,19 @@ def describe() -> ScriptDescribe:
                 'default': 'local',
                 'summary': 'Stage objetivo (local|dev|prod)',
             },
+            'lambda': {
+                'type': 'string',
+                'summary': (
+                    'Nombre corto de un lambda, resuelto contra '
+                    'serverless/src/<nombre>/. Forma recomendada de '
+                    'apuntar a un lambda-controller'
+                ),
+            },
             'path': {
                 'type': 'string',
                 'summary': (
-                    'Directorio de un lambda (dir con lambda.yaml). '
-                    'Requerido por los comandos del modo lambda-controller'
+                    'Directorio de un lambda (dir con lambda.yaml), '
+                    'cualquier ubicacion. Alternativa a --lambda'
                 ),
             },
             'event': {

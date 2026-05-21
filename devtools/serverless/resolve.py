@@ -23,6 +23,10 @@ from typing import Any
 # Path al backend SAM del portfolio (modo legacy).
 _PORTFOLIO_SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
+# Directorio donde viven los lambda-controller del portfolio. El flag
+# `--lambda=<nombre>` resuelve un nombre corto contra `serverless/src/*`.
+_PORTFOLIO_LAMBDAS_DIR = _PORTFOLIO_SERVERLESS_DIR / 'src'
+
 # Campos obligatorios del manifiesto lambda.yaml.
 _REQUIRED_FIELDS = ('name', 'runtime', 'handler')
 
@@ -121,17 +125,82 @@ def _read_manifest(manifest_path: Path) -> dict[str, Any]:
     return manifest
 
 
+def available_lambdas() -> list[str]:
+    """Lista los nombres cortos de lambdas validos en `serverless/src/*`.
+
+    Un lambda valido es un subdirectorio de `serverless/src/` que trae un
+    `lambda.yaml`. Sirve para los mensajes de error de `--lambda`.
+    """
+    if not _PORTFOLIO_LAMBDAS_DIR.is_dir():
+        return []
+    return sorted(
+        child.name
+        for child in _PORTFOLIO_LAMBDAS_DIR.iterdir()
+        if child.is_dir() and (child / 'lambda.yaml').is_file()
+    )
+
+
+def _resolve_lambda_dir(name: str) -> Path:
+    """Resuelve un nombre corto de lambda a su directorio en `src/`.
+
+    `--lambda=contact_form` -> `serverless/src/contact_form/`. Valida que
+    la carpeta exista Y que cumpla la estructura lambda-controller (tenga
+    `lambda.yaml`); si no, lanza un error que advierte que no cumple lo
+    necesario y lista los lambdas validos.
+
+    Parameters
+    ----------
+    name : str
+        Nombre corto del lambda (subdirectorio de `serverless/src/`).
+
+    Returns
+    -------
+    Path
+        Directorio raiz del lambda.
+
+    Raises
+    ------
+    ManifestError
+        Si el directorio no existe o no es un lambda-controller valido.
+    """
+    candidate = _PORTFOLIO_LAMBDAS_DIR / name
+    valid = available_lambdas()
+
+    if not candidate.is_dir():
+        listed = ', '.join(valid) if valid else '(ninguno)'
+        raise ManifestError(
+            f'No existe el lambda {name!r} en {_PORTFOLIO_LAMBDAS_DIR}. '
+            f'Lambdas validos: {listed}.',
+        )
+
+    if not (candidate / 'lambda.yaml').is_file():
+        raise ManifestError(
+            f'El directorio {candidate} existe pero NO cumple la '
+            f'estructura lambda-controller: falta lambda.yaml. '
+            f'Un lambda valido debe traer su manifiesto lambda.yaml.',
+        )
+
+    return candidate
+
+
 def resolve_lambda(flags: dict[str, Any]) -> ResolvedLambda:
     """Resuelve el lambda objetivo a partir de los flags.
 
-    Si `--path` o `--module` esta presente, busca `lambda.yaml` en ese
-    directorio (modo lambda-controller). Sin esos flags, devuelve el
-    backend SAM del portfolio (modo legacy).
+    Tres formas de apuntar a un lambda-controller, en orden de
+    precedencia:
+
+      - `--lambda=<nombre>`: nombre corto resuelto contra
+        `serverless/src/<nombre>/` (forma recomendada).
+      - `--path=<dir>` / `--module=<dir>`: directorio explicito del
+        lambda (cualquier ubicacion, no solo `serverless/src/`).
+
+    Sin ninguno de esos flags, devuelve el backend SAM del portfolio
+    (modo legacy).
 
     Parameters
     ----------
     flags : dict[str, Any]
-        Flags ya parseados; se leen `path` y `module`.
+        Flags ya parseados; se leen `lambda`, `path` y `module`.
 
     Returns
     -------
@@ -141,19 +210,22 @@ def resolve_lambda(flags: dict[str, Any]) -> ResolvedLambda:
     Raises
     ------
     ManifestError
-        Si el path no existe o el manifiesto es invalido.
+        Si el lambda no existe, no cumple la estructura, o el manifiesto
+        es invalido.
     """
-    target = flags.get('path') or flags.get('module')
-
-    if not target:
-        return ResolvedLambda(
-            mode='legacy',
-            root=_PORTFOLIO_SERVERLESS_DIR,
-        )
-
-    root = Path(target).expanduser().resolve()
-    if not root.is_dir():
-        raise ManifestError(f'El path del lambda no existe: {root}')
+    lambda_name = flags.get('lambda')
+    if lambda_name:
+        root = _resolve_lambda_dir(str(lambda_name))
+    else:
+        target = flags.get('path') or flags.get('module')
+        if not target:
+            return ResolvedLambda(
+                mode='legacy',
+                root=_PORTFOLIO_SERVERLESS_DIR,
+            )
+        root = Path(target).expanduser().resolve()
+        if not root.is_dir():
+            raise ManifestError(f'El path del lambda no existe: {root}')
 
     manifest_path = root / 'lambda.yaml'
     if not manifest_path.is_file():

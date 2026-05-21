@@ -21,7 +21,8 @@
   `Fn::ImportValue`. Para borrar, los Lambdas primero (CloudFormation
   bloquea borrar un export en uso).
 - **SIEMPRE** cada Lambda se opera con `python devtools/run.py serverless
-  <cmd> --path=serverless/src/<lambda>` (formato `lambda-controller`).
+  <cmd> --lambda=<nombre>` (formato `lambda-controller`); el nombre corto
+  se resuelve contra `serverless/src/<nombre>/`.
 - **SIEMPRE** el `lambda.yaml` de cada Lambda es la fuente de verdad de
   su config; el `template.yaml` SAM se genera y es efimero (`.gitignore`).
 - **SIEMPRE** Python 3.13 (managed runtime), arm64 Graviton2, Powertools v3.
@@ -38,10 +39,10 @@
 | Stack | Contenido | Operacion |
 |-------|-----------|-----------|
 | `portfolio-infra-<stage>` | API Gateway REST + 5 tablas DynamoDB + DLQ SQS | `serverless deploy-infra` |
-| `portfolio-db-<stage>` | Lambda `db` (schema Alembic, invoke directo) | `serverless deploy --path=serverless/src/db` |
-| `portfolio-contact-form-<stage>` | Lambda `contact_form` + `POST /contact` | `serverless deploy --path=serverless/src/contact_form` |
-| `portfolio-tracking-pixel-<stage>` | Lambda `tracking_pixel` + `POST /track` | `serverless deploy --path=serverless/src/tracking_pixel` |
-| `portfolio-stream-processor-<stage>` | Lambda `stream_processor` + Event Source Mappings | `serverless deploy --path=serverless/src/stream_processor` |
+| `portfolio-db-<stage>` | Lambda `db` (schema Alembic, invoke directo) | `serverless deploy --lambda=db` |
+| `portfolio-contact-form-<stage>` | Lambda `contact_form` + `POST /contact` | `serverless deploy --lambda=contact_form` |
+| `portfolio-tracking-pixel-<stage>` | Lambda `tracking_pixel` + `POST /track` | `serverless deploy --lambda=tracking_pixel` |
+| `portfolio-stream-processor-<stage>` | Lambda `stream_processor` + Event Source Mappings | `serverless deploy --lambda=stream_processor` |
 
 ## Que NO esta aqui (referencias)
 

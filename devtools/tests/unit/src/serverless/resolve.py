@@ -67,6 +67,58 @@ class TestResolveMode:
         assert resolved.is_lambda_controller is True
 
 
+class TestResolveByLambdaName:
+    """resolve_lambda con --lambda resuelve un nombre corto contra src/."""
+
+    def test_lambda_name_resolves_to_src_directory(self):
+        from serverless.resolve import resolve_lambda
+
+        resolved = resolve_lambda({'lambda': 'contact_form'})
+
+        assert resolved.mode == 'lambda-controller'
+        assert resolved.root.name == 'contact_form'
+
+    def test_lambda_name_reads_the_manifest(self):
+        from serverless.resolve import resolve_lambda
+
+        resolved = resolve_lambda({'lambda': 'db'})
+
+        assert resolved.manifest['name'] == 'db'
+
+    def test_unknown_lambda_name_raises_listing_valid_ones(self):
+        from serverless.resolve import ManifestError
+        from serverless.resolve import resolve_lambda
+
+        with pytest.raises(ManifestError, match='No existe el lambda'):
+            resolve_lambda({'lambda': 'nonexistent-lambda'})
+
+    def test_directory_without_manifest_raises_structure_error(
+        self, monkeypatch, tmp_path
+    ):
+        from serverless import resolve
+
+        # Apunta el resolver a un src/ de prueba con una carpeta que NO
+        # cumple la estructura lambda-controller (sin lambda.yaml).
+        fake_src = tmp_path / 'src'
+        (fake_src / 'broken').mkdir(parents=True)
+        monkeypatch.setattr(resolve, '_PORTFOLIO_LAMBDAS_DIR', fake_src)
+
+        with pytest.raises(resolve.ManifestError, match='NO cumple'):
+            resolve.resolve_lambda({'lambda': 'broken'})
+
+    def test_available_lambdas_lists_real_lambdas(self):
+        from serverless.resolve import available_lambdas
+
+        names = available_lambdas()
+
+        assert names == [
+            'contact_form',
+            'db',
+            'stream_processor',
+            'tracking_pixel',
+        ]
+
+
 class TestManifestValidation:
     """_read_manifest valida campos obligatorios, runtime y defaults."""
 

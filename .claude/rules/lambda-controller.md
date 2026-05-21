@@ -229,35 +229,44 @@ Receta detallada + checklist Definition of Done:
 ## Operacion con devtools
 
 El lambda-controller se opera con el script `serverless` de devtools.
-Todos los comandos requieren `--path=<dir>` (la raiz del lambda, con
-`lambda.yaml`). `--module` es alias de `--path`.
+Todos los comandos requieren apuntar al lambda con `--lambda=<nombre>`
+(forma recomendada): el nombre corto se resuelve contra
+`serverless/src/<nombre>/` y devtools valida que la carpeta cumpla la
+estructura lambda-controller (que exista y traiga `lambda.yaml`); si no,
+lanza un error listando los lambdas validos. Como alternativa,
+`--path=<dir>` (o su alias `--module=<dir>`) apunta a un directorio
+explicito en cualquier ubicacion.
 
 ```bash
 # Generar el SAM template desde lambda.yaml (efimero)
-python devtools/run.py serverless sam-generate --path=<dir> --stage=dev
+python devtools/run.py serverless sam-generate --lambda=<nombre> --stage=dev
 
 # Ejecutar en local (sam local invoke)
 python devtools/run.py serverless run-local \
-  --path=<dir> --event=events/create.json
+  --lambda=<nombre> --event=events/create.json
 
 # Deployar a un entorno (uv arma el zip en build/, luego sam deploy)
-python devtools/run.py serverless deploy --path=<dir> --stage=dev
-python devtools/run.py serverless deploy --path=<dir> --stage=stage
-python devtools/run.py serverless deploy --path=<dir> --stage=prod
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod
 
 # Invocar el Lambda ya deployado (aws lambda invoke)
 python devtools/run.py serverless invoke-remote \
-  --path=<dir> --stage=dev --event=events/create.json
+  --lambda=<nombre> --stage=dev --event=events/create.json
 
 # Tests
-python devtools/run.py serverless test-unit --path=<dir>
-python devtools/run.py serverless test-integration --path=<dir>
+python devtools/run.py serverless test-unit --lambda=<nombre>
+python devtools/run.py serverless test-integration --lambda=<nombre>
+
+# Alternativa: apuntar a un directorio explicito con --path
+python devtools/run.py serverless deploy --path=<dir> --stage=dev
 ```
 
 `lambda.yaml` es la unica fuente de verdad de la config; el
 `template.yaml` SAM se regenera desde el en cada `run-local`/`deploy`.
-Sin `--path`, los comandos `deploy`/`test-unit`/`test-integration`
-operan sobre el backend SAM del portfolio (modo legacy).
+Sin `--lambda` ni `--path`, los comandos `deploy`/`test-unit`/
+`test-integration` operan sobre el backend SAM del portfolio (modo
+legacy).
 
 Detalle completo:
 [.claude/docs/lambda-controller/06-devtools-operations.md](../docs/lambda-controller/06-devtools-operations.md).
@@ -271,7 +280,7 @@ pytest tests/unit                        # suite unitaria verde
 pytest tests/unit --cov=core --cov-report=term-missing
 
 # o via devtools (resuelve cwd + deps con uv):
-python devtools/run.py serverless test-unit --path=<dir>
+python devtools/run.py serverless test-unit --lambda=<nombre>
 ```
 
 ## Anti-patrones

@@ -73,10 +73,10 @@ El stack de infra va PRIMERO; los 4 Lambdas lo importan.
 python devtools/run.py serverless deploy-infra --stage=dev --profile=tfs-dev
 
 # 2. Los 4 stacks de Lambda (en cualquier orden entre si)
-python devtools/run.py serverless deploy --path=serverless/src/db --stage=dev --profile=tfs-dev
-python devtools/run.py serverless deploy --path=serverless/src/contact_form --stage=dev --profile=tfs-dev
-python devtools/run.py serverless deploy --path=serverless/src/tracking_pixel --stage=dev --profile=tfs-dev
-python devtools/run.py serverless deploy --path=serverless/src/stream_processor --stage=dev --profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=db --stage=dev --profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=contact_form --stage=dev --profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=tracking_pixel --stage=dev --profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=stream_processor --stage=dev --profile=tfs-dev
 
 # 3. Aplicar el schema PostgreSQL (via la Lambda db)
 python devtools/run.py serverless db-migrate --stage=dev
@@ -102,19 +102,19 @@ Lambda primero, el de infra al final.
 
 ```bash
 # Generar el SAM efimero desde lambda.yaml
-python devtools/run.py serverless sam-generate --path=serverless/src/db --stage=dev
+python devtools/run.py serverless sam-generate --lambda=db --stage=dev
 
 # Ejecutar el Lambda en local (sam local invoke, sin AWS)
 python devtools/run.py serverless run-local \
-  --path=serverless/src/db --event=events/current.json
+  --lambda=db --event=events/current.json
 
 # Invocar un Lambda ya deployado
 python devtools/run.py serverless invoke-remote \
-  --path=serverless/src/db --stage=dev --event=events/current.json --profile=tfs-dev
+  --lambda=db --stage=dev --event=events/current.json --profile=tfs-dev
 
 # Tests de un Lambda (viven dentro del Lambda)
-python devtools/run.py serverless test-unit --path=serverless/src/db
-python devtools/run.py serverless test-integration --path=serverless/src/db
+python devtools/run.py serverless test-unit --lambda=db
+python devtools/run.py serverless test-integration --lambda=db
 
 # Tests de la libreria comun shared/
 python devtools/run.py serverless test --coverage-threshold=80
@@ -125,10 +125,12 @@ python devtools/run.py serverless test --coverage-threshold=80
 `python devtools/run.py serverless <command> [flags]`. Inventario
 colorizado: `serverless help`.
 
-### Lambda (modo `lambda-controller`, `--path` requerido)
+### Lambda (modo `lambda-controller`, `--lambda` requerido)
 
-`--path=<dir>` es la raiz del Lambda (el directorio con `lambda.yaml`);
-`--module` es alias de `--path`.
+`--lambda=<nombre>` resuelve el lambda contra `serverless/src/<nombre>/`
+(forma recomendada) y valida que la carpeta cumpla la estructura
+lambda-controller. Como alternativa, `--path=<dir>` apunta a un
+directorio explicito (`--module` es alias de `--path`).
 
 | Comando | Que hace |
 |---------|----------|
@@ -187,7 +189,7 @@ colorizado: `serverless help`.
 
 > No existe ya el modo SAM monolitico: los comandos `build`, `validate`,
 > `start-api`, `logs` y `smoke` fueron eliminados. Cada Lambda es su
-> propio stack y se opera con `--path`.
+> propio stack y se opera con `--lambda=<nombre>`.
 
 ## 6. Rotar secrets
 

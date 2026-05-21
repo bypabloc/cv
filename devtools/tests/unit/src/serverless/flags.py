@@ -88,6 +88,22 @@ class TestPathRequired:
 
         assert result['command'] == 'run-local'
 
+    def test_lambda_flag_satisfies_path_requirement(self, monkeypatch):
+        _argv(monkeypatch, 'deploy', '--stage=dev')
+        from serverless.flags import flag
+
+        result = flag({'lambda': 'contact_form'})
+
+        assert result['command'] == 'deploy'
+        assert result['lambda'] == 'contact_form'
+
+    def test_error_message_mentions_lambda_flag(self, monkeypatch):
+        _argv(monkeypatch, 'deploy', '--stage=dev')
+        from serverless.flags import flag
+
+        with pytest.raises(ValueError, match='--lambda'):
+            flag({})
+
 
 class TestDeployRequiresPath:
     """deploy y test-unit operan un Lambda: exigen --path (no hay legacy)."""

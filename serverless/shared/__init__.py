@@ -1,44 +1,25 @@
 """
-Common module: helpers compartidos entre todas las Lambdas del backend.
+Libreria comun del backend serverless del portfolio.
 
-Re-exports:
-- logger, tracer, metrics: instancias Powertools v3 configuradas
-- dynamodb_resource, ssm_client, ses_client: boto3 clients en module scope
-- BaseModel: clase base del ORM DynamoDB (ver shared/dynamodb/)
-- extract_ip, new_uuidv7, is_valid_email: utilities sin estado
-- json_response, error_response, cors_headers: HTTP helpers
-- ApplicationError + subclases: jerarquia de excepciones
-- Settings: configuracion desde env vars (Pydantic)
+Este paquete NO re-exporta nada: cada subpaquete es la unidad de import.
+Importar SIEMPRE de forma explicita desde el subpaquete correspondiente:
 
-Convencion: importar SIEMPRE desde `shared.<submodulo>` (no este __init__)
-para evitar imports circulares en tests. Este modulo solo expone la API
-publica para uso ergonomico.
+    from shared.core.exceptions import ValidationError
+    from shared.aws.dynamodb import get_table
+    from shared.observability.logger import logger
+    from shared.http.responses import json_response
+
+Subpaquetes:
+- `core`          — config, excepciones, tipos, ulid (primitivos sin deps).
+- `aws`           — clientes boto3: DynamoDB, SES, SSM.
+- `observability` — logger, tracer, metrics (Powertools v3).
+- `http`          — CORS, responses, ip_extractor, turnstile, validators.
+- `db`            — ORM SQLAlchemy + Alembic para Neon PostgreSQL.
+- `dynamodb`      — ORM minimalista para DynamoDB (modelos Pydantic).
+- `cache`         — cache DynamoDB con TTL, SWR y lock distribuido.
+- `rate_limit`    — rate-limit per-IP sliding window weighted.
+
+Cada subpaquete declara sus dependencias externas e internas en su propio
+`pyproject.toml`. devtools resuelve por AST que subpaquetes usa cada
+Lambda y vendoriza solo ese cierre transitivo.
 """
-
-from shared.dynamodb import BaseModel
-from shared.exceptions import (
-    ApplicationError,
-    IPBlacklistedError,
-    RateLimitExceededError,
-    TurnstileError,
-    ValidationError,
-)
-from shared.ip_extractor import extract_ip
-from shared.responses import error_response, json_response
-from shared.ulid import new_uuidv7
-from shared.validators import is_valid_email, sanitize_text
-
-__all__ = [
-    'ApplicationError',
-    'BaseModel',
-    'IPBlacklistedError',
-    'RateLimitExceededError',
-    'TurnstileError',
-    'ValidationError',
-    'error_response',
-    'extract_ip',
-    'is_valid_email',
-    'json_response',
-    'new_uuidv7',
-    'sanitize_text',
-]

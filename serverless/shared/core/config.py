@@ -5,7 +5,7 @@ Inyectado por SAM template (Globals.Function.Environment.Variables). En tests
 unitarios se override con monkeypatch.setenv() o conftest fixtures.
 
 Uso:
-    from shared.config import settings
+    from shared.core.config import settings
     table_name = settings.contacts_table_name
 """
 
@@ -84,5 +84,5 @@ def get_settings() -> Settings:
     return Settings()
 
 
-# Alias ergonomico: `from shared.config import settings`
+# Alias ergonomico: `from shared.core.config import settings`
 settings = get_settings()

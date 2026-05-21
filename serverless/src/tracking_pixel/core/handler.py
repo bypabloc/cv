@@ -50,13 +50,13 @@ from aws_lambda_powertools.metrics import MetricUnit
 from settings.operations import OPERATIONS
 from utils.validation.event import validate_event
 
-from shared.cors import public_cors_origin
-from shared.exceptions import ApplicationError, ValidationError
-from shared.ip_extractor import extract_country, extract_ip
-from shared.logger import logger
-from shared.metrics import metrics
-from shared.responses import error_response, no_content_response
-from shared.tracer import tracer
+from shared.core.exceptions import ApplicationError, ValidationError
+from shared.http.cors import public_cors_origin
+from shared.http.ip_extractor import extract_country, extract_ip
+from shared.http.responses import error_response, no_content_response
+from shared.observability.logger import logger
+from shared.observability.metrics import metrics
+from shared.observability.tracer import tracer
 
 __version__ = '2.0.0'
 
@@ -90,7 +90,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     # /track lo invoca navigator.sendBeacon (modo `ping`), que exige
     # Access-Control-Allow-Origin: '*' literal. Un echo del Origin hace
     # fallar la request con CORS error. /track es tracking anonimo sin
-    # credenciales, asi que '*' es correcto (ver shared.cors).
+    # credenciales, asi que '*' es correcto (ver shared.http.cors).
     origin = public_cors_origin()
     ip = extract_ip(event)
     country = extract_country(event)

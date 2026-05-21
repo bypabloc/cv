@@ -78,7 +78,7 @@ def tracking_aws() -> Generator[None]:
     import boto3
     from moto import mock_aws
 
-    from shared.dynamodb_client import reset_resource_cache
+    from shared.aws.dynamodb import reset_resource_cache
 
     with mock_aws():
         # El resource DynamoDB singleton se recrea bajo este mock_aws():

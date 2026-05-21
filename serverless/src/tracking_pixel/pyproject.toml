@@ -1,0 +1,20 @@
+# @config: src/tracking_pixel/pyproject.toml
+# @description: manifiesto de dependencias del Lambda tracking_pixel.
+#   Workspace member de serverless/. Ver src/contact_form/pyproject.toml
+#   para el formato. Las deps de test viven en el pyproject.toml raiz.
+
+[project]
+name = "tracking-pixel"
+version = "0.1.0"
+description = "Lambda del tracking pixel: registra eventos de pagina en DynamoDB."
+requires-python = ">=3.13"
+
+dependencies = [
+  "aws-lambda-powertools[all]>=3.0.0,<4.0",
+  "pydantic[email]>=2.5,<3.0",
+  "pydantic-settings>=2.0,<3.0",
+  "boto3>=1.34.0,<2.0",
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,18 @@
+# @config: shared/http/pyproject.toml
+# @description: manifiesto de dependencias del subpaquete shared.http
+#   (CORS, responses, ip_extractor, turnstile, validators). Ver
+#   shared/core/pyproject.toml para el formato. NO es un paquete publicable.
+
+[project]
+name = "shared-http"
+version = "0"
+description = "Capa HTTP: CORS, responses API GW, IP, Turnstile, validators."
+requires-python = ">=3.13"
+dependencies = [
+  "httpx>=0.27.0,<1.0",
+]
+
+[tool.shared]
+# turnstile -> aws.ssm + observability.logger + core.exceptions;
+# responses -> core.exceptions + core.types.
+internal-deps = ["core", "aws", "observability"]

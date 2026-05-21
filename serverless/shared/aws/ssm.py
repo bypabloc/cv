@@ -11,7 +11,7 @@ Cache reduce SSM GetParameter calls de N por invocacion a 1 cada 5 min.
 A $0.05/10K calls + ~30ms latencia, el cache ahorra ambos.
 
 Uso:
-    from shared.ssm_client import get_secret, get_parameter
+    from shared.aws.ssm import get_secret, get_parameter
 
     secret = get_secret('/portfolio/turnstile-secret')  # SecureString
     email = get_parameter('/portfolio/owner-email')      # String

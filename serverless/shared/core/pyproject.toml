@@ -1,0 +1,20 @@
+# @config: shared/core/pyproject.toml
+# @description: manifiesto de dependencias del subpaquete shared.core.
+#   Declara las deps externas (PyPI) en [project.dependencies] y las deps
+#   internas a otros subpaquetes de shared/ en [tool.shared.internal-deps].
+#   devtools lee este archivo al vendorizar para resolver el cierre de
+#   dependencias de cada Lambda. NO es un paquete publicable.
+
+[project]
+name = "shared-core"
+version = "0"
+description = "Primitivos compartidos: config, excepciones, tipos, ulid."
+requires-python = ">=3.13"
+dependencies = [
+  "pydantic>=2.5,<3.0",
+  "pydantic-settings>=2.0,<3.0",
+]
+
+[tool.shared]
+# Subpaquetes de shared/ de los que depende este subpaquete.
+internal-deps = []

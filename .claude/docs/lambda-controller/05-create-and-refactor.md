@@ -56,7 +56,15 @@ y `utils/invoker.py` si el Lambda no invoca otros Lambdas.
 Renombrar los `LogMetricType.OPERATION_*` al dominio del servicio
 (ej. `PAYMENT_ROUTING_START`). Agregar `ErrorCode` si hace falta.
 
-### 7. Escribir tests
+### 7. Declarar dependencias
+
+El scaffold trae un `pyproject.toml` (PEP 621) en la raiz del lambda.
+Declarar las deps de runtime en `[project.dependencies]` y las de
+testing ya estan en el grupo `dev` (`[dependency-groups]`). No hay
+`requirements*.txt` ni `pytest.ini` — la config de pytest del backend
+vive en `serverless/pyproject.toml`.
+
+### 8. Escribir tests
 
 Por cada accion, al menos:
 
@@ -67,11 +75,11 @@ Por cada accion, al menos:
 
 Un archivo por escenario, en `tests/unit/`. Ver [04 - Testing](04-testing.md).
 
-### 8. Verificar
+### 9. Verificar
 
 ```bash
 python -m compileall -q core
-pip install -r requirements-dev.txt
+uv sync
 pytest tests/unit
 ```
 

@@ -2,7 +2,7 @@
 Validators y sanitizers de input.
 
 Funciones puras sin dependencias externas. Uso desde Lambdas:
-    from shared.validators import is_valid_email, sanitize_text
+    from shared.http.validators import is_valid_email, sanitize_text
 
 Reglas:
 - NUNCA confiar en API Gateway request validator: hacer doble validacion

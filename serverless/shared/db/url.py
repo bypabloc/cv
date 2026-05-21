@@ -42,9 +42,9 @@ def resolve_database_url() -> str:
             'exporta DATABASE_URL (ver .claude/rules/neon-management.md).'
         )
 
-    # Import tardio: ssm_client arrastra boto3/Powertools — innecesario en
+    # Import tardio: aws.ssm arrastra boto3/Powertools — innecesario en
     # el camino local donde DATABASE_URL ya viene seteada.
-    from shared.ssm_client import get_secret
+    from shared.aws.ssm import get_secret
 
     return _normalize(get_secret(ssm_path))
 

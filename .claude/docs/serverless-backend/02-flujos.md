@@ -159,7 +159,7 @@ DynamoDB Streams (NEW_AND_OLD_IMAGES, retencion 24h)
 ```
 
 > El schema de Neon lo gestionan los modelos SQLAlchemy de
-> `serverless/src/_shared/db/` + Alembic. El `stream_processor` usa ese
+> `serverless/shared/db/` + Alembic. El `stream_processor` usa ese
 > ORM para escribir. Ver [03-datos.md](03-datos.md).
 
 ## 4. `db` — gestion del schema (invoke directo)

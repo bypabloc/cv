@@ -22,9 +22,9 @@ from typing import Any
 
 import httpx
 
-from shared.exceptions import TurnstileError
-from shared.logger import logger
-from shared.ssm_client import get_secret
+from shared.aws.ssm import get_secret
+from shared.core.exceptions import TurnstileError
+from shared.observability.logger import logger
 
 TURNSTILE_SITEVERIFY_URL = (
     'https://challenges.cloudflare.com/turnstile/v0/siteverify'

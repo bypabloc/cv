@@ -1,4 +1,0 @@
-pydantic>=2,<3
-# boto3 viene preinstalado en el runtime Lambda; descomentar solo si se
-# necesita una version especifica o para correr en local.
-# boto3>=1.34

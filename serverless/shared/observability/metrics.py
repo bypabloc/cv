@@ -3,7 +3,7 @@ Powertools v3 Metrics (CloudWatch EMF).
 
 Uso:
     from aws_lambda_powertools.metrics import MetricUnit
-    from shared.metrics import metrics
+    from shared.observability.metrics import metrics
 
     @metrics.log_metrics
     def lambda_handler(event, context):

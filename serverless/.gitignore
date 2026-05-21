@@ -2,6 +2,15 @@
 .aws-sam/
 samconfig.toml.local
 
+# Artefacto de deploy que devtools arma con uv (efimero, por lambda).
+src/*/build/
+src/*/template.yaml
+src/*/core/shared/
+
+# requirements.txt efimero (la fuente de verdad es pyproject.toml + uv.lock).
+src/*/requirements.txt
+src/*/requirements-dev.txt
+
 # Python
 .venv/
 __pycache__/

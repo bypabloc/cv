@@ -26,8 +26,9 @@
   su config; el `template.yaml` SAM se genera y es efimero (`.gitignore`).
 - **SIEMPRE** Python 3.13 (managed runtime), arm64 Graviton2, Powertools v3.
 - **SIEMPRE** secrets via SSM Parameter Store + KMS, NUNCA env vars planos.
-- **NUNCA** editar ni commitear `template.yaml` ni `core/shared/` (ambos
-  efimeros, generados por devtools antes de cada `run-local`/`deploy`).
+- **NUNCA** editar ni commitear `template.yaml`, `build/` ni
+  `build/core/shared/` (todos efimeros, generados por devtools antes de
+  cada `run-local`/`deploy`).
 - **NUNCA** existe ya un stack SAM monolitico — el modelo monolitico
   (`build`, `validate`, `start-api`, `smoke`) fue eliminado.
 - **NUNCA** atribucion de IA en codigo, commits ni docstrings.

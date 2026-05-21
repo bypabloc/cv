@@ -87,6 +87,31 @@ class TestBuildTemplateBasics:
         props = template['Resources']['DbFunction']['Properties']
         assert props['FunctionName'] == 'portfolio-db-dev'
 
+    def test_code_uri_defaults_to_build_dir(self):
+        from serverless.sam_generate import build_template
+
+        template = build_template(_manifest_direct(), stage='dev')
+
+        props = template['Resources']['DbFunction']['Properties']
+        assert props['CodeUri'] == 'build'
+
+    def test_code_uri_override_for_run_local(self):
+        from serverless.sam_generate import build_template
+
+        template = build_template(_manifest_direct(), stage='dev', code_uri='.')
+
+        props = template['Resources']['DbFunction']['Properties']
+        assert props['CodeUri'] == '.'
+
+    def test_function_has_no_build_method_metadata(self):
+        from serverless.sam_generate import build_template
+
+        template = build_template(_manifest_direct(), stage='dev')
+
+        # SIN Metadata.BuildMethod: devtools arma el zip con uv, SAM no
+        # corre pip — solo deploya el artefacto build/ ya construido.
+        assert 'Metadata' not in template['Resources']['DbFunction']
+
 
 class TestEnvVars:
     """El bloque de env vars combina env explicito + uses."""

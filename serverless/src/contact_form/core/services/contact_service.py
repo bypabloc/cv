@@ -34,11 +34,11 @@ from typing import Any
 import boto3
 from aws_lambda_powertools.metrics import MetricUnit
 
+from shared.aws.ssm import get_parameter
+from shared.core.ulid import new_uuidv7
 from shared.dynamodb import ContactItem
-from shared.logger import logger
-from shared.metrics import metrics
-from shared.ssm_client import get_parameter
-from shared.ulid import new_uuidv7
+from shared.observability.logger import logger
+from shared.observability.metrics import metrics
 
 # templates/ esta en la raiz del Lambda; este archivo en core/services/.
 _TEMPLATES_DIR = Path(__file__).resolve().parents[2] / 'templates'

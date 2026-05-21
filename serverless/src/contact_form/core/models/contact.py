@@ -18,7 +18,7 @@ from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from shared.validators import sanitize_text
+from shared.http.validators import sanitize_text
 
 
 class RequestMeta(BaseModel):

@@ -20,7 +20,7 @@ from services.tracking_service import process_tracking_event
 from settings.config import ErrorCode
 from utils.base_controller import BaseController
 
-from shared.exceptions import ApplicationError
+from shared.core.exceptions import ApplicationError
 from shared.rate_limit import check_or_raise
 
 # Endpoint que el rate-limit usa para resolver las rules.

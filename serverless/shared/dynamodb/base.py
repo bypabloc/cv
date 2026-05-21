@@ -35,6 +35,7 @@ from typing import Any, ClassVar, Self
 from botocore.exceptions import ClientError
 from pydantic import BaseModel as PydanticBaseModel
 
+from shared.aws.dynamodb import get_resource, get_table
 from shared.dynamodb._convert import from_dynamodb, is_empty, to_dynamodb
 from shared.dynamodb._schema import (
     SchemaDiff,
@@ -42,7 +43,6 @@ from shared.dynamodb._schema import (
     build_create_table_kwargs,
     diff_table,
 )
-from shared.dynamodb_client import get_resource, get_table
 
 
 class BaseModel(PydanticBaseModel):

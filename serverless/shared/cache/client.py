@@ -49,7 +49,7 @@ class DynamoDBCache:
         # table_name explicito distinto, respetar ese.
         if self.table_name == CacheItem.table_name():
             return CacheItem._table()
-        from shared.dynamodb_client import get_table
+        from shared.aws.dynamodb import get_table
 
         return get_table(self.table_name)
 

@@ -2,7 +2,7 @@
 Powertools v3 Logger configurado.
 
 Uso:
-    from shared.logger import logger
+    from shared.observability.logger import logger
 
     @logger.inject_lambda_context
     def lambda_handler(event, context):

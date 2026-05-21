@@ -6,23 +6,31 @@ requires-python = ">=3.13"
 license = { text = "MIT" }
 authors = [{ name = "Pablo Contreras" }]
 
-# Union de las dependencias runtime de las 4 Lambdas. Cada Lambda declara su
-# subconjunto en src/<lambda>/requirements.txt (SAM las empaqueta en el zip —
-# sin Lambda Layers). Aqui se pinnean para que dev local + tests usen la
-# misma version que cloud.
+# El raiz es el WORKSPACE de uv: no declara deps de runtime propias. Cada
+# Lambda (workspace member en src/<lambda>/pyproject.toml) declara las
+# suyas; cada subpaquete de shared/ declara las suyas en su pyproject.toml.
+# El .venv del workspace instala la union de TODAS para dev local + tests.
 dependencies = [
-  "aws-lambda-powertools[all]>=3.0.0,<4.0",
-  "httpx>=0.27.0,<1.0",
-  "pydantic[email]>=2.5,<3.0",
-  "pydantic-settings>=2.0,<3.0",
-  "boto3>=1.34.0,<2.0",
-  # psycopg: driver. SQLAlchemy: ORM (modelos de shared/db, unica fuente
-  # de verdad del schema). Los usan las Lambdas stream_processor y db.
-  "psycopg[binary]>=3.2,<4.0",
-  "sqlalchemy>=2.0,<3.0",
-  # Alembic: migraciones del schema — solo lo usa la Lambda db.
-  "alembic>=1.13,<2.0",
+  "contact-form",
+  "tracking-pixel",
+  "db",
+  "stream-processor",
 ]
+
+[tool.uv.workspace]
+# Los 4 Lambdas son workspace members. shared/ NO es member: sus
+# subpaquetes no son packages instalables (package = false implicito,
+# son codigo vendorizado), se resuelven por path en runtime/vendoring.
+members = ["src/*"]
+
+[tool.uv.sources]
+contact-form = { workspace = true }
+tracking-pixel = { workspace = true }
+db = { workspace = true }
+stream-processor = { workspace = true }
+
+[tool.uv]
+package = false
 
 [dependency-groups]
 dev = [

@@ -10,7 +10,7 @@ import httpx
 import pytest
 import respx
 
-from shared.turnstile import TURNSTILE_SITEVERIFY_URL
+from shared.http.turnstile import TURNSTILE_SITEVERIFY_URL
 
 pytestmark = pytest.mark.unit
 

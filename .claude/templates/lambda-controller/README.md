@@ -21,9 +21,9 @@ normaliza la respuesta.
 
 ```text
 <lambda-name>/
-├── requirements.txt             # deps de runtime
-├── requirements-dev.txt         # + deps de testing (pytest, coverage)
-├── pytest.ini                   # config pytest (rootdir = raiz del lambda)
+├── pyproject.toml               # PEP 621: deps de runtime + grupo dev
+│                                #   (pytest, coverage). Un solo archivo;
+│                                #   reemplaza requirements*.txt y pytest.ini.
 ├── core/
 │   ├── handler.py               # ENTRYPOINT: lambda_handler(event, context)
 │   ├── controllers/             # ORQUESTADORES: un paquete por operation
@@ -106,6 +106,9 @@ event {operation, action, data}
 8. Renombrar los `LogMetricType.OPERATION_*` al dominio real.
 9. Editar `lambda.yaml`: `name`, `runtime`, `memory`/`timeout`, env vars
    por stage, layers, IAM policies. Es la fuente de verdad de la config.
+10. Editar `pyproject.toml`: declarar las deps de runtime del Lambda en
+    `[project.dependencies]`. El grupo `dev` (`[dependency-groups]`) ya
+    trae pytest y coverage.
 
 ## Agregar una operacion o accion nueva
 
@@ -153,7 +156,7 @@ Convenciones:
 - Asserts EXACTOS (`== valor`), nunca rangos.
 
 ```bash
-pip install -r requirements-dev.txt
+uv sync                                 # deps de runtime + grupo dev
 
 pytest tests/unit                       # rapido, sin red
 pytest tests/integration                # requiere AWS / red

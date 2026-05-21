@@ -2,7 +2,7 @@
 Powertools v3 Tracer (X-Ray).
 
 Uso:
-    from shared.tracer import tracer
+    from shared.observability.tracer import tracer
 
     @tracer.capture_lambda_handler
     def lambda_handler(event, context):

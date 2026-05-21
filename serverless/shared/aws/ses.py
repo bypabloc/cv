@@ -9,7 +9,7 @@ domain identity (no email-by-email).
 Module-scope para reusar HTTPS connection entre invocaciones warm.
 
 Uso:
-    from shared.ses_client import ses
+    from shared.aws.ses import ses
 
     ses.send_email(
         FromEmailAddress='no-reply@the-full-stack.com',

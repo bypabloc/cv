@@ -17,7 +17,7 @@ Usar SIEMPRE `Resource` (mas alto nivel) para CRUD; Client crudo solo si
 no hay Resource equivalente.
 
 Uso:
-    from shared.dynamodb_client import get_table
+    from shared.aws.dynamodb import get_table
 
     table = get_table('portfolio-contacts-dev')
     table.put_item(Item={...})

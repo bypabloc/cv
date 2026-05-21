@@ -89,8 +89,17 @@ serverless/
 ├── infra/
 │   └── infra.yaml               # template del stack de infra compartida
 │
+├── pyproject.toml               # uv workspace (raiz) — agrupa shared/ + src/
+├── uv.lock                      # lockfile unico del workspace
+│
 ├── shared/                      # libreria comun (codigo fuente, versionado)
-│   ├── cors.py  logger.py  ...
+│   │                            # 8 subpaquetes por dominio, cada uno con
+│   │                            # su pyproject.toml (deps externas + internal-deps)
+│   ├── core/                    # config, exceptions, types, ulid
+│   ├── aws/                     # dynamodb, ses, ssm (clientes AWS)
+│   ├── observability/           # logger, tracer, metrics
+│   ├── http/                    # cors, responses, ip_extractor, turnstile, validators
+│   ├── dynamodb/                # acceso DynamoDB de dominio
 │   ├── cache/                   # cache con DynamoDB TTL
 │   ├── rate_limit/              # rate-limit per-IP
 │   └── db/                      # ORM SQLAlchemy + Alembic (schema unificado)
@@ -104,6 +113,13 @@ serverless/
 └── tests/                       # tests de la libreria comun shared/
 ```
 
+`serverless/` es un **uv workspace**: el `pyproject.toml` de la raiz
+agrupa `shared/` (sus 8 subpaquetes) y los 4 Lambdas de `src/`, con un
+`uv.lock` unico. Cada Lambda y cada subpaquete de `shared/` tiene su
+propio `pyproject.toml` (PEP 621) declarando sus dependencias — externas
+e `internal-deps` (otros subpaquetes de `shared/`). devtools gestiona las
+deps con uv; no hay `requirements.txt`.
+
 Cada Lambda de `src/` sigue el formato `lambda-controller`:
 
 ```text
@@ -111,7 +127,8 @@ src/<lambda>/
 ├── lambda.yaml                  # MANIFIESTO: fuente de verdad de la config
 ├── template.yaml                # SAM generado (EFIMERO, en .gitignore)
 ├── pytest.ini
-├── requirements.txt  requirements-dev.txt
+├── pyproject.toml               # deps del Lambda (PEP 621) — uv las gestiona
+├── build/                       # EFIMERO: artefacto de deploy (en .gitignore)
 ├── events/                      # eventos de ejemplo para run-local
 ├── core/
 │   ├── handler.py               # ENTRYPOINT — router delgado
@@ -119,33 +136,52 @@ src/<lambda>/
 │   ├── services/                # logica de negocio
 │   ├── models/                  # validacion Pydantic del payload
 │   ├── settings/                # AppConfig + OPERATIONS
-│   ├── utils/                   # BaseController, invoker, ...
-│   └── shared/                  # EFIMERO: vendor de serverless/shared/
+│   └── utils/                   # BaseController, invoker, ...
 └── tests/{unit,integration}/
 ```
+
+El vendor de `shared/` NO vive en `core/shared/`: devtools lo coloca en
+`build/core/shared/` al armar el artefacto de deploy (ver seccion 6).
 
 Detalle completo del formato: [.claude/rules/lambda-controller.md](../../rules/lambda-controller.md)
 y [.claude/docs/lambda-controller/](../lambda-controller/).
 
-## 6. La libreria comun vendorizada
+## 6. La libreria comun vendorizada (selectiva)
 
-El codigo compartido entre Lambdas vive en `serverless/shared/` (cors,
-logger, rate_limit, cache, turnstile, ORM de la DB, etc.). NO se publica
-como Lambda Layer.
+El codigo compartido entre Lambdas vive en `serverless/shared/`,
+organizado en 8 subpaquetes por dominio (`core`, `aws`, `observability`,
+`http`, `dynamodb`, `cache`, `rate_limit`, `db`). NO se publica como
+Lambda Layer.
 
-Antes de cada `run-local`, `deploy`, `test-unit` o `test-integration`,
-devtools **vendoriza** (copia) `serverless/shared/` dentro de
-`<lambda>/core/shared/`. Ese `core/shared/` es efimero (`.gitignore`) y
-se limpia al terminar. Los imports en el codigo del Lambda son
-`from shared...` y resuelven contra el vendor.
+Para armar el artefacto de deploy, devtools arma el directorio `build/`
+del Lambda:
+
+1. Instala las dependencias del Lambda con uv
+   (`uv pip install --target build/`), resueltas desde el `uv.lock` del
+   workspace.
+2. **Vendoriza SELECTIVAMENTE** solo los subpaquetes de `shared/` que el
+   Lambda realmente usa. devtools calcula el cierre transitivo de
+   dependencias por **AST scan** de los imports `from shared.<sub>...` y
+   copia esos subpaquetes (y los que ellos importan a su vez) a
+   `build/core/shared/`.
 
 ```text
-serverless/shared/   --(devtools vendoriza)-->   src/<lambda>/core/shared/
-   (fuente, versionado)                            (efimero, .gitignore)
+serverless/shared/<sub>   --(AST scan: cierre transitivo)-->
+   (fuente, versionado)        build/core/shared/<sub>
+                               (efimero, .gitignore)
 ```
 
-Asi cada Lambda empaqueta solo el codigo comun que importa, sin Layers
-ni dependencias de deploy cruzadas entre stacks.
+Los imports en el codigo del Lambda son explicitos al subpaquete
+(`from shared.observability.logger import logger`,
+`from shared.aws.dynamodb import get_table`,
+`from shared.core.exceptions import X`) y resuelven contra el vendor.
+`shared/__init__.py` ya no re-exporta nada — siempre se importa la ruta
+completa del subpaquete.
+
+`build/` es efimero (`.gitignore`); se regenera en cada `deploy`,
+`run-local`, `test-unit` o `test-integration`. Asi cada Lambda empaqueta
+solo el codigo comun que importa, sin Layers ni dependencias de deploy
+cruzadas entre stacks.
 
 ## 7. Los 4 Lambdas
 
@@ -183,9 +219,12 @@ devtools (`devtools/serverless/sam_generate.py`) lo traduce:
 - `uses.secrets` -> `ssm:GetParameter` del path completo + `kms:Decrypt`.
 - `uses.sends-email` -> `ses:SendEmail` con condition de remitente.
 
-El `template.yaml` resultante es EFIMERO: nunca se edita ni commitea. Si
-hay que cambiar la config se edita el `lambda.yaml` y se regenera con
-`sam-generate`.
+El `template.yaml` resultante apunta `CodeUri` al directorio `build/`
+(el artefacto ya armado por devtools con uv + vendoring selectivo) y NO
+lleva `Metadata.BuildMethod`: `sam deploy` solo sube ese artefacto, no
+corre `pip` ni `sam build`. El `template.yaml` es EFIMERO: nunca se
+edita ni commitea. Si hay que cambiar la config se edita el `lambda.yaml`
+y se regenera con `sam-generate`.
 
 ## 8. Stages
 

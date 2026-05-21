@@ -15,9 +15,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from shared.cors import cors_headers
-from shared.exceptions import ApplicationError
-from shared.types import ErrorPayload, JsonResponse
+from shared.core.exceptions import ApplicationError
+from shared.core.types import ErrorPayload, JsonResponse
+from shared.http.cors import cors_headers
 
 _DEFAULT_HEADERS = {
     'Content-Type': 'application/json; charset=utf-8',

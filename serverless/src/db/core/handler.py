@@ -38,9 +38,9 @@ from settings.operations import OPERATIONS
 from utils.validation.event import validate_event
 
 from shared.db.url import ensure_database_url
-from shared.logger import logger
-from shared.metrics import metrics
-from shared.tracer import tracer
+from shared.observability.logger import logger
+from shared.observability.metrics import metrics
+from shared.observability.tracer import tracer
 
 __version__ = '2.0.0'
 

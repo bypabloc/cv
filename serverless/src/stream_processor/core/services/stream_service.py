@@ -28,10 +28,10 @@ from decimal import Decimal
 from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
+from settings.config import logger
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from settings.config import logger
 from shared.db.models import Contact, ProcessedStreamEvent, TrackingEvent
 from shared.db.session import db_session
 

@@ -31,12 +31,12 @@ if _CORE_DIR not in sys.path:
 from typing import Any
 
 from aws_lambda_powertools.metrics import MetricUnit
-
 from settings.operations import OPERATIONS
+from utils.validation.event import validate_event
+
 from shared.logger import logger
 from shared.metrics import metrics
 from shared.tracer import tracer
-from utils.validation.event import validate_event
 
 __version__ = '2.0.0'
 

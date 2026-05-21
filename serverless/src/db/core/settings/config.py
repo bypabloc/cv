@@ -11,8 +11,9 @@ desde un solo lugar, como pide el estandar lambda-controller.
 
 from enum import Enum
 
-from shared.logger import logger
 from utils.base_settings import BaseSettings
+
+from shared.logger import logger
 
 __all__ = ['AppConfig', 'ErrorCode', 'LogMetricType', 'app_config', 'logger']
 

@@ -4,8 +4,7 @@ Clase base de configuracion: carga variables de entorno como atributos.
 
 from json import dumps as json_dumps
 from os import environ as os_environ
-from typing import Any
-from typing import get_origin
+from typing import Any, get_origin
 
 
 class BaseSettings:

@@ -46,8 +46,9 @@ if _CORE_DIR not in sys.path:
 from typing import Any
 
 from aws_lambda_powertools.metrics import MetricUnit
-
 from settings.operations import OPERATIONS
+from utils.validation.event import validate_event
+
 from shared.cors import resolve_origin
 from shared.exceptions import ApplicationError, ValidationError
 from shared.ip_extractor import extract_country, extract_ip
@@ -55,7 +56,6 @@ from shared.logger import logger
 from shared.metrics import metrics
 from shared.responses import error_response, json_response
 from shared.tracer import tracer
-from utils.validation.event import validate_event
 
 __version__ = '2.0.0'
 

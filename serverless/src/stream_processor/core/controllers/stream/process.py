@@ -50,7 +50,7 @@ class Process(BaseController):
 
             try:
                 result = process_record(record, event_id)
-            except Exception:  # noqa: BLE001 - record fallido se reporta
+            except Exception:
                 failed_record_ids.append(event_id)
                 logger.exception(
                     'failed to process stream record',

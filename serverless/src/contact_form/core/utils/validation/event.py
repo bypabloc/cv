@@ -8,11 +8,9 @@ una respuesta de error normalizada.
 from traceback import format_exc as traceback_format_exc
 from typing import Any
 
-from pydantic import ValidationError
-
 from models.event import EventModel
-from settings.config import LogMetricType
-from settings.config import logger
+from pydantic import ValidationError
+from settings.config import LogMetricType, logger
 
 # Mapeo de tipos de error a codigos internos
 _ERROR_CODES = {
@@ -88,7 +86,7 @@ def validate_event(event: dict[str, Any]) -> dict:
             message=original_message,
         )
 
-    except Exception:  # noqa: BLE001 - se reporta como error inesperado
+    except Exception:
         logger.error(
             'Unexpected error during event validation',
             extra={

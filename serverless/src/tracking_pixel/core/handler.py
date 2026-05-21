@@ -47,8 +47,9 @@ if _CORE_DIR not in sys.path:
 from typing import Any  # noqa: E402
 
 from aws_lambda_powertools.metrics import MetricUnit  # noqa: E402
-
 from settings.operations import OPERATIONS  # noqa: E402
+from utils.validation.event import validate_event  # noqa: E402
+
 from shared.cors import public_cors_origin  # noqa: E402
 from shared.exceptions import ApplicationError, ValidationError  # noqa: E402
 from shared.ip_extractor import extract_country, extract_ip  # noqa: E402
@@ -56,7 +57,6 @@ from shared.logger import logger  # noqa: E402
 from shared.metrics import metrics  # noqa: E402
 from shared.responses import error_response, no_content_response  # noqa: E402
 from shared.tracer import tracer  # noqa: E402
-from utils.validation.event import validate_event  # noqa: E402
 
 __version__ = '2.0.0'
 

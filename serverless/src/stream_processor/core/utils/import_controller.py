@@ -7,9 +7,7 @@ controllers.{controller}.{action}.{Action}.
 from importlib import import_module
 from traceback import format_exc as traceback_format_exc
 
-from settings.config import ErrorCode
-from settings.config import LogMetricType
-from settings.config import logger
+from settings.config import ErrorCode, LogMetricType, logger
 from settings.operations import OPERATIONS
 from utils.base_controller import BaseController
 
@@ -106,7 +104,7 @@ def import_controller(operation: str, action: str) -> dict:
             'code': ErrorCode.VALIDATION_ERROR.value,
             'class': None,
         }
-    except Exception as exc:  # noqa: BLE001 - error inesperado de import
+    except Exception as exc:
         logger.error(
             'Unexpected error importing controller module',
             extra={

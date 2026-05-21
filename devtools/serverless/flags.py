@@ -58,6 +58,11 @@ VALID_COMMANDS = [
     'test-unit',  # pytest tests/unit -m unit
     'test-integration',  # pytest tests/integration -m integration
     'test-coverage',  # pytest --cov=src
+    # lambda-controller dinamico (lambdas con lambda.yaml, fuera del SAM
+    # del portfolio). Requieren --path=<dir>.
+    'sam-generate',  # lambda.yaml -> template.yaml (SAM efimero)
+    'run-local',  # sam local invoke del lambda-controller
+    'invoke-remote',  # aws lambda invoke contra un stage deployado
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
@@ -89,6 +94,9 @@ VALID_COMMANDS = [
 ALLOWED_FLAGS = [
     # Stage
     'stage',
+    # lambda-controller dinamico
+    'path',  # --path=<dir> del lambda-controller (dir con lambda.yaml)
+    'module',  # alias de --path
     # Lifecycle
     'guided',  # sam deploy --guided
     'confirm',  # required para 'delete' (no destructivo accidental)
@@ -153,6 +161,16 @@ DESTRUCTIVE_COMMANDS = frozenset(
 )
 
 
+# Comandos del modo lambda-controller dinamico: requieren --path=<dir>.
+PATH_REQUIRED_COMMANDS = frozenset(
+    {
+        'sam-generate',
+        'run-local',
+        'invoke-remote',
+    }
+)
+
+
 # Comandos que soportan --output=json para integracion CI/scripts.
 JSON_OUTPUT_COMMANDS = frozenset(
     {
@@ -179,9 +197,12 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'format': 'Ruff format',
     'typecheck': 'mypy strict sobre src/',
     'test': 'pytest unit + integration',
-    'test-unit': 'pytest tests/unit -m unit',
-    'test-integration': 'pytest tests/integration -m integration',
+    'test-unit': 'pytest tests/unit (--path para lambda-controller)',
+    'test-integration': 'pytest tests/integration (--path lambda-controller)',
     'test-coverage': 'pytest --cov=src (threshold 80% per-file)',
+    'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--path)',
+    'run-local': 'sam local invoke de un lambda-controller (--path)',
+    'invoke-remote': 'aws lambda invoke contra un stage deployado (--path)',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
@@ -219,9 +240,12 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'format': ['module_path', 'files'],
     'typecheck': ['module_path'],
     'test': ['verbose', 'coverage_threshold'],
-    'test-unit': ['verbose', 'marker', 'files'],
-    'test-integration': ['verbose', 'marker'],
+    'test-unit': ['verbose', 'marker', 'files', 'path', 'module'],
+    'test-integration': ['verbose', 'marker', 'path', 'module'],
     'test-coverage': ['coverage_threshold'],
+    'sam-generate': ['path', 'module', 'stage'],
+    'run-local': ['path', 'module', 'stage', 'event', 'debug'],
+    'invoke-remote': ['path', 'module', 'stage', 'event'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
     'verify-ses-dns': [],
@@ -349,6 +373,14 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
             f'{command!r} es destructivo. Agrega --confirm o --dry-run.',
         )
 
+    if command in PATH_REQUIRED_COMMANDS and not (
+        flags_dict.get('path') or flags_dict.get('module')
+    ):
+        raise ValueError(
+            f'{command!r} opera sobre un lambda-controller: requiere '
+            f'--path=<dir> (directorio con lambda.yaml).',
+        )
+
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, _DEFAULTS)
 
@@ -360,7 +392,10 @@ def describe() -> ScriptDescribe:
     return {
         'name': 'serverless',
         'kind': 'subcommand',
-        'summary': 'Gestion del backend SAM (Lambdas + API GW + DynamoDB + SES + Neon)',
+        'summary': (
+            'Backend SAM del portfolio (Lambdas + API GW + DynamoDB + SES '
+            '+ Neon) y, con --path, lambdas tipo lambda-controller'
+        ),
         'commands': [
             {
                 'name': cmd,
@@ -382,6 +417,13 @@ def describe() -> ScriptDescribe:
                 'type': 'choice',
                 'choices': list(VALID_FUNCTIONS),
                 'summary': 'Funcion Lambda objetivo',
+            },
+            'path': {
+                'type': 'string',
+                'summary': (
+                    'Directorio de un lambda-controller (dir con '
+                    'lambda.yaml). Activa el modo dinamico'
+                ),
             },
             'event': {
                 'type': 'string',

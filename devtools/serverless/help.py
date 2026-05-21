@@ -5,6 +5,12 @@ Renders a colourised inventory of subcommands grouped by domain.
 
 from typing import Any
 
+from serverless.flags import _COMMAND_FLAGS
+from serverless.flags import _COMMAND_SUMMARIES
+from serverless.flags import DESTRUCTIVE_COMMANDS
+from serverless.flags import VALID_COMMANDS
+from serverless.flags import VALID_FUNCTIONS
+from serverless.flags import VALID_STAGES
 from shared.console import BOLD
 from shared.console import CYAN
 from shared.console import DIM
@@ -14,13 +20,6 @@ from shared.console import RED
 from shared.console import YELLOW
 from shared.console import _c
 
-from serverless.flags import _COMMAND_FLAGS
-from serverless.flags import _COMMAND_SUMMARIES
-from serverless.flags import DESTRUCTIVE_COMMANDS
-from serverless.flags import VALID_COMMANDS
-from serverless.flags import VALID_FUNCTIONS
-from serverless.flags import VALID_STAGES
-
 
 # Mapeo comando -> grupo para render organizado
 _GROUPS: dict[str, list[str]] = {
@@ -28,6 +27,11 @@ _GROUPS: dict[str, list[str]] = {
     'Local development': ['invoke', 'start-api', 'logs', 'tail'],
     'Quality': ['lint', 'lint-fix', 'format', 'typecheck'],
     'Tests': ['test', 'test-unit', 'test-integration', 'test-coverage'],
+    'Lambda-controller (--path, lambdas con lambda.yaml)': [
+        'sam-generate',
+        'run-local',
+        'invoke-remote',
+    ],
     'Secrets / DNS': [
         'setup-ssm',
         'rotate-secret',

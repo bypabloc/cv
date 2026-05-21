@@ -68,6 +68,49 @@ python devtools/run.py serverless <command> [--stage=local] [flags...]
 | `test-integration` | pytest tests/integration -m integration | `--verbose`, `--marker` |
 | `test-coverage` | pytest --cov + HTML report | `--coverage-threshold=80` |
 
+### Lambda-controller (lambdas con `lambda.yaml`, fuera del SAM del portfolio)
+
+El script tiene dos modos. **Sin `--path`** opera el backend SAM del
+portfolio (todo lo de arriba). **Con `--path=<dir>`** opera cualquier
+lambda que siga el formato `lambda-controller` (ver
+[`.claude/docs/lambda-controller/`](../../.claude/docs/lambda-controller/)):
+un directorio con `lambda.yaml` (manifiesto simple) del que devtools
+genera el `template.yaml` SAM efimero.
+
+| Comando | Descripcion | Flags |
+| ------- | ----------- | ----- |
+| `sam-generate` | `lambda.yaml` -> `template.yaml` SAM (efimero) | `--path`, `--stage` |
+| `run-local` | `sam local invoke` del lambda-controller | `--path`, `--stage`, `--event`, `--debug` |
+| `deploy` | `sam build` + `sam deploy` (con `--path`) | `--path`, `--stage`, `--guided`, `--dry-run` |
+| `invoke-remote` | `aws lambda invoke` contra un stage deployado | `--path`, `--stage`, `--event` |
+| `test-unit` | `pytest tests/unit` (con `--path`) | `--path`, `--verbose` |
+| `test-integration` | `pytest tests/integration` (con `--path`) | `--path`, `--verbose` |
+
+`--module` es alias de `--path`. `sam-generate`, `run-local` e
+`invoke-remote` exigen `--path`. `deploy`, `test-unit` y
+`test-integration` funcionan en ambos modos (con `--path` =
+lambda-controller; sin el = backend SAM del portfolio).
+
+Ejemplos:
+
+```bash
+LAMBDA=../legolambda/offer/payment_router
+
+# Generar el SAM y ejecutar en local
+python devtools/run.py serverless sam-generate --path=$LAMBDA --stage=dev
+python devtools/run.py serverless run-local \
+    --path=$LAMBDA --event=events/create.json
+
+# Tests
+python devtools/run.py serverless test-unit --path=$LAMBDA
+python devtools/run.py serverless test-integration --path=$LAMBDA
+
+# Deploy + invoke contra dev
+python devtools/run.py serverless deploy --path=$LAMBDA --stage=dev
+python devtools/run.py serverless invoke-remote \
+    --path=$LAMBDA --stage=dev --event=events/create.json
+```
+
 ### Secrets / Setup AWS resources fuera del template
 
 | Comando | Descripcion | Flags |
@@ -208,6 +251,11 @@ Sigue exactamente el patron de `devtools/docker/`:
    - `secrets.py` — SSM Parameters, SES DNS verify
    - `database.py` — Neon PG (shell, migrate, branch, tables)
    - `observability.py` — CloudWatch metrics + alarms
+   - `resolve.py` — resuelve el lambda objetivo (legacy vs `--path`),
+     lee y valida `lambda.yaml`
+   - `sam_generate.py` — genera el `template.yaml` SAM desde `lambda.yaml`
+   - `lambda_controller.py` — sam-generate, run-local, invoke-remote,
+     test-unit / test-integration dinamicos (modo `--path`)
    - `help.py` — ayuda colorizada
 3. **Validacion centralizada**: `flags.py` con `VALID_COMMANDS`,
    `ALLOWED_FLAGS`, `DESTRUCTIVE_COMMANDS`, `JSON_OUTPUT_COMMANDS`.

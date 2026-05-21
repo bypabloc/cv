@@ -15,8 +15,6 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
-from shared.console import _err
-
 from serverless.database import cmd_db_branch
 from serverless.database import cmd_db_current
 from serverless.database import cmd_db_migrate
@@ -26,6 +24,12 @@ from serverless.database import cmd_db_shell
 from serverless.database import cmd_db_show_migrations
 from serverless.database import cmd_db_tables
 from serverless.help import cmd_help
+from serverless.lambda_controller import cmd_deploy_lambda
+from serverless.lambda_controller import cmd_invoke_remote
+from serverless.lambda_controller import cmd_run_local
+from serverless.lambda_controller import cmd_sam_generate
+from serverless.lambda_controller import cmd_test_integration_lambda
+from serverless.lambda_controller import cmd_test_unit_lambda
 from serverless.lifecycle import cmd_build
 from serverless.lifecycle import cmd_clean
 from serverless.lifecycle import cmd_delete
@@ -52,6 +56,33 @@ from serverless.testing import cmd_test
 from serverless.testing import cmd_test_coverage
 from serverless.testing import cmd_test_integration
 from serverless.testing import cmd_test_unit
+from shared.console import _err
+
+
+def _has_lambda_path(flags: dict[str, Any]) -> bool:
+    """True si los flags traen --path/--module (modo lambda-controller)."""
+    return bool(flags.get('path') or flags.get('module'))
+
+
+def _dispatch_deploy(flags: dict[str, Any]) -> int:
+    """deploy: lambda-controller si hay --path, backend SAM si no."""
+    if _has_lambda_path(flags):
+        return cmd_deploy_lambda(flags)
+    return cmd_deploy(flags)
+
+
+def _dispatch_test_unit(flags: dict[str, Any]) -> int:
+    """test-unit: lambda-controller si hay --path, backend SAM si no."""
+    if _has_lambda_path(flags):
+        return cmd_test_unit_lambda(flags)
+    return cmd_test_unit(flags)
+
+
+def _dispatch_test_integration(flags: dict[str, Any]) -> int:
+    """test-integration: lambda-controller si hay --path, SAM si no."""
+    if _has_lambda_path(flags):
+        return cmd_test_integration_lambda(flags)
+    return cmd_test_integration(flags)
 
 
 COMMAND_REGISTRY: dict[str, Any] = {
@@ -59,7 +90,7 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'init': cmd_init,
     'validate': cmd_validate,
     'build': cmd_build,
-    'deploy': cmd_deploy,
+    'deploy': _dispatch_deploy,
     'delete': cmd_delete,
     # Local development
     'invoke': cmd_invoke,
@@ -73,9 +104,13 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'typecheck': cmd_typecheck,
     # Tests
     'test': cmd_test,
-    'test-unit': cmd_test_unit,
-    'test-integration': cmd_test_integration,
+    'test-unit': _dispatch_test_unit,
+    'test-integration': _dispatch_test_integration,
     'test-coverage': cmd_test_coverage,
+    # lambda-controller dinamico (lambdas con lambda.yaml, --path requerido)
+    'sam-generate': cmd_sam_generate,
+    'run-local': cmd_run_local,
+    'invoke-remote': cmd_invoke_remote,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
     'rotate-secret': cmd_rotate_secret,

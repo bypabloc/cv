@@ -4,6 +4,7 @@ Common module: helpers compartidos entre todas las Lambdas del backend.
 Re-exports:
 - logger, tracer, metrics: instancias Powertools v3 configuradas
 - dynamodb_resource, ssm_client, ses_client: boto3 clients en module scope
+- BaseModel: clase base del ORM DynamoDB (ver shared/dynamodb/)
 - extract_ip, new_uuidv7, is_valid_email: utilities sin estado
 - json_response, error_response, cors_headers: HTTP helpers
 - ApplicationError + subclases: jerarquia de excepciones
@@ -14,6 +15,7 @@ para evitar imports circulares en tests. Este modulo solo expone la API
 publica para uso ergonomico.
 """
 
+from shared.dynamodb import BaseModel
 from shared.exceptions import (
     ApplicationError,
     IPBlacklistedError,
@@ -28,6 +30,7 @@ from shared.validators import is_valid_email, sanitize_text
 
 __all__ = [
     'ApplicationError',
+    'BaseModel',
     'IPBlacklistedError',
     'RateLimitExceededError',
     'TurnstileError',

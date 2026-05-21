@@ -1,0 +1,91 @@
+# Manifiesto del Lambda `tracking_pixel` — fuente de verdad de la config.
+#
+# devtools genera el template.yaml SAM a partir de este archivo:
+#   python devtools/run.py serverless sam-generate --path=serverless/src/tracking_pixel
+#
+# El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
+# edita a mano: se cambia este lambda.yaml y se regenera.
+#
+# El Lambda `tracking_pixel` registra eventos de tracking del portfolio.
+# Esta detras de la API Gateway REST del stack de infra (POST /track):
+# agrega un metodo sobre esa API, NO crea una nueva. Persiste el evento en
+# DynamoDB (tabla tracking, TTL 60d) y responde HTTP 204 No Content.
+
+# --- Obligatorios ---
+name: portfolio-tracking-pixel
+runtime: python3.13
+handler: core.handler.lambda_handler
+
+# --- Opcionales (con defaults) ---
+memory: 256
+timeout: 10
+region: us-east-1
+architecture: arm64
+
+# Trigger: la Lambda agrega el metodo POST /track sobre la API Gateway
+# REST del stack de infra (NO crea una API nueva). devtools resuelve los
+# recursos compartidos desde los Outputs del stack portfolio-infra-${stage}.
+trigger:
+  type: api
+  # Metodo + ruta que esta Lambda expone.
+  method: POST
+  path: /track
+  # La API Gateway REST y sus recursos raiz NO los crea esta Lambda: los
+  # importa del stack de infra (cross-stack Fn::ImportValue). devtools usa
+  # estos nombres de Output para resolver los ImportValue al generar el SAM.
+  imports:
+    api_id: portfolio-infra-${stage}-ApiId
+    api_root_resource_id: portfolio-infra-${stage}-ApiRootResourceId
+
+# Recursos del stack de infra que esta Lambda consume. devtools resuelve
+# cada uno via Fn::ImportValue del stack portfolio-infra-${stage} y los
+# inyecta como env vars (ver `environment`) y como ARNs en `iam_statements`.
+stack_imports:
+  tracking_table_name: portfolio-infra-${stage}-TrackingTable
+  tracking_table_arn: portfolio-infra-${stage}-TrackingTableArn
+  cache_table_name: portfolio-infra-${stage}-CacheTable
+  cache_table_arn: portfolio-infra-${stage}-CacheTableArn
+  rate_limit_rules_table_name: portfolio-infra-${stage}-RateLimitRulesTable
+  rate_limit_rules_table_arn: portfolio-infra-${stage}-RateLimitRulesTableArn
+  rate_limit_buckets_table_name: portfolio-infra-${stage}-RateLimitBucketsTable
+  rate_limit_buckets_table_arn: portfolio-infra-${stage}-RateLimitBucketsTableArn
+
+# IAM: DynamoDB CRUD sobre las 4 tablas que la Lambda usa
+#   - tracking : persistencia del evento (PutItem).
+#   - cache    : @cached del UA parsing (SPEC-204).
+#   - rate-limit rules + buckets : check_or_raise per-IP.
+iam_statements:
+  - effect: Allow
+    actions:
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:UpdateItem
+      - dynamodb:DeleteItem
+      - dynamodb:Query
+      - dynamodb:BatchGetItem
+      - dynamodb:BatchWriteItem
+    resource:
+      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-tracking-${stage}'
+      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-cache-${stage}'
+      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-rate-limit-rules-${stage}'
+      - 'arn:aws:dynamodb:${region}:${account_id}:table/portfolio-rate-limit-buckets-${stage}'
+
+# Variables de entorno por stage. 'default' aplica a todos los stages;
+# las claves de un stage especifico sobrescriben las de 'default'.
+# Los *_TABLE_NAME los resuelve devtools desde stack_imports en el SAM.
+environment:
+  default:
+    POWERTOOLS_SERVICE_NAME: tracking-pixel
+    POWERTOOLS_METRICS_NAMESPACE: Portfolio
+    LOG_LEVEL: INFO
+    ENVIRONMENT: dev
+  dev:
+    ENVIRONMENT: dev
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
+  stage:
+    ENVIRONMENT: stage
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
+  prod:
+    ENVIRONMENT: prod
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

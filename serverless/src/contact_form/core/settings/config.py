@@ -1,12 +1,12 @@
-"""Configuracion del Lambda `db`.
+"""Configuracion del Lambda `contact_form`.
 
 Define `AppConfig` (variables de entorno), los enums de codigos de error
 y de metricas de logging, y reexporta el `logger` de la libreria comun.
 
-El Lambda `db` usa el logger / tracer / metrics de Powertools v3 que vive
-en `shared/` (vendorizado en `core/shared/` por devtools). `config.py`
-reexporta el `logger` para que el resto del codigo `core/` lo importe
-desde un solo lugar, como pide el estandar lambda-controller.
+El Lambda `contact_form` usa el logger / tracer / metrics de Powertools
+v3 que vive en `shared/` (vendorizado en `core/shared/` por devtools).
+`config.py` reexporta el `logger` para que el resto del codigo `core/`
+lo importe desde un solo lugar, como pide el estandar lambda-controller.
 """
 
 from enum import Enum
@@ -22,7 +22,7 @@ class ErrorCode(Enum):
 
     0 exito; 1xxx validacion; 2xxx configuracion; 4xxx negocio; 5xxx
     API/externo; 6xxx sistema. El handler colapsa el `code` del
-    controller a un codigo de salida estable.
+    controller a un HTTP status estable.
     """
 
     SUCCESS = 0
@@ -38,7 +38,8 @@ class ErrorCode(Enum):
 
     # Business logic errors (4000-4999)
     BUSINESS_LOGIC_ERROR = 4000
-    DOWNGRADE_NOT_CONFIRMED = 4001
+    RATE_LIMIT_EXCEEDED = 4001
+    CAPTCHA_INVALID = 4002
 
     # External API errors (5000-5999)
     EXTERNAL_API_ERROR = 5000
@@ -84,23 +85,42 @@ class LogMetricType(Enum):
     CONTROLLER_IMPORT_ERROR = 'CONTROLLER_IMPORT_ERROR'
     CONTROLLER_CLASS_NOT_FOUND = 'CONTROLLER_CLASS_NOT_FOUND'
 
-    # Schema operations (dominio del Lambda db)
-    SCHEMA_MIGRATE_START = 'SCHEMA_MIGRATE_START'
-    SCHEMA_MIGRATE_SUCCESS = 'SCHEMA_MIGRATE_SUCCESS'
-    SCHEMA_OPERATION_ERROR = 'SCHEMA_OPERATION_ERROR'
+    # Contact operations (dominio del Lambda contact_form)
+    CONTACT_RATE_LIMITED = 'CONTACT_RATE_LIMITED'
+    CONTACT_CAPTCHA_FAILED = 'CONTACT_CAPTCHA_FAILED'
+    CONTACT_PERSISTED = 'CONTACT_PERSISTED'
+    CONTACT_EMAIL_SENT = 'CONTACT_EMAIL_SENT'
+    CONTACT_OPERATION_ERROR = 'CONTACT_OPERATION_ERROR'
 
 
 class AppConfig(BaseSettings):
-    """Configuracion del Lambda `db`, cargada de variables de entorno.
+    """Configuracion del Lambda `contact_form`, cargada de env vars.
 
     Cada campo anotado se carga de la env var homonima en MAYUSCULAS.
+    Las tablas DynamoDB y los paths SSM los inyecta el template SAM; los
+    secretos NUNCA se hardcodean — solo se guarda su path SSM.
     """
 
     environment: str = 'dev'
 
-    # Path SSM de la connection string de Neon. La Lambda la resuelve en
-    # runtime (shared.db.url). NUNCA se hardcodea la URL.
-    ssm_neon_url_path: str = ''
+    # Region donde vive la identidad SES verificada.
+    aws_ses_region: str = 'us-east-1'
+
+    # Whitelist CORS (CSV). La inyecta StageConfig del template SAM.
+    cors_allowed_origins: str = ''
+
+    # Tablas DynamoDB (las inyecta el template SAM desde el stack de infra).
+    contacts_table_name: str = ''
+    cache_table_name: str = ''
+    rate_limit_rules_table_name: str = ''
+    rate_limit_buckets_table_name: str = ''
+
+    # Paths SSM de los secretos / parametros (la Lambda los resuelve en
+    # runtime via boto3; NUNCA se guarda el valor del secreto aqui).
+    ssm_turnstile_secret_path: str = '/portfolio/turnstile-secret'
+    ssm_turnstile_bypass_path: str = ''
+    ssm_owner_email_path: str = '/portfolio/owner-email'
+    ssm_ses_from_path: str = '/portfolio/ses-from-address'
 
     # Testing
     testing: str = '0'

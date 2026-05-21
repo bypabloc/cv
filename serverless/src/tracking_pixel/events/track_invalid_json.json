@@ -1,0 +1,18 @@
+{
+  "httpMethod": "POST",
+  "path": "/track",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://the-full-stack.com",
+    "CF-Connecting-IP": "1.2.3.4"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "isBase64Encoded": false,
+  "body": "{not valid json",
+  "requestContext": {
+    "identity": { "sourceIp": "1.2.3.4" },
+    "requestId": "track-invalid-request-id",
+    "stage": "dev"
+  }
+}

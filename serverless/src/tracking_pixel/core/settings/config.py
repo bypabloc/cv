@@ -1,12 +1,18 @@
-"""Configuracion del Lambda `db`.
+"""Configuracion del Lambda `tracking_pixel`.
 
 Define `AppConfig` (variables de entorno), los enums de codigos de error
 y de metricas de logging, y reexporta el `logger` de la libreria comun.
 
-El Lambda `db` usa el logger / tracer / metrics de Powertools v3 que vive
-en `shared/` (vendorizado en `core/shared/` por devtools). `config.py`
-reexporta el `logger` para que el resto del codigo `core/` lo importe
-desde un solo lugar, como pide el estandar lambda-controller.
+El Lambda `tracking_pixel` usa el logger / tracer / metrics de Powertools
+v3 que vive en `shared/` (vendorizado en `core/shared/` por devtools).
+`config.py` reexporta el `logger` para que el resto del codigo `core/` lo
+importe desde un solo lugar, como pide el estandar lambda-controller.
+
+NOTA: este modulo NO usa `from __future__ import annotations`. `BaseSettings`
+inspecciona `__annotations__` en runtime y compara `field_type is str`; con
+anotaciones lazy (PEP 563) los tipos quedan como strings (`'str'`) y la
+carga de env vars no detectaria los campos. Las anotaciones deben ser los
+tipos reales.
 """
 
 from enum import Enum
@@ -38,7 +44,7 @@ class ErrorCode(Enum):
 
     # Business logic errors (4000-4999)
     BUSINESS_LOGIC_ERROR = 4000
-    DOWNGRADE_NOT_CONFIRMED = 4001
+    RATE_LIMITED = 4001
 
     # External API errors (5000-5999)
     EXTERNAL_API_ERROR = 5000
@@ -84,23 +90,24 @@ class LogMetricType(Enum):
     CONTROLLER_IMPORT_ERROR = 'CONTROLLER_IMPORT_ERROR'
     CONTROLLER_CLASS_NOT_FOUND = 'CONTROLLER_CLASS_NOT_FOUND'
 
-    # Schema operations (dominio del Lambda db)
-    SCHEMA_MIGRATE_START = 'SCHEMA_MIGRATE_START'
-    SCHEMA_MIGRATE_SUCCESS = 'SCHEMA_MIGRATE_SUCCESS'
-    SCHEMA_OPERATION_ERROR = 'SCHEMA_OPERATION_ERROR'
+    # Tracking operations (dominio del Lambda tracking_pixel)
+    TRACKING_EVENT_RECEIVED = 'TRACKING_EVENT_RECEIVED'
+    TRACKING_EVENT_PERSISTED = 'TRACKING_EVENT_PERSISTED'
+    TRACKING_EVENT_REJECTED = 'TRACKING_EVENT_REJECTED'
 
 
 class AppConfig(BaseSettings):
-    """Configuracion del Lambda `db`, cargada de variables de entorno.
+    """Configuracion del Lambda `tracking_pixel`, desde env vars.
 
     Cada campo anotado se carga de la env var homonima en MAYUSCULAS.
+    Los valores de tabla los inyecta el template SAM (ver lambda.yaml).
     """
 
     environment: str = 'dev'
 
-    # Path SSM de la connection string de Neon. La Lambda la resuelve en
-    # runtime (shared.db.url). NUNCA se hardcodea la URL.
-    ssm_neon_url_path: str = ''
+    # Nombre de la tabla DynamoDB de tracking (TTL 60d). La capa de
+    # persistence la lee; se centraliza aqui para no dispersar os.environ.
+    tracking_table_name: str = 'portfolio-tracking-dev'
 
     # Testing
     testing: str = '0'

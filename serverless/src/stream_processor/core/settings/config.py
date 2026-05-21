@@ -1,12 +1,13 @@
-"""Configuracion del Lambda `db`.
+"""Configuracion del Lambda `stream_processor`.
 
 Define `AppConfig` (variables de entorno), los enums de codigos de error
 y de metricas de logging, y reexporta el `logger` de la libreria comun.
 
-El Lambda `db` usa el logger / tracer / metrics de Powertools v3 que vive
-en `shared/` (vendorizado en `core/shared/` por devtools). `config.py`
-reexporta el `logger` para que el resto del codigo `core/` lo importe
-desde un solo lugar, como pide el estandar lambda-controller.
+El Lambda `stream_processor` usa el logger / tracer / metrics de
+Powertools v3 que vive en `shared/` (vendorizado en `core/shared/` por
+devtools). `config.py` reexporta el `logger` para que el resto del
+codigo `core/` lo importe desde un solo lugar, como pide el estandar
+lambda-controller.
 """
 
 from enum import Enum
@@ -38,7 +39,6 @@ class ErrorCode(Enum):
 
     # Business logic errors (4000-4999)
     BUSINESS_LOGIC_ERROR = 4000
-    DOWNGRADE_NOT_CONFIRMED = 4001
 
     # External API errors (5000-5999)
     EXTERNAL_API_ERROR = 5000
@@ -84,21 +84,22 @@ class LogMetricType(Enum):
     CONTROLLER_IMPORT_ERROR = 'CONTROLLER_IMPORT_ERROR'
     CONTROLLER_CLASS_NOT_FOUND = 'CONTROLLER_CLASS_NOT_FOUND'
 
-    # Schema operations (dominio del Lambda db)
-    SCHEMA_MIGRATE_START = 'SCHEMA_MIGRATE_START'
-    SCHEMA_MIGRATE_SUCCESS = 'SCHEMA_MIGRATE_SUCCESS'
-    SCHEMA_OPERATION_ERROR = 'SCHEMA_OPERATION_ERROR'
+    # Stream operations (dominio del Lambda stream_processor)
+    STREAM_RECORD_PROCESSED = 'STREAM_RECORD_PROCESSED'
+    STREAM_RECORD_SKIPPED = 'STREAM_RECORD_SKIPPED'
+    STREAM_RECORD_FAILED = 'STREAM_RECORD_FAILED'
+    STREAM_BATCH_COMPLETE = 'STREAM_BATCH_COMPLETE'
 
 
 class AppConfig(BaseSettings):
-    """Configuracion del Lambda `db`, cargada de variables de entorno.
+    """Configuracion del Lambda `stream_processor`, de variables de entorno.
 
     Cada campo anotado se carga de la env var homonima en MAYUSCULAS.
     """
 
     environment: str = 'dev'
 
-    # Path SSM de la connection string de Neon. La Lambda la resuelve en
+    # Path SSM de la connection string de Neon. El Lambda la resuelve en
     # runtime (shared.db.url). NUNCA se hardcodea la URL.
     ssm_neon_url_path: str = ''
 

@@ -32,9 +32,9 @@ from pathlib import Path
 from typing import Any
 
 import boto3
-
 from aws_lambda_powertools.metrics import MetricUnit
 
+from shared.dynamodb import ContactItem
 from shared.logger import logger
 from shared.metrics import metrics
 from shared.ssm_client import get_parameter
@@ -85,32 +85,25 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
     contact_id = new_uuidv7()
     created_at = datetime.now(UTC).isoformat()
 
-    region = os.environ.get('AWS_REGION', 'us-east-1')
-    table_name = os.environ.get(
-        'CONTACTS_TABLE_NAME', 'portfolio-contacts-dev'
-    )
-    table = boto3.resource('dynamodb', region_name=region).Table(table_name)
-
-    item: dict[str, Any] = {
-        'id': contact_id,
-        'created_at': created_at,
-        'name': payload['name'],
-        'email': payload['email'],
-        'message': payload['message'],
-    }
-    # Campos opcionales: solo agregar si tienen valor (DynamoDB no permite
-    # empty strings). session_id enlaza el contacto con tracking_events; el
-    # origen (ip/country/user_agent) NO se duplica aqui — se consulta en
-    # tracking via JOIN por session_id.
-    for optional_field in (
-        'company', 'role', 'service_type', 'budget', 'timeline', 'niche',
-        'session_id',
-    ):
-        value = payload.get(optional_field)
-        if value:
-            item[optional_field] = value
-
-    table.put_item(Item=item)
+    # ContactItem (ORM) arma el Item: omite los campos opcionales no
+    # provistos (DynamoDB no permite empty strings) y reusa el resource
+    # boto3 singleton. session_id enlaza el contacto con tracking_events;
+    # el origen (ip/country/user_agent) NO se duplica aqui — se consulta
+    # en tracking via JOIN por session_id.
+    ContactItem(
+        id=contact_id,
+        created_at=created_at,
+        name=payload['name'],
+        email=payload['email'],
+        message=payload['message'],
+        company=payload.get('company'),
+        role=payload.get('role'),
+        service_type=payload.get('service_type'),
+        budget=payload.get('budget'),
+        timeline=payload.get('timeline'),
+        niche=payload.get('niche'),
+        session_id=payload.get('session_id'),
+    ).save()
 
     return {'contact_id': contact_id, 'created_at': created_at}
 

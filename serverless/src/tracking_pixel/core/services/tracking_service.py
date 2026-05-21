@@ -21,9 +21,10 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
-from settings.config import app_config, logger
+from settings.config import logger
+
 from shared.cache import cached
-from shared.dynamodb_client import get_table
+from shared.dynamodb import TrackingEventItem
 from shared.ulid import new_uuidv7
 
 # --- Persistence ---
@@ -133,65 +134,40 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     created_at = datetime.now(UTC).isoformat()
     expires_at = int(time.time()) + TTL_SECONDS
 
-    # El resource DynamoDB vive en module scope (shared.dynamodb_client):
-    # se reusa entre invocaciones warm del mismo contenedor Lambda en vez
-    # de re-crearse en cada save (~150ms de cold start por invocacion).
-    table = get_table(app_config.tracking_table_name)
-
-    item: dict[str, Any] = {
-        'session_id': payload['session_id'],
-        'page_id': page_id,
-        'created_at': created_at,
-        'expires_at': expires_at,
-        'page_url': payload['page_url'],
+    # TrackingEventItem (ORM) arma el Item y lo persiste: omite los campos
+    # opcionales no provistos (DynamoDB no permite empty strings) y reusa
+    # el resource boto3 singleton entre invocaciones warm. event_props es
+    # un Map de DynamoDB (datos especificos por tipo de evento, SPEC-200).
+    TrackingEventItem(
+        session_id=payload['session_id'],
+        page_id=page_id,
+        created_at=created_at,
+        expires_at=expires_at,
+        page_url=payload['page_url'],
         # Identificadores del evento (SPEC-102): event_id da idempotencia,
         # event_type_id es el tipo del catalogo event_types.
-        'event_id': payload['event_id'],
-        'event_type_id': payload['event_type_id'],
-    }
-
-    # Campos opcionales (solo si tienen valor)
-    for optional_field in (
-        'page_title',
-        'page_path',
-        'referrer',
-        'utm_source',
-        'utm_medium',
-        'utm_campaign',
-        'utm_content',
-        'utm_term',
-        'niche',
-    ):
-        value = payload.get(optional_field)
-        if value:
-            item[optional_field] = value
-
-    # Viewport (int, no string)
-    for vp_field in ('viewport_width', 'viewport_height'):
-        value = payload.get(vp_field)
-        if value is not None:
-            item[vp_field] = value
-
-    # Metadata enrichment
-    for meta_field in (
-        'ip',
-        'country',
-        'user_agent',
-        'browser',
-        'browser_version',
-        'os',
-        'device_type',
-    ):
-        if payload.get(meta_field):
-            item[meta_field] = payload[meta_field]
-
-    # event_props (SPEC-200): datos especificos por tipo de evento. Se guarda
-    # como atributo Map de DynamoDB. Nullable: solo si el cliente lo envio.
-    event_props = payload.get('event_props')
-    if event_props:
-        item['event_props'] = event_props
-
-    table.put_item(Item=item)
+        event_id=payload['event_id'],
+        event_type_id=payload['event_type_id'],
+        page_title=payload.get('page_title'),
+        page_path=payload.get('page_path'),
+        referrer=payload.get('referrer'),
+        utm_source=payload.get('utm_source'),
+        utm_medium=payload.get('utm_medium'),
+        utm_campaign=payload.get('utm_campaign'),
+        utm_content=payload.get('utm_content'),
+        utm_term=payload.get('utm_term'),
+        niche=payload.get('niche'),
+        viewport_width=payload.get('viewport_width'),
+        viewport_height=payload.get('viewport_height'),
+        ip=payload.get('ip'),
+        country=payload.get('country'),
+        user_agent=payload.get('user_agent'),
+        browser=payload.get('browser'),
+        browser_version=payload.get('browser_version'),
+        os=payload.get('os'),
+        device_type=payload.get('device_type'),
+        event_props=payload.get('event_props'),
+    ).save()
 
     return {
         'session_id': payload['session_id'],

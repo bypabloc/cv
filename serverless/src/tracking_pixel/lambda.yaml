@@ -1,0 +1,52 @@
+# Manifiesto del Lambda `tracking_pixel` — fuente de verdad de su config.
+#
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
+# devtools traduce este manifiesto al template SAM efimero:
+#   python devtools/run.py serverless sam-generate \
+#     --path=serverless/src/tracking_pixel
+#
+# El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
+# edita a mano: se cambia este lambda.yaml y se regenera.
+
+# --- Identidad ---
+name: tracking-pixel
+description: Registra eventos de tracking del portfolio (page views, clicks).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 256       # MB
+timeout: 10       # segundos
+
+# --- Como se invoca este Lambda ---
+# http: expone un endpoint en la API del backend. devtools conecta la
+# ruta a la API Gateway compartida automaticamente.
+trigger:
+  type: http
+  method: POST
+  path: /track
+
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  tables:
+    tracking: read-write       # persistencia del evento
+    cache: read-write          # @cached del parsing de user-agent
+    rate-limit-rules: read-write   # rate-limit per-IP
+    rate-limit-buckets: read-write
+  secrets: []
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+  dev:
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
+  stage:
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

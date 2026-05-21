@@ -18,23 +18,23 @@ from typing import Any
 from shared.console import _err
 
 from serverless.database import cmd_db_branch
+from serverless.database import cmd_db_current
 from serverless.database import cmd_db_migrate
 from serverless.database import cmd_db_rollback
 from serverless.database import cmd_db_seed
 from serverless.database import cmd_db_shell
+from serverless.database import cmd_db_show_migrations
 from serverless.database import cmd_db_tables
 from serverless.help import cmd_help
-from serverless.lifecycle import cmd_build
+from serverless.infra_deploy import cmd_deploy_infra
+from serverless.lambda_controller import cmd_deploy_lambda
+from serverless.lambda_controller import cmd_invoke_remote
+from serverless.lambda_controller import cmd_run_local
+from serverless.lambda_controller import cmd_sam_generate
+from serverless.lambda_controller import cmd_test_integration_lambda
+from serverless.lambda_controller import cmd_test_unit_lambda
 from serverless.lifecycle import cmd_clean
-from serverless.lifecycle import cmd_delete
-from serverless.lifecycle import cmd_deploy
 from serverless.lifecycle import cmd_init
-from serverless.lifecycle import cmd_invoke
-from serverless.lifecycle import cmd_logs
-from serverless.lifecycle import cmd_smoke
-from serverless.lifecycle import cmd_start_api
-from serverless.lifecycle import cmd_tail
-from serverless.lifecycle import cmd_validate
 from serverless.observability import cmd_alarms
 from serverless.observability import cmd_metrics
 from serverless.quality import cmd_format
@@ -48,41 +48,40 @@ from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
 from serverless.testing import cmd_test
 from serverless.testing import cmd_test_coverage
-from serverless.testing import cmd_test_integration
-from serverless.testing import cmd_test_unit
 
 
 COMMAND_REGISTRY: dict[str, Any] = {
-    # Lifecycle
+    # Setup / Maintenance
     'init': cmd_init,
-    'validate': cmd_validate,
-    'build': cmd_build,
-    'deploy': cmd_deploy,
-    'delete': cmd_delete,
-    # Local development
-    'invoke': cmd_invoke,
-    'start-api': cmd_start_api,
-    'logs': cmd_logs,
-    'tail': cmd_tail,
-    # Quality
+    'clean': cmd_clean,
+    # Quality (Ruff + mypy sobre serverless/shared/ y serverless/src/)
     'lint': cmd_lint,
     'lint-fix': cmd_lint_fix,
     'format': cmd_format,
     'typecheck': cmd_typecheck,
-    # Tests
+    # Tests de la libreria comun (serverless/tests/, cubre shared/)
     'test': cmd_test,
-    'test-unit': cmd_test_unit,
-    'test-integration': cmd_test_integration,
     'test-coverage': cmd_test_coverage,
+    # lambda-controller: ciclo de vida de cada Lambda (--path requerido)
+    'sam-generate': cmd_sam_generate,
+    'run-local': cmd_run_local,
+    'invoke-remote': cmd_invoke_remote,
+    'deploy': cmd_deploy_lambda,
+    'test-unit': cmd_test_unit_lambda,
+    'test-integration': cmd_test_integration_lambda,
+    # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
+    'deploy-infra': cmd_deploy_infra,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
     'rotate-secret': cmd_rotate_secret,
     'verify-ses-dns': cmd_verify_ses_dns,
     'request-ses-prod': cmd_request_ses_prod,
-    # Database (Neon)
+    # Database (Neon) — migraciones via la Lambda `db` (Alembic)
     'db-shell': cmd_db_shell,
     'db-migrate': cmd_db_migrate,
     'db-rollback': cmd_db_rollback,
+    'db-current': cmd_db_current,
+    'db-show-migrations': cmd_db_show_migrations,
     'db-seed': cmd_db_seed,
     'db-branch': cmd_db_branch,
     'db-tables': cmd_db_tables,
@@ -91,9 +90,7 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'alarms': cmd_alarms,
     # Rate-limit management (alternativa $0 a AWS WAF)
     'rate-limit': cmd_rate_limit,
-    # Maintenance
-    'smoke': cmd_smoke,
-    'clean': cmd_clean,
+    # Help
     'help': cmd_help,
 }
 

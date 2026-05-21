@@ -1,0 +1,14 @@
+# SAM template generado por devtools desde lambda.yaml — efimero, NUNCA
+# se commitea. lambda.yaml es la unica fuente de verdad versionada.
+template.yaml
+
+# Artefactos de build / invoke de AWS SAM
+.aws-sam/
+
+# Caches de Python y pytest
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/

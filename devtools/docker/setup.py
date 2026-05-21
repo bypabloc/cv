@@ -12,6 +12,8 @@ import shutil
 import subprocess
 from typing import Any
 
+from docker._helpers import confirm_destructive
+from docker.urls import print_service_urls
 from shared.compose import compose_exec
 from shared.compose import run_cmd
 from shared.compose import run_compose
@@ -25,9 +27,6 @@ from shared.console import _warn
 from shared.paths import DOCKER_DIR
 from shared.paths import PROJECT_ROOT
 from shared.project_config import CONTAINER_PREFIX
-
-from docker._helpers import confirm_destructive
-from docker.urls import print_service_urls
 
 
 def cmd_setup(flags: dict[str, Any]) -> int:

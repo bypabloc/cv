@@ -1,15 +1,25 @@
 """Database commands for the SAM backend (Neon PostgreSQL).
 
-Maneja conexion a Neon (lee connection string de SSM), migrations SQL
-desde serverless/migrations/, branches Neon (git-style DB branching),
-y consultas de inventario (tablas + row counts).
+El schema de Neon lo gestiona Alembic — los modelos SQLAlchemy de
+`serverless/src/common/db/` son la unica fuente de verdad. Las migraciones
+NO se aplican con `psql` desde aqui: se delegan a la Lambda `db`
+(`portfolio-db-<stage>`), que corre Alembic dentro de AWS con la
+connection string que el template inyecta desde SSM.
+
+Este modulo:
+- `db-migrate` / `db-rollback` / `db-current` / `db-show-migrations`:
+  invocan la Lambda `db` via `aws lambda invoke`.
+- `db-shell` / `db-tables` / `db-seed`: psql directo (no son migraciones).
+- `db-branch`: CRUD de branches Neon (git-style) via el `neon` CLI.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 from typing import Any
 
 from shared.console import CYAN
@@ -22,13 +32,14 @@ from shared.console import _err
 
 
 _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
-_MIGRATIONS_DIR = _SERVERLESS_DIR / 'migrations'
 
 
 def _get_neon_url(stage: str) -> str | None:
     """Lee la connection string de Neon desde SSM Parameter Store.
 
-    Returns la URL o None si falla (con mensaje de error impreso).
+    Solo la usan los comandos psql directos (`db-shell`, `db-tables`,
+    `db-seed`). Las migraciones NO la usan — la Lambda `db` resuelve la URL
+    por su cuenta dentro de AWS. Returns la URL o None si falla.
     """
     if shutil.which('aws') is None:
         _err('AWS CLI no esta instalado')
@@ -70,6 +81,83 @@ def _get_neon_url(stage: str) -> str | None:
     return result.stdout.strip()
 
 
+def _invoke_db_lambda(
+    stage: str, command: str, args: dict[str, Any] | None = None
+) -> dict[str, Any] | None:
+    """Invoca la Lambda `db` (`portfolio-db-<stage>`) con un comando Alembic.
+
+    Construye el payload `{"command": ..., "args": {...}}`, lo invoca con
+    `aws lambda invoke` y parsea la respuesta JSON. Returns el dict de
+    respuesta, o None si la invocacion falla (con error impreso).
+    """
+    if shutil.which('aws') is None:
+        _err('AWS CLI no esta instalado')
+        return None
+
+    function_name = f'portfolio-db-{stage}'
+    payload: dict[str, Any] = {'command': command}
+    if args:
+        payload['args'] = args
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out_path = Path(tmp) / 'db-lambda-response.json'
+        result = subprocess.run(
+            [
+                'aws',
+                'lambda',
+                'invoke',
+                '--function-name',
+                function_name,
+                '--payload',
+                json.dumps(payload),
+                '--cli-binary-format',
+                'raw-in-base64-out',
+                '--region',
+                'us-east-1',
+                str(out_path),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            _err(f'No se pudo invocar {function_name}: {result.stderr.strip()}')
+            return None
+        try:
+            response: dict[str, Any] = json.loads(out_path.read_text())
+        except (json.JSONDecodeError, OSError) as exc:
+            _err(f'Respuesta invalida de {function_name}: {exc}')
+            return None
+
+    return response
+
+
+def _report_db_response(
+    response: dict[str, Any] | None, *, ok_label: str
+) -> int:
+    """Imprime la respuesta de la Lambda `db` y devuelve el exit code.
+
+    `ok_label` es el texto a mostrar cuando `status == 'ok'`. Returns 0 si
+    la Lambda respondio ok, 1 en cualquier otro caso.
+    """
+    if response is None:
+        return 1
+
+    status = response.get('status')
+    if status == 'ok':
+        print(_c(GREEN, ok_label))
+        for key in ('current', 'target'):
+            if key in response and response[key] is not None:
+                print(f'{DIM}  {key}: {response[key]}{NC}')
+        for line in response.get('history', []):
+            print(f'{DIM}  {line}{NC}')
+        return 0
+
+    # status 'error' | 'rejected' u otro.
+    _err(response.get('error', f'la Lambda db respondio status={status!r}'))
+    return 1
+
+
 def cmd_db_shell(flags: dict[str, Any]) -> int:
     """psql interactivo contra Neon."""
     if shutil.which('psql') is None:
@@ -92,96 +180,76 @@ def cmd_db_shell(flags: dict[str, Any]) -> int:
 
 
 def cmd_db_migrate(flags: dict[str, Any]) -> int:
-    """Aplicar migrations SQL pendientes desde serverless/migrations/.
+    """Aplica las migraciones pendientes (`alembic upgrade`) via la Lambda db.
 
-    Las migrations son archivos numerados (`001_<name>.sql`,
-    `002_<name>.sql`, ...). El runner mantiene una tabla
-    `schema_migrations` para evitar re-aplicar.
+    `--target` opcional (default `head`). El schema lo definen los modelos
+    SQLAlchemy de `common/db/`; las migraciones viven en
+    `common/db/alembic/versions/`.
     """
-    if not _MIGRATIONS_DIR.exists():
-        _err(f'No existe directorio de migrations: {_MIGRATIONS_DIR}')
-        print(f'{YELLOW}  Crear con:{NC} {CYAN}mkdir -p {_MIGRATIONS_DIR}{NC}')
-        return 1
-
-    sql_file = flags.get('sql_file')
-    migrations = (
-        [_MIGRATIONS_DIR / sql_file]
-        if sql_file
-        else sorted(_MIGRATIONS_DIR.glob('*.sql'))
-    )
-
-    if not migrations:
-        print(_c(YELLOW, 'No hay migrations pendientes'))
-        return 0
-
     stage = flags.get('stage', 'local')
-    url = _get_neon_url(stage)
-    if not url:
-        return 1
+    target = flags.get('target', 'head')
 
     if flags.get('dry_run'):
-        for m in migrations:
-            print(_c(YELLOW, f'[dry-run] psql -f {m.name}'))
+        print(
+            _c(
+                YELLOW,
+                f'[dry-run] invoke portfolio-db-{stage} '
+                f'command=migrate target={target}',
+            )
+        )
         return 0
 
-    for migration in migrations:
-        print(_c(CYAN, f'$ psql -f {migration.name}'))
-        result = subprocess.run(
-            ['psql', url, '-f', str(migration), '-v', 'ON_ERROR_STOP=1'],
-            check=False,
-        )
-        if result.returncode != 0:
-            _err(f'Migration fallo: {migration.name}')
-            return result.returncode
-
-    print(_c(GREEN, f'OK  {len(migrations)} migration(s) aplicadas'))
-    return 0
+    print(_c(CYAN, f'$ invoke portfolio-db-{stage} command=migrate'))
+    response = _invoke_db_lambda(stage, 'migrate', {'target': target})
+    return _report_db_response(response, ok_label='OK  migraciones aplicadas')
 
 
 def cmd_db_rollback(flags: dict[str, Any]) -> int:
-    """Rollback de la ultima migration (destructivo).
+    """Revierte migraciones (`alembic downgrade`) via la Lambda db.
 
-    Busca el archivo `<migration>.down.sql` correspondiente y lo aplica.
+    OPERACION DESTRUCTIVA: requiere `--confirm`. `--target` opcional
+    (default `-1`, una migracion atras).
     """
     if not flags.get('confirm'):
         _err('--confirm requerido para rollback')
         return 2
 
-    if not _MIGRATIONS_DIR.exists():
-        _err(f'No existe: {_MIGRATIONS_DIR}')
-        return 1
-
-    # Encuentra la ultima migration aplicada
-    migrations = sorted(_MIGRATIONS_DIR.glob('*.sql'))
-    if not migrations:
-        print(_c(YELLOW, 'No hay migrations para rollback'))
-        return 0
-
-    last = migrations[-1]
-    down_file = last.with_suffix('.down.sql')
-
-    if not down_file.exists():
-        _err(f'No existe el down script: {down_file}')
-        return 1
-
     stage = flags.get('stage', 'local')
-    url = _get_neon_url(stage)
-    if not url:
-        return 1
+    target = flags.get('target', '-1')
 
     if flags.get('dry_run'):
-        print(_c(YELLOW, f'[dry-run] psql -f {down_file.name}'))
+        print(
+            _c(
+                YELLOW,
+                f'[dry-run] invoke portfolio-db-{stage} '
+                f'command=downgrade target={target}',
+            )
+        )
         return 0
 
-    print(_c(CYAN, f'$ psql -f {down_file.name}'))
-    result = subprocess.run(
-        ['psql', url, '-f', str(down_file), '-v', 'ON_ERROR_STOP=1'],
-        check=False,
+    print(_c(CYAN, f'$ invoke portfolio-db-{stage} command=downgrade'))
+    response = _invoke_db_lambda(
+        stage, 'downgrade', {'target': target, 'confirm': True}
     )
+    return _report_db_response(response, ok_label='OK  rollback aplicado')
 
-    if result.returncode == 0:
-        print(_c(GREEN, f'OK  Rollback de {last.name} aplicado'))
-    return result.returncode
+
+def cmd_db_current(flags: dict[str, Any]) -> int:
+    """Muestra la revision Alembic aplicada en la DB (via la Lambda db)."""
+    stage = flags.get('stage', 'local')
+    print(_c(CYAN, f'$ invoke portfolio-db-{stage} command=current'))
+    response = _invoke_db_lambda(stage, 'current')
+    return _report_db_response(response, ok_label='OK  revision actual')
+
+
+def cmd_db_show_migrations(flags: dict[str, Any]) -> int:
+    """Muestra el historial de migraciones Alembic (via la Lambda db)."""
+    stage = flags.get('stage', 'local')
+    print(_c(CYAN, f'$ invoke portfolio-db-{stage} command=show-migrations'))
+    response = _invoke_db_lambda(stage, 'show-migrations')
+    return _report_db_response(
+        response, ok_label='OK  historial de migraciones'
+    )
 
 
 def cmd_db_seed(flags: dict[str, Any]) -> int:
@@ -190,7 +258,8 @@ def cmd_db_seed(flags: dict[str, Any]) -> int:
     if not seed_script.exists():
         _err(f'No existe: {seed_script}')
         print(
-            f'{YELLOW}  Crear con sample data. Ver serverless/ARCHITECTURE.md{NC}'
+            f'{YELLOW}  Crear con sample data. '
+            f'Ver .claude/docs/serverless-backend/{NC}'
         )
         return 1
 

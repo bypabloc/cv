@@ -1,0 +1,26 @@
+[project]
+name = "portfolio-cv-db"
+version = "0.1.0"
+description = "Schema relacional PostgreSQL del CV (modelos SQLAlchemy 2.x + Alembic + seed desde los YAML de @portfolio/content)"
+requires-python = "==3.14.*"
+readme = "README.md"
+
+dependencies = [
+    # ORM + tipado nativo (Mapped[...]) — fuente del autogenerate de Alembic
+    "sqlalchemy>=2.0.36",
+    # Migraciones versionadas con autogenerate
+    "alembic>=1.14.0",
+    # Driver PostgreSQL v3 (mismo que el backend serverless)
+    "psycopg[binary]>=3.2.3",
+    # Parser de los YAML del CV (seed)
+    "pyyaml>=6.0.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.12",
+    "pytest>=9.0.3",
+]
+
+[tool.uv]
+package = false

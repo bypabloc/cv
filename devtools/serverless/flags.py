@@ -26,59 +26,50 @@ STAGE_DESCRIPTIONS = {
     'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
 }
 
-# Funciones Lambda del modulo. Coinciden con el LogicalId del template.yaml.
-VALID_FUNCTIONS = [
-    'contact-form',
-    'tracking-pixel',
-    'stream-processor',  # DynamoDB Streams -> Neon PG
-]
-
 # Tablas DynamoDB administradas por el modulo. Usadas por subcomandos
 # ``db-*`` para scope explicito.
 VALID_TABLES = ['contacts', 'tracking']
 
 VALID_COMMANDS = [
-    # Lifecycle
-    'init',  # uv sync + first-time setup (alias de pyproject)
-    'validate',  # sam validate template.yaml
-    'build',  # sam build --use-container (cross-platform arm64)
-    'deploy',  # sam deploy (guided si stage no existe)
-    'delete',  # sam delete (destructivo, requiere --confirm)
-    # Local development (no AWS)
-    'invoke',  # sam local invoke <function> --event events/X.json
-    'start-api',  # sam local start-api --port 3000
-    'logs',  # sam logs -n <function> --tail
-    # Quality
-    'lint',  # Ruff check sobre serverless/src/
+    # Setup / Maintenance
+    'init',  # uv sync + verifica sam + aws CLI
+    'clean',  # rm caches + artefactos efimeros (template.yaml, core/shared)
+    # Quality (Ruff + mypy sobre serverless/shared/ y serverless/src/)
+    'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
     'format',  # Ruff format
-    'typecheck',  # mypy (si configurado) sobre src/
-    # Tests
-    'test',  # pytest tests/unit + integration
-    'test-unit',  # pytest tests/unit -m unit
-    'test-integration',  # pytest tests/integration -m integration
-    'test-coverage',  # pytest --cov=src
+    'typecheck',  # mypy
+    # Tests de la libreria comun (serverless/tests/, cubre shared/)
+    'test',  # pytest tests/ con coverage
+    'test-coverage',  # pytest --cov + HTML report
+    # lambda-controller: ciclo de vida de cada Lambda. --path requerido.
+    'sam-generate',  # lambda.yaml -> template.yaml (SAM efimero)
+    'run-local',  # sam local invoke del lambda
+    'deploy',  # sam build + sam deploy del lambda (stack propio)
+    'invoke-remote',  # aws lambda invoke contra un stage deployado
+    'test-unit',  # pytest <lambda>/tests/unit
+    'test-integration',  # pytest <lambda>/tests/integration
+    # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
+    'deploy-infra',  # deploya el stack de infra compartida (5-stacks)
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
     'verify-ses-dns',  # dig DKIM/SPF/DMARC contra Cloudflare
     'request-ses-prod',  # Imprime plantilla del ticket SES production access
-    # Database (Neon PostgreSQL)
+    # Database (Neon PostgreSQL) — migraciones via la Lambda `db` (Alembic)
     'db-shell',  # psql interactivo contra Neon (lee connection string de SSM)
-    'db-migrate',  # Aplica migrations SQL desde serverless/migrations/
-    'db-rollback',  # Rollback de la ultima migration
+    'db-migrate',  # alembic upgrade via Lambda db (aplica migraciones)
+    'db-rollback',  # alembic downgrade via Lambda db (DESTRUCTIVO)
+    'db-current',  # alembic current via Lambda db (revision aplicada)
+    'db-show-migrations',  # alembic history via Lambda db
     'db-seed',  # Carga data de prueba en Neon
     'db-branch',  # Crea / lista / borra branches de Neon (neon CLI)
     'db-tables',  # Lista tablas + row counts
     # Observability
-    'tail',  # sam logs -n <function> --tail (alias verbose de `logs --follow`)
     'metrics',  # CloudWatch metrics summary del stack
     'alarms',  # Lista alarmas y su estado
     # Rate-limit management (alternativa $0 a AWS WAF)
     'rate-limit',  # Dispatcher: list|show|set|allow|block|unblock|stats|clear-buckets
-    # Smoke / Maintenance
-    'smoke',  # scripts/smoke_test.sh (curl contra endpoint real)
-    'clean',  # rm -rf .aws-sam/ + __pycache__ + .pytest_cache
     'help',  # Ayuda colorizada
 ]
 
@@ -87,21 +78,14 @@ VALID_COMMANDS = [
 ALLOWED_FLAGS = [
     # Stage
     'stage',
-    # Lifecycle
+    # lambda-controller: --path=<dir> del lambda (dir con lambda.yaml)
+    'path',
+    'module',  # alias de --path
+    # Deploy
     'guided',  # sam deploy --guided
-    'confirm',  # required para 'delete' (no destructivo accidental)
-    'no_cache',  # sam build --no-cache (rebuild from scratch)
-    'parameter_overrides',  # sam deploy --parameter-overrides
-    # Local invoke
-    'function',  # --function=contact-form
-    'event',  # --event=events/contact_form_valid.json
-    'port',  # sam local start-api --port=3000
+    'confirm',  # required para comandos destructivos
+    'event',  # --event=events/<X>.json (run-local / invoke-remote)
     'debug',  # sam local invoke --debug
-    # Logs
-    'tail',  # --tail (continuous follow)
-    'follow',  # alias de tail
-    'since',  # --since=10m (timeframe de logs)
-    'filter',  # --filter='ERROR' (CloudWatch filter pattern)
     # Quality / Tests
     'module_path',  # Subset del codigo (ej. src/contact_form/)
     'files',  # Subset de archivos especificos
@@ -110,7 +94,6 @@ ALLOWED_FLAGS = [
     'quiet',
     'output_format',
     # Test
-    'marker',  # pytest -m <marker>
     'coverage_threshold',  # default 80
     # Secrets
     'name',  # --name=/portfolio/turnstile-secret
@@ -120,7 +103,7 @@ ALLOWED_FLAGS = [
     'table',  # --table=contacts
     'branch',  # --branch=dev-feature-X (Neon branching)
     'parent',  # --parent=main (parent branch)
-    'sql_file',  # --sql-file=migrations/001_init.sql
+    'target',  # --target=head|-1|base|<revision> (Alembic, via Lambda db)
     'dry_run',  # No aplica, solo imprime acciones
     # Rate-limit management
     'endpoint',  # --endpoint=/contact (rate-limit set)
@@ -133,6 +116,8 @@ ALLOWED_FLAGS = [
     'reason',  # --reason="why" (audit string)
     # Cross-cutting
     'output',  # json|text
+    'since',  # --since=10m|1h|24h (ventana de metrics / rate-limit stats)
+    'profile',  # --profile=tfs-dev (perfil AWS CLI)
     # Internal
     'command',
     'subcommands',
@@ -143,10 +128,23 @@ ALLOWED_FLAGS = [
 # Comandos destructivos. Cada uno requiere --confirm o --dry-run primero.
 DESTRUCTIVE_COMMANDS = frozenset(
     {
-        'delete',
         'clean',
         'db-rollback',
         'rotate-secret',
+    }
+)
+
+
+# Comandos del modo lambda-controller: requieren --path=<dir> (la raiz
+# del lambda, con lambda.yaml).
+PATH_REQUIRED_COMMANDS = frozenset(
+    {
+        'sam-generate',
+        'run-local',
+        'invoke-remote',
+        'deploy',
+        'test-unit',
+        'test-integration',
     }
 )
 
@@ -157,7 +155,6 @@ JSON_OUTPUT_COMMANDS = frozenset(
         'metrics',
         'alarms',
         'db-tables',
-        'logs',
     }
 )
 
@@ -165,37 +162,35 @@ JSON_OUTPUT_COMMANDS = frozenset(
 # Resumenes 1-line por comando (usados por describe() y help).
 _COMMAND_SUMMARIES: dict[str, str] = {
     'init': 'Setup inicial (uv sync + verifica AWS CLI + SAM)',
-    'validate': 'sam validate template.yaml',
-    'build': 'sam build --use-container (arm64 cross-platform)',
-    'deploy': 'sam deploy a stage (--guided si primera vez)',
-    'delete': 'sam delete del stack (DESTRUCTIVO)',
-    'invoke': 'sam local invoke <function> --event events/X.json',
-    'start-api': 'sam local start-api (server HTTP local)',
-    'logs': 'sam logs -n <function> (real-time o ventana)',
-    'lint': 'Ruff check sobre src/',
+    'clean': 'Eliminar caches + artefactos efimeros (template.yaml, vendor)',
+    'lint': 'Ruff check sobre shared/ y src/',
     'lint-fix': 'Ruff check --fix',
     'format': 'Ruff format',
-    'typecheck': 'mypy strict sobre src/',
-    'test': 'pytest unit + integration',
-    'test-unit': 'pytest tests/unit -m unit',
-    'test-integration': 'pytest tests/integration -m integration',
-    'test-coverage': 'pytest --cov=src (threshold 80% per-file)',
+    'typecheck': 'mypy strict sobre shared/ y src/',
+    'test': 'pytest tests/ (cubre la libreria comun shared/)',
+    'test-coverage': 'pytest --cov + HTML report (threshold 80%)',
+    'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--path)',
+    'run-local': 'sam local invoke de un lambda (--path)',
+    'deploy': 'sam build + sam deploy del lambda a un stage (--path)',
+    'invoke-remote': 'aws lambda invoke contra un stage deployado (--path)',
+    'test-unit': 'pytest <lambda>/tests/unit (--path)',
+    'test-integration': 'pytest <lambda>/tests/integration (--path)',
+    'deploy-infra': 'Deploya el stack de infra compartida (idempotente)',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
     'request-ses-prod': 'Plantilla del ticket de production access SES',
     'db-shell': 'psql contra Neon (lee URL de SSM)',
-    'db-migrate': 'Aplicar migrations SQL pendientes',
-    'db-rollback': 'Rollback ultima migration (DESTRUCTIVO)',
+    'db-migrate': 'alembic upgrade via Lambda db (aplica migraciones)',
+    'db-rollback': 'alembic downgrade via Lambda db (DESTRUCTIVO)',
+    'db-current': 'Revision Alembic aplicada en la DB',
+    'db-show-migrations': 'Historial de migraciones Alembic',
     'db-seed': 'Cargar data de prueba',
     'db-branch': 'CRUD de branches Neon (create/list/delete)',
     'db-tables': 'Listar tablas Neon + row counts',
-    'tail': 'sam logs --tail (alias verbose de logs --follow)',
     'metrics': 'Resumen CloudWatch metrics del stack',
     'alarms': 'Lista alarmas + estado',
     'rate-limit': 'Gestion de reglas rate-limit (list|set|allow|block|stats|...)',
-    'smoke': 'curl contra endpoint deployed (smoke test)',
-    'clean': 'Eliminar .aws-sam/ + caches Python',
     'help': 'Ayuda colorizada',
 }
 
@@ -203,32 +198,32 @@ _COMMAND_SUMMARIES: dict[str, str] = {
 # Flags relevantes por comando (informativo para describe() y completion).
 _COMMAND_FLAGS: dict[str, list[str]] = {
     'init': [],
-    'validate': [],
-    'build': ['no_cache', 'function'],
-    'deploy': ['stage', 'guided', 'parameter_overrides'],
-    'delete': ['stage', 'confirm', 'dry_run'],
-    'invoke': ['function', 'event', 'debug'],
-    'start-api': ['port', 'debug'],
-    'logs': ['function', 'tail', 'follow', 'since', 'filter', 'output'],
+    'clean': ['dry_run'],
     'lint': ['module_path', 'files', 'output_format'],
     'lint-fix': ['module_path', 'files'],
     'format': ['module_path', 'files'],
     'typecheck': ['module_path'],
     'test': ['verbose', 'coverage_threshold'],
-    'test-unit': ['verbose', 'marker', 'files'],
-    'test-integration': ['verbose', 'marker'],
     'test-coverage': ['coverage_threshold'],
+    'sam-generate': ['path', 'module', 'stage'],
+    'run-local': ['path', 'module', 'stage', 'event', 'debug'],
+    'deploy': ['path', 'module', 'stage', 'guided', 'profile', 'dry_run'],
+    'invoke-remote': ['path', 'module', 'stage', 'event', 'profile'],
+    'test-unit': ['path', 'module', 'verbose'],
+    'test-integration': ['path', 'module', 'verbose'],
+    'deploy-infra': ['stage', 'profile', 'dry_run'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
     'verify-ses-dns': [],
     'request-ses-prod': [],
     'db-shell': ['stage', 'branch'],
-    'db-migrate': ['stage', 'sql_file', 'dry_run'],
-    'db-rollback': ['stage', 'confirm', 'dry_run'],
+    'db-migrate': ['stage', 'target', 'dry_run'],
+    'db-rollback': ['stage', 'target', 'confirm', 'dry_run'],
+    'db-current': ['stage'],
+    'db-show-migrations': ['stage'],
     'db-seed': ['stage', 'dry_run'],
     'db-branch': ['parent', 'branch', 'subcommands'],
     'db-tables': ['stage', 'output'],
-    'tail': ['function', 'since', 'filter'],
     'metrics': ['stage', 'since', 'output'],
     'alarms': ['stage', 'output'],
     'rate-limit': [
@@ -247,8 +242,6 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'dry_run',
         'name',
     ],
-    'smoke': ['stage'],
-    'clean': ['dry_run'],
     'help': [],
 }
 
@@ -258,11 +251,7 @@ _DEFAULTS: dict[str, Any] = {
     'stage': 'local',
     'guided': False,
     'confirm': False,
-    'no_cache': False,
-    'port': 3000,
     'debug': False,
-    'tail': False,
-    'follow': False,
     'since': '10m',
     'verbose': False,
     'quiet': False,
@@ -329,18 +318,19 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
             f'Stage invalido: {stage!r}. Validos: {", ".join(VALID_STAGES)}',
         )
 
-    function = flags_dict.get('function')
-    if function is not None and function not in VALID_FUNCTIONS:
-        raise ValueError(
-            f'Function invalida: {function!r}. '
-            f'Validas: {", ".join(VALID_FUNCTIONS)}',
-        )
-
     if command in DESTRUCTIVE_COMMANDS and not (
         flags_dict.get('confirm') or flags_dict.get('dry_run')
     ):
         raise ValueError(
             f'{command!r} es destructivo. Agrega --confirm o --dry-run.',
+        )
+
+    if command in PATH_REQUIRED_COMMANDS and not (
+        flags_dict.get('path') or flags_dict.get('module')
+    ):
+        raise ValueError(
+            f'{command!r} opera sobre un lambda-controller: requiere '
+            f'--path=<dir> (directorio con lambda.yaml).',
         )
 
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
@@ -354,7 +344,10 @@ def describe() -> ScriptDescribe:
     return {
         'name': 'serverless',
         'kind': 'subcommand',
-        'summary': 'Gestion del backend SAM (Lambdas + API GW + DynamoDB + SES + Neon)',
+        'summary': (
+            'Backend serverless del portfolio: 5 stacks (infra + 4 Lambdas '
+            'lambda-controller). Cada Lambda se opera con --path=<dir>'
+        ),
         'commands': [
             {
                 'name': cmd,
@@ -370,31 +363,27 @@ def describe() -> ScriptDescribe:
                 'type': 'choice',
                 'choices': list(VALID_STAGES),
                 'default': 'local',
-                'summary': 'Stage del stack SAM (local|dev|prod)',
+                'summary': 'Stage objetivo (local|dev|prod)',
             },
-            'function': {
-                'type': 'choice',
-                'choices': list(VALID_FUNCTIONS),
-                'summary': 'Funcion Lambda objetivo',
+            'path': {
+                'type': 'string',
+                'summary': (
+                    'Directorio de un lambda (dir con lambda.yaml). '
+                    'Requerido por los comandos del modo lambda-controller'
+                ),
             },
             'event': {
                 'type': 'string',
                 'summary': 'Path a event JSON (events/<X>.json)',
             },
-            'port': {
-                'type': 'int',
-                'default': 3000,
-                'summary': 'Puerto local API (start-api)',
-            },
-            'tail': {
-                'type': 'bool',
-                'default': False,
-                'summary': 'Continuous log streaming',
+            'profile': {
+                'type': 'string',
+                'summary': 'Perfil AWS CLI (ej. tfs-dev)',
             },
             'since': {
                 'type': 'string',
                 'default': '10m',
-                'summary': 'Ventana de logs (ej. 10m, 1h, 1d)',
+                'summary': 'Ventana de metrics / rate-limit stats (10m, 1h)',
             },
             'confirm': {
                 'type': 'bool',

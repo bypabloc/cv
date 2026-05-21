@@ -1,0 +1,21 @@
+{
+  "Records": [
+    {
+      "eventID": "evt-contact-0001",
+      "eventName": "INSERT",
+      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/portfolio-contacts-dev/stream/2026-05-17T00:00:00.000",
+      "dynamodb": {
+        "NewImage": {
+          "id": { "S": "019e372b-e0a7-7154-8279-8829bcf6a08c" },
+          "name": { "S": "Pablo Contreras" },
+          "email": { "S": "user@example.com" },
+          "message": { "S": "Hola, me interesa colaborar" },
+          "company": { "S": "Acme" },
+          "niche": { "S": "fintech" },
+          "session_id": { "S": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+          "created_at": { "S": "2026-05-17T12:00:00Z" }
+        }
+      }
+    }
+  ]
+}

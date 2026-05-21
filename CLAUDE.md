@@ -224,6 +224,8 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 │   ├── env/{client,server,dev-cli}/  # env vars por categoria de sensibilidad
 │   └── scripts/          # entrypoints sh
 ├── devtools/             # Python 3.14 + uv (CLI orquestador)
+├── db/cv/                # [legacy] solo seed/ — el schema se unifico en
+│                         #   serverless/shared/db/ (ver alla)
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
 ├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
 ├── .claude/              # rules, skills, agents, hooks de Claude Code
@@ -269,11 +271,13 @@ Antes de trabajar, identifica que contexto necesitas:
 | Gestion de Neon (operativa) | [.claude/rules/neon-management.md](.claude/rules/neon-management.md) | Como gestionar Neon: connection string en SSM, runner de migrations versionado, branches, rollback, comandos `serverless db-*`, seguridad |
 | Secrets serverless | [.claude/rules/serverless-secrets.md](.claude/rules/serverless-secrets.md) | Inventario SSM (`/portfolio/*`), KMS key, IAM scopes por Lambda, rotacion de Turnstile/Neon/emails, estado de AWS SES (production access, DKIM/SPF/DMARC) |
 | PostgreSQL 18 Analytics | [.claude/docs/postgresql-18-analytics/README.md](.claude/docs/postgresql-18-analytics/README.md) | Schema de las 4 tablas del backend, window functions, partitioning, JSONB, queries dashboard. Complementa skill `postgresql-18` |
-| DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/src/common/cache/` |
-| Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/src/common/rate_limit/` |
-| Backend serverless | [serverless/ARCHITECTURE.md](serverless/ARCHITECTURE.md) + [INTEGRATION.md](serverless/INTEGRATION.md) | Estructura + diagramas ASCII + propuesta hibrida DynamoDB+Neon+Cache. Costo $0/mes (todo free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
+| DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/shared/cache/` |
+| Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/shared/rate_limit/` |
+| Backend serverless | [.claude/docs/serverless-backend/README.md](.claude/docs/serverless-backend/README.md) | Modelo de 5 stacks CloudFormation (infra compartida + 4 Lambdas Python `lambda-controller`), flujos ASCII de cada Lambda, schema de tablas DynamoDB + Neon. Costo $0/mes (free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
 | Specs tracking + SES | [docs/specs/tracking-and-ses/README.md](docs/specs/tracking-and-ses/README.md) | Plan en 2 fases: activar el email del form de contacto (SES) y el sistema de tracking de eventos. 8 specs (SPEC-100..204) con AC BDD + archivos afectados + verify commands + DoD. Incluye el historial de migracion del antiguo `serverless/specs/` (eliminado) |
-| Devtools serverless CLI | [devtools/serverless/README.md](devtools/serverless/README.md) | `python devtools/run.py serverless <command>` — build, deploy, invoke, logs, db-migrate, db-branch, rate-limit, cache, smoke |
+| Devtools serverless CLI | [.claude/docs/serverless-backend/04-deploy-operacion.md](.claude/docs/serverless-backend/04-deploy-operacion.md) | `python devtools/run.py serverless <command>` — opera el backend de 5 stacks: `deploy-infra` (stack de infra) y, con `--path=<dir>`, los Lambdas `lambda-controller` (sam-generate, run-local, deploy, invoke-remote, test-unit/integration). Mas db-migrate, db-branch, rate-limit, setup-ssm, metrics. Sin modo SAM monolitico |
+| Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. El `stream_processor` usa el ORM. `db/cv/` quedo como legacy (solo su `seed/` falta migrar) |
+| Formato de Lambdas Python | [.claude/rules/lambda-controller.md](.claude/rules/lambda-controller.md) + [.claude/docs/lambda-controller/](.claude/docs/lambda-controller/) o skill `lambda-controller` | Patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold en `.claude/templates/lambda-controller/`. Cada lambda trae un `lambda.yaml` (manifiesto) del que devtools genera el SAM efimero. Operacion: `serverless run-local/deploy/invoke-remote/test-unit/test-integration --path=<dir>`. Aplica a Lambdas Python (legolambda), NO al frontend Astro |
 
 ## Skills disponibles
 
@@ -315,8 +319,9 @@ anti-bot con Cloudflare Turnstile. Stack IaC: AWS SAM. Costo: $0/mes
 | `cloudflare-turnstile` | CAPTCHA alternativa privacy-preserving: 1 sitekey para 6 subdominios, Managed mode form + Invisible tracking, idempotency_key, CSP directives |
 | `neon` | Neon serverless PostgreSQL: scale-to-zero, branching git-style, integracion con AWS Lambda Python via psycopg3, free tier 0.5GB + 191.9h compute/mes, vs RDS/Supabase/PlanetScale |
 | `postgresql-18` | PostgreSQL 18 (AIO, UUIDv7, virtual generated columns, skip scan, `RETURNING OLD/NEW`, psycopg3) — referencia del motor que usa Neon |
-| `dynamodb-cache` | Sistema de cache con DynamoDB TTL: `@cached(ttl)` decorator, lock distribuido (cache stampede prevention), stale-while-revalidate, tag invalidation. Vive en `serverless/src/common/cache/` y se usa desde todas las Lambdas |
-| `serverless-rate-limit` | Rate-limiting per-IP self-managed con DynamoDB (alternativa $0/mes a AWS WAF Web ACL que cuesta $7/mes). Sliding window weighted, atomic counters, auto-blacklist bot detection (3+ tokens Turnstile validos en 60s -> blacklist 24h), IP whitelist/blacklist, country rules. Vive en `serverless/src/common/rate_limit/` + 2 tablas DynamoDB |
+| `dynamodb-cache` | Sistema de cache con DynamoDB TTL: `@cached(ttl)` decorator, lock distribuido (cache stampede prevention), stale-while-revalidate, tag invalidation. Vive en `serverless/shared/cache/` y se usa desde todas las Lambdas |
+| `serverless-rate-limit` | Rate-limiting per-IP self-managed con DynamoDB (alternativa $0/mes a AWS WAF Web ACL que cuesta $7/mes). Sliding window weighted, atomic counters, auto-blacklist bot detection (3+ tokens Turnstile validos en 60s -> blacklist 24h), IP whitelist/blacklist, country rules. Vive en `serverless/shared/rate_limit/` + 2 tablas DynamoDB |
+| `lambda-controller` | Formato para crear/refactorizar Lambdas Python con el patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold reproducible en `.claude/templates/lambda-controller/`, docs en `.claude/docs/lambda-controller/`. Pensado para repos de Lambdas Python (legolambda) |
 
 ## Convenciones (resumen)
 

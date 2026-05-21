@@ -1,0 +1,18 @@
+# Artefactos efimeros generados por devtools — NO versionar.
+
+# SAM template generado desde lambda.yaml (sam-generate).
+template.yaml
+
+# Build de SAM.
+.aws-sam/
+
+# Libreria comun vendorizada por devtools (fuente: serverless/shared/).
+core/shared/
+
+# Caches de Python / pytest.
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/

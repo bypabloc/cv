@@ -1,0 +1,36 @@
+{
+  "Records": [
+    {
+      "eventID": "evt-contact-0002",
+      "eventName": "INSERT",
+      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/portfolio-contacts-dev/stream/2026-05-17T00:00:00.000",
+      "dynamodb": {
+        "NewImage": {
+          "id": { "S": "019e372b-e0a7-7154-8279-8829bcf6a08d" },
+          "name": { "S": "Pablo Contreras" },
+          "email": { "S": "user@example.com" },
+          "message": { "S": "Consulta de proyecto" },
+          "created_at": { "S": "2026-05-17T12:05:00Z" }
+        }
+      }
+    },
+    {
+      "eventID": "evt-tracking-0001",
+      "eventName": "INSERT",
+      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/portfolio-tracking-dev/stream/2026-05-17T00:00:00.000",
+      "dynamodb": {
+        "NewImage": {
+          "session_id": { "S": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+          "page_id": { "S": "019e372b-e0a7-7154-8279-8829bcf6a08c" },
+          "page_url": { "S": "https://the-full-stack.com/" },
+          "page_path": { "S": "/" },
+          "niche": { "S": "generic" },
+          "viewport_width": { "N": "1920" },
+          "viewport_height": { "N": "1080" },
+          "expires_at": { "N": "1763553600" },
+          "created_at": { "S": "2026-05-17T12:06:00Z" }
+        }
+      }
+    }
+  ]
+}

@@ -1,4 +1,0 @@
-# Lambda Layer postgres_python (psycopg3 binary arm64)
-# Build: sam build --use-container (cross-platform compile a arm64)
-
-psycopg[binary]>=3.2,<4.0

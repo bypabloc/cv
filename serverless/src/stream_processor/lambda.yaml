@@ -1,0 +1,48 @@
+# Manifiesto del Lambda `stream_processor` — fuente de verdad de su config.
+#
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
+# devtools traduce este manifiesto al template SAM efimero:
+#   python devtools/run.py serverless sam-generate \
+#     --path=serverless/src/stream_processor
+#
+# El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
+# edita a mano: se cambia este lambda.yaml y se regenera.
+
+# --- Identidad ---
+name: stream-processor
+description: Replica los cambios de DynamoDB (contacts, tracking) a Neon PostgreSQL.
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 60       # segundos
+
+# --- Como se invoca este Lambda ---
+# on-table-changes: reacciona a cada cambio (INSERT/MODIFY/REMOVE) de las
+# tablas listadas. devtools conecta el DynamoDB Stream de cada tabla y la
+# cola de errores (DLQ) automaticamente.
+trigger:
+  type: on-table-changes
+  tables:
+    - contacts
+    - tracking
+
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # El Lambda lee los Streams de contacts/tracking (declarado en trigger);
+  # no necesita leer/escribir el contenido de ninguna tabla directamente.
+  tables: []
+  # Secretos que el Lambda lee (de SSM).
+  secrets:
+    - neon-url
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+  prod:
+    LOG_LEVEL: WARNING

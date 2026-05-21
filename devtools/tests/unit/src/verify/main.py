@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+
 from verify.main import build_reports
 from verify.main import classify_file
 from verify.main import collect_changed_files

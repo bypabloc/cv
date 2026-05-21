@@ -1,8 +1,16 @@
-"""Test commands for the SAM backend.
+"""Comandos de test de la libreria comun del backend.
 
-pytest unit + integration con moto + responses para mockear AWS y httpx.
-Sigue el patron python.md: BDD-style en docstrings, AAA en cuerpo,
-asserts EXACTOS, coverage >= 80% per-file.
+`cmd_test` / `cmd_test_coverage` corren pytest sobre `serverless/tests/`,
+que cubre la libreria comun `serverless/shared/` (cors, logger,
+rate_limit, db, cache, turnstile, etc.).
+
+Los tests de cada Lambda viven DENTRO del Lambda
+(`serverless/src/<lambda>/tests/`) y se corren con
+`serverless test-unit --path=<lambda>` (modo lambda-controller, ver
+`lambda_controller.py`).
+
+moto + responses mockean AWS y httpx. Patron python.md: BDD-style en
+docstrings, AAA en cuerpo, asserts EXACTOS, coverage >= 80% per-file.
 """
 
 from __future__ import annotations
@@ -53,33 +61,6 @@ def cmd_test(flags: dict[str, Any]) -> int:
 
     if result.returncode == 0:
         print(_c(GREEN, f'OK  tests pasan + coverage >= {threshold}%'))
-    return result.returncode
-
-
-def cmd_test_unit(flags: dict[str, Any]) -> int:
-    """pytest tests/unit/ -m unit."""
-    args = _pytest_base_args(flags)
-    args.extend(['-m', flags.get('marker') or 'unit', 'tests/unit/'])
-
-    files = flags.get('files')
-    if files:
-        args = [a for a in args if a != 'tests/unit/']
-        args.extend(f.strip() for f in files.split(','))
-
-    print(_c(CYAN, f'$ {" ".join(args)}'))
-    result = subprocess.run(args, cwd=_SERVERLESS_DIR, check=False)
-    return result.returncode
-
-
-def cmd_test_integration(flags: dict[str, Any]) -> int:
-    """pytest tests/integration/ -m integration."""
-    args = _pytest_base_args(flags)
-    args.extend(
-        ['-m', flags.get('marker') or 'integration', 'tests/integration/']
-    )
-
-    print(_c(CYAN, f'$ {" ".join(args)}'))
-    result = subprocess.run(args, cwd=_SERVERLESS_DIR, check=False)
     return result.returncode
 
 

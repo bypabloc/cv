@@ -1,0 +1,46 @@
+# Manifiesto del Lambda `db` — fuente de verdad de su configuracion.
+#
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
+# devtools traduce este manifiesto al template SAM efimero:
+#   python devtools/run.py serverless sam-generate --path=serverless/src/db
+#
+# El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
+# edita a mano: se cambia este lambda.yaml y se regenera.
+
+# --- Identidad ---
+name: db
+description: Gestiona el schema PostgreSQL del portfolio (migraciones Alembic).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 120      # segundos
+
+# --- Como se invoca este Lambda ---
+# direct  : se invoca directo (aws lambda invoke / deploy hook). Sin HTTP.
+# http    : expone un endpoint en la API del backend.
+# on-table-changes : reacciona a cambios en tablas DynamoDB.
+trigger:
+  type: direct
+
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # Tablas DynamoDB que el Lambda lee/escribe. El Lambda db no usa.
+  tables: []
+  # Secretos que el Lambda lee (de SSM). Solo el nombre corto: devtools
+  # resuelve el path completo y el permiso de descifrado.
+  secrets:
+    - neon-url
+  # true si el Lambda envia email (SES).
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+# 'default' aplica a todos; un stage especifico sobrescribe esas claves.
+env:
+  default:
+    LOG_LEVEL: INFO
+  prod:
+    LOG_LEVEL: WARNING

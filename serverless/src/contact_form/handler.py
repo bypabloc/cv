@@ -17,14 +17,14 @@ from typing import Any
 from aws_lambda_powertools.metrics import MetricUnit
 from pydantic import ValidationError as PydanticValidationError
 
-from _shared.cors import resolve_origin
-from _shared.exceptions import ApplicationError, ValidationError
-from _shared.ip_extractor import extract_country, extract_ip
-from _shared.logger import logger
-from _shared.metrics import metrics
-from _shared.rate_limit import check_or_raise
-from _shared.responses import error_response, json_response
-from _shared.tracer import tracer
+from shared.cors import resolve_origin
+from shared.exceptions import ApplicationError, ValidationError
+from shared.ip_extractor import extract_country, extract_ip
+from shared.logger import logger
+from shared.metrics import metrics
+from shared.rate_limit import check_or_raise
+from shared.responses import error_response, json_response
+from shared.tracer import tracer
 from contact_form.schemas import ContactCreatedOutput, ContactFormInput
 from contact_form.service import process_contact_form
 
@@ -88,11 +88,11 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         # 5. Auto-blacklist counter: mark turnstile_validated AFTER success
         # (este atomic ADD ya se hizo dentro de check_or_raise con turnstile_validated=False;
         # ahora hacemos un segundo INCREMENT marcando turnstile_validated=True)
-        from _shared.rate_limit.auto_blacklist import (
+        from shared.rate_limit.auto_blacklist import (
             create_blacklist_rule,
             should_auto_blacklist,
         )
-        from _shared.rate_limit.buckets import increment_bucket
+        from shared.rate_limit.buckets import increment_bucket
 
         bucket = increment_bucket(
             ip=ip,

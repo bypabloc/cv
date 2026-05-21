@@ -1,6 +1,6 @@
 ---
 description: "Gestion operativa de Neon PostgreSQL en el backend serverless del portfolio: connection string en SSM, migraciones Alembic via la Lambda db, branches git-style, comandos devtools, reglas de seguridad y rollback"
-globs: "serverless/src/_shared/db/**/*.py,serverless/src/db/**/*.py,devtools/serverless/database.py"
+globs: "serverless/shared/db/**/*.py,serverless/src/db/**/*.py,devtools/serverless/database.py"
 ---
 
 # Gestion de Neon PostgreSQL - Portfolio
@@ -17,8 +17,8 @@ globs: "serverless/src/_shared/db/**/*.py,serverless/src/db/**/*.py,devtools/ser
 
 Aplica SIEMPRE que se trabaje con:
 
-- Los modelos SQLAlchemy en `serverless/src/_shared/db/`
-- Las migraciones Alembic en `serverless/src/_shared/db/alembic/`
+- Los modelos SQLAlchemy en `serverless/shared/db/`
+- Las migraciones Alembic en `serverless/shared/db/alembic/`
 - La Lambda `db` (`serverless/src/db/`)
 - `devtools/serverless/database.py` (comandos `serverless db-*`)
 - Connection string de Neon en SSM (`/portfolio/neon-url`)
@@ -36,8 +36,8 @@ Aplica SIEMPRE que se trabaje con:
 - **SIEMPRE** agregar `sslmode=require&channel_binding=require` a la URL.
 - **SIEMPRE** usar `psycopg` v3 — NUNCA `psycopg2` (deprecado).
 - **SIEMPRE** versionar el schema con los modelos SQLAlchemy de
-  `serverless/src/_shared/db/models/` + migraciones Alembic en
-  `_shared/db/alembic/versions/`. Es la unica fuente de verdad.
+  `serverless/shared/db/models/` + migraciones Alembic en
+  `shared/db/alembic/versions/`. Es la unica fuente de verdad.
 - **NUNCA** modificar el schema de Neon a mano via `psql` o la consola web —
   todo cambio de schema pasa por una migracion Alembic nueva (auditabilidad).
 - **NUNCA** editar una migracion Alembic ya aplicada en `prod` — rompe la
@@ -80,9 +80,9 @@ python devtools/run.py serverless setup-ssm --name=/portfolio/neon-url
 ## Migrations: Alembic via la Lambda `db`
 
 El schema lo definen los modelos SQLAlchemy de
-`serverless/src/_shared/db/models/` — esa es la unica fuente de verdad.
+`serverless/shared/db/models/` — esa es la unica fuente de verdad.
 Las migraciones son archivos Alembic en
-`serverless/src/_shared/db/alembic/versions/`. La Lambda `db`
+`serverless/shared/db/alembic/versions/`. La Lambda `db`
 (`serverless/src/db/`) corre Alembic dentro de AWS; devtools la invoca.
 
 > El runner SQL viejo (`migrate.py` + los `.sql` numerados +
@@ -124,18 +124,18 @@ La Lambda `db` tiene estructura factory — el payload trae `command`:
 ## Crear una migration nueva
 
 1. Modificar los modelos SQLAlchemy en
-   `serverless/src/_shared/db/models/` (agregar columna, tabla, indice).
+   `serverless/shared/db/models/` (agregar columna, tabla, indice).
 2. Autogenerar la migracion con Alembic (en local, con `DATABASE_URL`
    apuntando a un branch Neon de prueba):
 
    ```bash
    cd serverless
    DATABASE_URL=<branch-de-prueba> \
-     .venv/bin/alembic -c src/_shared/db/alembic.ini revision \
+     .venv/bin/alembic -c shared/db/alembic.ini revision \
      --autogenerate -m "<descripcion>"
    ```
 
-3. **Revisar el archivo generado** en `_shared/db/alembic/versions/` —
+3. **Revisar el archivo generado** en `shared/db/alembic/versions/` —
    Alembic no autogenera todo (particiones, triggers, extensiones,
    `op.execute()` queda manual; ver `_init_schema_extras.py`).
 4. **Probar `upgrade` + `downgrade` en un branch Neon** antes de tocar
@@ -225,9 +225,9 @@ Tras crear/modificar una migracion Alembic:
 # 1. Probar upgrade + downgrade + upgrade en un branch Neon de prueba
 python devtools/run.py serverless db-branch create --branch=test-verify --parent=main
 #    apuntar DATABASE_URL al branch y correr (en local, con el alembic del repo):
-#      alembic -c src/_shared/db/alembic.ini upgrade head
-#      alembic -c src/_shared/db/alembic.ini downgrade base
-#      alembic -c src/_shared/db/alembic.ini upgrade head
+#      alembic -c shared/db/alembic.ini upgrade head
+#      alembic -c shared/db/alembic.ini downgrade base
+#      alembic -c shared/db/alembic.ini upgrade head
 
 # 2. Ver que aplicaria sin ejecutar
 python devtools/run.py serverless db-migrate --stage=dev --dry-run
@@ -263,8 +263,8 @@ por UN solo Alembic. Antes habia dos sistemas (runner SQL para el backend
 
 | Aspecto | Valor actual |
 |---------|--------------|
-| Modelos (fuente de verdad) | `serverless/src/_shared/db/models/` — 35 tablas SQLAlchemy 2.x (CV + datos del visitante) |
-| Migraciones | un solo Alembic en `serverless/src/_shared/db/alembic/` |
+| Modelos (fuente de verdad) | `serverless/shared/db/models/` — 35 tablas SQLAlchemy 2.x (CV + datos del visitante) |
+| Migraciones | un solo Alembic en `serverless/shared/db/alembic/` |
 | Tabla de versiones | la estandar `alembic_version` |
 | Runner | la Lambda `db` (`serverless/src/db/`) corre Alembic dentro de AWS |
 | Comandos | `db-migrate`, `db-rollback`, `db-current`, `db-show-migrations` via `python devtools/run.py serverless <cmd>` |
@@ -272,7 +272,7 @@ por UN solo Alembic. Antes habia dos sistemas (runner SQL para el backend
 Reglas duras:
 
 - TODO cambio de schema (backend o CV) es una migracion Alembic nueva en
-  `_shared/db/alembic/versions/`. NO se editan los `.sql` archivados.
+  `shared/db/alembic/versions/`. NO se editan los `.sql` archivados.
 - El runner SQL viejo (`serverless/scripts/migrate.py` + los `.sql`) esta
   archivado en `serverless/migrations/_archive/` — solo referencia
   historica, NO se aplica mas.
@@ -280,10 +280,10 @@ Reglas duras:
   `db-current` y, si hace falta adoptar Alembic, `{"command": "stamp"}` —
   NUNCA un `migrate` que intente recrear tablas existentes.
 - La connection string es la `DATABASE_URL` que el template SAM inyecta
-  desde SSM (`SSM_NEON_URL_PATH`); el modulo `_shared/db/url.py` la
+  desde SSM (`SSM_NEON_URL_PATH`); el modulo `shared/db/url.py` la
   resuelve. Mismo patron de secretos que el resto.
 
-Detalle operativo: `serverless/src/_shared/db/` (modelos + Alembic) y
+Detalle operativo: `serverless/shared/db/` (modelos + Alembic) y
 `serverless/src/db/` (la Lambda).
 
 ## Referencias cruzadas
@@ -295,6 +295,6 @@ Detalle operativo: `serverless/src/_shared/db/` (modelos + Alembic) y
 - Schema de las tablas + queries analiticas:
   `.claude/docs/postgresql-18-analytics/README.md`
 - Schema PostgreSQL unificado (modelos SQLAlchemy + Alembic):
-  `serverless/src/_shared/db/` + diagrama `docs/diagrams/db-er.mmd`
+  `serverless/shared/db/` + diagrama `docs/diagrams/db-er.mmd`
 - Secretos en SSM (patron general): `serverless/docs/secrets.md`
 - PostgreSQL 18 (features del motor): skill `postgresql-18`

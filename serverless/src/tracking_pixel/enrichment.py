@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from _shared.cache import cached
+from shared.cache import cached
 
 # TTL del cache de UA parsing: 24h. Un mismo User-Agent string repetido en
 # invocaciones warm no re-ejecuta el regex (SPEC-204).

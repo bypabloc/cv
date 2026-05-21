@@ -8,7 +8,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from _shared.dynamodb_client import reset_resource_cache
+from shared.dynamodb_client import reset_resource_cache
 
 
 @pytest.fixture

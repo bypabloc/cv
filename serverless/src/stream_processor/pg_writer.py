@@ -2,7 +2,7 @@
 
 El `stream_processor` consume DynamoDB Streams y replica cada record en Neon.
 Antes este modulo emitia SQL crudo via psycopg; ahora usa los modelos ORM de
-`_shared/db/` — los modelos son la unica fuente de verdad del schema.
+`shared/db/` — los modelos son la unica fuente de verdad del schema.
 
 Patron de transaccion: el handler abre UNA `Session` por record (via
 `db_session()`), inserta el contacto/evento + su fila de idempotencia, y el
@@ -20,7 +20,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from _shared.db.models import Contact, ProcessedStreamEvent, TrackingEvent
+from shared.db.models import Contact, ProcessedStreamEvent, TrackingEvent
 
 
 def is_event_processed(session: Session, event_id: str) -> bool:

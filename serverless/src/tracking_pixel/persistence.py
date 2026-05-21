@@ -7,8 +7,8 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
-from _shared.dynamodb_client import get_table
-from _shared.ulid import new_uuidv7
+from shared.dynamodb_client import get_table
+from shared.ulid import new_uuidv7
 
 # 60 dias en segundos
 TTL_SECONDS = 60 * 24 * 60 * 60
@@ -32,7 +32,7 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     created_at = datetime.now(UTC).isoformat()
     expires_at = int(time.time()) + TTL_SECONDS
 
-    # El resource DynamoDB vive en module scope (_shared.dynamodb_client):
+    # El resource DynamoDB vive en module scope (shared.dynamodb_client):
     # se reusa entre invocaciones warm del mismo contenedor Lambda en vez
     # de re-crearse en cada save (~150ms de cold start por invocacion).
     table_name = os.environ.get('TRACKING_TABLE_NAME', 'portfolio-tracking-dev')

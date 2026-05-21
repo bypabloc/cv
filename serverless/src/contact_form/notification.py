@@ -9,8 +9,8 @@ from typing import Any
 
 import boto3
 
-from _shared.logger import logger
-from _shared.ssm_client import get_parameter
+from shared.logger import logger
+from shared.ssm_client import get_parameter
 
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
 

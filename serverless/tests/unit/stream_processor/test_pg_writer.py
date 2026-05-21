@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from _shared.db.models import Contact, ProcessedStreamEvent, TrackingEvent
+from shared.db.models import Contact, ProcessedStreamEvent, TrackingEvent
 from stream_processor import pg_writer
 
 pytestmark = pytest.mark.unit

@@ -8,17 +8,17 @@ Idempotencia: cada Stream record trae un `eventID` unico. Antes de insertar
 se verifica en `processed_stream_events`; el INSERT del dato + su fila de
 idempotencia confirman en la MISMA transaccion.
 
-Persistencia: via los modelos ORM de `_shared/db/` (una `Session` por record).
+Persistencia: via los modelos ORM de `shared/db/` (una `Session` por record).
 """
 
 from typing import Any
 
 from aws_lambda_powertools.metrics import MetricUnit
 
-from _shared.db.session import db_session
-from _shared.logger import logger
-from _shared.metrics import metrics
-from _shared.tracer import tracer
+from shared.db.session import db_session
+from shared.logger import logger
+from shared.metrics import metrics
+from shared.tracer import tracer
 from stream_processor.pg_writer import (
     insert_contact,
     insert_tracking,

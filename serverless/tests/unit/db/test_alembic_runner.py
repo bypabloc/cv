@@ -20,14 +20,14 @@ class TestBuildConfig:
         Given build_config sin buffer,
         When se invoca,
         Then devuelve un Config con script_location apuntando al alembic/
-        del modulo _shared/db.
+        del modulo shared/db.
         """
         cfg = alembic_runner.build_config()
 
         assert isinstance(cfg, Config)
         script_location = cfg.get_main_option('script_location')
         assert script_location is not None
-        assert script_location.endswith('_shared/db/alembic')
+        assert script_location.endswith('shared/db/alembic')
 
     def test_when_out_buffer_given_then_config_writes_to_it(self) -> None:
         """

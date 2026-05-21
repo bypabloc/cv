@@ -1,7 +1,7 @@
 """@module alembic_runner — wrapper de Alembic para la Lambda `db`.
 
 Centraliza la construccion del `alembic.config.Config` apuntando al modulo
-unificado `_shared/db/alembic`. Los comandos (`commands/*`) invocan Alembic
+unificado `shared/db/alembic`. Los comandos (`commands/*`) invocan Alembic
 programaticamente via este modulo — no via subprocess (la Lambda no tiene
 shell ni el binario `alembic` en el PATH; si la libreria, empaquetada con
 el codigo de la Lambda).
@@ -17,8 +17,8 @@ from pathlib import Path
 from alembic.config import Config
 
 # La Lambda `db` empaqueta `serverless/src/`; el modulo de schema vive en
-# `_shared/db/`. La config de Alembic apunta a su `alembic.ini` + `alembic/`.
-_DB_MODULE = Path(__file__).resolve().parent.parent / '_shared' / 'db'
+# `shared/db/`. La config de Alembic apunta a su `alembic.ini` + `alembic/`.
+_DB_MODULE = Path(__file__).resolve().parent.parent / 'shared' / 'db'
 
 
 def build_config(out: io.StringIO | None = None) -> Config:

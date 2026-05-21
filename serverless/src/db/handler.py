@@ -20,10 +20,10 @@ from typing import Any
 
 from aws_lambda_powertools.metrics import MetricUnit
 
-from _shared.db.url import ensure_database_url
-from _shared.logger import logger
-from _shared.metrics import metrics
-from _shared.tracer import tracer
+from shared.db.url import ensure_database_url
+from shared.logger import logger
+from shared.metrics import metrics
+from shared.tracer import tracer
 from db.commands import COMMANDS
 
 

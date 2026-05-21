@@ -32,7 +32,7 @@ serverless/
 │
 ├── src/                                 # Codigo de los handlers Python
 │   │
-│   ├── _shared/                          # Codigo compartido entre Lambdas (sin Layers)
+│   ├── shared/                          # Codigo compartido entre Lambdas (sin Layers)
 │   │   ├── __init__.py
 │   │   ├── config.py                    # Settings desde env vars + SSM (Pydantic)
 │   │   ├── logger.py                    # Powertools Logger configurado
@@ -133,7 +133,7 @@ serverless/
 │   ├── pytest.ini                       # Markers: unit, integration
 │   │
 │   ├── unit/                            # Path mirror de src/
-│   │   ├── _shared/
+│   │   ├── shared/
 │   │   │   ├── test_cors.py
 │   │   │   ├── test_ip_extractor.py
 │   │   │   ├── test_responses.py
@@ -198,9 +198,9 @@ serverless/
 | **Handler layer** | `src/<lambda>/handler.py` | Entry point Lambda (`lambda_handler(event, context)`) — solo orquesta, no logica |
 | **Service layer** | `src/<lambda>/service.py` | Logica de negocio (combinar persistence + notification + validation) |
 | **Persistence** | `src/<lambda>/persistence.py` | boto3 DynamoDB `put_item` con `ConditionExpression` |
-| **Validation** | `src/<lambda>/schemas.py` + `src/_shared/validators.py` | JSON Schema (API GW) + Pydantic v2 (runtime) |
+| **Validation** | `src/<lambda>/schemas.py` + `shared/validators.py` | JSON Schema (API GW) + Pydantic v2 (runtime) |
 | **External APIs** | `src/contact_form/turnstile.py` | httpx POST a Cloudflare siteverify |
-| **Shared layer** | `src/_shared/*.py` | Reutilizable entre 3 Lambdas (clients boto3 en module scope, types, helpers) |
+| **Shared layer** | `shared/*.py` | Reutilizable entre 3 Lambdas (clients boto3 en module scope, types, helpers) |
 | **Templates email** | `src/contact_form/templates/*.{mjml,html,txt}` | MJML source + HTML/TXT compilados |
 | **Tests** | `tests/unit/<lambda>/test_*.py` | pytest path-mirroring + moto + responses |
 | **Operations** | `scripts/*.sh`, `scripts/*.py` | Setup SSM, verify DNS, smoke tests |
@@ -761,11 +761,11 @@ LATENCIA STREAM REPLICA (DynamoDB write -> visible en PG):
   5-30s tipico, max 60s (DLQ si excede)
 ```
 
-## 4.8. Diagrama de flujo: cache module (src/_shared/cache/)
+## 4.8. Diagrama de flujo: cache module (shared/cache/)
 
 Sistema de cache de proposito general con DynamoDB TTL. Cualquier Lambda
 del modulo (contact-form, tracking-pixel, stream-processor) puede usarlo
-via import desde `src/_shared/cache/`. Detalle en
+via import desde `shared/cache/`. Detalle en
 `.claude/docs/dynamodb-cache/` (8 docs) + skill `dynamodb-cache`.
 
 ```
@@ -934,7 +934,7 @@ CUANDO NO USAR cache:
 - Stream processing (cada record es unico)
 - Operaciones con side effects (writes a Dynamo/SES/PG)
 
-## 4.9. Diagrama de flujo: rate-limit middleware (_shared/rate_limit/)
+## 4.9. Diagrama de flujo: rate-limit middleware (shared/rate_limit/)
 
 Reemplaza la funcionalidad de AWS WAF rate-based rules con un middleware
 self-managed en cada Lambda. Costo: $0/mes (DynamoDB free tier perpetuo).
@@ -970,7 +970,7 @@ Detalle completo en `.claude/docs/serverless-rate-limit/` + skill
             +----------------------+
             | rate_limit_rules     |
             | (cached via          |
-            |  _shared/cache)       |
+            |  shared/cache)       |
             |  - endpoint rule     |   limit + window_seconds
             |  - ip whitelist      |   skip rate-limit
             |  - ip blacklist      |   immediate 403
@@ -1159,7 +1159,7 @@ COSTO:
 +-------------+---------+        +-------------+---------------+
 |                                                              |
 |  Layer 1: Middleware rate-limit per-IP (DynamoDB)            |
-|    Sliding window weighted en _shared/rate_limit/             |
+|    Sliding window weighted en shared/rate_limit/             |
 |    - /contact: 3 req/5min/IP                                 |
 |    - /track:   30 req/5min/IP                                |
 |    - IP whitelist + blacklist + country rules                |
@@ -1505,7 +1505,7 @@ template.yaml (resources)
 |     SSESpecification: { SSEEnabled: true }
 |     # Items: "endpoint#/contact" + "endpoint#/track" + "ip#X.X.X.X" (white/blacklist)
 |     #        + "country#CN" (country rules)
-|     # Volumen ~10-50 items. Cacheable via _shared/cache @cached(ttl=60)
+|     # Volumen ~10-50 items. Cacheable via shared/cache @cached(ttl=60)
 |
 +-- AWS::DynamoDB::Table                RateLimitBucketsTable
 |     TableName: rate_limit_buckets
@@ -1547,7 +1547,7 @@ template.yaml (resources)
 |       Enabled: true
 |     SSESpecification:
 |       SSEEnabled: true                  # Encrypted at rest (AWS-owned key)
-|     # Tabla generica de cache (src/_shared/cache/)
+|     # Tabla generica de cache (shared/cache/)
 |     # Free tier: 25GB + 25 WCU + 25 RCU perpetuo lo cubre
 |     # Sin Streams (cache no es source of truth)
 |
@@ -1678,7 +1678,7 @@ Developer local
 |------------|--------|-----------------------------|
 | Carpetas por dominio (services, selectors, handlers) | `.claude/rules/python.md` | `src/<lambda>/` con `handler.py` + `service.py` + `persistence.py` + `schemas.py` |
 | Un archivo por entidad < 300 lineas | `.claude/rules/python.md` | Cada Lambda esta dividida en handler/service/persistence/schemas |
-| Type hints obligatorios | `.claude/rules/python.md` | `src/_shared/types.py` con TypedDicts compartidos |
+| Type hints obligatorios | `.claude/rules/python.md` | `shared/types.py` con TypedDicts compartidos |
 | Single quotes para strings tecnicos | `.claude/rules/python.md` | Codigo Python en todo el modulo |
 | Trailing commas | `.claude/rules/python.md` | Minimiza git diff en multilinea |
 | pytest path-mirroring | `.claude/rules/python.md` | `tests/unit/<X>/test_<Y>.py` mirror de `src/<X>/<Y>.py` |

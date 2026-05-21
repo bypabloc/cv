@@ -16,7 +16,7 @@ dependencies = [
   "pydantic[email]>=2.5,<3.0",
   "pydantic-settings>=2.0,<3.0",
   "boto3>=1.34.0,<2.0",
-  # psycopg: driver. SQLAlchemy: ORM (modelos de _shared/db, unica fuente
+  # psycopg: driver. SQLAlchemy: ORM (modelos de shared/db, unica fuente
   # de verdad del schema). Los usan las Lambdas stream_processor y db.
   "psycopg[binary]>=3.2,<4.0",
   "sqlalchemy>=2.0,<3.0",
@@ -71,7 +71,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["src"]
+source = ["src", "shared"]
 omit = ["**/__init__.py", "**/tests/*", "src/layers/*"]
 
 [tool.coverage.report]
@@ -89,7 +89,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unreachable = true
 disallow_untyped_defs = true
-files = ["src/", "tests/"]
+files = ["src/", "shared/", "tests/"]
 # Alembic env.py + migraciones: scripts de config con la API dinamica de
 # Alembic (op.*, callbacks con Literal). No es codigo de aplicacion.
-exclude = ["src/_shared/db/alembic/.*", "\\.aws-sam/.*"]
+exclude = ["shared/db/alembic/.*", "\\.aws-sam/.*"]

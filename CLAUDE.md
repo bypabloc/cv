@@ -225,7 +225,7 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 │   └── scripts/          # entrypoints sh
 ├── devtools/             # Python 3.14 + uv (CLI orquestador)
 ├── db/cv/                # [legacy] solo seed/ — el schema se unifico en
-│                         #   serverless/src/_shared/db/ (ver alla)
+│                         #   serverless/shared/db/ (ver alla)
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
 ├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
 ├── .claude/              # rules, skills, agents, hooks de Claude Code
@@ -276,7 +276,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Backend serverless | [serverless/ARCHITECTURE.md](serverless/ARCHITECTURE.md) + [INTEGRATION.md](serverless/INTEGRATION.md) | Estructura + diagramas ASCII + propuesta hibrida DynamoDB+Neon+Cache. Costo $0/mes (todo free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
 | Specs tracking + SES | [docs/specs/tracking-and-ses/README.md](docs/specs/tracking-and-ses/README.md) | Plan en 2 fases: activar el email del form de contacto (SES) y el sistema de tracking de eventos. 8 specs (SPEC-100..204) con AC BDD + archivos afectados + verify commands + DoD. Incluye el historial de migracion del antiguo `serverless/specs/` (eliminado) |
 | Devtools serverless CLI | [devtools/serverless/README.md](devtools/serverless/README.md) | `python devtools/run.py serverless <command>` — backend SAM del portfolio (build, deploy, invoke, logs, db-migrate, db-branch, rate-limit, cache, smoke) Y, con `--path=<dir>`, lambdas tipo `lambda-controller` (sam-generate, run-local, deploy, invoke-remote, test-unit, test-integration) |
-| Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/src/_shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. El `stream_processor` usa el ORM. `db/cv/` quedo como legacy (solo su `seed/` falta migrar) |
+| Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. El `stream_processor` usa el ORM. `db/cv/` quedo como legacy (solo su `seed/` falta migrar) |
 | Formato de Lambdas Python | [.claude/rules/lambda-controller.md](.claude/rules/lambda-controller.md) + [.claude/docs/lambda-controller/](.claude/docs/lambda-controller/) o skill `lambda-controller` | Patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold en `.claude/templates/lambda-controller/`. Cada lambda trae un `lambda.yaml` (manifiesto) del que devtools genera el SAM efimero. Operacion: `serverless run-local/deploy/invoke-remote/test-unit/test-integration --path=<dir>`. Aplica a Lambdas Python (legolambda), NO al frontend Astro |
 
 ## Skills disponibles

@@ -14,8 +14,8 @@ runner SQL casero: archivos numerados `NNN_<nombre>.sql` (+ su par
 
 Todo el schema PostgreSQL del portfolio (las tablas del backend + las del
 CV) se unifico en un solo set de modelos SQLAlchemy 2.x en
-`serverless/src/_shared/db/`, gestionado por **un solo Alembic**. La
-migracion inicial de Alembic (`_shared/db/alembic/versions/`) reproduce el
+`serverless/shared/db/`, gestionado por **un solo Alembic**. La
+migracion inicial de Alembic (`shared/db/alembic/versions/`) reproduce el
 schema que estos `.sql` construian.
 
 La Lambda `db` (`serverless/src/db/`) corre Alembic dentro de AWS:

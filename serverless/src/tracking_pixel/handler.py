@@ -16,14 +16,14 @@ from typing import Any
 from aws_lambda_powertools.metrics import MetricUnit
 from pydantic import ValidationError as PydanticValidationError
 
-from _shared.cors import public_cors_origin
-from _shared.exceptions import ApplicationError, ValidationError
-from _shared.ip_extractor import extract_country, extract_ip
-from _shared.logger import logger
-from _shared.metrics import metrics
-from _shared.rate_limit import check_or_raise
-from _shared.responses import error_response, no_content_response
-from _shared.tracer import tracer
+from shared.cors import public_cors_origin
+from shared.exceptions import ApplicationError, ValidationError
+from shared.ip_extractor import extract_country, extract_ip
+from shared.logger import logger
+from shared.metrics import metrics
+from shared.rate_limit import check_or_raise
+from shared.responses import error_response, no_content_response
+from shared.tracer import tracer
 from tracking_pixel.schemas import TrackingEventInput
 from tracking_pixel.service import process_tracking_event
 
@@ -37,7 +37,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     # /track lo invoca navigator.sendBeacon (modo `ping`), que exige
     # Access-Control-Allow-Origin: '*' literal. Un echo del Origin hace
     # fallar la request con CORS error. /track es tracking anonimo sin
-    # credenciales, asi que '*' es correcto (ver _shared.cors).
+    # credenciales, asi que '*' es correcto (ver shared.cors).
     origin = public_cors_origin()
     ip = extract_ip(event)
     country = extract_country(event)

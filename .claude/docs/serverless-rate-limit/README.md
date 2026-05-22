@@ -28,7 +28,7 @@ last-reviewed: 2026-05-14
 | [02-algorithms-comparison.md](./02-algorithms-comparison.md) | Algoritmos: fixed window, sliding window log, **sliding window weighted**, token bucket, leaky bucket | Antes de elegir algoritmo |
 | [02-sliding-window-weighted-deep-dive.md](./02-sliding-window-weighted-deep-dive.md) | Deep dive del algoritmo recomendado: math, race conditions, edge cases | Antes de implementar check |
 | [03-schema-design.md](./03-schema-design.md) | Schema de las 2 tablas: `rate_limit_rules` y `rate_limit_buckets` | Antes de crear infra (SAM template incluido) |
-| [04-python-implementation.md](./04-python-implementation.md) | Codigo Python COMPLETO: check.py, rules.py, buckets.py, auto_blacklist.py, exceptions.py | Para copy-paste a `serverless/src/common/rate_limit/` |
+| [04-python-implementation.md](./04-python-implementation.md) | Codigo Python COMPLETO: check.py, rules.py, buckets.py, auto_blacklist.py, exceptions.py | Para copy-paste a `serverless/lambda/shared/rate_limit/` |
 | [05-auto-blacklist-bot-detection.md](./05-auto-blacklist-bot-detection.md) | Auto-blacklist: deteccion de bots con 3+ tokens Turnstile validos en 60s | Antes de habilitar auto-blacklist |
 | [06-management-cli.md](./06-management-cli.md) | CLI para gestionar reglas (list, set, allow, block, unblock, stats) | Para integrar en devtools |
 | [07-observability.md](./07-observability.md) | CloudWatch metrics, structured logs, X-Ray, dashboards, alarms | Antes de deploy a produccion |

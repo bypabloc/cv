@@ -148,9 +148,40 @@ aws kms schedule-key-deletion --key-id <KEY_ID_ANTIGUO> \
 
 | Lambda | SSM parameters | KMS Decrypt |
 |--------|----------------|-------------|
-| `contact_form` | `turnstile-secret`, `owner-email`, `ses-from-address` | Si (solo turnstile-secret) |
-| `tracking_pixel` | ninguno | No |
-| `stream_processor` | `neon-url` | Si |
+| `contact_form` | `turnstile-secret`, `owner-email`, `ses-from-address` + paths `dynamodb/{contacts,cache,rate-limit-*}` | Si (solo turnstile-secret) |
+| `tracking_pixel` | paths `dynamodb/{tracking,cache,rate-limit-*}` | No |
+| `stream_processor` | `neon-url` + paths `dynamodb/{contacts,tracking}` | Si |
+
+Los paths `/portfolio/{stage}/dynamodb/...` son `String` planos (nombre/ARN
+de recurso, no secreto); su lectura no requiere `kms:Decrypt`. Solo
+`turnstile-secret` y `neon-url` son `SecureString`.
+
+## SSM params de infraestructura — publicados por los stacks de recurso
+
+Tras el refactor serverless, los recursos compartidos
+(`serverless/lambda/resources/<tipo>/<nombre>.yaml`) son stacks
+CloudFormation autonomos. Cada stack **publica** sus identificadores a SSM
+Parameter Store (no usa `Export`/`Fn::ImportValue`), con el patron de path
+`/portfolio/{stage}/{tipo}/{nombre}/{atributo}`. Son `String` planos (no
+secretos): el nombre/ARN de un recurso AWS no es sensible.
+
+| Path SSM | Que publica |
+|----------|-------------|
+| `/portfolio/{stage}/dynamodb/contacts/{name,arn,stream-arn}` | tabla DynamoDB de contactos |
+| `/portfolio/{stage}/dynamodb/tracking/{name,arn,stream-arn}` | tabla DynamoDB de tracking events |
+| `/portfolio/{stage}/dynamodb/cache/{name,arn}` | tabla DynamoDB de cache |
+| `/portfolio/{stage}/dynamodb/rate-limit-rules/{name,arn}` | tabla DynamoDB de reglas de rate-limit |
+| `/portfolio/{stage}/dynamodb/rate-limit-buckets/{name,arn}` | tabla DynamoDB de buckets de rate-limit |
+| `/portfolio/{stage}/api_gateway/portfolio-api/{id,root-resource-id,access-log-group-arn}` | API Gateway REST |
+| `/portfolio/{stage}/sqs/stream-processor-dlq/{arn,url}` | DLQ del `stream_processor` |
+
+Las Lambdas resuelven el **nombre de cada tabla DynamoDB en el cold start**
+leyendo el path SSM correspondiente: el template SAM les inyecta una env var
+`SSM_<TABLA>_TABLE_PATH` (ej. `SSM_CONTACTS_TABLE_PATH=/portfolio/dev/dynamodb/contacts/name`)
+y el codigo hace `ssm:GetParameter` sobre ese path, en vez de recibir el
+nombre directo en `CONTACTS_TABLE_NAME`. El Stream ARN, el DLQ ARN y el
+`ApiId` se resuelven con dynamic references CloudFormation
+(`{{resolve:ssm:...}}`) en el template SAM generado, no en runtime.
 
 ## Env vars constantes (sin SSM)
 
@@ -162,8 +193,8 @@ Son derivables; cambiarlas implica redeploy.
 | `POWERTOOLS_SERVICE_NAME` / `POWERTOOLS_METRICS_NAMESPACE` | `template.yaml` Globals | Powertools |
 | `LOG_LEVEL` | `template.yaml` Globals (INFO dev / WARNING prod) | logger |
 | `CORS_ALLOWED_ORIGINS` | `template.yaml` Globals | `common.cors.resolve_origin` |
-| `CONTACTS_TABLE_NAME` / `TRACKING_TABLE_NAME` / `CACHE_TABLE_NAME` | `template.yaml` Globals | persistence / cache |
-| `RATE_LIMIT_RULES_TABLE_NAME` / `RATE_LIMIT_BUCKETS_TABLE_NAME` | `template.yaml` Globals | `common.rate_limit` |
+| `SSM_CONTACTS_TABLE_PATH` / `SSM_TRACKING_TABLE_PATH` / `SSM_CACHE_TABLE_PATH` | `template.yaml` Globals | persistence / cache (resuelven el nombre de tabla en cold start) |
+| `SSM_RATE_LIMIT_RULES_TABLE_PATH` / `SSM_RATE_LIMIT_BUCKETS_TABLE_PATH` | `template.yaml` Globals | `common.rate_limit` |
 | `AWS_SES_REGION` | `template.yaml` (`ContactFormFunction`) | `notification.py` (SPEC-100) |
 
 ## Credenciales de deploy (no SSM)
@@ -180,7 +211,8 @@ Las credenciales que devtools usa para `sam deploy` NO viven en AWS:
 
 > **Perfil AWS de los comandos `serverless`.** El backend del portfolio vive
 > en la cuenta `637423614564`, accesible con el perfil `tfs-dev`. Los
-> comandos `deploy`, `deploy-infra` e `invoke-remote` del script
+> comandos `deploy`, `deploy-infra`, `deploy-resource`,
+> `destroy-resource` y `run` (contra un stage deployado) del script
 > `serverless` aceptan `--aws-profile=tfs-dev` para fijar ese perfil en los
 > comandos `aws`/`sam` que ejecutan. Sin el flag usan el perfil del shell
 > (`AWS_PROFILE`/`[default]`), que puede apuntar a otra cuenta o tener el

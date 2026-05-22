@@ -27,8 +27,10 @@ replica: 5-30s.
 
 ## 2. Las 5 tablas DynamoDB
 
-Todas viven en el stack de infra (`portfolio-infra-<stage>`), modo
-`PAY_PER_REQUEST`. Nombre real: `portfolio-<tabla>-<stage>`.
+Cada tabla es su propio stack de recurso
+(`portfolio-dynamodb-<tabla>-<stage>`), modo `PAY_PER_REQUEST`. Nombre
+real de la tabla: `portfolio-<tabla>-<stage>`. Cada stack publica el
+nombre y el ARN a SSM (`/portfolio/{stage}/dynamodb/<tabla>/{name,arn}`).
 
 ### `contacts` — form de contacto
 
@@ -123,7 +125,7 @@ weighted, auto-blacklist): skill `serverless-rate-limit`.
 ## 3. Tablas Neon PostgreSQL
 
 Neon es la replica analitica. El schema lo definen los modelos
-SQLAlchemy 2.x de `serverless/shared/db/models/` (fuente de verdad,
+SQLAlchemy 2.x de `serverless/lambda/shared/db/models/` (fuente de verdad,
 35 tablas — CV + datos del visitante) gestionados por un solo Alembic.
 El `stream_processor` escribe a las tablas del visitante via ese ORM.
 
@@ -197,7 +199,7 @@ skill `neon` + skill `aws-dynamodb`.
 ## 5. Esquema PostgreSQL unificado
 
 El Neon del portfolio tiene UN solo schema (35 tablas: CV + visitante)
-gestionado por UN solo Alembic en `serverless/shared/db/alembic/`.
+gestionado por UN solo Alembic en `serverless/lambda/shared/db/alembic/`.
 La Lambda `db` corre las migraciones. Diagrama ER completo:
 [docs/diagrams/db-er.mmd](../../../docs/diagrams/db-er.mmd). Operacion de
 las migraciones y branches Neon:

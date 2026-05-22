@@ -3,13 +3,16 @@
 samconfig.toml.local
 
 # Artefacto de deploy que devtools arma con uv (efimero, por lambda).
-src/*/build/
-src/*/template.yaml
-src/*/core/shared/
+lambda/services/*/build/
+lambda/services/*/template.yaml
+lambda/services/*/core/shared/
 
 # requirements.txt efimero (la fuente de verdad es pyproject.toml + uv.lock).
-src/*/requirements.txt
-src/*/requirements-dev.txt
+lambda/services/*/requirements.txt
+lambda/services/*/requirements-dev.txt
+
+# Template de infra ensamblado desde lambda/resources/ (efimero).
+lambda/resources/infra.yaml
 
 # Python
 .venv/

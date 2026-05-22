@@ -24,8 +24,9 @@ from typing import Any
 _PORTFOLIO_SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
 # Directorio donde viven los lambda-controller del portfolio. El flag
-# `--lambda=<nombre>` resuelve un nombre corto contra `serverless/src/*`.
-_PORTFOLIO_LAMBDAS_DIR = _PORTFOLIO_SERVERLESS_DIR / 'src'
+# `--lambda=<nombre>` resuelve un nombre corto contra
+# `serverless/lambda/services/*`.
+_PORTFOLIO_LAMBDAS_DIR = _PORTFOLIO_SERVERLESS_DIR / 'lambda' / 'services'
 
 # Campos obligatorios del manifiesto lambda.yaml.
 _REQUIRED_FIELDS = ('name', 'runtime', 'handler')
@@ -126,9 +127,9 @@ def _read_manifest(manifest_path: Path) -> dict[str, Any]:
 
 
 def available_lambdas() -> list[str]:
-    """Lista los nombres cortos de lambdas validos en `serverless/src/*`.
+    """Lista los nombres cortos de lambdas validos en `serverless/lambda/services/*`.
 
-    Un lambda valido es un subdirectorio de `serverless/src/` que trae un
+    Un lambda valido es un subdirectorio de `serverless/lambda/services/` que trae un
     `lambda.yaml`. Sirve para los mensajes de error de `--lambda`.
     """
     if not _PORTFOLIO_LAMBDAS_DIR.is_dir():
@@ -143,7 +144,7 @@ def available_lambdas() -> list[str]:
 def _resolve_lambda_dir(name: str) -> Path:
     """Resuelve un nombre corto de lambda a su directorio en `src/`.
 
-    `--lambda=contact_form` -> `serverless/src/contact_form/`. Valida que
+    `--lambda=contact_form` -> `serverless/lambda/services/contact_form/`. Valida que
     la carpeta exista Y que cumpla la estructura lambda-controller (tenga
     `lambda.yaml`); si no, lanza un error que advierte que no cumple lo
     necesario y lista los lambdas validos.
@@ -151,7 +152,7 @@ def _resolve_lambda_dir(name: str) -> Path:
     Parameters
     ----------
     name : str
-        Nombre corto del lambda (subdirectorio de `serverless/src/`).
+        Nombre corto del lambda (subdirectorio de `serverless/lambda/services/`).
 
     Returns
     -------
@@ -190,9 +191,9 @@ def resolve_lambda(flags: dict[str, Any]) -> ResolvedLambda:
     precedencia:
 
       - `--lambda=<nombre>`: nombre corto resuelto contra
-        `serverless/src/<nombre>/` (forma recomendada).
+        `serverless/lambda/services/<nombre>/` (forma recomendada).
       - `--path=<dir>` / `--module=<dir>`: directorio explicito del
-        lambda (cualquier ubicacion, no solo `serverless/src/`).
+        lambda (cualquier ubicacion, no solo `serverless/lambda/services/`).
 
     Sin ninguno de esos flags, devuelve el backend SAM del portfolio
     (modo legacy).

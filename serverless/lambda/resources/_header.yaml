@@ -1,0 +1,62 @@
+# ============================================================================
+# resources/ — documentacion del patron "stack CloudFormation autonomo"
+# ============================================================================
+# Este archivo YA NO se ensambla con los fragmentos de resources/. Quedaba
+# como cabecera comun del antiguo stack unico de infra; ahora es solo
+# documentacion del patron. Es YAML valido pero NO se deploya.
+#
+# ----------------------------------------------------------------------------
+# Patron: cada recurso es un stack independiente
+# ----------------------------------------------------------------------------
+# Cada `resources/<tipo>/<nombre>.yaml` es un template CloudFormation
+# COMPLETO y autonomo: trae su `AWSTemplateFormatVersion`, su `Description`,
+# sus `Parameters` (el `Stage`), sus `Resources` y sus `Outputs`.
+#
+# Antes los fragmentos eran parciales (solo `Resources:` + `Outputs:` con
+# `Export:`) y se ensamblaban en UN stack unico junto a este header.
+# CloudFormation prohibe borrar o recrear un stack cuyo `Export` esta en
+# uso, lo que impedia gestionar cada recurso por separado. La solucion:
+# stack-por-recurso + SSM Parameter Store en vez de `Export`.
+#
+# ----------------------------------------------------------------------------
+# Deploy de un recurso
+# ----------------------------------------------------------------------------
+#   python devtools/run.py serverless deploy-resource \
+#     --name=<tipo>/<nombre> --stage=<stage>
+#
+# Nombre del stack CloudFormation resultante:
+#   portfolio-<tipo>-<nombre>-<stage>
+#   ej. portfolio-dynamodb-contacts-dev
+#       portfolio-api_gateway-portfolio-api-dev
+#       portfolio-sqs-stream-processor-dlq-dev
+#
+# `deploy-infra` deploya TODOS los stacks de recurso de resources/ en orden.
+#
+# ----------------------------------------------------------------------------
+# Convencion de nombres SSM
+# ----------------------------------------------------------------------------
+# Cada stack publica sus identificadores como recursos `AWS::SSM::Parameter`
+# (NO como `Outputs` con `Export`). Convencion del Name:
+#
+#   /portfolio/{stage}/{tipo}/{nombre}/{atributo}
+#
+#   {stage}     dev | stage | prod
+#   {tipo}      carpeta del recurso: dynamodb | api_gateway | sqs
+#   {nombre}    nombre del archivo sin extension: contacts, portfolio-api, ...
+#   {atributo}  kebab-case: arn, name, stream-arn, id, url, ...
+#
+# Ejemplos:
+#   /portfolio/dev/dynamodb/contacts/arn
+#   /portfolio/dev/dynamodb/contacts/name
+#   /portfolio/dev/dynamodb/contacts/stream-arn
+#   /portfolio/dev/api_gateway/portfolio-api/id
+#   /portfolio/dev/sqs/stream-processor-dlq/url
+#
+# Los Lambdas leen estos parametros en el cold start (module scope) via
+# boto3, con un IAM `ssm:GetParameter` scoped a esos paths. Asi un stack de
+# recurso se puede redeployar sin tocar ni bloquear los stacks de los
+# Lambdas: no hay `Export` en uso.
+#
+# Cada `<tipo>/<nombre>.yaml` mantiene ademas un bloque `Outputs:` SIN
+# `Export:` — referencia post-deploy / debugging unicamente.
+# ============================================================================

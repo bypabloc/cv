@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+# ============================================================================
+# Stack autonomo — DynamoDB: RateLimitRulesTable (rules per-endpoint/IP/country)
+# ============================================================================
+# Stack CloudFormation completo e independiente. Se deploya con
+# `serverless deploy-resource --name=dynamodb/rate-limit-rules --stage=<stage>`.
+# Nombre del stack: portfolio-dynamodb-rate-limit-rules-<stage>.
+# Publica sus identificadores como SSM Parameters bajo
+# /portfolio/{stage}/dynamodb/rate-limit-rules/{atributo}.
+# ============================================================================
+
+Description: >
+  Portfolio backend — DynamoDB RateLimitRulesTable (rules por
+  endpoint/IP/country). Stack autonomo; publica name y arn en SSM.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+    Description: Ambiente del stack (dev | stage | prod).
+
+Resources:
+  RateLimitRulesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-rate-limit-rules-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: rule_key
+          AttributeType: S
+        - AttributeName: kind
+          AttributeType: S
+      KeySchema:
+        - AttributeName: rule_key
+          KeyType: HASH
+        - AttributeName: kind
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+  # SSM Parameters: reemplazan los Outputs con Export.
+  RateLimitRulesTableNameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/rate-limit-rules/name
+      Type: String
+      Value: !Ref RateLimitRulesTable
+      Description: Nombre fisico de la tabla RateLimitRulesTable.
+
+  RateLimitRulesTableArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/rate-limit-rules/arn
+      Type: String
+      Value: !GetAtt RateLimitRulesTable.Arn
+      Description: ARN de la tabla RateLimitRulesTable.
+
+# Outputs sin Export: referencia post-deploy / debugging.
+Outputs:
+  RateLimitRulesTableName:
+    Description: Nombre fisico de la tabla RateLimitRulesTable.
+    Value: !Ref RateLimitRulesTable
+  RateLimitRulesTableArn:
+    Description: ARN de la tabla RateLimitRulesTable.
+    Value: !GetAtt RateLimitRulesTable.Arn

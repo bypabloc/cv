@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+# ============================================================================
+# Stack autonomo — DynamoDB: TrackingTable (eventos de tracking pixel, TTL 60d)
+# ============================================================================
+# Stack CloudFormation completo e independiente. Se deploya con
+# `serverless deploy-resource --name=dynamodb/tracking --stage=<stage>`.
+# Nombre del stack: portfolio-dynamodb-tracking-<stage>.
+# Publica sus identificadores como SSM Parameters bajo
+# /portfolio/{stage}/dynamodb/tracking/{atributo}.
+# ============================================================================
+
+Description: >
+  Portfolio backend — DynamoDB TrackingTable (eventos de tracking pixel,
+  TTL 60d). Stack autonomo; publica name, arn y stream-arn en SSM.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+    Description: Ambiente del stack (dev | stage | prod).
+
+Resources:
+  TrackingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-tracking-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: session_id
+          AttributeType: S
+        - AttributeName: page_id
+          AttributeType: S
+        # Atributos del GSI niche-created_at-index.
+        - AttributeName: niche
+          AttributeType: S
+        - AttributeName: created_at
+          AttributeType: S
+      KeySchema:
+        - AttributeName: session_id
+          KeyType: HASH
+        - AttributeName: page_id
+          KeyType: RANGE
+      # GSI: queries de dashboard por nicho ordenadas por fecha sin full
+      # scan. El esquema lo declara tambien TrackingEventItem.Meta (ORM);
+      # `check_schema` verifica que ambos no diverjan.
+      GlobalSecondaryIndexes:
+        - IndexName: niche-created_at-index
+          KeySchema:
+            - AttributeName: niche
+              KeyType: HASH
+            - AttributeName: created_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+  # SSM Parameters: reemplazan los Outputs con Export.
+  TrackingTableNameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/tracking/name
+      Type: String
+      Value: !Ref TrackingTable
+      Description: Nombre fisico de la tabla TrackingTable.
+
+  TrackingTableArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/tracking/arn
+      Type: String
+      Value: !GetAtt TrackingTable.Arn
+      Description: ARN de la tabla TrackingTable.
+
+  TrackingTableStreamArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/tracking/stream-arn
+      Type: String
+      Value: !GetAtt TrackingTable.StreamArn
+      Description: ARN del DynamoDB Stream de TrackingTable.
+
+# Outputs sin Export: referencia post-deploy / debugging.
+Outputs:
+  TrackingTableName:
+    Description: Nombre fisico de la tabla TrackingTable.
+    Value: !Ref TrackingTable
+  TrackingTableArn:
+    Description: ARN de la tabla TrackingTable.
+    Value: !GetAtt TrackingTable.Arn
+  TrackingStreamArn:
+    Description: ARN del DynamoDB Stream de TrackingTable.
+    Value: !GetAtt TrackingTable.StreamArn

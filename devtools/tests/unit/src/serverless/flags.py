@@ -2,10 +2,11 @@
 
 Path mirroring: devtools/serverless/flags.py -> this file.
 
-Cubre los comandos del modo lambda-controller (sam-generate, run-local,
-deploy, invoke-remote, test-unit, test-integration) y la exigencia de
---path. El backend del portfolio son 5 stacks; cada Lambda se opera con
---path. NO hay modo legacy de SAM monolitico.
+Cubre la grilla de comandos del CLI serverless tras la unificacion:
+`tests` (un comando con --type) y `run` (un comando con --stage)
+reemplazan a `test-unit`/`test-integration`/`test`/`test-coverage` y a
+`run-local`/`invoke-remote`. Los comandos del modo lambda-controller
+exigen --lambda o --path.
 """
 
 import pytest
@@ -20,19 +21,11 @@ def _argv(monkeypatch, *args):
 
 
 class TestNewCommandsRegistered:
-    """Los comandos lambda-controller estan en VALID_COMMANDS."""
+    """`tests` y `run` estan en VALID_COMMANDS; los viejos no."""
 
     @pytest.mark.parametrize(
         'command',
-        [
-            'sam-generate',
-            'run-local',
-            'deploy',
-            'invoke-remote',
-            'test-unit',
-            'test-integration',
-            'deploy-infra',
-        ],
+        ['tests', 'run', 'sam-generate', 'deploy', 'deploy-infra'],
     )
     def test_command_is_valid(self, command):
         from serverless.flags import VALID_COMMANDS
@@ -41,33 +34,30 @@ class TestNewCommandsRegistered:
 
     @pytest.mark.parametrize(
         'command',
-        ['build', 'validate', 'invoke', 'start-api', 'logs', 'smoke'],
+        [
+            'test-unit',
+            'test-integration',
+            'test',
+            'test-coverage',
+            'run-local',
+            'invoke-remote',
+        ],
     )
-    def test_legacy_sam_commands_removed(self, command):
+    def test_legacy_commands_removed(self, command):
         from serverless.flags import VALID_COMMANDS
 
         assert command not in VALID_COMMANDS
 
 
 class TestPathRequired:
-    """Los comandos lambda-controller exigen --path."""
+    """sam-generate, run y deploy exigen --lambda o --path."""
 
-    @pytest.mark.parametrize(
-        'command',
-        [
-            'sam-generate',
-            'run-local',
-            'deploy',
-            'invoke-remote',
-            'test-unit',
-            'test-integration',
-        ],
-    )
+    @pytest.mark.parametrize('command', ['sam-generate', 'run', 'deploy'])
     def test_command_without_path_raises(self, monkeypatch, command):
         _argv(monkeypatch, command)
         from serverless.flags import flag
 
-        with pytest.raises(ValueError, match='--path'):
+        with pytest.raises(ValueError, match='--lambda'):
             flag({})
 
     def test_command_with_path_accepted(self, monkeypatch):
@@ -81,12 +71,12 @@ class TestPathRequired:
         assert result['path'] == '/tmp/x'
 
     def test_module_flag_satisfies_path_requirement(self, monkeypatch):
-        _argv(monkeypatch, 'run-local')
+        _argv(monkeypatch, 'run', '--stage=dev')
         from serverless.flags import flag
 
         result = flag({'module': '/tmp/x'})
 
-        assert result['command'] == 'run-local'
+        assert result['command'] == 'run'
 
     def test_lambda_flag_satisfies_path_requirement(self, monkeypatch):
         _argv(monkeypatch, 'deploy', '--stage=dev')
@@ -104,22 +94,91 @@ class TestPathRequired:
         with pytest.raises(ValueError, match='--lambda'):
             flag({})
 
-
-class TestDeployRequiresPath:
-    """deploy y test-unit operan un Lambda: exigen --path (no hay legacy)."""
-
-    def test_deploy_without_path_raises(self, monkeypatch):
-        _argv(monkeypatch, 'deploy', '--stage=dev')
+    def test_tests_command_does_not_require_path(self, monkeypatch):
+        # `tests` sin target corre toda la suite: no exige --lambda/--path.
+        _argv(monkeypatch, 'tests', '--type=unit')
         from serverless.flags import flag
 
-        with pytest.raises(ValueError, match='--path'):
+        result = flag({'type': 'unit'})
+
+        assert result['command'] == 'tests'
+
+
+class TestTestsTypeFlag:
+    """El comando `tests` exige --type valido."""
+
+    def test_tests_without_type_raises(self, monkeypatch):
+        _argv(monkeypatch, 'tests')
+        from serverless.flags import flag
+
+        with pytest.raises(ValueError, match='--type'):
             flag({})
 
-    def test_deploy_with_path_accepted(self, monkeypatch):
-        _argv(monkeypatch, 'deploy', '--stage=dev')
+    def test_tests_with_invalid_type_raises(self, monkeypatch):
+        _argv(monkeypatch, 'tests', '--type=smoke')
         from serverless.flags import flag
 
-        result = flag({'path': 'serverless/src/db'})
+        with pytest.raises(ValueError, match='--type'):
+            flag({'type': 'smoke'})
 
-        assert result['command'] == 'deploy'
-        assert result['path'] == 'serverless/src/db'
+    @pytest.mark.parametrize('test_type', ['unit', 'integration', 'coverage'])
+    def test_tests_with_valid_type_accepted(self, monkeypatch, test_type):
+        _argv(monkeypatch, 'tests', f'--type={test_type}')
+        from serverless.flags import flag
+
+        result = flag({'type': test_type})
+
+        assert result['command'] == 'tests'
+        assert result['type'] == test_type
+
+    def test_tests_with_shared_target_accepted(self, monkeypatch):
+        _argv(monkeypatch, 'tests', '--type=unit', '--shared')
+        from serverless.flags import flag
+
+        result = flag({'type': 'unit', 'shared': True})
+
+        assert result['command'] == 'tests'
+        assert result['shared'] is True
+
+
+class TestRunStage:
+    """`run` acepta --stage local y deployado."""
+
+    @pytest.mark.parametrize('stage', ['local', 'dev', 'stage', 'prod'])
+    def test_run_accepts_all_stages(self, monkeypatch, stage):
+        _argv(monkeypatch, 'run', f'--stage={stage}')
+        from serverless.flags import flag
+
+        result = flag({'lambda': 'db', 'stage': stage})
+
+        assert result['command'] == 'run'
+        assert result['stage'] == stage
+
+
+class TestDbCommandsRemoved:
+    """Los comandos db-* se eliminaron: las ops de DB van via `run`."""
+
+    @pytest.mark.parametrize(
+        'command',
+        [
+            'db-shell',
+            'db-migrate',
+            'db-rollback',
+            'db-current',
+            'db-show-migrations',
+            'db-seed',
+            'db-branch',
+            'db-tables',
+        ],
+    )
+    def test_db_command_is_not_valid(self, command):
+        from serverless.flags import VALID_COMMANDS
+
+        assert command not in VALID_COMMANDS
+
+    def test_unknown_db_command_raises(self, monkeypatch):
+        _argv(monkeypatch, 'db-migrate')
+        from serverless.flags import flag
+
+        with pytest.raises(ValueError, match='Comando desconocido'):
+            flag({})

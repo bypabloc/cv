@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+# ============================================================================
+# Stack autonomo — API Gateway REST + CloudWatch Access Log
+# ============================================================================
+# Stack CloudFormation completo e independiente. Se deploya con
+# `serverless deploy-resource --name=api_gateway/portfolio-api --stage=<stage>`.
+# Nombre del stack: portfolio-api_gateway-portfolio-api-<stage>.
+# Define la API Gateway REST nativa, su rol de CloudWatch Logs, la cuenta de
+# API Gateway y el log group de access logs. Los metodos /contact y /track
+# los agregan los stacks de contact_form y tracking_pixel sobre esta API.
+# Publica sus identificadores como SSM Parameters bajo
+# /portfolio/{stage}/api_gateway/portfolio-api/{atributo} — los stacks de
+# los Lambdas los leen para agregar metodos sin Fn::ImportValue.
+# Solo usa tipos CloudFormation nativos (AWS::ApiGateway::*, AWS::IAM::*,
+# AWS::Logs::*, AWS::SSM::*), por eso NO requiere Transform SAM.
+# ============================================================================
+
+Description: >
+  Portfolio backend — API Gateway REST nativa + CloudWatch access log.
+  Stack autonomo; publica el Id de la API y su RootResourceId en SSM.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+    Description: Ambiente del stack (dev | stage | prod).
+
+Resources:
+  ApiGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub portfolio-api-cwlogs-role-${Stage}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/portfolio-api-${Stage}
+      RetentionInDays: 7
+
+  # API Gateway REST nativa (NO AWS::Serverless::Api): los metodos /contact
+  # y /track los agregan los stacks de contact_form y tracking_pixel sobre
+  # esta API por su Id. CloudFormation permite una REST API sin metodos.
+  PortfolioApi:
+    Type: AWS::ApiGateway::RestApi
+    DependsOn: ApiGatewayAccount
+    Properties:
+      Name: !Sub portfolio-api-${Stage}
+      Description: !Sub Portfolio backend API (${Stage})
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+  # SSM Parameters: reemplazan los Outputs con Export. Los stacks de los
+  # Lambdas leen estos paths para agregar metodos sobre la API existente.
+  PortfolioApiIdParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/api_gateway/portfolio-api/id
+      Type: String
+      Value: !Ref PortfolioApi
+      Description: REST API Id — contact_form y tracking_pixel agregan metodos.
+
+  PortfolioApiRootResourceIdParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/api_gateway/portfolio-api/root-resource-id
+      Type: String
+      Value: !GetAtt PortfolioApi.RootResourceId
+      Description: RootResourceId de la API — parent de /contact y /track.
+
+  PortfolioApiAccessLogGroupArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/api_gateway/portfolio-api/access-log-group-arn
+      Type: String
+      Value: !GetAtt ApiAccessLogGroup.Arn
+      Description: ARN del CloudWatch LogGroup de access logs de la API.
+
+# Outputs sin Export: referencia post-deploy / debugging.
+Outputs:
+  ApiId:
+    Description: REST API Id — contact_form y tracking_pixel agregan metodos.
+    Value: !Ref PortfolioApi
+  ApiRootResourceId:
+    Description: RootResourceId de la API — parent de /contact y /track.
+    Value: !GetAtt PortfolioApi.RootResourceId
+  ApiAccessLogGroupArn:
+    Description: ARN del CloudWatch LogGroup de access logs de la API.
+    Value: !GetAtt ApiAccessLogGroup.Arn

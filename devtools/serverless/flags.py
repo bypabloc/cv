@@ -26,45 +26,34 @@ STAGE_DESCRIPTIONS = {
     'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
 }
 
-# Tablas DynamoDB administradas por el modulo. Usadas por subcomandos
-# ``db-*`` para scope explicito.
-VALID_TABLES = ['contacts', 'tracking']
+# Tipos de test soportados por el comando `tests`.
+VALID_TEST_TYPES = ['unit', 'integration', 'coverage']
 
 VALID_COMMANDS = [
     # Setup / Maintenance
     'init',  # uv sync + verifica sam + aws CLI
     'clean',  # rm caches + artefactos efimeros (template.yaml, core/shared)
-    # Quality (Ruff + mypy sobre serverless/shared/ y serverless/src/)
+    # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
     'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
     'format',  # Ruff format
     'typecheck',  # mypy
-    # Tests de la libreria comun (serverless/tests/, cubre shared/)
-    'test',  # pytest tests/ con coverage
-    'test-coverage',  # pytest --cov + HTML report
+    # Tests: unico comando, --type=unit|integration|coverage + target
+    'tests',  # pytest de un lambda (--lambda), shared (--shared) o todo
     # lambda-controller: ciclo de vida de cada Lambda. --path requerido.
     'sam-generate',  # lambda.yaml -> template.yaml (SAM efimero)
-    'run-local',  # sam local invoke del lambda
+    'run',  # ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke
     'deploy',  # sam build + sam deploy del lambda (stack propio)
-    'invoke-remote',  # aws lambda invoke contra un stage deployado
-    'test-unit',  # pytest <lambda>/tests/unit
-    'test-integration',  # pytest <lambda>/tests/integration
-    # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
-    'deploy-infra',  # deploya el stack de infra compartida (5-stacks)
+    # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
+    'deploy-infra',  # deploya TODOS los stacks de recurso de resources/
+    'deploy-resource',  # deploya UN stack de recurso (--name=<tipo>/<nombre>)
+    'destroy-resource',  # borra UN stack de recurso (destructivo)
+    'list-resources',  # lista los recursos declarados en resources/
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
     'verify-ses-dns',  # dig DKIM/SPF/DMARC contra Cloudflare
     'request-ses-prod',  # Imprime plantilla del ticket SES production access
-    # Database (Neon PostgreSQL) — migraciones via la Lambda `db` (Alembic)
-    'db-shell',  # psql interactivo contra Neon (lee connection string de SSM)
-    'db-migrate',  # alembic upgrade via Lambda db (aplica migraciones)
-    'db-rollback',  # alembic downgrade via Lambda db (DESTRUCTIVO)
-    'db-current',  # alembic current via Lambda db (revision aplicada)
-    'db-show-migrations',  # alembic history via Lambda db
-    'db-seed',  # Carga data de prueba en Neon
-    'db-branch',  # Crea / lista / borra branches de Neon (neon CLI)
-    'db-tables',  # Lista tablas + row counts
     # Observability
     'metrics',  # CloudWatch metrics summary del stack
     'alarms',  # Lista alarmas y su estado
@@ -79,13 +68,14 @@ ALLOWED_FLAGS = [
     # Stage
     'stage',
     # lambda-controller: como apuntar al lambda objetivo
-    'lambda',  # --lambda=<nombre> resuelto contra serverless/src/* (recomendado)
+    'lambda',  # --lambda=<nombre> resuelto contra serverless/lambda/services/* (recomendado)
     'path',  # --path=<dir> del lambda (dir con lambda.yaml, cualquier ubicacion)
     'module',  # alias de --path
+    'shared',  # --shared o --shared=<subpaquete> (target del comando tests)
     # Deploy
     'guided',  # sam deploy --guided
     'confirm',  # required para comandos destructivos
-    'event',  # --event=events/<X>.json (run-local / invoke-remote)
+    'event',  # --event=events/<X>.json (run)
     'debug',  # sam local invoke --debug
     # Quality / Tests
     'module_path',  # Subset del codigo (ej. src/contact_form/)
@@ -95,16 +85,13 @@ ALLOWED_FLAGS = [
     'quiet',
     'output_format',
     # Test
+    'type',  # --type=unit|integration|coverage (comando tests)
     'coverage_threshold',  # default 80
     # Secrets
     'name',  # --name=/portfolio/turnstile-secret
     'value',  # --value=... (preferir leer de stdin para no leak shell history)
     'key_id',  # --key-id=alias/portfolio-lambdas
-    # Database
-    'table',  # --table=contacts
-    'branch',  # --branch=dev-feature-X (Neon branching)
-    'parent',  # --parent=main (parent branch)
-    'target',  # --target=head|-1|base|<revision> (Alembic, via Lambda db)
+    # Cross-cutting
     'dry_run',  # No aplica, solo imprime acciones
     # Rate-limit management
     'endpoint',  # --endpoint=/contact (rate-limit set)
@@ -130,22 +117,20 @@ ALLOWED_FLAGS = [
 DESTRUCTIVE_COMMANDS = frozenset(
     {
         'clean',
-        'db-rollback',
+        'destroy-resource',
         'rotate-secret',
     }
 )
 
 
 # Comandos del modo lambda-controller: requieren apuntar a un lambda con
-# --lambda=<nombre> (resuelto contra serverless/src/*) o --path=<dir>.
+# --lambda=<nombre> (resuelto contra serverless/lambda/services/*) o --path=<dir>.
+# `tests` NO esta aqui: sin target corre toda la suite, o usa --shared.
 PATH_REQUIRED_COMMANDS = frozenset(
     {
         'sam-generate',
-        'run-local',
-        'invoke-remote',
+        'run',
         'deploy',
-        'test-unit',
-        'test-integration',
     }
 )
 
@@ -155,7 +140,6 @@ JSON_OUTPUT_COMMANDS = frozenset(
     {
         'metrics',
         'alarms',
-        'db-tables',
     }
 )
 
@@ -168,27 +152,18 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'lint-fix': 'Ruff check --fix',
     'format': 'Ruff format',
     'typecheck': 'mypy strict sobre shared/ y src/',
-    'test': 'pytest tests/ (cubre la libreria comun shared/)',
-    'test-coverage': 'pytest --cov + HTML report (threshold 80%)',
+    'tests': 'pytest --type=unit|integration|coverage (--lambda / --shared)',
     'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--lambda)',
-    'run-local': 'sam local invoke de un lambda (--lambda)',
+    'run': 'Ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke',
     'deploy': 'Empaqueta con uv + sam deploy del lambda a un stage (--lambda)',
-    'invoke-remote': 'aws lambda invoke contra un stage deployado (--lambda)',
-    'test-unit': 'pytest <lambda>/tests/unit (--lambda)',
-    'test-integration': 'pytest <lambda>/tests/integration (--lambda)',
-    'deploy-infra': 'Deploya el stack de infra compartida (idempotente)',
+    'deploy-infra': 'Deploya TODOS los stacks de recurso de resources/',
+    'deploy-resource': 'Deploya UN stack de recurso (--name=<tipo>/<nombre>)',
+    'destroy-resource': 'Borra UN stack de recurso (DESTRUCTIVO)',
+    'list-resources': 'Lista los recursos declarados en resources/',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
     'request-ses-prod': 'Plantilla del ticket de production access SES',
-    'db-shell': 'psql contra Neon (lee URL de SSM)',
-    'db-migrate': 'alembic upgrade via Lambda db (aplica migraciones)',
-    'db-rollback': 'alembic downgrade via Lambda db (DESTRUCTIVO)',
-    'db-current': 'Revision Alembic aplicada en la DB',
-    'db-show-migrations': 'Historial de migraciones Alembic',
-    'db-seed': 'Cargar data de prueba',
-    'db-branch': 'CRUD de branches Neon (create/list/delete)',
-    'db-tables': 'Listar tablas Neon + row counts',
     'metrics': 'Resumen CloudWatch metrics del stack',
     'alarms': 'Lista alarmas + estado',
     'rate-limit': 'Gestion de reglas rate-limit (list|set|allow|block|stats|...)',
@@ -204,10 +179,25 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'lint-fix': ['module_path', 'files'],
     'format': ['module_path', 'files'],
     'typecheck': ['module_path'],
-    'test': ['verbose', 'coverage_threshold'],
-    'test-coverage': ['coverage_threshold'],
+    'tests': [
+        'type',
+        'lambda',
+        'path',
+        'module',
+        'shared',
+        'verbose',
+        'coverage_threshold',
+    ],
     'sam-generate': ['lambda', 'path', 'module', 'stage'],
-    'run-local': ['lambda', 'path', 'module', 'stage', 'event', 'debug'],
+    'run': [
+        'lambda',
+        'path',
+        'module',
+        'stage',
+        'event',
+        'debug',
+        'aws_profile',
+    ],
     'deploy': [
         'lambda',
         'path',
@@ -217,29 +207,14 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'aws_profile',
         'dry_run',
     ],
-    'invoke-remote': [
-        'lambda',
-        'path',
-        'module',
-        'stage',
-        'event',
-        'aws_profile',
-    ],
-    'test-unit': ['lambda', 'path', 'module', 'verbose'],
-    'test-integration': ['lambda', 'path', 'module', 'verbose'],
     'deploy-infra': ['stage', 'aws_profile', 'dry_run'],
+    'deploy-resource': ['name', 'stage', 'aws_profile', 'dry_run'],
+    'destroy-resource': ['name', 'stage', 'confirm', 'aws_profile', 'dry_run'],
+    'list-resources': ['stage'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
     'verify-ses-dns': [],
     'request-ses-prod': [],
-    'db-shell': ['stage', 'branch'],
-    'db-migrate': ['stage', 'target', 'dry_run'],
-    'db-rollback': ['stage', 'target', 'confirm', 'dry_run'],
-    'db-current': ['stage'],
-    'db-show-migrations': ['stage'],
-    'db-seed': ['stage', 'dry_run'],
-    'db-branch': ['parent', 'branch', 'subcommands'],
-    'db-tables': ['stage', 'output'],
     'metrics': ['stage', 'since', 'output'],
     'alarms': ['stage', 'output'],
     'rate-limit': [
@@ -275,7 +250,6 @@ _DEFAULTS: dict[str, Any] = {
     'coverage_threshold': 80,
     'dry_run': False,
     'output': 'text',
-    'parent': 'main',
 }
 
 
@@ -348,9 +322,17 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     ):
         raise ValueError(
             f'{command!r} opera sobre un lambda-controller: requiere '
-            f'--lambda=<nombre> (resuelto contra serverless/src/*) '
+            f'--lambda=<nombre> (resuelto contra serverless/lambda/services/*) '
             f'o --path=<dir> (directorio con lambda.yaml).',
         )
+
+    if command == 'tests':
+        test_type = flags_dict.get('type')
+        if test_type not in VALID_TEST_TYPES:
+            raise ValueError(
+                'tests requiere --type=unit|integration|coverage '
+                f'(recibido: {test_type!r}).',
+            )
 
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, _DEFAULTS)
@@ -388,7 +370,7 @@ def describe() -> ScriptDescribe:
                 'type': 'string',
                 'summary': (
                     'Nombre corto de un lambda, resuelto contra '
-                    'serverless/src/<nombre>/. Forma recomendada de '
+                    'serverless/lambda/services/<nombre>/. Forma recomendada de '
                     'apuntar a un lambda-controller'
                 ),
             },
@@ -402,6 +384,21 @@ def describe() -> ScriptDescribe:
             'event': {
                 'type': 'string',
                 'summary': 'Path a event JSON (events/<X>.json)',
+            },
+            'type': {
+                'type': 'choice',
+                'choices': list(VALID_TEST_TYPES),
+                'summary': (
+                    'Tipo de test para el comando tests '
+                    '(unit | integration | coverage)'
+                ),
+            },
+            'shared': {
+                'type': 'string',
+                'summary': (
+                    'Target del comando tests: --shared para toda la '
+                    'libreria comun, --shared=<subpaquete> para uno solo'
+                ),
             },
             'aws_profile': {
                 'type': 'string',

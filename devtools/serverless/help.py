@@ -24,31 +24,25 @@ from shared.console import _c
 _GROUPS: dict[str, list[str]] = {
     'Setup / Maintenance': ['init', 'clean', 'help'],
     'Quality': ['lint', 'lint-fix', 'format', 'typecheck'],
-    'Tests (libreria comun shared/)': ['test', 'test-coverage'],
-    'Lambda (--path=<dir>, dir con lambda.yaml)': [
-        'sam-generate',
-        'run-local',
-        'deploy',
-        'invoke-remote',
-        'test-unit',
-        'test-integration',
+    'Tests (--type=unit|integration|coverage, --lambda / --shared)': [
+        'tests',
     ],
-    'Infra (stack compartido)': ['deploy-infra'],
+    'Lambda (--lambda=<nombre> o --path=<dir>)': [
+        'sam-generate',
+        'run',
+        'deploy',
+    ],
+    'Infra (recursos como stacks autonomos)': [
+        'deploy-infra',
+        'deploy-resource',
+        'destroy-resource',
+        'list-resources',
+    ],
     'Secrets / DNS': [
         'setup-ssm',
         'rotate-secret',
         'verify-ses-dns',
         'request-ses-prod',
-    ],
-    'Database (Neon PG)': [
-        'db-shell',
-        'db-migrate',
-        'db-rollback',
-        'db-current',
-        'db-show-migrations',
-        'db-seed',
-        'db-branch',
-        'db-tables',
     ],
     'Observability': ['metrics', 'alarms'],
     'Rate-limit (DynamoDB self-managed, alternativa $0 a WAF)': ['rate-limit'],
@@ -77,7 +71,7 @@ def cmd_help(flags: dict[str, Any]) -> int:
     for stage in VALID_STAGES:
         print(f'  {_c(GREEN, stage):<20}')
     print()
-    print(_c(YELLOW, 'Lambdas (serverless/src/<lambda>/):'))
+    print(_c(YELLOW, 'Lambdas (serverless/lambda/services/<lambda>/):'))
     for lam in ('db', 'contact_form', 'tracking_pixel', 'stream_processor'):
         print(f'  {_c(CYAN, lam):<25}')
     print()

@@ -5,8 +5,8 @@ Estos comandos operan sobre cualquier lambda resuelto por `--path`
 manifiesto y lo usan por detras para `sam local invoke`, `sam build` +
 `sam deploy`, y `aws lambda invoke` contra un stage deployado.
 
-Para el backend SAM del portfolio (modo legacy, sin `--path`) ver
-`serverless/lifecycle.py` y `serverless/testing.py`.
+El comando `tests` corre las suites unit/integration/coverage de los
+lambdas y de la libreria comun `shared/`.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from serverless.packaging import PackagingError
 from serverless.packaging import packaged_lambda
 from serverless.resolve import ManifestError
 from serverless.resolve import ResolvedLambda
+from serverless.resolve import available_lambdas
 from serverless.resolve import resolve_lambda
 from serverless.sam_generate import generate_sam_file
 from serverless.vendoring import VendoringError
@@ -113,11 +114,24 @@ def cmd_sam_generate(flags: dict[str, Any]) -> int:
 
 
 # ---------------------------------------------------------------------------
-# run-local: sam local invoke
+# run: sam local invoke (stage local) | aws lambda invoke (stage deployado)
 # ---------------------------------------------------------------------------
 
 
-def cmd_run_local(flags: dict[str, Any]) -> int:
+def cmd_run(flags: dict[str, Any]) -> int:
+    """Ejecuta un lambda. El `--stage` decide el mecanismo.
+
+    `--stage=local` -> `sam local invoke` (contenedor Docker local).
+    `--stage=dev|stage|prod` -> `aws lambda invoke` contra la funcion
+    `portfolio-<name>-<stage>` ya deployada.
+    """
+    stage = flags.get('stage', 'local')
+    if stage == 'local':
+        return _run_local(flags)
+    return _invoke_remote(flags)
+
+
+def _run_local(flags: dict[str, Any]) -> int:
     """Ejecuta el lambda en local con `sam local invoke`.
 
     Regenera el SAM desde lambda.yaml y corre `sam local invoke` con el
@@ -128,9 +142,8 @@ def cmd_run_local(flags: dict[str, Any]) -> int:
         'Instalar: brew install aws-sam-cli  o  pip install aws-sam-cli',
     )
     resolved = _require_lambda_controller(flags)
-    stage = flags.get('stage', 'local')
     # `local` no es un stage de env vars; usamos dev para el bloque de env.
-    env_stage = 'dev' if stage == 'local' else stage
+    env_stage = 'dev'
 
     # run-local empaqueta con `core/shared/` vendorizado en la raiz del
     # lambda: el CodeUri del template apunta a `.`, no a `build/`.
@@ -153,7 +166,7 @@ def cmd_run_local(flags: dict[str, Any]) -> int:
     if flags.get('debug'):
         args.append('--debug')
 
-    # Vendoriza serverless/shared/ en core/shared/ para que el codigo del
+    # Vendoriza serverless/lambda/shared/ en core/shared/ para que el codigo del
     # lambda resuelva `import shared...` durante la invocacion local.
     try:
         with vendored_shared(resolved.root):
@@ -251,11 +264,11 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
 
 
 # ---------------------------------------------------------------------------
-# invoke-remote: aws lambda invoke contra un stage deployado
+# _invoke_remote: aws lambda invoke contra un stage deployado
 # ---------------------------------------------------------------------------
 
 
-def cmd_invoke_remote(flags: dict[str, Any]) -> int:
+def _invoke_remote(flags: dict[str, Any]) -> int:
     """Invoca el lambda YA deployado en un stage (aws lambda invoke)."""
     _ensure_tool(
         'aws',
@@ -263,10 +276,6 @@ def cmd_invoke_remote(flags: dict[str, Any]) -> int:
     )
     resolved = _require_lambda_controller(flags)
     stage = flags.get('stage', 'dev')
-
-    if stage == 'local':
-        _err('Stage `local` no esta deployado — usa `run-local`')
-        return 1
 
     # El FunctionName fisico lleva el prefijo `portfolio-` (ver
     # sam_generate.build_template) y el sufijo de stage.
@@ -337,10 +346,37 @@ def _resolve_pytest_python(resolved: ResolvedLambda) -> str:
     return 'python3'
 
 
-def _run_pytest(resolved: ResolvedLambda, subdir: str, flags: dict) -> int:
-    """Corre pytest sobre tests/<subdir> con cwd en la raiz del lambda."""
+# El directorio del backend serverless y la libreria comun.
+_SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
+_SHARED_DIR = _SERVERLESS_DIR / 'lambda' / 'shared'
+
+
+def _pytest_extra(flags: dict[str, Any]) -> list[str]:
+    """Flags pytest comunes (verbose / quiet) derivados de los flags CLI."""
+    extra: list[str] = []
+    if flags.get('verbose') or flags.get('v'):
+        extra.append('-v')
+    if flags.get('quiet'):
+        extra.append('-q')
+    return extra
+
+
+def _run_lambda_tests(
+    resolved: ResolvedLambda, test_type: str, flags: dict[str, Any]
+) -> int:
+    """Corre los tests de un lambda-controller para el `--type` indicado.
+
+    `unit` / `integration` corren `tests/<type>`. `coverage` corre
+    `tests/unit` con `--cov=core` + `--cov-fail-under`.
+    """
+    subdir = 'unit' if test_type == 'coverage' else test_type
     tests_dir = resolved.root / 'tests' / subdir
     if not tests_dir.is_dir():
+        if test_type == 'integration':
+            print(
+                _c(YELLOW, f'[skip] {resolved.root.name}: sin tests/{subdir}')
+            )
+            return 0
         _err(f'No existe {tests_dir}')
         print(
             f'  Un lambda-controller debe traer tests/{subdir}/ '
@@ -350,12 +386,23 @@ def _run_pytest(resolved: ResolvedLambda, subdir: str, flags: dict) -> int:
 
     python = _resolve_pytest_python(resolved)
     args = [python, '-m', 'pytest', f'tests/{subdir}', '-o', 'addopts=']
-    if flags.get('verbose') or flags.get('v'):
-        args.append('-v')
-    if flags.get('quiet'):
-        args.append('-q')
+    args.extend(_pytest_extra(flags))
+    if test_type == 'coverage':
+        threshold = flags.get('coverage_threshold', 80)
+        # --cov-config apunta al pyproject del backend: su [tool.coverage.run]
+        # omite core/shared/ (la libreria comun vendorizada) para que el
+        # coverage del Lambda mida solo su propio codigo.
+        cov_config = _SERVERLESS_DIR / 'pyproject.toml'
+        args.extend(
+            [
+                '--cov=core',
+                f'--cov-config={cov_config}',
+                '--cov-report=term-missing',
+                f'--cov-fail-under={threshold}',
+            ]
+        )
 
-    # Vendoriza serverless/shared/ en core/shared/ para que los tests
+    # Vendoriza serverless/lambda/shared/ en core/shared/ para que los tests
     # resuelvan `import shared...` igual que en el artefacto desplegado.
     try:
         with vendored_shared(resolved.root):
@@ -365,13 +412,109 @@ def _run_pytest(resolved: ResolvedLambda, subdir: str, flags: dict) -> int:
         return 1
 
 
-def cmd_test_unit_lambda(flags: dict[str, Any]) -> int:
-    """pytest tests/unit del lambda-controller (cwd = raiz del lambda)."""
-    resolved = _require_lambda_controller(flags)
-    return _run_pytest(resolved, 'unit', flags)
+def _run_shared_tests(
+    test_type: str, flags: dict[str, Any], *, subpackage: str | None
+) -> int:
+    """Corre los tests de la libreria comun (`serverless/lambda/shared/tests/`).
+
+    El cwd es `serverless/lambda/` (NO `shared/`): asi el directorio que
+    pytest agrega al `sys.path` es `lambda/`, `import shared...` resuelve
+    y el subpaquete `shared/http/` no tapa el `http` del stdlib.
+
+    `subpackage` filtra a un subpaquete (`core`, `aws`, `http`, `cache`,
+    `db`, `dynamodb`, `rate_limit`): corre `tests/unit/shared/<subpackage>/`
+    y acota el `--cov` a ese subpaquete. Si el subpaquete no tiene subdir
+    de tests, cae a `-k <subpackage>` (el `--cov` sigue midiendo todo).
+    """
+    tests_root = _SHARED_DIR / 'tests'
+    type_dir = tests_root / ('unit' if test_type == 'coverage' else test_type)
+    if not type_dir.is_dir():
+        if test_type == 'integration':
+            print(_c(YELLOW, '[skip] shared: sin tests de integration'))
+            return 0
+        _err(f'No existe {type_dir}')
+        return 1
+
+    target = 'unit' if test_type == 'coverage' else test_type
+    # El .venv del backend serverless trae pytest + las deps de runtime.
+    python = (
+        str(_PORTFOLIO_SERVERLESS_VENV)
+        if _PORTFOLIO_SERVERLESS_VENV.is_file()
+        else 'python3'
+    )
+    # cwd = serverless/lambda/, target relativo: shared/tests/<type>.
+    test_path = f'shared/tests/{target}'
+    args = [python, '-m', 'pytest', test_path, '-o', 'addopts=']
+    args.extend(_pytest_extra(flags))
+
+    # Por defecto el coverage mide toda la libreria comun; con --shared=X
+    # se acota al subpaquete (mide solo lo que los tests filtrados cubren).
+    cov_target = 'shared'
+    filtered_by_dir = False
+    if subpackage:
+        subpkg_dir = type_dir / 'shared' / subpackage
+        if subpkg_dir.is_dir():
+            args[3] = f'{test_path}/shared/{subpackage}'
+            cov_target = f'shared/{subpackage}'
+            filtered_by_dir = True
+        else:
+            args.extend(['-k', subpackage])
+
+    if test_type == 'coverage':
+        threshold = flags.get('coverage_threshold', 80)
+        cov_config = _SERVERLESS_DIR / 'pyproject.toml'
+        args.extend(
+            [
+                f'--cov={cov_target}',
+                f'--cov-config={cov_config}',
+                '--cov-report=term-missing',
+                f'--cov-fail-under={threshold}',
+            ]
+        )
+        if subpackage and not filtered_by_dir:
+            # subpaquete filtrado por -k (no por dir): el --cov igual mide
+            # toda la libreria, no se puede acotar mas sin el subdir.
+            print(
+                _c(
+                    YELLOW,
+                    f'[nota] --shared={subpackage} sin subdir propio: '
+                    'el coverage mide toda la libreria comun.',
+                )
+            )
+
+    return _run(args, cwd=_SHARED_DIR.parent)
 
 
-def cmd_test_integration_lambda(flags: dict[str, Any]) -> int:
-    """pytest tests/integration del lambda-controller."""
-    resolved = _require_lambda_controller(flags)
-    return _run_pytest(resolved, 'integration', flags)
+def cmd_tests(flags: dict[str, Any]) -> int:
+    """Corre tests del backend: `--type` + target.
+
+    `--type=unit|integration|coverage` (obligatorio, validado en flags).
+    Target, por precedencia:
+      - `--lambda=<nombre>` / `--path=<dir>`: tests de ese lambda.
+      - `--shared` / `--shared=<subpaquete>`: tests de la libreria comun.
+      - sin target: corre TODO (los 4 lambdas + shared).
+    """
+    test_type = flags.get('type', 'unit')
+
+    has_lambda_target = bool(
+        flags.get('lambda') or flags.get('path') or flags.get('module')
+    )
+    shared_target = flags.get('shared')
+
+    if has_lambda_target:
+        resolved = _require_lambda_controller(flags)
+        return _run_lambda_tests(resolved, test_type, flags)
+
+    if shared_target is not None:
+        # --shared (bool True) = toda la libreria; --shared=aws = subpaquete.
+        subpackage = shared_target if isinstance(shared_target, str) else None
+        return _run_shared_tests(test_type, flags, subpackage=subpackage)
+
+    # Sin target: corre todo (los 4 lambdas + shared).
+    rc = 0
+    for name in available_lambdas():
+        print(_c(CYAN, f'== tests {test_type} :: {name} =='))
+        resolved = resolve_lambda({'lambda': name})
+        rc = _run_lambda_tests(resolved, test_type, flags) or rc
+    print(_c(CYAN, f'== tests {test_type} :: shared =='))
+    return _run_shared_tests(test_type, flags, subpackage=None) or rc

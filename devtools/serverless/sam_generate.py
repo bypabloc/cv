@@ -7,16 +7,27 @@ IAM. Este modulo TRADUCE ese manifiesto al `template.yaml` SAM, que es
 deploy / local.
 
 Cada Lambda del portfolio es su propio stack CloudFormation. Los
-recursos compartidos (API Gateway, tablas DynamoDB, DLQ) viven en el
-stack `portfolio-infra-<stage>` y se importan via `Fn::ImportValue`.
+recursos compartidos (API Gateway, tablas DynamoDB, DLQ) son stacks
+autonomos (un stack por recurso) que publican sus identificadores en SSM
+Parameter Store con la convencion `/portfolio/{stage}/{tipo}/{nombre}/
+{atributo}`. Los Lambdas NO usan `Fn::ImportValue`:
+
+  - el NOMBRE de tabla se inyecta como env var con el path SSM; el
+    codigo del Lambda lo resuelve en el cold start (boto3 ssm).
+  - los identificadores que el template necesita en deploy-time (Stream
+    ARN, ApiId) se resuelven con dynamic references CloudFormation
+    `{{resolve:ssm:...}}`.
+
+Esto desacopla los stacks: un recurso se puede redeployar sin bloquear
+los Lambdas (no hay Export en uso).
 
 Traduccion del manifiesto:
   - `trigger.type: direct`           -> sin Events.
-  - `trigger.type: http`             -> Event Api sobre la API importada.
+  - `trigger.type: http`             -> ruta nativa sobre la API SSM.
   - `trigger.type: on-table-changes` -> Event DynamoDB por cada tabla +
                                         DLQ.
-  - `uses.tables`                    -> permisos DynamoDB + env vars con
-                                        el nombre de tabla importado.
+  - `uses.tables`                    -> permisos DynamoDB + env var con
+                                        el path SSM del nombre de tabla.
   - `uses.secrets`                   -> permisos SSM GetParameter + KMS
                                         Decrypt + env vars con el path.
   - `uses.sends-email`               -> permisos SES SendEmail.
@@ -34,45 +45,64 @@ from serverless.resolve import ResolvedLambda
 # Stages validos del manifiesto (la clave 'default' aplica a todos).
 _VALID_ENV_STAGES = ('default', 'dev', 'stage', 'prod')
 
-# Nombre del stack de infra compartida (se interpola el stage).
-_INFRA_STACK = 'portfolio-infra-${stage}'
-
 # Tipos de trigger soportados.
 _VALID_TRIGGERS = ('direct', 'http', 'on-table-changes')
+
+# Convencion de nombres SSM publicada por los stacks de recurso:
+# /portfolio/{stage}/{tipo}/{nombre}/{atributo}.
+_SSM_RESOURCE_PREFIX = '/portfolio/${stage}'
+
+
+def _ssm_path(resource_type: str, name: str, attribute: str) -> str:
+    """Path SSM de un atributo de un recurso compartido (con `${stage}`)."""
+    return f'{_SSM_RESOURCE_PREFIX}/{resource_type}/{name}/{attribute}'
+
+
+def _ssm_resolve(path: str, stage: str) -> str:
+    """Dynamic reference CloudFormation que resuelve un SSM param en deploy.
+
+    CloudFormation reemplaza `{{resolve:ssm:<path>}}` por el valor del
+    parametro al desplegar. Se usa para identificadores que el template
+    necesita en deploy-time (Stream ARN, ApiId) sin `Fn::ImportValue`.
+    """
+    return '{{resolve:ssm:' + _interp(path, stage) + '}}'
+
 
 # --- Catalogo de recursos del backend (nombre corto -> definicion) -----
 #
 # El manifiesto usa nombres cortos legibles (`contacts`, `neon-url`).
-# Aqui se resuelven al recurso real: el nombre de tabla fisico, el Output
-# del stack de infra y el env var con que el codigo del Lambda lo lee.
+# Aqui se resuelven al recurso real: el path SSM con el nombre/ARN de la
+# tabla y el env var con que el codigo del Lambda lo lee.
 
 # Tablas DynamoDB: nombre corto -> (nombre fisico, env var del codigo).
-# El nombre fisico lleva el sufijo de stage; el codigo lo lee por env var.
+# El nombre fisico es deterministico (`portfolio-<nombre>-<stage>`); se
+# usa para el ARN en las politicas IAM. El codigo del Lambda lee el
+# NOMBRE de tabla resolviendo el path SSM (env var SSM_*_TABLE_PATH).
 _TABLES: dict[str, dict[str, str]] = {
     'contacts': {
         'physical': 'portfolio-contacts-${stage}',
-        'env': 'CONTACTS_TABLE_NAME',
-        'stream_export': 'ContactsStreamArn',
+        'env': 'SSM_CONTACTS_TABLE_PATH',
+        'has_stream': 'yes',
     },
     'tracking': {
         'physical': 'portfolio-tracking-${stage}',
-        'env': 'TRACKING_TABLE_NAME',
-        'stream_export': 'TrackingStreamArn',
+        'env': 'SSM_TRACKING_TABLE_PATH',
+        'has_stream': 'yes',
     },
     'cache': {
         'physical': 'portfolio-cache-${stage}',
-        'env': 'CACHE_TABLE_NAME',
-        'stream_export': '',
+        'env': 'SSM_CACHE_TABLE_PATH',
+        'has_stream': '',
     },
     'rate-limit-rules': {
         'physical': 'portfolio-rate-limit-rules-${stage}',
-        'env': 'RATE_LIMIT_RULES_TABLE_NAME',
-        'stream_export': '',
+        'env': 'SSM_RATE_LIMIT_RULES_TABLE_PATH',
+        'has_stream': '',
     },
     'rate-limit-buckets': {
         'physical': 'portfolio-rate-limit-buckets-${stage}',
-        'env': 'RATE_LIMIT_BUCKETS_TABLE_NAME',
-        'stream_export': '',
+        'env': 'SSM_RATE_LIMIT_BUCKETS_TABLE_PATH',
+        'has_stream': '',
     },
 }
 
@@ -137,15 +167,6 @@ def _logical_id(name: str) -> str:
 def _interp(value: str, stage: str) -> str:
     """Interpola `${stage}` en un string del manifiesto."""
     return value.replace('${stage}', stage)
-
-
-def _import_value(export_suffix: str, stage: str) -> dict[str, Any]:
-    """Construye un `Fn::ImportValue` de un Output del stack de infra.
-
-    El nombre del export es `portfolio-infra-<stage>-<suffix>`.
-    """
-    infra = _interp(_INFRA_STACK, stage)
-    return {'Fn::ImportValue': f'{infra}-{export_suffix}'}
 
 
 def _resolve_env(manifest: dict[str, Any], stage: str) -> dict[str, Any]:
@@ -213,12 +234,15 @@ def _build_env_vars(manifest: dict[str, Any], stage: str) -> dict[str, Any]:
 
     uses = manifest.get('uses') or {}
 
-    # Cada tabla declarada -> env var con el nombre fisico de la tabla.
+    # Cada tabla declarada -> env var con el PATH SSM del nombre de tabla.
+    # El codigo del Lambda resuelve el path en el cold start (boto3 ssm).
     tables = uses.get('tables') or {}
     if isinstance(tables, dict):
         for short_name in tables:
             tdef = _table_def(short_name)
-            env[tdef['env']] = _interp(tdef['physical'], stage)
+            env[tdef['env']] = _interp(
+                _ssm_path('dynamodb', short_name, 'name'), stage
+            )
 
     # Cada secreto declarado -> env var con el path SSM.
     for short_name in uses.get('secrets') or []:
@@ -226,6 +250,53 @@ def _build_env_vars(manifest: dict[str, Any], stage: str) -> dict[str, Any]:
         env[sdef['env']] = _interp(sdef['path'], stage)
 
     return env
+
+
+def _dynamodb_statements(
+    tables: Any, stage: str, *, region: str, account: str
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Statements DynamoDB de las tablas declaradas + sus paths SSM.
+
+    Devuelve `(statements, table_ssm_paths)`: una Statement IAM por tabla
+    (acciones segun el nivel de acceso) y los paths SSM de los nombres de
+    tabla, que el Lambda lee en runtime.
+    """
+    statements: list[dict[str, Any]] = []
+    table_ssm_paths: list[str] = []
+    if not isinstance(tables, dict):
+        return statements, table_ssm_paths
+
+    for short_name, access in tables.items():
+        tdef = _table_def(short_name)
+        actions: list[str] = []
+        if access in ('read', 'read-write'):
+            actions += _DYNAMO_ACTIONS['read']
+        if access in ('write', 'read-write'):
+            actions += _DYNAMO_ACTIONS['write']
+        if not actions:
+            raise ManifestError(
+                f'acceso invalido {access!r} para la tabla '
+                f'{short_name!r}. Usa read | write | read-write.',
+            )
+        physical = _interp(tdef['physical'], stage)
+        statements.append(
+            {
+                'Effect': 'Allow',
+                'Action': actions,
+                'Resource': [
+                    {
+                        'Fn::Sub': (
+                            f'arn:aws:dynamodb:{region}:{account}:'
+                            f'table/{physical}'
+                        ),
+                    },
+                ],
+            }
+        )
+        table_ssm_paths.append(
+            _interp(_ssm_path('dynamodb', short_name, 'name'), stage)
+        )
+    return statements, table_ssm_paths
 
 
 def _build_policies(
@@ -245,61 +316,40 @@ def _build_policies(
     """
     region = '${AWS::Region}'
     account = '${AWS::AccountId}'
-    statements: list[dict[str, Any]] = []
     uses = manifest.get('uses') or {}
 
     # --- DynamoDB: una Statement por tabla ---
-    tables = uses.get('tables') or {}
-    if isinstance(tables, dict):
-        for short_name, access in tables.items():
-            tdef = _table_def(short_name)
-            actions: list[str] = []
-            if access in ('read', 'read-write'):
-                actions += _DYNAMO_ACTIONS['read']
-            if access in ('write', 'read-write'):
-                actions += _DYNAMO_ACTIONS['write']
-            if not actions:
-                raise ManifestError(
-                    f'acceso invalido {access!r} para la tabla '
-                    f'{short_name!r}. Usa read | write | read-write.',
-                )
-            physical = _interp(tdef['physical'], stage)
-            statements.append(
-                {
-                    'Effect': 'Allow',
-                    'Action': actions,
-                    'Resource': [
-                        {
-                            'Fn::Sub': (
-                                f'arn:aws:dynamodb:{region}:{account}:'
-                                f'table/{physical}'
-                            ),
-                        },
-                    ],
-                }
-            )
+    statements, table_ssm_paths = _dynamodb_statements(
+        uses.get('tables') or {}, stage, region=region, account=account
+    )
 
     # --- SSM + KMS: una Statement SSM por grupo de secretos, una KMS ---
+    # Los paths SSM de las tablas se leen como String plano (sin KMS); los
+    # secretos son SecureString (requieren KMS Decrypt).
     secrets = uses.get('secrets') or []
-    if secrets:
-        secret_arns = []
-        for short_name in secrets:
-            sdef = _secret_def(short_name)
-            path = _interp(sdef['path'], stage)
-            secret_arns.append(
-                {
-                    'Fn::Sub': (
-                        f'arn:aws:ssm:{region}:{account}:parameter{path}'
-                    ),
-                }
-            )
+    ssm_read_arns = [
+        {
+            'Fn::Sub': f'arn:aws:ssm:{region}:{account}:parameter{path}',
+        }
+        for path in table_ssm_paths
+    ]
+    for short_name in secrets:
+        sdef = _secret_def(short_name)
+        path = _interp(sdef['path'], stage)
+        ssm_read_arns.append(
+            {
+                'Fn::Sub': f'arn:aws:ssm:{region}:{account}:parameter{path}',
+            }
+        )
+    if ssm_read_arns:
         statements.append(
             {
                 'Effect': 'Allow',
                 'Action': ['ssm:GetParameter'],
-                'Resource': secret_arns,
+                'Resource': ssm_read_arns,
             }
         )
+    if secrets:
         statements.append(
             {
                 'Effect': 'Allow',
@@ -342,17 +392,23 @@ def _build_policies(
         )
 
     # --- on-table-changes: leer los Streams + escribir al DLQ ---
+    # Los Stream ARN y el ARN del DLQ se resuelven con dynamic references
+    # SSM: CloudFormation los reemplaza en deploy-time (sin Fn::ImportValue).
     trigger = manifest.get('trigger') or {}
     if trigger.get('type') == 'on-table-changes':
-        stream_arns = []
+        stream_arns: list[str] = []
         for short_name in trigger.get('tables') or []:
             tdef = _table_def(short_name)
-            if not tdef['stream_export']:
+            if not tdef['has_stream']:
                 raise ManifestError(
                     f'la tabla {short_name!r} no tiene Stream — no puede '
                     f'usarse en on-table-changes.',
                 )
-            stream_arns.append(_import_value(tdef['stream_export'], stage))
+            stream_arns.append(
+                _ssm_resolve(
+                    _ssm_path('dynamodb', short_name, 'stream-arn'), stage
+                )
+            )
         statements.append(
             {
                 'Effect': 'Allow',
@@ -369,7 +425,11 @@ def _build_policies(
             {
                 'Effect': 'Allow',
                 'Action': ['sqs:SendMessage'],
-                'Resource': [_import_value('StreamProcessorDLQArn', stage)],
+                'Resource': [
+                    _ssm_resolve(
+                        _ssm_path('sqs', 'stream-processor-dlq', 'arn'), stage
+                    ),
+                ],
             }
         )
 
@@ -404,7 +464,7 @@ def _build_events(manifest: dict[str, Any], stage: str) -> dict[str, Any]:
     events: dict[str, Any] = {}
     for short_name in trigger.get('tables') or []:
         tdef = _table_def(short_name)
-        if not tdef['stream_export']:
+        if not tdef['has_stream']:
             raise ManifestError(
                 f'la tabla {short_name!r} no tiene Stream.',
             )
@@ -414,7 +474,9 @@ def _build_events(manifest: dict[str, Any], stage: str) -> dict[str, Any]:
         events[event_name] = {
             'Type': 'DynamoDB',
             'Properties': {
-                'Stream': _import_value(tdef['stream_export'], stage),
+                'Stream': _ssm_resolve(
+                    _ssm_path('dynamodb', short_name, 'stream-arn'), stage
+                ),
                 'StartingPosition': 'LATEST',
                 'BatchSize': 100,
                 'MaximumBatchingWindowInSeconds': 10,
@@ -431,10 +493,11 @@ def _build_apigw_resources(
 ) -> dict[str, Any]:
     """Construye los recursos de API Gateway para un trigger `http`.
 
-    SAM no acepta `Fn::ImportValue` en el `RestApiId` de un Event Api.
-    Por eso una ruta HTTP sobre la API importada del stack de infra se
-    modela con recursos NATIVOS de CloudFormation (que si aceptan
-    `Fn::ImportValue`):
+    Una ruta HTTP sobre la API compartida se modela con recursos NATIVOS
+    de CloudFormation. El ApiId y el root resource id se resuelven con
+    dynamic references SSM (`{{resolve:ssm:...}}`), que CloudFormation
+    reemplaza en deploy-time — sin `Fn::ImportValue`, asi el stack de la
+    API se puede redeployar sin bloquear el del Lambda:
 
       - `AWS::ApiGateway::Resource` : el path (ej. /contact).
       - `AWS::ApiGateway::Method`   : el metodo (POST) con integracion
@@ -457,8 +520,12 @@ def _build_apigw_resources(
 
     region = '${AWS::Region}'
     account = '${AWS::AccountId}'
-    api_id = _import_value('ApiId', stage)
-    root_id = _import_value('ApiRootResourceId', stage)
+    api_id = _ssm_resolve(
+        _ssm_path('api_gateway', 'portfolio-api', 'id'), stage
+    )
+    root_id = _ssm_resolve(
+        _ssm_path('api_gateway', 'portfolio-api', 'root-resource-id'), stage
+    )
     path_part = path.lstrip('/')
     func_arn = {'Fn::GetAtt': [function_logical_id, 'Arn']}
 
@@ -512,16 +579,13 @@ def _build_apigw_resources(
                 'FunctionName': func_arn,
                 'Action': 'lambda:InvokeFunction',
                 'Principal': 'apigateway.amazonaws.com',
-                # Fn::Sub con mapa de variables: ApiId se resuelve via
-                # Fn::ImportValue (no se puede inline en el string).
+                # api_id es un string {{resolve:ssm:...}} que CloudFormation
+                # resuelve en deploy-time; se interpola directo en el ARN.
                 'SourceArn': {
-                    'Fn::Sub': [
-                        (
-                            f'arn:aws:execute-api:{region}:{account}:'
-                            f'${{ApiId}}/{stage}/{method}{path}'
-                        ),
-                        {'ApiId': api_id},
-                    ],
+                    'Fn::Sub': (
+                        f'arn:aws:execute-api:{region}:{account}:'
+                        f'{api_id}/{stage}/{method}{path}'
+                    ),
                 },
             },
         },
@@ -610,9 +674,6 @@ def build_template(
             f'{logical_id}Arn': {
                 'Description': f'ARN de la funcion {name}',
                 'Value': {'Fn::GetAtt': [logical_id, 'Arn']},
-                'Export': {
-                    'Name': f'portfolio-{name}-{stage}-FunctionArn',
-                },
             },
         },
     }

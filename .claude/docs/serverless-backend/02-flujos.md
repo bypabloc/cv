@@ -22,7 +22,7 @@ Cloudflare upstream         Capa 0: DDoS L3/L4/L7 + Bot Fight (free)
    v
 API Gateway REST            Capa 2: throttling global (burst 5, 1/s)
   POST /contact             (metodo agregado por este stack sobre la
-   |                         API del stack de infra)
+   |                         API compartida del stack de recurso)
    v
 Request Validator           Capa 3: JSON Schema — body shape, required,
    |                         lengths, cf_token presente
@@ -159,7 +159,7 @@ DynamoDB Streams (NEW_AND_OLD_IMAGES, retencion 24h)
 ```
 
 > El schema de Neon lo gestionan los modelos SQLAlchemy de
-> `serverless/shared/db/` + Alembic. El `stream_processor` usa ese
+> `serverless/lambda/shared/db/` + Alembic. El `stream_processor` usa ese
 > ORM para escribir. Ver [03-datos.md](03-datos.md).
 
 ## 4. `db` — gestion del schema (invoke directo)
@@ -190,12 +190,15 @@ Operador / devtools / deploy hook
    |   command: show-migrations  -> historial
    |   command: downgrade        -> alembic downgrade (requiere confirm)
    |   command: stamp            -> adopta una rev sin recrear tablas
+   |   command: seed             -> carga datos del CV
+   |   command: tables           -> lista tablas + row counts
    v
  {is_valid, code, data:{...}}
 ```
 
-Comandos via devtools (`db-migrate`, `db-rollback`, `db-current`, ...) —
-ver [04-deploy-operacion.md](04-deploy-operacion.md). Operacion de Neon:
+Se opera invocando la Lambda con `serverless run --lambda=db
+--event=events/<command>.json` — ver
+[04-deploy-operacion.md](04-deploy-operacion.md). Operacion de Neon:
 [.claude/rules/neon-management.md](../../rules/neon-management.md).
 
 ## 5. Defense in depth (capas)

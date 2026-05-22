@@ -3,7 +3,7 @@
 devtools arma el zip que se sube a AWS; SAM solo lo deploya. El flujo
 reemplaza al `sam build` clasico (que corria `pip install`):
 
-  1. Resuelve, via `shared_resolver`, que subpaquetes de `serverless/shared/`
+  1. Resuelve, via `shared_resolver`, que subpaquetes de `serverless/lambda/shared/`
      usa el lambda (cierre transitivo por AST) y la union de sus deps
      externas.
   2. Lee las deps de runtime del `pyproject.toml` del propio lambda.

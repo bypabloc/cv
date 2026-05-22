@@ -1,0 +1,57 @@
+# Manifiesto del Lambda `contact_form` — fuente de verdad de su config.
+#
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
+# devtools traduce este manifiesto al template SAM efimero:
+#   python devtools/run.py serverless sam-generate \
+#     --lambda=contact_form
+#
+# El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
+# edita a mano: se cambia este lambda.yaml y se regenera.
+
+# --- Identidad ---
+name: contact-form
+description: Atiende el form de contacto (valida, rate-limit, Turnstile, email).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 30       # segundos
+
+# --- Como se invoca este Lambda ---
+# http: expone un endpoint en la API del backend.
+trigger:
+  type: http
+  method: POST
+  path: /contact
+
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  tables:
+    contacts: read-write           # persiste el form recibido
+    cache: read-write              # @cached
+    rate-limit-rules: read-write   # rate-limit per-IP
+    rate-limit-buckets: read-write
+  # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
+  secrets:
+    - turnstile-secret        # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
+    - owner-email             # destinatario de la notificacion
+    - ses-from-address        # remitente verificado en SES
+  # Envia email transaccional por SES al recibir un form.
+  sends-email: true
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+    AWS_SES_REGION: us-east-1
+  dev:
+    LOG_LEVEL: INFO
+  stage:
+    LOG_LEVEL: INFO
+  prod:
+    LOG_LEVEL: WARNING

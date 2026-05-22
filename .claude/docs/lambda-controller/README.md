@@ -18,7 +18,7 @@ La rule operativa es [.claude/rules/lambda-controller.md](../../rules/lambda-con
 | [03-controllers-and-models.md](03-controllers-and-models.md) | Como escribir un controller y su modelo de validacion |
 | [04-testing.md](04-testing.md) | Como verificar y testear un Lambda de este tipo |
 | [05-create-and-refactor.md](05-create-and-refactor.md) | Receta para crear uno nuevo o refactorizar un Lambda monolitico |
-| [06-devtools-operations.md](06-devtools-operations.md) | Operar el Lambda con devtools: lambda.yaml, run-local, deploy, invoke-remote, tests |
+| [06-devtools-operations.md](06-devtools-operations.md) | Operar el Lambda con devtools: lambda.yaml, `run`, `deploy`, `tests` |
 
 ## Reglas criticas
 
@@ -34,8 +34,9 @@ La rule operativa es [.claude/rules/lambda-controller.md](../../rules/lambda-con
   por escenario en `tests/{unit,integration}/`.
 - SIEMPRE el lambda trae un `lambda.yaml` (manifiesto); el `template.yaml`
   SAM se genera de el y es efimero (`.gitignore`).
-- SIEMPRE el lambda se opera con el script `serverless` de devtools
-  (`run-local`, `deploy`, `invoke-remote`, `test-unit`, `test-integration`).
+- SIEMPRE el lambda se opera con el script `serverless` de devtools:
+  `run --stage=<env>` (ejecutar), `deploy` (desplegar) y
+  `tests --type=<unit|integration|coverage>` (testear).
 - NUNCA poner logica de negocio en `handler.py` ni en los controllers —
   el handler enruta, el controller orquesta.
 - NUNCA registrar controllers a mano — se descubren por convencion de

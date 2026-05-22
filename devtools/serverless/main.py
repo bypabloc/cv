@@ -1,9 +1,11 @@
 """Serverless CLI entry point.
 
 Dispatches the parsed flags to the right command handler. Command
-implementations live in domain modules (lifecycle, quality, testing,
-secrets, database, observability, help) so this file stays small and
-the COMMAND_REGISTRY reads as the canonical inventory of subcommands.
+implementations live in domain modules (lifecycle, quality,
+lambda_controller, secrets, observability, help) so this file stays
+small and the COMMAND_REGISTRY reads as the canonical inventory of
+subcommands. Las operaciones de base de datos se hacen invocando la
+Lambda `db` con `run --lambda=db --event=events/<X>.json`.
 
 Sigue exactamente el patron de devtools/docker/main.py — posicional
 subcommand + flag-based parameters, error handling consistente, exit
@@ -15,22 +17,15 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
-from serverless.database import cmd_db_branch
-from serverless.database import cmd_db_current
-from serverless.database import cmd_db_migrate
-from serverless.database import cmd_db_rollback
-from serverless.database import cmd_db_seed
-from serverless.database import cmd_db_shell
-from serverless.database import cmd_db_show_migrations
-from serverless.database import cmd_db_tables
 from serverless.help import cmd_help
 from serverless.infra_deploy import cmd_deploy_infra
+from serverless.infra_deploy import cmd_deploy_resource
+from serverless.infra_deploy import cmd_destroy_resource
+from serverless.infra_deploy import cmd_list_resources
 from serverless.lambda_controller import cmd_deploy_lambda
-from serverless.lambda_controller import cmd_invoke_remote
-from serverless.lambda_controller import cmd_run_local
+from serverless.lambda_controller import cmd_run
 from serverless.lambda_controller import cmd_sam_generate
-from serverless.lambda_controller import cmd_test_integration_lambda
-from serverless.lambda_controller import cmd_test_unit_lambda
+from serverless.lambda_controller import cmd_tests
 from serverless.lifecycle import cmd_clean
 from serverless.lifecycle import cmd_init
 from serverless.observability import cmd_alarms
@@ -44,8 +39,6 @@ from serverless.secrets import cmd_request_ses_prod
 from serverless.secrets import cmd_rotate_secret
 from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
-from serverless.testing import cmd_test
-from serverless.testing import cmd_test_coverage
 from shared.console import _err
 
 
@@ -53,37 +46,27 @@ COMMAND_REGISTRY: dict[str, Any] = {
     # Setup / Maintenance
     'init': cmd_init,
     'clean': cmd_clean,
-    # Quality (Ruff + mypy sobre serverless/shared/ y serverless/src/)
+    # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
     'lint': cmd_lint,
     'lint-fix': cmd_lint_fix,
     'format': cmd_format,
     'typecheck': cmd_typecheck,
-    # Tests de la libreria comun (serverless/tests/, cubre shared/)
-    'test': cmd_test,
-    'test-coverage': cmd_test_coverage,
-    # lambda-controller: ciclo de vida de cada Lambda (--path requerido)
+    # Tests: unico comando, --type=unit|integration|coverage + target
+    'tests': cmd_tests,
+    # lambda-controller: ciclo de vida de cada Lambda (--lambda requerido)
     'sam-generate': cmd_sam_generate,
-    'run-local': cmd_run_local,
-    'invoke-remote': cmd_invoke_remote,
+    'run': cmd_run,
     'deploy': cmd_deploy_lambda,
-    'test-unit': cmd_test_unit_lambda,
-    'test-integration': cmd_test_integration_lambda,
-    # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
+    # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
     'deploy-infra': cmd_deploy_infra,
+    'deploy-resource': cmd_deploy_resource,
+    'destroy-resource': cmd_destroy_resource,
+    'list-resources': cmd_list_resources,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
     'rotate-secret': cmd_rotate_secret,
     'verify-ses-dns': cmd_verify_ses_dns,
     'request-ses-prod': cmd_request_ses_prod,
-    # Database (Neon) — migraciones via la Lambda `db` (Alembic)
-    'db-shell': cmd_db_shell,
-    'db-migrate': cmd_db_migrate,
-    'db-rollback': cmd_db_rollback,
-    'db-current': cmd_db_current,
-    'db-show-migrations': cmd_db_show_migrations,
-    'db-seed': cmd_db_seed,
-    'db-branch': cmd_db_branch,
-    'db-tables': cmd_db_tables,
     # Observability
     'metrics': cmd_metrics,
     'alarms': cmd_alarms,

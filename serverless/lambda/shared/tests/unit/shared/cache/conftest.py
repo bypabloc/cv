@@ -8,7 +8,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from shared.dynamodb_client import reset_resource_cache
+from shared.aws.dynamodb import reset_resource_cache
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def cache_table() -> Generator[str]:
     """
     with mock_aws():
         # DynamoDBCache delega en el ORM (CacheItem), que usa el resource
-        # boto3 singleton de shared.dynamodb_client: recrearlo bajo este
+        # boto3 singleton de shared.aws.dynamodb: recrearlo bajo este
         # mock_aws() para que moto intercepte.
         reset_resource_cache()
         client = boto3.client('dynamodb', region_name='us-east-1')

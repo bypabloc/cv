@@ -1,4 +1,4 @@
-"""Tests para shared.turnstile (httpx con respx)."""
+"""Tests para shared.http.turnstile (httpx con respx)."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import httpx
 import pytest
 import respx
 
-from shared.exceptions import TurnstileError
-from shared.turnstile import (
+from shared.core.exceptions import TurnstileError
+from shared.http.turnstile import (
     TURNSTILE_SITEVERIFY_URL,
     verify_turnstile_token,
 )
@@ -190,7 +190,7 @@ class TestVerifyTurnstileToken:
             '/portfolio/dev/turnstile-bypass-secret',
         )
         monkeypatch.setattr(
-            'shared.turnstile.get_secret',
+            'shared.http.turnstile.get_secret',
             lambda _path: 'test-bypass-123',
         )
 
@@ -220,7 +220,7 @@ class TestVerifyTurnstileToken:
             '/portfolio/dev/turnstile-bypass-secret',
         )
         monkeypatch.setattr(
-            'shared.turnstile.get_secret',
+            'shared.http.turnstile.get_secret',
             lambda _path: 'test-bypass-123',
         )
 

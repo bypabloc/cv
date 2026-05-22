@@ -1,10 +1,10 @@
-"""Unit tests para shared.ip_extractor."""
+"""Unit tests para shared.http.ip_extractor."""
 
 from __future__ import annotations
 
 import pytest
 
-from shared.ip_extractor import extract_country, extract_ip
+from shared.http.ip_extractor import extract_country, extract_ip
 
 pytestmark = pytest.mark.unit
 

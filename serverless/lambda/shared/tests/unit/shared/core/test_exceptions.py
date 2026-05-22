@@ -1,10 +1,10 @@
-"""Unit tests para shared.exceptions."""
+"""Unit tests para shared.core.exceptions."""
 
 from __future__ import annotations
 
 import pytest
 
-from shared.exceptions import (
+from shared.core.exceptions import (
     ApplicationError,
     CountryBlockedError,
     IPBlacklistedError,

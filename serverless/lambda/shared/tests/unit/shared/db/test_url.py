@@ -65,7 +65,7 @@ class TestResolveDatabaseUrl:
         monkeypatch.delenv('DATABASE_URL', raising=False)
         monkeypatch.setenv('SSM_NEON_URL_PATH', '/portfolio/dev/neon-url')
         monkeypatch.setattr(
-            'shared.ssm_client.get_secret',
+            'shared.aws.ssm.get_secret',
             lambda path: 'postgresql://ssm-user:p@ssm-host/db',
         )
 
@@ -118,7 +118,7 @@ class TestEnsureDatabaseUrl:
         monkeypatch.delenv('DATABASE_URL', raising=False)
         monkeypatch.setenv('SSM_NEON_URL_PATH', '/portfolio/neon-url')
         monkeypatch.setattr(
-            'shared.ssm_client.get_secret',
+            'shared.aws.ssm.get_secret',
             lambda path: 'postgresql://u:p@h/db',
         )
 

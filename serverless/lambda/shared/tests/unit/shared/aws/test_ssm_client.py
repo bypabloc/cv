@@ -1,11 +1,11 @@
-"""Unit tests para shared.ssm_client (Powertools parameters + cache)."""
+"""Unit tests para shared.aws.ssm (Powertools parameters + cache)."""
 
 from __future__ import annotations
 
 import pytest
 from moto import mock_aws
 
-from shared.ssm_client import clear_cache, get_parameter, get_secret
+from shared.aws.ssm import clear_cache, get_parameter, get_secret
 
 pytestmark = pytest.mark.unit
 

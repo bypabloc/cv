@@ -68,7 +68,7 @@ def reset_settings_cache() -> Generator[None]:
     # Limpiar cache al final del test (no al inicio: otros fixtures pueden
     # haber seteado env vars que el test quiere ver).
     try:
-        from shared.config import get_settings
+        from shared.core.config import get_settings
         get_settings.cache_clear()
     except ImportError:
         pass

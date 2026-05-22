@@ -5,8 +5,8 @@ Estos comandos operan sobre cualquier lambda resuelto por `--path`
 manifiesto y lo usan por detras para `sam local invoke`, `sam build` +
 `sam deploy`, y `aws lambda invoke` contra un stage deployado.
 
-Para el backend SAM del portfolio (modo legacy, sin `--path`) ver
-`serverless/lifecycle.py` y `serverless/testing.py`.
+El comando `tests` corre las suites unit/integration/coverage de los
+lambdas y de la libreria comun `shared/`.
 """
 
 from __future__ import annotations
@@ -389,9 +389,14 @@ def _run_lambda_tests(
     args.extend(_pytest_extra(flags))
     if test_type == 'coverage':
         threshold = flags.get('coverage_threshold', 80)
+        # --cov-config apunta al pyproject del backend: su [tool.coverage.run]
+        # omite core/shared/ (la libreria comun vendorizada) para que el
+        # coverage del Lambda mida solo su propio codigo.
+        cov_config = _SERVERLESS_DIR / 'pyproject.toml'
         args.extend(
             [
                 '--cov=core',
+                f'--cov-config={cov_config}',
                 '--cov-report=term-missing',
                 f'--cov-fail-under={threshold}',
             ]
@@ -416,9 +421,10 @@ def _run_shared_tests(
     pytest agrega al `sys.path` es `lambda/`, `import shared...` resuelve
     y el subpaquete `shared/http/` no tapa el `http` del stdlib.
 
-    `subpackage` filtra a un subpaquete (`aws`, `cache`, ...): si existe
-    `tests/unit/shared/<subpackage>/` corre ese directorio, sino filtra
-    por `-k <subpackage>`.
+    `subpackage` filtra a un subpaquete (`core`, `aws`, `http`, `cache`,
+    `db`, `dynamodb`, `rate_limit`): corre `tests/unit/shared/<subpackage>/`
+    y acota el `--cov` a ese subpaquete. Si el subpaquete no tiene subdir
+    de tests, cae a `-k <subpackage>` (el `--cov` sigue midiendo todo).
     """
     tests_root = _SHARED_DIR / 'tests'
     type_dir = tests_root / ('unit' if test_type == 'coverage' else test_type)
@@ -441,22 +447,40 @@ def _run_shared_tests(
     args = [python, '-m', 'pytest', test_path, '-o', 'addopts=']
     args.extend(_pytest_extra(flags))
 
+    # Por defecto el coverage mide toda la libreria comun; con --shared=X
+    # se acota al subpaquete (mide solo lo que los tests filtrados cubren).
+    cov_target = 'shared'
+    filtered_by_dir = False
     if subpackage:
         subpkg_dir = type_dir / 'shared' / subpackage
         if subpkg_dir.is_dir():
             args[3] = f'{test_path}/shared/{subpackage}'
+            cov_target = f'shared/{subpackage}'
+            filtered_by_dir = True
         else:
             args.extend(['-k', subpackage])
 
     if test_type == 'coverage':
         threshold = flags.get('coverage_threshold', 80)
+        cov_config = _SERVERLESS_DIR / 'pyproject.toml'
         args.extend(
             [
-                '--cov=shared',
+                f'--cov={cov_target}',
+                f'--cov-config={cov_config}',
                 '--cov-report=term-missing',
                 f'--cov-fail-under={threshold}',
             ]
         )
+        if subpackage and not filtered_by_dir:
+            # subpaquete filtrado por -k (no por dir): el --cov igual mide
+            # toda la libreria, no se puede acotar mas sin el subdir.
+            print(
+                _c(
+                    YELLOW,
+                    f'[nota] --shared={subpackage} sin subdir propio: '
+                    'el coverage mide toda la libreria comun.',
+                )
+            )
 
     return _run(args, cwd=_SHARED_DIR.parent)
 

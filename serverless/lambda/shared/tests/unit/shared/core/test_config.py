@@ -1,10 +1,10 @@
-"""Unit tests para shared.config (Settings)."""
+"""Unit tests para shared.core.config (Settings)."""
 
 from __future__ import annotations
 
 import pytest
 
-from shared.config import Settings, get_settings
+from shared.core.config import Settings, get_settings
 
 pytestmark = pytest.mark.unit
 

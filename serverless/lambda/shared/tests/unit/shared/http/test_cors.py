@@ -1,10 +1,10 @@
-"""Unit tests para shared.cors."""
+"""Unit tests para shared.http.cors."""
 
 from __future__ import annotations
 
 import pytest
 
-from shared.cors import (
+from shared.http.cors import (
     cors_headers,
     is_allowed_origin,
     public_cors_origin,

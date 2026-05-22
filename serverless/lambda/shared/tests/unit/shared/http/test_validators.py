@@ -1,10 +1,10 @@
-"""Unit tests para shared.validators."""
+"""Unit tests para shared.http.validators."""
 
 from __future__ import annotations
 
 import pytest
 
-from shared.validators import is_valid_country, is_valid_email, sanitize_text
+from shared.http.validators import is_valid_country, is_valid_email, sanitize_text
 
 pytestmark = pytest.mark.unit
 

@@ -101,7 +101,9 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["lambda/services", "lambda/shared"]
-omit = ["**/__init__.py", "**/tests/*"]
+# core/shared/ es la libreria comun vendorizada (efimera) dentro de cada
+# Lambda: el coverage del Lambda mide solo SU codigo, no la copia de shared.
+omit = ["**/__init__.py", "**/tests/*", "**/core/shared/*"]
 
 [tool.coverage.report]
 exclude_lines = [

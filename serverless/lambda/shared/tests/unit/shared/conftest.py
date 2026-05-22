@@ -12,7 +12,7 @@ from moto import mock_aws
 @pytest.fixture
 def turnstile_env(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     """
-    Setup minimo para tests de shared.turnstile.
+    Setup minimo para tests de shared.http.turnstile.
 
     Solo SSM (turnstile-secret) + las env vars que verify_turnstile_token
     consulta: SSM_TURNSTILE_SECRET_PATH y CORS_ALLOWED_ORIGINS (whitelist de

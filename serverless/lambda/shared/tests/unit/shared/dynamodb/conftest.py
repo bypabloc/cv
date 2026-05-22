@@ -20,7 +20,7 @@ from shared.dynamodb import (
     RateLimitRuleItem,
     TrackingEventItem,
 )
-from shared.dynamodb_client import reset_resource_cache
+from shared.aws.dynamodb import reset_resource_cache
 
 _ALL_MODELS = (
     ContactItem,

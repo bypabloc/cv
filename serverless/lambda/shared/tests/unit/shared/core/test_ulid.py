@@ -1,4 +1,4 @@
-"""Unit tests para shared.ulid (UUIDv7 generator)."""
+"""Unit tests para shared.core.ulid (UUIDv7 generator)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from shared.ulid import new_uuidv7
+from shared.core.ulid import new_uuidv7
 
 pytestmark = pytest.mark.unit
 

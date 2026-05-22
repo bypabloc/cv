@@ -1,0 +1,20 @@
+# @config: shared/lambda_kit/pyproject.toml
+# @description: manifiesto de dependencias del subpaquete
+#   shared.lambda_kit (kit comun del estandar lambda-controller:
+#   BaseController, BaseSettings, import_controller, event_model,
+#   validate_event, run_controller). Ver shared/core/pyproject.toml para
+#   el formato. NO es un paquete publicable.
+
+[project]
+name = "shared-lambda-kit"
+version = "0"
+description = "Kit comun del estandar lambda-controller del backend."
+requires-python = ">=3.13"
+dependencies = [
+  "pydantic>=2.5,<3.0",
+]
+
+[tool.shared]
+# base_controller / import_controller / validate_event usan el logger de
+# shared.observability.
+internal-deps = ["observability"]

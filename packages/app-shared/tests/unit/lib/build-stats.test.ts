@@ -2,7 +2,13 @@
  * @description Tests para buildStats: derivacion de stats desde profile o
  *   calculo desde data si profile.stats no esta definido.
  */
-import type { Experience, Profile } from '@portfolio/content'
+import {
+  certificates,
+  type Experience,
+  experiences,
+  type Profile,
+  profile,
+} from '@portfolio/content'
 import { describe, expect, it } from 'vitest'
 import {
   buildStats,
@@ -154,5 +160,32 @@ describe('countCompanies', () => {
       }) as unknown as Experience
     const list = [make('A'), make('A'), make('B')]
     expect(countCompanies(list)).toBe(2)
+  })
+})
+
+describe('profile real: consistencia de stats con la data', () => {
+  it('Given el profile real When se lee stats.companies Then vale 5 (empresas distintas en experiences)', () => {
+    // Las 9 experiencias agrupan 5 nombres de empresa distintos.
+    expect(profile.stats?.companies).toBe(5)
+    expect(profile.stats?.companies).toBe(countCompanies(experiences))
+  })
+
+  it('Given el profile real When se lee stats.certifications Then coincide con la cantidad de certificates', () => {
+    expect(profile.stats?.certifications).toBe(certificates.length)
+    expect(profile.stats?.certifications).toBe(11)
+  })
+
+  it('Given el profile real When se lee stats.yearsExperience Then vale 12', () => {
+    expect(profile.stats?.yearsExperience).toBe(12)
+  })
+
+  it('Given el profile real When se lee el summary Then menciona "12 años" y NO "8 años"', () => {
+    expect(profile.summary.es).toContain('12 años')
+    expect(profile.summary.es).not.toContain('8 años')
+  })
+
+  it('Given el profile real When se lee el summary en ingles Then menciona "12 years" y NO "8 years"', () => {
+    expect(profile.summary.en).toContain('12 years')
+    expect(profile.summary.en).not.toContain('8 years')
   })
 })

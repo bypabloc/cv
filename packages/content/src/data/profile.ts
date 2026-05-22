@@ -13,8 +13,8 @@ export const profile: Profile = ProfileSchema.parse({
     en: 'Senior Full Stack Engineer — LATAM fintech, microservices, AWS',
   },
   summary: {
-    es: 'Ingeniero de software con más de 8 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.',
-    en: 'Software engineer with over 8 years of experience, specialized in Full Stack development with Python and JavaScript. Expert in building technology solutions with Vue, Django, microservices and AWS, I have successfully delivered and led the implementation of ERP systems and fintech platforms, significantly improving operational efficiency and user experience. Skilled in coordinating and motivating teams, I adapt easily to dynamic and challenging environments, always focused on quality and innovation.',
+    es: 'Ingeniero de software con más de 12 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.',
+    en: 'Software engineer with over 12 years of experience, specialized in Full Stack development with Python and JavaScript. Expert in building technology solutions with Vue, Django, microservices and AWS, I have successfully delivered and led the implementation of ERP systems and fintech platforms, significantly improving operational efficiency and user experience. Skilled in coordinating and motivating teams, I adapt easily to dynamic and challenging environments, always focused on quality and innovation.',
   },
   location: 'Lima, Perú',
   availability: {
@@ -32,7 +32,11 @@ export const profile: Profile = ProfileSchema.parse({
   niches: ['fintech', 'architect', 'leader', 'vibe', 'generic'],
   stats: {
     yearsExperience: 12,
-    companies: 8,
+    // 5 empresas distintas en experiences/: Destacame, Dibal, GoodMeal,
+    //   Laboratorio Cofasa S.A. e "Independiente / Académico".
+    companies: 5,
+    // 4 países: Venezuela (primeras experiencias), Perú (Dibal),
+    //   Chile y México (Destacame, ambas sucursales).
     countries: 4,
     certifications: 11,
   },

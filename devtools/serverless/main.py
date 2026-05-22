@@ -23,8 +23,9 @@ from serverless.help import cmd_help
 from serverless.infra_provision import cmd_list_resources
 from serverless.infra_provision import cmd_provision_infra
 from serverless.lambda_controller import cmd_deploy_lambda
+from serverless.lambda_controller import cmd_destroy
 from serverless.lambda_controller import cmd_run
-from serverless.lambda_controller import cmd_sam_generate
+from serverless.lambda_controller import cmd_status
 from serverless.lambda_controller import cmd_tests
 from serverless.lifecycle import cmd_clean
 from serverless.lifecycle import cmd_init
@@ -52,15 +53,14 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'typecheck': cmd_typecheck,
     # Tests: unico comando, --type=unit|integration|coverage + target
     'tests': cmd_tests,
-    # lambda-controller: ciclo de vida de cada Lambda (--lambda requerido)
-    'sam-generate': cmd_sam_generate,
+    # lambda-controller: ciclo de vida de cada Lambda. devtools provisiona
+    # cada Lambda con AWS CLI directo (sin SAM): deploy traduce el
+    # manifiesto a llamadas AWS, run lo ejecuta con RIE / modo directo.
     'run': cmd_run,
     'deploy': cmd_deploy_lambda,
+    'destroy': cmd_destroy,
+    'status': cmd_status,
     # Infra: recursos compartidos provisionados con AWS CLI directo.
-    # Toque minimo de la Fase 3: `deploy-infra` (en VALID_COMMANDS de
-    # flags.py) apunta al provisioner nuevo; `provision-infra` queda como
-    # alias para cuando la Fase 5 lo agregue a flags.py.
-    'deploy-infra': cmd_provision_infra,
     'provision-infra': cmd_provision_infra,
     'list-resources': cmd_list_resources,
     # Secrets / DNS

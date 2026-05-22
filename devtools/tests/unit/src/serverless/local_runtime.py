@@ -3,15 +3,14 @@
 Path mirroring: devtools/serverless/local_runtime.py -> this file.
 
 Cubre los dos modos de ejecucion local (RIE via Docker / directo via
-import del handler), el fallback a directo cuando Docker no esta, el
-manejo de un event JSON inexistente y el `_FakeContext`. `subprocess`,
-`shutil.which`, `package_lambda` y `vendored_shared` estan mockeados:
-ningun test levanta Docker ni empaqueta de verdad.
+subprocess con el .venv del backend), el fallback a directo cuando Docker
+no esta, el manejo de un event JSON inexistente y el `_FakeContext`.
+`subprocess`, `shutil.which`, `package_lambda` y `vendored_shared` estan
+mockeados: ningun test levanta Docker ni empaqueta de verdad.
 """
 
 import contextlib
 import subprocess
-import sys
 import textwrap
 
 import pytest
@@ -67,7 +66,7 @@ def _noop_vendor(_root):
 
 
 class TestRunLocalDirect:
-    """run_local con mode=DIRECT importa y ejecuta el handler."""
+    """run_local con mode=DIRECT ejecuta el handler en un subproceso."""
 
     def test_run_local_direct_invokes_handler(self, tmp_path, monkeypatch):
         from serverless import local_runtime
@@ -78,8 +77,18 @@ class TestRunLocalDirect:
             'vendored_shared',
             _noop_vendor,
         )
-        sys.modules.pop('core', None)
-        sys.modules.pop('core.handler', None)
+        captured = {}
+
+        def _fake_run(cmd, **_kwargs):
+            captured['cmd'] = cmd
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout='{"ok": true}',
+                stderr='',
+            )
+
+        monkeypatch.setattr(local_runtime.subprocess, 'run', _fake_run)
 
         rc = local_runtime.run_local(
             _resolved(root),
@@ -88,6 +97,9 @@ class TestRunLocalDirect:
         )
 
         assert rc == 0
+        # El subproceso recibe el script runner + la raiz del lambda.
+        assert local_runtime._DIRECT_RUNNER in captured['cmd']  # noqa: SLF001
+        assert str(root) in captured['cmd']
 
     def test_run_local_direct_when_handler_raises_returns_error(
         self,
@@ -96,22 +108,22 @@ class TestRunLocalDirect:
     ):
         from serverless import local_runtime
 
-        root = tmp_path
-        core = root / 'core'
-        core.mkdir()
-        (core / '__init__.py').write_text('', encoding='utf-8')
-        (core / 'handler.py').write_text(
-            'def lambda_handler(event, context):\n'
-            "    raise ValueError('boom')\n",
-            encoding='utf-8',
-        )
+        root = _make_direct_lambda(tmp_path)
         monkeypatch.setattr(
             local_runtime,
             'vendored_shared',
             _noop_vendor,
         )
-        sys.modules.pop('core', None)
-        sys.modules.pop('core.handler', None)
+
+        def _fake_run(cmd, **_kwargs):
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=1,
+                stdout='',
+                stderr='ValueError: boom',
+            )
+
+        monkeypatch.setattr(local_runtime.subprocess, 'run', _fake_run)
 
         rc = local_runtime.run_local(
             _resolved(root),
@@ -216,8 +228,13 @@ class TestRunLocalRie:
             raise AssertionError('no debe empaquetar sin Docker')
 
         monkeypatch.setattr(local_runtime, 'package_lambda', _explode)
-        sys.modules.pop('core', None)
-        sys.modules.pop('core.handler', None)
+        monkeypatch.setattr(
+            local_runtime.subprocess,
+            'run',
+            lambda cmd, **_k: subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout='{"ok": true}', stderr=''
+            ),
+        )
 
         rc = local_runtime.run_local(
             _resolved(root),

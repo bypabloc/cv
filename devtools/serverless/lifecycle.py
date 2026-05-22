@@ -1,15 +1,14 @@
 """Comandos de mantenimiento del backend serverless.
 
-El backend del portfolio son stacks CloudFormation independientes (un
-`manifest.yaml` por Lambda en `serverless/lambda/services/*`, un stack por
-recurso compartido en `serverless/lambda/resources/*`). El ciclo de vida
-de cada stack se opera con los comandos del modo lambda-controller
-(`sam-generate`, `run`, `deploy`, `tests`) y `deploy-infra` para los
-recursos compartidos.
+El backend del portfolio son recursos AWS provisionados con AWS CLI
+directo (sin SAM ni CloudFormation): un `manifest.yaml` por Lambda en
+`serverless/lambda/services/*` y los fragmentos de recurso compartido en
+`serverless/lambda/resources/*`. El ciclo de vida de cada Lambda se opera
+con los comandos del modo lambda-controller (`run`, `deploy`, `destroy`,
+`status`, `tests`) y `provision-infra` para los recursos compartidos.
 
-Este modulo conserva solo los comandos transversales que NO dependen de
-un SAM template monolitico: `init` (setup del entorno) y `clean`
-(limpieza de caches y artefactos efimeros).
+Este modulo conserva los comandos transversales: `init` (setup del
+entorno) y `clean` (limpieza de caches y artefactos efimeros).
 """
 
 from __future__ import annotations
@@ -31,27 +30,14 @@ from shared.console import _err
 _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
 
-def _ensure_sam_available() -> None:
-    """Verifica que `sam` esta en el PATH; aborta con hint si falta."""
-    if shutil.which('sam') is None:
-        _err('AWS SAM CLI no esta instalado')
-        print(
-            f'{YELLOW}  Instalar con:{NC} '
-            f'{CYAN}brew install aws-sam-cli{NC} '
-            f'o {CYAN}pip install aws-sam-cli{NC}',
-        )
-        raise SystemExit(1)
-
-
 # ---------------------------------------------------------------------------
 # Setup / Init
 # ---------------------------------------------------------------------------
 
 
 def cmd_init(flags: dict[str, Any]) -> int:
-    """Setup inicial: verifica deps (sam, aws CLI) y uv sync del modulo."""
+    """Setup inicial: verifica deps (aws CLI + uv) y uv sync del modulo."""
     _ = flags
-    _ensure_sam_available()
 
     if shutil.which('aws') is None:
         _err('AWS CLI no esta instalado')
@@ -62,12 +48,21 @@ def cmd_init(flags: dict[str, Any]) -> int:
         )
         return 1
 
+    if shutil.which('uv') is None:
+        _err('uv no esta instalado')
+        print(
+            f'{YELLOW}  Instalar con:{NC} '
+            f'{CYAN}curl -LsSf https://astral.sh/uv/install.sh | sh{NC}'
+        )
+        return 1
+
     # uv sync del pyproject del modulo (deps de runtime de los lambdas).
     pyproject = _SERVERLESS_DIR / 'pyproject.toml'
     if pyproject.exists():
         print(_c(CYAN, '$ uv sync --project serverless'))
-        result = subprocess.run(
-            ['uv', 'sync', '--project', str(_SERVERLESS_DIR)],
+
+        result = subprocess.run(  # noqa: S603
+            ['uv', 'sync', '--project', str(_SERVERLESS_DIR)],  # noqa: S607
             check=False,
         )
         if result.returncode != 0:
@@ -77,7 +72,7 @@ def cmd_init(flags: dict[str, Any]) -> int:
     print()
     print(_c(GREEN, 'OK  serverless/ listo para usar'))
     print(f'{YELLOW}Siguiente paso:{NC}')
-    print('  python devtools/run.py serverless deploy-infra --stage=dev')
+    print('  python devtools/run.py serverless provision-infra --stage=dev')
     print('  python devtools/run.py serverless deploy --lambda=db --stage=dev')
     return 0
 
@@ -92,29 +87,27 @@ def cmd_clean(flags: dict[str, Any]) -> int:
 
     Limpia, en `serverless/` y en cada lambda de
     `serverless/lambda/services/*/`:
-      - `.aws-sam/` (build de SAM)
-      - `template.yaml` efimero generado por sam-generate
-      - `build/` y `core/shared/` vendorizados
+      - `build/` y `build.zip` (artefacto que devtools arma con uv)
+      - `core/shared/` vendorizado
       - caches de Python / pytest / ruff / coverage
     """
     targets: list[Path] = [
-        _SERVERLESS_DIR / '.aws-sam',
         _SERVERLESS_DIR / '.pytest_cache',
         _SERVERLESS_DIR / '.ruff_cache',
         _SERVERLESS_DIR / '.coverage',
         _SERVERLESS_DIR / 'htmlcov',
     ]
 
-    # Artefactos efimeros por lambda: template.yaml, .aws-sam/, build/,
-    # core/shared/ vendorizado.
+    # Artefactos efimeros por lambda: build/, build.zip, core/shared/
+    # vendorizado, .invoke/ con la respuesta de aws lambda invoke.
     services_dir = _SERVERLESS_DIR / 'lambda' / 'services'
     if services_dir.is_dir():
         for lambda_dir in services_dir.iterdir():
             if not lambda_dir.is_dir():
                 continue
-            targets.append(lambda_dir / 'template.yaml')
-            targets.append(lambda_dir / '.aws-sam')
             targets.append(lambda_dir / 'build')
+            targets.append(lambda_dir / 'build.zip')
+            targets.append(lambda_dir / '.invoke')
             targets.append(lambda_dir / 'core' / 'shared')
 
     # __pycache__ recursivo.

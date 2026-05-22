@@ -1,6 +1,6 @@
 """Flag validation and configuration for serverless CLI script.
 
-Validates and normalizes flags for the AWS SAM backend module. Like
+Validates and normalizes flags for the serverless backend module. Like
 ``docker``, this module takes a positional subcommand (NOT `--command=`)
 plus flag-based parameters. See ``.claude/rules/devtools.md`` for the
 posicional-vs-flag policy.
@@ -14,25 +14,27 @@ from utils.flags_to_dict import set_default_values
 from utils.flags_to_dict import validate_allowed_flags
 
 
-# Stages soportados por el backend SAM. Se mapean a samconfig.toml
-# environments. ``local`` no es un stage AWS real — apunta a sam local
-# invoke + sam local start-api + moto mocks.
+# Stages soportados por el backend serverless. ``local`` no es un stage
+# AWS real — apunta a la ejecucion local del Lambda (RIE / modo directo).
 VALID_STAGES = ['local', 'dev', 'stage', 'prod']
 
 STAGE_DESCRIPTIONS = {
-    'local': 'sam local invoke / start-api con moto mocks (sin AWS)',
-    'dev': 'Stack desplegado en us-east-1 (cuenta dev / sandbox)',
-    'stage': 'Stack de pre-produccion en us-east-1 (replica prod)',
-    'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
+    'local': 'Ejecucion local del Lambda (RIE / modo directo, sin AWS)',
+    'dev': 'Recursos provisionados en us-east-1 (cuenta dev / sandbox)',
+    'stage': 'Recursos de pre-produccion en us-east-1 (replica prod)',
+    'prod': 'Recursos provisionados en us-east-1 (cuenta productiva)',
 }
 
 # Tipos de test soportados por el comando `tests`.
 VALID_TEST_TYPES = ['unit', 'integration', 'coverage']
 
+# Modos de ejecucion local del comando `run --stage=local`.
+VALID_RUNTIME_MODES = ['rie', 'direct']
+
 VALID_COMMANDS = [
     # Setup / Maintenance
-    'init',  # uv sync + verifica sam + aws CLI
-    'clean',  # rm caches + artefactos efimeros (template.yaml, core/shared)
+    'init',  # uv sync + verifica aws CLI + uv
+    'clean',  # rm caches + artefactos efimeros (build/, core/shared)
     # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
     'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
@@ -40,14 +42,13 @@ VALID_COMMANDS = [
     'typecheck',  # mypy
     # Tests: unico comando, --type=unit|integration|coverage + target
     'tests',  # pytest de un lambda (--lambda), shared (--shared) o todo
-    # lambda-controller: ciclo de vida de cada Lambda. --path requerido.
-    'sam-generate',  # manifest.yaml -> template.yaml (SAM efimero)
-    'run',  # ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke
-    'deploy',  # sam build + sam deploy del lambda (stack propio)
-    # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
-    'deploy-infra',  # deploya TODOS los stacks de recurso de resources/
-    'deploy-resource',  # deploya UN stack de recurso (--name=<tipo>/<nombre>)
-    'destroy-resource',  # borra UN stack de recurso (destructivo)
+    # lambda-controller: ciclo de vida de cada Lambda con AWS CLI directo.
+    'run',  # ejecuta un lambda: --stage=local -> RIE/directo; resto -> aws invoke
+    'deploy',  # provisiona el lambda en un stage (AWS CLI + estado local)
+    'destroy',  # borra los recursos de un stage (lambda(s) + infra)
+    'status',  # estado local vs AWS, por scope
+    # Infra: recursos compartidos provisionados con AWS CLI directo
+    'provision-infra',  # provisiona TODOS los recursos de resources/
     'list-resources',  # lista los recursos declarados en resources/
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
@@ -72,11 +73,11 @@ ALLOWED_FLAGS = [
     'path',  # --path=<dir> del lambda (dir con manifest.yaml, cualquier ubicacion)
     'module',  # alias de --path
     'shared',  # --shared o --shared=<subpaquete> (target del comando tests)
-    # Deploy
-    'guided',  # sam deploy --guided
+    # Deploy / run
     'confirm',  # required para comandos destructivos
+    'yes',  # confirmacion no interactiva de `destroy`
     'event',  # --event=events/<X>.json (run)
-    'debug',  # sam local invoke --debug
+    'runtime_mode',  # --runtime-mode=rie|direct (run --stage=local)
     # Quality / Tests
     'module_path',  # Subset del codigo (ej. src/contact_form/)
     'files',  # Subset de archivos especificos
@@ -114,10 +115,10 @@ ALLOWED_FLAGS = [
 
 
 # Comandos destructivos. Cada uno requiere --confirm o --dry-run primero.
+# `destroy` NO esta aqui: usa su propio flag --yes (validado en cmd_destroy).
 DESTRUCTIVE_COMMANDS = frozenset(
     {
         'clean',
-        'destroy-resource',
         'rotate-secret',
     }
 )
@@ -126,9 +127,9 @@ DESTRUCTIVE_COMMANDS = frozenset(
 # Comandos del modo lambda-controller: requieren apuntar a un lambda con
 # --lambda=<nombre> (resuelto contra serverless/lambda/services/*) o --path=<dir>.
 # `tests` NO esta aqui: sin target corre toda la suite, o usa --shared.
+# `destroy` / `status` NO estan: sin --lambda operan sobre todo el stage.
 PATH_REQUIRED_COMMANDS = frozenset(
     {
-        'sam-generate',
         'run',
         'deploy',
     }
@@ -146,19 +147,18 @@ JSON_OUTPUT_COMMANDS = frozenset(
 
 # Resumenes 1-line por comando (usados por describe() y help).
 _COMMAND_SUMMARIES: dict[str, str] = {
-    'init': 'Setup inicial (uv sync + verifica AWS CLI + SAM)',
-    'clean': 'Eliminar caches + artefactos efimeros (template.yaml, vendor)',
+    'init': 'Setup inicial (uv sync + verifica AWS CLI + uv)',
+    'clean': 'Eliminar caches + artefactos efimeros (build/, vendor)',
     'lint': 'Ruff check sobre shared/ y src/',
     'lint-fix': 'Ruff check --fix',
     'format': 'Ruff format',
     'typecheck': 'mypy strict sobre shared/ y src/',
     'tests': 'pytest --type=unit|integration|coverage (--lambda / --shared)',
-    'sam-generate': 'Genera template.yaml SAM desde manifest.yaml (--lambda)',
-    'run': 'Ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke',
-    'deploy': 'Empaqueta con uv + sam deploy del lambda a un stage (--lambda)',
-    'deploy-infra': 'Deploya TODOS los stacks de recurso de resources/',
-    'deploy-resource': 'Deploya UN stack de recurso (--name=<tipo>/<nombre>)',
-    'destroy-resource': 'Borra UN stack de recurso (DESTRUCTIVO)',
+    'run': 'Ejecuta un lambda: --stage=local -> RIE/directo; resto -> aws invoke',
+    'deploy': 'Provisiona el lambda en un stage (AWS CLI + estado local)',
+    'destroy': 'Borra los recursos de un stage (lambda(s) + infra) — requiere --yes',
+    'status': 'Estado local vs AWS, por scope',
+    'provision-infra': 'Provisiona TODOS los recursos de resources/ con AWS CLI',
     'list-resources': 'Lista los recursos declarados en resources/',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
@@ -188,14 +188,13 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'verbose',
         'coverage_threshold',
     ],
-    'sam-generate': ['lambda', 'path', 'module', 'stage'],
     'run': [
         'lambda',
         'path',
         'module',
         'stage',
         'event',
-        'debug',
+        'runtime_mode',
         'aws_profile',
     ],
     'deploy': [
@@ -203,13 +202,12 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'path',
         'module',
         'stage',
-        'guided',
         'aws_profile',
         'dry_run',
     ],
-    'deploy-infra': ['stage', 'aws_profile', 'dry_run'],
-    'deploy-resource': ['name', 'stage', 'aws_profile', 'dry_run'],
-    'destroy-resource': ['name', 'stage', 'confirm', 'aws_profile', 'dry_run'],
+    'destroy': ['lambda', 'path', 'module', 'stage', 'yes', 'aws_profile'],
+    'status': ['lambda', 'path', 'module', 'stage', 'aws_profile'],
+    'provision-infra': ['stage', 'aws_profile', 'dry_run'],
     'list-resources': ['stage'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
@@ -240,9 +238,9 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
 # Defaults aplicados por set_default_values cuando un flag no se provee.
 _DEFAULTS: dict[str, Any] = {
     'stage': 'local',
-    'guided': False,
     'confirm': False,
-    'debug': False,
+    'yes': False,
+    'runtime_mode': 'rie',
     'since': '10m',
     'verbose': False,
     'quiet': False,
@@ -334,6 +332,13 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
                 f'(recibido: {test_type!r}).',
             )
 
+    runtime_mode = flags_dict.get('runtime_mode')
+    if runtime_mode is not None and runtime_mode not in VALID_RUNTIME_MODES:
+        raise ValueError(
+            f'--runtime-mode invalido: {runtime_mode!r}. '
+            f'Validos: {", ".join(VALID_RUNTIME_MODES)}.',
+        )
+
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, _DEFAULTS)
 
@@ -346,8 +351,9 @@ def describe() -> ScriptDescribe:
         'name': 'serverless',
         'kind': 'subcommand',
         'summary': (
-            'Backend serverless del portfolio: 5 stacks (infra + 4 Lambdas '
-            'lambda-controller). Cada Lambda se opera con --lambda=<nombre>'
+            'Backend serverless del portfolio: infra compartida + 4 Lambdas '
+            'lambda-controller, provisionados con AWS CLI directo (sin SAM). '
+            'Cada Lambda se opera con --lambda=<nombre>'
         ),
         'commands': [
             {
@@ -385,6 +391,21 @@ def describe() -> ScriptDescribe:
                 'type': 'string',
                 'summary': 'Path a event JSON (events/<X>.json)',
             },
+            'runtime_mode': {
+                'type': 'choice',
+                'choices': list(VALID_RUNTIME_MODES),
+                'default': 'rie',
+                'summary': (
+                    'Modo de ejecucion local (run --stage=local): rie '
+                    '(Runtime Interface Emulator via Docker) o direct '
+                    '(importa el handler en el proceso)'
+                ),
+            },
+            'yes': {
+                'type': 'bool',
+                'default': False,
+                'summary': 'Confirmacion no interactiva de `destroy`',
+            },
             'type': {
                 'type': 'choice',
                 'choices': list(VALID_TEST_TYPES),
@@ -403,7 +424,7 @@ def describe() -> ScriptDescribe:
             'aws_profile': {
                 'type': 'string',
                 'summary': (
-                    'Perfil AWS CLI a inyectar en los comandos aws/sam '
+                    'Perfil AWS CLI a inyectar en los comandos aws '
                     '(ej. --aws-profile=tfs-dev). Si se omite, se usa el '
                     'perfil por defecto (AWS_PROFILE o [default])'
                 ),

@@ -8,11 +8,12 @@ ofreciendo dos modos de ejecucion local, en orden de preferencia:
      MISMO emulador que SAM usa por debajo, invocado directo via Docker
      sobre la imagen oficial `public.ecr.aws/lambda/python:<runtime>`. Da
      un entorno identico al runtime AWS real, sin pasar por SAM.
-  2. **Modo directo** (fallback) — importa `core.handler.lambda_handler`
-     en el proceso de devtools y lo invoca con un `_FakeContext`. No
-     replica el sandbox de Lambda (filesystem read-only, limites de
-     memoria), pero es rapido y no necesita Docker. Util para iterar
-     logica.
+  2. **Modo directo** (fallback) — ejecuta un proceso Python con el
+     `.venv` del backend serverless (que tiene las deps de runtime),
+     importa `core.handler.lambda_handler` y lo invoca con un
+     `_FakeContext`. No replica el sandbox de Lambda (filesystem
+     read-only, limites de memoria), pero es rapido y no necesita
+     Docker. Util para iterar logica.
 
 Si se pide modo RIE y Docker no esta disponible, se cae a modo directo
 con un `[WARN]` — `run-local` nunca falla por ausencia de Docker.
@@ -27,12 +28,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-import importlib
 import json
 from pathlib import Path
 import shutil
 import subprocess
-import sys
+import textwrap
 import time
 from typing import Any
 
@@ -52,6 +52,17 @@ from serverless.vendoring import vendored_shared
 # Imagen base oficial del runtime de AWS Lambda Python. Trae el RIE
 # incluido; se versiona por runtime (`:3.13`).
 _RIE_IMAGE_PREFIX = 'public.ecr.aws/lambda/python'
+
+# Python del `.venv` del backend serverless: tiene la union de las deps
+# de runtime de los 4 lambdas (Powertools, pydantic, boto3, ...). El modo
+# directo lo usa para que `import core.handler` resuelva esas deps.
+_PORTFOLIO_SERVERLESS_VENV = (
+    Path(__file__).resolve().parents[2]
+    / 'serverless'
+    / '.venv'
+    / 'bin'
+    / 'python'
+)
 
 # Puerto del host mapeado al :8080 del RIE dentro del contenedor.
 _RIE_HOST_PORT = 9000
@@ -80,11 +91,16 @@ class RuntimeMode(StrEnum):
 
 @dataclass
 class _FakeContext:
-    """Context minimo de AWS Lambda para el modo directo.
+    """Context de AWS Lambda para el modo directo.
 
     Reproduce los atributos del objeto `context` que el runtime de AWS
-    pasa al handler. Suficiente para que el handler corra en local sin el
-    sandbox real.
+    pasa al handler. Incluye los que AWS Lambda Powertools consume
+    (`invoked_function_arn`, `log_group_name`, ...) para que el handler
+    corra en local sin el sandbox real.
+
+    El modo directo ejecuta el handler en un subproceso (`_DIRECT_RUNNER`)
+    con su propia clase `_Ctx` equivalente; este dataclass documenta el
+    contrato y se usa en los tests.
 
     Attributes
     ----------
@@ -99,6 +115,12 @@ class _FakeContext:
     function_name: str = 'local'
     memory_limit_in_mb: int = 256
     aws_request_id: str = 'local-invoke'
+    function_version: str = '$LATEST'
+    log_group_name: str = '/aws/lambda/local'
+    log_stream_name: str = 'local'
+    invoked_function_arn: str = (
+        'arn:aws:lambda:us-east-1:000000000000:function:local'
+    )
 
     def get_remaining_time_in_millis(self) -> int:
         """Milisegundos restantes de ejecucion (fijo en local)."""
@@ -134,12 +156,49 @@ def _load_event(event_path: Path | None) -> tuple[Any, str | None]:
         return {}, f'Event JSON invalido ({event_path}): {exc}'
 
 
-def _run_direct(resolved: ResolvedLambda, event: Any) -> int:
-    """Ejecuta el handler importandolo en el proceso de devtools.
+# Script Python que se ejecuta en el `.venv` del backend serverless: el
+# modo directo NO importa el handler en el proceso de devtools (que no
+# tiene las deps de runtime), sino en un subproceso con el interprete
+# correcto. El event y la config del context llegan por sys.argv.
+_DIRECT_RUNNER = textwrap.dedent(
+    """
+    import json
+    import sys
 
-    Vendoriza `shared/` en `core/shared/`, agrega la raiz del lambda al
-    `sys.path`, importa `core.handler.lambda_handler` y lo invoca con un
-    `_FakeContext`. Imprime el resultado como JSON.
+    root, event_path, fn_name, memory = sys.argv[1:5]
+    sys.path.insert(0, root)
+
+    class _Ctx:
+        function_name = fn_name
+        function_version = '$LATEST'
+        memory_limit_in_mb = int(memory)
+        aws_request_id = 'local-invoke'
+        log_group_name = '/aws/lambda/' + fn_name
+        log_stream_name = 'local'
+        invoked_function_arn = (
+            'arn:aws:lambda:us-east-1:000000000000:function:' + fn_name
+        )
+
+        def get_remaining_time_in_millis(self):
+            return 300_000
+
+    with open(event_path, encoding='utf-8') as fh:
+        event = json.load(fh)
+
+    from core.handler import lambda_handler
+
+    result = lambda_handler(event, _Ctx())
+    print(json.dumps(result, indent=2, default=str))
+    """,
+).strip()
+
+
+def _run_direct(resolved: ResolvedLambda, event: Any) -> int:
+    """Ejecuta el handler en un subproceso con el `.venv` del backend.
+
+    Vendoriza `shared/` en `core/shared/`, escribe el event a un archivo
+    temporal y lanza `_DIRECT_RUNNER` con el Python del backend serverless
+    (que tiene las deps de runtime). Imprime el resultado como JSON.
 
     Parameters
     ----------
@@ -154,34 +213,46 @@ def _run_direct(resolved: ResolvedLambda, event: Any) -> int:
         0 si el handler corrio sin excepcion, 1 si fallo.
     """
     manifest = resolved.manifest
-    context = _FakeContext(
-        function_name=str(manifest.get('name', 'local')),
-        memory_limit_in_mb=int(manifest.get('memory', 256)),
+    root = resolved.root
+    print(_c(CYAN, f'[direct] core.handler desde {root}'))
+
+    python = (
+        str(_PORTFOLIO_SERVERLESS_VENV)
+        if _PORTFOLIO_SERVERLESS_VENV.is_file()
+        else 'python3'
     )
-    root = str(resolved.root)
-    print(_c(CYAN, f'[direct] import core.handler desde {root}'))
 
     try:
-        with vendored_shared(resolved.root):
-            added_path = root not in sys.path
-            if added_path:
-                sys.path.insert(0, root)
-            try:
-                module = importlib.import_module('core.handler')
-                module = importlib.reload(module)
-                result = module.lambda_handler(event, context)
-            finally:
-                if added_path and root in sys.path:
-                    sys.path.remove(root)
+        with vendored_shared(root):
+            tmp_dir = root / 'tmp'
+            tmp_dir.mkdir(exist_ok=True)
+            event_file = tmp_dir / '_local_event.json'
+            event_file.write_text(json.dumps(event), encoding='utf-8')
+            cmd = [
+                python,
+                '-c',
+                _DIRECT_RUNNER,
+                str(root),
+                str(event_file),
+                str(manifest.get('name', 'local')),
+                str(manifest.get('memory', 256)),
+            ]
+
+            completed = subprocess.run(  # noqa: S603
+                cmd, capture_output=True, text=True, check=False
+            )
+            event_file.unlink(missing_ok=True)
     except VendoringError as exc:
         _err(str(exc))
         return 1
-    except Exception as exc:  # noqa: BLE001 - cualquier fallo del handler
-        _err(f'El handler lanzo una excepcion: {exc}')
+
+    if completed.returncode != 0:
+        _err('El handler lanzo una excepcion:')
+        print(completed.stderr.strip())
         return 1
 
     print(_c(GREEN, 'Respuesta del handler:'))
-    print(json.dumps(result, indent=2, default=str))
+    print(completed.stdout.strip())
     return 0
 
 

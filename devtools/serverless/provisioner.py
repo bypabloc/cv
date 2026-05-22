@@ -1123,6 +1123,34 @@ def provision(
     return _build_state(rendered, stage, resources)
 
 
+def rendered_config(rendered: RenderedLambda) -> dict[str, Any]:
+    """Subset de `RenderedLambda` que define el `config_hash` del diff.
+
+    Tanto `provision` (al construir el estado nuevo) como
+    `cmd_deploy_lambda` (al decidir la accion del diff) hashean ESTE
+    dict, asi el `config_hash` es consistente entre el deploy y el diff.
+
+    Parameters
+    ----------
+    rendered : RenderedLambda
+        Lambda renderizado por `render`.
+
+    Returns
+    -------
+    dict[str, Any]
+        Campos de config que, al cambiar, fuerzan un re-deploy de config.
+    """
+    return {
+        'runtime': rendered.runtime,
+        'architecture': rendered.architecture,
+        'handler': rendered.handler,
+        'memory': rendered.memory,
+        'timeout': rendered.timeout,
+        'env_vars': rendered.env_vars,
+        'iam_policy': rendered.iam_policy,
+    }
+
+
 def _build_state(
     rendered: RenderedLambda,
     stage: str,
@@ -1134,17 +1162,7 @@ def _build_state(
     return LambdaState(
         scope=rendered.name,
         stage=stage,
-        config_hash=config_hash(
-            {
-                'runtime': rendered.runtime,
-                'architecture': rendered.architecture,
-                'handler': rendered.handler,
-                'memory': rendered.memory,
-                'timeout': rendered.timeout,
-                'env_vars': rendered.env_vars,
-                'iam_policy': rendered.iam_policy,
-            }
-        ),
+        config_hash=config_hash(rendered_config(rendered)),
         code_hash='',
         resources=resources,
         updated_at=now_iso(),

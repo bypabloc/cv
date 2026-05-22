@@ -1,9 +1,14 @@
 """Comandos para lambdas que siguen el formato lambda-controller.
 
-Estos comandos operan sobre cualquier lambda resuelto por `--path`
-(directorio con `manifest.yaml`). Generan el SAM template efimero desde el
-manifiesto y lo usan por detras para `sam local invoke`, `sam build` +
-`sam deploy`, y `aws lambda invoke` contra un stage deployado.
+Estos comandos operan sobre cualquier lambda resuelto por `--lambda` o
+`--path` (directorio con `manifest.yaml`). devtools provisiona cada
+Lambda con AWS CLI directo: `deploy` traduce el manifiesto a llamadas
+AWS via `provisioner.py`, decide create / update / no-op con el estado
+local (`state.py`), y `run --stage=local` lo ejecuta con el Runtime
+Interface Emulator o importando el handler (`local_runtime.py`).
+
+Los comandos `destroy` y `status` operan sobre el estado local: borran
+los recursos de un stage o comparan el estado guardado vs AWS.
 
 El comando `tests` corre las suites unit/integration/coverage de los
 lambdas y de la libreria comun `shared/`.
@@ -11,26 +16,33 @@ lambdas y de la libreria comun `shared/`.
 
 from __future__ import annotations
 
+from dataclasses import asdict
+from dataclasses import replace
 import json
 from pathlib import Path
 import shutil
 import subprocess
 from typing import Any
 
-from serverless.packaging import PackagingError
-from serverless.packaging import packaged_lambda
-from serverless.resolve import ManifestError
-from serverless.resolve import ResolvedLambda
-from serverless.resolve import available_lambdas
-from serverless.resolve import resolve_lambda
-from serverless.sam_generate import generate_sam_file
-from serverless.vendoring import VendoringError
-from serverless.vendoring import vendored_shared
 from shared.console import CYAN
 from shared.console import GREEN
 from shared.console import YELLOW
 from shared.console import _c
 from shared.console import _err
+
+from serverless import local_runtime
+from serverless import provisioner
+from serverless import state as state_mod
+from serverless.aws_cli import AwsError
+from serverless.local_runtime import RuntimeMode
+from serverless.packaging import PackagingError
+from serverless.packaging import packaged_lambda
+from serverless.packaging import zip_build_dir
+from serverless.resolve import ManifestError
+from serverless.resolve import ResolvedLambda
+from serverless.resolve import available_lambdas
+from serverless.resolve import resolve_lambda
+from serverless.vendoring import VendoringError
 
 
 # Python del `.venv` del backend serverless del portfolio. Tiene la union
@@ -43,6 +55,14 @@ _PORTFOLIO_SERVERLESS_VENV = (
     / '.venv'
     / 'bin'
     / 'python'
+)
+
+# Scopes que `destroy --stage` sin `--lambda` borra (los 4 lambdas).
+_ALL_LAMBDA_SCOPES = (
+    'contact-form',
+    'tracking-pixel',
+    'stream-processor',
+    'db',
 )
 
 
@@ -60,70 +80,39 @@ def _require_lambda_controller(flags: dict[str, Any]) -> ResolvedLambda:
     Raises
     ------
     SystemExit
-        Si no se paso `--path`/`--module` (modo legacy no aplica aqui).
+        Si no se paso `--lambda`/`--path`/`--module` (modo legacy no
+        aplica aqui).
     """
     resolved = resolve_lambda(flags)
     if not resolved.is_lambda_controller:
         _err(
-            'Este comando requiere --path=<dir> de un lambda-controller '
-            '(directorio con manifest.yaml).',
+            'Este comando requiere --lambda=<nombre> o --path=<dir> de un '
+            'lambda-controller (directorio con manifest.yaml).',
         )
         raise SystemExit(2)
     return resolved
 
 
-def _regenerate_sam(
-    resolved: ResolvedLambda,
-    stage: str,
-    *,
-    code_uri: str = 'build',
-) -> Path:
-    """Regenera el template.yaml efimero del lambda para un stage.
-
-    `code_uri` es el directorio del codigo: `build/` para deploy (el
-    artefacto que devtools arma con uv) o `.` para run-local.
-    """
-    template = generate_sam_file(resolved, stage=stage, code_uri=code_uri)
-    print(_c(CYAN, f'SAM generado: {template} (stage {stage})'))
-    return template
-
-
 def _run(cmd: list[str], *, cwd: Path) -> int:
     """Ejecuta un comando, imprime la invocacion, devuelve exit code."""
     print(_c(CYAN, f'$ cd {cwd} && {" ".join(cmd)}'))
-    result = subprocess.run(cmd, cwd=cwd, check=False)
+
+    result = subprocess.run(cmd, cwd=cwd, check=False)  # noqa: S603
     return result.returncode
 
 
 # ---------------------------------------------------------------------------
-# sam-generate
-# ---------------------------------------------------------------------------
-
-
-def cmd_sam_generate(flags: dict[str, Any]) -> int:
-    """Genera template.yaml desde manifest.yaml (sin build ni deploy)."""
-    resolved = _require_lambda_controller(flags)
-    stage = flags.get('stage', 'dev')
-    try:
-        _regenerate_sam(resolved, stage)
-    except ManifestError as exc:
-        _err(str(exc))
-        return 1
-    print(_c(GREEN, 'OK  template.yaml generado'))
-    return 0
-
-
-# ---------------------------------------------------------------------------
-# run: sam local invoke (stage local) | aws lambda invoke (stage deployado)
+# run: ejecucion local (RIE / directo) | aws lambda invoke (stage deployado)
 # ---------------------------------------------------------------------------
 
 
 def cmd_run(flags: dict[str, Any]) -> int:
     """Ejecuta un lambda. El `--stage` decide el mecanismo.
 
-    `--stage=local` -> `sam local invoke` (contenedor Docker local).
-    `--stage=dev|stage|prod` -> `aws lambda invoke` contra la funcion
-    `portfolio-<name>-<stage>` ya deployada.
+    `--stage=local` -> ejecucion local con el Runtime Interface Emulator
+    (`--runtime-mode=rie`, default) o importando el handler en el proceso
+    (`--runtime-mode=direct`). `--stage=dev|stage|prod` -> `aws lambda
+    invoke` contra la funcion `portfolio-<name>-<stage>` ya deployada.
     """
     stage = flags.get('stage', 'local')
     if stage == 'local':
@@ -132,115 +121,62 @@ def cmd_run(flags: dict[str, Any]) -> int:
 
 
 def _run_local(flags: dict[str, Any]) -> int:
-    """Ejecuta el lambda en local con `sam local invoke`.
-
-    Regenera el SAM desde manifest.yaml y corre `sam local invoke` con el
-    event JSON indicado (--event).
-    """
-    _ensure_tool(
-        'sam',
-        'Instalar: brew install aws-sam-cli  o  pip install aws-sam-cli',
-    )
+    """Ejecuta el lambda en local sin SAM (RIE o modo directo)."""
     resolved = _require_lambda_controller(flags)
-    # `local` no es un stage de env vars; usamos dev para el bloque de env.
-    env_stage = 'dev'
 
-    # run-local empaqueta con `core/shared/` vendorizado en la raiz del
-    # lambda: el CodeUri del template apunta a `.`, no a `build/`.
+    mode_raw = str(flags.get('runtime_mode', 'rie'))
     try:
-        _regenerate_sam(resolved, env_stage, code_uri='.')
-    except ManifestError as exc:
-        _err(str(exc))
+        mode = RuntimeMode(mode_raw)
+    except ValueError:
+        _err(f'--runtime-mode invalido: {mode_raw!r}. Validos: rie | direct.')
         return 1
 
-    args = ['sam', 'local', 'invoke']
-
     event = flags.get('event')
+    event_path: Path | None = None
     if event:
         event_path = (resolved.root / event).resolve()
-        if not event_path.is_file():
-            _err(f'Event JSON no existe: {event_path}')
-            return 1
-        args.extend(['--event', str(event_path)])
 
-    if flags.get('debug'):
-        args.append('--debug')
-
-    # Vendoriza serverless/lambda/shared/ en core/shared/ para que el codigo del
-    # lambda resuelva `import shared...` durante la invocacion local.
     try:
-        with vendored_shared(resolved.root):
-            return _run(args, cwd=resolved.root)
+        return local_runtime.run_local(
+            resolved,
+            event_path=event_path,
+            mode=mode,
+        )
     except VendoringError as exc:
         _err(str(exc))
         return 1
 
 
 # ---------------------------------------------------------------------------
-# deploy: sam build + sam deploy
+# deploy: provisioner + estado local (sin SAM)
 # ---------------------------------------------------------------------------
 
 
 def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
-    """Deploya un lambda-controller a un stage.
+    """Deploya un lambda-controller a un stage con AWS CLI directo.
 
-    devtools arma el artefacto (`build/`) con uv: instala las deps del
-    lambda + de los subpaquetes de `shared/` que usa, copia `core/` y
-    vendoriza el cierre de subpaquetes resuelto. SAM solo deploya: el
-    template apunta `CodeUri` a `build/` y, al no tener
-    `Metadata.BuildMethod`, `sam deploy` zipea ese directorio tal cual
-    sin correr `pip`.
+    devtools renderiza el manifiesto (`provisioner.render`), arma el
+    artefacto (`build.zip`) con uv, decide la accion comparando el estado
+    local (`state.diff`) y provisiona los recursos AWS necesarios.
     """
     _ensure_tool(
         'uv', 'Instalar: curl -LsSf https://astral.sh/uv/install.sh | sh'
-    )
-    _ensure_tool(
-        'sam',
-        'Instalar: brew install aws-sam-cli  o  pip install aws-sam-cli',
     )
     resolved = _require_lambda_controller(flags)
     stage = flags.get('stage', 'dev')
 
     if stage == 'local':
-        _err('Stage `local` no se deploya — usa `run-local`')
+        _err('Stage `local` no se deploya — usa `run --stage=local`')
         return 1
 
-    # El template de deploy apunta CodeUri a build/ (el artefacto uv).
-    try:
-        _regenerate_sam(resolved, stage, code_uri='build')
-    except ManifestError as exc:
-        _err(str(exc))
-        return 1
+    region = str(resolved.manifest.get('region', 'us-east-1'))
+    profile = flags.get('aws_profile')
+    profile_str = str(profile) if profile else None
 
-    if flags.get('dry_run'):
-        print(_c(YELLOW, f'[dry-run] uv package + sam deploy stage {stage}'))
-        return 0
-
-    stack_name = f'portfolio-{resolved.manifest["name"]}-{stage}'
-    deploy_args = [
-        'sam',
-        'deploy',
-        '--stack-name',
-        stack_name,
-        '--resolve-s3',
-        '--capabilities',
-        'CAPABILITY_IAM',
-        '--no-confirm-changeset',
-        '--no-fail-on-empty-changeset',
-        '--region',
-        str(resolved.manifest.get('region', 'us-east-1')),
-    ]
-    aws_profile = flags.get('aws_profile')
-    if aws_profile:
-        deploy_args += ['--profile', str(aws_profile)]
-    if flags.get('guided'):
-        deploy_args.append('--guided')
+    rendered = provisioner.render(resolved.manifest, stage=stage)
+    previous = state_mod.load_state(rendered.name, stage)
 
     runtime = str(resolved.manifest['runtime'])
-    print(_c(CYAN, f'Runtime del artefacto: {runtime}'))
-
-    # devtools arma build/ con uv (deps + core/ + shared/ selectivo). El
-    # build/ se limpia al salir del bloque (sam deploy ya lo subio).
     try:
         with packaged_lambda(resolved.root, runtime=runtime) as packaged:
             _, closure, all_deps = packaged
@@ -249,18 +185,170 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
                     CYAN,
                     f'Artefacto: shared/{{{", ".join(sorted(closure))}}} '
                     f'+ {len(all_deps)} deps',
-                )
+                ),
             )
+            zip_path = zip_build_dir(resolved.root)
+            new_code_hash = state_mod.code_hash(resolved.root / 'core')
+            new_config_hash = state_mod.config_hash(
+                provisioner.rendered_config(rendered),
+            )
+            action = state_mod.diff(previous, new_config_hash, new_code_hash)
+
+            if flags.get('dry_run'):
+                print(_c(YELLOW, f'[dry-run] accion: {action.name}'))
+                return 0
+
             print(
-                _c(
-                    YELLOW,
-                    f'Deploy de {resolved.manifest["name"]} a {stage}...',
-                )
+                _c(YELLOW, f'Deploy de {rendered.function_name}: {action.name}'),
             )
-            return _run(deploy_args, cwd=resolved.root)
+            try:
+                new_state = provisioner.provision(
+                    rendered,
+                    action=action,
+                    zip_path=zip_path,
+                    previous=previous,
+                    profile=profile_str,
+                    region=region,
+                )
+            except AwsError as exc:
+                _err(f'Deploy fallo: {exc}')
+                partial = getattr(exc, 'partial_state', None)
+                if partial is not None:
+                    state_mod.save_state(
+                        replace(partial, code_hash=new_code_hash),
+                    )
+                    print(
+                        _c(
+                            YELLOW,
+                            '  estado parcial guardado — re-ejecuta `deploy` '
+                            'para completar (idempotente)',
+                        ),
+                    )
+                return 1
     except PackagingError as exc:
         _err(str(exc))
         return 1
+
+    state_mod.save_state(replace(new_state, code_hash=new_code_hash))
+    print(_c(GREEN, f'OK  {rendered.function_name} -> {action.name}'))
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# destroy: borra los recursos de un stage (lambda(s) + infra)
+# ---------------------------------------------------------------------------
+
+
+def cmd_destroy(flags: dict[str, Any]) -> int:
+    """Borra los recursos de un stage. Operacion DESTRUCTIVA.
+
+    Sin `--lambda`: borra los 4 lambdas + la infra del stage. Con
+    `--lambda=<x>`: borra solo ese lambda. Requiere `--yes` (confirmacion
+    no interactiva); sin `--yes` NO borra nada.
+    """
+    stage = flags.get('stage', 'dev')
+    if stage == 'local':
+        _err('Stage `local` no tiene recursos AWS que destruir.')
+        return 1
+
+    region = 'us-east-1'
+    profile = flags.get('aws_profile')
+    profile_str = str(profile) if profile else None
+    lambda_name = flags.get('lambda')
+
+    if not flags.get('yes'):
+        target = (
+            f'el lambda {lambda_name!r}'
+            if lambda_name
+            else f'TODOS los lambdas + infra del stage {stage!r}'
+        )
+        _err(f'destroy es destructivo: borraria {target}.')
+        print(_c(YELLOW, '  Agrega --yes para confirmar.'))
+        return 2
+
+    if lambda_name:
+        resolved = _require_lambda_controller(flags)
+        scopes = [provisioner.render(resolved.manifest, stage=stage).name]
+    else:
+        scopes = list(_ALL_LAMBDA_SCOPES)
+
+    rc = 0
+    for scope in scopes:
+        st = state_mod.load_state(scope, stage)
+        if st is None:
+            print(_c(YELLOW, f'[skip] {scope}-{stage}: sin estado local'))
+            continue
+        print(_c(YELLOW, f'Destruyendo {scope}-{stage}...'))
+        try:
+            provisioner.deprovision(
+                st, profile=profile_str, region=region
+            )
+        except AwsError as exc:
+            _err(f'destroy de {scope} fallo: {exc}')
+            rc = 1
+
+    if not lambda_name:
+        # destroy completo: tambien borra la infra y limpia el estado.
+        from serverless.infra_provision import deprovision_infra
+
+        print(_c(YELLOW, f'Destruyendo infra del stage {stage}...'))
+        try:
+            deprovision_infra(
+                stage=stage, profile=profile_str, region=region
+            )
+        except AwsError as exc:
+            _err(f'destroy de infra fallo: {exc}')
+            rc = 1
+        removed = state_mod.clear_state(stage)
+        print(_c(GREEN, f'OK  estado local limpiado ({len(removed)} archivos)'))
+
+    return rc
+
+
+# ---------------------------------------------------------------------------
+# status: estado local vs AWS
+# ---------------------------------------------------------------------------
+
+
+def cmd_status(flags: dict[str, Any]) -> int:
+    """Compara el estado local con AWS, por scope.
+
+    Sin `--lambda`: reporta los 4 lambdas. Con `--lambda=<x>`: solo ese.
+    Para cada scope informa si hay estado local y si la funcion existe en
+    AWS (`aws lambda get-function`).
+    """
+    from serverless.aws_cli import aws_resource_exists
+
+    stage = flags.get('stage', 'dev')
+    profile = flags.get('aws_profile')
+    profile_str = str(profile) if profile else None
+    lambda_name = flags.get('lambda')
+
+    if lambda_name:
+        resolved = _require_lambda_controller(flags)
+        scopes = [provisioner.render(resolved.manifest, stage=stage).name]
+    else:
+        scopes = list(_ALL_LAMBDA_SCOPES)
+
+    print(_c(CYAN, f'Estado del backend serverless (stage {stage}):'))
+    for scope in scopes:
+        st = state_mod.load_state(scope, stage)
+        function_name = f'portfolio-{scope}-{stage}'
+        in_aws = aws_resource_exists(
+            'lambda',
+            ['get-function', '--function-name', function_name],
+            profile=profile_str,
+        )
+        if st is None and not in_aws:
+            mark = _c(YELLOW, 'sin deployar')
+        elif st is not None and in_aws:
+            mark = _c(GREEN, 'OK (local + AWS)')
+        elif st is None:
+            mark = _c(YELLOW, 'en AWS pero sin estado local (drift)')
+        else:
+            mark = _c(YELLOW, 'estado local pero ausente en AWS (drift)')
+        print(f'  {scope:<20} {mark}')
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -277,9 +365,10 @@ def _invoke_remote(flags: dict[str, Any]) -> int:
     resolved = _require_lambda_controller(flags)
     stage = flags.get('stage', 'dev')
 
-    # El FunctionName fisico lleva el prefijo `portfolio-` (ver
-    # sam_generate.build_template) y el sufijo de stage.
-    function_name = f'portfolio-{resolved.manifest["name"]}-{stage}'
+    # El FunctionName fisico lleva el prefijo `portfolio-` y el sufijo de
+    # stage (ver provisioner.render).
+    rendered = provisioner.render(resolved.manifest, stage=stage)
+    function_name = rendered.function_name
     region = str(resolved.manifest.get('region', 'us-east-1'))
 
     args = [
@@ -305,7 +394,7 @@ def _invoke_remote(flags: dict[str, Any]) -> int:
             return 1
         args.extend(['--payload', f'file://{event_path}'])
 
-    out_path = resolved.root / '.aws-sam' / 'invoke-response.json'
+    out_path = resolved.root / '.invoke' / 'invoke-response.json'
     out_path.parent.mkdir(parents=True, exist_ok=True)
     args.append(str(out_path))
 
@@ -404,6 +493,8 @@ def _run_lambda_tests(
 
     # Vendoriza serverless/lambda/shared/ en core/shared/ para que los tests
     # resuelvan `import shared...` igual que en el artefacto desplegado.
+    from serverless.vendoring import vendored_shared
+
     try:
         with vendored_shared(resolved.root):
             return _run(args, cwd=resolved.root)

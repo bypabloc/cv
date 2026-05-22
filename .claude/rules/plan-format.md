@@ -234,8 +234,11 @@ Listado de commits incrementales que implementan el plan. Archivo dedicado
 - Indica que AC cubre + su verificacion incremental.
 
 El primer commit suele ser la carpeta del plan (`docs(specs): ...`); el ultimo
-es el de la seccion 11. Cada commit ejecuta su verificacion incremental ANTES
-de commitear — no se difiere al final. Un solo PR `feature/<nombre> -> dev`.
+es el de la seccion 11 e incluye el `git rm -r docs/specs/<nombre>/` — la
+carpeta del plan es efimera y se elimina al mergear (ver "Ciclo de vida de la
+carpeta del plan" abajo). Cada commit ejecuta su verificacion incremental
+ANTES de commitear — no se difiere al final. Un solo PR
+`feature/<nombre> -> dev`.
 
 **Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 2
 (plantilla, regla por commit, resumen de secuencia, PR).
@@ -319,6 +322,27 @@ Dos checklists:
 - Si un diagrama justifica `.mmd` permanente, anotarlo en seccion 7
 - AC numerados son la fuente de verdad: tests y tareas los referencian
 - El ultimo commit del plan es SIEMPRE la seccion 11 (verificacion E2E)
+- La carpeta del plan es efimera: se elimina al mergear (ver abajo)
+
+## Ciclo de vida de la carpeta del plan
+
+La carpeta `docs/specs/<nombre-kebab>/` es un artefacto **efimero del plan**,
+no documentacion permanente del producto. Cuando el plan esta implementado y
+su PR `feature/<nombre> -> dev` se mergea, la carpeta se **elimina**:
+
+- El ultimo commit del PR (el de la seccion 11) incluye el
+  `git rm -r docs/specs/<nombre>/`, o se hace un commit de limpieza dedicado
+  inmediatamente despues del merge.
+- Si una decision de arquitectura o convencion de la spec debe sobrevivir, se
+  promueve a una rule de `.claude/rules/` o a un doc de producto (`docs/cv/`,
+  `docs/guide/`, etc.) ANTES de borrar la carpeta. El codigo, los tests y las
+  rules son la fuente de verdad — no la spec.
+- La trazabilidad del plan queda en `git log` y en el PR mergeado.
+- Las specs de planes **aun no implementados o en curso** SI permanecen en
+  `docs/specs/`. La eliminacion aplica solo al cerrar el plan completo.
+
+Asi `docs/specs/` solo contiene planes pendientes o en ejecucion, nunca
+planes obsoletos ya implementados.
 
 ## Anti-patrones
 
@@ -336,3 +360,5 @@ Dos checklists:
 - Definition of Done implicita en lugar de criterios observables
 - Descomposicion para paralelizacion sin verificar file exclusivity (race conditions)
 - Declarar el plan "listo" sin que la bateria de la seccion 11 pase completa
+- Dejar la carpeta `docs/specs/<nombre>/` viva tras mergear el plan (es
+  efimera: el ultimo commit la elimina con `git rm -r`)

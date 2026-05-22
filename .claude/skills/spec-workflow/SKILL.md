@@ -159,3 +159,8 @@ Marcar spec como `approved`, comenzar por tasks en orden.
 - NUNCA cambiar scope sin actualizar la spec
 - Tasks deben ser ejecutables independientemente cuando sea posible
 - Usar plan-format rule para diagramas inline (ASCII, no Mermaid)
+- La spec es un artefacto **efimero**: cuando el plan esta implementado y su
+  PR se mergea a `dev`, la carpeta/archivo de `docs/specs/` se ELIMINA (el
+  ultimo commit del PR la borra con `git rm`). `docs/specs/` solo conserva
+  planes pendientes o en curso — ver `.claude/rules/plan-format.md`, "Ciclo
+  de vida de la carpeta del plan".

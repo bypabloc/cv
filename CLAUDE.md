@@ -280,7 +280,6 @@ Antes de trabajar, identifica que contexto necesitas:
 | DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/lambda/shared/cache/` |
 | Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/lambda/shared/rate_limit/` |
 | Backend serverless | [.claude/docs/serverless-backend/README.md](.claude/docs/serverless-backend/README.md) | Recursos gestionados por devtools con AWS CLI directo y estado local (sin SAM ni CloudFormation): recursos compartidos (tablas DynamoDB + API GW + DLQ SQS, publican identificadores a SSM) + 4 Lambdas Python `lambda-controller`. Flujos ASCII de cada Lambda, schema de tablas DynamoDB + Neon, archivo de estado local. Costo $0/mes (free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
-| Specs tracking + SES | [docs/specs/tracking-and-ses/README.md](docs/specs/tracking-and-ses/README.md) | Plan en 2 fases: activar el email del form de contacto (SES) y el sistema de tracking de eventos. 8 specs (SPEC-100..204) con AC BDD + archivos afectados + verify commands + DoD. Incluye el historial de migracion del antiguo `serverless/specs/` (eliminado) |
 | Devtools serverless CLI | [.claude/docs/serverless-backend/04-deploy-operacion.md](.claude/docs/serverless-backend/04-deploy-operacion.md) | `python devtools/run.py serverless <command>` — opera el backend: `provision-infra`/`list-resources` (los recursos compartidos, provisionados con AWS CLI) y, con `--lambda=<nombre>` o `--path=<dir>`, los Lambdas `lambda-controller` (`run --stage=<env>`, `deploy`, `destroy`, `status`, `tests --type=<unit\|integration\|coverage>`). La DB se opera con `run --lambda=db --event=events/<X>.json`. Mas rate-limit, setup-ssm, metrics |
 | Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/lambda/shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. El `stream_processor` usa el ORM. `db/cv/` quedo como legacy (solo su `seed/` falta migrar) |
 | Formato de Lambdas Python | [.claude/rules/lambda-controller.md](.claude/rules/lambda-controller.md) + [.claude/docs/lambda-controller/](.claude/docs/lambda-controller/) o skill `lambda-controller` | Patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold en `.claude/templates/lambda-controller/`. Cada lambda trae un `manifest.yaml` (manifiesto) que devtools lee directamente para provisionar el Lambda con AWS CLI, y un `pyproject.toml` (PEP 621, deps gestionadas con uv) en vez de `requirements*.txt`. El deploy arma el zip con uv, vendoriza selectivamente los subpaquetes de `serverless/lambda/shared/` que el lambda usa y registra el resultado en un archivo de estado local. Operacion: `serverless run --stage=<env> --lambda=<nombre>` y `serverless tests --type=<tipo> --lambda=<nombre>`. Aplica a los Lambdas Python del backend, NO al frontend Astro |
@@ -346,9 +345,10 @@ estado en archivos locales (sin SAM ni CloudFormation). Costo: $0/mes
 `docs/` tiene dos zonas separadas — NO mezclar:
 
 - **Producto** (Knowledge Tree navegable): `cv/`, `guide/`, `design-system/`,
-  `diagrams/`, `specs/`, `claude/` — cambia raramente, audiencia: reviewers
-- **Harness interno**: `progress/`, `<area>/feature_list.json`,
-  `CHECKPOINTS.md` — cambia constantemente, audiencia: el orquestador
+  `diagrams/`, `claude/` — cambia raramente, audiencia: reviewers
+- **Harness interno**: `progress/`, `specs/`, `<area>/feature_list.json`,
+  `CHECKPOINTS.md` — cambia constantemente, audiencia: el orquestador.
+  `docs/specs/<plan>/` es efimero: se elimina al mergear el plan a `dev`
 
 Reglas: [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md)
 y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).

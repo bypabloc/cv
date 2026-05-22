@@ -4,9 +4,6 @@
 > secciones de ejecucion que TODO plan debe incluir — commits, paralelizacion
 > con git worktrees y verificacion E2E iterativa — mas la descomposicion para
 > paralelizacion. Referenciado desde `.claude/rules/plan-format.md`.
->
-> Plan de referencia que sigue este estandar al pie de la letra:
-> `docs/specs/serverless-drop-sam/` (README + 12 docs de fases).
 
 ## Que define este documento
 
@@ -53,6 +50,29 @@ Reglas de la carpeta:
   presentes, en forma minima (1 commit, `worktrees: N/A`, verificacion corta).
 - Para planes **Small/Medium/Large**: un `.md` por fase + los tres archivos
   de ejecucion (commits, worktrees, verificacion).
+
+## Ciclo de vida de la carpeta: se elimina al mergear
+
+La carpeta `docs/specs/<nombre-kebab>/` es un artefacto **efimero del plan**,
+no documentacion permanente del producto. Una vez que el plan esta
+implementado y su PR `feature/<nombre> -> dev` se mergea, la carpeta del plan
+debe **eliminarse**:
+
+- El ultimo commit del PR (el de la seccion 11) incluye el `git rm -r` de la
+  carpeta `docs/specs/<nombre>/`, o se hace un commit de limpieza dedicado
+  inmediatamente despues del merge.
+- La fuente de verdad del cambio implementado pasa a ser el codigo, los
+  tests, las rules y la documentacion de producto (`docs/cv/`, `docs/guide/`,
+  etc.) — NO la spec. Si algo de la spec debe sobrevivir (una decision de
+  arquitectura, una convencion), se promueve a una rule o a un doc de
+  producto ANTES de borrar la carpeta.
+- El plan en si queda en el historial de git: `git log` y el PR mergeado
+  conservan la trazabilidad. No se necesita la carpeta viva.
+- Las specs de planes **aun no implementados** (o en curso) SI permanecen en
+  `docs/specs/`. La eliminacion aplica solo al mergear el plan completo.
+
+Asi `docs/specs/` nunca acumula planes obsoletos: contiene unicamente lo que
+esta pendiente o en ejecucion.
 
 ---
 
@@ -199,11 +219,16 @@ PR NO se mergea hasta que esa bateria pasa completa.
 ## Reglas de la seccion 9
 
 - El primer commit suele ser la propia carpeta del plan (`docs(specs): ...`).
-- El ultimo commit es el de la seccion 11 (refactor de tests + verificacion).
+- El ultimo commit es el de la seccion 11 (refactor de tests + verificacion);
+  ese commit ademas elimina la carpeta `docs/specs/<nombre>/` con `git rm -r`
+  (la spec es efimera — ver "Ciclo de vida de la carpeta" arriba). Si por
+  flujo se prefiere un commit de limpieza separado, va inmediatamente despues
+  del merge a `dev`.
 - Los commits operativos que NO son de codigo (ej. "destruir y reaprovisionar
   infra") se listan igual, marcados como operativos.
 - NUNCA atribucion de IA en los mensajes (politica de empresa).
-- En Micro: la seccion puede ser un solo commit; igual se documenta.
+- En Micro: la seccion puede ser un solo commit; igual se documenta. Ese
+  commit unico tambien elimina la carpeta del plan al cerrarse.
 
 ---
 
@@ -429,5 +454,4 @@ repetir — hasta que toda la bateria pase. Solo entonces el PR esta listo.
 - `.claude/rules/verify-before-done.md` — verificacion por tipo de archivo
 - `.claude/rules/harness-protocol.md` — subagentes con output en disco
 - `.claude/rules/markdown-docs.md` — formato de la carpeta del plan
-- Plan de referencia: `docs/specs/serverless-drop-sam/` (README + 12 docs)
 - Workflow Anthropic: Explore → Plan → Implement → Commit

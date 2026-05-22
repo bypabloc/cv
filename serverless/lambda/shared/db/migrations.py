@@ -23,8 +23,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from alembic import command
 from alembic.config import Config
+
+from alembic import command
 
 # Raiz de este subpaquete: aqui viven `alembic.ini` y `alembic/`.
 _DB_MODULE = Path(__file__).resolve().parent

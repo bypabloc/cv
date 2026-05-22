@@ -169,6 +169,54 @@ Asi se concilian las dos propiedades: los Lambdas son **independientes**
 (deploy por separado, cada uno con su propio archivo de estado) y a la
 vez **comparten** la libreria comun sin copiar-pegar codigo en el repo.
 
+## Handlers HTTP genericos (`shared.lambda_kit.http_handler`)
+
+Los Lambdas con `trigger.type=http` NO hardcodean `operation`/`action`
+en su `handler.py`: el cliente los envia en cada request y el handler
+HTTP generico `shared.lambda_kit.http_handler` los resuelve uniformemente
+para todo el backend.
+
+Contrato uniforme del request:
+
+- **GET**: `operation` y `action` son query params; el resto de
+  argumentos tambien viajan por query params.
+- **POST/PUT/PATCH**: `operation`, `action` y el resto de campos van en
+  el body JSON.
+
+`http_handler` realiza el ciclo completo:
+1. `extract_request(event)` resuelve `(operation, action, data, method)`
+   del evento crudo de API Gateway.
+2. Inyecta `data['_meta']` con `{ip, country, user_agent, bypass_secret}`
+   extraidos de headers/`requestContext`.
+3. Llama a `run_controller({operation, action, data}, event_model)`.
+4. Traduce el `DispatchResult` a respuesta API GW.
+
+Cada Lambda HTTP solo declara las DIFERENCIAS via parametros:
+
+```python
+return http_handler(
+    event,
+    event_model=_EVENT_MODEL,
+    cors_origin='echo',      # 'echo' (form) | 'public' (sendBeacon / API)
+    success_status=201,      # 200 | 201 | 204
+    metric_names={           # opcional
+        'submitted': 'ContactFormSubmitted',
+        'rejected':  'ContactFormRejected',
+        'error':     'ContactFormError',
+    },
+)
+```
+
+Reglas asociadas:
+
+- **SIEMPRE** los modelos Pydantic que reciben `_meta` deben usar
+  `alias='_meta'` + `populate_by_name=True` (ver `contact_form` y
+  `tracking_pixel` como referencia).
+- **SIEMPRE** el frontend envia `operation` y `action` (query params en
+  GET, body JSON en POST). Ningun handler los hardcodea.
+- **NUNCA** duplicar el parsing del evento en cada handler — delegar
+  SIEMPRE en `http_handler`.
+
 ## Separacion de responsabilidades
 
 | Capa | Responsabilidad | NO debe |

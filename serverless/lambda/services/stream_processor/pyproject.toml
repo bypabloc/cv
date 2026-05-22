@@ -11,17 +11,13 @@ version = "0.1.0"
 description = "Lambda que replica contacts/tracking de DynamoDB Streams a Neon."
 requires-python = ">=3.13"
 
-# El core/ del Lambda solo importa pydantic (modelos del evento) y boto3
-# (TypeDeserializer del Stream). El resto (powertools, sqlalchemy,
-# psycopg) le llega por el vendoring del cierre de shared/ (shared.db,
-# shared.observability, shared.lambda_kit) — regla de dedup D-3 del plan
-# docs/specs/serverless-lambda-independence/.
-#
-# boto3 lo trae shared.aws (parte del cierre): por la regla D-3 estricta
-# NO se declara aca aunque el core/ lo importe directo.
-dependencies = [
-  "pydantic>=2.5,<3.0",
-]
+# El core/ del Lambda no declara deps de runtime propias. pydantic
+# (modelos del evento), boto3 (TypeDeserializer del Stream), powertools,
+# sqlalchemy y psycopg le llegan por el vendoring del cierre de shared/
+# (shared.db, shared.observability, shared.lambda_kit — este ultimo
+# aporta pydantic; shared.aws aporta boto3). Regla de dedup D-3 estricta
+# del plan docs/specs/serverless-lambda-independence/.
+dependencies = []
 
 # Deps de DESARROLLO: pytest + coverage + mocks. NO van al artefacto de
 # deploy (solo a [project.dependencies] llega al zip). Los tests del

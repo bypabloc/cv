@@ -17,8 +17,7 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
-from shared.console import _err
-
+from serverless.dep_validator import cmd_lint_deps
 from serverless.help import cmd_help
 from serverless.infra_provision import cmd_list_resources
 from serverless.infra_provision import cmd_provision_infra
@@ -40,6 +39,7 @@ from serverless.secrets import cmd_request_ses_prod
 from serverless.secrets import cmd_rotate_secret
 from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
+from shared.console import _err
 
 
 COMMAND_REGISTRY: dict[str, Any] = {
@@ -49,6 +49,7 @@ COMMAND_REGISTRY: dict[str, Any] = {
     # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
     'lint': cmd_lint,
     'lint-fix': cmd_lint_fix,
+    'lint-deps': cmd_lint_deps,
     'format': cmd_format,
     'typecheck': cmd_typecheck,
     # Tests: unico comando, --type=unit|integration|coverage + target

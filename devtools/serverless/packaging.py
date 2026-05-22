@@ -193,6 +193,35 @@ def _install_dependencies(
         )
 
 
+def _check_dep_dedup(lambda_root: Path) -> None:
+    """Aborta el build si el lambda duplica deps del cierre de `shared/`.
+
+    Enforcement de la regla de dedup D-3: ningun `pyproject.toml` de
+    lambda declara una dep que ya le llega por el vendoring de `shared/`.
+
+    Raises
+    ------
+    PackagingError
+        Si hay deps duplicadas (con el detalle de cuales y que
+        subpaquete de `shared/` las aporta).
+    """
+    from serverless.dep_validator import DepValidatorError
+    from serverless.dep_validator import format_report
+    from serverless.dep_validator import validate_lambda_deps
+
+    try:
+        result = validate_lambda_deps(lambda_root)
+    except DepValidatorError as exc:
+        # El lambda no tiene pyproject.toml o esta malformado: es un
+        # error de empaquetado (lo traducimos a PackagingError).
+        raise PackagingError(str(exc)) from exc
+    if not result.is_valid:
+        raise PackagingError(
+            'Build abortado por deps duplicadas (regla de dedup D-3):\n'
+            + format_report(result),
+        )
+
+
 def package_lambda(
     lambda_root: Path,
     *,
@@ -229,6 +258,11 @@ def package_lambda(
         raise PackagingError(
             f'El lambda {lambda_root} no tiene core/.',
         )
+
+    # Gate de dedup D-3: el build aborta temprano si el lambda declara
+    # una dep que ya aporta el cierre de shared/ (regla del plan
+    # serverless-lambda-independence).
+    _check_dep_dedup(lambda_root)
 
     closure, shared_deps = resolve_lambda_shared(lambda_root)
     lambda_deps = _lambda_runtime_deps(lambda_root)

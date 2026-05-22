@@ -217,9 +217,9 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
         '--region',
         str(resolved.manifest.get('region', 'us-east-1')),
     ]
-    profile = flags.get('profile')
-    if profile:
-        deploy_args += ['--profile', str(profile)]
+    aws_profile = flags.get('aws_profile')
+    if aws_profile:
+        deploy_args += ['--profile', str(aws_profile)]
     if flags.get('guided'):
         deploy_args.append('--guided')
 
@@ -284,9 +284,9 @@ def cmd_invoke_remote(flags: dict[str, Any]) -> int:
         '--cli-binary-format',
         'raw-in-base64-out',
     ]
-    profile = flags.get('profile')
-    if profile:
-        args += ['--profile', str(profile)]
+    aws_profile = flags.get('aws_profile')
+    if aws_profile:
+        args += ['--profile', str(aws_profile)]
 
     event = flags.get('event')
     if event:

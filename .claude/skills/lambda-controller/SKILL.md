@@ -176,11 +176,11 @@ python devtools/run.py serverless run-local \
   --path=<dir> --event=events/create.json
 
 # Deployar a un entorno (sam build + sam deploy)
-python devtools/run.py serverless deploy --path=<dir> --stage=dev
+python devtools/run.py serverless deploy --path=<dir> --stage=dev --aws-profile=<perfil>
 
 # Invocar el Lambda ya deployado (aws lambda invoke)
 python devtools/run.py serverless invoke-remote \
-  --path=<dir> --stage=dev --event=events/create.json
+  --path=<dir> --stage=dev --event=events/create.json --aws-profile=<perfil>
 
 # Tests
 python devtools/run.py serverless test-unit --path=<dir>
@@ -191,6 +191,14 @@ python devtools/run.py serverless test-integration --path=<dir>
 commitear el `template.yaml` generado: se cambia `lambda.yaml` y se
 regenera. Detalle:
 `.claude/docs/lambda-controller/06-devtools-operations.md`.
+
+**`--aws-profile`**: `deploy`, `deploy-infra` e `invoke-remote` ejecutan
+`aws`/`sam` por debajo. Sin `--aws-profile` usan el perfil del shell
+(`AWS_PROFILE` o `[default]`), que puede apuntar a otra cuenta AWS o
+tener el token SSO expirado — sintoma: `Error when retrieving token
+from sso` aun despues de `aws sso login`. SIEMPRE pasar
+`--aws-profile=<perfil>` (en el portfolio: `tfs-dev`) o
+`export AWS_PROFILE=<perfil>` en la sesion de trabajo.
 
 ## Verificacion (antes de declarar listo)
 

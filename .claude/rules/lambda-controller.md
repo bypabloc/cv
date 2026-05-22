@@ -246,20 +246,20 @@ python devtools/run.py serverless run-local \
   --lambda=<nombre> --event=events/create.json
 
 # Deployar a un entorno (uv arma el zip en build/, luego sam deploy)
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev --aws-profile=<perfil>
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-profile=<perfil>
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=<perfil>
 
 # Invocar el Lambda ya deployado (aws lambda invoke)
 python devtools/run.py serverless invoke-remote \
-  --lambda=<nombre> --stage=dev --event=events/create.json
+  --lambda=<nombre> --stage=dev --event=events/create.json --aws-profile=<perfil>
 
 # Tests
 python devtools/run.py serverless test-unit --lambda=<nombre>
 python devtools/run.py serverless test-integration --lambda=<nombre>
 
 # Alternativa: apuntar a un directorio explicito con --path
-python devtools/run.py serverless deploy --path=<dir> --stage=dev
+python devtools/run.py serverless deploy --path=<dir> --stage=dev --aws-profile=<perfil>
 ```
 
 `lambda.yaml` es la unica fuente de verdad de la config; el
@@ -267,6 +267,14 @@ python devtools/run.py serverless deploy --path=<dir> --stage=dev
 Sin `--lambda` ni `--path`, los comandos `deploy`/`test-unit`/
 `test-integration` operan sobre el backend SAM del portfolio (modo
 legacy).
+
+**`--aws-profile` (perfil AWS CLI)**: `deploy`, `deploy-infra` e
+`invoke-remote` ejecutan `aws`/`sam` por debajo. Sin `--aws-profile`
+usan el perfil del shell (`AWS_PROFILE` o `[default]`), que puede
+apuntar a otra cuenta AWS o tener el token SSO expirado — sintoma:
+`Error when retrieving token from sso` aun despues de `aws sso login`.
+SIEMPRE pasar `--aws-profile=<perfil>` (en el portfolio: `tfs-dev`) o
+`export AWS_PROFILE=<perfil>` en la sesion de trabajo.
 
 Detalle completo:
 [.claude/docs/lambda-controller/06-devtools-operations.md](../docs/lambda-controller/06-devtools-operations.md).

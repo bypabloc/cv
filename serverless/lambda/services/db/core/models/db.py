@@ -55,3 +55,15 @@ class DowngradeModel(BaseModel):
     confirm: bool = False
 
     model_config = {'extra': 'forbid'}
+
+
+class TablesModel(BaseModel):
+    """Valida el payload de db/tables (sin campos)."""
+
+    model_config = {'extra': 'forbid'}
+
+
+class SeedModel(BaseModel):
+    """Valida el payload de db/seed (sin campos)."""
+
+    model_config = {'extra': 'forbid'}

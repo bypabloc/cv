@@ -24,6 +24,8 @@ def test_handler_rejects_missing_command():
         'current',
         'downgrade',
         'migrate',
+        'seed',
         'show-migrations',
         'stamp',
+        'tables',
     ]

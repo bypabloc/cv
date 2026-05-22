@@ -41,7 +41,7 @@ VALID_COMMANDS = [
     # Tests: unico comando, --type=unit|integration|coverage + target
     'tests',  # pytest de un lambda (--lambda), shared (--shared) o todo
     # lambda-controller: ciclo de vida de cada Lambda. --path requerido.
-    'sam-generate',  # lambda.yaml -> template.yaml (SAM efimero)
+    'sam-generate',  # manifest.yaml -> template.yaml (SAM efimero)
     'run',  # ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke
     'deploy',  # sam build + sam deploy del lambda (stack propio)
     # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
@@ -69,7 +69,7 @@ ALLOWED_FLAGS = [
     'stage',
     # lambda-controller: como apuntar al lambda objetivo
     'lambda',  # --lambda=<nombre> resuelto contra serverless/lambda/services/* (recomendado)
-    'path',  # --path=<dir> del lambda (dir con lambda.yaml, cualquier ubicacion)
+    'path',  # --path=<dir> del lambda (dir con manifest.yaml, cualquier ubicacion)
     'module',  # alias de --path
     'shared',  # --shared o --shared=<subpaquete> (target del comando tests)
     # Deploy
@@ -153,7 +153,7 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'format': 'Ruff format',
     'typecheck': 'mypy strict sobre shared/ y src/',
     'tests': 'pytest --type=unit|integration|coverage (--lambda / --shared)',
-    'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--lambda)',
+    'sam-generate': 'Genera template.yaml SAM desde manifest.yaml (--lambda)',
     'run': 'Ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke',
     'deploy': 'Empaqueta con uv + sam deploy del lambda a un stage (--lambda)',
     'deploy-infra': 'Deploya TODOS los stacks de recurso de resources/',
@@ -323,7 +323,7 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(
             f'{command!r} opera sobre un lambda-controller: requiere '
             f'--lambda=<nombre> (resuelto contra serverless/lambda/services/*) '
-            f'o --path=<dir> (directorio con lambda.yaml).',
+            f'o --path=<dir> (directorio con manifest.yaml).',
         )
 
     if command == 'tests':
@@ -377,7 +377,7 @@ def describe() -> ScriptDescribe:
             'path': {
                 'type': 'string',
                 'summary': (
-                    'Directorio de un lambda (dir con lambda.yaml), '
+                    'Directorio de un lambda (dir con manifest.yaml), '
                     'cualquier ubicacion. Alternativa a --lambda'
                 ),
             },

@@ -257,7 +257,7 @@ def resolve_lambda_shared(
     Parameters
     ----------
     lambda_root : Path
-        Directorio raiz del lambda (donde vive `lambda.yaml`).
+        Directorio raiz del lambda (donde vive `manifest.yaml`).
 
     Returns
     -------

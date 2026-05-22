@@ -3,7 +3,7 @@
 Path mirroring: devtools/serverless/resolve.py -> this file.
 
 Verifica los dos modos (legacy / lambda-controller) y la validacion del
-manifiesto lambda.yaml: campos obligatorios, runtime, defaults.
+manifiesto manifest.yaml: campos obligatorios, runtime, defaults.
 """
 
 import textwrap
@@ -24,10 +24,10 @@ _VALID_MANIFEST = textwrap.dedent(
 
 
 def _write_lambda(tmp_path, manifest_text):
-    """Crea un dir de lambda con lambda.yaml y devuelve el path."""
+    """Crea un dir de lambda con manifest.yaml y devuelve el path."""
     lambda_dir = tmp_path / 'my-lambda'
     lambda_dir.mkdir()
-    (lambda_dir / 'lambda.yaml').write_text(manifest_text, encoding='utf-8')
+    (lambda_dir / 'manifest.yaml').write_text(manifest_text, encoding='utf-8')
     return lambda_dir
 
 
@@ -98,7 +98,7 @@ class TestResolveByLambdaName:
         from serverless import resolve
 
         # Apunta el resolver a un src/ de prueba con una carpeta que NO
-        # cumple la estructura lambda-controller (sin lambda.yaml).
+        # cumple la estructura lambda-controller (sin manifest.yaml).
         fake_src = tmp_path / 'src'
         (fake_src / 'broken').mkdir(parents=True)
         monkeypatch.setattr(resolve, '_PORTFOLIO_LAMBDAS_DIR', fake_src)
@@ -117,6 +117,23 @@ class TestResolveByLambdaName:
             'stream_processor',
             'tracking_pixel',
         ]
+
+    def test_resolve_lambda_finds_service_by_manifest_yaml(self):
+        """AC-2.12: cada servicio se resuelve por la constante MANIFEST_FILENAME."""
+        from serverless.resolve import MANIFEST_FILENAME
+        from serverless.resolve import resolve_lambda
+
+        assert MANIFEST_FILENAME == 'manifest.yaml'
+        for name in (
+            'contact_form',
+            'tracking_pixel',
+            'stream_processor',
+            'db',
+        ):
+            resolved = resolve_lambda({'lambda': name})
+
+            assert resolved.is_lambda_controller is True
+            assert (resolved.root / MANIFEST_FILENAME).is_file()
 
 
 class TestManifestValidation:
@@ -165,7 +182,7 @@ class TestManifestValidation:
         empty_dir = tmp_path / 'empty'
         empty_dir.mkdir()
 
-        with pytest.raises(ManifestError, match=r'lambda\.yaml'):
+        with pytest.raises(ManifestError, match=r'manifest\.yaml'):
             resolve_lambda({'path': str(empty_dir)})
 
     def test_nonexistent_path_raises(self, tmp_path):

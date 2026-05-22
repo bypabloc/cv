@@ -1,7 +1,7 @@
 """Comandos de mantenimiento del backend serverless.
 
 El backend del portfolio son stacks CloudFormation independientes (un
-`lambda.yaml` por Lambda en `serverless/lambda/services/*`, un stack por
+`manifest.yaml` por Lambda en `serverless/lambda/services/*`, un stack por
 recurso compartido en `serverless/lambda/resources/*`). El ciclo de vida
 de cada stack se opera con los comandos del modo lambda-controller
 (`sam-generate`, `run`, `deploy`, `tests`) y `deploy-infra` para los

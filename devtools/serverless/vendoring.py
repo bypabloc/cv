@@ -85,7 +85,7 @@ def vendor_target(lambda_root: Path) -> Path:
     Parameters
     ----------
     lambda_root : Path
-        Directorio raiz del lambda (donde vive `lambda.yaml`).
+        Directorio raiz del lambda (donde vive `manifest.yaml`).
     """
     return lambda_root / 'core' / _VENDOR_DIRNAME
 

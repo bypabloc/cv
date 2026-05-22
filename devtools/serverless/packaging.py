@@ -155,7 +155,7 @@ def package_lambda(
     Parameters
     ----------
     lambda_root : Path
-        Directorio raiz del lambda (con `lambda.yaml`, `pyproject.toml`,
+        Directorio raiz del lambda (con `manifest.yaml`, `pyproject.toml`,
         `core/`).
     runtime : str
         Runtime del manifiesto (`python3.13`) — fija la version de uv.

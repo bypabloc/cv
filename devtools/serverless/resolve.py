@@ -1,15 +1,16 @@
-"""Resolucion del lambda objetivo (legacy SAM portfolio vs lambda-controller).
+"""Resolucion del lambda objetivo (legacy portfolio vs lambda-controller).
 
 El script `serverless` opera en dos modos:
 
-  - **legacy**: sin `--path` ni `--module`, apunta al backend SAM del
+  - **legacy**: sin `--path` ni `--module`, apunta al backend del
     portfolio (`serverless/` en la raiz del repo). Comportamiento historico.
   - **lambda-controller**: con `--path=<dir>` (o `--module=<dir>`), apunta
     a cualquier lambda que siga el formato `lambda-controller` y traiga un
-    `lambda.yaml` (manifiesto simple) del que devtools genera el SAM.
+    `manifest.yaml` (manifiesto declarativo de la config del servicio).
 
-Este modulo localiza el directorio del lambda, lee y valida `lambda.yaml`,
-y expone una estructura `ResolvedLambda` para los demas comandos.
+Este modulo localiza el directorio del lambda, lee y valida
+`manifest.yaml`, y expone una estructura `ResolvedLambda` para los demas
+comandos.
 """
 
 from __future__ import annotations
@@ -20,7 +21,11 @@ from pathlib import Path
 from typing import Any
 
 
-# Path al backend SAM del portfolio (modo legacy).
+# Nombre del manifiesto declarativo de cada Lambda. Constante unica que
+# todos los modulos de devtools que localizan el manifiesto deben usar.
+MANIFEST_FILENAME = 'manifest.yaml'
+
+# Path al backend del portfolio (modo legacy).
 _PORTFOLIO_SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
 # Directorio donde viven los lambda-controller del portfolio. El flag
@@ -28,7 +33,7 @@ _PORTFOLIO_SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 # `serverless/lambda/services/*`.
 _PORTFOLIO_LAMBDAS_DIR = _PORTFOLIO_SERVERLESS_DIR / 'lambda' / 'services'
 
-# Campos obligatorios del manifiesto lambda.yaml.
+# Campos obligatorios del manifiesto manifest.yaml.
 _REQUIRED_FIELDS = ('name', 'runtime', 'handler')
 
 # Runtimes Python soportados.
@@ -43,7 +48,7 @@ _MANIFEST_DEFAULTS: dict[str, Any] = {
 
 
 class ManifestError(ValueError):
-    """Error de validacion del manifiesto lambda.yaml (exit code 1)."""
+    """Error de validacion del manifiesto manifest.yaml (exit code 1)."""
 
 
 @dataclass
@@ -53,11 +58,11 @@ class ResolvedLambda:
     Attributes
     ----------
     mode : str
-        'legacy' (backend SAM del portfolio) o 'lambda-controller'.
+        'legacy' (backend del portfolio) o 'lambda-controller'.
     root : Path
-        Directorio raiz del lambda (donde corren sam / pytest).
+        Directorio raiz del lambda (donde corren los comandos / pytest).
     manifest : dict[str, Any]
-        Contenido de lambda.yaml normalizado. Vacio en modo legacy.
+        Contenido de manifest.yaml normalizado. Vacio en modo legacy.
     """
 
     mode: str
@@ -71,12 +76,12 @@ class ResolvedLambda:
 
 
 def _read_manifest(manifest_path: Path) -> dict[str, Any]:
-    """Lee y valida lambda.yaml, aplica defaults.
+    """Lee y valida manifest.yaml, aplica defaults.
 
     Parameters
     ----------
     manifest_path : Path
-        Ruta al archivo lambda.yaml.
+        Ruta al archivo manifest.yaml.
 
     Returns
     -------
@@ -99,18 +104,18 @@ def _read_manifest(manifest_path: Path) -> dict[str, Any]:
         raw = yaml.safe_load(manifest_path.read_text(encoding='utf-8'))
     except yaml.YAMLError as exc:
         raise ManifestError(
-            f'lambda.yaml mal formado ({manifest_path}): {exc}',
+            f'manifest.yaml mal formado ({manifest_path}): {exc}',
         ) from exc
 
     if not isinstance(raw, dict):
         raise ManifestError(
-            f'lambda.yaml debe ser un mapa de claves ({manifest_path})',
+            f'manifest.yaml debe ser un mapa de claves ({manifest_path})',
         )
 
     missing = [f for f in _REQUIRED_FIELDS if not raw.get(f)]
     if missing:
         raise ManifestError(
-            f'lambda.yaml ({manifest_path}) sin campos obligatorios: '
+            f'manifest.yaml ({manifest_path}) sin campos obligatorios: '
             f'{", ".join(missing)}',
         )
 
@@ -130,14 +135,14 @@ def available_lambdas() -> list[str]:
     """Lista los nombres cortos de lambdas validos en `serverless/lambda/services/*`.
 
     Un lambda valido es un subdirectorio de `serverless/lambda/services/` que trae un
-    `lambda.yaml`. Sirve para los mensajes de error de `--lambda`.
+    `manifest.yaml`. Sirve para los mensajes de error de `--lambda`.
     """
     if not _PORTFOLIO_LAMBDAS_DIR.is_dir():
         return []
     return sorted(
         child.name
         for child in _PORTFOLIO_LAMBDAS_DIR.iterdir()
-        if child.is_dir() and (child / 'lambda.yaml').is_file()
+        if child.is_dir() and (child / MANIFEST_FILENAME).is_file()
     )
 
 
@@ -146,7 +151,7 @@ def _resolve_lambda_dir(name: str) -> Path:
 
     `--lambda=contact_form` -> `serverless/lambda/services/contact_form/`. Valida que
     la carpeta exista Y que cumpla la estructura lambda-controller (tenga
-    `lambda.yaml`); si no, lanza un error que advierte que no cumple lo
+    `manifest.yaml`); si no, lanza un error que advierte que no cumple lo
     necesario y lista los lambdas validos.
 
     Parameters
@@ -174,11 +179,11 @@ def _resolve_lambda_dir(name: str) -> Path:
             f'Lambdas validos: {listed}.',
         )
 
-    if not (candidate / 'lambda.yaml').is_file():
+    if not (candidate / MANIFEST_FILENAME).is_file():
         raise ManifestError(
             f'El directorio {candidate} existe pero NO cumple la '
-            f'estructura lambda-controller: falta lambda.yaml. '
-            f'Un lambda valido debe traer su manifiesto lambda.yaml.',
+            f'estructura lambda-controller: falta {MANIFEST_FILENAME}. '
+            f'Un lambda valido debe traer su manifiesto {MANIFEST_FILENAME}.',
         )
 
     return candidate
@@ -195,7 +200,7 @@ def resolve_lambda(flags: dict[str, Any]) -> ResolvedLambda:
       - `--path=<dir>` / `--module=<dir>`: directorio explicito del
         lambda (cualquier ubicacion, no solo `serverless/lambda/services/`).
 
-    Sin ninguno de esos flags, devuelve el backend SAM del portfolio
+    Sin ninguno de esos flags, devuelve el backend del portfolio
     (modo legacy).
 
     Parameters
@@ -228,11 +233,11 @@ def resolve_lambda(flags: dict[str, Any]) -> ResolvedLambda:
         if not root.is_dir():
             raise ManifestError(f'El path del lambda no existe: {root}')
 
-    manifest_path = root / 'lambda.yaml'
+    manifest_path = root / MANIFEST_FILENAME
     if not manifest_path.is_file():
         raise ManifestError(
-            f'No se encuentra lambda.yaml en {root}. '
-            f'Un lambda-controller debe traer su manifiesto lambda.yaml.',
+            f'No se encuentra {MANIFEST_FILENAME} en {root}. '
+            f'Un lambda-controller debe traer su manifiesto {MANIFEST_FILENAME}.',
         )
 
     manifest = _read_manifest(manifest_path)

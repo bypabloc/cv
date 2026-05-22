@@ -1,7 +1,7 @@
 """Comandos para lambdas que siguen el formato lambda-controller.
 
 Estos comandos operan sobre cualquier lambda resuelto por `--path`
-(directorio con `lambda.yaml`). Generan el SAM template efimero desde el
+(directorio con `manifest.yaml`). Generan el SAM template efimero desde el
 manifiesto y lo usan por detras para `sam local invoke`, `sam build` +
 `sam deploy`, y `aws lambda invoke` contra un stage deployado.
 
@@ -66,7 +66,7 @@ def _require_lambda_controller(flags: dict[str, Any]) -> ResolvedLambda:
     if not resolved.is_lambda_controller:
         _err(
             'Este comando requiere --path=<dir> de un lambda-controller '
-            '(directorio con lambda.yaml).',
+            '(directorio con manifest.yaml).',
         )
         raise SystemExit(2)
     return resolved
@@ -101,7 +101,7 @@ def _run(cmd: list[str], *, cwd: Path) -> int:
 
 
 def cmd_sam_generate(flags: dict[str, Any]) -> int:
-    """Genera template.yaml desde lambda.yaml (sin build ni deploy)."""
+    """Genera template.yaml desde manifest.yaml (sin build ni deploy)."""
     resolved = _require_lambda_controller(flags)
     stage = flags.get('stage', 'dev')
     try:
@@ -134,7 +134,7 @@ def cmd_run(flags: dict[str, Any]) -> int:
 def _run_local(flags: dict[str, Any]) -> int:
     """Ejecuta el lambda en local con `sam local invoke`.
 
-    Regenera el SAM desde lambda.yaml y corre `sam local invoke` con el
+    Regenera el SAM desde manifest.yaml y corre `sam local invoke` con el
     event JSON indicado (--event).
     """
     _ensure_tool(

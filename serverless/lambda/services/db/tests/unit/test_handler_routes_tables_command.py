@@ -18,10 +18,11 @@ pytestmark = pytest.mark.unit
 def test_handler_routes_tables_command():
     import handler
 
-    # Arrange
+    # Arrange: se parchea la referencia que usa el controller
+    # (controllers.db.tables importa run_tables con `from ... import`).
     with (
         patch(
-            'services.db_service.run_tables',
+            'controllers.db.tables.run_tables',
             return_value={
                 'tables': [{'name': 'public.contacts', 'rows': 200}],
             },

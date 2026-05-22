@@ -1,9 +1,10 @@
-"""Handler — routing del command 'current'.
+"""Handler — el controller lanza una excepcion generica.
 
-Given un payload {command: 'current'},
+Given un payload {command: 'current'} y el service run_current que lanza
+     una excepcion no controlada (no ServiceError),
 When lambda_handler lo procesa,
-Then sintetiza operation='db'/action='current', ejecuta el controller y
-     devuelve el resultado del service.
+Then captura la excepcion y devuelve status 'error' indicando que el
+     command fallo.
 """
 
 from unittest.mock import patch
@@ -15,17 +16,17 @@ from tests.unit._helpers import invoke_event, lambda_context
 pytestmark = pytest.mark.unit
 
 
-def test_handler_routes_current_command():
+def test_handler_returns_error_when_controller_raises():
     import handler
 
     # Arrange: se parchea la referencia que usa el controller
     # (controllers.db.current importa run_current con `from ... import`).
     with (
+        patch('handler.ensure_database_url'),
         patch(
             'controllers.db.current.run_current',
-            return_value={'current': '81c2cc51db34'},
+            side_effect=RuntimeError('conexion perdida'),
         ),
-        patch('handler.ensure_database_url'),
     ):
         # Act
         result = handler.lambda_handler(
@@ -34,7 +35,7 @@ def test_handler_routes_current_command():
 
     # Assert
     assert result == {
+        'status': 'error',
         'command': 'current',
-        'status': 'ok',
-        'current': '81c2cc51db34',
+        'error': 'El command fallo — ver los logs de CloudWatch.',
     }

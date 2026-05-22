@@ -18,10 +18,11 @@ pytestmark = pytest.mark.unit
 def test_handler_maps_show_migrations_command_to_action():
     import handler
 
-    # Arrange
+    # Arrange: se parchea la referencia que usa el controller
+    # (controllers.db.show_migrations importa con `from ... import`).
     with (
         patch(
-            'services.db_service.run_show_migrations',
+            'controllers.db.show_migrations.run_show_migrations',
             return_value={'history': ['rev1 (head)'], 'current': 'rev1'},
         ),
         patch('handler.ensure_database_url'),

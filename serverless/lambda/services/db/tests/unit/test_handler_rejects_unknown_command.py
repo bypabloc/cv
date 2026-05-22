@@ -19,9 +19,7 @@ def test_handler_rejects_unknown_command():
 
     # Act
     with patch('handler.ensure_database_url'):
-        result = handler.lambda_handler(
-            invoke_event('bogus'), lambda_context()
-        )
+        result = handler.lambda_handler(invoke_event('bogus'), lambda_context())
 
     # Assert
     assert result['status'] == 'error'

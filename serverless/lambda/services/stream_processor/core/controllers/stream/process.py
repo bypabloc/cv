@@ -10,7 +10,7 @@ from __future__ import annotations
 from models.stream import StreamModel
 from services.stream_service import process_record
 from settings.config import logger
-from utils.base_controller import BaseController
+from shared.lambda_kit import BaseController
 
 
 class Process(BaseController):

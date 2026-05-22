@@ -12,8 +12,7 @@ lambda-controller.
 
 from enum import Enum
 
-from utils.base_settings import BaseSettings
-
+from shared.lambda_kit import BaseSettings
 from shared.observability.logger import logger
 
 __all__ = ['AppConfig', 'ErrorCode', 'LogMetricType', 'app_config', 'logger']

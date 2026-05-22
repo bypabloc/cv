@@ -9,14 +9,16 @@ version = "0.1.0"
 description = "Lambda que replica contacts/tracking de DynamoDB Streams a Neon."
 requires-python = ">=3.13"
 
-# Toca Neon via el ORM: psycopg (driver) + SQLAlchemy. pydantic valida el
-# evento sintetico {operation, action, data} del estandar lambda-controller.
+# El core/ del Lambda solo importa pydantic (modelos del evento) y boto3
+# (TypeDeserializer del Stream). El resto (powertools, sqlalchemy,
+# psycopg) le llega por el vendoring del cierre de shared/ (shared.db,
+# shared.observability, shared.lambda_kit) — regla de dedup D-3 del plan
+# docs/specs/serverless-lambda-independence/.
+#
+# boto3 lo trae shared.aws (parte del cierre): por la regla D-3 estricta
+# NO se declara aca aunque el core/ lo importe directo.
 dependencies = [
-  "aws-lambda-powertools[all]>=3.0.0,<4.0",
-  "boto3>=1.34.0,<2.0",
-  "psycopg[binary]>=3.2,<4.0",
   "pydantic>=2.5,<3.0",
-  "sqlalchemy>=2.0,<3.0",
 ]
 
 [tool.uv]

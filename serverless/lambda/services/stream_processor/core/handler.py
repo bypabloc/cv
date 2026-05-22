@@ -12,8 +12,10 @@ los records fallidos (los demas avanzan).
 
 El Handler de la funcion AWS es `core.handler.lambda_handler`.
 
-`DATABASE_URL` la inyecta el template SAM desde SSM; el ORM
-(`shared.db.session`) la resuelve via `shared.db.url`.
+`DATABASE_URL` la inyecta devtools desde SSM; el ORM
+(`shared.db.session`) la resuelve via `shared.db.url`. El nucleo
+`validate_event -> controller -> run` lo provee
+`shared.lambda_kit.run_controller`.
 """
 
 from __future__ import annotations
@@ -22,7 +24,7 @@ import os
 import sys
 
 # El handler vive dentro de core/. Agregamos core/ al sys.path para que
-# los imports absolutos (models., services., settings., utils., shared.)
+# los imports absolutos (models., services., settings., shared.)
 # resuelvan en AWS y en invoke local. shared/ se vendoriza en core/shared/.
 _CORE_DIR = os.path.dirname(os.path.abspath(__file__))
 if _CORE_DIR not in sys.path:
@@ -32,13 +34,36 @@ from typing import Any
 
 from aws_lambda_powertools.metrics import MetricUnit
 from settings.operations import OPERATIONS
-from utils.validation.event import validate_event
-
+from shared.lambda_kit import build_event_model, run_controller
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 from shared.observability.tracer import tracer
 
-__version__ = '2.0.0'
+__version__ = '3.0.0'
+
+# Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
+_EVENT_MODEL = build_event_model(OPERATIONS)
+
+
+def _all_failed(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Reporta TODOS los records del batch como fallidos.
+
+    Se usa cuando no se puede procesar el batch (evento invalido o fallo
+    inesperado del controller): AWS reintenta todo, no se pierde nada.
+    """
+    failed_ids = [
+        r.get('eventID', '') for r in records if r.get('eventID')
+    ]
+    metrics.add_metric(
+        name='StreamRecordsFailed',
+        unit=MetricUnit.Count,
+        value=len(failed_ids),
+    )
+    return {
+        'batchItemFailures': [
+            {'itemIdentifier': eid} for eid in failed_ids
+        ],
+    }
 
 
 @logger.inject_lambda_context(log_event=False)
@@ -62,61 +87,32 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         'data': {'records': records},
     }
 
-    # --- Validar evento + resolver controller (operation + action) ---
-    validation_result = validate_event(synthetic_event)
-    if not validation_result.get('is_valid'):
-        logger.error(
-            'stream event validation failed',
-            extra={'validation_error': validation_result.get('message')},
-        )
-        # Sin un controller resuelto no podemos procesar el batch.
-        # Reportamos TODOS los records como fallidos para que AWS los
-        # reintente (no se pierde nada).
-        failed_ids = [
-            r.get('eventID', '') for r in records if r.get('eventID')
-        ]
-        metrics.add_metric(
-            name='StreamRecordsFailed',
-            unit=MetricUnit.Count,
-            value=len(failed_ids),
-        )
-        return {
-            'batchItemFailures': [
-                {'itemIdentifier': eid} for eid in failed_ids
-            ],
-        }
-
-    validated_event = validation_result['data']
-    controller_data = validated_event.controller_info.get('data', {})
-    controller_class = controller_data.get('controller_class')
-
-    # --- Ejecutar el controller (preload -> validate -> execute) ---
+    # --- Validar evento + resolver controller + ejecutar (kit) ---
     try:
-        instance = controller_class(
-            event=validated_event.controller_event,
-        )
-        result = instance.run()
+        result = run_controller(synthetic_event, _EVENT_MODEL)
     except Exception:
         logger.exception('stream batch processing failed')
         # Fallo inesperado del controller: reintentamos todo el batch.
-        failed_ids = [
-            r.get('eventID', '') for r in records if r.get('eventID')
-        ]
-        metrics.add_metric(
-            name='StreamRecordsFailed',
-            unit=MetricUnit.Count,
-            value=len(failed_ids),
-        )
-        return {
-            'batchItemFailures': [
-                {'itemIdentifier': eid} for eid in failed_ids
-            ],
-        }
+        return _all_failed(records)
 
-    result_data = result.get('data', {})
-    processed = result_data.get('processed', 0)
-    skipped = result_data.get('skipped', 0)
-    failed_record_ids = result_data.get('failed_record_ids', [])
+    if result.stage == 'validation':
+        logger.error(
+            'stream event validation failed',
+            extra={'validation_error': result.data},
+        )
+        # Sin un controller resuelto no podemos procesar el batch.
+        return _all_failed(records)
+
+    if not result.is_valid:
+        # El controller `Process` NUNCA devuelve is_valid: False por un
+        # record fallido (los reporta en failed_record_ids). Un is_valid
+        # False aqui es defensivo: reintentamos todo el batch.
+        logger.error('stream controller reported failure')
+        return _all_failed(records)
+
+    processed = result.data.get('processed', 0)
+    skipped = result.data.get('skipped', 0)
+    failed_record_ids = result.data.get('failed_record_ids', [])
 
     metrics.add_metric(
         name='StreamRecordsProcessed',
@@ -142,8 +138,3 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             {'itemIdentifier': eid} for eid in failed_record_ids
         ],
     }
-
-
-# OPERATIONS se importa para forzar el registro de la operacion `stream`
-# (descubrimiento por convencion); referenciado para evitar F401.
-_ = OPERATIONS

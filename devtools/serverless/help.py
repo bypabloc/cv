@@ -5,6 +5,11 @@ Renders a colourised inventory of subcommands grouped by domain.
 
 from typing import Any
 
+from serverless.flags import _COMMAND_FLAGS
+from serverless.flags import _COMMAND_SUMMARIES
+from serverless.flags import DESTRUCTIVE_COMMANDS
+from serverless.flags import VALID_COMMANDS
+from serverless.flags import VALID_STAGES
 from shared.console import BOLD
 from shared.console import CYAN
 from shared.console import DIM
@@ -14,25 +19,18 @@ from shared.console import RED
 from shared.console import YELLOW
 from shared.console import _c
 
-from serverless.flags import _COMMAND_FLAGS
-from serverless.flags import _COMMAND_SUMMARIES
-from serverless.flags import DESTRUCTIVE_COMMANDS
-from serverless.flags import VALID_COMMANDS
-from serverless.flags import VALID_STAGES
-
 
 # Mapeo comando -> grupo para render organizado
 _GROUPS: dict[str, list[str]] = {
     'Setup / Maintenance': ['init', 'clean', 'help'],
     'Quality': ['lint', 'lint-fix', 'format', 'typecheck'],
-    'Tests (libreria comun shared/)': ['test', 'test-coverage'],
-    'Lambda (--path=<dir>, dir con lambda.yaml)': [
+    'Tests (--type=unit|integration|coverage, --lambda / --shared)': [
+        'tests',
+    ],
+    'Lambda (--lambda=<nombre> o --path=<dir>)': [
         'sam-generate',
-        'run-local',
+        'run',
         'deploy',
-        'invoke-remote',
-        'test-unit',
-        'test-integration',
     ],
     'Infra (stack compartido)': ['deploy-infra'],
     'Secrets / DNS': [

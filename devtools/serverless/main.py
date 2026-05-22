@@ -26,11 +26,9 @@ from serverless.database import cmd_db_tables
 from serverless.help import cmd_help
 from serverless.infra_deploy import cmd_deploy_infra
 from serverless.lambda_controller import cmd_deploy_lambda
-from serverless.lambda_controller import cmd_invoke_remote
-from serverless.lambda_controller import cmd_run_local
+from serverless.lambda_controller import cmd_run
 from serverless.lambda_controller import cmd_sam_generate
-from serverless.lambda_controller import cmd_test_integration_lambda
-from serverless.lambda_controller import cmd_test_unit_lambda
+from serverless.lambda_controller import cmd_tests
 from serverless.lifecycle import cmd_clean
 from serverless.lifecycle import cmd_init
 from serverless.observability import cmd_alarms
@@ -44,8 +42,6 @@ from serverless.secrets import cmd_request_ses_prod
 from serverless.secrets import cmd_rotate_secret
 from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
-from serverless.testing import cmd_test
-from serverless.testing import cmd_test_coverage
 from shared.console import _err
 
 
@@ -58,16 +54,12 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'lint-fix': cmd_lint_fix,
     'format': cmd_format,
     'typecheck': cmd_typecheck,
-    # Tests de la libreria comun (serverless/lambda/shared/tests/, cubre shared/)
-    'test': cmd_test,
-    'test-coverage': cmd_test_coverage,
-    # lambda-controller: ciclo de vida de cada Lambda (--path requerido)
+    # Tests: unico comando, --type=unit|integration|coverage + target
+    'tests': cmd_tests,
+    # lambda-controller: ciclo de vida de cada Lambda (--lambda requerido)
     'sam-generate': cmd_sam_generate,
-    'run-local': cmd_run_local,
-    'invoke-remote': cmd_invoke_remote,
+    'run': cmd_run,
     'deploy': cmd_deploy_lambda,
-    'test-unit': cmd_test_unit_lambda,
-    'test-integration': cmd_test_integration_lambda,
     # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
     'deploy-infra': cmd_deploy_infra,
     # Secrets / DNS

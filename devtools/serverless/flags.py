@@ -26,9 +26,11 @@ STAGE_DESCRIPTIONS = {
     'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
 }
 
-# Tablas DynamoDB administradas por el modulo. Usadas por subcomandos
-# ``db-*`` para scope explicito.
+# Tablas DynamoDB administradas por el modulo.
 VALID_TABLES = ['contacts', 'tracking']
+
+# Tipos de test soportados por el comando `tests`.
+VALID_TEST_TYPES = ['unit', 'integration', 'coverage']
 
 VALID_COMMANDS = [
     # Setup / Maintenance
@@ -39,16 +41,12 @@ VALID_COMMANDS = [
     'lint-fix',  # Ruff check --fix
     'format',  # Ruff format
     'typecheck',  # mypy
-    # Tests de la libreria comun (serverless/lambda/shared/tests/, cubre shared/)
-    'test',  # pytest tests/ con coverage
-    'test-coverage',  # pytest --cov + HTML report
+    # Tests: unico comando, --type=unit|integration|coverage + target
+    'tests',  # pytest de un lambda (--lambda), shared (--shared) o todo
     # lambda-controller: ciclo de vida de cada Lambda. --path requerido.
     'sam-generate',  # lambda.yaml -> template.yaml (SAM efimero)
-    'run-local',  # sam local invoke del lambda
+    'run',  # ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke
     'deploy',  # sam build + sam deploy del lambda (stack propio)
-    'invoke-remote',  # aws lambda invoke contra un stage deployado
-    'test-unit',  # pytest <lambda>/tests/unit
-    'test-integration',  # pytest <lambda>/tests/integration
     # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
     'deploy-infra',  # deploya el stack de infra compartida (5-stacks)
     # Secrets / Setup AWS resources fuera del template
@@ -82,10 +80,11 @@ ALLOWED_FLAGS = [
     'lambda',  # --lambda=<nombre> resuelto contra serverless/lambda/services/* (recomendado)
     'path',  # --path=<dir> del lambda (dir con lambda.yaml, cualquier ubicacion)
     'module',  # alias de --path
+    'shared',  # --shared o --shared=<subpaquete> (target del comando tests)
     # Deploy
     'guided',  # sam deploy --guided
     'confirm',  # required para comandos destructivos
-    'event',  # --event=events/<X>.json (run-local / invoke-remote)
+    'event',  # --event=events/<X>.json (run)
     'debug',  # sam local invoke --debug
     # Quality / Tests
     'module_path',  # Subset del codigo (ej. src/contact_form/)
@@ -95,6 +94,7 @@ ALLOWED_FLAGS = [
     'quiet',
     'output_format',
     # Test
+    'type',  # --type=unit|integration|coverage (comando tests)
     'coverage_threshold',  # default 80
     # Secrets
     'name',  # --name=/portfolio/turnstile-secret
@@ -138,14 +138,12 @@ DESTRUCTIVE_COMMANDS = frozenset(
 
 # Comandos del modo lambda-controller: requieren apuntar a un lambda con
 # --lambda=<nombre> (resuelto contra serverless/lambda/services/*) o --path=<dir>.
+# `tests` NO esta aqui: sin target corre toda la suite, o usa --shared.
 PATH_REQUIRED_COMMANDS = frozenset(
     {
         'sam-generate',
-        'run-local',
-        'invoke-remote',
+        'run',
         'deploy',
-        'test-unit',
-        'test-integration',
     }
 )
 
@@ -168,14 +166,10 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'lint-fix': 'Ruff check --fix',
     'format': 'Ruff format',
     'typecheck': 'mypy strict sobre shared/ y src/',
-    'test': 'pytest tests/ (cubre la libreria comun shared/)',
-    'test-coverage': 'pytest --cov + HTML report (threshold 80%)',
+    'tests': 'pytest --type=unit|integration|coverage (--lambda / --shared)',
     'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--lambda)',
-    'run-local': 'sam local invoke de un lambda (--lambda)',
+    'run': 'Ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke',
     'deploy': 'Empaqueta con uv + sam deploy del lambda a un stage (--lambda)',
-    'invoke-remote': 'aws lambda invoke contra un stage deployado (--lambda)',
-    'test-unit': 'pytest <lambda>/tests/unit (--lambda)',
-    'test-integration': 'pytest <lambda>/tests/integration (--lambda)',
     'deploy-infra': 'Deploya el stack de infra compartida (idempotente)',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
@@ -204,10 +198,25 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'lint-fix': ['module_path', 'files'],
     'format': ['module_path', 'files'],
     'typecheck': ['module_path'],
-    'test': ['verbose', 'coverage_threshold'],
-    'test-coverage': ['coverage_threshold'],
+    'tests': [
+        'type',
+        'lambda',
+        'path',
+        'module',
+        'shared',
+        'verbose',
+        'coverage_threshold',
+    ],
     'sam-generate': ['lambda', 'path', 'module', 'stage'],
-    'run-local': ['lambda', 'path', 'module', 'stage', 'event', 'debug'],
+    'run': [
+        'lambda',
+        'path',
+        'module',
+        'stage',
+        'event',
+        'debug',
+        'aws_profile',
+    ],
     'deploy': [
         'lambda',
         'path',
@@ -217,16 +226,6 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'aws_profile',
         'dry_run',
     ],
-    'invoke-remote': [
-        'lambda',
-        'path',
-        'module',
-        'stage',
-        'event',
-        'aws_profile',
-    ],
-    'test-unit': ['lambda', 'path', 'module', 'verbose'],
-    'test-integration': ['lambda', 'path', 'module', 'verbose'],
     'deploy-infra': ['stage', 'aws_profile', 'dry_run'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
@@ -352,6 +351,14 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
             f'o --path=<dir> (directorio con lambda.yaml).',
         )
 
+    if command == 'tests':
+        test_type = flags_dict.get('type')
+        if test_type not in VALID_TEST_TYPES:
+            raise ValueError(
+                'tests requiere --type=unit|integration|coverage '
+                f'(recibido: {test_type!r}).',
+            )
+
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
     flags_dict = set_default_values(flags_dict, _DEFAULTS)
 
@@ -402,6 +409,21 @@ def describe() -> ScriptDescribe:
             'event': {
                 'type': 'string',
                 'summary': 'Path a event JSON (events/<X>.json)',
+            },
+            'type': {
+                'type': 'choice',
+                'choices': list(VALID_TEST_TYPES),
+                'summary': (
+                    'Tipo de test para el comando tests '
+                    '(unit | integration | coverage)'
+                ),
+            },
+            'shared': {
+                'type': 'string',
+                'summary': (
+                    'Target del comando tests: --shared para toda la '
+                    'libreria comun, --shared=<subpaquete> para uno solo'
+                ),
             },
             'aws_profile': {
                 'type': 'string',

@@ -70,13 +70,17 @@ consultado 2026-05-22). Umbrales del plan:
 
 | Fase | Estado |
 |------|--------|
-| 1 — Auditoria de imports | pending |
-| 2 — Mover logica a shared/db | pending |
-| 3 — Venv aislado + eliminar workspace | pending |
-| 4 — Config de tooling descentralizada | pending |
-| 5 — Validador de dedup | pending |
-| 6 — Peso del artefacto | pending |
-| 7 — Verificacion E2E | pending |
+| 1 — Auditoria de imports | done |
+| 2 — Mover logica a shared/db + shared/lambda_kit | done |
+| 3 — Venv aislado + eliminar workspace | done |
+| 4 — Config de tooling descentralizada | done |
+| 5 — Validador de dedup | done |
+| 6 — Peso del artefacto | done |
+| 7 — Verificacion E2E | done |
+
+Implementado en `feature/serverless-lambda-independence` (14 commits,
+C-1..C-15). Suite verde: 398 tests del backend (4 lambdas con `.venv`
+aislado + shared) + 209 tests de devtools.
 
 ## Navegacion
 

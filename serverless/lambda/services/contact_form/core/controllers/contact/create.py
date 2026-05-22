@@ -26,9 +26,8 @@ from __future__ import annotations
 from models.contact import ContactCreatedOutput, ContactCreateModel
 from services.contact_service import process_contact_form
 from settings.config import logger
-from utils.base_controller import BaseController
-
 from shared.http.turnstile import verify_turnstile_token
+from shared.lambda_kit import BaseController
 from shared.rate_limit import check_or_raise
 from shared.rate_limit.auto_blacklist import (
     create_blacklist_rule,

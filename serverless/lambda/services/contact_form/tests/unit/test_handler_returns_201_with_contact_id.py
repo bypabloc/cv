@@ -10,8 +10,8 @@ import json
 import httpx
 import pytest
 import respx
-
 from shared.http.turnstile import TURNSTILE_SITEVERIFY_URL
+
 from tests.unit._helpers import api_gw_event, lambda_context
 
 pytestmark = pytest.mark.unit

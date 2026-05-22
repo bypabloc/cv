@@ -8,7 +8,6 @@ Then propaga la excepcion ANTES de validar Turnstile o persistir (el
 """
 
 import pytest
-
 from shared.rate_limit import RateLimitExceededError
 
 pytestmark = pytest.mark.unit

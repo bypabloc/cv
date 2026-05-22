@@ -1,0 +1,41 @@
+# Manifiesto del Lambda `cv` — fuente de verdad de su config.
+#
+# Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv. devtools
+# traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=cv
+
+# --- Identidad ---
+name: cv
+description: Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv.
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 30       # segundos
+
+# --- Trigger HTTP ---
+trigger:
+  type: http
+  method: GET
+  path: /cv
+
+# --- Recursos que usa ---
+uses:
+  tables:
+    cache: read-write          # @cached de las respuestas (CV cambia raramente)
+  secrets:
+    - neon-url                 # connection string PostgreSQL (SecureString)
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+  dev:
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
+  stage:
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

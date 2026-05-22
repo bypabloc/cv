@@ -1,0 +1,17 @@
+{
+  "httpMethod": "GET",
+  "path": "/cv",
+  "queryStringParameters": {
+    "operation": "cv",
+    "action": "awards",
+    "niche": "generic",
+    "locale": "es"
+  },
+  "headers": {
+    "Origin": "https://the-full-stack.com"
+  },
+  "requestContext": {
+    "identity": {"sourceIp": "127.0.0.1"},
+    "requestId": "local-test"
+  }
+}

@@ -27,11 +27,28 @@ python devtools/run.py serverless init    # uv sync + verifica sam + aws CLI
 
 ### 2.1. Profile SSO
 
+El backend del portfolio vive en la cuenta AWS `637423614564`, accesible
+con el perfil `tfs-dev` (SSO start URL `https://tfs-tech.awsapps.com/start`,
+role `AdministratorAccess`).
+
 ```bash
 aws configure sso
 # SSO start URL, region us-east-1, role AdministratorAccess, profile tfs-dev
 aws sts get-caller-identity --profile tfs-dev
 ```
+
+> **CRITICO — el perfil AWS de los comandos `serverless`.** Los comandos
+> `deploy`, `deploy-infra` e `invoke-remote` ejecutan `aws`/`sam` por
+> debajo. Por defecto usan el perfil del shell (`AWS_PROFILE` o
+> `[default]`), que puede apuntar a OTRA cuenta (ej. un perfil de otro
+> proyecto) o tener el token SSO expirado. Por eso estos comandos aceptan
+> `--aws-profile=tfs-dev`: inyecta `--profile tfs-dev` en los comandos
+> `aws`/`sam` y garantiza que se opera sobre la cuenta del portfolio.
+>
+> SIEMPRE pasar `--aws-profile=tfs-dev` (o `export AWS_PROFILE=tfs-dev`
+> en la sesion de trabajo del portfolio). Sin esto, un
+> `aws sso login --profile tfs-dev` refresca el perfil equivocado y el
+> comando sigue fallando con `Error when retrieving token from sso`.
 
 ### 2.2. KMS key para los SSM SecureString
 
@@ -70,13 +87,13 @@ El stack de infra va PRIMERO; los 4 Lambdas lo importan.
 
 ```bash
 # 1. Stack de infra (idempotente: CREATE si no existe, UPDATE si existe)
-python devtools/run.py serverless deploy-infra --stage=dev --profile=tfs-dev
+python devtools/run.py serverless deploy-infra --stage=dev --aws-profile=tfs-dev
 
 # 2. Los 4 stacks de Lambda (en cualquier orden entre si)
-python devtools/run.py serverless deploy --lambda=db --stage=dev --profile=tfs-dev
-python devtools/run.py serverless deploy --lambda=contact_form --stage=dev --profile=tfs-dev
-python devtools/run.py serverless deploy --lambda=tracking_pixel --stage=dev --profile=tfs-dev
-python devtools/run.py serverless deploy --lambda=stream_processor --stage=dev --profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=db --stage=dev --aws-profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=contact_form --stage=dev --aws-profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=tracking_pixel --stage=dev --aws-profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=stream_processor --stage=dev --aws-profile=tfs-dev
 
 # 3. Aplicar el schema PostgreSQL (via la Lambda db)
 python devtools/run.py serverless db-migrate --stage=dev
@@ -110,7 +127,7 @@ python devtools/run.py serverless run-local \
 
 # Invocar un Lambda ya deployado
 python devtools/run.py serverless invoke-remote \
-  --lambda=db --stage=dev --event=events/current.json --profile=tfs-dev
+  --lambda=db --stage=dev --event=events/current.json --aws-profile=tfs-dev
 
 # Tests de un Lambda (viven dentro del Lambda)
 python devtools/run.py serverless test-unit --lambda=db
@@ -141,11 +158,15 @@ directorio explicito (`--module` es alias de `--path`).
 | `test-unit` | `pytest <lambda>/tests/unit` |
 | `test-integration` | `pytest <lambda>/tests/integration` |
 
+`deploy` e `invoke-remote` aceptan `--aws-profile=<perfil>` para fijar el
+perfil AWS CLI de los comandos `aws`/`sam`. Usar SIEMPRE
+`--aws-profile=tfs-dev` (ver seccion 2.1).
+
 ### Infra
 
 | Comando | Que hace |
 |---------|----------|
-| `deploy-infra` | Deploya `portfolio-infra-<stage>` (idempotente) |
+| `deploy-infra` | Deploya `portfolio-infra-<stage>` (idempotente). Acepta `--aws-profile=tfs-dev` |
 
 ### Setup / mantenimiento / calidad
 
@@ -221,7 +242,8 @@ python devtools/run.py serverless rotate-secret \
 
 | Sintoma | Causa probable | Solucion |
 |---------|----------------|----------|
-| `UnauthorizedOperation` en el deploy | Token SSO expirado | `aws sso login --profile tfs-dev` |
+| `Error when retrieving token from sso` aunque hiciste `aws sso login` | El comando usa el perfil del shell (`AWS_PROFILE`/`[default]`), no `tfs-dev` — refrescaste el perfil equivocado | Pasar `--aws-profile=tfs-dev` al comando `serverless` (o `export AWS_PROFILE=tfs-dev`). Ver seccion 2.1 |
+| `UnauthorizedOperation` en el deploy | Token SSO de `tfs-dev` expirado | `aws sso login --profile tfs-dev` + `--aws-profile=tfs-dev` |
 | `Export ... cannot be deleted` | Se intenta borrar infra antes que los Lambdas | Borrar los 4 stacks de Lambda primero |
 | `No export named portfolio-infra-...` al deployar un Lambda | El stack de infra no esta deployado en ese stage | `deploy-infra --stage=<stage>` primero |
 | Stack en `ROLLBACK_COMPLETE` | Recurso no creado en un deploy previo | `aws cloudformation delete-stack` + re-deploy |

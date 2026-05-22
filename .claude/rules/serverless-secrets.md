@@ -178,6 +178,16 @@ Las credenciales que devtools usa para `sam deploy` NO viven en AWS:
   borrar la antigua tras 24h sin uso.
 - Alternativa SSO para uso manual: `aws sso login --profile tfs-dev`.
 
+> **Perfil AWS de los comandos `serverless`.** El backend del portfolio vive
+> en la cuenta `637423614564`, accesible con el perfil `tfs-dev`. Los
+> comandos `deploy`, `deploy-infra` e `invoke-remote` del script
+> `serverless` aceptan `--aws-profile=tfs-dev` para fijar ese perfil en los
+> comandos `aws`/`sam` que ejecutan. Sin el flag usan el perfil del shell
+> (`AWS_PROFILE`/`[default]`), que puede apuntar a otra cuenta o tener el
+> token SSO expirado — sintoma: `Error when retrieving token from sso` aun
+> tras `aws sso login`. SIEMPRE pasar `--aws-profile=tfs-dev` o
+> `export AWS_PROFILE=tfs-dev` en la sesion de trabajo del portfolio.
+
 `CLOUDFLARE_API_TOKEN` no se necesita en runtime de las Lambdas; solo lo usa
 devtools en local.
 

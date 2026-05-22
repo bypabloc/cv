@@ -78,9 +78,9 @@ lambda.
 ### Deployar a un entorno
 
 ```bash
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev --aws-profile=<perfil>
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-profile=<perfil>
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=<perfil>
 ```
 
 Regenera el SAM para ese stage (selecciona su bloque de env vars), corre
@@ -91,11 +91,22 @@ Regenera el SAM para ese stage (selecciona su bloque de env vars), corre
 
 ```bash
 python devtools/run.py serverless invoke-remote \
-  --lambda=<nombre> --stage=dev --event=events/create.json
+  --lambda=<nombre> --stage=dev --event=events/create.json --aws-profile=<perfil>
 ```
 
 Invoca via `aws lambda invoke` la funcion `<name>-<stage>` ya desplegada
 e imprime el payload de respuesta. Requiere AWS CLI + credenciales.
+
+### Flag `--aws-profile` (perfil AWS CLI)
+
+`deploy` e `invoke-remote` ejecutan `aws`/`sam` por debajo. Sin
+`--aws-profile`, usan el perfil del shell (`AWS_PROFILE` o `[default]`),
+que puede apuntar a OTRA cuenta AWS o tener el token SSO expirado —
+sintoma: `Error when retrieving token from sso` aunque hayas hecho
+`aws sso login`. Pasar SIEMPRE `--aws-profile=<perfil>` para fijar el
+perfil correcto en los comandos `aws`/`sam`. Alternativa:
+`export AWS_PROFILE=<perfil>` en la sesion de trabajo. El nombre del
+perfil es especifico del backend (en el portfolio: `tfs-dev`).
 
 ### Tests
 

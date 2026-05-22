@@ -118,7 +118,7 @@ ALLOWED_FLAGS = [
     # Cross-cutting
     'output',  # json|text
     'since',  # --since=10m|1h|24h (ventana de metrics / rate-limit stats)
-    'profile',  # --profile=tfs-dev (perfil AWS CLI)
+    'aws_profile',  # --aws-profile=tfs-dev (perfil AWS CLI)
     # Internal
     'command',
     'subcommands',
@@ -214,13 +214,20 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'module',
         'stage',
         'guided',
-        'profile',
+        'aws_profile',
         'dry_run',
     ],
-    'invoke-remote': ['lambda', 'path', 'module', 'stage', 'event', 'profile'],
+    'invoke-remote': [
+        'lambda',
+        'path',
+        'module',
+        'stage',
+        'event',
+        'aws_profile',
+    ],
     'test-unit': ['lambda', 'path', 'module', 'verbose'],
     'test-integration': ['lambda', 'path', 'module', 'verbose'],
-    'deploy-infra': ['stage', 'profile', 'dry_run'],
+    'deploy-infra': ['stage', 'aws_profile', 'dry_run'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
     'verify-ses-dns': [],
@@ -396,9 +403,13 @@ def describe() -> ScriptDescribe:
                 'type': 'string',
                 'summary': 'Path a event JSON (events/<X>.json)',
             },
-            'profile': {
+            'aws_profile': {
                 'type': 'string',
-                'summary': 'Perfil AWS CLI (ej. tfs-dev)',
+                'summary': (
+                    'Perfil AWS CLI a inyectar en los comandos aws/sam '
+                    '(ej. --aws-profile=tfs-dev). Si se omite, se usa el '
+                    'perfil por defecto (AWS_PROFILE o [default])'
+                ),
             },
             'since': {
                 'type': 'string',

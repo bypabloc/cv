@@ -154,16 +154,16 @@ def cmd_deploy_infra(flags: dict[str, Any]) -> int:
     """Deploya el stack de infra compartida (idempotente).
 
     Flags:
-      --stage   : dev | stage | prod (default dev).
-      --profile : perfil AWS CLI (opcional).
-      --dry-run : muestra que haria sin ejecutar.
+      --stage       : dev | stage | prod (default dev).
+      --aws-profile : perfil AWS CLI (opcional).
+      --dry-run     : muestra que haria sin ejecutar.
     """
     stage = flags.get('stage', 'dev')
     if stage == 'local':
         _err('El stack de infra no aplica al stage `local`.')
         return 1
 
-    profile = flags.get('profile')
+    profile = flags.get('aws_profile')
     region = 'us-east-1'
     stack = f'portfolio-infra-{stage}'
 

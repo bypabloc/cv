@@ -92,8 +92,13 @@ def cmd_help(flags: dict[str, Any]) -> int:
             destructive_marker = (
                 _c(RED, ' [destructivo]') if cmd in DESTRUCTIVE_COMMANDS else ''
             )
+            # flags_to_dict normaliza --foo-bar -> key 'foo_bar'; el help
+            # muestra la forma con guion (la que el usuario tipea).
             flag_hint = (
-                _c(DIM, f'  ({", ".join("--" + f for f in flag_list)})')
+                _c(
+                    DIM,
+                    f'  ({", ".join("--" + f.replace("_", "-") for f in flag_list)})',
+                )
                 if flag_list
                 else ''
             )

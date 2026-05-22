@@ -22,13 +22,7 @@
     "website": "https://the-full-stack.com"
   },
   "avatarUrl": "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif",
-  "niches": [
-    "fintech",
-    "architect",
-    "leader",
-    "vibe",
-    "generic"
-  ],
+  "niches": ["fintech", "architect", "leader", "vibe", "generic"],
   "stats": {
     "yearsExperience": 12,
     "companies": 8,

@@ -16,10 +16,7 @@
       "Skill-based agents"
     ],
     "kind": "technical",
-    "niches": [
-      "vibe",
-      "generic"
-    ]
+    "niches": ["vibe", "generic"]
   },
   {
     "slug": "architecture",
@@ -38,11 +35,7 @@
       "Implementación de Soluciones"
     ],
     "kind": "technical",
-    "niches": [
-      "architect",
-      "leader",
-      "generic"
-    ]
+    "niches": ["architect", "leader", "generic"]
   },
   {
     "slug": "backend",
@@ -62,11 +55,7 @@
       "CRUD"
     ],
     "kind": "technical",
-    "niches": [
-      "fintech",
-      "architect",
-      "generic"
-    ]
+    "niches": ["fintech", "architect", "generic"]
   },
   {
     "slug": "cloud-devops",
@@ -90,11 +79,7 @@
       "Microservicios"
     ],
     "kind": "technical",
-    "niches": [
-      "architect",
-      "leader",
-      "generic"
-    ]
+    "niches": ["architect", "leader", "generic"]
   },
   {
     "slug": "data",
@@ -109,11 +94,7 @@
       "Gestión de Datos"
     ],
     "kind": "technical",
-    "niches": [
-      "fintech",
-      "architect",
-      "generic"
-    ]
+    "niches": ["fintech", "architect", "generic"]
   },
   {
     "slug": "domains",
@@ -134,10 +115,7 @@
       "Monitoreo de Producción"
     ],
     "kind": "technical",
-    "niches": [
-      "fintech",
-      "generic"
-    ]
+    "niches": ["fintech", "generic"]
   },
   {
     "slug": "frontend",
@@ -158,13 +136,7 @@
       "jQuery"
     ],
     "kind": "technical",
-    "niches": [
-      "fintech",
-      "architect",
-      "leader",
-      "vibe",
-      "generic"
-    ]
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
   },
   {
     "slug": "leadership",
@@ -183,11 +155,7 @@
       "Gestión del Tiempo"
     ],
     "kind": "soft",
-    "niches": [
-      "leader",
-      "architect",
-      "generic"
-    ]
+    "niches": ["leader", "architect", "generic"]
   },
   {
     "slug": "mindset",
@@ -203,13 +171,7 @@
       "Resolución de Problemas"
     ],
     "kind": "soft",
-    "niches": [
-      "fintech",
-      "architect",
-      "leader",
-      "vibe",
-      "generic"
-    ]
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
   },
   {
     "slug": "team-client",
@@ -226,11 +188,6 @@
       "Trabajo en Equipo"
     ],
     "kind": "soft",
-    "niches": [
-      "fintech",
-      "architect",
-      "leader",
-      "generic"
-    ]
+    "niches": ["fintech", "architect", "leader", "generic"]
   }
 ]

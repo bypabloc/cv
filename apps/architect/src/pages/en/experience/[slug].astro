@@ -5,9 +5,9 @@ import PageLayout from '../../../layouts/PageLayout.astro'
 import { NICHE, STRINGS } from '../../../lib/site-config'
 
 export function getStaticPaths() {
-  return experiences.map((experience) => ({
-    params: { slug: experience.slug },
-    props: { experience },
+  return experiences.map((exp) => ({
+    params: { slug: exp.slug },
+    props: { experience: exp },
   }))
 }
 

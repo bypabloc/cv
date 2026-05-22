@@ -93,7 +93,7 @@ def test_strip_ts_line_comments_cuts_comment_after_quoted_value() -> None:
 def test_load_profile_returns_corrected_stats() -> None:
     """Given el profile.ts real,
     When se invoca _load_profile,
-    Then stats refleja la data corregida (companies=5, years=12).
+    Then stats refleja la data corregida (companies=8, years=12).
     """
     # Act
     profile = _load_profile()
@@ -101,7 +101,7 @@ def test_load_profile_returns_corrected_stats() -> None:
     # Assert
     assert profile['stats'] == {
         'yearsExperience': 12,
-        'companies': 5,
+        'companies': 8,
         'countries': 4,
         'certifications': 11,
     }

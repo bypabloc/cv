@@ -10,9 +10,7 @@
     "companyUrl": "https://laboratoriocofasa.com",
     "start": "2017-01",
     "end": "2018-11",
-    "niches": [
-      "generic"
-    ],
+    "niches": ["generic"],
     "priority": {
       "generic": 70
     },
@@ -58,10 +56,7 @@
       "Laravel",
       "Plataforma Web"
     ],
-    "skillsSoft": [
-      "Colaboración de Equipo",
-      "Resolución de Problemas"
-    ],
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
     "seniority": "mid",
     "metricsEstimated": true
   },
@@ -75,9 +70,7 @@
     "country": "Venezuela",
     "start": "2013-01",
     "end": "2013-12",
-    "niches": [
-      "generic"
-    ],
+    "niches": ["generic"],
     "priority": {
       "generic": 20
     },
@@ -118,10 +111,7 @@
       "Sistema Offline",
       "Gestión de Activos"
     ],
-    "skillsSoft": [
-      "Resolución de Problemas",
-      "Colaboración de Equipo"
-    ],
+    "skillsSoft": ["Resolución de Problemas", "Colaboración de Equipo"],
     "seniority": "intern",
     "metricsEstimated": true
   },
@@ -135,13 +125,7 @@
     "country": "Chile",
     "companyUrl": "https://destacame.cl",
     "start": "2022-08",
-    "niches": [
-      "fintech",
-      "architect",
-      "leader",
-      "vibe",
-      "generic"
-    ],
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"],
     "priority": {
       "fintech": 100,
       "architect": 100,
@@ -216,10 +200,7 @@
     "companyUrl": "https://destacame.cl",
     "start": "2021-12",
     "end": "2022-08",
-    "niches": [
-      "fintech",
-      "generic"
-    ],
+    "niches": ["fintech", "generic"],
     "priority": {
       "fintech": 90,
       "generic": 95
@@ -286,11 +267,7 @@
     "companyUrl": "https://dibal.pe",
     "start": "2018-12",
     "end": "2021-09",
-    "niches": [
-      "architect",
-      "leader",
-      "generic"
-    ],
+    "niches": ["architect", "leader", "generic"],
     "priority": {
       "architect": 90,
       "leader": 95,
@@ -363,10 +340,7 @@
     "companyUrl": "https://www.goodmeal.app",
     "start": "2021-05",
     "end": "2021-12",
-    "niches": [
-      "fintech",
-      "generic"
-    ],
+    "niches": ["fintech", "generic"],
     "priority": {
       "fintech": 70,
       "generic": 90
@@ -432,10 +406,7 @@
     "country": "Venezuela",
     "start": "2015-01",
     "end": "2015-12",
-    "niches": [
-      "leader",
-      "generic"
-    ],
+    "niches": ["leader", "generic"],
     "priority": {
       "leader": 55,
       "generic": 45
@@ -500,9 +471,7 @@
     "country": "Venezuela",
     "start": "2014-01",
     "end": "2014-12",
-    "niches": [
-      "generic"
-    ],
+    "niches": ["generic"],
     "priority": {
       "generic": 30
     },
@@ -562,10 +531,7 @@
     "country": "Venezuela",
     "start": "2015-01",
     "end": "2015-12",
-    "niches": [
-      "leader",
-      "generic"
-    ],
+    "niches": ["leader", "generic"],
     "priority": {
       "leader": 60,
       "generic": 50

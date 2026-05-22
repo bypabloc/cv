@@ -1,11 +1,12 @@
-"""@module profile — singleton de perfil + sus stats.
+"""@module profile — singleton de perfil + sus stats + sus niches.
 
 `profile` es un singleton (siempre 1 fila). Sus textos bilingues
 (`headline`, `summary`, `availability`) NO viven aqui: van a `translations`.
-Los campos no-bilingues (contactos, urls) son columnas nativas.
+Los campos no-bilingues (contactos, urls) son columnas nativas. Los niches
+del profile se persisten en la union `profile_niches`.
 """
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, PrimaryKeyConstraint, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import Base, TimestampMixin, UUIDPKMixin
@@ -49,3 +50,23 @@ class ProfileStats(UUIDPKMixin, TimestampMixin, Base):
     companies: Mapped[int] = mapped_column(Integer, nullable=False)
     countries: Mapped[int] = mapped_column(Integer, nullable=False)
     certifications: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ProfileNiche(Base):
+    """Union profile <-> niche. El profile es singleton, pero sus niches
+    se persisten igual para que la DB sea fuente de verdad completa del CV.
+
+    Union pura `(profile_id, niche_id)` con PK compuesta — mismo patron
+    que las demas tablas `<entidad>_niches` de `junctions.py`.
+    """
+
+    __tablename__ = 'profile_niches'
+
+    profile_id: Mapped[str] = mapped_column(
+        ForeignKey('profile.id', ondelete='CASCADE'), nullable=False
+    )
+    niche_id: Mapped[str] = mapped_column(
+        ForeignKey('niches.id', ondelete='CASCADE'), nullable=False
+    )
+
+    __table_args__ = (PrimaryKeyConstraint('profile_id', 'niche_id'),)

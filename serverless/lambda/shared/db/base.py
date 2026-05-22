@@ -1,6 +1,6 @@
 """@module base — DeclarativeBase + mixins del schema unificado.
 
-Todos los modelos del portfolio (las 37 tablas: datos del visitante +
+Todos los modelos del portfolio (las 36 tablas: datos del visitante +
 contenido del CV) heredan de `Base`. `Base.metadata` es el target unico del
 autogenerate de Alembic.
 
@@ -29,7 +29,7 @@ NAMING_CONVENTION = {
 
 
 class Base(DeclarativeBase):
-    """Base declarativa de las 37 tablas del portfolio."""
+    """Base declarativa de las 36 tablas del portfolio."""
 
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 

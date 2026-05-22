@@ -218,6 +218,11 @@ PR NO se mergea hasta que esa bateria pasa completa.
 
 ## Reglas de la seccion 9
 
+- ANTES del primer commit se verifica la rama actual: si es protegida
+  (`dev`/`stage`/`main`/`master`) se crea una rama de trabajo
+  (`feature/<nombre>` partiendo de `dev`). Los commits del plan NUNCA van
+  directo sobre una rama protegida. Ver la "Regla de ejecucion" de
+  `.claude/rules/plan-format.md`.
 - El primer commit suele ser la propia carpeta del plan (`docs(specs): ...`).
 - El ultimo commit es el de la seccion 11 (refactor de tests + verificacion);
   ese commit ademas elimina la carpeta `docs/specs/<nombre>/` con `git rm -r`
@@ -436,6 +441,27 @@ repetir — hasta que toda la bateria pase. Solo entonces el PR esta listo.
 - En Micro: la fase es minima — un barrido + la verificacion del scope + la
   regla de cierre. Sigue siendo obligatoria.
 
+## Gate de cierre: push y PR SOLO con todo verde
+
+El `git push` y la creacion del PR son el **gate de cierre del plan**, no un
+paso intermedio. Ocurren UNICAMENTE cuando la bateria de la Parte B pasa
+completa: cero comandos fallando, cero tests rojos, coverage >= 80% per-file.
+
+```text
+bateria Parte B en VERDE  ->  git push  ->  crear PR
+bateria con algo en rojo  ->  corregir  ->  re-ejecutar  ->  (repetir)
+```
+
+NUNCA hacer `push` ni abrir el PR con la bateria fallando — eso convierte el
+PR en un work-in-progress sin gate. La unica excepcion son los comandos que
+requieren recursos externos sin acceso en el momento (AWS, Docker): se
+documentan como pendientes en el PR y se corren antes del merge.
+
+Esto enlaza con la "Regla de ejecucion" de `.claude/rules/plan-format.md`:
+antes del primer commit se verifica la rama (si es `dev`/`stage`/`main` se
+crea una rama de trabajo); al final, recien con la bateria verde, se hace
+push + PR.
+
 ## Anti-patrones de la verificacion final
 
 - Declarar el plan "listo" sin ejecutar la bateria completa
@@ -444,6 +470,10 @@ repetir — hasta que toda la bateria pase. Solo entonces el PR esta listo.
 - Dejar tests referenciando codigo eliminado
 - Mergear el PR con comandos de la bateria fallando
 - Saltar el bucle de correccion ("se ve bien, lo dejo asi")
+- Hacer `git push` o abrir el PR con la bateria en rojo (el push/PR es el
+  gate de cierre, no un paso intermedio)
+- Implementar el plan directo sobre `dev`/`stage`/`main` sin crear una rama
+  de trabajo
 
 ---
 

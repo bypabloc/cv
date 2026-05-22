@@ -107,7 +107,28 @@ def zip_build_dir(lambda_root: Path) -> Path:
         'zip',
         root_dir=str(target),
     )
-    return Path(archive)
+    archive_path = Path(archive)
+
+    # Control de peso: con el zip ya armado tenemos ambas cifras. Avisa
+    # al 80% del limite y ABORTA el build si supera un hard limit de AWS
+    # Lambda (50 MB zip / 250 MB descomprimido).
+    from serverless.artifact_size import ArtifactTooLargeError
+    from serverless.artifact_size import check_artifact_size
+    from serverless.artifact_size import format_size_report
+    from serverless.artifact_size import measure_artifact
+    from serverless.artifact_size import size_warning
+
+    unzipped_mb, zip_mb = measure_artifact(target, zip_path=archive_path)
+    print(format_size_report(unzipped_mb, zip_mb))
+    warning = size_warning(unzipped_mb, zip_mb)
+    if warning is not None:
+        print(warning)
+    try:
+        check_artifact_size(unzipped_mb, zip_mb)
+    except ArtifactTooLargeError as exc:
+        raise PackagingError(str(exc)) from exc
+
+    return archive_path
 
 
 def _lambda_runtime_deps(lambda_root: Path) -> list[str]:
@@ -299,6 +320,17 @@ def package_lambda(
             vendor / subpackage,
             ignore=_IGNORE,
         )
+
+    # Control de peso: mide el build/ descomprimido y avisa si se acerca
+    # al limite de AWS Lambda. El error duro (build abortado) se evalua
+    # en `zip_build_dir`, cuando ya existen ambas cifras (zip + desc).
+    from serverless.artifact_size import measure_artifact
+    from serverless.artifact_size import size_warning
+
+    unzipped_mb, _ = measure_artifact(target, zip_path=None)
+    warning = size_warning(unzipped_mb, zip_mb=0.0)
+    if warning is not None:
+        print(warning)
 
     return target, closure, all_deps
 

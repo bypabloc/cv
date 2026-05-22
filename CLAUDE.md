@@ -257,7 +257,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Git hooks | [.claude/rules/git-hooks.md](.claude/rules/git-hooks.md) | Quality gates pre-commit / pre-push |
 | Security | [.claude/rules/security.md](.claude/rules/security.md) | Secrets, CSP, headers, supply chain |
 | Archivos .env | [.claude/rules/env-files.md](.claude/rules/env-files.md) | NUNCA leer/importar `.env` (incl. `docker/env/**`): extraer solo la key con bash e inyectarla inline al comando |
-| Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) | En plan mode o al planificar features |
+| Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) + [.claude/docs/plan-format-large/README.md](.claude/docs/plan-format-large/README.md) | En plan mode o al planificar features. Todo plan vive en `docs/specs/<nombre>/` y trae 4 secciones de ejecucion obligatorias: descomposicion, commits, paralelizacion con worktrees y verificacion E2E iterativa |
 | Harness protocol | [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md) | Subagentes, feature_list, current/history |
 | Markdown docs | [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md) | Editar archivos de `docs/` |
 | Skills (frontmatter) | [.claude/rules/skills.md](.claude/rules/skills.md) | Crear / modificar skills |

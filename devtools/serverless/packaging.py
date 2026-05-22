@@ -39,6 +39,9 @@ from serverless.vendoring import shared_source
 # Nombre del directorio de build efimero dentro del lambda.
 _BUILD_DIRNAME = 'build'
 
+# Nombre del archivo zip del artefacto de deploy.
+_BUILD_ZIP_NAME = 'build.zip'
+
 # Patrones que NO se copian al artefacto (basura local).
 _IGNORE = shutil.ignore_patterns(
     '__pycache__',
@@ -56,6 +59,55 @@ class PackagingError(RuntimeError):
 def build_dir(lambda_root: Path) -> Path:
     """Devuelve el path del directorio de build: `<lambda_root>/build/`."""
     return lambda_root / _BUILD_DIRNAME
+
+
+def build_zip_path(lambda_root: Path) -> Path:
+    """Devuelve el path del zip de build: `<lambda_root>/build.zip`."""
+    return lambda_root / _BUILD_ZIP_NAME
+
+
+def zip_build_dir(lambda_root: Path) -> Path:
+    """Comprime el directorio `build/` en `build.zip`.
+
+    Sin SAM, devtools arma el zip que se sube a AWS:
+    `aws lambda create-function --zip-file` y `update-function-code
+    --zip-file` necesitan un archivo zip, no un directorio. Este helper
+    produce ese `build.zip` desde el `build/` que dejo `package_lambda`.
+
+    El zip es efimero (esta en el `.gitignore` del lambda) y se regenera
+    en cada deploy.
+
+    Parameters
+    ----------
+    lambda_root : Path
+        Directorio raiz del lambda (con `build/` ya construido).
+
+    Returns
+    -------
+    Path
+        Ruta del `build.zip` generado.
+
+    Raises
+    ------
+    PackagingError
+        Si el directorio `build/` no existe (no se corrio el package).
+    """
+    target = build_dir(lambda_root)
+    if not target.is_dir():
+        raise PackagingError(
+            f'No existe el directorio build/ en {lambda_root}. '
+            f'Ejecuta package_lambda antes de zip_build_dir.',
+        )
+    zip_path = build_zip_path(lambda_root)
+    if zip_path.exists():
+        zip_path.unlink()
+    base = zip_path.with_suffix('')
+    archive = shutil.make_archive(
+        str(base),
+        'zip',
+        root_dir=str(target),
+    )
+    return Path(archive)
 
 
 def _lambda_runtime_deps(lambda_root: Path) -> list[str]:

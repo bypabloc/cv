@@ -21,11 +21,11 @@ Aplica SIEMPRE que se trabaje con:
 - **SIEMPRE** los secretos rotables (Turnstile secret, Neon URL) viven en SSM
   Parameter Store como `SecureString` cifrado con la KMS key del proyecto.
 - **SIEMPRE** las Lambdas leen los secretos en runtime via `boto3`, NUNCA
-  como env var plano del template.
+  como env var plano de la config del Lambda.
 - **SIEMPRE** IAM least privilege: cada Lambda tiene `ssm:GetParameter` solo
   sobre los ARNs que necesita (ver tabla de scopes abajo).
-- **NUNCA** hardcodear un secreto en codigo, `template.yaml`, `samconfig.toml`
-  ni en archivos `.env` commiteados.
+- **NUNCA** hardcodear un secreto en codigo, en el `manifest.yaml` del
+  Lambda ni en archivos `.env` commiteados.
 - **NUNCA** logear el valor de un `SecureString` (Turnstile secret, Neon URL).
 - **NUNCA** dejar un CloudWatch Log Group con `retention=Never` (default AWS):
   el backend usa `LogRetentionInDays: 7` en todos.
@@ -38,7 +38,7 @@ Aplica SIEMPRE que se trabaje con:
 |-----------------|------------|--------------|----------|
 | Rotables (Turnstile, Neon) | SSM Parameter Store + KMS | Lambdas en runtime (boto3) | Manual via `serverless setup-ssm` |
 | Constantes (emails, addresses) | SSM Parameter Store (plain String) | Lambdas en runtime (boto3) | Manual (raro) |
-| Build-time vars (CORS, hostnames) | SAM template Globals | Lambdas en runtime (env var) | Cambio en `template.yaml` + redeploy |
+| Build-time vars (CORS, hostnames) | `manifest.yaml` del Lambda | Lambdas en runtime (env var) | Cambio en `manifest.yaml` + redeploy |
 | AWS auth (deploy) | `docker/env/dev-cli/.{dev,local,prod}` (gitignored) | devtools en local | Manual cuando expira IAM key |
 
 ## SSM Parameter Store — inventario completo
@@ -69,7 +69,8 @@ Aplica SIEMPRE que se trabaje con:
 - **Que es**: connection string PostgreSQL del proyecto Neon (pooled,
   `sslmode=require`), una por stage para aislamiento dev/prod a nivel DB.
 - **Parametros**: `/portfolio/dev/neon-url` y `/portfolio/prod/neon-url`. El
-  `template.yaml` resuelve `SSM_NEON_URL_PATH: !Sub /portfolio/${Stage}/neon-url`
+  `manifest.yaml` de la Lambda `db` declara `SSM_NEON_URL_PATH` como
+  `/portfolio/${stage}/neon-url` y devtools la inyecta como env var
   (SPEC-202, Fase 2). El `/portfolio/neon-url` plano queda como legacy/fallback.
 - **Quien lo lee**: Lambda `stream_processor`.
 - **Rotacion**: cuando se rota el password de `neondb_owner` en Neon Console:
@@ -156,14 +157,15 @@ Los paths `/portfolio/{stage}/dynamodb/...` son `String` planos (nombre/ARN
 de recurso, no secreto); su lectura no requiere `kms:Decrypt`. Solo
 `turnstile-secret` y `neon-url` son `SecureString`.
 
-## SSM params de infraestructura — publicados por los stacks de recurso
+## SSM params de infraestructura — publicados al provisionar los recursos
 
-Tras el refactor serverless, los recursos compartidos
-(`serverless/lambda/resources/<tipo>/<nombre>.yaml`) son stacks
-CloudFormation autonomos. Cada stack **publica** sus identificadores a SSM
-Parameter Store (no usa `Export`/`Fn::ImportValue`), con el patron de path
+Los recursos compartidos se declaran en
+`serverless/lambda/resources/<tipo>/<nombre>.yaml` (esquema propio de
+devtools, sin IaC declarativa). Al provisionarlos, devtools **publica**
+sus identificadores en SSM Parameter Store, con el patron de path
 `/portfolio/{stage}/{tipo}/{nombre}/{atributo}`. Son `String` planos (no
-secretos): el nombre/ARN de un recurso AWS no es sensible.
+secretos): el nombre/ARN de un recurso AWS no es sensible. Asi cada
+recurso se puede recrear sin bloquear a quien lo consume.
 
 | Path SSM | Que publica |
 |----------|-------------|
@@ -176,30 +178,33 @@ secretos): el nombre/ARN de un recurso AWS no es sensible.
 | `/portfolio/{stage}/sqs/stream-processor-dlq/{arn,url}` | DLQ del `stream_processor` |
 
 Las Lambdas resuelven el **nombre de cada tabla DynamoDB en el cold start**
-leyendo el path SSM correspondiente: el template SAM les inyecta una env var
+leyendo el path SSM correspondiente: devtools les inyecta una env var
 `SSM_<TABLA>_TABLE_PATH` (ej. `SSM_CONTACTS_TABLE_PATH=/portfolio/dev/dynamodb/contacts/name`)
 y el codigo hace `ssm:GetParameter` sobre ese path, en vez de recibir el
 nombre directo en `CONTACTS_TABLE_NAME`. El Stream ARN, el DLQ ARN y el
-`ApiId` se resuelven con dynamic references CloudFormation
-(`{{resolve:ssm:...}}`) en el template SAM generado, no en runtime.
+`ApiId` los resuelve `provisioner.py` con `aws ssm get-parameter` al
+momento del `deploy` (los necesita para crear el Event Source Mapping y
+las rutas de la API), no en runtime del Lambda.
 
 ## Env vars constantes (sin SSM)
 
-Se inyectan al template SAM (bloque `Environment` de la Lambda), no via SSM.
-Son derivables; cambiarlas implica redeploy.
+Se declaran en el `manifest.yaml` del Lambda (bloque `environment`) y
+devtools las inyecta como env vars de la funcion. Son derivables;
+cambiarlas implica redeploy.
 
 | Variable | Donde se setea | Quien la usa |
 |----------|----------------|--------------|
-| `POWERTOOLS_SERVICE_NAME` / `POWERTOOLS_METRICS_NAMESPACE` | `template.yaml` Globals | Powertools |
-| `LOG_LEVEL` | `template.yaml` Globals (INFO dev / WARNING prod) | logger |
-| `CORS_ALLOWED_ORIGINS` | `template.yaml` Globals | `common.cors.resolve_origin` |
-| `SSM_CONTACTS_TABLE_PATH` / `SSM_TRACKING_TABLE_PATH` / `SSM_CACHE_TABLE_PATH` | `template.yaml` Globals | persistence / cache (resuelven el nombre de tabla en cold start) |
-| `SSM_RATE_LIMIT_RULES_TABLE_PATH` / `SSM_RATE_LIMIT_BUCKETS_TABLE_PATH` | `template.yaml` Globals | `common.rate_limit` |
-| `AWS_SES_REGION` | `template.yaml` (`ContactFormFunction`) | `notification.py` (SPEC-100) |
+| `POWERTOOLS_SERVICE_NAME` / `POWERTOOLS_METRICS_NAMESPACE` | `manifest.yaml` del Lambda | Powertools |
+| `LOG_LEVEL` | `manifest.yaml` del Lambda (INFO dev / WARNING prod) | logger |
+| `CORS_ALLOWED_ORIGINS` | `manifest.yaml` del Lambda | `common.cors.resolve_origin` |
+| `SSM_CONTACTS_TABLE_PATH` / `SSM_TRACKING_TABLE_PATH` / `SSM_CACHE_TABLE_PATH` | `manifest.yaml` del Lambda | persistence / cache (resuelven el nombre de tabla en cold start) |
+| `SSM_RATE_LIMIT_RULES_TABLE_PATH` / `SSM_RATE_LIMIT_BUCKETS_TABLE_PATH` | `manifest.yaml` del Lambda | `common.rate_limit` |
+| `AWS_SES_REGION` | `manifest.yaml` del `contact_form` | `notification.py` (SPEC-100) |
 
 ## Credenciales de deploy (no SSM)
 
-Las credenciales que devtools usa para `sam deploy` NO viven en AWS:
+Las credenciales que devtools usa para provisionar la infra con AWS CLI
+NO viven en AWS:
 
 - IAM user `dev` (grupo `Admin`, `AdministratorAccess`).
 - Viven en `docker/env/dev-cli/.{dev,local,prod}` (gitignored, categoria
@@ -211,10 +216,10 @@ Las credenciales que devtools usa para `sam deploy` NO viven en AWS:
 
 > **Perfil AWS de los comandos `serverless`.** El backend del portfolio vive
 > en la cuenta `637423614564`, accesible con el perfil `tfs-dev`. Los
-> comandos `deploy`, `deploy-infra`, `deploy-resource`,
-> `destroy-resource` y `run` (contra un stage deployado) del script
-> `serverless` aceptan `--aws-profile=tfs-dev` para fijar ese perfil en los
-> comandos `aws`/`sam` que ejecutan. Sin el flag usan el perfil del shell
+> comandos `deploy`, `destroy`, `status`, `provision-infra` y `run`
+> (contra un stage provisionado) del script `serverless` aceptan
+> `--aws-profile=tfs-dev` para fijar ese perfil en los comandos `aws`
+> que ejecutan. Sin el flag usan el perfil del shell
 > (`AWS_PROFILE`/`[default]`), que puede apuntar a otra cuenta o tener el
 > token SSO expirado — sintoma: `Error when retrieving token from sso` aun
 > tras `aws sso login`. SIEMPRE pasar `--aws-profile=tfs-dev` o
@@ -268,7 +273,7 @@ aws cloudtrail lookup-events \
 
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
-| Secreto hardcodeado en `template.yaml` | Expuesto en git | SSM `SecureString` + KMS |
+| Secreto hardcodeado en el `manifest.yaml` | Expuesto en git | SSM `SecureString` + KMS |
 | Lambda lee el secreto como env var plano | El valor queda en la config de la Lambda | Leer de SSM en runtime con boto3 |
 | `ssm:GetParameter` con wildcard `/portfolio/*` | Rompe least privilege | ARN especifico por Lambda |
 | Logear la Neon URL o el Turnstile secret | Leak en CloudWatch | Referir al nombre del parametro, nunca al valor |

@@ -8,8 +8,8 @@ duplicar el codigo en el repo, devtools **vendoriza** los subpaquetes que
 el lambda usa dentro de `<lambda>/core/shared/` antes de cada accion que
 necesite el codigo completo:
 
-  - `run-local` / `test-unit` / `test-integration`: copia `shared/` a
-    `<lambda>/core/shared/` para que `sam local invoke` y `pytest` lo
+  - `run` (--stage=local) / `tests`: copia `shared/` a
+    `<lambda>/core/shared/` para que la ejecucion local y `pytest` lo
     resuelvan.
   - `deploy`: idem, antes de armar el zip (el artefacto lo incluye).
 
@@ -85,7 +85,7 @@ def vendor_target(lambda_root: Path) -> Path:
     Parameters
     ----------
     lambda_root : Path
-        Directorio raiz del lambda (donde vive `lambda.yaml`).
+        Directorio raiz del lambda (donde vive `manifest.yaml`).
     """
     return lambda_root / 'core' / _VENDOR_DIRNAME
 

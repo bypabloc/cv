@@ -42,33 +42,32 @@ legolambda-stacks).
   Pydantic en `models/<operation>.py`.
 - **SIEMPRE** los tests siguen el estandar de testing (ver abajo): un
   archivo por escenario, en `tests/unit/` o `tests/integration/`.
-- **SIEMPRE** el lambda trae un `lambda.yaml` (manifiesto simple con la
-  config). devtools genera el `template.yaml` SAM a partir de el.
+- **SIEMPRE** el lambda trae un `manifest.yaml` (manifiesto simple con la
+  config). devtools lo lee directamente: `provisioner.py` lo traduce a
+  llamadas AWS CLI. NO hay paso intermedio ni template efimero — el
+  manifiesto es la unica entrada.
 - **SIEMPRE** las dependencias se declaran en un `pyproject.toml` (PEP 621)
   en la raiz del lambda: deps de runtime en `[project.dependencies]`, deps
   de testing en `[dependency-groups]` dev. NUNCA usar `requirements*.txt`
   ni `pytest.ini` — la config de pytest del backend vive en
   `serverless/pyproject.toml` (`[tool.pytest.ini_options]`).
 - **SIEMPRE** el lambda se opera con el script `serverless` de devtools
-  (`run --stage=...`, `deploy`, `tests --type=...`) — ver "Operacion con
-  devtools" abajo.
+  (`run --stage=...`, `deploy`, `destroy`, `status`, `tests --type=...`)
+  — ver "Operacion con devtools" abajo.
 - **NUNCA** poner logica de negocio en `handler.py` ni en los
   controllers — el handler enruta, el controller orquesta.
 - **NUNCA** registrar controllers a mano: se descubren por convencion
   de nombres (`controllers.<controller>.<action>.<Action>`).
-- **NUNCA** editar ni commitear el `template.yaml` generado: es efimero
-  (esta en `.gitignore`). Se cambia el `lambda.yaml` y se regenera.
 - **NUNCA** hardcodear secretos ni ARNs en el codigo — van en
-  `AppConfig` via variables de entorno (declaradas en `lambda.yaml`).
+  `AppConfig` via variables de entorno (declaradas en `manifest.yaml`).
 - **NUNCA** atribucion de IA en codigo, commits ni docstrings.
 
 ## Estructura obligatoria
 
 ```text
 <lambda-name>/
-├── lambda.yaml                   # MANIFIESTO: fuente de verdad de la config
-├── template.yaml                 # SAM generado (EFIMERO, en .gitignore)
-├── .gitignore                    # excluye template.yaml + build/ + .aws-sam/
+├── manifest.yaml                 # MANIFIESTO: fuente de verdad de la config
+├── .gitignore                    # excluye build/ + build.zip
 ├── pyproject.toml                # PEP 621: deps de runtime + grupo dev
 │                                 #   (pytest, coverage). Reemplaza los
 │                                 #   requirements*.txt y el pytest.ini.
@@ -134,8 +133,9 @@ los `internal-deps` de cada `pyproject.toml`. Un Lambda que no usa
 
 - `run --stage=local` / `tests`: la libreria se resuelve via el
   `sys.path` del backend (la copia maestra).
-- `deploy`: `packaging.py` instala las deps con uv y vendoriza SOLO los
-  subpaquetes del cierre transitivo en `build/core/shared/`.
+- `deploy`: `packaging.py` instala las deps con uv, vendoriza SOLO los
+  subpaquetes del cierre transitivo en `build/core/shared/` y arma el
+  `build.zip` que se sube a AWS.
 
 Reglas del vendoring:
 
@@ -154,8 +154,8 @@ Reglas del vendoring:
   llegan al zip. Un Lambda que no comparte codigo no tiene `core/shared/`.
 
 Asi se concilian las dos propiedades: los Lambdas son **independientes**
-(deploy por separado, un stack cada uno) y a la vez **comparten** la
-libreria comun sin copiar-pegar codigo en el repo.
+(deploy por separado, cada uno con su propio archivo de estado) y a la
+vez **comparten** la libreria comun sin copiar-pegar codigo en el repo.
 
 ## Separacion de responsabilidades
 
@@ -229,29 +229,38 @@ Receta detallada + checklist Definition of Done:
 ## Operacion con devtools
 
 El lambda-controller se opera con el script `serverless` de devtools.
-Todos los comandos requieren apuntar al lambda con `--lambda=<nombre>`
-(forma recomendada): el nombre corto se resuelve contra
-`serverless/lambda/services/<nombre>/` y devtools valida que la carpeta
-cumpla la estructura lambda-controller (que exista y traiga
-`lambda.yaml`); si no, lanza un error listando los lambdas validos. Como
-alternativa, `--path=<dir>` (o su alias `--module=<dir>`) apunta a un
-directorio explicito en cualquier ubicacion.
+devtools provisiona cada recurso AWS con AWS CLI imperativo (sin capas
+de IaC declarativa) y mantiene un archivo de estado local por
+`(scope, stage)`. Todos los comandos requieren apuntar al lambda con
+`--lambda=<nombre>` (forma recomendada): el nombre corto se resuelve
+contra `serverless/lambda/services/<nombre>/` y devtools valida que la
+carpeta cumpla la estructura lambda-controller (que exista y traiga
+`manifest.yaml`); si no, lanza un error listando los lambdas validos.
+Como alternativa, `--path=<dir>` (o su alias `--module=<dir>`) apunta a
+un directorio explicito en cualquier ubicacion.
 
 ```bash
-# Generar el SAM template desde lambda.yaml (efimero)
-python devtools/run.py serverless sam-generate --lambda=<nombre> --stage=dev
-
-# Ejecutar el lambda: --stage=local -> sam local invoke;
-#   --stage=dev|stage|prod -> aws lambda invoke contra el ya deployado.
+# Ejecutar el lambda en local: --runtime-mode=rie -> contenedor con el
+#   AWS Lambda Runtime Interface Emulator; --runtime-mode=direct -> el
+#   handler corre en proceso. --stage=dev|stage|prod -> aws lambda invoke
+#   contra el ya provisionado.
 python devtools/run.py serverless run \
   --stage=local --lambda=<nombre> --event=events/create.json
 python devtools/run.py serverless run \
   --stage=dev --lambda=<nombre> --event=events/create.json --aws-profile=<perfil>
 
-# Deployar a un entorno (uv arma el zip en build/, luego sam deploy)
+# Deployar a un entorno: provisioner traduce manifest.yaml a llamadas
+#   AWS CLI (rol IAM, LogGroup, funcion, wiring del trigger) y actualiza
+#   el archivo de estado. El diff de hashes decide create/update/noop.
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev --aws-profile=<perfil>
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-profile=<perfil>
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=<perfil>
+
+# Estado: compara el estado local contra los describe-* de AWS
+python devtools/run.py serverless status --lambda=<nombre> --stage=dev --aws-profile=<perfil>
+
+# Destruir: borra los recursos del lambda en un stage (requiere --yes)
+python devtools/run.py serverless destroy --lambda=<nombre> --stage=dev --yes --aws-profile=<perfil>
 
 # Tests: un solo comando, --type=unit|integration|coverage
 python devtools/run.py serverless tests --type=unit --lambda=<nombre>
@@ -262,18 +271,25 @@ python devtools/run.py serverless tests --type=coverage --lambda=<nombre>
 python devtools/run.py serverless deploy --path=<dir> --stage=dev --aws-profile=<perfil>
 ```
 
-`lambda.yaml` es la unica fuente de verdad de la config; el
-`template.yaml` SAM se regenera desde el en cada `run`/`deploy`. El
-comando `tests` sin target (`--lambda`/`--path`/`--shared`) corre la
-suite completa: los 4 lambdas + la libreria comun.
+`manifest.yaml` es la unica fuente de verdad de la config; `provisioner.py`
+lo traduce a llamadas AWS CLI en cada `deploy`. devtools mantiene un
+archivo de estado por `(scope, stage)` en
+`serverless/lambda/.state/<scope>-<stage>.json` (gitignored): registra
+los ARNs de lo creado y los hashes de config y codigo. El diff de esos
+hashes decide la accion del `deploy` (`create` / `update-function-code`
+/ `update-function-configuration` / `noop`), lo que hace el comando
+idempotente y re-ejecutable. El comando `tests` sin target
+(`--lambda`/`--path`/`--shared`) corre la suite completa: los 4 lambdas
++ la libreria comun.
 
-**`--aws-profile` (perfil AWS CLI)**: `deploy`, `deploy-infra` y `run`
-contra un stage deployado ejecutan `aws`/`sam` por debajo. Sin
-`--aws-profile` usan el perfil del shell (`AWS_PROFILE` o `[default]`),
-que puede apuntar a otra cuenta AWS o tener el token SSO expirado —
-sintoma: `Error when retrieving token from sso` aun despues de
-`aws sso login`. SIEMPRE pasar `--aws-profile=<perfil>` (en el portfolio:
-`tfs-dev`) o `export AWS_PROFILE=<perfil>` en la sesion de trabajo.
+**`--aws-profile` (perfil AWS CLI)**: `deploy`, `destroy`, `status`,
+`provision-infra` y `run` contra un stage provisionado ejecutan `aws`
+por debajo. Sin `--aws-profile` usan el perfil del shell (`AWS_PROFILE`
+o `[default]`), que puede apuntar a otra cuenta AWS o tener el token SSO
+expirado — sintoma: `Error when retrieving token from sso` aun despues
+de `aws sso login`. SIEMPRE pasar `--aws-profile=<perfil>` (en el
+portfolio: `tfs-dev`) o `export AWS_PROFILE=<perfil>` en la sesion de
+trabajo.
 
 Detalle completo:
 [.claude/docs/lambda-controller/06-devtools-operations.md](../docs/lambda-controller/06-devtools-operations.md).
@@ -304,19 +320,19 @@ python devtools/run.py serverless tests --type=unit --lambda=<nombre>
 | Varias funciones `test_*` en un archivo | Rompe el estandar de testing | Un archivo por escenario |
 | Mockear `services`/`controllers` propios | Test que no prueba nada | Mockear solo E/S externa |
 | `assert result['code'] > 1000` | Assert vago | `assert result['code'] == 1001` |
-| Editar el `template.yaml` a mano | Es efimero, se pierde al regenerar | Cambiar `lambda.yaml` |
-| Commitear el `template.yaml` generado | Drift con `lambda.yaml` | Esta en `.gitignore` |
-| Escribir el SAM sin `lambda.yaml` | No hay fuente de verdad simple | `lambda.yaml` + `sam-generate` |
 | `requirements.txt` / `pytest.ini` en el lambda | Formato viejo pre-uv | `pyproject.toml` (PEP 621) en la raiz |
 | `from shared.logger import logger` (raiz) | El `__init__.py` ya no re-exporta | Import al subpaquete: `from shared.observability.logger import logger` |
-| Commitear `build/` | Es el artefacto efimero del deploy | Esta en `.gitignore` |
+| Commitear `build/` o `build.zip` | Son artefactos efimeros del deploy | Estan en `.gitignore` |
+| Commitear el `.state/<scope>-<stage>.json` | Estado local de devtools, no versionado | Esta en `.gitignore` |
+| Editar un recurso AWS a mano en la consola | devtools no detecta el drift | Cambiar `manifest.yaml` + `deploy`; auditar con `status` |
 
 ## Referencias cruzadas
 
 - Scaffold: `.claude/templates/lambda-controller/`
 - Docs (6 capitulos): `.claude/docs/lambda-controller/`
 - Skill: `lambda-controller`
-- AWS Lambda Python (runtime, Powertools, SAM, IAM, costos):
+- AWS Lambda Python (runtime, Powertools, IAM, costos):
   `.claude/docs/aws-lambda/` o skill `aws-lambda-python`
+- Estado local de devtools: `.claude/docs/serverless-backend/05-estado-local.md`
 - Python (estilo, estructura, Ruff): `.claude/rules/python.md`
 - Verify-before-done: `.claude/rules/verify-before-done.md`

@@ -17,14 +17,15 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
+from shared.console import _err
+
 from serverless.help import cmd_help
-from serverless.infra_deploy import cmd_deploy_infra
-from serverless.infra_deploy import cmd_deploy_resource
-from serverless.infra_deploy import cmd_destroy_resource
-from serverless.infra_deploy import cmd_list_resources
+from serverless.infra_provision import cmd_list_resources
+from serverless.infra_provision import cmd_provision_infra
 from serverless.lambda_controller import cmd_deploy_lambda
+from serverless.lambda_controller import cmd_destroy
 from serverless.lambda_controller import cmd_run
-from serverless.lambda_controller import cmd_sam_generate
+from serverless.lambda_controller import cmd_status
 from serverless.lambda_controller import cmd_tests
 from serverless.lifecycle import cmd_clean
 from serverless.lifecycle import cmd_init
@@ -39,7 +40,6 @@ from serverless.secrets import cmd_request_ses_prod
 from serverless.secrets import cmd_rotate_secret
 from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
-from shared.console import _err
 
 
 COMMAND_REGISTRY: dict[str, Any] = {
@@ -53,14 +53,15 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'typecheck': cmd_typecheck,
     # Tests: unico comando, --type=unit|integration|coverage + target
     'tests': cmd_tests,
-    # lambda-controller: ciclo de vida de cada Lambda (--lambda requerido)
-    'sam-generate': cmd_sam_generate,
+    # lambda-controller: ciclo de vida de cada Lambda. devtools provisiona
+    # cada Lambda con AWS CLI directo (sin SAM): deploy traduce el
+    # manifiesto a llamadas AWS, run lo ejecuta con RIE / modo directo.
     'run': cmd_run,
     'deploy': cmd_deploy_lambda,
-    # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
-    'deploy-infra': cmd_deploy_infra,
-    'deploy-resource': cmd_deploy_resource,
-    'destroy-resource': cmd_destroy_resource,
+    'destroy': cmd_destroy,
+    'status': cmd_status,
+    # Infra: recursos compartidos provisionados con AWS CLI directo.
+    'provision-infra': cmd_provision_infra,
     'list-resources': cmd_list_resources,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,

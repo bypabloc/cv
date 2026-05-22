@@ -5,11 +5,6 @@ Renders a colourised inventory of subcommands grouped by domain.
 
 from typing import Any
 
-from serverless.flags import _COMMAND_FLAGS
-from serverless.flags import _COMMAND_SUMMARIES
-from serverless.flags import DESTRUCTIVE_COMMANDS
-from serverless.flags import VALID_COMMANDS
-from serverless.flags import VALID_STAGES
 from shared.console import BOLD
 from shared.console import CYAN
 from shared.console import DIM
@@ -18,6 +13,12 @@ from shared.console import NC
 from shared.console import RED
 from shared.console import YELLOW
 from shared.console import _c
+
+from serverless.flags import _COMMAND_FLAGS
+from serverless.flags import _COMMAND_SUMMARIES
+from serverless.flags import DESTRUCTIVE_COMMANDS
+from serverless.flags import VALID_COMMANDS
+from serverless.flags import VALID_STAGES
 
 
 # Mapeo comando -> grupo para render organizado
@@ -28,14 +29,13 @@ _GROUPS: dict[str, list[str]] = {
         'tests',
     ],
     'Lambda (--lambda=<nombre> o --path=<dir>)': [
-        'sam-generate',
         'run',
         'deploy',
+        'destroy',
+        'status',
     ],
-    'Infra (recursos como stacks autonomos)': [
-        'deploy-infra',
-        'deploy-resource',
-        'destroy-resource',
+    'Infra (recursos provisionados con AWS CLI directo)': [
+        'provision-infra',
         'list-resources',
     ],
     'Secrets / DNS': [
@@ -52,7 +52,11 @@ _GROUPS: dict[str, list[str]] = {
 def cmd_help(flags: dict[str, Any]) -> int:
     """Imprime ayuda colorizada del CLI serverless."""
     print()
-    print(_c(BOLD, 'serverless') + ' ' + _c(DIM, '— backend SAM del portfolio'))
+    print(
+        _c(BOLD, 'serverless')
+        + ' '
+        + _c(DIM, '— backend serverless del portfolio')
+    )
     print(
         _c(
             DIM,

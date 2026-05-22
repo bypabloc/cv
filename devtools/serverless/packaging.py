@@ -1,7 +1,7 @@
 """Empaquetado del artefacto de deploy de un lambda con uv.
 
-devtools arma el zip que se sube a AWS; SAM solo lo deploya. El flujo
-reemplaza al `sam build` clasico (que corria `pip install`):
+devtools arma el zip que se sube a AWS y luego lo deploya con
+`aws lambda`. El flujo (reemplaza al viejo `pip install` de build):
 
   1. Resuelve, via `shared_resolver`, que subpaquetes de `serverless/lambda/shared/`
      usa el lambda (cierre transitivo por AST) y la union de sus deps
@@ -14,8 +14,8 @@ reemplaza al `sam build` clasico (que corria `pip install`):
      cierre resuelto.
 
 El directorio `build/` resultante es autocontenido: el handler, la
-libreria comun y las deps. SAM lo zipea tal cual (CodeUri apunta a
-`build/`, sin `Metadata.BuildMethod`, asi `sam deploy` no corre pip).
+libreria comun y las deps. devtools lo zipea tal cual y lo sube con
+`aws lambda create-function` / `update-function-code`.
 
 `build/` es efimero: esta en el `.gitignore` del lambda, se regenera en
 cada deploy y se limpia despues.
@@ -39,6 +39,9 @@ from serverless.vendoring import shared_source
 # Nombre del directorio de build efimero dentro del lambda.
 _BUILD_DIRNAME = 'build'
 
+# Nombre del archivo zip del artefacto de deploy.
+_BUILD_ZIP_NAME = 'build.zip'
+
 # Patrones que NO se copian al artefacto (basura local).
 _IGNORE = shutil.ignore_patterns(
     '__pycache__',
@@ -56,6 +59,55 @@ class PackagingError(RuntimeError):
 def build_dir(lambda_root: Path) -> Path:
     """Devuelve el path del directorio de build: `<lambda_root>/build/`."""
     return lambda_root / _BUILD_DIRNAME
+
+
+def build_zip_path(lambda_root: Path) -> Path:
+    """Devuelve el path del zip de build: `<lambda_root>/build.zip`."""
+    return lambda_root / _BUILD_ZIP_NAME
+
+
+def zip_build_dir(lambda_root: Path) -> Path:
+    """Comprime el directorio `build/` en `build.zip`.
+
+    Sin SAM, devtools arma el zip que se sube a AWS:
+    `aws lambda create-function --zip-file` y `update-function-code
+    --zip-file` necesitan un archivo zip, no un directorio. Este helper
+    produce ese `build.zip` desde el `build/` que dejo `package_lambda`.
+
+    El zip es efimero (esta en el `.gitignore` del lambda) y se regenera
+    en cada deploy.
+
+    Parameters
+    ----------
+    lambda_root : Path
+        Directorio raiz del lambda (con `build/` ya construido).
+
+    Returns
+    -------
+    Path
+        Ruta del `build.zip` generado.
+
+    Raises
+    ------
+    PackagingError
+        Si el directorio `build/` no existe (no se corrio el package).
+    """
+    target = build_dir(lambda_root)
+    if not target.is_dir():
+        raise PackagingError(
+            f'No existe el directorio build/ en {lambda_root}. '
+            f'Ejecuta package_lambda antes de zip_build_dir.',
+        )
+    zip_path = build_zip_path(lambda_root)
+    if zip_path.exists():
+        zip_path.unlink()
+    base = zip_path.with_suffix('')
+    archive = shutil.make_archive(
+        str(base),
+        'zip',
+        root_dir=str(target),
+    )
+    return Path(archive)
 
 
 def _lambda_runtime_deps(lambda_root: Path) -> list[str]:
@@ -155,7 +207,7 @@ def package_lambda(
     Parameters
     ----------
     lambda_root : Path
-        Directorio raiz del lambda (con `lambda.yaml`, `pyproject.toml`,
+        Directorio raiz del lambda (con `manifest.yaml`, `pyproject.toml`,
         `core/`).
     runtime : str
         Runtime del manifiesto (`python3.13`) — fija la version de uv.

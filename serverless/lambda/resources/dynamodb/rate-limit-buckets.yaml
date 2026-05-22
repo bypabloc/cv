@@ -1,76 +1,18 @@
-AWSTemplateFormatVersion: '2010-09-09'
-
-# ============================================================================
-# Stack autonomo — DynamoDB: RateLimitBucketsTable (sliding window counters)
-# ============================================================================
-# Stack CloudFormation completo e independiente. Se deploya con
-# `serverless deploy-resource --name=dynamodb/rate-limit-buckets --stage=<stage>`.
-# Nombre del stack: portfolio-dynamodb-rate-limit-buckets-<stage>.
-# Publica sus identificadores como SSM Parameters bajo
-# /portfolio/{stage}/dynamodb/rate-limit-buckets/{atributo}.
-# ============================================================================
-
-Description: >
-  Portfolio backend — DynamoDB RateLimitBucketsTable (sliding window
-  counters). Stack autonomo; publica name y arn en SSM Parameter Store.
-
-Parameters:
-  Stage:
-    Type: String
-    Default: dev
-    AllowedValues:
-      - dev
-      - stage
-      - prod
-    Description: Ambiente del stack (dev | stage | prod).
-
-Resources:
-  RateLimitBucketsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub portfolio-rate-limit-buckets-${Stage}
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: bucket_key
-          AttributeType: S
-      KeySchema:
-        - AttributeName: bucket_key
-          KeyType: HASH
-      TimeToLiveSpecification:
-        AttributeName: expires_at
-        Enabled: true
-      SSESpecification:
-        SSEEnabled: true
-      Tags:
-        - Key: Project
-          Value: portfolio
-        - Key: ManagedBy
-          Value: SAM
-        - Key: Stage
-          Value: !Ref Stage
-
-  # SSM Parameters: reemplazan los Outputs con Export.
-  RateLimitBucketsTableNameParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub /portfolio/${Stage}/dynamodb/rate-limit-buckets/name
-      Type: String
-      Value: !Ref RateLimitBucketsTable
-      Description: Nombre fisico de la tabla RateLimitBucketsTable.
-
-  RateLimitBucketsTableArnParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub /portfolio/${Stage}/dynamodb/rate-limit-buckets/arn
-      Type: String
-      Value: !GetAtt RateLimitBucketsTable.Arn
-      Description: ARN de la tabla RateLimitBucketsTable.
-
-# Outputs sin Export: referencia post-deploy / debugging.
-Outputs:
-  RateLimitBucketsTableName:
-    Description: Nombre fisico de la tabla RateLimitBucketsTable.
-    Value: !Ref RateLimitBucketsTable
-  RateLimitBucketsTableArn:
-    Description: ARN de la tabla RateLimitBucketsTable.
-    Value: !GetAtt RateLimitBucketsTable.Arn
+# Esquema devtools — NO CloudFormation: esquema plano, sin funciones
+# intrinsecas. devtools lo lee y emite las llamadas AWS CLI.
+# DynamoDB RateLimitBucketsTable (sliding window counters, TTL). devtools la
+# provisiona con `aws dynamodb create-table` + `update-time-to-live` y
+# publica name/arn en SSM.
+kind: dynamodb-table
+name: portfolio-rate-limit-buckets-${stage}
+billing_mode: PAY_PER_REQUEST
+hash_key: { name: bucket_key, type: S }
+range_key: null
+stream: null
+point_in_time_recovery: false
+encryption: true
+ttl_attribute: expires_at
+publishes_ssm:
+  name: /portfolio/${stage}/dynamodb/rate-limit-buckets/name
+  arn: /portfolio/${stage}/dynamodb/rate-limit-buckets/arn
+tags: { Project: portfolio, ManagedBy: devtools }

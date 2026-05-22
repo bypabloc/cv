@@ -31,7 +31,7 @@ if _core_dir not in sys.path:
 Esto debe ejecutarse ANTES de cualquier `from models...`. Por eso esas
 lineas van arriba de todo, con la excepcion de `import os`/`import sys`.
 
-En la consola AWS / `template.yaml`, el Handler de la funcion es
+En la consola AWS y en el `manifest.yaml`, el Handler de la funcion es
 `core.handler.lambda_handler`.
 
 ## Flujo de routing

@@ -3,15 +3,19 @@
 > Anterior: [05 - Crear y refactorizar](05-create-and-refactor.md) | [README](README.md)
 
 Un lambda-controller se opera con el script `serverless` de devtools:
-ejecutar en local, deployar a los entornos, invocar el Lambda deployado
-y correr los tests. El comando resuelve el lambda objetivo via
-`--lambda=<nombre>` (o `--path=<dir>`).
+ejecutar en local, deployar a los entornos, invocar el Lambda deployado,
+ver su estado, destruirlo y correr los tests. devtools provisiona cada
+recurso AWS con AWS CLI imperativo (sin capas de IaC declarativa) y
+mantiene un archivo de estado local por `(scope, stage)`. El comando
+resuelve el lambda objetivo via `--lambda=<nombre>` (o `--path=<dir>`).
 
-## El manifiesto `lambda.yaml`
+## El manifiesto `manifest.yaml`
 
-Cada lambda-controller trae un `lambda.yaml` en su raiz: el manifiesto
+Cada lambda-controller trae un `manifest.yaml` en su raiz: el manifiesto
 **simple** que declara la configuracion. Es la unica fuente de verdad
-versionada. devtools genera el `template.yaml` SAM a partir de el.
+versionada. devtools lo lee directamente — `provisioner.py` lo traduce a
+una secuencia de llamadas AWS CLI (rol IAM, LogGroup, funcion, wiring del
+trigger). NO hay paso intermedio ni archivo de config generado.
 
 ```yaml
 # Obligatorios
@@ -25,7 +29,7 @@ timeout: 30                             # seg   (default 30)
 region: us-east-1                       # AWS region (default us-east-1)
 
 layers: []                              # ARNs de layers compartidos
-iam_policies: []                        # managed policies / SAM templates
+iam_policies: []                        # managed policies adicionales
 
 # Env vars por stage: 'default' aplica a todos; el stage especifico
 # sobrescribe las claves de 'default'.
@@ -36,45 +40,61 @@ environment:
     LOG_LEVEL: WARNING
 ```
 
-## El template.yaml es efimero
+## Como devtools provisiona el Lambda
 
-devtools **genera** `template.yaml` desde `lambda.yaml` antes de cada
-`run` / `deploy`. El `template.yaml` esta en `.gitignore` — NUNCA se
-commitea ni se edita a mano. Esto elimina el drift: el dev cambia solo
-el `lambda.yaml`.
+`provisioner.py` lee el `manifest.yaml` y emite las llamadas AWS CLI que
+crean/actualizan el Lambda y su wiring: `aws iam create-role` +
+`put-role-policy`, `aws logs create-log-group` + `put-retention-policy`,
+`aws lambda create-function`, y segun el `trigger` las llamadas de
+`apigateway` (rutas HTTP) o `aws lambda create-event-source-mapping`
+(triggers de tabla).
+
+`packaging.py` arma el artefacto `build.zip` con uv (deps + `core/` +
+vendoring selectivo de `shared/`). El `build/` y el `build.zip` son
+efimeros (`.gitignore`); se regeneran en cada `deploy`.
+
+## El archivo de estado local
+
+devtools mantiene un JSON por `(scope, stage)` en
+`serverless/lambda/.state/<scope>-<stage>.json` (gitignored). Registra
+los ARNs de lo creado y dos hashes: `config_hash` (config aplicada) y
+`code_hash` (contenido de `core/`). El diff de esos hashes decide la
+accion del `deploy`:
 
 ```text
-lambda.yaml  --(devtools sam-generate)-->  template.yaml  --(sam)-->  AWS
- (versionado, fuente de verdad)            (efimero, .gitignore)
+config_hash y code_hash coinciden con disco  -> noop
+solo cambio code_hash                        -> update-function-code
+cambio config_hash                           -> update-function-configuration (+ IAM)
+no hay estado previo                          -> create (secuencia completa)
 ```
 
-Si necesitas ver el SAM que se va a usar:
-
-```bash
-python devtools/run.py serverless sam-generate --lambda=<nombre> --stage=dev
-```
+Esto hace el `deploy` idempotente y re-ejecutable. Esquema completo:
+[.claude/docs/serverless-backend/05-estado-local.md](../serverless-backend/05-estado-local.md).
 
 ## Comandos
 
 Los comandos de lambda-controller apuntan al lambda con `--lambda=<nombre>`
 (forma recomendada): el nombre corto se resuelve contra
 `serverless/lambda/services/<nombre>/` y devtools valida que la carpeta
-cumpla la estructura lambda-controller (que exista y traiga `lambda.yaml`);
+cumpla la estructura lambda-controller (que exista y traiga `manifest.yaml`);
 si no, lanza un error listando los lambdas validos. Como alternativa,
 `--path=<dir>` apunta a un directorio explicito en cualquier ubicacion
 (`--module` es alias de `--path`).
 
-El CLI unifico la operacion en dos verbos: `run` (ejecutar el lambda, en
-local o contra un stage deployado) y `tests` (correr la suite). Los viejos
-`run-local` / `invoke-remote` / `test-unit` / `test-integration` ya NO
-existen.
+Los verbos: `run` (ejecutar el lambda, en local o contra un stage
+deployado), `deploy` (provisionar), `destroy` (eliminar), `status`
+(estado local vs AWS) y `tests` (correr la suite).
 
 ### Ejecutar el lambda: `run`
 
 ```bash
-# --stage=local -> regenera el SAM y corre `sam local invoke`
+# --stage=local -> ejecuta el lambda en local. Por defecto usa el
+#   Runtime Interface Emulator (RIE) en un contenedor Docker; con
+#   --runtime-mode=direct corre el handler en proceso (sin Docker).
 python devtools/run.py serverless run \
   --stage=local --lambda=<nombre> --event=events/create.json
+python devtools/run.py serverless run \
+  --stage=local --lambda=<nombre> --event=events/create.json --runtime-mode=direct
 
 # --stage=dev|stage|prod -> `aws lambda invoke` contra el ya deployado
 python devtools/run.py serverless run \
@@ -82,10 +102,10 @@ python devtools/run.py serverless run \
 ```
 
 `run` SIEMPRE necesita `--stage` y `--lambda` (o `--path`). El `--stage`
-decide el modo: `local` usa `sam local invoke` (requiere AWS SAM CLI);
-`dev`/`stage`/`prod` usan `aws lambda invoke` contra la funcion ya
-desplegada (requiere AWS CLI + credenciales). El `--event` es relativo a
-la raiz del lambda.
+decide el modo: `local` corre el Lambda en local (RIE via Docker, o
+modo directo con `--runtime-mode=direct`); `dev`/`stage`/`prod` usan
+`aws lambda invoke` contra la funcion ya deployada (requiere AWS CLI +
+credenciales). El `--event` es relativo a la raiz del lambda.
 
 ### Deployar a un entorno
 
@@ -95,20 +115,44 @@ python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-p
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=<perfil>
 ```
 
-Regenera el SAM para ese stage (selecciona su bloque de env vars), corre
-`sam build --use-container` y `sam deploy`. El stack se llama
-`<name>-<stage>`. `--dry-run` imprime las acciones sin ejecutar.
+`deploy` arma el `build.zip` con uv + vendoring selectivo de `shared/`,
+lee el `manifest.yaml`, carga el estado previo, calcula el diff de
+hashes y aplica la accion correspondiente (`create` / `update-code` /
+`update-config` / `noop`) con AWS CLI. Al terminar guarda el estado en
+`.state/<nombre>-<stage>.json`. `--dry-run` imprime las acciones sin
+ejecutarlas.
+
+### Ver el estado: `status`
+
+```bash
+python devtools/run.py serverless status --lambda=<nombre> --stage=dev --aws-profile=<perfil>
+```
+
+Compara el estado local (`.state/<nombre>-<stage>.json`) contra los
+`describe-*` reales de AWS. Sirve para detectar drift: si alguien cambio
+un recurso a mano en la consola, `status` lo muestra.
+
+### Destruir: `destroy`
+
+```bash
+python devtools/run.py serverless destroy --lambda=<nombre> --stage=dev --yes --aws-profile=<perfil>
+```
+
+Borra los recursos del lambda en ese stage en orden inverso al de
+creacion (event source mapping, permisos, metodos de API, funcion, rol,
+LogGroup) y limpia el archivo de estado. Requiere `--yes` por ser
+destructivo.
 
 ### Flag `--aws-profile` (perfil AWS CLI)
 
-`deploy` y `run` contra un stage deployado ejecutan `aws`/`sam` por
-debajo. Sin `--aws-profile`, usan el perfil del shell (`AWS_PROFILE` o
-`[default]`), que puede apuntar a OTRA cuenta AWS o tener el token SSO
-expirado — sintoma: `Error when retrieving token from sso` aunque hayas
-hecho `aws sso login`. Pasar SIEMPRE `--aws-profile=<perfil>` para fijar
-el perfil correcto. Alternativa: `export AWS_PROFILE=<perfil>` en la
-sesion de trabajo. El nombre del perfil es especifico del backend (en el
-portfolio: `tfs-dev`).
+`deploy`, `destroy`, `status` y `run` contra un stage deployado ejecutan
+`aws` por debajo. Sin `--aws-profile`, usan el perfil del shell
+(`AWS_PROFILE` o `[default]`), que puede apuntar a OTRA cuenta AWS o
+tener el token SSO expirado — sintoma: `Error when retrieving token from
+sso` aunque hayas hecho `aws sso login`. Pasar SIEMPRE
+`--aws-profile=<perfil>` para fijar el perfil correcto. Alternativa:
+`export AWS_PROFILE=<perfil>` en la sesion de trabajo. El nombre del
+perfil es especifico del backend (en el portfolio: `tfs-dev`).
 
 ### Tests: `tests --type`
 

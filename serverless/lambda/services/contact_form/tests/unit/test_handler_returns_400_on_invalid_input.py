@@ -3,7 +3,8 @@
 Given un evento API Gateway con un body JSON valido pero sin el campo
      obligatorio `name`,
 When lambda_handler procesa el evento,
-Then devuelve HTTP 400 con code INVALID_INPUT (error_response).
+Then devuelve HTTP 400 con code INVALID_REQUEST (http_handler unifica
+     las fallas de validacion Pydantic bajo ese code).
 """
 
 import json
@@ -34,4 +35,4 @@ def test_handler_returns_400_on_invalid_input(contact_form_aws):
     # Assert
     assert response['statusCode'] == 400
     body = json.loads(response['body'])
-    assert body['code'] == 'INVALID_INPUT'
+    assert body['code'] == 'INVALID_REQUEST'

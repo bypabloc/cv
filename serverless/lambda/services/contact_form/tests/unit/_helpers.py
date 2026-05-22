@@ -64,6 +64,12 @@ def api_gw_event(
         headers.update(extra_headers)
 
     if isinstance(body, dict):
+        # El contrato HTTP del backend exige operation y action en el body
+        # (resueltos por shared.lambda_kit.http_handler). Los tests vieron
+        # solo los campos del form historicamente; aqui se inyectan los
+        # valores por defecto si el caller no los provee, manteniendo los
+        # tests focales en sus campos de interes.
+        body = {'operation': 'contact', 'action': 'create', **body}
         body_str: str = json.dumps(body)
     elif isinstance(body, str):
         body_str = body

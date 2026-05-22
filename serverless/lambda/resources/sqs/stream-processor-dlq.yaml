@@ -1,6 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
 # ============================================================================
-# SQS: DLQ del stream_processor
+# Stack autonomo — SQS: DLQ del stream_processor
 # ============================================================================
+# Stack CloudFormation completo e independiente. Se deploya con
+# `serverless deploy-resource --name=sqs/stream-processor-dlq --stage=<stage>`.
+# Nombre del stack: portfolio-sqs-stream-processor-dlq-<stage>.
+# Publica sus identificadores como SSM Parameters bajo
+# /portfolio/{stage}/sqs/stream-processor-dlq/{atributo}.
+# ============================================================================
+
+Description: >
+  Portfolio backend — SQS DLQ del stream_processor. Stack autonomo;
+  publica arn y url en SSM Parameter Store.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+    Description: Ambiente del stack (dev | stage | prod).
 
 Resources:
   StreamProcessorDLQ:
@@ -10,12 +32,31 @@ Resources:
       MessageRetentionPeriod: 1209600  # 14 dias
       VisibilityTimeout: 300
 
+  # SSM Parameters: reemplazan los Outputs con Export.
+  StreamProcessorDLQArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/sqs/stream-processor-dlq/arn
+      Type: String
+      Value: !GetAtt StreamProcessorDLQ.Arn
+      Description: ARN de la cola DLQ del stream_processor.
+
+  StreamProcessorDLQUrlParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/sqs/stream-processor-dlq/url
+      Type: String
+      Value: !Ref StreamProcessorDLQ
+      Description: URL de la cola DLQ del stream_processor.
+
+# Outputs sin Export: referencia post-deploy / debugging.
 Outputs:
   StreamProcessorDLQArn:
+    Description: ARN de la cola DLQ del stream_processor.
     Value: !GetAtt StreamProcessorDLQ.Arn
-    Export:
-      Name: !Sub portfolio-infra-${Stage}-StreamProcessorDLQArn
+  StreamProcessorDLQUrl:
+    Description: URL de la cola DLQ del stream_processor.
+    Value: !Ref StreamProcessorDLQ
   StreamProcessorDLQName:
+    Description: Nombre de la cola DLQ del stream_processor.
     Value: !GetAtt StreamProcessorDLQ.QueueName
-    Export:
-      Name: !Sub portfolio-infra-${Stage}-StreamProcessorDLQName

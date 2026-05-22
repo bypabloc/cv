@@ -1,6 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
 # ============================================================================
-# DynamoDB: TrackingTable — eventos de tracking pixel (TTL 60d)
+# Stack autonomo — DynamoDB: TrackingTable (eventos de tracking pixel, TTL 60d)
 # ============================================================================
+# Stack CloudFormation completo e independiente. Se deploya con
+# `serverless deploy-resource --name=dynamodb/tracking --stage=<stage>`.
+# Nombre del stack: portfolio-dynamodb-tracking-<stage>.
+# Publica sus identificadores como SSM Parameters bajo
+# /portfolio/{stage}/dynamodb/tracking/{atributo}.
+# ============================================================================
+
+Description: >
+  Portfolio backend — DynamoDB TrackingTable (eventos de tracking pixel,
+  TTL 60d). Stack autonomo; publica name, arn y stream-arn en SSM.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+    Description: Ambiente del stack (dev | stage | prod).
 
 Resources:
   TrackingTable:
@@ -52,16 +74,39 @@ Resources:
         - Key: Stage
           Value: !Ref Stage
 
+  # SSM Parameters: reemplazan los Outputs con Export.
+  TrackingTableNameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/tracking/name
+      Type: String
+      Value: !Ref TrackingTable
+      Description: Nombre fisico de la tabla TrackingTable.
+
+  TrackingTableArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/tracking/arn
+      Type: String
+      Value: !GetAtt TrackingTable.Arn
+      Description: ARN de la tabla TrackingTable.
+
+  TrackingTableStreamArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/tracking/stream-arn
+      Type: String
+      Value: !GetAtt TrackingTable.StreamArn
+      Description: ARN del DynamoDB Stream de TrackingTable.
+
+# Outputs sin Export: referencia post-deploy / debugging.
 Outputs:
   TrackingTableName:
+    Description: Nombre fisico de la tabla TrackingTable.
     Value: !Ref TrackingTable
-    Export:
-      Name: !Sub portfolio-infra-${Stage}-TrackingTableName
   TrackingTableArn:
+    Description: ARN de la tabla TrackingTable.
     Value: !GetAtt TrackingTable.Arn
-    Export:
-      Name: !Sub portfolio-infra-${Stage}-TrackingTableArn
   TrackingStreamArn:
+    Description: ARN del DynamoDB Stream de TrackingTable.
     Value: !GetAtt TrackingTable.StreamArn
-    Export:
-      Name: !Sub portfolio-infra-${Stage}-TrackingStreamArn

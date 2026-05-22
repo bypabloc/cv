@@ -1,6 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
 # ============================================================================
-# DynamoDB: CacheTable — cache key-value (TTL, sin Streams)
+# Stack autonomo — DynamoDB: CacheTable (cache key-value, TTL, sin Streams)
 # ============================================================================
+# Stack CloudFormation completo e independiente. Se deploya con
+# `serverless deploy-resource --name=dynamodb/cache --stage=<stage>`.
+# Nombre del stack: portfolio-dynamodb-cache-<stage>.
+# Publica sus identificadores como SSM Parameters bajo
+# /portfolio/{stage}/dynamodb/cache/{atributo}.
+# ============================================================================
+
+Description: >
+  Portfolio backend — DynamoDB CacheTable (cache key-value con TTL, sin
+  Streams). Stack autonomo; publica name y arn en SSM Parameter Store.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+    Description: Ambiente del stack (dev | stage | prod).
 
 Resources:
   CacheTable:
@@ -27,12 +49,28 @@ Resources:
         - Key: Stage
           Value: !Ref Stage
 
+  # SSM Parameters: reemplazan los Outputs con Export.
+  CacheTableNameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/cache/name
+      Type: String
+      Value: !Ref CacheTable
+      Description: Nombre fisico de la tabla CacheTable.
+
+  CacheTableArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /portfolio/${Stage}/dynamodb/cache/arn
+      Type: String
+      Value: !GetAtt CacheTable.Arn
+      Description: ARN de la tabla CacheTable.
+
+# Outputs sin Export: referencia post-deploy / debugging.
 Outputs:
   CacheTableName:
+    Description: Nombre fisico de la tabla CacheTable.
     Value: !Ref CacheTable
-    Export:
-      Name: !Sub portfolio-infra-${Stage}-CacheTableName
   CacheTableArn:
+    Description: ARN de la tabla CacheTable.
     Value: !GetAtt CacheTable.Arn
-    Export:
-      Name: !Sub portfolio-infra-${Stage}-CacheTableArn

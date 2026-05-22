@@ -102,6 +102,19 @@ legolambda-stacks).
         └── test_<escenario>_e2e.py
 ```
 
+> **Variante del backend del portfolio (mayo 2026).** En este repo, los
+> 4 Lambdas comparten el "kit" del estandar (`base_controller`,
+> `base_settings`, `import_controller`, `EventModel`, `validate_event` y
+> el nucleo `run_controller`) via el subpaquete
+> `serverless/lambda/shared/lambda_kit/` — esos archivos NO se duplican
+> en el `core/utils/` de cada Lambda. El `core/` de un Lambda importa
+> `from shared.lambda_kit import BaseController, build_event_model,
+> run_controller, ...`. Ademas, cada Lambda tiene su `pyproject.toml` +
+> `uv.lock` + `.venv` AISLADO (sin workspace uv compartido) y NO declara
+> deps que ya le aporta el cierre de `shared/` (regla de dedup,
+> enforced por `serverless lint-deps`). Detalle completo del refactor:
+> [docs/specs/serverless-lambda-independence/](../../docs/specs/serverless-lambda-independence/README.md).
+
 ## Lambdas autonomos + libreria comun vendorizada
 
 Cada Lambda es **autonomo en el artefacto desplegado**: el zip que sube
@@ -262,10 +275,16 @@ python devtools/run.py serverless status --lambda=<nombre> --stage=dev --aws-pro
 # Destruir: borra los recursos del lambda en un stage (requiere --yes)
 python devtools/run.py serverless destroy --lambda=<nombre> --stage=dev --yes --aws-profile=<perfil>
 
-# Tests: un solo comando, --type=unit|integration|coverage
+# Tests: un solo comando, --type=unit|integration|coverage. Cada lambda
+#   corre con su .venv AISLADO (devtools lo prepara con uv sync + las
+#   deps del cierre de shared/).
 python devtools/run.py serverless tests --type=unit --lambda=<nombre>
 python devtools/run.py serverless tests --type=integration --lambda=<nombre>
 python devtools/run.py serverless tests --type=coverage --lambda=<nombre>
+
+# Dedup D-3: valida que el lambda no declare deps que ya aporta shared/.
+#   Sin --lambda valida los 4. El deploy/build lo corre de oficio.
+python devtools/run.py serverless lint-deps --lambda=<nombre>
 
 # Alternativa: apuntar a un directorio explicito con --path
 python devtools/run.py serverless deploy --path=<dir> --stage=dev --aws-profile=<perfil>

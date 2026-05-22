@@ -42,6 +42,10 @@ class TrackEventMeta(BaseModel):
     ip: str = Field(default='')
     country: str | None = Field(default=None)
     user_agent: str | None = Field(default=None)
+    # bypass_secret no se usa en tracking (no hay Turnstile estricto), pero
+    # el http_handler generico siempre lo inyecta para uniformidad. Se
+    # acepta para no romper el extra:forbid del sub-modelo.
+    bypass_secret: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
@@ -94,8 +98,12 @@ class TrackEventModel(BaseModel):
     event_props: dict[str, Any] | None = Field(default=None)
 
     # Contexto HTTP que el handler inyecta (IP / country / User-Agent).
-    # Default vacio: si el handler no lo provee, el modelo no rompe.
-    meta: TrackEventMeta = Field(default_factory=TrackEventMeta)
+    # Default vacio: si el handler no lo provee, el modelo no rompe. El
+    # http_handler generico lo inyecta como `_meta` (con guion bajo, mismo
+    # patron que contact_form para consistencia); aqui se acepta via alias.
+    meta: TrackEventMeta = Field(
+        default_factory=TrackEventMeta, alias='_meta'
+    )
 
     @field_validator('event_props')
     @classmethod
@@ -134,7 +142,10 @@ class TrackEventModel(BaseModel):
         UUID(v)
         return v
 
-    model_config = {'extra': 'forbid'}
+    # populate_by_name permite que `meta` se asigne tanto por el alias
+    # `_meta` (inyectado por http_handler) como por el nombre del campo
+    # (compatibilidad con codigo que ya pasaba `meta` directo).
+    model_config = {'extra': 'forbid', 'populate_by_name': True}
 
     def tracking_payload(self) -> dict[str, Any]:
         """Devuelve el payload de tracking validado, sin `cf_token` ni `meta`.

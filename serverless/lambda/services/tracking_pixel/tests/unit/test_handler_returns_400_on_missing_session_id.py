@@ -31,4 +31,4 @@ def test_handler_returns_400_on_missing_session_id(tracking_aws: None):
 
     # Assert
     assert response['statusCode'] == 400
-    assert json.loads(response['body'])['code'] == 'INVALID_INPUT'
+    assert json.loads(response['body'])['code'] == 'INVALID_REQUEST'

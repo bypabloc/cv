@@ -343,10 +343,12 @@ def _seed_experiences(
             {
                 'slug': slug,
                 'company': data['company'],
+                'country': data['country'],
                 'company_url': data.get('companyUrl'),
                 'start_ym': data['start'],
                 'end_ym': data.get('end'),
                 'seniority': data['seniority'],
+                'metrics_estimated': data.get('metricsEstimated', False),
             },
         )
         ids[slug] = exp_id
@@ -448,6 +450,7 @@ def _seed_projects(
                 'status': data['status'],
                 'project_type': data['projectType'],
                 'is_confidential': data.get('isConfidential', False),
+                'metrics_estimated': data.get('metricsEstimated', False),
             },
         )
         ids[slug] = proj_id

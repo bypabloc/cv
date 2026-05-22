@@ -11,6 +11,7 @@ fila de union.
 """
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     ForeignKey,
     Integer,
@@ -37,11 +38,17 @@ class Experience(UUIDPKMixin, TimestampMixin, Base):
 
     slug: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
     company: Mapped[str] = mapped_column(String(160), nullable=False)
+    # Pais donde se desempeño el rol (ej. "Venezuela", "Perú", "Chile").
+    country: Mapped[str] = mapped_column(String(120), nullable=False)
     company_url: Mapped[str | None] = mapped_column(String(500))
     # YYYY-MM. varchar + CHECK: el dato del CV no es fecha completa.
     start_ym: Mapped[str] = mapped_column(String(7), nullable=False)
     end_ym: Mapped[str | None] = mapped_column(String(7))
     seniority: Mapped[str] = mapped_column(seniority_enum, nullable=False)
+    # Marcador interno: la entry tiene metricas estimadas sin validar.
+    metrics_estimated: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
 
     __table_args__ = (
         # start siempre bien formado; end opcional, pero si esta presente

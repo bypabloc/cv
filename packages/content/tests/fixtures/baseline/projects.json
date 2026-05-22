@@ -13,12 +13,20 @@
     "url": "https://github.com/bypabloc/cv",
     "repo": "https://github.com/bypabloc/cv",
     "status": "active",
-    "niches": ["vibe", "generic"],
+    "niches": [
+      "vibe",
+      "generic"
+    ],
     "priority": {
       "vibe": 98,
       "generic": 70
     },
-    "stack": ["TypeScript", "Claude Code", "Astro", "Vibe Coding"],
+    "stack": [
+      "TypeScript",
+      "Claude Code",
+      "Astro",
+      "Vibe Coding"
+    ],
     "caseStudy": {
       "es": "Problema: necesitaba un CV builder propio que pudiera iterar rápido. Solución: vibe coding session con Claude Code, prompts iterativos, code review en cada commit. Impacto: MVP funcional en una noche.",
       "en": "Problem: I needed a CV builder I could iterate on fast. Solution: vibe coding session with Claude Code, iterative prompts, code review on every commit. Impact: working MVP in one night."
@@ -43,7 +51,8 @@
       }
     },
     "isConfidential": false,
-    "projectType": "web"
+    "projectType": "web",
+    "metricsEstimated": false
   },
   {
     "slug": "destacame-credit-mexico",
@@ -57,7 +66,11 @@
       "en": "Product built at Destacame for the Mexican market. Vue/Nuxt frontend + Django microservices + credit-bureau integrations."
     },
     "status": "active",
-    "niches": ["fintech", "architect", "generic"],
+    "niches": [
+      "fintech",
+      "architect",
+      "generic"
+    ],
     "priority": {
       "fintech": 95,
       "architect": 85,
@@ -96,7 +109,8 @@
       }
     },
     "isConfidential": true,
-    "projectType": "fintech-platform"
+    "projectType": "fintech-platform",
+    "metricsEstimated": false
   },
   {
     "slug": "destacame-debt-chile",
@@ -110,7 +124,11 @@
       "en": "Product built at Destacame as Frontend Architect. Integrates Django microservices with a Vue/Nuxt frontend and handles sensitive PII flows and financial compliance."
     },
     "status": "active",
-    "niches": ["fintech", "architect", "generic"],
+    "niches": [
+      "fintech",
+      "architect",
+      "generic"
+    ],
     "priority": {
       "fintech": 100,
       "architect": 90,
@@ -149,7 +167,8 @@
       }
     },
     "isConfidential": true,
-    "projectType": "fintech-platform"
+    "projectType": "fintech-platform",
+    "metricsEstimated": false
   },
   {
     "slug": "faststruct",
@@ -165,13 +184,21 @@
     "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
     "repo": "https://github.com/bypabloc/faststruct",
     "status": "active",
-    "niches": ["vibe", "architect", "generic"],
+    "niches": [
+      "vibe",
+      "architect",
+      "generic"
+    ],
     "priority": {
       "architect": 70,
       "vibe": 100,
       "generic": 80
     },
-    "stack": ["TypeScript", "VS Code Extension API", "Node.js"],
+    "stack": [
+      "TypeScript",
+      "VS Code Extension API",
+      "Node.js"
+    ],
     "caseStudy": {
       "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
       "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
@@ -196,7 +223,8 @@
       }
     },
     "isConfidential": false,
-    "projectType": "cli"
+    "projectType": "cli",
+    "metricsEstimated": false
   },
   {
     "slug": "mvp-template-full-stack",
@@ -212,7 +240,11 @@
     "url": "https://github.com/bypabloc/mvp-template-full-stack",
     "repo": "https://github.com/bypabloc/mvp-template-full-stack",
     "status": "active",
-    "niches": ["vibe", "architect", "generic"],
+    "niches": [
+      "vibe",
+      "architect",
+      "generic"
+    ],
     "priority": {
       "architect": 75,
       "vibe": 92,
@@ -237,7 +269,8 @@
       "stack": "Astro + Django + Python 3.14 + uv"
     },
     "isConfidential": false,
-    "projectType": "library"
+    "projectType": "library",
+    "metricsEstimated": false
   },
   {
     "slug": "portfolio-astro",
@@ -253,14 +286,25 @@
     "url": "https://the-full-stack.com",
     "repo": "https://github.com/bypabloc/portfolio",
     "status": "active",
-    "niches": ["vibe", "architect", "generic"],
+    "niches": [
+      "vibe",
+      "architect",
+      "generic"
+    ],
     "priority": {
       "architect": 80,
       "vibe": 95,
       "generic": 75
     },
-    "stack": ["Astro 6", "TypeScript", "Biome v2", "pnpm", "Cloudflare Pages"],
+    "stack": [
+      "Astro 6",
+      "TypeScript",
+      "Biome v2",
+      "pnpm",
+      "Cloudflare Pages"
+    ],
     "isConfidential": false,
-    "projectType": "web"
+    "projectType": "web",
+    "metricsEstimated": false
   }
 ]

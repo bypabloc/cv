@@ -6,10 +6,13 @@
       "en": "Web Systems Developer"
     },
     "company": "Laboratorio Cofasa S.A.",
+    "country": "Venezuela",
     "companyUrl": "https://laboratoriocofasa.com",
     "start": "2017-01",
     "end": "2018-11",
-    "niches": ["generic"],
+    "niches": [
+      "generic"
+    ],
     "priority": {
       "generic": 70
     },
@@ -42,8 +45,12 @@
       "jQuery",
       "Plataforma Web"
     ],
-    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
-    "seniority": "mid"
+    "skillsSoft": [
+      "Colaboración de Equipo",
+      "Resolución de Problemas"
+    ],
+    "seniority": "mid",
+    "metricsEstimated": false
   },
   {
     "slug": "corpoelec",
@@ -52,9 +59,12 @@
       "en": "Web Developer"
     },
     "company": "Independiente / Académico",
+    "country": "Venezuela",
     "start": "2013-01",
     "end": "2013-12",
-    "niches": ["generic"],
+    "niches": [
+      "generic"
+    ],
     "priority": {
       "generic": 20
     },
@@ -83,8 +93,12 @@
       "Sistema Offline",
       "Gestión de Activos"
     ],
-    "skillsSoft": ["Resolución de Problemas", "Colaboración de Equipo"],
-    "seniority": "intern"
+    "skillsSoft": [
+      "Resolución de Problemas",
+      "Colaboración de Equipo"
+    ],
+    "seniority": "intern",
+    "metricsEstimated": false
   },
   {
     "slug": "destacame-architect",
@@ -93,9 +107,16 @@
       "en": "Frontend Architect and Microservices Developer"
     },
     "company": "Destacame",
+    "country": "Chile",
     "companyUrl": "https://destacame.cl",
     "start": "2022-08",
-    "niches": ["fintech", "architect", "leader", "vibe", "generic"],
+    "niches": [
+      "fintech",
+      "architect",
+      "leader",
+      "vibe",
+      "generic"
+    ],
     "priority": {
       "fintech": 100,
       "architect": 100,
@@ -136,8 +157,13 @@
       "Microservicios",
       "AWS"
     ],
-    "skillsSoft": ["Fintech", "Planificación Estratégica", "Adaptabilidad"],
-    "seniority": "lead"
+    "skillsSoft": [
+      "Fintech",
+      "Planificación Estratégica",
+      "Adaptabilidad"
+    ],
+    "seniority": "lead",
+    "metricsEstimated": false
   },
   {
     "slug": "destacame-frontend",
@@ -146,10 +172,14 @@
       "en": "Web Frontend Developer"
     },
     "company": "Destacame",
+    "country": "Chile",
     "companyUrl": "https://destacame.cl",
     "start": "2021-12",
     "end": "2022-08",
-    "niches": ["fintech", "generic"],
+    "niches": [
+      "fintech",
+      "generic"
+    ],
     "priority": {
       "fintech": 90,
       "generic": 95
@@ -190,7 +220,8 @@
       "Agilidad de Aprendizaje",
       "Trabajo en Equipo"
     ],
-    "seniority": "senior"
+    "seniority": "senior",
+    "metricsEstimated": false
   },
   {
     "slug": "dibal",
@@ -199,10 +230,15 @@
       "en": "Development Team Lead and Developer"
     },
     "company": "Dibal",
+    "country": "Perú",
     "companyUrl": "https://dibal.pe",
     "start": "2018-12",
     "end": "2021-09",
-    "niches": ["architect", "leader", "generic"],
+    "niches": [
+      "architect",
+      "leader",
+      "generic"
+    ],
     "priority": {
       "architect": 90,
       "leader": 95,
@@ -248,7 +284,8 @@
       "Gestión de Equipos",
       "Orientado al Cliente"
     ],
-    "seniority": "senior"
+    "seniority": "senior",
+    "metricsEstimated": false
   },
   {
     "slug": "goodmeal",
@@ -257,10 +294,14 @@
       "en": "Full Stack Web Developer"
     },
     "company": "GoodMeal",
+    "country": "Chile",
     "companyUrl": "https://www.goodmeal.app",
     "start": "2021-05",
     "end": "2021-12",
-    "niches": ["fintech", "generic"],
+    "niches": [
+      "fintech",
+      "generic"
+    ],
     "priority": {
       "fintech": 70,
       "generic": 90
@@ -301,7 +342,8 @@
       "Resolución de Problemas",
       "Trabajo en Equipo"
     ],
-    "seniority": "mid"
+    "seniority": "mid",
+    "metricsEstimated": false
   },
   {
     "slug": "iai",
@@ -310,9 +352,13 @@
       "en": "Software Development Lead and Systems Architecture"
     },
     "company": "Independiente / Académico",
+    "country": "Venezuela",
     "start": "2015-01",
     "end": "2015-12",
-    "niches": ["leader", "generic"],
+    "niches": [
+      "leader",
+      "generic"
+    ],
     "priority": {
       "leader": 55,
       "generic": 45
@@ -352,7 +398,8 @@
       "Gestión de Proyectos",
       "Trabajo Colaborativo"
     ],
-    "seniority": "mid"
+    "seniority": "mid",
+    "metricsEstimated": false
   },
   {
     "slug": "ipasme",
@@ -361,9 +408,12 @@
       "en": "Software Developer"
     },
     "company": "Independiente / Académico",
+    "country": "Venezuela",
     "start": "2014-01",
     "end": "2014-12",
-    "niches": ["generic"],
+    "niches": [
+      "generic"
+    ],
     "priority": {
       "generic": 30
     },
@@ -400,7 +450,8 @@
       "Resolución de Problemas",
       "Adaptabilidad"
     ],
-    "seniority": "junior"
+    "seniority": "junior",
+    "metricsEstimated": false
   },
   {
     "slug": "projects-degrees",
@@ -409,9 +460,13 @@
       "en": "Leader, Architect and Developer"
     },
     "company": "Independiente / Académico",
+    "country": "Venezuela",
     "start": "2015-01",
     "end": "2015-12",
-    "niches": ["leader", "generic"],
+    "niches": [
+      "leader",
+      "generic"
+    ],
     "priority": {
       "leader": 60,
       "generic": 50
@@ -443,6 +498,7 @@
       "Resolución de Problemas",
       "Adaptabilidad"
     ],
-    "seniority": "mid"
+    "seniority": "mid",
+    "metricsEstimated": false
   }
 ]

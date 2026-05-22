@@ -24,6 +24,7 @@ function buildValidExperienceBase() {
     slug: 'test',
     role: { es: 'Rol', en: 'Role' },
     company: 'Acme',
+    country: 'Perú',
     start: '2024-01',
     niches: ['generic'] as Niche[],
     responsibilities: { es: ['a'], en: ['a'] },
@@ -66,6 +67,61 @@ describe('ExperienceSchema.seniority [AC-1]', () => {
         seniority: 'invalid',
       }),
     ).toThrow()
+  })
+})
+
+describe('ExperienceSchema.country', () => {
+  it('Given an experience with country When parsing Then schema accepts it', () => {
+    const parsed = ExperienceSchema.parse({
+      ...buildValidExperienceBase(),
+      seniority: 'senior',
+    })
+    expect(parsed.country).toBe('Perú')
+  })
+
+  it('Given an experience without country When parsing Then schema fails', () => {
+    const { country: _omit, ...withoutCountry } = buildValidExperienceBase()
+    expect(() =>
+      ExperienceSchema.parse({ ...withoutCountry, seniority: 'senior' }),
+    ).toThrow()
+  })
+})
+
+describe('ExperienceSchema.metricsEstimated', () => {
+  it('Given an experience without metricsEstimated When parsing Then defaults to false', () => {
+    const parsed = ExperienceSchema.parse({
+      ...buildValidExperienceBase(),
+      seniority: 'senior',
+    })
+    expect(parsed.metricsEstimated).toBe(false)
+  })
+
+  it('Given an experience with metricsEstimated true When parsing Then keeps it', () => {
+    const parsed = ExperienceSchema.parse({
+      ...buildValidExperienceBase(),
+      seniority: 'senior',
+      metricsEstimated: true,
+    })
+    expect(parsed.metricsEstimated).toBe(true)
+  })
+})
+
+describe('ProjectSchema.metricsEstimated', () => {
+  it('Given a project without metricsEstimated When parsing Then defaults to false', () => {
+    const parsed = ProjectSchema.parse({
+      ...buildValidProjectBase(),
+      projectType: 'web',
+    })
+    expect(parsed.metricsEstimated).toBe(false)
+  })
+
+  it('Given a project with metricsEstimated true When parsing Then keeps it', () => {
+    const parsed = ProjectSchema.parse({
+      ...buildValidProjectBase(),
+      projectType: 'web',
+      metricsEstimated: true,
+    })
+    expect(parsed.metricsEstimated).toBe(true)
   })
 })
 

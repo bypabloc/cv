@@ -140,6 +140,8 @@ export const ExperienceSchema = z.object({
   slug: z.string().min(1),
   role: BiLangSchema,
   company: z.string().min(1),
+  /** Pais donde se desempeño el rol (ej. "Venezuela", "Perú", "Chile"). */
+  country: z.string().min(1),
   companyUrl: z.string().url().optional(),
   start: YearMonthSchema,
   end: YearMonthSchema.optional(),
@@ -160,6 +162,11 @@ export const ExperienceSchema = z.object({
    * Ver SENIORITIES para valores y semantica.
    */
   seniority: SeniorityValueSchema,
+  /**
+   * Marcador interno: la entry tiene metricas estimadas pendientes de
+   * validacion. NO se renderiza — solo audita que cifras revisar.
+   */
+  metricsEstimated: z.boolean().default(false),
 })
 export type Experience = z.infer<typeof ExperienceSchema>
 
@@ -191,6 +198,11 @@ export const ProjectSchema = z.object({
    * Ver PROJECT_TYPES para valores y semantica.
    */
   projectType: ProjectTypeValueSchema,
+  /**
+   * Marcador interno: la entry tiene metricas estimadas pendientes de
+   * validacion. NO se renderiza — solo audita que cifras revisar.
+   */
+  metricsEstimated: z.boolean().default(false),
 })
 export type Project = z.infer<typeof ProjectSchema>
 

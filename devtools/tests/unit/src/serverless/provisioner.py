@@ -385,7 +385,10 @@ class TestProvisionUpdate:
         )
 
         verbs = ['.'.join(c[:2]) for c in calls]
-        assert verbs == ['lambda.update-function-code']
+        assert verbs == [
+            'lambda.wait',
+            'lambda.update-function-code',
+        ]
 
     def test_provision_update_config_calls_config_and_role_policy(
         self, monkeypatch
@@ -423,6 +426,7 @@ class TestProvisionUpdate:
         verbs = ['.'.join(c[:2]) for c in calls]
         assert verbs == [
             'sts.get-caller-identity',
+            'lambda.wait',
             'lambda.update-function-configuration',
             'iam.put-role-policy',
         ]
@@ -461,8 +465,10 @@ class TestProvisionUpdate:
 
         verbs = ['.'.join(c[:2]) for c in calls]
         assert verbs == [
+            'lambda.wait',
             'lambda.update-function-code',
             'sts.get-caller-identity',
+            'lambda.wait',
             'lambda.update-function-configuration',
             'iam.put-role-policy',
         ]

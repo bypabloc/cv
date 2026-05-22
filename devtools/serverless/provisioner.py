@@ -26,6 +26,8 @@ import time
 from typing import TYPE_CHECKING
 from typing import Any
 
+from serverless.aws_cli import AwsError
+from serverless.aws_cli import AwsResult
 from serverless.aws_cli import aws
 from serverless.resolve import ManifestError
 from serverless.state import LambdaState
@@ -580,6 +582,62 @@ def _resolve_account(*, profile: str | None, region: str) -> str:
     return str(result.json['Account'])
 
 
+# Fragmentos del stderr de AWS que indican "el recurso ya existe". Un
+# `create-*` que falla con uno de estos es idempotente: se ignora para
+# que `provision` con `Action.CREATE` sea re-ejecutable (AC-2.8). Cada
+# servicio AWS usa su propia excepcion y redaccion: IAM
+# `EntityAlreadyExists`, Logs `ResourceAlreadyExistsException`, Lambda
+# `ResourceConflictException` con "Function already exist".
+_ALREADY_EXISTS_MARKERS = (
+    'ResourceAlreadyExistsException',
+    'ResourceConflictException',
+    'EntityAlreadyExists',
+    'already exist',
+)
+
+
+def _aws_create(
+    args: list[str],
+    *,
+    profile: str | None,
+    region: str,
+    parse_json: bool = False,
+) -> AwsResult | None:
+    """Ejecuta un `create-*` AWS tolerando "el recurso ya existe".
+
+    Si el comando falla porque el recurso ya existe (re-ejecucion de un
+    `CREATE` tras un deploy parcial), devuelve None en vez de abortar.
+    Cualquier otro error se propaga como `AwsError`.
+
+    Parameters
+    ----------
+    args : list[str]
+        Argumentos del comando `create-*`.
+    profile : str | None
+        Perfil AWS CLI.
+    region : str
+        Region AWS.
+    parse_json : bool
+        Si True, parsea la salida como JSON.
+
+    Returns
+    -------
+    AwsResult | None
+        El resultado del comando, o None si el recurso ya existia.
+    """
+    try:
+        return aws(
+            args,
+            profile=profile,
+            region=region,
+            parse_json=parse_json,
+        )
+    except AwsError as exc:
+        if any(marker in exc.stderr for marker in _ALREADY_EXISTS_MARKERS):
+            return None
+        raise
+
+
 def _concrete_iam_policy(
     rendered: RenderedLambda, account: str
 ) -> dict[str, Any]:
@@ -591,24 +649,35 @@ def _concrete_iam_policy(
 
 
 def _environment_arg(env_vars: dict[str, str]) -> str:
-    """Serializa las env vars al formato `--environment` del AWS CLI."""
+    """Serializa las env vars al formato `--environment` del AWS CLI.
+
+    `aws lambda create-function --environment` espera el JSON estructurado
+    `{"Variables": {...}}` — NO el shorthand `Variables={...}`, que el CLI
+    interpreta mal cuando los valores traen caracteres especiales.
+    """
     import json
 
-    return 'Variables=' + json.dumps(env_vars, sort_keys=True)
+    return json.dumps({'Variables': env_vars}, sort_keys=True)
 
 
 def _create_iam_role(
     rendered: RenderedLambda,
     policy: dict[str, Any],
+    account: str,
     *,
     profile: str | None,
     region: str,
     resources: dict[str, str | None],
 ) -> None:
-    """Crea el rol IAM, le aplica la policy inline y la de logs basicos."""
+    """Crea el rol IAM, le aplica la policy inline y la de logs basicos.
+
+    Idempotente: si el rol ya existe (re-ejecucion tras un deploy
+    parcial), reconstruye su ARN y re-aplica las politicas (que son
+    idempotentes).
+    """
     import json
 
-    role_result = aws(
+    role_result = _aws_create(
         [
             'iam',
             'create-role',
@@ -621,7 +690,13 @@ def _create_iam_role(
         region=region,
         parse_json=True,
     )
-    resources['role_arn'] = str(role_result.json['Role']['Arn'])
+    if role_result is not None:
+        resources['role_arn'] = str(role_result.json['Role']['Arn'])
+    else:
+        # El rol ya existia: el ARN de un rol IAM es deterministico.
+        resources['role_arn'] = (
+            f'arn:aws:iam::{account}:role/{rendered.role_name}'
+        )
     resources['role_name'] = rendered.role_name
 
     aws(
@@ -659,9 +734,12 @@ def _create_log_group(
     region: str,
     resources: dict[str, str | None],
 ) -> None:
-    """Crea el LogGroup del Lambda y le fija la retencion a 7 dias."""
+    """Crea el LogGroup del Lambda y le fija la retencion a 7 dias.
+
+    Idempotente: si el LogGroup ya existe, solo re-aplica la retencion.
+    """
     log_group = f'/aws/lambda/{rendered.function_name}'
-    aws(
+    _aws_create(
         ['logs', 'create-log-group', '--log-group-name', log_group],
         profile=profile,
         region=region,
@@ -690,8 +768,13 @@ def _create_function(
     region: str,
     resources: dict[str, str | None],
 ) -> None:
-    """Crea la funcion Lambda con el artefacto `build.zip`."""
-    result = aws(
+    """Crea la funcion Lambda con el artefacto `build.zip`.
+
+    Idempotente: si la funcion ya existe (re-ejecucion de un `CREATE`
+    tras un deploy parcial), reconcilia el codigo y la config en vez de
+    abortar.
+    """
+    result = _aws_create(
         [
             'lambda',
             'create-function',
@@ -721,8 +804,14 @@ def _create_function(
         parse_json=True,
     )
     resources['function_name'] = rendered.function_name
-    if result.json:
+    if result is not None and result.json:
         resources['function_arn'] = str(result.json.get('FunctionArn'))
+    elif result is None:
+        # La funcion ya existia: reconcilia codigo + config.
+        _provision_update_code(
+            rendered, zip_path, profile=profile, region=region
+        )
+        _provision_update_config(rendered, profile=profile, region=region)
 
 
 def _ssm_value(path: str, *, profile: str | None, region: str) -> str:
@@ -946,6 +1035,7 @@ def _provision_create(
     _create_iam_role(
         rendered,
         policy,
+        account,
         profile=profile,
         region=region,
         resources=resources,
@@ -980,6 +1070,30 @@ def _provision_create(
     )
 
 
+def _wait_function_active(
+    function_name: str, *, profile: str | None, region: str
+) -> None:
+    """Espera a que la funcion Lambda este lista para un update.
+
+    Tras `create-function` o un `update-function-*`, la funcion queda en
+    estado `Pending` unos segundos; un update concurrente falla con
+    `ResourceConflictException`. `aws lambda wait function-updated-v2`
+    bloquea hasta que `LastUpdateStatus` sale de `InProgress`.
+    """
+    aws(
+        [
+            'lambda',
+            'wait',
+            'function-updated-v2',
+            '--function-name',
+            function_name,
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+
 def _provision_update_code(
     rendered: RenderedLambda,
     zip_path: Path,
@@ -988,6 +1102,9 @@ def _provision_update_code(
     region: str,
 ) -> None:
     """Secuencia `Action.UPDATE_CODE`: solo `update-function-code`."""
+    _wait_function_active(
+        rendered.function_name, profile=profile, region=region
+    )
     aws(
         [
             'lambda',
@@ -1014,6 +1131,9 @@ def _provision_update_config(
     account = _resolve_account(profile=profile, region=region)
     policy = _concrete_iam_policy(rendered, account)
 
+    _wait_function_active(
+        rendered.function_name, profile=profile, region=region
+    )
     aws(
         [
             'lambda',

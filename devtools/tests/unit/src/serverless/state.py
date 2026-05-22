@@ -13,7 +13,9 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
-def _state(scope='contact-form', stage='dev', config='sha256:c', code='sha256:k'):
+def _state(
+    scope='contact-form', stage='dev', config='sha256:c', code='sha256:k'
+):
     """Construye un LambdaState de prueba."""
     from serverless.state import LambdaState
 
@@ -30,9 +32,7 @@ def _state(scope='contact-form', stage='dev', config='sha256:c', code='sha256:k'
 class TestLoadSave:
     """load_state / save_state hacen roundtrip por (scope, stage)."""
 
-    def test_load_state_when_no_file_returns_none(
-        self, monkeypatch, tmp_path
-    ):
+    def test_load_state_when_no_file_returns_none(self, monkeypatch, tmp_path):
         from serverless import state
 
         monkeypatch.setattr(state, 'STATE_DIR', tmp_path)
@@ -60,9 +60,7 @@ class TestLoadSave:
 
         assert nested.is_dir()
 
-    def test_state_path_includes_scope_and_stage(
-        self, monkeypatch, tmp_path
-    ):
+    def test_state_path_includes_scope_and_stage(self, monkeypatch, tmp_path):
         from serverless import state
 
         monkeypatch.setattr(state, 'STATE_DIR', tmp_path)
@@ -116,6 +114,17 @@ class TestDiff:
         result = diff(previous, 'sha256:NEW', 'sha256:NEW2')
 
         assert result == Action.UPDATE_BOTH
+
+    def test_diff_when_previous_is_partial_returns_create(self):
+        from serverless.state import PARTIAL_MARKER
+        from serverless.state import Action
+        from serverless.state import diff
+
+        # Un deploy que fallo a mitad guarda config_hash=PARTIAL_MARKER:
+        # el siguiente diff debe re-ejecutar el CREATE.
+        partial = _state(config=PARTIAL_MARKER, code='')
+
+        assert diff(partial, 'sha256:c', 'sha256:k') == Action.CREATE
 
 
 class TestConfigHash:

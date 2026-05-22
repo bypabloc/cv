@@ -62,6 +62,11 @@ _APIGW_CWLOGS_POLICY = (
 # deprovision recorre la lista inversa.
 _PROVISION_ORDER = ('sqs-queue', 'dynamodb-table', 'rest-api')
 
+# SQS bloquea recrear una cola con el mismo nombre por 60s tras borrarla
+# (QueueDeletedRecently). El ciclo destroy + provision-infra reintenta.
+_SQS_RECREATE_RETRIES = 5
+_SQS_RECREATE_WAIT = 20
+
 
 @dataclass(frozen=True)
 class RenderedResource:
@@ -523,24 +528,46 @@ def _create_sqs_queue(
     profile: str | None,
     region: str,
 ) -> str | None:
-    """Llama `aws sqs create-queue` y devuelve la URL creada."""
+    """Llama `aws sqs create-queue` y devuelve la URL creada.
+
+    SQS no permite recrear una cola con el mismo nombre dentro de los 60
+    segundos posteriores a su borrado (`QueueDeletedRecently`). Para que
+    el ciclo `destroy` + `provision-infra` no falle, ante ese error se
+    espera y se reintenta.
+    """
+    import time
+
     print(_c(YELLOW, f'  creando cola {rendered.name}...'))
     retention = rendered.spec.get('message_retention_seconds', 1209600)
-    result = aws_cli.aws(
-        [
-            'sqs',
-            'create-queue',
-            '--queue-name',
-            rendered.name,
-            '--attributes',
-            f'MessageRetentionPeriod={retention}',
-        ],
-        profile=profile,
-        region=region,
-        parse_json=True,
-    )
-    print(_c(GREEN, f'  OK  cola {rendered.name} creada'))
-    return (result.json or {}).get('QueueUrl')
+    args = [
+        'sqs',
+        'create-queue',
+        '--queue-name',
+        rendered.name,
+        '--attributes',
+        f'MessageRetentionPeriod={retention}',
+    ]
+    for attempt in range(_SQS_RECREATE_RETRIES):
+        try:
+            result = aws_cli.aws(
+                args, profile=profile, region=region, parse_json=True
+            )
+        except aws_cli.AwsError as exc:
+            last = attempt == _SQS_RECREATE_RETRIES - 1
+            if 'QueueDeletedRecently' in exc.stderr and not last:
+                print(
+                    _c(
+                        YELLOW,
+                        f'  cola borrada hace poco — reintento en '
+                        f'{_SQS_RECREATE_WAIT}s...',
+                    ),
+                )
+                time.sleep(_SQS_RECREATE_WAIT)
+                continue
+            raise
+        print(_c(GREEN, f'  OK  cola {rendered.name} creada'))
+        return (result.json or {}).get('QueueUrl')
+    return None
 
 
 def _describe_queue_arn(

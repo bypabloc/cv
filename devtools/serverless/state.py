@@ -237,6 +237,13 @@ def code_hash(code_dir: Path) -> str:
     return f'sha256:{hasher.hexdigest()}'
 
 
+# Marca de un estado parcial: un `deploy` que fallo a mitad de camino
+# guarda el estado con este `config_hash` para registrar los recursos ya
+# creados sin marcar el deploy como completo. El siguiente `diff` lo
+# trata como CREATE para re-ejecutar la secuencia (idempotente).
+PARTIAL_MARKER = 'sha256:partial'
+
+
 def diff(
     previous: LambdaState | None,
     new_config_hash: str,
@@ -256,9 +263,10 @@ def diff(
     Returns
     -------
     Action
-        CREATE si no hay estado previo; NOOP / UPDATE_* segun que cambio.
+        CREATE si no hay estado previo o si el estado previo es parcial
+        (deploy incompleto); NOOP / UPDATE_* segun que cambio.
     """
-    if previous is None:
+    if previous is None or previous.config_hash == PARTIAL_MARKER:
         return Action.CREATE
 
     config_changed = previous.config_hash != new_config_hash

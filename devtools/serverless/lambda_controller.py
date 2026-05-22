@@ -199,7 +199,9 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
                 return 0
 
             print(
-                _c(YELLOW, f'Deploy de {rendered.function_name}: {action.name}'),
+                _c(
+                    YELLOW, f'Deploy de {rendered.function_name}: {action.name}'
+                ),
             )
             try:
                 new_state = provisioner.provision(
@@ -214,8 +216,15 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
                 _err(f'Deploy fallo: {exc}')
                 partial = getattr(exc, 'partial_state', None)
                 if partial is not None:
+                    # Se marca como parcial (config_hash sentinel) para que
+                    # el siguiente `deploy` re-ejecute el CREATE: registra
+                    # los recursos creados sin dar el deploy por completo.
                     state_mod.save_state(
-                        replace(partial, code_hash=new_code_hash),
+                        replace(
+                            partial,
+                            config_hash=state_mod.PARTIAL_MARKER,
+                            code_hash='',
+                        ),
                     )
                     print(
                         _c(
@@ -280,9 +289,7 @@ def cmd_destroy(flags: dict[str, Any]) -> int:
             continue
         print(_c(YELLOW, f'Destruyendo {scope}-{stage}...'))
         try:
-            provisioner.deprovision(
-                st, profile=profile_str, region=region
-            )
+            provisioner.deprovision(st, profile=profile_str, region=region)
         except AwsError as exc:
             _err(f'destroy de {scope} fallo: {exc}')
             rc = 1
@@ -293,9 +300,7 @@ def cmd_destroy(flags: dict[str, Any]) -> int:
 
         print(_c(YELLOW, f'Destruyendo infra del stage {stage}...'))
         try:
-            deprovision_infra(
-                stage=stage, profile=profile_str, region=region
-            )
+            deprovision_infra(stage=stage, profile=profile_str, region=region)
         except AwsError as exc:
             _err(f'destroy de infra fallo: {exc}')
             rc = 1

@@ -4,9 +4,6 @@
 > secciones de ejecucion que TODO plan debe incluir — commits, paralelizacion
 > con git worktrees y verificacion E2E iterativa — mas la descomposicion para
 > paralelizacion. Referenciado desde `.claude/rules/plan-format.md`.
->
-> Plan de referencia que sigue este estandar al pie de la letra:
-> `docs/specs/serverless-drop-sam/` (README + 12 docs de fases).
 
 ## Que define este documento
 
@@ -53,6 +50,29 @@ Reglas de la carpeta:
   presentes, en forma minima (1 commit, `worktrees: N/A`, verificacion corta).
 - Para planes **Small/Medium/Large**: un `.md` por fase + los tres archivos
   de ejecucion (commits, worktrees, verificacion).
+
+## Ciclo de vida de la carpeta: se elimina al mergear
+
+La carpeta `docs/specs/<nombre-kebab>/` es un artefacto **efimero del plan**,
+no documentacion permanente del producto. Una vez que el plan esta
+implementado y su PR `feature/<nombre> -> dev` se mergea, la carpeta del plan
+debe **eliminarse**:
+
+- El ultimo commit del PR (el de la seccion 11) incluye el `git rm -r` de la
+  carpeta `docs/specs/<nombre>/`, o se hace un commit de limpieza dedicado
+  inmediatamente despues del merge.
+- La fuente de verdad del cambio implementado pasa a ser el codigo, los
+  tests, las rules y la documentacion de producto (`docs/cv/`, `docs/guide/`,
+  etc.) — NO la spec. Si algo de la spec debe sobrevivir (una decision de
+  arquitectura, una convencion), se promueve a una rule o a un doc de
+  producto ANTES de borrar la carpeta.
+- El plan en si queda en el historial de git: `git log` y el PR mergeado
+  conservan la trazabilidad. No se necesita la carpeta viva.
+- Las specs de planes **aun no implementados** (o en curso) SI permanecen en
+  `docs/specs/`. La eliminacion aplica solo al mergear el plan completo.
+
+Asi `docs/specs/` nunca acumula planes obsoletos: contiene unicamente lo que
+esta pendiente o en ejecucion.
 
 ---
 
@@ -198,12 +218,22 @@ PR NO se mergea hasta que esa bateria pasa completa.
 
 ## Reglas de la seccion 9
 
+- ANTES del primer commit se verifica la rama actual: si es protegida
+  (`dev`/`stage`/`main`/`master`) se crea una rama de trabajo
+  (`feature/<nombre>` partiendo de `dev`). Los commits del plan NUNCA van
+  directo sobre una rama protegida. Ver la "Regla de ejecucion" de
+  `.claude/rules/plan-format.md`.
 - El primer commit suele ser la propia carpeta del plan (`docs(specs): ...`).
-- El ultimo commit es el de la seccion 11 (refactor de tests + verificacion).
+- El ultimo commit es el de la seccion 11 (refactor de tests + verificacion);
+  ese commit ademas elimina la carpeta `docs/specs/<nombre>/` con `git rm -r`
+  (la spec es efimera — ver "Ciclo de vida de la carpeta" arriba). Si por
+  flujo se prefiere un commit de limpieza separado, va inmediatamente despues
+  del merge a `dev`.
 - Los commits operativos que NO son de codigo (ej. "destruir y reaprovisionar
   infra") se listan igual, marcados como operativos.
 - NUNCA atribucion de IA en los mensajes (politica de empresa).
-- En Micro: la seccion puede ser un solo commit; igual se documenta.
+- En Micro: la seccion puede ser un solo commit; igual se documenta. Ese
+  commit unico tambien elimina la carpeta del plan al cerrarse.
 
 ---
 
@@ -411,6 +441,27 @@ repetir — hasta que toda la bateria pase. Solo entonces el PR esta listo.
 - En Micro: la fase es minima — un barrido + la verificacion del scope + la
   regla de cierre. Sigue siendo obligatoria.
 
+## Gate de cierre: push y PR SOLO con todo verde
+
+El `git push` y la creacion del PR son el **gate de cierre del plan**, no un
+paso intermedio. Ocurren UNICAMENTE cuando la bateria de la Parte B pasa
+completa: cero comandos fallando, cero tests rojos, coverage >= 80% per-file.
+
+```text
+bateria Parte B en VERDE  ->  git push  ->  crear PR
+bateria con algo en rojo  ->  corregir  ->  re-ejecutar  ->  (repetir)
+```
+
+NUNCA hacer `push` ni abrir el PR con la bateria fallando — eso convierte el
+PR en un work-in-progress sin gate. La unica excepcion son los comandos que
+requieren recursos externos sin acceso en el momento (AWS, Docker): se
+documentan como pendientes en el PR y se corren antes del merge.
+
+Esto enlaza con la "Regla de ejecucion" de `.claude/rules/plan-format.md`:
+antes del primer commit se verifica la rama (si es `dev`/`stage`/`main` se
+crea una rama de trabajo); al final, recien con la bateria verde, se hace
+push + PR.
+
 ## Anti-patrones de la verificacion final
 
 - Declarar el plan "listo" sin ejecutar la bateria completa
@@ -419,6 +470,10 @@ repetir — hasta que toda la bateria pase. Solo entonces el PR esta listo.
 - Dejar tests referenciando codigo eliminado
 - Mergear el PR con comandos de la bateria fallando
 - Saltar el bucle de correccion ("se ve bien, lo dejo asi")
+- Hacer `git push` o abrir el PR con la bateria en rojo (el push/PR es el
+  gate de cierre, no un paso intermedio)
+- Implementar el plan directo sobre `dev`/`stage`/`main` sin crear una rama
+  de trabajo
 
 ---
 
@@ -429,5 +484,4 @@ repetir — hasta que toda la bateria pase. Solo entonces el PR esta listo.
 - `.claude/rules/verify-before-done.md` — verificacion por tipo de archivo
 - `.claude/rules/harness-protocol.md` — subagentes con output en disco
 - `.claude/rules/markdown-docs.md` — formato de la carpeta del plan
-- Plan de referencia: `docs/specs/serverless-drop-sam/` (README + 12 docs)
 - Workflow Anthropic: Explore → Plan → Implement → Commit

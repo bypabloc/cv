@@ -13,13 +13,19 @@ misma subcarpeta:
 
 | Zona | Subcarpetas | Audiencia | Estabilidad | Formato |
 |------|-------------|-----------|-------------|---------|
-| **Producto** (Knowledge Tree) | `cv/`, `guide/`, `design-system/`, `diagrams/`, `specs/`, `claude/` | Reviewers, visitantes del repo | Cambia raramente | Knowledge Tree (abajo) |
-| **Harness interno** | `progress/`, `<area>/`, `CHECKPOINTS.md` | Orquestador (Claude + dev actual) | Cambia constantemente | Formato libre o JSON (queues, scratchpads) |
+| **Producto** (Knowledge Tree) | `cv/`, `guide/`, `design-system/`, `diagrams/`, `claude/` | Reviewers, visitantes del repo | Cambia raramente | Knowledge Tree (abajo) |
+| **Harness interno** | `progress/`, `specs/`, `<area>/`, `CHECKPOINTS.md` | Orquestador (Claude + dev actual) | Cambia constantemente | Formato libre o JSON (queues, scratchpads) |
 
 La zona harness contiene `feature_list.json` opcional (uno por area si hay
 sub-areas: `docs/cv/feature_list.json`, `docs/projects/feature_list.json`),
 y `docs/progress/` (scratchpads de sesion). NO sigue Knowledge Tree porque
 no son documentos navegables sino artefactos del agente.
+
+`docs/specs/` tambien es zona harness: cada carpeta de plan es un artefacto
+**efimero** que se elimina al mergear el plan a `dev` (ver
+`.claude/rules/plan-format.md`, "Ciclo de vida de la carpeta del plan").
+`docs/specs/` solo contiene planes pendientes o en ejecucion — nunca planes
+ya implementados.
 
 Reglas autoritativas de la zona harness: `.claude/rules/harness-protocol.md`.
 

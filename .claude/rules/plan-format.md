@@ -26,6 +26,44 @@ Anthropic recomienda 4 fases para cambios no triviales:
 
 Para features grandes o requisitos ambiguos, considerar fase de **Interview** previa con `AskUserQuestion` cubriendo edge cases, tradeoffs y constraints.
 
+## Regla de ejecucion: rama, verificacion y push/PR (OBLIGATORIA)
+
+Al pasar a la fase **Implement**, antes de tocar codigo:
+
+1. **Verificar la rama actual.** Si es una rama protegida (`dev`, `stage`,
+   `main`, `master`), NUNCA trabajar ahi: crear una rama de trabajo nueva
+   (`feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/` con `/`)
+   partiendo de `dev`. Si ya se esta en una rama de trabajo, continuar en
+   ella. Esto se hace ANTES del primer commit del plan.
+
+   ```bash
+   branch=$(git branch --show-current)
+   case "$branch" in
+     dev|stage|main|master)
+       git checkout -b feature/<nombre-del-plan>  # parte de dev
+       ;;
+   esac
+   ```
+
+2. **Implementar y verificar.** Ejecutar el plan commit a commit. NO se
+   hace push ni PR mientras quede trabajo sin verificar.
+
+3. **Gate de cierre: push + PR SOLO con todo verde.** Hacer `git push` y
+   crear el PR UNICAMENTE cuando la bateria completa de la seccion 11
+   pasa: lint + typecheck + unit + build + (E2E si aplica) en verde,
+   coverage >= 80% per-file, cero tests rojos. Si algo falla: corregir,
+   re-ejecutar la suite, repetir. NUNCA `push`/PR con un comando de la
+   bateria fallando.
+
+Resumen del orden NO negociable:
+
+```text
+verificar rama -> (si protegida) crear rama de trabajo
+  -> implementar + commits con verificacion incremental
+  -> bateria E2E completa (seccion 11) en VERDE
+  -> recien ahi: git push + crear PR
+```
+
 ## Todo plan vive en una carpeta
 
 Todo plan se materializa como una carpeta `docs/specs/<nombre-kebab>/`, NUNCA
@@ -234,8 +272,11 @@ Listado de commits incrementales que implementan el plan. Archivo dedicado
 - Indica que AC cubre + su verificacion incremental.
 
 El primer commit suele ser la carpeta del plan (`docs(specs): ...`); el ultimo
-es el de la seccion 11. Cada commit ejecuta su verificacion incremental ANTES
-de commitear — no se difiere al final. Un solo PR `feature/<nombre> -> dev`.
+es el de la seccion 11 e incluye el `git rm -r docs/specs/<nombre>/` — la
+carpeta del plan es efimera y se elimina al mergear (ver "Ciclo de vida de la
+carpeta del plan" abajo). Cada commit ejecuta su verificacion incremental
+ANTES de commitear — no se difiere al final. Un solo PR
+`feature/<nombre> -> dev`.
 
 **Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 2
 (plantilla, regla por commit, resumen de secuencia, PR).
@@ -273,7 +314,9 @@ la ultima fase y el ultimo commit. Dos partes:
   coverage < 80%.
 
 Esta fase consolida — no sustituye — la verificacion incremental de cada fase.
-El "Como probar" del PR reutiliza esta bateria. Es el gate del PR.
+El "Como probar" del PR reutiliza esta bateria. Es el gate del PR: el `git
+push` y la creacion del PR ocurren SOLO cuando esta bateria pasa completa en
+verde (ver "Regla de ejecucion" arriba).
 
 **Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 4
 (plantilla, bucle de correccion, regla de cierre).
@@ -319,6 +362,32 @@ Dos checklists:
 - Si un diagrama justifica `.mmd` permanente, anotarlo en seccion 7
 - AC numerados son la fuente de verdad: tests y tareas los referencian
 - El ultimo commit del plan es SIEMPRE la seccion 11 (verificacion E2E)
+- La carpeta del plan es efimera: se elimina al mergear (ver abajo)
+- Implementar SIEMPRE en una rama de trabajo: si la rama actual es protegida
+  (`dev`/`stage`/`main`/`master`), crear una rama nueva ANTES del primer
+  commit (ver "Regla de ejecucion" arriba)
+- `git push` + PR SOLO con la bateria de la seccion 11 completa en verde —
+  nunca con tests rojos o coverage < 80%
+
+## Ciclo de vida de la carpeta del plan
+
+La carpeta `docs/specs/<nombre-kebab>/` es un artefacto **efimero del plan**,
+no documentacion permanente del producto. Cuando el plan esta implementado y
+su PR `feature/<nombre> -> dev` se mergea, la carpeta se **elimina**:
+
+- El ultimo commit del PR (el de la seccion 11) incluye el
+  `git rm -r docs/specs/<nombre>/`, o se hace un commit de limpieza dedicado
+  inmediatamente despues del merge.
+- Si una decision de arquitectura o convencion de la spec debe sobrevivir, se
+  promueve a una rule de `.claude/rules/` o a un doc de producto (`docs/cv/`,
+  `docs/guide/`, etc.) ANTES de borrar la carpeta. El codigo, los tests y las
+  rules son la fuente de verdad — no la spec.
+- La trazabilidad del plan queda en `git log` y en el PR mergeado.
+- Las specs de planes **aun no implementados o en curso** SI permanecen en
+  `docs/specs/`. La eliminacion aplica solo al cerrar el plan completo.
+
+Asi `docs/specs/` solo contiene planes pendientes o en ejecucion, nunca
+planes obsoletos ya implementados.
 
 ## Anti-patrones
 
@@ -336,3 +405,9 @@ Dos checklists:
 - Definition of Done implicita en lugar de criterios observables
 - Descomposicion para paralelizacion sin verificar file exclusivity (race conditions)
 - Declarar el plan "listo" sin que la bateria de la seccion 11 pase completa
+- Dejar la carpeta `docs/specs/<nombre>/` viva tras mergear el plan (es
+  efimera: el ultimo commit la elimina con `git rm -r`)
+- Implementar el plan directo sobre `dev`/`stage`/`main` sin crear una rama
+  de trabajo
+- `git push` o crear el PR con tests rojos, build roto o coverage < 80%
+  (el push/PR es el gate de cierre, no un paso intermedio)

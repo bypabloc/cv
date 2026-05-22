@@ -94,8 +94,7 @@ Aplica SIEMPRE que se trabaje con:
 - **Que es**: email(s) del owner, destinatario(s) del form de contacto.
 - **Quien lo lee**: Lambda `contact_form` para `SendEmail.Destination.ToAddresses`.
 - **Formato**: una o varias direcciones separadas por coma. `notification.py`
-  hace `split(',')` + `strip()` y descarta vacios (ver SPEC-100 en
-  `docs/specs/tracking-and-ses/`).
+  hace `split(',')` + `strip()` y descarta vacios.
 - **Rotacion**: cuando cambian los destinatarios:
 
   ```bash
@@ -288,5 +287,3 @@ aws cloudtrail lookup-events \
 - [security.md](security.md) — politica general de secretos del repo
 - skill `aws-ses` — SES v2, DKIM/SPF/DMARC, deliverability, bounce/complaint
 - skill `cloudflare-turnstile` — el widget cuyo secret vive en SSM
-- `docs/specs/tracking-and-ses/SPEC-100-ses-funcional.md` — uso de
-  `owner-email` y `ses-from-address` en el form de contacto

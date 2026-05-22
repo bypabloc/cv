@@ -112,8 +112,7 @@ legolambda-stacks).
 > run_controller, ...`. Ademas, cada Lambda tiene su `pyproject.toml` +
 > `uv.lock` + `.venv` AISLADO (sin workspace uv compartido) y NO declara
 > deps que ya le aporta el cierre de `shared/` (regla de dedup,
-> enforced por `serverless lint-deps`). Detalle completo del refactor:
-> [docs/specs/serverless-lambda-independence/](../../docs/specs/serverless-lambda-independence/README.md).
+> enforced por `serverless lint-deps`).
 
 ## Lambdas autonomos + libreria comun vendorizada
 

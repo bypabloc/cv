@@ -26,6 +26,7 @@ class RateLimitRuleItem(BaseModel):
 
     Meta: ClassVar[TableMeta] = TableMeta(
         table_env_var='RATE_LIMIT_RULES_TABLE_NAME',
+        table_ssm_env='SSM_RATE_LIMIT_RULES_TABLE_PATH',
         table_default='portfolio-rate-limit-rules-dev',
         partition_key='rule_key',
         sort_key='kind',

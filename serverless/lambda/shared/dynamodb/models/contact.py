@@ -22,6 +22,7 @@ class ContactItem(BaseModel):
 
     Meta: ClassVar[TableMeta] = TableMeta(
         table_env_var='CONTACTS_TABLE_NAME',
+        table_ssm_env='SSM_CONTACTS_TABLE_PATH',
         table_default='portfolio-contacts-dev',
         partition_key='id',
     )

@@ -25,6 +25,7 @@ class TrackingEventItem(BaseModel):
 
     Meta: ClassVar[TableMeta] = TableMeta(
         table_env_var='TRACKING_TABLE_NAME',
+        table_ssm_env='SSM_TRACKING_TABLE_PATH',
         table_default='portfolio-tracking-dev',
         partition_key='session_id',
         sort_key='page_id',

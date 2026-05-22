@@ -25,6 +25,7 @@ class CacheItem(BaseModel):
 
     Meta: ClassVar[TableMeta] = TableMeta(
         table_env_var='CACHE_TABLE_NAME',
+        table_ssm_env='SSM_CACHE_TABLE_PATH',
         table_default='portfolio-cache-dev',
         partition_key='cache_key',
         ttl_attr='expires_at',

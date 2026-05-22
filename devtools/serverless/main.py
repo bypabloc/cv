@@ -19,6 +19,9 @@ from typing import Any
 
 from serverless.help import cmd_help
 from serverless.infra_deploy import cmd_deploy_infra
+from serverless.infra_deploy import cmd_deploy_resource
+from serverless.infra_deploy import cmd_destroy_resource
+from serverless.infra_deploy import cmd_list_resources
 from serverless.lambda_controller import cmd_deploy_lambda
 from serverless.lambda_controller import cmd_run
 from serverless.lambda_controller import cmd_sam_generate
@@ -54,8 +57,11 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'sam-generate': cmd_sam_generate,
     'run': cmd_run,
     'deploy': cmd_deploy_lambda,
-    # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
+    # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
     'deploy-infra': cmd_deploy_infra,
+    'deploy-resource': cmd_deploy_resource,
+    'destroy-resource': cmd_destroy_resource,
+    'list-resources': cmd_list_resources,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
     'rotate-secret': cmd_rotate_secret,

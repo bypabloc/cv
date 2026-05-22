@@ -19,7 +19,6 @@ consumen.
 
 from __future__ import annotations
 
-import os
 import time
 from typing import Any
 
@@ -36,12 +35,11 @@ class DynamoDBCache:
     def __init__(self, table_name: str | None = None) -> None:
         """
         Args:
-            table_name: nombre fisico de la tabla; default leido de env
-                        CACHE_TABLE_NAME.
+            table_name: nombre fisico de la tabla; si se omite, se resuelve
+                        igual que el ORM (`CacheItem.table_name()`): por
+                        SSM en AWS, por env var / default en tests/local.
         """
-        self.table_name = table_name or os.environ.get(
-            'CACHE_TABLE_NAME', 'portfolio-cache-dev'
-        )
+        self.table_name = table_name or CacheItem.table_name()
 
     def _model_table(self) -> Any:
         """boto3 Table del ORM (para invalidation/stampede que usan scan)."""

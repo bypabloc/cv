@@ -60,10 +60,24 @@ class BaseModel(PydanticBaseModel):
 
     @classmethod
     def table_name(cls) -> str:
-        """Nombre fisico de la tabla (env var o default del `TableMeta`)."""
-        return os.environ.get(
-            cls.Meta.table_env_var, cls.Meta.table_default
-        )
+        """Nombre fisico de la tabla.
+
+        Resolucion, en orden de precedencia:
+          1. `table_ssm_env` seteada -> la env var lleva un PATH SSM; se
+             resuelve el path via SSM (Powertools cache). Es el modo de
+             AWS: el stack del recurso publica el nombre en SSM.
+          2. `table_env_var` seteada directo -> el nombre fisico literal
+             (tests/local, donde no hay SSM).
+          3. `table_default` -> fallback.
+        """
+        ssm_env = cls.Meta.table_ssm_env
+        if ssm_env:
+            ssm_path = os.environ.get(ssm_env)
+            if ssm_path:
+                from shared.aws.ssm import get_parameter
+
+                return get_parameter(ssm_path)
+        return os.environ.get(cls.Meta.table_env_var, cls.Meta.table_default)
 
     @classmethod
     def _table(cls) -> Any:

@@ -44,8 +44,11 @@ VALID_COMMANDS = [
     'sam-generate',  # lambda.yaml -> template.yaml (SAM efimero)
     'run',  # ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke
     'deploy',  # sam build + sam deploy del lambda (stack propio)
-    # Infra: stack compartido (API Gateway + tablas DynamoDB + DLQ)
-    'deploy-infra',  # deploya el stack de infra compartida (5-stacks)
+    # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
+    'deploy-infra',  # deploya TODOS los stacks de recurso de resources/
+    'deploy-resource',  # deploya UN stack de recurso (--name=<tipo>/<nombre>)
+    'destroy-resource',  # borra UN stack de recurso (destructivo)
+    'list-resources',  # lista los recursos declarados en resources/
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
@@ -114,6 +117,7 @@ ALLOWED_FLAGS = [
 DESTRUCTIVE_COMMANDS = frozenset(
     {
         'clean',
+        'destroy-resource',
         'rotate-secret',
     }
 )
@@ -152,7 +156,10 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'sam-generate': 'Genera template.yaml SAM desde lambda.yaml (--lambda)',
     'run': 'Ejecuta un lambda: --stage=local -> sam local; resto -> aws invoke',
     'deploy': 'Empaqueta con uv + sam deploy del lambda a un stage (--lambda)',
-    'deploy-infra': 'Deploya el stack de infra compartida (idempotente)',
+    'deploy-infra': 'Deploya TODOS los stacks de recurso de resources/',
+    'deploy-resource': 'Deploya UN stack de recurso (--name=<tipo>/<nombre>)',
+    'destroy-resource': 'Borra UN stack de recurso (DESTRUCTIVO)',
+    'list-resources': 'Lista los recursos declarados en resources/',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
@@ -201,6 +208,9 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'dry_run',
     ],
     'deploy-infra': ['stage', 'aws_profile', 'dry_run'],
+    'deploy-resource': ['name', 'stage', 'aws_profile', 'dry_run'],
+    'destroy-resource': ['name', 'stage', 'confirm', 'aws_profile', 'dry_run'],
+    'list-resources': ['stage'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
     'verify-ses-dns': [],

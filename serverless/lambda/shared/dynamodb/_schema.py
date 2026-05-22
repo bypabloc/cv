@@ -44,9 +44,9 @@ class TableMeta:
     ----------
     table_env_var : str
         Nombre de la env var con el nombre fisico de la tabla
-        (ej. `CONTACTS_TABLE_NAME`).
+        (ej. `CONTACTS_TABLE_NAME`). Se usa en tests/local.
     table_default : str
-        Nombre fisico por defecto si la env var no esta seteada.
+        Nombre fisico por defecto si no se resuelve por SSM ni env var.
     partition_key : str
         Atributo HASH de la tabla.
     sort_key : str | None
@@ -55,6 +55,11 @@ class TableMeta:
         Atributo usado por el TTL service de AWS, o `None` si no hay TTL.
     gsis : tuple[GSIMeta, ...]
         Indices secundarios globales declarados (vacio si no hay).
+    table_ssm_env : str
+        Nombre de la env var que lleva el PATH SSM del nombre de tabla
+        (ej. `SSM_CONTACTS_TABLE_PATH`). En AWS el template SAM la
+        inyecta; el codigo resuelve el path via SSM en el cold start.
+        Vacio en los modelos que no usan resolucion por SSM.
     """
 
     table_env_var: str
@@ -63,6 +68,7 @@ class TableMeta:
     sort_key: str | None = None
     ttl_attr: str | None = None
     gsis: tuple[GSIMeta, ...] = ()
+    table_ssm_env: str = ''
 
     def key_attributes(self) -> set[str]:
         """Conjunto de atributos que participan en alguna key (tabla + GSI).

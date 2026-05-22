@@ -32,7 +32,12 @@ _GROUPS: dict[str, list[str]] = {
         'run',
         'deploy',
     ],
-    'Infra (stack compartido)': ['deploy-infra'],
+    'Infra (recursos como stacks autonomos)': [
+        'deploy-infra',
+        'deploy-resource',
+        'destroy-resource',
+        'list-resources',
+    ],
     'Secrets / DNS': [
         'setup-ssm',
         'rotate-secret',

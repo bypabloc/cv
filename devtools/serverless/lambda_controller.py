@@ -412,6 +412,10 @@ def _run_shared_tests(
 ) -> int:
     """Corre los tests de la libreria comun (`serverless/lambda/shared/tests/`).
 
+    El cwd es `serverless/lambda/` (NO `shared/`): asi el directorio que
+    pytest agrega al `sys.path` es `lambda/`, `import shared...` resuelve
+    y el subpaquete `shared/http/` no tapa el `http` del stdlib.
+
     `subpackage` filtra a un subpaquete (`aws`, `cache`, ...): si existe
     `tests/unit/shared/<subpackage>/` corre ese directorio, sino filtra
     por `-k <subpackage>`.
@@ -426,13 +430,21 @@ def _run_shared_tests(
         return 1
 
     target = 'unit' if test_type == 'coverage' else test_type
-    args = ['python3', '-m', 'pytest', f'tests/{target}', '-o', 'addopts=']
+    # El .venv del backend serverless trae pytest + las deps de runtime.
+    python = (
+        str(_PORTFOLIO_SERVERLESS_VENV)
+        if _PORTFOLIO_SERVERLESS_VENV.is_file()
+        else 'python3'
+    )
+    # cwd = serverless/lambda/, target relativo: shared/tests/<type>.
+    test_path = f'shared/tests/{target}'
+    args = [python, '-m', 'pytest', test_path, '-o', 'addopts=']
     args.extend(_pytest_extra(flags))
 
     if subpackage:
         subpkg_dir = type_dir / 'shared' / subpackage
         if subpkg_dir.is_dir():
-            args[4] = f'tests/{target}/shared/{subpackage}'
+            args[3] = f'{test_path}/shared/{subpackage}'
         else:
             args.extend(['-k', subpackage])
 
@@ -446,7 +458,7 @@ def _run_shared_tests(
             ]
         )
 
-    return _run(args, cwd=_SHARED_DIR)
+    return _run(args, cwd=_SHARED_DIR.parent)
 
 
 def cmd_tests(flags: dict[str, Any]) -> int:

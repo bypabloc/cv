@@ -126,7 +126,7 @@ class TestEnvVars:
         ]
         assert env['SSM_NEON_URL_PATH'] == '/portfolio/dev/neon-url'
 
-    def test_table_name_injected_as_env_var(self):
+    def test_table_ssm_path_injected_as_env_var(self):
         from serverless.sam_generate import build_template
 
         template = build_template(_manifest_http(), stage='dev')
@@ -134,7 +134,10 @@ class TestEnvVars:
         env = template['Resources']['ContactFormFunction']['Properties'][
             'Environment'
         ]['Variables']
-        assert env['CONTACTS_TABLE_NAME'] == 'portfolio-contacts-dev'
+        assert (
+            env['SSM_CONTACTS_TABLE_PATH']
+            == '/portfolio/dev/dynamodb/contacts/name'
+        )
 
     def test_invalid_env_stage_raises(self):
         from serverless.resolve import ManifestError

@@ -24,6 +24,7 @@ class RateLimitBucketItem(BaseModel):
 
     Meta: ClassVar[TableMeta] = TableMeta(
         table_env_var='RATE_LIMIT_BUCKETS_TABLE_NAME',
+        table_ssm_env='SSM_RATE_LIMIT_BUCKETS_TABLE_PATH',
         table_default='portfolio-rate-limit-buckets-dev',
         partition_key='bucket_key',
         ttl_attr='expires_at',

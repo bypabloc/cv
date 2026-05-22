@@ -469,6 +469,8 @@ export const ElementsStringsSchema = z.object({
     confidential: z.string().min(1),
     technicalSkills: z.string().min(1),
     softSkills: z.string().min(1),
+    responsibilities: z.string().min(1),
+    achievements: z.string().min(1),
     caseStudyCta: z.string().min(1),
     caseStudyProblem: z.string().min(1),
     caseStudyProcess: z.string().min(1),

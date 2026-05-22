@@ -63,6 +63,8 @@ labels:
   confidential: "Under NDA — detailed metrics on request"
   technicalSkills: "Technical"
   softSkills: "Soft"
+  responsibilities: "Responsibilities"
+  achievements: "Achievements"
   caseStudyCta: "View case study"
   caseStudyProblem: "Problem"
   caseStudyProcess: "Process"

@@ -63,6 +63,8 @@ labels:
   confidential: "Bajo NDA — métricas detalladas en privado"
   technicalSkills: "Técnicas"
   softSkills: "Blandas"
+  responsibilities: "Responsabilidades"
+  achievements: "Logros"
   caseStudyCta: "Ver caso de estudio"
   caseStudyProblem: "Problema"
   caseStudyProcess: "Proceso"

@@ -65,6 +65,8 @@ export interface I18nStrings {
     confidential: string
     technicalSkills: string
     softSkills: string
+    responsibilities: string
+    achievements: string
     caseStudyCta: string
     caseStudyProblem: string
     caseStudyProcess: string
@@ -199,6 +201,8 @@ export function buildStrings(
         confidential: el.labels.confidential,
         technicalSkills: el.labels.technicalSkills,
         softSkills: el.labels.softSkills,
+        responsibilities: el.labels.responsibilities,
+        achievements: el.labels.achievements,
         caseStudyCta: el.labels.caseStudyCta,
         caseStudyProblem: el.labels.caseStudyProblem,
         caseStudyProcess: el.labels.caseStudyProcess,

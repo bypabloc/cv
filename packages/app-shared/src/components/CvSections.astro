@@ -35,6 +35,7 @@ import SkillsMarquee from '@portfolio/ui/components/SkillsMarquee.astro'
 import StatsBar from '@portfolio/ui/components/StatsBar.astro'
 import TimelineItem from '@portfolio/ui/components/TimelineItem.astro'
 import { buildStats } from '../lib/build-stats'
+import { isDetailedCv, visibleResponsibilities } from '../lib/cv-detail'
 import { getNicheExtras } from '../lib/get-niche-extras'
 import type { I18nStrings } from '../lib/site-config'
 import AiWorkflowSection from './AiWorkflowSection.astro'
@@ -251,11 +252,30 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           dataStart={e.start}
           dataEnd={e.end ?? ''}
         >
+          {isDetailedCv(niche) && (
+            <p class="exp-bullets__heading text-label">
+              {t.labels.responsibilities}
+            </p>
+          )}
           <ul class="exp-bullets">
-            {e.responsibilities[locale].slice(0, 3).map((r) => (
-              <li>{r}</li>
-            ))}
+            {visibleResponsibilities(e.responsibilities[locale], niche).map(
+              (r) => (
+                <li>{r}</li>
+              ),
+            )}
           </ul>
+          {isDetailedCv(niche) && e.achievements[locale].length > 0 && (
+            <>
+              <p class="exp-bullets__heading text-label">
+                {t.labels.achievements}
+              </p>
+              <ul class="exp-bullets exp-bullets--achievements">
+                {e.achievements[locale].map((a) => (
+                  <li>{a}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </TimelineItem>
       ))
     }
@@ -406,6 +426,15 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   }
   .exp-bullets li {
     margin-bottom: var(--space-4);
+  }
+  /* Encabezado de cada lista (solo en el CV generico detallado). */
+  .exp-bullets__heading {
+    display: block;
+    margin-top: var(--space-12);
+    color: var(--color-text-muted);
+  }
+  .exp-bullets--achievements {
+    color: var(--color-text-muted);
   }
   .awards-grid {
     display: grid;

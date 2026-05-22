@@ -21,6 +21,11 @@ from shared.lambda_kit.base_settings import BaseSettings
 from shared.lambda_kit.dispatch import DispatchResult, run_controller
 from shared.lambda_kit.error_codes import ErrorCode
 from shared.lambda_kit.event_model import build_event_model
+from shared.lambda_kit.http_dispatch import (
+    ExtractedRequest,
+    extract_request,
+    http_handler,
+)
 from shared.lambda_kit.import_controller import (
     import_controller,
     resolve_operation,
@@ -33,8 +38,11 @@ __all__ = [
     'BaseSettings',
     'DispatchResult',
     'ErrorCode',
+    'ExtractedRequest',
     'LogMetricType',
     'build_event_model',
+    'extract_request',
+    'http_handler',
     'import_controller',
     'resolve_operation',
     'run_controller',

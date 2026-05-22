@@ -23,7 +23,7 @@ def test_handler_routes_seed_command():
     with (
         patch(
             'controllers.db.seed.run_seed',
-            return_value={'seeded': False, 'reason': 'no hay seed'},
+            return_value={'seeded': True, 'counts': {'profile': 1}},
         ),
         patch('handler.ensure_database_url'),
     ):
@@ -34,6 +34,6 @@ def test_handler_routes_seed_command():
     assert result == {
         'command': 'seed',
         'status': 'ok',
-        'seeded': False,
-        'reason': 'no hay seed',
+        'seeded': True,
+        'counts': {'profile': 1},
     }

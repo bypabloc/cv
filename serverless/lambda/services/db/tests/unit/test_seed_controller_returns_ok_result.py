@@ -1,6 +1,6 @@
 """Controller db/seed.
 
-Given el service run_seed (sin seed disponible),
+Given el service run_seed que puebla la DB y devuelve conteos,
 When el controller Seed ejecuta su ciclo run(),
 Then devuelve {is_valid: True, code: 0} con el resultado normalizado.
 """
@@ -18,7 +18,10 @@ def test_seed_controller_returns_ok_result():
     # Arrange
     with patch(
         'controllers.db.seed.run_seed',
-        return_value={'seeded': False, 'reason': 'no hay seed'},
+        return_value={
+            'seeded': True,
+            'counts': {'profile': 1, 'experiences': 9},
+        },
     ):
         controller = Seed(event={})
 
@@ -32,7 +35,7 @@ def test_seed_controller_returns_ok_result():
         'data': {
             'command': 'seed',
             'status': 'ok',
-            'seeded': False,
-            'reason': 'no hay seed',
+            'seeded': True,
+            'counts': {'profile': 1, 'experiences': 9},
         },
     }

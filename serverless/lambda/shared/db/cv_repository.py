@@ -39,8 +39,10 @@ from .models import (
     Experience,
     ExperienceBullet,
     ExperienceNiche,
+    ExperienceSkill,
     Language,
     LanguageNiche,
+    Niche,
     NichePriority,
     Profile,
     ProfileNiche,
@@ -116,7 +118,6 @@ def _ids_for_niche(
     """
     if niche_slug is None:
         return None
-    from .models import Niche
 
     entity_col_attr = getattr(union_model, entity_col)
     stmt = (
@@ -133,13 +134,12 @@ def _priorities_map(
     entity_ids: list[str],
     niche_slug: str | None,
 ) -> dict[str, int]:
-    """Devuelve `{entity_id: priority}` para el niche dado.
+    """Devuelve `{entity_id: priority}` para el niche dado (filtro activo).
 
     Si el niche es None, devuelve `{}` (sin prioridades aplicables).
     """
     if niche_slug is None or not entity_ids:
         return {}
-    from .models import Niche
 
     stmt = (
         select(NichePriority.entity_id, NichePriority.priority)
@@ -151,6 +151,85 @@ def _priorities_map(
         )
     )
     return {row.entity_id: row.priority for row in session.execute(stmt)}
+
+
+def _all_priorities_by_entity(
+    session: Session,
+    entity_type: str,
+    entity_ids: list[str],
+) -> dict[str, dict[str, int]]:
+    """Devuelve `{entity_id: {niche_slug: priority, ...}}` para TODOS los niches.
+
+    A diferencia de `_priorities_map`, no filtra por un niche concreto: devuelve
+    el priority por cada niche en el que la entidad lo declara. Coincide con el
+    shape Zod `PriorityByNicheSchema`.
+    """
+    if not entity_ids:
+        return {}
+
+    stmt = (
+        select(
+            NichePriority.entity_id, Niche.slug, NichePriority.priority
+        )
+        .join(Niche, Niche.id == NichePriority.niche_id)
+        .where(
+            NichePriority.entity_type == entity_type,
+            NichePriority.entity_id.in_(entity_ids),
+        )
+    )
+    out: dict[str, dict[str, int]] = defaultdict(dict)
+    for row in session.execute(stmt):
+        out[row.entity_id][row.slug] = row.priority
+    return out
+
+
+def _niches_by_entity(
+    session: Session,
+    union_model: type,
+    entity_col: str,
+    entity_ids: list[str],
+) -> dict[str, list[str]]:
+    """Devuelve `{entity_id: [niche_slug, ...]}` ordenado por position canonica."""
+    if not entity_ids:
+        return {}
+
+    entity_col_attr = getattr(union_model, entity_col)
+    stmt = (
+        select(entity_col_attr, Niche.slug)
+        .join(Niche, Niche.id == union_model.niche_id)
+        .where(entity_col_attr.in_(entity_ids))
+        .order_by(Niche.position)
+    )
+    out: dict[str, list[str]] = defaultdict(list)
+    for row in session.execute(stmt):
+        # row es (entity_id, niche.slug)
+        out[row[0]].append(row[1])
+    return out
+
+
+def _experience_skills_by_exp(
+    session: Session,
+    experience_ids: list[str],
+) -> dict[str, dict[str, list[str]]]:
+    """Devuelve `{exp_id: {'technical': [...], 'soft': [...]}}`."""
+    if not experience_ids:
+        return {}
+    stmt = (
+        select(
+            ExperienceSkill.experience_id,
+            ExperienceSkill.kind,
+            Skill.name,
+        )
+        .join(Skill, Skill.id == ExperienceSkill.skill_id)
+        .where(ExperienceSkill.experience_id.in_(experience_ids))
+        .order_by(Skill.name)
+    )
+    out: dict[str, dict[str, list[str]]] = defaultdict(
+        lambda: {'technical': [], 'soft': []}
+    )
+    for row in session.execute(stmt):
+        out[row.experience_id][row.kind].append(row.name)
+    return out
 
 
 def get_profile(*, locale: str = 'es') -> dict[str, Any]:
@@ -213,7 +292,14 @@ def get_profile(*, locale: str = 'es') -> dict[str, Any]:
 def list_experiences(
     *, niche: str | None = None, locale: str = 'es'
 ) -> list[dict[str, Any]]:
-    """Devuelve las experiencias filtradas por niche, con bullets y skills."""
+    """Devuelve las experiencias filtradas por niche en shape Zod.
+
+    `responsibilities`/`achievements` se devuelven como
+    `{es: [str,...], en: [str,...]}` (dos arrays paralelos ordenados por
+    position) — el mismo shape que esperan los Zod schemas de
+    `@portfolio/content`. `niches`, `priority` (por TODOS los niches),
+    `skillsTechnical`, `skillsSoft` se incluyen siempre.
+    """
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
@@ -230,8 +316,15 @@ def list_experiences(
             ids = [e.id for e in experiences]
             translations = _translations_map(session, 'experience', ids)
             priorities = _priorities_map(session, 'experience', ids, niche)
+            all_priorities = _all_priorities_by_entity(
+                session, 'experience', ids
+            )
+            niches_by_exp = _niches_by_entity(
+                session, ExperienceNiche, 'experience_id', ids
+            )
+            skills_by_exp = _experience_skills_by_exp(session, ids)
 
-            # Bullets por experiencia
+            # Bullets ordenados por position → shape Zod {es:[...], en:[...]}
             bullet_stmt = (
                 select(ExperienceBullet)
                 .where(ExperienceBullet.experience_id.in_(ids))
@@ -242,12 +335,25 @@ def list_experiences(
             bullet_translations = _translations_map(
                 session, 'experience_bullet', bullet_ids
             )
-            bullets_by_exp: dict[str, dict[str, list[dict[str, str]]]] = (
-                defaultdict(lambda: {'responsibility': [], 'achievement': []})
+            # Por (experience_id, kind) acumulamos las traducciones en
+            # listas paralelas es[] / en[] ordenadas por position.
+            bullets_by_exp: dict[
+                str, dict[str, dict[str, list[str]]]
+            ] = defaultdict(
+                lambda: {
+                    'responsibility': {'es': [], 'en': []},
+                    'achievement': {'es': [], 'en': []},
+                }
             )
             for bullet in bullets_raw:
                 texts = bullet_translations.get(bullet.id, {}).get('text', {})
-                bullets_by_exp[bullet.experience_id][bullet.kind].append(texts)
+                target = bullets_by_exp[bullet.experience_id][bullet.kind]
+                # Si una traduccion falta, se omite el bullet en ESE locale
+                # para no insertar None / empty (Zod rechaza min(1)).
+                if texts.get('es'):
+                    target['es'].append(texts['es'])
+                if texts.get('en'):
+                    target['en'].append(texts['en'])
 
             result: list[dict[str, Any]] = []
             for exp in experiences:
@@ -263,14 +369,24 @@ def list_experiences(
                     'role': translations.get(exp.id, {}).get('role', {}),
                     'responsibilities': bullets_by_exp[exp.id]['responsibility'],
                     'achievements': bullets_by_exp[exp.id]['achievement'],
+                    'niches': niches_by_exp.get(exp.id, []),
+                    'priority': all_priorities.get(exp.id, {}),
+                    'skillsTechnical': skills_by_exp[exp.id]['technical'],
+                    'skillsSoft': skills_by_exp[exp.id]['soft'],
                 }
-                if priorities:
-                    exp_dict['priority'] = priorities.get(exp.id, 0)
                 result.append(exp_dict)
-            # Ordenar por priority desc cuando hay filtro de niche.
+            # Ordenar por priority del niche pedido (si aplica) desc.
             if priorities:
                 result.sort(
-                    key=lambda e: e.get('priority', 0), reverse=True
+                    key=lambda e: priorities.get(
+                        next(
+                            (exp.id for exp in experiences
+                             if exp.slug == e['slug']),
+                            '',
+                        ),
+                        0,
+                    ),
+                    reverse=True,
                 )
             return result
     except Exception as exc:  # pragma: no cover
@@ -297,6 +413,12 @@ def list_projects(
             ids = [p.id for p in projects]
             translations = _translations_map(session, 'project', ids)
             priorities = _priorities_map(session, 'project', ids, niche)
+            all_priorities = _all_priorities_by_entity(
+                session, 'project', ids
+            )
+            niches_by_proj = _niches_by_entity(
+                session, ProjectNiche, 'project_id', ids
+            )
 
             # Stack (tech tags)
             stack_stmt = (
@@ -356,6 +478,8 @@ def list_projects(
                     ),
                     'stack': stack_by_proj.get(proj.id, []),
                     'metrics': dict(metrics_by_proj.get(proj.id, {})),
+                    'niches': niches_by_proj.get(proj.id, []),
+                    'priority': all_priorities.get(proj.id, {}),
                 }
                 cs = cs_by_proj.get(proj.id)
                 if cs is not None:
@@ -365,12 +489,22 @@ def list_projects(
                         'process': cs_texts.get('process', {}),
                         'result': cs_texts.get('result', {}),
                     }
-                if priorities:
-                    proj_dict['priority'] = priorities.get(proj.id, 0)
                 result.append(proj_dict)
+            # Si se filtro por niche, ordenar por priority de ese niche desc.
             if priorities:
                 result.sort(
-                    key=lambda p: p.get('priority', 0), reverse=True
+                    key=lambda p: priorities.get(
+                        next(
+                            (
+                                proj.id
+                                for proj in projects
+                                if proj.slug == p['slug']
+                            ),
+                            '',
+                        ),
+                        0,
+                    ),
+                    reverse=True,
                 )
             return result
     except Exception as exc:  # pragma: no cover
@@ -393,6 +527,10 @@ def list_certificates(
                     return []
                 stmt = stmt.where(Certificate.id.in_(filtered_ids))
             certificates = list(session.execute(stmt).scalars())
+            ids = [c.id for c in certificates]
+            niches_by_cert = _niches_by_entity(
+                session, CertificateNiche, 'certificate_id', ids
+            )
             return [
                 {
                     'slug': c.slug,
@@ -400,6 +538,7 @@ def list_certificates(
                     'issuer': c.issuer,
                     'date': c.issued_on.isoformat() if c.issued_on else None,
                     'url': c.url,
+                    'niches': niches_by_cert.get(c.id, []),
                 }
                 for c in certificates
             ]
@@ -426,6 +565,9 @@ def list_awards(
             awards = list(session.execute(stmt).scalars())
             ids = [a.id for a in awards]
             translations = _translations_map(session, 'award', ids)
+            niches_by_award = _niches_by_entity(
+                session, AwardNiche, 'award_id', ids
+            )
             return [
                 {
                     'slug': a.slug,
@@ -436,6 +578,7 @@ def list_awards(
                     'motivation': translations.get(a.id, {}).get(
                         'motivation', {}
                     ),
+                    'niches': niches_by_award.get(a.id, []),
                 }
                 for a in awards
             ]
@@ -462,6 +605,9 @@ def list_education(
             educations = list(session.execute(stmt).scalars())
             ids = [e.id for e in educations]
             translations = _translations_map(session, 'education', ids)
+            niches_by_edu = _niches_by_entity(
+                session, EducationNiche, 'education_id', ids
+            )
             return [
                 {
                     'slug': e.slug,
@@ -473,6 +619,7 @@ def list_education(
                     'description': translations.get(e.id, {}).get(
                         'description', {}
                     ),
+                    'niches': niches_by_edu.get(e.id, []),
                 }
                 for e in educations
             ]
@@ -499,11 +646,15 @@ def list_languages(
             languages = list(session.execute(stmt).scalars())
             ids = [language.id for language in languages]
             translations = _translations_map(session, 'language', ids)
+            niches_by_lang = _niches_by_entity(
+                session, LanguageNiche, 'language_id', ids
+            )
             return [
                 {
                     'slug': language.slug,
                     'name': translations.get(language.id, {}).get('name', {}),
                     'level': translations.get(language.id, {}).get('level', {}),
+                    'niches': niches_by_lang.get(language.id, []),
                 }
                 for language in languages
             ]
@@ -530,6 +681,9 @@ def list_references(
             references = list(session.execute(stmt).scalars())
             ids = [r.id for r in references]
             translations = _translations_map(session, 'reference', ids)
+            niches_by_ref = _niches_by_entity(
+                session, ReferenceNiche, 'reference_id', ids
+            )
             return [
                 {
                     'slug': r.slug,
@@ -538,6 +692,7 @@ def list_references(
                     'company': r.company,
                     'linkedin': r.linkedin_url,
                     'relation': translations.get(r.id, {}).get('relation', {}),
+                    'niches': niches_by_ref.get(r.id, []),
                 }
                 for r in references
             ]
@@ -564,6 +719,9 @@ def list_skill_categories(
             categories = list(session.execute(stmt).scalars())
             ids = [c.id for c in categories]
             translations = _translations_map(session, 'skill_category', ids)
+            niches_by_cat = _niches_by_entity(
+                session, SkillCategoryNiche, 'skill_category_id', ids
+            )
 
             # Skills por categoria (ordenadas por position)
             skill_stmt = (
@@ -586,6 +744,7 @@ def list_skill_categories(
                     'kind': c.kind,
                     'name': translations.get(c.id, {}).get('name', {}),
                     'skills': skills_by_cat.get(c.id, []),
+                    'niches': niches_by_cat.get(c.id, []),
                 }
                 for c in categories
             ]

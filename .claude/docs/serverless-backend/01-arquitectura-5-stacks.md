@@ -1,69 +1,87 @@
-# 01 — Arquitectura: stacks de recurso + stacks de Lambda
+# 01 — Arquitectura: recursos compartidos + Lambdas
 
 > [<- README](README.md) | [Siguiente: 02-flujos ->](02-flujos.md)
 
-El backend NO es un stack SAM monolitico, ni tiene un unico stack de
-infra. Son N stacks CloudFormation independientes: un stack por cada
-recurso compartido (tabla DynamoDB, API Gateway, DLQ SQS) y un stack por
-cada Lambda. Cada uno se deploya por separado.
+El backend NO usa SAM ni CloudFormation. devtools provisiona cada
+recurso AWS de forma imperativa con AWS CLI y registra lo creado en un
+archivo de estado local. Hay dos planos: los recursos compartidos
+(tablas DynamoDB, API Gateway, DLQ SQS) y los 4 Lambdas. Cada plano se
+provisiona por separado.
 
-## 1. Los stacks
+## 1. Los recursos
 
-### Stacks de recurso (`resources/`)
+### Recursos compartidos (`resources/`)
 
-| Stack | Tipo | Contenido |
-|-------|------|-----------|
-| `portfolio-dynamodb-contacts-<stage>` | Recurso | tabla DynamoDB `contacts` (con Stream) |
-| `portfolio-dynamodb-tracking-<stage>` | Recurso | tabla DynamoDB `tracking` (con Stream + TTL) |
-| `portfolio-dynamodb-cache-<stage>` | Recurso | tabla DynamoDB `cache` |
-| `portfolio-dynamodb-rate-limit-rules-<stage>` | Recurso | tabla DynamoDB `rate-limit-rules` |
-| `portfolio-dynamodb-rate-limit-buckets-<stage>` | Recurso | tabla DynamoDB `rate-limit-buckets` |
-| `portfolio-api_gateway-portfolio-api-<stage>` | Recurso | API Gateway REST REGIONAL (sin metodos) |
-| `portfolio-sqs-stream-processor-dlq-<stage>` | Recurso | DLQ SQS del `stream_processor` |
+| Recurso | Tipo | Contenido |
+|---------|------|-----------|
+| `portfolio-contacts-<stage>` | DynamoDB | tabla `contacts` (con Stream) |
+| `portfolio-tracking-<stage>` | DynamoDB | tabla `tracking` (con Stream + TTL) |
+| `portfolio-cache-<stage>` | DynamoDB | tabla `cache` |
+| `portfolio-rate-limit-rules-<stage>` | DynamoDB | tabla `rate-limit-rules` |
+| `portfolio-rate-limit-buckets-<stage>` | DynamoDB | tabla `rate-limit-buckets` |
+| `portfolio-api-<stage>` | API Gateway | API REST REGIONAL (sin metodos) |
+| `portfolio-stream-processor-dlq-<stage>` | SQS | DLQ del `stream_processor` |
 
-### Stacks de Lambda (`services/`)
+### Lambdas (`services/`)
 
-| Stack | Tipo | Contenido |
-|-------|------|-----------|
-| `portfolio-db-<stage>` | Lambda | Lambda `db` — gestion del schema Alembic (invoke directo, sin API) |
-| `portfolio-contact-form-<stage>` | Lambda | Lambda `contact_form` + ruta `POST /contact` sobre la API compartida |
-| `portfolio-tracking-pixel-<stage>` | Lambda | Lambda `tracking_pixel` + ruta `POST /track` sobre la API compartida |
-| `portfolio-stream-processor-<stage>` | Lambda | Lambda `stream_processor` + Event Source Mappings de los Streams de `contacts` y `tracking` |
+| Lambda | Trigger | Contenido |
+|--------|---------|-----------|
+| `portfolio-db-<stage>` | invoke directo | Lambda `db` — gestion del schema Alembic (sin API) |
+| `portfolio-contact-form-<stage>` | `http` | Lambda `contact_form` + ruta `POST /contact` sobre la API compartida |
+| `portfolio-tracking-pixel-<stage>` | `http` | Lambda `tracking_pixel` + ruta `POST /track` sobre la API compartida |
+| `portfolio-stream-processor-<stage>` | `on-table-changes` | Lambda `stream_processor` + Event Source Mappings de los Streams de `contacts` y `tracking` |
 
 `<stage>` es `dev`, `stage` o `prod`. Cada stage es un set completo de
-todos los stacks, aislado.
+todos los recursos, aislado, con su propio set de archivos de estado.
 
-## 2. Por que stack-por-recurso y no 1 stack de infra
+## 2. Por que recurso-por-recurso y no un stack de infra unico
 
-| Aspecto | Stack de infra unico | Stack-por-recurso (actual) |
-|---------|----------------------|----------------------------|
-| Deploy de 1 recurso | Redeploya todo el stack | Solo su stack — rapido, blast radius minimo |
-| Falla en un deploy | Rollback de TODO | Aislada al stack que fallo |
-| Recrear/borrar un recurso | Bloqueado: su `Export` esta en uso | Libre: no hay `Export`, los Lambdas leen SSM |
-| Acoplamiento | `Fn::ImportValue` crea dependencias rigidas | Lectura de SSM en runtime, sin lock |
-| Ownership | Difuso | Cada recurso/Lambda es duena de su stack |
+| Aspecto | IaC declarativa monolitica | Provisioning por recurso (actual) |
+|---------|----------------------------|-----------------------------------|
+| Deploy de 1 recurso | Redeploya todo el stack | Solo ese recurso — rapido, blast radius minimo |
+| Falla en un deploy | Rollback de TODO | Aislada al recurso que fallo |
+| Recrear/borrar un recurso | Bloqueado si su identificador esta en uso | Libre: los Lambdas leen SSM, sin lock |
+| Acoplamiento | Referencias cruzadas rigidas entre stacks | Lectura de SSM, sin dependencias rigidas |
+| Ownership | Difuso | Cada recurso/Lambda es duena de su estado |
 
-CloudFormation prohibe borrar o recrear un stack cuyo `Export` esta en
-uso por otro stack. El modelo de infra unica + `Fn::ImportValue` impedia
-gestionar cada recurso por separado. La solucion: un stack por recurso +
-SSM Parameter Store en lugar de `Export`.
+El modelo declarativo monolitico impide gestionar cada recurso por
+separado y agrega una capa opaca de traduccion. La solucion: provisionar
+cada recurso por separado con AWS CLI + SSM Parameter Store para que los
+Lambdas resuelvan los identificadores sin acoplarse.
 
-## 3. Los stacks de recurso (`resources/<tipo>/<nombre>.yaml`)
+## 3. Los recursos compartidos (`resources/<tipo>/<nombre>.yaml`)
 
 Cada archivo `serverless/lambda/resources/<tipo>/<nombre>.yaml` es un
-template CloudFormation COMPLETO y autonomo: trae su
-`AWSTemplateFormatVersion`, `Description`, `Parameters` (el `Stage`),
-`Resources` y `Outputs`. El nombre del stack resultante es
-`portfolio-<tipo>-<nombre>-<stage>`.
+descriptor en un **esquema propio de devtools** — plano, sin funciones
+intrinsecas — que declara que recurso crear: tipo, nombre, atributos y
+que paths SSM publicar. `infra_provision.py` lee el descriptor y emite
+las llamadas AWS CLI (`aws dynamodb create-table`, `aws apigateway
+create-rest-api`, `aws sqs create-queue`, `aws ssm put-parameter`).
 
-`resources/_header.yaml` ya NO se ensambla con nada: quedo como
-documentacion del patron.
+Ejemplo `resources/dynamodb/contacts.yaml`:
 
-### Publicacion a SSM (en vez de `Export`)
+```yaml
+# Esquema devtools — descriptor plano, sin IaC declarativa.
+kind: dynamodb-table
+name: portfolio-contacts-${stage}
+billing_mode: PAY_PER_REQUEST
+hash_key: { name: id, type: S }
+stream: NEW_AND_OLD_IMAGES
+point_in_time_recovery: true
+encryption: true
+publishes_ssm:                    # devtools escribe estos SSM tras crear
+  name: /portfolio/${stage}/dynamodb/contacts/name
+  arn: /portfolio/${stage}/dynamodb/contacts/arn
+  stream_arn: /portfolio/${stage}/dynamodb/contacts/stream-arn
+tags: { Project: portfolio, ManagedBy: devtools }
+```
 
-Cada stack de recurso publica sus identificadores como recursos
-`AWS::SSM::Parameter`, NO como `Outputs` con `Export`. Convencion del
-`Name`:
+`resources/_header.yaml` quedo como documentacion del patron.
+
+### Publicacion a SSM
+
+Tras crear cada recurso, devtools publica sus identificadores como SSM
+Parameters (`String` planos). Convencion del `Name`:
 
 ```text
 /portfolio/{stage}/{tipo}/{nombre}/{atributo}
@@ -78,15 +96,15 @@ Ejemplos:
 
 | Path SSM | Lo publica | Lo consume |
 |----------|------------|------------|
-| `/portfolio/{stage}/dynamodb/contacts/name` | stack `contacts` | `contact_form`, `stream_processor` |
-| `/portfolio/{stage}/dynamodb/contacts/arn` | stack `contacts` | politicas IAM de los Lambdas |
-| `/portfolio/{stage}/dynamodb/contacts/stream-arn` | stack `contacts` | `stream_processor` (Event Source Mapping) |
-| `/portfolio/{stage}/dynamodb/tracking/{name,arn,stream-arn}` | stack `tracking` | `tracking_pixel`, `stream_processor` |
-| `/portfolio/{stage}/dynamodb/cache/{name,arn}` | stack `cache` | `contact_form`, `tracking_pixel` |
-| `/portfolio/{stage}/dynamodb/rate-limit-rules/{name,arn}` | stack `rate-limit-rules` | `contact_form`, `tracking_pixel` |
-| `/portfolio/{stage}/dynamodb/rate-limit-buckets/{name,arn}` | stack `rate-limit-buckets` | `contact_form`, `tracking_pixel` |
-| `/portfolio/{stage}/api_gateway/portfolio-api/{id,root-resource-id,access-log-group-arn}` | stack `portfolio-api` | `contact_form`, `tracking_pixel` |
-| `/portfolio/{stage}/sqs/stream-processor-dlq/{arn,url}` | stack `stream-processor-dlq` | `stream_processor` |
+| `/portfolio/{stage}/dynamodb/contacts/name` | recurso `contacts` | `contact_form`, `stream_processor` |
+| `/portfolio/{stage}/dynamodb/contacts/arn` | recurso `contacts` | politicas IAM de los Lambdas |
+| `/portfolio/{stage}/dynamodb/contacts/stream-arn` | recurso `contacts` | `stream_processor` (Event Source Mapping) |
+| `/portfolio/{stage}/dynamodb/tracking/{name,arn,stream-arn}` | recurso `tracking` | `tracking_pixel`, `stream_processor` |
+| `/portfolio/{stage}/dynamodb/cache/{name,arn}` | recurso `cache` | `contact_form`, `tracking_pixel` |
+| `/portfolio/{stage}/dynamodb/rate-limit-rules/{name,arn}` | recurso `rate-limit-rules` | `contact_form`, `tracking_pixel` |
+| `/portfolio/{stage}/dynamodb/rate-limit-buckets/{name,arn}` | recurso `rate-limit-buckets` | `contact_form`, `tracking_pixel` |
+| `/portfolio/{stage}/api_gateway/portfolio-api/{id,root-resource-id,access-log-group-arn}` | recurso `portfolio-api` | `contact_form`, `tracking_pixel` |
+| `/portfolio/{stage}/sqs/stream-processor-dlq/{arn,url}` | recurso `stream-processor-dlq` | `stream_processor` |
 
 Estos paths son `String` planos (un nombre/ARN de recurso no es secreto).
 
@@ -95,39 +113,42 @@ Estos paths son `String` planos (un nombre/ARN de recurso no es secreto).
 Hay dos vias, segun el momento en que se necesita el valor:
 
 - **Runtime (cold start)**: el Lambda lee el **nombre de la tabla**
-  DynamoDB con `ssm:GetParameter` en el cold start (module scope). El
-  template SAM le inyecta una env var `SSM_<TABLA>_TABLE_PATH`
+  DynamoDB con `ssm:GetParameter` en el cold start (module scope).
+  devtools le inyecta una env var `SSM_<TABLA>_TABLE_PATH`
   (ej. `SSM_CONTACTS_TABLE_PATH=/portfolio/dev/dynamodb/contacts/name`)
-  y el codigo resuelve ese path. Asi un stack de recurso se puede
-  redeployar sin tocar ni bloquear los stacks de los Lambdas.
-- **Deploy-time (dynamic reference)**: el Stream ARN, el DLQ ARN y el
-  `ApiId` se resuelven con dynamic references CloudFormation
-  (`{{resolve:ssm:...}}`) en el `template.yaml` SAM generado. Son
-  necesarios para crear el Event Source Mapping y los `Method`/`Resource`
-  de la API.
+  y el codigo resuelve ese path. Asi un recurso se puede recrear sin
+  tocar ni bloquear a los Lambdas.
+- **Deploy-time (resolucion en el provisioner)**: el Stream ARN, el DLQ
+  ARN y el `ApiId` los resuelve `provisioner.py` con
+  `aws ssm get-parameter` al momento del `deploy`. Son necesarios para
+  crear el Event Source Mapping y las rutas (`apigateway put-method` /
+  `put-integration`) de la API.
 
 ```text
-stack de recurso  --(AWS::SSM::Parameter)-->  SSM Parameter Store
-                                                  |
-            cold start (boto3 GetParameter) ------+--> nombre de tabla
-            deploy ({{resolve:ssm:...}})  --------+--> ARN/ApiId en el SAM
+recurso  --(aws ssm put-parameter)-->  SSM Parameter Store
+                                           |
+       cold start (boto3 GetParameter) ----+--> nombre de tabla
+       deploy (aws ssm get-parameter) -----+--> ARN/ApiId para el wiring
 ```
 
 Orden de operacion:
 
-- **Deploy**: stacks de recurso primero (`deploy-infra`), luego los 4
-  Lambdas (en cualquier orden).
-- **Delete**: no hay `Export` en uso, asi que el orden es flexible; aun
-  asi conviene borrar los Lambdas antes que los recursos para no dejar
-  Event Source Mappings apuntando a tablas inexistentes.
+- **Deploy**: recursos compartidos primero (`provision-infra`), luego los
+  4 Lambdas (en cualquier orden).
+- **Destroy**: el orden es flexible; aun asi conviene borrar los Lambdas
+  antes que los recursos para no dejar Event Source Mappings apuntando a
+  tablas inexistentes. `serverless destroy` ya borra en orden inverso al
+  de creacion.
 
 ## 5. Estructura de carpetas
 
 ```text
 serverless/
 └── lambda/
-    ├── resources/                  # un stack CloudFormation por recurso
-    │   ├── _header.yaml             # documentacion del patron (no se deploya)
+    ├── .state/                     # estado local de devtools (gitignored)
+    │   └── <scope>-<stage>.json     # un archivo por recurso/lambda x stage
+    ├── resources/                  # un descriptor devtools por recurso
+    │   ├── _header.yaml             # documentacion del patron (no se provisiona)
     │   ├── dynamodb/
     │   │   ├── contacts.yaml
     │   │   ├── tracking.yaml
@@ -173,10 +194,10 @@ Cada Lambda de `services/` sigue el formato `lambda-controller`:
 
 ```text
 services/<lambda>/
-├── lambda.yaml                  # MANIFIESTO: fuente de verdad de la config
-├── template.yaml                # SAM generado (EFIMERO, en .gitignore)
+├── manifest.yaml                # MANIFIESTO: fuente de verdad de la config
 ├── pyproject.toml               # deps del Lambda (PEP 621) — uv las gestiona
 ├── build/                       # EFIMERO: artefacto de deploy (en .gitignore)
+├── build.zip                    # EFIMERO: zip que se sube a AWS (.gitignore)
 ├── events/                      # eventos de ejemplo para `run`
 ├── core/
 │   ├── handler.py               # ENTRYPOINT — router delgado
@@ -228,21 +249,22 @@ completa del subpaquete.
 
 `build/` es efimero (`.gitignore`); se regenera en cada `deploy` o `run`.
 Asi cada Lambda empaqueta solo el codigo comun que importa, sin Layers ni
-dependencias de deploy cruzadas entre stacks.
+dependencias de deploy cruzadas entre Lambdas.
 
 ## 7. Los 4 Lambdas
 
-| Lambda | Trigger | Memoria | Timeout | Stack |
-|--------|---------|---------|---------|-------|
-| `db` | `direct` (invoke directo) | 512 MB | 120s | `portfolio-db-<stage>` |
-| `contact_form` | `http` `POST /contact` | 512 MB | 30s | `portfolio-contact-form-<stage>` |
-| `tracking_pixel` | `http` `POST /track` | 256 MB | 10s | `portfolio-tracking-pixel-<stage>` |
-| `stream_processor` | `on-table-changes` (`contacts`, `tracking`) | 512 MB | 60s | `portfolio-stream-processor-<stage>` |
+| Lambda | Trigger | Memoria | Timeout |
+|--------|---------|---------|---------|
+| `db` | `direct` (invoke directo) | 512 MB | 120s |
+| `contact_form` | `http` `POST /contact` | 512 MB | 30s |
+| `tracking_pixel` | `http` `POST /track` | 256 MB | 10s |
+| `stream_processor` | `on-table-changes` (`contacts`, `tracking`) | 512 MB | 60s |
 
-### El manifiesto `lambda.yaml` (formato dev)
+### El manifiesto `manifest.yaml` (formato dev)
 
-`lambda.yaml` describe el Lambda en terminos de DESARROLLADOR: sin ARNs,
-sin politicas IAM. devtools lo traduce al SAM.
+`manifest.yaml` describe el Lambda en terminos de DESARROLLADOR: sin
+ARNs, sin politicas IAM. `provisioner.py` lo lee directamente y lo
+traduce a llamadas AWS CLI.
 
 Campos:
 
@@ -256,33 +278,33 @@ Campos:
 | `uses.sends-email` | `true` si el Lambda manda email por SES |
 | `env` | Variables de entorno por stage (`default` + override por `dev`/`stage`/`prod`) |
 
-devtools (`devtools/serverless/sam_generate.py`) lo traduce:
+`provisioner.py` lo traduce a llamadas AWS CLI:
 
-- `trigger: http` -> `AWS::ApiGateway::Method` + `Resource` sobre la API
-  compartida; el `ApiId` se resuelve con `{{resolve:ssm:...}}`.
-- `trigger: on-table-changes` -> Event Source Mapping por cada Stream
-  (Stream ARN resuelto con `{{resolve:ssm:...}}`) + DLQ en `OnFailure`.
-- `uses.tables` -> politica IAM scoped al ARN de cada tabla + env var
-  `SSM_<TABLA>_TABLE_PATH` para que el Lambda resuelva el nombre en
-  runtime.
+- `trigger: http` -> `aws apigateway put-method` + `put-integration` +
+  `create-deployment` sobre la API compartida; el `ApiId` lo resuelve el
+  provisioner con `aws ssm get-parameter`.
+- `trigger: on-table-changes` -> `aws lambda create-event-source-mapping`
+  por cada Stream (Stream ARN resuelto via SSM) + DLQ en `OnFailure`.
+- `uses.tables` -> politica IAM (`aws iam put-role-policy`) scoped al ARN
+  de cada tabla + env var `SSM_<TABLA>_TABLE_PATH` para que el Lambda
+  resuelva el nombre en runtime.
 - `uses.secrets` -> `ssm:GetParameter` del path completo + `kms:Decrypt`.
 - `uses.sends-email` -> `ses:SendEmail` con condition de remitente.
 
-El `template.yaml` resultante apunta `CodeUri` al directorio `build/`
-(el artefacto ya armado por devtools con uv + vendoring selectivo) y NO
-lleva `Metadata.BuildMethod`: `sam deploy` solo sube ese artefacto, no
-corre `pip` ni `sam build`. El `template.yaml` es EFIMERO: nunca se
-edita ni commitea. Si hay que cambiar la config se edita el `lambda.yaml`
-y se regenera con `sam-generate`.
+devtools arma el `build.zip` (artefacto con uv + vendoring selectivo) y
+lo sube con `aws lambda create-function` / `update-function-code`. El
+`manifest.yaml` es la unica fuente de verdad de la config: para cambiar
+algo se edita y se re-deploya. devtools registra lo creado en el archivo
+de estado (ver [05-estado-local.md](05-estado-local.md)).
 
 ## 8. Stages
 
 | Stage | Descripcion |
 |-------|-------------|
-| `local` | `sam local invoke` con eventos de `events/` — sin AWS |
-| `dev` | Todos los stacks desplegados en `us-east-1` (cuenta dev) |
-| `stage` | Todos los stacks desplegados (pre-produccion) |
-| `prod` | Todos los stacks desplegados (cuenta productiva) |
+| `local` | Lambda corre en local (RIE via Docker o modo directo) con eventos de `events/` — sin AWS |
+| `dev` | Todos los recursos provisionados en `us-east-1` (cuenta dev) |
+| `stage` | Todos los recursos provisionados (pre-produccion) |
+| `prod` | Todos los recursos provisionados (cuenta productiva) |
 
 ## 9. Region y costos
 

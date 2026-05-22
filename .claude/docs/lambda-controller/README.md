@@ -18,7 +18,7 @@ La rule operativa es [.claude/rules/lambda-controller.md](../../rules/lambda-con
 | [03-controllers-and-models.md](03-controllers-and-models.md) | Como escribir un controller y su modelo de validacion |
 | [04-testing.md](04-testing.md) | Como verificar y testear un Lambda de este tipo |
 | [05-create-and-refactor.md](05-create-and-refactor.md) | Receta para crear uno nuevo o refactorizar un Lambda monolitico |
-| [06-devtools-operations.md](06-devtools-operations.md) | Operar el Lambda con devtools: lambda.yaml, `run`, `deploy`, `tests` |
+| [06-devtools-operations.md](06-devtools-operations.md) | Operar el Lambda con devtools: manifest.yaml, `run`, `deploy`, `destroy`, `status`, `tests` |
 
 ## Reglas criticas
 
@@ -32,22 +32,23 @@ La rule operativa es [.claude/rules/lambda-controller.md](../../rules/lambda-con
 - SIEMPRE registrar la operacion en `settings/operations.py` (`OPERATIONS`).
 - SIEMPRE los tests siguen el estandar de `04-testing.md`: un archivo
   por escenario en `tests/{unit,integration}/`.
-- SIEMPRE el lambda trae un `lambda.yaml` (manifiesto); el `template.yaml`
-  SAM se genera de el y es efimero (`.gitignore`).
+- SIEMPRE el lambda trae un `manifest.yaml` (manifiesto de config);
+  devtools lo lee directamente para provisionar el Lambda con AWS CLI.
 - SIEMPRE el lambda se opera con el script `serverless` de devtools:
-  `run --stage=<env>` (ejecutar), `deploy` (desplegar) y
-  `tests --type=<unit|integration|coverage>` (testear).
+  `run --stage=<env>` (ejecutar), `deploy` (desplegar), `destroy`
+  (eliminar), `status` (estado) y `tests --type=<unit|integration|coverage>`
+  (testear).
 - NUNCA poner logica de negocio en `handler.py` ni en los controllers —
   el handler enruta, el controller orquesta.
 - NUNCA registrar controllers a mano — se descubren por convencion de
   nombres (`controllers.<controller>.<action>.<Action>`).
-- NUNCA editar ni commitear el `template.yaml` generado — se cambia el
-  `lambda.yaml` y se regenera.
+- NUNCA commitear `build/`, `build.zip` ni el archivo de estado de
+  devtools (`serverless/lambda/.state/`) — son efimeros / locales.
 
 ## Navegacion
 
 - Scaffold: [.claude/templates/lambda-controller/](../../templates/lambda-controller/)
 - Rule: [.claude/rules/lambda-controller.md](../../rules/lambda-controller.md)
 - Skill: `lambda-controller` (invocable con `/lambda-controller`)
-- Referencia AWS Lambda Python (runtime, Powertools, SAM):
+- Referencia AWS Lambda Python (runtime, Powertools, IAM, costos):
   [.claude/docs/aws-lambda/](../aws-lambda/) o skill `aws-lambda-python`

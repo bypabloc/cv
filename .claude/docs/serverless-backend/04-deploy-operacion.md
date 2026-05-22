@@ -2,8 +2,10 @@
 
 > [<- 03-datos](03-datos.md) | [README](README.md)
 
-Como deployar el backend (stacks de recurso + stacks de Lambda), los
-comandos devtools, rotar secrets y troubleshooting. Todo se opera con
+Como deployar el backend (recursos compartidos + Lambdas), los comandos
+devtools, rotar secrets y troubleshooting. devtools provisiona cada
+recurso con AWS CLI directo y mantiene el estado en archivos locales —
+sin SAM ni CloudFormation. Todo se opera con
 `python devtools/run.py serverless <command>`.
 
 ## 1. Pre-requisitos
@@ -11,7 +13,7 @@ comandos devtools, rotar secrets y troubleshooting. Todo se opera con
 | Herramienta | Version min | Verificar |
 |-------------|-------------|-----------|
 | AWS CLI | 2.15+ | `aws --version` |
-| AWS SAM CLI | 1.160+ | `sam --version` (`uv tool install aws-sam-cli`) |
+| Docker | reciente (opcional, para `run --stage=local` en modo RIE) | `docker --version` |
 | Python | 3.13+ | `python3 --version` |
 | uv | 0.5+ | `uv --version` |
 | psql | 16+ (opcional, para sesiones interactivas contra Neon) | `psql --version` |
@@ -21,7 +23,7 @@ comandos devtools, rotar secrets y troubleshooting. Todo se opera con
 Setup inicial del modulo:
 
 ```bash
-python devtools/run.py serverless init    # uv sync + verifica sam + aws CLI
+python devtools/run.py serverless init    # uv sync + verifica AWS CLI + uv
 ```
 
 ## 2. Setup AWS (una vez por cuenta)
@@ -39,13 +41,13 @@ aws sts get-caller-identity --profile tfs-dev
 ```
 
 > **CRITICO — el perfil AWS de los comandos `serverless`.** Los comandos
-> `deploy`, `deploy-infra`, `deploy-resource`, `destroy-resource` y `run`
-> (contra un stage deployado) ejecutan `aws`/`sam` por debajo. Por
-> defecto usan el perfil del shell (`AWS_PROFILE` o
-> `[default]`), que puede apuntar a OTRA cuenta (ej. un perfil de otro
-> proyecto) o tener el token SSO expirado. Por eso estos comandos aceptan
-> `--aws-profile=tfs-dev`: inyecta `--profile tfs-dev` en los comandos
-> `aws`/`sam` y garantiza que se opera sobre la cuenta del portfolio.
+> `deploy`, `destroy`, `status`, `provision-infra` y `run` (contra un
+> stage provisionado) ejecutan `aws` por debajo. Por defecto usan el
+> perfil del shell (`AWS_PROFILE` o `[default]`), que puede apuntar a
+> OTRA cuenta (ej. un perfil de otro proyecto) o tener el token SSO
+> expirado. Por eso estos comandos aceptan `--aws-profile=tfs-dev`:
+> inyecta `--profile tfs-dev` en los comandos `aws` y garantiza que se
+> opera sobre la cuenta del portfolio.
 >
 > SIEMPRE pasar `--aws-profile=tfs-dev` (o `export AWS_PROFILE=tfs-dev`
 > en la sesion de trabajo del portfolio). Sin esto, un
@@ -83,16 +85,16 @@ Inventario completo de SSM Parameters (paths por stage, quien los lee):
 - **AWS SES**: domain identity verificada en `us-east-1`, DKIM/SPF/DMARC
   en Cloudflare DNS, production access. Detalle: skill `aws-ses`.
 
-## 3. Deploy de los stacks
+## 3. Deploy del backend
 
-Los stacks de recurso van PRIMERO; los 4 Lambdas leen sus identificadores
-desde SSM.
+Los recursos compartidos van PRIMERO; los 4 Lambdas leen sus
+identificadores desde SSM.
 
 ```bash
-# 1. Todos los stacks de recurso (5 tablas DynamoDB + API GW + DLQ SQS)
-python devtools/run.py serverless deploy-infra --stage=dev --aws-profile=tfs-dev
+# 1. Todos los recursos compartidos (5 tablas DynamoDB + API GW + DLQ SQS)
+python devtools/run.py serverless provision-infra --stage=dev --aws-profile=tfs-dev
 
-# 2. Los 4 stacks de Lambda (en cualquier orden entre si)
+# 2. Los 4 Lambdas (en cualquier orden entre si)
 python devtools/run.py serverless deploy --lambda=db --stage=dev --aws-profile=tfs-dev
 python devtools/run.py serverless deploy --lambda=contact_form --stage=dev --aws-profile=tfs-dev
 python devtools/run.py serverless deploy --lambda=tracking_pixel --stage=dev --aws-profile=tfs-dev
@@ -103,47 +105,50 @@ python devtools/run.py serverless run --stage=dev --lambda=db \
   --event=events/migrate.json --aws-profile=tfs-dev
 ```
 
-`deploy-infra` deploya en orden los 7 stacks de recurso de
-`serverless/lambda/resources/`. Para deployar (o redeployar) UN solo
-recurso:
-
-```bash
-python devtools/run.py serverless deploy-resource \
-  --name=dynamodb/contacts --stage=dev --aws-profile=tfs-dev
-```
+`provision-infra` provisiona en orden los 7 recursos compartidos de
+`serverless/lambda/resources/` con AWS CLI directo y publica sus
+identificadores a SSM. `list-resources` lista los recursos declarados.
 
 Para `stage` y `prod`: mismos comandos cambiando `--stage`. `deploy` arma
-el artefacto `build/` del Lambda con uv (`uv pip install --target
-build/`) + vendoring selectivo de `shared/`, y luego `sam deploy` solo
-sube ese artefacto — NO corre `sam build` ni `pip`. `--guided` en el
-primer deploy de cada uno.
+el artefacto `build.zip` del Lambda con uv (`uv pip install --target
+build/`) + vendoring selectivo de `shared/`, lee el `manifest.yaml`,
+carga el estado previo y aplica la accion que el diff de hashes indica
+(`create` / `update-function-code` / `update-function-configuration` /
+`noop`). `--dry-run` imprime las acciones sin ejecutarlas.
 
 `deploy` y `run` regeneran el `build/` del Lambda (deps con uv +
 vendoring selectivo de los subpaquetes de `serverless/lambda/shared/` que
-el Lambda usa, en `build/core/shared/`) antes de ejecutar; `build/` es
-efimero y se limpia al terminar.
+el Lambda usa, en `build/core/shared/`) antes de ejecutar; `build/` y
+`build.zip` son efimeros y se limpian al terminar.
 
-### Delete
+### Estado y destroy
 
-No hay `Export`/`Fn::ImportValue` entre stacks, asi que el orden de
-borrado es flexible. Aun asi conviene borrar los 4 stacks de Lambda
-antes que los de recurso (para no dejar Event Source Mappings apuntando a
-tablas inexistentes). Borrar UN recurso:
+`status` compara el estado local contra los `describe-*` de AWS; sirve
+para detectar drift. `destroy` borra los recursos de un stage en orden
+inverso al de creacion (primero los Lambdas, luego los recursos
+compartidos) y limpia los archivos de estado:
 
 ```bash
-python devtools/run.py serverless destroy-resource \
-  --name=dynamodb/contacts --stage=dev --confirm --aws-profile=tfs-dev
+# Estado de un lambda (local vs AWS)
+python devtools/run.py serverless status --lambda=db --stage=dev --aws-profile=tfs-dev
+
+# Destruir TODO el backend de un stage (lambdas + infra) — requiere --yes
+python devtools/run.py serverless destroy --stage=dev --yes --aws-profile=tfs-dev
+
+# Destruir solo un lambda de un stage
+python devtools/run.py serverless destroy --lambda=db --stage=dev --yes --aws-profile=tfs-dev
 ```
 
 ## 4. Desarrollo local
 
 ```bash
-# Generar el SAM efimero desde lambda.yaml
-python devtools/run.py serverless sam-generate --lambda=db --stage=dev
-
-# Ejecutar el Lambda en local (--stage=local -> sam local invoke, sin AWS)
+# Ejecutar el Lambda en local. --stage=local usa por defecto el Runtime
+#   Interface Emulator (RIE) en un contenedor Docker; --runtime-mode=direct
+#   corre el handler en proceso (sin Docker, sin AWS).
 python devtools/run.py serverless run \
   --stage=local --lambda=db --event=events/current.json
+python devtools/run.py serverless run \
+  --stage=local --lambda=db --event=events/current.json --runtime-mode=direct
 
 # Invocar un Lambda ya deployado (--stage=dev|stage|prod -> aws lambda invoke)
 python devtools/run.py serverless run \
@@ -172,30 +177,30 @@ la carpeta cumpla la estructura lambda-controller. Como alternativa,
 
 | Comando | Que hace |
 |---------|----------|
-| `sam-generate` | `lambda.yaml` -> `template.yaml` SAM efimero |
-| `run --stage=<env>` | `--stage=local` -> `sam local invoke`; `--stage=dev\|stage\|prod` -> `aws lambda invoke` contra el deployado |
-| `deploy` | Arma `build/` con uv + vendoring selectivo de `shared/`, luego `sam deploy` del artefacto (su stack) |
+| `run --stage=<env>` | `--stage=local` -> RIE via Docker (o `--runtime-mode=direct`); `--stage=dev\|stage\|prod` -> `aws lambda invoke` contra el deployado |
+| `deploy` | Arma `build.zip` con uv + vendoring selectivo de `shared/`, lo provisiona con AWS CLI y actualiza el estado local |
+| `destroy --yes` | Borra los recursos del lambda (o de todo el stage) en orden inverso al de creacion y limpia el estado |
+| `status` | Compara el estado local vs los `describe-*` de AWS (deteccion de drift) |
 | `tests --type=<unit\|integration\|coverage>` | `pytest` del Lambda; sin target corre la suite completa, con `--shared` corre la libreria comun |
 
-`deploy` y `run` (contra un stage deployado) aceptan
-`--aws-profile=<perfil>` para fijar el perfil AWS CLI de los comandos
-`aws`/`sam`. Usar SIEMPRE `--aws-profile=tfs-dev` (ver seccion 2.1).
+`deploy`, `destroy`, `status` y `run` (contra un stage deployado)
+aceptan `--aws-profile=<perfil>` para fijar el perfil AWS CLI de los
+comandos `aws`. Usar SIEMPRE `--aws-profile=tfs-dev` (ver seccion 2.1).
 
 ### Infra / recursos
 
 | Comando | Que hace |
 |---------|----------|
-| `deploy-infra` | Deploya en orden TODOS los stacks de recurso de `resources/`. Acepta `--aws-profile=tfs-dev` |
-| `deploy-resource --name=<tipo>/<nombre>` | Deploya UN stack de recurso (`portfolio-<tipo>-<nombre>-<stage>`) |
-| `destroy-resource --name=<tipo>/<nombre> --confirm` | Borra un stack de recurso |
+| `provision-infra` | Provisiona en orden TODOS los recursos de `resources/` con AWS CLI directo. Acepta `--aws-profile=tfs-dev` |
 | `list-resources` | Lista los recursos declarados en `resources/` |
+| `destroy --stage=<env> --yes` | Borra todo el backend del stage (lambdas + recursos compartidos) |
 
 ### Setup / mantenimiento / calidad
 
 | Comando | Que hace |
 |---------|----------|
-| `init` | Setup inicial (uv sync + verifica sam + aws CLI) |
-| `clean` | Borra caches + artefactos efimeros (`template.yaml`, `build/`, `.aws-sam/`) |
+| `init` | Setup inicial (uv sync + verifica AWS CLI + uv) |
+| `clean` | Borra caches + artefactos efimeros (`build/`, `build.zip`, vendor) |
 | `lint` / `lint-fix` / `format` | Ruff sobre `shared/` + `services/` |
 | `typecheck` | mypy --strict |
 | `tests --type=coverage --shared` | pytest + cobertura de la libreria comun `shared/` |
@@ -237,9 +242,10 @@ gestionar branches de Neon, usar `neonctl`. Ver
 | `alarms` | Lista alarmas + estado |
 | `rate-limit <sub-accion>` | Gestion de `rate-limit-rules`/`-buckets`: `list`, `show`, `set`, `allow`, `block`, `unblock`, `stats`, `clear-buckets` |
 
-> No existe ya el modo SAM monolitico ni un stack de infra unico: cada
-> recurso es su propio stack (`deploy-resource`) y cada Lambda es su
-> propio stack (`deploy --lambda=<nombre>`).
+> No hay SAM ni CloudFormation: devtools provisiona cada recurso con AWS
+> CLI directo y registra lo creado en un archivo de estado local
+> (`serverless/lambda/.state/<scope>-<stage>.json`). Detalle del estado:
+> [05-estado-local.md](05-estado-local.md).
 
 ## 6. Rotar secrets
 
@@ -273,9 +279,10 @@ python devtools/run.py serverless rotate-secret \
 |---------|----------------|----------|
 | `Error when retrieving token from sso` aunque hiciste `aws sso login` | El comando usa el perfil del shell (`AWS_PROFILE`/`[default]`), no `tfs-dev` — refrescaste el perfil equivocado | Pasar `--aws-profile=tfs-dev` al comando `serverless` (o `export AWS_PROFILE=tfs-dev`). Ver seccion 2.1 |
 | `UnauthorizedOperation` en el deploy | Token SSO de `tfs-dev` expirado | `aws sso login --profile tfs-dev` + `--aws-profile=tfs-dev` |
-| `Parameter ... not found` (`{{resolve:ssm:...}}`) al deployar un Lambda | El stack de recurso no esta deployado en ese stage (el SSM param no existe) | `deploy-infra --stage=<stage>` (o `deploy-resource` del recurso faltante) primero |
-| El Lambda falla en runtime con `Parameter ... not found` | El path SSM del nombre de tabla no existe — recurso no deployado | Deployar el stack de recurso correspondiente |
-| Stack en `ROLLBACK_COMPLETE` | Recurso no creado en un deploy previo | `aws cloudformation delete-stack` + re-deploy |
+| `Parameter ... not found` al deployar un Lambda | El recurso compartido no esta provisionado en ese stage (el SSM param no existe) | `provision-infra --stage=<stage>` primero |
+| El Lambda falla en runtime con `Parameter ... not found` | El path SSM del nombre de tabla no existe — recurso no provisionado | Provisionar el recurso compartido correspondiente |
+| `deploy` fallo a mitad y dejo recursos parciales | Sin rollback transaccional; el estado local registra lo creado | Re-ejecutar `deploy` (es idempotente) o `destroy --lambda=<X>` + `deploy` |
+| El estado local no coincide con AWS (drift) | Alguien edito un recurso a mano en la consola | `serverless status` para ver la diferencia; re-deployar o destruir+recrear |
 | `ImportModuleError` / `No module named 'shared'` | Subpaquete de `shared/` no vendorizado en `build/core/shared/` (el AST scan no detecto el import) | Verificar que el import es `from shared.<sub>...` explicito; redeployar (devtools regenera `build/` en cada `deploy`) — no editar `build/` a mano |
 | `POST /contact` responde 502 | Lambda timeout o env var faltante | Revisar logs del Lambda en CloudWatch; `serverless metrics --stage=<stage>` |
 | `POST /track` responde 400 | Body invalido segun el JSON Schema / Pydantic | Revisar el payload contra `models/` del `tracking_pixel` |

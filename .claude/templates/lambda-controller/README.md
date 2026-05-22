@@ -104,8 +104,9 @@ event {operation, action, data}
    referenciados por los controllers (`arn_config_key`). Eliminar
    `arn_example` y `utils/invoker.py` si el Lambda no invoca otros.
 8. Renombrar los `LogMetricType.OPERATION_*` al dominio real.
-9. Editar `lambda.yaml`: `name`, `runtime`, `memory`/`timeout`, env vars
-   por stage, layers, IAM policies. Es la fuente de verdad de la config.
+9. Editar `manifest.yaml`: `name`, `runtime`, `memory`/`timeout`, env
+   vars por stage, layers, IAM policies. Es la fuente de verdad de la
+   config; devtools lo lee directamente para provisionar el Lambda.
 10. Editar `pyproject.toml`: declarar las deps de runtime del Lambda en
     `[project.dependencies]`. El grupo `dev` (`[dependency-groups]`) ya
     trae pytest y coverage.
@@ -165,23 +166,25 @@ pytest tests/unit --cov=core --cov-report=term-missing
 
 ## Operacion con devtools
 
-El Lambda se opera con el script `serverless` de devtools. `lambda.yaml`
-es el manifiesto (fuente de verdad de la config); devtools genera de el
-el `template.yaml` SAM, que es efimero (`.gitignore`).
+El Lambda se opera con el script `serverless` de devtools.
+`manifest.yaml` es el manifiesto (fuente de verdad de la config);
+devtools lo lee directamente y provisiona el Lambda con AWS CLI,
+manteniendo un archivo de estado local. NO hay SAM ni CloudFormation.
 
 ```bash
-# Generar el SAM template desde lambda.yaml
-python devtools/run.py serverless sam-generate --path=<dir> --stage=dev
-
-# Ejecutar el Lambda: --stage=local -> sam local invoke;
+# Ejecutar el Lambda: --stage=local -> RIE via Docker (o --runtime-mode=direct);
 #   --stage=dev|stage|prod -> aws lambda invoke contra el ya deployado.
 python devtools/run.py serverless run \
   --stage=local --path=<dir> --event=events/create.json
 python devtools/run.py serverless run \
   --stage=dev --path=<dir> --event=events/create.json
 
-# Deployar a un entorno
+# Deployar a un entorno (uv arma el build.zip, provisioner lo sube)
 python devtools/run.py serverless deploy --path=<dir> --stage=dev
+
+# Estado y destroy
+python devtools/run.py serverless status --path=<dir> --stage=dev
+python devtools/run.py serverless destroy --path=<dir> --stage=dev --yes
 
 # Tests: un solo comando, --type=unit|integration|coverage
 python devtools/run.py serverless tests --type=unit --path=<dir>

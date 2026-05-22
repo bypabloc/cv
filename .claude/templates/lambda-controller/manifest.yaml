@@ -1,10 +1,11 @@
 # Manifiesto del Lambda — fuente de verdad de la configuracion.
 #
-# devtools genera el template.yaml SAM a partir de este archivo:
-#   python devtools/run.py serverless sam-generate --path=<este-dir>
+# devtools lo lee directamente: provisioner.py lo traduce a llamadas
+# AWS CLI (rol IAM, LogGroup, funcion, wiring del trigger) en cada
+#   python devtools/run.py serverless deploy --path=<este-dir> --stage=<env>
 #
-# El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
-# edita a mano: se cambia este lambda.yaml y se regenera.
+# No hay capa intermedia: este manifest.yaml es la unica entrada. Para
+# cambiar algo se edita aqui y se re-deploya.
 
 # --- Obligatorios ---
 name: example-lambda                    # nombre logico (kebab-case)
@@ -20,7 +21,7 @@ region: us-east-1                       # AWS region (default us-east-1)
 layers: []
 # - arn:aws:lambda:us-east-1:000000000000:layer:shared-deps:1
 
-# IAM: managed policy names o SAM policy templates (opcional)
+# IAM: managed policy names o ARNs adicionales (opcional)
 iam_policies: []
 # - AWSLambdaBasicExecutionRole
 # - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess

@@ -30,7 +30,7 @@ Aplica SIEMPRE que se trabaje con:
 - **SIEMPRE** leer la connection string desde SSM Parameter Store
   (`/portfolio/neon-url`, `/portfolio/dev/neon-url`, `/portfolio/prod/neon-url`),
   type `SecureString`. NUNCA hardcodear `DATABASE_URL` ni `DB_URL` en codigo,
-  `template.yaml`, `samconfig.toml` ni archivos `.env` commiteados.
+  en el `manifest.yaml` del Lambda ni en archivos `.env` commiteados.
 - **SIEMPRE** usar el endpoint **pooled** (`-pooler` en el host) para las
   Lambdas. El endpoint directo solo para `psql` interactivo.
 - **SIEMPRE** agregar `sslmode=require&channel_binding=require` a la URL.
@@ -64,7 +64,7 @@ Aplica SIEMPRE que se trabaje con:
 
 ### Parametros SSM por stage
 
-El template SAM de la Lambda `db` resuelve el nombre del parametro asi:
+El `manifest.yaml` de la Lambda `db` resuelve el nombre del parametro asi:
 
 | Stage | Parametro SSM |
 |-------|---------------|
@@ -95,9 +95,9 @@ de devtools la invoca.
 
 Los comandos `db-*` dedicados se eliminaron del CLI. La DB se opera
 invocando la Lambda `db` con `serverless run`, que resuelve el stage y
-ejecuta `aws lambda invoke` (`--stage=local` corre `sam local invoke`).
-El payload de cada `command` vive como event en
-`serverless/lambda/services/db/events/`:
+ejecuta `aws lambda invoke` (`--stage=local` corre el Lambda con el
+Runtime Interface Emulator o en modo directo). El payload de cada
+`command` vive como event en `serverless/lambda/services/db/events/`:
 
 ```bash
 # upgrade head
@@ -266,7 +266,7 @@ neon branches delete test-verify
 |-------------|---------|------------|
 | Modificar schema via `psql`/consola web | Sin auditabilidad, drift con los modelos | Migracion Alembic nueva |
 | Editar una migracion Alembic ya aplicada en prod | Rompe la cadena de revisiones | Crear una migracion nueva |
-| Hardcodear `DATABASE_URL` en codigo o `template.yaml` | Secreto expuesto en git | SSM Parameter Store |
+| Hardcodear `DATABASE_URL` en codigo o `manifest.yaml` | Secreto expuesto en git | SSM Parameter Store |
 | Endpoint directo (no `-pooler`) en Lambda | Agota `max_connections` bajo concurrencia | Endpoint pooled |
 | `psycopg2` | Deprecado | `psycopg` v3 |
 | Crear el engine SQLAlchemy dentro del handler | Cold start cada invocacion | Module scope (`get_engine` con lru_cache) |
@@ -300,9 +300,10 @@ Reglas duras:
   el event `current.json` y, si hace falta adoptar Alembic, el event
   `stamp.json` (`{"command": "stamp"}`) — NUNCA un `migrate` que intente
   recrear tablas existentes.
-- La connection string es la `DATABASE_URL` que el template SAM inyecta
-  desde SSM (`SSM_NEON_URL_PATH`); el modulo `shared/db/url.py` la
-  resuelve. Mismo patron de secretos que el resto.
+- La connection string es la `DATABASE_URL` que devtools inyecta como
+  env var del Lambda desde SSM (`SSM_NEON_URL_PATH`, declarada en el
+  `manifest.yaml`); el modulo `shared/db/url.py` la resuelve. Mismo
+  patron de secretos que el resto.
 
 Detalle operativo: `serverless/lambda/shared/db/` (modelos + Alembic) y
 `serverless/lambda/services/db/` (la Lambda).
@@ -311,8 +312,8 @@ Detalle operativo: `serverless/lambda/shared/db/` (modelos + Alembic) y
 
 - Arquitectura, pricing, comparativas, integracion Lambda detallada:
   skill `neon` + `.claude/docs/neon/` (5 archivos)
-- Backend serverless (5 stacks, estructura, diagramas, datos):
-  `.claude/docs/serverless-backend/`
+- Backend serverless (recursos gestionados por devtools, estructura,
+  diagramas, datos): `.claude/docs/serverless-backend/`
 - Schema de las tablas + queries analiticas:
   `.claude/docs/postgresql-18-analytics/README.md`
 - Schema PostgreSQL unificado (modelos SQLAlchemy + Alembic):

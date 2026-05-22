@@ -40,5 +40,5 @@ python_functions = ["test_*"]
 addopts = "-ra"
 markers = [
   "unit: tests unitarios (rapidos, sin AWS real)",
-  "integration: tests con AWS real (deployed o sam local)",
+  "integration: tests con AWS real (deployed o RIE local)",
 ]

@@ -39,6 +39,10 @@ class Project(UUIDPKMixin, TimestampMixin, Base):
     is_confidential: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
+    # Marcador interno: la entry tiene metricas estimadas sin validar.
+    metrics_estimated: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
 
 
 class ProjectCaseStudy(UUIDPKMixin, TimestampMixin, Base):

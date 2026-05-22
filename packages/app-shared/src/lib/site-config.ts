@@ -62,9 +62,12 @@ export interface I18nStrings {
     home: string
     downloadCv: string
     viewAllExperience: string
+    viewDetail: string
     confidential: string
     technicalSkills: string
     softSkills: string
+    responsibilities: string
+    achievements: string
     caseStudyCta: string
     caseStudyProblem: string
     caseStudyProcess: string
@@ -196,9 +199,12 @@ export function buildStrings(
         home: el.labels.home,
         downloadCv: el.labels.downloadCv,
         viewAllExperience: el.labels.viewAllExperience,
+        viewDetail: el.labels.viewDetail,
         confidential: el.labels.confidential,
         technicalSkills: el.labels.technicalSkills,
         softSkills: el.labels.softSkills,
+        responsibilities: el.labels.responsibilities,
+        achievements: el.labels.achievements,
         caseStudyCta: el.labels.caseStudyCta,
         caseStudyProblem: el.labels.caseStudyProblem,
         caseStudyProcess: el.labels.caseStudyProcess,

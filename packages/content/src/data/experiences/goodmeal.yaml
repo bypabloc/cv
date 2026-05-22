@@ -3,6 +3,7 @@ role:
   es: Desarrollador Web Full Stack
   en: Full Stack Web Developer
 company: GoodMeal
+country: Chile
 companyUrl: https://www.goodmeal.app
 start: 2021-05
 end: 2021-12
@@ -12,36 +13,76 @@ niches:
 priority:
   fintech: 70
   generic: 90
+metricsEstimated: true
 responsibilities:
   es:
     - >-
-      Integración en una startup en crecimiento, trabajando bajo presión para satisfacer las
-      demandas de los Project Managers y resolver bugs de manera eficiente.
+      Reestructuración del frontend de la aplicación web, migrándolo a Vue 3 con tooling moderno
+      para mejorar el rendimiento y la mantenibilidad.
     - >-
-      Colaboración estrecha con un equipo talentoso, adoptando prácticas de Scrum, realizando
-      reuniones diarias y mejorando las habilidades de trabajo en equipo.
+      Desarrollo full stack de funcionalidades de la plataforma, integrando el frontend con los
+      servicios de backend.
     - >-
-      Restructuración del frontend de la aplicación web, migrándolo a Vue 3 y utilizando tecnologías
-      de vanguardia para mejorar la eficiencia y rendimiento.
+      Resolución eficiente de bugs y atención de las solicitudes de los Project Managers, trabajando
+      bajo plazos ajustados.
+    - >-
+      Colaboración estrecha con el equipo bajo prácticas de Scrum, participando en las reuniones
+      diarias y en la planificación de iteraciones.
+    - >-
+      Soporte al flujo de pagos y transacciones de la aplicación de pedidos, cuidando la
+      consistencia de los datos sensibles del negocio.
+    - >-
+      Adopción de estándares de código y buenas prácticas durante la modernización del frontend.
   en:
     - >-
-      Joined a fast-growing startup, delivering under pressure for PMs and resolving bugs
-      efficiently.
-    - Worked closely with a strong team, adopting Scrum with daily standups and refining teamwork.
-    - Restructured the frontend, migrating to Vue 3 and modern tooling to improve performance.
+      Restructured the web application's frontend, migrating it to Vue 3 with modern tooling to
+      improve performance and maintainability.
+    - >-
+      Full stack development of platform features, integrating the frontend with backend services.
+    - >-
+      Efficiently fixed bugs and handled Project Managers' requests while working under tight
+      deadlines.
+    - >-
+      Worked closely with the team under Scrum practices, taking part in daily standups and
+      iteration planning.
+    - >-
+      Supported the ordering app's payment and transaction flow, safeguarding the consistency of
+      business-sensitive data.
+    - >-
+      Adopted coding standards and best practices throughout the frontend modernization.
 achievements:
   es:
     - >-
-      Superé los retos de trabajar en un ambiente de startup dinámico y en rápido crecimiento,
-      entregando soluciones eficientes bajo plazos ajustados.
+      Lideré la migración del frontend a Vue 3, modernizando la base de código y mejorando de forma
+      notable la experiencia de usuario de la aplicación de pedidos.
     - >-
-      Lideré la migración y reestructuración del frontend hacia tecnologías más modernas, mejorando
-      significativamente la experiencia de usuario y la eficiencia de la aplicación.
+      Contribuí al flujo de pagos de la plataforma fintech-adyacente, reforzando la fiabilidad de
+      las transacciones de los pedidos.
+    - >-
+      Reduje el tiempo de resolución de bugs recurrentes al estabilizar el frontend sobre un stack
+      más moderno y predecible.
+    - >-
+      Entregué soluciones de manera consistente bajo plazos ajustados en un entorno de startup
+      dinámico y en rápido crecimiento.
+    - >-
+      Aporté a la adopción de prácticas de Scrum del equipo, mejorando la previsibilidad de las
+      entregas iteración a iteración.
   en:
-    - Delivered efficient solutions under tight deadlines in a fast-paced startup environment.
     - >-
-      Led the frontend migration and restructure to modern stacks, significantly improving UX and
-      app efficiency.
+      Led the frontend migration to Vue 3, modernizing the codebase and noticeably improving the
+      ordering app's user experience.
+    - >-
+      Contributed to the payment flow of the fintech-adjacent platform, strengthening the
+      reliability of order transactions.
+    - >-
+      Cut resolution time for recurring bugs by stabilizing the frontend on a more modern,
+      predictable stack.
+    - >-
+      Consistently delivered solutions under tight deadlines in a dynamic, fast-growing startup
+      environment.
+    - >-
+      Contributed to the team's adoption of Scrum practices, improving delivery predictability
+      iteration over iteration.
 skillsTechnical:
   - Desarrollo Full Stack
   - Vue 3

@@ -2,7 +2,8 @@ slug: projects-degrees
 role:
   es: Líder, Arquitecto y Desarrollador
   en: Leader, Architect and Developer
-company: Independiente / Académico
+company: Asesoría de proyectos de grado
+country: Venezuela
 start: 2015-01
 end: 2015-12
 niches:
@@ -11,27 +12,76 @@ niches:
 priority:
   leader: 60
   generic: 50
+metricsEstimated: true
 responsibilities:
   es:
     - >-
-      Reestructuración y finalización del proyecto de grado de dos equipos que enfrentaron
-      dificultades técnicas.
+      Dirección de la reestructuración de los proyectos de grado de dos equipos que habían quedado
+      bloqueados por dificultades técnicas.
     - >-
-      Dirección e implementación completa de las soluciones necesarias para cumplir con los
-      objetivos del proyecto.
+      Mentoría técnica de los integrantes de cada equipo, explicando cada implementación y el
+      razonamiento detrás de las decisiones.
+    - >-
+      Definición de la arquitectura y del plan de trabajo necesario para encaminar ambos proyectos
+      hacia su finalización.
+    - >-
+      Implementación completa de las soluciones técnicas requeridas para cumplir con los objetivos
+      de cada proyecto de grado.
+    - >-
+      Diagnóstico de los puntos de falla en el código y la arquitectura heredados, priorizando lo
+      crítico para la entrega.
+    - >-
+      Acompañamiento de los equipos en la preparación de la documentación y la defensa de sus
+      proyectos.
   en:
-    - Restructured and finished the thesis projects of two teams that had hit technical roadblocks.
-    - Led and fully implemented the solutions required to meet project objectives.
+    - >-
+      Led the restructuring of the thesis projects of two teams that had stalled due to technical
+      roadblocks.
+    - >-
+      Mentored the members of each team, explaining every implementation and the reasoning behind
+      the decisions.
+    - >-
+      Defined the architecture and the work plan needed to steer both projects toward completion.
+    - >-
+      Fully implemented the technical solutions required to meet the objectives of each thesis
+      project.
+    - >-
+      Diagnosed the failure points in the inherited code and architecture, prioritizing the
+      critical work for delivery.
+    - >-
+      Supported the teams in preparing the documentation and the defense of their projects.
 achievements:
   es:
     - >-
-      Completé el proyecto que dos equipos no pudieron en meses en una semana, instruyendo sobre
-      cada implementación y sus razones.
+      Reencaminé y completé en aproximadamente una semana dos proyectos de grado que dos equipos no
+      habían logrado terminar en varios meses.
+    - >-
+      Capacité a cerca de seis estudiantes de dos equipos, dejándolos en capacidad de explicar y
+      sostener técnicamente sus propias soluciones.
+    - >-
+      Reduje el tiempo estimado de finalización de ambos proyectos de meses a días mediante un
+      diagnóstico técnico preciso y un plan de trabajo claro.
+    - >-
+      Llevé ambos proyectos de un estado bloqueado a una entrega lista para defensa, sin perder el
+      alcance original de cada uno.
   en:
     - >-
-      Delivered in one week what two teams could not finish in months, mentoring on each
-      implementation and the reasoning behind it.
-skillsTechnical: []
+      Got two thesis projects back on track and finished them in roughly one week after two teams
+      had failed to complete them over several months.
+    - >-
+      Coached around six students across two teams, leaving them able to explain and technically
+      defend their own solutions.
+    - >-
+      Cut the estimated completion time of both projects from months to days through a precise
+      technical diagnosis and a clear work plan.
+    - >-
+      Took both projects from a blocked state to a defense-ready delivery without losing the
+      original scope of either one.
+skillsTechnical:
+  - Diagnóstico Técnico
+  - Reestructuración de Proyectos
+  - Arquitectura de Software
+  - Implementación de Soluciones
 skillsSoft:
   - Dirección de Proyecto
   - Colaboración de Equipo

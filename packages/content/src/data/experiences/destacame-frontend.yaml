@@ -3,6 +3,7 @@ role:
   es: Desarrollador Web Frontend
   en: Web Frontend Developer
 company: Destacame
+country: Chile
 companyUrl: https://destacame.cl
 start: 2021-12
 end: 2022-08
@@ -12,43 +13,84 @@ niches:
 priority:
   fintech: 90
   generic: 95
+metricsEstimated: true
 responsibilities:
   es:
     - >-
-      Contratado inicialmente para trabajar en el área de frontend debido a habilidades
-      sobresalientes demostradas en pruebas técnicas.
+      Desarrollo frontend de productos fintech con Vue y Nuxt.js, construyendo interfaces para
+      flujos financieros de los usuarios de la plataforma.
     - >-
-      Implementación de estándares y nuevas tecnologías en el desarrollo frontend, trabajando con
-      Vue y Nuxt.js para mejorar la experiencia del usuario.
+      Implementación de estándares y nuevas tecnologías en el desarrollo frontend para mejorar la
+      experiencia de usuario y la consistencia del producto.
     - >-
-      Aprendizaje y aplicación progresiva de habilidades en el backend, enfocándome en Python y
-      Django, para expandir mis capacidades como desarrollador full stack.
+      Trabajo con datos sensibles de los usuarios, cuidando la validación de formularios y la
+      correcta presentación de la información financiera.
+    - >-
+      Aprendizaje y aplicación progresiva del backend con Python y Django para crecer hacia un rol
+      full stack.
+    - >-
+      Colaboración con el equipo de producto y diseño para traducir los requerimientos en interfaces
+      claras y usables.
+    - >-
+      Refactorización de componentes existentes para reducir la deuda técnica del frontend y
+      facilitar su mantenimiento.
   en:
-    - Hired into the frontend team based on outstanding technical assessments.
-    - Introduced new standards and tooling for frontend with Vue and Nuxt.js to improve UX.
-    - Progressively expanded into the backend with Python and Django to grow into a full stack role.
+    - >-
+      Frontend development of fintech products with Vue and Nuxt.js, building interfaces for the
+      platform users' financial flows.
+    - >-
+      Introduced standards and new technologies in frontend development to improve user experience
+      and product consistency.
+    - >-
+      Worked with sensitive user data, taking care of form validation and the correct presentation
+      of financial information.
+    - >-
+      Progressively learned and applied backend development with Python and Django to grow into a
+      full stack role.
+    - >-
+      Collaborated with the product and design teams to translate requirements into clear, usable
+      interfaces.
+    - >-
+      Refactored existing components to reduce frontend technical debt and ease maintenance.
 achievements:
   es:
     - >-
-      Mejoré significativamente la calidad y eficiencia del desarrollo frontend mediante la adopción
-      de nuevas tecnologías y estándares.
+      Construí interfaces para productos fintech en uso real por los usuarios de la plataforma de
+      gestión financiera en Chile.
     - >-
-      Desarrollé habilidades en Python y Django, superando los desafíos iniciales de falta de
-      experiencia en estas tecnologías.
+      Mejoré de forma notable la calidad y la eficiencia del desarrollo frontend mediante la
+      adopción de nuevas tecnologías y estándares.
     - >-
-      Contribuí a la versatilidad y flexibilidad del equipo de desarrollo, adaptándome a necesidades
-      cambiantes y aprendiendo nuevas habilidades.
+      Reduje la deuda técnica del frontend al refactorizar componentes heredados, acortando el
+      tiempo de implementación de nuevas funcionalidades.
+    - >-
+      Pasé de un perfil exclusivamente frontend a uno full stack en cerca de ocho meses,
+      incorporando Python y Django desde cero.
+    - >-
+      Aporté a la versatilidad del equipo al cubrir tanto frontend como backend, adaptándome a las
+      necesidades cambiantes del producto.
   en:
     - >-
-      Significantly improved frontend quality and efficiency by adopting modern tooling and
-      standards.
-    - Built solid Python/Django skills despite starting with no prior experience in those stacks.
-    - Contributed to team versatility, adapting to changing needs and learning new skills.
+      Built interfaces for fintech products in real use by the users of the financial management
+      platform in Chile.
+    - >-
+      Noticeably improved frontend quality and efficiency by adopting modern tooling and standards.
+    - >-
+      Reduced frontend technical debt by refactoring legacy components, shortening the time to ship
+      new features.
+    - >-
+      Grew from a frontend-only profile to a full stack one in about eight months, picking up
+      Python and Django from scratch.
+    - >-
+      Contributed to team versatility by covering both frontend and backend, adapting to the
+      product's changing needs.
 skillsTechnical:
   - Vue.js
   - Nuxt.js
   - TypeScript
   - Desarrollo Frontend
+  - Python
+  - Django
   - Desarrollo Web
 skillsSoft:
   - Resolución de Problemas

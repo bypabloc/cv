@@ -89,10 +89,39 @@ def _load_profile() -> dict[str, Any]:
                 end = i + 1
                 break
     block = raw[start:end]
-    # TS -> YAML laxo: quita comas finales y comillas de claves no son
-    # necesarias. yaml.safe_load tolera el objeto tal cual (claves sin
-    # comillas, strings con comillas simples/dobles).
-    return yaml.safe_load(block)
+    # TS -> YAML laxo: yaml.safe_load tolera el objeto tal cual (claves
+    # sin comillas, strings con comillas simples/dobles, comas finales).
+    # Pero NO entiende los comentarios `//` de TS: hay que quitarlos antes
+    # (un `//` dentro de un string siempre va entre comillas, asi que solo
+    # se elimina el comentario de linea cuando esta fuera de comillas).
+    return yaml.safe_load(_strip_ts_line_comments(block))
+
+
+def _strip_ts_line_comments(block: str) -> str:
+    """Elimina los comentarios de linea `//` de un bloque TS.
+
+    Respeta los `//` que aparezcan dentro de un string (entre comillas
+    simples o dobles): solo recorta a partir de un `//` que este fuera de
+    comillas. YAML usa `#` para comentar, no `//`.
+    """
+    out: list[str] = []
+    for line in block.splitlines():
+        quote: str | None = None
+        cut: int | None = None
+        idx = 0
+        while idx < len(line):
+            char = line[idx]
+            if quote is not None:
+                if char == quote:
+                    quote = None
+            elif char in {'"', "'"}:
+                quote = char
+            elif char == '/' and idx + 1 < len(line) and line[idx + 1] == '/':
+                cut = idx
+                break
+            idx += 1
+        out.append(line if cut is None else line[:cut].rstrip())
+    return '\n'.join(out)
 
 
 # ---------------------------------------------------------------------------
@@ -243,7 +272,7 @@ def _resolve_vocabulary(
 # ---------------------------------------------------------------------------
 
 
-def _seed_profile(cur: psycopg.Cursor) -> None:
+def _seed_profile(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
     p = _load_profile()
     contacts = p['contacts']
     profile_id = _upsert_returning_id(
@@ -289,6 +318,16 @@ def _seed_profile(cur: psycopg.Cursor) -> None:
                 stats['certifications'],
             ),
         )
+    # Nichos del profile -> profile_niches (singleton, pero se persiste
+    # igual para que la DB sea fuente de verdad completa del CV).
+    _link_niches(
+        cur,
+        'profile_niches',
+        'profile_id',
+        profile_id,
+        p.get('niches'),
+        niche_ids,
+    )
 
 
 def _seed_experiences(
@@ -304,10 +343,12 @@ def _seed_experiences(
             {
                 'slug': slug,
                 'company': data['company'],
+                'country': data['country'],
                 'company_url': data.get('companyUrl'),
                 'start_ym': data['start'],
                 'end_ym': data.get('end'),
                 'seniority': data['seniority'],
+                'metrics_estimated': data.get('metricsEstimated', False),
             },
         )
         ids[slug] = exp_id
@@ -409,6 +450,7 @@ def _seed_projects(
                 'status': data['status'],
                 'project_type': data['projectType'],
                 'is_confidential': data.get('isConfidential', False),
+                'metrics_estimated': data.get('metricsEstimated', False),
             },
         )
         ids[slug] = proj_id
@@ -735,7 +777,7 @@ def run_seed(conn: psycopg.Connection) -> dict[str, int]:
         tech_ids = _resolve_vocabulary(cur, 'tech_tags', _collect_tech_names())
 
         # 2. Entidades.
-        _seed_profile(cur)
+        _seed_profile(cur, niche_ids)
         exp_ids = _seed_experiences(cur, niche_ids)
         _seed_projects(cur, niche_ids, tech_ids)
         _seed_skill_categories(cur, niche_ids, skill_ids)
@@ -749,6 +791,7 @@ def run_seed(conn: psycopg.Connection) -> dict[str, int]:
         counts: dict[str, int] = {}
         for table in (
             'profile',
+            'profile_niches',
             'experiences',
             'projects',
             'skill_categories',

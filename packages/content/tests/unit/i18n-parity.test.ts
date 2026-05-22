@@ -74,4 +74,19 @@ describe('i18n content sanity', () => {
     expect(hubSelector.es.cards).toHaveLength(5)
     expect(hubSelector.en.cards).toHaveLength(5)
   })
+
+  it('Given the fintech niche When curriculum loaded Then hero.summary is fintech-specific (mentions financial institutions)', () => {
+    expect(getCurriculum('fintech', 'es').hero.summary).toContain(
+      'instituciones financieras',
+    )
+    expect(getCurriculum('fintech', 'en').hero.summary).toContain(
+      'financial institutions',
+    )
+  })
+
+  it('Given a niche with its own hero.summary When loaded Then it differs from the generic summary', () => {
+    const fintech = getCurriculum('fintech', 'es').hero.summary
+    const architect = getCurriculum('architect', 'es').hero.summary
+    expect(fintech).not.toBe(architect)
+  })
 })

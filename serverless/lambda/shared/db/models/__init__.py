@@ -1,6 +1,6 @@
 """@module models — barrel del schema unificado del portfolio.
 
-Importa TODOS los modelos (las 35 tablas: datos del visitante + contenido
+Importa TODOS los modelos (las 36 tablas: datos del visitante + contenido
 del CV). Al importarse, `Base.metadata` queda poblada con cada tabla — es el
 `target_metadata` unico del autogenerate de Alembic.
 
@@ -36,7 +36,7 @@ from .junctions import (
     SkillCategoryNiche,
     SkillCategorySkill,
 )
-from .profile import Profile, ProfileStats
+from .profile import Profile, ProfileNiche, ProfileStats
 from .project import Project, ProjectCaseStudy, ProjectMetric
 from .stream import ProcessedStreamEvent
 from .tracking import EventType, TrackingEvent
@@ -66,6 +66,7 @@ __all__ = [  # noqa: RUF022
     'Niche',
     'NichePriority',
     'Profile',
+    'ProfileNiche',
     'ProfileStats',
     'Project',
     'ProjectCaseStudy',

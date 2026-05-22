@@ -17,6 +17,8 @@ from seed.seed_from_yaml import run_seed
 # Conteos esperados tras el seed — derivados de la data real de los YAML.
 _EXPECTED_COUNTS = {
     'profile': 1,
+    # profile.niches declara los 5 niches -> 5 filas en profile_niches.
+    'profile_niches': 5,
     'experiences': 9,
     'projects': 6,
     'skill_categories': 10,

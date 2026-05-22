@@ -1,0 +1,131 @@
+---
+import { type Experience, formatRange } from '@portfolio/content'
+import SectionHeader from '@portfolio/ui/components/SectionHeader.astro'
+/**
+ * @component ExperienceDetail
+ * @description Vista de detalle completa de una experiencia laboral:
+ *   rol, empresa, pais, rango de fechas, TODAS las responsabilidades,
+ *   TODOS los logros y las skills. La usan las paginas /experience/<slug>
+ *   de cada app. No renderiza el flag interno metricsEstimated.
+ *
+ * @props {Experience} experience - La experiencia a renderizar
+ * @props {'es'|'en'} locale - Idioma activo
+ * @props {I18nStrings} strings - Strings de UI de la app
+ */
+import type { I18nStrings } from '../lib/site-config'
+
+interface Props {
+  experience: Experience
+  locale: 'es' | 'en'
+  strings: I18nStrings
+}
+
+const { experience: e, locale, strings: t } = Astro.props
+const dateRange = formatRange(e.start, e.end, locale)
+---
+
+<article class="container-medium section experience-detail">
+  <SectionHeader eyebrow="01" title={e.role[locale]} />
+
+  <p class="experience-detail__meta text-mono text-muted">
+    {e.company} · {e.country} · {dateRange}
+    {e.companyUrl && (
+      <>
+        {' · '}
+        <a href={e.companyUrl} target="_blank" rel="noopener noreferrer">
+          {e.companyUrl}
+        </a>
+      </>
+    )}
+  </p>
+
+  <h3 class="text-h5 experience-detail__heading">
+    {t.labels.responsibilities}
+  </h3>
+  <ul class="experience-detail__list">
+    {e.responsibilities[locale].map((r) => <li>{r}</li>)}
+  </ul>
+
+  {
+    e.achievements[locale].length > 0 && (
+      <>
+        <h3 class="text-h5 experience-detail__heading">
+          {t.labels.achievements}
+        </h3>
+        <ul class="experience-detail__list">
+          {e.achievements[locale].map((a) => (
+            <li>{a}</li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  {
+    e.skillsTechnical.length > 0 && (
+      <>
+        <h3 class="text-h5 experience-detail__heading">
+          {t.labels.technicalSkills}
+        </h3>
+        <ul class="experience-detail__chips">
+          {e.skillsTechnical.map((s) => (
+            <li class="experience-detail__chip">{s}</li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  {
+    e.skillsSoft.length > 0 && (
+      <>
+        <h3 class="text-h5 experience-detail__heading">
+          {t.labels.softSkills}
+        </h3>
+        <ul class="experience-detail__chips">
+          {e.skillsSoft.map((s) => (
+            <li class="experience-detail__chip">{s}</li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  <p class="experience-detail__back">
+    <a href={t.labels.home ? '/#experience' : '/'}>&larr; {t.labels.home}</a>
+  </p>
+</article>
+
+<style>
+  .experience-detail__meta {
+    margin-top: var(--space-8);
+  }
+  .experience-detail__heading {
+    margin-top: var(--space-24);
+    margin-bottom: var(--space-8);
+  }
+  .experience-detail__list {
+    list-style: disc inside;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    overflow-wrap: break-word;
+  }
+  .experience-detail__chips {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+  }
+  .experience-detail__chip {
+    padding: var(--space-4) var(--space-12);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-13);
+    color: var(--color-text-muted);
+  }
+  .experience-detail__back {
+    margin-top: var(--space-32);
+  }
+</style>

@@ -8,7 +8,7 @@ meta:
 hero:
   eyebrow: "Pablo Contreras · Fintech LATAM · Lima, Perú · Remoto LATAM/US"
   headline: "Senior Full Stack Fintech LATAM"
-  summary: "Entrego productos fintech en Chile y México desde Destacame: saldar deudas, scoring crediticio y créditos por tramos. Vue + Nuxt + Django + AWS + microservicios con foco en compliance y experiencia del usuario."
+  summary: "Entrego productos fintech en Chile y México desde Destacame: saldar deudas, scoring crediticio y créditos por tramos. Diseñé un producto replicable que suma nuevas instituciones financieras como configuración y no como desarrollo nuevo. Vue + Nuxt + Django + AWS + microservicios con foco en compliance y experiencia del usuario."
   nicheLabel: "Fintech LATAM"
 
 sections:

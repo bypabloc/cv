@@ -2,27 +2,74 @@ slug: ipasme
 role:
   es: Desarrollador de Software
   en: Software Developer
-company: Independiente / Académico
+company: IPASME
+country: Venezuela
 start: 2014-01
 end: 2014-12
 niches:
   - generic
 priority:
   generic: 30
+metricsEstimated: true
 responsibilities:
   es:
-    - Desarrollo e implementación de un sistema de gestión de historias médicas para pacientes.
-    - Creación de interfaces de escritorio en Java para Windows.
+    - >-
+      Desarrollo e implementación de un sistema de gestión de historias médicas para el registro y
+      consulta de pacientes en el instituto.
+    - >-
+      Creación de interfaces de escritorio en Java para Windows, aplicando programación orientada a
+      objetos y un modelo de datos persistente.
+    - >-
+      Implementación de operaciones CRUD para la administración de pacientes, consultas y registros
+      clínicos asociados.
+    - >-
+      Levantamiento de requerimientos con el personal médico y administrativo para alinear el
+      sistema con el flujo real de atención.
+    - >-
+      Manejo de datos sensibles de salud con controles básicos de acceso y validación de la
+      información ingresada.
   en:
-    - Built and deployed a patient medical-records management system.
-    - Created Java desktop interfaces for Windows.
+    - >-
+      Built and deployed a patient medical-records management system for registering and consulting
+      patients at the institute.
+    - >-
+      Created Java desktop interfaces for Windows, applying object-oriented programming and a
+      persistent data model.
+    - >-
+      Implemented CRUD operations to manage patients, appointments and associated clinical records.
+    - >-
+      Gathered requirements with medical and administrative staff to align the system with the
+      real care workflow.
+    - >-
+      Handled sensitive health data with basic access controls and input validation of the
+      information entered.
 achievements:
   es:
-    - Aplicación de conceptos de POO y CRUDs en Java, mejorando mis habilidades técnicas.
-    - Mejora de habilidades de comunicación y levantamiento de requerimientos.
+    - >-
+      Entregué un sistema funcional de historias médicas que reemplazó el manejo de fichas en papel
+      por un registro digital consultable.
+    - >-
+      Reduje el tiempo de búsqueda de la historia de un paciente de varios minutos en archivo físico
+      a una consulta inmediata en pantalla.
+    - >-
+      Apliqué conceptos de POO y operaciones CRUD en Java de forma consistente, consolidando bases
+      sólidas de ingeniería de software.
+    - >-
+      Mejoré mis habilidades de comunicación técnica y de levantamiento de requerimientos al
+      trabajar directamente con el personal de salud.
   en:
-    - Applied OOP and CRUD patterns in Java to strengthen core engineering skills.
-    - Improved technical communication and requirements-gathering skills.
+    - >-
+      Delivered a working medical-records system that replaced paper file handling with a
+      searchable digital record.
+    - >-
+      Cut patient history lookup time from several minutes in physical archives to an instant
+      on-screen query.
+    - >-
+      Applied OOP and CRUD operations in Java consistently, building solid software-engineering
+      foundations.
+    - >-
+      Improved technical communication and requirements-gathering skills by working directly with
+      healthcare staff.
 skillsTechnical:
   - Historias Médicas
   - Aplicación de Escritorio

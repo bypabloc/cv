@@ -40,6 +40,14 @@ describe('mergeCurriculum', () => {
     expect(result.hero.summary).toBe('base summary')
   })
 
+  it('Given a hero summary override When merged Then the niche summary wins over the base', () => {
+    const override: CurriculumOverride = {
+      hero: { summary: 'niche summary' },
+    }
+    const result = mergeCurriculum(base, override)
+    expect(result.hero.summary).toBe('niche summary')
+  })
+
   it('Given a partial sections override When merged Then absent subtitles fall back to base', () => {
     const override: CurriculumOverride = {
       sections: { experienceSubtitle: 'app exp' },

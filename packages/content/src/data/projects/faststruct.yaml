@@ -44,6 +44,7 @@ metrics:
   speedup: 5x faster context handoff
   adoption: Marketplace published
   precursor: Pre-Claude-Code era (< May 2025)
+metricsEstimated: true
 caseStudyDetailed:
   problem:
     es: >-

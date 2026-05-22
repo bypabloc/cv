@@ -3,6 +3,7 @@ role:
   es: Líder de Equipo de Desarrollo y Desarrollador
   en: Development Team Lead and Developer
 company: Dibal
+country: Perú
 companyUrl: https://dibal.pe
 start: 2018-12
 end: 2021-09
@@ -14,55 +15,92 @@ priority:
   architect: 90
   leader: 95
   generic: 85
+metricsEstimated: true
 responsibilities:
   es:
     - >-
-      Primer desarrollador contratado en la startup, contribuyendo al desarrollo de un sistema web
-      para múltiples restaurantes usando jQuery y Laravel.
+      Liderazgo del equipo de desarrollo de la startup, organizando el trabajo, definiendo
+      prioridades y acompañando técnicamente a cada integrante.
     - >-
-      Liderazgo del equipo de desarrollo, organizando e implementando arquitecturas adaptadas a las
-      necesidades cambiantes del negocio.
+      Definición e implementación de arquitecturas de sistema adaptadas a las necesidades cambiantes
+      del negocio, incluyendo un modelo de microfrontends.
     - >-
-      Desarrollo de un e-commerce en Vue que integra la gestión de restaurantes con la experiencia
-      del cliente, minimizando la interacción humana.
+      Primer desarrollador contratado, responsable de construir desde cero un sistema web para
+      múltiples restaurantes con jQuery y Laravel.
     - >-
-      Encargado del despliegue de aplicaciones en AWS, utilizando servicios como EC2, RDS, S3, Route
-      53, SES, AutoScaling y LoadBalancer.
+      Desarrollo de un e-commerce en Vue que integró la gestión de los restaurantes con la
+      experiencia del cliente, minimizando la interacción humana.
+    - >-
+      Responsable del despliegue de las aplicaciones en AWS, usando EC2, RDS, S3, Route 53, SES,
+      AutoScaling y Load Balancer.
+    - >-
+      Definición de estándares de desarrollo y de los flujos de trabajo del equipo a medida que la
+      startup escalaba.
+    - >-
+      Incorporación y onboarding técnico de los nuevos desarrolladores que se sumaron al equipo.
   en:
     - >-
-      First developer hired at the startup, building a multi-restaurant web system with jQuery and
-      Laravel.
+      Led the startup's development team, organizing the work, setting priorities and technically
+      supporting every team member.
     - >-
-      Led the development team, organizing and implementing architectures adapted to evolving
-      business needs.
+      Defined and implemented system architectures adapted to evolving business needs, including a
+      microfrontends model.
     - >-
-      Built a Vue e-commerce that integrates restaurant management with the customer experience,
+      First developer hired, responsible for building a multi-restaurant web system from scratch
+      with jQuery and Laravel.
+    - >-
+      Built a Vue e-commerce that integrated restaurant management with the customer experience,
       minimizing human interaction.
     - >-
-      Owned application deployments on AWS using EC2, RDS, S3, Route 53, SES, AutoScaling and
-      LoadBalancer.
+      Owned application deployments on AWS using EC2, RDS, S3, Route 53, SES, AutoScaling and Load
+      Balancer.
+    - >-
+      Defined development standards and team workflows as the startup scaled.
+    - >-
+      Onboarded and technically ramped up the new developers who joined the team.
 achievements:
   es:
     - >-
-      Contribuí al crecimiento de la startup, adaptándome y respondiendo eficazmente a las
-      necesidades de los clientes.
+      Lideré el crecimiento del equipo de desarrollo desde un único desarrollador hasta un grupo de
+      aproximadamente cuatro a seis personas, definiendo sus estándares de trabajo.
     - >-
-      Lideré con éxito un equipo de desarrollo, facilitando el crecimiento de la empresa y la
-      implementación de soluciones tecnológicas avanzadas.
+      Diseñé una arquitectura de microfrontends que permitió evolucionar partes de la plataforma de
+      forma independiente y reducir el acoplamiento del sistema.
     - >-
-      Implementé soluciones de comercio electrónico que mejoraron significativamente la experiencia
-      del cliente y la eficiencia operativa de los restaurantes asociados.
+      Construí desde cero la plataforma multi-restaurante, llevándola de un prototipo inicial a un
+      sistema en uso productivo por varios restaurantes.
+    - >-
+      Diseñé el despliegue en AWS con AutoScaling y Load Balancer, sosteniendo la disponibilidad del
+      servicio durante los picos de demanda de los restaurantes.
+    - >-
+      Reduje el tiempo de despliegue de nuevas versiones de jornadas manuales a un proceso
+      repetible de pocas horas sobre infraestructura AWS.
+    - >-
+      Acompañé el crecimiento de la startup durante casi tres años, adaptando la tecnología a cada
+      nueva necesidad del negocio.
   en:
-    - Contributed to the startup growth by adapting to and responding to customer needs effectively.
     - >-
-      Successfully led a development team, enabling company growth and the rollout of advanced
-      technical solutions.
+      Led the development team's growth from a single developer to a group of roughly four to six
+      people, defining their working standards.
     - >-
-      Shipped e-commerce solutions that significantly improved customer experience and partner
-      restaurants efficiency.
+      Designed a microfrontends architecture that allowed parts of the platform to evolve
+      independently and reduced system coupling.
+    - >-
+      Built the multi-restaurant platform from scratch, taking it from an initial prototype to a
+      system in productive use by several restaurants.
+    - >-
+      Designed the AWS deployment with AutoScaling and Load Balancer, sustaining service
+      availability through the restaurants' demand peaks.
+    - >-
+      Cut new-version deployment time from manual full-day efforts to a repeatable few-hour process
+      on AWS infrastructure.
+    - >-
+      Supported the startup's growth for nearly three years, adapting the technology to every new
+      business need.
 skillsTechnical:
   - Despliegue en AWS
   - Laravel
+  - Vue
   - Arquitectura de Sistemas
   - Microfrontend
   - Desarrollo de E-commerce

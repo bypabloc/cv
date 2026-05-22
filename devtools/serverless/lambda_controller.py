@@ -24,12 +24,6 @@ import shutil
 import subprocess
 from typing import Any
 
-from shared.console import CYAN
-from shared.console import GREEN
-from shared.console import YELLOW
-from shared.console import _c
-from shared.console import _err
-
 from serverless import local_runtime
 from serverless import provisioner
 from serverless import state as state_mod
@@ -43,19 +37,19 @@ from serverless.resolve import ResolvedLambda
 from serverless.resolve import available_lambdas
 from serverless.resolve import resolve_lambda
 from serverless.vendoring import VendoringError
+from shared.console import CYAN
+from shared.console import GREEN
+from shared.console import YELLOW
+from shared.console import _c
+from shared.console import _err
 
 
-# Python del `.venv` del backend serverless del portfolio. Tiene la union
-# de las deps de runtime de los 4 lambdas (Powertools, pydantic, boto3,
-# SQLAlchemy, etc.) — se usa para correr los tests de un lambda cuando
-# este no trae su propio `.venv`.
-_PORTFOLIO_SERVERLESS_VENV = (
-    Path(__file__).resolve().parents[2]
-    / 'serverless'
-    / '.venv'
-    / 'bin'
-    / 'python'
-)
+# Raiz del backend serverless del portfolio. La suite CENTRALIZADA de la
+# libreria comun (`shared/`) vive en `serverless/lambda/shared/tests/` y
+# corre con el `.venv` de `serverless/` (su `pyproject.toml` trae el
+# grupo dev). Cada lambda, en cambio, corre sus tests con su `.venv`
+# AISLADO (`venv.ensure_lambda_venv`).
+_PORTFOLIO_SERVERLESS_ROOT = Path(__file__).resolve().parents[2] / 'serverless'
 
 # Scopes que `destroy --stage` sin `--lambda` borra (los 4 lambdas).
 _ALL_LAMBDA_SCOPES = (
@@ -422,22 +416,26 @@ def _invoke_remote(flags: dict[str, Any]) -> int:
 def _resolve_pytest_python(resolved: ResolvedLambda) -> str:
     """Resuelve el interprete Python para correr los tests del lambda.
 
-    Los tests del lambda necesitan las deps de runtime (Powertools,
-    pydantic, etc.) que el `.venv` de devtools NO tiene. Busca un `.venv`
-    con esas deps, en orden:
-      1. `<lambda>/.venv` (el propio lambda, si lo tiene).
-      2. El `.venv` del backend serverless (`serverless/.venv`), que ya
-         instala la union de deps de los 4 lambdas.
-      3. `python3` del PATH (fallback; puede no tener las deps).
+    Cada lambda tiene su `.venv` AISLADO (el workspace uv compartido se
+    elimino, plan serverless-lambda-independence). `venv.ensure_lambda_venv`
+    lo prepara con `uv sync` (deps del lambda + grupo dev) y `uv pip
+    install` de las deps externas del cierre de `shared/` que el lambda
+    usa — asi el `.venv` refleja EXACTAMENTE lo que el lambda necesita,
+    fiel a la realidad de AWS.
+
+    Si `uv` no esta disponible cae a `python3` del PATH (fallback; puede
+    no tener las deps — los tests fallarian con ImportError, lo que es un
+    diagnostico claro).
     """
-    candidates = [
-        resolved.root / '.venv' / 'bin' / 'python',
-        _PORTFOLIO_SERVERLESS_VENV,
-    ]
-    for python in candidates:
-        if python.is_file():
-            return str(python)
-    return 'python3'
+    from serverless.venv import VenvError
+    from serverless.venv import ensure_lambda_venv
+
+    try:
+        return str(ensure_lambda_venv(resolved.root))
+    except VenvError as exc:
+        _err(f'No se pudo preparar el .venv del lambda: {exc}')
+        print(_c(YELLOW, '  [WARN] cae a python3 del PATH'))
+        return 'python3'
 
 
 # El directorio del backend serverless y la libreria comun.
@@ -483,10 +481,12 @@ def _run_lambda_tests(
     args.extend(_pytest_extra(flags))
     if test_type == 'coverage':
         threshold = flags.get('coverage_threshold', 80)
-        # --cov-config apunta al pyproject del backend: su [tool.coverage.run]
-        # omite core/shared/ (la libreria comun vendorizada) para que el
-        # coverage del Lambda mida solo su propio codigo.
-        cov_config = _SERVERLESS_DIR / 'pyproject.toml'
+        # --cov-config apunta al pyproject del PROPIO lambda: su
+        # [tool.coverage.run] omite core/shared/ (la libreria comun
+        # vendorizada) para que el coverage mida solo su codigo. Cada
+        # lambda tiene su config de tooling (plan
+        # serverless-lambda-independence).
+        cov_config = resolved.root / 'pyproject.toml'
         args.extend(
             [
                 '--cov=core',
@@ -532,12 +532,18 @@ def _run_shared_tests(
         return 1
 
     target = 'unit' if test_type == 'coverage' else test_type
-    # El .venv del backend serverless trae pytest + las deps de runtime.
-    python = (
-        str(_PORTFOLIO_SERVERLESS_VENV)
-        if _PORTFOLIO_SERVERLESS_VENV.is_file()
-        else 'python3'
-    )
+    # La suite centralizada de shared/ corre con el `.venv` de
+    # `serverless/`: `venv.ensure_shared_venv` lo sincroniza (uv sync del
+    # grupo dev del `serverless/pyproject.toml`).
+    from serverless.venv import VenvError
+    from serverless.venv import ensure_shared_venv
+
+    try:
+        python = str(ensure_shared_venv(_PORTFOLIO_SERVERLESS_ROOT))
+    except VenvError as exc:
+        _err(f'No se pudo preparar el .venv de shared/: {exc}')
+        print(_c(YELLOW, '  [WARN] cae a python3 del PATH'))
+        python = 'python3'
     # cwd = serverless/lambda/, target relativo: shared/tests/<type>.
     test_path = f'shared/tests/{target}'
     args = [python, '-m', 'pytest', test_path, '-o', 'addopts=']

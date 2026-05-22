@@ -23,6 +23,8 @@ def _make_direct_lambda(tmp_path):
     """Crea un lambda de prueba con un core/handler.py importable.
 
     El handler devuelve un dict fijo para verificar que se ejecuto.
+    Incluye un `pyproject.toml` minimo: `_run_direct` prepara el `.venv`
+    aislado del lambda con `ensure_lambda_venv`, que lo exige.
     """
     core = tmp_path / 'core'
     core.mkdir()
@@ -40,7 +42,28 @@ def _make_direct_lambda(tmp_path):
         ),
         encoding='utf-8',
     )
+    (tmp_path / 'pyproject.toml').write_text(
+        '[project]\nname = "probe"\nversion = "0.1.0"\n',
+        encoding='utf-8',
+    )
     return tmp_path
+
+
+def _stub_venv(monkeypatch):
+    """Mockea ensure_lambda_venv: no corre `uv`, devuelve un python fijo.
+
+    `_run_direct` prepara el `.venv` aislado del lambda; en los tests no
+    queremos correr `uv sync` de verdad.
+    """
+    from serverless import venv
+
+    # `_run_direct` hace `from serverless.venv import ensure_lambda_venv`
+    # (import local): se parchea en el modulo origen.
+    monkeypatch.setattr(
+        venv,
+        'ensure_lambda_venv',
+        lambda root: root / '.venv' / 'bin' / 'python',
+    )
 
 
 def _resolved(root, *, name='probe', runtime='python3.13', memory=256):
@@ -72,6 +95,7 @@ class TestRunLocalDirect:
         from serverless import local_runtime
 
         root = _make_direct_lambda(tmp_path)
+        _stub_venv(monkeypatch)
         monkeypatch.setattr(
             local_runtime,
             'vendored_shared',
@@ -98,7 +122,7 @@ class TestRunLocalDirect:
 
         assert rc == 0
         # El subproceso recibe el script runner + la raiz del lambda.
-        assert local_runtime._DIRECT_RUNNER in captured['cmd']  # noqa: SLF001
+        assert local_runtime._DIRECT_RUNNER in captured['cmd']
         assert str(root) in captured['cmd']
 
     def test_run_local_direct_when_handler_raises_returns_error(
@@ -109,6 +133,7 @@ class TestRunLocalDirect:
         from serverless import local_runtime
 
         root = _make_direct_lambda(tmp_path)
+        _stub_venv(monkeypatch)
         monkeypatch.setattr(
             local_runtime,
             'vendored_shared',
@@ -145,6 +170,7 @@ class TestRunLocalRie:
         from serverless import local_runtime
 
         root = _make_direct_lambda(tmp_path)
+        _stub_venv(monkeypatch)
         build_path = tmp_path / 'build'
         build_path.mkdir()
 
@@ -213,6 +239,7 @@ class TestRunLocalRie:
         from serverless import local_runtime
 
         root = _make_direct_lambda(tmp_path)
+        _stub_venv(monkeypatch)
         monkeypatch.setattr(
             local_runtime.shutil,
             'which',
@@ -256,6 +283,7 @@ class TestRunLocalEventErrors:
         from serverless import local_runtime
 
         root = _make_direct_lambda(tmp_path)
+        _stub_venv(monkeypatch)
         monkeypatch.setattr(
             local_runtime.shutil,
             'which',
@@ -278,6 +306,7 @@ class TestRunLocalEventErrors:
         from serverless import local_runtime
 
         root = _make_direct_lambda(tmp_path)
+        _stub_venv(monkeypatch)
         event_file = tmp_path / 'bad.json'
         event_file.write_text('{not json', encoding='utf-8')
         monkeypatch.setattr(

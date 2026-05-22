@@ -36,33 +36,21 @@ import textwrap
 import time
 from typing import Any
 
+from serverless.packaging import PackagingError
+from serverless.packaging import package_lambda
+from serverless.resolve import ResolvedLambda
+from serverless.vendoring import VendoringError
+from serverless.vendoring import vendored_shared
 from shared.console import CYAN
 from shared.console import GREEN
 from shared.console import YELLOW
 from shared.console import _c
 from shared.console import _err
 
-from serverless.packaging import PackagingError
-from serverless.packaging import package_lambda
-from serverless.resolve import ResolvedLambda
-from serverless.vendoring import VendoringError
-from serverless.vendoring import vendored_shared
-
 
 # Imagen base oficial del runtime de AWS Lambda Python. Trae el RIE
 # incluido; se versiona por runtime (`:3.13`).
 _RIE_IMAGE_PREFIX = 'public.ecr.aws/lambda/python'
-
-# Python del `.venv` del backend serverless: tiene la union de las deps
-# de runtime de los 4 lambdas (Powertools, pydantic, boto3, ...). El modo
-# directo lo usa para que `import core.handler` resuelva esas deps.
-_PORTFOLIO_SERVERLESS_VENV = (
-    Path(__file__).resolve().parents[2]
-    / 'serverless'
-    / '.venv'
-    / 'bin'
-    / 'python'
-)
 
 # Puerto del host mapeado al :8080 del RIE dentro del contenedor.
 _RIE_HOST_PORT = 9000
@@ -216,11 +204,17 @@ def _run_direct(resolved: ResolvedLambda, event: Any) -> int:
     root = resolved.root
     print(_c(CYAN, f'[direct] core.handler desde {root}'))
 
-    python = (
-        str(_PORTFOLIO_SERVERLESS_VENV)
-        if _PORTFOLIO_SERVERLESS_VENV.is_file()
-        else 'python3'
-    )
+    # El modo directo corre el handler con el `.venv` AISLADO del lambda
+    # (el workspace uv compartido se elimino). `ensure_lambda_venv` lo
+    # prepara con `uv sync` + las deps del cierre de `shared/`.
+    from serverless.venv import VenvError
+    from serverless.venv import ensure_lambda_venv
+
+    try:
+        python = str(ensure_lambda_venv(root))
+    except VenvError as exc:
+        _err(f'No se pudo preparar el .venv del lambda: {exc}')
+        return 1
 
     try:
         with vendored_shared(root):

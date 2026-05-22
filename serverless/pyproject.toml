@@ -1,3 +1,11 @@
+# @config: serverless/pyproject.toml
+# @description: config de los tests CENTRALIZADOS de la libreria comun
+#   shared/ (viven en lambda/shared/tests/). NO es un workspace uv: el
+#   workspace se elimino (plan serverless-lambda-independence). Cada
+#   lambda y cada subpaquete de shared/ tiene su propio pyproject.toml +
+#   uv.lock + .venv aislado. Este archivo solo concentra la config de
+#   pytest/coverage/ruff/mypy de la suite centralizada de shared/.
+
 [project]
 name = "portfolio-serverless"
 version = "0.1.0"
@@ -6,32 +14,28 @@ requires-python = ">=3.13"
 license = { text = "MIT" }
 authors = [{ name = "Pablo Contreras" }]
 
-# El raiz es el WORKSPACE de uv: no declara deps de runtime propias. Cada
-# Lambda (workspace member en src/<lambda>/pyproject.toml) declara las
-# suyas; cada subpaquete de shared/ declara las suyas en su pyproject.toml.
-# El .venv del workspace instala la union de TODAS para dev local + tests.
+# Sin [tool.uv.workspace]: cada paquete es autonomo.
+#
+# [project.dependencies] = UNION de las deps de runtime de los 9
+# subpaquetes de shared/. La suite CENTRALIZADA de shared/
+# (lambda/shared/tests/) importa shared.core, shared.db, shared.http,
+# etc., asi que el `.venv` de `serverless/` necesita esas deps. Cada
+# subpaquete declara las SUYAS en su propio pyproject.toml (fuente de
+# verdad); esta lista es su union, para el entorno de test de shared/.
 dependencies = [
-  "contact-form",
-  "tracking-pixel",
-  "db",
-  "stream-processor",
+  "aws-lambda-powertools[all]>=3.0.0,<4.0",
+  "boto3>=1.34.0,<2.0",
+  "pydantic>=2.5,<3.0",
+  "pydantic-settings>=2.0,<3.0",
+  "httpx>=0.27.0,<1.0",
+  "sqlalchemy>=2.0,<3.0",
+  "alembic>=1.13,<2.0",
+  "psycopg[binary]>=3.2,<4.0",
 ]
 
-[tool.uv.workspace]
-# Los 4 Lambdas son workspace members. shared/ NO es member: sus
-# subpaquetes no son packages instalables (package = false implicito,
-# son codigo vendorizado), se resuelven por path en runtime/vendoring.
-members = ["lambda/services/*"]
-
-[tool.uv.sources]
-contact-form = { workspace = true }
-tracking-pixel = { workspace = true }
-db = { workspace = true }
-stream-processor = { workspace = true }
-
-[tool.uv]
-package = false
-
+# Deps para correr la suite CENTRALIZADA de shared/ (lambda/shared/tests/).
+# Cada subpaquete de shared/ y cada lambda tiene ademas su propio grupo
+# dev en su pyproject.toml para su .venv aislado.
 [dependency-groups]
 dev = [
   "pytest>=8.0,<9.0",
@@ -44,18 +48,15 @@ dev = [
   "ruff>=0.6,<1.0",
   "mypy>=1.10,<2.0",
   "boto3-stubs[essential,ses,sns,ssm,kms,events,sqs,logs]>=1.34,<2.0",
-  "cfn-lint>=1.10,<2.0",
   "respx>=0.23.1",
 ]
 
 [tool.ruff]
 line-length = 80
 target-version = "py313"
-# migrations/_archive/: runner SQL legacy archivado (ver
-# .claude/rules/neon-management.md) — referencia historica, no se aplica.
 extend-exclude = [
-  ".aws-sam/",
   ".venv/",
+  "build/",
   "events/*.json",
   "migrations/_archive/",
 ]
@@ -71,13 +72,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Tests: el nombre del test es el contrato; las firmas no necesitan
-# anotaciones de tipo. S105/S106 son falsos positivos (cf_token de
-# Turnstile, no es un password).
+# anotaciones de tipo. S105/S106 son falsos positivos.
 "**/tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S105", "S106"]
-# El handler vive dentro de core/ y ajusta sys.path antes de importar
-# (models./services./settings./utils./shared. resuelven en AWS y en
-# invoke local). Los imports tras ese setup son intencionales: E402 no
-# aplica.
 "**/core/handler.py" = ["E402"]
 
 [tool.ruff.format]
@@ -88,21 +84,21 @@ line-ending = "lf"
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra --strict-markers --cov-report=term-missing --cov-fail-under=80"
-# Tests de la libreria comun. Los tests de cada Lambda viven dentro del
-# Lambda (lambda/services/<lambda>/tests/) y se corren con
-# `serverless tests --type=unit --lambda=<lambda>`.
+# Suite centralizada de la libreria comun. Los tests de cada Lambda
+# viven dentro del Lambda (lambda/services/<lambda>/tests/) y se corren
+# con `serverless tests --type=unit --lambda=<lambda>`.
 testpaths = ["lambda/shared/tests"]
 markers = [
   "unit: tests unitarios (rapidos, sin AWS real)",
-  "integration: tests con AWS real (deployed o sam local)",
+  "integration: tests con AWS real (deployed)",
   "slow: tests > 1s",
 ]
 
 [tool.coverage.run]
 branch = true
-source = ["lambda/services", "lambda/shared"]
+source = ["lambda/shared"]
 # core/shared/ es la libreria comun vendorizada (efimera) dentro de cada
-# Lambda: el coverage del Lambda mide solo SU codigo, no la copia de shared.
+# Lambda: el coverage mide solo el codigo fuente, no las copias.
 omit = ["**/__init__.py", "**/tests/*", "**/core/shared/*"]
 
 [tool.coverage.report]
@@ -120,7 +116,6 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unreachable = true
 disallow_untyped_defs = true
-files = ["lambda/services/", "lambda/shared/"]
-# Alembic env.py + migraciones: scripts de config con la API dinamica de
-# Alembic (op.*, callbacks con Literal). No es codigo de aplicacion.
-exclude = ["lambda/shared/db/alembic/.*", "\\.aws-sam/.*"]
+files = ["lambda/shared"]
+# Alembic env.py + migraciones: scripts con la API dinamica de Alembic.
+exclude = ["lambda/shared/db/alembic/.*"]

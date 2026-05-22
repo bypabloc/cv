@@ -1,0 +1,43 @@
+# ============================================================================
+# DynamoDB: ContactsTable — form de contacto
+# ============================================================================
+
+Resources:
+  ContactsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-contacts-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+Outputs:
+  ContactsTableName:
+    Value: !Ref ContactsTable
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-ContactsTableName
+  ContactsTableArn:
+    Value: !GetAtt ContactsTable.Arn
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-ContactsTableArn
+  ContactsStreamArn:
+    Value: !GetAtt ContactsTable.StreamArn
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-ContactsStreamArn

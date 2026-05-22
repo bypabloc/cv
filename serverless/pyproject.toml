@@ -21,7 +21,7 @@ dependencies = [
 # Los 4 Lambdas son workspace members. shared/ NO es member: sus
 # subpaquetes no son packages instalables (package = false implicito,
 # son codigo vendorizado), se resuelven por path en runtime/vendoring.
-members = ["src/*"]
+members = ["lambda/services/*"]
 
 [tool.uv.sources]
 contact-form = { workspace = true }
@@ -88,7 +88,10 @@ line-ending = "lf"
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra --strict-markers --cov-report=term-missing --cov-fail-under=80"
-testpaths = ["tests"]
+# Tests de la libreria comun. Los tests de cada Lambda viven dentro del
+# Lambda (lambda/services/<lambda>/tests/) y se corren con
+# `serverless tests --type=unit --lambda=<lambda>`.
+testpaths = ["lambda/shared/tests"]
 markers = [
   "unit: tests unitarios (rapidos, sin AWS real)",
   "integration: tests con AWS real (deployed o sam local)",
@@ -97,8 +100,8 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["src", "shared"]
-omit = ["**/__init__.py", "**/tests/*", "src/layers/*"]
+source = ["lambda/services", "lambda/shared"]
+omit = ["**/__init__.py", "**/tests/*"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -115,7 +118,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unreachable = true
 disallow_untyped_defs = true
-files = ["src/", "shared/", "tests/"]
+files = ["lambda/services/", "lambda/shared/"]
 # Alembic env.py + migraciones: scripts de config con la API dinamica de
 # Alembic (op.*, callbacks con Literal). No es codigo de aplicacion.
-exclude = ["shared/db/alembic/.*", "\\.aws-sam/.*"]
+exclude = ["lambda/shared/db/alembic/.*", "\\.aws-sam/.*"]

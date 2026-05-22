@@ -1,0 +1,38 @@
+# ============================================================================
+# DynamoDB: CacheTable — cache key-value (TTL, sin Streams)
+# ============================================================================
+
+Resources:
+  CacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-cache-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: cache_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: cache_key
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+Outputs:
+  CacheTableName:
+    Value: !Ref CacheTable
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-CacheTableName
+  CacheTableArn:
+    Value: !GetAtt CacheTable.Arn
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-CacheTableArn

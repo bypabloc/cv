@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+# ============================================================================
+# Portfolio backend — header comun de la INFRA COMPARTIDA
+# Region: us-east-1
+# ============================================================================
+# Cabecera y Parameters del stack de infra compartida. Los Resources y Outputs
+# viven en fragmentos por dominio bajo resources/ (dynamodb/, api_gateway/,
+# sqs/) y se ensamblan junto con este header.
+# ============================================================================
+
+Description: >
+  Portfolio backend — infra compartida ensamblada desde resources/.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+    Description: Ambiente del stack (dev | stage | prod).

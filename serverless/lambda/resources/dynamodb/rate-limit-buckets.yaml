@@ -1,0 +1,38 @@
+# ============================================================================
+# DynamoDB: RateLimitBucketsTable — sliding window counters
+# ============================================================================
+
+Resources:
+  RateLimitBucketsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-rate-limit-buckets-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: bucket_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: bucket_key
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+Outputs:
+  RateLimitBucketsTableName:
+    Value: !Ref RateLimitBucketsTable
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-RateLimitBucketsTableName
+  RateLimitBucketsTableArn:
+    Value: !GetAtt RateLimitBucketsTable.Arn
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-RateLimitBucketsTableArn

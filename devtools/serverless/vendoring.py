@@ -1,7 +1,7 @@
 """Vendoring de la libreria comun `shared/` dentro de cada lambda.
 
 Los lambdas del backend del portfolio son autonomos en el artefacto
-desplegado, pero comparten codigo de `serverless/shared/`, organizado en
+desplegado, pero comparten codigo de `serverless/lambda/shared/`, organizado en
 subpaquetes por dominio (`core`, `aws`, `observability`, `http`, `db`,
 `dynamodb`, `cache`, `rate_limit`). En vez de un Lambda Layer o de
 duplicar el codigo en el repo, devtools **vendoriza** los subpaquetes que
@@ -22,10 +22,10 @@ importan subpaquetes via fallback de path).
 
 `core/shared/` es **efimero**: esta en el `.gitignore` de cada lambda, se
 regenera en cada accion y se limpia despues. La fuente de verdad unica es
-`serverless/shared/`.
+`serverless/lambda/shared/`.
 
 Los imports del codigo del lambda son siempre `from shared.<subpaquete>`:
-resuelven igual en la fuente maestra (`serverless/shared/`, via el
+resuelven igual en la fuente maestra (`serverless/lambda/shared/`, via el
 `sys.path` del backend) y en el vendor (`<lambda>/core/shared/`, porque
 `core/` esta en el `sys.path` del handler).
 """
@@ -40,11 +40,11 @@ import shutil
 from serverless.shared_resolver import resolve_lambda_shared
 
 
-# Raiz del backend serverless del portfolio (contiene shared/).
+# Raiz del backend serverless del portfolio.
 _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
-# Fuente de verdad de la libreria comun.
-_SHARED_SOURCE = _SERVERLESS_DIR / 'shared'
+# Fuente de verdad de la libreria comun (serverless/lambda/shared/).
+_SHARED_SOURCE = _SERVERLESS_DIR / 'lambda' / 'shared'
 
 # Nombre del directorio destino dentro de core/ del lambda.
 _VENDOR_DIRNAME = 'shared'
@@ -64,17 +64,17 @@ class VendoringError(RuntimeError):
 
 
 def shared_source() -> Path:
-    """Devuelve el path de la fuente maestra `serverless/shared/`.
+    """Devuelve el path de la fuente maestra `serverless/lambda/shared/`.
 
     Raises
     ------
     VendoringError
-        Si `serverless/shared/` no existe (estructura del repo rota).
+        Si `serverless/lambda/shared/` no existe (estructura del repo rota).
     """
     if not _SHARED_SOURCE.is_dir():
         raise VendoringError(
             f'No existe la libreria comun en {_SHARED_SOURCE}. '
-            f'El backend serverless debe tener serverless/shared/.',
+            f'El backend serverless debe tener serverless/lambda/shared/.',
         )
     return _SHARED_SOURCE
 
@@ -91,7 +91,7 @@ def vendor_target(lambda_root: Path) -> Path:
 
 
 def vendor_shared(lambda_root: Path) -> Path:
-    """Copia `serverless/shared/` dentro de `<lambda_root>/core/shared/`.
+    """Copia `serverless/lambda/shared/` dentro de `<lambda_root>/core/shared/`.
 
     Si el destino ya existe (de una corrida previa interrumpida) se borra
     primero, para que el vendor sea siempre un reflejo limpio de la

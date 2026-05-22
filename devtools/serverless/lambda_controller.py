@@ -153,7 +153,7 @@ def cmd_run_local(flags: dict[str, Any]) -> int:
     if flags.get('debug'):
         args.append('--debug')
 
-    # Vendoriza serverless/shared/ en core/shared/ para que el codigo del
+    # Vendoriza serverless/lambda/shared/ en core/shared/ para que el codigo del
     # lambda resuelva `import shared...` durante la invocacion local.
     try:
         with vendored_shared(resolved.root):
@@ -355,7 +355,7 @@ def _run_pytest(resolved: ResolvedLambda, subdir: str, flags: dict) -> int:
     if flags.get('quiet'):
         args.append('-q')
 
-    # Vendoriza serverless/shared/ en core/shared/ para que los tests
+    # Vendoriza serverless/lambda/shared/ en core/shared/ para que los tests
     # resuelvan `import shared...` igual que en el artefacto desplegado.
     try:
         with vendored_shared(resolved.root):

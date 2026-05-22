@@ -1,0 +1,42 @@
+# ============================================================================
+# DynamoDB: RateLimitRulesTable — rules per-endpoint/IP/country
+# ============================================================================
+
+Resources:
+  RateLimitRulesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub portfolio-rate-limit-rules-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: rule_key
+          AttributeType: S
+        - AttributeName: kind
+          AttributeType: S
+      KeySchema:
+        - AttributeName: rule_key
+          KeyType: HASH
+        - AttributeName: kind
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+Outputs:
+  RateLimitRulesTableName:
+    Value: !Ref RateLimitRulesTable
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-RateLimitRulesTableName
+  RateLimitRulesTableArn:
+    Value: !GetAtt RateLimitRulesTable.Arn
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-RateLimitRulesTableArn

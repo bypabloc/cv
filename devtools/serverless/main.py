@@ -53,12 +53,12 @@ COMMAND_REGISTRY: dict[str, Any] = {
     # Setup / Maintenance
     'init': cmd_init,
     'clean': cmd_clean,
-    # Quality (Ruff + mypy sobre serverless/shared/ y serverless/src/)
+    # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
     'lint': cmd_lint,
     'lint-fix': cmd_lint_fix,
     'format': cmd_format,
     'typecheck': cmd_typecheck,
-    # Tests de la libreria comun (serverless/tests/, cubre shared/)
+    # Tests de la libreria comun (serverless/lambda/shared/tests/, cubre shared/)
     'test': cmd_test,
     'test-coverage': cmd_test_coverage,
     # lambda-controller: ciclo de vida de cada Lambda (--path requerido)

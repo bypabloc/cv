@@ -1,7 +1,7 @@
 """Database commands for the SAM backend (Neon PostgreSQL).
 
 El schema de Neon lo gestiona Alembic — los modelos SQLAlchemy de
-`serverless/src/common/db/` son la unica fuente de verdad. Las migraciones
+`serverless/lambda/shared/db/` son la unica fuente de verdad. Las migraciones
 NO se aplican con `psql` desde aqui: se delegan a la Lambda `db`
 (`portfolio-db-<stage>`), que corre Alembic dentro de AWS con la
 connection string que el template inyecta desde SSM.

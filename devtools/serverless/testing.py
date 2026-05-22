@@ -1,13 +1,14 @@
 """Comandos de test de la libreria comun del backend.
 
-`cmd_test` / `cmd_test_coverage` corren pytest sobre `serverless/tests/`,
-que cubre la libreria comun `serverless/shared/` (cors, logger,
-rate_limit, db, cache, turnstile, etc.).
+`cmd_test` / `cmd_test_coverage` corren pytest sobre
+`serverless/lambda/shared/tests/`, que cubre la libreria comun
+`serverless/lambda/shared/` (cors, logger, rate_limit, db, cache,
+turnstile, etc.).
 
 Los tests de cada Lambda viven DENTRO del Lambda
-(`serverless/src/<lambda>/tests/`) y se corren con
-`serverless test-unit --path=<lambda>` (modo lambda-controller, ver
-`lambda_controller.py`).
+(`serverless/lambda/services/<lambda>/tests/`) y se corren con
+`serverless tests --type=unit --lambda=<lambda>` (modo
+lambda-controller, ver `lambda_controller.py`).
 
 moto + responses mockean AWS y httpx. Patron python.md: BDD-style en
 docstrings, AAA en cuerpo, asserts EXACTOS, coverage >= 80% per-file.

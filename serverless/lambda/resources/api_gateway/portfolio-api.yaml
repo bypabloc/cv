@@ -1,0 +1,65 @@
+# ============================================================================
+# API Gateway REST + CloudWatch Access Log
+# ============================================================================
+# Define la API Gateway REST nativa, su rol de CloudWatch Logs, la cuenta de
+# API Gateway y el log group de access logs. Los metodos /contact y /track
+# los agregan los stacks de contact_form y tracking_pixel.
+
+Resources:
+  ApiGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub portfolio-api-cwlogs-role-${Stage}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/portfolio-api-${Stage}
+      RetentionInDays: 7
+
+  # API Gateway REST nativa (NO AWS::Serverless::Api): los metodos /contact
+  # y /track los agregan los stacks de contact_form y tracking_pixel sobre
+  # esta API por su Id. CloudFormation permite una REST API sin metodos.
+  PortfolioApi:
+    Type: AWS::ApiGateway::RestApi
+    DependsOn: ApiGatewayAccount
+    Properties:
+      Name: !Sub portfolio-api-${Stage}
+      Description: !Sub Portfolio backend API (${Stage})
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Tags:
+        - Key: Project
+          Value: portfolio
+        - Key: ManagedBy
+          Value: SAM
+        - Key: Stage
+          Value: !Ref Stage
+
+Outputs:
+  ApiId:
+    Description: REST API Id — contact_form y tracking_pixel agregan metodos
+    Value: !Ref PortfolioApi
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-ApiId
+
+  ApiRootResourceId:
+    Description: RootResourceId de la API — parent de /contact y /track
+    Value: !GetAtt PortfolioApi.RootResourceId
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-ApiRootResourceId

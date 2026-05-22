@@ -1,6 +1,6 @@
 """Resolucion del cierre de subpaquetes de `shared/` que usa un lambda.
 
-La libreria comun `serverless/shared/` esta organizada en subpaquetes por
+La libreria comun `serverless/lambda/shared/` esta organizada en subpaquetes por
 dominio (`core`, `aws`, `observability`, `http`, `db`, `dynamodb`,
 `cache`, `rate_limit`). Cada subpaquete declara, en su propio
 `pyproject.toml`:
@@ -28,11 +28,11 @@ from pathlib import Path
 import tomllib
 
 
-# Raiz del backend serverless del portfolio (contiene shared/).
+# Raiz del backend serverless del portfolio.
 _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
-# Fuente de verdad de la libreria comun.
-_SHARED_SOURCE = _SERVERLESS_DIR / 'shared'
+# Fuente de verdad de la libreria comun (serverless/lambda/shared/).
+_SHARED_SOURCE = _SERVERLESS_DIR / 'lambda' / 'shared'
 
 # Nombre del paquete raiz de la libreria comun en los imports.
 _SHARED_ROOT = 'shared'
@@ -43,12 +43,12 @@ class SharedResolverError(RuntimeError):
 
 
 def shared_root() -> Path:
-    """Devuelve el path de la fuente maestra `serverless/shared/`.
+    """Devuelve el path de la fuente maestra `serverless/lambda/shared/`.
 
     Raises
     ------
     SharedResolverError
-        Si `serverless/shared/` no existe.
+        Si `serverless/lambda/shared/` no existe.
     """
     if not _SHARED_SOURCE.is_dir():
         raise SharedResolverError(

@@ -34,12 +34,12 @@ VALID_COMMANDS = [
     # Setup / Maintenance
     'init',  # uv sync + verifica sam + aws CLI
     'clean',  # rm caches + artefactos efimeros (template.yaml, core/shared)
-    # Quality (Ruff + mypy sobre serverless/shared/ y serverless/src/)
+    # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
     'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
     'format',  # Ruff format
     'typecheck',  # mypy
-    # Tests de la libreria comun (serverless/tests/, cubre shared/)
+    # Tests de la libreria comun (serverless/lambda/shared/tests/, cubre shared/)
     'test',  # pytest tests/ con coverage
     'test-coverage',  # pytest --cov + HTML report
     # lambda-controller: ciclo de vida de cada Lambda. --path requerido.
@@ -79,7 +79,7 @@ ALLOWED_FLAGS = [
     # Stage
     'stage',
     # lambda-controller: como apuntar al lambda objetivo
-    'lambda',  # --lambda=<nombre> resuelto contra serverless/src/* (recomendado)
+    'lambda',  # --lambda=<nombre> resuelto contra serverless/lambda/services/* (recomendado)
     'path',  # --path=<dir> del lambda (dir con lambda.yaml, cualquier ubicacion)
     'module',  # alias de --path
     # Deploy
@@ -137,7 +137,7 @@ DESTRUCTIVE_COMMANDS = frozenset(
 
 
 # Comandos del modo lambda-controller: requieren apuntar a un lambda con
-# --lambda=<nombre> (resuelto contra serverless/src/*) o --path=<dir>.
+# --lambda=<nombre> (resuelto contra serverless/lambda/services/*) o --path=<dir>.
 PATH_REQUIRED_COMMANDS = frozenset(
     {
         'sam-generate',
@@ -348,7 +348,7 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     ):
         raise ValueError(
             f'{command!r} opera sobre un lambda-controller: requiere '
-            f'--lambda=<nombre> (resuelto contra serverless/src/*) '
+            f'--lambda=<nombre> (resuelto contra serverless/lambda/services/*) '
             f'o --path=<dir> (directorio con lambda.yaml).',
         )
 
@@ -388,7 +388,7 @@ def describe() -> ScriptDescribe:
                 'type': 'string',
                 'summary': (
                     'Nombre corto de un lambda, resuelto contra '
-                    'serverless/src/<nombre>/. Forma recomendada de '
+                    'serverless/lambda/services/<nombre>/. Forma recomendada de '
                     'apuntar a un lambda-controller'
                 ),
             },

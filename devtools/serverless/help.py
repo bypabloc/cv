@@ -5,11 +5,6 @@ Renders a colourised inventory of subcommands grouped by domain.
 
 from typing import Any
 
-from serverless.flags import _COMMAND_FLAGS
-from serverless.flags import _COMMAND_SUMMARIES
-from serverless.flags import DESTRUCTIVE_COMMANDS
-from serverless.flags import VALID_COMMANDS
-from serverless.flags import VALID_STAGES
 from shared.console import BOLD
 from shared.console import CYAN
 from shared.console import DIM
@@ -18,6 +13,12 @@ from shared.console import NC
 from shared.console import RED
 from shared.console import YELLOW
 from shared.console import _c
+
+from serverless.flags import _COMMAND_FLAGS
+from serverless.flags import _COMMAND_SUMMARIES
+from serverless.flags import DESTRUCTIVE_COMMANDS
+from serverless.flags import VALID_COMMANDS
+from serverless.flags import VALID_STAGES
 
 
 # Mapeo comando -> grupo para render organizado
@@ -77,7 +78,7 @@ def cmd_help(flags: dict[str, Any]) -> int:
     for stage in VALID_STAGES:
         print(f'  {_c(GREEN, stage):<20}')
     print()
-    print(_c(YELLOW, 'Lambdas (serverless/src/<lambda>/):'))
+    print(_c(YELLOW, 'Lambdas (serverless/lambda/services/<lambda>/):'))
     for lam in ('db', 'contact_form', 'tracking_pixel', 'stream_processor'):
         print(f'  {_c(CYAN, lam):<25}')
     print()

@@ -1,10 +1,11 @@
 """Comandos de mantenimiento del backend serverless.
 
-El backend del portfolio son 5 stacks CloudFormation independientes (ver
-`serverless/infra/infra.yaml` + un `lambda.yaml` por Lambda). El ciclo
-de vida de cada stack se opera con los comandos del modo
-lambda-controller (`sam-generate`, `run-local`, `deploy`,
-`invoke-remote`, `test-unit`) y `deploy-infra` para el stack de infra.
+El backend del portfolio son stacks CloudFormation independientes (un
+`lambda.yaml` por Lambda en `serverless/lambda/services/*`, un stack por
+recurso compartido en `serverless/lambda/resources/*`). El ciclo de vida
+de cada stack se opera con los comandos del modo lambda-controller
+(`sam-generate`, `run`, `deploy`, `tests`) y `deploy-infra` para los
+recursos compartidos.
 
 Este modulo conserva solo los comandos transversales que NO dependen de
 un SAM template monolitico: `init` (setup del entorno) y `clean`
@@ -77,10 +78,7 @@ def cmd_init(flags: dict[str, Any]) -> int:
     print(_c(GREEN, 'OK  serverless/ listo para usar'))
     print(f'{YELLOW}Siguiente paso:{NC}')
     print('  python devtools/run.py serverless deploy-infra --stage=dev')
-    print(
-        '  python devtools/run.py serverless deploy '
-        '--path=serverless/src/db --stage=dev'
-    )
+    print('  python devtools/run.py serverless deploy --lambda=db --stage=dev')
     return 0
 
 
@@ -92,10 +90,11 @@ def cmd_init(flags: dict[str, Any]) -> int:
 def cmd_clean(flags: dict[str, Any]) -> int:
     """Elimina caches y artefactos efimeros del backend.
 
-    Limpia, en `serverless/` y en cada lambda de `serverless/src/*/`:
+    Limpia, en `serverless/` y en cada lambda de
+    `serverless/lambda/services/*/`:
       - `.aws-sam/` (build de SAM)
       - `template.yaml` efimero generado por sam-generate
-      - `core/shared/` vendorizado
+      - `build/` y `core/shared/` vendorizados
       - caches de Python / pytest / ruff / coverage
     """
     targets: list[Path] = [
@@ -106,14 +105,16 @@ def cmd_clean(flags: dict[str, Any]) -> int:
         _SERVERLESS_DIR / 'htmlcov',
     ]
 
-    # Artefactos efimeros por lambda: template.yaml, .aws-sam/, core/shared/.
-    src_dir = _SERVERLESS_DIR / 'src'
-    if src_dir.is_dir():
-        for lambda_dir in src_dir.iterdir():
+    # Artefactos efimeros por lambda: template.yaml, .aws-sam/, build/,
+    # core/shared/ vendorizado.
+    services_dir = _SERVERLESS_DIR / 'lambda' / 'services'
+    if services_dir.is_dir():
+        for lambda_dir in services_dir.iterdir():
             if not lambda_dir.is_dir():
                 continue
             targets.append(lambda_dir / 'template.yaml')
             targets.append(lambda_dir / '.aws-sam')
+            targets.append(lambda_dir / 'build')
             targets.append(lambda_dir / 'core' / 'shared')
 
     # __pycache__ recursivo.

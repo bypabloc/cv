@@ -17,11 +17,15 @@ from pathlib import Path
 
 import pytest
 
-# Permitir imports de `shared.*` (serverless/ esta en path: contiene el
-# paquete shared/) y de los Lambdas de src/ (src/ esta en path).
-_SERVERLESS_ROOT = Path(__file__).parent.parent
-_SRC = _SERVERLESS_ROOT / 'src'
-for _p in (_SERVERLESS_ROOT, _SRC):
+# Permitir imports de `shared.*` y de los Lambdas. Este conftest vive en
+# serverless/lambda/shared/tests/. El paquete `shared/` cuelga de
+# serverless/lambda/, asi que ese directorio va al path para que
+# `import shared...` resuelva; y serverless/lambda/services/ para los
+# Lambdas.
+#   __file__.parents: tests/ -> shared/ -> lambda/
+_LAMBDA_DIR = Path(__file__).resolve().parents[1]
+_SERVICES_DIR = _LAMBDA_DIR / 'services'
+for _p in (_LAMBDA_DIR, _SERVICES_DIR):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 

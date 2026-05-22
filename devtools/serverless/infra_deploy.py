@@ -1,17 +1,24 @@
 """Deploy del stack de infra compartida del backend serverless.
 
-El backend del portfolio son 5 stacks CloudFormation independientes (ver
-`serverless/infra/infra.yaml`): un stack de infra compartida + un stack
-por Lambda. Este modulo deploya el stack de infra.
+Los recursos compartidos del backend (API Gateway REST, tablas DynamoDB,
+DLQ SQS) viven como fragmentos YAML en `serverless/lambda/resources/`,
+uno por recurso. Cada fragmento declara solo `Resources:` y `Outputs:`;
+el header comun (`_header.yaml`) declara `AWSTemplateFormatVersion`,
+`Transform`, `Description` y `Parameters`.
 
-`infra.yaml` declara 5 tablas DynamoDB, una API Gateway REST y una DLQ.
+`cmd_deploy_infra` ENSAMBLA el header + todos los fragmentos en un
+`infra.yaml` efimero (gitignored) y lo deploya como un unico stack
+CloudFormation `portfolio-infra-<stage>`.
+
+NOTA: este es el modelo de UN stack de infra. El rediseno a
+stack-por-recurso + SSM (cada recurso un stack autonomo, sin Export)
+esta documentado en `docs/specs/serverless-restructure/` y se
+implementara en una rama aparte.
+
 El deploy es IDEMPOTENTE:
   - Si el stack no existe -> lo crea (CREATE).
-  - Si ya existe -> aplica los cambios (UPDATE); CloudFormation detecta
-    si el modelado cambio y actualiza solo lo necesario.
-  - Antes de crear, verifica si las tablas del manifiesto ya existen
-    como recursos sueltos en AWS (fuera de CloudFormation) y avisa: una
-    tabla preexistente fuera del stack haria fallar el CREATE.
+  - Si ya existe -> aplica los cambios (UPDATE).
+  - Antes de un CREATE, verifica que las tablas no existan huerfanas.
 """
 
 from __future__ import annotations
@@ -19,6 +26,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import subprocess
+import tempfile
 from typing import Any
 
 from shared.console import CYAN
@@ -31,10 +39,16 @@ from shared.console import _err
 # Raiz del backend serverless del portfolio.
 _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 
-# Template del stack de infra (versionado, NO se genera).
-_INFRA_TEMPLATE = _SERVERLESS_DIR / 'infra' / 'infra.yaml'
+# Directorio de los recursos compartidos (un fragmento YAML por recurso).
+_RESOURCES_DIR = _SERVERLESS_DIR / 'lambda' / 'resources'
 
-# Tablas DynamoDB que declara infra.yaml (para el chequeo de pre-existencia).
+# Header comun del template ensamblado (sin Resources ni Outputs).
+_HEADER_FILE = _RESOURCES_DIR / '_header.yaml'
+
+# Subdirectorios de _RESOURCES_DIR que contienen fragmentos de recursos.
+_FRAGMENT_DIRS = ('dynamodb', 'api_gateway', 'sqs')
+
+# Tablas DynamoDB que declara la infra (para el chequeo de pre-existencia).
 _INFRA_TABLES = (
     'portfolio-contacts-${stage}',
     'portfolio-tracking-${stage}',
@@ -42,6 +56,87 @@ _INFRA_TABLES = (
     'portfolio-rate-limit-rules-${stage}',
     'portfolio-rate-limit-buckets-${stage}',
 )
+
+
+def _collect_fragments() -> list[Path]:
+    """Devuelve los fragmentos YAML de recursos, ordenados por path.
+
+    Un fragmento es cualquier `.yaml` dentro de los subdirectorios de
+    `_RESOURCES_DIR` (dynamodb/, api_gateway/, sqs/). El `_header.yaml`
+    y el `infra.yaml` legacy NO son fragmentos.
+    """
+    fragments: list[Path] = []
+    for subdir in _FRAGMENT_DIRS:
+        directory = _RESOURCES_DIR / subdir
+        if directory.is_dir():
+            fragments.extend(sorted(directory.glob('*.yaml')))
+    return fragments
+
+
+def _assemble_template() -> str:
+    """Ensambla el header + todos los fragmentos en un template unico.
+
+    El resultado es un template CloudFormation valido: el header aporta
+    `AWSTemplateFormatVersion` / `Transform` / `Description` /
+    `Parameters`, y los fragmentos aportan, concatenados, sus bloques
+    `Resources:` y `Outputs:`.
+
+    Como cada fragmento ya trae `Resources:` y `Outputs:` como claves de
+    nivel raiz, el ensamblado las fusiona: el primer fragmento abre cada
+    bloque y los siguientes solo aportan entradas indentadas. Para
+    mantenerlo simple y robusto, el ensamblado declara `Resources:` y
+    `Outputs:` una sola vez y vuelca el cuerpo de cada fragmento debajo.
+
+    Raises
+    ------
+    FileNotFoundError
+        Si falta el header o no hay fragmentos.
+    """
+    if not _HEADER_FILE.is_file():
+        raise FileNotFoundError(
+            f'No existe el header de infra: {_HEADER_FILE}',
+        )
+    fragments = _collect_fragments()
+    if not fragments:
+        raise FileNotFoundError(
+            f'No hay fragmentos de recursos en {_RESOURCES_DIR}.',
+        )
+
+    resources_body: list[str] = []
+    outputs_body: list[str] = []
+    for fragment in fragments:
+        section = None
+        for line in fragment.read_text(encoding='utf-8').splitlines():
+            stripped = line.strip()
+            if stripped.startswith('#') or not stripped:
+                # Comentarios y lineas vacias: solo dentro de una seccion.
+                if section == 'resources':
+                    resources_body.append(line)
+                elif section == 'outputs':
+                    outputs_body.append(line)
+                continue
+            if line.startswith('Resources:'):
+                section = 'resources'
+                continue
+            if line.startswith('Outputs:'):
+                section = 'outputs'
+                continue
+            if section == 'resources':
+                resources_body.append(line)
+            elif section == 'outputs':
+                outputs_body.append(line)
+
+    parts = [
+        _HEADER_FILE.read_text(encoding='utf-8').rstrip(),
+        '',
+        'Resources:',
+        *resources_body,
+        '',
+        'Outputs:',
+        *outputs_body,
+        '',
+    ]
+    return '\n'.join(parts)
 
 
 def _aws(
@@ -119,7 +214,7 @@ def _preflight_tables(
 ) -> bool:
     """Verifica el estado de las tablas antes de un CREATE del stack.
 
-    Reporta, por cada tabla declarada en infra.yaml:
+    Reporta, por cada tabla declarada en los fragmentos:
       - no existe          -> el stack la creara (OK).
       - existe en el stack -> el stack la actualizara (OK).
       - existe huerfana    -> el CREATE del stack fallaria (BLOQUEA).
@@ -130,7 +225,7 @@ def _preflight_tables(
         True si el deploy puede proceder; False si hay una tabla
         huerfana que bloquearia el CREATE.
     """
-    print(_c(CYAN, 'Verificando tablas DynamoDB declaradas en infra.yaml:'))
+    print(_c(CYAN, 'Verificando tablas DynamoDB declaradas en resources/:'))
     blocked = False
     for tpl in _INFRA_TABLES:
         table = tpl.replace('${stage}', stage)
@@ -153,6 +248,9 @@ def _preflight_tables(
 def cmd_deploy_infra(flags: dict[str, Any]) -> int:
     """Deploya el stack de infra compartida (idempotente).
 
+    Ensambla `_header.yaml` + los fragmentos de `resources/` en un
+    `infra.yaml` efimero y lo deploya como `portfolio-infra-<stage>`.
+
     Flags:
       --stage       : dev | stage | prod (default dev).
       --aws-profile : perfil AWS CLI (opcional).
@@ -167,8 +265,10 @@ def cmd_deploy_infra(flags: dict[str, Any]) -> int:
     region = 'us-east-1'
     stack = f'portfolio-infra-{stage}'
 
-    if not _INFRA_TEMPLATE.is_file():
-        _err(f'No existe el template de infra: {_INFRA_TEMPLATE}')
+    try:
+        template_body = _assemble_template()
+    except FileNotFoundError as exc:
+        _err(str(exc))
         return 1
 
     exists = _stack_exists(stack, region, profile)
@@ -191,25 +291,34 @@ def cmd_deploy_infra(flags: dict[str, Any]) -> int:
 
     if flags.get('dry_run'):
         print(_c(YELLOW, f'[dry-run] cloudformation deploy {stack}'))
+        print(_c(CYAN, '--- template ensamblado (resumen) ---'))
+        print(template_body[:600])
         return 0
 
-    deploy_cmd = [
-        'cloudformation',
-        'deploy',
-        '--template-file',
-        str(_INFRA_TEMPLATE),
-        '--stack-name',
-        stack,
-        '--parameter-overrides',
-        f'Stage={stage}',
-        '--capabilities',
-        'CAPABILITY_NAMED_IAM',
-        '--region',
-        region,
-        '--no-fail-on-empty-changeset',
-    ]
-    print(_c(YELLOW, f'Deploy de infra a {stage}...'))
-    result = _aws(deploy_cmd, profile=profile)
+    # El template ensamblado es efimero: se escribe en un tmp y se borra
+    # al salir. La fuente de verdad son los fragmentos de resources/.
+    with tempfile.TemporaryDirectory() as tmp:
+        template_path = Path(tmp) / 'infra.yaml'
+        template_path.write_text(template_body, encoding='utf-8')
+
+        deploy_cmd = [
+            'cloudformation',
+            'deploy',
+            '--template-file',
+            str(template_path),
+            '--stack-name',
+            stack,
+            '--parameter-overrides',
+            f'Stage={stage}',
+            '--capabilities',
+            'CAPABILITY_NAMED_IAM',
+            '--region',
+            region,
+            '--no-fail-on-empty-changeset',
+        ]
+        print(_c(YELLOW, f'Deploy de infra a {stage}...'))
+        result = _aws(deploy_cmd, profile=profile)
+
     if result.stdout:
         print(result.stdout.strip())
     if result.returncode != 0:

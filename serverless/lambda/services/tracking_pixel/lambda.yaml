@@ -4,7 +4,7 @@
 # infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
 # devtools traduce este manifiesto al template SAM efimero:
 #   python devtools/run.py serverless sam-generate \
-#     --path=serverless/src/tracking_pixel
+#     --lambda=tracking_pixel
 #
 # El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
 # edita a mano: se cambia este lambda.yaml y se regenera.

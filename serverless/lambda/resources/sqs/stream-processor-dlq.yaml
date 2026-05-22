@@ -1,0 +1,21 @@
+# ============================================================================
+# SQS: DLQ del stream_processor
+# ============================================================================
+
+Resources:
+  StreamProcessorDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub portfolio-stream-processor-dlq-${Stage}
+      MessageRetentionPeriod: 1209600  # 14 dias
+      VisibilityTimeout: 300
+
+Outputs:
+  StreamProcessorDLQArn:
+    Value: !GetAtt StreamProcessorDLQ.Arn
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-StreamProcessorDLQArn
+  StreamProcessorDLQName:
+    Value: !GetAtt StreamProcessorDLQ.QueueName
+    Export:
+      Name: !Sub portfolio-infra-${Stage}-StreamProcessorDLQName

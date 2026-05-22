@@ -9,15 +9,13 @@ version = "0.1.0"
 description = "Lambda de gestion del schema PostgreSQL del portfolio (Alembic)."
 requires-python = ">=3.13"
 
-# Corre Alembic dentro de AWS: SQLAlchemy (ORM, metadata) + alembic +
-# psycopg (driver). pydantic valida el payload de los comandos.
+# El core/ del Lambda solo importa pydantic (modelos del payload). El
+# resto (powertools, boto3, sqlalchemy, alembic, psycopg) le llega por el
+# vendoring del cierre de shared/ (shared.db, shared.observability,
+# shared.lambda_kit) — ver la regla de dedup D-3 del plan
+# docs/specs/serverless-lambda-independence/.
 dependencies = [
-  "aws-lambda-powertools[all]>=3.0.0,<4.0",
-  "boto3>=1.34.0,<2.0",
   "pydantic>=2.5,<3.0",
-  "psycopg[binary]>=3.2,<4.0",
-  "sqlalchemy>=2.0,<3.0",
-  "alembic>=1.13,<2.0",
 ]
 
 [tool.uv]

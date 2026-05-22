@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from models.db import ShowMigrationsModel
 from services.db_service import ServiceError, run_show_migrations
-from utils.base_controller import BaseController
+from shared.lambda_kit import BaseController
 
 
 class Show_migrations(BaseController):  # noqa: N801 - action.capitalize()

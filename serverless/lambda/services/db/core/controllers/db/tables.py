@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from models.db import TablesModel
 from services.db_service import ServiceError, run_tables
-from utils.base_controller import BaseController
+from shared.lambda_kit import BaseController
 
 
 class Tables(BaseController):

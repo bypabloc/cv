@@ -6,13 +6,6 @@ When `lambda_handler` procesa el batch end-to-end,
 Then el handler reporta TODOS los records con `eventID` en
   `batchItemFailures` (para que AWS reintente el batch entero) y nada se
   escribe en la base.
-
-Nota: el helper `patched_validation` mockea `handler.logger` ademas de
-`validate_event`. La rama de validacion fallida del handler logea con
-`extra={'message': ...}` y `message` es una clave reservada de
-`LogRecord` (bug pre-existente del handler, fuera del scope de esta
-suite). El mock del logger lo neutraliza para poder observar el
-contrato de salida del handler.
 """
 
 from __future__ import annotations

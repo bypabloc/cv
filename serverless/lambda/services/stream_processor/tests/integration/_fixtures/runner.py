@@ -55,16 +55,8 @@ def patched_validation(
     El handler sintetiza SIEMPRE un evento valido
     (`operation='stream', action='process'`); para ejercitar la rama de
     validacion fallida se parchea `validate_event` para que devuelva una
-    respuesta de error normalizada.
-
-    Tambien se mockea `handler.logger` (E/S externa hacia CloudWatch):
-    la rama de validacion fallida del handler hace
-    `logger.error(..., extra={'message': ...})`, y `message` es una
-    clave reservada de `logging.LogRecord` que Powertools rechaza con
-    `KeyError`. Es un bug pre-existente del handler, fuera del scope de
-    esta suite (solo toca `tests/`); mockear el logger lo neutraliza
-    para poder verificar el comportamiento observable del handler — que
-    reporta TODOS los records con `eventID` en `batchItemFailures`.
+    respuesta de error normalizada. El handler real (logger incluido)
+    corre sin mocks adicionales.
     """
     import handler
 
@@ -75,8 +67,5 @@ def patched_validation(
         'message': error_message,
         'data': {},
     }
-    with (
-        patch.object(handler, 'validate_event', return_value=error_response),
-        patch.object(handler, 'logger'),
-    ):
+    with patch.object(handler, 'validate_event', return_value=error_response):
         yield

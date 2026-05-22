@@ -67,7 +67,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     if not validation_result.get('is_valid'):
         logger.error(
             'stream event validation failed',
-            extra={'message': validation_result.get('message')},
+            extra={'validation_error': validation_result.get('message')},
         )
         # Sin un controller resuelto no podemos procesar el batch.
         # Reportamos TODOS los records como fallidos para que AWS los

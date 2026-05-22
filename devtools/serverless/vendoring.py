@@ -8,8 +8,8 @@ duplicar el codigo en el repo, devtools **vendoriza** los subpaquetes que
 el lambda usa dentro de `<lambda>/core/shared/` antes de cada accion que
 necesite el codigo completo:
 
-  - `run-local` / `test-unit` / `test-integration`: copia `shared/` a
-    `<lambda>/core/shared/` para que `sam local invoke` y `pytest` lo
+  - `run` (--stage=local) / `tests`: copia `shared/` a
+    `<lambda>/core/shared/` para que la ejecucion local y `pytest` lo
     resuelvan.
   - `deploy`: idem, antes de armar el zip (el artefacto lo incluye).
 

@@ -1,13 +1,13 @@
 # Manifiesto del Lambda `contact_form` — fuente de verdad de su config.
 #
 # Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
-# infraestructura: no hay ARNs, ni politicas IAM, ni Fn::ImportValue.
-# devtools traduce este manifiesto al template SAM efimero:
-#   python devtools/run.py serverless sam-generate \
-#     --lambda=contact_form
+# infraestructura: no hay ARNs, ni politicas IAM, ni funciones intrinsecas.
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=contact_form
 #
-# El template.yaml generado es EFIMERO (esta en .gitignore). NUNCA se
-# edita a mano: se cambia este lambda.yaml y se regenera.
+# devtools provisiona el Lambda sin SAM ni CloudFormation: el rol IAM, el
+# LogGroup, la funcion y el wiring del trigger se crean con `aws ...` y el
+# estado queda en serverless/lambda/.state/ (efimero, gitignored).
 
 # --- Identidad ---
 name: contact-form

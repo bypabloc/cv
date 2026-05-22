@@ -1,7 +1,7 @@
 """Empaquetado del artefacto de deploy de un lambda con uv.
 
-devtools arma el zip que se sube a AWS; SAM solo lo deploya. El flujo
-reemplaza al `sam build` clasico (que corria `pip install`):
+devtools arma el zip que se sube a AWS y luego lo deploya con
+`aws lambda`. El flujo (reemplaza al viejo `pip install` de build):
 
   1. Resuelve, via `shared_resolver`, que subpaquetes de `serverless/lambda/shared/`
      usa el lambda (cierre transitivo por AST) y la union de sus deps
@@ -14,8 +14,8 @@ reemplaza al `sam build` clasico (que corria `pip install`):
      cierre resuelto.
 
 El directorio `build/` resultante es autocontenido: el handler, la
-libreria comun y las deps. SAM lo zipea tal cual (CodeUri apunta a
-`build/`, sin `Metadata.BuildMethod`, asi `sam deploy` no corre pip).
+libreria comun y las deps. devtools lo zipea tal cual y lo sube con
+`aws lambda create-function` / `update-function-code`.
 
 `build/` es efimero: esta en el `.gitignore` del lambda, se regenera en
 cada deploy y se limpia despues.

@@ -1,7 +1,7 @@
-"""Provisioner de Lambdas con AWS CLI (reemplaza `sam_generate.py`).
+"""Provisioner de Lambdas con AWS CLI.
 
 Sin SAM/CloudFormation, devtools traduce el `manifest.yaml` de un Lambda
-directamente a una secuencia de llamadas `aws ...`. Este modulo hace dos
+directamente a una secuencia de llamadas `aws ...`. Este modulo hace tres
 cosas:
 
   1. `render(manifest, stage)` — funcion PURA: produce un `RenderedLambda`
@@ -12,10 +12,10 @@ cosas:
      segun la `Action` que decidio `state.diff` (CREATE / UPDATE_* ).
   3. `deprovision(state, ...)` — borra los recursos en orden inverso.
 
-La traduccion `uses` -> IAM se porta de `sam_generate.py`, con una
-diferencia clave: los ARNs se resuelven a strings concretos (cuenta y
-region reales), sin `Fn::Sub` ni `Fn::ImportValue`. Los identificadores
-de infra (Stream ARN, ApiId) se leen de SSM con `aws ssm get-parameter`.
+La traduccion `uses` -> IAM resuelve los ARNs a strings concretos
+(cuenta y region reales), sin `Fn::Sub` ni `Fn::ImportValue`. Los
+identificadores de infra (Stream ARN, ApiId) se leen de SSM con
+`aws ssm get-parameter`.
 """
 
 from __future__ import annotations
@@ -48,8 +48,8 @@ _VALID_TRIGGERS = ('direct', 'http', 'on-table-changes')
 # `create-function`: un rol nuevo puede no estar disponible aun.
 _IAM_PROPAGATION_SECONDS = 10
 
-# Tablas DynamoDB: nombre corto -> definicion del catalogo. Identico al
-# catalogo de `sam_generate.py` pero sin marcadores CloudFormation.
+# Tablas DynamoDB: nombre corto -> definicion del catalogo. Sin
+# marcadores CloudFormation: nombres y ARNs concretos.
 _TABLES: dict[str, dict[str, str]] = {
     'contacts': {
         'physical': 'portfolio-contacts-${stage}',
@@ -410,9 +410,9 @@ def _build_statements(
 ) -> list[dict[str, Any]]:
     """Traduce `uses` + `trigger` a una lista de Statements IAM.
 
-    Portado de `sam_generate._build_policies`: cada tabla -> Statement
-    DynamoDB; cada secreto -> Statement SSM `GetParameter` + un Statement
-    `kms:Decrypt`; `sends-email` -> Statement SES; `on-table-changes` ->
+    Cada tabla -> Statement DynamoDB; cada secreto -> Statement SSM
+    `GetParameter` + un Statement `kms:Decrypt`; `sends-email` ->
+    Statement SES; `on-table-changes` ->
     Statements de Stream + SQS al DLQ. Sin `Fn::Sub`: ARNs concretos.
     """
     uses = manifest.get('uses') or {}

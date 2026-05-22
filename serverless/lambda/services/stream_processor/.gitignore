@@ -1,20 +1,17 @@
 # Artefactos efimeros generados por devtools — NO versionar.
 
-# SAM template generado desde lambda.yaml (sam-generate).
-template.yaml
-
 # Artefacto de deploy: devtools lo arma con uv (deps + core/ + shared/).
 build/
-function.zip
+build.zip
+
+# Respuesta de `aws lambda invoke` (run contra un stage deployado).
+.invoke/
 
 # requirements.txt efimero (si alguna herramienta lo genera desde uv).
 requirements.txt
 requirements-dev.txt
 
-# Build de SAM (legacy / sam local).
-.aws-sam/
-
-# Libreria comun vendorizada por devtools (fuente: serverless/shared/).
+# Libreria comun vendorizada por devtools (fuente: serverless/lambda/shared/).
 core/shared/
 
 # Caches de Python / pytest.

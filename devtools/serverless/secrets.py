@@ -141,8 +141,7 @@ def cmd_verify_ses_dns(flags: dict[str, Any]) -> int:
     """dig CNAMEs DKIM + TXT SPF/DMARC contra Cloudflare DNS.
 
     El SES Domain Identity expone 3 CNAMEs DKIM en us-east-1. Esta
-    funcion los lee del template.yaml (o el output de sam deploy) y
-    verifica con dig que existen en Cloudflare.
+    funcion verifica con dig que existen en Cloudflare.
     """
     import shutil
 

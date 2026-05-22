@@ -34,10 +34,11 @@ import psycopg
 import yaml
 from shared.db.url import resolve_database_url
 
-# seeds/data/ — este archivo vive en <lambda>/core/services/seed_service.py,
-# asi que la raiz del Lambda es parents[2].
-_LAMBDA_ROOT = Path(__file__).resolve().parents[2]
-_DATA_DIR = _LAMBDA_ROOT / 'seeds' / 'data'
+# seeds/data/ vive dentro de core/ para que el packaging del deploy lo
+# incluya en el zip (packaging.py solo copia core/ al artefacto). Este
+# archivo esta en core/services/, asi que core/ es parents[1].
+_CORE_DIR = Path(__file__).resolve().parents[1]
+_DATA_DIR = _CORE_DIR / 'seeds' / 'data'
 
 # Los 5 niches del portfolio, en orden canonico de presentacion.
 _NICHES = ['fintech', 'architect', 'leader', 'vibe', 'generic']

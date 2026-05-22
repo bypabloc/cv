@@ -24,7 +24,7 @@ python devtools/run.py serverless run --stage=dev --lambda=db \
 ```
 
 El directorio se vendoriza dentro del zip de deploy del Lambda — por eso vive
-en el arbol del Lambda y no se referencia `packages/content/` (que no esta
+dentro de core/ y no se referencia `packages/content/` (que no esta
 disponible en el runtime de AWS).
 
 ## Origen

@@ -26,9 +26,6 @@ STAGE_DESCRIPTIONS = {
     'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
 }
 
-# Tablas DynamoDB administradas por el modulo.
-VALID_TABLES = ['contacts', 'tracking']
-
 # Tipos de test soportados por el comando `tests`.
 VALID_TEST_TYPES = ['unit', 'integration', 'coverage']
 
@@ -54,15 +51,6 @@ VALID_COMMANDS = [
     'rotate-secret',  # Rotar valor de un SSM Parameter
     'verify-ses-dns',  # dig DKIM/SPF/DMARC contra Cloudflare
     'request-ses-prod',  # Imprime plantilla del ticket SES production access
-    # Database (Neon PostgreSQL) — migraciones via la Lambda `db` (Alembic)
-    'db-shell',  # psql interactivo contra Neon (lee connection string de SSM)
-    'db-migrate',  # alembic upgrade via Lambda db (aplica migraciones)
-    'db-rollback',  # alembic downgrade via Lambda db (DESTRUCTIVO)
-    'db-current',  # alembic current via Lambda db (revision aplicada)
-    'db-show-migrations',  # alembic history via Lambda db
-    'db-seed',  # Carga data de prueba en Neon
-    'db-branch',  # Crea / lista / borra branches de Neon (neon CLI)
-    'db-tables',  # Lista tablas + row counts
     # Observability
     'metrics',  # CloudWatch metrics summary del stack
     'alarms',  # Lista alarmas y su estado
@@ -100,11 +88,7 @@ ALLOWED_FLAGS = [
     'name',  # --name=/portfolio/turnstile-secret
     'value',  # --value=... (preferir leer de stdin para no leak shell history)
     'key_id',  # --key-id=alias/portfolio-lambdas
-    # Database
-    'table',  # --table=contacts
-    'branch',  # --branch=dev-feature-X (Neon branching)
-    'parent',  # --parent=main (parent branch)
-    'target',  # --target=head|-1|base|<revision> (Alembic, via Lambda db)
+    # Cross-cutting
     'dry_run',  # No aplica, solo imprime acciones
     # Rate-limit management
     'endpoint',  # --endpoint=/contact (rate-limit set)
@@ -130,7 +114,6 @@ ALLOWED_FLAGS = [
 DESTRUCTIVE_COMMANDS = frozenset(
     {
         'clean',
-        'db-rollback',
         'rotate-secret',
     }
 )
@@ -153,7 +136,6 @@ JSON_OUTPUT_COMMANDS = frozenset(
     {
         'metrics',
         'alarms',
-        'db-tables',
     }
 )
 
@@ -175,14 +157,6 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
     'request-ses-prod': 'Plantilla del ticket de production access SES',
-    'db-shell': 'psql contra Neon (lee URL de SSM)',
-    'db-migrate': 'alembic upgrade via Lambda db (aplica migraciones)',
-    'db-rollback': 'alembic downgrade via Lambda db (DESTRUCTIVO)',
-    'db-current': 'Revision Alembic aplicada en la DB',
-    'db-show-migrations': 'Historial de migraciones Alembic',
-    'db-seed': 'Cargar data de prueba',
-    'db-branch': 'CRUD de branches Neon (create/list/delete)',
-    'db-tables': 'Listar tablas Neon + row counts',
     'metrics': 'Resumen CloudWatch metrics del stack',
     'alarms': 'Lista alarmas + estado',
     'rate-limit': 'Gestion de reglas rate-limit (list|set|allow|block|stats|...)',
@@ -231,14 +205,6 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'rotate-secret': ['stage', 'name', 'value', 'confirm'],
     'verify-ses-dns': [],
     'request-ses-prod': [],
-    'db-shell': ['stage', 'branch'],
-    'db-migrate': ['stage', 'target', 'dry_run'],
-    'db-rollback': ['stage', 'target', 'confirm', 'dry_run'],
-    'db-current': ['stage'],
-    'db-show-migrations': ['stage'],
-    'db-seed': ['stage', 'dry_run'],
-    'db-branch': ['parent', 'branch', 'subcommands'],
-    'db-tables': ['stage', 'output'],
     'metrics': ['stage', 'since', 'output'],
     'alarms': ['stage', 'output'],
     'rate-limit': [
@@ -274,7 +240,6 @@ _DEFAULTS: dict[str, Any] = {
     'coverage_threshold': 80,
     'dry_run': False,
     'output': 'text',
-    'parent': 'main',
 }
 
 

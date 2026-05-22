@@ -39,16 +39,6 @@ _GROUPS: dict[str, list[str]] = {
         'verify-ses-dns',
         'request-ses-prod',
     ],
-    'Database (Neon PG)': [
-        'db-shell',
-        'db-migrate',
-        'db-rollback',
-        'db-current',
-        'db-show-migrations',
-        'db-seed',
-        'db-branch',
-        'db-tables',
-    ],
     'Observability': ['metrics', 'alarms'],
     'Rate-limit (DynamoDB self-managed, alternativa $0 a WAF)': ['rate-limit'],
 }

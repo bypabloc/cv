@@ -155,13 +155,30 @@ class TestRunStage:
         assert result['stage'] == stage
 
 
-class TestDbCommandsStillPresent:
-    """Los comandos db-* siguen presentes hasta el commit 4."""
+class TestDbCommandsRemoved:
+    """Los comandos db-* se eliminaron: las ops de DB van via `run`."""
 
     @pytest.mark.parametrize(
-        'command', ['db-migrate', 'db-current', 'db-tables']
+        'command',
+        [
+            'db-shell',
+            'db-migrate',
+            'db-rollback',
+            'db-current',
+            'db-show-migrations',
+            'db-seed',
+            'db-branch',
+            'db-tables',
+        ],
     )
-    def test_db_command_is_valid(self, command):
+    def test_db_command_is_not_valid(self, command):
         from serverless.flags import VALID_COMMANDS
 
-        assert command in VALID_COMMANDS
+        assert command not in VALID_COMMANDS
+
+    def test_unknown_db_command_raises(self, monkeypatch):
+        _argv(monkeypatch, 'db-migrate')
+        from serverless.flags import flag
+
+        with pytest.raises(ValueError, match='Comando desconocido'):
+            flag({})

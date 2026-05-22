@@ -217,7 +217,7 @@ renderizan (no 404). Decisión final en `09-verificacion-e2e.md`.
 - `serverless/lambda/shared/db/alembic/versions/<rev>_add_cv_country_metrics.py`
   — migración Alembic nueva (Fase 2).
   - Verificar: `upgrade`/`downgrade` (`--sql` o branch Neon).
-- `docs/specs/cv-content-enrichment/11-metricas-estimadas.md` — anexo.
+- `docs/specs/b-cv-content-enrichment/11-metricas-estimadas.md` — anexo.
 
 ### Modificar (backend — Fase 2)
 
@@ -252,6 +252,6 @@ renderizan (no 404). Decisión final en `09-verificacion-e2e.md`.
 
 ### Eliminar
 
-- `docs/specs/cv-content-enrichment/` — último commit (Fase 6).
+- `docs/specs/b-cv-content-enrichment/` — último commit (Fase 6).
 
 [← README](README.md) · [Fase 1 →](02-fase-schema-zod.md)

@@ -73,7 +73,7 @@ el plan A corrigió datos rotos, este enriquece el contenido.
 - TDD: tests primero en las fases con lógica nueva (helpers, schema).
 - Español neutro en todo texto nuevo. Inglés con tono US.
 - Cada commit deja el repo verde. El último es la Fase 6 + el
-  `git rm -r docs/specs/cv-content-enrichment/`.
+  `git rm -r docs/specs/b-cv-content-enrichment/`.
 - Las 6 apps deben buildear; las páginas de detalle suman ~180 páginas
   estáticas (15 slugs × 2 locales × 6 apps).
 

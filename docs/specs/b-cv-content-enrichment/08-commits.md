@@ -9,7 +9,7 @@ deja el repo verde y ejecuta su verificación ANTES de commitear.
 
 ### Commit 1 — `docs(specs): plan de enriquecimiento de contenido del CV`
 
-- Agrega `docs/specs/cv-content-enrichment/` (README + 10 docs + anexo).
+- Agrega `docs/specs/b-cv-content-enrichment/` (README + 10 docs + anexo).
 - Verificación: lectura.
 
 ### Commit 2 — `feat(content): agrega country y metricsEstimated al schema`
@@ -79,7 +79,7 @@ deja el repo verde y ejecuta su verificación ANTES de commitear.
 
 - Fase 7 (sección 11): batería completa.
 - Anexo `11-metricas-estimadas.md` final, completo.
-- Incluye `git rm -r docs/specs/cv-content-enrichment/`.
+- Incluye `git rm -r docs/specs/b-cv-content-enrichment/`.
 - Cubre AC-14.
 - Verificación: ver `10-verificacion-e2e.md` — batería completa.
 

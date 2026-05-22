@@ -108,7 +108,7 @@ Si algo falla: diagnosticar, corregir, re-ejecutar la batería completa.
 ## Commit final
 
 ```bash
-git rm -r docs/specs/cv-content-enrichment/
+git rm -r docs/specs/b-cv-content-enrichment/
 git commit -m "test(cv-content): verificacion E2E del plan de enriquecimiento
 
 - ejecuta la bateria completa con el codigo final integrado

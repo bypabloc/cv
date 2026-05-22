@@ -1,0 +1,70 @@
+slug: destacame-credit-mexico
+name: Producto de créditos (México)
+summary:
+  es: Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México.
+  en: Fintech product offering tiered personal credit to users in Mexico.
+description:
+  es: >-
+    Producto desarrollado en Destacame para el mercado mexicano. Frontend Vue/Nuxt + microservicios
+    Django + integraciones con bureaus de crédito.
+  en: >-
+    Product built at Destacame for the Mexican market. Vue/Nuxt frontend + Django microservices +
+    credit-bureau integrations.
+status: active
+niches:
+  - fintech
+  - architect
+  - generic
+priority:
+  fintech: 95
+  architect: 85
+  generic: 65
+stack:
+  - Vue
+  - Nuxt
+  - TypeScript
+  - Django
+  - Python
+  - AWS
+  - Microservicios
+caseStudy:
+  es: >-
+    Problema: los usuarios mexicanos necesitaban créditos accesibles con onboarding rápido.
+    Solución: producto con niveles de crédito, scoring integrado y flujo de aprobación que minimiza
+    fricción. Impacto: contribución al portafolio fintech LATAM de Destacame en el mercado mexicano
+    (detalles bajo NDA).
+  en: >-
+    Problem: Mexican users needed accessible credit with fast onboarding. Solution: tiered-credit
+    product with embedded scoring and a low-friction approval flow. Impact: contribution to
+    Destacame LATAM fintech portfolio in the Mexican market (details under NDA).
+metrics:
+  market: México
+  product: Tiered credit + embedded scoring
+  architecture: Vue/Nuxt + Django + Bureau integrations
+caseStudyDetailed:
+  problem:
+    es: >-
+      Mercado mexicano requeria creditos personales accesibles con onboarding rapido. Restricciones
+      regulatorias locales + fricciones de KYC + integracion con bureaus de credito.
+    en: >-
+      Mexican market required accessible personal credit with fast onboarding. Local regulatory
+      constraints + KYC friction + credit bureau integrations.
+  process:
+    es: >-
+      Producto con tramos de credito + scoring embebido + flujo de aprobacion de baja friccion.
+      Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus mexicanos. Decisiones de
+      arquitectura documentadas para sucesores.
+    en: >-
+      Tiered-credit product + embedded scoring + low-friction approval flow. Vue/Nuxt frontend +
+      Django microservices + Mexican credit bureau integrations. Documented architecture decisions
+      for successors.
+  result:
+    es: >-
+      Contribucion clave al portafolio fintech LATAM de Destacame en el mercado mexicano.
+      Reutilizacion de patrones del producto Chile con adaptacion regulatoria local (metricas bajo
+      NDA).
+    en: >-
+      Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse
+      from the Chilean product with local regulatory adaptation (metrics under NDA).
+isConfidential: true
+projectType: fintech-platform

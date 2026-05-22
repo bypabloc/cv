@@ -1,0 +1,80 @@
+slug: corpoelec
+role:
+  es: Desarrollador Web
+  en: Web Developer
+company: CORPOELEC
+country: Venezuela
+start: 2013-01
+end: 2013-12
+niches:
+  - generic
+priority:
+  generic: 20
+metricsEstimated: true
+responsibilities:
+  es:
+    - >-
+      Implementación y mantenimiento de un sistema de inventario de equipos eléctricos usando PHP y
+      jQuery, con base de datos relacional para el registro de activos.
+    - >-
+      Desarrollo de funcionalidades CRUD para la administración de equipos y la asociación de
+      activos a personas y dependencias.
+    - >-
+      Diseño de la operación offline del sistema, de modo que funcionara en sedes con conectividad
+      limitada o intermitente.
+    - >-
+      Levantamiento de requerimientos con el personal operativo para entender el flujo real de
+      gestión de activos en campo.
+    - >-
+      Documentación de los procesos del sistema y elaboración de guías básicas para los usuarios
+      finales de cada sede.
+  en:
+    - >-
+      Implemented and maintained an electrical-equipment inventory system using PHP and jQuery,
+      backed by a relational database for asset tracking.
+    - >-
+      Built CRUD features to administer equipment and assign assets to people and departments.
+    - >-
+      Designed the system to operate offline so it could run at sites with limited or intermittent
+      connectivity.
+    - >-
+      Gathered requirements with operations staff to understand the real-world asset management
+      flow in the field.
+    - >-
+      Documented system processes and produced basic user guides for the end users at each site.
+achievements:
+  es:
+    - >-
+      Implementación exitosa del sistema en tres estados del país, operando de manera completamente
+      offline en sedes con conectividad limitada.
+    - >-
+      Reduje el tiempo de localización de un equipo de varios minutos de búsqueda manual en
+      registros en papel a una consulta inmediata en el sistema.
+    - >-
+      Centralicé el registro de activos de aproximadamente tres sedes en una base de datos común,
+      eliminando planillas dispersas y duplicadas.
+    - >-
+      Entregué el sistema dentro del año previsto, capacitando al personal de cada sede en su uso
+      cotidiano.
+  en:
+    - >-
+      Successfully deployed the system across three states of the country, running fully offline at
+      sites with limited connectivity.
+    - >-
+      Cut equipment lookup time from several minutes of manual searching in paper records to an
+      instant query in the system.
+    - >-
+      Centralized asset records from roughly three sites into a single shared database, removing
+      scattered and duplicated spreadsheets.
+    - >-
+      Delivered the system within the planned year and trained staff at each site on its daily use.
+skillsTechnical:
+  - Gestión de Inventarios
+  - PHP
+  - CRUD
+  - Sistema Offline
+  - Gestión de Activos
+skillsSoft:
+  - Resolución de Problemas
+  - Colaboración de Equipo
+seniority: intern

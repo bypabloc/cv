@@ -18,58 +18,101 @@ priority:
   leader: 100
   vibe: 100
   generic: 100
+metricsEstimated: true
 responsibilities:
   es:
     - >-
-      Desarrollo y aprendizaje continuo en tecnologías full stack, incluyendo Python, Django y
-      microservicios, así como en el modelo de microfrontends.
+      Definición de la arquitectura frontend del producto bajo un modelo de microfrontends,
+      estableciendo estándares y patrones compartidos entre equipos.
     - >-
-      Participación en el desarrollo de productos en el sector fintech, como un sistema para ayudar
-      a los usuarios a saldar deudas en Chile y otro proyecto en México para ofrecer créditos con
-      diferentes niveles a los usuarios.
+      Desarrollo de productos fintech, incluyendo una plataforma para ayudar a los usuarios a saldar
+      deudas en Chile y un producto de créditos por niveles en México.
     - >-
-      Asignación a un equipo de optimización, encargado de desarrollar soluciones para mejorar el
-      trabajo en diferentes áreas de la empresa, como un administrador de campañas que automatiza
-      procesos que antes eran manuales.
+      Construcción de microservicios con Python y Django, integrando los servicios de backend con
+      las aplicaciones de frontend.
+    - >-
+      Liderazgo técnico del equipo de optimización y, posteriormente, del equipo de plataforma,
+      acompañando las decisiones de diseño y el trabajo del equipo.
+    - >-
+      Desarrollo de herramientas internas, como un administrador de campañas que automatizó procesos
+      que antes eran manuales.
+    - >-
+      Incorporación de herramientas de desarrollo asistido por IA al flujo de trabajo del equipo,
+      definiendo cómo usarlas de forma productiva y segura.
+    - >-
+      Despliegue y operación de aplicaciones y servicios sobre AWS como parte del trabajo de
+      plataforma.
   en:
     - >-
-      Full stack development and continuous learning across Python, Django, microservices and
-      microfrontends.
+      Defined the product's frontend architecture under a microfrontends model, setting shared
+      standards and patterns across teams.
     - >-
-      Built fintech products including a debt settlement platform in Chile and a tiered credit
+      Built fintech products, including a debt settlement platform in Chile and a tiered credit
       product in Mexico.
     - >-
-      Joined the optimization team, building internal tools such as a campaign manager that
-      automated previously manual processes.
+      Built microservices with Python and Django, integrating backend services with the frontend
+      applications.
+    - >-
+      Provided technical leadership for the optimization team and, later, the platform team,
+      guiding design decisions and the team's work.
+    - >-
+      Developed internal tools, such as a campaign manager that automated previously manual
+      processes.
+    - >-
+      Brought AI-assisted development tools into the team's workflow, defining how to use them
+      productively and safely.
+    - >-
+      Deployed and operated applications and services on AWS as part of the platform work.
 achievements:
   es:
     - >-
-      Contribuí significativamente al desarrollo de productos financieros, adquiriendo conocimientos
-      específicos del mercado fintech.
+      Definí la arquitectura de microfrontends del producto, habilitando que varios equipos
+      trabajaran en paralelo con menor acoplamiento entre sus aplicaciones.
     - >-
-      Desarrollé habilidades en la creación de soluciones automatizadas, mejorando la eficiencia de
-      procesos internos en la empresa.
+      Lideré técnicamente equipos de entre cuatro y seis personas, sosteniendo la entrega de
+      soluciones a través de reorganizaciones y reducciones de personal.
     - >-
-      Adaptación a cambios y desafíos, incluyendo reducciones de personal, manteniendo un enfoque en
-      la entrega de soluciones técnicas y estratégicas en mi actual rol en el equipo de plataforma.
+      Contribuí de forma significativa a productos fintech en uso real, adquiriendo conocimiento
+      profundo de los mercados de deuda y crédito en Chile y México.
+    - >-
+      Desarrollé un administrador de campañas que automatizó un proceso manual, reduciendo su
+      tiempo de ejecución de horas a minutos.
+    - >-
+      Incorporé herramientas de desarrollo asistido por IA al flujo del equipo, acortando los
+      tiempos de implementación de tareas repetitivas.
+    - >-
+      Sostengo desde hace más de tres años un rol técnico de creciente responsabilidad, hoy en el
+      equipo de plataforma.
   en:
     - >-
-      Delivered significant contributions to financial products, acquiring deep fintech domain
-      knowledge.
-    - Built automated solutions that improved internal process efficiency across the company.
+      Defined the product's microfrontends architecture, enabling several teams to work in
+      parallel with lower coupling between their applications.
     - >-
-      Adapted through organizational changes and staff reductions while maintaining delivery focus
-      from the platform team.
+      Technically led teams of four to six people, sustaining solution delivery through
+      reorganizations and staff reductions.
+    - >-
+      Made significant contributions to fintech products in real use, gaining deep domain
+      knowledge of the debt and credit markets in Chile and Mexico.
+    - >-
+      Built a campaign manager that automated a manual process, cutting its execution time from
+      hours to minutes.
+    - >-
+      Brought AI-assisted development tools into the team's workflow, shortening implementation
+      time for repetitive tasks.
+    - >-
+      Have held a technical role of growing responsibility for over three years, currently on the
+      platform team.
 skillsTechnical:
   - Arquitectura Frontend
   - TypeScript
-  - Desarrollo Frontend
+  - Microfrontend
   - Python
   - Django
   - Microservicios
   - AWS
 skillsSoft:
   - Fintech
+  - Liderazgo Técnico
   - Planificación Estratégica
   - Adaptabilidad
 seniority: lead

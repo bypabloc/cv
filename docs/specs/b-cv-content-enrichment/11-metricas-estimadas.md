@@ -28,9 +28,39 @@ que sobreviva al borrado de la carpeta del plan.
 
 ## Tabla — Experiencias (Fase 3)
 
-| Experiencia | Cifra generada | Texto del logro | Justificación | ¿Validada? |
-|-------------|----------------|-----------------|---------------|------------|
-| _(a completar en Fase 3)_ | | | | ☐ |
+Las 9 experiencias llevan `metricsEstimated: true`. 18 cifras/rangos. De
+ellas: 5 son derivaciones exactas de las fechas `start`/`end` del YAML
+(no son invento), 3 reexpresan cifras del texto original, ~10 son rangos
+cualitativos conservadores ("de X a Y", tamaños de equipo). Cero
+porcentajes agresivos.
+
+| Experiencia | Cifra generada | Justificación | ¿Validada? |
+|-------------|----------------|---------------|------------|
+| corpoelec | "tres estados / tres sedes" | El YAML ya decía "tres estados del país" | ☐ |
+| corpoelec | "varios minutos → consulta inmediata" | Rango cualitativo: papel → query | ☐ |
+| ipasme | "varios minutos → consulta inmediata" | Digitalizar fichas físicas → registro consultable | ☐ |
+| iai | "~tres personas" (equipo) | Equipo de tesis típico 2-4 personas | ☐ |
+| iai | "jornadas manuales → reportes generados" | Reportes automáticos vs consolidación manual | ☐ |
+| projects-degrees | "~una semana vs varios meses" | El YAML original ya lo decía | ☐ |
+| projects-degrees | "~seis estudiantes" | 2 equipos × ~3 integrantes | ☐ |
+| projects-degrees | "de meses a días" | Reexpresión del dato original | ☐ |
+| cofasa | "casi dos años" | Fechas: 2017-01 → 2018-11 = ~23 meses | ☐ |
+| cofasa | "varias horas → consulta directa" | Reportes de productividad: manual → sistema | ☐ |
+| dibal | "1 dev → ~4-6 personas" | "Primer dev contratado" es dato; 4-6 es rango startup | ☐ |
+| dibal | "casi tres años" | Fechas: 2018-12 → 2021-09 = ~34 meses | ☐ |
+| dibal | "jornadas manuales → pocas horas" (deploy) | AWS ya en el YAML; automatizar deploy | ☐ |
+| goodmeal | "iteración a iteración" (Scrum) | Mejora cualitativa de proceso, sin número | ☐ |
+| destacame-frontend | "~ocho meses" | Fechas: 2021-12 → 2022-08 = ~8 meses | ☐ |
+| destacame-architect | "~4-6 personas" (equipo) | Rango para equipos de plataforma; seniority lead | ☐ |
+| destacame-architect | "más de tres años" | Fechas: 2022-08 → presente = ~3 años 9 meses | ☐ |
+| destacame-architect | "de horas a minutos" (admin campañas) | El YAML ya describía la automatización | ☐ |
+
+**Adiciones interpretativas a revisar** (el agente las señaló):
+- `goodmeal` se enmarcó con ángulo fintech ("flujo de pagos") porque
+  procesa pagos y declara el nicho `fintech` — no es un producto fintech
+  inventado, es redacción para cubrir el nicho.
+- `destacame-architect` se enmarcó con ángulo IA/dev tools porque declara
+  el nicho `vibe` — adición interpretativa, sin inventar un proyecto.
 
 ## Tabla — Proyectos (Fase 4)
 

@@ -85,11 +85,11 @@ describe('buildStats', () => {
     expect(result.countries).toBe(4)
   })
 
-  it('Given profile sin stats When buildStats Then companies refleja experiences unicas (5: Destacame, Dibal, GoodMeal, Independiente/Academico, Laboratorio Cofasa)', () => {
+  it('Given profile sin stats When buildStats Then companies refleja experiences unicas (8: CORPOELEC, IPASME, Destacame, Dibal, GoodMeal, Cofasa, Proyecto academico, Asesoria de proyectos de grado)', () => {
     const profileWithoutStats: Profile = { ...baseProfile, stats: undefined }
     const result = buildStats(profileWithoutStats)
-    // experiences.ts tiene 9 roles agrupados en 5 companias unicas
-    expect(result.companies).toBe(5)
+    // experiences.ts tiene 9 roles agrupados en 8 companias unicas
+    expect(result.companies).toBe(8)
   })
 
   it('Given profile sin stats When buildStats Then certifications coincide con array certificates', () => {
@@ -164,9 +164,9 @@ describe('countCompanies', () => {
 })
 
 describe('profile real: consistencia de stats con la data', () => {
-  it('Given el profile real When se lee stats.companies Then vale 5 (empresas distintas en experiences)', () => {
-    // Las 9 experiencias agrupan 5 nombres de empresa distintos.
-    expect(profile.stats?.companies).toBe(5)
+  it('Given el profile real When se lee stats.companies Then vale 8 (empresas distintas en experiences)', () => {
+    // Las 9 experiencias agrupan 8 nombres de empresa distintos.
+    expect(profile.stats?.companies).toBe(8)
     expect(profile.stats?.companies).toBe(countCompanies(experiences))
   })
 

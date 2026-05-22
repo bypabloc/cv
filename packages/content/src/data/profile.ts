@@ -32,9 +32,10 @@ export const profile: Profile = ProfileSchema.parse({
   niches: ['fintech', 'architect', 'leader', 'vibe', 'generic'],
   stats: {
     yearsExperience: 12,
-    // 5 empresas distintas en experiences/: Destacame, Dibal, GoodMeal,
-    //   Laboratorio Cofasa S.A. e "Independiente / Académico".
-    companies: 5,
+    // 8 empresas/instituciones distintas en experiences/: CORPOELEC,
+    //   IPASME, Destacame, Dibal, GoodMeal, Laboratorio Cofasa S.A.,
+    //   "Proyecto académico" y "Asesoría de proyectos de grado".
+    companies: 8,
     // 4 países: Venezuela (primeras experiencias), Perú (Dibal),
     //   Chile y México (Destacame, ambas sucursales).
     countries: 4,

@@ -17,11 +17,11 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
+from shared.console import _err
+
 from serverless.help import cmd_help
-from serverless.infra_deploy import cmd_deploy_infra
-from serverless.infra_deploy import cmd_deploy_resource
-from serverless.infra_deploy import cmd_destroy_resource
-from serverless.infra_deploy import cmd_list_resources
+from serverless.infra_provision import cmd_list_resources
+from serverless.infra_provision import cmd_provision_infra
 from serverless.lambda_controller import cmd_deploy_lambda
 from serverless.lambda_controller import cmd_run
 from serverless.lambda_controller import cmd_sam_generate
@@ -39,7 +39,6 @@ from serverless.secrets import cmd_request_ses_prod
 from serverless.secrets import cmd_rotate_secret
 from serverless.secrets import cmd_setup_ssm
 from serverless.secrets import cmd_verify_ses_dns
-from shared.console import _err
 
 
 COMMAND_REGISTRY: dict[str, Any] = {
@@ -57,10 +56,12 @@ COMMAND_REGISTRY: dict[str, Any] = {
     'sam-generate': cmd_sam_generate,
     'run': cmd_run,
     'deploy': cmd_deploy_lambda,
-    # Infra: recursos compartidos como stacks autonomos (un stack por recurso)
-    'deploy-infra': cmd_deploy_infra,
-    'deploy-resource': cmd_deploy_resource,
-    'destroy-resource': cmd_destroy_resource,
+    # Infra: recursos compartidos provisionados con AWS CLI directo.
+    # Toque minimo de la Fase 3: `deploy-infra` (en VALID_COMMANDS de
+    # flags.py) apunta al provisioner nuevo; `provision-infra` queda como
+    # alias para cuando la Fase 5 lo agregue a flags.py.
+    'deploy-infra': cmd_provision_infra,
+    'provision-infra': cmd_provision_infra,
     'list-resources': cmd_list_resources,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,

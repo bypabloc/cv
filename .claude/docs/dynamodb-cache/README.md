@@ -17,7 +17,7 @@ behavior (48h eventual delete), Momento 2026 pricing.
 | Cache stampede problem + lock distribuido + XFetch | [03-stampede-prevention-lock.md](./03-stampede-prevention-lock.md) | Implementar `@cached` decorator sin thundering herd |
 | Stale-while-revalidate pattern (SWR) | [04-stale-while-revalidate.md](./04-stale-while-revalidate.md) | Para queries Neon que toleran staleness |
 | Tag-based invalidation + soft delete | [05-tag-invalidation.md](./05-tag-invalidation.md) | Cachear con categoria + invalidar por dominio |
-| Python implementation COMPLETA (copy-paste ready) | [06-python-implementation.md](./06-python-implementation.md) | Copiar modulos a `serverless/src/common/cache/` |
+| Python implementation COMPLETA (copy-paste ready) | [06-python-implementation.md](./06-python-implementation.md) | Copiar modulos a `serverless/lambda/shared/cache/` |
 | AWS Powertools Idempotency vs este cache | [07-powertools-idempotency-vs-cache.md](./07-powertools-idempotency-vs-cache.md) | Usar ambos juntos en handlers criticos |
 
 ## Reglas criticas
@@ -50,7 +50,7 @@ behavior (48h eventual delete), Momento 2026 pricing.
 ## Navegacion rapida
 
 - **Empezar aqui**: Lee 01 (decision arquitectonica) + 02 (schema)
-- **Implementar cache basico**: Lee 06 (Python), copia a `serverless/src/common/cache/`
+- **Implementar cache basico**: Lee 06 (Python), copia a `serverless/lambda/shared/cache/`
 - **Problema: multiples Lambdas lanzan el mismo recompute**: Lee 03 (lock distribuido)
 - **Problema: query cara que puede esperar 30min**: Lee 04 (SWR)
 - **Problema: invalidar multiples keys con un comando**: Lee 05 (tag invalidation)
@@ -61,7 +61,7 @@ behavior (48h eventual delete), Momento 2026 pricing.
 ```bash
 # 1. Leer 06-python-implementation.md
 # 2. Crear dir
-mkdir -p serverless/src/common/cache
+mkdir -p serverless/lambda/shared/cache
 
 # 3. Copiar los 5 modulos
 # cache/__init__.py, cache/client.py, cache/decorator.py, cache/swr.py, cache/serializers.py

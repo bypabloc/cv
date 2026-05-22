@@ -39,9 +39,9 @@ environment:
 ## El template.yaml es efimero
 
 devtools **genera** `template.yaml` desde `lambda.yaml` antes de cada
-`run-local` / `deploy`. El `template.yaml` esta en `.gitignore` — NUNCA
-se commitea ni se edita a mano. Esto elimina el drift: el dev cambia
-solo el `lambda.yaml`.
+`run` / `deploy`. El `template.yaml` esta en `.gitignore` — NUNCA se
+commitea ni se edita a mano. Esto elimina el drift: el dev cambia solo
+el `lambda.yaml`.
 
 ```text
 lambda.yaml  --(devtools sam-generate)-->  template.yaml  --(sam)-->  AWS
@@ -56,24 +56,36 @@ python devtools/run.py serverless sam-generate --lambda=<nombre> --stage=dev
 
 ## Comandos
 
-Todos los comandos de lambda-controller requieren apuntar al lambda.
-La forma recomendada es `--lambda=<nombre>`: el nombre corto se resuelve
-contra `serverless/src/<nombre>/` y devtools valida que la carpeta cumpla
-la estructura lambda-controller (que exista y traiga `lambda.yaml`); si
-no, lanza un error listando los lambdas validos. Como alternativa,
+Los comandos de lambda-controller apuntan al lambda con `--lambda=<nombre>`
+(forma recomendada): el nombre corto se resuelve contra
+`serverless/lambda/services/<nombre>/` y devtools valida que la carpeta
+cumpla la estructura lambda-controller (que exista y traiga `lambda.yaml`);
+si no, lanza un error listando los lambdas validos. Como alternativa,
 `--path=<dir>` apunta a un directorio explicito en cualquier ubicacion
 (`--module` es alias de `--path`).
 
-### Ejecutar en local
+El CLI unifico la operacion en dos verbos: `run` (ejecutar el lambda, en
+local o contra un stage deployado) y `tests` (correr la suite). Los viejos
+`run-local` / `invoke-remote` / `test-unit` / `test-integration` ya NO
+existen.
+
+### Ejecutar el lambda: `run`
 
 ```bash
-python devtools/run.py serverless run-local \
-  --lambda=<nombre> --event=events/create.json
+# --stage=local -> regenera el SAM y corre `sam local invoke`
+python devtools/run.py serverless run \
+  --stage=local --lambda=<nombre> --event=events/create.json
+
+# --stage=dev|stage|prod -> `aws lambda invoke` contra el ya deployado
+python devtools/run.py serverless run \
+  --stage=dev --lambda=<nombre> --event=events/create.json --aws-profile=<perfil>
 ```
 
-Regenera el SAM y corre `sam local invoke` con el event JSON indicado.
-Requiere AWS SAM CLI instalado. El `--event` es relativo a la raiz del
-lambda.
+`run` SIEMPRE necesita `--stage` y `--lambda` (o `--path`). El `--stage`
+decide el modo: `local` usa `sam local invoke` (requiere AWS SAM CLI);
+`dev`/`stage`/`prod` usan `aws lambda invoke` contra la funcion ya
+desplegada (requiere AWS CLI + credenciales). El `--event` es relativo a
+la raiz del lambda.
 
 ### Deployar a un entorno
 
@@ -87,73 +99,52 @@ Regenera el SAM para ese stage (selecciona su bloque de env vars), corre
 `sam build --use-container` y `sam deploy`. El stack se llama
 `<name>-<stage>`. `--dry-run` imprime las acciones sin ejecutar.
 
-### Invocar el Lambda ya deployado
-
-```bash
-python devtools/run.py serverless invoke-remote \
-  --lambda=<nombre> --stage=dev --event=events/create.json --aws-profile=<perfil>
-```
-
-Invoca via `aws lambda invoke` la funcion `<name>-<stage>` ya desplegada
-e imprime el payload de respuesta. Requiere AWS CLI + credenciales.
-
 ### Flag `--aws-profile` (perfil AWS CLI)
 
-`deploy` e `invoke-remote` ejecutan `aws`/`sam` por debajo. Sin
-`--aws-profile`, usan el perfil del shell (`AWS_PROFILE` o `[default]`),
-que puede apuntar a OTRA cuenta AWS o tener el token SSO expirado —
-sintoma: `Error when retrieving token from sso` aunque hayas hecho
-`aws sso login`. Pasar SIEMPRE `--aws-profile=<perfil>` para fijar el
-perfil correcto en los comandos `aws`/`sam`. Alternativa:
-`export AWS_PROFILE=<perfil>` en la sesion de trabajo. El nombre del
-perfil es especifico del backend (en el portfolio: `tfs-dev`).
+`deploy` y `run` contra un stage deployado ejecutan `aws`/`sam` por
+debajo. Sin `--aws-profile`, usan el perfil del shell (`AWS_PROFILE` o
+`[default]`), que puede apuntar a OTRA cuenta AWS o tener el token SSO
+expirado — sintoma: `Error when retrieving token from sso` aunque hayas
+hecho `aws sso login`. Pasar SIEMPRE `--aws-profile=<perfil>` para fijar
+el perfil correcto. Alternativa: `export AWS_PROFILE=<perfil>` en la
+sesion de trabajo. El nombre del perfil es especifico del backend (en el
+portfolio: `tfs-dev`).
 
-### Tests
+### Tests: `tests --type`
 
 ```bash
-python devtools/run.py serverless test-unit --lambda=<nombre>
-python devtools/run.py serverless test-integration --lambda=<nombre>
+python devtools/run.py serverless tests --type=unit --lambda=<nombre>
+python devtools/run.py serverless tests --type=integration --lambda=<nombre>
+python devtools/run.py serverless tests --type=coverage --lambda=<nombre>
 ```
 
-`test-unit` corre `pytest tests/unit` y `test-integration` corre
-`pytest tests/integration`, ambos con cwd en la raiz del lambda. Sin
-`--lambda` ni `--path`, estos comandos operan sobre el backend SAM del
-portfolio (modo legacy).
+`tests` SIEMPRE necesita `--type` (`unit` | `integration` | `coverage`).
+`--type=unit` corre `pytest tests/unit`, `--type=integration` corre
+`pytest tests/integration` y `--type=coverage` agrega el reporte de
+cobertura; todos con cwd en la raiz del lambda. Sin target
+(`--lambda`/`--path`/`--shared`), `tests` corre la suite completa: los 4
+lambdas + la libreria comun. Con `--shared` corre solo la suite de
+`serverless/lambda/shared/`.
 
 ## Ciclo de trabajo tipico
 
 ```bash
 # 1. Desarrollar + tests
-python devtools/run.py serverless test-unit --lambda=<nombre>
+python devtools/run.py serverless tests --type=unit --lambda=<nombre>
 
 # 2. Probar en local
-python devtools/run.py serverless run-local \
-  --lambda=<nombre> --event=events/create.json
+python devtools/run.py serverless run \
+  --stage=local --lambda=<nombre> --event=events/create.json
 
 # 3. Deployar a dev y verificar
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev
-python devtools/run.py serverless invoke-remote \
-  --lambda=<nombre> --stage=dev --event=events/create.json
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev --aws-profile=tfs-dev
+python devtools/run.py serverless run \
+  --stage=dev --lambda=<nombre> --event=events/create.json --aws-profile=tfs-dev
 
 # 4. Promover a stage y prod
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-profile=tfs-dev
+python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=tfs-dev
 ```
-
-## Modo legacy vs lambda-controller
-
-El script `serverless` opera en dos modos segun la presencia de
-`--lambda` (o `--path`):
-
-| Sin `--lambda` ni `--path` | Con `--lambda=<nombre>` (o `--path=<dir>`) |
-|----------------------------|--------------------------------------------|
-| Backend SAM del portfolio (`serverless/`) | lambda-controller resuelto |
-| `template.yaml` escrito a mano | `template.yaml` generado de `lambda.yaml` |
-| 3 funciones fijas | cualquier lambda con `lambda.yaml` |
-
-Los comandos `sam-generate`, `run-local`, `invoke-remote` SOLO existen
-en modo lambda-controller (exigen `--lambda` o `--path`). `deploy`,
-`test-unit`, `test-integration` funcionan en ambos modos.
 
 ---
 

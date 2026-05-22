@@ -173,20 +173,19 @@ el `template.yaml` SAM, que es efimero (`.gitignore`).
 # Generar el SAM template desde lambda.yaml
 python devtools/run.py serverless sam-generate --path=<dir> --stage=dev
 
-# Ejecutar en local (sam local invoke)
-python devtools/run.py serverless run-local \
-  --path=<dir> --event=events/create.json
+# Ejecutar el Lambda: --stage=local -> sam local invoke;
+#   --stage=dev|stage|prod -> aws lambda invoke contra el ya deployado.
+python devtools/run.py serverless run \
+  --stage=local --path=<dir> --event=events/create.json
+python devtools/run.py serverless run \
+  --stage=dev --path=<dir> --event=events/create.json
 
 # Deployar a un entorno
 python devtools/run.py serverless deploy --path=<dir> --stage=dev
 
-# Invocar el Lambda ya deployado
-python devtools/run.py serverless invoke-remote \
-  --path=<dir> --stage=dev --event=events/create.json
-
-# Tests
-python devtools/run.py serverless test-unit --path=<dir>
-python devtools/run.py serverless test-integration --path=<dir>
+# Tests: un solo comando, --type=unit|integration|coverage
+python devtools/run.py serverless tests --type=unit --path=<dir>
+python devtools/run.py serverless tests --type=integration --path=<dir>
 ```
 
 Detalle: `.claude/docs/lambda-controller/06-devtools-operations.md`.

@@ -1,13 +1,13 @@
 ---
 title: Implementacion Python - Modulos copy-paste
-description: Codigo completo para serverless/src/common/rate_limit/ - 6 modulos listos.
+description: Codigo completo para serverless/lambda/shared/rate_limit/ - 6 modulos listos.
 status: stable
 last-reviewed: 2026-05-14
 ---
 
 # 04. Implementacion Python - Codigo listo
 
-> 6 modulos Python 3.13 listos para copy-paste a `serverless/src/common/rate_limit/`.
+> 6 modulos Python 3.13 listos para copy-paste a `serverless/lambda/shared/rate_limit/`.
 > Incluye type hints obligatorios, docstrings BDD-style, pytest tests.
 
 [← Schema](./03-schema-design.md) | [README](./README.md) | [Siguiente: Auto-blacklist →](./05-auto-blacklist-bot-detection.md)
@@ -15,7 +15,7 @@ last-reviewed: 2026-05-14
 ## Estructura de modulos
 
 ```
-serverless/src/common/rate_limit/
+serverless/lambda/shared/rate_limit/
 ├── __init__.py              # exports
 ├── client.py                # DynamoDBClient
 ├── check.py                 # check_or_raise (API principal)
@@ -556,7 +556,7 @@ def handler(event, context):
 **Instalacion**:
 ```bash
 # Copy-paste los 6 archivos
-cp -r docs/serverless-rate-limit/code/* serverless/src/common/rate_limit/
+cp -r docs/serverless-rate-limit/code/* serverless/lambda/shared/rate_limit/
 
 # Instalar boto3 (ya incluido en Lambda runtime)
 pip install boto3>=1.28

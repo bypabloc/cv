@@ -1,6 +1,6 @@
 # 06. Python Implementation (copy-paste ready)
 
-> Modulos Python listos para copiar a `serverless/src/common/cache/`.
+> Modulos Python listos para copiar a `serverless/lambda/shared/cache/`.
 > Tipado, docstrings BDD-style, testeado con moto.
 
 **Verificado**: 2026-05-14 — Codigo Python 3.13 compatible, type hints obligatorios.
@@ -8,7 +8,7 @@
 ## Estructura
 
 ```
-serverless/src/common/cache/
+serverless/lambda/shared/cache/
 ├── __init__.py           # Exports publicos
 ├── client.py             # DynamoDBCache class
 ├── decorator.py          # @cached decorator
@@ -704,7 +704,7 @@ def test_cache_invalidate_by_tag():
 
 ## Deployment checklist
 
-- [ ] Copiar los 6 modulos a `serverless/src/common/cache/`
+- [ ] Copiar los 6 modulos a `serverless/lambda/shared/cache/`
 - [ ] Crear tabla DynamoDB via SAM/CloudFormation
 - [ ] Verificar tabla tiene TTL enabled en `expires_at`
 - [ ] IAM policy: Lambda tiene `dynamodb:GetItem, PutItem, UpdateItem, DeleteItem` en tabla

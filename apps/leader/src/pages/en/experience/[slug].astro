@@ -1,0 +1,26 @@
+---
+import ExperienceDetail from '@portfolio/app-shared/components/ExperienceDetail.astro'
+import { experiences } from '@portfolio/content'
+import PageLayout from '../../../layouts/PageLayout.astro'
+import { NICHE, STRINGS } from '../../../lib/site-config'
+
+export function getStaticPaths() {
+  return experiences.map((experience) => ({
+    params: { slug: experience.slug },
+    props: { experience },
+  }))
+}
+
+const { experience } = Astro.props
+const t = STRINGS.en
+---
+
+<PageLayout
+  title={`${experience.role.en} — ${experience.company} — ${t.meta.title}`}
+  description={`${experience.role.en} at ${experience.company}, ${experience.country}.`}
+  canonicalPath={`/en/experience/${experience.slug}`}
+  locale="en"
+  otherLocalePath={`/experience/${experience.slug}`}
+>
+  <ExperienceDetail experience={experience} locale="en" strings={t} />
+</PageLayout>

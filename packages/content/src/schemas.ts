@@ -478,6 +478,7 @@ export const ElementsStringsSchema = z.object({
     home: z.string().min(1),
     downloadCv: z.string().min(1),
     viewAllExperience: z.string().min(1),
+    viewDetail: z.string().min(1),
     confidential: z.string().min(1),
     technicalSkills: z.string().min(1),
     softSkills: z.string().min(1),

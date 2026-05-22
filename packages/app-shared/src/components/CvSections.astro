@@ -63,6 +63,8 @@ const {
   cvHref = '/cv.html',
   enableFilters = false,
 } = Astro.props
+// Prefijo de ruta segun locale: el ingles vive bajo /en.
+const localePrefix = locale === 'en' ? '/en' : ''
 const exps = sortByPriority(filterByNiche(experiences, niche), niche)
 const projs = sortByPriority(filterByNiche(projects, niche), niche)
 const sks = filterByNiche(skills, niche)
@@ -251,6 +253,8 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           dataSeniority={e.seniority}
           dataStart={e.start}
           dataEnd={e.end ?? ''}
+          detailHref={`${localePrefix}/experience/${e.slug}`}
+          detailLabel={t.labels.viewDetail}
         >
           {isDetailedCv(niche) && (
             <p class="exp-bullets__heading text-label">
@@ -314,6 +318,8 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           caseStudyLabel={t.labels.confidential}
           filterable={enableFilters}
           dataProjectType={p.projectType}
+          detailHref={`${localePrefix}/projects/${p.slug}`}
+          detailLabel={t.labels.viewDetail}
         />
       ))
     }

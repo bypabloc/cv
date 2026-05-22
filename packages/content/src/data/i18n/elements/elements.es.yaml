@@ -60,6 +60,7 @@ labels:
   home: "Inicio"
   downloadCv: "Descargar CV"
   viewAllExperience: "Ver toda la experiencia"
+  viewDetail: "Ver detalle"
   confidential: "Bajo NDA — métricas detalladas en privado"
   technicalSkills: "Técnicas"
   softSkills: "Blandas"

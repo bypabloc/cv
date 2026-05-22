@@ -60,6 +60,7 @@ labels:
   home: "Home"
   downloadCv: "Download CV"
   viewAllExperience: "View full experience"
+  viewDetail: "View detail"
   confidential: "Under NDA — detailed metrics on request"
   technicalSkills: "Technical"
   softSkills: "Soft"

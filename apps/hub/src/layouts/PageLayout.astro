@@ -1,0 +1,35 @@
+---
+/**
+ * @layout PageLayout (hub)
+ * @description Wrapper de SitePageLayout con la config del sitio hub.
+ *   Lo usan las paginas de detalle /experience/<slug> y /projects/<slug>.
+ */
+import SitePageLayout from '@portfolio/app-shared/layouts/SitePageLayout.astro'
+import { NICHE, OG_IMAGE, SITE_URL, STRINGS } from '../lib/site-config'
+
+interface Props {
+  title: string
+  description: string
+  canonicalPath: string
+  locale: 'es' | 'en'
+  otherLocalePath: string
+}
+
+const { title, description, canonicalPath, locale, otherLocalePath } =
+  Astro.props
+const t = STRINGS[locale]
+---
+
+<SitePageLayout
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  otherLocalePath={otherLocalePath}
+  locale={locale}
+  siteUrl={SITE_URL}
+  niche={NICHE}
+  strings={t}
+  ogImage={OG_IMAGE}
+>
+  <slot />
+</SitePageLayout>

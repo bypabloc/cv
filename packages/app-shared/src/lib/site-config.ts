@@ -62,6 +62,7 @@ export interface I18nStrings {
     home: string
     downloadCv: string
     viewAllExperience: string
+    viewDetail: string
     confidential: string
     technicalSkills: string
     softSkills: string
@@ -198,6 +199,7 @@ export function buildStrings(
         home: el.labels.home,
         downloadCv: el.labels.downloadCv,
         viewAllExperience: el.labels.viewAllExperience,
+        viewDetail: el.labels.viewDetail,
         confidential: el.labels.confidential,
         technicalSkills: el.labels.technicalSkills,
         softSkills: el.labels.softSkills,

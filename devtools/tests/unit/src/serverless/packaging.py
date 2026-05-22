@@ -250,3 +250,44 @@ class TestPackagedLambdaContextManager:
                 raise ValueError('boom')
 
         assert not build_dir(lambda_root).exists()
+
+
+class TestZipBuildDir:
+    """zip_build_dir comprime build/ en build.zip para el deploy AWS."""
+
+    def test_zip_build_dir_creates_build_zip(self, tmp_path):
+        from serverless.packaging import build_zip_path
+        from serverless.packaging import zip_build_dir
+
+        build = tmp_path / 'build'
+        build.mkdir()
+        (build / 'handler.py').write_text('x = 1', encoding='utf-8')
+
+        result = zip_build_dir(tmp_path)
+
+        assert result == build_zip_path(tmp_path)
+        assert result.is_file()
+        assert result.name == 'build.zip'
+
+    def test_zip_build_dir_when_no_build_raises(self, tmp_path):
+        from serverless.packaging import PackagingError
+        from serverless.packaging import zip_build_dir
+
+        with pytest.raises(PackagingError, match='build/'):
+            zip_build_dir(tmp_path)
+
+    def test_zip_build_dir_overwrites_existing_zip(self, tmp_path):
+        from serverless.packaging import build_zip_path
+        from serverless.packaging import zip_build_dir
+
+        build = tmp_path / 'build'
+        build.mkdir()
+        (build / 'handler.py').write_text('v1', encoding='utf-8')
+        stale = build_zip_path(tmp_path)
+        stale.write_text('stale', encoding='utf-8')
+
+        result = zip_build_dir(tmp_path)
+
+        assert result.is_file()
+        # El zip nuevo reemplaza al stale: ya no es el texto plano.
+        assert result.read_bytes()[:2] == b'PK'

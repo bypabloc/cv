@@ -21,12 +21,16 @@ REST proxy (`{body, headers, requestContext, ...}`). El handler:
      (el controller necesita esos datos para el rate-limit + enrichment;
      viajan dentro de `data` para que el modelo Pydantic los valide en un
      solo objeto, sin un segundo canal paralelo).
-  4. valida el evento via `validate_event` y ejecuta el controller.
+  4. valida el evento y ejecuta el controller via
+     `shared.lambda_kit.run_controller`.
 
 La RESPUESTA es HTTP 204 No Content en exito (`no_content_response`) y
 `error_response` en error — comportamiento IDENTICO al handler original.
 El CORS usa `public_cors_origin()` (`'*'`), NO el echo: /track lo invoca
 `navigator.sendBeacon` (modo `ping`), que exige `Allow-Origin: '*'`.
+
+El nucleo `validate_event -> resolver controller -> run()` lo provee
+`shared.lambda_kit.run_controller`.
 
 El Handler de la funcion AWS es `core.handler.lambda_handler`.
 """
@@ -38,7 +42,7 @@ import os
 import sys
 
 # El handler vive dentro de core/. Agregamos core/ al sys.path para que
-# los imports absolutos (models., services., settings., utils., shared.)
+# los imports absolutos (models., services., settings., shared.)
 # resuelvan en AWS y en invoke local. shared/ se vendoriza en core/shared/.
 _CORE_DIR = os.path.dirname(os.path.abspath(__file__))
 if _CORE_DIR not in sys.path:
@@ -48,17 +52,19 @@ from typing import Any
 
 from aws_lambda_powertools.metrics import MetricUnit
 from settings.operations import OPERATIONS
-from utils.validation.event import validate_event
-
 from shared.core.exceptions import ApplicationError, ValidationError
 from shared.http.cors import public_cors_origin
 from shared.http.ip_extractor import extract_country, extract_ip
 from shared.http.responses import error_response, no_content_response
+from shared.lambda_kit import build_event_model, run_controller
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 from shared.observability.tracer import tracer
 
 __version__ = '2.0.0'
+
+# Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
+_EVENT_MODEL = build_event_model(OPERATIONS)
 
 
 def _parse_body(event: dict[str, Any]) -> dict[str, Any]:
@@ -116,28 +122,25 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             },
         }
 
-        # 3. Validar evento + resolver controller (operation + action)
-        validation_result = validate_event(synthetic_event)
-        if not validation_result.get('is_valid'):
-            raise ValidationError(
-                'Validation failed',
-                code='INVALID_INPUT',
-            )
+        # 3. Validar evento + resolver controller + ejecutar (kit).
+        #    `run_controller` concentra el nucleo generico:
+        #    validate_event -> resolver controller_class -> run().
+        result = run_controller(synthetic_event, _EVENT_MODEL)
 
-        validated_event = validation_result['data']
-        controller_data = validated_event.controller_info.get('data', {})
-        controller_class = controller_data.get('controller_class')
-
-        # 4. Ejecutar el controller (preload -> validate -> execute)
-        instance = controller_class(event=validated_event.controller_event)
-        result = instance.run()
-
-        # 5. El controller normaliza {is_valid, data, code}. Un is_valid
-        #    False lo provoca una validacion fallida del payload (modelo
-        #    Pydantic) o el rate-limit. Se traduce a la respuesta HTTP.
-        if not result.get('is_valid'):
-            result_data = result.get('data', {})
-            app_error = result_data.get('application_error')
+        # 4. El kit devuelve un DispatchResult. `stage='validation'`
+        #    significa que fallo resolver/validar el evento sintetico;
+        #    `stage='controller'` significa que el controller se ejecuto.
+        #    En ambos casos un is_valid False se traduce a respuesta HTTP.
+        if not result.is_valid:
+            if result.stage == 'validation':
+                raise ValidationError(
+                    'Validation failed',
+                    code='INVALID_INPUT',
+                )
+            # El controller se ejecuto y devolvio is_valid False: lo
+            # provoca una validacion fallida del payload (modelo Pydantic)
+            # o el rate-limit (ApplicationError en data).
+            app_error = result.data.get('application_error')
             if isinstance(app_error, ApplicationError):
                 raise app_error
             raise ValidationError(
@@ -145,7 +148,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 code='INVALID_INPUT',
             )
 
-        # 6. Metrics + 204 No Content (fire-and-forget)
+        # 5. Metrics + 204 No Content (fire-and-forget)
         metrics.add_metric(
             name='TrackingEventReceived', unit=MetricUnit.Count, value=1
         )

@@ -1,1 +1,0 @@
-"""Validacion del evento Lambda."""

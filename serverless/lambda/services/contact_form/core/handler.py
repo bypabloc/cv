@@ -13,9 +13,9 @@ Flujo:
      user-agent, bypass-secret) y resolver el origin para el echo CORS.
   3. Sintetizar el evento `{operation: 'contact', action: 'create',
      data: <body + _meta>}`.
-  4. Validar el evento + resolver el controller (`validate_event`).
-  5. Ejecutar el controller (`preload -> validate -> execute`).
-  6. Devolver HTTP 201 con el `contact_id`, o `error_response` en error.
+  4. Validar el evento + resolver el controller + ejecutar su ciclo
+     `preload -> validate -> execute` (`run_controller` del kit).
+  5. Devolver HTTP 201 con el `contact_id`, o `error_response` en error.
 
 Sobre la metadata de transporte: el rate-limit y la verificacion
 Turnstile que orquesta el controller necesitan datos del evento HTTP
@@ -37,7 +37,7 @@ import os
 import sys
 
 # El handler vive dentro de core/. Agregamos core/ al sys.path para que
-# los imports absolutos (models., services., settings., utils., shared.)
+# los imports absolutos (models., services., settings., shared.)
 # resuelvan en AWS y en invoke local. shared/ se vendoriza en core/shared/.
 _CORE_DIR = os.path.dirname(os.path.abspath(__file__))
 if _CORE_DIR not in sys.path:
@@ -47,17 +47,19 @@ from typing import Any
 
 from aws_lambda_powertools.metrics import MetricUnit
 from settings.operations import OPERATIONS
-from utils.validation.event import validate_event
-
 from shared.core.exceptions import ApplicationError, ValidationError
 from shared.http.cors import resolve_origin
 from shared.http.ip_extractor import extract_country, extract_ip
 from shared.http.responses import error_response, json_response
+from shared.lambda_kit import build_event_model, run_controller
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 from shared.observability.tracer import tracer
 
-__version__ = '2.0.0'
+__version__ = '3.0.0'
+
+# Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
+_EVENT_MODEL = build_event_model(OPERATIONS)
 
 
 def _header(headers: dict[str, str], name: str) -> str | None:
@@ -113,41 +115,34 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             },
         }
 
-        # --- 3. Validar evento + resolver controller ---
-        validation_result = validate_event(synthetic_event)
-        if not validation_result.get('is_valid'):
+        # --- 3. Validar evento + resolver controller + ejecutar (kit) ---
+        result = run_controller(synthetic_event, _EVENT_MODEL)
+
+        if result.stage == 'validation':
             # El evento sintetico siempre tiene operation/action/data; un
             # fallo aqui es defensivo (controller mal registrado).
             logger.error(
                 'synthetic event validation failed',
-                extra={'detail': validation_result.get('message')},
+                extra={'detail': result.data},
             )
             metrics.add_metric(
                 name='ContactFormError', unit=MetricUnit.Count, value=1
             )
             return error_response(Exception('internal'), origin=origin)
 
-        validated_event = validation_result['data']
-        controller_data = validated_event.controller_info.get('data', {})
-        controller_class = controller_data.get('controller_class')
-
-        # --- 4. Ejecutar el controller (preload -> validate -> execute) ---
-        instance = controller_class(event=validated_event.controller_event)
-        result = instance.run()
-
-        if not result.get('is_valid'):
+        if not result.is_valid:
             # El payload no paso la validacion Pydantic del modelo.
             raise ValidationError(
                 'Validation failed',
                 code='INVALID_INPUT',
-                extra={'detail': result.get('data', {})},
+                extra={'detail': result.data},
             )
 
-        # --- 5. Respuesta 201 con el contact_id ---
+        # --- 4. Respuesta 201 con el contact_id ---
         metrics.add_metric(
             name='ContactFormSubmitted', unit=MetricUnit.Count, value=1
         )
-        return json_response(201, result['data'], origin=origin)
+        return json_response(201, result.data, origin=origin)
 
     except ApplicationError as exc:
         logger.warning(

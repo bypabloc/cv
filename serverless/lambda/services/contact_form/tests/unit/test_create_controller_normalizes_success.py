@@ -9,7 +9,6 @@ Then devuelve {is_valid: True, code: 0} con el contact_id en data.
 import httpx
 import pytest
 import respx
-
 from shared.http.turnstile import TURNSTILE_SITEVERIFY_URL
 
 pytestmark = pytest.mark.unit

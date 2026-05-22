@@ -38,6 +38,7 @@ VALID_COMMANDS = [
     # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
     'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
+    'lint-deps',  # Valida la regla de dedup D-3 (deps lambda vs shared/)
     'format',  # Ruff format
     'typecheck',  # mypy
     # Tests: unico comando, --type=unit|integration|coverage + target
@@ -151,6 +152,7 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'clean': 'Eliminar caches + artefactos efimeros (build/, vendor)',
     'lint': 'Ruff check sobre shared/ y src/',
     'lint-fix': 'Ruff check --fix',
+    'lint-deps': 'Valida que un lambda no duplique deps de shared/ (D-3)',
     'format': 'Ruff format',
     'typecheck': 'mypy strict sobre shared/ y src/',
     'tests': 'pytest --type=unit|integration|coverage (--lambda / --shared)',
@@ -177,6 +179,7 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'clean': ['dry_run'],
     'lint': ['module_path', 'files', 'output_format'],
     'lint-fix': ['module_path', 'files'],
+    'lint-deps': ['lambda', 'path', 'module'],
     'format': ['module_path', 'files'],
     'typecheck': ['module_path'],
     'tests': [

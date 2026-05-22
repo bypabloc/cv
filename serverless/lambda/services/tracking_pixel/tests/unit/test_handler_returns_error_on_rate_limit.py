@@ -17,7 +17,6 @@ pytestmark = pytest.mark.unit
 
 def test_handler_returns_error_on_rate_limit(tracking_aws: None):
     import handler
-
     from shared.rate_limit import RateLimitExceededError
 
     # Arrange

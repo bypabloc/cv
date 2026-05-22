@@ -1,8 +1,8 @@
 """Configuracion pytest del Lambda `tracking_pixel`.
 
 Agrega `core/` al `sys.path` para que los imports absolutos del codigo
-(`handler`, `controllers.`, `services.`, `models.`, `settings.`,
-`utils.`) resuelvan en los tests.
+(`handler`, `controllers.`, `services.`, `models.`, `settings.`)
+resuelvan en los tests.
 
 La libreria comun `shared/` normalmente se vendoriza en `core/shared/`
 por devtools antes de correr los tests (`serverless test-unit` lo hace).
@@ -78,7 +78,6 @@ def tracking_aws() -> Generator[None]:
     """
     import boto3
     from moto import mock_aws
-
     from shared.aws.dynamodb import reset_resource_cache
 
     with mock_aws():

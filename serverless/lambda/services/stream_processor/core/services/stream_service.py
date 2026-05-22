@@ -1,19 +1,22 @@
 """Service de la operacion `stream`: replica DynamoDB Streams a Neon.
 
-Concentra la logica de negocio del Lambda `stream_processor`:
+Logica de negocio del Lambda `stream_processor`:
 
 - transformacion de un Stream Record (imagen type-tagged de DynamoDB) a
   los kwargs del modelo ORM correspondiente (`Contact` / `TrackingEvent`);
-- escritura ORM en Neon mas la fila de idempotencia
-  (`processed_stream_events`), en una unica transaccion por record.
+- procesamiento de un record (orquesta la escritura ORM en Neon).
+
+La transformacion NO usa SQLAlchemy: es logica de negocio del Lambda y
+vive aca. La escritura ORM (idempotencia + INSERT) la delega en
+`shared.db.repository`: el `core/` de este Lambda NO importa `sqlalchemy`
+directamente (regla de dedup D-3 del plan
+`docs/specs/serverless-lambda-independence/`).
 
 Regla de separacion:
   - controllers/stream/process.py : orquesta (valida -> service -> normaliza).
-  - services/stream_service.py     : logica de negocio (este archivo).
-  - utils/                         : infraestructura generica.
-
-El service NO conoce el evento Lambda ni la respuesta del handler:
-recibe un Record (dict) y devuelve el resultado del procesamiento.
+  - services/stream_service.py     : transformacion + orquestacion (este archivo).
+  - shared.db                      : dueno del schema, los modelos y la
+                                      escritura ORM.
 
 Idempotencia: cada Stream record trae un `eventID` unico. Antes de
 insertar se verifica en `processed_stream_events`; el INSERT del dato +
@@ -29,10 +32,12 @@ from typing import Any
 
 from boto3.dynamodb.types import TypeDeserializer
 from settings.config import logger
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
-from shared.db.models import Contact, ProcessedStreamEvent, TrackingEvent
+from shared.db.repository import (
+    insert_contact,
+    insert_tracking,
+    is_event_processed,
+    mark_event_processed,
+)
 from shared.db.session import db_session
 
 _deserializer = TypeDeserializer()
@@ -239,65 +244,17 @@ def detect_table(record: dict[str, Any]) -> str:
 
 
 # --------------------------------------------------------------------------
-# Escritura ORM en Neon
-# --------------------------------------------------------------------------
-
-
-def is_event_processed(session: Session, event_id: str) -> bool:
-    """`True` si el `event_id` ya esta en `processed_stream_events`."""
-    stmt = select(ProcessedStreamEvent.event_id).where(
-        ProcessedStreamEvent.event_id == event_id,
-    )
-    return session.execute(stmt).first() is not None
-
-
-def mark_event_processed(
-    session: Session,
-    event_id: str,
-    *,
-    event_type: str,
-    table_name: str,
-) -> None:
-    """Registra el `event_id` como procesado (fila de idempotencia).
-
-    Se llama dentro de la misma Session/transaccion que el INSERT del
-    contacto/evento — ambos confirman juntos o ninguno.
-    """
-    session.add(
-        ProcessedStreamEvent(
-            event_id=event_id,
-            event_type=event_type,
-            table_name=table_name,
-        ),
-    )
-
-
-def insert_contact(session: Session, payload: dict[str, Any]) -> None:
-    """Inserta una fila en `contacts` desde el payload del transformer.
-
-    `session_id` enlaza el contacto con `tracking_events` (correlacion
-    via JOIN). `ip`/`country`/`user_agent` son columnas legacy: los
-    contactos nuevos las reciben en NULL.
-    """
-    session.add(Contact(**payload))
-
-
-def insert_tracking(session: Session, payload: dict[str, Any]) -> None:
-    """Inserta una fila en `tracking_events` desde el payload.
-
-    `event_props` es un dict plano: SQLAlchemy lo adapta a JSONB sin
-    envoltura manual.
-    """
-    session.add(TrackingEvent(**payload))
-
-
-# --------------------------------------------------------------------------
 # Procesamiento de un record (logica de negocio principal)
 # --------------------------------------------------------------------------
 
 
 def process_record(record: dict[str, Any], event_id: str) -> str:
     """Procesa un record del Stream dentro de su propia transaccion.
+
+    La escritura ORM (chequeo de idempotencia + INSERT del dato + fila de
+    idempotencia) la delega en `shared.db.repository`; este service solo
+    transforma el record y orquesta. Todo confirma en la MISMA
+    transaccion (via `db_session`).
 
     Parameters
     ----------

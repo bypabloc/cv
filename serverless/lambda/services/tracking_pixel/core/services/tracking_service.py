@@ -22,7 +22,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 from settings.config import logger
-
 from shared.cache import cached
 from shared.core.ulid import new_uuidv7
 from shared.dynamodb import TrackingEventItem

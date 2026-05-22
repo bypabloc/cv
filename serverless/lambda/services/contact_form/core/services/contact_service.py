@@ -33,7 +33,6 @@ from typing import Any
 
 import boto3
 from aws_lambda_powertools.metrics import MetricUnit
-
 from shared.aws.ssm import get_parameter
 from shared.core.ulid import new_uuidv7
 from shared.dynamodb import ContactItem

@@ -107,7 +107,28 @@ def zip_build_dir(lambda_root: Path) -> Path:
         'zip',
         root_dir=str(target),
     )
-    return Path(archive)
+    archive_path = Path(archive)
+
+    # Control de peso: con el zip ya armado tenemos ambas cifras. Avisa
+    # al 80% del limite y ABORTA el build si supera un hard limit de AWS
+    # Lambda (50 MB zip / 250 MB descomprimido).
+    from serverless.artifact_size import ArtifactTooLargeError
+    from serverless.artifact_size import check_artifact_size
+    from serverless.artifact_size import format_size_report
+    from serverless.artifact_size import measure_artifact
+    from serverless.artifact_size import size_warning
+
+    unzipped_mb, zip_mb = measure_artifact(target, zip_path=archive_path)
+    print(format_size_report(unzipped_mb, zip_mb))
+    warning = size_warning(unzipped_mb, zip_mb)
+    if warning is not None:
+        print(warning)
+    try:
+        check_artifact_size(unzipped_mb, zip_mb)
+    except ArtifactTooLargeError as exc:
+        raise PackagingError(str(exc)) from exc
+
+    return archive_path
 
 
 def _lambda_runtime_deps(lambda_root: Path) -> list[str]:
@@ -193,6 +214,35 @@ def _install_dependencies(
         )
 
 
+def _check_dep_dedup(lambda_root: Path) -> None:
+    """Aborta el build si el lambda duplica deps del cierre de `shared/`.
+
+    Enforcement de la regla de dedup D-3: ningun `pyproject.toml` de
+    lambda declara una dep que ya le llega por el vendoring de `shared/`.
+
+    Raises
+    ------
+    PackagingError
+        Si hay deps duplicadas (con el detalle de cuales y que
+        subpaquete de `shared/` las aporta).
+    """
+    from serverless.dep_validator import DepValidatorError
+    from serverless.dep_validator import format_report
+    from serverless.dep_validator import validate_lambda_deps
+
+    try:
+        result = validate_lambda_deps(lambda_root)
+    except DepValidatorError as exc:
+        # El lambda no tiene pyproject.toml o esta malformado: es un
+        # error de empaquetado (lo traducimos a PackagingError).
+        raise PackagingError(str(exc)) from exc
+    if not result.is_valid:
+        raise PackagingError(
+            'Build abortado por deps duplicadas (regla de dedup D-3):\n'
+            + format_report(result),
+        )
+
+
 def package_lambda(
     lambda_root: Path,
     *,
@@ -230,6 +280,11 @@ def package_lambda(
             f'El lambda {lambda_root} no tiene core/.',
         )
 
+    # Gate de dedup D-3: el build aborta temprano si el lambda declara
+    # una dep que ya aporta el cierre de shared/ (regla del plan
+    # serverless-lambda-independence).
+    _check_dep_dedup(lambda_root)
+
     closure, shared_deps = resolve_lambda_shared(lambda_root)
     lambda_deps = _lambda_runtime_deps(lambda_root)
     all_deps = sorted(set(lambda_deps) | set(shared_deps))
@@ -265,6 +320,17 @@ def package_lambda(
             vendor / subpackage,
             ignore=_IGNORE,
         )
+
+    # Control de peso: mide el build/ descomprimido y avisa si se acerca
+    # al limite de AWS Lambda. El error duro (build abortado) se evalua
+    # en `zip_build_dir`, cuando ya existen ambas cifras (zip + desc).
+    from serverless.artifact_size import measure_artifact
+    from serverless.artifact_size import size_warning
+
+    unzipped_mb, _ = measure_artifact(target, zip_path=None)
+    warning = size_warning(unzipped_mb, zip_mb=0.0)
+    if warning is not None:
+        print(warning)
 
     return target, closure, all_deps
 

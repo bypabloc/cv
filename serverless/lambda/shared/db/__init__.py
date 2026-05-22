@@ -13,12 +13,42 @@ versiona con Alembic (`alembic/`). Las Lambdas consumen el ORM via
 """
 
 from .base import Base, TimestampMixin, UUIDPKMixin
+from .migrations import (
+    build_config,
+    current_revision,
+    run_current,
+    run_downgrade,
+    run_migrate,
+    run_show_migrations,
+    run_stamp,
+)
+from .repository import (
+    RepositoryError,
+    insert_contact,
+    insert_tracking,
+    is_event_processed,
+    list_tables,
+    mark_event_processed,
+)
 from .session import db_session, get_engine
 
 __all__ = [
     'Base',
+    'RepositoryError',
     'TimestampMixin',
     'UUIDPKMixin',
+    'build_config',
+    'current_revision',
     'db_session',
     'get_engine',
+    'insert_contact',
+    'insert_tracking',
+    'is_event_processed',
+    'list_tables',
+    'mark_event_processed',
+    'run_current',
+    'run_downgrade',
+    'run_migrate',
+    'run_show_migrations',
+    'run_stamp',
 ]

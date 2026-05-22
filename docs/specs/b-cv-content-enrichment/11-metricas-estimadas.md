@@ -64,9 +64,19 @@ porcentajes agresivos.
 
 ## Tabla — Proyectos (Fase 4)
 
-| Proyecto | Métrica (`metrics` key) | Valor generado | Justificación | ¿Validada? |
-|----------|-------------------------|----------------|---------------|------------|
-| _(a completar en Fase 4)_ | | | | ☐ |
+De los 6 proyectos, solo **1 lleva `metricsEstimated: true`**: `faststruct`
+(por su métrica "5x faster context handoff", que ya existía en el YAML).
+`cv-builder` y `portfolio-astro` se reescribieron con métricas 100%
+verificables; `mvp-template-full-stack`, `destacame-debt-chile` y
+`destacame-credit-mexico` ya tenían descriptores verificables.
+
+| Proyecto | Cifra estimada | Justificación | ¿Validada? |
+|----------|----------------|---------------|------------|
+| faststruct | `speedup: "5x faster context handoff"` | Multiplicador modesto sin medición detrás; conservador, ya existía en el YAML original | ☐ |
+
+El resto de las `metrics` de los 6 proyectos son hechos verificables
+(estructura de repos, conteo de apps/packages, stack documentado, mercado,
+"publicado en Marketplace") — no requieren validación.
 
 ## Tabla — Summaries por nicho (Fase 5)
 

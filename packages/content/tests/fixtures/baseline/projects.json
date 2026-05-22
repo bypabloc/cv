@@ -1,53 +1,59 @@
 [
   {
     "slug": "cv-builder",
-    "name": "CV builder (bypabloc/cv)",
+    "name": "CV Platform (bypabloc/cv)",
     "summary": {
-      "es": "CV builder construido en una sola noche con Claude Code (12 mayo 2026). Demo end-to-end del flujo vibe coding moderno: data → render → deploy.",
-      "en": "CV builder shipped in a single night with Claude Code (May 12, 2026). End-to-end demo of the modern vibe coding workflow: data → render → deploy."
+      "es": "Plataforma web de CVs profesionales multilenguaje con editor asistido por IA y URLs publicas en /cv/<slug>/<lang>. Monorepo full stack: landing Astro, webapp Nuxt 4, backend Django 6.",
+      "en": "Web platform for multilingual professional CVs with an AI-assisted editor and public URLs at /cv/<slug>/<lang>. Full stack monorepo: Astro landing, Nuxt 4 webapp, Django 6 backend."
     },
     "description": {
-      "es": "Proyecto que empecé la noche del 12/05/2026 y terminé al día siguiente. Demuestra cómo construir una herramienta funcional en pocas horas usando Claude Code como copiloto. Código revisado, testeado y mantenido por mí — la IA es herramienta, no autor.",
-      "en": "Project I started on the night of 2026-05-12 and finished the next day. Demonstrates building a functional tool in a few hours using Claude Code as a copilot. Code reviewed, tested and maintained by me — AI is a tool, not an author."
+      "es": "Aplicacion full stack para crear, editar y publicar CVs profesionales en varios idiomas. La webapp Nuxt 4 (SPA) ofrece un editor con sugerencias asistidas por IA multi-proveedor (Claude API y OpenAI, con API keys propias del usuario). El backend Django 6 + DRF cubre autenticacion email-first con JWT, MFA, passkeys y OAuth, ademas de las URLs publicas de cada CV. Construida y mantenida con Claude Code: la IA es herramienta, no autor.",
+      "en": "Full stack application to create, edit and publish professional CVs in multiple languages. The Nuxt 4 webapp (SPA) provides an editor with AI-assisted suggestions from multiple providers (Claude API and OpenAI, using the user's own API keys). The Django 6 + DRF backend covers email-first authentication with JWT, MFA, passkeys and OAuth, plus the public URLs for each CV. Built and maintained with Claude Code: AI is a tool, not an author."
     },
     "url": "https://github.com/bypabloc/cv",
     "repo": "https://github.com/bypabloc/cv",
     "status": "active",
-    "niches": [
-      "vibe",
-      "generic"
-    ],
+    "niches": ["vibe", "generic"],
     "priority": {
       "vibe": 98,
       "generic": 70
     },
     "stack": [
+      "Astro 5",
+      "Vue 3",
+      "Nuxt 4",
       "TypeScript",
-      "Claude Code",
-      "Astro",
-      "Vibe Coding"
+      "Pinia",
+      "Django 6",
+      "Django REST Framework",
+      "Celery",
+      "PostgreSQL",
+      "Redis",
+      "Docker",
+      "Claude Code"
     ],
     "caseStudy": {
-      "es": "Problema: necesitaba un CV builder propio que pudiera iterar rápido. Solución: vibe coding session con Claude Code, prompts iterativos, code review en cada commit. Impacto: MVP funcional en una noche.",
-      "en": "Problem: I needed a CV builder I could iterate on fast. Solution: vibe coding session with Claude Code, iterative prompts, code review on every commit. Impact: working MVP in one night."
+      "es": "Problema: necesitaba una plataforma propia para crear y publicar CVs multilenguaje sin depender de herramientas cerradas. Solucion: monorepo full stack con landing Astro, webapp Nuxt 4 SPA y backend Django 6 + DRF; editor asistido por IA multi-proveedor, auth email-first con MFA y passkeys, y URLs publicas /cv/<slug>/<lang>. Impacto: plataforma activa que centraliza la edicion de CVs con asistencia de IA y publicacion directa por URL.",
+      "en": "Problem: I needed my own platform to create and publish multilingual CVs without relying on closed tools. Solution: a full stack monorepo with an Astro landing, a Nuxt 4 SPA webapp and a Django 6 + DRF backend; a multi-provider AI-assisted editor, email-first auth with MFA and passkeys, and public /cv/<slug>/<lang> URLs. Impact: an active platform that centralizes AI-assisted CV editing and direct URL publishing."
     },
     "metrics": {
-      "timeline": "Built in one night (May 12-13, 2026)",
-      "ai_tool": "Claude Code as copilot",
+      "architecture": "Monorepo - Astro landing + Nuxt 4 webapp + Django 6 backend",
+      "ai": "Multi-provider editor (Claude API + OpenAI, user-supplied keys)",
+      "auth": "Email-first - JWT, MFA, passkeys, OAuth",
       "attribution": "0 AI attribution in commits (company policy)"
     },
     "caseStudyDetailed": {
       "problem": {
-        "es": "Necesitaba un CV builder propio para iterar rápido sobre datos del CV sin tocar a mano cada exportación. Calendario apretado: una noche disponible.",
-        "en": "I needed my own CV builder to iterate fast on CV data without hand-editing each export. Tight timeline: one night available."
+        "es": "Las herramientas de CV existentes eran cerradas, mono-idioma o sin control sobre la URL publica. Queria una plataforma propia: editor con asistencia de IA, soporte multilenguaje real y un CV publicable como pagina con su propia direccion.",
+        "en": "Existing CV tools were closed, single-language or offered no control over the public URL. I wanted my own platform: an editor with AI assistance, real multilingual support and a CV publishable as a page with its own address."
       },
       "process": {
-        "es": "Sesión vibe coding con Claude Code el 12/05/2026: prompts iterativos para definir esquema de datos, render, themes y export. Code review humano en cada commit. Nada de copy-paste sin entender.",
-        "en": "Vibe coding session with Claude Code on 2026-05-12: iterative prompts to define data schema, render, themes and export. Human code review on every commit. No copy-paste without understanding."
+        "es": "Disenie un monorepo full stack: landing en Astro 5, webapp SPA en Nuxt 4 con Pinia y TypeScript strict, y backend Django 6 + DRF con Celery, PostgreSQL y Redis. La autenticacion es email-first con JWT, MFA, passkeys y OAuth. El servicio de IA abstrae varios proveedores (Claude API y OpenAI) detras de una interfaz comun, con las API keys aportadas por cada usuario. Todo orquestado con Docker Compose. Construido con Claude Code y revision humana en cada commit.",
+        "en": "I designed a full stack monorepo: an Astro 5 landing, a Nuxt 4 SPA webapp with Pinia and strict TypeScript, and a Django 6 + DRF backend with Celery, PostgreSQL and Redis. Authentication is email-first with JWT, MFA, passkeys and OAuth. The AI service abstracts several providers (Claude API and OpenAI) behind a common interface, using API keys supplied by each user. Everything is orchestrated with Docker Compose. Built with Claude Code and human review on every commit."
       },
       "result": {
-        "es": "MVP funcional en una sola noche, repo público en bypabloc/cv. Demuestra que la combinación Claude Code + revision humana entrega producto sin sacrificar mantenibilidad.",
-        "en": "Working MVP in a single night, public repo at bypabloc/cv. Demonstrates that Claude Code + human review combo ships product without sacrificing maintainability."
+        "es": "Plataforma activa en bypabloc/cv que permite crear, editar y publicar CVs profesionales multilenguaje, con editor asistido por IA y cada CV accesible en /cv/<slug>/<lang>. Demuestra la entrega de un producto full stack completo manteniendo mantenibilidad y revision humana del codigo.",
+        "en": "Active platform at bypabloc/cv that lets users create, edit and publish multilingual professional CVs, with an AI-assisted editor and each CV reachable at /cv/<slug>/<lang>. It demonstrates shipping a complete full stack product while keeping maintainability and human code review."
       }
     },
     "isConfidential": false,
@@ -66,11 +72,7 @@
       "en": "Product built at Destacame for the Mexican market. Vue/Nuxt frontend + Django microservices + credit-bureau integrations."
     },
     "status": "active",
-    "niches": [
-      "fintech",
-      "architect",
-      "generic"
-    ],
+    "niches": ["fintech", "architect", "generic"],
     "priority": {
       "fintech": 95,
       "architect": 85,
@@ -124,11 +126,7 @@
       "en": "Product built at Destacame as Frontend Architect. Integrates Django microservices with a Vue/Nuxt frontend and handles sensitive PII flows and financial compliance."
     },
     "status": "active",
-    "niches": [
-      "fintech",
-      "architect",
-      "generic"
-    ],
+    "niches": ["fintech", "architect", "generic"],
     "priority": {
       "fintech": 100,
       "architect": 90,
@@ -184,21 +182,13 @@
     "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
     "repo": "https://github.com/bypabloc/faststruct",
     "status": "active",
-    "niches": [
-      "vibe",
-      "architect",
-      "generic"
-    ],
+    "niches": ["vibe", "architect", "generic"],
     "priority": {
       "architect": 70,
       "vibe": 100,
       "generic": 80
     },
-    "stack": [
-      "TypeScript",
-      "VS Code Extension API",
-      "Node.js"
-    ],
+    "stack": ["TypeScript", "VS Code Extension API", "Node.js"],
     "caseStudy": {
       "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
       "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
@@ -224,7 +214,7 @@
     },
     "isConfidential": false,
     "projectType": "cli",
-    "metricsEstimated": false
+    "metricsEstimated": true
   },
   {
     "slug": "mvp-template-full-stack",
@@ -240,11 +230,7 @@
     "url": "https://github.com/bypabloc/mvp-template-full-stack",
     "repo": "https://github.com/bypabloc/mvp-template-full-stack",
     "status": "active",
-    "niches": [
-      "vibe",
-      "architect",
-      "generic"
-    ],
+    "niches": ["vibe", "architect", "generic"],
     "priority": {
       "architect": 75,
       "vibe": 92,
@@ -268,6 +254,20 @@
       "role": "Reference for Destacame Claude Code rollout",
       "stack": "Astro + Django + Python 3.14 + uv"
     },
+    "caseStudyDetailed": {
+      "problem": {
+        "es": "Arrancar un proyecto full stack nuevo significaba repetir cada vez la misma configuracion: estructura del harness de Claude Code, quality gates, convenciones de codigo y tooling. Sin un punto de partida estandar, cada repo divergia y el setup consumia tiempo antes de escribir la primera linea de producto.",
+        "en": "Bootstrapping a new full stack project meant repeating the same setup every time: the Claude Code harness structure, quality gates, code conventions and tooling. Without a standard starting point, each repo diverged and setup consumed time before writing the first line of product code."
+      },
+      "process": {
+        "es": "Construi un template publico con el flujo vibe coding completo: harness de Claude Code con skills, rules y hooks; stack Astro 6 + Django listo para usar; quality gates en pre-commit y pre-push (conformance, typecheck, tests); y un CLI de devtools en Python 3.14 con uv para orquestar tareas. Biome v2 unifica lint y formato. Es el mismo patron que adopte al introducir Claude Code en el equipo de Destacame.",
+        "en": "I built a public template with the full vibe coding workflow: a Claude Code harness with skills, rules and hooks; a ready-to-use Astro 6 + Django stack; quality gates in pre-commit and pre-push (conformance, typecheck, tests); and a Python 3.14 devtools CLI with uv to orchestrate tasks. Biome v2 unifies linting and formatting. It is the same pattern I adopted when rolling out Claude Code on the Destacame team."
+      },
+      "result": {
+        "es": "Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar, con el harness de Claude Code y los quality gates ya configurados. Sirvio de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos.",
+        "en": "A reusable template that reduces the setup of a new full stack project to cloning and adapting, with the Claude Code harness and quality gates already configured. It served as the reference for the Claude Code rollout at Destacame and standardizes the workflow across projects."
+      }
+    },
     "isConfidential": false,
     "projectType": "library",
     "metricsEstimated": false
@@ -276,33 +276,47 @@
     "slug": "portfolio-astro",
     "name": "Portfolio multi-nicho",
     "summary": {
-      "es": "Este mismo portfolio: monorepo Astro 6 con 5 sitios independientes desplegados en Cloudflare Pages, optimizado para GEO/LLM-SEO.",
-      "en": "This very portfolio: an Astro 6 monorepo with 5 independent sites deployed to Cloudflare Pages, optimized for GEO/LLM-SEO."
+      "es": "Este mismo portfolio: monorepo Astro 6 con 6 sitios independientes desplegados en Cloudflare Pages, optimizado para GEO/LLM-SEO.",
+      "en": "This very portfolio: an Astro 6 monorepo with 6 independent sites deployed to Cloudflare Pages, optimized for GEO/LLM-SEO."
     },
     "description": {
-      "es": "Arquitectura monorepo con DS unificado, content collections compartidas, filtrado por nicho, dark/light/system theme y JSON-LD Person por sitio. Meta caso de estudio del stack.",
-      "en": "Monorepo architecture with a unified DS, shared content collections, niche-based filtering, dark/light/system theming and per-site JSON-LD Person. Meta case study of the stack."
+      "es": "Arquitectura monorepo con DS unificado, content collections compartidas, filtrado por nicho, dark/light/system theme y JSON-LD Person por sitio. Seis apps (generic, hub, fintech, architect, leader, vibe) consumen packages compartidos para contenido, UI, layout y SEO. Meta caso de estudio del stack.",
+      "en": "Monorepo architecture with a unified DS, shared content collections, niche-based filtering, dark/light/system theming and per-site JSON-LD Person. Six apps (generic, hub, fintech, architect, leader, vibe) consume shared packages for content, UI, layout and SEO. Meta case study of the stack."
     },
     "url": "https://the-full-stack.com",
     "repo": "https://github.com/bypabloc/portfolio",
     "status": "active",
-    "niches": [
-      "vibe",
-      "architect",
-      "generic"
-    ],
+    "niches": ["vibe", "architect", "generic"],
     "priority": {
       "architect": 80,
       "vibe": 95,
       "generic": 75
     },
-    "stack": [
-      "Astro 6",
-      "TypeScript",
-      "Biome v2",
-      "pnpm",
-      "Cloudflare Pages"
-    ],
+    "stack": ["Astro 6", "TypeScript", "Biome v2", "pnpm", "Cloudflare Pages"],
+    "caseStudy": {
+      "es": "Problema: posicionarme en varios nichos (fintech, arquitectura frontend, liderazgo, vibe coding) necesitaba mensajes distintos sin duplicar contenido ni mantenimiento. Solucion: monorepo Astro 6 con seis sitios que comparten packages de contenido, UI y SEO; el mismo CV se filtra y reordena por nicho. Impacto: una sola fuente de verdad alimenta seis portfolios optimizados para buscadores y para respuestas de IA (GEO/LLM-SEO).",
+      "en": "Problem: positioning myself across several niches (fintech, frontend architecture, leadership, vibe coding) required different messaging without duplicating content or maintenance. Solution: an Astro 6 monorepo with six sites sharing content, UI and SEO packages; the same CV is filtered and reordered per niche. Impact: a single source of truth feeds six portfolios optimized for search engines and for AI answers (GEO/LLM-SEO)."
+    },
+    "metrics": {
+      "architecture": "6 Astro sites in one monorepo",
+      "packages": "5 shared workspace packages (content, ui, app-shared, seo, cv-pdf)",
+      "deploy": "Cloudflare Pages, static output",
+      "seo": "Per-site JSON-LD Person + GEO/LLM-SEO optimization"
+    },
+    "caseStudyDetailed": {
+      "problem": {
+        "es": "Un solo portfolio generalista diluye el mensaje para reclutadores de nichos distintos. Mantener varios sitios separados, en cambio, multiplica el contenido duplicado y el mantenimiento. El reto era servir mensajes especificos por nicho desde una unica fuente de verdad del CV.",
+        "en": "A single generalist portfolio dilutes the message for recruiters in different niches. Maintaining several separate sites, on the other hand, multiplies duplicated content and maintenance. The challenge was serving niche-specific messaging from a single source of truth for the CV."
+      },
+      "process": {
+        "es": "Disenie un monorepo Astro 6 con pnpm workspaces: seis apps (generic, hub, fintech, architect, leader, vibe) y cinco packages compartidos (content para los datos del CV con schemas Zod, ui para el design system, app-shared para layout y secciones, seo para JSON-LD y sitemap, cv-pdf para el render ATS-friendly). Los mismos datos del CV se filtran y reordenan por nicho. Biome v2 unifica lint y formato; el output es estatico y se despliega en Cloudflare Pages. El contenido se optimiza tanto para buscadores como para respuestas de IA (GEO/LLM-SEO).",
+        "en": "I designed an Astro 6 monorepo with pnpm workspaces: six apps (generic, hub, fintech, architect, leader, vibe) and five shared packages (content for the CV data with Zod schemas, ui for the design system, app-shared for layout and sections, seo for JSON-LD and sitemap, cv-pdf for the ATS-friendly render). The same CV data is filtered and reordered per niche. Biome v2 unifies linting and formatting; the output is static and deployed to Cloudflare Pages. Content is optimized for both search engines and AI answers (GEO/LLM-SEO)."
+      },
+      "result": {
+        "es": "Una sola fuente de verdad del CV alimenta seis portfolios desplegados de forma independiente en Cloudflare Pages, cada uno con su posicionamiento y su JSON-LD Person. La arquitectura de packages compartidos mantiene el contenido sin duplicar y permite agregar un nicho nuevo sin reescribir el CV.",
+        "en": "A single source of truth for the CV feeds six portfolios deployed independently to Cloudflare Pages, each with its own positioning and JSON-LD Person. The shared-package architecture keeps content free of duplication and allows adding a new niche without rewriting the CV."
+      }
+    },
     "isConfidential": false,
     "projectType": "web",
     "metricsEstimated": false

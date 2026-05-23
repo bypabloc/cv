@@ -1,16 +1,14 @@
 """@module seed_service — carga la data del CV (YAML) en PostgreSQL.
 
-Lee los archivos de `seeds/data/` (dentro del arbol del Lambda `db`) y los
-inserta en el schema relacional del CV. Es IDEMPOTENTE: cada fila se inserta
-con `ON CONFLICT` sobre su clave natural (`slug` / clave compuesta), asi que
-correr el seed N veces deja siempre el mismo estado.
+Lee los archivos de `core/seeds/data/` y los inserta en el schema relacional
+del CV usando los modelos SQLAlchemy de `shared.db.models`. NO usa `psycopg`
+directo: la unica capa de acceso a Neon es el ORM de `shared.db`, igual que
+el resto del backend (`stream_processor`, `cv_repository`).
 
-Migrado del seeder legacy `db/cv/seed/seed_from_yaml.py`. Cambios respecto
-al original:
-- Los datos viven en `seeds/data/` (relativo a la raiz del Lambda), NO en
-  `packages/content/src/data/` — el Lambda es autocontenido.
-- La connection string se resuelve con `shared.db.url.resolve_database_url`
-  (la misma `DATABASE_URL` del Lambda `db`), NO con `CV_DATABASE_URL`.
+Idempotencia: se usa `INSERT ... ON CONFLICT ... DO UPDATE` via el dialecto
+PostgreSQL de SQLAlchemy (`sqlalchemy.dialects.postgresql.insert`). Cada
+fila se inserta con su clave natural (`slug` o clave compuesta) y, si ya
+existe, se actualiza al mismo valor (no-op semantico) para devolver el ID.
 
 Requisitos:
 - El schema debe estar creado (`db/migrate`).
@@ -30,9 +28,45 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import psycopg
 import yaml
-from shared.db.url import resolve_database_url
+from shared.db import db_session
+from shared.db.models import (
+    Award,
+    AwardNiche,
+    Certificate,
+    CertificateNiche,
+    Education,
+    EducationNiche,
+    Experience,
+    ExperienceBullet,
+    ExperienceNiche,
+    ExperienceSkill,
+    Language,
+    LanguageNiche,
+    Niche,
+    NichePriority,
+    Profile,
+    ProfileNiche,
+    ProfileStats,
+    Project,
+    ProjectCaseStudy,
+    ProjectMetric,
+    ProjectNiche,
+    ProjectTechTag,
+    Publication,
+    PublicationNiche,
+    Reference,
+    ReferenceNiche,
+    Skill,
+    SkillCategory,
+    SkillCategoryNiche,
+    SkillCategorySkill,
+    TechTag,
+    Translation,
+)
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 # seeds/data/ vive dentro de core/ para que el packaging del deploy lo
 # incluya en el zip (packaging.py solo copia core/ al artefacto). Este
@@ -42,18 +76,6 @@ _DATA_DIR = _CORE_DIR / 'seeds' / 'data'
 
 # Los 5 niches del portfolio, en orden canonico de presentacion.
 _NICHES = ['fintech', 'architect', 'leader', 'vibe', 'generic']
-
-
-def _seed_database_url() -> str:
-    """Connection string para `psycopg` directo.
-
-    `resolve_database_url` devuelve la URL con el driver SQLAlchemy
-    (`postgresql+psycopg://`). El seeder usa `psycopg` directo, que espera
-    el esquema sin el sufijo del driver.
-    """
-    return resolve_database_url().replace(
-        'postgresql+psycopg://', 'postgresql://', 1
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -100,9 +122,6 @@ def _load_profile() -> dict[str, Any]:
                 end = i + 1
                 break
     block = raw[start:end]
-    # TS -> YAML laxo: yaml.safe_load tolera el objeto tal cual (claves
-    # sin comillas, strings con comillas simples/dobles, comas finales).
-    # Pero NO entiende los comentarios `//` de TS: hay que quitarlos antes.
     return yaml.safe_load(_strip_ts_line_comments(block))
 
 
@@ -134,85 +153,72 @@ def _strip_ts_line_comments(block: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Helpers de insercion idempotente
+# Helpers de upsert idempotente (SQLAlchemy)
 # ---------------------------------------------------------------------------
 
 
-def _require_id(cur: psycopg.Cursor) -> str:
-    """Devuelve el `id` del `RETURNING id` recien ejecutado.
-
-    Toda sentencia que lo invoca usa `RETURNING id`, asi que siempre hay
-    fila; si no la hubiera, es un bug del seed — falla explicito.
-    """
-    row = cur.fetchone()
-    if row is None:
-        raise RuntimeError('INSERT ... RETURNING id no devolvio fila')
-    return row[0]
-
-
 def _upsert_returning_id(
-    cur: psycopg.Cursor,
-    table: str,
+    session: Session,
+    model: type,
     natural_key: str,
-    columns: dict[str, Any],
+    values: dict[str, Any],
 ) -> str:
     """Inserta una fila y devuelve su `id`. Idempotente sobre `natural_key`.
 
-    Si la fila ya existe (mismo valor de `natural_key`), no la modifica y
-    devuelve el `id` existente — el seed se puede correr N veces.
-
-    El nombre de tabla se cita con comillas dobles: `references` es una
-    palabra reservada de SQL y sin comillas el INSERT falla.
+    Usa `INSERT ... ON CONFLICT (<natural_key>) DO UPDATE SET <natural_key>
+    = EXCLUDED.<natural_key>` para el caso "ya existe" (no-op semantico) y
+    devolver el ID en una sola query.
     """
-    cols = list(columns.keys())
-    placeholders = ', '.join(['%s'] * len(cols))
-    col_list = ', '.join(cols)
-    # S608: `table`/`col_list`/`natural_key` provienen de constantes internas
-    # del seed (nombres de tabla/columna del propio schema), NUNCA de input
-    # externo. No hay vector de inyeccion. Los VALUES si van parametrizados.
-    query = f"""
-        INSERT INTO "{table}" ({col_list})
-        VALUES ({placeholders})
-        ON CONFLICT ({natural_key}) DO UPDATE
-            SET {natural_key} = EXCLUDED.{natural_key}
-        RETURNING id
-        """  # noqa: S608
-    cur.execute(query, list(columns.values()))
-    return _require_id(cur)
+    stmt = (
+        insert(model)
+        .values(**values)
+        .on_conflict_do_update(
+            index_elements=[natural_key],
+            set_={natural_key: getattr(insert(model).excluded, natural_key)},
+        )
+        .returning(model.id)
+    )
+    return session.execute(stmt).scalar_one()
 
 
 def _set_translation(
-    cur: psycopg.Cursor,
+    session: Session,
     entity_type: str,
     entity_id: str,
     field: str,
     bilang: dict[str, str] | None,
 ) -> None:
-    """Inserta (o actualiza) las 2 filas es/en de un campo bilingue.
-
-    `bilang` es el dict `{es, en}` del YAML. Si es None (campo opcional
-    ausente), no hace nada.
-    """
+    """Inserta (o actualiza) las filas es/en de un campo bilingue."""
     if not bilang:
         return
     for locale in ('es', 'en'):
         value = bilang.get(locale)
         if value is None:
             continue
-        cur.execute(
-            """
-            INSERT INTO translations
-                (entity_type, entity_id, field, locale, value)
-            VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (entity_type, entity_id, field, locale)
-                DO UPDATE SET value = EXCLUDED.value
-            """,
-            (entity_type, entity_id, field, locale, value),
+        stmt = (
+            insert(Translation)
+            .values(
+                entity_type=entity_type,
+                entity_id=entity_id,
+                field=field,
+                locale=locale,
+                value=value,
+            )
+            .on_conflict_do_update(
+                index_elements=[
+                    'entity_type',
+                    'entity_id',
+                    'field',
+                    'locale',
+                ],
+                set_={'value': value},
+            )
         )
+        session.execute(stmt)
 
 
 def _set_niche_priorities(
-    cur: psycopg.Cursor,
+    session: Session,
     entity_type: str,
     entity_id: str,
     priority: dict[str, int] | None,
@@ -225,54 +231,67 @@ def _set_niche_priorities(
         niche_id = niche_ids.get(niche_slug)
         if niche_id is None:
             continue
-        cur.execute(
-            """
-            INSERT INTO niche_priorities
-                (entity_type, entity_id, niche_id, priority)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (entity_type, entity_id, niche_id)
-                DO UPDATE SET priority = EXCLUDED.priority
-            """,
-            (entity_type, entity_id, niche_id, value),
+        stmt = (
+            insert(NichePriority)
+            .values(
+                entity_type=entity_type,
+                entity_id=entity_id,
+                niche_id=niche_id,
+                priority=value,
+            )
+            .on_conflict_do_update(
+                index_elements=['entity_type', 'entity_id', 'niche_id'],
+                set_={'priority': value},
+            )
         )
+        session.execute(stmt)
 
 
 def _link_niches(
-    cur: psycopg.Cursor,
-    table: str,
+    session: Session,
+    union_model: type,
     entity_col: str,
     entity_id: str,
     niche_slugs: list[str] | None,
     niche_ids: dict[str, str],
 ) -> None:
-    """Inserta las filas de la union `<entidad>_niches`."""
-    # S608: `table`/`entity_col` son nombres de tabla/columna del propio
-    # schema, no input externo. Los VALUES van parametrizados.
-    query = f"""
-        INSERT INTO "{table}" ({entity_col}, niche_id)
-        VALUES (%s, %s)
-        ON CONFLICT ({entity_col}, niche_id) DO NOTHING
-        """  # noqa: S608
+    """Inserta las filas de la union `<entidad>_niches` (idempotente)."""
     for niche_slug in niche_slugs or []:
         niche_id = niche_ids.get(niche_slug)
         if niche_id is None:
             continue
-        cur.execute(query, (entity_id, niche_id))
+        stmt = (
+            insert(union_model)
+            .values(**{entity_col: entity_id, 'niche_id': niche_id})
+            .on_conflict_do_nothing(
+                index_elements=[entity_col, 'niche_id'],
+            )
+        )
+        session.execute(stmt)
 
 
-def _resolve_vocabulary(
-    cur: psycopg.Cursor, table: str, names: set[str]
+def _resolve_niches(session: Session) -> dict[str, str]:
+    """Inserta los 5 niches del catalogo y devuelve `{slug: id}`."""
+    out: dict[str, str] = {}
+    for slug in _NICHES:
+        nid = _upsert_returning_id(
+            session,
+            Niche,
+            'slug',
+            {'slug': slug, 'position': _NICHES.index(slug)},
+        )
+        out[slug] = nid
+    return out
+
+
+def _resolve_named_vocab(
+    session: Session, model: type, names: set[str]
 ) -> dict[str, str]:
-    """Inserta nombres deduplicados en `skills`/`tech_tags`/`niches` y
-    devuelve el mapa `name -> id`. Idempotente sobre `name`/`slug`.
-    """
-    natural = 'slug' if table == 'niches' else 'name'
+    """Upsert de un vocabulario con clave natural `name` (skills/tech_tags)."""
     out: dict[str, str] = {}
     for name in sorted(names):
-        columns: dict[str, Any] = {natural: name}
-        if table == 'niches':
-            columns['position'] = _NICHES.index(name)
-        out[name] = _upsert_returning_id(cur, table, natural, columns)
+        nid = _upsert_returning_id(session, model, 'name', {'name': name})
+        out[name] = nid
     return out
 
 
@@ -281,12 +300,12 @@ def _resolve_vocabulary(
 # ---------------------------------------------------------------------------
 
 
-def _seed_profile(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
+def _seed_profile(session: Session, niche_ids: dict[str, str]) -> None:
     p = _load_profile()
     contacts = p['contacts']
     profile_id = _upsert_returning_id(
-        cur,
-        'profile',
+        session,
+        Profile,
         'handle',
         {
             'name': p['name'],
@@ -300,38 +319,36 @@ def _seed_profile(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
             'avatar_url': p['avatarUrl'],
         },
     )
-    _set_translation(cur, 'profile', profile_id, 'headline', p['headline'])
-    _set_translation(cur, 'profile', profile_id, 'summary', p['summary'])
+    _set_translation(session, 'profile', profile_id, 'headline', p['headline'])
+    _set_translation(session, 'profile', profile_id, 'summary', p['summary'])
     _set_translation(
-        cur, 'profile', profile_id, 'availability', p.get('availability')
+        session, 'profile', profile_id, 'availability', p.get('availability')
     )
     stats = p.get('stats')
     if stats:
-        cur.execute(
-            """
-            INSERT INTO profile_stats
-                (profile_id, years_experience, companies, countries,
-                 certifications)
-            VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (profile_id) DO UPDATE SET
-                years_experience = EXCLUDED.years_experience,
-                companies = EXCLUDED.companies,
-                countries = EXCLUDED.countries,
-                certifications = EXCLUDED.certifications
-            """,
-            (
-                profile_id,
-                stats['yearsExperience'],
-                stats['companies'],
-                stats['countries'],
-                stats['certifications'],
-            ),
+        stmt = (
+            insert(ProfileStats)
+            .values(
+                profile_id=profile_id,
+                years_experience=stats['yearsExperience'],
+                companies=stats['companies'],
+                countries=stats['countries'],
+                certifications=stats['certifications'],
+            )
+            .on_conflict_do_update(
+                index_elements=['profile_id'],
+                set_={
+                    'years_experience': stats['yearsExperience'],
+                    'companies': stats['companies'],
+                    'countries': stats['countries'],
+                    'certifications': stats['certifications'],
+                },
+            )
         )
-    # Nichos del profile -> profile_niches (singleton, pero se persiste
-    # igual para que la DB sea fuente de verdad completa del CV).
+        session.execute(stmt)
     _link_niches(
-        cur,
-        'profile_niches',
+        session,
+        ProfileNiche,
         'profile_id',
         profile_id,
         p.get('niches'),
@@ -339,51 +356,10 @@ def _seed_profile(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
     )
 
 
-def _seed_experiences(
-    cur: psycopg.Cursor, niche_ids: dict[str, str]
-) -> dict[str, str]:
-    """Inserta experiencias + bullets + uniones. Devuelve slug -> id."""
-    ids: dict[str, str] = {}
-    for slug, data in _load_dir('experiences'):
-        exp_id = _upsert_returning_id(
-            cur,
-            'experiences',
-            'slug',
-            {
-                'slug': slug,
-                'company': data['company'],
-                'country': data['country'],
-                'company_url': data.get('companyUrl'),
-                'start_ym': data['start'],
-                'end_ym': data.get('end'),
-                'seniority': data['seniority'],
-                'metrics_estimated': data.get('metricsEstimated', False),
-            },
-        )
-        ids[slug] = exp_id
-        _set_translation(cur, 'experience', exp_id, 'role', data['role'])
-        _link_niches(
-            cur,
-            'experience_niches',
-            'experience_id',
-            exp_id,
-            data.get('niches'),
-            niche_ids,
-        )
-        _set_niche_priorities(
-            cur, 'experience', exp_id, data.get('priority'), niche_ids
-        )
-        _seed_experience_bullets(cur, exp_id, data)
-    return ids
-
-
 def _seed_experience_bullets(
-    cur: psycopg.Cursor, exp_id: str, data: dict[str, Any]
+    session: Session, exp_id: str, data: dict[str, Any]
 ) -> None:
-    """Inserta los bullets (responsibilities + achievements) de una
-    experiencia. El bullet es idempotente sobre (experience_id, kind,
-    position); su texto bilingue va a translations.
-    """
+    """Inserta los bullets (responsibilities + achievements) + sus textos."""
     for kind, yaml_key in (
         ('responsibility', 'responsibilities'),
         ('achievement', 'achievements'),
@@ -392,29 +368,27 @@ def _seed_experience_bullets(
         es_list = block.get('es') or []
         en_list = block.get('en') or []
         for position in range(max(len(es_list), len(en_list))):
-            cur.execute(
-                """
-                INSERT INTO experience_bullets
-                    (experience_id, kind, position)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (experience_id, kind, position) DO UPDATE
-                    SET position = EXCLUDED.position
-                RETURNING id
-                """,
-                (exp_id, kind, position),
+            stmt = (
+                insert(ExperienceBullet)
+                .values(experience_id=exp_id, kind=kind, position=position)
+                .on_conflict_do_update(
+                    index_elements=['experience_id', 'kind', 'position'],
+                    set_={'position': position},
+                )
+                .returning(ExperienceBullet.id)
             )
-            bullet_id = _require_id(cur)
+            bullet_id = session.execute(stmt).scalar_one()
             bilang = {
                 'es': es_list[position] if position < len(es_list) else None,
                 'en': en_list[position] if position < len(en_list) else None,
             }
             _set_translation(
-                cur, 'experience_bullet', bullet_id, 'text', bilang
+                session, 'experience_bullet', bullet_id, 'text', bilang
             )
 
 
 def _seed_experience_skills(
-    cur: psycopg.Cursor,
+    session: Session,
     exp_id: str,
     data: dict[str, Any],
     skill_ids: dict[str, str],
@@ -428,19 +402,121 @@ def _seed_experience_skills(
             skill_id = skill_ids.get(name)
             if skill_id is None:
                 continue
-            cur.execute(
-                """
-                INSERT INTO experience_skills
-                    (experience_id, skill_id, kind)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (experience_id, skill_id, kind) DO NOTHING
-                """,
-                (exp_id, skill_id, kind),
+            stmt = (
+                insert(ExperienceSkill)
+                .values(experience_id=exp_id, skill_id=skill_id, kind=kind)
+                .on_conflict_do_nothing(
+                    index_elements=['experience_id', 'skill_id', 'kind'],
+                )
             )
+            session.execute(stmt)
+
+
+def _seed_experiences(
+    session: Session, niche_ids: dict[str, str]
+) -> dict[str, str]:
+    """Inserta experiencias + bullets + uniones. Devuelve slug -> id."""
+    ids: dict[str, str] = {}
+    for slug, data in _load_dir('experiences'):
+        exp_id = _upsert_returning_id(
+            session,
+            Experience,
+            'slug',
+            {
+                'slug': slug,
+                'company': data['company'],
+                'country': data['country'],
+                'company_url': data.get('companyUrl'),
+                'start_ym': data['start'],
+                'end_ym': data.get('end'),
+                'seniority': data['seniority'],
+                'metrics_estimated': data.get('metricsEstimated', False),
+            },
+        )
+        ids[slug] = exp_id
+        _set_translation(session, 'experience', exp_id, 'role', data['role'])
+        _link_niches(
+            session,
+            ExperienceNiche,
+            'experience_id',
+            exp_id,
+            data.get('niches'),
+            niche_ids,
+        )
+        _set_niche_priorities(
+            session, 'experience', exp_id, data.get('priority'), niche_ids
+        )
+        _seed_experience_bullets(session, exp_id, data)
+    return ids
+
+
+def _seed_project_stack(
+    session: Session,
+    proj_id: str,
+    data: dict[str, Any],
+    tech_ids: dict[str, str],
+) -> None:
+    """Enlaza un proyecto con su stack (`tech_tags`), preservando el orden."""
+    for position, name in enumerate(data.get('stack') or []):
+        tech_id = tech_ids.get(name)
+        if tech_id is None:
+            continue
+        stmt = (
+            insert(ProjectTechTag)
+            .values(
+                project_id=proj_id, tech_tag_id=tech_id, position=position
+            )
+            .on_conflict_do_update(
+                index_elements=['project_id', 'tech_tag_id'],
+                set_={'position': position},
+            )
+        )
+        session.execute(stmt)
+
+
+def _seed_project_case_study(
+    session: Session, proj_id: str, data: dict[str, Any]
+) -> None:
+    """Inserta el case study detallado (1:1) de un proyecto, si existe."""
+    detailed = data.get('caseStudyDetailed')
+    if not detailed:
+        return
+    cs_id = _upsert_returning_id(
+        session,
+        ProjectCaseStudy,
+        'project_id',
+        {'project_id': proj_id},
+    )
+    for field in ('problem', 'process', 'result'):
+        _set_translation(
+            session, 'project_case_study', cs_id, field, detailed.get(field)
+        )
+
+
+def _seed_project_metrics(
+    session: Session, proj_id: str, data: dict[str, Any]
+) -> None:
+    """Inserta las metricas (par clave/valor ordenado) de un proyecto."""
+    metrics = data.get('metrics') or {}
+    for position, (key, value) in enumerate(metrics.items()):
+        stmt = (
+            insert(ProjectMetric)
+            .values(
+                project_id=proj_id,
+                metric_key=key,
+                metric_value=str(value),
+                position=position,
+            )
+            .on_conflict_do_update(
+                index_elements=['project_id', 'metric_key'],
+                set_={'metric_value': str(value), 'position': position},
+            )
+        )
+        session.execute(stmt)
 
 
 def _seed_projects(
-    cur: psycopg.Cursor,
+    session: Session,
     niche_ids: dict[str, str],
     tech_ids: dict[str, str],
 ) -> dict[str, str]:
@@ -448,8 +524,8 @@ def _seed_projects(
     ids: dict[str, str] = {}
     for slug, data in _load_dir('projects'):
         proj_id = _upsert_returning_id(
-            cur,
-            'projects',
+            session,
+            Project,
             'slug',
             {
                 'slug': slug,
@@ -463,107 +539,51 @@ def _seed_projects(
             },
         )
         ids[slug] = proj_id
-        _set_translation(cur, 'project', proj_id, 'summary', data['summary'])
         _set_translation(
-            cur, 'project', proj_id, 'description', data.get('description')
+            session, 'project', proj_id, 'summary', data['summary']
         )
         _set_translation(
-            cur, 'project', proj_id, 'case_study', data.get('caseStudy')
+            session, 'project', proj_id, 'description', data.get('description')
+        )
+        _set_translation(
+            session, 'project', proj_id, 'case_study', data.get('caseStudy')
         )
         _link_niches(
-            cur,
-            'project_niches',
+            session,
+            ProjectNiche,
             'project_id',
             proj_id,
             data.get('niches'),
             niche_ids,
         )
         _set_niche_priorities(
-            cur, 'project', proj_id, data.get('priority'), niche_ids
+            session, 'project', proj_id, data.get('priority'), niche_ids
         )
-        _seed_project_stack(cur, proj_id, data, tech_ids)
-        _seed_project_case_study(cur, proj_id, data)
-        _seed_project_metrics(cur, proj_id, data)
+        _seed_project_stack(session, proj_id, data, tech_ids)
+        _seed_project_case_study(session, proj_id, data)
+        _seed_project_metrics(session, proj_id, data)
     return ids
 
 
-def _seed_project_stack(
-    cur: psycopg.Cursor,
-    proj_id: str,
-    data: dict[str, Any],
-    tech_ids: dict[str, str],
-) -> None:
-    """Enlaza un proyecto con su stack (`tech_tags`), preservando el orden."""
-    for position, name in enumerate(data.get('stack') or []):
-        tech_id = tech_ids.get(name)
-        if tech_id is None:
-            continue
-        cur.execute(
-            """
-            INSERT INTO project_tech_tags (project_id, tech_tag_id, position)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (project_id, tech_tag_id) DO UPDATE
-                SET position = EXCLUDED.position
-            """,
-            (proj_id, tech_id, position),
-        )
-
-
-def _seed_project_case_study(
-    cur: psycopg.Cursor, proj_id: str, data: dict[str, Any]
-) -> None:
-    """Inserta el case study detallado (1:1) de un proyecto, si existe."""
-    detailed = data.get('caseStudyDetailed')
-    if not detailed:
-        return
-    cs_id = _upsert_returning_id(
-        cur,
-        'project_case_studies',
-        'project_id',
-        {'project_id': proj_id},
-    )
-    for field in ('problem', 'process', 'result'):
-        _set_translation(
-            cur, 'project_case_study', cs_id, field, detailed.get(field)
-        )
-
-
-def _seed_project_metrics(
-    cur: psycopg.Cursor, proj_id: str, data: dict[str, Any]
-) -> None:
-    """Inserta las metricas (par clave/valor ordenado) de un proyecto."""
-    metrics = data.get('metrics') or {}
-    for position, (key, value) in enumerate(metrics.items()):
-        cur.execute(
-            """
-            INSERT INTO project_metrics
-                (project_id, metric_key, metric_value, position)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (project_id, metric_key) DO UPDATE SET
-                metric_value = EXCLUDED.metric_value,
-                position = EXCLUDED.position
-            """,
-            (proj_id, key, str(value), position),
-        )
-
-
 def _seed_skill_categories(
-    cur: psycopg.Cursor,
+    session: Session,
     niche_ids: dict[str, str],
     skill_ids: dict[str, str],
 ) -> None:
     """Inserta categorias de skills + sus uniones a skills y niches."""
     for slug, data in _load_dir('skills'):
         cat_id = _upsert_returning_id(
-            cur,
-            'skill_categories',
+            session,
+            SkillCategory,
             'slug',
             {'slug': slug, 'kind': data['kind']},
         )
-        _set_translation(cur, 'skill_category', cat_id, 'name', data['name'])
+        _set_translation(
+            session, 'skill_category', cat_id, 'name', data['name']
+        )
         _link_niches(
-            cur,
-            'skill_category_niches',
+            session,
+            SkillCategoryNiche,
             'skill_category_id',
             cat_id,
             data.get('niches'),
@@ -573,37 +593,28 @@ def _seed_skill_categories(
             skill_id = skill_ids.get(name)
             if skill_id is None:
                 continue
-            cur.execute(
-                """
-                INSERT INTO skill_category_skills
-                    (skill_category_id, skill_id, position)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (skill_category_id, skill_id) DO UPDATE
-                    SET position = EXCLUDED.position
-                """,
-                (cat_id, skill_id, position),
+            stmt = (
+                insert(SkillCategorySkill)
+                .values(
+                    skill_category_id=cat_id,
+                    skill_id=skill_id,
+                    position=position,
+                )
+                .on_conflict_do_update(
+                    index_elements=['skill_category_id', 'skill_id'],
+                    set_={'position': position},
+                )
             )
+            session.execute(stmt)
 
 
-def _seed_simple_entities(
-    cur: psycopg.Cursor, niche_ids: dict[str, str]
+def _seed_certificates(
+    session: Session, niche_ids: dict[str, str]
 ) -> None:
-    """Inserta certificates, awards, education, references, languages,
-    publications — entidades sin sub-tablas propias.
-    """
-    _seed_certificates(cur, niche_ids)
-    _seed_awards(cur, niche_ids)
-    _seed_education(cur, niche_ids)
-    _seed_references(cur, niche_ids)
-    _seed_languages(cur, niche_ids)
-    _seed_publications(cur, niche_ids)
-
-
-def _seed_certificates(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('certificates'):
         cert_id = _upsert_returning_id(
-            cur,
-            'certificates',
+            session,
+            Certificate,
             'slug',
             {
                 'slug': slug,
@@ -614,8 +625,8 @@ def _seed_certificates(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
             },
         )
         _link_niches(
-            cur,
-            'certificate_niches',
+            session,
+            CertificateNiche,
             'certificate_id',
             cert_id,
             data.get('niches'),
@@ -623,11 +634,11 @@ def _seed_certificates(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
         )
 
 
-def _seed_awards(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
+def _seed_awards(session: Session, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('awards'):
         award_id = _upsert_returning_id(
-            cur,
-            'awards',
+            session,
+            Award,
             'slug',
             {
                 'slug': slug,
@@ -636,13 +647,13 @@ def _seed_awards(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
                 'url': data.get('url'),
             },
         )
-        _set_translation(cur, 'award', award_id, 'title', data['title'])
+        _set_translation(session, 'award', award_id, 'title', data['title'])
         _set_translation(
-            cur, 'award', award_id, 'motivation', data['motivation']
+            session, 'award', award_id, 'motivation', data['motivation']
         )
         _link_niches(
-            cur,
-            'award_niches',
+            session,
+            AwardNiche,
             'award_id',
             award_id,
             data.get('niches'),
@@ -650,11 +661,11 @@ def _seed_awards(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
         )
 
 
-def _seed_education(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
+def _seed_education(session: Session, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('education'):
         edu_id = _upsert_returning_id(
-            cur,
-            'education',
+            session,
+            Education,
             'slug',
             {
                 'slug': slug,
@@ -664,13 +675,15 @@ def _seed_education(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
                 'url': data.get('url'),
             },
         )
-        _set_translation(cur, 'education', edu_id, 'degree', data.get('degree'))
         _set_translation(
-            cur, 'education', edu_id, 'description', data['description']
+            session, 'education', edu_id, 'degree', data.get('degree')
+        )
+        _set_translation(
+            session, 'education', edu_id, 'description', data['description']
         )
         _link_niches(
-            cur,
-            'education_niches',
+            session,
+            EducationNiche,
             'education_id',
             edu_id,
             data.get('niches'),
@@ -678,11 +691,11 @@ def _seed_education(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
         )
 
 
-def _seed_references(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
+def _seed_references(session: Session, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('references'):
         ref_id = _upsert_returning_id(
-            cur,
-            'references',
+            session,
+            Reference,
             'slug',
             {
                 'slug': slug,
@@ -692,10 +705,12 @@ def _seed_references(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
                 'linkedin_url': data['linkedin'],
             },
         )
-        _set_translation(cur, 'reference', ref_id, 'relation', data['relation'])
+        _set_translation(
+            session, 'reference', ref_id, 'relation', data['relation']
+        )
         _link_niches(
-            cur,
-            'reference_niches',
+            session,
+            ReferenceNiche,
             'reference_id',
             ref_id,
             data.get('niches'),
@@ -703,14 +718,16 @@ def _seed_references(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
         )
 
 
-def _seed_languages(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
+def _seed_languages(session: Session, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('languages'):
-        lang_id = _upsert_returning_id(cur, 'languages', 'slug', {'slug': slug})
-        _set_translation(cur, 'language', lang_id, 'name', data['name'])
-        _set_translation(cur, 'language', lang_id, 'level', data['level'])
+        lang_id = _upsert_returning_id(
+            session, Language, 'slug', {'slug': slug}
+        )
+        _set_translation(session, 'language', lang_id, 'name', data['name'])
+        _set_translation(session, 'language', lang_id, 'level', data['level'])
         _link_niches(
-            cur,
-            'language_niches',
+            session,
+            LanguageNiche,
             'language_id',
             lang_id,
             data.get('niches'),
@@ -718,11 +735,11 @@ def _seed_languages(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
         )
 
 
-def _seed_publications(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
+def _seed_publications(session: Session, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('publications'):
         pub_id = _upsert_returning_id(
-            cur,
-            'publications',
+            session,
+            Publication,
             'slug',
             {
                 'slug': slug,
@@ -733,15 +750,31 @@ def _seed_publications(cur: psycopg.Cursor, niche_ids: dict[str, str]) -> None:
                 'published_on': data['date'],
             },
         )
-        _set_translation(cur, 'publication', pub_id, 'summary', data['summary'])
+        _set_translation(
+            session, 'publication', pub_id, 'summary', data['summary']
+        )
         _link_niches(
-            cur,
-            'publication_niches',
+            session,
+            PublicationNiche,
             'publication_id',
             pub_id,
             data.get('niches'),
             niche_ids,
         )
+
+
+def _seed_simple_entities(
+    session: Session, niche_ids: dict[str, str]
+) -> None:
+    """Inserta certificates, awards, education, references, languages,
+    publications — entidades sin sub-tablas propias.
+    """
+    _seed_certificates(session, niche_ids)
+    _seed_awards(session, niche_ids)
+    _seed_education(session, niche_ids)
+    _seed_references(session, niche_ids)
+    _seed_languages(session, niche_ids)
+    _seed_publications(session, niche_ids)
 
 
 # ---------------------------------------------------------------------------
@@ -775,62 +808,62 @@ def _collect_tech_names() -> set[str]:
 # ---------------------------------------------------------------------------
 
 # Tablas principales sobre las que se reportan conteos tras el seed.
-_COUNT_TABLES = (
-    'profile',
-    'profile_niches',
-    'experiences',
-    'projects',
-    'skill_categories',
-    'certificates',
-    'awards',
-    'education',
-    'references',
-    'languages',
-    'publications',
-    'niches',
-    'skills',
-    'tech_tags',
-    'translations',
-    'niche_priorities',
+_COUNT_MODELS: tuple[tuple[str, type], ...] = (
+    ('profile', Profile),
+    ('profile_niches', ProfileNiche),
+    ('experiences', Experience),
+    ('projects', Project),
+    ('skill_categories', SkillCategory),
+    ('certificates', Certificate),
+    ('awards', Award),
+    ('education', Education),
+    ('references', Reference),
+    ('languages', Language),
+    ('publications', Publication),
+    ('niches', Niche),
+    ('skills', Skill),
+    ('tech_tags', TechTag),
+    ('translations', Translation),
+    ('niche_priorities', NichePriority),
 )
 
 
-def _run_seed_on_connection(conn: psycopg.Connection) -> dict[str, int]:
-    """Ejecuta el seed completo en una transaccion. Devuelve los conteos
-    por tabla principal (para verificacion).
+def _run_seed_on_session(session: Session) -> dict[str, int]:
+    """Ejecuta el seed completo dentro de la `session` provista. Devuelve los
+    conteos por tabla principal (para verificacion).
     """
-    with conn.cursor() as cur:
-        # 1. Vocabularios deduplicados.
-        niche_ids = _resolve_vocabulary(cur, 'niches', set(_NICHES))
-        skill_ids = _resolve_vocabulary(cur, 'skills', _collect_skill_names())
-        tech_ids = _resolve_vocabulary(cur, 'tech_tags', _collect_tech_names())
+    # 1. Vocabularios deduplicados.
+    niche_ids = _resolve_niches(session)
+    skill_ids = _resolve_named_vocab(session, Skill, _collect_skill_names())
+    tech_ids = _resolve_named_vocab(session, TechTag, _collect_tech_names())
 
-        # 2. Entidades.
-        _seed_profile(cur, niche_ids)
-        exp_ids = _seed_experiences(cur, niche_ids)
-        _seed_projects(cur, niche_ids, tech_ids)
-        _seed_skill_categories(cur, niche_ids, skill_ids)
-        _seed_simple_entities(cur, niche_ids)
+    # 2. Entidades.
+    _seed_profile(session, niche_ids)
+    exp_ids = _seed_experiences(session, niche_ids)
+    _seed_projects(session, niche_ids, tech_ids)
+    _seed_skill_categories(session, niche_ids, skill_ids)
+    _seed_simple_entities(session, niche_ids)
 
-        # 3. experience_skills (depende de experiences + skills ya cargados).
-        for slug, data in _load_dir('experiences'):
-            _seed_experience_skills(cur, exp_ids[slug], data, skill_ids)
+    # 3. experience_skills (depende de experiences + skills ya cargados).
+    for slug, data in _load_dir('experiences'):
+        _seed_experience_skills(session, exp_ids[slug], data, skill_ids)
 
-        # 4. Conteos de verificacion.
-        counts: dict[str, int] = {}
-        for table in _COUNT_TABLES:
-            cur.execute(f'SELECT count(*) FROM "{table}"')  # noqa: S608
-            row = cur.fetchone()
-            counts[table] = row[0] if row else 0
-    conn.commit()
+    # 4. Conteos de verificacion: COUNT(*) por modelo via select.
+    from sqlalchemy import func
+
+    counts: dict[str, int] = {}
+    for label, model in _COUNT_MODELS:
+        n = session.execute(select(func.count()).select_from(model)).scalar()
+        counts[label] = int(n or 0)
     return counts
 
 
 def run_seed() -> dict[str, Any]:
-    """Carga la data del CV (YAML de `seeds/data/`) en PostgreSQL.
+    """Carga la data del CV (YAML de `core/seeds/data/`) en PostgreSQL.
 
-    Idempotente: cada fila se inserta con `ON CONFLICT` sobre su clave
-    natural. Correr el seed N veces deja siempre el mismo estado.
+    Usa SQLAlchemy + `INSERT ... ON CONFLICT` (idempotente). El context
+    manager `db_session()` commitea al salir limpio o hace rollback si
+    levanta una excepcion.
 
     Returns
     -------
@@ -838,7 +871,6 @@ def run_seed() -> dict[str, Any]:
         `{'seeded': True, 'counts': {<tabla>: <filas>, ...}}` — conteos
         por tabla principal tras el seed.
     """
-    url = _seed_database_url()
-    with psycopg.connect(url) as conn:
-        counts = _run_seed_on_connection(conn)
+    with db_session() as session:
+        counts = _run_seed_on_session(session)
     return {'seeded': True, 'counts': counts}

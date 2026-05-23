@@ -112,7 +112,7 @@ gh api -H "Accept: application/json" \
   "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects" \
   | jq -r '.result[].name' | sort
 
-# Crear el faltante (ej. portfolio-vibe-dev)
+# Crear el faltante (ej. vibe-dev)
 # Ver skill 'cloudflare-deploy' para el comando exacto.
 ```
 

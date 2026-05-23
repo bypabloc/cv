@@ -1,9 +1,8 @@
 /**
  * @description Tests de track-event: la API unica de emision de eventos.
  *   Verifica que `trackEvent` arma el payload con `event_id`/`session_id`/
- *   `event_type_id`/`event_props` [AC-3], y que respeta el gating de
- *   consentimiento (`cf_consent`) y el bypass de QA `?cf_track=force`
- *   [AC-12].
+ *   `event_type_id`/`event_props` y siempre emite (tracking always-on,
+ *   sin gating de consentimiento).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -11,8 +10,6 @@ import {
   configureTracking,
   generateEventId,
   getSessionId,
-  hasTrackingConsent,
-  isTrackingForced,
   resetTrackingConfig,
   sendBeaconPayload,
   type TrackEventPayload,
@@ -54,39 +51,6 @@ describe('track-event', () => {
 
     it('Given two calls When generateEventId Then returns distinct ids', () => {
       expect(generateEventId()).not.toBe(generateEventId())
-    })
-  })
-
-  describe('isTrackingForced', () => {
-    it('Given URL with ?cf_track=force When isTrackingForced Then returns true', () => {
-      setSearch('?cf_track=force')
-      expect(isTrackingForced()).toBe(true)
-    })
-
-    it('Given URL without the QA flag When isTrackingForced Then returns false', () => {
-      setSearch('?utm_source=x')
-      expect(isTrackingForced()).toBe(false)
-    })
-  })
-
-  describe('hasTrackingConsent', () => {
-    it('Given cf_consent=accepted When hasTrackingConsent Then returns true', () => {
-      localStorage.setItem('cf_consent', 'accepted')
-      expect(hasTrackingConsent()).toBe(true)
-    })
-
-    it('Given no cf_consent and no flag When hasTrackingConsent Then returns false', () => {
-      expect(hasTrackingConsent()).toBe(false)
-    })
-
-    it('Given cf_consent=rejected When hasTrackingConsent Then returns false', () => {
-      localStorage.setItem('cf_consent', 'rejected')
-      expect(hasTrackingConsent()).toBe(false)
-    })
-
-    it('Given no consent but ?cf_track=force When hasTrackingConsent Then returns true', () => {
-      setSearch('?cf_track=force')
-      expect(hasTrackingConsent()).toBe(true)
     })
   })
 
@@ -172,29 +136,27 @@ describe('track-event', () => {
     })
   })
 
-  describe('trackEvent gating', () => {
-    it('Given no consent and no QA flag When trackEvent Then does NOT send and returns false [AC-12]', () => {
-      const result = trackEvent(CTA_CLICK, { href: '/x' })
-      expect(result).toBe(false)
-      expect(navigator.sendBeacon).toHaveBeenCalledTimes(0)
-    })
-
-    it('Given cf_consent=accepted When trackEvent Then sends a beacon to /track and returns true', () => {
-      localStorage.setItem('cf_consent', 'accepted')
+  describe('trackEvent (always-on)', () => {
+    it('Given no previous localStorage state When trackEvent Then sends a beacon and returns true', () => {
       const result = trackEvent(CTA_CLICK, { href: '/contact' })
       expect(result).toBe(true)
       expect(navigator.sendBeacon).toHaveBeenCalledTimes(1)
     })
 
-    it('Given consent When trackEvent Then beacon URL is the configured endpoint + /track', () => {
-      localStorage.setItem('cf_consent', 'accepted')
+    it('Given no configured endpoint When trackEvent Then does NOT send and returns false', () => {
+      resetTrackingConfig()
+      const result = trackEvent(PAGE_LOAD)
+      expect(result).toBe(false)
+      expect(navigator.sendBeacon).toHaveBeenCalledTimes(0)
+    })
+
+    it('Given an event When trackEvent Then beacon URL is the configured endpoint + /track', () => {
       trackEvent(PAGE_LOAD)
       const [url] = vi.mocked(navigator.sendBeacon).mock.calls[0] ?? []
       expect(url).toBe('https://api.test/track')
     })
 
-    it('Given consent When trackEvent Then the beacon body carries event_type_id and event_props', async () => {
-      localStorage.setItem('cf_consent', 'accepted')
+    it('Given an event with props When trackEvent Then the beacon body carries event_type_id and event_props', async () => {
       trackEvent(CTA_CLICK, { href: '/contact' })
       const [, blob] = vi.mocked(navigator.sendBeacon).mock.calls[0] ?? []
       const text = await (blob as Blob).text()
@@ -206,18 +168,10 @@ describe('track-event', () => {
       expect(body.event_props).toEqual({ href: '/contact' })
     })
 
-    it('Given consent When trackEvent Then the beacon Blob is text/plain (CORS-safelisted, no preflight)', () => {
-      localStorage.setItem('cf_consent', 'accepted')
+    it('Given an event When trackEvent Then the beacon Blob is text/plain (CORS-safelisted, no preflight)', () => {
       trackEvent(PAGE_LOAD)
       const [, blob] = vi.mocked(navigator.sendBeacon).mock.calls[0] ?? []
       expect((blob as Blob).type).toBe('text/plain')
-    })
-
-    it('Given no consent but ?cf_track=force When trackEvent Then sends the beacon (QA bypass)', () => {
-      setSearch('?cf_track=force')
-      const result = trackEvent(PAGE_LOAD)
-      expect(result).toBe(true)
-      expect(navigator.sendBeacon).toHaveBeenCalledTimes(1)
     })
   })
 })

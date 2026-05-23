@@ -5,7 +5,6 @@
 import { profile } from '@portfolio/content'
 import ContactForm from '@portfolio/ui/components/ContactFormReact.astro'
 import ContactLinks from '@portfolio/ui/components/ContactLinks.astro'
-import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
 import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
 import { STRINGS } from '../lib/site-config'
@@ -69,7 +68,6 @@ const siteUrl = (import.meta.env.SITE_URL ||
     </section>
   </main>
   <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="hub" />
-  <CookieBanner strings={t.components.cookieBanner} />
 </BaseLayout>
 
 <style>

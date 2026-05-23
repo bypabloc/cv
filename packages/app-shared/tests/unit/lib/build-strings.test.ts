@@ -60,8 +60,6 @@ describe('buildStrings', () => {
   it('Given any app When built Then component strings are present', () => {
     const strings = buildStrings('architect')
     expect(strings.es.components.contactForm.submit).toBe('Enviar')
-    expect(strings.es.components.footer.manageConsent).toBe(
-      'Gestionar consentimiento',
-    )
+    expect(strings.es.components.footer.linkedin).toBe('LinkedIn')
   })
 })

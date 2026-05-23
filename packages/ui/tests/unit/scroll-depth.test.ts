@@ -39,7 +39,6 @@ function setScroll(opts: {
 describe('scroll-depth', () => {
   beforeEach(() => {
     localStorage.clear()
-    localStorage.setItem('cf_consent', 'accepted')
     resetTrackingConfig()
     configureTracking({ apiEndpoint: 'https://api.test', niche: 'generic' })
     navigator.sendBeacon = vi.fn().mockReturnValue(true)

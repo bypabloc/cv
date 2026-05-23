@@ -6,21 +6,11 @@
  *   import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
  *   import Hero from '@portfolio/ui/components/Hero.astro'
  *   import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
- *   import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
  *
- *   import { applyTheme, readConsent } from '@portfolio/ui'
+ *   import { applyTheme } from '@portfolio/ui'
  */
 
 export { buildClickProps, initClickTracking } from './lib/click-tracking'
-export type { ConsentValue } from './lib/cookie-consent'
-export {
-  CONSENT_CHANGED_EVENT,
-  isConsentValue,
-  REOPEN_BANNER_EVENT,
-  readConsent,
-  STORAGE_KEY,
-  writeConsent,
-} from './lib/cookie-consent'
 export { initMagneticCursor } from './lib/magnetic-cursor'
 export { initMobileNav } from './lib/mobile-nav'
 export {
@@ -50,8 +40,6 @@ export {
   configureTracking,
   generateEventId,
   getSessionId,
-  hasTrackingConsent,
-  isTrackingForced,
   resetTrackingConfig,
   sendBeaconPayload,
   type TrackEventPayload,

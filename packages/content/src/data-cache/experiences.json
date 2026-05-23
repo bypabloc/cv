@@ -63,7 +63,11 @@
     "skillsSoft": [
       "Colaboración de Equipo",
       "Resolución de Problemas"
-    ]
+    ],
+    "summary": {
+      "es": "Desarrolle un sistema web (jQuery + Laravel) para monitorear la produccion farmaceutica y analizar paradas de maquina.",
+      "en": "Built a web system (jQuery + Laravel) to monitor pharmaceutical production and analyze machine downtime for productivity."
+    }
   },
   {
     "slug": "corpoelec",
@@ -123,7 +127,11 @@
     "skillsSoft": [
       "Colaboración de Equipo",
       "Resolución de Problemas"
-    ]
+    ],
+    "summary": {
+      "es": "Pasantia: implemente un sistema de inventario de equipos electricos (PHP + jQuery) desplegado offline en 3 estados de Venezuela.",
+      "en": "Internship: built an offline-capable electrical inventory system (PHP + jQuery) deployed across 3 Venezuelan states."
+    }
   },
   {
     "slug": "destacame-architect",
@@ -203,7 +211,11 @@
       "Fintech",
       "Liderazgo Técnico",
       "Planificación Estratégica"
-    ]
+    ],
+    "summary": {
+      "es": "Arquitecto frontend lidere la migracion a microfrontends y orqueste los productos fintech de Destacame para Chile y Mexico.",
+      "en": "Frontend Architect leading the microfrontend migration and orchestrating Destacame fintech products for Chile and Mexico."
+    }
   },
   {
     "slug": "destacame-frontend",
@@ -273,7 +285,11 @@
       "Agilidad de Aprendizaje",
       "Resolución de Problemas",
       "Trabajo en Equipo"
-    ]
+    ],
+    "summary": {
+      "es": "Construi interfaces Vue/Nuxt para los productos fintech de Destacame en Chile antes de pasar al rol de arquitecto.",
+      "en": "Built Vue/Nuxt UIs for Destacame fintech products in Chile before moving up to the Frontend Architect role."
+    }
   },
   {
     "slug": "dibal",
@@ -350,7 +366,11 @@
       "Liderazgo de Equipo",
       "Metodologías Ágiles",
       "Orientado al Cliente"
-    ]
+    ],
+    "summary": {
+      "es": "Tech lead y primer desarrollador de Dibal: lleve el equipo de 1 a ~5 personas y defini sus estandares de trabajo.",
+      "en": "Tech lead and first dev at Dibal: grew the team from 1 to ~5 people and defined their engineering standards."
+    }
   },
   {
     "slug": "goodmeal",
@@ -420,7 +440,11 @@
       "Gestión del Tiempo",
       "Resolución de Problemas",
       "Trabajo en Equipo"
-    ]
+    ],
+    "summary": {
+      "es": "Lidere la migracion del frontend de GoodMeal a Vue 3, modernizando la base de codigo y la experiencia del usuario.",
+      "en": "Led the frontend migration of GoodMeal to Vue 3, modernizing the codebase and the user experience."
+    }
   },
   {
     "slug": "iai",
@@ -488,7 +512,11 @@
       "Gestión del Trabajo",
       "Planificación de Proyecto",
       "Trabajo Colaborativo"
-    ]
+    ],
+    "summary": {
+      "es": "Lidere el desarrollo y arquitectura de un proyecto academico, coordinando un equipo pequeno hasta su entrega exitosa.",
+      "en": "Led development and architecture of an academic project, coordinating a small team through successful delivery."
+    }
   },
   {
     "slug": "ipasme",
@@ -550,7 +578,11 @@
       "Comunicación Técnica",
       "Pensamiento Analítico",
       "Resolución de Problemas"
-    ]
+    ],
+    "summary": {
+      "es": "Entregue un sistema digital de historias medicas que reemplazo el registro en papel en el IPASME.",
+      "en": "Delivered a digital medical records system that replaced paper-based registration at IPASME."
+    }
   },
   {
     "slug": "projects-degrees",
@@ -617,6 +649,10 @@
       "Dirección de Proyecto",
       "Gestión del Tiempo",
       "Resolución de Problemas"
-    ]
+    ],
+    "summary": {
+      "es": "Reencamine en una semana dos proyectos de grado que dos equipos no habian podido terminar en meses.",
+      "en": "Rescued in one week two undergrad final projects that two teams had failed to deliver over months."
+    }
   }
 ]

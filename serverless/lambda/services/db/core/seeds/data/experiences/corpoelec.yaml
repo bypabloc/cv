@@ -78,3 +78,8 @@ skillsSoft:
   - Resolución de Problemas
   - Colaboración de Equipo
 seniority: intern
+summary:
+  es: >-
+    Pasantia: implemente un sistema de inventario de equipos electricos (PHP + jQuery) desplegado offline en 3 estados de Venezuela.
+  en: >-
+    Internship: built an offline-capable electrical inventory system (PHP + jQuery) deployed across 3 Venezuelan states.

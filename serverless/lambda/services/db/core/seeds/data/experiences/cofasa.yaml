@@ -93,3 +93,8 @@ skillsSoft:
   - Colaboración de Equipo
   - Resolución de Problemas
 seniority: mid
+summary:
+  es: >-
+    Desarrolle un sistema web (jQuery + Laravel) para monitorear la produccion farmaceutica y analizar paradas de maquina.
+  en: >-
+    Built a web system (jQuery + Laravel) to monitor pharmaceutical production and analyze machine downtime for productivity.

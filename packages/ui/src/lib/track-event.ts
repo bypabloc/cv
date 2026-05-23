@@ -7,9 +7,9 @@
  *   sendBeacon), adjunta `session_id` (localStorage `cf_session`, la misma
  *   key del pixel page_load), `page_url`, y `event_props` opcional.
  *
- *   GATING: solo emite si hay consentimiento — `localStorage.cf_consent`
- *   debe ser `'accepted'`. El flag de QA `?cf_track=force` lo bypassa (para
- *   E2E). Sin consentimiento ni flag: cero eventos (GDPR por defecto).
+ *   Tracking always-on: NO hay gating de consentimiento. Privacy stance:
+ *   no PII, no cookies, anonimo, TTL 60 dias en DynamoDB. El unico estado
+ *   persistido del lado del cliente es `cf_session` (UUID por sesion).
  *
  *   `TrackingPixel.astro` y los inicializadores `initClickTracking` /
  *   `initScrollDepth` usan este modulo: nadie duplica la logica de envio.
@@ -20,11 +20,7 @@
  *   trackEvent(EVENT_TYPES.CTA_CLICK, { href: '/contact' })
  */
 
-const STORAGE_CONSENT = 'cf_consent'
 const STORAGE_SESSION = 'cf_session'
-const CONSENT_ACCEPTED = 'accepted'
-const QA_FLAG = 'cf_track'
-const QA_FLAG_VALUE = 'force'
 
 /**
  * @type TrackingConfig
@@ -87,34 +83,6 @@ export function generateEventId(): string {
   }
   const rand = (): string => Math.random().toString(36).slice(2)
   return `${Date.now().toString(36)}${rand()}${rand()}`
-}
-
-/**
- * @function isTrackingForced
- * @description True si la URL lleva `?cf_track=force` (bypass de QA del
- *   gating de consentimiento, usado por los tests E2E).
- */
-export function isTrackingForced(): boolean {
-  try {
-    const search = globalThis.location?.search ?? ''
-    return new URLSearchParams(search).get(QA_FLAG) === QA_FLAG_VALUE
-  } catch {
-    return false
-  }
-}
-
-/**
- * @function hasTrackingConsent
- * @description True si el usuario acepto el tracking (`cf_consent` =
- *   `'accepted'`) o si la URL lleva el flag de QA `?cf_track=force`.
- */
-export function hasTrackingConsent(): boolean {
-  if (isTrackingForced()) return true
-  try {
-    return localStorage.getItem(STORAGE_CONSENT) === CONSENT_ACCEPTED
-  } catch {
-    return false
-  }
 }
 
 /**
@@ -211,12 +179,13 @@ export function sendBeaconPayload(payload: TrackEventPayload): boolean {
 
 /**
  * @function trackEvent
- * @description Emite un evento de tracking. GATING: si no hay consentimiento
- *   ni el flag `?cf_track=force`, NO emite nada y retorna false.
+ * @description Emite un evento de tracking. Always-on: sin gating. Retorna
+ *   `false` solo si no hay endpoint configurado o si `sendBeacon` reporta
+ *   fallo.
  *
  * @param {string} eventTypeId - UUID del tipo de evento (de `EVENT_TYPES`)
  * @param {Record<string, unknown>} [props] - contexto del evento
- * @returns {boolean} true si se emitio, false si el gating lo bloqueo
+ * @returns {boolean} true si se emitio, false si no se pudo entregar
  *
  * @example
  *   trackEvent(EVENT_TYPES.THEME_TOGGLE, { theme: 'dark' })
@@ -225,7 +194,6 @@ export function trackEvent(
   eventTypeId: string,
   props?: Record<string, unknown>,
 ): boolean {
-  if (!hasTrackingConsent()) return false
   const payload = buildTrackPayload(eventTypeId, props)
   return sendBeaconPayload(payload)
 }

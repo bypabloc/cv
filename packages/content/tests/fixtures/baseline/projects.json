@@ -12,11 +12,7 @@
     },
     "url": "https://www.destacame.com.mx/",
     "status": "active",
-    "niches": [
-      "fintech",
-      "leader",
-      "generic"
-    ],
+    "niches": ["fintech", "leader", "generic"],
     "priority": {
       "fintech": 90,
       "leader": 95,
@@ -94,12 +90,7 @@
       }
     ],
     "status": "active",
-    "niches": [
-      "fintech",
-      "architect",
-      "leader",
-      "generic"
-    ],
+    "niches": ["fintech", "architect", "leader", "generic"],
     "priority": {
       "fintech": 100,
       "architect": 95,
@@ -157,19 +148,12 @@
     "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
     "repo": "https://github.com/bypabloc/faststruct",
     "status": "active",
-    "niches": [
-      "vibe",
-      "generic"
-    ],
+    "niches": ["vibe", "generic"],
     "priority": {
       "vibe": 80,
       "generic": 65
     },
-    "stack": [
-      "TypeScript",
-      "VS Code Extension API",
-      "Node.js"
-    ],
+    "stack": ["TypeScript", "VS Code Extension API", "Node.js"],
     "caseStudy": {
       "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
       "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
@@ -211,11 +195,7 @@
     "url": "https://the-full-stack.com/",
     "repo": "https://github.com/bypabloc/cv",
     "status": "active",
-    "niches": [
-      "architect",
-      "vibe",
-      "generic"
-    ],
+    "niches": ["architect", "vibe", "generic"],
     "priority": {
       "architect": 80,
       "vibe": 90,

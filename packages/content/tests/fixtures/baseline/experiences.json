@@ -46,9 +46,7 @@
         "Kept a system in productive use for nearly two years, adapting it to the operation's changing needs."
       ]
     },
-    "niches": [
-      "generic"
-    ],
+    "niches": ["generic"],
     "priority": {
       "generic": 70
     },
@@ -60,10 +58,7 @@
       "Red Local",
       "jQuery"
     ],
-    "skillsSoft": [
-      "Colaboración de Equipo",
-      "Resolución de Problemas"
-    ],
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
     "summary": {
       "es": "Desarrolle un sistema web (jQuery + Laravel) para monitorear la produccion farmaceutica y analizar paradas de maquina.",
       "en": "Built a web system (jQuery + Laravel) to monitor pharmaceutical production and analyze machine downtime for productivity."
@@ -111,9 +106,7 @@
         "Delivered the system within the planned year and trained staff at each site on its daily use."
       ]
     },
-    "niches": [
-      "generic"
-    ],
+    "niches": ["generic"],
     "priority": {
       "generic": 20
     },
@@ -124,10 +117,7 @@
       "PHP",
       "Sistema Offline"
     ],
-    "skillsSoft": [
-      "Colaboración de Equipo",
-      "Resolución de Problemas"
-    ],
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
     "summary": {
       "es": "Pasantia: implemente un sistema de inventario de equipos electricos (PHP + jQuery) desplegado offline en 3 estados de Venezuela.",
       "en": "Internship: built an offline-capable electrical inventory system (PHP + jQuery) deployed across 3 Venezuelan states."
@@ -183,13 +173,7 @@
         "Have held a technical role of growing responsibility for over three years, currently on the platform team."
       ]
     },
-    "niches": [
-      "fintech",
-      "architect",
-      "leader",
-      "vibe",
-      "generic"
-    ],
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"],
     "priority": {
       "fintech": 100,
       "architect": 100,
@@ -264,10 +248,7 @@
         "Contributed to team versatility by covering both frontend and backend, adapting to the product's changing needs."
       ]
     },
-    "niches": [
-      "fintech",
-      "generic"
-    ],
+    "niches": ["fintech", "generic"],
     "priority": {
       "fintech": 90,
       "generic": 95
@@ -342,11 +323,7 @@
         "Supported the startup's growth for nearly three years, adapting the technology to every new business need."
       ]
     },
-    "niches": [
-      "architect",
-      "leader",
-      "generic"
-    ],
+    "niches": ["architect", "leader", "generic"],
     "priority": {
       "architect": 90,
       "leader": 95,
@@ -419,10 +396,7 @@
         "Contributed to the team's adoption of Scrum practices, improving delivery predictability iteration over iteration."
       ]
     },
-    "niches": [
-      "fintech",
-      "generic"
-    ],
+    "niches": ["fintech", "generic"],
     "priority": {
       "fintech": 70,
       "generic": 90
@@ -490,10 +464,7 @@
         "Documented the full solution architecture, leaving a clear technical foundation for its defense and eventual maintenance."
       ]
     },
-    "niches": [
-      "leader",
-      "generic"
-    ],
+    "niches": ["leader", "generic"],
     "priority": {
       "leader": 55,
       "generic": 45
@@ -560,9 +531,7 @@
         "Improved technical communication and requirements-gathering skills by working directly with healthcare staff."
       ]
     },
-    "niches": [
-      "generic"
-    ],
+    "niches": ["generic"],
     "priority": {
       "generic": 30
     },
@@ -628,10 +597,7 @@
         "Took both projects from a blocked state to a defense-ready delivery without losing the original scope of either one."
       ]
     },
-    "niches": [
-      "leader",
-      "generic"
-    ],
+    "niches": ["leader", "generic"],
     "priority": {
       "leader": 60,
       "generic": 50

@@ -497,6 +497,7 @@ export const ElementsStringsSchema = z.object({
     viewDetail: z.string().min(1),
     viewSite: z.string().min(1),
     viewRepo: z.string().min(1),
+    currentView: z.string().min(1),
     confidential: z.string().min(1),
     technicalSkills: z.string().min(1),
     softSkills: z.string().min(1),
@@ -509,6 +510,14 @@ export const ElementsStringsSchema = z.object({
     caseStudyMetrics: z.string().min(1),
     ctaPrimary: z.string().min(1),
     ctaSecondary: z.string().min(1),
+  }),
+  /** Etiquetas de los 5 niches (para el dropdown del nav y otros usos). */
+  nicheLabels: z.object({
+    fintech: z.string().min(1),
+    architect: z.string().min(1),
+    leader: z.string().min(1),
+    vibe: z.string().min(1),
+    generic: z.string().min(1),
   }),
   components: ComponentsStringsSchema,
   pages: PagesStringsSchema,

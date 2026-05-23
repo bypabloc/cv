@@ -26,16 +26,29 @@
  */
 import type { ComponentsStrings } from '@portfolio/content'
 import MobileNavDrawer from './MobileNavDrawer.astro'
+import NicheDropdown from './NicheDropdown.astro'
 import ThemeToggle from './ThemeToggle.astro'
+
+interface NavDropdownItem {
+  href: string
+  label: string
+  niche?: string
+  current?: boolean
+}
 
 interface NavItem {
   href: string
   label: string
   /**
    * Si true, abre en otra pestana (target=_blank). Util para links a otros
-   * dominios del portfolio (ej. "Otras vistas" -> hub.portfolio.the-full-stack.com).
+   * dominios del portfolio. Compatibilidad legacy.
    */
   external?: boolean
+  /**
+   * Si esta presente, el item se renderiza como dropdown (en lugar de link).
+   * Cada entrada es un sub-link cross-subdomain (misma pestana).
+   */
+  dropdownItems?: NavDropdownItem[]
 }
 
 interface Props {
@@ -44,6 +57,11 @@ interface Props {
   brandHref?: string
   currentLocale?: 'es' | 'en'
   otherLocaleHref?: string
+  /**
+   * Label "Vista actual" / "Current view" para marcar el niche actual en
+   * el dropdown. Opcional; default fallback al hardcoded.
+   */
+  currentViewLabel?: string
   strings: ComponentsStrings['nav']
   themeStrings: ComponentsStrings['themeToggle']
 }
@@ -54,6 +72,7 @@ const {
   brandHref = '/',
   currentLocale = 'es',
   otherLocaleHref,
+  currentViewLabel,
   strings,
   themeStrings,
 } = Astro.props
@@ -70,37 +89,45 @@ const menuLabel = strings.openMenu
         {
           items.map((item) => (
             <li>
-              <a
-                href={item.href}
-                class:list={[
-                  'site-nav__link',
-                  Astro.url.pathname === item.href && 'is-current',
-                  item.external && 'site-nav__link--external',
-                ]}
-                target={item.external ? '_blank' : undefined}
-                rel={item.external ? 'noopener noreferrer' : undefined}
-                data-track="nav_click"
-              >
-                {item.label}
-                {item.external && (
-                  <svg
-                    class="site-nav__external-icon"
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
-                )}
-              </a>
+              {item.dropdownItems ? (
+                <NicheDropdown
+                  label={item.label}
+                  items={item.dropdownItems}
+                  currentViewLabel={currentViewLabel}
+                />
+              ) : (
+                <a
+                  href={item.href}
+                  class:list={[
+                    'site-nav__link',
+                    Astro.url.pathname === item.href && 'is-current',
+                    item.external && 'site-nav__link--external',
+                  ]}
+                  target={item.external ? '_blank' : undefined}
+                  rel={item.external ? 'noopener noreferrer' : undefined}
+                  data-track="nav_click"
+                >
+                  {item.label}
+                  {item.external && (
+                    <svg
+                      class="site-nav__external-icon"
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  )}
+                </a>
+              )}
             </li>
           ))
         }
@@ -145,6 +172,7 @@ const menuLabel = strings.openMenu
   items={items}
   currentLocale={currentLocale}
   otherLocaleHref={otherLocaleHref}
+  currentViewLabel={currentViewLabel}
   strings={strings}
 />
 

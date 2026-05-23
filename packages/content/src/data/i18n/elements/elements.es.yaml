@@ -63,6 +63,7 @@ labels:
   viewDetail: "Ver detalle"
   viewSite: "Ver sitio"
   viewRepo: "Repositorio"
+  currentView: "Vista actual"
   confidential: "Bajo NDA — métricas detalladas en privado"
   technicalSkills: "Técnicas"
   softSkills: "Blandas"
@@ -75,6 +76,14 @@ labels:
   caseStudyMetrics: "Métricas"
   ctaPrimary: "Ver experiencia"
   ctaSecondary: "Descargar CV"
+
+# Etiquetas de los 5 niches (usadas en el dropdown del nav y otros sitios).
+nicheLabels:
+  fintech: "Fintech"
+  architect: "Arquitecto"
+  leader: "Liderazgo"
+  vibe: "Vibe Coding"
+  generic: "Full Stack"
 
 # Textos de los componentes interactivos.
 components:

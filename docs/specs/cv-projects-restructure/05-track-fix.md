@@ -57,19 +57,32 @@ aws dynamodb scan \
 
 ## Fix dependiente del diagnostico
 
-### Caso 1: IP blacklisteada
+### Caso 1 (probable): IP blacklisteada por testing previo
+
+Si durante el desarrollo se envio 3+ veces el form /contact en 60s desde
+la misma IP, el sistema de bot-detection auto-blacklisteo la IP por 24h
+y ahora TODOS los endpoints (incluyendo /track) devuelven 403.
+
+Comando de limpieza rapida (agregado en este plan):
 
 ```bash
-# Borrar el item especifico
-aws dynamodb delete-item \
-  --table-name portfolio-rate-limit-rules-dev \
-  --key '{"rule_key":{"S":"ip#<MI_IP>"},"kind":{"S":"ip_blacklist"}}' \
-  --region us-east-1 --profile tfs-dev
-```
+# Listar todas las IPs blacklisted en dev
+python devtools/run.py serverless rate-limit list --stage=dev \
+  --aws-profile=tfs-dev
 
-Adicionalmente, considerar agregar un comando `serverless rate-limit
-unblacklist --ip=<X> --stage=<env>` para que sea operativo (si no
-existe). Ver `devtools/serverless/rate_limit*.py`.
+# Limpiar TODAS las blacklisted de una sola vez (DEV ONLY)
+python devtools/run.py serverless rate-limit unblock-all --stage=dev \
+  --confirm --aws-profile=tfs-dev
+
+# O remover una IP especifica
+python devtools/run.py serverless rate-limit unblock --ip=<MI_IP> \
+  --stage=dev --aws-profile=tfs-dev
+
+# Tambien limpiar los buckets (counters de sliding window) si la IP
+# acumulo throttling y aun esta cerca del limite
+python devtools/run.py serverless rate-limit clear-buckets --stage=dev \
+  --confirm --aws-profile=tfs-dev
+```
 
 ### Caso 2: Country block
 

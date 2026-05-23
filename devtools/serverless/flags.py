@@ -235,6 +235,7 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'alarms': ['stage', 'output'],
     'rate-limit': [
         'subcommands',
+        'stage',
         'endpoint',
         'country',
         'limit',
@@ -248,6 +249,7 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'confirm',
         'dry_run',
         'name',
+        'aws_profile',
     ],
     'help': [],
 }

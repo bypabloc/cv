@@ -53,23 +53,25 @@ const hubStyle = nicheTokensToCssVars('hub')
   skipToContentLabel={t.components.layout.skipToContent}
 >
   <div class="hub-root" data-niche="hub" style={hubStyle}>
-    <section class="container-medium hub-hero">
+    <section class="hub-hero">
       <MeshGradientBg variant="vivid" aurora />
-      <p class="text-mono-label hub-hero__eyebrow">
-        <span class="hub-hero__dot" aria-hidden="true"></span>
-        {sel.heroEyebrow}
-      </p>
-      <h1 class="text-display-mega hub-hero__title">
-        <span class="gradient-text">{sel.heroHeadline.lead}</span><br />
-        <span>{sel.heroHeadline.mid}</span><br />
-        <span class="hub-hero__title-light">{sel.heroHeadline.tail}</span>
-      </h1>
-      <p class="text-body-lg text-muted hub-hero__intro">
-        {sel.heroIntro}
-      </p>
-      <p class="text-mono hub-hero__lang">
-        <a href="/en/" class="anim-underline">{sel.otherLocaleLink}</a>
-      </p>
+      <div class="hub-hero__inner">
+        <p class="text-mono-label hub-hero__eyebrow">
+          <span class="hub-hero__dot" aria-hidden="true"></span>
+          {sel.heroEyebrow}
+        </p>
+        <h1 class="text-display-mega hub-hero__title">
+          <span class="gradient-text">{sel.heroHeadline.lead}</span><br />
+          <span>{sel.heroHeadline.mid}</span><br />
+          <span class="hub-hero__title-light">{sel.heroHeadline.tail}</span>
+        </h1>
+        <p class="text-body text-muted hub-hero__intro">
+          {sel.heroIntro}
+        </p>
+        <p class="text-mono hub-hero__lang">
+          <a href="/en/" class="anim-underline">{sel.otherLocaleLink}</a>
+        </p>
+      </div>
     </section>
 
     <section class="container-medium hub-grid">
@@ -120,6 +122,17 @@ const hubStyle = nicheTokensToCssVars('hub')
     text-align: left;
     overflow: hidden;
     isolation: isolate;
+    /* Full-bleed: el fondo escapa el wrapper del layout y ocupa 100vw. */
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+  .hub-hero__inner {
+    position: relative;
+    z-index: 2;
+    max-width: var(--container-medium, 960px);
+    margin-inline: auto;
+    padding-inline: clamp(var(--space-16), 4vw, var(--space-40));
   }
   .hub-hero__eyebrow {
     display: inline-flex;
@@ -149,7 +162,7 @@ const hubStyle = nicheTokensToCssVars('hub')
     font-variation-settings: 'wght' 600;
   }
   .hub-hero__intro {
-    max-width: 56ch;
+    max-width: 62ch;
     margin-bottom: var(--space-24);
   }
   .hub-hero__lang a {

@@ -1,0 +1,219 @@
+---
+/**
+ * @component NicheDropdown
+ * @description Dropdown del nav que lista los 5 niches del portfolio. El
+ *   click en cada item navega cross-subdomain en la MISMA pestana
+ *   (no target=_blank). Usa <button> + <ul role="menu"> con un toggle
+ *   vanilla JS (~30 lineas) que cierra con Escape, click fuera o focusout.
+ *
+ *   La entry actual aparece marcada con `aria-current="page"` y un label
+ *   "Vista actual" (i18n) bajo el texto. Hover/keyboard activan focus styles.
+ *
+ * @props {Array<{href, label, niche?, current?}>} items - Sub-entradas del dropdown
+ * @props {string} label - Texto del trigger ("Otras vistas" / "Other views")
+ * @props {string} [currentViewLabel] - Texto secundario para la entry actual
+ *   (default: "Vista actual")
+ *
+ * @example
+ *   <NicheDropdown
+ *     label="Otras vistas"
+ *     items={[
+ *       { href: 'https://fintech.portfolio.the-full-stack.com', label: 'Fintech', niche: 'fintech', current: true },
+ *       { href: 'https://architect.portfolio.the-full-stack.com', label: 'Arquitecto', niche: 'architect' },
+ *       ...
+ *     ]}
+ *   />
+ */
+interface DropdownItem {
+  href: string
+  label: string
+  niche?: string
+  current?: boolean
+}
+
+interface Props {
+  label: string
+  items: DropdownItem[]
+  currentViewLabel?: string
+}
+
+const { label, items, currentViewLabel = 'Vista actual' } = Astro.props
+---
+
+<div class="niche-dropdown" data-niche-dropdown>
+  <button
+    type="button"
+    class="niche-dropdown__trigger"
+    aria-haspopup="menu"
+    aria-expanded="false"
+    data-niche-dropdown-trigger
+  >
+    {label}
+    <svg
+      class="niche-dropdown__chevron"
+      width="12"
+      height="12"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 6L8 10L12 6"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
+  <ul class="niche-dropdown__menu" role="menu" hidden data-niche-dropdown-menu>
+    {
+      items.map((item) => (
+        <li role="none">
+          <a
+            href={item.href}
+            role="menuitem"
+            class:list={[
+              'niche-dropdown__item',
+              { 'is-current': item.current },
+            ]}
+            aria-current={item.current ? 'page' : undefined}
+            data-niche={item.niche}
+          >
+            <span class="niche-dropdown__item-label">{item.label}</span>
+            {item.current && (
+              <span class="niche-dropdown__item-current text-mono-label">
+                {currentViewLabel}
+              </span>
+            )}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<script>
+  function setupDropdowns(): void {
+    const dropdowns = document.querySelectorAll<HTMLDivElement>(
+      '[data-niche-dropdown]',
+    )
+    for (const root of dropdowns) {
+      if (root.dataset.bound === '1') continue
+      const trigger = root.querySelector<HTMLButtonElement>(
+        '[data-niche-dropdown-trigger]',
+      )
+      const menu = root.querySelector<HTMLUListElement>(
+        '[data-niche-dropdown-menu]',
+      )
+      if (!(trigger && menu)) continue
+
+      const close = (): void => {
+        trigger.setAttribute('aria-expanded', 'false')
+        menu.hidden = true
+      }
+      const open = (): void => {
+        trigger.setAttribute('aria-expanded', 'true')
+        menu.hidden = false
+      }
+
+      trigger.addEventListener('click', (ev) => {
+        ev.stopPropagation()
+        const expanded = trigger.getAttribute('aria-expanded') === 'true'
+        if (expanded) {
+          close()
+        } else {
+          open()
+        }
+      })
+
+      root.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') {
+          close()
+          trigger.focus()
+        }
+      })
+
+      document.addEventListener('click', (ev) => {
+        if (!root.contains(ev.target as Node)) close()
+      })
+
+      root.dataset.bound = '1'
+    }
+  }
+
+  setupDropdowns()
+  // Re-bind tras view transitions (Astro client-side navigation)
+  document.addEventListener('astro:after-swap', setupDropdowns)
+</script>
+
+<style>
+  .niche-dropdown {
+    position: relative;
+  }
+  .niche-dropdown__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-6) 0;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-14);
+    font-weight: 500;
+    font-family: inherit;
+  }
+  .niche-dropdown__trigger:hover,
+  .niche-dropdown__trigger:focus-visible,
+  .niche-dropdown__trigger[aria-expanded='true'] {
+    color: var(--color-text);
+  }
+  .niche-dropdown__chevron {
+    transition: transform var(--motion-fast) var(--easing-out);
+  }
+  .niche-dropdown__trigger[aria-expanded='true'] .niche-dropdown__chevron {
+    transform: rotate(180deg);
+  }
+  .niche-dropdown__menu {
+    position: absolute;
+    top: calc(100% + var(--space-8));
+    right: 0;
+    min-width: 220px;
+    margin: 0;
+    padding: var(--space-6);
+    list-style: none;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    z-index: 60;
+    display: grid;
+    gap: 2px;
+  }
+  .niche-dropdown__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-8) var(--space-12);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--font-size-14);
+    text-decoration: none;
+    transition: background-color var(--motion-fast) var(--easing-out);
+  }
+  .niche-dropdown__item:hover,
+  .niche-dropdown__item:focus-visible {
+    background: var(--color-surface-2);
+    outline: none;
+  }
+  .niche-dropdown__item.is-current {
+    background: rgba(var(--niche-accent-rgb), 0.1);
+    color: var(--niche-accent);
+    cursor: default;
+  }
+  .niche-dropdown__item-current {
+    font-size: var(--font-size-10);
+    opacity: 0.7;
+  }
+</style>

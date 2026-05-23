@@ -80,8 +80,12 @@ describe('defineSiteConfig', () => {
     ])
   })
 
-  it('Given app hub with hubHref null When invoked Then the nav omits the hub item', () => {
-    const r = defineSiteConfig({ niche: 'generic', app: 'hub', hubHref: null })
+  it('Given app hub with omitNicheDropdown true When invoked Then the nav omits the hub item', () => {
+    const r = defineSiteConfig({
+      niche: 'generic',
+      app: 'hub',
+      omitNicheDropdown: true,
+    })
     const labels = r.STRINGS.es.nav.map((n) => n.label)
     expect(labels).toEqual([
       'Experiencia',
@@ -91,5 +95,17 @@ describe('defineSiteConfig', () => {
       'Certificados',
       'Contacto',
     ])
+  })
+
+  it('Given a niche app When invoked Then the hub nav item is a dropdown with 5 niches', () => {
+    const r = defineSiteConfig({ niche: 'fintech' })
+    const hubItem = r.STRINGS.es.nav.find((n) => n.label === 'Otras vistas')
+    expect(hubItem?.dropdownItems?.length).toBe(5)
+    expect(
+      hubItem?.dropdownItems?.find((d) => d.niche === 'fintech')?.current,
+    ).toBe(true)
+    expect(
+      hubItem?.dropdownItems?.find((d) => d.niche === 'architect')?.current,
+    ).toBe(false)
   })
 })

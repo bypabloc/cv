@@ -96,3 +96,8 @@ skillsSoft:
   - Resolución de Problemas
   - Trabajo en Equipo
 seniority: mid
+summary:
+  es: >-
+    Lidere la migracion del frontend de GoodMeal a Vue 3, modernizando la base de codigo y la experiencia del usuario.
+  en: >-
+    Led the frontend migration of GoodMeal to Vue 3, modernizing the codebase and the user experience.

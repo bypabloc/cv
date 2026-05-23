@@ -15,8 +15,20 @@ import {
   type ElementsStrings,
   getCurriculum,
   getElements,
+  NICHES,
   type Niche,
 } from '@portfolio/content'
+import { SITE_URLS } from './site-urls'
+
+/** Sub-item de un nav dropdown. */
+export interface NavDropdownItem {
+  href: string
+  label: string
+  /** Niche al que apunta (usado para CSS hooks). */
+  niche?: string
+  /** True si esta entry corresponde al niche/sitio actual. */
+  current?: boolean
+}
 
 /** Item de navegacion ya resuelto (con href listo para render). */
 export interface NavItem {
@@ -24,6 +36,8 @@ export interface NavItem {
   label: string
   /** Si true, abre en otra pestaña / dominio (ej. link al hub). */
   external?: boolean
+  /** Si esta presente, el item es un dropdown con las sub-entries listadas. */
+  dropdownItems?: NavDropdownItem[]
 }
 
 /**
@@ -63,6 +77,9 @@ export interface I18nStrings {
     downloadCv: string
     viewAllExperience: string
     viewDetail: string
+    viewSite: string
+    viewRepo: string
+    currentView: string
     confidential: string
     technicalSkills: string
     softSkills: string
@@ -73,7 +90,11 @@ export interface I18nStrings {
     caseStudyProcess: string
     caseStudyResult: string
     caseStudyMetrics: string
+    ctaPrimary: string
+    ctaSecondary: string
   }
+  /** Etiquetas de los 5 niches (usado por el dropdown del nav). */
+  nicheLabels: ElementsStrings['nicheLabels']
   /** Strings de los componentes interactivos (form, footer, nav, ...). */
   components: ElementsStrings['components']
   /** Meta de las paginas secundarias (about, certificates, contact). */
@@ -104,23 +125,30 @@ function navHrefFor(key: string, basePrefix: string, hubHref?: string): string {
 }
 
 /**
- * Construye los items de nav resueltos. El item `hub` solo se incluye si la
- * app pasa `hubHref` (las 5 apps niche lo pasan; la app hub lo omite).
+ * Construye los items de nav resueltos. El item `hub` se reemplaza por un
+ * dropdown con los 5 niches del portfolio (cross-subdomain, navegacion en
+ * la misma pestana). Se incluye solo si la app pasa `currentNiche` (las
+ * 5 apps niche lo pasan; la app hub lo omite).
  */
 function buildNav(
   elements: ElementsStrings,
   locale: 'es' | 'en',
-  hubHref?: string,
+  currentNiche: Niche | null,
 ): NavItem[] {
   const basePrefix = locale === 'es' ? '' : '/en'
   const items: NavItem[] = []
   for (const item of elements.nav) {
     if (item.key === 'hub') {
-      if (hubHref === undefined) continue
+      if (currentNiche === null) continue
       items.push({
-        href: hubHref,
+        href: '',
         label: item.label,
-        external: true,
+        dropdownItems: NICHES.map((n) => ({
+          href: SITE_URLS[n],
+          label: elements.nicheLabels[n],
+          niche: n,
+          current: n === currentNiche,
+        })),
       })
       continue
     }
@@ -133,28 +161,29 @@ function buildNav(
  * @function buildStrings
  * @description Compone el `I18nStrings` de una app en ambos idiomas, fundiendo
  *   los `elements` (labels reutilizables) con el `curriculum` de la app
- *   (textos del CV). El `hubHref` agrega el item "Otras vistas" al nav.
+ *   (textos del CV). El `currentNiche` agrega el item dropdown "Otras vistas"
+ *   con los 5 niches; pasar `null` (caso app hub) lo omite.
  *
  * @param app - App del monorepo (generic | hub | fintech | architect | leader | vibe)
- * @param hubHref - URL del hub. Si se pasa, el nav incluye el item al hub.
+ * @param currentNiche - Niche del sitio actual. Si `null`, omite el dropdown del nav.
  *
  * @returns Record es/en con las strings completas de la app.
  *
  * @example
- *   const STRINGS = buildStrings('fintech', SITE_URLS.hub)
+ *   const STRINGS = buildStrings('fintech', 'fintech')
  *   STRINGS.es.hero.headline   // del curriculum/fintech.es.yaml
  *   STRINGS.es.sections.experience.title  // del elements.es.yaml
  */
 export function buildStrings(
   app: CurriculumApp,
-  hubHref?: string,
+  currentNiche: Niche | null,
 ): Record<'es' | 'en', I18nStrings> {
   const compose = (locale: 'es' | 'en'): I18nStrings => {
     const el = getElements(locale)
     const cv = getCurriculum(app, locale)
     return {
       meta: { ...cv.meta },
-      nav: buildNav(el, locale, hubHref),
+      nav: buildNav(el, locale, currentNiche),
       hero: {
         eyebrow: cv.hero.eyebrow,
         headline: cv.hero.headline,
@@ -200,6 +229,9 @@ export function buildStrings(
         downloadCv: el.labels.downloadCv,
         viewAllExperience: el.labels.viewAllExperience,
         viewDetail: el.labels.viewDetail,
+        viewSite: el.labels.viewSite,
+        viewRepo: el.labels.viewRepo,
+        currentView: el.labels.currentView,
         confidential: el.labels.confidential,
         technicalSkills: el.labels.technicalSkills,
         softSkills: el.labels.softSkills,
@@ -210,7 +242,10 @@ export function buildStrings(
         caseStudyProcess: el.labels.caseStudyProcess,
         caseStudyResult: el.labels.caseStudyResult,
         caseStudyMetrics: el.labels.caseStudyMetrics,
+        ctaPrimary: el.labels.ctaPrimary,
+        ctaSecondary: el.labels.ctaSecondary,
       },
+      nicheLabels: el.nicheLabels,
       components: el.components,
       pages: el.pages,
       atsKeywords: [...cv.atsKeywords],

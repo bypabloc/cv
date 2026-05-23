@@ -64,7 +64,7 @@ from shared.db.models import (
     TechTag,
     Translation,
 )
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -165,16 +165,25 @@ def _upsert_returning_id(
 ) -> str:
     """Inserta una fila y devuelve su `id`. Idempotente sobre `natural_key`.
 
-    Usa `INSERT ... ON CONFLICT (<natural_key>) DO UPDATE SET <natural_key>
-    = EXCLUDED.<natural_key>` para el caso "ya existe" (no-op semantico) y
-    devolver el ID en una sola query.
+    Usa `INSERT ... ON CONFLICT (<natural_key>) DO UPDATE SET <field> =
+    EXCLUDED.<field>` para TODOS los campos provistos (excepto el propio
+    natural_key, que es la dimension de conflict). Asi un re-seed con
+    cambios en el YAML propaga los valores nuevos a la fila existente.
     """
+    excluded = insert(model).excluded
+    update_set = {
+        col: getattr(excluded, col) for col in values if col != natural_key
+    }
+    # Si el unico campo es el natural_key (no aplica aqui pero por seguridad),
+    # caemos al patron viejo "no-op semantico" para evitar SET vacio.
+    if not update_set:
+        update_set = {natural_key: getattr(excluded, natural_key)}
     stmt = (
         insert(model)
         .values(**values)
         .on_conflict_do_update(
             index_elements=[natural_key],
-            set_={natural_key: getattr(insert(model).excluded, natural_key)},
+            set_=update_set,
         )
         .returning(model.id)
     )
@@ -224,27 +233,32 @@ def _set_niche_priorities(
     priority: dict[str, int] | None,
     niche_ids: dict[str, str],
 ) -> None:
-    """Inserta las filas de priority por niche de una entidad."""
+    """Reescribe las filas de priority por niche de una entidad.
+
+    Borra primero las existentes para esta entity y luego inserta las del
+    YAML. Asi un YAML que removio un niche del bloque `priority` deja la
+    DB consistente (sin entries huerfanas).
+    """
+    session.execute(
+        delete(NichePriority).where(
+            NichePriority.entity_type == entity_type,
+            NichePriority.entity_id == entity_id,
+        )
+    )
     if not priority:
         return
     for niche_slug, value in priority.items():
         niche_id = niche_ids.get(niche_slug)
         if niche_id is None:
             continue
-        stmt = (
-            insert(NichePriority)
-            .values(
+        session.execute(
+            insert(NichePriority).values(
                 entity_type=entity_type,
                 entity_id=entity_id,
                 niche_id=niche_id,
                 priority=value,
             )
-            .on_conflict_do_update(
-                index_elements=['entity_type', 'entity_id', 'niche_id'],
-                set_={'priority': value},
-            )
         )
-        session.execute(stmt)
 
 
 def _link_niches(
@@ -255,19 +269,25 @@ def _link_niches(
     niche_slugs: list[str] | None,
     niche_ids: dict[str, str],
 ) -> None:
-    """Inserta las filas de la union `<entidad>_niches` (idempotente)."""
+    """Reescribe las filas de la union `<entidad>_niches`.
+
+    Borra primero las existentes para esta entity y luego inserta las del
+    YAML. Mantiene la DB sincronizada con la lista del seed (entradas
+    huerfanas eliminadas).
+    """
+    entity_col_attr = getattr(union_model, entity_col)
+    session.execute(
+        delete(union_model).where(entity_col_attr == entity_id)
+    )
     for niche_slug in niche_slugs or []:
         niche_id = niche_ids.get(niche_slug)
         if niche_id is None:
             continue
-        stmt = (
-            insert(union_model)
-            .values(**{entity_col: entity_id, 'niche_id': niche_id})
-            .on_conflict_do_nothing(
-                index_elements=[entity_col, 'niche_id'],
+        session.execute(
+            insert(union_model).values(
+                **{entity_col: entity_id, 'niche_id': niche_id}
             )
         )
-        session.execute(stmt)
 
 
 def _resolve_niches(session: Session) -> dict[str, str]:
@@ -435,6 +455,12 @@ def _seed_experiences(
         )
         ids[slug] = exp_id
         _set_translation(session, 'experience', exp_id, 'role', data['role'])
+        # summary es opcional pero la mayoria de YAMLs ya lo tienen; el
+        # render del home lo usa para mostrar resumen corto en la timeline.
+        if data.get('summary'):
+            _set_translation(
+                session, 'experience', exp_id, 'summary', data['summary']
+            )
         _link_niches(
             session,
             ExperienceNiche,
@@ -456,22 +482,23 @@ def _seed_project_stack(
     data: dict[str, Any],
     tech_ids: dict[str, str],
 ) -> None:
-    """Enlaza un proyecto con su stack (`tech_tags`), preservando el orden."""
+    """Reescribe el stack (`tech_tags`) de un proyecto preservando el orden.
+
+    Borra las relaciones previas para asegurar que un tech removido del
+    YAML quede fuera de la DB.
+    """
+    session.execute(
+        delete(ProjectTechTag).where(ProjectTechTag.project_id == proj_id)
+    )
     for position, name in enumerate(data.get('stack') or []):
         tech_id = tech_ids.get(name)
         if tech_id is None:
             continue
-        stmt = (
-            insert(ProjectTechTag)
-            .values(
+        session.execute(
+            insert(ProjectTechTag).values(
                 project_id=proj_id, tech_tag_id=tech_id, position=position
             )
-            .on_conflict_do_update(
-                index_elements=['project_id', 'tech_tag_id'],
-                set_={'position': position},
-            )
         )
-        session.execute(stmt)
 
 
 def _seed_project_case_study(
@@ -496,23 +523,24 @@ def _seed_project_case_study(
 def _seed_project_metrics(
     session: Session, proj_id: str, data: dict[str, Any]
 ) -> None:
-    """Inserta las metricas (par clave/valor ordenado) de un proyecto."""
+    """Reescribe las metricas (par clave/valor ordenado) de un proyecto.
+
+    Borra las metricas previas para que un YAML que removio una metrica
+    deje la DB consistente.
+    """
+    session.execute(
+        delete(ProjectMetric).where(ProjectMetric.project_id == proj_id)
+    )
     metrics = data.get('metrics') or {}
     for position, (key, value) in enumerate(metrics.items()):
-        stmt = (
-            insert(ProjectMetric)
-            .values(
+        session.execute(
+            insert(ProjectMetric).values(
                 project_id=proj_id,
                 metric_key=key,
                 metric_value=str(value),
                 position=position,
             )
-            .on_conflict_do_update(
-                index_elements=['project_id', 'metric_key'],
-                set_={'metric_value': str(value), 'position': position},
-            )
         )
-        session.execute(stmt)
 
 
 def _seed_projects(
@@ -531,6 +559,7 @@ def _seed_projects(
                 'slug': slug,
                 'name': data['name'],
                 'url': data.get('url'),
+                'links': data.get('links'),
                 'repo': data.get('repo'),
                 'status': data['status'],
                 'project_type': data['projectType'],

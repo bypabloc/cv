@@ -7,7 +7,7 @@
  *
  *   Usa <ProjectBentoCard> como children (no acepta ProjectCard legacy).
  *
- * @props {string} [ariaLabel='Proyectos destacados']
+ * @props {string} [ariaLabel='Proyectos']
  *
  * @example
  *   <ProjectsBento>
@@ -19,7 +19,7 @@ interface Props {
   ariaLabel?: string
 }
 
-const { ariaLabel = 'Proyectos destacados' } = Astro.props
+const { ariaLabel = 'Proyectos' } = Astro.props
 ---
 
 <div class="bento-grid" role="list" aria-label={ariaLabel}>

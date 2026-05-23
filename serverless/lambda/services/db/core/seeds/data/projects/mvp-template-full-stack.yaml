@@ -2,84 +2,93 @@ slug: mvp-template-full-stack
 name: MVP template Full Stack
 summary:
   es: >-
-    Template público que uso de referencia para nuevos proyectos: estructura .claude/ con skills,
-    rules, hooks, devtools CLI, conformance y testing.
+    Este portfolio open source es mi template de referencia para arrancar full stack: Astro 6,
+    backend serverless en AWS, devtools en Python 3.14 y harness de Claude Code estandarizado.
   en: >-
-    Public template I use as reference for new projects: .claude/ structure with skills, rules,
-    hooks, devtools CLI, conformance and testing.
+    This open source portfolio is my reference template to bootstrap full stack: Astro 6, AWS
+    serverless backend, Python 3.14 devtools and a standardized Claude Code harness.
 description:
   es: >-
-    Blueprint del flujo vibe coding completo: Astro 6 + Django stack-ready, harness de Claude Code
-    estandarizado, quality gates en pre-commit/pre-push, devtools CLI en Python 3.14 con uv. Mismo
-    patrón que adopté en Destacame al introducir Claude Code en el equipo.
+    The Full Stack es el sitio publico y a la vez el blueprint del flujo vibe coding completo:
+    6 apps Astro 6 + backend serverless en AWS (Lambdas Python, DynamoDB, Neon PostgreSQL,
+    SES, Turnstile) + harness de Claude Code estandarizado (skills, rules, hooks) + quality
+    gates en pre-commit/pre-push + devtools CLI en Python 3.14 con uv. Mismo patron que adopte
+    en Destacame al introducir Claude Code en el equipo.
   en: >-
-    Blueprint of the full vibe coding workflow: Astro 6 + Django stack-ready, standardized Claude
-    Code harness, quality gates in pre-commit/pre-push, Python 3.14 + uv devtools CLI. Same pattern
-    I adopted at Destacame when rolling out Claude Code in the team.
-url: https://github.com/bypabloc/mvp-template-full-stack
-repo: https://github.com/bypabloc/mvp-template-full-stack
+    The Full Stack is both the public site and the blueprint of the full vibe coding workflow:
+    6 Astro 6 apps + AWS serverless backend (Python Lambdas, DynamoDB, Neon PostgreSQL, SES,
+    Turnstile) + standardized Claude Code harness (skills, rules, hooks) + quality gates in
+    pre-commit/pre-push + Python 3.14 devtools CLI with uv. Same pattern I adopted at Destacame
+    when rolling out Claude Code in the team.
+url: https://the-full-stack.com/
+repo: https://github.com/bypabloc/cv
 status: active
 niches:
-  - vibe
   - architect
+  - vibe
   - generic
 priority:
-  architect: 75
-  vibe: 92
-  generic: 65
+  architect: 80
+  vibe: 90
+  generic: 75
 stack:
   - Claude Code
   - Astro 6
   - TypeScript
   - Python 3.14
-  - Django
+  - AWS Lambda
+  - DynamoDB
+  - Neon PostgreSQL
   - Biome v2
   - uv
 caseStudy:
   es: >-
     Blueprint para arrancar proyectos full stack con flujo vibe coding estandarizado: harness Claude
-    Code + quality gates + devtools CLI. Mismo patrón usado al implementar Claude Code en Destacame.
+    Code + quality gates + devtools CLI + backend serverless real. Mismo patron usado al implementar
+    Claude Code en Destacame.
   en: >-
     Blueprint to bootstrap full stack projects with a standardized vibe coding workflow: Claude Code
-    harness + quality gates + devtools CLI. Same pattern used when rolling out Claude Code at
-    Destacame.
+    harness + quality gates + devtools CLI + real serverless backend. Same pattern used when rolling
+    out Claude Code at Destacame.
 metrics:
-  coverage: Skills + Rules + Hooks + Devtools
+  coverage: Skills + Rules + Hooks + Devtools + Serverless backend
   role: Reference for Destacame Claude Code rollout
-  stack: Astro + Django + Python 3.14 + uv
+  stack: Astro + AWS Lambda + Neon + Python 3.14 + uv
 caseStudyDetailed:
   problem:
     es: >-
       Arrancar un proyecto full stack nuevo significaba repetir cada vez la misma configuracion:
-      estructura del harness de Claude Code, quality gates, convenciones de codigo y tooling. Sin un
-      punto de partida estandar, cada repo divergia y el setup consumia tiempo antes de escribir la
-      primera linea de producto.
+      estructura del harness de Claude Code, quality gates, convenciones de codigo, tooling y
+      backend serverless. Sin un punto de partida estandar, cada repo divergia y el setup consumia
+      tiempo antes de escribir la primera linea de producto.
     en: >-
       Bootstrapping a new full stack project meant repeating the same setup every time: the Claude
-      Code harness structure, quality gates, code conventions and tooling. Without a standard
-      starting point, each repo diverged and setup consumed time before writing the first line of
-      product code.
+      Code harness structure, quality gates, code conventions, tooling and serverless backend.
+      Without a standard starting point, each repo diverged and setup consumed time before writing
+      the first line of product code.
   process:
     es: >-
-      Construi un template publico con el flujo vibe coding completo: harness de Claude Code con
-      skills, rules y hooks; stack Astro 6 + Django listo para usar; quality gates en pre-commit y
-      pre-push (conformance, typecheck, tests); y un CLI de devtools en Python 3.14 con uv para
-      orquestar tareas. Biome v2 unifica lint y formato. Es el mismo patron que adopte al introducir
-      Claude Code en el equipo de Destacame.
+      Construi un portfolio publico que es a la vez template: 6 apps Astro 6, backend serverless
+      en AWS (Lambdas Python, DynamoDB, Neon, SES, Turnstile) provisionado con devtools y AWS CLI,
+      harness Claude Code con skills/rules/hooks, quality gates en pre-commit y pre-push y un CLI
+      de devtools en Python 3.14 con uv. Biome v2 unifica lint y formato. Es el mismo patron que
+      adopte al introducir Claude Code en el equipo de Destacame.
     en: >-
-      I built a public template with the full vibe coding workflow: a Claude Code harness with
-      skills, rules and hooks; a ready-to-use Astro 6 + Django stack; quality gates in pre-commit and
-      pre-push (conformance, typecheck, tests); and a Python 3.14 devtools CLI with uv to orchestrate
-      tasks. Biome v2 unifies linting and formatting. It is the same pattern I adopted when rolling
-      out Claude Code on the Destacame team.
+      I built a public portfolio that doubles as a template: 6 Astro 6 apps, AWS serverless backend
+      (Python Lambdas, DynamoDB, Neon, SES, Turnstile) provisioned with devtools and AWS CLI, a
+      Claude Code harness with skills/rules/hooks, quality gates in pre-commit and pre-push and a
+      Python 3.14 devtools CLI with uv. Biome v2 unifies linting and formatting. It is the same
+      pattern I adopted when rolling out Claude Code on the Destacame team.
   result:
     es: >-
       Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar,
-      con el harness de Claude Code y los quality gates ya configurados. Sirvio de referencia para el
-      rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos.
+      con el harness de Claude Code, los quality gates y el backend serverless ya configurados.
+      Sirvio de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de
+      trabajo entre proyectos.
     en: >-
-      A reusable template that reduces the setup of a new full stack project to cloning and adapting,
-      with the Claude Code harness and quality gates already configured. It served as the reference
-      for the Claude Code rollout at Destacame and standardizes the workflow across projects.
+      A reusable template that reduces the setup of a new full stack project to cloning and
+      adapting, with the Claude Code harness, the quality gates and the serverless backend already
+      configured. It served as the reference for the Claude Code rollout at Destacame and
+      standardizes the workflow across projects.
 isConfidential: false
 projectType: library

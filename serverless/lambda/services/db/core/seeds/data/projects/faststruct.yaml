@@ -21,12 +21,10 @@ repo: https://github.com/bypabloc/faststruct
 status: active
 niches:
   - vibe
-  - architect
   - generic
 priority:
-  architect: 70
-  vibe: 100
-  generic: 80
+  vibe: 80
+  generic: 65
 stack:
   - TypeScript
   - VS Code Extension API

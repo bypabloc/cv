@@ -80,29 +80,9 @@ _TABLES: dict[str, dict[str, str]] = {
     },
 }
 
-# Secretos SSM: nombre corto -> (path SSM, env var del codigo).
-_SECRETS: dict[str, dict[str, str]] = {
-    'neon-url': {
-        'path': '/portfolio/${stage}/neon-url',
-        'env': 'SSM_NEON_URL_PATH',
-    },
-    'turnstile-secret': {
-        'path': '/portfolio/${stage}/turnstile-secret',
-        'env': 'SSM_TURNSTILE_SECRET_PATH',
-    },
-    'turnstile-bypass-secret': {
-        'path': '/portfolio/dev/turnstile-bypass-secret',
-        'env': 'SSM_TURNSTILE_BYPASS_PATH',
-    },
-    'owner-email': {
-        'path': '/portfolio/owner-email',
-        'env': 'SSM_OWNER_EMAIL_PATH',
-    },
-    'ses-from-address': {
-        'path': '/portfolio/ses-from-address',
-        'env': 'SSM_SES_FROM_PATH',
-    },
-}
+# El inventario de secretos SSM vive en
+# `serverless/lambda/resources/secrets/*.yaml`. Lo consume
+# `_secret_def(short_name)` via `serverless.secrets_catalog.Catalog`.
 
 # Identidades verificadas en SES sobre las que el Lambda puede enviar.
 _SES_IDENTITIES = (
@@ -238,14 +218,24 @@ def _table_def(short_name: str) -> dict[str, str]:
 
 
 def _secret_def(short_name: str) -> dict[str, str]:
-    """Resuelve un nombre corto de secreto a su definicion del catalogo."""
-    secret = _SECRETS.get(short_name)
-    if secret is None:
-        raise ManifestError(
-            f'secreto desconocido: {short_name!r}. '
-            f'Validos: {", ".join(sorted(_SECRETS))}',
-        )
-    return secret
+    """Resuelve un nombre corto de secreto a su definicion del catalogo.
+
+    Lee del catalogo YAML en `serverless/lambda/resources/secrets/`
+    (fuente de verdad). Devuelve la estructura {path, env} compatible
+    con los consumers historicos de este modulo.
+    """
+    from serverless.secrets_catalog import Catalog
+    from serverless.secrets_catalog import CatalogError
+
+    try:
+        spec = Catalog.load().get(short_name)
+    except CatalogError as exc:
+        raise ManifestError(str(exc)) from exc
+
+    return {
+        'path': spec.path_template,
+        'env': spec.target_env_var,
+    }
 
 
 def _resolve_env(manifest: dict[str, Any], stage: str) -> dict[str, str]:

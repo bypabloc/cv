@@ -39,6 +39,7 @@ VALID_COMMANDS = [
     'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
     'lint-deps',  # Valida la regla de dedup D-3 (deps lambda vs shared/)
+    'detect-changes',  # Detecta lambdas afectados entre 2 shas (CI)
     'format',  # Ruff format
     'typecheck',  # mypy
     # Tests: unico comando, --type=unit|integration|coverage + target
@@ -93,6 +94,9 @@ ALLOWED_FLAGS = [
     'name',  # --name=/portfolio/turnstile-secret
     'value',  # --value=... (preferir leer de stdin para no leak shell history)
     'key_id',  # --key-id=alias/portfolio-lambdas
+    # detect-changes (CI)
+    'base',  # --base=<sha> SHA base del diff
+    'head',  # --head=<sha> SHA head del diff (default HEAD)
     # Cross-cutting
     'dry_run',  # No aplica, solo imprime acciones
     # Rate-limit management

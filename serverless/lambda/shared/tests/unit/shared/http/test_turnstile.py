@@ -185,14 +185,7 @@ class TestVerifyTurnstileToken:
         Then bypass aplica (no HTTP call a Cloudflare).
         """
         monkeypatch.setenv('STAGE', 'dev')
-        monkeypatch.setenv(
-            'SSM_TURNSTILE_BYPASS_PATH',
-            '/portfolio/dev/turnstile-bypass-secret',
-        )
-        monkeypatch.setattr(
-            'shared.http.turnstile.get_secret',
-            lambda _path: 'test-bypass-123',
-        )
+        monkeypatch.setenv('TURNSTILE_BYPASS_SECRET', 'test-bypass-123')
 
         result = verify_turnstile_token(
             '',

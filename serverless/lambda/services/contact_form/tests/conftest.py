@@ -85,7 +85,7 @@ def contact_form_aws(
     )
     monkeypatch.setenv('SSM_OWNER_EMAIL_PATH', '/portfolio-test/owner-email')
     monkeypatch.setenv(
-        'SSM_SES_FROM_PATH', '/portfolio-test/ses-from-address'
+        'SSM_SES_FROM_ADDRESS_PATH', '/portfolio-test/ses-from-address'
     )
     monkeypatch.setenv(
         'CORS_ALLOWED_ORIGINS',

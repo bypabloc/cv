@@ -140,7 +140,7 @@ def aws_env(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         'SSM_TURNSTILE_SECRET_PATH', '/portfolio-test/turnstile-secret'
     )
     monkeypatch.setenv('SSM_OWNER_EMAIL_PATH', '/portfolio-test/owner-email')
-    monkeypatch.setenv('SSM_SES_FROM_PATH', '/portfolio-test/ses-from-address')
+    monkeypatch.setenv('SSM_SES_FROM_ADDRESS_PATH', '/portfolio-test/ses-from-address')
     monkeypatch.setenv('CORS_ALLOWED_ORIGINS', _CORS_ORIGINS)
 
     with mock_aws():

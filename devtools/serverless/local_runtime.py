@@ -120,6 +120,70 @@ def _docker_available() -> bool:
     return shutil.which('docker') is not None
 
 
+def _local_env_vars(resolved: ResolvedLambda) -> dict[str, str]:
+    """Construye env vars para el lambda local (modo offline-dev).
+
+    Mezcla, en orden de menor a mayor precedencia:
+      1. Defaults Powertools / STAGE.
+      2. Bloque `env.default` + `env.local` del manifest.yaml.
+      3. Valores del catalogo de secretos del lambda (uses.secrets),
+         leyendo docker/env/server/.local y exponiendo
+         `<source_env_var>=<valor>` directo (NO SSM).
+
+    Hermetico: NUNCA imprime ni loggea valores. Solo nombres.
+    """
+    env: dict[str, str] = {
+        'STAGE': 'local',
+        'ENVIRONMENT': 'local',
+        'AWS_REGION': str(resolved.manifest.get('region', 'us-east-1')),
+        'POWERTOOLS_SERVICE_NAME': str(resolved.manifest.get('name', 'local')),
+        'POWERTOOLS_METRICS_NAMESPACE': 'Portfolio',
+        'POWERTOOLS_LOG_LEVEL': 'INFO',
+    }
+    env_block = resolved.manifest.get('env') or {}
+    if isinstance(env_block, dict):
+        for k, v in (env_block.get('default') or {}).items():
+            env[k] = str(v)
+        for k, v in (env_block.get('local') or {}).items():
+            env[k] = str(v)
+
+    used_secrets = (resolved.manifest.get('uses') or {}).get('secrets') or []
+    if used_secrets:
+        from serverless.secrets_catalog import Catalog
+        from serverless.secrets_catalog import CatalogError
+        from serverless.secrets_sync import load_env_file
+
+        try:
+            catalog = Catalog.load()
+        except CatalogError:
+            return env
+
+        env_file = (
+            Path(__file__).resolve().parents[2]
+            / 'docker'
+            / 'env'
+            / 'server'
+            / '.local'
+        )
+        if not env_file.exists():
+            return env
+
+        env_values = load_env_file(env_file)
+        for short_name in used_secrets:
+            try:
+                spec = catalog.get(short_name)
+            except CatalogError:  # noqa: S112
+                # Lambda declara un secreto que el catalogo no conoce
+                # (puede ser una migracion en curso). Saltar el secreto
+                # en local; el deploy normal lo detectara.
+                continue
+            source_value = env_values.get(spec.source_env_var)
+            if source_value:
+                env[spec.source_env_var] = source_value
+
+    return env
+
+
 def _load_event(event_path: Path | None) -> tuple[Any, str | None]:
     """Carga el event JSON desde disco.
 
@@ -232,8 +296,27 @@ def _run_direct(resolved: ResolvedLambda, event: Any) -> int:
                 str(manifest.get('memory', 256)),
             ]
 
+            # Local mode: inyectar env vars del .env + manifest.env.local.
+            # Hereda PATH/HOME/USER del proceso devtools. Hermetico: nombres
+            # se loggean abajo, valores nunca.
+            import os as _os
+
+            base_env = {**_os.environ}
+            base_env.update(_local_env_vars(resolved))
+            injected = sorted(
+                k for k in _local_env_vars(resolved) if k not in _os.environ
+            )
+            if injected:
+                print(
+                    _c(CYAN, f'[local-env] inyectadas: {", ".join(injected)}'),
+                )
+
             completed = subprocess.run(  # noqa: S603
-                cmd, capture_output=True, text=True, check=False
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=base_env,
             )
             event_file.unlink(missing_ok=True)
     except VendoringError as exc:
@@ -255,11 +338,18 @@ def _build_docker_command(
     *,
     runtime: str,
     handler: str,
+    env_vars: dict[str, str] | None = None,
 ) -> list[str]:
     """Arma el comando `docker run` que levanta el RIE.
 
     Monta el `build/` del lambda en `/var/task` (read-only), publica el
-    puerto del RIE y usa la imagen oficial del runtime.
+    puerto del RIE y usa la imagen oficial del runtime. Si se proveen
+    `env_vars`, inyecta cada par KEY=VALUE al contenedor.
+
+    Hermetico: el VALOR pasa al docker como argumento del flag `-e`, lo
+    que es VISIBLE en `ps aux`. Para modo local-dev es aceptable porque
+    el .env ya esta en disco; pero NUNCA usar esta funcion con secretos
+    de produccion. SOLO modo local.
 
     Parameters
     ----------
@@ -269,6 +359,8 @@ def _build_docker_command(
         Runtime del manifiesto (`python3.13`); fija el tag de la imagen.
     handler : str
         Handler del manifiesto (`core.handler.lambda_handler`).
+    env_vars : dict[str, str] | None
+        Env vars a inyectar al contenedor (KEY=VALUE).
 
     Returns
     -------
@@ -276,17 +368,20 @@ def _build_docker_command(
         Comando `docker run` completo.
     """
     image_tag = runtime.removeprefix('python')
-    return [
-        'docker',
-        'run',
-        '--rm',
-        '-v',
-        f'{build_path}:/var/task:ro',
-        '-p',
-        f'{_RIE_HOST_PORT}:8080',
-        f'{_RIE_IMAGE_PREFIX}:{image_tag}',
-        handler,
-    ]
+    cmd = ['docker', 'run', '--rm']
+    for key, value in (env_vars or {}).items():
+        cmd.extend(['-e', f'{key}={value}'])
+    cmd.extend(
+        [
+            '-v',
+            f'{build_path}:/var/task:ro',
+            '-p',
+            f'{_RIE_HOST_PORT}:8080',
+            f'{_RIE_IMAGE_PREFIX}:{image_tag}',
+            handler,
+        ]
+    )
+    return cmd
 
 
 def _invoke_rie_endpoint(event: Any) -> int:
@@ -350,12 +445,25 @@ def _run_rie(resolved: ResolvedLambda, event: Any) -> int:
         _err(str(exc))
         return 1
 
+    env_vars = _local_env_vars(resolved)
     docker_cmd = _build_docker_command(
         build_path,
         runtime=runtime,
         handler=handler,
+        env_vars=env_vars,
     )
-    print(_c(CYAN, f'$ {" ".join(docker_cmd)}'))
+    # Hermetico: imprimimos el comando SIN los valores (los `-e KEY=VALUE`
+    # contienen los valores reales del .env, no se loggean). El siguiente
+    # arg tras `-e` se reemplaza por `<KEY=...>`.
+    safe_view: list[str] = []
+    for i, arg in enumerate(docker_cmd):
+        if i > 0 and docker_cmd[i - 1] == '-e':
+            safe_view.append('<KEY=...>')
+        else:
+            safe_view.append(arg)
+    print(_c(CYAN, f'$ {" ".join(safe_view)}'))
+    if env_vars:
+        print(_c(CYAN, f'[local-env] {len(env_vars)} env vars al RIE'))
     # S603: comando armado por devtools (binario fijo `docker` + flags
     # derivados del manifiesto), sin input no confiable de usuario.
     container = subprocess.Popen(  # noqa: S603

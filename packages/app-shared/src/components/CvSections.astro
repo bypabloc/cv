@@ -11,7 +11,6 @@ import {
   sortByPriority,
 } from '@portfolio/content'
 import AwardCard from '@portfolio/ui/components/AwardCard.astro'
-import CaseStudyExpander from '@portfolio/ui/components/CaseStudyExpander.astro'
 import ExperienceTimeline from '@portfolio/ui/components/ExperienceTimeline.astro'
 /**
  * @component CvSections
@@ -329,31 +328,6 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
       <p class="filter-empty text-muted" data-filter-empty hidden>
         {t.components.filters.emptyProjects}
       </p>
-    )
-  }
-
-  {
-    projs.filter((p) => p.caseStudyDetailed).length > 0 && (
-      <div class="case-studies">
-        {projs
-          .filter((p) => p.caseStudyDetailed)
-          .map((p) => (
-            <CaseStudyExpander
-              title={p.name}
-              problem={p.caseStudyDetailed!.problem[locale]}
-              process={p.caseStudyDetailed!.process[locale]}
-              result={p.caseStudyDetailed!.result[locale]}
-              metrics={p.metrics ? Object.values(p.metrics) : []}
-              labels={{
-                cta: t.labels.caseStudyCta,
-                problem: t.labels.caseStudyProblem,
-                process: t.labels.caseStudyProcess,
-                result: t.labels.caseStudyResult,
-                metricsTitle: t.labels.caseStudyMetrics,
-              }}
-            />
-          ))}
-      </div>
     )
   }
 </section>

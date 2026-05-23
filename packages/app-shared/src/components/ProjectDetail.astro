@@ -1,5 +1,6 @@
 ---
 import type { Project } from '@portfolio/content'
+import CaseStudyExpander from '@portfolio/ui/components/CaseStudyExpander.astro'
 import SectionHeader from '@portfolio/ui/components/SectionHeader.astro'
 /**
  * @component ProjectDetail
@@ -64,25 +65,30 @@ const metricEntries = p.metrics ? Object.entries(p.metrics) : []
 
   {
     cs && (
-      <div class="project-detail__case">
+      <div class="project-detail__case-wrapper">
         <h3 class="text-h5 project-detail__heading">
-          {t.labels.caseStudyProblem}
+          {t.labels.caseStudyCta}
         </h3>
-        <p class="text-muted">{cs.problem[locale]}</p>
-        <h3 class="text-h5 project-detail__heading">
-          {t.labels.caseStudyProcess}
-        </h3>
-        <p class="text-muted">{cs.process[locale]}</p>
-        <h3 class="text-h5 project-detail__heading">
-          {t.labels.caseStudyResult}
-        </h3>
-        <p class="text-muted">{cs.result[locale]}</p>
+        <CaseStudyExpander
+          title={p.name}
+          problem={cs.problem[locale]}
+          process={cs.process[locale]}
+          result={cs.result[locale]}
+          metrics={metricEntries.map(([k, v]) => `${k}: ${v}`)}
+          labels={{
+            cta: t.labels.caseStudyCta,
+            problem: t.labels.caseStudyProblem,
+            process: t.labels.caseStudyProcess,
+            result: t.labels.caseStudyResult,
+            metricsTitle: t.labels.caseStudyMetrics,
+          }}
+        />
       </div>
     )
   }
 
   {
-    metricEntries.length > 0 && (
+    !cs && metricEntries.length > 0 && (
       <>
         <h3 class="text-h5 project-detail__heading">
           {t.labels.caseStudyMetrics}

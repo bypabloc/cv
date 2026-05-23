@@ -815,6 +815,134 @@ def _ssm_value(path: str, *, profile: str | None, region: str) -> str:
     return str(result.json['Parameter']['Value'])
 
 
+def _wire_cors_options(
+    *,
+    api_id: str,
+    resource_id: str,
+    method: str,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Crea el method OPTIONS para CORS preflight en un resource de API GW.
+
+    Patron estandar de CORS:
+    - PUT method OPTIONS authType=NONE.
+    - MOCK integration con request template para application/json y
+      passthroughBehavior=WHEN_NO_TEMPLATES (sin este flag, browsers que
+      hacen preflight sin Content-Type reciben 500).
+    - method-response + integration-response con los 4 headers
+      Access-Control-* (Origin=*, Methods, Headers, Max-Age=600).
+
+    Headers permitidos: Content-Type + los headers Turnstile del form de
+    contacto. Si en el futuro el frontend manda headers custom, ampliar
+    aqui (anyway el preflight los lista en Access-Control-Request-Headers
+    y el navegador valida contra Access-Control-Allow-Headers).
+
+    Idempotente: cada `aws apigateway put-*` acepta re-aplicacion sobre
+    una entidad existente (sobrescribe). Para flexibilidad ante re-deploys,
+    los errores "ConflictException: Method already exists" se ignoran.
+    """
+    allowed_headers = 'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'
+    allowed_methods = f'{method},OPTIONS'
+
+    # 1. put-method OPTIONS — puede fallar con ConflictException si ya
+    # existe. Lo tratamos como noop.
+    aws(
+        [
+            'apigateway',
+            'put-method',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--authorization-type',
+            'NONE',
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+    # 2. put-integration MOCK
+    aws(
+        [
+            'apigateway',
+            'put-integration',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--type',
+            'MOCK',
+            '--request-templates',
+            '{"application/json":"{\\"statusCode\\":200}"}',
+            '--passthrough-behavior',
+            'WHEN_NO_TEMPLATES',
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+    # 3. put-method-response 200 declarando los 4 headers CORS
+    aws(
+        [
+            'apigateway',
+            'put-method-response',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--status-code',
+            '200',
+            '--response-parameters',
+            (
+                'method.response.header.Access-Control-Allow-Origin=true,'
+                'method.response.header.Access-Control-Allow-Methods=true,'
+                'method.response.header.Access-Control-Allow-Headers=true,'
+                'method.response.header.Access-Control-Max-Age=true'
+            ),
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+    # 4. put-integration-response 200 con los VALORES de los headers
+    aws(
+        [
+            'apigateway',
+            'put-integration-response',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--status-code',
+            '200',
+            '--response-parameters',
+            (
+                '{'
+                '"method.response.header.Access-Control-Allow-Origin":"\'*\'",'
+                f'"method.response.header.Access-Control-Allow-Methods":"\'{allowed_methods}\'",'
+                f'"method.response.header.Access-Control-Allow-Headers":"\'{allowed_headers}\'",'
+                '"method.response.header.Access-Control-Max-Age":"\'600\'"'
+                '}'
+            ),
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+
 def _wire_http_trigger(
     rendered: RenderedLambda,
     stage: str,
@@ -895,6 +1023,19 @@ def _wire_http_trigger(
             '--uri',
             invoke_arn,
         ],
+        profile=profile,
+        region=region,
+    )
+    # CORS preflight: agrega OPTIONS al resource para que los browsers que
+    # disparan preflight (Content-Type application/json o headers custom)
+    # reciban un 200 con los headers Access-Control-* correctos. Sin esto,
+    # API Gateway responde MissingAuthenticationTokenException (HTTP 403) y
+    # el browser bloquea la request real. Idempotente — los `put-*` aceptan
+    # re-aplicacion sobre un metodo existente.
+    _wire_cors_options(
+        api_id=api_id,
+        resource_id=resource_id,
+        method=str(trigger.method),
         profile=profile,
         region=region,
     )

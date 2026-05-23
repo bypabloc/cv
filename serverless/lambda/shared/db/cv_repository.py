@@ -387,6 +387,7 @@ def list_experiences(
 
             result: list[dict[str, Any]] = []
             for exp in experiences:
+                summary = translations.get(exp.id, {}).get('summary') or None
                 exp_dict: dict[str, Any] = _drop_nones(
                     {
                         'slug': exp.slug,
@@ -398,6 +399,7 @@ def list_experiences(
                         'seniority': exp.seniority,
                         'metricsEstimated': exp.metrics_estimated,
                         'role': translations.get(exp.id, {}).get('role', {}),
+                        'summary': summary,
                         'responsibilities': bullets_by_exp[exp.id][
                             'responsibility'
                         ],
@@ -507,6 +509,7 @@ def list_projects(
                         'slug': proj.slug,
                         'name': proj.name,
                         'url': proj.url,
+                        'links': proj.links or None,
                         'repo': proj.repo,
                         'status': proj.status,
                         'projectType': proj.project_type,

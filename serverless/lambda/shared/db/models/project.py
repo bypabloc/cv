@@ -11,7 +11,10 @@ Estructuras embebidas del YAML:
   `project_metrics` (par clave/valor ordenado).
 """
 
+from typing import Any
+
 from sqlalchemy import Boolean, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import Base, TimestampMixin, UUIDPKMixin
@@ -33,6 +36,12 @@ class Project(UUIDPKMixin, TimestampMixin, Base):
     # Nombre propio del proyecto — NO bilingue.
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     url: Mapped[str | None] = mapped_column(String(500))
+    # Links adicionales del proyecto (sitios alternos en produccion). JSONB
+    # con shape `[{"label": {"es": "X", "en": "X"}, "url": "https://..."}, ...]`.
+    # Si el proyecto solo tiene 1 URL en produccion, se queda en `url`; este
+    # campo solo aparece cuando hay >1 sitios alternos (ej. el sistema de
+    # saldar deudas Chile cubre 3 marcas).
+    links: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
     repo: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(project_status_enum, nullable=False)
     project_type: Mapped[str] = mapped_column(project_type_enum, nullable=False)

@@ -255,28 +255,35 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           detailHref={`${localePrefix}/experience/${e.slug}`}
           detailLabel={t.labels.viewDetail}
         >
-          {isDetailedCv(niche) && (
-            <p class="exp-bullets__heading text-label">
-              {t.labels.responsibilities}
-            </p>
-          )}
-          <ul class="exp-bullets">
-            {visibleResponsibilities(e.responsibilities[locale], niche).map(
-              (r) => (
-                <li>{r}</li>
-              ),
-            )}
-          </ul>
-          {isDetailedCv(niche) && e.achievements[locale].length > 0 && (
+          {e.summary ? (
+            <p class="exp-summary">{e.summary[locale]}</p>
+          ) : (
             <>
-              <p class="exp-bullets__heading text-label">
-                {t.labels.achievements}
-              </p>
-              <ul class="exp-bullets exp-bullets--achievements">
-                {e.achievements[locale].map((a) => (
-                  <li>{a}</li>
+              {isDetailedCv(niche) && (
+                <p class="exp-bullets__heading text-label">
+                  {t.labels.responsibilities}
+                </p>
+              )}
+              <ul class="exp-bullets">
+                {visibleResponsibilities(
+                  e.responsibilities[locale],
+                  niche,
+                ).map((r) => (
+                  <li>{r}</li>
                 ))}
               </ul>
+              {isDetailedCv(niche) && e.achievements[locale].length > 0 && (
+                <>
+                  <p class="exp-bullets__heading text-label">
+                    {t.labels.achievements}
+                  </p>
+                  <ul class="exp-bullets exp-bullets--achievements">
+                    {e.achievements[locale].map((a) => (
+                      <li>{a}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </>
           )}
         </TimelineItem>
@@ -400,6 +407,10 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   }
   .section--compact {
     padding-block: var(--space-24);
+  }
+  .exp-summary {
+    margin: 0;
+    line-height: var(--line-height-relaxed);
   }
   .exp-bullets {
     list-style: disc inside;

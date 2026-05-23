@@ -1,9 +1,11 @@
 /**
- * @feature TrackingPixel - evento page_load en las 6 apps
- * @description Verifica el cableado end-to-end del TrackingPixel (SPEC-102):
+ * @feature TrackingPixel - tracking always-on en las 6 apps
+ * @description Verifica el cableado end-to-end del TrackingPixel:
  *   - cada subdominio emite POST /track con event_id + event_type_id al cargar
+ *     SIN requerir opt-in previo (tracking always-on, sin gating)
  *   - la navegacion SPA (View Transitions) re-dispara un page_load nuevo
- *   - sin consentimiento y sin ?cf_track=force NO se emite ningun /track
+ *   - NO existe banner de consentimiento ni boton "Gestionar consentimiento"
+ *     en el DOM [AC-1, AC-4]
  *
  *   El pixel envia el evento por navigator.sendBeacon (con fallback a fetch).
  *   El body de sendBeacon viaja como Blob y Playwright no expone su postData
@@ -82,9 +84,9 @@ async function waitForCount(
     .toBeGreaterThanOrEqual(min)
 }
 
-test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
+test.describe('Feature: TrackingPixel always-on', () => {
   for (const { name, host } of SUBDOMAINS) {
-    test(`Given ${name} con ?cf_track=force When carga Then emite POST /track con event_type_id [AC-1]`, async ({
+    test(`Given ${name} When carga Then emite POST /track con event_type_id (sin opt-in) [AC-2]`, async ({
       page,
     }) => {
       // Arrange
@@ -92,7 +94,7 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
       const captured = await captureTrackRequests(page)
 
       // Act
-      await page.goto(`${subdomainUrl(host)}/?cf_track=force`, {
+      await page.goto(`${subdomainUrl(host)}/`, {
         waitUntil: 'domcontentloaded',
       })
       await waitForCount(captured, 1)
@@ -106,7 +108,25 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
     })
   }
 
-  test('Given dos cargas en la misma sesion When inspecciono Then mismo session_id y event_id distinto [AC-2]', async ({
+  test('Given carga inicial When inspecciono Then NO existe banner ni boton Gestionar consentimiento [AC-1, AC-4]', async ({
+    page,
+  }) => {
+    // Act
+    await page.goto(`${subdomainUrl()}/`, { waitUntil: 'domcontentloaded' })
+
+    // Assert: ningun dialogo con label de consent en ES ni en EN
+    await expect(
+      page.getByRole('dialog', {
+        name: /Consentimiento de analytics|Analytics consent/i,
+      }),
+    ).toHaveCount(0)
+    // El boton del Footer ya no existe
+    await expect(page.locator('[data-testid="manage-consent"]')).toHaveCount(0)
+    // El elemento del banner tampoco
+    await expect(page.locator('#cookie-banner')).toHaveCount(0)
+  })
+
+  test('Given dos cargas en la misma sesion When inspecciono Then mismo session_id y event_id distinto', async ({
     page,
   }) => {
     // Arrange
@@ -115,13 +135,9 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
     const base = subdomainUrl()
 
     // Act: dos cargas completas (full reload) en la misma sesion del browser
-    await page.goto(`${base}/?cf_track=force`, {
-      waitUntil: 'domcontentloaded',
-    })
+    await page.goto(`${base}/`, { waitUntil: 'domcontentloaded' })
     await waitForCount(captured, 1)
-    await page.goto(`${base}/about?cf_track=force`, {
-      waitUntil: 'domcontentloaded',
-    })
+    await page.goto(`${base}/about`, { waitUntil: 'domcontentloaded' })
     await waitForCount(captured, 2)
 
     // Assert
@@ -136,10 +152,8 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
     await disableSendBeacon(page)
     const captured = await captureTrackRequests(page)
 
-    // Act: cargar el home y navegar via View Transition manteniendo el flag
-    await page.goto(`${subdomainUrl()}/?cf_track=force`, {
-      waitUntil: 'domcontentloaded',
-    })
+    // Act: cargar el home y navegar via View Transition
+    await page.goto(`${subdomainUrl()}/`, { waitUntil: 'domcontentloaded' })
     await waitForCount(captured, 1)
 
     await page.evaluate(() => {
@@ -147,9 +161,9 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
         .navigate
       // Astro expone navigate() con ClientRouter activo; fallback a location.
       if (nav) {
-        nav('/about?cf_track=force')
+        nav('/about')
       } else {
-        window.location.href = '/about?cf_track=force'
+        window.location.href = '/about'
       }
     })
 
@@ -168,21 +182,5 @@ test.describe('Feature: TrackingPixel page_load (SPEC-102)', () => {
     const aboutEvent = captured.find((p) => p.page_url.includes('/about'))
     expect(aboutEvent?.page_url).toContain('/about')
     expect(aboutEvent?.event_id).not.toBe(captured[0].event_id)
-  })
-
-  test('Given pagina sin consentimiento y sin flag When carga Then NO se emite /track [AC-8]', async ({
-    page,
-  }) => {
-    // Arrange
-    await disableSendBeacon(page)
-    const captured = await captureTrackRequests(page)
-
-    // Act: cargar sin ?cf_track=force y sin cf_consent en localStorage
-    await page.goto(`${subdomainUrl()}/`, { waitUntil: 'domcontentloaded' })
-    // Dar tiempo al requestIdleCallback del pixel (timeout 2000ms)
-    await page.waitForTimeout(4000)
-
-    // Assert
-    expect(captured.length).toBe(0)
   })
 })

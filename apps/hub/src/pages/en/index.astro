@@ -2,7 +2,6 @@
 import { getHubSelector, profile } from '@portfolio/content'
 import { buildPersonSchema } from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
-import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
 import Footer from '@portfolio/ui/components/Footer.astro'
 import MeshGradientBg from '@portfolio/ui/components/MeshGradientBg.astro'
 import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
@@ -106,7 +105,6 @@ const hubStyle = nicheTokensToCssVars('hub')
     strings={t.components.footer}
   />
   <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="hub" />
-  <CookieBanner strings={t.components.cookieBanner} />
 </BaseLayout>
 
 <style>

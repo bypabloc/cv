@@ -23,7 +23,6 @@ import {
   buildSiteNavigationSchema,
 } from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
-import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
 import Footer from '@portfolio/ui/components/Footer.astro'
 import Nav from '@portfolio/ui/components/Nav.astro'
 import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
@@ -135,7 +134,6 @@ const nicheStyle = nicheTokensToCssVars(niche)
     apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
     niche={niche}
   />
-  <CookieBanner strings={strings.components.cookieBanner} />
   <script>
     import {
       initMagneticCursor,

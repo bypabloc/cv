@@ -32,13 +32,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import boto3
-from aws_lambda_powertools.metrics import MetricUnit
+from shared.aws import send_email
 from shared.aws.ssm import get_parameter
 from shared.core.ulid import new_uuidv7
 from shared.dynamodb import ContactItem
-from shared.observability.logger import logger
-from shared.observability.metrics import metrics
+from shared.observability import MetricUnit, logger, metrics
 
 # templates/ vive dentro de core/ para que el deploy lo incluya en el zip.
 # Este archivo esta en core/services/, asi que parents[1] = core/.
@@ -112,13 +110,6 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Notificacion SES (antes notification.py)
 # ---------------------------------------------------------------------------
-
-
-def _ses_client() -> Any:
-    """Cliente SES lazy (no module-scope, para compat con moto)."""
-    return boto3.client(
-        'sesv2', region_name=os.environ.get('AWS_SES_REGION', 'us-east-1')
-    )
 
 
 def _render_mustache_lite(template: str, context: dict[str, Any]) -> str:
@@ -210,19 +201,13 @@ def send_owner_email(contact: dict[str, Any]) -> str:
         f'({contact.get("niche", "generic")})'
     )
 
-    response = _ses_client().send_email(
-        FromEmailAddress=f'The Full Stack <{from_address}>',
-        Destination={'ToAddresses': recipients},
-        ReplyToAddresses=[contact.get('email', from_address)],
-        Content={
-            'Simple': {
-                'Subject': {'Data': subject, 'Charset': 'UTF-8'},
-                'Body': {
-                    'Text': {'Data': text_body, 'Charset': 'UTF-8'},
-                    'Html': {'Data': html_body, 'Charset': 'UTF-8'},
-                },
-            },
-        },
+    response = send_email(
+        from_address=f'The Full Stack <{from_address}>',
+        to_addresses=recipients,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+        reply_to=[contact.get('email', from_address)],
     )
 
     message_id: str = response.get('MessageId', '')

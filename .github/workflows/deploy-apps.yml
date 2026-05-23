@@ -131,6 +131,11 @@ jobs:
     name: Deploy ${{ matrix.niche }}
     needs: [resolve-env, build-apps]
     runs-on: ubuntu-24.04
+    # GitHub Environment: aplica la deployment branch policy de prod
+    # (solo branch main) y registra el deploy en el audit log del env.
+    # Los secrets CLOUDFLARE_* siguen siendo Repository Secrets (mismos
+    # valores en los 3 envs).
+    environment: ${{ needs.resolve-env.outputs.stage }}
     timeout-minutes: 10
     strategy:
       fail-fast: false

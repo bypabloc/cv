@@ -238,16 +238,21 @@ def cmd_sync_secrets(flags: dict[str, Any]) -> int:
         return 2
 
     env_file = _SERVER_ENV_DIR / f'.{stage}'
+    example_file = _SERVER_ENV_DIR / '.example'
     only_raw = flags.get('only')
     only: tuple[str, ...] | None = None
     if only_raw:
         only = tuple(s.strip() for s in str(only_raw).split(',') if s.strip())
 
     try:
+        # `example_file` habilita el fallback a `os.environ` cuando el
+        # `.env` local no existe (modo CI). En local con `.env` presente
+        # se usa el archivo y `os.environ` se ignora.
         results = sync_secrets_to_ssm(
             stage=str(stage),
             env_file=env_file,
             catalog=Catalog.load(),
+            example_file=example_file,
             profile=flags.get('aws_profile'),
             only=only,
             dry_run=bool(flags.get('dry_run')),
@@ -317,7 +322,7 @@ def cmd_secrets_status(flags: dict[str, Any]) -> int:
     from serverless.secrets_catalog import Catalog
     from serverless.secrets_catalog import CatalogError
     from serverless.secrets_sync import SyncError
-    from serverless.secrets_sync import load_env_file
+    from serverless.secrets_sync import load_env_with_fallback
 
     stage = flags.get('stage')
     if not stage:
@@ -331,10 +336,11 @@ def cmd_secrets_status(flags: dict[str, Any]) -> int:
         return 1
 
     env_file = _SERVER_ENV_DIR / f'.{stage}'
+    example_file = _SERVER_ENV_DIR / '.example'
     env_values: dict[str, str] = {}
-    if env_file.exists():
+    if env_file.exists() or example_file.exists():
         try:
-            env_values = load_env_file(env_file)
+            env_values = load_env_with_fallback(env_file, example_file)
         except SyncError:
             env_values = {}
 

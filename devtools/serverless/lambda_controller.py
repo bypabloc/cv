@@ -24,6 +24,12 @@ import shutil
 import subprocess
 from typing import Any
 
+from shared.console import CYAN
+from shared.console import GREEN
+from shared.console import YELLOW
+from shared.console import _c
+from shared.console import _err
+
 from serverless import local_runtime
 from serverless import provisioner
 from serverless import state as state_mod
@@ -37,11 +43,6 @@ from serverless.resolve import ResolvedLambda
 from serverless.resolve import available_lambdas
 from serverless.resolve import resolve_lambda
 from serverless.vendoring import VendoringError
-from shared.console import CYAN
-from shared.console import GREEN
-from shared.console import YELLOW
-from shared.console import _c
-from shared.console import _err
 
 
 # Raiz del backend serverless del portfolio. La suite CENTRALIZADA de la
@@ -281,26 +282,29 @@ def _sync_secrets_before_deploy(
     if not used_secrets:
         return 0
 
-    env_file = (
-        _PORTFOLIO_SERVERLESS_ROOT.parent
-        / 'docker'
-        / 'env'
-        / 'server'
-        / f'.{stage}'
+    server_env_dir = (
+        _PORTFOLIO_SERVERLESS_ROOT.parent / 'docker' / 'env' / 'server'
     )
-    if not env_file.exists():
+    env_file = server_env_dir / f'.{stage}'
+    example_file = server_env_dir / '.example'
+    if not env_file.exists() and not example_file.exists():
         _err(
-            f'docker/env/server/.{stage} no existe. Crear desde '
-            f'docker/env/server/.example y completar los valores.',
+            f'docker/env/server/.{stage} no existe y tampoco hay '
+            'docker/env/server/.example para resolver via os.environ.',
         )
         return 1
 
     try:
         catalog = Catalog.load()
+        # `example_file` habilita el fallback: si `env_file` no existe
+        # (modo CI), las keys se resuelven desde `os.environ` usando el
+        # `.example` como schema canonico. GitHub Actions inyecta cada
+        # key como Environment Secret.
         results = sync_secrets_to_ssm(
             stage=stage,
             env_file=env_file,
             catalog=catalog,
+            example_file=example_file,
             profile=profile,
             region=region,
             only=tuple(used_secrets),

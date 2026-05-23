@@ -7,6 +7,9 @@ Reglas:
 
 - El `.env` se carga con `dotenv_values` (PyPI `python-dotenv`) o, como
   fallback minimo, un parser custom (sin imprimir).
+- En CI (sin `.env` local) el valor de cada key se resuelve desde
+  `os.environ`, usando `docker/env/server/.example` como schema canonico
+  de keys validas. GitHub Actions inyecta cada key como Environment Secret.
 - `aws ssm put-parameter` recibe el valor por tempfile (`--value file://`).
   Tempfile con perms `0600`, borrado en `finally`. NUNCA por argumento
   (visible en `ps`) ni stdin (inflexible bajo `subprocess`).
@@ -97,6 +100,65 @@ def load_env_file(env_file: Path) -> dict[str, str]:
             if key:
                 result[key] = value
         return result
+
+
+def load_example_keys(example_file: Path) -> tuple[str, ...]:
+    """Devuelve las KEY declaradas en `.example`, en orden de aparicion.
+
+    El `.example` es el SCHEMA canonico: enumera todas las keys que el
+    backend serverless reconoce, con o sin valor por defecto. Esta
+    funcion solo extrae los NOMBRES (no los valores). El parsing acepta
+    keys con digitos (ej. `AWS_S3_REGION_NAME`).
+    """
+    if not example_file.exists():
+        raise SyncError(f'.example no existe: {example_file}')
+
+    keys: list[str] = []
+    seen: set[str] = set()
+    for line in example_file.read_text(encoding='utf-8').splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+        if '=' not in stripped:
+            continue
+        key, _, _value = stripped.partition('=')
+        key = key.strip()
+        # Validar identificador: empieza con letra/underscore, resto
+        # alfanumerico o underscore (acepta digitos: AWS_S3_REGION_NAME).
+        if not key or not (key[0].isalpha() or key[0] == '_'):
+            continue
+        if not all(c.isalnum() or c == '_' for c in key):
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        keys.append(key)
+    return tuple(keys)
+
+
+def load_env_with_fallback(
+    env_file: Path,
+    example_file: Path,
+) -> dict[str, str]:
+    """Carga env vars con prioridad `.env` archivo -> `os.environ` schema.
+
+    - Si `env_file` existe: devuelve `load_env_file(env_file)`.
+    - Si NO existe: devuelve `{key: os.environ[key]}` para cada `key` del
+      `.example`. Las keys ausentes en `os.environ` se omiten (no se
+      defaultean a ''); el caller (`sync_secrets_to_ssm`) decide si la
+      ausencia es fatal segun `spec.required`.
+
+    Esto soporta dos modos:
+    - Local del dev: lee `docker/env/server/.{stage}` (con valores reales).
+    - CI: GitHub Actions inyecta cada key como Environment Secret a
+      `os.environ` y este modulo las resuelve usando `.example` como
+      schema canonico.
+    """
+    if env_file.exists():
+        return load_env_file(env_file)
+
+    keys = load_example_keys(example_file)
+    return {key: os.environ[key] for key in keys if key in os.environ}
 
 
 def _aws_cmd(profile: str | None, *extra: str) -> list[str]:
@@ -218,6 +280,7 @@ def _eval_one(
     profile: str | None,
     region: str,
     dry_run: bool,
+    env_source: str,
 ) -> SyncResult:
     """Evalua y sincroniza un secreto."""
     path = spec.path_for(stage)
@@ -225,8 +288,8 @@ def _eval_one(
     if not local_value:
         if spec.required:
             raise SyncError(
-                f'{spec.source_env_var} ausente o vacio en docker/env/server/'
-                f'.{stage} (requerido por secreto {spec.name!r})',
+                f'{spec.source_env_var} ausente o vacio en {env_source} '
+                f'(requerido por secreto {spec.name!r})',
             )
         return SyncResult(
             name=spec.name,
@@ -269,6 +332,7 @@ def sync_secrets_to_ssm(
     stage: str,
     env_file: Path,
     catalog: Catalog,
+    example_file: Path | None = None,
     profile: str | None = None,
     region: str = 'us-east-1',
     only: tuple[str, ...] | None = None,
@@ -279,6 +343,12 @@ def sync_secrets_to_ssm(
     Devuelve la lista de resultados (un SyncResult por secreto considerado).
     Levanta SyncError si un required falta en el .env.
 
+    Resolucion de valores:
+    - Si `env_file` existe, se carga ese archivo (modo dev local).
+    - Si NO existe y se paso `example_file`, las keys del `.example` se
+      resuelven desde `os.environ` (modo CI con Environment Secrets).
+    - Si NO existe y NO se paso `example_file`, se levanta SyncError.
+
     Hermetico: ningun valor real aparece en stdout/stderr/logs/exception
     messages.
     """
@@ -288,7 +358,16 @@ def sync_secrets_to_ssm(
             'Las env vars del .local se inyectan al runtime del lambda directo.',
         )
 
-    env_values = load_env_file(env_file)
+    if example_file is not None:
+        env_values = load_env_with_fallback(env_file, example_file)
+        env_source = (
+            f'docker/env/server/.{stage}'
+            if env_file.exists()
+            else 'os.environ (CI: GitHub Environment Secrets)'
+        )
+    else:
+        env_values = load_env_file(env_file)
+        env_source = f'docker/env/server/.{stage}'
     specs = catalog.for_stage(stage)
     if only:
         only_set = set(only)
@@ -303,6 +382,7 @@ def sync_secrets_to_ssm(
             profile=profile,
             region=region,
             dry_run=dry_run,
+            env_source=env_source,
         )
         results.append(result)
     return results

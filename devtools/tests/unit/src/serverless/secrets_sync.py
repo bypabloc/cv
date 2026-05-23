@@ -144,6 +144,131 @@ class TestLoadEnvFile:
         assert result == {'KEY': 'value'}
 
 
+class TestLoadExampleKeys:
+    def test_when_file_does_not_exist_raises(self, tmp_path):
+        from serverless.secrets_sync import SyncError
+        from serverless.secrets_sync import load_example_keys
+
+        with pytest.raises(SyncError, match='no existe'):
+            load_example_keys(tmp_path / '.example')
+
+    def test_extracts_keys_in_order_skipping_comments(self, tmp_path):
+        from serverless.secrets_sync import load_example_keys
+
+        example = tmp_path / '.example'
+        example.write_text(
+            '# header comment\nFOO=\n\nBAR=value\n# inline comment\nBAZ=x\n',
+            encoding='utf-8',
+        )
+
+        keys = load_example_keys(example)
+
+        assert keys == ('FOO', 'BAR', 'BAZ')
+
+    def test_accepts_keys_with_digits(self, tmp_path):
+        from serverless.secrets_sync import load_example_keys
+
+        example = tmp_path / '.example'
+        example.write_text(
+            'AWS_S3_REGION_NAME=us-east-1\nDB_PORT=5432\n',
+            encoding='utf-8',
+        )
+
+        keys = load_example_keys(example)
+
+        assert keys == ('AWS_S3_REGION_NAME', 'DB_PORT')
+
+    def test_deduplicates_repeated_keys(self, tmp_path):
+        from serverless.secrets_sync import load_example_keys
+
+        example = tmp_path / '.example'
+        example.write_text('FOO=a\nBAR=b\nFOO=c\n', encoding='utf-8')
+
+        keys = load_example_keys(example)
+
+        assert keys == ('FOO', 'BAR')
+
+    def test_skips_invalid_identifiers(self, tmp_path):
+        from serverless.secrets_sync import load_example_keys
+
+        example = tmp_path / '.example'
+        example.write_text(
+            '1BAD_LEADING_DIGIT=x\nGOOD=y\nBAD-DASH=z\n',
+            encoding='utf-8',
+        )
+
+        keys = load_example_keys(example)
+
+        assert keys == ('GOOD',)
+
+
+class TestLoadEnvWithFallback:
+    def test_when_env_file_exists_uses_file(self, tmp_path, monkeypatch):
+        from serverless.secrets_sync import load_env_with_fallback
+
+        example = tmp_path / '.example'
+        example.write_text('FOO=\nBAR=\n', encoding='utf-8')
+        env_file = _write_env(tmp_path, 'FOO=from_file\nBAR=from_file\n')
+        # os.environ tiene un valor distinto para verificar que NO se usa.
+        monkeypatch.setenv('FOO', 'from_env')
+        monkeypatch.setenv('BAR', 'from_env')
+
+        result = load_env_with_fallback(env_file, example)
+
+        assert result == {'FOO': 'from_file', 'BAR': 'from_file'}
+
+    def test_when_env_file_absent_uses_os_environ(self, tmp_path, monkeypatch):
+        from serverless.secrets_sync import load_env_with_fallback
+
+        example = tmp_path / '.example'
+        example.write_text('FOO=\nBAR=\nBAZ=\n', encoding='utf-8')
+        # Solo FOO y BAR en os.environ; BAZ ausente.
+        monkeypatch.setenv('FOO', 'from_env_foo')
+        monkeypatch.setenv('BAR', 'from_env_bar')
+        monkeypatch.delenv('BAZ', raising=False)
+
+        result = load_env_with_fallback(tmp_path / '.dev', example)
+
+        assert result == {'FOO': 'from_env_foo', 'BAR': 'from_env_bar'}
+
+    def test_when_env_file_absent_and_example_absent_raises(self, tmp_path):
+        from serverless.secrets_sync import SyncError
+        from serverless.secrets_sync import load_env_with_fallback
+
+        with pytest.raises(SyncError, match='no existe'):
+            load_env_with_fallback(tmp_path / '.dev', tmp_path / '.example')
+
+
+class TestSyncFlowWithFallback:
+    """Comportamiento de sync_secrets_to_ssm con example_file."""
+
+    def test_fail_fast_message_in_ci_mentions_os_environ(
+        self, tmp_path, monkeypatch
+    ):
+        """Sin .env y con TURNSTILE_SECRET_KEY ausente en os.environ, el
+        mensaje de error debe citar 'os.environ' (no el path del .env)
+        para que el dev de CI entienda donde setear la env var."""
+        from serverless.secrets_catalog import Catalog
+        from serverless.secrets_sync import SyncError
+        from serverless.secrets_sync import sync_secrets_to_ssm
+
+        catalog_dir = _write_catalog_dir(tmp_path)
+        example = tmp_path / '.example'
+        example.write_text('TURNSTILE_SECRET_KEY=\nOWNER_EMAIL=\n', 'utf-8')
+        monkeypatch.delenv('TURNSTILE_SECRET_KEY', raising=False)
+        monkeypatch.delenv('OWNER_EMAIL', raising=False)
+
+        catalog = Catalog.load(catalog_dir)
+
+        with pytest.raises(SyncError, match='os.environ'):
+            sync_secrets_to_ssm(
+                stage='dev',
+                env_file=tmp_path / '.dev',  # NO existe
+                catalog=catalog,
+                example_file=example,
+            )
+
+
 class TestSyncFlow:
     def test_when_value_matches_ssm_returns_skip(self, tmp_path, monkeypatch):
         from serverless.secrets_catalog import Catalog

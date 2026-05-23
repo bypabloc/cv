@@ -70,6 +70,27 @@ def _ensure_locale(locale: str) -> str:
     return locale if locale in ('es', 'en') else 'es'
 
 
+def _drop_nones(d: dict[str, Any]) -> dict[str, Any]:
+    """Devuelve `d` sin las claves cuyo valor sea None.
+
+    Los Zod schemas tratan los campos opcionales como `T | undefined` (la
+    clave AUSENTE), no como `T | null`. El cv_repository genera dicts con
+    `None` para FK opcionales (companyUrl, phone, etc.) — esto los elimina
+    antes de serializar al cache JSON / respuesta del API.
+    """
+    return {k: v for k, v in d.items() if v is not None}
+
+
+def _niches_or_omit(niches: list[str]) -> list[str] | None:
+    """Devuelve `niches` o None si esta vacio.
+
+    Para entidades con niches OPCIONAL en Zod (education, languages,
+    references): una lista vacia provoca Zod `min(1)` error; en su lugar
+    omitimos la clave entera. None se elimina con _drop_nones.
+    """
+    return niches if niches else None
+
+
 def _ensure_niche(niche: str | None) -> str | None:
     """Valida el niche o devuelve None."""
     valid = {'fintech', 'architect', 'leader', 'vibe', 'generic'}
@@ -259,24 +280,33 @@ def get_profile(*, locale: str = 'es') -> dict[str, Any]:
             )
             niche_slugs = [row[0] for row in session.execute(niches_stmt)]
 
-            result: dict[str, Any] = {
-                'slug': profile.handle,
-                'name': profile.name,
-                'handle': profile.handle,
-                'location': profile.location,
-                'avatarUrl': profile.avatar_url,
-                'contacts': {
+            # availability es opcional en Zod: si no hay traduccion, el
+            # campo se omite (no se envia {} vacio).
+            availability = translations.get('availability') or None
+            contacts = _drop_nones(
+                {
                     'email': profile.email,
                     'phone': profile.phone,
                     'linkedin': profile.linkedin_url,
                     'github': profile.github_url,
                     'website': profile.website_url,
                 },
-                'headline': translations.get('headline', {}),
-                'summary': translations.get('summary', {}),
-                'availability': translations.get('availability', {}),
-                'niches': niche_slugs,
-            }
+            )
+            result: dict[str, Any] = _drop_nones(
+                {
+                    # slug NO se expone: ProfileSchema (Zod) no lo declara
+                    # (el profile es singleton, handle/slug serian alias).
+                    'name': profile.name,
+                    'handle': profile.handle,
+                    'location': profile.location,
+                    'avatarUrl': profile.avatar_url,
+                    'contacts': contacts,
+                    'headline': translations.get('headline', {}),
+                    'summary': translations.get('summary', {}),
+                    'availability': availability,
+                    'niches': niche_slugs,
+                },
+            )
             if stats is not None:
                 result['stats'] = {
                     'yearsExperience': stats.years_experience,
@@ -357,23 +387,27 @@ def list_experiences(
 
             result: list[dict[str, Any]] = []
             for exp in experiences:
-                exp_dict: dict[str, Any] = {
-                    'slug': exp.slug,
-                    'company': exp.company,
-                    'country': exp.country,
-                    'companyUrl': exp.company_url,
-                    'start': exp.start_ym,
-                    'end': exp.end_ym,
-                    'seniority': exp.seniority,
-                    'metricsEstimated': exp.metrics_estimated,
-                    'role': translations.get(exp.id, {}).get('role', {}),
-                    'responsibilities': bullets_by_exp[exp.id]['responsibility'],
-                    'achievements': bullets_by_exp[exp.id]['achievement'],
-                    'niches': niches_by_exp.get(exp.id, []),
-                    'priority': all_priorities.get(exp.id, {}),
-                    'skillsTechnical': skills_by_exp[exp.id]['technical'],
-                    'skillsSoft': skills_by_exp[exp.id]['soft'],
-                }
+                exp_dict: dict[str, Any] = _drop_nones(
+                    {
+                        'slug': exp.slug,
+                        'company': exp.company,
+                        'country': exp.country,
+                        'companyUrl': exp.company_url,
+                        'start': exp.start_ym,
+                        'end': exp.end_ym,
+                        'seniority': exp.seniority,
+                        'metricsEstimated': exp.metrics_estimated,
+                        'role': translations.get(exp.id, {}).get('role', {}),
+                        'responsibilities': bullets_by_exp[exp.id][
+                            'responsibility'
+                        ],
+                        'achievements': bullets_by_exp[exp.id]['achievement'],
+                        'niches': niches_by_exp.get(exp.id, []),
+                        'priority': all_priorities.get(exp.id, {}),
+                        'skillsTechnical': skills_by_exp[exp.id]['technical'],
+                        'skillsSoft': skills_by_exp[exp.id]['soft'],
+                    },
+                )
                 result.append(exp_dict)
             # Ordenar por priority del niche pedido (si aplica) desc.
             if priorities:
@@ -460,27 +494,35 @@ def list_projects(
 
             result: list[dict[str, Any]] = []
             for proj in projects:
-                proj_dict: dict[str, Any] = {
-                    'slug': proj.slug,
-                    'name': proj.name,
-                    'url': proj.url,
-                    'repo': proj.repo,
-                    'status': proj.status,
-                    'projectType': proj.project_type,
-                    'isConfidential': proj.is_confidential,
-                    'metricsEstimated': proj.metrics_estimated,
-                    'summary': translations.get(proj.id, {}).get('summary', {}),
-                    'description': translations.get(proj.id, {}).get(
-                        'description', {}
-                    ),
-                    'caseStudy': translations.get(proj.id, {}).get(
-                        'case_study', {}
-                    ),
-                    'stack': stack_by_proj.get(proj.id, []),
-                    'metrics': dict(metrics_by_proj.get(proj.id, {})),
-                    'niches': niches_by_proj.get(proj.id, []),
-                    'priority': all_priorities.get(proj.id, {}),
-                }
+                # description y caseStudy son opcionales: si no tienen
+                # traducciones se omiten para que Zod no los rechace.
+                description = (
+                    translations.get(proj.id, {}).get('description') or None
+                )
+                case_study = (
+                    translations.get(proj.id, {}).get('case_study') or None
+                )
+                proj_dict: dict[str, Any] = _drop_nones(
+                    {
+                        'slug': proj.slug,
+                        'name': proj.name,
+                        'url': proj.url,
+                        'repo': proj.repo,
+                        'status': proj.status,
+                        'projectType': proj.project_type,
+                        'isConfidential': proj.is_confidential,
+                        'metricsEstimated': proj.metrics_estimated,
+                        'summary': translations.get(proj.id, {}).get(
+                            'summary', {}
+                        ),
+                        'description': description,
+                        'caseStudy': case_study,
+                        'stack': stack_by_proj.get(proj.id, []),
+                        'metrics': dict(metrics_by_proj.get(proj.id, {})),
+                        'niches': niches_by_proj.get(proj.id, []),
+                        'priority': all_priorities.get(proj.id, {}),
+                    },
+                )
                 cs = cs_by_proj.get(proj.id)
                 if cs is not None:
                     cs_texts = cs_translations.get(cs.id, {})
@@ -532,14 +574,18 @@ def list_certificates(
                 session, CertificateNiche, 'certificate_id', ids
             )
             return [
-                {
-                    'slug': c.slug,
-                    'title': c.title,
-                    'issuer': c.issuer,
-                    'date': c.issued_on.isoformat() if c.issued_on else None,
-                    'url': c.url,
-                    'niches': niches_by_cert.get(c.id, []),
-                }
+                _drop_nones(
+                    {
+                        'slug': c.slug,
+                        'title': c.title,
+                        'issuer': c.issuer,
+                        'date': (
+                            c.issued_on.isoformat() if c.issued_on else None
+                        ),
+                        'url': c.url,
+                        'niches': niches_by_cert.get(c.id, []),
+                    },
+                )
                 for c in certificates
             ]
     except Exception as exc:  # pragma: no cover
@@ -569,17 +615,19 @@ def list_awards(
                 session, AwardNiche, 'award_id', ids
             )
             return [
-                {
-                    'slug': a.slug,
-                    'issuer': a.issuer,
-                    'date': a.awarded_ym,
-                    'url': a.url,
-                    'title': translations.get(a.id, {}).get('title', {}),
-                    'motivation': translations.get(a.id, {}).get(
-                        'motivation', {}
-                    ),
-                    'niches': niches_by_award.get(a.id, []),
-                }
+                _drop_nones(
+                    {
+                        'slug': a.slug,
+                        'issuer': a.issuer,
+                        'date': a.awarded_ym,
+                        'url': a.url,
+                        'title': translations.get(a.id, {}).get('title', {}),
+                        'motivation': translations.get(a.id, {}).get(
+                            'motivation', {}
+                        ),
+                        'niches': niches_by_award.get(a.id, []),
+                    },
+                )
                 for a in awards
             ]
     except Exception as exc:  # pragma: no cover
@@ -609,18 +657,23 @@ def list_education(
                 session, EducationNiche, 'education_id', ids
             )
             return [
-                {
-                    'slug': e.slug,
-                    'institution': e.institution,
-                    'start': e.start_year,
-                    'end': e.end_year,
-                    'url': e.url,
-                    'degree': translations.get(e.id, {}).get('degree', {}),
-                    'description': translations.get(e.id, {}).get(
-                        'description', {}
-                    ),
-                    'niches': niches_by_edu.get(e.id, []),
-                }
+                _drop_nones(
+                    {
+                        'slug': e.slug,
+                        'institution': e.institution,
+                        'start': e.start_year,
+                        'end': e.end_year,
+                        'url': e.url,
+                        'degree': translations.get(e.id, {}).get('degree')
+                        or None,
+                        'description': translations.get(e.id, {}).get(
+                            'description', {}
+                        ),
+                        'niches': _niches_or_omit(
+                            niches_by_edu.get(e.id, [])
+                        ),
+                    },
+                )
                 for e in educations
             ]
     except Exception as exc:  # pragma: no cover
@@ -650,12 +703,20 @@ def list_languages(
                 session, LanguageNiche, 'language_id', ids
             )
             return [
-                {
-                    'slug': language.slug,
-                    'name': translations.get(language.id, {}).get('name', {}),
-                    'level': translations.get(language.id, {}).get('level', {}),
-                    'niches': niches_by_lang.get(language.id, []),
-                }
+                _drop_nones(
+                    {
+                        'slug': language.slug,
+                        'name': translations.get(language.id, {}).get(
+                            'name', {}
+                        ),
+                        'level': translations.get(language.id, {}).get(
+                            'level', {}
+                        ),
+                        'niches': _niches_or_omit(
+                            niches_by_lang.get(language.id, [])
+                        ),
+                    },
+                )
                 for language in languages
             ]
     except Exception as exc:  # pragma: no cover
@@ -685,15 +746,21 @@ def list_references(
                 session, ReferenceNiche, 'reference_id', ids
             )
             return [
-                {
-                    'slug': r.slug,
-                    'name': r.name,
-                    'role': r.role,
-                    'company': r.company,
-                    'linkedin': r.linkedin_url,
-                    'relation': translations.get(r.id, {}).get('relation', {}),
-                    'niches': niches_by_ref.get(r.id, []),
-                }
+                _drop_nones(
+                    {
+                        'slug': r.slug,
+                        'name': r.name,
+                        'role': r.role,
+                        'company': r.company,
+                        'linkedin': r.linkedin_url,
+                        'relation': translations.get(r.id, {}).get(
+                            'relation', {}
+                        ),
+                        'niches': _niches_or_omit(
+                            niches_by_ref.get(r.id, [])
+                        ),
+                    },
+                )
                 for r in references
             ]
     except Exception as exc:  # pragma: no cover

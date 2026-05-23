@@ -1,19 +1,15 @@
 /**
  * @module projects
- * @description Side projects + case studies de Pablo Contreras. Data en YAML
- *   1-por-entry (slug = filename). Schema en `../../schemas/ProjectSchema`.
- *
- * Para agregar/modificar un proyecto: editar `<slug>.yaml` o crear uno nuevo.
- * `slug` del YAML debe matchear el filename (enforced por loadYamlEntries).
+ * @description Side projects + case studies de Pablo Contreras.
+ *   Origen: cache JSON generado por `scripts/fetch-cv-cache.mjs`.
  */
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/projects.json'
 import { type Project, ProjectSchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly Project[] = (raw as readonly unknown[]).map((entry) =>
+  ProjectSchema.parse(entry),
+)
 
-export const projects: readonly Project[] = loadYamlEntries<Project>(
-  modules,
-  ProjectSchema,
+export const projects: readonly Project[] = [...items].sort((a, b) =>
+  a.slug.localeCompare(b.slug),
 )

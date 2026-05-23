@@ -16,7 +16,10 @@
       "MCP Servers",
       "Skill-based agents"
     ],
-    "niches": ["vibe", "generic"]
+    "niches": [
+      "vibe",
+      "generic"
+    ]
   },
   {
     "slug": "architecture",
@@ -35,7 +38,11 @@
       "SOLID",
       "Implementación de Soluciones"
     ],
-    "niches": ["architect", "leader", "generic"]
+    "niches": [
+      "architect",
+      "leader",
+      "generic"
+    ]
   },
   {
     "slug": "backend",
@@ -55,7 +62,11 @@
       "Programación Orientada a Objetos",
       "CRUD"
     ],
-    "niches": ["fintech", "architect", "generic"]
+    "niches": [
+      "fintech",
+      "architect",
+      "generic"
+    ]
   },
   {
     "slug": "cloud-devops",
@@ -79,7 +90,11 @@
       "Gestión de Infraestructura",
       "Microservicios"
     ],
-    "niches": ["architect", "leader", "generic"]
+    "niches": [
+      "architect",
+      "leader",
+      "generic"
+    ]
   },
   {
     "slug": "data",
@@ -94,7 +109,11 @@
       "Análisis de Productividad",
       "Gestión de Datos"
     ],
-    "niches": ["fintech", "architect", "generic"]
+    "niches": [
+      "fintech",
+      "architect",
+      "generic"
+    ]
   },
   {
     "slug": "domains",
@@ -115,7 +134,10 @@
       "Historias Médicas",
       "Monitoreo de Producción"
     ],
-    "niches": ["fintech", "generic"]
+    "niches": [
+      "fintech",
+      "generic"
+    ]
   },
   {
     "slug": "frontend",
@@ -136,7 +158,13 @@
       "Aplicación Web",
       "jQuery"
     ],
-    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
+    "niches": [
+      "fintech",
+      "architect",
+      "leader",
+      "vibe",
+      "generic"
+    ]
   },
   {
     "slug": "leadership",
@@ -155,7 +183,11 @@
       "Consultoría Técnica",
       "Gestión del Tiempo"
     ],
-    "niches": ["architect", "leader", "generic"]
+    "niches": [
+      "architect",
+      "leader",
+      "generic"
+    ]
   },
   {
     "slug": "mindset",
@@ -171,7 +203,13 @@
       "Pensamiento Analítico",
       "Resolución de Problemas"
     ],
-    "niches": ["fintech", "architect", "leader", "vibe", "generic"]
+    "niches": [
+      "fintech",
+      "architect",
+      "leader",
+      "vibe",
+      "generic"
+    ]
   },
   {
     "slug": "team-client",
@@ -188,6 +226,11 @@
       "Trabajo Colaborativo",
       "Trabajo en Equipo"
     ],
-    "niches": ["fintech", "architect", "leader", "generic"]
+    "niches": [
+      "fintech",
+      "architect",
+      "leader",
+      "generic"
+    ]
   }
 ]

@@ -22,7 +22,13 @@
     "es": "Disponible remoto · zona horaria LATAM/US",
     "en": "Remote-friendly · LATAM/US timezone"
   },
-  "niches": ["fintech", "architect", "leader", "vibe", "generic"],
+  "niches": [
+    "fintech",
+    "architect",
+    "leader",
+    "vibe",
+    "generic"
+  ],
   "stats": {
     "yearsExperience": 12,
     "companies": 8,

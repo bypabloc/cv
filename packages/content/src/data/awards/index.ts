@@ -1,17 +1,15 @@
 /**
  * @module awards
- * @description Premios y reconocimientos. Data en YAML 1-por-award (slug =
- *   filename). Schema en `../../schemas/AwardSchema`.
+ * @description Premios y reconocimientos. Origen: cache JSON generado
+ *   por `scripts/fetch-cv-cache.mjs` (API GET /cv?action=awards).
  */
-
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/awards.json'
 import { type Award, AwardSchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly Award[] = (raw as readonly unknown[]).map((entry) =>
+  AwardSchema.parse(entry),
+)
 
-export const awards: readonly Award[] = loadYamlEntries<Award>(
-  modules,
-  AwardSchema,
+export const awards: readonly Award[] = [...items].sort((a, b) =>
+  a.slug.localeCompare(b.slug),
 )

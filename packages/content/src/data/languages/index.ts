@@ -1,17 +1,16 @@
 /**
  * @module languages
- * @description Idiomas hablados + nivel. Data en YAML 1-por-idioma. El campo
- *   `slug` es opcional en el schema; las entries actuales no lo declaran (el
- *   filename solo aporta organizacion, no constraint).
+ * @description Idiomas hablados + nivel. Origen: cache JSON generado por
+ *   `scripts/fetch-cv-cache.mjs` (API GET /cv?action=languages).
  */
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/languages.json'
 import { type Language, LanguageSchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly Language[] = (raw as readonly unknown[]).map((entry) =>
+  LanguageSchema.parse(entry),
+)
 
-export const languages: readonly Language[] = loadYamlEntries<Language>(
-  modules,
-  LanguageSchema,
+// Language tiene slug? opcional — fallback al primer campo estable.
+export const languages: readonly Language[] = [...items].sort((a, b) =>
+  (a.slug ?? '').localeCompare(b.slug ?? ''),
 )

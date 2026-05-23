@@ -40,7 +40,10 @@
       "auth": "Email-first - JWT, MFA, passkeys, OAuth",
       "attribution": "0 AI attribution in commits (company policy)"
     },
-    "niches": ["vibe", "generic"],
+    "niches": [
+      "vibe",
+      "generic"
+    ],
     "priority": {
       "vibe": 98,
       "generic": 70
@@ -93,7 +96,11 @@
       "product": "Tiered credit + embedded scoring",
       "architecture": "Vue/Nuxt + Django + Bureau integrations"
     },
-    "niches": ["fintech", "architect", "generic"],
+    "niches": [
+      "fintech",
+      "architect",
+      "generic"
+    ],
     "priority": {
       "fintech": 95,
       "architect": 85,
@@ -147,7 +154,11 @@
       "compliance": "PCI DSS aware · KYC · PII handling",
       "architecture": "Vue/Nuxt + Django microservices + AWS"
     },
-    "niches": ["fintech", "architect", "generic"],
+    "niches": [
+      "fintech",
+      "architect",
+      "generic"
+    ],
     "priority": {
       "fintech": 100,
       "architect": 90,
@@ -189,13 +200,21 @@
       "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
       "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
     },
-    "stack": ["TypeScript", "VS Code Extension API", "Node.js"],
+    "stack": [
+      "TypeScript",
+      "VS Code Extension API",
+      "Node.js"
+    ],
     "metrics": {
       "speedup": "5x faster context handoff",
       "adoption": "Marketplace published",
       "precursor": "Pre-Claude-Code era (< May 2025)"
     },
-    "niches": ["architect", "vibe", "generic"],
+    "niches": [
+      "architect",
+      "vibe",
+      "generic"
+    ],
     "priority": {
       "architect": 70,
       "vibe": 100,
@@ -251,7 +270,11 @@
       "role": "Reference for Destacame Claude Code rollout",
       "stack": "Astro + Django + Python 3.14 + uv"
     },
-    "niches": ["architect", "vibe", "generic"],
+    "niches": [
+      "architect",
+      "vibe",
+      "generic"
+    ],
     "priority": {
       "architect": 75,
       "vibe": 92,
@@ -293,14 +316,24 @@
       "es": "Problema: posicionarme en varios nichos (fintech, arquitectura frontend, liderazgo, vibe coding) necesitaba mensajes distintos sin duplicar contenido ni mantenimiento. Solucion: monorepo Astro 6 con seis sitios que comparten packages de contenido, UI y SEO; el mismo CV se filtra y reordena por nicho. Impacto: una sola fuente de verdad alimenta seis portfolios optimizados para buscadores y para respuestas de IA (GEO/LLM-SEO).",
       "en": "Problem: positioning myself across several niches (fintech, frontend architecture, leadership, vibe coding) required different messaging without duplicating content or maintenance. Solution: an Astro 6 monorepo with six sites sharing content, UI and SEO packages; the same CV is filtered and reordered per niche. Impact: a single source of truth feeds six portfolios optimized for search engines and for AI answers (GEO/LLM-SEO)."
     },
-    "stack": ["Astro 6", "TypeScript", "Biome v2", "pnpm", "Cloudflare Pages"],
+    "stack": [
+      "Astro 6",
+      "TypeScript",
+      "Biome v2",
+      "pnpm",
+      "Cloudflare Pages"
+    ],
     "metrics": {
       "architecture": "6 Astro sites in one monorepo",
       "packages": "5 shared workspace packages (content, ui, app-shared, seo, cv-pdf)",
       "deploy": "Cloudflare Pages, static output",
       "seo": "Per-site JSON-LD Person + GEO/LLM-SEO optimization"
     },
-    "niches": ["architect", "vibe", "generic"],
+    "niches": [
+      "architect",
+      "vibe",
+      "generic"
+    ],
     "priority": {
       "architect": 80,
       "vibe": 95,

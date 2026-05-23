@@ -1,44 +1,13 @@
 /**
  * @module profile
- * @description Profile singleton de Pablo Contreras. Fuente derivada de
- *   .claude/docs/cv/01-perfil.md.
+ * @description Profile singleton de Pablo Contreras.
+ *   Origen: cache JSON generado por `scripts/fetch-cv-cache.mjs`
+ *   (API GET /cv?action=profile).
+ *
+ * Para modificar el profile: hacerlo en la DB (Lambda db, command seed)
+ * y regenerar el cache JSON. NO editar el cache a mano.
  */
+import raw from '../data-cache/profile.json'
 import { type Profile, ProfileSchema } from '../schemas'
 
-export const profile: Profile = ProfileSchema.parse({
-  name: 'Pablo Contreras',
-  handle: 'bypabloc',
-  headline: {
-    es: 'Ingeniero Full Stack senior — Fintech LATAM, microservicios, AWS',
-    en: 'Senior Full Stack Engineer — LATAM fintech, microservices, AWS',
-  },
-  summary: {
-    es: 'Ingeniero de software con más de 12 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.',
-    en: 'Software engineer with over 12 years of experience, specialized in Full Stack development with Python and JavaScript. Expert in building technology solutions with Vue, Django, microservices and AWS, I have successfully delivered and led the implementation of ERP systems and fintech platforms, significantly improving operational efficiency and user experience. Skilled in coordinating and motivating teams, I adapt easily to dynamic and challenging environments, always focused on quality and innovation.',
-  },
-  location: 'Lima, Perú',
-  availability: {
-    es: 'Disponible remoto · zona horaria LATAM/US',
-    en: 'Remote-friendly · LATAM/US timezone',
-  },
-  contacts: {
-    email: 'pacg1991@gmail.com',
-    phone: '+51 918490148',
-    linkedin: 'https://linkedin.com/in/bypabloc',
-    github: 'https://github.com/bypabloc',
-    website: 'https://the-full-stack.com',
-  },
-  avatarUrl: 'https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif',
-  niches: ['fintech', 'architect', 'leader', 'vibe', 'generic'],
-  stats: {
-    yearsExperience: 12,
-    // 8 empresas/instituciones distintas en experiences/: CORPOELEC,
-    //   IPASME, Destacame, Dibal, GoodMeal, Laboratorio Cofasa S.A.,
-    //   "Proyecto académico" y "Asesoría de proyectos de grado".
-    companies: 8,
-    // 4 países: Venezuela (primeras experiencias), Perú (Dibal),
-    //   Chile y México (Destacame, ambas sucursales).
-    countries: 4,
-    certifications: 11,
-  },
-})
+export const profile: Profile = ProfileSchema.parse(raw)

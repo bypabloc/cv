@@ -22,7 +22,7 @@ import json
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from shared.core import BaseModel, Field, field_validator
 
 # Tamano maximo del event_props serializado a JSON. event_props es un dict
 # libre con datos especificos por tipo de evento (href del link, scroll %,

@@ -114,20 +114,21 @@ jobs:
             --lambda=db --stage=${{ needs.resolve-env.outputs.stage }}
 
       # Aplicar migraciones (Alembic upgrade head). Idempotente: si no hay
-      # nada pending, exit 0.
+      # nada pending, exit 0. El path de --event es relativo al directorio
+      # del lambda (devtools lo resuelve como <lambda_dir>/<event_path>).
       - name: Apply migrations
         run: |
           python devtools/run.py serverless run \
             --lambda=db \
             --stage=${{ needs.resolve-env.outputs.stage }} \
-            --event=serverless/lambda/services/db/events/migrate.json
+            --event=events/migrate.json
 
       - name: Show current revision (audit)
         run: |
           python devtools/run.py serverless run \
             --lambda=db \
             --stage=${{ needs.resolve-env.outputs.stage }} \
-            --event=serverless/lambda/services/db/events/current.json
+            --event=events/current.json
 
   # ---------------------------------------------------------------------------
   # 2. Detect lambdas afectados (path-based + cierre shared) entre el sha

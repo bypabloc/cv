@@ -30,7 +30,12 @@ description: >
   "cannot find cwd", "ERR_PNPM_NO_PKG_MANIFEST", "build falla en
   cloudflare", "cloudflare build error", "cloudflare 403", "cloudflare
   http 403", "cloudflare 522", "cert pending", "ssl pending cloudflare",
-  "workers static assets", "migrar a workers", "cloudflare workers".
+  "workers static assets", "migrar a workers", "cloudflare workers",
+  "cloudflare_setup", "cloudflare setup", "rebuild apps", "reconstruir
+  apps", "redeploy apps", "trigger deploy", "trigger build", "cloudflare
+  dev", "cloudflare stage", "cloudflare prod", "deploy dev", "deploy
+  stage", "deploy prod", "rebuild dev", "rebuild stage", "preview branch",
+  "preview_branch_includes", "preview branch includes".
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(dig:*), Bash(nslookup:*), Bash(pnpm:*), Bash(git:*)
 argument-hint: "tema: setup | dns | api-token | gotchas | comparacion | workers | troubleshoot"
@@ -117,8 +122,22 @@ Resumen:
 2. `cp tmp/cloudflare-creds.env.template tmp/cloudflare-creds.env` y
    completar.
 3. `set -a; . tmp/cloudflare-creds.env; set +a`
-4. `devtools/.venv/bin/python -m devtools.cloudflare_setup.main all`
-5. Verificar con `... main status`
+4. `python devtools/run.py cloudflare_setup all --env=prod`
+5. Verificar con `python devtools/run.py cloudflare_setup status --env=prod`
+
+Para dev o stage, cambiar el flag: `--env=dev` o `--env=stage`. El
+script cubre los 18 Pages projects del portfolio (6 niches x 3 envs).
+
+### "Como reconstruyo (rebuild) las apps en dev?"
+
+```bash
+set -a; . tmp/cloudflare-creds.env; set +a
+python devtools/run.py cloudflare_setup trigger --env=dev
+```
+
+`trigger` dispara un build fresco en cada uno de los 6 projects `*-dev`
+sin hacer push a GitHub. Para stage: `--env=stage`. Para prod:
+`--env=prod`.
 
 ### "Cuanto cuesta?"
 
@@ -164,9 +183,14 @@ Causa: `root_dir` mal configurado o CF cacheo un commit viejo. Fix en
 ## Comandos utiles (smoke test rapido)
 
 ```bash
-# Status de los 6 proyectos
+# Status de los 6 proyectos (prod por defecto; --env=dev|stage para otros)
 set -a; . tmp/cloudflare-creds.env; set +a
-devtools/.venv/bin/python -m devtools.cloudflare_setup.main status
+python devtools/run.py cloudflare_setup status --env=prod
+python devtools/run.py cloudflare_setup status --env=dev
+python devtools/run.py cloudflare_setup status --env=stage
+
+# Rebuild forzado (no requiere push a GitHub)
+python devtools/run.py cloudflare_setup trigger --env=dev
 
 # Verificar nameservers del dominio
 dig +short NS the-full-stack.com

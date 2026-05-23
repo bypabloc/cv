@@ -1,9 +1,14 @@
 # Secrets del backend serverless — inventario y politicas
 
 > Catalogo de secretos del backend serverless del portfolio: que es, donde
-> vive, quien lo consume, como se rota. Politica hibrida: SSM SecureString +
-> KMS solo para los rotables; env vars planos para constantes derivables.
-> Incluye el estado actual de AWS SES.
+> vive, quien lo consume, como se rota.
+>
+> **Fuente de verdad del inventario**:
+> `serverless/lambda/resources/secrets/*.yaml` (catalogo declarativo,
+> un YAML por entrada). devtools lo carga via
+> `serverless.secrets_catalog.Catalog.load()`. Los diccionarios
+> hardcodeados `_SECRETS` (provisioner.py) y `_SSM_PARAMETERS`
+> (secrets.py) **fueron eliminados** — el catalogo YAML los reemplaza.
 
 ## Activacion
 
@@ -13,24 +18,33 @@ Aplica SIEMPRE que se trabaje con:
 - La KMS key `alias/portfolio-lambdas`
 - Rotacion de secretos (Turnstile, Neon URL, emails)
 - IAM scopes de las Lambdas del backend
-- `devtools/serverless/secrets.py` (comando `serverless setup-ssm`)
+- `devtools/serverless/secrets.py` (comandos `setup-ssm`, `sync-secrets`,
+  `secrets-status`, `validate-catalog`, `rotate-secret`)
 - Configuracion de AWS SES del portfolio
+- `serverless/lambda/resources/secrets/*.yaml` (catalogo)
 
 ## Reglas criticas (SIEMPRE / NUNCA)
 
-- **SIEMPRE** los secretos rotables (Turnstile secret, Neon URL) viven en SSM
-  Parameter Store como `SecureString` cifrado con la KMS key del proyecto.
-- **SIEMPRE** las Lambdas leen los secretos en runtime via `boto3`, NUNCA
-  como env var plano de la config del Lambda.
-- **SIEMPRE** IAM least privilege: cada Lambda tiene `ssm:GetParameter` solo
-  sobre los ARNs que necesita (ver tabla de scopes abajo).
-- **NUNCA** hardcodear un secreto en codigo, en el `manifest.yaml` del
-  Lambda ni en archivos `.env` commiteados.
-- **NUNCA** logear el valor de un `SecureString` (Turnstile secret, Neon URL).
-- **NUNCA** dejar un CloudWatch Log Group con `retention=Never` (default AWS):
-  el backend usa `LogRetentionInDays: 7` en todos.
-- El inventario `_SSM_PARAMETERS` en `devtools/serverless/secrets.py` debe
-  mantenerse sincronizado con este documento.
+- **SIEMPRE** los secretos del backend se declaran en
+  `serverless/lambda/resources/secrets/<short-name>.yaml`. Una entrada
+  por secreto, schema documentado en
+  `serverless/lambda/resources/secrets/README.md`.
+- **SIEMPRE** `docker/env/server/.{stage}` es la fuente del VALOR.
+  devtools (en `serverless deploy`) lee el .env y publica a SSM —
+  hermetico, sin imprimir valores.
+- **SIEMPRE** las Lambdas leen secretos via
+  `shared.aws.ssm.get_secret_by_name(short_name, local_env=<KEY>)`. En
+  cloud lee `SSM_<UPPER>_PATH`; en local lee `<source_env_var>` directo.
+- **SIEMPRE** los secretos rotables (Turnstile secret, Neon URL) son
+  `SecureString` cifrados con `alias/portfolio-lambdas`.
+- **SIEMPRE** IAM least privilege: cada Lambda tiene `ssm:GetParameter`
+  solo sobre los ARNs que necesita (ver tabla de scopes abajo).
+- **NUNCA** hardcodear un secreto en codigo ni en `manifest.yaml`.
+- **NUNCA** logear el valor de un `SecureString`.
+- **NUNCA** publicar a `/portfolio/local/*` — local NO usa SSM
+  (devtools inyecta env vars directo al runtime).
+- **NUNCA** dejar un CloudWatch Log Group con `retention=Never`:
+  el backend usa `LogRetentionInDays: 7`.
 
 ## Resumen ejecutivo
 

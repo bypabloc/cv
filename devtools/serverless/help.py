@@ -41,6 +41,9 @@ _GROUPS: dict[str, list[str]] = {
     'Secrets / DNS': [
         'setup-ssm',
         'rotate-secret',
+        'sync-secrets',
+        'secrets-status',
+        'validate-catalog',
         'verify-ses-dns',
         'request-ses-prod',
     ],

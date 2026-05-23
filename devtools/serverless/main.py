@@ -17,8 +17,6 @@ from __future__ import annotations
 import subprocess
 from typing import Any
 
-from shared.console import _err
-
 from serverless.change_detector import cmd_detect_changes
 from serverless.dep_validator import cmd_lint_deps
 from serverless.help import cmd_help
@@ -40,8 +38,12 @@ from serverless.quality import cmd_typecheck
 from serverless.rate_limit_cmds import cmd_rate_limit
 from serverless.secrets import cmd_request_ses_prod
 from serverless.secrets import cmd_rotate_secret
+from serverless.secrets import cmd_secrets_status
 from serverless.secrets import cmd_setup_ssm
+from serverless.secrets import cmd_sync_secrets
+from serverless.secrets import cmd_validate_catalog
 from serverless.secrets import cmd_verify_ses_dns
+from shared.console import _err
 
 
 COMMAND_REGISTRY: dict[str, Any] = {
@@ -70,6 +72,9 @@ COMMAND_REGISTRY: dict[str, Any] = {
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
     'rotate-secret': cmd_rotate_secret,
+    'sync-secrets': cmd_sync_secrets,
+    'secrets-status': cmd_secrets_status,
+    'validate-catalog': cmd_validate_catalog,
     'verify-ses-dns': cmd_verify_ses_dns,
     'request-ses-prod': cmd_request_ses_prod,
     # Observability

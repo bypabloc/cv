@@ -27,14 +27,6 @@ const API_BASE = (
   ''
 ).replace(/\/+$/, '')
 
-if (!API_BASE) {
-  throw new Error(
-    'fetch-cv-cache: ni PUBLIC_CV_API_URL ni CV_API_URL estan seteadas.\n' +
-      'Setea la URL del API antes del prebuild, ej:\n' +
-      '  export PUBLIC_CV_API_URL=https://<id>.execute-api.us-east-1.amazonaws.com/dev',
-  )
-}
-
 /**
  * Las 10 actions del API y el archivo cache de salida.
  * Cada action carga TODOS los entries (sin niche): los componentes Astro
@@ -73,8 +65,32 @@ async function cacheExists(file) {
   }
 }
 
+async function allCachesExist() {
+  for (const [, filename] of ACTIONS) {
+    const file = resolve(CACHE_DIR, filename)
+    if (!(await cacheExists(file))) return false
+  }
+  return true
+}
+
 async function main() {
   await mkdir(CACHE_DIR, { recursive: true })
+
+  // Si NO hay API_BASE pero el cache YA existe (caso CI con cache
+  // committeado al repo): usar el cache tal cual, no es un error.
+  if (!API_BASE) {
+    if (await allCachesExist()) {
+      // biome-ignore lint/suspicious/noConsole: CLI script output
+      console.log(
+        '[fetch-cv-cache] sin PUBLIC_CV_API_URL — usando cache existente',
+      )
+      return
+    }
+    throw new Error(
+      'fetch-cv-cache: PUBLIC_CV_API_URL/CV_API_URL no estan seteadas y el ' +
+        'cache no existe. Setea la URL del API o committea data-cache/.',
+    )
+  }
 
   const reuse = process.env.CV_CACHE_REUSE === '1'
   const skipped = []

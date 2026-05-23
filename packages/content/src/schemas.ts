@@ -367,12 +367,11 @@ export const ComponentsStringsSchema = z.object({
     validationNotAllowed: z.string().min(1),
     validationInvalid: z.string().min(1),
   }),
-  /** Footer: copyright y boton de consentimiento. `{year}` / `{name}`. */
+  /** Footer: copyright y links sociales. `{year}` / `{name}`. */
   footer: z.object({
     copyright: z.string().min(1),
     linkedin: z.string().min(1),
     github: z.string().min(1),
-    manageConsent: z.string().min(1),
   }),
   /** Navbar + drawer movil. */
   nav: z.object({
@@ -387,15 +386,6 @@ export const ComponentsStringsSchema = z.object({
     system: z.string().min(1),
     dark: z.string().min(1),
     light: z.string().min(1),
-  }),
-  /** Banner de cookies / consentimiento. */
-  cookieBanner: z.object({
-    ariaLabel: z.string().min(1),
-    bodyLead: z.string().min(1),
-    bodyStrong: z.string().min(1),
-    bodyTail: z.string().min(1),
-    accept: z.string().min(1),
-    reject: z.string().min(1),
   }),
   /** Links de contacto con boton "copiar email". */
   contactLinks: z.object({

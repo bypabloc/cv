@@ -191,3 +191,45 @@ jobs:
           python devtools/run.py serverless status \
             --lambda=${{ matrix.lambda }} \
             --stage=${{ needs.resolve-env.outputs.stage }}
+
+  # ---------------------------------------------------------------------------
+  # 4. Resumen del deploy posteado como commit comment. if: always() corre
+  # tambien si pasos previos fallan (vemos el resultado consolidado).
+  # ---------------------------------------------------------------------------
+  report:
+    name: Report backend deploy summary
+    needs: [resolve-env, migrate-db, detect-changes, deploy-lambdas]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Build report body
+        id: build-report
+        run: |
+          stage="${{ needs.resolve-env.outputs.stage }}"
+          affected='${{ needs.detect-changes.outputs.affected }}'
+          migrate_result='${{ needs.migrate-db.result }}'
+          deploy_result='${{ needs.deploy-lambdas.result }}'
+
+          {
+            echo "## Backend deploy report — \`${stage}\`"
+            echo
+            echo "| Step | Result |"
+            echo "|------|--------|"
+            echo "| Migrations (lambda \`db\`) | ${migrate_result} |"
+            echo "| Lambdas affected | \`${affected:-N/A}\` |"
+            echo "| Lambdas deploy | ${deploy_result:-skipped} |"
+            echo
+            echo "Workflow: [run #${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          } > /tmp/body.md
+
+          {
+            echo "body<<EOF"
+            cat /tmp/body.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post commit comment
+        uses: peter-evans/commit-comment@v3
+        with:
+          sha: ${{ github.sha }}
+          body: ${{ steps.build-report.outputs.body }}

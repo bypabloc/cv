@@ -2,6 +2,12 @@
   {
     "slug": "cv-builder",
     "name": "CV Platform (bypabloc/cv)",
+    "url": "https://github.com/bypabloc/cv",
+    "repo": "https://github.com/bypabloc/cv",
+    "status": "active",
+    "projectType": "web",
+    "isConfidential": false,
+    "metricsEstimated": false,
     "summary": {
       "es": "Plataforma web de CVs profesionales multilenguaje con editor asistido por IA y URLs publicas en /cv/<slug>/<lang>. Monorepo full stack: landing Astro, webapp Nuxt 4, backend Django 6.",
       "en": "Web platform for multilingual professional CVs with an AI-assisted editor and public URLs at /cv/<slug>/<lang>. Full stack monorepo: Astro landing, Nuxt 4 webapp, Django 6 backend."
@@ -10,13 +16,9 @@
       "es": "Aplicacion full stack para crear, editar y publicar CVs profesionales en varios idiomas. La webapp Nuxt 4 (SPA) ofrece un editor con sugerencias asistidas por IA multi-proveedor (Claude API y OpenAI, con API keys propias del usuario). El backend Django 6 + DRF cubre autenticacion email-first con JWT, MFA, passkeys y OAuth, ademas de las URLs publicas de cada CV. Construida y mantenida con Claude Code: la IA es herramienta, no autor.",
       "en": "Full stack application to create, edit and publish professional CVs in multiple languages. The Nuxt 4 webapp (SPA) provides an editor with AI-assisted suggestions from multiple providers (Claude API and OpenAI, using the user's own API keys). The Django 6 + DRF backend covers email-first authentication with JWT, MFA, passkeys and OAuth, plus the public URLs for each CV. Built and maintained with Claude Code: AI is a tool, not an author."
     },
-    "url": "https://github.com/bypabloc/cv",
-    "repo": "https://github.com/bypabloc/cv",
-    "status": "active",
-    "niches": ["vibe", "generic"],
-    "priority": {
-      "vibe": 98,
-      "generic": 70
+    "caseStudy": {
+      "es": "Problema: necesitaba una plataforma propia para crear y publicar CVs multilenguaje sin depender de herramientas cerradas. Solucion: monorepo full stack con landing Astro, webapp Nuxt 4 SPA y backend Django 6 + DRF; editor asistido por IA multi-proveedor, auth email-first con MFA y passkeys, y URLs publicas /cv/<slug>/<lang>. Impacto: plataforma activa que centraliza la edicion de CVs con asistencia de IA y publicacion directa por URL.",
+      "en": "Problem: I needed my own platform to create and publish multilingual CVs without relying on closed tools. Solution: a full stack monorepo with an Astro landing, a Nuxt 4 SPA webapp and a Django 6 + DRF backend; a multi-provider AI-assisted editor, email-first auth with MFA and passkeys, and public /cv/<slug>/<lang> URLs. Impact: an active platform that centralizes AI-assisted CV editing and direct URL publishing."
     },
     "stack": [
       "Astro 5",
@@ -32,15 +34,16 @@
       "Docker",
       "Claude Code"
     ],
-    "caseStudy": {
-      "es": "Problema: necesitaba una plataforma propia para crear y publicar CVs multilenguaje sin depender de herramientas cerradas. Solucion: monorepo full stack con landing Astro, webapp Nuxt 4 SPA y backend Django 6 + DRF; editor asistido por IA multi-proveedor, auth email-first con MFA y passkeys, y URLs publicas /cv/<slug>/<lang>. Impacto: plataforma activa que centraliza la edicion de CVs con asistencia de IA y publicacion directa por URL.",
-      "en": "Problem: I needed my own platform to create and publish multilingual CVs without relying on closed tools. Solution: a full stack monorepo with an Astro landing, a Nuxt 4 SPA webapp and a Django 6 + DRF backend; a multi-provider AI-assisted editor, email-first auth with MFA and passkeys, and public /cv/<slug>/<lang> URLs. Impact: an active platform that centralizes AI-assisted CV editing and direct URL publishing."
-    },
     "metrics": {
       "architecture": "Monorepo - Astro landing + Nuxt 4 webapp + Django 6 backend",
       "ai": "Multi-provider editor (Claude API + OpenAI, user-supplied keys)",
       "auth": "Email-first - JWT, MFA, passkeys, OAuth",
       "attribution": "0 AI attribution in commits (company policy)"
+    },
+    "niches": ["vibe", "generic"],
+    "priority": {
+      "vibe": 98,
+      "generic": 70
     },
     "caseStudyDetailed": {
       "problem": {
@@ -55,14 +58,15 @@
         "es": "Plataforma activa en bypabloc/cv que permite crear, editar y publicar CVs profesionales multilenguaje, con editor asistido por IA y cada CV accesible en /cv/<slug>/<lang>. Demuestra la entrega de un producto full stack completo manteniendo mantenibilidad y revision humana del codigo.",
         "en": "Active platform at bypabloc/cv that lets users create, edit and publish multilingual professional CVs, with an AI-assisted editor and each CV reachable at /cv/<slug>/<lang>. It demonstrates shipping a complete full stack product while keeping maintainability and human code review."
       }
-    },
-    "isConfidential": false,
-    "projectType": "web",
-    "metricsEstimated": false
+    }
   },
   {
     "slug": "destacame-credit-mexico",
     "name": "Producto de créditos (México)",
+    "status": "active",
+    "projectType": "fintech-platform",
+    "isConfidential": true,
+    "metricsEstimated": false,
     "summary": {
       "es": "Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México.",
       "en": "Fintech product offering tiered personal credit to users in Mexico."
@@ -71,12 +75,9 @@
       "es": "Producto desarrollado en Destacame para el mercado mexicano. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus de crédito.",
       "en": "Product built at Destacame for the Mexican market. Vue/Nuxt frontend + Django microservices + credit-bureau integrations."
     },
-    "status": "active",
-    "niches": ["fintech", "architect", "generic"],
-    "priority": {
-      "fintech": 95,
-      "architect": 85,
-      "generic": 65
+    "caseStudy": {
+      "es": "Problema: los usuarios mexicanos necesitaban créditos accesibles con onboarding rápido. Solución: producto con niveles de crédito, scoring integrado y flujo de aprobación que minimiza fricción. Impacto: contribución al portafolio fintech LATAM de Destacame en el mercado mexicano (detalles bajo NDA).",
+      "en": "Problem: Mexican users needed accessible credit with fast onboarding. Solution: tiered-credit product with embedded scoring and a low-friction approval flow. Impact: contribution to Destacame LATAM fintech portfolio in the Mexican market (details under NDA)."
     },
     "stack": [
       "Vue",
@@ -87,14 +88,16 @@
       "AWS",
       "Microservicios"
     ],
-    "caseStudy": {
-      "es": "Problema: los usuarios mexicanos necesitaban créditos accesibles con onboarding rápido. Solución: producto con niveles de crédito, scoring integrado y flujo de aprobación que minimiza fricción. Impacto: contribución al portafolio fintech LATAM de Destacame en el mercado mexicano (detalles bajo NDA).",
-      "en": "Problem: Mexican users needed accessible credit with fast onboarding. Solution: tiered-credit product with embedded scoring and a low-friction approval flow. Impact: contribution to Destacame LATAM fintech portfolio in the Mexican market (details under NDA)."
-    },
     "metrics": {
       "market": "México",
       "product": "Tiered credit + embedded scoring",
       "architecture": "Vue/Nuxt + Django + Bureau integrations"
+    },
+    "niches": ["fintech", "architect", "generic"],
+    "priority": {
+      "fintech": 95,
+      "architect": 85,
+      "generic": 65
     },
     "caseStudyDetailed": {
       "problem": {
@@ -109,14 +112,15 @@
         "es": "Contribucion clave al portafolio fintech LATAM de Destacame en el mercado mexicano. Reutilizacion de patrones del producto Chile con adaptacion regulatoria local (metricas bajo NDA).",
         "en": "Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse from the Chilean product with local regulatory adaptation (metrics under NDA)."
       }
-    },
-    "isConfidential": true,
-    "projectType": "fintech-platform",
-    "metricsEstimated": false
+    }
   },
   {
     "slug": "destacame-debt-chile",
     "name": "Sistema de saldar deudas (Chile)",
+    "status": "active",
+    "projectType": "fintech-platform",
+    "isConfidential": true,
+    "metricsEstimated": false,
     "summary": {
       "es": "Plataforma fintech B2C que ayuda a usuarios chilenos a negociar y saldar deudas con instituciones financieras.",
       "en": "Fintech B2C platform that helps Chilean users negotiate and settle debts with financial institutions."
@@ -125,12 +129,9 @@
       "es": "Producto desarrollado en Destacame como Arquitecto Frontend. Integra microservicios Django + frontend Vue/Nuxt y maneja flujos sensibles de PII y compliance financiero.",
       "en": "Product built at Destacame as Frontend Architect. Integrates Django microservices with a Vue/Nuxt frontend and handles sensitive PII flows and financial compliance."
     },
-    "status": "active",
-    "niches": ["fintech", "architect", "generic"],
-    "priority": {
-      "fintech": 100,
-      "architect": 90,
-      "generic": 70
+    "caseStudy": {
+      "es": "Problema: los usuarios chilenos no tenían un canal claro para regularizar deudas y las instituciones perdían cobranzas. Solución: orquestación entre microservicios fintech con un flujo guiado de elegibilidad → oferta → pago. Impacto: mejora medible en la eficiencia operativa de cobranza y en la experiencia del usuario final (detalles bajo NDA).",
+      "en": "Problem: Chilean users lacked a clear channel to regularize debts and institutions lost collections. Solution: orchestration across fintech microservices with a guided eligibility → offer → payment flow. Impact: measurable improvement in collection operational efficiency and end-user experience (details under NDA)."
     },
     "stack": [
       "Vue",
@@ -141,14 +142,16 @@
       "AWS",
       "Microservicios"
     ],
-    "caseStudy": {
-      "es": "Problema: los usuarios chilenos no tenían un canal claro para regularizar deudas y las instituciones perdían cobranzas. Solución: orquestación entre microservicios fintech con un flujo guiado de elegibilidad → oferta → pago. Impacto: mejora medible en la eficiencia operativa de cobranza y en la experiencia del usuario final (detalles bajo NDA).",
-      "en": "Problem: Chilean users lacked a clear channel to regularize debts and institutions lost collections. Solution: orchestration across fintech microservices with a guided eligibility → offer → payment flow. Impact: measurable improvement in collection operational efficiency and end-user experience (details under NDA)."
-    },
     "metrics": {
       "market": "Chile",
       "compliance": "PCI DSS aware · KYC · PII handling",
       "architecture": "Vue/Nuxt + Django microservices + AWS"
+    },
+    "niches": ["fintech", "architect", "generic"],
+    "priority": {
+      "fintech": 100,
+      "architect": 90,
+      "generic": 70
     },
     "caseStudyDetailed": {
       "problem": {
@@ -163,14 +166,17 @@
         "es": "Mejora medible en eficiencia operativa de cobranza y experiencia del usuario final. Plataforma sigue en produccion sirviendo el mercado chileno (metricas detalladas bajo NDA).",
         "en": "Measurable improvement in collection operational efficiency and end-user experience. Platform still in production serving the Chilean market (detailed metrics under NDA)."
       }
-    },
-    "isConfidential": true,
-    "projectType": "fintech-platform",
-    "metricsEstimated": false
+    }
   },
   {
     "slug": "faststruct",
     "name": "FastStruct",
+    "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
+    "repo": "https://github.com/bypabloc/faststruct",
+    "status": "active",
+    "projectType": "cli",
+    "isConfidential": false,
+    "metricsEstimated": true,
     "summary": {
       "es": "Extensión de VS Code para visualizar y documentar la estructura de un proyecto en segundos, optimizando workflows con IA.",
       "en": "VS Code extension that visualizes and documents a project structure in seconds, optimized for AI workflows."
@@ -179,24 +185,21 @@
       "es": "Genera documentación clara y bien formateada de la estructura de directorios e incluye contenido de archivos cuando sea necesario. Nació antes de Claude Code para pasarle contexto estructural a la interfaz web de Claude sin copiar manualmente.",
       "en": "Generates clear, well-formatted documentation of a directory tree, optionally including file contents. Born before Claude Code to feed structural context to the Claude web interface without copy-pasting."
     },
-    "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
-    "repo": "https://github.com/bypabloc/faststruct",
-    "status": "active",
-    "niches": ["vibe", "architect", "generic"],
-    "priority": {
-      "architect": 70,
-      "vibe": 100,
-      "generic": 80
-    },
-    "stack": ["TypeScript", "VS Code Extension API", "Node.js"],
     "caseStudy": {
       "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
       "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
     },
+    "stack": ["TypeScript", "VS Code Extension API", "Node.js"],
     "metrics": {
       "speedup": "5x faster context handoff",
       "adoption": "Marketplace published",
       "precursor": "Pre-Claude-Code era (< May 2025)"
+    },
+    "niches": ["architect", "vibe", "generic"],
+    "priority": {
+      "architect": 70,
+      "vibe": 100,
+      "generic": 80
     },
     "caseStudyDetailed": {
       "problem": {
@@ -211,14 +214,17 @@
         "es": "Workflow personal 5x más rápido para instruir IAs. Publicada en Marketplace, sigue siendo útil incluso ahora con Claude Code para casos donde necesito contexto compacto para sub-agentes o resumenes externos.",
         "en": "5x faster personal workflow when instructing AIs. Published in the Marketplace, still useful even now with Claude Code for cases where I need compact context for sub-agents or external summaries."
       }
-    },
-    "isConfidential": false,
-    "projectType": "cli",
-    "metricsEstimated": true
+    }
   },
   {
     "slug": "mvp-template-full-stack",
     "name": "MVP template Full Stack",
+    "url": "https://github.com/bypabloc/mvp-template-full-stack",
+    "repo": "https://github.com/bypabloc/mvp-template-full-stack",
+    "status": "active",
+    "projectType": "library",
+    "isConfidential": false,
+    "metricsEstimated": false,
     "summary": {
       "es": "Template público que uso de referencia para nuevos proyectos: estructura .claude/ con skills, rules, hooks, devtools CLI, conformance y testing.",
       "en": "Public template I use as reference for new projects: .claude/ structure with skills, rules, hooks, devtools CLI, conformance and testing."
@@ -227,14 +233,9 @@
       "es": "Blueprint del flujo vibe coding completo: Astro 6 + Django stack-ready, harness de Claude Code estandarizado, quality gates en pre-commit/pre-push, devtools CLI en Python 3.14 con uv. Mismo patrón que adopté en Destacame al introducir Claude Code en el equipo.",
       "en": "Blueprint of the full vibe coding workflow: Astro 6 + Django stack-ready, standardized Claude Code harness, quality gates in pre-commit/pre-push, Python 3.14 + uv devtools CLI. Same pattern I adopted at Destacame when rolling out Claude Code in the team."
     },
-    "url": "https://github.com/bypabloc/mvp-template-full-stack",
-    "repo": "https://github.com/bypabloc/mvp-template-full-stack",
-    "status": "active",
-    "niches": ["vibe", "architect", "generic"],
-    "priority": {
-      "architect": 75,
-      "vibe": 92,
-      "generic": 65
+    "caseStudy": {
+      "es": "Blueprint para arrancar proyectos full stack con flujo vibe coding estandarizado: harness Claude Code + quality gates + devtools CLI. Mismo patrón usado al implementar Claude Code en Destacame.",
+      "en": "Blueprint to bootstrap full stack projects with a standardized vibe coding workflow: Claude Code harness + quality gates + devtools CLI. Same pattern used when rolling out Claude Code at Destacame."
     },
     "stack": [
       "Claude Code",
@@ -245,14 +246,16 @@
       "Biome v2",
       "uv"
     ],
-    "caseStudy": {
-      "es": "Blueprint para arrancar proyectos full stack con flujo vibe coding estandarizado: harness Claude Code + quality gates + devtools CLI. Mismo patrón usado al implementar Claude Code en Destacame.",
-      "en": "Blueprint to bootstrap full stack projects with a standardized vibe coding workflow: Claude Code harness + quality gates + devtools CLI. Same pattern used when rolling out Claude Code at Destacame."
-    },
     "metrics": {
       "coverage": "Skills + Rules + Hooks + Devtools",
       "role": "Reference for Destacame Claude Code rollout",
       "stack": "Astro + Django + Python 3.14 + uv"
+    },
+    "niches": ["architect", "vibe", "generic"],
+    "priority": {
+      "architect": 75,
+      "vibe": 92,
+      "generic": 65
     },
     "caseStudyDetailed": {
       "problem": {
@@ -267,14 +270,17 @@
         "es": "Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar, con el harness de Claude Code y los quality gates ya configurados. Sirvio de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos.",
         "en": "A reusable template that reduces the setup of a new full stack project to cloning and adapting, with the Claude Code harness and quality gates already configured. It served as the reference for the Claude Code rollout at Destacame and standardizes the workflow across projects."
       }
-    },
-    "isConfidential": false,
-    "projectType": "library",
-    "metricsEstimated": false
+    }
   },
   {
     "slug": "portfolio-astro",
     "name": "Portfolio multi-nicho",
+    "url": "https://the-full-stack.com",
+    "repo": "https://github.com/bypabloc/portfolio",
+    "status": "active",
+    "projectType": "web",
+    "isConfidential": false,
+    "metricsEstimated": false,
     "summary": {
       "es": "Este mismo portfolio: monorepo Astro 6 con 6 sitios independientes desplegados en Cloudflare Pages, optimizado para GEO/LLM-SEO.",
       "en": "This very portfolio: an Astro 6 monorepo with 6 independent sites deployed to Cloudflare Pages, optimized for GEO/LLM-SEO."
@@ -283,25 +289,22 @@
       "es": "Arquitectura monorepo con DS unificado, content collections compartidas, filtrado por nicho, dark/light/system theme y JSON-LD Person por sitio. Seis apps (generic, hub, fintech, architect, leader, vibe) consumen packages compartidos para contenido, UI, layout y SEO. Meta caso de estudio del stack.",
       "en": "Monorepo architecture with a unified DS, shared content collections, niche-based filtering, dark/light/system theming and per-site JSON-LD Person. Six apps (generic, hub, fintech, architect, leader, vibe) consume shared packages for content, UI, layout and SEO. Meta case study of the stack."
     },
-    "url": "https://the-full-stack.com",
-    "repo": "https://github.com/bypabloc/portfolio",
-    "status": "active",
-    "niches": ["vibe", "architect", "generic"],
-    "priority": {
-      "architect": 80,
-      "vibe": 95,
-      "generic": 75
-    },
-    "stack": ["Astro 6", "TypeScript", "Biome v2", "pnpm", "Cloudflare Pages"],
     "caseStudy": {
       "es": "Problema: posicionarme en varios nichos (fintech, arquitectura frontend, liderazgo, vibe coding) necesitaba mensajes distintos sin duplicar contenido ni mantenimiento. Solucion: monorepo Astro 6 con seis sitios que comparten packages de contenido, UI y SEO; el mismo CV se filtra y reordena por nicho. Impacto: una sola fuente de verdad alimenta seis portfolios optimizados para buscadores y para respuestas de IA (GEO/LLM-SEO).",
       "en": "Problem: positioning myself across several niches (fintech, frontend architecture, leadership, vibe coding) required different messaging without duplicating content or maintenance. Solution: an Astro 6 monorepo with six sites sharing content, UI and SEO packages; the same CV is filtered and reordered per niche. Impact: a single source of truth feeds six portfolios optimized for search engines and for AI answers (GEO/LLM-SEO)."
     },
+    "stack": ["Astro 6", "TypeScript", "Biome v2", "pnpm", "Cloudflare Pages"],
     "metrics": {
       "architecture": "6 Astro sites in one monorepo",
       "packages": "5 shared workspace packages (content, ui, app-shared, seo, cv-pdf)",
       "deploy": "Cloudflare Pages, static output",
       "seo": "Per-site JSON-LD Person + GEO/LLM-SEO optimization"
+    },
+    "niches": ["architect", "vibe", "generic"],
+    "priority": {
+      "architect": 80,
+      "vibe": 95,
+      "generic": 75
     },
     "caseStudyDetailed": {
       "problem": {
@@ -316,9 +319,6 @@
         "es": "Una sola fuente de verdad del CV alimenta seis portfolios desplegados de forma independiente en Cloudflare Pages, cada uno con su posicionamiento y su JSON-LD Person. La arquitectura de packages compartidos mantiene el contenido sin duplicar y permite agregar un nicho nuevo sin reescribir el CV.",
         "en": "A single source of truth for the CV feeds six portfolios deployed independently to Cloudflare Pages, each with its own positioning and JSON-LD Person. The shared-package architecture keeps content free of duplication and allows adding a new niche without rewriting the CV."
       }
-    },
-    "isConfidential": false,
-    "projectType": "web",
-    "metricsEstimated": false
+    }
   }
 ]

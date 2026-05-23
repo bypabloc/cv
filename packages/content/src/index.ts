@@ -23,6 +23,32 @@ export { publications } from './data/publications/index'
 export { references } from './data/references/index'
 export { skills } from './data/skills/index'
 export {
+  type BiLangText,
+  type CvAward,
+  type CvCertificate,
+  type CvEducation,
+  type CvExperience,
+  type CvFetchOptions,
+  type CvFull,
+  type CvLanguage,
+  type CvLocale,
+  type CvNiche,
+  type CvProfile,
+  type CvProject,
+  type CvReference,
+  type CvSkillCategory,
+  fetchAwards,
+  fetchCertificates,
+  fetchCv,
+  fetchEducation,
+  fetchExperiences,
+  fetchLanguages,
+  fetchProfile,
+  fetchProjects,
+  fetchReferences,
+  fetchSkillCategories,
+} from './lib/cv-api-client'
+export {
   EVENT_TYPE_BY_CODE,
   EVENT_TYPES,
   type EventTypeCode,

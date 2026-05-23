@@ -18,9 +18,10 @@ Regla de separacion:
 Este archivo fusiona los antiguos modulos planos `service.py`,
 `persistence.py` y `notification.py`.
 
-`templates/` (los HTML/txt del email) sigue en la raiz del Lambda. Este
-archivo vive en `core/services/`, asi que el directorio de templates es
-`../../templates` (parents[2]).
+`templates/` (los HTML/txt del email) vive dentro de `core/` para que el
+packaging del deploy lo incluya en el zip (`packaging.py` solo copia
+`core/` al artefacto). Este archivo esta en `core/services/`, asi que
+`templates/` es `../templates` (parents[1]).
 """
 
 from __future__ import annotations
@@ -39,8 +40,9 @@ from shared.dynamodb import ContactItem
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 
-# templates/ esta en la raiz del Lambda; este archivo en core/services/.
-_TEMPLATES_DIR = Path(__file__).resolve().parents[2] / 'templates'
+# templates/ vive dentro de core/ para que el deploy lo incluya en el zip.
+# Este archivo esta en core/services/, asi que parents[1] = core/.
+_TEMPLATES_DIR = Path(__file__).resolve().parents[1] / 'templates'
 
 
 class ServiceError(Exception):

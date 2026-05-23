@@ -10,13 +10,15 @@ version = "0.1.0"
 description = "Lambda de gestion del schema PostgreSQL del portfolio (Alembic)."
 requires-python = ">=3.13"
 
-# El core/ del Lambda no declara deps de runtime propias: pydantic
-# (modelos del payload), powertools, boto3, sqlalchemy, alembic y
-# psycopg le llegan por el vendoring del cierre de shared/ (shared.db,
-# shared.observability, shared.lambda_kit — este ultimo aporta
-# pydantic). Regla de dedup D-3 del plan
-# docs/specs/serverless-lambda-independence/.
-dependencies = []
+# pydantic (modelos del payload), powertools, boto3, sqlalchemy, alembic
+# y psycopg le llegan por el vendoring del cierre de shared/ (shared.db,
+# shared.observability, shared.lambda_kit — este ultimo aporta pydantic).
+# Regla de dedup D-3 del plan docs/specs/serverless-lambda-independence/.
+# pyyaml NO llega por shared/ — lo necesita seed_service para parsear los
+# YAML del CV de seeds/data/.
+dependencies = [
+  "pyyaml>=6.0,<7.0",
+]
 
 # Deps de DESARROLLO: pytest + coverage + mocks. NO van al artefacto de
 # deploy (solo a [project.dependencies] llega al zip).

@@ -1,15 +1,15 @@
 /**
  * @module certificates
- * @description Certificaciones obtenidas (cursos, programas). Data en YAML
- *   1-por-cert (slug = filename). Schema en `../../schemas/CertificateSchema`.
+ * @description Certificaciones obtenidas. Origen: cache JSON generado por
+ *   `scripts/fetch-cv-cache.mjs` (API GET /cv?action=certificates).
  */
-
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/certificates.json'
 import { type Certificate, CertificateSchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly Certificate[] = (raw as readonly unknown[]).map((entry) =>
+  CertificateSchema.parse(entry),
+)
 
-export const certificates: readonly Certificate[] =
-  loadYamlEntries<Certificate>(modules, CertificateSchema)
+export const certificates: readonly Certificate[] = [...items].sort((a, b) =>
+  a.slug.localeCompare(b.slug),
+)

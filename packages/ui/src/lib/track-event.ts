@@ -42,6 +42,10 @@ export interface TrackingConfig {
  * @description Forma del body que se envia a `POST /track`.
  */
 export interface TrackEventPayload {
+  // El handler HTTP generico del backend exige operation y action en el
+  // body. Son constantes para tracking pero el shape los requiere.
+  operation: 'tracking'
+  action: 'track'
   session_id: string
   event_id: string
   event_type_id: string
@@ -146,6 +150,8 @@ export function buildTrackPayload(
   props?: Record<string, unknown>,
 ): TrackEventPayload {
   const payload: TrackEventPayload = {
+    operation: 'tracking',
+    action: 'track',
     session_id: getSessionId(),
     event_id: generateEventId(),
     event_type_id: eventTypeId,

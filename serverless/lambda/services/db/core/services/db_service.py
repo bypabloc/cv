@@ -103,23 +103,31 @@ def run_tables() -> dict[str, Any]:
 
 
 def run_seed() -> dict[str, Any]:
-    """Carga data de prueba en la DB — actualmente NO disponible.
+    """Carga la data del CV (YAML de `seeds/data/`) en la DB.
 
-    El schema del portfolio se unifico en `shared/db/` (modelos
-    SQLAlchemy + Alembic), pero NO existe todavia un seed migrado para
-    ese schema. Mientras no exista, esta funcion NO inventa data:
-    reporta honestamente que no hay seed disponible.
+    Delega en `seed_service.run_seed`, que lee los YAML del CV del arbol
+    del Lambda e inserta cada fila con upsert idempotente. Correr el seed
+    N veces deja siempre el mismo estado.
 
     Returns
     -------
     dict[str, Any]
-        `{'seeded': False, 'reason': str}` — no hay seed para el schema
-        unificado todavia.
+        `{'seeded': True, 'counts': {<tabla>: <filas>}}` con los conteos
+        por tabla principal tras el seed.
+
+    Raises
+    ------
+    ServiceError
+        Si el seed falla (DB inaccesible, schema sin migrar, YAML
+        invalido) con `code=5000` y `error_code='SEED_FAILED'`.
     """
-    return {
-        'seeded': False,
-        'reason': (
-            'no hay seed disponible para el schema unificado de '
-            'shared/db/ — el seed legacy de db/cv/ no esta migrado'
-        ),
-    }
+    from services.seed_service import run_seed as _run_cv_seed
+
+    try:
+        return _run_cv_seed()
+    except Exception as exc:
+        raise ServiceError(
+            f'El seed del CV fallo: {exc}',
+            code=5000,
+            error_code='SEED_FAILED',
+        ) from exc

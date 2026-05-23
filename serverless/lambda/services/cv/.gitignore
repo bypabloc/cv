@@ -1,0 +1,9 @@
+build/
+build.zip
+.venv/
+.invoke/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/

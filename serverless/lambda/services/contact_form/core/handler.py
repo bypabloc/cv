@@ -1,38 +1,30 @@
 """Lambda `contact_form` — endpoint HTTP `POST /contact`.
 
-Entrypoint del Lambda. Router delgado: traduce el evento HTTP de API
-Gateway (REST proxy) al contrato del estandar lambda-controller
-`{operation, action, data}`, resuelve el controller `contact/create` y
-devuelve una respuesta HTTP para API Gateway.
+Entrypoint del Lambda. Router delgado que delega TODO el ciclo al
+`http_handler` generico de `shared.lambda_kit`. El cliente envia
+`operation` y `action` en el body JSON junto con los campos del form:
+
+    POST /contact
+    {
+      "operation": "contact",
+      "action": "create",
+      "name": "...", "email": "...", "message": "...",
+      "cf_token": "...", ...
+    }
+
+El `http_handler` extrae `operation`/`action`/`data` del body, inyecta
+`data._meta` con la metadata de transporte (IP, country, user-agent,
+bypass-secret) y ejecuta el ciclo `preload -> validate -> execute` del
+controller `contact/create`. Toda la logica de negocio sigue en
+`services/contact_service.py`; el comportamiento observable (HTTP 201,
+mismo CORS echo, mismas metricas) es IDENTICO al handler hardcodeado
+que reemplaza.
 
 El Handler de la funcion AWS es `core.handler.lambda_handler`.
-
-Flujo:
-  1. Parsear el body JSON del evento HTTP.
-  2. Extraer la metadata de transporte de los headers (IP, country,
-     user-agent, bypass-secret) y resolver el origin para el echo CORS.
-  3. Sintetizar el evento `{operation: 'contact', action: 'create',
-     data: <body + _meta>}`.
-  4. Validar el evento + resolver el controller + ejecutar su ciclo
-     `preload -> validate -> execute` (`run_controller` del kit).
-  5. Devolver HTTP 201 con el `contact_id`, o `error_response` en error.
-
-Sobre la metadata de transporte: el rate-limit y la verificacion
-Turnstile que orquesta el controller necesitan datos del evento HTTP
-(IP, country, user-agent, bypass-secret) que NO son campos del form. El
-handler los empaqueta en `data._meta`; `ContactCreateModel` (modelo
-Pydantic) los valida como un sub-objeto `RequestMeta`. Asi el controller
-recibe TODO via el evento sintetico, sin tocar el evento Lambda crudo.
-
-El comportamiento observable (HTTP 201 con `contact_id` en exito, el
-`error_response` del backend en error, los headers CORS, las metricas
-`ContactFormSubmitted/Rejected/Error`) es IDENTICO al Lambda plano que
-este modulo reemplaza.
 """
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 
@@ -45,30 +37,16 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
-from aws_lambda_powertools.metrics import MetricUnit
 from settings.operations import OPERATIONS
-from shared.core.exceptions import ApplicationError, ValidationError
-from shared.http.cors import resolve_origin
-from shared.http.ip_extractor import extract_country, extract_ip
-from shared.http.responses import error_response, json_response
-from shared.lambda_kit import build_event_model, run_controller
+from shared.lambda_kit import build_event_model, http_handler
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 from shared.observability.tracer import tracer
 
-__version__ = '3.0.0'
+__version__ = '4.0.0'
 
 # Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
 _EVENT_MODEL = build_event_model(OPERATIONS)
-
-
-def _header(headers: dict[str, str], name: str) -> str | None:
-    """Lookup case-insensitive de un header HTTP."""
-    target = name.lower()
-    return next(
-        (v for k, v in headers.items() if k.lower() == target),
-        None,
-    )
 
 
 @logger.inject_lambda_context(
@@ -77,89 +55,22 @@ def _header(headers: dict[str, str], name: str) -> str | None:
 @tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
-    """Entrypoint Lambda contact_form (POST /contact)."""
-    headers = event.get('headers') or {}
-    origin = resolve_origin(headers)
-    ip = extract_ip(event)
-    country = extract_country(event)
-    user_agent = _header(headers, 'user-agent')
-    bypass_secret = _header(headers, 'x-turnstile-bypass-secret')
+    """Entrypoint Lambda contact_form (POST /contact).
 
-    try:
-        # --- 1. Parsear el body JSON ---
-        body_raw = event.get('body') or ''
-        try:
-            body_dict = json.loads(body_raw) if body_raw else {}
-        except json.JSONDecodeError as exc:
-            msg = 'Invalid JSON body'
-            raise ValidationError(msg, code='INVALID_JSON') from exc
-
-        if not isinstance(body_dict, dict):
-            msg = 'Invalid JSON body'
-            raise ValidationError(msg, code='INVALID_JSON')
-
-        # --- 2. Sintetizar el evento {operation, action, data} ---
-        # data = campos del form + _meta (metadata de transporte que el
-        # controller necesita para rate-limit y Turnstile).
-        synthetic_event = {
-            'operation': 'contact',
-            'action': 'create',
-            'data': {
-                **body_dict,
-                '_meta': {
-                    'ip': ip,
-                    'country': country,
-                    'user_agent': user_agent,
-                    'bypass_secret': bypass_secret,
-                },
-            },
-        }
-
-        # --- 3. Validar evento + resolver controller + ejecutar (kit) ---
-        result = run_controller(synthetic_event, _EVENT_MODEL)
-
-        if result.stage == 'validation':
-            # El evento sintetico siempre tiene operation/action/data; un
-            # fallo aqui es defensivo (controller mal registrado).
-            logger.error(
-                'synthetic event validation failed',
-                extra={'detail': result.data},
-            )
-            metrics.add_metric(
-                name='ContactFormError', unit=MetricUnit.Count, value=1
-            )
-            return error_response(Exception('internal'), origin=origin)
-
-        if not result.is_valid:
-            # El payload no paso la validacion Pydantic del modelo.
-            raise ValidationError(
-                'Validation failed',
-                code='INVALID_INPUT',
-                extra={'detail': result.data},
-            )
-
-        # --- 4. Respuesta 201 con el contact_id ---
-        metrics.add_metric(
-            name='ContactFormSubmitted', unit=MetricUnit.Count, value=1
-        )
-        return json_response(201, result.data, origin=origin)
-
-    except ApplicationError as exc:
-        logger.warning(
-            'contact form rejected',
-            extra={'code': exc.code, 'reason': exc.message, 'ip': ip},
-        )
-        metrics.add_metric(
-            name='ContactFormRejected', unit=MetricUnit.Count, value=1
-        )
-        return error_response(exc, origin=origin)
-
-    except Exception:
-        logger.exception('unhandled error in contact_form')
-        metrics.add_metric(
-            name='ContactFormError', unit=MetricUnit.Count, value=1
-        )
-        return error_response(Exception('internal'), origin=origin)
+    Delega en `http_handler` con CORS echo (form del visitante), HTTP 201
+    en exito y las 3 metricas CloudWatch (Submitted/Rejected/Error).
+    """
+    return http_handler(
+        event,
+        event_model=_EVENT_MODEL,
+        cors_origin='echo',
+        success_status=201,
+        metric_names={
+            'submitted': 'ContactFormSubmitted',
+            'rejected': 'ContactFormRejected',
+            'error': 'ContactFormError',
+        },
+    )
 
 
 # OPERATIONS se importa para forzar el registro de la operacion `contact`

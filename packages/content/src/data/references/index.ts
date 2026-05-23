@@ -1,19 +1,18 @@
 /**
  * @module references
- * @description Referencias profesionales. Data en YAML 1-por-referencia
- *   (slug = filename). Schema en `../../schemas/ReferenceSchema`.
+ * @description Referencias profesionales. Origen: cache JSON generado por
+ *   `scripts/fetch-cv-cache.mjs` (API GET /cv?action=references).
  *
  *   `niches?` opcional: si se omite, la reference se renderiza en todos los
  *   niches (default actual).
  */
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/references.json'
 import { type Reference, ReferenceSchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly Reference[] = (raw as readonly unknown[]).map((entry) =>
+  ReferenceSchema.parse(entry),
+)
 
-export const references: readonly Reference[] = loadYamlEntries<Reference>(
-  modules,
-  ReferenceSchema,
+export const references: readonly Reference[] = [...items].sort((a, b) =>
+  a.slug.localeCompare(b.slug),
 )

@@ -16,6 +16,7 @@
       "!**/.pnpm-store",
       "!**/public",
       "!**/pnpm-lock.yaml",
+      "!packages/content/src/data-cache",
       "!packages/ui/src/styles/global.css",
       "!serverless/.aws-sam",
       "!serverless/.venv",

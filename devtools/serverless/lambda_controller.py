@@ -24,6 +24,12 @@ import shutil
 import subprocess
 from typing import Any
 
+from shared.console import CYAN
+from shared.console import GREEN
+from shared.console import YELLOW
+from shared.console import _c
+from shared.console import _err
+
 from serverless import local_runtime
 from serverless import provisioner
 from serverless import state as state_mod
@@ -37,11 +43,6 @@ from serverless.resolve import ResolvedLambda
 from serverless.resolve import available_lambdas
 from serverless.resolve import resolve_lambda
 from serverless.vendoring import VendoringError
-from shared.console import CYAN
-from shared.console import GREEN
-from shared.console import YELLOW
-from shared.console import _c
-from shared.console import _err
 
 
 # Raiz del backend serverless del portfolio. La suite CENTRALIZADA de la
@@ -182,7 +183,14 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
                 ),
             )
             zip_path = zip_build_dir(resolved.root)
-            new_code_hash = state_mod.code_hash(resolved.root / 'core')
+            # El hash se calcula sobre el build/ (que ya incluye core/ +
+            # shared/ vendorizado), no solo sobre core/. Asi cambios en
+            # subpaquetes de shared/ disparan re-deploy. El build dir es
+            # determinista — packaging.py respeta el orden de los archivos
+            # del cierre de shared.
+            from serverless.packaging import build_dir as _build_dir
+
+            new_code_hash = state_mod.code_hash(_build_dir(resolved.root))
             new_config_hash = state_mod.config_hash(
                 provisioner.rendered_config(rendered),
             )

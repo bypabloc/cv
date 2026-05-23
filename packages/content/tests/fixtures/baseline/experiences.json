@@ -1,18 +1,16 @@
 [
   {
     "slug": "cofasa",
-    "role": {
-      "es": "Desarrollador de Sistemas Web",
-      "en": "Web Systems Developer"
-    },
     "company": "Laboratorio Cofasa S.A.",
     "country": "Venezuela",
     "companyUrl": "https://laboratoriocofasa.com",
     "start": "2017-01",
     "end": "2018-11",
-    "niches": ["generic"],
-    "priority": {
-      "generic": 70
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador de Sistemas Web",
+      "en": "Web Systems Developer"
     },
     "responsibilities": {
       "es": [
@@ -48,31 +46,31 @@
         "Kept a system in productive use for nearly two years, adapting it to the operation's changing needs."
       ]
     },
+    "niches": ["generic"],
+    "priority": {
+      "generic": 70
+    },
     "skillsTechnical": [
-      "Monitoreo de Producción",
       "Análisis de Productividad",
-      "Red Local",
-      "jQuery",
       "Laravel",
-      "Plataforma Web"
+      "Monitoreo de Producción",
+      "Plataforma Web",
+      "Red Local",
+      "jQuery"
     ],
-    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
-    "seniority": "mid",
-    "metricsEstimated": true
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"]
   },
   {
     "slug": "corpoelec",
-    "role": {
-      "es": "Desarrollador Web",
-      "en": "Web Developer"
-    },
     "company": "CORPOELEC",
     "country": "Venezuela",
     "start": "2013-01",
     "end": "2013-12",
-    "niches": ["generic"],
-    "priority": {
-      "generic": 20
+    "seniority": "intern",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador Web",
+      "en": "Web Developer"
     },
     "responsibilities": {
       "es": [
@@ -104,34 +102,30 @@
         "Delivered the system within the planned year and trained staff at each site on its daily use."
       ]
     },
+    "niches": ["generic"],
+    "priority": {
+      "generic": 20
+    },
     "skillsTechnical": [
+      "CRUD",
+      "Gestión de Activos",
       "Gestión de Inventarios",
       "PHP",
-      "CRUD",
-      "Sistema Offline",
-      "Gestión de Activos"
+      "Sistema Offline"
     ],
-    "skillsSoft": ["Resolución de Problemas", "Colaboración de Equipo"],
-    "seniority": "intern",
-    "metricsEstimated": true
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"]
   },
   {
     "slug": "destacame-architect",
-    "role": {
-      "es": "Arquitecto Frontend y Desarrollador de Microservicios",
-      "en": "Frontend Architect and Microservices Developer"
-    },
     "company": "Destacame",
     "country": "Chile",
     "companyUrl": "https://destacame.cl",
     "start": "2022-08",
-    "niches": ["fintech", "architect", "leader", "vibe", "generic"],
-    "priority": {
-      "fintech": 100,
-      "architect": 100,
-      "leader": 100,
-      "vibe": 100,
-      "generic": 100
+    "seniority": "lead",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Arquitecto Frontend y Desarrollador de Microservicios",
+      "en": "Frontend Architect and Microservices Developer"
     },
     "responsibilities": {
       "es": [
@@ -171,39 +165,42 @@
         "Have held a technical role of growing responsibility for over three years, currently on the platform team."
       ]
     },
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"],
+    "priority": {
+      "fintech": 100,
+      "architect": 100,
+      "leader": 100,
+      "vibe": 100,
+      "generic": 100
+    },
     "skillsTechnical": [
+      "AWS",
       "Arquitectura Frontend",
-      "TypeScript",
-      "Microfrontend",
-      "Python",
       "Django",
+      "Microfrontend",
       "Microservicios",
-      "AWS"
+      "Python",
+      "TypeScript"
     ],
     "skillsSoft": [
+      "Adaptabilidad",
       "Fintech",
       "Liderazgo Técnico",
-      "Planificación Estratégica",
-      "Adaptabilidad"
-    ],
-    "seniority": "lead",
-    "metricsEstimated": true
+      "Planificación Estratégica"
+    ]
   },
   {
     "slug": "destacame-frontend",
-    "role": {
-      "es": "Desarrollador Web Frontend",
-      "en": "Web Frontend Developer"
-    },
     "company": "Destacame",
     "country": "Chile",
     "companyUrl": "https://destacame.cl",
     "start": "2021-12",
     "end": "2022-08",
-    "niches": ["fintech", "generic"],
-    "priority": {
-      "fintech": 90,
-      "generic": 95
+    "seniority": "senior",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador Web Frontend",
+      "en": "Web Frontend Developer"
     },
     "responsibilities": {
       "es": [
@@ -239,39 +236,38 @@
         "Contributed to team versatility by covering both frontend and backend, adapting to the product's changing needs."
       ]
     },
+    "niches": ["fintech", "generic"],
+    "priority": {
+      "fintech": 90,
+      "generic": 95
+    },
     "skillsTechnical": [
-      "Vue.js",
-      "Nuxt.js",
-      "TypeScript",
       "Desarrollo Frontend",
-      "Python",
+      "Desarrollo Web",
       "Django",
-      "Desarrollo Web"
+      "Nuxt.js",
+      "Python",
+      "TypeScript",
+      "Vue.js"
     ],
     "skillsSoft": [
-      "Resolución de Problemas",
       "Agilidad de Aprendizaje",
+      "Resolución de Problemas",
       "Trabajo en Equipo"
-    ],
-    "seniority": "senior",
-    "metricsEstimated": true
+    ]
   },
   {
     "slug": "dibal",
-    "role": {
-      "es": "Líder de Equipo de Desarrollo y Desarrollador",
-      "en": "Development Team Lead and Developer"
-    },
     "company": "Dibal",
     "country": "Perú",
     "companyUrl": "https://dibal.pe",
     "start": "2018-12",
     "end": "2021-09",
-    "niches": ["architect", "leader", "generic"],
-    "priority": {
-      "architect": 90,
-      "leader": 95,
-      "generic": 85
+    "seniority": "senior",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Líder de Equipo de Desarrollo y Desarrollador",
+      "en": "Development Team Lead and Developer"
     },
     "responsibilities": {
       "es": [
@@ -311,39 +307,40 @@
         "Supported the startup's growth for nearly three years, adapting the technology to every new business need."
       ]
     },
+    "niches": ["architect", "leader", "generic"],
+    "priority": {
+      "architect": 90,
+      "leader": 95,
+      "generic": 85
+    },
     "skillsTechnical": [
+      "Arquitectura de Sistemas",
+      "Computación en la Nube",
+      "Desarrollo de E-commerce",
       "Despliegue en AWS",
       "Laravel",
-      "Vue",
-      "Arquitectura de Sistemas",
       "Microfrontend",
-      "Desarrollo de E-commerce",
-      "Computación en la Nube"
+      "Vue"
     ],
     "skillsSoft": [
+      "Gestión de Equipos",
       "Liderazgo de Equipo",
       "Metodologías Ágiles",
-      "Gestión de Equipos",
       "Orientado al Cliente"
-    ],
-    "seniority": "senior",
-    "metricsEstimated": true
+    ]
   },
   {
     "slug": "goodmeal",
-    "role": {
-      "es": "Desarrollador Web Full Stack",
-      "en": "Full Stack Web Developer"
-    },
     "company": "GoodMeal",
     "country": "Chile",
     "companyUrl": "https://www.goodmeal.app",
     "start": "2021-05",
     "end": "2021-12",
-    "niches": ["fintech", "generic"],
-    "priority": {
-      "fintech": 70,
-      "generic": 90
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador Web Full Stack",
+      "en": "Full Stack Web Developer"
     },
     "responsibilities": {
       "es": [
@@ -379,37 +376,37 @@
         "Contributed to the team's adoption of Scrum practices, improving delivery predictability iteration over iteration."
       ]
     },
+    "niches": ["fintech", "generic"],
+    "priority": {
+      "fintech": 70,
+      "generic": 90
+    },
     "skillsTechnical": [
-      "Desarrollo Full Stack",
-      "Vue 3",
-      "Scrum",
+      "Aplicación Web",
       "Corrección de Errores",
-      "Aplicación Web"
+      "Desarrollo Full Stack",
+      "Scrum",
+      "Vue 3"
     ],
     "skillsSoft": [
+      "Adaptabilidad",
       "Gestión de Proyectos",
       "Gestión del Tiempo",
-      "Adaptabilidad",
       "Resolución de Problemas",
       "Trabajo en Equipo"
-    ],
-    "seniority": "mid",
-    "metricsEstimated": true
+    ]
   },
   {
     "slug": "iai",
-    "role": {
-      "es": "Líder de Desarrollo de Software y Arquitectura de Sistemas",
-      "en": "Software Development Lead and Systems Architecture"
-    },
     "company": "Proyecto académico",
     "country": "Venezuela",
     "start": "2015-01",
     "end": "2015-12",
-    "niches": ["leader", "generic"],
-    "priority": {
-      "leader": 55,
-      "generic": 45
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Líder de Desarrollo de Software y Arquitectura de Sistemas",
+      "en": "Software Development Lead and Systems Architecture"
     },
     "responsibilities": {
       "es": [
@@ -443,37 +440,38 @@
         "Documented the full solution architecture, leaving a clear technical foundation for its defense and eventual maintenance."
       ]
     },
+    "niches": ["leader", "generic"],
+    "priority": {
+      "leader": 55,
+      "generic": 45
+    },
     "skillsTechnical": [
-      "Proyecto de Grado",
-      "Implementación de Soluciones",
-      "Redacción Técnica",
-      "Gestión de Infraestructura",
       "Desarrollo de Software",
-      "Gestión de Datos"
+      "Gestión de Datos",
+      "Gestión de Infraestructura",
+      "Implementación de Soluciones",
+      "Proyecto de Grado",
+      "Redacción Técnica"
     ],
     "skillsSoft": [
-      "Planificación de Proyecto",
-      "Gestión del Trabajo",
-      "Gestión del Presupuesto",
       "Gestión de Proyectos",
+      "Gestión del Presupuesto",
+      "Gestión del Trabajo",
+      "Planificación de Proyecto",
       "Trabajo Colaborativo"
-    ],
-    "seniority": "mid",
-    "metricsEstimated": true
+    ]
   },
   {
     "slug": "ipasme",
-    "role": {
-      "es": "Desarrollador de Software",
-      "en": "Software Developer"
-    },
     "company": "IPASME",
     "country": "Venezuela",
     "start": "2014-01",
     "end": "2014-12",
-    "niches": ["generic"],
-    "priority": {
-      "generic": 30
+    "seniority": "junior",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador de Software",
+      "en": "Software Developer"
     },
     "responsibilities": {
       "es": [
@@ -505,36 +503,35 @@
         "Improved technical communication and requirements-gathering skills by working directly with healthcare staff."
       ]
     },
+    "niches": ["generic"],
+    "priority": {
+      "generic": 30
+    },
     "skillsTechnical": [
-      "Historias Médicas",
       "Aplicación de Escritorio",
+      "Historias Médicas",
       "Java",
-      "Programación Orientada a Objetos",
-      "Levantamiento de Requerimientos"
+      "Levantamiento de Requerimientos",
+      "Programación Orientada a Objetos"
     ],
     "skillsSoft": [
+      "Adaptabilidad",
       "Comunicación Técnica",
       "Pensamiento Analítico",
-      "Resolución de Problemas",
-      "Adaptabilidad"
-    ],
-    "seniority": "junior",
-    "metricsEstimated": true
+      "Resolución de Problemas"
+    ]
   },
   {
     "slug": "projects-degrees",
-    "role": {
-      "es": "Líder, Arquitecto y Desarrollador",
-      "en": "Leader, Architect and Developer"
-    },
     "company": "Asesoría de proyectos de grado",
     "country": "Venezuela",
     "start": "2015-01",
     "end": "2015-12",
-    "niches": ["leader", "generic"],
-    "priority": {
-      "leader": 60,
-      "generic": 50
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Líder, Arquitecto y Desarrollador",
+      "en": "Leader, Architect and Developer"
     },
     "responsibilities": {
       "es": [
@@ -568,21 +565,24 @@
         "Took both projects from a blocked state to a defense-ready delivery without losing the original scope of either one."
       ]
     },
+    "niches": ["leader", "generic"],
+    "priority": {
+      "leader": 60,
+      "generic": 50
+    },
     "skillsTechnical": [
-      "Diagnóstico Técnico",
-      "Reestructuración de Proyectos",
       "Arquitectura de Software",
-      "Implementación de Soluciones"
+      "Diagnóstico Técnico",
+      "Implementación de Soluciones",
+      "Reestructuración de Proyectos"
     ],
     "skillsSoft": [
-      "Dirección de Proyecto",
+      "Adaptabilidad",
       "Colaboración de Equipo",
       "Consultoría Técnica",
+      "Dirección de Proyecto",
       "Gestión del Tiempo",
-      "Resolución de Problemas",
-      "Adaptabilidad"
-    ],
-    "seniority": "mid",
-    "metricsEstimated": true
+      "Resolución de Problemas"
+    ]
   }
 ]

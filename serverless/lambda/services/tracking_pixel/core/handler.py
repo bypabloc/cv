@@ -1,43 +1,28 @@
-"""Lambda `tracking_pixel` — registro de eventos de tracking (POST /track).
+"""Lambda `tracking_pixel` — endpoint HTTP `POST /track`.
 
-Entrypoint del Lambda. Router delgado: traduce el evento HTTP de API
-Gateway REST proxy al contrato del estandar lambda-controller
-`{operation, action, data}`, resuelve el controller y traduce el
-resultado normalizado a una respuesta HTTP.
+Entrypoint del Lambda. Router delgado que delega TODO el ciclo al
+`http_handler` generico de `shared.lambda_kit`. El cliente envia
+`operation` y `action` en el body JSON junto con el evento de tracking:
 
-Diferencias vs contact_form:
-  - No Turnstile estricto (best-effort, no enforced).
-  - Sin SES email.
-  - Respuesta HTTP 204 No Content en exito (fire-and-forget).
-  - Rate-limit mas laxo (30/min vs 3/min en contact).
+    POST /track
+    {
+      "operation": "tracking",
+      "action": "track",
+      "session_id": "...", "event_type": "...", "page_url": "...", ...
+    }
 
-Sintesis del evento: tracking_pixel atiende UNA sola operacion/accion:
-`operation='tracking'`, `action='track'`. El evento real es API Gateway
-REST proxy (`{body, headers, requestContext, ...}`). El handler:
-  1. parsea el body JSON del POST.
-  2. extrae IP / country / user-agent del evento HTTP.
-  3. sintetiza `{operation, action, data}` donde `data` es el body
-     parseado mas una clave `meta` con la IP / country / user-agent
-     (el controller necesita esos datos para el rate-limit + enrichment;
-     viajan dentro de `data` para que el modelo Pydantic los valide en un
-     solo objeto, sin un segundo canal paralelo).
-  4. valida el evento y ejecuta el controller via
-     `shared.lambda_kit.run_controller`.
-
-La RESPUESTA es HTTP 204 No Content en exito (`no_content_response`) y
-`error_response` en error — comportamiento IDENTICO al handler original.
-El CORS usa `public_cors_origin()` (`'*'`), NO el echo: /track lo invoca
-`navigator.sendBeacon` (modo `ping`), que exige `Allow-Origin: '*'`.
-
-El nucleo `validate_event -> resolver controller -> run()` lo provee
-`shared.lambda_kit.run_controller`.
+El `http_handler` extrae `operation`/`action`/`data` del body, inyecta
+`data._meta` con la metadata de transporte (IP, country, user-agent) y
+ejecuta el ciclo del controller `tracking/track`. Toda la logica de
+negocio sigue en `services/`; el comportamiento observable (HTTP 204
+fire-and-forget, mismo CORS publico para sendBeacon, mismas metricas)
+es IDENTICO al handler hardcodeado que reemplaza.
 
 El Handler de la funcion AWS es `core.handler.lambda_handler`.
 """
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 
@@ -50,39 +35,16 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
-from aws_lambda_powertools.metrics import MetricUnit
 from settings.operations import OPERATIONS
-from shared.core.exceptions import ApplicationError, ValidationError
-from shared.http.cors import public_cors_origin
-from shared.http.ip_extractor import extract_country, extract_ip
-from shared.http.responses import error_response, no_content_response
-from shared.lambda_kit import build_event_model, run_controller
+from shared.lambda_kit import build_event_model, http_handler
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 from shared.observability.tracer import tracer
 
-__version__ = '2.0.0'
+__version__ = '3.0.0'
 
 # Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
 _EVENT_MODEL = build_event_model(OPERATIONS)
-
-
-def _parse_body(event: dict[str, Any]) -> dict[str, Any]:
-    """Parsea el body JSON del POST. Lanza ValidationError si es invalido."""
-    body_raw = event.get('body') or ''
-    try:
-        return json.loads(body_raw) if body_raw else {}
-    except json.JSONDecodeError as exc:
-        msg = 'Invalid JSON body'
-        raise ValidationError(msg, code='INVALID_JSON') from exc
-
-
-def _user_agent(headers: dict[str, str]) -> str | None:
-    """Extrae el header User-Agent (lookup case-insensitive)."""
-    return next(
-        (v for k, v in headers.items() if k.lower() == 'user-agent'),
-        None,
-    )
 
 
 @logger.inject_lambda_context(
@@ -91,85 +53,23 @@ def _user_agent(headers: dict[str, str]) -> str | None:
 @tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
-    """Traduce el evento API GW a {operation, action, data} y enruta."""
-    headers = event.get('headers') or {}
-    # /track lo invoca navigator.sendBeacon (modo `ping`), que exige
-    # Access-Control-Allow-Origin: '*' literal. Un echo del Origin hace
-    # fallar la request con CORS error. /track es tracking anonimo sin
-    # credenciales, asi que '*' es correcto (ver shared.http.cors).
-    origin = public_cors_origin()
-    ip = extract_ip(event)
-    country = extract_country(event)
-    user_agent = _user_agent(headers)
+    """Entrypoint Lambda tracking_pixel (POST /track).
 
-    try:
-        # 1. Parse body
-        body_dict = _parse_body(event)
-
-        # 2. Sintetizar el evento estandar {operation, action, data}.
-        #    `data` = body parseado + `meta` (contexto HTTP). El modelo
-        #    Pydantic TrackEventModel valida ambos en un solo objeto.
-        synthetic_event = {
-            'operation': 'tracking',
-            'action': 'track',
-            'data': {
-                **body_dict,
-                'meta': {
-                    'ip': ip,
-                    'country': country,
-                    'user_agent': user_agent,
-                },
-            },
-        }
-
-        # 3. Validar evento + resolver controller + ejecutar (kit).
-        #    `run_controller` concentra el nucleo generico:
-        #    validate_event -> resolver controller_class -> run().
-        result = run_controller(synthetic_event, _EVENT_MODEL)
-
-        # 4. El kit devuelve un DispatchResult. `stage='validation'`
-        #    significa que fallo resolver/validar el evento sintetico;
-        #    `stage='controller'` significa que el controller se ejecuto.
-        #    En ambos casos un is_valid False se traduce a respuesta HTTP.
-        if not result.is_valid:
-            if result.stage == 'validation':
-                raise ValidationError(
-                    'Validation failed',
-                    code='INVALID_INPUT',
-                )
-            # El controller se ejecuto y devolvio is_valid False: lo
-            # provoca una validacion fallida del payload (modelo Pydantic)
-            # o el rate-limit (ApplicationError en data).
-            app_error = result.data.get('application_error')
-            if isinstance(app_error, ApplicationError):
-                raise app_error
-            raise ValidationError(
-                'Validation failed',
-                code='INVALID_INPUT',
-            )
-
-        # 5. Metrics + 204 No Content (fire-and-forget)
-        metrics.add_metric(
-            name='TrackingEventReceived', unit=MetricUnit.Count, value=1
-        )
-        return no_content_response(origin=origin)
-
-    except ApplicationError as exc:
-        logger.warning(
-            'tracking event rejected',
-            extra={'code': exc.code, 'reason': exc.message, 'ip': ip},
-        )
-        metrics.add_metric(
-            name='TrackingEventRejected', unit=MetricUnit.Count, value=1
-        )
-        return error_response(exc, origin=origin)
-
-    except Exception:
-        logger.exception('unhandled error in tracking_pixel')
-        metrics.add_metric(
-            name='TrackingEventError', unit=MetricUnit.Count, value=1
-        )
-        return error_response(Exception('internal'), origin=origin)
+    Delega en `http_handler` con CORS publico (`*`, exigido por
+    navigator.sendBeacon en modo ping), HTTP 204 fire-and-forget y las 3
+    metricas CloudWatch (Received/Rejected/Error).
+    """
+    return http_handler(
+        event,
+        event_model=_EVENT_MODEL,
+        cors_origin='public',
+        success_status=204,
+        metric_names={
+            'submitted': 'TrackingEventReceived',
+            'rejected': 'TrackingEventRejected',
+            'error': 'TrackingEventError',
+        },
+    )
 
 
 # OPERATIONS se importa para forzar el registro de la operacion

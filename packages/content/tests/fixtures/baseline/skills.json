@@ -1,6 +1,7 @@
 [
   {
     "slug": "ai-workflows",
+    "kind": "technical",
     "name": {
       "es": "AI Workflows",
       "en": "AI Workflows"
@@ -15,11 +16,11 @@
       "MCP Servers",
       "Skill-based agents"
     ],
-    "kind": "technical",
     "niches": ["vibe", "generic"]
   },
   {
     "slug": "architecture",
+    "kind": "technical",
     "name": {
       "es": "Arquitectura",
       "en": "Architecture"
@@ -34,11 +35,11 @@
       "SOLID",
       "Implementación de Soluciones"
     ],
-    "kind": "technical",
     "niches": ["architect", "leader", "generic"]
   },
   {
     "slug": "backend",
+    "kind": "technical",
     "name": {
       "es": "Backend",
       "en": "Backend"
@@ -54,11 +55,11 @@
       "Programación Orientada a Objetos",
       "CRUD"
     ],
-    "kind": "technical",
     "niches": ["fintech", "architect", "generic"]
   },
   {
     "slug": "cloud-devops",
+    "kind": "technical",
     "name": {
       "es": "Cloud & DevOps",
       "en": "Cloud & DevOps"
@@ -78,11 +79,11 @@
       "Gestión de Infraestructura",
       "Microservicios"
     ],
-    "kind": "technical",
     "niches": ["architect", "leader", "generic"]
   },
   {
     "slug": "data",
+    "kind": "technical",
     "name": {
       "es": "Datos & SQL",
       "en": "Data & SQL"
@@ -93,11 +94,11 @@
       "Análisis de Productividad",
       "Gestión de Datos"
     ],
-    "kind": "technical",
     "niches": ["fintech", "architect", "generic"]
   },
   {
     "slug": "domains",
+    "kind": "technical",
     "name": {
       "es": "Dominios",
       "en": "Domains"
@@ -114,11 +115,11 @@
       "Historias Médicas",
       "Monitoreo de Producción"
     ],
-    "kind": "technical",
     "niches": ["fintech", "generic"]
   },
   {
     "slug": "frontend",
+    "kind": "technical",
     "name": {
       "es": "Frontend",
       "en": "Frontend"
@@ -135,11 +136,11 @@
       "Aplicación Web",
       "jQuery"
     ],
-    "kind": "technical",
     "niches": ["fintech", "architect", "leader", "vibe", "generic"]
   },
   {
     "slug": "leadership",
+    "kind": "soft",
     "name": {
       "es": "Liderazgo & Gestión",
       "en": "Leadership & Management"
@@ -154,11 +155,11 @@
       "Consultoría Técnica",
       "Gestión del Tiempo"
     ],
-    "kind": "soft",
-    "niches": ["leader", "architect", "generic"]
+    "niches": ["architect", "leader", "generic"]
   },
   {
     "slug": "mindset",
+    "kind": "soft",
     "name": {
       "es": "Mindset & Personal",
       "en": "Mindset & Personal"
@@ -170,11 +171,11 @@
       "Pensamiento Analítico",
       "Resolución de Problemas"
     ],
-    "kind": "soft",
     "niches": ["fintech", "architect", "leader", "vibe", "generic"]
   },
   {
     "slug": "team-client",
+    "kind": "soft",
     "name": {
       "es": "Equipo & Cliente",
       "en": "Team & Client"
@@ -187,7 +188,6 @@
       "Trabajo Colaborativo",
       "Trabajo en Equipo"
     ],
-    "kind": "soft",
     "niches": ["fintech", "architect", "leader", "generic"]
   }
 ]

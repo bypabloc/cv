@@ -1,19 +1,18 @@
 /**
  * @module education
- * @description Formacion academica + autodidacta. Data en YAML 1-por-institucion
- *   (slug = filename). Schema en `../../schemas/EducationSchema`.
+ * @description Formacion academica + autodidacta. Origen: cache JSON generado
+ *   por `scripts/fetch-cv-cache.mjs` (API GET /cv?action=education).
  *
  *   `niches?` opcional en el schema: si se omite, la entry se renderiza en
  *   todos los niches (default actual). Cuando se define, habilita filtrado.
  */
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/education.json'
 import { type Education, EducationSchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly Education[] = (raw as readonly unknown[]).map((entry) =>
+  EducationSchema.parse(entry),
+)
 
-export const education: readonly Education[] = loadYamlEntries<Education>(
-  modules,
-  EducationSchema,
+export const education: readonly Education[] = [...items].sort((a, b) =>
+  a.slug.localeCompare(b.slug),
 )

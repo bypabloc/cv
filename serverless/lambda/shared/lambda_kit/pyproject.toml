@@ -16,8 +16,9 @@ dependencies = [
 
 [tool.shared]
 # base_controller / import_controller / validate_event usan el logger de
-# shared.observability.
-internal-deps = ["observability"]
+# shared.observability. http_dispatch usa shared.http (CORS, responses,
+# ip_extractor) y shared.core.exceptions/types.
+internal-deps = ["core", "http", "observability"]
 
 # Deps de DESARROLLO del subpaquete: pytest + coverage + mocks. Permiten
 # que el .venv aislado del subpaquete corra su suite. NO van al artefacto

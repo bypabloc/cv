@@ -112,6 +112,8 @@ describe('track-event', () => {
 
   describe('sendBeaconPayload', () => {
     const payload: TrackEventPayload = {
+      operation: 'tracking',
+      action: 'track',
       session_id: 's',
       event_id: 'e',
       event_type_id: PAGE_LOAD,
@@ -143,6 +145,8 @@ describe('track-event', () => {
       localStorage.setItem('cf_session', 'session000000000000000000000000')
       const payload = buildTrackPayload(CTA_CLICK, { href: '/contact' })
       expect(payload).toEqual({
+        operation: 'tracking',
+        action: 'track',
         session_id: 'session000000000000000000000000',
         event_id: payload.event_id,
         event_type_id: CTA_CLICK,

@@ -67,6 +67,11 @@ def api_gw_event(
     if raw_body is not None:
         serialized = raw_body
     elif body is not None:
+        # El contrato HTTP del backend exige operation y action en el body
+        # (resueltos por shared.lambda_kit.http_handler). Los tests viejos
+        # solo enviaban los campos de tracking; aqui se inyectan los
+        # defaults si no estan, manteniendo los tests focales.
+        body = {'operation': 'tracking', 'action': 'track', **body}
         serialized = json.dumps(body)
     else:
         serialized = ''

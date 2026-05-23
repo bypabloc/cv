@@ -1,0 +1,36 @@
+name: Test OIDC (smoke, temporal)
+
+# Workflow EFIMERO: valida que el OIDC + IAM roles funcionan antes de
+# mergear el plan e-ci-cd-deploy-pipeline. Se elimina tras validar.
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Env del rol a asumir (dev/stage/prod)"
+        required: true
+        type: choice
+        options: [dev, stage, prod]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    name: Assume role portfolio-deploy-${{ inputs.env }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::637423614564:role/portfolio-deploy-${{ inputs.env }}
+          aws-region: us-east-1
+
+      - name: Print assumed identity
+        run: aws sts get-caller-identity
+
+      - name: Verify S3 bucket access (state backend)
+        run: |
+          aws s3 ls s3://portfolio-devtools-state/
+          echo "OK: el rol puede listar el bucket de state"

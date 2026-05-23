@@ -61,6 +61,8 @@ labels:
   downloadCv: "Download CV"
   viewAllExperience: "View full experience"
   viewDetail: "View detail"
+  viewSite: "View site"
+  viewRepo: "Repository"
   confidential: "Under NDA — detailed metrics on request"
   technicalSkills: "Technical"
   softSkills: "Soft"

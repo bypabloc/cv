@@ -61,6 +61,8 @@ labels:
   downloadCv: "Descargar CV"
   viewAllExperience: "Ver toda la experiencia"
   viewDetail: "Ver detalle"
+  viewSite: "Ver sitio"
+  viewRepo: "Repositorio"
   confidential: "Bajo NDA — métricas detalladas en privado"
   technicalSkills: "Técnicas"
   softSkills: "Blandas"

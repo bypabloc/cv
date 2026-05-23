@@ -147,6 +147,13 @@ export const ExperienceSchema = z.object({
   end: YearMonthSchema.optional(),
   niches: z.array(NicheSchema).min(1),
   priority: PriorityByNicheSchema.default({}),
+  /**
+   * Resumen corto bilingue (1-2 frases, 80-140 chars). Se muestra en la
+   * timeline del home; el detail page sigue mostrando responsibilities y
+   * achievements completos. Optional durante migracion — debe poblarse en
+   * todas las entries antes de hacerse obligatorio.
+   */
+  summary: BiLangSchema.optional(),
   responsibilities: z.object({
     es: z.array(z.string().min(1)).min(1),
     en: z.array(z.string().min(1)).min(1),
@@ -170,6 +177,19 @@ export const ExperienceSchema = z.object({
 })
 export type Experience = z.infer<typeof ExperienceSchema>
 
+/**
+ * Link adicional de un project (CTA secundario). Cada proyecto puede tener
+ * uno o varios sitios en produccion (ej. el sistema de saldar deudas
+ * cubre 3 marcas: Santander, Santander Consumer, Scotiabank). El campo
+ * `url` sigue siendo la URL principal; `links[]` agrega las adicionales
+ * con su propio label bilingue.
+ */
+export const ProjectLinkSchema = z.object({
+  label: BiLangSchema,
+  url: z.string().url(),
+})
+export type ProjectLink = z.infer<typeof ProjectLinkSchema>
+
 /** Project entry. */
 export const ProjectStatusSchema = z.enum(['active', 'inactive', 'concept'])
 export const ProjectSchema = z.object({
@@ -178,6 +198,12 @@ export const ProjectSchema = z.object({
   summary: BiLangSchema,
   description: BiLangSchema.optional(),
   url: z.string().url().optional(),
+  /**
+   * Links adicionales del proyecto (sitios alternos, demos, lanzamientos).
+   * Si esta presente y tiene >1 entry, el card muestra botones multiples.
+   * Maximo 5 items para evitar UI saturada. `url` queda como URL principal.
+   */
+  links: z.array(ProjectLinkSchema).max(5).optional(),
   repo: z.string().url().optional(),
   status: ProjectStatusSchema,
   niches: z.array(NicheSchema).min(1),
@@ -469,6 +495,8 @@ export const ElementsStringsSchema = z.object({
     downloadCv: z.string().min(1),
     viewAllExperience: z.string().min(1),
     viewDetail: z.string().min(1),
+    viewSite: z.string().min(1),
+    viewRepo: z.string().min(1),
     confidential: z.string().min(1),
     technicalSkills: z.string().min(1),
     softSkills: z.string().min(1),

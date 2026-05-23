@@ -211,6 +211,7 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'stage',
         'aws_profile',
         'dry_run',
+        'skip_sync',
     ],
     'destroy': ['lambda', 'path', 'module', 'stage', 'yes', 'aws_profile'],
     'status': ['lambda', 'path', 'module', 'stage', 'aws_profile'],
@@ -254,6 +255,7 @@ _DEFAULTS: dict[str, Any] = {
     'output_format': 'text',
     'coverage_threshold': 80,
     'dry_run': False,
+    'skip_sync': False,
     'output': 'text',
 }
 
@@ -450,6 +452,11 @@ def describe() -> ScriptDescribe:
                 'type': 'bool',
                 'default': False,
                 'summary': 'Imprime acciones sin ejecutar',
+            },
+            'skip_sync': {
+                'type': 'bool',
+                'default': False,
+                'summary': 'Saltar sync de secretos al desplegar',
             },
             'coverage_threshold': {
                 'type': 'int',

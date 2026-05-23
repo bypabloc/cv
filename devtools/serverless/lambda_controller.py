@@ -24,12 +24,6 @@ import shutil
 import subprocess
 from typing import Any
 
-from shared.console import CYAN
-from shared.console import GREEN
-from shared.console import YELLOW
-from shared.console import _c
-from shared.console import _err
-
 from serverless import local_runtime
 from serverless import provisioner
 from serverless import state as state_mod
@@ -43,6 +37,11 @@ from serverless.resolve import ResolvedLambda
 from serverless.resolve import available_lambdas
 from serverless.resolve import resolve_lambda
 from serverless.vendoring import VendoringError
+from shared.console import CYAN
+from shared.console import GREEN
+from shared.console import YELLOW
+from shared.console import _c
+from shared.console import _err
 
 
 # Raiz del backend serverless del portfolio. La suite CENTRALIZADA de la
@@ -153,6 +152,10 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
     devtools renderiza el manifiesto (`provisioner.render`), arma el
     artefacto (`build.zip`) con uv, decide la accion comparando el estado
     local (`state.diff`) y provisiona los recursos AWS necesarios.
+
+    Antes del provisioner, sincroniza los secretos del catalogo
+    (`resources/secrets/`) desde `docker/env/server/.{stage}` a SSM
+    Parameter Store (--skip-sync para saltarlo).
     """
     _ensure_tool(
         'uv', 'Instalar: curl -LsSf https://astral.sh/uv/install.sh | sh'
@@ -167,6 +170,16 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
     region = str(resolved.manifest.get('region', 'us-east-1'))
     profile = flags.get('aws_profile')
     profile_str = str(profile) if profile else None
+
+    if not flags.get('skip_sync'):
+        sync_rc = _sync_secrets_before_deploy(
+            resolved=resolved,
+            stage=stage,
+            profile=profile_str,
+            region=region,
+        )
+        if sync_rc != 0:
+            return sync_rc
 
     rendered = provisioner.render(resolved.manifest, stage=stage)
     previous = state_mod.load_state(rendered.name, stage)
@@ -242,6 +255,79 @@ def cmd_deploy_lambda(flags: dict[str, Any]) -> int:
 
     state_mod.save_state(replace(new_state, code_hash=new_code_hash))
     print(_c(GREEN, f'OK  {rendered.function_name} -> {action.name}'))
+    return 0
+
+
+def _sync_secrets_before_deploy(
+    *,
+    resolved: ResolvedLambda,
+    stage: str,
+    profile: str | None,
+    region: str,
+) -> int:
+    """Sincroniza el catalogo de secretos del stage desde el .env a SSM.
+
+    Solo sincroniza los secretos que el lambda USA (uses.secrets del
+    manifest). Asi cada deploy publica solo lo necesario. Hermetico: el
+    valor nunca aparece en stdout/stderr.
+    """
+    from serverless.secrets_catalog import Catalog
+    from serverless.secrets_catalog import CatalogError
+    from serverless.secrets_sync import SyncAction
+    from serverless.secrets_sync import SyncError
+    from serverless.secrets_sync import sync_secrets_to_ssm
+
+    used_secrets = (resolved.manifest.get('uses') or {}).get('secrets') or []
+    if not used_secrets:
+        return 0
+
+    env_file = (
+        _PORTFOLIO_SERVERLESS_ROOT.parent
+        / 'docker'
+        / 'env'
+        / 'server'
+        / f'.{stage}'
+    )
+    if not env_file.exists():
+        _err(
+            f'docker/env/server/.{stage} no existe. Crear desde '
+            f'docker/env/server/.example y completar los valores.',
+        )
+        return 1
+
+    try:
+        catalog = Catalog.load()
+        results = sync_secrets_to_ssm(
+            stage=stage,
+            env_file=env_file,
+            catalog=catalog,
+            profile=profile,
+            region=region,
+            only=tuple(used_secrets),
+        )
+    except (CatalogError, SyncError) as exc:
+        _err(f'secrets-sync fallo: {exc}')
+        return 1
+
+    push = sum(1 for r in results if r.action == SyncAction.PUSH)
+    skip = sum(1 for r in results if r.action == SyncAction.SKIP)
+    miss = sum(1 for r in results if r.action == SyncAction.MISSING)
+
+    print(_c(CYAN, f'[secrets-sync] catalogo: {len(results)} entradas'))
+    for r in results:
+        # NUNCA el valor. Solo nombre, accion, path, hash truncado.
+        marker = (
+            GREEN
+            if r.action == SyncAction.SKIP
+            else YELLOW
+            if r.action == SyncAction.PUSH
+            else CYAN
+        )
+        print(
+            f'  {_c(marker, r.action.value):<6} {r.name:<25} '
+            f'{r.path:<45} hash={r.hash_short}',
+        )
+    print(_c(GREEN, f'  -> {push} PUSH, {skip} SKIP, {miss} MISSING'))
     return 0
 
 

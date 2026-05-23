@@ -1,205 +1,13 @@
 [
   {
-    "slug": "destacame-credit-mexico",
-    "name": "Producto de créditos (México)",
-    "summary": {
-      "es": "Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México.",
-      "en": "Fintech product offering tiered personal credit to users in Mexico."
-    },
-    "description": {
-      "es": "Producto desarrollado en Destacame para el mercado mexicano. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus de crédito.",
-      "en": "Product built at Destacame for the Mexican market. Vue/Nuxt frontend + Django microservices + credit-bureau integrations."
-    },
-    "url": "https://www.destacame.com.mx/",
-    "status": "active",
-    "niches": [
-      "fintech",
-      "leader",
-      "generic"
-    ],
-    "priority": {
-      "fintech": 90,
-      "leader": 95,
-      "generic": 80
-    },
-    "stack": [
-      "Vue",
-      "Nuxt",
-      "TypeScript",
-      "Django",
-      "Python",
-      "AWS",
-      "Microservicios"
-    ],
-    "caseStudy": {
-      "es": "Problema: los usuarios mexicanos necesitaban créditos accesibles con onboarding rápido. Solución: producto con niveles de crédito, scoring integrado y flujo de aprobación que minimiza fricción. Impacto: contribución al portafolio fintech LATAM de Destacame en el mercado mexicano (detalles bajo NDA).",
-      "en": "Problem: Mexican users needed accessible credit with fast onboarding. Solution: tiered-credit product with embedded scoring and a low-friction approval flow. Impact: contribution to Destacame LATAM fintech portfolio in the Mexican market (details under NDA)."
-    },
-    "metrics": {
-      "market": "México",
-      "product": "Tiered credit + embedded scoring",
-      "architecture": "Vue/Nuxt + Django + Bureau integrations"
-    },
-    "caseStudyDetailed": {
-      "problem": {
-        "es": "Mercado mexicano requeria creditos personales accesibles con onboarding rapido. Restricciones regulatorias locales + fricciones de KYC + integracion con bureaus de credito.",
-        "en": "Mexican market required accessible personal credit with fast onboarding. Local regulatory constraints + KYC friction + credit bureau integrations."
-      },
-      "process": {
-        "es": "Producto con tramos de credito + scoring embebido + flujo de aprobacion de baja friccion. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus mexicanos. Decisiones de arquitectura documentadas para sucesores.",
-        "en": "Tiered-credit product + embedded scoring + low-friction approval flow. Vue/Nuxt frontend + Django microservices + Mexican credit bureau integrations. Documented architecture decisions for successors."
-      },
-      "result": {
-        "es": "Contribucion clave al portafolio fintech LATAM de Destacame en el mercado mexicano. Reutilizacion de patrones del producto Chile con adaptacion regulatoria local (metricas bajo NDA).",
-        "en": "Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse from the Chilean product with local regulatory adaptation (metrics under NDA)."
-      }
-    },
-    "isConfidential": true,
-    "projectType": "fintech-platform",
-    "metricsEstimated": false
-  },
-  {
-    "slug": "destacame-debt-chile",
-    "name": "Sistema de saldar deudas (Chile)",
-    "summary": {
-      "es": "Plataforma fintech B2C que ayuda a usuarios chilenos a negociar y saldar deudas con bancos e instituciones financieras. Cubre 3 marcas en produccion (Santander, Santander Consumer, Scotiabank).",
-      "en": "Fintech B2C platform that helps Chilean users negotiate and settle debts with banks and financial institutions. Covers 3 brands in production (Santander, Santander Consumer, Scotiabank)."
-    },
-    "description": {
-      "es": "Producto desarrollado en Destacame como Arquitecto Frontend. Integra microservicios Django + frontend Vue/Nuxt y maneja flujos sensibles de PII y compliance financiero. Una misma base tecnologica sirve a 3 marcas comerciales con branding y reglas de negocio independientes.",
-      "en": "Product built at Destacame as Frontend Architect. Integrates Django microservices with a Vue/Nuxt frontend and handles sensitive PII flows and financial compliance. A single tech foundation serves 3 commercial brands with independent branding and business rules."
-    },
-    "url": "https://pagaloaqui.cl/santander",
-    "links": [
-      {
-        "label": {
-          "es": "Santander",
-          "en": "Santander"
-        },
-        "url": "https://pagaloaqui.cl/santander"
-      },
-      {
-        "label": {
-          "es": "Santander Consumer",
-          "en": "Santander Consumer"
-        },
-        "url": "https://pagaloaqui.cl/santanderconsumer"
-      },
-      {
-        "label": {
-          "es": "Scotiabank",
-          "en": "Scotiabank"
-        },
-        "url": "https://solucionesscotiabank.pagaloaqui.cl"
-      }
-    ],
-    "status": "active",
-    "niches": [
-      "fintech",
-      "architect",
-      "leader",
-      "generic"
-    ],
-    "priority": {
-      "fintech": 100,
-      "architect": 95,
-      "leader": 100,
-      "generic": 85
-    },
-    "stack": [
-      "Vue",
-      "Nuxt",
-      "TypeScript",
-      "Django",
-      "Python",
-      "AWS",
-      "Microservicios"
-    ],
-    "caseStudy": {
-      "es": "Problema: los usuarios chilenos no tenían un canal claro para regularizar deudas y las instituciones perdían cobranzas. Solución: orquestación entre microservicios fintech con un flujo guiado de elegibilidad → oferta → pago. Impacto: mejora medible en la eficiencia operativa de cobranza y en la experiencia del usuario final (detalles bajo NDA).",
-      "en": "Problem: Chilean users lacked a clear channel to regularize debts and institutions lost collections. Solution: orchestration across fintech microservices with a guided eligibility → offer → payment flow. Impact: measurable improvement in collection operational efficiency and end-user experience (details under NDA)."
-    },
-    "metrics": {
-      "market": "Chile",
-      "brands": "Santander, Santander Consumer, Scotiabank",
-      "compliance": "PCI DSS aware · KYC · PII handling",
-      "architecture": "Vue/Nuxt + Django microservices + AWS"
-    },
-    "caseStudyDetailed": {
-      "problem": {
-        "es": "Los usuarios chilenos no tenian un canal claro para regularizar deudas y las instituciones financieras perdian cobranzas significativas. Datos sensibles (PII) + compliance financiero LATAM + necesidad de servir multiples marcas comerciales con la misma plataforma tecnica.",
-        "en": "Chilean users lacked a clear channel to regularize debts and financial institutions were losing significant collections. Sensitive data (PII) + LATAM financial compliance + need to serve multiple commercial brands from the same technical platform."
-      },
-      "process": {
-        "es": "Como Frontend Architect orqueste microservicios Django con frontend Vue/Nuxt: elegibilidad → oferta → pago. Manejo de PII con encriptacion en transito y reposo. Integracion con bureaus + verificacion KYC. Branding white-label para servir a Santander, Santander Consumer y Scotiabank desde una sola base de codigo.",
-        "en": "As Frontend Architect I orchestrated Django microservices with Vue/Nuxt frontend: eligibility → offer → payment. PII handling with encryption in transit and at rest. Bureau integrations + KYC verification. White-label branding to serve Santander, Santander Consumer and Scotiabank from a single codebase."
-      },
-      "result": {
-        "es": "Plataforma con 3 marcas en produccion (Santander, Santander Consumer, Scotiabank) sirviendo el mercado chileno. Mejora medible en eficiencia operativa de cobranza y experiencia del usuario final (metricas detalladas bajo NDA).",
-        "en": "Platform with 3 brands in production (Santander, Santander Consumer, Scotiabank) serving the Chilean market. Measurable improvement in collection operational efficiency and end-user experience (detailed metrics under NDA)."
-      }
-    },
-    "isConfidential": true,
-    "projectType": "fintech-platform",
-    "metricsEstimated": false
-  },
-  {
-    "slug": "faststruct",
-    "name": "FastStruct",
-    "summary": {
-      "es": "Extensión de VS Code para visualizar y documentar la estructura de un proyecto en segundos, optimizando workflows con IA.",
-      "en": "VS Code extension that visualizes and documents a project structure in seconds, optimized for AI workflows."
-    },
-    "description": {
-      "es": "Genera documentación clara y bien formateada de la estructura de directorios e incluye contenido de archivos cuando sea necesario. Nació antes de Claude Code para pasarle contexto estructural a la interfaz web de Claude sin copiar manualmente.",
-      "en": "Generates clear, well-formatted documentation of a directory tree, optionally including file contents. Born before Claude Code to feed structural context to the Claude web interface without copy-pasting."
-    },
-    "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
-    "repo": "https://github.com/bypabloc/faststruct",
-    "status": "active",
-    "niches": [
-      "vibe",
-      "generic"
-    ],
-    "priority": {
-      "vibe": 80,
-      "generic": 65
-    },
-    "stack": [
-      "TypeScript",
-      "VS Code Extension API",
-      "Node.js"
-    ],
-    "caseStudy": {
-      "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
-      "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
-    },
-    "metrics": {
-      "speedup": "5x faster context handoff",
-      "adoption": "Marketplace published",
-      "precursor": "Pre-Claude-Code era (< May 2025)"
-    },
-    "metricsEstimated": true,
-    "caseStudyDetailed": {
-      "problem": {
-        "es": "Antes de Claude Code (mayo 2025) usaba la interfaz web de Claude para programar. Pasarle el contexto de un proyecto significaba copiar archivo por archivo manualmente.",
-        "en": "Before Claude Code (May 2025) I used the Claude web interface to code. Sharing project context meant copy-pasting file by file manually."
-      },
-      "process": {
-        "es": "Construí FastStruct como extensión VS Code en TypeScript: comando único que escanea workspace, respeta .gitignore, formatea en markdown estructurado y copia al portapapeles. Patrones de exclusión configurables.",
-        "en": "I built FastStruct as a TypeScript VS Code extension: single command that scans the workspace, honors .gitignore, formats structured markdown and copies to clipboard. Configurable exclusion patterns."
-      },
-      "result": {
-        "es": "Workflow personal 5x más rápido para instruir IAs. Publicada en Marketplace, sigue siendo útil incluso ahora con Claude Code para casos donde necesito contexto compacto para sub-agentes o resumenes externos.",
-        "en": "5x faster personal workflow when instructing AIs. Published in the Marketplace, still useful even now with Claude Code for cases where I need compact context for sub-agents or external summaries."
-      }
-    },
-    "projectType": "cli",
-    "isConfidential": false
-  },
-  {
     "slug": "mvp-template-full-stack",
     "name": "MVP template Full Stack",
+    "url": "https://the-full-stack.com/",
+    "repo": "https://github.com/bypabloc/cv",
+    "status": "active",
+    "projectType": "library",
+    "isConfidential": false,
+    "metricsEstimated": false,
     "summary": {
       "es": "Este portfolio open source es mi template de referencia para arrancar full stack: Astro 6, backend serverless en AWS, devtools en Python 3.14 y harness de Claude Code estandarizado.",
       "en": "This open source portfolio is my reference template to bootstrap full stack: Astro 6, AWS serverless backend, Python 3.14 devtools and a standardized Claude Code harness."
@@ -208,18 +16,9 @@
       "es": "The Full Stack es el sitio publico y a la vez el blueprint del flujo vibe coding completo: 6 apps Astro 6 + backend serverless en AWS (Lambdas Python, DynamoDB, Neon PostgreSQL, SES, Turnstile) + harness de Claude Code estandarizado (skills, rules, hooks) + quality gates en pre-commit/pre-push + devtools CLI en Python 3.14 con uv. Mismo patron que adopte en Destacame al introducir Claude Code en el equipo.",
       "en": "The Full Stack is both the public site and the blueprint of the full vibe coding workflow: 6 Astro 6 apps + AWS serverless backend (Python Lambdas, DynamoDB, Neon PostgreSQL, SES, Turnstile) + standardized Claude Code harness (skills, rules, hooks) + quality gates in pre-commit/pre-push + Python 3.14 devtools CLI with uv. Same pattern I adopted at Destacame when rolling out Claude Code in the team."
     },
-    "url": "https://the-full-stack.com/",
-    "repo": "https://github.com/bypabloc/cv",
-    "status": "active",
-    "niches": [
-      "architect",
-      "vibe",
-      "generic"
-    ],
-    "priority": {
-      "architect": 80,
-      "vibe": 90,
-      "generic": 75
+    "caseStudy": {
+      "es": "Blueprint para arrancar proyectos full stack con flujo vibe coding estandarizado: harness Claude Code + quality gates + devtools CLI + backend serverless real. Mismo patron usado al implementar Claude Code en Destacame.",
+      "en": "Blueprint to bootstrap full stack projects with a standardized vibe coding workflow: Claude Code harness + quality gates + devtools CLI + real serverless backend. Same pattern used when rolling out Claude Code at Destacame."
     },
     "stack": [
       "Claude Code",
@@ -232,14 +31,20 @@
       "Biome v2",
       "uv"
     ],
-    "caseStudy": {
-      "es": "Blueprint para arrancar proyectos full stack con flujo vibe coding estandarizado: harness Claude Code + quality gates + devtools CLI + backend serverless real. Mismo patron usado al implementar Claude Code en Destacame.",
-      "en": "Blueprint to bootstrap full stack projects with a standardized vibe coding workflow: Claude Code harness + quality gates + devtools CLI + real serverless backend. Same pattern used when rolling out Claude Code at Destacame."
-    },
     "metrics": {
       "coverage": "Skills + Rules + Hooks + Devtools + Serverless backend",
       "role": "Reference for Destacame Claude Code rollout",
       "stack": "Astro + AWS Lambda + Neon + Python 3.14 + uv"
+    },
+    "niches": [
+      "architect",
+      "vibe",
+      "generic"
+    ],
+    "priority": {
+      "architect": 80,
+      "vibe": 90,
+      "generic": 75
     },
     "caseStudyDetailed": {
       "problem": {
@@ -254,9 +59,204 @@
         "es": "Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar, con el harness de Claude Code, los quality gates y el backend serverless ya configurados. Sirvio de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos.",
         "en": "A reusable template that reduces the setup of a new full stack project to cloning and adapting, with the Claude Code harness, the quality gates and the serverless backend already configured. It served as the reference for the Claude Code rollout at Destacame and standardizes the workflow across projects."
       }
+    }
+  },
+  {
+    "slug": "destacame-credit-mexico",
+    "name": "Producto de créditos (México)",
+    "url": "https://www.destacame.com.mx/",
+    "status": "active",
+    "projectType": "fintech-platform",
+    "isConfidential": true,
+    "metricsEstimated": false,
+    "summary": {
+      "es": "Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México.",
+      "en": "Fintech product offering tiered personal credit to users in Mexico."
     },
+    "description": {
+      "es": "Producto desarrollado en Destacame para el mercado mexicano. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus de crédito.",
+      "en": "Product built at Destacame for the Mexican market. Vue/Nuxt frontend + Django microservices + credit-bureau integrations."
+    },
+    "caseStudy": {
+      "es": "Problema: los usuarios mexicanos necesitaban créditos accesibles con onboarding rápido. Solución: producto con niveles de crédito, scoring integrado y flujo de aprobación que minimiza fricción. Impacto: contribución al portafolio fintech LATAM de Destacame en el mercado mexicano (detalles bajo NDA).",
+      "en": "Problem: Mexican users needed accessible credit with fast onboarding. Solution: tiered-credit product with embedded scoring and a low-friction approval flow. Impact: contribution to Destacame LATAM fintech portfolio in the Mexican market (details under NDA)."
+    },
+    "stack": [
+      "Vue",
+      "Nuxt",
+      "TypeScript",
+      "Django",
+      "Python",
+      "AWS",
+      "Microservicios"
+    ],
+    "metrics": {
+      "market": "México",
+      "product": "Tiered credit + embedded scoring",
+      "architecture": "Vue/Nuxt + Django + Bureau integrations"
+    },
+    "niches": [
+      "fintech",
+      "leader",
+      "generic"
+    ],
+    "priority": {
+      "fintech": 90,
+      "leader": 95,
+      "generic": 80
+    },
+    "caseStudyDetailed": {
+      "problem": {
+        "es": "Mercado mexicano requeria creditos personales accesibles con onboarding rapido. Restricciones regulatorias locales + fricciones de KYC + integracion con bureaus de credito.",
+        "en": "Mexican market required accessible personal credit with fast onboarding. Local regulatory constraints + KYC friction + credit bureau integrations."
+      },
+      "process": {
+        "es": "Producto con tramos de credito + scoring embebido + flujo de aprobacion de baja friccion. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus mexicanos. Decisiones de arquitectura documentadas para sucesores.",
+        "en": "Tiered-credit product + embedded scoring + low-friction approval flow. Vue/Nuxt frontend + Django microservices + Mexican credit bureau integrations. Documented architecture decisions for successors."
+      },
+      "result": {
+        "es": "Contribucion clave al portafolio fintech LATAM de Destacame en el mercado mexicano. Reutilizacion de patrones del producto Chile con adaptacion regulatoria local (metricas bajo NDA).",
+        "en": "Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse from the Chilean product with local regulatory adaptation (metrics under NDA)."
+      }
+    }
+  },
+  {
+    "slug": "destacame-debt-chile",
+    "name": "Sistema de saldar deudas (Chile)",
+    "url": "https://pagaloaqui.cl/santander",
+    "links": [
+      {
+        "url": "https://pagaloaqui.cl/santander",
+        "label": {
+          "en": "Santander",
+          "es": "Santander"
+        }
+      },
+      {
+        "url": "https://pagaloaqui.cl/santanderconsumer",
+        "label": {
+          "en": "Santander Consumer",
+          "es": "Santander Consumer"
+        }
+      },
+      {
+        "url": "https://solucionesscotiabank.pagaloaqui.cl",
+        "label": {
+          "en": "Scotiabank",
+          "es": "Scotiabank"
+        }
+      }
+    ],
+    "status": "active",
+    "projectType": "fintech-platform",
+    "isConfidential": true,
+    "metricsEstimated": false,
+    "summary": {
+      "es": "Plataforma fintech B2C que ayuda a usuarios chilenos a negociar y saldar deudas con bancos e instituciones financieras. Cubre 3 marcas en produccion (Santander, Santander Consumer, Scotiabank).",
+      "en": "Fintech B2C platform that helps Chilean users negotiate and settle debts with banks and financial institutions. Covers 3 brands in production (Santander, Santander Consumer, Scotiabank)."
+    },
+    "description": {
+      "es": "Producto desarrollado en Destacame como Arquitecto Frontend. Integra microservicios Django + frontend Vue/Nuxt y maneja flujos sensibles de PII y compliance financiero. Una misma base tecnologica sirve a 3 marcas comerciales con branding y reglas de negocio independientes.",
+      "en": "Product built at Destacame as Frontend Architect. Integrates Django microservices with a Vue/Nuxt frontend and handles sensitive PII flows and financial compliance. A single tech foundation serves 3 commercial brands with independent branding and business rules."
+    },
+    "caseStudy": {
+      "es": "Problema: los usuarios chilenos no tenían un canal claro para regularizar deudas y las instituciones perdían cobranzas. Solución: orquestación entre microservicios fintech con un flujo guiado de elegibilidad → oferta → pago. Impacto: mejora medible en la eficiencia operativa de cobranza y en la experiencia del usuario final (detalles bajo NDA).",
+      "en": "Problem: Chilean users lacked a clear channel to regularize debts and institutions lost collections. Solution: orchestration across fintech microservices with a guided eligibility → offer → payment flow. Impact: measurable improvement in collection operational efficiency and end-user experience (details under NDA)."
+    },
+    "stack": [
+      "Vue",
+      "Nuxt",
+      "TypeScript",
+      "Django",
+      "Python",
+      "AWS",
+      "Microservicios"
+    ],
+    "metrics": {
+      "market": "Chile",
+      "brands": "Santander, Santander Consumer, Scotiabank",
+      "compliance": "PCI DSS aware · KYC · PII handling",
+      "architecture": "Vue/Nuxt + Django microservices + AWS"
+    },
+    "niches": [
+      "fintech",
+      "architect",
+      "leader",
+      "generic"
+    ],
+    "priority": {
+      "fintech": 100,
+      "architect": 95,
+      "leader": 100,
+      "generic": 85
+    },
+    "caseStudyDetailed": {
+      "problem": {
+        "es": "Los usuarios chilenos no tenian un canal claro para regularizar deudas y las instituciones financieras perdian cobranzas significativas. Datos sensibles (PII) + compliance financiero LATAM + necesidad de servir multiples marcas comerciales con la misma plataforma tecnica.",
+        "en": "Chilean users lacked a clear channel to regularize debts and financial institutions were losing significant collections. Sensitive data (PII) + LATAM financial compliance + need to serve multiple commercial brands from the same technical platform."
+      },
+      "process": {
+        "es": "Como Frontend Architect orqueste microservicios Django con frontend Vue/Nuxt: elegibilidad → oferta → pago. Manejo de PII con encriptacion en transito y reposo. Integracion con bureaus + verificacion KYC. Branding white-label para servir a Santander, Santander Consumer y Scotiabank desde una sola base de codigo.",
+        "en": "As Frontend Architect I orchestrated Django microservices with Vue/Nuxt frontend: eligibility → offer → payment. PII handling with encryption in transit and at rest. Bureau integrations + KYC verification. White-label branding to serve Santander, Santander Consumer and Scotiabank from a single codebase."
+      },
+      "result": {
+        "en": "Platform with 3 brands in production (Santander, Santander Consumer, Scotiabank) serving the Chilean market. Measurable improvement in collection operational efficiency and end-user experience (detailed metrics under NDA).",
+        "es": "Plataforma con 3 marcas en produccion (Santander, Santander Consumer, Scotiabank) sirviendo el mercado chileno. Mejora medible en eficiencia operativa de cobranza y experiencia del usuario final (metricas detalladas bajo NDA)."
+      }
+    }
+  },
+  {
+    "slug": "faststruct",
+    "name": "FastStruct",
+    "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
+    "repo": "https://github.com/bypabloc/faststruct",
+    "status": "active",
+    "projectType": "cli",
     "isConfidential": false,
-    "projectType": "library",
-    "metricsEstimated": false
+    "metricsEstimated": true,
+    "summary": {
+      "es": "Extensión de VS Code para visualizar y documentar la estructura de un proyecto en segundos, optimizando workflows con IA.",
+      "en": "VS Code extension that visualizes and documents a project structure in seconds, optimized for AI workflows."
+    },
+    "description": {
+      "en": "Generates clear, well-formatted documentation of a directory tree, optionally including file contents. Born before Claude Code to feed structural context to the Claude web interface without copy-pasting.",
+      "es": "Genera documentación clara y bien formateada de la estructura de directorios e incluye contenido de archivos cuando sea necesario. Nació antes de Claude Code para pasarle contexto estructural a la interfaz web de Claude sin copiar manualmente."
+    },
+    "caseStudy": {
+      "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
+      "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
+    },
+    "stack": [
+      "TypeScript",
+      "VS Code Extension API",
+      "Node.js"
+    ],
+    "metrics": {
+      "speedup": "5x faster context handoff",
+      "adoption": "Marketplace published",
+      "precursor": "Pre-Claude-Code era (< May 2025)"
+    },
+    "niches": [
+      "vibe",
+      "generic"
+    ],
+    "priority": {
+      "vibe": 80,
+      "generic": 65
+    },
+    "caseStudyDetailed": {
+      "problem": {
+        "es": "Antes de Claude Code (mayo 2025) usaba la interfaz web de Claude para programar. Pasarle el contexto de un proyecto significaba copiar archivo por archivo manualmente.",
+        "en": "Before Claude Code (May 2025) I used the Claude web interface to code. Sharing project context meant copy-pasting file by file manually."
+      },
+      "process": {
+        "es": "Construí FastStruct como extensión VS Code en TypeScript: comando único que escanea workspace, respeta .gitignore, formatea en markdown estructurado y copia al portapapeles. Patrones de exclusión configurables.",
+        "en": "I built FastStruct as a TypeScript VS Code extension: single command that scans the workspace, honors .gitignore, formats structured markdown and copies to clipboard. Configurable exclusion patterns."
+      },
+      "result": {
+        "es": "Workflow personal 5x más rápido para instruir IAs. Publicada en Marketplace, sigue siendo útil incluso ahora con Claude Code para casos donde necesito contexto compacto para sub-agentes o resumenes externos.",
+        "en": "5x faster personal workflow when instructing AIs. Published in the Marketplace, still useful even now with Claude Code for cases where I need compact context for sub-agents or external summaries."
+      }
+    }
   }
 ]

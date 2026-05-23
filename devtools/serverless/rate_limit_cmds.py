@@ -29,6 +29,7 @@ API CLI:
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import time
@@ -131,6 +132,12 @@ def cmd_rate_limit(flags: dict[str, Any]) -> int:
     stage = _resolve_stage(flags)
     _RULES_TABLE = _rules_table(stage)
     _BUCKETS_TABLE = _buckets_table(stage)
+
+    # Propaga --aws-profile como env var para que los `aws ...` heredados lo
+    # usen sin tocar la firma de _run_aws.
+    aws_profile = flags.get('aws_profile')
+    if aws_profile:
+        os.environ['AWS_PROFILE'] = aws_profile
 
     subcommands = flags.get('subcommands', []) or []
     action = subcommands[1] if len(subcommands) > 1 else 'list'

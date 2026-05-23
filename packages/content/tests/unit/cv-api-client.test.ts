@@ -45,13 +45,13 @@ describe('cv-api-client', () => {
   it('Given default options When fetchCv Then calls /cv?operation=cv&action=get&locale=es', async () => {
     await fetchCv()
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    const url = fetchMock.mock.calls[0][0] as string
+    const url = fetchMock.mock.calls[0]?.[0] as string
     expect(url).toBe(`${API}/cv?operation=cv&action=get&locale=es`)
   })
 
   it('Given niche and locale When fetchExperiences Then includes both query params', async () => {
     await fetchExperiences({ niche: 'fintech', locale: 'en' })
-    const url = fetchMock.mock.calls[0][0] as string
+    const url = fetchMock.mock.calls[0]?.[0] as string
     expect(url).toBe(
       `${API}/cv?operation=cv&action=experiences&niche=fintech&locale=en`,
     )
@@ -59,7 +59,7 @@ describe('cv-api-client', () => {
 
   it('Given apiBase override When fetchProfile Then uses override over env var', async () => {
     await fetchProfile({ apiBase: 'https://override.test/dev/' })
-    const url = fetchMock.mock.calls[0][0] as string
+    const url = fetchMock.mock.calls[0]?.[0] as string
     expect(url).toBe(
       'https://override.test/dev/cv?operation=cv&action=profile&locale=es',
     )
@@ -89,7 +89,7 @@ describe('cv-api-client', () => {
   ])('Given %s When called Then uses action=%s', async (_name, fn, expectedAction) => {
     fetchMock.mockResolvedValueOnce(jsonResponse([]))
     await fn()
-    const url = fetchMock.mock.calls[0][0] as string
+    const url = fetchMock.mock.calls[0]?.[0] as string
     expect(url).toContain(`action=${expectedAction}`)
   })
 

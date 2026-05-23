@@ -17,7 +17,6 @@ concurrency:
 permissions:
   id-token: write  # OIDC (aws-actions/configure-aws-credentials)
   contents: read
-  pull-requests: write  # commit-comment (Fase G)
 
 env:
   AWS_REGION: us-east-1
@@ -201,6 +200,11 @@ jobs:
     needs: [resolve-env, migrate-db, detect-changes, deploy-lambdas]
     if: always()
     runs-on: ubuntu-24.04
+    permissions:
+      # commit-comment posts a comment on the merge commit:
+      # POST /repos/:owner/:repo/commits/:sha/comments requires contents:write
+      # (NOT pull-requests:write — that's for PR threads).
+      contents: write
     steps:
       - name: Build report body
         id: build-report

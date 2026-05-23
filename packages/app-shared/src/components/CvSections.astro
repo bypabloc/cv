@@ -310,11 +310,14 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           summary={p.summary[locale]}
           stack={p.stack}
           url={p.url}
+          links={p.links?.map((l) => ({ label: l.label[locale], url: l.url }))}
           repo={p.repo}
           status={p.status}
           isConfidential={p.isConfidential}
           bentoSpan={bentoSpans[idx % bentoSpans.length] ?? 'md'}
           caseStudyLabel={t.labels.confidential}
+          viewSiteLabel={t.labels.viewSite}
+          viewRepoLabel={t.labels.viewRepo}
           filterable={enableFilters}
           dataProjectType={p.projectType}
           detailHref={`${localePrefix}/projects/${p.slug}`}

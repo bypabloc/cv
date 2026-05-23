@@ -25,6 +25,8 @@ interface Props {
 const { project: p, locale, strings: t } = Astro.props
 const cs = p.caseStudyDetailed
 const metricEntries = p.metrics ? Object.entries(p.metrics) : []
+const resolvedLinks =
+  p.links?.map((l) => ({ label: l.label[locale], url: l.url })) ?? []
 ---
 
 <article class="container-medium section project-detail">
@@ -34,19 +36,43 @@ const metricEntries = p.metrics ? Object.entries(p.metrics) : []
 
   {p.description && <p class="text-muted">{p.description[locale]}</p>}
 
-  <p class="project-detail__links text-mono text-muted">
-    {p.url && (
-      <a href={p.url} target="_blank" rel="noopener noreferrer">
-        {p.url}
-      </a>
-    )}
-    {p.url && p.repo && ' · '}
-    {p.repo && (
-      <a href={p.repo} target="_blank" rel="noopener noreferrer">
-        {p.repo}
-      </a>
-    )}
-  </p>
+  {
+    resolvedLinks.length > 0 ? (
+      <ul class="project-detail__link-chips">
+        {resolvedLinks.map((l) => (
+          <li>
+            <a href={l.url} target="_blank" rel="noopener noreferrer" class="project-detail__link-chip">
+              {l.label}
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          </li>
+        ))}
+        {p.repo && (
+          <li>
+            <a href={p.repo} target="_blank" rel="noopener noreferrer" class="project-detail__link-chip project-detail__link-chip--ghost">
+              {t.labels.viewRepo}
+            </a>
+          </li>
+        )}
+      </ul>
+    ) : (
+      <p class="project-detail__links text-mono text-muted">
+        {p.url && (
+          <a href={p.url} target="_blank" rel="noopener noreferrer">
+            {t.labels.viewSite}
+          </a>
+        )}
+        {p.url && p.repo && ' · '}
+        {p.repo && (
+          <a href={p.repo} target="_blank" rel="noopener noreferrer">
+            {t.labels.viewRepo}
+          </a>
+        )}
+      </p>
+    )
+  }
 
   {
     p.stack.length > 0 && (
@@ -117,6 +143,39 @@ const metricEntries = p.metrics ? Object.entries(p.metrics) : []
   .project-detail__links {
     margin-top: var(--space-8);
     overflow-wrap: break-word;
+  }
+  .project-detail__link-chips {
+    margin-top: var(--space-8);
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+  }
+  .project-detail__link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-8) var(--space-16);
+    border-radius: var(--radius-pill);
+    background: var(--niche-accent);
+    color: #0a0a0a;
+    font-size: var(--font-size-13);
+    font-weight: 600;
+    text-decoration: none;
+    transition: box-shadow var(--motion-base) var(--easing-out);
+  }
+  .project-detail__link-chip:hover {
+    box-shadow: 0 4px 24px var(--niche-glow);
+  }
+  .project-detail__link-chip--ghost {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border-strong);
+  }
+  .project-detail__link-chip--ghost:hover {
+    border-color: var(--niche-accent);
+    color: var(--niche-accent);
   }
   .project-detail__heading {
     margin-top: var(--space-24);

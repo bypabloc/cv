@@ -32,12 +32,9 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
-from aws_lambda_powertools.metrics import MetricUnit
 from settings.operations import OPERATIONS
 from shared.lambda_kit import build_event_model, run_controller
-from shared.observability.logger import logger
-from shared.observability.metrics import metrics
-from shared.observability.tracer import tracer
+from shared.observability import MetricUnit, logger, metrics, tracer
 
 __version__ = '3.0.0'
 

@@ -30,8 +30,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from boto3.dynamodb.types import TypeDeserializer
 from settings.config import logger
+from shared.aws import TypeDeserializer
 from shared.db.repository import (
     insert_contact,
     insert_tracking,

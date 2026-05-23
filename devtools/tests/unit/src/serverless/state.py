@@ -213,3 +213,169 @@ class TestClearState:
         monkeypatch.setattr(state, 'STATE_DIR', tmp_path / 'nope')
 
         assert state.clear_state('dev') == []
+
+
+# ---------------------------------------------------------------------------
+# Backend pluggable: tests del _select_backend + smoke del S3 backend.
+# ---------------------------------------------------------------------------
+
+
+class TestSelectBackend:
+    """_select_backend lee env vars y elige el backend correspondiente."""
+
+    def test_default_is_local_backend(self, monkeypatch):
+        """
+        Given sin env vars,
+        When invoco _select_backend,
+        Then devuelve un LocalStateBackend.
+        """
+        from serverless import state
+
+        monkeypatch.delenv('DEVTOOLS_STATE_BACKEND', raising=False)
+        monkeypatch.delenv('DEVTOOLS_STATE_BUCKET', raising=False)
+
+        backend = state._select_backend()
+
+        assert isinstance(backend, state.LocalStateBackend)
+
+    def test_explicit_local_backend(self, monkeypatch):
+        """
+        Given DEVTOOLS_STATE_BACKEND=local,
+        When invoco _select_backend,
+        Then devuelve un LocalStateBackend.
+        """
+        from serverless import state
+
+        monkeypatch.setenv('DEVTOOLS_STATE_BACKEND', 'local')
+
+        backend = state._select_backend()
+
+        assert isinstance(backend, state.LocalStateBackend)
+
+    def test_s3_backend_requires_bucket(self, monkeypatch):
+        """
+        Given DEVTOOLS_STATE_BACKEND=s3 sin DEVTOOLS_STATE_BUCKET,
+        When invoco _select_backend,
+        Then lanza ValueError indicando que falta el bucket.
+        """
+        import pytest
+
+        from serverless import state
+
+        monkeypatch.setenv('DEVTOOLS_STATE_BACKEND', 's3')
+        monkeypatch.delenv('DEVTOOLS_STATE_BUCKET', raising=False)
+
+        with pytest.raises(ValueError, match='DEVTOOLS_STATE_BUCKET'):
+            state._select_backend()
+
+    def test_unknown_backend_raises(self, monkeypatch):
+        """
+        Given DEVTOOLS_STATE_BACKEND=foo (invalido),
+        When invoco _select_backend,
+        Then lanza ValueError listando los valores aceptados.
+        """
+        import pytest
+
+        from serverless import state
+
+        monkeypatch.setenv('DEVTOOLS_STATE_BACKEND', 'foo')
+
+        with pytest.raises(ValueError, match="'local', 's3'"):
+            state._select_backend()
+
+
+class TestS3StateBackendKeys:
+    """S3StateBackend usa keys del shape `state/<scope>-<stage>.json`."""
+
+    def test_key_layout(self):
+        """
+        Given un S3StateBackend con bucket de prueba,
+        When llamo _key,
+        Then devuelve 'state/<scope>-<stage>.json'.
+        """
+        import unittest.mock
+
+        from serverless import state
+
+        backend = state.S3StateBackend(
+            bucket='test-bucket', client=unittest.mock.MagicMock()
+        )
+
+        assert backend._key('cv', 'dev') == 'state/cv-dev.json'
+        assert backend._key('infra', 'prod') == 'state/infra-prod.json'
+
+    def test_save_calls_put_object_with_json_body(self):
+        """
+        Given un S3StateBackend con cliente fake inyectado,
+        When invoco save(state),
+        Then llama a put_object con el body JSON serializado y
+             content-type application/json.
+        """
+        import unittest.mock
+
+        from serverless import state
+
+        fake_client = unittest.mock.MagicMock()
+        backend = state.S3StateBackend(bucket='test-bucket', client=fake_client)
+
+        ls = _state(scope='cv', stage='dev')
+        uri = backend.save(ls)
+
+        assert uri == 's3://test-bucket/state/cv-dev.json'
+        fake_client.put_object.assert_called_once()
+        kwargs = fake_client.put_object.call_args.kwargs
+        assert kwargs['Bucket'] == 'test-bucket'
+        assert kwargs['Key'] == 'state/cv-dev.json'
+        assert kwargs['ContentType'] == 'application/json'
+        # Body es bytes serializados que deben deserializar al mismo state
+        assert state._deserialize_state(kwargs['Body']) == ls
+
+    def test_load_returns_none_on_no_such_key(self):
+        """
+        Given un S3StateBackend cuyo get_object lanza NoSuchKey,
+        When invoco load,
+        Then devuelve None (no propaga la excepcion).
+        """
+        import unittest.mock
+
+        from serverless import state
+
+        fake_client = unittest.mock.MagicMock()
+
+        class _NoSuchKey(Exception):
+            pass
+
+        fake_client.exceptions.NoSuchKey = _NoSuchKey
+        fake_client.get_object.side_effect = _NoSuchKey('not found')
+
+        backend = state.S3StateBackend(bucket='test-bucket', client=fake_client)
+
+        assert backend.load('cv', 'dev') is None
+
+    def test_load_returns_state_when_key_exists(self):
+        """
+        Given un S3StateBackend cuyo get_object devuelve un body JSON valido,
+        When invoco load,
+        Then deserializa el body y devuelve el LambdaState.
+        """
+        import io
+        import unittest.mock
+
+        from serverless import state
+
+        ls = _state(scope='cv', stage='dev')
+        body_bytes = state._serialize_state(ls)
+
+        fake_client = unittest.mock.MagicMock()
+        fake_client.get_object.return_value = {
+            'Body': io.BytesIO(body_bytes),
+        }
+
+        backend = state.S3StateBackend(bucket='test-bucket', client=fake_client)
+
+        result = backend.load('cv', 'dev')
+
+        assert result == ls
+        fake_client.get_object.assert_called_once_with(
+            Bucket='test-bucket', Key='state/cv-dev.json'
+        )

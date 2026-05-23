@@ -52,6 +52,24 @@ leer: estan versionados en git y contienen solo placeholders, sin valores
 reales. Sirven de plantilla — leerlos es seguro y a veces necesario para
 saber que keys existen.
 
+## Excepcion: devtools en flujo de deploy automatizado
+
+`devtools/serverless/secrets_sync.py` lee `docker/env/server/.{stage}`
+durante `serverless deploy --stage=<env>` para sincronizar a SSM. Es la
+unica excepcion a la regla "NUNCA leer un .env":
+
+- El valor pasa del archivo a un dict Python local a SSM, NUNCA a Claude.
+- Tests automaticos (`test_secrets_sync.py`) verifican que el valor no
+  aparece en stdout/stderr/subprocess args con un canary.
+- El subprocess `aws ssm put-parameter` recibe el valor via tempfile
+  (`--value file:///tmp/portfolio-ssm-X.tmp` con perms 0600), no como
+  argumento (que seria visible en `ps aux`).
+
+Claude y los subagentes NO ejecutan `serverless deploy` directamente:
+solo el dev humano lo hace. Si Claude necesita revisar el estado del
+sync, usa `serverless secrets-status --stage=<env>` (muestra hash
+truncado a 4 chars, nunca el valor).
+
 ## Patron obligatorio: extraer una key
 
 Para descubrir QUE keys existen sin ver valores, leer el `.example`. Para

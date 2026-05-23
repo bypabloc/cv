@@ -34,7 +34,7 @@ from typing import Any
 
 import boto3
 from aws_lambda_powertools.metrics import MetricUnit
-from shared.aws.ssm import get_parameter
+from shared.aws.ssm import get_secret_by_name
 from shared.core.ulid import new_uuidv7
 from shared.dynamodb import ContactItem
 from shared.observability.logger import logger
@@ -184,15 +184,15 @@ def send_owner_email(contact: dict[str, Any]) -> str:
     str
         SES MessageId.
     """
-    from_address_path = os.environ.get(
-        'SSM_SES_FROM_PATH', '/portfolio/ses-from-address'
+    # Catalogo: serverless/lambda/resources/secrets/{ses-from-address,owner-email}.yaml
+    # En cloud: devtools inyecta SSM_<UPPER>_PATH (path SSM); en local,
+    # devtools inyecta <source_env_var> (valor directo).
+    from_address = get_secret_by_name(
+        'ses-from-address', local_env='EMAIL_FROM',
     )
-    owner_email_path = os.environ.get(
-        'SSM_OWNER_EMAIL_PATH', '/portfolio/owner-email'
+    recipients = parse_recipients(
+        get_secret_by_name('owner-email', local_env='OWNER_EMAIL'),
     )
-
-    from_address = get_parameter(from_address_path)
-    recipients = parse_recipients(get_parameter(owner_email_path))
 
     html_template = (_TEMPLATES_DIR / 'owner_email.html').read_text(
         encoding='utf-8'

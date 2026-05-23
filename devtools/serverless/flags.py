@@ -39,6 +39,7 @@ VALID_COMMANDS = [
     'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
     'lint-deps',  # Valida la regla de dedup D-3 (deps lambda vs shared/)
+    'detect-changes',  # Detecta lambdas afectados entre 2 shas (CI)
     'format',  # Ruff format
     'typecheck',  # mypy
     # Tests: unico comando, --type=unit|integration|coverage + target
@@ -54,6 +55,9 @@ VALID_COMMANDS = [
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
+    'sync-secrets',  # Sync .env del stage -> SSM (idempotente, hash-based)
+    'secrets-status',  # .env vs SSM por entrada del catalogo (sin valores)
+    'validate-catalog',  # Valida resources/secrets/*.yaml
     'verify-ses-dns',  # dig DKIM/SPF/DMARC contra Cloudflare
     'request-ses-prod',  # Imprime plantilla del ticket SES production access
     # Observability
@@ -93,6 +97,10 @@ ALLOWED_FLAGS = [
     'name',  # --name=/portfolio/turnstile-secret
     'value',  # --value=... (preferir leer de stdin para no leak shell history)
     'key_id',  # --key-id=alias/portfolio-lambdas
+    'only',  # --only=turnstile-secret,neon-url (subset del catalogo)
+    # detect-changes (CI)
+    'base',  # --base=<sha> SHA base del diff
+    'head',  # --head=<sha> SHA head del diff (default HEAD)
     # Cross-cutting
     'dry_run',  # No aplica, solo imprime acciones
     # Rate-limit management
@@ -164,6 +172,9 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'list-resources': 'Lista los recursos declarados en resources/',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
+    'sync-secrets': 'Sync .env del stage -> SSM (idempotente, hash-based)',
+    'secrets-status': '.env vs SSM por entrada del catalogo (sin valores)',
+    'validate-catalog': 'Valida resources/secrets/*.yaml',
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
     'request-ses-prod': 'Plantilla del ticket de production access SES',
     'metrics': 'Resumen CloudWatch metrics del stack',
@@ -207,13 +218,17 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'stage',
         'aws_profile',
         'dry_run',
+        'skip_sync',
     ],
     'destroy': ['lambda', 'path', 'module', 'stage', 'yes', 'aws_profile'],
     'status': ['lambda', 'path', 'module', 'stage', 'aws_profile'],
     'provision-infra': ['stage', 'aws_profile', 'dry_run'],
     'list-resources': ['stage'],
-    'setup-ssm': ['stage', 'name', 'value', 'key_id'],
-    'rotate-secret': ['stage', 'name', 'value', 'confirm'],
+    'setup-ssm': ['stage', 'name', 'value', 'key_id', 'aws_profile'],
+    'rotate-secret': ['stage', 'name', 'value', 'confirm', 'aws_profile'],
+    'sync-secrets': ['stage', 'only', 'aws_profile', 'dry_run'],
+    'secrets-status': ['stage', 'aws_profile', 'output'],
+    'validate-catalog': [],
     'verify-ses-dns': [],
     'request-ses-prod': [],
     'metrics': ['stage', 'since', 'output'],
@@ -250,6 +265,7 @@ _DEFAULTS: dict[str, Any] = {
     'output_format': 'text',
     'coverage_threshold': 80,
     'dry_run': False,
+    'skip_sync': False,
     'output': 'text',
 }
 
@@ -446,6 +462,11 @@ def describe() -> ScriptDescribe:
                 'type': 'bool',
                 'default': False,
                 'summary': 'Imprime acciones sin ejecutar',
+            },
+            'skip_sync': {
+                'type': 'bool',
+                'default': False,
+                'summary': 'Saltar sync de secretos al desplegar',
             },
             'coverage_threshold': {
                 'type': 'int',

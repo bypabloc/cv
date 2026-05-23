@@ -26,20 +26,26 @@ def _normalize(url: str) -> str:
 def resolve_database_url() -> str:
     """Devuelve la connection string lista para SQLAlchemy.
 
+    Orden de precedencia:
+    1. `DATABASE_URL` (legacy, tests / CI).
+    2. `DB_URL` (catalog `source_env_var` de neon-url — modo local).
+    3. SSM via `SSM_NEON_URL_PATH` (cloud).
+
     Raises:
-        RuntimeError: si ni `DATABASE_URL` ni `SSM_NEON_URL_PATH` estan
-        seteadas.
+        RuntimeError: si ninguna esta seteada.
     """
-    url = os.environ.get('DATABASE_URL')
+    url = os.environ.get('DATABASE_URL') or os.environ.get('DB_URL')
     if url:
         return _normalize(url)
 
     ssm_path = os.environ.get('SSM_NEON_URL_PATH')
     if not ssm_path:
         raise RuntimeError(
-            'Ni DATABASE_URL ni SSM_NEON_URL_PATH estan seteadas. En las '
-            'Lambdas el template SAM inyecta SSM_NEON_URL_PATH; en local '
-            'exporta DATABASE_URL (ver .claude/rules/neon-management.md).'
+            'Ni DATABASE_URL/DB_URL ni SSM_NEON_URL_PATH estan seteadas. '
+            'En las Lambdas devtools inyecta SSM_NEON_URL_PATH desde el '
+            'catalogo (serverless/lambda/resources/secrets/neon-url.yaml); '
+            'en local exporta DB_URL desde docker/env/server/.local '
+            '(ver .claude/rules/neon-management.md).'
         )
 
     # Import tardio: aws.ssm arrastra boto3/Powertools — innecesario en

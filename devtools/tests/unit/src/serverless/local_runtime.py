@@ -217,17 +217,21 @@ class TestRunLocalRie:
         )
 
         assert rc == 0
-        assert captured['popen_cmd'] == [
-            'docker',
-            'run',
-            '--rm',
-            '-v',
-            f'{build_path}:/var/task:ro',
-            '-p',
-            '9000:8080',
+        # El comando incluye env vars del modo local antes del -v. Tras
+        # filtrar los pares `-e KEY=VALUE`, debe quedar el comando base.
+        popen_cmd = captured['popen_cmd']
+        # docker, run, --rm al inicio
+        assert popen_cmd[:3] == ['docker', 'run', '--rm']
+        # Las ultimas posiciones son la imagen + handler
+        assert popen_cmd[-2:] == [
             'public.ecr.aws/lambda/python:3.13',
             'core.handler.lambda_handler',
         ]
+        # Y debe estar el mount + port (en algun lugar antes de la imagen)
+        assert '-v' in popen_cmd
+        assert f'{build_path}:/var/task:ro' in popen_cmd
+        assert '-p' in popen_cmd
+        assert '9000:8080' in popen_cmd
         assert captured['run_cmd'][0] == 'curl'
         assert captured['terminated'] is True
 
@@ -349,3 +353,64 @@ class TestRuntimeMode:
 
         assert RuntimeMode.RIE.value == 'rie'
         assert RuntimeMode.DIRECT.value == 'direct'
+
+
+class TestLocalEnvVars:
+    """_local_env_vars mezcla defaults + manifest.env + catalogo .env."""
+
+    def test_defaults_include_stage_local(self):
+        from serverless.local_runtime import _local_env_vars
+
+        resolved = _resolved(__import__('pathlib').Path('/tmp/probe'))
+
+        env = _local_env_vars(resolved)
+
+        assert env['STAGE'] == 'local'
+        assert env['ENVIRONMENT'] == 'local'
+        assert env['POWERTOOLS_SERVICE_NAME'] == 'probe'
+
+    def test_manifest_env_default_and_local_merged(self, tmp_path):
+        from serverless.local_runtime import _local_env_vars
+        from serverless.resolve import ResolvedLambda
+
+        resolved = ResolvedLambda(
+            mode='lambda-controller',
+            root=tmp_path,
+            manifest={
+                'name': 'probe',
+                'runtime': 'python3.13',
+                'handler': 'core.handler.lambda_handler',
+                'memory': 256,
+                'env': {
+                    'default': {'LOG_LEVEL': 'INFO', 'X': 'default'},
+                    'local': {'X': 'local-override'},
+                },
+            },
+        )
+
+        env = _local_env_vars(resolved)
+
+        assert env['LOG_LEVEL'] == 'INFO'
+        assert env['X'] == 'local-override'
+
+    def test_no_secrets_when_lambda_uses_no_secrets(self, tmp_path):
+        from serverless.local_runtime import _local_env_vars
+        from serverless.resolve import ResolvedLambda
+
+        resolved = ResolvedLambda(
+            mode='lambda-controller',
+            root=tmp_path,
+            manifest={
+                'name': 'no-secrets',
+                'runtime': 'python3.13',
+                'handler': 'core.handler.lambda_handler',
+                'memory': 256,
+                'uses': {'secrets': []},
+            },
+        )
+
+        env = _local_env_vars(resolved)
+
+        # No DB_URL ni TURNSTILE_SECRET_KEY si el lambda no los usa
+        assert 'DB_URL' not in env
+        assert 'TURNSTILE_SECRET_KEY' not in env

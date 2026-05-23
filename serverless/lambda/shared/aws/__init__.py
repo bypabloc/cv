@@ -11,13 +11,19 @@ Convencion: importar SIEMPRE desde `shared.aws.<modulo>`.
 
 from shared.aws.dynamodb import get_resource, get_table, reset_resource_cache
 from shared.aws.ses import ses
-from shared.aws.ssm import clear_cache, get_parameter, get_secret
+from shared.aws.ssm import (
+    clear_cache,
+    get_parameter,
+    get_secret,
+    get_secret_by_name,
+)
 
 __all__ = [
     'clear_cache',
     'get_parameter',
     'get_resource',
     'get_secret',
+    'get_secret_by_name',
     'get_table',
     'reset_resource_cache',
     'ses',

@@ -76,3 +76,58 @@ def clear_cache() -> None:
     cache: Any = getattr(parameters, '_DEFAULT_PROVIDERS', None)
     if cache is not None:
         cache.clear()
+
+
+def _short_name_to_upper(short_name: str) -> str:
+    """Convierte un short_name del catalogo a UPPER_UNDER.
+
+    Convencion: 'turnstile-secret' -> 'TURNSTILE_SECRET'.
+    """
+    return short_name.upper().replace('-', '_')
+
+
+def get_secret_by_name(
+    short_name: str, *, local_env: str | None = None,
+) -> str:
+    """Resuelve un secreto del catalogo (cloud SSM o local env var).
+
+    devtools inyecta dos env vars al Lambda segun el modo:
+      - cloud: SSM_<UPPER>_PATH = path SSM (el helper hace SSM lookup)
+      - local: <local_env> = valor directo del .env
+
+    Si `local_env` no se provee, busca tambien `SECRET_<UPPER>` por
+    convencion.
+
+    Args:
+        short_name: nombre corto del catalogo
+            (ej: 'turnstile-secret', 'neon-url').
+        local_env: env var del valor directo en modo local
+            (ej: 'TURNSTILE_SECRET_KEY', 'DB_URL').
+
+    Returns:
+        El valor del secreto.
+
+    Raises:
+        RuntimeError: si ninguna fuente tiene el valor.
+    """
+    upper = _short_name_to_upper(short_name)
+    ssm_path_env = f'SSM_{upper}_PATH'
+    ssm_path = os.environ.get(ssm_path_env)
+    if ssm_path:
+        return get_secret(ssm_path)
+    # Local mode
+    if local_env:
+        direct = os.environ.get(local_env)
+        if direct:
+            return direct
+    fallback = os.environ.get(f'SECRET_{upper}')
+    if fallback:
+        return fallback
+    candidates = [ssm_path_env]
+    if local_env:
+        candidates.append(local_env)
+    candidates.append(f'SECRET_{upper}')
+    raise RuntimeError(
+        f'No se puede resolver el secreto {short_name!r}: ninguna de '
+        f'estas env vars esta seteada: {candidates}',
+    )

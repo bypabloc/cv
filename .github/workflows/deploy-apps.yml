@@ -1,0 +1,217 @@
+name: Deploy Apps
+
+# Dispara en cada merge a una rama de entorno. workflow_dispatch permite
+# disparar manual desde la UI (con el env como input).
+on:
+  push:
+    branches: [dev, stage, main]
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options: [dev, stage, main]
+
+# Queue por env. Alineado con deploy-backend.yml para que dos pushes
+# seguidos al mismo env no compitan.
+concurrency:
+  group: deploy-apps-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write  # commit-comment (Fase G)
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "11.0.9"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Mapea branch -> stage + sufijo del proyecto Cloudflare Pages.
+  # ---------------------------------------------------------------------------
+  resolve-env:
+    name: Resolve env (${{ github.ref_name }})
+    runs-on: ubuntu-24.04
+    outputs:
+      stage: ${{ steps.resolve.outputs.stage }}
+      project-suffix: ${{ steps.resolve.outputs.project-suffix }}
+    steps:
+      - id: resolve
+        run: |
+          # workflow_dispatch trae el env via inputs.env; push lo trae via ref_name.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            branch="${{ github.event.inputs.env }}"
+          else
+            branch="${{ github.ref_name }}"
+          fi
+
+          case "$branch" in
+            dev)
+              echo "stage=dev"             >> "$GITHUB_OUTPUT"
+              echo "project-suffix=-dev"   >> "$GITHUB_OUTPUT"
+              ;;
+            stage)
+              echo "stage=stage"           >> "$GITHUB_OUTPUT"
+              echo "project-suffix=-stage" >> "$GITHUB_OUTPUT"
+              ;;
+            main)
+              echo "stage=prod"            >> "$GITHUB_OUTPUT"
+              echo "project-suffix="       >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "ERROR: branch $branch no es dev/stage/main"
+              exit 1
+              ;;
+          esac
+
+  # ---------------------------------------------------------------------------
+  # Build de las 6 apps. Intenta reutilizar el artifact dist-all-apps-<sha>
+  # que sube ci.yml; si no esta (workflow_dispatch o race), rebuild local.
+  # ---------------------------------------------------------------------------
+  build-apps:
+    name: Build apps
+    needs: resolve-env
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Try to download CI artifact (dist)
+        id: try-artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-all-apps-${{ github.sha }}
+          path: apps/
+        continue-on-error: true
+
+      - name: Setup pnpm
+        if: steps.try-artifact.outcome == 'failure'
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Setup Node
+        if: steps.try-artifact.outcome == 'failure'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install deps
+        if: steps.try-artifact.outcome == 'failure'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build cv-filters bundle (needed by apps prebuild)
+        if: steps.try-artifact.outcome == 'failure'
+        run: pnpm --filter @portfolio/cv-filters run build
+
+      - name: Build all apps
+        if: steps.try-artifact.outcome == 'failure'
+        run: pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
+
+      # Subir el artifact con un nombre estable para los jobs del matrix
+      # (independiente de si vino de ci.yml o se rebuildeo aqui).
+      - name: Re-upload artifact for matrix
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-dist-${{ github.run_id }}
+          path: apps/*/dist
+          retention-days: 1
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Deploy de las 6 apps en paralelo. Mapeo:
+  #   dev   -> portfolio-{niche}-dev
+  #   stage -> portfolio-{niche}-stage
+  #   main  -> portfolio-{niche}    (sin sufijo)
+  # ---------------------------------------------------------------------------
+  deploy-pages:
+    name: Deploy ${{ matrix.niche }}
+    needs: [resolve-env, build-apps]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        niche: [generic, hub, fintech, architect, leader, vibe]
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-dist-${{ github.run_id }}
+          path: apps/
+
+      - name: Setup Node (wrangler-action lo necesita)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy apps/${{ matrix.niche }}/dist
+            --project-name=portfolio-${{ matrix.niche }}${{ needs.resolve-env.outputs.project-suffix }}
+            --branch=${{ github.ref_name }}
+
+  # ---------------------------------------------------------------------------
+  # Resumen del deploy posteado como commit comment. if: always() para
+  # ver el resultado consolidado aun si algun deploy fallo.
+  # ---------------------------------------------------------------------------
+  report:
+    name: Report apps deploy summary
+    needs: [resolve-env, deploy-pages]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Build report body
+        id: build-report
+        run: |
+          stage="${{ needs.resolve-env.outputs.stage }}"
+          suffix="${{ needs.resolve-env.outputs.project-suffix }}"
+          deploy_result='${{ needs.deploy-pages.result }}'
+
+          # URLs canonicas por env. prod (main) -> sin etiqueta de env;
+          # generic en prod usa el apex the-full-stack.com directamente.
+          if [[ "$stage" == "prod" ]]; then
+            base_url="portfolio.the-full-stack.com"
+          else
+            base_url="portfolio.${stage}.the-full-stack.com"
+          fi
+
+          {
+            echo "## Apps deploy report — \`${stage}\`"
+            echo
+            echo "| Niche | Project | URL |"
+            echo "|-------|---------|-----|"
+            for niche in generic hub fintech architect leader vibe; do
+              project="portfolio-${niche}${suffix}"
+              if [[ "$niche" == "generic" && "$stage" == "prod" ]]; then
+                url="https://the-full-stack.com"
+              else
+                url="https://${niche}.${base_url}"
+              fi
+              echo "| \`${niche}\` | \`${project}\` | ${url} |"
+            done
+            echo
+            echo "Overall: ${deploy_result}"
+            echo
+            echo "Workflow: [run #${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          } > /tmp/body.md
+
+          {
+            echo "body<<EOF"
+            cat /tmp/body.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post commit comment
+        uses: peter-evans/commit-comment@v3
+        with:
+          sha: ${{ github.sha }}
+          body: ${{ steps.build-report.outputs.body }}

@@ -16,18 +16,26 @@ env:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Quality gates: lint + typecheck + unit + build estático.
-  # E2E (Playwright) NO corre en CI: es lento y los tests reales viven en
-  # pre-push del hook local. Ver .claude/rules/verify-before-done.md.
+  # Quality gates SIMPLIFICADO: solo conformance + build estatico.
+  #
+  # El pre-push hook local SIEMPRE corre la bateria completa (lint +
+  # typecheck + unit + coverage + build + E2E). CI es la red de
+  # seguridad para `--no-verify` y colaboradores sin el hook setup —
+  # cubrir el subset que detecta deploys rotos basta.
+  #
+  # typecheck y unit tests viven en pre-push (ver .git-hooks/pre-push).
+  # astro check duplica el parsing que ya hace astro build, asi que se
+  # elimina. Coverage no es required check; si se quiere visibilidad en
+  # PRs, agregar Codecov en un PR aparte.
   # --------------------------------------------------------------------------
   quality-gates:
-    name: Lint + Typecheck + Unit + Build
+    name: Lint + Build
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1  # depth=1 alcanza: no necesitamos historia
 
       - name: Setup pnpm ${{ env.PNPM_VERSION }}
         uses: pnpm/action-setup@v4
@@ -47,34 +55,20 @@ jobs:
       - name: Biome check (lint + format)
         run: pnpm exec biome check .
 
-      - name: TypeScript check (packages)
-        run: pnpm -r --filter "./packages/*" run typecheck
-
-      - name: Astro check (apps)
-        run: pnpm -r --filter "./apps/*" exec astro check
-
-      - name: Unit tests with coverage
-        run: pnpm -r --filter "./packages/*" run test:coverage
-
-      - name: Upload coverage artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports
-          path: packages/*/coverage
-          if-no-files-found: ignore
-
       - name: Build cv-filters bundle (needed by apps prebuild)
         run: pnpm --filter @portfolio/cv-filters run build
 
-      - name: Build all apps (matrix-free)
-        run: pnpm -r --filter "./apps/*" run build
+      - name: Build all apps
+        run: pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
 
+      # El artifact dist-all-apps-<sha> lo descarga deploy-apps.yml para
+      # evitar rebuild en el deploy. Solo se sube en push a env branches
+      # (en PRs no hace falta porque no se deploya — ahorra storage).
       - name: Upload dist artifacts
-        if: always()
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: dist-all-apps
+          name: dist-all-apps-${{ github.sha }}
           path: apps/*/dist
           retention-days: 7
           if-no-files-found: warn

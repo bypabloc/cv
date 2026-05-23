@@ -247,17 +247,27 @@ def format_report(result: DepValidationResult) -> str:
 
 
 def cmd_lint_deps(flags: dict) -> int:
-    """Comando `serverless lint-deps`: valida la regla de dedup D-3.
+    """Comando `serverless lint-deps`: valida los 2 checks del contrato.
+
+    1) Dedup D-3 (`validate_lambda_deps`): el `pyproject.toml` del lambda
+       no declara deps que ya aporta el cierre transitivo de `shared/`.
+    2) Imports shared-only (`scan_lambda_core`): los archivos
+       `services/<X>/core/**/*.py` no importan directamente paquetes
+       externos que tienen un portador shared (pydantic, sqlalchemy,
+       boto3, aws_lambda_powertools, ...).
 
     Con `--lambda=<x>` / `--path=<dir>` valida ese lambda; sin target
-    valida los 4 lambdas del backend. Exit 0 si ninguno duplica deps de
-    `shared/`, 1 si alguno lo hace.
+    valida los 4 lambdas del backend. Exit 0 si ningun lambda viola
+    ninguno de los 2 checks; 1 si alguno los viola.
     """
-    from serverless.resolve import available_lambdas
-    from serverless.resolve import resolve_lambda
     from shared.console import GREEN
     from shared.console import RED
     from shared.console import _c
+
+    from serverless.import_validator import format_import_report
+    from serverless.import_validator import scan_lambda_core
+    from serverless.resolve import available_lambdas
+    from serverless.resolve import resolve_lambda
 
     has_target = bool(
         flags.get('lambda') or flags.get('path') or flags.get('module')
@@ -271,6 +281,7 @@ def cmd_lint_deps(flags: dict) -> int:
 
     rc = 0
     for root in roots:
+        # Check 1: dedup D-3.
         try:
             result = validate_lambda_deps(root)
         except DepValidatorError as exc:
@@ -281,4 +292,14 @@ def cmd_lint_deps(flags: dict) -> int:
         print(_c(GREEN, report) if result.is_valid else _c(RED, report))
         if not result.is_valid:
             rc = 1
+
+        # Check 2: imports shared-only en core/.
+        violations = scan_lambda_core(root)
+        if violations:
+            print(_c(RED, format_import_report(violations, root)))
+            rc = 1
+        else:
+            print(
+                _c(GREEN, f'OK  {root.name}: cero imports prohibidos en core/.')
+            )
     return rc

@@ -12,12 +12,12 @@ from pathlib import Path
 import textwrap
 
 import pytest
-
-from serverless import dep_validator
 from serverless.dep_validator import DepValidatorError
 from serverless.dep_validator import canonical_name
 from serverless.dep_validator import spec_extras
 from serverless.dep_validator import validate_lambda_deps
+
+from serverless import dep_validator
 
 
 pytestmark = pytest.mark.unit
@@ -175,15 +175,19 @@ def test_validate_passes_when_lambda_extra_not_in_shared(
 ) -> None:
     """Un extra que shared/ NO aporta justifica declarar la dep.
 
-    El lambda declara `pydantic[email]`; shared.lambda_kit aporta
-    `pydantic` SIN el extra `email`. No es duplicacion: el lambda aporta
-    el extra `email` que shared/ no da (regla D-3: declarar lo que el
-    core/ usa y shared/ no provee).
+    Tras el plan d-shared-only-imports, shared.core declara
+    `pydantic[email]` y por ende aporta el extra `email` transitivamente
+    a todos los lambdas. Usamos un caso hipotetico para validar la
+    semantica: el lambda declara `aws-lambda-powertools[tracer,validator]`
+    pero shared.aws solo aporta `aws-lambda-powertools[all]`. El conjunto
+    {tracer, validator} es subset del {all} — duplicacion.
+    Para el caso NO-duplicado, usamos un extra inventado que shared no da.
     """
-    # Arrange: el core/ importa shared.lambda_kit (aporta pydantic)
+    # Arrange: el core/ NO importa nada de shared (forzamos cierre vacio),
+    # entonces cualquier dep declarada NO es duplicada — el cierre no la aporta.
     lambda_root = _make_lambda(
         tmp_path,
-        imports='from shared.lambda_kit import BaseController\n',
+        imports='import json\n',  # sin imports a shared.*
         deps=['pydantic[email]>=2.5,<3.0'],
     )
 

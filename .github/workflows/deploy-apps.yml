@@ -123,9 +123,9 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Deploy de las 6 apps en paralelo. Mapeo:
-  #   dev   -> portfolio-{niche}-dev
-  #   stage -> portfolio-{niche}-stage
-  #   main  -> portfolio-{niche}    (sin sufijo)
+  #   dev   -> {niche}-dev
+  #   stage -> {niche}-stage
+  #   main  -> {niche}    (sin sufijo)
   # ---------------------------------------------------------------------------
   deploy-pages:
     name: Deploy ${{ matrix.niche }}
@@ -161,7 +161,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >-
             pages deploy apps/${{ matrix.niche }}/dist
-            --project-name=portfolio-${{ matrix.niche }}${{ needs.resolve-env.outputs.project-suffix }}
+            --project-name=${{ matrix.niche }}${{ needs.resolve-env.outputs.project-suffix }}
             --branch=${{ github.ref_name }}
 
   # ---------------------------------------------------------------------------
@@ -200,7 +200,7 @@ jobs:
             echo "| Niche | Project | URL |"
             echo "|-------|---------|-----|"
             for niche in generic hub fintech architect leader vibe; do
-              project="portfolio-${niche}${suffix}"
+              project="${niche}${suffix}"
               if [[ "$niche" == "generic" && "$stage" == "prod" ]]; then
                 url="https://the-full-stack.com"
               else

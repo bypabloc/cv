@@ -14,21 +14,32 @@ globs: "devtools/**/*.py"
 - Archivos obligatorios por script: `main.py` (logica) + `flags.py` (validacion) + `README.md`
 - Utilidades compartidas en `devtools/shared/` y `devtools/utils/`
 - Scripts disponibles: `scan`, `docker`, `test_runner`, `verify`, `hooks`,
-  `e2e`, `init`, `upgrade_deps`
+  `e2e`, `init`, `upgrade_deps`, `serverless`, `cloudflare_setup`,
+  `rotate_secrets`, `validate_versions`, `mutation_testing`, `weak_assertion`,
+  `harness_init`
 - Modulos por script max 300 lineas — partir por dominio cuando crece
-  (ver `docker/`, `scan/`, `test_runner/` como ejemplo)
+  (ver `docker/`, `scan/`, `test_runner/`, `serverless/`, `rotate_secrets/`
+  como ejemplo)
 
 ## API: posicional vs flags
 
 Convencion fija para que el CLI sea predecible:
 
-- **Scripts con multiples comandos discretos** (`docker` y futuros similares)
-  toman comando posicional: `docker up`, `docker shell`. El comando NO se
-  pasa como `--command=...`.
+- **Scripts con multiples comandos discretos** (`docker`, `serverless`,
+  `rotate_secrets`) toman comando posicional: `docker up`, `serverless
+  deploy`, `rotate_secrets turnstile`. El comando NO se pasa como
+  `--command=...`.
 - **Scripts mono-comando con parametrizacion** (`scan`, `test_runner`,
   `verify`, `upgrade_deps`, `init`, `hooks`, `e2e`) usan SOLO flags. No
   exponen subcomandos: el script es la unidad. Ej: `test_runner
   --module=pkg-content --type=unit`.
+
+En `flags.py`, los scripts subcommand-style extraen el positional desde
+`sys.argv[2:]` con un helper `_extract_positionals` (ver
+`devtools/serverless/flags.py` o `devtools/rotate_secrets/flags.py` como
+referencia) y declaran su lista `VALID_COMMANDS` / `VALID_SERVICES`. El
+nombre normalizado queda en `flags_dict['command']` para que `main.py`
+lo dispatchee con un dict-handler.
 
 ## Comando unico para tests
 
@@ -77,3 +88,27 @@ todas las reglas comunes mas estas particularidades de devtools:
 - Tests en `devtools/tests/` (si aplican)
 - Testear logica pura: parsing de flags, validaciones, transformaciones
 - Coverage y formatter obligatorios
+
+## Rotacion de credenciales (rotate_secrets)
+
+El script `devtools/rotate_secrets/` rota o configura credenciales de
+servicios externos y las escribe a `docker/env/{server,client}/.{env}`.
+Detalle completo: skill `rotate-secrets` o
+`devtools/rotate_secrets/README.md`.
+
+Reglas duras:
+
+- Cada servicio es un subcomando posicional con sus credenciales como
+  flags **explicitas** (no como env vars, no como path a un `.env`).
+  Ej: `rotate_secrets turnstile` exige `--cloudflare-api-token` +
+  `--cloudflare-account-id`.
+- El script NUNCA lee un archivo `.env` automaticamente
+  (ver `.claude/rules/env-files.md`). Si el usuario tiene la credencial
+  en `docker/env/dev-cli/.prod`, la extrae con
+  `grep -m1 '^KEY=' file | cut -d= -f2-` y la pasa inline.
+- Si la rotacion afecta un secret que las Lambdas consumen via SSM,
+  sincronizar despues con `serverless setup-ssm`
+  (ver `.claude/rules/serverless-secrets.md`).
+
+Servicios soportados: `turnstile`. Receta para agregar uno nuevo en el
+README del script y en la skill `rotate-secrets`.

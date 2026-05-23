@@ -302,6 +302,7 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 | `mermaid` | Crear / modificar diagramas `.mmd` en `docs/diagrams/` |
 | `python-devtools` | Entorno Python del proyecto (`devtools/` + `.git-hooks/`): interprete correcto (`.venv` 3.14 vs `python3` 3.12 del shell), PEP 758, estructura de paquetes, comandos. Invocar ANTES de tocar/verificar cualquier `.py` |
 | `research` | Deep research de tecnologías y librerías (skill con web habilitada) |
+| `rotate-secrets` | Devtools script `rotate_secrets` para rotar/configurar credenciales de servicios externos (hoy: Cloudflare Turnstile) y escribir `docker/env/{server,client}/.{env}`. Subcommand-style: cada servicio exige sus credenciales como flags explicitas. Paso 1 de la rotacion antes de `serverless setup-ssm` |
 | `spec-workflow` | Descomponer features en specs + tareas atómicas |
 | `tdd-workflow` | TDD obligatorio (Red-Green-Refactor) antes de implementar |
 

@@ -53,16 +53,31 @@ Aplica SIEMPRE que se trabaje con:
   `{hub,fintech,architect,leader,vibe}.portfolio.the-full-stack.com`,
   `localhost`, `127.0.0.1`.
 - **Rotacion**: cuando el widget Turnstile se regenera en Cloudflare (o ante
-  sospecha de leak):
+  sospecha de leak), usar el script dedicado `rotate_secrets turnstile`
+  (rota los 3 widgets dev/stage/prod, escribe `TURNSTILE_SECRET_KEY` +
+  `TURNSTILE_BYPASS_SECRET` en `docker/env/server/.{env}` y
+  `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SITE_KEY` en
+  `docker/env/client/.{env}`):
 
   ```bash
+  # 1. Rotar widgets en Cloudflare + actualizar envs locales
+  python devtools/run.py rotate_secrets turnstile \
+    --cloudflare-api-token="$(grep -m1 '^CLOUDFLARE_API_TOKEN=' \
+        docker/env/dev-cli/.prod | cut -d= -f2-)" \
+    --cloudflare-account-id="$(grep -m1 '^CLOUDFLARE_ACCOUNT_ID=' \
+        docker/env/dev-cli/.prod | cut -d= -f2-)" \
+    --rotate
+
+  # 2. Sincronizar el nuevo secret a SSM (por stage)
   python devtools/run.py serverless setup-ssm \
     --name=/portfolio/turnstile-secret \
     --key-id=alias/portfolio-lambdas --env=dev
-  # luego actualizar TURNSTILE_SITE_KEY en docker/env/client/.{dev,local,prod}
-  # y TURNSTILE_SECRET_KEY en docker/env/server/.{dev,local,prod}
-  # y redeploy del frontend para el nuevo sitekey publico
+
+  # 3. Redeploy del frontend para que sirva el sitekey publico nuevo
   ```
+
+  Detalle del script: skill `rotate-secrets` o
+  `devtools/rotate_secrets/README.md`.
 
 ### `/portfolio/{stage}/neon-url` (SecureString + KMS)
 
@@ -287,3 +302,6 @@ aws cloudtrail lookup-events \
 - [security.md](security.md) — politica general de secretos del repo
 - skill `aws-ses` — SES v2, DKIM/SPF/DMARC, deliverability, bounce/complaint
 - skill `cloudflare-turnstile` — el widget cuyo secret vive en SSM
+- skill `rotate-secrets` — `devtools/rotate_secrets/` script para rotar
+  widgets Turnstile (y futuros servicios) + escribir envs locales. Es el
+  paso 1 antes de sincronizar SSM con `serverless setup-ssm`.

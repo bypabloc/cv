@@ -1,0 +1,237 @@
+---
+name: rotate-secrets
+description: >
+  Devtools subcommand-style script to rotate or set up external service
+  credentials (Cloudflare Turnstile, ...) and write them to
+  docker/env/{server,client}/.{env}. Lives at devtools/rotate_secrets/.
+  Each service is a positional subcommand and requires its OWN credentials
+  as explicit flags — the script NEVER reads .env files automatically, the
+  caller extracts only the keys it needs with `grep -m1 ^KEY= file | cut`.
+  Currently supports `turnstile` (requires --cloudflare-api-token +
+  --cloudflare-account-id). Resolves the 3 Cloudflare Turnstile widgets
+  (dev/stage/prod), reads or rotates secrets, generates per-env
+  TURNSTILE_BYPASS_SECRET with openssl, and updates server + client env
+  files. Common flags: --dry-run, --rotate, --force, --envs=stage,prod.
+  ALWAYS invoke this skill BEFORE answering ANY question about rotating
+  Turnstile keys, regenerating widget secrets, populating
+  TURNSTILE_SECRET_KEY / TURNSTILE_BYPASS_SECRET / PUBLIC_TURNSTILE_SITEKEY
+  in env files, or adding a new credential-rotation service to devtools.
+  NEVER answer rotation questions from training data alone — this
+  portfolio has a consolidated workflow (Cloudflare API + per-env widgets
+  + bypass token generation + env-file writer + post-rotation SSM sync)
+  that overrides generic advice.
+  Use when the user says "rotate secrets", "rotar credenciales", "rotar
+  turnstile", "regenerate turnstile secret", "rotar secret", "actualizar
+  turnstile keys", "renovar credenciales", "renew widget", "create
+  turnstile widgets", "crear widgets turnstile", "populate env turnstile",
+  "configurar turnstile por entorno", "turnstile per env", "turnstile dev
+  stage prod", "TURNSTILE_SECRET_KEY", "TURNSTILE_BYPASS_SECRET",
+  "PUBLIC_TURNSTILE_SITEKEY", "rotate cloudflare widget", "cloudflare
+  turnstile setup", "agregar servicio a rotate_secrets", "nuevo servicio
+  de rotacion", "rotation script devtools", "cuenta cloudflare credenciales".
+user-invocable: true
+allowed-tools: Read, Glob, Grep, Bash, Edit, Write
+---
+
+# rotate-secrets (devtools)
+
+> Devtools subcommand-style script for rotating or setting up external
+> service credentials and writing them to `docker/env/{server,client}/.{env}`.
+> Lives at `devtools/rotate_secrets/`. NEVER reads `.env` automatically —
+> credentials are passed as explicit flags per subcommand.
+
+## Cuando invocar
+
+- Usuario pide rotar o regenerar Turnstile (widgets o secret)
+- Usuario quiere poblar `TURNSTILE_SECRET_KEY` / `TURNSTILE_BYPASS_SECRET` /
+  `PUBLIC_TURNSTILE_SITEKEY` en envs server/client
+- Usuario pregunta como configurar widgets Turnstile por entorno
+- Usuario quiere agregar un servicio nuevo de rotacion (Neon API key, AWS
+  IAM, etc.) al script
+
+## Cuando NO invocar
+
+- Operacion AWS SSM Parameter Store -> skill `lambda-controller` o
+  comando `serverless setup-ssm` (esa rotacion es del valor en AWS, no
+  del widget). Despues de rotar el widget con `rotate_secrets turnstile
+  --rotate`, hay que sincronizar el secret a SSM con `serverless
+  setup-ssm`.
+- Deploy de proyectos Cloudflare Pages -> skill `cloudflare-deploy`
+- Validacion de un token Turnstile en runtime -> skill `cloudflare-turnstile`
+
+## Inventario de servicios soportados
+
+| Servicio | Subcomando | Credenciales requeridas (flags) | Archivos que toca |
+|----------|------------|---------------------------------|-------------------|
+| Cloudflare Turnstile | `turnstile` | `--cloudflare-api-token`, `--cloudflare-account-id` | `docker/env/server/.{env}`, `docker/env/client/.{env}` |
+
+## Politica de credenciales (CRITICO)
+
+El script **NO lee archivos `.env` automaticamente**. Cada subcomando
+exige sus credenciales como flags explicitas. Si el usuario tiene las
+credenciales en `docker/env/dev-cli/.prod` (caso comun en este portfolio),
+las extrae con bash siguiendo `.claude/rules/env-files.md`:
+
+```bash
+grep -m1 '^CLOUDFLARE_API_TOKEN=' docker/env/dev-cli/.prod | cut -d= -f2-
+```
+
+Si faltan credenciales, el script imprime un error claro indicando que
+flags faltan y un ejemplo de extraccion. NUNCA proponer leer el `.env`
+con Read/cat — la rule lo prohibe explicitamente.
+
+## Subcomando `turnstile`
+
+Configura los 3 widgets Cloudflare Turnstile que cubren los entornos del
+portfolio:
+
+| Widget | Sirve a | Hostnames |
+|--------|---------|-----------|
+| `Portfolio Backend (dev)` | `.local`, `.test`, `.dev` | localhost, 127.0.0.1, `{niche}.portfolio.dev.the-full-stack.com` |
+| `Portfolio Backend (stage)` | `.stage` | `{niche}.portfolio.stage.the-full-stack.com` |
+| `Portfolio Backend (prod)` | `.prod` | apex `the-full-stack.com` + www + `{niche}.portfolio.the-full-stack.com` |
+
+Niches: `hub`, `fintech`, `architect`, `leader`, `vibe`, `generic`.
+
+Por cada env target el script escribe:
+
+- `docker/env/server/.{env}` <- `TURNSTILE_SECRET_KEY` + `TURNSTILE_BYPASS_SECRET`
+- `docker/env/client/.{env}` <- `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SITE_KEY`
+
+El `TURNSTILE_BYPASS_SECRET` se genera **localmente** con
+`secrets.token_hex(32)` (NO es de Cloudflare; solo lo usa Playwright E2E
+para saltar el challenge). Cada env recibe su propio bypass.
+
+### Flujos de uso
+
+**Setup inicial / lectura de secrets actuales** (reusa widgets existentes):
+
+```bash
+python devtools/run.py rotate_secrets turnstile \
+  --cloudflare-api-token="$(grep -m1 '^CLOUDFLARE_API_TOKEN=' \
+      docker/env/dev-cli/.prod | cut -d= -f2-)" \
+  --cloudflare-account-id="$(grep -m1 '^CLOUDFLARE_ACCOUNT_ID=' \
+      docker/env/dev-cli/.prod | cut -d= -f2-)"
+```
+
+**Rotacion de secrets** (periodica o ante compromiso):
+
+```bash
+python devtools/run.py rotate_secrets turnstile \
+  --cloudflare-api-token="$(...)" \
+  --cloudflare-account-id="$(...)" \
+  --rotate
+```
+
+**Solo un entorno** (ej. solo stage):
+
+```bash
+python devtools/run.py rotate_secrets turnstile \
+  --cloudflare-api-token="$(...)" \
+  --cloudflare-account-id="$(...)" \
+  --rotate --envs=stage
+```
+
+**Dry-run** (inspecciona sin escribir):
+
+```bash
+python devtools/run.py rotate_secrets turnstile \
+  --cloudflare-api-token="$(...)" \
+  --cloudflare-account-id="$(...)" \
+  --dry-run
+```
+
+### Siguiente paso obligatorio post-rotacion
+
+Tras `--rotate`, sincronizar el `TURNSTILE_SECRET_KEY` a SSM para que las
+Lambdas lo lean en runtime (ver `.claude/rules/serverless-secrets.md`):
+
+```bash
+python devtools/run.py serverless setup-ssm \
+  --name=/portfolio/<stage>/turnstile-secret
+```
+
+Sin este paso, el backend sigue usando el secret viejo y rechaza tokens
+del frontend (que ya tiene el sitekey nuevo).
+
+## Estructura del script (para agregar servicios)
+
+```text
+devtools/rotate_secrets/
+├── __init__.py
+├── main.py             # dispatcher por servicio (_DISPATCH)
+├── flags.py            # VALID_SERVICES + _REQUIRED_CREDS + describe()
+├── cloudflare_api.py   # TurnstileClient (httpx) - solo Cloudflare
+├── env_writer.py       # update_env_file() generico
+├── turnstile.py        # handler del subcomando turnstile
+└── README.md
+```
+
+## Agregar un servicio nuevo (receta)
+
+1. Crear `devtools/rotate_secrets/<servicio>.py` con una funcion `run(...)`
+   que reciba las credenciales como kwargs y los flags compartidos
+   (`envs`, `dry_run`).
+2. Si necesita cliente API propio (no Cloudflare), crear un modulo
+   hermano (`<provider>_api.py`).
+3. En `flags.py`:
+   - Agregar el nombre a `VALID_SERVICES`.
+   - Declarar las flags requeridas en `_REQUIRED_CREDS[<servicio>]`.
+   - Agregar entradas a `_COMMAND_SUMMARIES` y `_COMMAND_FLAGS`.
+   - Si las credenciales son flags nuevas, agregarlas a `ALLOWED_FLAGS` y
+     a `flags.describe().flags`.
+4. En `main.py`: agregar handler a `_DISPATCH[<servicio>]`.
+5. Update `README.md` del script + esta skill + la tabla de
+   `.claude/rules/serverless-secrets.md` si el servicio gestiona un
+   secreto del backend.
+
+## Reglas heredadas
+
+- `.claude/rules/devtools.md` — convenciones de scripts devtools
+  (estructura, `main.py` + `flags.py`, posicional vs flags, Ruff)
+- `.claude/rules/env-files.md` — NUNCA leer `.env` completo; extraer keys
+  puntuales con `grep -m1`
+- `.claude/rules/serverless-secrets.md` — inventario de secretos del
+  backend (Turnstile, Neon, SES) y politica de rotacion
+- `.claude/rules/python.md` — estilo Python 3.14, BDD docstrings, asserts
+  exactos
+- skill `python-devtools` — interprete correcto, PEP 758, comandos
+  canonicos
+
+## Anti-patrones
+
+| Anti-patron | Por que | Correccion |
+|-------------|---------|------------|
+| `Read docker/env/dev-cli/.prod` para sacar el token | Viola env-files.md; expone TODOS los secretos al contexto | `grep -m1 '^KEY=' file \| cut -d= -f2-` solo de la key necesaria |
+| Acumular `--rotate` sin sincronizar SSM despues | Backend rechaza tokens nuevos (`invalid-input-secret`) | Tras `--rotate` correr `serverless setup-ssm` para cada widget rotado |
+| Crear un script `tmp/rotate_X.py` ad-hoc | El proyecto ya tiene `devtools/rotate_secrets/` | Agregar el servicio al script existente |
+| Hardcodear el bypass secret | Cada env debe tener uno propio | El script lo genera con `secrets.token_hex(32)` por env |
+| Crear widget nuevo con `--force` cuando ya existe el correcto | Crea widgets duplicados en Cloudflare | Solo `--force` si el widget actual quedo invalido |
+| Pasar `--envs=local` esperando que escriba sitekey de prod | Cada env mapea a UN widget (ver tabla arriba); local usa el de dev | Respetar el mapeo `ENV_TO_WIDGET` |
+
+## Validacion (antes de declarar listo)
+
+```bash
+# Lint del script
+devtools/.venv/bin/python -m ruff check devtools/rotate_secrets/ \
+  --config devtools/ruff.toml
+
+# Format check
+devtools/.venv/bin/python -m ruff format --check devtools/rotate_secrets/ \
+  --config devtools/ruff.toml
+
+# Describe machine-readable (verifica que el script esta registrado)
+python devtools/run.py rotate_secrets --describe --output=json
+
+# Dry-run end-to-end (verifica conexion a Cloudflare)
+python devtools/run.py rotate_secrets turnstile \
+  --cloudflare-api-token="$(...)" \
+  --cloudflare-account-id="$(...)" \
+  --dry-run
+```
+
+## Soporte de idioma
+
+- Frontmatter: ingles (matching logic)
+- Cuerpo de la skill: espanol, terminos tecnicos en ingles
+- Respuestas: espanol

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from shared.core import BaseModel, Field
 
 # Niches validos del portfolio.
 _VALID_NICHES = frozenset(

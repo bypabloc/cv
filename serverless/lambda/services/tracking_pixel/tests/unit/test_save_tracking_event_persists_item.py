@@ -40,7 +40,7 @@ def test_save_tracking_event_persists_item(
     assert payload['page_url'] == 'https://the-full-stack.com/'
     # page_id se genera dentro del service (UUIDv7)
     assert payload['page_id'] == result['page_id']
-    # stream_event_id queda en None (campo legacy del stream)
-    assert payload['stream_event_id'] is None
+    # stream_event_id YA NO existe en el payload (columna dropeada)
+    assert 'stream_event_id' not in payload
     # expires_at: None — Neon no usa TTL (es analytics, no cache)
     assert payload['expires_at'] is None

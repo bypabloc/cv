@@ -93,7 +93,6 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
 
     neon_payload: dict[str, Any] = {
         'id': contact_id,
-        'stream_event_id': None,
         'created_at': created_at,
         'name': payload['name'],
         'email': payload['email'],

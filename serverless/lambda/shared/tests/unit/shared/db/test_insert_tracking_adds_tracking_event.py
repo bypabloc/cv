@@ -23,7 +23,6 @@ def test_insert_tracking_adds_tracking_event() -> None:
     payload = {
         'session_id': 's-1',
         'page_id': 'p-1',
-        'stream_event_id': 'evt-1',
         'page_url': 'https://the-full-stack.com',
     }
 

@@ -137,7 +137,6 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     neon_payload: dict[str, Any] = {
         'session_id': payload['session_id'],
         'page_id': page_id,
-        'stream_event_id': None,
         'created_at': created_at,
         'expires_at': None,
         'page_url': payload['page_url'],

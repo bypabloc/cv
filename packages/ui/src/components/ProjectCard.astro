@@ -20,6 +20,12 @@ interface Props {
   status?: 'active' | 'inactive' | 'concept'
   isConfidential?: boolean
   caseStudyLabel?: string
+  /** Slug unico del proyecto. Si se pasa, la card carga
+   * `transition:name='project-{slug}'` para morph hacia la pagina
+   * de detalle `/projects/[slug]` (spec tracking-data-completeness
+   * AC-11). Omitir cuando la app no tiene paginas de detalle: la
+   * card degrada al fade default. */
+  slug?: string
 }
 
 const {
@@ -31,10 +37,15 @@ const {
   status = 'active',
   isConfidential = false,
   caseStudyLabel,
+  slug,
 } = Astro.props
+const transitionName = slug ? `project-${slug}` : undefined
 ---
 
-<article class="proj-card reveal-on-scroll">
+<article
+  class="proj-card reveal-on-scroll"
+  transition:name={transitionName}
+>
   <header class="proj-card__header">
     <h3 class="proj-card__name text-h4">{name}</h3>
     <span class:list={['proj-card__status', `is-${status}`]}>{status}</span>

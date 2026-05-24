@@ -58,7 +58,20 @@ jobs:
       - name: Build cv-filters bundle (needed by apps prebuild)
         run: pnpm --filter @portfolio/cv-filters run build
 
-      - name: Build all apps
+      - name: Build all apps (con prod defaults — validacion only)
+        # ci.yml NO deploya; solo valida que el build no tenga errores.
+        # Las env vars reales por env (dev/stage/prod) las inyecta
+        # deploy-apps.yml desde GH Environment Variables (vars.*).
+        # Aqui usamos defaults de prod para que el guard de
+        # TrackingPixel.astro (validateApiEndpoint) no rechace el build
+        # por env vars vacias. El artifact resultante NO se usa para
+        # deploy real — deploy-apps.yml siempre rebuildea.
+        env:
+          BASE_DOMAIN: portfolio.the-full-stack.com
+          APEX_DOMAIN: the-full-stack.com
+          BASE_SCHEME: https
+          PUBLIC_API_ENDPOINT: https://api.portfolio.the-full-stack.com
+          PUBLIC_TURNSTILE_SITEKEY: ci-validation-only-not-real
         run: pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
 
       # El artifact dist-all-apps-<sha> lo descarga deploy-apps.yml para

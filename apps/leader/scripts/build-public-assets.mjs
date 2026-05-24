@@ -11,7 +11,7 @@ const SITE_URL =
   process.env.SITE_URL ?? 'https://leader.portfolio.the-full-stack.com'
 const NICHE = 'leader'
 const API_ENDPOINT =
-  process.env.PUBLIC_API_ENDPOINT ??
+  process.env.PUBLIC_API_ENDPOINT ||
   (process.env.BASE_DOMAIN
     ? `https://api.${process.env.BASE_DOMAIN}`
     : 'https://api.portfolio.the-full-stack.com')

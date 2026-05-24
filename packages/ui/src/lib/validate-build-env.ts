@@ -39,7 +39,11 @@ export function validateApiEndpoint(apiEndpoint: string | undefined): string {
     )
   }
   const baseDomain = readBaseDomain()
-  if (baseDomain) {
+  // El match estricto solo aplica en builds remotos (dev/stage/prod).
+  // En local docker BASE_DOMAIN=localhost pero PUBLIC_API_ENDPOINT
+  // tipicamente apunta al AWS API Gateway real (no hay api.localhost),
+  // asi que se omite el match para localhost.
+  if (baseDomain && !isLocalBuild(baseDomain)) {
     const expected = `https://api.${baseDomain}`
     if (apiEndpoint !== expected) {
       throw new Error(
@@ -50,6 +54,15 @@ export function validateApiEndpoint(apiEndpoint: string | undefined): string {
     }
   }
   return apiEndpoint
+}
+
+/**
+ * Detecta builds de desarrollo local donde BASE_DOMAIN=localhost (caso
+ * docker local). En esos builds, `api.localhost` no existe — el dev
+ * apunta a un AWS API Gateway real. El match estricto NO aplica.
+ */
+function isLocalBuild(baseDomain: string): boolean {
+  return baseDomain === 'localhost' || baseDomain.endsWith('.localhost')
 }
 
 /**

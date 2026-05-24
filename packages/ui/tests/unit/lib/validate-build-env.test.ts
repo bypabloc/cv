@@ -49,6 +49,19 @@ describe('validateApiEndpoint', () => {
     expect(validateApiEndpoint(endpoint)).toBe(endpoint)
   })
 
+  it('Given BASE_DOMAIN=localhost When validate con AWS endpoint Then NO exige match (modo docker local)', () => {
+    vi.stubEnv('BASE_DOMAIN', 'localhost')
+    const endpoint =
+      'https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev'
+    expect(validateApiEndpoint(endpoint)).toBe(endpoint)
+  })
+
+  it('Given BASE_DOMAIN=hub.localhost When validate Then NO exige match (subdominio localhost)', () => {
+    vi.stubEnv('BASE_DOMAIN', 'hub.localhost')
+    const endpoint = 'https://api.example.com'
+    expect(validateApiEndpoint(endpoint)).toBe(endpoint)
+  })
+
   it('Given BASE_DOMAIN=prod y endpoint prod matcheado When validate Then retorna el valor', () => {
     vi.stubEnv('BASE_DOMAIN', 'portfolio.the-full-stack.com')
     const endpoint = 'https://api.portfolio.the-full-stack.com'

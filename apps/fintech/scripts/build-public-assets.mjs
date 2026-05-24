@@ -14,7 +14,7 @@ const NICHE = 'fintech'
 // PUBLIC_API_ENDPOINT directo, sino fallback prod). Usado para el CSP
 // connect-src del _headers (Cloudflare Pages).
 const API_ENDPOINT =
-  process.env.PUBLIC_API_ENDPOINT ??
+  process.env.PUBLIC_API_ENDPOINT ||
   (process.env.BASE_DOMAIN
     ? `https://api.${process.env.BASE_DOMAIN}`
     : 'https://api.portfolio.the-full-stack.com')

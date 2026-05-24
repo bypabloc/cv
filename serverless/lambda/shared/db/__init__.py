@@ -24,6 +24,7 @@ from .migrations import (
 )
 from .repository import (
     RepositoryError,
+    ensure_session_and_visit,
     insert_contact,
     insert_tracking,
     list_tables,
@@ -38,6 +39,7 @@ __all__ = [
     'build_config',
     'current_revision',
     'db_session',
+    'ensure_session_and_visit',
     'get_engine',
     'insert_contact',
     'insert_tracking',

@@ -21,18 +21,22 @@ publishes_ssm:
 # Cert wildcard *.the-full-stack.com en us-east-1; mismo cert para
 # los 3 envs.
 custom_domain_by_stage:
+  # base_path_mappings.stage es el DEPLOYMENT STAGE de la API GW (no el
+  # stage del repo). En este proyecto coincide nominalmente con el env:
+  # api.portfolio.dev -> stage 'dev'; api.portfolio.stage -> 'stage';
+  # api.portfolio -> 'prod'.
   dev:
     domain_name: api.portfolio.dev.the-full-stack.com
     endpoint_type: EDGE
     certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
     base_path_mappings:
-      - { base_path: '', stage: prod }
+      - { base_path: '', stage: dev }
   stage:
     domain_name: api.portfolio.stage.the-full-stack.com
     endpoint_type: EDGE
     certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
     base_path_mappings:
-      - { base_path: '', stage: prod }
+      - { base_path: '', stage: stage }
   prod:
     domain_name: api.portfolio.the-full-stack.com
     endpoint_type: EDGE

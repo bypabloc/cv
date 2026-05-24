@@ -109,9 +109,6 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
         'ip': None,
         'country': None,
         'user_agent': None,
-        # cloudfront_meta: SI persistimos en el contact (Edge-Optimized
-        # devuelve ~22 headers; analitica de origen del lead).
-        'cloudfront_meta': payload.get('cloudfront_meta') or None,
         'session_id': payload.get('session_id'),
     }
 

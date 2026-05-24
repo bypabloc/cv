@@ -113,9 +113,12 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     """Persiste un evento de tracking en Neon (`tracking_events`).
 
     Genera `page_id = uuidv7()` server-side y arma el payload ORM:
-    `created_at` con `datetime.now(UTC)`, `expires_at=None` (Neon no
-    necesita TTL — es analytics, no cache), `event_props` como dict
-    (SQLAlchemy lo adapta a JSONB).
+    `created_at` con `datetime.now(UTC)`, `event_props` como dict
+    (SQLAlchemy lo adapta a JSONB). Spec drop-cloudfront-meta: las
+    keys `cloudfront_meta`, `expires_at`, `page_url`, `page_title` y
+    `referrer` NO se persisten (columnas dropeadas en alembic
+    `c3d4e5f6a7b8`); el Pydantic las sigue aceptando pero el ORM ya
+    no las tiene.
 
     Parameters
     ----------
@@ -134,13 +137,9 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
         'session_id': payload['session_id'],
         'page_id': page_id,
         'created_at': created_at,
-        'expires_at': None,
-        'page_url': payload['page_url'],
         'event_id': payload['event_id'],
         'event_type_id': payload['event_type_id'],
-        'page_title': payload.get('page_title'),
         'page_path': payload.get('page_path'),
-        'referrer': payload.get('referrer'),
         'utm_source': payload.get('utm_source'),
         'utm_medium': payload.get('utm_medium'),
         'utm_campaign': payload.get('utm_campaign'),
@@ -156,7 +155,6 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
         'browser_version': payload.get('browser_version'),
         'os': payload.get('os'),
         'device_type': payload.get('device_type'),
-        'cloudfront_meta': payload.get('cloudfront_meta'),
         'event_props': payload.get('event_props'),
     }
 
@@ -175,7 +173,6 @@ def process_tracking_event(
     ip: str,
     user_agent: str | None,
     country: str | None = None,
-    cloudfront_meta: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Orquesta enrichment + persistencia del evento de tracking.
 
@@ -189,10 +186,6 @@ def process_tracking_event(
         Header User-Agent de la request.
     country : str | None
         Country code (cloudfront-viewer-country o cf-ipcountry).
-    cloudfront_meta : dict[str, str] | None
-        Mapa raw de los headers cloudfront-* del request (cuando el
-        custom domain es Edge-Optimized: viewer-country/city/region/
-        postal/lat/long/metro/time-zone/asn/ja3 + device flags).
 
     Returns
     -------
@@ -210,10 +203,6 @@ def process_tracking_event(
     }
     if country:
         payload['country'] = country
-    # cloudfront_meta JSONB: solo se persiste si tiene contenido (evita
-    # filas con dicts vacios cuando el custom domain todavia es REGIONAL).
-    if cloudfront_meta:
-        payload['cloudfront_meta'] = cloudfront_meta
 
     result = save_tracking_event(payload)
     logger.info(

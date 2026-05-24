@@ -66,7 +66,6 @@ class Track(BaseController):
             ip=meta.ip,
             user_agent=meta.user_agent,
             country=meta.country,
-            cloudfront_meta=meta.cloudfront_meta,
         )
 
         return {

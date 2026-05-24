@@ -3,13 +3,18 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { profile } from '@portfolio/content'
 import { renderCvHtml } from '@portfolio/cv-pdf'
-import { buildLlmsTxt, buildRobotsTxt } from '@portfolio/seo'
+import { buildHeaders, buildLlmsTxt, buildRobotsTxt } from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
 const SITE_URL =
   process.env.SITE_URL ?? 'https://architect.portfolio.the-full-stack.com'
 const NICHE = 'architect'
+const API_ENDPOINT =
+  process.env.PUBLIC_API_ENDPOINT ??
+  (process.env.BASE_DOMAIN
+    ? `https://api.${process.env.BASE_DOMAIN}`
+    : 'https://api.portfolio.the-full-stack.com')
 const ATS_KEYWORDS = [
   'Frontend Architect',
   'Software Architect',
@@ -98,6 +103,7 @@ async function main() {
     }),
   )
   await write('robots.txt', buildRobotsTxt(SITE_URL))
+  await write('_headers', buildHeaders({ apiEndpoint: API_ENDPOINT }))
 }
 
 main().catch((err) => {

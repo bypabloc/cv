@@ -10,12 +10,17 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildRobotsTxt } from '@portfolio/seo'
+import { buildHeaders, buildRobotsTxt } from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
 const SITE_URL =
   process.env.SITE_URL ?? 'https://hub.portfolio.the-full-stack.com'
+const API_ENDPOINT =
+  process.env.PUBLIC_API_ENDPOINT ??
+  (process.env.BASE_DOMAIN
+    ? `https://api.${process.env.BASE_DOMAIN}`
+    : 'https://api.portfolio.the-full-stack.com')
 
 async function write(path, content) {
   const full = resolve(PUBLIC_DIR, path)
@@ -68,6 +73,7 @@ async function main() {
   await mkdir(PUBLIC_DIR, { recursive: true })
   await write('robots.txt', buildRobotsTxt(SITE_URL))
   await write('llms.txt', buildHubLlmsTxt())
+  await write('_headers', buildHeaders({ apiEndpoint: API_ENDPOINT }))
 }
 
 main().catch((err) => {

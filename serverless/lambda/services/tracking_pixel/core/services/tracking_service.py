@@ -160,6 +160,7 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
         'browser_version': payload.get('browser_version'),
         'os': payload.get('os'),
         'device_type': payload.get('device_type'),
+        'cloudfront_meta': payload.get('cloudfront_meta'),
         'event_props': payload.get('event_props'),
     }
 

@@ -69,22 +69,30 @@ class TrackEventModel(BaseModel):
     # evento debe estar tipado (page_load, etc.).
     event_type_id: str = Field(..., min_length=36, max_length=36)
 
-    # Page metadata (cliente lo provee)
+    # Page metadata. REQUIRED: el frontend siempre los provee desde
+    # location/document. Si falta alguno -> HTTP 400 (request mal armado).
     page_url: str = Field(..., max_length=500)
-    page_title: str | None = Field(default=None, max_length=200)
-    page_path: str | None = Field(default=None, max_length=300)
-    referrer: str | None = Field(default=None, max_length=500)
+    page_title: str = Field(..., max_length=200)
+    page_path: str = Field(..., max_length=300)
+    # referrer queda best-effort (string vacio cuando document.referrer = '').
+    referrer: str = Field(default='', max_length=500)
 
-    # UTM params (campaign tracking)
-    utm_source: str | None = Field(default=None, max_length=100)
-    utm_medium: str | None = Field(default=None, max_length=100)
-    utm_campaign: str | None = Field(default=None, max_length=100)
-    utm_content: str | None = Field(default=None, max_length=100)
+    # UTM params (campaign tracking). REQUIRED en payload: el frontend
+    # parsea URLSearchParams y manda los 4 siempre — string vacio si la URL
+    # no tiene ese query param. utm_term queda opcional (legacy poco usado).
+    utm_source: str = Field(..., max_length=100)
+    utm_medium: str = Field(..., max_length=100)
+    utm_campaign: str = Field(..., max_length=100)
+    utm_content: str = Field(..., max_length=100)
     utm_term: str | None = Field(default=None, max_length=100)
 
-    # Viewport (cliente lo manda)
-    viewport_width: int | None = Field(default=None, ge=0, le=10000)
-    viewport_height: int | None = Field(default=None, ge=0, le=10000)
+    # Viewport. REQUIRED: window.innerWidth/Height siempre disponibles en
+    # el browser real. Si llega 0 -> probablemente bot/scraper.
+    viewport_width: int = Field(..., ge=0, le=10000)
+    viewport_height: int = Field(..., ge=0, le=10000)
+    # devicePixelRatio: backup analitico para distinguir retina (no
+    # required estrictamente, default 1.0 para clientes legacy).
+    device_pixel_ratio: float = Field(default=1.0, ge=0.1, le=10.0)
 
     # Niche (que subdominio)
     niche: str | None = Field(default=None, max_length=50)

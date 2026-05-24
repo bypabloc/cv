@@ -212,9 +212,13 @@ def ensure_session_and_visit(
     session.execute(sessions_upsert)
 
     # --- Paso 2: SELECT ultimo visit del session, FOR UPDATE --------
+    # host(ip) en vez de ip::text: INET cast a text agrega sufijo de
+    # mascara (/32 para IPv4, /128 para IPv6) y la comparacion contra
+    # el payload (str plano sin mascara) fallaba SIEMPRE. host() devuelve
+    # solo la direccion sin mascara, alineado con el formato del payload.
     last_visit_query = (
         text(
-            'SELECT visit_id, ip::text, utm_source, utm_medium, '
+            'SELECT visit_id, host(ip) AS ip, utm_source, utm_medium, '
             'utm_campaign, utm_content, utm_term '
             'FROM session_visits '
             'WHERE session_id = :sid '

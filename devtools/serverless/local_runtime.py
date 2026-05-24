@@ -36,16 +36,17 @@ import textwrap
 import time
 from typing import Any
 
-from serverless.packaging import PackagingError
-from serverless.packaging import package_lambda
-from serverless.resolve import ResolvedLambda
-from serverless.vendoring import VendoringError
-from serverless.vendoring import vendored_shared
 from shared.console import CYAN
 from shared.console import GREEN
 from shared.console import YELLOW
 from shared.console import _c
 from shared.console import _err
+
+from serverless.packaging import PackagingError
+from serverless.packaging import package_lambda
+from serverless.resolve import ResolvedLambda
+from serverless.vendoring import VendoringError
+from serverless.vendoring import vendored_shared
 
 
 # Imagen base oficial del runtime de AWS Lambda Python. Trae el RIE
@@ -120,6 +121,19 @@ def _docker_available() -> bool:
     return shutil.which('docker') is not None
 
 
+# Keys de `docker/env/server/.local` que se pasan al lambda local
+# independientemente del catalogo de secretos. Util para overrides de
+# infra local (dynamodb-local, ssm-local, etc.) que boto3 1.28+ respeta
+# nativamente via AWS_ENDPOINT_URL_<SERVICE>.
+_LOCAL_PASSTHROUGH_KEYS = (
+    'AWS_ENDPOINT_URL_DYNAMODB',
+    'AWS_ENDPOINT_URL_SSM',
+    'AWS_ENDPOINT_URL_KMS',
+    'AWS_ENDPOINT_URL_SES',
+    'AWS_ENDPOINT_URL_SQS',
+)
+
+
 def _local_env_vars(resolved: ResolvedLambda) -> dict[str, str]:
     """Construye env vars para el lambda local (modo offline-dev).
 
@@ -129,6 +143,10 @@ def _local_env_vars(resolved: ResolvedLambda) -> dict[str, str]:
       3. Valores del catalogo de secretos del lambda (uses.secrets),
          leyendo docker/env/server/.local y exponiendo
          `<source_env_var>=<valor>` directo (NO SSM).
+      4. Keys de `_LOCAL_PASSTHROUGH_KEYS` desde `.local` — overrides de
+         endpoints AWS (boto3 1.28+ respeta `AWS_ENDPOINT_URL_<SERVICE>`
+         nativamente). Asi el lambda local apunta a `dynamodb-local`,
+         `localstack`, etc. sin codigo extra.
 
     Hermetico: NUNCA imprime ni loggea valores. Solo nombres.
     """
@@ -147,39 +165,52 @@ def _local_env_vars(resolved: ResolvedLambda) -> dict[str, str]:
         for k, v in (env_block.get('local') or {}).items():
             env[k] = str(v)
 
+    # Leer `.local` SIEMPRE para resolver secretos del catalogo + passthrough
+    # de AWS_ENDPOINT_URL_*. Si no existe (entorno fresco), saltar ambos
+    # bloques silenciosamente.
+    env_file = (
+        Path(__file__).resolve().parents[2]
+        / 'docker'
+        / 'env'
+        / 'server'
+        / '.local'
+    )
+    if not env_file.exists():
+        return env
+
+    from serverless.secrets_sync import load_env_file
+
+    env_values = load_env_file(env_file)
+
     used_secrets = (resolved.manifest.get('uses') or {}).get('secrets') or []
     if used_secrets:
         from serverless.secrets_catalog import Catalog
         from serverless.secrets_catalog import CatalogError
-        from serverless.secrets_sync import load_env_file
 
         try:
             catalog = Catalog.load()
         except CatalogError:
-            return env
+            catalog = None
 
-        env_file = (
-            Path(__file__).resolve().parents[2]
-            / 'docker'
-            / 'env'
-            / 'server'
-            / '.local'
-        )
-        if not env_file.exists():
-            return env
+        if catalog is not None:
+            for short_name in used_secrets:
+                try:
+                    spec = catalog.get(short_name)
+                except CatalogError:  # noqa: S112
+                    # Lambda declara un secreto que el catalogo no conoce
+                    # (puede ser una migracion en curso). Saltar el
+                    # secreto en local; el deploy normal lo detectara.
+                    continue
+                source_value = env_values.get(spec.source_env_var)
+                if source_value:
+                    env[spec.source_env_var] = source_value
 
-        env_values = load_env_file(env_file)
-        for short_name in used_secrets:
-            try:
-                spec = catalog.get(short_name)
-            except CatalogError:  # noqa: S112
-                # Lambda declara un secreto que el catalogo no conoce
-                # (puede ser una migracion en curso). Saltar el secreto
-                # en local; el deploy normal lo detectara.
-                continue
-            source_value = env_values.get(spec.source_env_var)
-            if source_value:
-                env[spec.source_env_var] = source_value
+    # Passthrough de AWS_ENDPOINT_URL_<SERVICE> — el lambda local apunta
+    # a dynamodb-local / localstack / etc. sin tocar codigo.
+    for key in _LOCAL_PASSTHROUGH_KEYS:
+        value = env_values.get(key)
+        if value and key not in env:
+            env[key] = value
 
     return env
 

@@ -55,6 +55,11 @@
         "enabled": true,
         "description": "Build estático de todas las apps Astro. Falla si Astro/Vite no genera dist/."
       },
+      "build_tests": {
+        "name": "Build Tests (Capa B: dist regression)",
+        "enabled": true,
+        "description": "Capa B del plan build-env-vars-per-env: verifica que el dist tenga data-api-endpoint correcto y que el build sin env vars falla con el guard. Opt-in via RUN_BUILD_TESTS=1 (sin el flag se omite, ~15s)."
+      },
       "feature_tests": {
         "name": "Feature tests (Playwright E2E via Docker)",
         "enabled": true,

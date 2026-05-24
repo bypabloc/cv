@@ -223,6 +223,10 @@ def http_handler(
     """
     headers = event.get('headers') or {}
     origin = _resolve_origin_value(headers, cors_origin)
+    # Origin header raw del request (sin echo / public translation).
+    # Lo usan los modelos Pydantic que necesitan inferir niche del
+    # subdominio (spec sessions-normalize: contact_form/niche fallback).
+    raw_origin = _header(headers, 'origin')
     ip = extract_ip(event)
     country = extract_country(event)
     user_agent = _header(headers, 'user-agent')
@@ -251,6 +255,7 @@ def http_handler(
                     'user_agent': user_agent,
                     'bypass_secret': bypass_secret,
                     'cloudfront_meta': cloudfront_meta,
+                    'origin': raw_origin,
                 },
             },
         }

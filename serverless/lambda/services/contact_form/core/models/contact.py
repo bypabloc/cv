@@ -36,6 +36,10 @@ class RequestMeta(BaseModel):
     # API GW los expone). El service lo persiste en la columna
     # cloudfront_meta JSONB.
     cloudfront_meta: dict[str, str] = Field(default_factory=dict)
+    # Origin header raw del request (https://hub.portfolio.dev...). El
+    # controller lo usa para inferir niche cuando el form no lo envia
+    # (spec sessions-normalize, decision 6).
+    origin: str | None = None
 
     model_config = {'extra': 'forbid'}
 

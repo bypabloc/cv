@@ -27,6 +27,10 @@ class CvRequestMeta(BaseModel):
     country: str | None = None
     user_agent: str | None = None
     bypass_secret: str | None = None
+    cloudfront_meta: dict[str, str] = Field(default_factory=dict)
+    # Origin header raw del request. Inyectado por http_handler para
+    # uniformidad entre Lambdas. cv no lo usa hoy.
+    origin: str | None = None
 
     model_config = {'extra': 'forbid'}
 

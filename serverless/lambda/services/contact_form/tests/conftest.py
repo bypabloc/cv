@@ -172,20 +172,49 @@ def contact_form_aws(
         yield
 
 
+_STUB_VISIT_ID = '019e5c50-0000-7000-8000-000000000002'
+"""visit_id determinista (UUIDv7 valido) que el mock de
+`ensure_session_and_visit` retorna en los tests de contact_form."""
+
+
 @pytest.fixture
-def mock_neon_writes(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
-    """Mockea `db_session()` + `insert_contact()` y captura los payloads.
+def session_visit_calls(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura los kwargs de cada invocacion a `ensure_session_and_visit`.
 
-    Reemplaza la escritura real a Neon por un mock que registra los
-    payloads pasados a `insert_contact`. Devuelve la lista de payloads
-    capturados para que los tests hagan asserts EXACTOS.
+    Retorna un visit_id determinista. Mockea el helper en
+    `services.contact_service`. Spec sessions-normalize: el contact
+    UPSERTea session + visit via este helper antes del INSERT del row.
+    """
+    captured: list[dict] = []
 
-    Spec `direct-neon-writes`: el Lambda escribe directo a Neon en vez
-    de DynamoDB+Stream. En unit tests no levantamos un Postgres real —
-    mockeamos el repository y verificamos que se llamo con el payload
-    esperado.
+    def _fake_ensure(_session: object, **kwargs: object) -> tuple[str, str]:
+        captured.append(dict(kwargs))
+        return str(kwargs['session_id']), _STUB_VISIT_ID
+
+    monkeypatch.setattr(
+        'services.contact_service.ensure_session_and_visit', _fake_ensure
+    )
+    return captured
+
+
+@pytest.fixture
+def mock_neon_writes(
+    monkeypatch: pytest.MonkeyPatch,
+    session_visit_calls: list[dict],
+) -> list[dict]:
+    """Mockea `db_session()` + `ensure_session_and_visit` + `insert_contact()`.
+
+    Captura los payloads de `insert_contact`. Para inspeccionar los args
+    del helper, agregar `session_visit_calls` como fixture explicito.
+
+    Spec sessions-normalize: el service UPSERTea session + visit antes
+    del INSERT del contact en la misma tx. En unit tests no levantamos
+    un Postgres real: mockeamos las 3 escrituras.
     """
     from contextlib import contextmanager
+
+    # session_visit_calls inyectado para que el helper se mockee.
+    _ = session_visit_calls
 
     captured: list[dict] = []
 
@@ -196,8 +225,6 @@ def mock_neon_writes(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
     def _fake_insert_contact(_session: object, payload: dict) -> None:
         captured.append(payload)
 
-    # `db_session` y `insert_contact` se importan en
-    # `services.contact_service`: parchamos AHI (donde se usan).
     monkeypatch.setattr(
         'services.contact_service.db_session', _fake_db_session
     )

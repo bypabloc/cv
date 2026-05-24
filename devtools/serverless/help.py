@@ -79,7 +79,7 @@ def cmd_help(flags: dict[str, Any]) -> int:
         print(f'  {_c(GREEN, stage):<20}')
     print()
     print(_c(YELLOW, 'Lambdas (serverless/lambda/services/<lambda>/):'))
-    for lam in ('db', 'contact_form', 'tracking_pixel', 'stream_processor'):
+    for lam in ('db', 'contact_form', 'tracking_pixel'):
         print(f'  {_c(CYAN, lam):<25}')
     print()
 

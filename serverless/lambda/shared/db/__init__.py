@@ -26,9 +26,7 @@ from .repository import (
     RepositoryError,
     insert_contact,
     insert_tracking,
-    is_event_processed,
     list_tables,
-    mark_event_processed,
 )
 from .session import db_session, get_engine
 
@@ -43,9 +41,7 @@ __all__ = [
     'get_engine',
     'insert_contact',
     'insert_tracking',
-    'is_event_processed',
     'list_tables',
-    'mark_event_processed',
     'run_current',
     'run_downgrade',
     'run_migrate',

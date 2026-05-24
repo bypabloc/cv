@@ -38,7 +38,6 @@ from .junctions import (
 )
 from .profile import Profile, ProfileNiche, ProfileStats
 from .project import Project, ProjectCaseStudy, ProjectMetric
-from .stream import ProcessedStreamEvent
 from .tracking import EventType, TrackingEvent
 from .translations import NichePriority, Translation
 
@@ -48,7 +47,6 @@ __all__ = [  # noqa: RUF022
     # Datos del visitante (replica de DynamoDB)
     'Contact',
     'EventType',
-    'ProcessedStreamEvent',
     'TrackingEvent',
     # Contenido del CV
     'Award',

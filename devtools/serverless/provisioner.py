@@ -43,40 +43,32 @@ if TYPE_CHECKING:
 # Stages validos del bloque `env` del manifiesto.
 _VALID_ENV_STAGES = ('default', 'dev', 'stage', 'prod')
 
-# Tipos de trigger soportados.
-_VALID_TRIGGERS = ('direct', 'http', 'on-table-changes')
+# Tipos de trigger soportados. `on-table-changes` se elimino con el
+# stream_processor (spec direct-neon-writes): los Lambdas HTTP escriben
+# directo a Neon en vez de via DDB Stream.
+_VALID_TRIGGERS = ('direct', 'http')
 
 # Espera de propagacion del rol IAM recien creado antes de
 # `create-function`: un rol nuevo puede no estar disponible aun.
 _IAM_PROPAGATION_SECONDS = 10
 
 # Tablas DynamoDB: nombre corto -> definicion del catalogo. Sin
-# marcadores CloudFormation: nombres y ARNs concretos.
+# marcadores CloudFormation: nombres y ARNs concretos. Solo tablas de
+# infraestructura (cache + rate-limit). Las tablas `contacts` y
+# `tracking` se eliminaron en spec direct-neon-writes — esos datos
+# viven ahora en Neon directo.
 _TABLES: dict[str, dict[str, str]] = {
-    'contacts': {
-        'physical': 'portfolio-contacts-${stage}',
-        'env': 'SSM_CONTACTS_TABLE_PATH',
-        'has_stream': 'yes',
-    },
-    'tracking': {
-        'physical': 'portfolio-tracking-${stage}',
-        'env': 'SSM_TRACKING_TABLE_PATH',
-        'has_stream': 'yes',
-    },
     'cache': {
         'physical': 'portfolio-cache-${stage}',
         'env': 'SSM_CACHE_TABLE_PATH',
-        'has_stream': '',
     },
     'rate-limit-rules': {
         'physical': 'portfolio-rate-limit-rules-${stage}',
         'env': 'SSM_RATE_LIMIT_RULES_TABLE_PATH',
-        'has_stream': '',
     },
     'rate-limit-buckets': {
         'physical': 'portfolio-rate-limit-buckets-${stage}',
         'env': 'SSM_RATE_LIMIT_BUCKETS_TABLE_PATH',
-        'has_stream': '',
     },
 }
 
@@ -138,19 +130,16 @@ class TriggerSpec:
     Attributes
     ----------
     type : str
-        `direct` | `http` | `on-table-changes`.
+        `direct` | `http`.
     method : str | None
         Metodo HTTP (solo `http`). Ej. `POST`.
     path : str | None
         Path del endpoint (solo `http`). Ej. `/contact`.
-    tables : tuple[str, ...]
-        Nombres cortos de las tablas (solo `on-table-changes`).
     """
 
     type: str
     method: str | None = None
     path: str | None = None
-    tables: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -341,58 +330,6 @@ def _dynamodb_statements(
     return statements, table_ssm_paths
 
 
-def _stream_statements(
-    trigger: dict[str, Any],
-    stage: str,
-    *,
-    region: str,
-    account: str,
-) -> list[dict[str, Any]]:
-    """Statements IAM de un trigger `on-table-changes`.
-
-    Permisos de lectura de los Streams de las tablas + `sqs:SendMessage`
-    al DLQ del stream processor. Los ARNs concretos del Stream y del DLQ
-    se resuelven contra SSM en `provision` (aqui se usa el ARN base de la
-    tabla, que cubre `table/<name>/stream/*`).
-    """
-    statements: list[dict[str, Any]] = []
-    stream_resources: list[str] = []
-    for short_name in trigger.get('tables') or []:
-        tdef = _table_def(short_name)
-        if not tdef['has_stream']:
-            raise ManifestError(
-                f'la tabla {short_name!r} no tiene Stream — no puede '
-                f'usarse en on-table-changes.',
-            )
-        physical = _interp(tdef['physical'], stage)
-        stream_resources.append(
-            f'arn:aws:dynamodb:{region}:{account}:table/{physical}/stream/*',
-        )
-    statements.append(
-        {
-            'Effect': 'Allow',
-            'Action': [
-                'dynamodb:DescribeStream',
-                'dynamodb:GetRecords',
-                'dynamodb:GetShardIterator',
-                'dynamodb:ListStreams',
-            ],
-            'Resource': stream_resources,
-        }
-    )
-    statements.append(
-        {
-            'Effect': 'Allow',
-            'Action': ['sqs:SendMessage'],
-            'Resource': [
-                f'arn:aws:sqs:{region}:{account}:'
-                f'portfolio-stream-processor-dlq-{stage}',
-            ],
-        }
-    )
-    return statements
-
-
 def _build_statements(
     manifest: dict[str, Any],
     stage: str,
@@ -404,8 +341,7 @@ def _build_statements(
 
     Cada tabla -> Statement DynamoDB; cada secreto -> Statement SSM
     `GetParameter` + un Statement `kms:Decrypt`; `sends-email` ->
-    Statement SES; `on-table-changes` ->
-    Statements de Stream + SQS al DLQ. Sin `Fn::Sub`: ARNs concretos.
+    Statement SES. Sin `Fn::Sub`: ARNs concretos.
     """
     uses = manifest.get('uses') or {}
 
@@ -463,12 +399,6 @@ def _build_statements(
             }
         )
 
-    trigger = manifest.get('trigger') or {}
-    if trigger.get('type') == 'on-table-changes':
-        statements += _stream_statements(
-            trigger, stage, region=region, account=account
-        )
-
     return statements
 
 
@@ -479,7 +409,7 @@ def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
     ------
     ManifestError
         Si el tipo de trigger no es valido o falta `method`/`path` en un
-        trigger `http`, o `tables` en `on-table-changes`.
+        trigger `http`.
     """
     trigger = manifest.get('trigger') or {}
     ttype = trigger.get('type')
@@ -496,16 +426,6 @@ def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
         if not method or not path:
             raise ManifestError("trigger http requiere 'method' y 'path'.")
         return TriggerSpec(type='http', method=method, path=path)
-
-    if ttype == 'on-table-changes':
-        tables = trigger.get('tables') or []
-        for short_name in tables:
-            tdef = _table_def(short_name)
-            if not tdef['has_stream']:
-                raise ManifestError(
-                    f'la tabla {short_name!r} no tiene Stream.',
-                )
-        return TriggerSpec(type='on-table-changes', tables=tuple(tables))
 
     return TriggerSpec(type='direct')
 
@@ -1075,48 +995,6 @@ def _wire_http_trigger(
     )
 
 
-def _wire_table_changes_trigger(
-    rendered: RenderedLambda,
-    stage: str,
-    *,
-    profile: str | None,
-    region: str,
-    resources: dict[str, str | None],
-) -> None:
-    """Conecta el Lambda a los DynamoDB Streams (`on-table-changes`)."""
-    uuids: list[str] = []
-    for short_name in rendered.trigger.tables:
-        stream_arn = _ssm_value(
-            f'/portfolio/{stage}/dynamodb/{short_name}/stream-arn',
-            profile=profile,
-            region=region,
-        )
-        result = aws(
-            [
-                'lambda',
-                'create-event-source-mapping',
-                '--function-name',
-                rendered.function_name,
-                '--event-source-arn',
-                stream_arn,
-                '--starting-position',
-                'LATEST',
-                '--batch-size',
-                '100',
-                '--maximum-batching-window-in-seconds',
-                '10',
-                '--function-response-types',
-                'ReportBatchItemFailures',
-            ],
-            profile=profile,
-            region=region,
-            parse_json=True,
-        )
-        if result.json:
-            uuids.append(str(result.json.get('UUID')))
-    resources['event_source_uuids'] = ','.join(uuids)
-
-
 def _wire_trigger(
     rendered: RenderedLambda,
     stage: str,
@@ -1132,14 +1010,6 @@ def _wire_trigger(
             rendered,
             stage,
             account,
-            profile=profile,
-            region=region,
-            resources=resources,
-        )
-    elif rendered.trigger.type == 'on-table-changes':
-        _wire_table_changes_trigger(
-            rendered,
-            stage,
             profile=profile,
             region=region,
             resources=resources,

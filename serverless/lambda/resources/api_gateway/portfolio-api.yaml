@@ -27,4 +27,16 @@ custom_domain_by_stage:
     certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
     base_path_mappings:
       - { base_path: '', stage: prod }
+  stage:
+    domain_name: api.portfolio.stage.the-full-stack.com
+    endpoint_type: EDGE
+    certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
+    base_path_mappings:
+      - { base_path: '', stage: prod }
+  prod:
+    domain_name: api.portfolio.the-full-stack.com
+    endpoint_type: EDGE
+    certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
+    base_path_mappings:
+      - { base_path: '', stage: prod }
 tags: { Project: portfolio, ManagedBy: devtools }

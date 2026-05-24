@@ -111,10 +111,12 @@ class TestResolveByLambdaName:
 
         names = available_lambdas()
 
+        # 4 lambdas reales tras spec direct-neon-writes (stream_processor
+        # se elimino: contact_form/tracking_pixel escriben directo a Neon).
         assert names == [
             'contact_form',
+            'cv',
             'db',
-            'stream_processor',
             'tracking_pixel',
         ]
 
@@ -127,7 +129,7 @@ class TestResolveByLambdaName:
         for name in (
             'contact_form',
             'tracking_pixel',
-            'stream_processor',
+            'cv',
             'db',
         ):
             resolved = resolve_lambda({'lambda': name})

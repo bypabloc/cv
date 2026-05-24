@@ -1,10 +1,19 @@
-"""Modelo de la tabla `portfolio-tracking-{stage}`.
+"""Modelo de la tabla `portfolio-tracking-{stage}` — TEST FIXTURE LEGACY.
 
 Tabla de eventos de tracking pixel. PK compuesta `session_id` (HASH) +
 `page_id` (RANGE). TTL 60d via `expires_at`.
 
 GSI `niche-created_at-index` (PK `niche`, SK `created_at`): habilita
 queries de dashboard por nicho ordenadas por fecha sin full scan.
+
+**NOTA (spec direct-neon-writes)**: ningun Lambda en produccion importa
+esta clase — `tracking_pixel` escribe directo a Neon
+(`shared.db.TrackingEvent`) en vez de DynamoDB. La clase se conserva
+como fixture para los tests de `shared.dynamodb.BaseModel` (~10 archivos
+en `tests/.../shared/dynamodb/` la usan como exemplar concreto).
+Cuando esos tests se refactoricen a usar `CacheItem`/
+`RateLimitBucketItem` como fixtures unicos, esta clase y la tabla DDB
+se pueden eliminar.
 """
 
 from __future__ import annotations

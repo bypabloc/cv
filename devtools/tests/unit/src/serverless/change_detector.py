@@ -209,7 +209,8 @@ class TestDetectAffectedLambdas:
         When invoco detect_affected_lambdas con los lambdas reales del repo,
         Then devuelve los lambdas cuyo cierre transitivo incluye shared.db
              (segun el shared_resolver real). Para el portfolio esto incluye
-             db, cv y stream_processor.
+             contact_form, cv, db y tracking_pixel (todos escriben/leen
+             Neon tras spec direct-neon-writes).
         """
         result = detect_affected_lambdas(
             base_sha='_unused',
@@ -218,8 +219,7 @@ class TestDetectAffectedLambdas:
             files=['serverless/lambda/shared/db/__init__.py'],
         )
         # Cualquier lambda que importe shared.db debe estar en el resultado.
-        # db (Lambda db), cv (cv_repository) y stream_processor (writes).
-        assert {'db', 'cv', 'stream_processor'}.issubset(result)
+        assert {'contact_form', 'cv', 'db', 'tracking_pixel'}.issubset(result)
 
     def test_combinacion_de_service_y_shared(self):
         """
@@ -237,9 +237,9 @@ class TestDetectAffectedLambdas:
             ],
         )
         # contact_form esta porque su path cambio directo.
-        # Los consumers de shared.db (db, cv, stream_processor) tambien.
+        # Los demas consumers de shared.db (cv, db, tracking_pixel) tambien.
         assert 'contact_form' in result
-        assert {'db', 'cv', 'stream_processor'}.issubset(result)
+        assert {'cv', 'db', 'tracking_pixel'}.issubset(result)
 
     def test_archivos_irrelevantes_returns_empty(self):
         """

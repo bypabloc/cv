@@ -229,17 +229,21 @@ class TestRenderResource:
 class TestDiscoverResources:
     """discover_resources lista los fragmentos reales de resources/."""
 
-    def test_discover_finds_seven_resources(self):
+    def test_discover_finds_four_resources(self):
         """
-        Given los 7 fragmentos de serverless/lambda/resources/,
+        Given los 4 fragmentos de serverless/lambda/resources/,
         When discover_resources,
-        Then devuelve exactamente 7 paths y ninguno empieza con '_'.
+        Then devuelve exactamente 4 paths y ninguno empieza con '_'.
+
+        Cantidad post spec direct-neon-writes: 3 tablas DDB (cache +
+        rate-limit-rules + rate-limit-buckets) + 1 API GW. Se eliminaron
+        las tablas `contacts`/`tracking` y la SQS DLQ del stream_processor.
         """
         from serverless import infra_provision
 
         paths = infra_provision.discover_resources()
 
-        assert len(paths) == 7
+        assert len(paths) == 4
         assert all(not p.stem.startswith('_') for p in paths)
 
 

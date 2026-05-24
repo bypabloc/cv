@@ -215,7 +215,11 @@ jobs:
           else
             base="portfolio.${stage}.the-full-stack.com"
             api="https://api.${base}"
-            url="https://${niche}.${base}"
+            if [[ "$niche" == "generic" ]]; then
+              url="https://${base}"
+            else
+              url="https://${niche}.${base}"
+            fi
           fi
 
           echo "url=$url"   >> "$GITHUB_OUTPUT"
@@ -290,8 +294,12 @@ jobs:
             echo "|-------|---------|-----|"
             for niche in generic hub fintech architect leader vibe; do
               project="${niche}${suffix}"
-              if [[ "$niche" == "generic" && "$stage" == "prod" ]]; then
-                url="https://the-full-stack.com"
+              if [[ "$niche" == "generic" ]]; then
+                if [[ "$stage" == "prod" ]]; then
+                  url="https://the-full-stack.com"
+                else
+                  url="https://${base_url}"
+                fi
               else
                 url="https://${niche}.${base_url}"
               fi

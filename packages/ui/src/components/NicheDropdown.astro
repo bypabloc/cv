@@ -66,7 +66,7 @@ const { label, items, currentViewLabel = 'Vista actual' } = Astro.props
       />
     </svg>
   </button>
-  <ul class="niche-dropdown__menu" role="menu" hidden data-niche-dropdown-menu>
+  <ul class="niche-dropdown__menu" role="menu" data-niche-dropdown-menu>
     {
       items.map((item) => (
         <li role="none">
@@ -131,11 +131,9 @@ const { label, items, currentViewLabel = 'Vista actual' } = Astro.props
 
       const close = (): void => {
         trigger.setAttribute('aria-expanded', 'false')
-        menu.hidden = true
       }
       const open = (): void => {
         trigger.setAttribute('aria-expanded', 'true')
-        menu.hidden = false
       }
 
       trigger.addEventListener(
@@ -225,6 +223,33 @@ const { label, items, currentViewLabel = 'Vista actual' } = Astro.props
     z-index: 60;
     display: grid;
     gap: 2px;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition:
+      opacity var(--motion-fast) var(--easing-out),
+      transform var(--motion-fast) var(--easing-out),
+      visibility 0s linear var(--motion-fast);
+  }
+  .niche-dropdown:has(
+      > [data-niche-dropdown-trigger][aria-expanded='true']
+    )
+    .niche-dropdown__menu {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition:
+      opacity var(--motion-fast) var(--easing-out),
+      transform var(--motion-fast) var(--easing-out),
+      visibility 0s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .niche-dropdown__menu {
+      transition: none;
+      transform: none;
+    }
   }
   .niche-dropdown__item {
     display: flex;

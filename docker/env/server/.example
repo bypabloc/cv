@@ -46,6 +46,14 @@ EMAIL_FROM_NAME=
 
 # === Variables NO catalogadas (inline en manifest.yaml de cada Lambda) =====
 
+# --- AWS endpoints (override para local-dev con dynamodb-local) ---
+# Solo en .local y .test: apunta boto3 al container amazon/dynamodb-local
+# del compose. boto3 1.28+ respeta AWS_ENDPOINT_URL_<SERVICE> nativamente.
+# En .dev/.stage/.prod debe quedar vacio para usar el endpoint AWS real.
+#   .local -> http://localhost:8000
+#   .test  -> http://localhost:8001
+AWS_ENDPOINT_URL_DYNAMODB=
+
 # --- Email backend (decision de runtime) ---
 # `ses` (cloud) | `console` (dev, imprime a stdout).
 EMAIL_BACKEND=

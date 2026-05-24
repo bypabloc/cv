@@ -2,7 +2,7 @@
 
 Concentra la logica de negocio del Lambda `tracking_pixel`:
   - parseo del User-Agent (browser / os / device type).
-  - persistencia del evento en DynamoDB con TTL 60d.
+  - persistencia del evento en Neon PostgreSQL (escritura directa).
   - orquestacion enrichment -> persist (`process_tracking_event`).
 
 Regla de separacion:
@@ -12,25 +12,25 @@ Regla de separacion:
 
 El service NO conoce el evento Lambda ni el evento HTTP: recibe datos ya
 extraidos (validated_input, ip, user_agent, country).
+
+Decision (spec `direct-neon-writes`): escribimos a Neon directo en la
+misma invocacion (sin pasar por DynamoDB + Stream + stream_processor).
+La tabla `tracking_events` en Neon NO tiene PK fisica, asi que no usamos
+`ON CONFLICT` — aceptamos duplicados raros (sendBeacon no reintenta y
+el volumen es bajo).
 """
 
 from __future__ import annotations
 
 import re
-import time
 from datetime import UTC, datetime
 from typing import Any
 
 from settings.config import logger
 from shared.cache import cached
 from shared.core.ulid import new_uuidv7
-from shared.dynamodb import TrackingEventItem
-
-# --- Persistence ---
-
-# 60 dias en segundos. El TTL service de AWS borra el item ~48h despues
-# de expires_at sin consumir WCU.
-TTL_SECONDS = 60 * 24 * 60 * 60
+from shared.db.repository import insert_tracking
+from shared.db.session import db_session
 
 # --- Enrichment ---
 
@@ -114,10 +114,12 @@ def parse_user_agent(user_agent: str | None) -> dict[str, str]:
 
 
 def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
-    """Persiste un evento de tracking en DynamoDB con TTL +60d.
+    """Persiste un evento de tracking en Neon (`tracking_events`).
 
-    PK: session_id, SK: page_id (UUIDv7). El TTL service de AWS borra el
-    item ~48h despues de expires_at sin consumir WCU.
+    Genera `page_id = uuidv7()` server-side y arma el payload ORM:
+    `created_at` con `datetime.now(UTC)`, `expires_at=None` (Neon no
+    necesita TTL — es analytics, no cache), `event_props` como dict
+    (SQLAlchemy lo adapta a JSONB).
 
     Parameters
     ----------
@@ -127,51 +129,47 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     Returns
     -------
     dict[str, Any]
-        Dict con `session_id`, `page_id` y `expires_at` del item escrito.
+        Dict con `session_id` y `page_id` de la fila escrita.
     """
     page_id = new_uuidv7()
-    created_at = datetime.now(UTC).isoformat()
-    expires_at = int(time.time()) + TTL_SECONDS
+    created_at = datetime.now(UTC)
 
-    # TrackingEventItem (ORM) arma el Item y lo persiste: omite los campos
-    # opcionales no provistos (DynamoDB no permite empty strings) y reusa
-    # el resource boto3 singleton entre invocaciones warm. event_props es
-    # un Map de DynamoDB (datos especificos por tipo de evento, SPEC-200).
-    TrackingEventItem(
-        session_id=payload['session_id'],
-        page_id=page_id,
-        created_at=created_at,
-        expires_at=expires_at,
-        page_url=payload['page_url'],
-        # Identificadores del evento (SPEC-102): event_id da idempotencia,
-        # event_type_id es el tipo del catalogo event_types.
-        event_id=payload['event_id'],
-        event_type_id=payload['event_type_id'],
-        page_title=payload.get('page_title'),
-        page_path=payload.get('page_path'),
-        referrer=payload.get('referrer'),
-        utm_source=payload.get('utm_source'),
-        utm_medium=payload.get('utm_medium'),
-        utm_campaign=payload.get('utm_campaign'),
-        utm_content=payload.get('utm_content'),
-        utm_term=payload.get('utm_term'),
-        niche=payload.get('niche'),
-        viewport_width=payload.get('viewport_width'),
-        viewport_height=payload.get('viewport_height'),
-        ip=payload.get('ip'),
-        country=payload.get('country'),
-        user_agent=payload.get('user_agent'),
-        browser=payload.get('browser'),
-        browser_version=payload.get('browser_version'),
-        os=payload.get('os'),
-        device_type=payload.get('device_type'),
-        event_props=payload.get('event_props'),
-    ).save()
+    neon_payload: dict[str, Any] = {
+        'session_id': payload['session_id'],
+        'page_id': page_id,
+        'stream_event_id': None,
+        'created_at': created_at,
+        'expires_at': None,
+        'page_url': payload['page_url'],
+        'event_id': payload['event_id'],
+        'event_type_id': payload['event_type_id'],
+        'page_title': payload.get('page_title'),
+        'page_path': payload.get('page_path'),
+        'referrer': payload.get('referrer'),
+        'utm_source': payload.get('utm_source'),
+        'utm_medium': payload.get('utm_medium'),
+        'utm_campaign': payload.get('utm_campaign'),
+        'utm_content': payload.get('utm_content'),
+        'utm_term': payload.get('utm_term'),
+        'niche': payload.get('niche'),
+        'viewport_width': payload.get('viewport_width'),
+        'viewport_height': payload.get('viewport_height'),
+        'ip': payload.get('ip'),
+        'country': payload.get('country'),
+        'user_agent': payload.get('user_agent'),
+        'browser': payload.get('browser'),
+        'browser_version': payload.get('browser_version'),
+        'os': payload.get('os'),
+        'device_type': payload.get('device_type'),
+        'event_props': payload.get('event_props'),
+    }
+
+    with db_session() as session:
+        insert_tracking(session, neon_payload)
 
     return {
         'session_id': payload['session_id'],
         'page_id': page_id,
-        'expires_at': expires_at,
     }
 
 
@@ -198,7 +196,7 @@ def process_tracking_event(
     Returns
     -------
     dict[str, Any]
-        Dict con `session_id`, `page_id` y `expires_at` del item escrito.
+        Dict con `session_id` y `page_id` de la fila escrita.
     """
     # Enrichment: parse UA
     ua_info = parse_user_agent(user_agent)

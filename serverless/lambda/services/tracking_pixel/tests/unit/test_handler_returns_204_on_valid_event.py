@@ -12,7 +12,9 @@ from tests.unit._helpers import api_gw_event, lambda_context, valid_body
 pytestmark = pytest.mark.unit
 
 
-def test_handler_returns_204_on_valid_event(tracking_aws: None):
+def test_handler_returns_204_on_valid_event(
+    mock_neon_writes: list[dict], tracking_aws: None
+) -> None:
     import handler
 
     # Arrange
@@ -31,3 +33,5 @@ def test_handler_returns_204_on_valid_event(tracking_aws: None):
     # Assert
     assert response['statusCode'] == 204
     assert response['body'] == ''
+    # La persistencia llego al repository (Neon mockeado)
+    assert len(mock_neon_writes) == 1

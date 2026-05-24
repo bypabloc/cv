@@ -1,24 +1,15 @@
 """@module shared.db.repository — acceso a datos del schema PostgreSQL.
 
-Concentra las operaciones de lectura/escritura ORM del portfolio que
-antes vivian dispersas en el `core/` de los Lambdas:
+Concentra las operaciones de lectura/escritura ORM del portfolio:
 
 - `list_tables`           — listado de tablas con estimado de filas.
-- `is_event_processed`    — chequeo de idempotencia del stream.
-- `mark_event_processed`  — registro de idempotencia del stream.
-- `insert_contact` / `insert_tracking` — escritura ORM de los datos
-  replicados desde DynamoDB Streams.
+- `insert_contact`        — escritura del form de contacto (Neon).
+- `insert_tracking`       — escritura de evento de tracking (Neon).
 
-Esta logica vivia en `db/core/services/db_service.py` y
-`stream_processor/core/services/stream_service.py`. Se movio aca porque
-SQLAlchemy es responsabilidad de dominio de `shared.db`: el `core/` de
+Las Lambdas HTTP (`contact_form`, `tracking_pixel`) escriben directo a
+Neon en la misma invocacion (spec `direct-neon-writes`). El `core/` de
 un Lambda NO importa `sqlalchemy` directo, solo consume estas funciones
 (`from shared.db.repository import ...`).
-
-Las funciones de transformacion de un Stream Record a kwargs del modelo
-(parseo de la imagen type-tagged de DynamoDB) NO viven aca: NO usan
-SQLAlchemy, son logica de negocio del `stream_processor` y se quedan en
-su `core/services/`.
 """
 
 from __future__ import annotations
@@ -28,7 +19,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .models import Contact, ProcessedStreamEvent, TrackingEvent
+from .models import Contact, TrackingEvent
 from .session import get_engine
 
 
@@ -96,37 +87,6 @@ def list_tables() -> dict[str, Any]:
         for row in rows
     ]
     return {'tables': tables}
-
-
-def is_event_processed(session: Session, event_id: str) -> bool:
-    """`True` si el `event_id` ya esta en `processed_stream_events`."""
-    from sqlalchemy import select
-
-    stmt = select(ProcessedStreamEvent.event_id).where(
-        ProcessedStreamEvent.event_id == event_id,
-    )
-    return session.execute(stmt).first() is not None
-
-
-def mark_event_processed(
-    session: Session,
-    event_id: str,
-    *,
-    event_type: str,
-    table_name: str,
-) -> None:
-    """Registra el `event_id` como procesado (fila de idempotencia).
-
-    Se llama dentro de la misma `Session`/transaccion que el INSERT del
-    contacto/evento — ambos confirman juntos o ninguno.
-    """
-    session.add(
-        ProcessedStreamEvent(
-            event_id=event_id,
-            event_type=event_type,
-            table_name=table_name,
-        ),
-    )
 
 
 def insert_contact(session: Session, payload: dict[str, Any]) -> None:

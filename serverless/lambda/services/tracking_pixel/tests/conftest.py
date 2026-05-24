@@ -41,7 +41,11 @@ os.environ.setdefault('ENVIRONMENT', 'dev')
 os.environ.setdefault('STAGE', 'dev')
 os.environ.setdefault('TESTING', '1')
 os.environ.setdefault('LOG_LEVEL', 'INFO')
-os.environ.setdefault('TRACKING_TABLE_NAME', 'portfolio-tracking-test')
+# TRACKING_TABLE_NAME se elimino (spec direct-neon-writes): el Lambda
+# ya no escribe a DynamoDB.tracking. La connection string de Neon va por
+# el env var DATABASE_URL que mockeamos por test (no hace falta default
+# aqui — los tests que persisten usan mock_neon_writes).
+os.environ.setdefault('DATABASE_URL', 'postgresql://test:test@localhost/test')
 os.environ.setdefault('CACHE_TABLE_NAME', 'portfolio-cache-test')
 os.environ.setdefault(
     'RATE_LIMIT_RULES_TABLE_NAME', 'portfolio-rate-limit-rules-test'
@@ -70,11 +74,13 @@ def aws_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def tracking_aws() -> Generator[None]:
-    """Setup AWS mock con tracking/cache/rate-limit tables.
+    """Setup AWS mock con cache/rate-limit tables.
 
-    Crea las 4 tablas DynamoDB que el Lambda usa bajo `mock_aws()` y
+    Crea las 3 tablas DynamoDB que el Lambda usa bajo `mock_aws()` y
     resetea el resource singleton de boto3 para que no quede apuntando a
-    un mock de un test anterior.
+    un mock de un test anterior. La tabla `tracking` se elimino (spec
+    direct-neon-writes): el Lambda escribe directo a Neon ahora —
+    los tests de persistencia usan el fixture `mock_neon_writes`.
     """
     import boto3
     from moto import mock_aws
@@ -86,18 +92,6 @@ def tracking_aws() -> Generator[None]:
         reset_resource_cache()
         ddb = boto3.client('dynamodb', region_name='us-east-1')
 
-        ddb.create_table(
-            TableName='portfolio-tracking-test',
-            AttributeDefinitions=[
-                {'AttributeName': 'session_id', 'AttributeType': 'S'},
-                {'AttributeName': 'page_id', 'AttributeType': 'S'},
-            ],
-            KeySchema=[
-                {'AttributeName': 'session_id', 'KeyType': 'HASH'},
-                {'AttributeName': 'page_id', 'KeyType': 'RANGE'},
-            ],
-            BillingMode='PAY_PER_REQUEST',
-        )
         ddb.create_table(
             TableName='portfolio-cache-test',
             AttributeDefinitions=[
@@ -128,3 +122,41 @@ def tracking_aws() -> Generator[None]:
         )
 
         yield
+
+
+@pytest.fixture
+def mock_neon_writes(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Mockea `db_session()` + `insert_tracking()` y captura los payloads.
+
+    Reemplaza la escritura real a Neon por un mock que registra los
+    payloads pasados a `insert_tracking`. Devuelve la lista de payloads
+    capturados para que los tests hagan asserts EXACTOS sobre lo que el
+    service intento escribir.
+
+    Spec `direct-neon-writes`: el Lambda escribe directo a Neon en vez
+    de DynamoDB+Stream. En unit tests no levantamos un Postgres real —
+    mockeamos el repository y verificamos que se llamo con el payload
+    esperado.
+    """
+    from contextlib import contextmanager
+
+    captured: list[dict] = []
+
+    @contextmanager
+    def _fake_db_session():
+        yield object()  # Session falso — no se usa, solo se pasa al repo
+
+    def _fake_insert_tracking(_session: object, payload: dict) -> None:
+        captured.append(payload)
+
+    # `db_session` esta importado en `services.tracking_service` con
+    # `from shared.db.session import db_session` — parchamos AHI (donde se
+    # usa), no en `shared.db.session` (donde se define) para que el
+    # rebind funcione.
+    monkeypatch.setattr(
+        'services.tracking_service.db_session', _fake_db_session
+    )
+    monkeypatch.setattr(
+        'services.tracking_service.insert_tracking', _fake_insert_tracking
+    )
+    return captured

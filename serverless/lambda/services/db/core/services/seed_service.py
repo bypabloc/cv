@@ -3,7 +3,7 @@
 Lee los archivos de `core/seeds/data/` y los inserta en el schema relacional
 del CV usando los modelos SQLAlchemy de `shared.db.models`. NO usa `psycopg`
 directo: la unica capa de acceso a Neon es el ORM de `shared.db`, igual que
-el resto del backend (`stream_processor`, `cv_repository`).
+el resto del backend.
 
 Idempotencia: se usa `INSERT ... ON CONFLICT ... DO UPDATE` via el dialecto
 PostgreSQL de SQLAlchemy (`sqlalchemy.dialects.postgresql.insert`). Cada

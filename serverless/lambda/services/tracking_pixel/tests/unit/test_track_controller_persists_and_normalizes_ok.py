@@ -12,7 +12,9 @@ from tests.unit._helpers import valid_body
 pytestmark = pytest.mark.unit
 
 
-def test_track_controller_persists_and_normalizes_ok(tracking_aws: None):
+def test_track_controller_persists_and_normalizes_ok(
+    mock_neon_writes: list[dict], tracking_aws: None
+) -> None:
     from controllers.tracking.track import Track
 
     # Arrange
@@ -25,10 +27,12 @@ def test_track_controller_persists_and_normalizes_ok(tracking_aws: None):
     # Act
     result = controller.run()
 
-    # Assert
+    # Assert: respuesta normalizada
     assert result['is_valid'] is True
     assert result['code'] == 0
     assert result['data']['operation'] == 'tracking'
     assert result['data']['action'] == 'track'
     assert result['data']['status'] == 'ok'
     assert result['data']['session_id'] == valid_body()['session_id']
+    # Assert: la persistencia llego a Neon (mockeada)
+    assert len(mock_neon_writes) == 1

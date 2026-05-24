@@ -4,6 +4,10 @@
 > (dev/stage/prod). NO editar GH Variables a mano; usar el script
 > hermetico de devtools. Las keys del client son PUBLIC_* — Variables,
 > nunca Secrets.
+>
+> **Rule hija de [secrets-strategy.md](secrets-strategy.md)** (umbrella
+> que cubre las 3 categorias: client / server / dev-cli). Esta rule
+> tiene el detalle del flujo client.
 
 ## Activacion
 
@@ -24,7 +28,7 @@ Aplica SIEMPRE que se trabaje con:
   debug.
 - **SIEMPRE** la fuente del valor es `docker/env/client/.{env}` (local,
   gitignored). Cambios se hacen ahi primero; luego sync.
-- **SIEMPRE** ejecutar `python devtools/run.py github_sync --env=<X>`
+- **SIEMPRE** ejecutar `python devtools/run.py sync_secrets --env=<X> --category=client`
   desde el repo root. NUNCA `gh variable set` a mano (rompe la
   trazabilidad con el `.env` local).
 - **SIEMPRE** correr `--dry-run` primero ante cualquier duda. El script
@@ -38,21 +42,21 @@ Aplica SIEMPRE que se trabaje con:
 
 ```bash
 # Dry-run (no toca GH)
-python devtools/run.py github_sync --env=dev --dry-run
+python devtools/run.py sync_secrets --env=dev --category=client --dry-run
 
 # Sync real
-python devtools/run.py github_sync --env=dev
+python devtools/run.py sync_secrets --env=dev --category=client
 
 # Crear el GH Environment si no existe (primera vez por env)
-python devtools/run.py github_sync --env=stage --create-env
+python devtools/run.py sync_secrets --env=stage --category=client --create-env
 
 # Subset (rotacion puntual de Turnstile)
-python devtools/run.py github_sync --env=prod --keys=PUBLIC_TURNSTILE_SITEKEY
+python devtools/run.py sync_secrets --env=prod --category=client --keys=PUBLIC_TURNSTILE_SITEKEY
 ```
 
 ## Catalogo de keys sincronizadas
 
-Definido en [devtools/github_sync/catalog.py](../../devtools/github_sync/catalog.py).
+Definido en [devtools/sync_secrets/catalog.py](../../devtools/sync_secrets/catalog.py).
 Solo las que afectan el build de las 6 apps:
 
 | Key | Donde se consume |
@@ -72,7 +76,7 @@ Cuando se regenera el widget Cloudflare:
 
 1. Copiar el nuevo sitekey al `docker/env/client/.{env}` correspondiente
    (extraer la KEY puntual; nunca abrir el `.env` completo).
-2. `python devtools/run.py github_sync --env=<X> --keys=PUBLIC_TURNSTILE_SITEKEY`.
+2. `python devtools/run.py sync_secrets --env=<X> --category=client --keys=PUBLIC_TURNSTILE_SITEKEY`.
 3. Re-deployar las 6 apps del env: empujar a la branch (`dev`/`stage`/
    `main`) o `gh workflow run deploy-apps.yml --ref <branch>`.
 4. El widget secret (server-side) se rota aparte via `serverless setup-ssm`
@@ -82,7 +86,7 @@ Cuando se regenera el widget Cloudflare:
 
 | Anti-patron | Por que | Correccion |
 |---|---|---|
-| `gh variable set` a mano | Sin trazabilidad con `.env` local | `python devtools/run.py github_sync` |
+| `gh variable set` a mano | Sin trazabilidad con `.env` local | `python devtools/run.py sync_secrets --category=client` |
 | Marcar PUBLIC_* como GH Secret | Mascarea en logs, estorba debug | Usar GH Environment Variables |
 | Hardcodear sitekey en `deploy-apps.yml` | Acopla con rotacion del widget | `${{ vars.PUBLIC_TURNSTILE_SITEKEY }}` |
 | Commitear el `.env` | Categoria client es local | Esta en `.gitignore` |
@@ -90,7 +94,7 @@ Cuando se regenera el widget Cloudflare:
 
 ## Referencias
 
-- [devtools/github_sync/README.md](../../devtools/github_sync/README.md)
+- [devtools/sync_secrets/README.md](../../devtools/sync_secrets/README.md)
 - [.claude/rules/env-files.md](env-files.md) — NUNCA leer `.env`; extraer
   keys puntuales
 - [.claude/rules/serverless-secrets.md](serverless-secrets.md) — el

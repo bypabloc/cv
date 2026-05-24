@@ -100,9 +100,11 @@ prod (bug que motivo el plan build-env-vars-per-env).
 para leer `vars.*` correctas. Sin eso, las vars son `''` y los guards
 de `TrackingPixel.astro` fallan el build (defensa en profundidad).
 
-Las vars se publican con `python devtools/run.py github_sync --env=<X>`
+Las vars se publican con
+`python devtools/run.py sync_secrets --env=<X> --category=client`
 desde `docker/env/client/.{env}`. Ver
-[client-env-sync.md](client-env-sync.md).
+[secrets-strategy.md](secrets-strategy.md) (umbrella) o
+[client-env-sync.md](client-env-sync.md) (detalle por categoria).
 
 ## Quitar redundancias con pre-push
 

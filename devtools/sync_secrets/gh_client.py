@@ -26,11 +26,7 @@ def check_auth() -> None:
 
 
 def ensure_environment(env: str) -> None:
-    """Crea el GH Environment si no existe (idempotente).
-
-    Usa la REST API: PUT /repos/{owner}/{repo}/environments/{env}.
-    Si ya existe, devuelve 200; si no, lo crea con 201.
-    """
+    """Crea el GH Environment si no existe (idempotente)."""
     repo = _current_repo()
     result = subprocess.run(  # noqa: S603
         [
@@ -72,7 +68,6 @@ def get_variable(env: str, name: str) -> str | None:
         check=False,
     )
     if result.returncode != 0:
-        # 404 -> no existe. Cualquier otro error -> propagar.
         stderr = result.stderr.lower()
         if 'http 404' in stderr or 'not found' in stderr:
             return None
@@ -86,13 +81,9 @@ def get_variable(env: str, name: str) -> str | None:
 def set_variable(env: str, name: str, value: str) -> None:
     """Crea o actualiza una GH Environment Variable.
 
-    `gh` infiere el repo del cwd (git remote). El valor se pasa por --body;
-    es publico (PUBLIC_*) por contrato, no aparece en stdout del CLI.
+    Las keys aqui son PUBLIC_* por contrato (no Secrets). Si en el futuro
+    se sincronizan Secrets, usar --body-file con tempfile 0600.
     """
-    # NOTA: `gh variable set` con --body SI envia el valor en argv (visible
-    # en ps aux corriendose). Como las keys de este script son PUBLIC_* por
-    # contrato (no secrets), es aceptable. Si en el futuro se quiere
-    # sincronizar Secrets, usar --body-file con tempfile 0600.
     result = subprocess.run(  # noqa: S603
         [
             'gh',
@@ -109,7 +100,6 @@ def set_variable(env: str, name: str, value: str) -> None:
         check=False,
     )
     if result.returncode != 0:
-        # NO incluir el valor en el error
         raise GhClientError(
             f'gh variable set fallo para {name} en env {env}: '
             f'{result.stderr.strip()}',

@@ -1,20 +1,16 @@
-"""Unit tests for github_sync.parser.
+"""Unit tests for sync_secrets.parser.
 
-Path mirroring: devtools/github_sync/parser.py -> this file.
-
-Cubre el parser de .env: keys validas, valores vacios, comillas,
-comentarios, errores. Hermetico: el parser solo se testea con strings
-inventados (no se leen .env reales del proyecto).
+Path mirroring: devtools/sync_secrets/parser.py -> this file.
 """
 
 from pathlib import Path
 
 import pytest
 
-from github_sync.catalog import SYNCED_KEYS
-from github_sync.parser import EnvParseError
-from github_sync.parser import filter_catalog
-from github_sync.parser import parse_env_file
+from sync_secrets.catalog import CLIENT_SYNCED_KEYS
+from sync_secrets.parser import EnvParseError
+from sync_secrets.parser import filter_catalog
+from sync_secrets.parser import parse_env_file
 
 
 pytestmark = pytest.mark.unit
@@ -108,17 +104,14 @@ def test_filter_catalog_keeps_only_known_keys() -> None:
         'PUBLIC_API_ENDPOINT': 'y',
         'TURNSTILE_ENABLED': 'true',  # NOT in catalog
     }
-    result = filter_catalog(parsed, SYNCED_KEYS)
+    result = filter_catalog(parsed, CLIENT_SYNCED_KEYS)
     assert result == {'BASE_DOMAIN': 'x', 'PUBLIC_API_ENDPOINT': 'y'}
 
 
-def test_catalog_matches_example_keys_expectation() -> None:
+def test_client_catalog_matches_example_keys_expectation() -> None:
     """
-    Invariante: el catalogo SYNCED_KEYS contiene exactamente las 5 keys
+    Invariante: CLIENT_SYNCED_KEYS contiene exactamente las 5 keys
     documentadas en docker/env/client/.example que afectan el build.
-
-    Si alguien agrega una key nueva al .example, debe agregar tambien
-    a SYNCED_KEYS o a IGNORED_KEYS (decision explicita).
     """
     expected = {
         'BASE_DOMAIN',
@@ -127,4 +120,4 @@ def test_catalog_matches_example_keys_expectation() -> None:
         'PUBLIC_API_ENDPOINT',
         'PUBLIC_TURNSTILE_SITEKEY',
     }
-    assert frozenset(expected) == SYNCED_KEYS
+    assert frozenset(expected) == CLIENT_SYNCED_KEYS

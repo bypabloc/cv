@@ -173,9 +173,10 @@ ignore = [
     "INP001",                       # tests don't need __init__.py
 ]
 
-# github_sync: CLI tools (gh) en PATH, no path absoluto
-"github_sync/**/*.py" = [
+# sync_secrets: CLI tools (gh) en PATH, no path absoluto
+"sync_secrets/**/*.py" = [
     "S607",  # gh es un CLI conocido, no se llama por path absoluto
+    "BLE001",  # except Exception OK en orquestadores (mapean a counters)
 ]
 
 # ============================================================================

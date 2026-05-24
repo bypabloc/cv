@@ -76,8 +76,8 @@ jobs:
   # y `site-urls.ts`.
   #
   # `environment: <stage>` da acceso a vars.* del environment del mismo
-  # nombre (poblados por `python devtools/run.py github_sync --env=<X>`
-  # desde docker/env/client/.{env}).
+  # nombre (poblados por `python devtools/run.py sync_secrets --env=<X>
+  # --category=client` desde docker/env/client/.{env}).
   # ---------------------------------------------------------------------------
   build-apps:
     name: Build apps
@@ -108,8 +108,9 @@ jobs:
 
       - name: Build all apps with env vars del stage
         # Las vars vienen de GH Environment (dev/stage/prod) pobladas por
-        # `python devtools/run.py github_sync --env=<X>`. Son publicas
-        # (PUBLIC_*) — no se mascarean en logs porque son Variables, no Secrets.
+        # `python devtools/run.py sync_secrets --env=<X> --category=client`.
+        # Son publicas (PUBLIC_*) — no se mascarean en logs porque son
+        # Variables, no Secrets.
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
           BASE_SCHEME: ${{ vars.BASE_SCHEME }}
@@ -121,9 +122,9 @@ jobs:
           # presentes. Si falta alguna, fallar temprano con mensaje claro
           # (el guard de TrackingPixel.astro tambien atrapa esto, pero
           # mejor reportarlo aqui antes que en un stack trace de Astro).
-          : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py github_sync --env=${{ needs.resolve-env.outputs.stage }}' para poblarlo.}"
-          : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre github_sync.}"
-          : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre github_sync.}"
+          : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py sync_secrets --env=${{ needs.resolve-env.outputs.stage }} --category=client' para poblarlo.}"
+          : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre sync_secrets --category=client.}"
+          : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre sync_secrets --category=client.}"
           pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
 
       # Subir el artifact con un nombre estable para los jobs del matrix.

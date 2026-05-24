@@ -53,7 +53,7 @@ Environment Variables** (NO Secrets — son publicas por contrato `PUBLIC_*`
 o config de build derivada). Pobladas por:
 
 ```bash
-python devtools/run.py github_sync --env=dev   # o stage / prod
+python devtools/run.py sync_secrets --env=dev --category=client   # o stage / prod
 ```
 
 | Env var | prod | dev | stage |
@@ -74,7 +74,9 @@ deriva su SITE de `buildSiteUrl('<niche>')` cuando `process.env.SITE_URL`
 no esta seteada. Asi una sola tabla de vars cubre las 6 apps.
 
 Fuente de los valores: `docker/env/client/.{env}` (gitignored). El
-script `github_sync` lee y publica idempotentemente.
+script `sync_secrets --category=client` lee y publica idempotentemente.
+Comando unificado para las 3 categorias (`client` / `server` / `dev-cli`):
+ver [.claude/rules/secrets-strategy.md](../.claude/rules/secrets-strategy.md).
 
 ## Headers de seguridad
 

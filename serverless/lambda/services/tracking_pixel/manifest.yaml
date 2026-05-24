@@ -31,12 +31,17 @@ trigger:
 # devtools traduce esto a los permisos IAM y los imports necesarios.
 uses:
   # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  # Spec direct-neon-writes: la tabla `tracking` ya no se usa — el Lambda
+  # escribe directo a Neon (`tracking_events`). Solo quedan las tablas
+  # de infraestructura (cache + rate-limit).
   tables:
-    tracking: read-write       # persistencia del evento
     cache: read-write          # @cached del parsing de user-agent
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
-  secrets: []
+  # neon-url: connection string del Neon dev/stage/prod (escritura
+  # directa de tracking_events tras spec direct-neon-writes).
+  secrets:
+    - neon-url
   sends-email: false
 
 # --- Variables de entorno por stage ---

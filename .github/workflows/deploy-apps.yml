@@ -66,53 +66,67 @@ jobs:
           esac
 
   # ---------------------------------------------------------------------------
-  # Build de las 6 apps. Intenta reutilizar el artifact dist-all-apps-<sha>
-  # que sube ci.yml; si no esta (workflow_dispatch o race), rebuild local.
+  # Build de las 6 apps. SIEMPRE rebuildea (NO reusa el artifact de ci.yml).
+  #
+  # Razon: el artifact de ci.yml se construye sin env vars del environment
+  # destino, entonces todas las URLs y endpoints caen al fallback de
+  # produccion. deploy-apps necesita inyectar BASE_DOMAIN, APEX_DOMAIN,
+  # PUBLIC_API_ENDPOINT, PUBLIC_TURNSTILE_SITEKEY del GH Environment del
+  # stage destino — esas se hornean en build time via import.meta.env.*
+  # y `site-urls.ts`.
+  #
+  # `environment: <stage>` da acceso a vars.* del environment del mismo
+  # nombre (poblados por `python devtools/run.py github_sync --env=<X>`
+  # desde docker/env/client/.{env}).
   # ---------------------------------------------------------------------------
   build-apps:
     name: Build apps
     needs: resolve-env
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    environment: ${{ needs.resolve-env.outputs.stage }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Try to download CI artifact (dist)
-        id: try-artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-all-apps-${{ github.sha }}
-          path: apps/
-        continue-on-error: true
-
       - name: Setup pnpm
-        if: steps.try-artifact.outcome == 'failure'
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
 
       - name: Setup Node
-        if: steps.try-artifact.outcome == 'failure'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - name: Install deps
-        if: steps.try-artifact.outcome == 'failure'
         run: pnpm install --frozen-lockfile
 
       - name: Build cv-filters bundle (needed by apps prebuild)
-        if: steps.try-artifact.outcome == 'failure'
         run: pnpm --filter @portfolio/cv-filters run build
 
-      - name: Build all apps
-        if: steps.try-artifact.outcome == 'failure'
-        run: pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
+      - name: Build all apps with env vars del stage
+        # Las vars vienen de GH Environment (dev/stage/prod) pobladas por
+        # `python devtools/run.py github_sync --env=<X>`. Son publicas
+        # (PUBLIC_*) — no se mascarean en logs porque son Variables, no Secrets.
+        env:
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          BASE_SCHEME: ${{ vars.BASE_SCHEME }}
+          APEX_DOMAIN: ${{ vars.APEX_DOMAIN }}
+          PUBLIC_API_ENDPOINT: ${{ vars.PUBLIC_API_ENDPOINT }}
+          PUBLIC_TURNSTILE_SITEKEY: ${{ vars.PUBLIC_TURNSTILE_SITEKEY }}
+        run: |
+          # Verificacion explicita: las vars requeridas deben estar
+          # presentes. Si falta alguna, fallar temprano con mensaje claro
+          # (el guard de TrackingPixel.astro tambien atrapa esto, pero
+          # mejor reportarlo aqui antes que en un stack trace de Astro).
+          : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py github_sync --env=${{ needs.resolve-env.outputs.stage }}' para poblarlo.}"
+          : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre github_sync.}"
+          : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre github_sync.}"
+          pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
 
-      # Subir el artifact con un nombre estable para los jobs del matrix
-      # (independiente de si vino de ci.yml o se rebuildeo aqui).
+      # Subir el artifact con un nombre estable para los jobs del matrix.
       - name: Re-upload artifact for matrix
         uses: actions/upload-artifact@v4
         with:

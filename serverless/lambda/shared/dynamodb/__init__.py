@@ -6,17 +6,23 @@ acceso boto3, reusa el resource singleton de `shared.dynamodb_client`,
 convierte `Decimal` de forma transparente y expone DML (datos) + DDL
 acotado (verificacion de esquema + create solo para tests/local).
 
-Las tablas reales de dev/stage/prod las sigue creando CloudFormation
-(`serverless/infra/infra.yaml`): es el unico que puede conectar el
-DynamoDB Stream al `stream_processor` y exportar los `TableArn` para el
-IAM least-privilege. Ver `README.md` de este paquete.
+Las tablas reales de dev/stage/prod las sigue creando devtools con
+`aws dynamodb create-table`, leyendo el catalogo de
+`serverless/lambda/resources/dynamodb/*.yaml` (3 tablas: `cache`,
+`rate-limit-rules`, `rate-limit-buckets`). Ver `README.md` de este
+paquete.
 
-Uso ergonomico:
+Modelos en uso (produccion):
 
-    from shared.dynamodb import ContactItem
+    from shared.dynamodb import CacheItem, RateLimitBucketItem
 
-    ContactItem(id='...', created_at='...', name='Pablo').save()
-    item = ContactItem.get('the-id')
+Modelos legacy (TEST FIXTURES — spec direct-neon-writes):
+
+    ContactItem, TrackingEventItem ya no se importan en codigo de
+    produccion (`contact_form`/`tracking_pixel` escriben directo a Neon).
+    Se conservan como exemplars de `BaseModel` para los tests de
+    `shared.dynamodb`. Si se refactorizan esos tests, las clases pueden
+    eliminarse — ver docstring en `models/{contact,tracking}.py`.
 """
 
 from shared.dynamodb._schema import GSIMeta, SchemaDiff, TableMeta

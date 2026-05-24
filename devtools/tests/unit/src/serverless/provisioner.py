@@ -21,7 +21,12 @@ _ZIP_PATH = Path('build') / 'build.zip'
 
 
 def _manifest_http():
-    """Manifiesto de un Lambda con trigger http y uses (contact-form)."""
+    """Manifiesto de un Lambda con trigger http y uses (contact-form).
+
+    Tablas: solo infra (cache + rate-limit-buckets). Spec
+    direct-neon-writes elimino `contacts` y `tracking` del catalogo
+    `_TABLES` del provisioner — los Lambdas escriben directo a Neon.
+    """
     return {
         'name': 'contact-form',
         'runtime': 'python3.13',
@@ -32,7 +37,7 @@ def _manifest_http():
         'trigger': {'type': 'http', 'method': 'POST', 'path': '/contact'},
         'uses': {
             'tables': {
-                'contacts': 'read-write',
+                'rate-limit-buckets': 'read-write',
                 'cache': 'read-write',
             },
             'secrets': ['turnstile-secret', 'owner-email'],
@@ -42,28 +47,6 @@ def _manifest_http():
             'default': {'LOG_LEVEL': 'INFO'},
             'dev': {'LOG_LEVEL': 'INFO'},
         },
-    }
-
-
-def _manifest_stream():
-    """Manifiesto de un Lambda con trigger on-table-changes."""
-    return {
-        'name': 'stream-processor',
-        'runtime': 'python3.13',
-        'handler': 'core.handler.lambda_handler',
-        'memory': 512,
-        'timeout': 60,
-        'region': 'us-east-1',
-        'trigger': {
-            'type': 'on-table-changes',
-            'tables': ['contacts', 'tracking'],
-        },
-        'uses': {
-            'tables': [],
-            'secrets': ['neon-url'],
-            'sends-email': False,
-        },
-        'env': {'default': {'LOG_LEVEL': 'INFO'}},
     }
 
 
@@ -142,7 +125,7 @@ class TestRender:
         assert len(dynamo) == 2
         assert dynamo[0]['Resource'] == [
             'arn:aws:dynamodb:us-east-1:${account}:'
-            'table/portfolio-contacts-dev',
+            'table/portfolio-rate-limit-buckets-dev',
         ]
 
     def test_render_iam_policy_when_uses_secrets(self):
@@ -180,27 +163,6 @@ class TestRender:
             'arn:aws:ses:us-east-1:${account}:identity/the-full-stack.com'
             in ses[0]['Resource']
         )
-
-    def test_render_iam_policy_when_on_table_changes(self):
-        from serverless import provisioner
-
-        rendered = provisioner.render(_manifest_stream(), stage='dev')
-
-        statements = rendered.iam_policy['Statement']
-        stream = [s for s in statements if 'dynamodb:GetRecords' in s['Action']]
-        sqs = [s for s in statements if s['Action'] == ['sqs:SendMessage']]
-        assert len(stream) == 1
-        assert len(sqs) == 1
-        assert stream[0]['Resource'] == [
-            'arn:aws:dynamodb:us-east-1:${account}:'
-            'table/portfolio-contacts-dev/stream/*',
-            'arn:aws:dynamodb:us-east-1:${account}:'
-            'table/portfolio-tracking-dev/stream/*',
-        ]
-        assert sqs[0]['Resource'] == [
-            'arn:aws:sqs:us-east-1:${account}:'
-            'portfolio-stream-processor-dlq-dev',
-        ]
 
     def test_render_is_pure_same_input_same_output(self):
         from serverless import provisioner
@@ -269,6 +231,11 @@ class TestProvisionCreate:
         )
 
         verbs = ['.'.join(c[:2]) for c in calls]
+        # Orden post fix CORS preflight (PR #107): el _wire_http_trigger
+        # crea POST + OPTIONS con sus put-method-response/put-integration-
+        # response antes de la deployment. La 2a `apigateway.put-method`
+        # corresponde a OPTIONS y las 2 put-*-response son su respuesta
+        # mockeada para devolver headers CORS al preflight.
         assert verbs == [
             'sts.get-caller-identity',
             'iam.create-role',
@@ -282,6 +249,10 @@ class TestProvisionCreate:
             'apigateway.create-resource',
             'apigateway.put-method',
             'apigateway.put-integration',
+            'apigateway.put-method',
+            'apigateway.put-integration',
+            'apigateway.put-method-response',
+            'apigateway.put-integration-response',
             'apigateway.create-deployment',
             'lambda.add-permission',
         ]
@@ -317,39 +288,6 @@ class TestProvisionCreate:
             '/aws/lambda/portfolio-contact-form-dev'
         )
         assert state.resources['api_resource_id'] == 'res9'
-
-    def test_provision_create_stream_creates_event_source_mappings(
-        self, monkeypatch
-    ):
-        from serverless.state import Action
-
-        from serverless import provisioner
-
-        calls = []
-        monkeypatch.setattr(
-            provisioner,
-            'aws',
-            _fake_aws(calls, _default_responses()),
-        )
-        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
-
-        rendered = provisioner.render(_manifest_stream(), stage='dev')
-        state = provisioner.provision(
-            rendered,
-            action=Action.CREATE,
-            zip_path=_ZIP_PATH,
-            previous=None,
-            profile=None,
-            region='us-east-1',
-        )
-
-        mappings = [
-            c
-            for c in calls
-            if '.'.join(c[:2]) == 'lambda.create-event-source-mapping'
-        ]
-        assert len(mappings) == 2
-        assert state.resources['event_source_uuids'] == 'uuid-1,uuid-1'
 
 
 class TestProvisionUpdate:

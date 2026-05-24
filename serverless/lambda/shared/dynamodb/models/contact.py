@@ -1,7 +1,15 @@
-"""Modelo de la tabla `portfolio-contacts-{stage}`.
+"""Modelo de la tabla `portfolio-contacts-{stage}` — TEST FIXTURE LEGACY.
 
 Tabla del form de contacto. PK simple `id` (UUIDv7); `created_at` es un
 atributo, NO sort key (paridad con `infra.yaml`).
+
+**NOTA (spec direct-neon-writes)**: ningun Lambda en produccion importa
+esta clase — `contact_form` escribe directo a Neon (`shared.db.Contact`)
+en vez de DynamoDB. La clase se conserva como fixture para los tests de
+`shared.dynamodb.BaseModel` (~10 archivos en `tests/.../shared/dynamodb/`
+la usan como exemplar concreto). Cuando esos tests se refactoricen a usar
+`CacheItem`/`RateLimitBucketItem` como fixtures unicos, esta clase y la
+tabla DDB se pueden eliminar.
 """
 
 from __future__ import annotations

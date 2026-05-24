@@ -63,6 +63,19 @@ export function initMobileNav(): () => void {
   toggle.addEventListener('click', handleToggle)
   dialog.addEventListener('click', handleDialogClick)
 
+  // Spec tracking-data-completeness (AC-13): cuando el drawer se cierra,
+  // colapsa todos los <details> internos (resetea el estado para la
+  // proxima apertura).
+  const handleDialogClose = (): void => {
+    const detailsList = dialog.querySelectorAll<HTMLDetailsElement>(
+      '[data-mobile-niche-details]',
+    )
+    detailsList.forEach((d) => {
+      d.open = false
+    })
+  }
+  dialog.addEventListener('close', handleDialogClose)
+
   // Cerrar drawer si el viewport cruza a desktop
   const mql = window.matchMedia(MD_QUERY)
   const handleMqChange = (e: MediaQueryListEvent): void => {
@@ -75,6 +88,7 @@ export function initMobileNav(): () => void {
   return (): void => {
     toggle.removeEventListener('click', handleToggle)
     dialog.removeEventListener('click', handleDialogClick)
+    dialog.removeEventListener('close', handleDialogClose)
     mql.removeEventListener('change', handleMqChange)
   }
 }

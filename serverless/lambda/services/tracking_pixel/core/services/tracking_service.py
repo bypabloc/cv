@@ -22,7 +22,6 @@ el volumen es bajo).
 
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -31,37 +30,49 @@ from shared.cache import cached
 from shared.core.ulid import new_uuidv7
 from shared.db.repository import insert_tracking
 from shared.db.session import db_session
+from ua_parser import user_agent_parser
 
 # --- Enrichment ---
 
 # TTL del cache de UA parsing: 24h. Un mismo User-Agent string repetido en
-# invocaciones warm no re-ejecuta el regex (SPEC-204).
+# invocaciones warm no re-ejecuta el parser (SPEC-204).
 _UA_CACHE_TTL_SECONDS = 24 * 60 * 60
 
-# Simple UA parser - regex patterns (sin dependencia externa para evitar bloat)
-_BROWSER_PATTERNS = (
-    ('Chrome', re.compile(r'Chrome/(\d+)')),
-    ('Firefox', re.compile(r'Firefox/(\d+)')),
-    ('Safari', re.compile(r'Version/(\d+).*Safari')),
-    ('Edge', re.compile(r'Edg/(\d+)')),
-)
+# Devices considerados mobile/tablet por ua-parser (family contains).
+_TABLET_HINTS = ('Tablet', 'iPad', 'Kindle')
+_BOT_HINTS = ('bot', 'crawler', 'spider', 'http')
 
-_OS_PATTERNS = (
-    ('iOS', re.compile(r'iPhone|iPad|iPod')),
-    ('Android', re.compile(r'Android')),
-    ('Windows', re.compile(r'Windows NT (\d+\.\d+)')),
-    ('macOS', re.compile(r'Mac OS X (\d+[._]\d+)')),
-    ('Linux', re.compile(r'Linux')),
-)
+
+def _ua_device_type(parsed: dict[str, Any], ua_string: str) -> str:
+    """Mapea el output de ua-parser a desktop|mobile|tablet|bot.
+
+    `ua-parser` devuelve `device.family` (Apple iPhone, Generic Tablet,
+    Other, etc.). Combinamos con el UA crudo para clasificacion final.
+    """
+    device_family = (parsed.get('device') or {}).get('family') or ''
+    os_family = (parsed.get('os') or {}).get('family') or ''
+    ua_lower = ua_string.lower()
+
+    if any(hint in ua_lower for hint in _BOT_HINTS):
+        return 'bot'
+    if any(hint in device_family for hint in _TABLET_HINTS):
+        return 'tablet'
+    if os_family in {'iOS', 'Android'}:
+        # ua-parser marca tablets de Android como Tablet en device.family
+        return 'mobile'
+    if 'Mobile' in ua_string:
+        return 'mobile'
+    return 'desktop'
 
 
 @cached(ttl=_UA_CACHE_TTL_SECONDS, namespace='ua', tags=['user-agent'])
 def parse_user_agent(user_agent: str | None) -> dict[str, str]:
-    """Parsea el User-Agent: browser + os + device type.
+    """Parsea el User-Agent con ua-parser (uap-python): browser+os+device.
 
-    El resultado se cachea 24h via DynamoDB (`@cached`): la cache key se
-    deriva del string User-Agent, asi UA repetidos en invocaciones warm
-    no re-ejecutan el regex y UA distintos no colisionan (SPEC-204).
+    El resultado se cachea 24h via DynamoDB (`@cached`): la cache key
+    deriva del string UA. ua-parser usa los regex specs mantenidos por
+    la comunidad (uap-core) — mejor accuracy que el regex custom previo,
+    en particular para Chrome iOS WebView, browsers embebidos y bots.
 
     Parameters
     ----------
@@ -81,29 +92,14 @@ def parse_user_agent(user_agent: str | None) -> dict[str, str]:
             'device_type': 'unknown',
         }
 
-    browser, browser_version = 'unknown', ''
-    for name, pattern in _BROWSER_PATTERNS:
-        match = pattern.search(user_agent)
-        if match:
-            browser = name
-            browser_version = match.group(1) if match.groups() else ''
-            break
+    parsed = user_agent_parser.Parse(user_agent)
+    ua_block = parsed.get('user_agent') or {}
+    os_block = parsed.get('os') or {}
 
-    os_name = 'unknown'
-    for name, pattern in _OS_PATTERNS:
-        if pattern.search(user_agent):
-            os_name = name
-            break
-
-    # Device type heuristico
-    if 'Mobile' in user_agent or 'iPhone' in user_agent:
-        device_type = 'mobile'
-    elif 'iPad' in user_agent or 'Tablet' in user_agent:
-        device_type = 'tablet'
-    elif 'bot' in user_agent.lower() or 'crawler' in user_agent.lower():
-        device_type = 'bot'
-    else:
-        device_type = 'desktop'
+    browser = ua_block.get('family') or 'unknown'
+    browser_version = ua_block.get('major') or ''
+    os_name = os_block.get('family') or 'unknown'
+    device_type = _ua_device_type(parsed, user_agent)
 
     return {
         'browser': browser,
@@ -137,7 +133,6 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     neon_payload: dict[str, Any] = {
         'session_id': payload['session_id'],
         'page_id': page_id,
-        'stream_event_id': None,
         'created_at': created_at,
         'expires_at': None,
         'page_url': payload['page_url'],
@@ -161,6 +156,7 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
         'browser_version': payload.get('browser_version'),
         'os': payload.get('os'),
         'device_type': payload.get('device_type'),
+        'cloudfront_meta': payload.get('cloudfront_meta'),
         'event_props': payload.get('event_props'),
     }
 
@@ -179,6 +175,7 @@ def process_tracking_event(
     ip: str,
     user_agent: str | None,
     country: str | None = None,
+    cloudfront_meta: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Orquesta enrichment + persistencia del evento de tracking.
 
@@ -191,7 +188,11 @@ def process_tracking_event(
     user_agent : str | None
         Header User-Agent de la request.
     country : str | None
-        Country code (CF-IPCountry).
+        Country code (cloudfront-viewer-country o cf-ipcountry).
+    cloudfront_meta : dict[str, str] | None
+        Mapa raw de los headers cloudfront-* del request (cuando el
+        custom domain es Edge-Optimized: viewer-country/city/region/
+        postal/lat/long/metro/time-zone/asn/ja3 + device flags).
 
     Returns
     -------
@@ -209,6 +210,10 @@ def process_tracking_event(
     }
     if country:
         payload['country'] = country
+    # cloudfront_meta JSONB: solo se persiste si tiene contenido (evita
+    # filas con dicts vacios cuando el custom domain todavia es REGIONAL).
+    if cloudfront_meta:
+        payload['cloudfront_meta'] = cloudfront_meta
 
     result = save_tracking_event(payload)
     logger.info(

@@ -31,7 +31,11 @@ from aws_lambda_powertools.metrics import MetricUnit
 from shared.core.exceptions import ApplicationError, ValidationError
 from shared.core.types import JsonResponse
 from shared.http.cors import public_cors_origin, resolve_origin
-from shared.http.ip_extractor import extract_country, extract_ip
+from shared.http.ip_extractor import (
+    extract_cloudfront_meta,
+    extract_country,
+    extract_ip,
+)
 from shared.http.responses import (
     error_response,
     json_response,
@@ -223,6 +227,10 @@ def http_handler(
     country = extract_country(event)
     user_agent = _header(headers, 'user-agent')
     bypass_secret = _header(headers, 'x-turnstile-bypass-secret')
+    # cloudfront_meta: TODOS los headers cloudfront-* del request, en
+    # lowercase canonico. Cuando el custom domain es Edge-Optimized
+    # llegan ~22 headers (geo/device/tls/asn/ja3). Vacio si REGIONAL.
+    cloudfront_meta = extract_cloudfront_meta(event)
 
     metric_names = metric_names or {}
 
@@ -242,6 +250,7 @@ def http_handler(
                     'country': country,
                     'user_agent': user_agent,
                     'bypass_secret': bypass_secret,
+                    'cloudfront_meta': cloudfront_meta,
                 },
             },
         }

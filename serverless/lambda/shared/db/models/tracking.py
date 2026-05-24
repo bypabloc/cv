@@ -73,9 +73,6 @@ class TrackingEvent(Base):
     page_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), nullable=False
     )
-    # PG no soporta UNIQUE en tabla particionada sin incluir la columna de
-    # particion — la idempotencia se enforce via processed_stream_events.
-    stream_event_id: Mapped[str | None] = mapped_column(Text)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -113,6 +110,12 @@ class TrackingEvent(Base):
     browser_version: Mapped[str | None] = mapped_column(Text)
     os: Mapped[str | None] = mapped_column(Text)
     device_type: Mapped[str | None] = mapped_column(Text)
+    # Mapa raw de los headers CloudFront-* del request (Edge-Optimized
+    # API GW los expone). Captura completa: viewer-country/region/city/
+    # postal/lat/long/metro/time-zone/asn/ja3-fingerprint/tls + device
+    # flags. `country` queda tipado para queries directos; el resto
+    # vive aqui para analitica futura.
+    cloudfront_meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     # Tipo de evento (migracion 007). FK al catalogo.
     event_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))

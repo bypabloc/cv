@@ -94,12 +94,30 @@ const { label, items, currentViewLabel = 'Vista actual' } = Astro.props
 </div>
 
 <script>
+  // Spec tracking-data-completeness (AC-12): AbortController por
+  // instancia + teardown ANTES del swap. El binding anterior usaba un
+  // flag data-bound y agregaba listeners al `document` sin removerlos
+  // en cada `astro:after-swap` -> con ClientRouter activo (C10) los
+  // handlers se acumulaban sobre nodos huerfanos y el dropdown perdia
+  // sincronia. Ahora cada bind crea su propio AbortController; el
+  // teardown llama abort() y el browser remueve TODOS los listeners.
+  type DropdownInstance = { abort: AbortController }
+  let instances: DropdownInstance[] = []
+
+  function teardown(): void {
+    for (const inst of instances) {
+      inst.abort.abort()
+    }
+    instances = []
+  }
+
   function setupDropdowns(): void {
+    teardown()
+
     const dropdowns = document.querySelectorAll<HTMLDivElement>(
       '[data-niche-dropdown]',
     )
     for (const root of dropdowns) {
-      if (root.dataset.bound === '1') continue
       const trigger = root.querySelector<HTMLButtonElement>(
         '[data-niche-dropdown-trigger]',
       )
@@ -107,6 +125,9 @@ const { label, items, currentViewLabel = 'Vista actual' } = Astro.props
         '[data-niche-dropdown-menu]',
       )
       if (!(trigger && menu)) continue
+
+      const abort = new AbortController()
+      const { signal } = abort
 
       const close = (): void => {
         trigger.setAttribute('aria-expanded', 'false')
@@ -117,33 +138,47 @@ const { label, items, currentViewLabel = 'Vista actual' } = Astro.props
         menu.hidden = false
       }
 
-      trigger.addEventListener('click', (ev) => {
-        ev.stopPropagation()
-        const expanded = trigger.getAttribute('aria-expanded') === 'true'
-        if (expanded) {
-          close()
-        } else {
-          open()
-        }
-      })
+      trigger.addEventListener(
+        'click',
+        (ev) => {
+          ev.stopPropagation()
+          const expanded = trigger.getAttribute('aria-expanded') === 'true'
+          if (expanded) {
+            close()
+          } else {
+            open()
+          }
+        },
+        { signal },
+      )
 
-      root.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Escape') {
-          close()
-          trigger.focus()
-        }
-      })
+      root.addEventListener(
+        'keydown',
+        (ev) => {
+          if (ev.key === 'Escape') {
+            close()
+            trigger.focus()
+          }
+        },
+        { signal },
+      )
 
-      document.addEventListener('click', (ev) => {
-        if (!root.contains(ev.target as Node)) close()
-      })
+      document.addEventListener(
+        'click',
+        (ev) => {
+          if (!root.contains(ev.target as Node)) close()
+        },
+        { signal },
+      )
 
-      root.dataset.bound = '1'
+      instances.push({ abort })
     }
   }
 
   setupDropdowns()
-  // Re-bind tras view transitions (Astro client-side navigation)
+  // ClientRouter lifecycle: teardown ANTES del swap (libera handlers
+  // sobre nodos que estan por desaparecer); rebind DESPUES del swap.
+  document.addEventListener('astro:before-swap', teardown)
   document.addEventListener('astro:after-swap', setupDropdowns)
 </script>
 

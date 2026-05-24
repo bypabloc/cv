@@ -21,7 +21,6 @@ def test_insert_contact_adds_contact() -> None:
     session = MagicMock()
     payload = {
         'id': 'c-1',
-        'stream_event_id': 'evt-1',
         'name': 'Pablo',
         'email': 'user@example.com',
         'message': 'hola',

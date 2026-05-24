@@ -29,7 +29,15 @@ const { eyebrow, headline, summary, ctas = [] } = Astro.props
   <p class="hero__eyebrow text-label anim-fade-in-up" style="--i: 0">
     {eyebrow}
   </p>
-  <h1 class="hero__headline text-display-1 anim-fade-in-up" style="--i: 1">
+  {/* Spec tracking-data-completeness (AC-11): transition:name unifica
+   * el headline del hero entre paginas que lo contengan -> el browser
+   * lo morphea (FLIP-style) en el page nav. Pages sin Hero degradan
+   * graciosamente al fade default. */}
+  <h1
+    class="hero__headline text-display-1 anim-fade-in-up"
+    style="--i: 1"
+    transition:name="hero-identity"
+  >
     {headline}
   </h1>
   <p class="hero__summary text-body-lg text-muted anim-fade-in-up" style="--i: 2">

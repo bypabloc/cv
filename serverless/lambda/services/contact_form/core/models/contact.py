@@ -32,6 +32,10 @@ class RequestMeta(BaseModel):
     country: str | None = None
     user_agent: str | None = None
     bypass_secret: str | None = None
+    # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
+    # API GW los expone). El service lo persiste en la columna
+    # cloudfront_meta JSONB.
+    cloudfront_meta: dict[str, str] = Field(default_factory=dict)
 
     model_config = {'extra': 'forbid'}
 
@@ -93,12 +97,16 @@ class ContactCreateModel(BaseModel):
 
         Es el payload que el service persiste y usa para el email: el
         equivalente de `parsed.model_dump(exclude={'cf_token'})` del
-        Lambda plano.
+        Lambda plano. Incluye `cloudfront_meta` derivado del bloque
+        meta para persistirlo en la columna JSONB (analitica del lead).
         """
-        return self.model_dump(
+        fields = self.model_dump(
             exclude={'cf_token', 'meta'},
             exclude_none=True,
         )
+        if self.meta.cloudfront_meta:
+            fields['cloudfront_meta'] = self.meta.cloudfront_meta
+        return fields
 
 
 class ContactCreatedOutput(BaseModel):

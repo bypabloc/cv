@@ -27,15 +27,14 @@ from dataclasses import field
 from pathlib import Path
 from typing import Any
 
+from serverless import aws_cli
+from serverless import state
+from serverless.aws_cli import AwsError
 from shared.console import CYAN
 from shared.console import GREEN
 from shared.console import YELLOW
 from shared.console import _c
 from shared.console import _err
-
-from serverless import aws_cli
-from serverless import state
-from serverless.aws_cli import AwsError
 
 
 # Raiz del backend serverless del portfolio.
@@ -82,17 +81,38 @@ class RenderedResource:
         Resto del fragmento con todos los `${stage}` interpolados.
     source : Path
         Ruta del fragmento YAML del que se renderizo.
+    stage : str
+        Entorno (`dev` | `stage` | `prod`); usado por providers que
+        seleccionan config por stage (ej. `custom_domain_by_stage` del
+        `rest-api`).
     """
 
     kind: str
     name: str
     spec: dict[str, Any]
     source: Path
+    stage: str = ''
 
     @property
     def publishes_ssm(self) -> dict[str, str]:
         """Mapa atributo -> path SSM declarado en el fragmento."""
         return self.spec.get('publishes_ssm', {})
+
+    @property
+    def custom_domain(self) -> dict[str, Any] | None:
+        """Config del custom domain del stage actual, o None.
+
+        Lee `custom_domain_by_stage[<stage>]` del spec. El bloque trae
+        `domain_name`, `endpoint_type` (`EDGE` | `REGIONAL`),
+        `certificate_arn`, y opcionalmente `base_path_mappings`.
+        """
+        by_stage = self.spec.get('custom_domain_by_stage')
+        if not isinstance(by_stage, dict):
+            return None
+        config = by_stage.get(self.stage)
+        if not isinstance(config, dict):
+            return None
+        return config
 
 
 @dataclass
@@ -215,6 +235,7 @@ def render_resource(path: Path, *, stage: str) -> RenderedResource:
         name=name,
         spec=spec,
         source=path,
+        stage=stage,
     )
 
 
@@ -626,6 +647,14 @@ def _provision_rest_api(
             )
         )
         print(_c(YELLOW, f'[dry-run] apigateway create-rest-api {api_name}'))
+        # Anunciar tambien el custom domain si esta declarado.
+        _, _ = _ensure_custom_domain(
+            rendered,
+            api_id=None,
+            profile=profile,
+            region=region,
+            dry_run=True,
+        )
         values: dict[str, str | None] = {
             'id': None,
             'root_resource_id': None,
@@ -648,6 +677,14 @@ def _provision_rest_api(
         region=region,
     )
 
+    domain_resources, _ = _ensure_custom_domain(
+        rendered,
+        api_id=api_id,
+        profile=profile,
+        region=region,
+        dry_run=False,
+    )
+
     values = {
         'id': api_id,
         'root_resource_id': root_resource_id,
@@ -665,6 +702,7 @@ def _provision_rest_api(
         f'rest-api:{api_name}:root_resource_id': root_resource_id,
         f'rest-api:{api_name}:access_log_group_arn': log_group_arn,
     }
+    resources.update(domain_resources)
     return resources, published
 
 
@@ -894,6 +932,251 @@ def _find_root_resource_id(
         if item.get('path') == '/':
             return item.get('id')
     return None
+
+
+# --------------------------------------------------------------------------
+# Custom domains de API Gateway (EDGE vs REGIONAL)
+# --------------------------------------------------------------------------
+# Stages de deployment de API Gateway (no confundir con `stage` del repo
+# que es dev/stage/prod): convencion del proyecto, usar 'prod' para todo.
+_APIGW_DEPLOYMENT_STAGE = 'prod'
+
+
+def _describe_custom_domain(
+    domain_name: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> dict[str, Any] | None:
+    """Describe un custom domain de API Gateway, o None si no existe."""
+    result = aws_cli.aws(
+        ['apigateway', 'get-domain-name', '--domain-name', domain_name],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    return result.json or None
+
+
+def _domain_endpoint_type(domain: dict[str, Any] | None) -> str | None:
+    """Extrae `endpointConfiguration.types[0]` de un describe."""
+    if not domain:
+        return None
+    types = (domain.get('endpointConfiguration') or {}).get('types') or []
+    return types[0] if types else None
+
+
+def _create_custom_domain(
+    domain_name: str,
+    endpoint_type: str,
+    certificate_arn: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Crea un custom domain con el endpoint_type pedido.
+
+    Para EDGE: el flag es `--certificate-arn` (cert global, debe vivir
+    en us-east-1). Para REGIONAL: `--regional-certificate-arn`.
+    """
+    cert_flag = (
+        '--certificate-arn'
+        if endpoint_type == 'EDGE'
+        else '--regional-certificate-arn'
+    )
+    aws_cli.aws(
+        [
+            'apigateway',
+            'create-domain-name',
+            '--domain-name',
+            domain_name,
+            cert_flag,
+            certificate_arn,
+            '--endpoint-configuration',
+            f'types={endpoint_type}',
+            '--security-policy',
+            'TLS_1_2',
+        ],
+        profile=profile,
+        region=region,
+    )
+
+
+def _ensure_base_path_mapping(
+    domain_name: str,
+    api_id: str,
+    base_path: str,
+    stage_name: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Asegura que existe un base-path-mapping domain -> api_id/stage.
+
+    `base_path` vacio significa root mapping (paths `/` del custom
+    domain enrutan al `/` de la API).
+    """
+    existing = aws_cli.aws(
+        [
+            'apigateway',
+            'get-base-path-mappings',
+            '--domain-name',
+            domain_name,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    expected_path = base_path or '(none)'
+    for item in (existing.json or {}).get('items', []):
+        current_path = item.get('basePath', '(none)')
+        # AWS devuelve '(none)' cuando es root (base_path vacio en yaml).
+        if (
+            current_path == expected_path
+            and item.get('restApiId') == api_id
+            and item.get('stage') == stage_name
+        ):
+            return  # mapping ya existe correctamente
+
+    args = [
+        'apigateway',
+        'create-base-path-mapping',
+        '--domain-name',
+        domain_name,
+        '--rest-api-id',
+        api_id,
+        '--stage',
+        stage_name,
+    ]
+    if base_path:
+        args.extend(['--base-path', base_path])
+    aws_cli.aws(args, profile=profile, region=region, check=False)
+
+
+def _ensure_custom_domain(
+    rendered: RenderedResource,
+    api_id: str | None,
+    *,
+    profile: str | None,
+    region: str,
+    dry_run: bool,
+) -> tuple[dict[str, str | None], list[str]]:
+    """Provisiona o reconcilia el custom domain del stage actual.
+
+    Si el yaml declara `custom_domain_by_stage[<stage>]` y el endpoint
+    type difiere de lo aprovisionado en AWS, recrea el custom domain
+    (delete + create) y re-aplica el base-path-mapping. Si no existe,
+    lo crea. Si ya esta alineado, no-op.
+
+    Returns
+    -------
+    tuple[dict, list[str]]
+        `resources` (claves planas con identificadores), `published`
+        (paths SSM publicados — vacio por ahora; placeholder para
+        futura publicacion del CloudFront distribution domain).
+    """
+    config = rendered.custom_domain
+    if not config:
+        return {}, []
+
+    domain_name = config['domain_name']
+    desired_type = config.get('endpoint_type', 'REGIONAL')
+    certificate_arn = config['certificate_arn']
+    base_paths = config.get('base_path_mappings') or [{'base_path': ''}]
+
+    if dry_run:
+        print(
+            _c(
+                YELLOW,
+                f'[dry-run] apigateway ensure-domain {domain_name} '
+                f'(endpoint={desired_type})',
+            ),
+        )
+        return {}, []
+
+    current = _describe_custom_domain(
+        domain_name,
+        profile=profile,
+        region=region,
+    )
+    current_type = _domain_endpoint_type(current)
+
+    if current and current_type != desired_type:
+        print(
+            _c(
+                YELLOW,
+                f'  custom domain {domain_name}: drift {current_type} -> '
+                f'{desired_type}, recreando...',
+            ),
+        )
+        aws_cli.aws(
+            [
+                'apigateway',
+                'delete-domain-name',
+                '--domain-name',
+                domain_name,
+            ],
+            profile=profile,
+            region=region,
+        )
+        current = None
+
+    if current is None:
+        print(
+            _c(
+                YELLOW,
+                f'  creando custom domain {domain_name} ({desired_type})...',
+            ),
+        )
+        _create_custom_domain(
+            domain_name,
+            desired_type,
+            certificate_arn,
+            profile=profile,
+            region=region,
+        )
+        current = _describe_custom_domain(
+            domain_name,
+            profile=profile,
+            region=region,
+        )
+
+    if api_id is None:
+        print(
+            _c(
+                YELLOW,
+                f'  WARN: no se pudo aplicar base-path-mapping de '
+                f'{domain_name}: api_id desconocido',
+            ),
+        )
+    else:
+        for mapping in base_paths:
+            base_path = mapping.get('base_path', '')
+            stage_name = mapping.get('stage', _APIGW_DEPLOYMENT_STAGE)
+            _ensure_base_path_mapping(
+                domain_name,
+                api_id,
+                base_path,
+                stage_name,
+                profile=profile,
+                region=region,
+            )
+
+    print(_c(GREEN, f'  OK  custom domain {domain_name} ({desired_type})'))
+
+    resources: dict[str, str | None] = {
+        f'custom-domain:{domain_name}:endpoint_type': desired_type,
+    }
+    if current:
+        cf_domain = current.get('distributionDomainName') or current.get(
+            'regionalDomainName',
+        )
+        if cf_domain:
+            resources[f'custom-domain:{domain_name}:gateway_domain'] = cf_domain
+
+    return resources, []
 
 
 # --------------------------------------------------------------------------

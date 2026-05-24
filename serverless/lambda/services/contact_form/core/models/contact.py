@@ -97,16 +97,15 @@ class ContactCreateModel(BaseModel):
 
         Es el payload que el service persiste y usa para el email: el
         equivalente de `parsed.model_dump(exclude={'cf_token'})` del
-        Lambda plano. Incluye `cloudfront_meta` derivado del bloque
-        meta para persistirlo en la columna JSONB (analitica del lead).
+        Lambda plano. Spec drop-cloudfront-meta: el dict NO incluye
+        `cloudfront_meta` (columna dropeada en alembic c3d4e5f6a7b8);
+        `RequestMeta.cloudfront_meta` sigue aceptandolo en entrada pero
+        ya no se propaga al payload de persistencia.
         """
-        fields = self.model_dump(
+        return self.model_dump(
             exclude={'cf_token', 'meta'},
             exclude_none=True,
         )
-        if self.meta.cloudfront_meta:
-            fields['cloudfront_meta'] = self.meta.cloudfront_meta
-        return fields
 
 
 class ContactCreatedOutput(BaseModel):

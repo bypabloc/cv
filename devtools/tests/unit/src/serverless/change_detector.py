@@ -308,3 +308,35 @@ class TestCmdDetectChanges:
         captured = capsys.readouterr()
         payload = json.loads(captured.out)
         assert payload == {'affected': ['cv', 'db']}
+
+
+class TestFilterDeletedLambdas:
+    """Lambdas eliminados del repo (`services/<name>/` no existe) no deben aparecer en `affected`.
+
+    Bug del 2026-05-24: un cambio que toca shared/db y a la vez elimina
+    el lambda `stream_processor` hacia que `change_detector` lo incluyera
+    en `affected` (porque el diff lo lista como `service`), y el CI matrix
+    intentaba deployarlo fallando con "No existe el lambda".
+    """
+
+    def test_lambda_eliminado_del_repo_no_aparece_en_affected(self):
+        """
+        Given un diff que toca services/stream_processor/X.py (lambda
+             eliminado del repo) + shared/db/__init__.py,
+        When invoco detect_affected_lambdas con los lambdas reales,
+        Then `stream_processor` NO esta en el resultado (solo los lambdas
+             que existen en services/).
+        """
+        result = detect_affected_lambdas(
+            base_sha='_unused',
+            head_sha='_unused',
+            lambdas_root=_lambdas_root(),
+            files=[
+                'serverless/lambda/services/stream_processor/core/handler.py',
+                'serverless/lambda/shared/db/__init__.py',
+            ],
+        )
+        # stream_processor fue eliminado — no debe aparecer.
+        assert 'stream_processor' not in result
+        # Los lambdas que SI existen y consumen shared.db sí aparecen.
+        assert {'contact_form', 'cv', 'db', 'tracking_pixel'}.issubset(result)

@@ -182,14 +182,20 @@ def detect_affected_lambdas(
         elif kind.kind == 'shared' and kind.name is not None:
             affected_shared.add(kind.name)
 
+    lambda_names = available_lambdas() if affected_shared or affected else []
+
     if affected_shared:
-        lambda_names = available_lambdas()
         consumers = _consumers_of_shared(
             affected_shared, lambdas_root, lambda_names
         )
         affected.update(consumers)
 
-    return affected
+    # Filtrar lambdas que ya no existen en el repo (ej. un lambda
+    # eliminado: el diff lo lista como service pero `services/<name>/`
+    # ya no existe). Sin este filtro, el CI matrix intentaria deployar
+    # un lambda inexistente y fallaria con "No existe el lambda".
+    valid = set(lambda_names)
+    return {name for name in affected if name in valid}
 
 
 # ---------------------------------------------------------------------------

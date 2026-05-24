@@ -124,35 +124,68 @@ def tracking_aws() -> Generator[None]:
         yield
 
 
+_STUB_VISIT_ID = '019e5c50-0000-7000-8000-000000000001'
+"""visit_id determinista (UUIDv7 valido) que el mock de
+`ensure_session_and_visit` retorna. Lo usan asserts de tests."""
+
+
 @pytest.fixture
-def mock_neon_writes(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
-    """Mockea `db_session()` + `insert_tracking()` y captura los payloads.
+def session_visit_calls(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura los kwargs de cada invocacion a `ensure_session_and_visit`.
 
-    Reemplaza la escritura real a Neon por un mock que registra los
-    payloads pasados a `insert_tracking`. Devuelve la lista de payloads
-    capturados para que los tests hagan asserts EXACTOS sobre lo que el
-    service intento escribir.
+    Retorna un visit_id determinista (`_STUB_VISIT_ID`) para que los
+    asserts de tests downstream sean predecibles. Mockea el helper en
+    `services.tracking_service` (donde se importa).
 
-    Spec `direct-neon-writes`: el Lambda escribe directo a Neon en vez
-    de DynamoDB+Stream. En unit tests no levantamos un Postgres real —
-    mockeamos el repository y verificamos que se llamo con el payload
-    esperado.
+    Spec sessions-normalize: el service ahora UPSERTea session + visit
+    via este helper antes del INSERT de tracking_events. Los tests
+    verifican QUE ARGS recibio el helper — el comportamiento real del
+    helper (idempotencia, visit-trigger) se valida en sus propios
+    tests / integration.
+    """
+    captured: list[dict] = []
+
+    def _fake_ensure(_session: object, **kwargs: object) -> tuple[str, str]:
+        captured.append(dict(kwargs))
+        return str(kwargs['session_id']), _STUB_VISIT_ID
+
+    monkeypatch.setattr(
+        'services.tracking_service.ensure_session_and_visit', _fake_ensure
+    )
+    return captured
+
+
+@pytest.fixture
+def mock_neon_writes(
+    monkeypatch: pytest.MonkeyPatch,
+    session_visit_calls: list[dict],
+) -> list[dict]:
+    """Mockea las 3 escrituras a Neon: db_session + ensure_session_and_visit
+    (via `session_visit_calls`) + insert_tracking. Captura los payloads
+    de `insert_tracking`.
+
+    El `db_session()` yield un `object()` falso (no se usa porque los
+    mocks downstream no tocan el session).
+
+    Spec sessions-normalize: tests verifican el SHAPE del payload de
+    `tracking_events` (sin ip/country/ua/utm — esos viven en sessions y
+    session_visits). Si el test tambien quiere verificar los args del
+    helper, agrega `session_visit_calls` como fixture explicito.
     """
     from contextlib import contextmanager
+
+    # `session_visit_calls` se inyecta y registra el mock del helper.
+    _ = session_visit_calls
 
     captured: list[dict] = []
 
     @contextmanager
     def _fake_db_session():
-        yield object()  # Session falso — no se usa, solo se pasa al repo
+        yield object()  # Session falso — los mocks no lo usan.
 
     def _fake_insert_tracking(_session: object, payload: dict) -> None:
         captured.append(payload)
 
-    # `db_session` esta importado en `services.tracking_service` con
-    # `from shared.db.session import db_session` — parchamos AHI (donde se
-    # usa), no en `shared.db.session` (donde se define) para que el
-    # rebind funcione.
     monkeypatch.setattr(
         'services.tracking_service.db_session', _fake_db_session
     )

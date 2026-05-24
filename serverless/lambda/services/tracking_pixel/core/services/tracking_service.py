@@ -175,6 +175,7 @@ def process_tracking_event(
     ip: str,
     user_agent: str | None,
     country: str | None = None,
+    cloudfront_meta: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Orquesta enrichment + persistencia del evento de tracking.
 
@@ -187,7 +188,11 @@ def process_tracking_event(
     user_agent : str | None
         Header User-Agent de la request.
     country : str | None
-        Country code (CF-IPCountry).
+        Country code (cloudfront-viewer-country o cf-ipcountry).
+    cloudfront_meta : dict[str, str] | None
+        Mapa raw de los headers cloudfront-* del request (cuando el
+        custom domain es Edge-Optimized: viewer-country/city/region/
+        postal/lat/long/metro/time-zone/asn/ja3 + device flags).
 
     Returns
     -------
@@ -205,6 +210,10 @@ def process_tracking_event(
     }
     if country:
         payload['country'] = country
+    # cloudfront_meta JSONB: solo se persiste si tiene contenido (evita
+    # filas con dicts vacios cuando el custom domain todavia es REGIONAL).
+    if cloudfront_meta:
+        payload['cloudfront_meta'] = cloudfront_meta
 
     result = save_tracking_event(payload)
     logger.info(

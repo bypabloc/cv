@@ -46,6 +46,10 @@ class TrackEventMeta(BaseModel):
     # el http_handler generico siempre lo inyecta para uniformidad. Se
     # acepta para no romper el extra:forbid del sub-modelo.
     bypass_secret: str | None = Field(default=None)
+    # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
+    # API GW los expone). El controller lo pasa al service para
+    # persistirlo en la columna cloudfront_meta JSONB.
+    cloudfront_meta: dict[str, str] = Field(default_factory=dict)
 
     model_config = {'extra': 'forbid'}
 

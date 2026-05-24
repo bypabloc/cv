@@ -68,7 +68,9 @@ export function applyStagger(
     { threshold: 0.1 },
   )
 
-  items.forEach((item) => observer.observe(item))
+  items.forEach((item) => {
+    observer.observe(item)
+  })
   // delayMs se conserva en la firma para futuro (override del 40ms del CSS).
   void delayMs
   return observer

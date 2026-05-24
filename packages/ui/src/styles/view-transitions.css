@@ -55,10 +55,13 @@
  *     declarada por shared elements (hero-identity, project-{slug}).
  *   - stagger se vuelve no-op: opacity:1 + sin transform. */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0s !important;
+  /* :where() tiene specificity 0; combinado con animation: none + 0.01ms
+   * mata cualquier override sin necesidad de !important. */
+  :where(::view-transition-old(*)),
+  :where(::view-transition-new(*)) {
+    animation: none;
+    animation-duration: 0.01ms;
+    animation-delay: 0s;
   }
 
   .stagger-pending,

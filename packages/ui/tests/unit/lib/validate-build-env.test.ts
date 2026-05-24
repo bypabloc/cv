@@ -83,7 +83,10 @@ describe('validateTurnstileSitekey', () => {
   })
 
   it('Given sitekey valido When validate Then retorna el valor', () => {
-    const sitekey = '0x4AAAAAADPSoiQA_-LcRafo'
+    // Valor fake para evitar false-positives de secret scanners. Los
+    // sitekeys reales del proyecto son publicos (acaban en el bundle),
+    // pero los scanners no distinguen — usamos un placeholder aqui.
+    const sitekey = 'fake-test-sitekey-not-real'
     expect(validateTurnstileSitekey(sitekey)).toBe(sitekey)
   })
 })

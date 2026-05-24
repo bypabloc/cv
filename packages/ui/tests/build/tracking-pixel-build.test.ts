@@ -28,7 +28,7 @@ const ENV_DEV = {
   BASE_DOMAIN: 'portfolio.dev.the-full-stack.com',
   BASE_SCHEME: 'https',
   PUBLIC_API_ENDPOINT: 'https://api.portfolio.dev.the-full-stack.com',
-  PUBLIC_TURNSTILE_SITEKEY: '0x0000000000000000_dev_test',
+  PUBLIC_TURNSTILE_SITEKEY: 'fake-test-sitekey-not-real',
 }
 
 function runBuild(envOverrides: Record<string, string | undefined>): {

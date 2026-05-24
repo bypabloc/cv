@@ -14,10 +14,8 @@ Fiel al schema actual (migraciones 001 + 010):
 
 from datetime import datetime
 
-from typing import Any
-
 from sqlalchemy import CHAR, CheckConstraint, DateTime, Index, Text, func, text
-from sqlalchemy.dialects.postgresql import CITEXT, INET, JSONB, UUID
+from sqlalchemy.dialects.postgresql import CITEXT, INET, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import Base
@@ -58,12 +56,6 @@ class Contact(Base):
     ip: Mapped[str | None] = mapped_column(INET)
     country: Mapped[str | None] = mapped_column(CHAR(2))
     user_agent: Mapped[str | None] = mapped_column(Text)
-    # Mapa raw de los headers CloudFront-* del request (Edge-Optimized
-    # API GW los expone). Capturados tal como llegan, en lowercase
-    # canonico (`cloudfront-viewer-city`, `cloudfront-is-mobile-viewer`,
-    # etc). `country` queda tipado para queries directos; el resto
-    # vive aqui para analitica futura.
-    cloudfront_meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     # Lifecycle / CRM (poblado manualmente por el owner).
     status: Mapped[str | None] = mapped_column(Text, server_default='new')

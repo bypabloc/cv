@@ -80,15 +80,9 @@ class TrackingEvent(Base):
     received_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
 
     # Metadata de pagina.
-    page_url: Mapped[str] = mapped_column(Text, nullable=False)
-    page_title: Mapped[str | None] = mapped_column(Text)
     page_path: Mapped[str | None] = mapped_column(Text)
-    referrer: Mapped[str | None] = mapped_column(Text)
 
     # UTM.
     utm_source: Mapped[str | None] = mapped_column(Text)
@@ -110,12 +104,6 @@ class TrackingEvent(Base):
     browser_version: Mapped[str | None] = mapped_column(Text)
     os: Mapped[str | None] = mapped_column(Text)
     device_type: Mapped[str | None] = mapped_column(Text)
-    # Mapa raw de los headers CloudFront-* del request (Edge-Optimized
-    # API GW los expone). Captura completa: viewer-country/region/city/
-    # postal/lat/long/metro/time-zone/asn/ja3-fingerprint/tls + device
-    # flags. `country` queda tipado para queries directos; el resto
-    # vive aqui para analitica futura.
-    cloudfront_meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     # Tipo de evento (migracion 007). FK al catalogo.
     event_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
@@ -138,11 +126,6 @@ class TrackingEvent(Base):
             postgresql_using='brin',
         ),
         Index('idx_tracking_page_path', 'page_path'),
-        Index(
-            'idx_tracking_referrer',
-            'referrer',
-            postgresql_where=text('referrer IS NOT NULL'),
-        ),
         Index(
             'idx_tracking_utm_source',
             'utm_source',

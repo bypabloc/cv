@@ -1,7 +1,8 @@
 # Cloudflare Pages — Configuración de proyectos
 
 > 18 proyectos Cloudflare Pages: 6 apps x 3 ambientes (prod / dev / stage).
-> Deploy git-native (Cloudflare construye desde el repo, sin GitHub Actions).
+> **Deploy via GitHub Actions + wrangler** ([.github/workflows/deploy-apps.yml](../.github/workflows/deploy-apps.yml)).
+> Los proyectos Pages NO construyen desde el repo (git-native deprecado para este flujo) — solo aceptan deploys via API con el dist pre-construido.
 
 ## Tabla de proyectos
 
@@ -29,37 +30,51 @@ Mismos 6 proyectos por env con sufijo `-dev` / `-stage`:
 
 El apex de dev/stage es `portfolio.{env}.the-full-stack.com` (= generic).
 
-## Deploy git-native
-
-Cada proyecto está conectado al repo `bypabloc/cv` con su
-`production_branch` (`main` / `dev` / `stage`). Cloudflare buildea con:
+## Deploy flow (GitHub Actions + wrangler)
 
 ```text
-build_command:   pnpm install --frozen-lockfile && pnpm --filter @portfolio/<app>... build
-destination_dir: apps/<app>/dist
-root_dir:        (vacio)
+push a dev | stage | main
+  -> .github/workflows/deploy-apps.yml
+     -> resolve-env: branch -> stage + suffix
+     -> build-apps (environment: <stage>): pnpm build con env vars del GH Environment
+     -> deploy-pages (matrix x6): wrangler pages deploy apps/<niche>/dist
+     -> verify-deploy (matrix x6): curl + grep verifica el dist desplegado
+     -> report: commit comment con URLs canonicas
 ```
 
-Un push a la branch correspondiente dispara el build + deploy. No hay
-workflow de GitHub Actions para el deploy del frontend.
+Las 6 apps comparten un solo build (NO se buildea por niche aparte; `pnpm
+-r --filter "./apps/*"` corre las 6 builds en paralelo con las mismas
+env vars). Cada deploy del matrix solo necesita su `apps/<niche>/dist`.
 
-## Variables de entorno por proyecto (build env vars)
+## Variables de entorno por stage (GitHub Environment Variables)
 
-Cada proyecto define las env vars que `site-urls.ts` lee en build time:
+Las env vars que `site-urls.ts` lee en build time viven como **GitHub
+Environment Variables** (NO Secrets — son publicas por contrato `PUBLIC_*`
+o config de build derivada). Pobladas por:
+
+```bash
+python devtools/run.py github_sync --env=dev   # o stage / prod
+```
 
 | Env var | prod | dev | stage |
 | --- | --- | --- | --- |
 | `BASE_DOMAIN` | `portfolio.the-full-stack.com` | `portfolio.dev.the-full-stack.com` | `portfolio.stage.the-full-stack.com` |
-| `APEX_DOMAIN` | `the-full-stack.com` | (no se setea) | (no se setea) |
+| `APEX_DOMAIN` | `the-full-stack.com` | (vacio) | (vacio) |
 | `BASE_SCHEME` | `https` | `https` | `https` |
-| `SITE_URL` | hostname propio de la app | idem | idem |
-| `NODE_VERSION` | `24` | `24` | `24` |
-| `PNPM_VERSION` | `11.0.9` | `11.0.9` | `11.0.9` |
+| `PUBLIC_API_ENDPOINT` | `https://api.portfolio.the-full-stack.com` | `https://api.portfolio.dev.the-full-stack.com` | `https://api.portfolio.stage.the-full-stack.com` |
+| `PUBLIC_TURNSTILE_SITEKEY` | sitekey prod | sitekey dev | sitekey stage |
 
 `APEX_DOMAIN` solo se setea en prod: ahi el apex de generic
 (`the-full-stack.com`) difiere del dominio de los niches
 (`portfolio.the-full-stack.com`). En dev/stage el apex del env coincide
 con `BASE_DOMAIN`, asi que `APEX_DOMAIN` no se necesita.
+
+`SITE_URL` ya **NO** se necesita por niche: cada `apps/*/astro.config.ts`
+deriva su SITE de `buildSiteUrl('<niche>')` cuando `process.env.SITE_URL`
+no esta seteada. Asi una sola tabla de vars cubre las 6 apps.
+
+Fuente de los valores: `docker/env/client/.{env}` (gitignored). El
+script `github_sync` lee y publica idempotentemente.
 
 ## Headers de seguridad
 

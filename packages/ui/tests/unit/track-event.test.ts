@@ -82,6 +82,15 @@ describe('track-event', () => {
       event_id: 'e',
       event_type_id: PAGE_LOAD,
       page_url: 'https://x.test/',
+      page_path: '/',
+      page_title: '',
+      referrer: '',
+      utm_source: '',
+      utm_medium: '',
+      utm_campaign: '',
+      utm_content: '',
+      viewport_width: 1280,
+      viewport_height: 800,
       niche: 'generic',
     }
 
@@ -105,19 +114,31 @@ describe('track-event', () => {
   })
 
   describe('buildTrackPayload', () => {
-    it('Given an event type and props When buildTrackPayload Then includes event_id, session_id, event_type_id and event_props', () => {
+    it('Given an event type and props When buildTrackPayload Then includes core fields + page/utm/viewport (spec tracking-data-completeness)', () => {
       localStorage.setItem('cf_session', 'session000000000000000000000000')
       const payload = buildTrackPayload(CTA_CLICK, { href: '/contact' })
-      expect(payload).toEqual({
+      expect(payload).toMatchObject({
         operation: 'tracking',
         action: 'track',
         session_id: 'session000000000000000000000000',
-        event_id: payload.event_id,
         event_type_id: CTA_CLICK,
         page_url: 'https://x.test/',
+        page_path: '/',
+        page_title: '',
+        referrer: '',
+        utm_source: '',
+        utm_medium: '',
+        utm_campaign: '',
+        utm_content: '',
         niche: 'generic',
         event_props: { href: '/contact' },
       })
+      // event_id es generado, solo verifica forma
+      expect(payload.event_id).toMatch(/^[0-9a-f]{32}$/i)
+      // viewport numeros (happy-dom default: 1024x768)
+      expect(payload.viewport_width).toBeGreaterThan(0)
+      expect(payload.viewport_height).toBeGreaterThan(0)
+      expect(payload.device_pixel_ratio).toBeGreaterThan(0)
     })
 
     it('Given the event_id field When buildTrackPayload Then it is a 32-char hex string', () => {
@@ -133,6 +154,24 @@ describe('track-event', () => {
     it('Given an empty props object When buildTrackPayload Then omits event_props', () => {
       const payload = buildTrackPayload(PAGE_LOAD, {})
       expect(payload.event_props).toBe(undefined)
+    })
+
+    it('Given URL with utm_source/medium When buildTrackPayload Then payload trae los 4 utm_* (vacio cuando no aplica) [AC-9]', () => {
+      setSearch('?utm_source=linkedin&utm_medium=organic')
+      const payload = buildTrackPayload(PAGE_LOAD)
+      expect(payload.utm_source).toBe('linkedin')
+      expect(payload.utm_medium).toBe('organic')
+      expect(payload.utm_campaign).toBe('')
+      expect(payload.utm_content).toBe('')
+    })
+
+    it('Given no query string When buildTrackPayload Then los 4 utm_* son string vacio (nunca undefined) [AC-9]', () => {
+      setSearch('')
+      const payload = buildTrackPayload(PAGE_LOAD)
+      expect(payload.utm_source).toBe('')
+      expect(payload.utm_medium).toBe('')
+      expect(payload.utm_campaign).toBe('')
+      expect(payload.utm_content).toBe('')
     })
   })
 

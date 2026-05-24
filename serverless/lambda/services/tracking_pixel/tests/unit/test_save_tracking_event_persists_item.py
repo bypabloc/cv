@@ -37,10 +37,13 @@ def test_save_tracking_event_persists_item(
     assert payload['session_id'] == SESSION_ID
     assert payload['event_id'] == EVENT_ID
     assert payload['event_type_id'] == EVENT_TYPE_ID
-    assert payload['page_url'] == 'https://the-full-stack.com/'
     # page_id se genera dentro del service (UUIDv7)
     assert payload['page_id'] == result['page_id']
     # stream_event_id YA NO existe en el payload (columna dropeada)
     assert 'stream_event_id' not in payload
-    # expires_at: None — Neon no usa TTL (es analytics, no cache)
-    assert payload['expires_at'] is None
+    # Spec drop-cloudfront-meta: 5 keys huerfanas dropeadas del payload
+    assert 'expires_at' not in payload
+    assert 'cloudfront_meta' not in payload
+    assert 'page_url' not in payload
+    assert 'page_title' not in payload
+    assert 'referrer' not in payload

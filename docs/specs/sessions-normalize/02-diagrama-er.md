@@ -4,7 +4,7 @@
 
 ## ER (ASCII inline)
 
-```
+```text
                                                        event_types
                                                        │ id (UUID, PK)
                                                        │ code_name (UNIQUE)
@@ -19,15 +19,16 @@ sessions                       session_visits           tracking_events
 │ first_seen_at                │ session_id (TEXT, FK)  │ visit_id    (UUID, FK)
 │ last_seen_at                 │ started_at             │ page_id     (UUID)
 │ user_agent                   │ ended_at               │ created_at
-│ browser                      │ ip                     │ received_at
-│ browser_version              │ country                │ page_path
-│ os                           │ utm_source             │ event_id
-│ device_type                  │ utm_medium             │ event_type_id
-└──┐                           │ utm_campaign           │ event_props
-   │                           │ utm_content            │ viewport_width
-   │ FK session_id (1:N)       │ utm_term               │ viewport_height
-   ├──────────────────────►   │ referrer               │ niche
-   │                           │ landing_page_path      └──────────────
+│ browser                      │ event_count (INT)      │ received_at
+│ browser_version              │ ip                     │ page_path
+│ os                           │ country                │ event_id
+│ device_type                  │ utm_source             │ event_type_id
+└──┐                           │ utm_medium             │ event_props
+   │                           │ utm_campaign           │ viewport_width
+   │ FK session_id (1:N)       │ utm_content            │ viewport_height
+   ├──────────────────────►   │ utm_term               │ niche
+   │                           │ referrer               └──────────────
+   │                           │ landing_page_path
    │                           │ niche
    │                           └──┐
    │                              │ FK visit_id (1:N)
@@ -84,8 +85,12 @@ CREATE TABLE session_visits (
     session_id        TEXT NOT NULL REFERENCES sessions(session_id),
     started_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     ended_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Cache denormalizado: COUNT(*) de tracking_events del visit.
+    -- Cada INSERT en tracking_events suma 1 en la misma tx (AC-15/16).
+    event_count       INTEGER NOT NULL DEFAULT 0,
     ip                INET,
     country           CHAR(2),
+    -- Los 6 campos que disparan nuevo visit ante cambio:
     utm_source        TEXT,
     utm_medium        TEXT,
     utm_campaign      TEXT,
@@ -107,6 +112,9 @@ CREATE INDEX idx_visits_niche
   ON session_visits (niche) WHERE niche IS NOT NULL;
 CREATE INDEX idx_visits_utm_source
   ON session_visits (utm_source) WHERE utm_source IS NOT NULL;
+-- Sin indice sobre event_count: es de uso analitico tipo WHERE
+-- event_count >= N. PostgreSQL puede hacer seq scan eficiente
+-- sobre la cardinalidad esperada (~10k-100k rows/mes).
 ```
 
 ### `tracking_events` (modificada)

@@ -22,11 +22,14 @@ rg -n 'Contact\(.*(ip|country|user_agent)=' serverless/lambda/
 
 # Tests viejos que asserten columnas dropeadas
 rg -n 'contacts\.(ip|country|user_agent)|tracking_events\.(ip|country|user_agent|browser|os|device_type|utm_)' serverless/lambda/
+
+# Niches: _VALID_NICHES debe haber desaparecido (centralizado en shared/core/niches)
+rg -n '_VALID_NICHES' serverless/lambda/
 ```
 
 Si algun comando arriba devuelve >0 lineas: corregir antes de
-continuar. Estos son los AC-8 / AC-9 en forma de "no quedan referencias
-huerfanas".
+continuar. Estos son los AC-8 / AC-9 / AC-14 en forma de "no quedan
+referencias huerfanas".
 
 ## Parte B — Bateria de comandos reales (post-deploy en dev)
 
@@ -57,8 +60,10 @@ python devtools/run.py serverless deploy --stage=dev --lambda=contact_form   --a
 ```
 
 Esperado:
+
 - `db` deploy ok, migration corre y `current=d4e5f6a7b8c9 (head)`.
-- `tracking_pixel` + `contact_form` deploys ok.
+- `tracking_pixel`, `contact_form` y `cv` deploys ok (este ultimo
+  porque la centralizacion de niches modifico su modelo).
 
 ### B.3 — Verificar schema final en Neon dev
 
@@ -180,16 +185,17 @@ cualquier niche dev), completar el form, submit con widget Turnstile
 activo. Esperado:
 
 - Response: `HTTP 200`.
-- En psql:
-  ```sql
-  SELECT id, session_id, name, email FROM contacts ORDER BY created_at DESC LIMIT 1;
-  -- 1 row con session_id NOT NULL.
+- En psql, verificar el contact + la session enlazada:
 
-  SELECT * FROM sessions WHERE session_id = (
-    SELECT session_id FROM contacts ORDER BY created_at DESC LIMIT 1
-  );
-  -- 1 row (creada por /track previo o por /contact on-the-fly).
-  ```
+```sql
+SELECT id, session_id, name, email FROM contacts ORDER BY created_at DESC LIMIT 1;
+-- 1 row con session_id NOT NULL.
+
+SELECT * FROM sessions WHERE session_id = (
+  SELECT session_id FROM contacts ORDER BY created_at DESC LIMIT 1
+);
+-- 1 row (creada por /track previo o por /contact on-the-fly).
+```
 
 Cubre AC-6 / AC-7.
 
@@ -225,7 +231,54 @@ psql "$(cat tmp/.dburl)" -c "
 
 Cubre AC-11.
 
-### B.10 — Cleanup (datos de prueba dev)
+### B.10 — Invariante `event_count == COUNT(*)` (AC-16)
+
+```bash
+psql "$(cat tmp/.dburl)" -c "
+  SELECT
+    v.visit_id,
+    v.event_count AS cached,
+    COUNT(t.*)::int AS real_count,
+    v.event_count = COUNT(t.*) AS coherent
+  FROM session_visits v
+  LEFT JOIN tracking_events t ON t.visit_id = v.visit_id
+  WHERE v.session_id = '$SESSION_ID'
+  GROUP BY v.visit_id, v.event_count;
+"
+# Esperado: la columna 'coherent' es TRUE para todos los visits.
+```
+
+Si algun row tiene `coherent=FALSE` -> bug en el incremento del helper
+(el UPDATE no corre dentro de la misma tx que el INSERT, o se duplica).
+
+Cubre AC-15 / AC-16.
+
+### B.11 — Modulo central de niches importable y consumido (AC-13/14)
+
+```bash
+# Importacion desde el repo (sin Lambda)
+cd serverless/lambda
+.venv/bin/python -c "
+from shared.core.niches import ALL_NICHES, CV_NICHES, niche_from_origin
+assert ALL_NICHES == {'hub', 'fintech', 'architect', 'leader', 'vibe', 'generic'}, ALL_NICHES
+assert CV_NICHES == ALL_NICHES - {'hub'}, CV_NICHES
+assert niche_from_origin('https://fintech.portfolio.dev.the-full-stack.com') == 'fintech'
+assert niche_from_origin('https://the-full-stack.com') is None
+assert niche_from_origin(None) is None
+print('OK')
+"
+cd ../..
+
+# Y desde el Lambda cv ya deployado: invocar GET /cv?niche=fintech y verificar 200
+curl -s -o /dev/null -w 'HTTP %{http_code}\n' \
+  'https://api.portfolio.dev.the-full-stack.com/cv?operation=cv&action=get&niche=fintech&locale=es' \
+  -H 'Origin: https://hub.portfolio.dev.the-full-stack.com'
+# Esperado: HTTP 200.
+```
+
+Cubre AC-13 / AC-14.
+
+### B.12 — Cleanup (datos de prueba dev)
 
 ```bash
 # Borrar el SESSION_ID de prueba en orden inverso:
@@ -258,14 +311,16 @@ EOF
 
 NO se hace `git push` ni `gh pr create` hasta:
 
-- [ ] Parte A: cero referencias huerfanas (todos los `rg -n` retornan vacio).
+- [ ] Parte A: cero referencias huerfanas (todos los `rg -n` retornan vacio, incluida `_VALID_NICHES`).
 - [ ] Parte B.1: build + lint + unit + integration verdes.
-- [ ] Parte B.2: deploy backend dev exitoso.
-- [ ] Parte B.3: schema verificado en Neon dev.
+- [ ] Parte B.2: deploy backend dev exitoso (incluye `cv`).
+- [ ] Parte B.3: schema verificado en Neon dev (sessions + session_visits + event_count).
 - [ ] Parte B.4-B.7: curls reales devuelven HTTP esperado y la DB tiene las rows correctas.
 - [ ] Parte B.8: 0 errores en CloudWatch ultimos 10 min.
 - [ ] Parte B.9: FK rechaza el DELETE.
-- [ ] Parte B.10: cleanup de prueba ok.
+- [ ] Parte B.10: invariante `event_count == COUNT(*)` cumplida para todos los visits.
+- [ ] Parte B.11: modulo central de niches importable y `cv` responde 200.
+- [ ] Parte B.12: cleanup de prueba ok.
 - [ ] Parte C: spec eliminada con `git rm -r`.
 
 Si algun item falla -> corregir en la rama -> re-ejecutar la bateria

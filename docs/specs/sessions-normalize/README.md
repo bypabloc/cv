@@ -10,7 +10,7 @@
 ## Cuando leer
 
 | Tema | Archivo | Cuando |
-|---|---|---|
+| --- | --- | --- |
 | Contexto + decisiones (no reabribles) | [01-contexto-y-decisiones.md](01-contexto-y-decisiones.md) | Antes de tocar nada del plan |
 | Diagrama ER + schema SQL | [02-diagrama-er.md](02-diagrama-er.md) | Antes de escribir el modelo ORM / migration |
 | Archivos afectados + comandos de verificacion | [03-archivos-afectados.md](03-archivos-afectados.md) | Antes de cada commit |
@@ -49,8 +49,9 @@ re-iniciar la spec:
    genera un nuevo `visit_id` (UUIDv7).
 9. **Visit trigger**: backend compara el ultimo visit del session (por
    `started_at DESC LIMIT 1`) contra el nuevo evento. Si
-   `(ip, utm_source, utm_medium, utm_campaign)` cambio -> nuevo visit.
-   Si igual -> reutiliza el visit_id existente y actualiza `ended_at`.
+   `(ip, utm_source, utm_medium, utm_campaign, utm_content, utm_term)`
+   cambio -> nuevo visit. Si igual -> reutiliza el visit_id existente
+   y actualiza `ended_at` + incrementa `event_count`.
 10. **Columnas de `sessions`**: `session_id`, `first_seen_at`,
     `last_seen_at`, `user_agent`, `browser`, `browser_version`, `os`,
     `device_type` (identidad estable). Todo lo demas
@@ -59,6 +60,19 @@ re-iniciar la spec:
     visit. `session_visits.niche` queda con el niche del landing_page
     de esa visit. `tracking_events.niche` guarda el niche del momento
     del evento (puede diferir).
+12. **`event_count` en `session_visits`**: columna agregada como cache
+    denormalizado. Cada INSERT en `tracking_events` ejecuta dentro de
+    la misma tx un `UPDATE session_visits SET event_count =
+    event_count + 1, ended_at = now() WHERE visit_id = ...`. Permite
+    queries de analitica del tipo "visits con N+ eventos" sin
+    JOIN+COUNT.
+13. **`niche` centralizado**: una unica fuente de verdad en
+    `serverless/lambda/shared/core/niches.py` (NUEVO). Expone
+    `ALL_NICHES` (6, incluye `hub` — para tracking) y `CV_NICHES` (5,
+    sin `hub` — para filtrado del Lambda `cv`). Migra el
+    `_VALID_NICHES` que hoy esta en `services/cv/core/models/cv.py` a
+    importar de este modulo. El helper `niche_from_origin(origin)`
+    tambien vive aqui.
 
 ## Reglas criticas (SIEMPRE / NUNCA)
 
@@ -81,27 +95,30 @@ re-iniciar la spec:
 ## Estado por fase
 
 | # | Fase | Archivo | Estado |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 0 | Spec escrita | (este README + 01-07) | pending review |
-| 1 | Migration Alembic + modelos ORM | [03-archivos-afectados.md](03-archivos-afectados.md#fase-1) | pending |
-| 2 | Repository helper `ensure_session_and_visit` | [03-archivos-afectados.md](03-archivos-afectados.md#fase-2) | pending |
-| 3 | `tracking_pixel`: integrar el helper | [03-archivos-afectados.md](03-archivos-afectados.md#fase-3) | pending |
-| 4 | `contact_form`: integrar el helper + niche fallback Origin | [03-archivos-afectados.md](03-archivos-afectados.md#fase-4) | pending |
-| 5 | Verificacion E2E (deploy dev + curls + CloudWatch checks) | [07-verificacion-e2e.md](07-verificacion-e2e.md) | pending |
+| 1 | Centralizar niches en `shared/core/niches.py` | [03-archivos-afectados.md](03-archivos-afectados.md#fase-1) | pending |
+| 2 | Migration Alembic + modelos ORM | [03-archivos-afectados.md](03-archivos-afectados.md#fase-2) | pending |
+| 3 | Repository helper `ensure_session_and_visit` | [03-archivos-afectados.md](03-archivos-afectados.md#fase-3) | pending |
+| 4 | `tracking_pixel`: integrar el helper | [03-archivos-afectados.md](03-archivos-afectados.md#fase-4) | pending |
+| 5 | `contact_form`: integrar el helper + niche fallback Origin | [03-archivos-afectados.md](03-archivos-afectados.md#fase-5) | pending |
+| 6 | Verificacion E2E (deploy dev + curls + CloudWatch checks) | [07-verificacion-e2e.md](07-verificacion-e2e.md) | pending |
 
 ## Matriz de verificacion
 
 | Gate | Comando | Cuando |
-|---|---|---|
-| Unit tests pasan | `serverless tests --type=unit --lambda=tracking_pixel` y `--lambda=contact_form` | Cada fase |
+| --- | --- | --- |
+| Unit tests pasan | `serverless tests --type=unit --lambda=tracking_pixel` y `--lambda=contact_form` y `--lambda=cv` | Cada fase |
 | Lint | `pnpm exec biome check .` + Ruff (devtools) | Cada commit |
 | Typecheck Python | `python -m compileall -q serverless/lambda/services/` | Cada commit |
-| Integration tests | `serverless tests --type=integration --lambda=tracking_pixel` y `--lambda=contact_form` | Fase 5 |
-| Migration up/down | `serverless run --stage=dev --lambda=db --event=events/migrate.json` y events/downgrade.json en un branch Neon de prueba | Fase 1 |
-| /track devuelve 204 en dev con payload realista | `curl -X POST .../track` | Fase 5 |
-| /contact devuelve 200 desde el browser real con form valido | manual | Fase 5 |
-| `session_id` aparece en `sessions` post-tracking | `psql ... SELECT * FROM sessions WHERE session_id=...` | Fase 5 |
-| 2 visits distintos por cambio de utm | `psql ... SELECT visit_id FROM session_visits WHERE session_id=...` | Fase 5 |
+| Integration tests | `serverless tests --type=integration --lambda=tracking_pixel` y `--lambda=contact_form` | Fase 6 |
+| `niches.py` centralizado importable | `python -c "from shared.core.niches import ALL_NICHES, CV_NICHES, niche_from_origin"` | Fase 1 |
+| Migration up/down | `serverless run --stage=dev --lambda=db --event=events/migrate.json` y events/downgrade.json en un branch Neon de prueba | Fase 2 |
+| /track devuelve 204 en dev con payload realista | `curl -X POST .../track` | Fase 6 |
+| /contact devuelve 200 desde el browser real con form valido | manual | Fase 6 |
+| `session_id` aparece en `sessions` post-tracking | `psql ... SELECT * FROM sessions WHERE session_id=...` | Fase 6 |
+| 2 visits distintos por cambio de utm | `psql ... SELECT visit_id FROM session_visits WHERE session_id=...` | Fase 6 |
+| `event_count` de session_visits coincide con `COUNT(*)` de tracking_events | `psql ... SELECT v.event_count = (SELECT COUNT(*) FROM tracking_events t WHERE t.visit_id = v.visit_id) FROM session_visits v` | Fase 6 |
 
 ## Tamano
 

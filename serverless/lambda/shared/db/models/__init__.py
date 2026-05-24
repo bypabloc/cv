@@ -38,6 +38,8 @@ from .junctions import (
 )
 from .profile import Profile, ProfileNiche, ProfileStats
 from .project import Project, ProjectCaseStudy, ProjectMetric
+from .session import Session
+from .session_visit import SessionVisit
 from .tracking import EventType, TrackingEvent
 from .translations import NichePriority, Translation
 
@@ -47,6 +49,8 @@ __all__ = [  # noqa: RUF022
     # Datos del visitante (replica de DynamoDB)
     'Contact',
     'EventType',
+    'Session',
+    'SessionVisit',
     'TrackingEvent',
     # Contenido del CV
     'Award',

@@ -3,19 +3,24 @@
 Replica en Neon de la tabla DynamoDB `ContactsTable`. El `stream_processor`
 inserta una fila por cada envio del formulario que llega via DynamoDB Stream.
 
-Fiel al schema actual (migraciones 001 + 010):
+Fiel al schema actual (migraciones 001 + 010 + d4e5f6a7b8c9):
 - PK `id` UUID generado por la Lambda (NO server-side `uuidv7()`): debe
   coincidir con el item de DynamoDB.
 - `email` es `CITEXT` (case-insensitive, para matching de CRM) — requiere
   la extension `citext`.
 - `service_type` / `status` se validan con CHECK inline (NO ENUM nativo):
   se conserva tal cual el schema de prod para parity.
+- `session_id` FK a `sessions(session_id)` NOT NULL (spec
+  sessions-normalize). Si llega un /contact sin session previa, el
+  Lambda crea la session on-the-fly.
+- Spec sessions-normalize dropeo `ip`, `country`, `user_agent` (todos
+  movidos a sessions/session_visits via FK).
 """
 
 from datetime import datetime
 
-from sqlalchemy import CHAR, CheckConstraint, DateTime, Index, Text, func, text
-from sqlalchemy.dialects.postgresql import CITEXT, INET, UUID
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Text, func, text
+from sqlalchemy.dialects.postgresql import CITEXT, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import Base
@@ -51,21 +56,19 @@ class Contact(Base):
     timeline: Mapped[str | None] = mapped_column(Text)
     niche: Mapped[str | None] = mapped_column(Text)
 
-    # Metadata de request (legacy: los contactos nuevos la dejan en NULL).
-    # CHAR(2): codigo ISO de pais, ancho fijo (parity con el schema de prod).
-    ip: Mapped[str | None] = mapped_column(INET)
-    country: Mapped[str | None] = mapped_column(CHAR(2))
-    user_agent: Mapped[str | None] = mapped_column(Text)
-
     # Lifecycle / CRM (poblado manualmente por el owner).
     status: Mapped[str | None] = mapped_column(Text, server_default='new')
     notes: Mapped[str | None] = mapped_column(Text)
 
-    # Correlacion con el journey de tracking (cf_session). NO es FK:
-    # tracking_events tiene TTL de 60 dias y un contacto puede sobrevivirlo.
-    # El orden (ultima columna) replica el schema de prod (migracion 010
-    # agrego session_id al final con ALTER TABLE).
-    session_id: Mapped[str | None] = mapped_column(Text)
+    # FK a sessions (spec sessions-normalize). Si el form se envia sin
+    # /track previo, el Lambda crea la session on-the-fly antes del
+    # INSERT del contact (decision 2). NOT NULL post-migration
+    # d4e5f6a7b8c9 (los rows previos fueron TRUNCATEados).
+    session_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey('sessions.session_id'),
+        nullable=False,
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -97,10 +100,7 @@ class Contact(Base):
             text("to_tsvector('spanish', message)"),
             postgresql_using='gin',
         ),
-        # Correlacion con tracking_events via session_id (migracion 010).
-        Index(
-            'idx_contacts_session_id',
-            'session_id',
-            postgresql_where=text('session_id IS NOT NULL'),
-        ),
+        # Correlacion con sessions via session_id (spec sessions-normalize).
+        # Ya no es partial WHERE NOT NULL — la columna es NOT NULL.
+        Index('idx_contacts_session_id', 'session_id'),
     )

@@ -255,6 +255,8 @@ Antes de trabajar, identifica que contexto necesitas:
 | Git hooks | [.claude/rules/git-hooks.md](.claude/rules/git-hooks.md) | Quality gates pre-commit / pre-push |
 | Security | [.claude/rules/security.md](.claude/rules/security.md) | Secrets, CSP, headers, supply chain |
 | Archivos .env | [.claude/rules/env-files.md](.claude/rules/env-files.md) | NUNCA leer/importar `.env` (incl. `docker/env/**`): extraer solo la key con bash e inyectarla inline al comando |
+| Secrets (umbrella) | [.claude/rules/secrets-strategy.md](.claude/rules/secrets-strategy.md) o skill `secrets-management` | Politica unificada de las 3 categorias (`client` -> GH Variables, `server` -> SSM, `dev-cli` -> local). Comando: `python devtools/run.py sync_secrets --env=<X> [--category=...]`. Matriz de decisiones (donde va una key nueva), pre-requisitos por categoria, anti-patrones |
+| Client env sync | [.claude/rules/client-env-sync.md](.claude/rules/client-env-sync.md) | Detalle del flujo client (rule hija de secrets-strategy): catalogo, rotacion de Turnstile sitekey, comando `sync_secrets --category=client` |
 | Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) + [.claude/docs/plan-format-large/README.md](.claude/docs/plan-format-large/README.md) | En plan mode o al planificar features. Todo plan vive en `docs/specs/<nombre>/` y trae 4 secciones de ejecucion obligatorias: descomposicion, commits, paralelizacion con worktrees y verificacion E2E iterativa |
 | Harness protocol | [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md) | Subagentes, feature_list, current/history |
 | Markdown docs | [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md) | Editar archivos de `docs/` |
@@ -329,6 +331,7 @@ estado en archivos locales (sin SAM ni CloudFormation). Costo: $0/mes
 | `serverless-rate-limit` | Rate-limiting per-IP self-managed con DynamoDB (alternativa $0/mes a AWS WAF Web ACL que cuesta $7/mes). Sliding window weighted, atomic counters, auto-blacklist bot detection (3+ tokens Turnstile validos en 60s -> blacklist 24h), IP whitelist/blacklist, country rules. Vive en `serverless/lambda/shared/rate_limit/` + 2 tablas DynamoDB |
 | `lambda-controller` | Formato para crear/refactorizar Lambdas Python con el patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold reproducible en `.claude/templates/lambda-controller/`, docs en `.claude/docs/lambda-controller/`. Pensado para los Lambdas Python del backend serverless |
 | `ci-cd-pipeline` | Pipeline CI/CD del portfolio: workflows de deploy del backend serverless (lambdas + migrations) y las apps Astro (Cloudflare Pages multi-env). AWS auth via OIDC, devtools state en S3, concurrency queue por env. Troubleshooting de errores comunes |
+| `secrets-management` | Politica unificada de las 3 categorias de secretos del portfolio (`client` -> GH Variables, `server` -> AWS SSM SecureString + KMS, `dev-cli` -> LOCAL-ONLY). Comando hermetico unificado `python devtools/run.py sync_secrets --env=<X> --category=...`. Decision: donde va una key nueva. Rotacion de Turnstile sitekey + secret, Neon URL, etc. Anti-patrones (gh/aws CLI a mano, PUBLIC_* como Secret, sync de dev-cli) |
 
 ## Convenciones (resumen)
 

@@ -3,6 +3,11 @@
 > Claude y los subagentes NUNCA leen, importan ni vuelcan el contenido de un
 > archivo de entorno del repo. Si se necesita una key, se extrae SOLO esa key
 > con bash y se pasa inline al comando — nunca el archivo completo.
+>
+> **Esta rule complementa [secrets-strategy.md](secrets-strategy.md)**: la
+> umbrella define las 3 categorias (`client`, `server`, `dev-cli`) y el
+> comando hermetico de sync; esta rule es la politica de NO leer el `.env`
+> desde dentro de Claude/subagentes (aplica a las 3 categorias).
 
 ## Activacion
 

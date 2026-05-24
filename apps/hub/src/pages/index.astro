@@ -13,9 +13,9 @@ import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
  */
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
 import { getNicheCards } from '../lib/niches'
-import { STRINGS } from '../lib/site-config'
+import { SITE_URL, STRINGS } from '../lib/site-config'
 
-const SITE = 'https://the-full-stack.com'
+const SITE = SITE_URL
 const canonicalUrl = `${SITE}/`
 const t = STRINGS.es
 const sel = getHubSelector('es')

@@ -46,3 +46,7 @@ export {
   type TrackingConfig,
   trackEvent,
 } from './lib/track-event'
+export {
+  validateApiEndpoint,
+  validateTurnstileSitekey,
+} from './lib/validate-build-env'

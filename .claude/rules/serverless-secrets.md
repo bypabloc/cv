@@ -1,7 +1,9 @@
 # Secrets del backend serverless — inventario y politicas
 
 > Catalogo de secretos del backend serverless del portfolio: que es, donde
-> vive, quien lo consume, como se rota.
+> vive, quien lo consume, como se rota. **Es la rule hija de la
+> categoria `server`** de [secrets-strategy.md](secrets-strategy.md)
+> (umbrella).
 >
 > **Fuente de verdad del inventario**:
 > `serverless/lambda/resources/secrets/*.yaml` (catalogo declarativo,
@@ -9,6 +11,11 @@
 > `serverless.secrets_catalog.Catalog.load()`. Los diccionarios
 > hardcodeados `_SECRETS` (provisioner.py) y `_SSM_PARAMETERS`
 > (secrets.py) **fueron eliminados** — el catalogo YAML los reemplaza.
+>
+> **Comando recomendado para sync (unificado)**:
+> `python devtools/run.py sync_secrets --env=<X> --category=server
+> --aws-profile=tfs-dev`. El comando `serverless sync-secrets` sigue
+> accesible para operar solo el server backend.
 
 ## Activacion
 

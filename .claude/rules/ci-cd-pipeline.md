@@ -82,6 +82,30 @@ Aplica SIEMPRE al editar:
 Comando CLI: `serverless detect-changes --base=<sha> --head=<sha>`
 imprime JSON `{"affected": [...]}`.
 
+## Build env vars del deploy de apps
+
+`deploy-apps.yml -> build-apps` declara `environment: <stage>` para leer
+GH Variables del environment activo. Sin eso, las vars caen al default
+prod (bug que motivo el plan build-env-vars-per-env).
+
+| Var | dev | stage | prod |
+|---|---|---|---|
+| `BASE_DOMAIN` | `portfolio.dev.the-full-stack.com` | `portfolio.stage.the-full-stack.com` | `portfolio.the-full-stack.com` |
+| `APEX_DOMAIN` | (vacio) | (vacio) | `the-full-stack.com` |
+| `BASE_SCHEME` | `https` | `https` | `https` |
+| `PUBLIC_API_ENDPOINT` | `https://api.portfolio.dev...` | `...stage...` | `...prod...` |
+| `PUBLIC_TURNSTILE_SITEKEY` | sitekey dev | sitekey stage | sitekey prod |
+
+**SIEMPRE** el build de `deploy-apps.yml` declara `environment: <stage>`
+para leer `vars.*` correctas. Sin eso, las vars son `''` y los guards
+de `TrackingPixel.astro` fallan el build (defensa en profundidad).
+
+Las vars se publican con
+`python devtools/run.py sync_secrets --env=<X> --category=client`
+desde `docker/env/client/.{env}`. Ver
+[secrets-strategy.md](secrets-strategy.md) (umbrella) o
+[client-env-sync.md](client-env-sync.md) (detalle por categoria).
+
 ## Quitar redundancias con pre-push
 
 El pre-push hook local (`.git-hooks/pre-push`) corre la bateria

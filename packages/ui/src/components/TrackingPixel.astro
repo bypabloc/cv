@@ -22,12 +22,18 @@
  *   <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="generic" />
  */
 import { EVENT_TYPES } from '@portfolio/content/lib/event-types'
+import { validateApiEndpoint } from '../lib/validate-build-env'
 
 interface Props {
   apiEndpoint: string
   niche?: string
 }
-const { apiEndpoint, niche = 'generic' } = Astro.props
+const { apiEndpoint: rawApiEndpoint, niche = 'generic' } = Astro.props
+// Guard build-time: si la prop esta vacia o no matchea BASE_DOMAIN,
+// el build FALLA en vez de hornear un atributo ausente y desactivar
+// el tracking en silencio (bug original que motivo el plan
+// build-env-vars-per-env).
+const apiEndpoint = validateApiEndpoint(rawApiEndpoint)
 ---
 
 <div

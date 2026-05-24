@@ -66,53 +66,68 @@ jobs:
           esac
 
   # ---------------------------------------------------------------------------
-  # Build de las 6 apps. Intenta reutilizar el artifact dist-all-apps-<sha>
-  # que sube ci.yml; si no esta (workflow_dispatch o race), rebuild local.
+  # Build de las 6 apps. SIEMPRE rebuildea (NO reusa el artifact de ci.yml).
+  #
+  # Razon: el artifact de ci.yml se construye sin env vars del environment
+  # destino, entonces todas las URLs y endpoints caen al fallback de
+  # produccion. deploy-apps necesita inyectar BASE_DOMAIN, APEX_DOMAIN,
+  # PUBLIC_API_ENDPOINT, PUBLIC_TURNSTILE_SITEKEY del GH Environment del
+  # stage destino — esas se hornean en build time via import.meta.env.*
+  # y `site-urls.ts`.
+  #
+  # `environment: <stage>` da acceso a vars.* del environment del mismo
+  # nombre (poblados por `python devtools/run.py sync_secrets --env=<X>
+  # --category=client` desde docker/env/client/.{env}).
   # ---------------------------------------------------------------------------
   build-apps:
     name: Build apps
     needs: resolve-env
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    environment: ${{ needs.resolve-env.outputs.stage }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Try to download CI artifact (dist)
-        id: try-artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-all-apps-${{ github.sha }}
-          path: apps/
-        continue-on-error: true
-
       - name: Setup pnpm
-        if: steps.try-artifact.outcome == 'failure'
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
 
       - name: Setup Node
-        if: steps.try-artifact.outcome == 'failure'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - name: Install deps
-        if: steps.try-artifact.outcome == 'failure'
         run: pnpm install --frozen-lockfile
 
       - name: Build cv-filters bundle (needed by apps prebuild)
-        if: steps.try-artifact.outcome == 'failure'
         run: pnpm --filter @portfolio/cv-filters run build
 
-      - name: Build all apps
-        if: steps.try-artifact.outcome == 'failure'
-        run: pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
+      - name: Build all apps with env vars del stage
+        # Las vars vienen de GH Environment (dev/stage/prod) pobladas por
+        # `python devtools/run.py sync_secrets --env=<X> --category=client`.
+        # Son publicas (PUBLIC_*) — no se mascarean en logs porque son
+        # Variables, no Secrets.
+        env:
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          BASE_SCHEME: ${{ vars.BASE_SCHEME }}
+          APEX_DOMAIN: ${{ vars.APEX_DOMAIN }}
+          PUBLIC_API_ENDPOINT: ${{ vars.PUBLIC_API_ENDPOINT }}
+          PUBLIC_TURNSTILE_SITEKEY: ${{ vars.PUBLIC_TURNSTILE_SITEKEY }}
+        run: |
+          # Verificacion explicita: las vars requeridas deben estar
+          # presentes. Si falta alguna, fallar temprano con mensaje claro
+          # (el guard de TrackingPixel.astro tambien atrapa esto, pero
+          # mejor reportarlo aqui antes que en un stack trace de Astro).
+          : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py sync_secrets --env=${{ needs.resolve-env.outputs.stage }} --category=client' para poblarlo.}"
+          : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre sync_secrets --category=client.}"
+          : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre sync_secrets --category=client.}"
+          pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
 
-      # Subir el artifact con un nombre estable para los jobs del matrix
-      # (independiente de si vino de ci.yml o se rebuildeo aqui).
+      # Subir el artifact con un nombre estable para los jobs del matrix.
       - name: Re-upload artifact for matrix
         uses: actions/upload-artifact@v4
         with:
@@ -163,6 +178,80 @@ jobs:
             pages deploy apps/${{ matrix.niche }}/dist
             --project-name=${{ matrix.niche }}${{ needs.resolve-env.outputs.project-suffix }}
             --branch=${{ github.ref_name }}
+
+  # ---------------------------------------------------------------------------
+  # Capa C del plan build-env-vars-per-env: smoke test post-deploy.
+  # Curl al hostname desplegado + grep:
+  #   - data-api-endpoint matchea PUBLIC_API_ENDPOINT del stage
+  #   - hrefs del dropdown NO apuntan a prod cuando stage != prod
+  # Detecta drift entre lo que sube el matrix y lo que sirve Cloudflare
+  # (cache stale, deploy parcial, etc.).
+  # ---------------------------------------------------------------------------
+  verify-deploy:
+    name: Verify ${{ matrix.niche }} dist matches env
+    needs: [resolve-env, deploy-pages]
+    if: needs.deploy-pages.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        niche: [generic, hub, fintech, architect, leader, vibe]
+    steps:
+      - name: Resolve expected URL + API endpoint
+        id: url
+        run: |
+          stage="${{ needs.resolve-env.outputs.stage }}"
+          niche="${{ matrix.niche }}"
+
+          if [[ "$stage" == "prod" ]]; then
+            base="portfolio.the-full-stack.com"
+            api="https://api.portfolio.the-full-stack.com"
+            if [[ "$niche" == "generic" ]]; then
+              url="https://the-full-stack.com"
+            else
+              url="https://${niche}.${base}"
+            fi
+          else
+            base="portfolio.${stage}.the-full-stack.com"
+            api="https://api.${base}"
+            url="https://${niche}.${base}"
+          fi
+
+          echo "url=$url"   >> "$GITHUB_OUTPUT"
+          echo "api=$api"   >> "$GITHUB_OUTPUT"
+          echo "stage=$stage" >> "$GITHUB_OUTPUT"
+          echo "Verificando: $url (api esperado: $api)"
+
+      - name: Curl y assert data-api-endpoint
+        run: |
+          # Esperar un poco a que Cloudflare propague el deploy
+          sleep 5
+          html=$(curl -fsSL --max-time 30 "${{ steps.url.outputs.url }}/" || true)
+          if [[ -z "$html" ]]; then
+            echo "::error::No pude curl ${{ steps.url.outputs.url }}/"
+            exit 1
+          fi
+          expected='data-api-endpoint="${{ steps.url.outputs.api }}"'
+          if ! grep -qF "$expected" <<<"$html"; then
+            echo "::error::data-api-endpoint missing/wrong en ${{ steps.url.outputs.url }}"
+            echo "Esperado: $expected"
+            echo "Lo que hay en cf-tracking-pixel:"
+            grep -oE 'cf-tracking-pixel[^>]*' <<<"$html" | head -3 || echo "(no match)"
+            exit 1
+          fi
+
+      - name: Curl y assert dropdown hrefs no apunten a prod en dev/stage
+        if: steps.url.outputs.stage != 'prod'
+        run: |
+          html=$(curl -fsSL --max-time 30 "${{ steps.url.outputs.url }}/")
+          bad=$(grep -oE 'href="https://[a-z]+\.portfolio\.the-full-stack\.com[^"]*"' <<<"$html" | head -5 || true)
+          if [[ -n "$bad" ]]; then
+            echo "::error::Dropdown hrefs apuntan a prod desde ${{ steps.url.outputs.stage }}:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "OK: dropdown hrefs apuntan a *.${{ steps.url.outputs.stage }}.*"
 
   # ---------------------------------------------------------------------------
   # Resumen del deploy posteado como commit comment. if: always() para

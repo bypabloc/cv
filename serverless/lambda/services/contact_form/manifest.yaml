@@ -30,8 +30,10 @@ trigger:
 # devtools traduce esto a los permisos IAM y los imports necesarios.
 uses:
   # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  # Spec direct-neon-writes: la tabla `contacts` ya no se usa — el Lambda
+  # escribe directo a Neon (`contacts`). Solo quedan las tablas de
+  # infraestructura (cache + rate-limit).
   tables:
-    contacts: read-write           # persiste el form recibido
     cache: read-write              # @cached
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
@@ -41,6 +43,7 @@ uses:
     - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
     - owner-email             # destinatario de la notificacion
     - ses-from-address        # remitente verificado en SES
+    - neon-url                # connection string Neon (escritura directa de contacts)
   # Envia email transaccional por SES al recibir un form.
   sends-email: true
 

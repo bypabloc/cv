@@ -15,7 +15,9 @@ pytestmark = pytest.mark.unit
 
 
 @respx.mock
-def test_create_controller_normalizes_success(contact_form_aws):
+def test_create_controller_normalizes_success(
+    mock_neon_writes: list[dict], contact_form_aws: None
+) -> None:
     from controllers.contact.create import Create
 
     # Arrange

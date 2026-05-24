@@ -18,7 +18,9 @@ pytestmark = pytest.mark.unit
 
 
 @respx.mock
-def test_handler_returns_201_with_contact_id(contact_form_aws):
+def test_handler_returns_201_with_contact_id(
+    mock_neon_writes: list[dict], contact_form_aws: None
+) -> None:
     import handler
 
     # Arrange

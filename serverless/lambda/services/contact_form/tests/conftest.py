@@ -72,7 +72,13 @@ def contact_form_aws(
     (turnstile-secret, owner-email, ses-from-address) y la identidad SES
     `the-full-stack.com`. Setea las env vars que apuntan a esos recursos.
     """
-    monkeypatch.setenv('CONTACTS_TABLE_NAME', 'portfolio-contacts-test')
+    # CONTACTS_TABLE_NAME se elimino (spec direct-neon-writes): el Lambda
+    # ya no escribe a DynamoDB.contacts. La connection string de Neon va
+    # por DATABASE_URL/DB_URL que mockeamos por test (no hace falta default
+    # aqui — los tests que persisten usan mock_neon_writes).
+    monkeypatch.setenv(
+        'DATABASE_URL', 'postgresql://test:test@localhost/test'
+    )
     monkeypatch.setenv('CACHE_TABLE_NAME', 'portfolio-cache-test')
     monkeypatch.setenv(
         'RATE_LIMIT_RULES_TABLE_NAME', 'portfolio-rate-limit-rules-test'
@@ -106,14 +112,9 @@ def contact_form_aws(
         reset_resource_cache()
 
         ddb = boto3.client('dynamodb', region_name='us-east-1')
-        ddb.create_table(
-            TableName='portfolio-contacts-test',
-            AttributeDefinitions=[
-                {'AttributeName': 'id', 'AttributeType': 'S'},
-            ],
-            KeySchema=[{'AttributeName': 'id', 'KeyType': 'HASH'}],
-            BillingMode='PAY_PER_REQUEST',
-        )
+        # La tabla `contacts` se elimino (spec direct-neon-writes): el
+        # Lambda escribe directo a Neon. Los tests de persistencia usan
+        # el fixture `mock_neon_writes`.
         ddb.create_table(
             TableName='portfolio-cache-test',
             AttributeDefinitions=[
@@ -169,3 +170,38 @@ def contact_form_aws(
         )
 
         yield
+
+
+@pytest.fixture
+def mock_neon_writes(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Mockea `db_session()` + `insert_contact()` y captura los payloads.
+
+    Reemplaza la escritura real a Neon por un mock que registra los
+    payloads pasados a `insert_contact`. Devuelve la lista de payloads
+    capturados para que los tests hagan asserts EXACTOS.
+
+    Spec `direct-neon-writes`: el Lambda escribe directo a Neon en vez
+    de DynamoDB+Stream. En unit tests no levantamos un Postgres real —
+    mockeamos el repository y verificamos que se llamo con el payload
+    esperado.
+    """
+    from contextlib import contextmanager
+
+    captured: list[dict] = []
+
+    @contextmanager
+    def _fake_db_session():
+        yield object()
+
+    def _fake_insert_contact(_session: object, payload: dict) -> None:
+        captured.append(payload)
+
+    # `db_session` y `insert_contact` se importan en
+    # `services.contact_service`: parchamos AHI (donde se usan).
+    monkeypatch.setattr(
+        'services.contact_service.db_session', _fake_db_session
+    )
+    monkeypatch.setattr(
+        'services.contact_service.insert_contact', _fake_insert_contact
+    )
+    return captured

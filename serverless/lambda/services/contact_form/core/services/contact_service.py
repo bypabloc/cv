@@ -36,7 +36,8 @@ import boto3
 from aws_lambda_powertools.metrics import MetricUnit
 from shared.aws.ssm import get_secret_by_name
 from shared.core.ulid import new_uuidv7
-from shared.dynamodb import ContactItem
+from shared.db.repository import insert_contact
+from shared.db.session import db_session
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 
@@ -66,12 +67,16 @@ class ServiceError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# Persistencia DynamoDB (antes persistence.py)
+# Persistencia Neon (spec direct-neon-writes)
 # ---------------------------------------------------------------------------
 
 
 def save_contact(payload: dict[str, Any]) -> dict[str, str]:
-    """Persiste un contact submission en DynamoDB.
+    """Persiste un contact submission en Neon (`contacts`).
+
+    Genera `id = uuidv7()` server-side. session_id enlaza el contacto con
+    tracking_events para correlacion via JOIN. El origen (ip / country /
+    user_agent) NO se duplica aqui — se consulta en tracking_events.
 
     Parameters
     ----------
@@ -81,32 +86,37 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
     Returns
     -------
     dict[str, str]
-        Dict con `contact_id` y `created_at` (ISO 8601 UTC).
+        Dict con `contact_id` (UUID v7) y `created_at` (ISO 8601 UTC).
     """
     contact_id = new_uuidv7()
-    created_at = datetime.now(UTC).isoformat()
+    created_at = datetime.now(UTC)
 
-    # ContactItem (ORM) arma el Item: omite los campos opcionales no
-    # provistos (DynamoDB no permite empty strings) y reusa el resource
-    # boto3 singleton. session_id enlaza el contacto con tracking_events;
-    # el origen (ip/country/user_agent) NO se duplica aqui — se consulta
-    # en tracking via JOIN por session_id.
-    ContactItem(
-        id=contact_id,
-        created_at=created_at,
-        name=payload['name'],
-        email=payload['email'],
-        message=payload['message'],
-        company=payload.get('company'),
-        role=payload.get('role'),
-        service_type=payload.get('service_type'),
-        budget=payload.get('budget'),
-        timeline=payload.get('timeline'),
-        niche=payload.get('niche'),
-        session_id=payload.get('session_id'),
-    ).save()
+    neon_payload: dict[str, Any] = {
+        'id': contact_id,
+        'stream_event_id': None,
+        'created_at': created_at,
+        'name': payload['name'],
+        'email': payload['email'],
+        'message': payload['message'],
+        'company': payload.get('company'),
+        'role': payload.get('role'),
+        'service_type': payload.get('service_type'),
+        'budget': payload.get('budget'),
+        'timeline': payload.get('timeline'),
+        'niche': payload.get('niche'),
+        # ip / country / user_agent: legacy en el schema, los contactos
+        # nuevos los reciben en NULL (correlacion con tracking_events
+        # via session_id, SPEC-202).
+        'ip': None,
+        'country': None,
+        'user_agent': None,
+        'session_id': payload.get('session_id'),
+    }
 
-    return {'contact_id': contact_id, 'created_at': created_at}
+    with db_session() as session:
+        insert_contact(session, neon_payload)
+
+    return {'contact_id': contact_id, 'created_at': created_at.isoformat()}
 
 
 # ---------------------------------------------------------------------------

@@ -50,6 +50,9 @@ class TrackEventMeta(BaseModel):
     # API GW los expone). El controller lo pasa al service para
     # persistirlo en la columna cloudfront_meta JSONB.
     cloudfront_meta: dict[str, str] = Field(default_factory=dict)
+    # Origin header raw del request. Inyectado por http_handler para
+    # uniformidad entre Lambdas. tracking_pixel no lo usa hoy.
+    origin: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 

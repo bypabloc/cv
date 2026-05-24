@@ -26,6 +26,8 @@ from __future__ import annotations
 from models.contact import ContactCreatedOutput, ContactCreateModel
 from services.contact_service import process_contact_form
 from settings.config import logger
+from shared.core.niches import niche_from_origin
+from shared.core.ulid import new_uuidv7
 from shared.http.turnstile import verify_turnstile_token
 from shared.lambda_kit import BaseController
 from shared.rate_limit import check_or_raise
@@ -37,6 +39,23 @@ from shared.rate_limit.buckets import increment_bucket
 
 _ENDPOINT = '/contact'
 _WINDOW_SECONDS = 60
+
+
+def _resolve_session_id(form_session_id: str | None) -> str:
+    """Resuelve el session_id del visitante.
+
+    Spec sessions-normalize, decision 2: si el form envia `session_id`
+    (porque el TrackingPixel cargo correctamente), se usa. Sino se
+    genera uno on-the-fly: el form se acepta igual y crea una session
+    nueva con los datos del request. Caso edge: adblock, JS bloqueado,
+    primer click directo al form.
+
+    Formato: UUIDv7 server-side (mismo formato que el cliente genera
+    en localStorage, asi sessions con tracking previo no chocan).
+    """
+    if form_session_id:
+        return form_session_id
+    return f'cf-{new_uuidv7()}'
 
 
 class Create(BaseController):
@@ -76,10 +95,27 @@ class Create(BaseController):
             bypass_secret=meta.bypass_secret,
         )
 
-        # 3. Delega al service: persiste en DynamoDB + envia email.
-        result = process_contact_form(form_fields=data.form_fields())
+        # 3. Resolver session_id + niche fallback del Origin (decision 6).
+        form_fields = data.form_fields()
+        session_id = _resolve_session_id(form_fields.get('session_id'))
+        origin_niche = niche_from_origin(meta.origin)
 
-        # 4. Contador de auto-blacklist: marca turnstile_validated=True
+        # Asegurar que form_fields tiene el session_id resuelto (NO el
+        # None original — el service espera que session_id este).
+        form_fields_with_session = {**form_fields, 'session_id': session_id}
+
+        # 4. Delega al service: UPSERT session + visit + INSERT contact +
+        #    envia email.
+        result = process_contact_form(
+            form_fields=form_fields_with_session,
+            session_id=session_id,
+            ip=meta.ip,
+            country=meta.country,
+            user_agent=meta.user_agent,
+            origin_niche=origin_niche,
+        )
+
+        # 5. Contador de auto-blacklist: marca turnstile_validated=True
         #    DESPUES del exito. check_or_raise ya hizo un ADD con
         #    turnstile_validated=False; este segundo INCREMENT marca el
         #    token como valido para la deteccion de bots con solver.
@@ -99,7 +135,7 @@ class Create(BaseController):
                 },
             )
 
-        # 5. Normaliza la salida de exito a {is_valid, data, code}.
+        # 6. Normaliza la salida de exito a {is_valid, data, code}.
         output = ContactCreatedOutput(**result)
         return {
             'is_valid': True,

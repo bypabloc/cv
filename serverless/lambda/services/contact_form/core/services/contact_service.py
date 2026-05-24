@@ -36,7 +36,7 @@ import boto3
 from aws_lambda_powertools.metrics import MetricUnit
 from shared.aws.ssm import get_secret_by_name
 from shared.core.ulid import new_uuidv7
-from shared.db.repository import insert_contact
+from shared.db.repository import ensure_session_and_visit, insert_contact
 from shared.db.session import db_session
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
@@ -72,16 +72,26 @@ class ServiceError(Exception):
 
 
 def save_contact(payload: dict[str, Any]) -> dict[str, str]:
-    """Persiste un contact submission en Neon (`contacts`).
+    """Persiste un contact submission en Neon (sessions + visits + contact).
 
-    Genera `id = uuidv7()` server-side. session_id enlaza el contacto con
-    tracking_events para correlacion via JOIN. El origen (ip / country /
-    user_agent) NO se duplica aqui — se consulta en tracking_events.
+    Spec sessions-normalize:
+    - `session_id` es OBLIGATORIO en el payload (el controller lo
+      genera si no viene del form: si el visitante no tiene tracking
+      previo, el cliente del form arma uno on-the-fly).
+    - El service UPSERTea `sessions` + `session_visits` via el helper
+      `ensure_session_and_visit` en la MISMA tx del INSERT del contact.
+    - `bump_event_count=True`: cada contact suma 1 al event_count del
+      visit (un contact tambien es un "evento" del visitante).
+    - ip/country/user_agent ya NO se persisten en `contacts` (viven en
+      sessions/session_visits via FK).
+    - El `niche` del visit se infiere del Origin si no hay visit previa
+      (lo calcula el controller con `niche_from_origin`).
 
     Parameters
     ----------
     payload : dict[str, Any]
-        Campos validados del form.
+        Campos del form + metadata de session: name, email, message,
+        ..., niche, session_id, ip, country, user_agent, origin_niche.
 
     Returns
     -------
@@ -90,29 +100,54 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
     """
     contact_id = new_uuidv7()
     created_at = datetime.now(UTC)
+    session_id = payload['session_id']
 
-    neon_payload: dict[str, Any] = {
-        'id': contact_id,
-        'created_at': created_at,
-        'name': payload['name'],
-        'email': payload['email'],
-        'message': payload['message'],
-        'company': payload.get('company'),
-        'role': payload.get('role'),
-        'service_type': payload.get('service_type'),
-        'budget': payload.get('budget'),
-        'timeline': payload.get('timeline'),
-        'niche': payload.get('niche'),
-        # ip / country / user_agent: legacy en el schema, los contactos
-        # nuevos los reciben en NULL (correlacion con tracking_events
-        # via session_id, SPEC-202).
-        'ip': None,
-        'country': None,
-        'user_agent': None,
-        'session_id': payload.get('session_id'),
-    }
+    # niche del visit: el niche que viene del form (la pagina donde se
+    # mostro el form) o, si falta, el `origin_niche` calculado por el
+    # controller con niche_from_origin.
+    visit_niche = payload.get('niche') or payload.get('origin_niche')
 
     with db_session() as session:
+        # Paso 1: UPSERT session + visit (en la misma tx). Si no hay
+        # tracking previo el visit se crea on-the-fly con ip/ua/country
+        # del request y niche del Origin (decision 2 + 6).
+        ensure_session_and_visit(
+            session,
+            session_id=session_id,
+            ip=payload.get('ip'),
+            country=payload.get('country'),
+            user_agent=payload.get('user_agent'),
+            browser=None,
+            browser_version=None,
+            os_name=None,
+            device_type=None,
+            utm_source=None,
+            utm_medium=None,
+            utm_campaign=None,
+            utm_content=None,
+            utm_term=None,
+            referrer=None,
+            landing_page_path=None,
+            niche=visit_niche,
+            bump_event_count=True,
+        )
+
+        # Paso 2: INSERT del contact. El ORM de `contacts` ya NO tiene
+        # ip/country/user_agent (movidos a sessions).
+        neon_payload: dict[str, Any] = {
+            'id': contact_id,
+            'created_at': created_at,
+            'name': payload['name'],
+            'email': payload['email'],
+            'message': payload['message'],
+            'company': payload.get('company'),
+            'role': payload.get('role'),
+            'service_type': payload.get('service_type'),
+            'budget': payload.get('budget'),
+            'timeline': payload.get('timeline'),
+            'niche': payload.get('niche'),
+            'session_id': session_id,
+        }
         insert_contact(session, neon_payload)
 
     return {'contact_id': contact_id, 'created_at': created_at.isoformat()}
@@ -251,19 +286,38 @@ def send_owner_email(contact: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def process_contact_form(*, form_fields: dict[str, Any]) -> dict[str, str]:
-    """Persiste el contacto y notifica al owner por email.
+def process_contact_form(
+    *,
+    form_fields: dict[str, Any],
+    session_id: str,
+    ip: str,
+    country: str | None,
+    user_agent: str | None,
+    origin_niche: str | None,
+) -> dict[str, str]:
+    """Persiste el contacto (sessions + visit + contact) y notifica owner.
 
     Logica de negocio del Lambda: a esta altura la verificacion Turnstile
     y el rate-limit YA pasaron (los orquesta el controller). El service
-    persiste en DynamoDB y dispara el email.
+    UPSERTea sessions + session_visits y INSERTea el contact en la misma
+    tx (spec sessions-normalize) y dispara el email.
 
     Parameters
     ----------
     form_fields : dict[str, Any]
         Campos del form ya validados (sin `cf_token` ni metadata de
-        transporte). Incluye `session_id` opcional, clave de correlacion
-        con tracking_events.
+        transporte). Incluye `session_id` opcional del form.
+    session_id : str
+        Identidad del visitante. El controller lo resuelve: form ->
+        session_id si el visitante tiene tracking, sino genera uno
+        on-the-fly (decision 2).
+    ip, country, user_agent : str | None
+        Metadata HTTP del request. Se pasan al helper
+        `ensure_session_and_visit` (no se persisten en `contacts`).
+    origin_niche : str | None
+        Niche derivado del header Origin con `niche_from_origin`. Si el
+        form ya envia `niche`, este se ignora; sino, se usa como fallback
+        para `session_visits.niche` (decision 6).
 
     Returns
     -------
@@ -272,18 +326,25 @@ def process_contact_form(*, form_fields: dict[str, Any]) -> dict[str, str]:
 
     Notes
     -----
-    contacts NO duplica datos de origen (ip/country/user_agent): se
-    consultan en tracking_events via JOIN por session_id (SPEC-202).
+    contacts NO duplica datos de origen (ip/country/user_agent): viven
+    en sessions/session_visits via FK (spec sessions-normalize).
 
     El fallo del email NO se propaga: el contacto ya quedo persistido en
-    DynamoDB y el lead no se pierde. El fallo se hace visible con la
+    Neon y el lead no se pierde. El fallo se hace visible con la
     metrica CloudWatch `OwnerEmailFailed`, sin romper la respuesta 201.
     """
-    payload = dict(form_fields)
+    payload = {
+        **form_fields,
+        'session_id': session_id,
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+        'origin_niche': origin_niche,
+    }
     result = save_contact(payload)
     logger.info(
         'contact persisted',
-        extra={'contact_id': result['contact_id']},
+        extra={'contact_id': result['contact_id'], 'session_id': session_id},
     )
 
     try:
@@ -294,7 +355,7 @@ def process_contact_form(*, form_fields: dict[str, Any]) -> dict[str, str]:
             'failed to send owner email (contact already persisted)',
             extra={'contact_id': result['contact_id']},
         )
-        # NO re-raise: el form se guardo en DynamoDB. El fallo se hace
+        # NO re-raise: el form se guardo en Neon. El fallo se hace
         # visible con una metrica para detectarlo sin romper el 201.
         metrics.add_metric(
             name='OwnerEmailFailed',

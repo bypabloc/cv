@@ -3,7 +3,8 @@
 Replica en Neon de la tabla DynamoDB `TrackingTable`. El `stream_processor`
 inserta una fila por cada evento de tracking que llega via DynamoDB Stream.
 
-Fiel al schema actual (migraciones 001 + 006 + 007 + 008 + 009):
+Fiel al schema actual (migraciones 001 + 006 + 007 + 008 + 009 +
+d4e5f6a7b8c9):
 - `tracking_events` esta PARTICIONADA por RANGE(created_at). SQLAlchemy
   declara las columnas; el `PARTITION BY` y la particion default los agrega
   la migracion Alembic con `op.execute()` (Alembic no autogenera
@@ -13,13 +14,17 @@ Fiel al schema actual (migraciones 001 + 006 + 007 + 008 + 009):
 - `event_type_id` es FK a `event_types` (PG soporta FK en tabla
   particionada desde PG12).
 - `event_props` es JSONB (datos especificos por tipo de evento).
+- `session_id` FK a `sessions(session_id)` NOT NULL.
+- `visit_id` FK a `session_visits(visit_id)` NOT NULL.
+- Spec sessions-normalize dropeo `ip`, `country`, `user_agent`,
+  `browser`, `browser_version`, `os`, `device_type`, `utm_*` (todos
+  movidos a sessions/session_visits).
 """
 
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import (
-    CHAR,
     DateTime,
     ForeignKey,
     Index,
@@ -28,7 +33,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import Base
@@ -69,7 +74,14 @@ class TrackingEvent(Base):
 
     __tablename__ = 'tracking_events'
 
-    session_id: Mapped[str] = mapped_column(Text, nullable=False)
+    session_id: Mapped[str] = mapped_column(
+        Text, ForeignKey('sessions.session_id'), nullable=False
+    )
+    visit_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey('session_visits.visit_id'),
+        nullable=False,
+    )
     page_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), nullable=False
     )
@@ -81,29 +93,17 @@ class TrackingEvent(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    # Metadata de pagina.
+    # Metadata de pagina (la utm/ip/ua/browser de cada evento vive en
+    # session_visits + sessions; aqui solo queda page_path por-evento).
     page_path: Mapped[str | None] = mapped_column(Text)
 
-    # UTM.
-    utm_source: Mapped[str | None] = mapped_column(Text)
-    utm_medium: Mapped[str | None] = mapped_column(Text)
-    utm_campaign: Mapped[str | None] = mapped_column(Text)
-    utm_content: Mapped[str | None] = mapped_column(Text)
-    utm_term: Mapped[str | None] = mapped_column(Text)
-
-    # Viewport.
+    # Viewport — sigue por-evento (un visit puede rotar mobile/desktop).
     viewport_width: Mapped[int | None] = mapped_column(Integer)
     viewport_height: Mapped[int | None] = mapped_column(Integer)
 
-    # Niche + enrichment.
+    # Niche del evento (puede diferir del niche del visit si el usuario
+    # navego entre subdominios dentro de la misma visit).
     niche: Mapped[str | None] = mapped_column(Text)
-    ip: Mapped[str | None] = mapped_column(INET)
-    country: Mapped[str | None] = mapped_column(CHAR(2))
-    user_agent: Mapped[str | None] = mapped_column(Text)
-    browser: Mapped[str | None] = mapped_column(Text)
-    browser_version: Mapped[str | None] = mapped_column(Text)
-    os: Mapped[str | None] = mapped_column(Text)
-    device_type: Mapped[str | None] = mapped_column(Text)
 
     # Tipo de evento (migracion 007). FK al catalogo.
     event_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
@@ -113,9 +113,10 @@ class TrackingEvent(Base):
     # Datos especificos por tipo de evento (migracion 009).
     event_props: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
-    # Indices de la migracion 002 + 007. Nombres explicitos (idx_*) para
-    # parity exacto con el schema de prod. El dict de opciones de tabla
-    # (postgresql_partition_by) va SIEMPRE ultimo en __table_args__.
+    # Indices de la migracion 002 + 007 + d4e5f6a7b8c9. Nombres
+    # explicitos (idx_*) para parity exacto con el schema de prod. El
+    # dict de opciones de tabla (postgresql_partition_by) va SIEMPRE
+    # ultimo en __table_args__.
     __table_args__ = (
         # Session journey: WHERE session_id = X ORDER BY created_at.
         Index('idx_tracking_session_created', 'session_id', 'created_at'),
@@ -127,17 +128,6 @@ class TrackingEvent(Base):
         ),
         Index('idx_tracking_page_path', 'page_path'),
         Index(
-            'idx_tracking_utm_source',
-            'utm_source',
-            postgresql_where=text('utm_source IS NOT NULL'),
-        ),
-        Index(
-            'idx_tracking_country',
-            'country',
-            postgresql_where=text('country IS NOT NULL'),
-        ),
-        Index('idx_tracking_device_type', 'device_type'),
-        Index(
             'idx_tracking_niche_created',
             'niche',
             text('created_at DESC'),
@@ -145,6 +135,8 @@ class TrackingEvent(Base):
         ),
         # FK al catalogo event_types (migracion 007).
         Index('idx_tracking_event_type', 'event_type_id'),
+        # Spec sessions-normalize: indice del FK visit_id.
+        Index('idx_tracking_visit_id', 'visit_id'),
         # Particionado RANGE por mes. La particion default la agrega la
         # migracion con op.execute(). El dict de opciones va ultimo.
         {'postgresql_partition_by': 'RANGE (created_at)'},

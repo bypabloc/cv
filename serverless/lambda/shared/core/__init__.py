@@ -18,6 +18,7 @@ from shared.core.exceptions import (
     TurnstileError,
     ValidationError,
 )
+from shared.core.niches import ALL_NICHES, CV_NICHES, niche_from_origin
 from shared.core.types import (
     ErrorPayload,
     JsonResponse,
@@ -28,7 +29,9 @@ from shared.core.types import (
 from shared.core.ulid import new_uuidv7
 
 __all__ = [
+    'ALL_NICHES',
     'ApplicationError',
+    'CV_NICHES',
     'CountryBlockedError',
     'ErrorPayload',
     'IPBlacklistedError',
@@ -42,5 +45,6 @@ __all__ = [
     'ValidationError',
     'get_settings',
     'new_uuidv7',
+    'niche_from_origin',
     'settings',
 ]

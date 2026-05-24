@@ -28,7 +28,7 @@ from typing import Any
 from settings.config import logger
 from shared.cache import cached
 from shared.core.ulid import new_uuidv7
-from shared.db.repository import insert_tracking
+from shared.db.repository import ensure_session_and_visit, insert_tracking
 from shared.db.session import db_session
 from ua_parser import user_agent_parser
 
@@ -110,15 +110,24 @@ def parse_user_agent(user_agent: str | None) -> dict[str, str]:
 
 
 def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
-    """Persiste un evento de tracking en Neon (`tracking_events`).
+    """Persiste sessions + session_visits + tracking_events en 1 tx.
+
+    Spec sessions-normalize: el INSERT del tracking_event va junto con
+    el UPSERT de su `session` y `session_visit` en la MISMA transaccion
+    (atomicidad — si el INSERT falla, todo rollback).
+
+    Pasos:
+    1. `ensure_session_and_visit(...)` UPSERTea session + visit y
+       devuelve `(session_id, visit_id)`. El helper incrementa
+       `event_count` del visit en 1 (bump_event_count=True).
+    2. INSERT en `tracking_events` con el `visit_id` retornado.
+    3. Commit al salir del `with db_session()`.
 
     Genera `page_id = uuidv7()` server-side y arma el payload ORM:
     `created_at` con `datetime.now(UTC)`, `event_props` como dict
-    (SQLAlchemy lo adapta a JSONB). Spec drop-cloudfront-meta: las
-    keys `cloudfront_meta`, `expires_at`, `page_url`, `page_title` y
-    `referrer` NO se persisten (columnas dropeadas en alembic
-    `c3d4e5f6a7b8`); el Pydantic las sigue aceptando pero el ORM ya
-    no las tiene.
+    (SQLAlchemy lo adapta a JSONB). Las columnas ip/country/ua/utm_*
+    se persisten en sessions/session_visits via el helper — el ORM de
+    tracking_events YA NO las tiene.
 
     Parameters
     ----------
@@ -128,42 +137,55 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     Returns
     -------
     dict[str, Any]
-        Dict con `session_id` y `page_id` de la fila escrita.
+        Dict con `session_id`, `page_id` y `visit_id` de la fila escrita.
     """
     page_id = new_uuidv7()
     created_at = datetime.now(UTC)
 
-    neon_payload: dict[str, Any] = {
-        'session_id': payload['session_id'],
-        'page_id': page_id,
-        'created_at': created_at,
-        'event_id': payload['event_id'],
-        'event_type_id': payload['event_type_id'],
-        'page_path': payload.get('page_path'),
-        'utm_source': payload.get('utm_source'),
-        'utm_medium': payload.get('utm_medium'),
-        'utm_campaign': payload.get('utm_campaign'),
-        'utm_content': payload.get('utm_content'),
-        'utm_term': payload.get('utm_term'),
-        'niche': payload.get('niche'),
-        'viewport_width': payload.get('viewport_width'),
-        'viewport_height': payload.get('viewport_height'),
-        'ip': payload.get('ip'),
-        'country': payload.get('country'),
-        'user_agent': payload.get('user_agent'),
-        'browser': payload.get('browser'),
-        'browser_version': payload.get('browser_version'),
-        'os': payload.get('os'),
-        'device_type': payload.get('device_type'),
-        'event_props': payload.get('event_props'),
-    }
-
     with db_session() as session:
+        # Paso 1: UPSERT session + visit (en la misma tx). El helper
+        # incrementa event_count del visit en 1.
+        session_id, visit_id = ensure_session_and_visit(
+            session,
+            session_id=payload['session_id'],
+            ip=payload.get('ip'),
+            country=payload.get('country'),
+            user_agent=payload.get('user_agent'),
+            browser=payload.get('browser'),
+            browser_version=payload.get('browser_version'),
+            os_name=payload.get('os'),
+            device_type=payload.get('device_type'),
+            utm_source=payload.get('utm_source'),
+            utm_medium=payload.get('utm_medium'),
+            utm_campaign=payload.get('utm_campaign'),
+            utm_content=payload.get('utm_content'),
+            utm_term=payload.get('utm_term'),
+            referrer=payload.get('referrer'),
+            landing_page_path=payload.get('landing_page_path'),
+            niche=payload.get('niche'),
+            bump_event_count=True,
+        )
+
+        # Paso 2: INSERT en tracking_events con visit_id.
+        neon_payload: dict[str, Any] = {
+            'session_id': session_id,
+            'visit_id': visit_id,
+            'page_id': page_id,
+            'created_at': created_at,
+            'event_id': payload['event_id'],
+            'event_type_id': payload['event_type_id'],
+            'page_path': payload.get('page_path'),
+            'niche': payload.get('niche'),
+            'viewport_width': payload.get('viewport_width'),
+            'viewport_height': payload.get('viewport_height'),
+            'event_props': payload.get('event_props'),
+        }
         insert_tracking(session, neon_payload)
 
     return {
         'session_id': payload['session_id'],
         'page_id': page_id,
+        'visit_id': visit_id,
     }
 
 
@@ -175,6 +197,13 @@ def process_tracking_event(
     country: str | None = None,
 ) -> dict[str, Any]:
     """Orquesta enrichment + persistencia del evento de tracking.
+
+    Spec sessions-normalize: el payload se enriquece con `ip`/`country`/
+    UA-parser-result y se pasa entero al helper `save_tracking_event`,
+    que UPSERTea session + visit y luego inserta el tracking_event.
+    `landing_page_path` se deriva de `page_path` (el primer evento de
+    una visit es el landing; las navegaciones internas reusan visit y
+    NO actualizan `landing_page_path`).
 
     Parameters
     ----------
@@ -190,7 +219,7 @@ def process_tracking_event(
     Returns
     -------
     dict[str, Any]
-        Dict con `session_id` y `page_id` de la fila escrita.
+        Dict con `session_id`, `page_id` y `visit_id` de la fila escrita.
     """
     # Enrichment: parse UA
     ua_info = parse_user_agent(user_agent)
@@ -200,6 +229,9 @@ def process_tracking_event(
         'ip': ip,
         'user_agent': user_agent or '',
         **ua_info,
+        # landing_page_path = page_path del evento. Solo se usa al
+        # crear un visit nuevo (el helper ignora este campo en UPDATE).
+        'landing_page_path': validated_input.get('page_path'),
     }
     if country:
         payload['country'] = country
@@ -210,6 +242,7 @@ def process_tracking_event(
         extra={
             'session_id': result['session_id'],
             'page_id': result['page_id'],
+            'visit_id': result['visit_id'],
             'device_type': ua_info['device_type'],
         },
     )

@@ -15,8 +15,11 @@ Exit codes:
 """
 
 import asyncio
+from pathlib import Path
+import sys
 
 from ai_audit import auth
+from ai_audit import report
 
 
 def main(flags: dict) -> int:
@@ -48,10 +51,22 @@ def _run_setup(flags: dict) -> int:
     return 0
 
 
-def _run_report(_flags: dict) -> int:
-    """Pendiente: implementado en C8 (fase report)."""
-    msg = 'report subcommand: pendiente — ver docs/specs/ai-audit-tool/05-fase-report.md'
-    raise NotImplementedError(msg)
+def _run_report(flags: dict) -> int:
+    """Re-renderiza Markdown desde un snapshot existente."""
+    snapshot_path = Path(flags['snapshot'])
+    if not snapshot_path.exists():
+        print(
+            f'report: snapshot no existe: {snapshot_path}',
+            file=sys.stderr,
+        )
+        return 2
+    output_path = snapshot_path.parent / 'report.md'
+    report.render_markdown(
+        snapshot_path=snapshot_path,
+        output_path=output_path,
+    )
+    print(f'rendered: {output_path}')
+    return 0
 
 
 def _run_audit(_flags: dict) -> int:

@@ -1,115 +1,105 @@
-# 02 - Auth setup (Ahrefs + Semrush)
+# 02 - Auth setup (PSI_API_KEY)
 
-> Como crear cuentas free y guardar Playwright storageState para las
-> 2 tools que requieren login. Las otras 2 (isitagentready,
-> aibotchecker) son anonimas.
+> El stack actual solo tiene UN setup de auth: la API key gratis de
+> Google PageSpeed Insights. Las otras 2 tools (isitagentready,
+> validators) son anonimas. Las viejas tools que requerian login
+> (Ahrefs/Semrush) fueron descartadas — ver
+> [01-tools-evaluadas.md](01-tools-evaluadas.md).
 
 [< 01 Tools](01-tools-evaluadas.md) | [03 Arquitectura >](03-arquitectura.md)
 
-## Donde vive el storageState
+## Donde vive la API key
 
 ```text
-docker/env/dev-cli/ai-audit/
-├── ahrefs.json
-└── semrush.json
+docker/env/dev-cli/
+├── .local      <- PSI_API_KEY=<tu_key>
+├── .dev
+├── .stage
+└── .prod
 ```
 
 - Categoria `dev-cli`: LOCAL-ONLY, NUNCA sincronizada a remoto. Es la
   misma categoria que las AWS IAM keys del dev. Ver
   [secrets-strategy.md](../../rules/secrets-strategy.md).
 - Gitignored: `docker/env/dev-cli/` esta en `.gitignore`.
-- Cada archivo contiene cookies + localStorage de la sesion. Es
-  equivalente a una credencial — NO compartir.
+- El tool resuelve la key en runtime via `grep -m1 '^PSI_API_KEY='`
+  del archivo del env activo. NUNCA carga el `.env` completo. Cumple
+  [env-files.md](../../rules/env-files.md).
 
 ## Setup por primera vez
 
-### Ahrefs
-
-1. Crear cuenta gratis en https://ahrefs.com/webmaster-tools (Ahrefs
-   Webmaster Tools — version free de Ahrefs).
-2. Verificar el dominio `the-full-stack.com` (TXT en Cloudflare DNS o
-   etiqueta meta — Ahrefs guia paso a paso).
-3. Correr el comando setup:
-
+1. Ir a https://console.cloud.google.com/apis/credentials
+2. Crear/usar un proyecto Google Cloud (no requiere tarjeta).
+3. En "APIs & Services > Library", buscar "PageSpeed Insights API" y
+   habilitarla en tu proyecto.
+4. Volver a "Credentials" -> "Create Credentials" -> "API key". Copiar
+   la key.
+5. (Opcional pero recomendado) Restringir la key:
+   - "Application restrictions": None (porque la usa devtools desde la
+     laptop, no un sitio web).
+   - "API restrictions": "Restrict key" -> seleccionar SOLO "PageSpeed
+     Insights API". Defensa en profundidad por si la key leakea.
+6. Pegar en el `.env` del env donde la quieras usar:
+   ```text
+   # docker/env/dev-cli/.local
+   PSI_API_KEY=<paste-here>
+   ```
+   - Sin comillas
+   - Sin espacios alrededor del `=`
+   - Una sola linea
+7. Verificar que el tool la encuentra:
    ```bash
-   python devtools/run.py ai_audit setup --tool=ahrefs
+   PSI_ENV=local python -c "
+   from ai_audit.tools.lighthouse_psi import LighthousePsi
+   k = LighthousePsi().get_api_key()
+   print('key encontrada:' if k else 'NO encontrada', len(k or '') if k else '')
+   "
+   ```
+   (Imprime `key encontrada: 39` o similar. NUNCA imprime el valor.)
+8. Correr el audit completo:
+   ```bash
+   python devtools/run.py ai_audit --env=prod
    ```
 
-4. Se abre browser Playwright NO-headless. Loguearse manualmente.
-5. Cuando el script detecta que estas logueado, guarda
-   `docker/env/dev-cli/ai-audit/ahrefs.json` y cierra el browser.
-6. Verificar: `ls -la docker/env/dev-cli/ai-audit/ahrefs.json` debe
-   existir con perms 600.
+## ¿Una key por env?
 
-### Semrush
+No es obligatorio. La misma key sirve para auditar prod/stage/dev (la
+restriccion es por API, no por origen de la request). Sugerido:
 
-1. Crear cuenta gratis en https://www.semrush.com/signup/ (cuenta
-   free, no requiere tarjeta).
-2. Setup:
+- Pegar la key en `.local`, `.dev`, `.stage`, `.prod` (4 copias). El
+  `PSI_ENV` que setea `main.py` solo determina cual archivo leer.
+- Alternativa minimalista: pegar solo en `.prod` y siempre correr con
+  `--env=prod` (que es lo recomendado de todos modos por la rule).
 
-   ```bash
-   python devtools/run.py ai_audit setup --tool=semrush
-   ```
+## Free tier de Google PSI
 
-3. Idem Ahrefs: browser interactivo, login manual, storageState
-   guardado.
+| Limite | Valor |
+|--------|-------|
+| Requests/dia | 25 000 |
+| Requests/100s | 100 |
+| Costo | $0 (sin tarjeta, sin trial) |
+| Renovacion | Diaria, automatica |
 
-## Cuando expira el storageState
+Suficiente para correr el audit hasta ~600 veces al dia (18 audits por
+run × 25k / 18 = ~1388 runs/dia). Sin riesgo de costo accidental.
 
-| Tool | Expiracion observada | Sintoma |
-|------|----------------------|---------|
-| Ahrefs | ~30 dias | Run reporta `PARTIAL` o `ERROR` con "login required" en el log |
-| Semrush | ~14 dias | Run reporta `PARTIAL` o redirige a /login |
+## Sintomas de problemas
 
-Cuando expira: re-correr `setup --tool=<X>`. El comando sobrescribe
-el `.json` con la sesion nueva.
+| Sintoma | Causa probable | Fix |
+|---------|----------------|-----|
+| `lighthouse_psi` reporta SKIPPED | `.env` no existe o no contiene `PSI_API_KEY=` | Crear el archivo + agregar la key |
+| ERROR `http 403: PSI_API_KEY invalido o sin quota` | Key revocada o quota diaria agotada | Verificar en Google Cloud Console |
+| ERROR `http 429: rate-limited por PSI` | >100 req/100s | Esperar 100s y reintentar; el retry exp backoff del scraper lo gestiona |
+| ERROR `api error: API key not valid` | La API "PageSpeed Insights" no esta habilitada en el proyecto | Habilitarla en el proyecto donde se creo la key |
 
-## Como verificar el storageState
+## Rotacion
 
-```bash
-# Estructura del archivo (NO el contenido, son cookies)
-jq 'keys' docker/env/dev-cli/ai-audit/ahrefs.json
-# Debe imprimir: ["cookies", "origins"]
+Si la key leakea (commit accidental, screenshot, etc.):
 
-# Numero de cookies guardadas
-jq '.cookies | length' docker/env/dev-cli/ai-audit/ahrefs.json
-# >0 indica sesion guardada
-
-# Validar que sigue siendo valida sin abrir browser
-python devtools/run.py ai_audit setup --tool=ahrefs --check-only
-# Imprime VALID o EXPIRED
-```
-
-## Seguridad
-
-- El storageState es una credencial. Trato igual que una AWS IAM key
-  personal.
-- NUNCA commitear al repo (gitignored en `.gitignore` raiz +
-  `docker/env/dev-cli/.gitignore`).
-- NUNCA compartir el archivo por chat ni copiarlo a otra maquina sin
-  cifrar.
-- Si se compromete: rotacion = cambiar password de la cuenta + correr
-  `setup` de nuevo.
-- Si la maquina se reemplaza: re-correr `setup` desde cero en la
-  nueva.
-
-## Que pasa si no hay storageState
-
-- Sin `ahrefs.json`: el run reporta `SKIPPED` para todos los targets
-  de Ahrefs. El reporte final lo lista.
-- Sin `semrush.json`: idem para Semrush.
-- isitagentready + aibotchecker siguen corriendo normal (no requieren
-  auth).
-- Si queres correr SOLO las 2 publicas: `--tools=isitagentready,aibotchecker`.
-
-## Flag para deshabilitar tools especificas
-
-```bash
-# Por ej. en una maquina sin cuentas Ahrefs/Semrush configuradas:
-python devtools/run.py ai_audit --tools=isitagentready,aibotchecker
-```
-
-El comando no falla si faltan storageStates de los tools NO incluidos
-en `--tools=`.
+1. Revocar la key vieja en Google Cloud Console.
+2. Crear nueva key (mismos pasos del setup).
+3. Pegar la nueva en los `.env` afectados.
+4. Si por accidente quedo en git history: `git filter-repo` + force
+   push (coordinar con todos los devs porque rescribe history).
 
 [< 01 Tools](01-tools-evaluadas.md) | [03 Arquitectura >](03-arquitectura.md)

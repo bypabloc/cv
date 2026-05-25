@@ -14,15 +14,15 @@ devtools/ai_audit/
 ├── main.py                # def main(flags: dict) -> int   (entry)
 ├── flags.py               # parsing + validacion de flags
 ├── catalog.py             # niche -> URL por env (los 6 sitios)
-├── auth.py                # load + setup storageState
-├── scraper.py             # Playwright runner + retry/backoff
+├── auth.py                # stub (compat con scraper.py — ninguna tool activa usa storageState)
+├── validators.py          # validadores puros (llms.txt, robots, sitemap, JSON-LD)
+├── scraper.py             # orquestador asyncio + retry/backoff + hard guard
 ├── tools/
-│   ├── __init__.py        # registry: name -> tool module
-│   ├── base.py            # contract: ToolResult dataclass + parse()
-│   ├── isitagentready.py
-│   ├── aibotchecker.py
-│   ├── ahrefs.py
-│   └── semrush.py
+│   ├── __init__.py        # registry: name -> Tool instance
+│   ├── base.py            # contract: ToolResult dataclass + Protocol
+│   ├── isitagentready.py  # cliente JSON de Cloudflare /api/scan
+│   ├── validators.py      # tool wrapper que fetcha 4 recursos + corre validators.py
+│   └── lighthouse_psi.py  # cliente Google PageSpeed Insights v5
 ├── report.py              # snapshot JSON + Markdown render
 └── tmp/                   # ignored — solo doc del runtime layout
 ```
@@ -40,7 +40,7 @@ Restricciones (per `.claude/rules/python.md`):
 ```python
 @dataclass(frozen=True)
 class ToolResult:
-    tool: str            # 'isitagentready' | 'aibotchecker' | 'ahrefs' | 'semrush'
+    tool: str            # 'isitagentready' | 'validators' | 'lighthouse_psi'
     target: str          # URL absoluta auditada
     status: Status       # OK | PARTIAL | BLOCKED | ERROR | SKIPPED
     score: int | None    # 0-100 (None si BLOCKED/ERROR/SKIPPED)
@@ -115,20 +115,17 @@ Trade-off: ~280MB extra en `devtools/.venv` por chromium. Se descarga
 una sola vez con `playwright install chromium` (idempotente — el
 script lo invoca en el primer run si falta).
 
-### Anonimo vs storageState por tool
+### Auth: solo lighthouse_psi (API key gratis)
 
-Las 4 tools tienen comportamiento mixto. Para no acoplar el scraper
-al modo auth, cada tool declara `REQUIRES_AUTH: bool`. El orquestador
-elige el contexto Playwright correcto:
+Las 3 tools activas se reparten asi:
 
-```python
-if tool.REQUIRES_AUTH:
-    context = browser.new_context(storage_state=auth.load(tool.TOOL_NAME))
-else:
-    context = browser.new_context()  # incognito
-```
+- `isitagentready` y `validators`: anonimas, ningun secreto.
+- `lighthouse_psi`: lee `PSI_API_KEY` desde `docker/env/dev-cli/.{env}`
+  en runtime via `grep -m1 '^PSI_API_KEY='`. Si no existe, devuelve
+  `SKIPPED` sin abortar el run.
 
-Asi un mismo run audita las 4 sin mezclar sesiones.
+`auth.py` quedo como stub (compat con `scraper.py`) — `REQUIRES_AUTH`
+es `False` para las 3 y `auth.check()` siempre devuelve `VALID`.
 
 ### Retry policy
 
@@ -160,18 +157,18 @@ devtools/tests/unit/src/ai_audit/
 ├── test_auth.py             # load + check_only (mockea Playwright)
 ├── test_scraper.py          # retry policy, sleep entre tools
 ├── test_report.py           # render Markdown + prioritization
+├── validators.py            # tests de las 4 funciones puras
 └── tools/
-    ├── test_isitagentready.py  # parse() sobre HTML fixture
-    ├── test_aibotchecker.py
-    ├── test_ahrefs.py
-    └── test_semrush.py
+    ├── isitagentready.py    # parse_payload sobre JSON fixture
+    ├── validators.py        # _run_validators con recursos mock
+    └── lighthouse_psi.py    # parse_payload + get_api_key
 ```
 
-Fixtures HTML capturados de runs reales en
-`devtools/tests/unit/src/ai_audit/fixtures/<tool>/<scenario>.html`
+Fixtures JSON capturados de runs reales en
+`devtools/tests/unit/src/ai_audit/fixtures/<tool>/<scenario>.json`
 (commiteables — son outputs publicos sin info sensible).
 
-Coverage: >= 80% per-file. Mockear Playwright (`Page` mock); NUNCA
-hacer red en unit tests.
+Coverage: >= 80% per-file. Mockear httpx (test fixtures); NUNCA hacer
+red en unit tests.
 
 [< 02 Auth](02-auth-setup.md) | [04 Troubleshooting >](04-troubleshooting.md)

@@ -6,9 +6,8 @@ Path mirroring: devtools/ai_audit/flags.py -> this file.
 import sys
 from unittest import mock
 
-import pytest
-
 from ai_audit.flags import flag
+import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -23,7 +22,7 @@ def test_flag_when_no_args_then_default_audit() -> None:
     """
     Given args vacios,
     When flag,
-    Then subcommand='audit', env='prod', niches=los 6, tools=las 4.
+    Then subcommand='audit', env='prod', niches=los 6, tools=las 3.
     """
     with mock.patch.object(sys, 'argv', _argv()):
         result = flag({})
@@ -40,9 +39,8 @@ def test_flag_when_no_args_then_default_audit() -> None:
     ]
     assert result['tools'] == [
         'isitagentready',
-        'aibotchecker',
-        'ahrefs',
-        'semrush',
+        'validators',
+        'lighthouse_psi',
     ]
     assert result['targets'] == []
 
@@ -111,34 +109,20 @@ def test_flag_when_targets_path_missing_slash_then_raises() -> None:
         flag({'targets': 'hub:projects'})
 
 
-def test_flag_when_setup_without_tool_then_raises() -> None:
+def test_flag_when_setup_subcommand_then_rejected() -> None:
     """
-    Given subcomando setup sin --tool,
+    Given subcomando 'setup' (eliminado en mayo 2026),
     When flag,
-    Then raises ValueError con 'setup requires --tool=<X>'.
+    Then raises ValueError con 'Subcomando desconocido' (solo audit y report).
     """
     with (
         mock.patch.object(sys, 'argv', _argv('setup')),
         pytest.raises(
             ValueError,
-            match=r'setup requires --tool',
+            match='Subcomando desconocido',
         ),
     ):
         flag({})
-
-
-def test_flag_when_setup_with_valid_tool_then_returns_dict() -> None:
-    """
-    Given setup --tool=ahrefs,
-    When flag,
-    Then subcommand='setup', tool='ahrefs', check_only=False.
-    """
-    with mock.patch.object(sys, 'argv', _argv('setup', '--tool=ahrefs')):
-        result = flag({'tool': 'ahrefs'})
-
-    assert result['subcommand'] == 'setup'
-    assert result['tool'] == 'ahrefs'
-    assert result['check_only'] is False
 
 
 def test_flag_when_report_with_snapshot_then_returns_dict() -> None:

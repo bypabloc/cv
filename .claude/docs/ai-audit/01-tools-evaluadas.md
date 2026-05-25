@@ -1,111 +1,121 @@
 # 01 - Tools evaluadas
 
-> Detalle de cada una de las 4 tools que el script `ai_audit` scrapea.
-> Una seccion por tool: URL, auth, datos capturados, gotchas del DOM,
-> frecuencia esperada de breakage.
+> Detalle de las 3 tools activas + las 5 descartadas. El stack actual
+> son las 3 que ofrecen acceso libre real (API publica o codigo OSS
+> propio); las otras 5 fueron descartadas tras verificacion directa.
 
 [< README](README.md) | [02 Auth setup >](02-auth-setup.md)
 
-## 1. Is Your Site Agent-Ready? (isitagentready)
+## Tools activas (3)
+
+### 1. isitagentready (Cloudflare)
 
 | Campo | Valor |
 |-------|-------|
-| URL del audit | `https://isitagentready.com` |
+| Endpoint | `POST https://isitagentready.com/api/scan` |
 | Auth | Anonima |
 | Respaldo | Cloudflare (oficial, lanzada abril 2026) |
-| Disclaimer en pie | "AI-generated recommendations. AI can make mistakes... Cloudflare assumes no liability" |
-| Que devuelve | Score global 0-100 + 5 categorias: Discoverability, Content Accessibility, Bot Access Control, Protocol Discovery, Commerce Standards |
-| Detalle por categoria | Lista de checks pasados/fallados con recomendacion copy-paste para coding agents (Claude Code, Cursor) |
-| Rate-limit observado | ~1 audit cada 10s por IP. Si dispara captcha, retry con backoff suele resolver |
-| DOM stable | Selectores conviven con clases hash; preferir matching por data-attributes o aria-labels |
+| Que devuelve | Level 0-5 (0=No-Bot-Aware, 5=Agent-Native), 5 categorias: discoverability, contentAccessibility, botAccessControl, discovery, commerce. Cada categoria con checks pass/fail/neutral |
+| Rate-limit observado | ~1 audit/10s por IP, sin rate-limit oficial documentado |
+| Notas | El sitio tiene MCP server en `/.well-known/mcp.json`; el endpoint `/api/scan` es la fuente que la UI consume internamente |
 
-**Parser captura**:
+**Parser captura** (en `ai_audit/tools/isitagentready.py`):
 
-- `score` global (numero)
-- `categories` dict {nombre: score}
-- `fixes` lista de hasta 5 con `{severity, category, issue, fix, file?}`
+- `score` = `level` (0-5)
+- `categories` dict con % de checks `pass` por categoria (excluye `neutral` del divisor)
+- `fixes` lista de hasta 5 priorizada por `nextLevel.requirements` (HIGH) + checks failing (MEDIUM)
 
-## 2. AI Visibility Checker (aibotchecker)
+### 2. validators (codigo OSS propio)
 
 | Campo | Valor |
 |-------|-------|
-| URL del audit | `https://aibotchecker.online` |
+| Tipo | Codigo Python (httpx + bs4), sin dep externa pesada |
 | Auth | Anonima |
-| Respaldo | Independiente (no afiliada a Cloudflare ni a SEO suites) |
-| Que devuelve | 60+ checks per-agent con severidad. Compara crawl con user-agent de browser vs user-agent de cada AI bot (GPTBot, ClaudeBot, PerplexityBot, OAI-SearchBot, ChatGPT-User, Anthropic-Claude-Web, Google-Extended, CCBot) |
-| Detalle por agente | Status (allow/block) + accesibilidad efectiva + diffs HTML vs browser |
-| Rate-limit observado | Mas tolerante (~1 audit cada 5s). Pero respeta robots.txt — si bloqueas su crawler en robots.txt, no funciona |
-| DOM stable | Tabla per-agent estable. Severidad por color (clase CSS) |
+| Que devuelve | 4 checks: llms.txt spec, robots.txt AI bots blocked, sitemap.xml validez, JSON-LD Person/Organization |
+| Notas | Fetcha los 4 recursos en paralelo con asyncio.gather; cada validator es una funcion pura testeable sin red |
 
-**Parser captura**:
+**Validators** (en `ai_audit/validators.py`):
 
-- `score` global (numero) si lo expone; si no, agregado ponderado por agente
-- `categories` dict {agente: status_summary}
-- `fixes` lista de hasta 5 ordenadas por severidad
+- `validate_llms_txt(content)` — header H1 + links markdown + size < 100 KB (spec llmstxt.org)
+- `validate_robots_ai_bots(content)` — detecta `Disallow: /` en bloques de GPTBot, ClaudeBot, PerplexityBot, CCBot, Google-Extended, ChatGPT-User, OAI-SearchBot, anthropic-ai, Applebot-Extended, cohere-ai
+- `validate_sitemap_xml(content)` — shape valida (urlset o sitemapindex) + count de `<loc>`
+- `validate_json_ld_person(html)` — extrae todos los `@type` de los `<script type="application/ld+json">` y verifica presencia de `Person` u `Organization`
 
-## 3. Ahrefs AI Visibility Checker
+**Tool wrapper** (en `ai_audit/tools/validators.py`):
 
-| Campo | Valor |
-|-------|-------|
-| URL del audit | `https://ahrefs.com/ai-visibility-checker` |
-| Auth | Cuenta Ahrefs gratis (Ahrefs Webmaster Tools) |
-| Respaldo | Ahrefs (proveedor SEO) |
-| Que devuelve | Brand mentions y citaciones en respuestas de ChatGPT, Gemini, Perplexity, Microsoft Copilot, Google AI Overviews |
-| Detalle | Lista de prompts donde aparece el dominio + sentiment + posicion |
-| Rate-limit observado | Estricto (~5 checks/dia cuenta free) |
-| DOM stable | Cambia frecuentemente — UI suite. Selectores via data-test-id donde existan |
+- `score` = % de los 4 checks con status `pass`
+- `categories` dict con 100 o 0 por cada check
+- `fixes` lista con severity HIGH para robots/json-ld (impacto en discoverability), MEDIUM para llms/sitemap
 
-**Parser captura**:
-
-- `score` global = nro de plataformas IA donde aparece (0-5)
-- `categories` dict {plataforma: nro_mentions}
-- `fixes` lista con sugerencias del propio Ahrefs (si las muestra) o vacia
-
-**StorageState**: `docker/env/dev-cli/ai-audit/ahrefs.json` (LOCAL-ONLY).
-
-## 4. Semrush AI Visibility Audit
+### 3. lighthouse_psi (Google PageSpeed Insights)
 
 | Campo | Valor |
 |-------|-------|
-| URL del audit | `https://www.semrush.com/ai-visibility-audit` |
-| Auth | Cuenta Semrush gratis |
-| Respaldo | Semrush (proveedor SEO) |
-| Que devuelve | AI readiness score + technical blocking + content audit + trafico real desde plataformas IA |
-| Detalle | Lista de issues tecnicos + sugerencias + integracion con sitemap y robots.txt del usuario |
-| Rate-limit observado | Estricto en cuenta free; ~2-3 audits/dia para dominios nuevos |
-| DOM stable | Cambia con releases del producto. Suite SaaS — sin contrato de estabilidad |
+| Endpoint | `GET https://www.googleapis.com/pagespeedonline/v5/runPagespeed` |
+| Auth | API key gratuita (Google Cloud Console, sin tarjeta) |
+| Free tier | 25 000 requests/dia, 100 req/100s |
+| Que devuelve | 4 categorias Lighthouse 0-100: Performance, SEO, Accessibility, BestPractices + audits failing con weight |
+| Notas | El cold scan demora ~10-30s. Si la key no esta seteada, el tool reporta SKIPPED sin abortar el run |
 
-**Parser captura**:
+**Parser captura** (en `ai_audit/tools/lighthouse_psi.py`):
 
-- `score` global 0-100
-- `categories` dict {Technical, Content, Visibility}
-- `fixes` lista de hasta 5 con severidad
+- `score` = promedio de las 4 categorias Lighthouse
+- `categories` dict con score 0-100 por categoria (o `'n/a'` si Lighthouse no la corrio)
+- `fixes` Top 5 audits failing ordenados por `weight DESC` con severity por threshold (>=5 HIGH, >=2 MEDIUM, sino LOW)
 
-**StorageState**: `docker/env/dev-cli/ai-audit/semrush.json` (LOCAL-ONLY).
+**Setup**: ver [02-auth-setup.md](02-auth-setup.md).
 
-## Ranking de fragilidad
+## Tools descartadas (5)
 
-| Tool | Fragilidad del scraper | Razon |
-|------|------------------------|-------|
-| isitagentready | Baja | UI simple, dominio estable, sin login |
-| aibotchecker | Baja | UI tabular estable, sin login |
-| Ahrefs | Alta | Suite SaaS que cambia DOM con releases + auth |
-| Semrush | Alta | Idem Ahrefs, ademas dashboard mas dinamico |
+### a. aibotchecker.online — DESCARTADA mayo 2026
 
-Si Ahrefs o Semrush rompen el parser, el script reporta `ERROR` para
-ese (target, tool) y continua. El reporte final lo lista para que el
-dev decida si actualizar el selector ahora o despues.
+| Razon | Detalle |
+|-------|---------|
+| No tiene API publica | Endpoints comunes (`/api/check`, `/api/scan`, `/api/audit`) responden HTTP 404 |
+| Free tier requiere signup | El boton "Run free check" en home no dispara ningun fetch sin login (verificado via XHR sniff) |
+| Overlap ~99% con isitagentready | Mide los mismos AI bots (GPTBot, ClaudeBot, PerplexityBot) + robots.txt |
 
-## Por que estas 4 y no otras
+### b. Ahrefs AI Visibility Checker — DESCARTADA mayo 2026
 
-| Alternativa | Por que NO incluirla |
-|-------------|----------------------|
-| Profound (profound.com) | API de pago, no scraping practico |
-| Otterly (otterly.ai) | Solo paid, dataset cerrado |
-| Brandwise / AI Brand Search | Mercado nuevo, sin trayectoria de estabilidad de DOM |
-| Lighthouse / PageSpeed Insights | Mide perf/SEO clasico, NO agent-readiness |
+| Razon | Detalle |
+|-------|---------|
+| API key cuesta $500+/mes | Brand Radar (feature de AI visibility) es addon pago del plan base |
+| Webapp gratis sin endpoint JSON | El UI renderea HTML/JS, sin endpoint publico tipo `/api/check` |
+| Riesgo legal | Google demando a SerpApi en 2025 por scraping; precedente afecta similares |
 
-Si en el futuro alguna 5ta vale la pena, agregar un nuevo archivo
-en `devtools/ai_audit/tools/<nombre>.py` siguiendo el contrato.
+### c. Semrush AI Visibility Audit — DESCARTADA mayo 2026
+
+| Razon | Detalle |
+|-------|---------|
+| API requiere plan Business $499/mes | Free tier no incluye NINGUN acceso a API |
+| AI Visibility Toolkit es addon $99/mes adicional | Total minimo ~$600/mes para acceso programatico |
+| Webapp gratis con rate-limit estricto | ~2-3 audits/dia para dominios nuevos en cuenta free |
+
+### d. Cloro (cloro.dev) — DESCARTADA mayo 2026
+
+| Razon | Detalle |
+|-------|---------|
+| Research previo lo presento como "free 500 credits sin signup" | FALSO — verificado directo: `POST /v1/monitor/chatgpt` sin Authorization devuelve HTTP 401 |
+| Plan minimo Hobby cuesta $100/mes (250k credits) | Costo por request: 3-7 credits dependiendo del LLM, no escala para auditoria periodica gratis |
+
+### e. HubSpot AEO Grader — DESCARTADA mayo 2026
+
+| Razon | Detalle |
+|-------|---------|
+| Brand-based, no URL-based | Form pide `companyName`+`geography`+`productsServices`+`industry`, mide presencia de la MARCA en LLMs, no audita una URL |
+| reCAPTCHA en el form | `<textarea name="g-recaptcha-response">` bloquea scraping headless |
+| No matchea el modelo del portfolio | Un dev sin "brand" empresarial no tiene queries naturales tipo "What does Pablo Contreras sell?" |
+
+## Tools NO evaluadas
+
+| Tool | Razon |
+|------|-------|
+| Otterly.AI, LLMrefs, SE Ranking | UI-only freemium sin API (verificado en research previo); no scripteables |
+| Profound (tryprofound.com) | Requiere signup + plan pago |
+| Brave Search API | Free tier eliminado en 2026, ahora metered billing |
+
+Si en el futuro alguna alternativa surge con API publica gratis real,
+agregar un nuevo archivo en `devtools/ai_audit/tools/<nombre>.py`
+siguiendo el contrato del Protocol `Tool`.
 
 [< README](README.md) | [02 Auth setup >](02-auth-setup.md)

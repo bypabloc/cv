@@ -37,20 +37,26 @@ falla por permisos / disco, ejecutarlo a mano.
 guarda screenshot al fallar). Si se ve un Cloudflare challenge, es
 diagnostico 1 o 2. Si se ve UI rota / vacia, es diagnostico 3.
 
-## Un tool reporta PARTIAL en todos los targets
+## lighthouse_psi reporta SKIPPED
 
-**Sintoma**: Ahrefs o Semrush devuelven `PARTIAL` para los 6 niches.
+**Sintoma**: `lighthouse_psi` siempre devuelve `SKIPPED` con razon
+`PSI_API_KEY missing en docker/env/dev-cli/.{env}`.
 
-**Diagnostico**: storageState expiro o no es valido.
+**Diagnostico**: la API key gratis de Google no esta seteada.
 
-**Fix**:
+**Fix**: seguir [02-auth-setup.md](02-auth-setup.md). Resumen:
 
-```bash
-# Validar primero
-python devtools/run.py ai_audit setup --tool=ahrefs --check-only
-# Si dice EXPIRED, regenerar:
-python devtools/run.py ai_audit setup --tool=ahrefs
-```
+1. Crear key en https://console.cloud.google.com/apis/credentials
+2. Habilitar "PageSpeed Insights API" en el proyecto.
+3. Pegar en el `.env` del env activo:
+   ```text
+   PSI_API_KEY=<paste>
+   ```
+   en `docker/env/dev-cli/.local` (o `.dev`/`.stage`/`.prod`).
+4. Verificar:
+   ```bash
+   python devtools/run.py ai_audit --tools=lighthouse_psi --niches=generic
+   ```
 
 ## ERROR en isitagentready solamente
 

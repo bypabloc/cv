@@ -5,8 +5,11 @@ validado por flags.py.
 
 Subcomandos:
 - audit   (default): scrapea targets x tools y produce snapshot+report
-- setup:  abre browser interactivo para guardar storageState
 - report: re-renderiza Markdown desde un snapshot.json existente
+
+Nota: el subcomando `setup` fue eliminado cuando se descontinuo el
+soporte de storageState (las tools activas son anonimas o usan API
+key gratuita resuelta directo desde docker/env/dev-cli/.{env}).
 
 Exit codes:
   0 -> exito (puede incluir PARTIAL / SKIPPED)
@@ -17,44 +20,24 @@ Exit codes:
 import asyncio
 from datetime import UTC
 from datetime import datetime
+import os
 from pathlib import Path
 import sys
 
-from ai_audit import auth
+from shared.paths import PROJECT_ROOT
+
 from ai_audit import catalog
 from ai_audit import report
 from ai_audit import scraper
 from ai_audit.tools.base import Status
-from shared.paths import PROJECT_ROOT
 
 
 def main(flags: dict) -> int:
     """Router de subcomandos. flags ya validado por flags.py."""
     sub = flags['subcommand']
-    if sub == 'setup':
-        return _run_setup(flags)
     if sub == 'report':
         return _run_report(flags)
     return _run_audit(flags)
-
-
-def _run_setup(flags: dict) -> int:
-    """Setup interactivo o check-only de storageState."""
-    tool = flags['tool']
-    if flags.get('check_only', False):
-        state = auth.check(tool)
-        print(state.value)
-        return 0 if state == auth.AuthState.VALID else 1
-
-    login_url = auth.LOGIN_URLS.get(tool)
-    if not login_url:
-        print(
-            f"setup: tool '{tool}' no requiere auth "
-            '(isitagentready y aibotchecker son anonimas)',
-        )
-        return 2
-    asyncio.run(auth.setup_interactive(tool, login_url))
-    return 0
 
 
 def _run_report(flags: dict) -> int:
@@ -78,6 +61,10 @@ def _run_report(flags: dict) -> int:
 def _run_audit(flags: dict) -> int:
     """Comando default: scrapea targets x tools y produce snapshot+report."""
     scraper.auto_install_chromium()
+
+    # PSI_ENV permite que LighthousePsi resuelva PSI_API_KEY desde
+    # docker/env/dev-cli/.{env} correcto en runtime.
+    os.environ['PSI_ENV'] = flags['env']
 
     targets = catalog.resolve_targets(
         env=flags['env'],

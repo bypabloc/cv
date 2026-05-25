@@ -1,9 +1,12 @@
 """Flag validation for ai_audit command.
 
-Soporta 3 subcomandos:
+Soporta 2 subcomandos:
 - (default)  audita los targets contra las tools elegidas
-- setup      guarda Playwright storageState para una tool
 - report     re-renderiza el Markdown desde un snapshot.json existente
+
+Nota: el subcomando `setup` fue eliminado cuando se migro de tools que
+requerian storageState (Ahrefs/Semrush) a tools con API publica o API
+key gratuita (isitagentready, validators OSS propios, lighthouse_psi).
 """
 
 import sys
@@ -15,8 +18,8 @@ from utils.flags_to_dict import validate_allowed_flags
 
 VALID_ENVS = ('local', 'dev', 'stage', 'prod')
 VALID_NICHES = ('generic', 'hub', 'fintech', 'architect', 'leader', 'vibe')
-VALID_TOOLS = ('isitagentready', 'aibotchecker', 'ahrefs', 'semrush')
-VALID_SUBCOMMANDS = ('audit', 'setup', 'report')
+VALID_TOOLS = ('isitagentready', 'validators', 'lighthouse_psi')
+VALID_SUBCOMMANDS = ('audit', 'report')
 
 ALLOWED_FLAGS = [
     # Globales
@@ -26,9 +29,6 @@ ALLOWED_FLAGS = [
     'targets',
     'headless',
     'help',
-    # Setup-only
-    'tool',
-    'check_only',
     # Report-only
     'snapshot',
 ]
@@ -47,16 +47,12 @@ def flag(flags_dict: dict) -> dict:
             'tools': '',
             'targets': '',
             'headless': True,
-            'tool': '',
-            'check_only': False,
             'snapshot': '',
         },
     )
 
     sub = normalized['subcommand']
-    if sub == 'setup':
-        _validate_setup(normalized)
-    elif sub == 'report':
+    if sub == 'report':
         _validate_report(normalized)
     else:
         _validate_audit(normalized)
@@ -65,7 +61,7 @@ def flag(flags_dict: dict) -> dict:
 
 
 def _extract_subcommand(flags_dict: dict) -> None:
-    """Extract positional subcommand (audit | setup | report).
+    """Extract positional subcommand (audit | report).
 
     Default: 'audit'. Si el primer posicional no es un subcomando
     conocido, lo rechaza con un mensaje claro (evita typos
@@ -129,18 +125,6 @@ def _validate_audit(normalized: dict) -> None:
     normalized['targets'] = targets
 
 
-def _validate_setup(normalized: dict) -> None:
-    """Valida flags del subcomando setup."""
-    tool = normalized['tool']
-    if not tool:
-        raise ValueError('setup requires --tool=<X>')
-    if tool not in VALID_TOOLS:
-        raise ValueError(
-            f"--tool='{tool}' invalido. Valores validos: "
-            + ', '.join(VALID_TOOLS),
-        )
-
-
 def _validate_report(normalized: dict) -> None:
     """Valida flags del subcomando report."""
     if not normalized['snapshot']:
@@ -194,20 +178,15 @@ def describe() -> ScriptDescribe:
         'name': 'ai_audit',
         'kind': 'subcommand',
         'summary': (
-            'Audita preparacion para IA scrapeando 4 tools '
-            '(isitagentready, aibotchecker, Ahrefs, Semrush)'
+            'Audita preparacion para IA combinando 3 fuentes: '
+            'isitagentready (API publica), validators OSS propios '
+            '(llms.txt+robots+sitemap+JSON-LD) y Google PageSpeed Insights'
         ),
         'commands': [
             {
                 'name': 'audit',
                 'summary': 'Default. Corre el audit sobre los targets',
                 'flags': ['env', 'niches', 'tools', 'targets', 'headless'],
-                'destructive': False,
-            },
-            {
-                'name': 'setup',
-                'summary': 'Guarda storageState de Playwright (login interactivo)',
-                'flags': ['tool', 'check_only'],
                 'destructive': False,
             },
             {
@@ -232,23 +211,12 @@ def describe() -> ScriptDescribe:
             'tools': {
                 'type': 'string',
                 'default': '',
-                'summary': 'CSV de tools (default: las 4)',
+                'summary': 'CSV de tools (default: las 3)',
             },
             'targets': {
                 'type': 'string',
                 'default': '',
                 'summary': 'CSV niche:/path (default: home de cada niche)',
-            },
-            'tool': {
-                'type': 'choice',
-                'choices': list(VALID_TOOLS),
-                'default': '',
-                'summary': '(setup) tool a configurar',
-            },
-            'check_only': {
-                'type': 'bool',
-                'default': False,
-                'summary': '(setup) solo verifica storageState, no abre browser',
             },
             'snapshot': {
                 'type': 'string',

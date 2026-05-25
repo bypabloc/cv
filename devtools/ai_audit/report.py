@@ -23,9 +23,8 @@ from ai_audit.tools.base import ToolResult
 # Max score por tool para normalizar a 0-100 en la tabla resumen.
 TOOL_SCORE_MAX: dict[str, int] = {
     'isitagentready': 5,
-    'aibotchecker': 100,
-    'ahrefs': 5,
-    'semrush': 100,
+    'validators': 100,
+    'lighthouse_psi': 100,
 }
 
 SEVERITY_WEIGHT: dict[Severity, int] = {

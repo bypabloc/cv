@@ -8,13 +8,12 @@ from datetime import datetime
 import json
 from pathlib import Path
 
-import pytest
-
 from ai_audit import report
 from ai_audit.tools.base import Fix
 from ai_audit.tools.base import Severity
 from ai_audit.tools.base import Status
 from ai_audit.tools.base import ToolResult
+import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -249,16 +248,16 @@ def test_render_markdown_when_called_twice_then_idempotent(
     assert first == second
 
 
-def test_write_snapshot_when_ahrefs_then_score_kept_as_is(
+def test_write_snapshot_when_5_scale_tool_then_score_kept_as_is(
     tmp_path: Path,
 ) -> None:
     """
-    Given un result de Ahrefs con score=3 (de 5 max),
+    Given un result de isitagentready con score=3 (de 5 max),
     When write_snapshot,
     Then el JSON guarda score=3 (sin normalizar — normalizacion vive
     en el render).
     """
-    r = _result(tool='ahrefs', score=3)
+    r = _result(tool='isitagentready', score=3)
     path = tmp_path / 'snapshot.json'
 
     report.write_snapshot(
@@ -272,15 +271,15 @@ def test_write_snapshot_when_ahrefs_then_score_kept_as_is(
     assert data['results'][0]['score'] == 3
 
 
-def test_render_markdown_when_ahrefs_then_table_shows_normalized_avg(
+def test_render_markdown_when_5_scale_tool_then_table_shows_normalized_avg(
     tmp_path: Path,
 ) -> None:
     """
-    Given un result de Ahrefs score=3 (max 5),
+    Given un result de isitagentready score=3 (max 5),
     When render_markdown,
     Then la tabla muestra '3/5' y avg normalizado 60.
     """
-    r = _result(tool='ahrefs', score=3)
+    r = _result(tool='isitagentready', score=3)
     snap = tmp_path / 'snapshot.json'
     report.write_snapshot(
         results=[r],

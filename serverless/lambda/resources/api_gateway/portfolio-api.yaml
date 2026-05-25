@@ -27,19 +27,19 @@ custom_domain_by_stage:
   # api.portfolio -> 'prod'.
   dev:
     domain_name: api.portfolio.dev.the-full-stack.com
-    endpoint_type: EDGE
+    endpoint_type: REGIONAL
     certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
     base_path_mappings:
       - { base_path: '', stage: dev }
   stage:
     domain_name: api.portfolio.stage.the-full-stack.com
-    endpoint_type: EDGE
+    endpoint_type: REGIONAL
     certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
     base_path_mappings:
       - { base_path: '', stage: stage }
   prod:
     domain_name: api.portfolio.the-full-stack.com
-    endpoint_type: EDGE
+    endpoint_type: REGIONAL
     certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
     base_path_mappings:
       - { base_path: '', stage: prod }

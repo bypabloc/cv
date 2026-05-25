@@ -106,6 +106,16 @@ jobs:
       - name: Setup uv (devtools bootstrap)
         run: pip install uv
 
+      # Provision de la infra compartida (API Gateway, tablas DynamoDB,
+      # roles IAM). Idempotente: si los recursos ya existen, no los
+      # recrea (estado guardado en devtools/serverless/.state/ o S3).
+      # Primera ejecucion en un stage nuevo crea desde cero y publica
+      # ARNs/IDs en SSM (/portfolio/<stage>/...).
+      - name: Provision shared infrastructure
+        run: |
+          python devtools/run.py serverless provision-infra \
+            --stage=${{ needs.resolve-env.outputs.stage }}
+
       # Re-deploy del Lambda db ANTES de invocar migrate: puede haber
       # cambios en migrations / models que requieren el codigo actualizado.
       - name: Re-deploy Lambda db

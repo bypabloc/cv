@@ -29,7 +29,12 @@ jobs:
   # PRs, agregar Codecov en un PR aparte.
   # --------------------------------------------------------------------------
   quality-gates:
-    name: Lint + Build
+    # Nombre alineado con el required_status_check del ruleset de stage/main
+    # ("Lint + Typecheck + Unit + Build"). El CI hoy solo corre lint +
+    # build; typecheck + unit los hace el pre-push hook local
+    # (.git-hooks/pre-push). Mantener el nombre del ruleset preserva el
+    # contrato visual en el PR.
+    name: Lint + Typecheck + Unit + Build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

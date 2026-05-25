@@ -1,0 +1,21 @@
+# Alarma: dispara si la DLQ del contact_worker tiene >=1 mensaje visible
+# por mas de 5 min. Indica que el worker no pudo procesar 3 retries
+# seguidos -> requiere intervencion manual.
+kind: cloudwatch-alarm
+name: portfolio-contact-form-dlq-not-empty-${stage}
+description: >
+  Hay mensajes en la DLQ del contact_worker. Revisar
+  CloudWatch Logs del worker y la consola SQS de la DLQ.
+metric:
+  namespace: AWS/SQS
+  name: ApproximateNumberOfMessagesVisible
+  dimensions:
+    QueueName: portfolio-contact-form-dlq-${stage}
+threshold: 0
+comparison: GreaterThanThreshold
+evaluation_periods: 1
+period_seconds: 300
+statistic: Maximum
+treat_missing_data: notBreaching
+alarm_actions: []
+tags: { Project: portfolio, ManagedBy: devtools }

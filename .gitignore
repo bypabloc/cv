@@ -32,6 +32,10 @@ docker/env/*/.stage
 docker/env/*/.test
 docker/env/*/.prod
 
+# ai_audit (devtools/ai_audit): Playwright storageState personal del dev
+# (cookies de Ahrefs/Semrush, categoria dev-cli, LOCAL-ONLY).
+docker/env/dev-cli/ai-audit/
+
 # Python (devtools, .git-hooks)
 __pycache__/
 *.pyc

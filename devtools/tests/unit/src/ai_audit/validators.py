@@ -107,6 +107,47 @@ class TestValidateRobotsAiBots:
         assert result['status'] == 'fail'
         assert 'GPTBot' in result['message']
         assert 'GPTBot' in result['details']['blocked']
+        assert result['details']['managed'] is False
+
+    def test_cloudflare_managed_block_returns_neutral(self) -> None:
+        """
+        Given robots.txt con la firma '# BEGIN Cloudflare Managed content'
+            y AI bots bloqueados,
+        When validate,
+        Then status=neutral con details.managed=True.
+        """
+        content = (
+            '# BEGIN Cloudflare Managed content\n'
+            'User-agent: GPTBot\nDisallow: /\n'
+            'User-agent: ClaudeBot\nDisallow: /\n'
+        )
+
+        result = validate_robots_ai_bots(content)
+
+        assert result['status'] == 'neutral'
+        assert result['details']['managed'] is True
+        assert set(result['details']['blocked']) >= {'GPTBot', 'ClaudeBot'}
+        assert 'Cloudflare Content Signals' in result['message']
+
+    def test_cloudflare_content_signals_long_signature_returns_neutral(
+        self,
+    ) -> None:
+        """
+        Given robots.txt con el comentario header de Content Signals
+            (otra firma reconocible),
+        When validate,
+        Then status=neutral.
+        """
+        content = (
+            '# As a condition of accessing this website, you agree to '
+            'abide by the following content signals:\n'
+            'User-agent: GPTBot\nDisallow: /\n'
+        )
+
+        result = validate_robots_ai_bots(content)
+
+        assert result['status'] == 'neutral'
+        assert result['details']['managed'] is True
 
     def test_claudebot_disallow_all_returns_fail(self) -> None:
         """Given User-agent: ClaudeBot + Disallow: /, Then fail."""

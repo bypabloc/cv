@@ -54,14 +54,17 @@ class Validators:
             raise ParseError(f'http error: {exc}') from exc
 
         validation = self._run_validators(target, results)
-        validation = _with_duration(validation, start)
-        return validation
+        return _with_duration(validation, start)
 
     async def _fetch_all(
         self,
         target: str,
     ) -> dict[str, str | None]:
-        """Fetcha llms.txt, robots.txt, sitemap.xml y home en paralelo."""
+        """Fetcha llms.txt, robots.txt, sitemap.xml y home en paralelo.
+
+        Si /sitemap.xml no devuelve XML valido (404 o HTML), prueba
+        con /sitemap-index.xml (lo que Astro genera por default).
+        """
         async with httpx.AsyncClient(
             timeout=_TIMEOUT_SECONDS,
             follow_redirects=True,
@@ -80,16 +83,34 @@ class Validators:
                 *[client.get(u) for u in urls],
                 return_exceptions=True,
             )
-        out: dict[str, str | None] = {}
-        for path, response in zip(paths, responses, strict=True):
-            key = path.lstrip('/') or 'home'
-            if isinstance(response, Exception):
-                out[key] = None
-                continue
-            if response.status_code != 200:
-                out[key] = None
-                continue
-            out[key] = response.text
+            out: dict[str, str | None] = {}
+            for path, response in zip(paths, responses, strict=True):
+                key = path.lstrip('/') or 'home'
+                if isinstance(response, Exception):
+                    out[key] = None
+                    continue
+                if response.status_code != 200:
+                    out[key] = None
+                    continue
+                out[key] = response.text
+
+            # Fallback: si sitemap.xml ausente o NO empieza con XML,
+            # probar /sitemap-index.xml (default Astro).
+            if _needs_sitemap_fallback(out.get('sitemap.xml')):
+                try:
+                    fallback = await client.get(
+                        validators.normalize_url(target, '/sitemap-index.xml'),
+                    )
+                    if (
+                        fallback.status_code == 200
+                        and fallback.text.lstrip().startswith(
+                            ('<?xml', '<urlset', '<sitemapindex'),
+                        )
+                    ):
+                        out['sitemap.xml'] = fallback.text
+                except httpx.HTTPError:  # noqa: S110 - fallback best-effort
+                    pass
+
         return out
 
     def _run_validators(
@@ -111,15 +132,20 @@ class Validators:
             ),
         }
 
-        passed = sum(1 for v in per_check.values() if v['status'] == 'pass')
+        # Score: pass=1.0, neutral=0.5, fail=0.0. Neutral cuenta como
+        # medio credito porque es un estado intencional del owner
+        # (ej. Cloudflare-managed robots) que NO penalizamos como fail.
         total = len(per_check)
-        score = round(passed / total * 100)
+        weighted = sum(_status_weight(v['status']) for v in per_check.values())
+        score = round(weighted / total * 100) if total else 0
 
         categories: dict[str, int | str] = {
-            name: 100 if v['status'] == 'pass' else 0
+            name: round(_status_weight(v['status']) * 100)
             for name, v in per_check.items()
         }
 
+        # Solo los `fail` generan Fix; `neutral` es intencional, sin
+        # accion requerida.
         fixes = tuple(
             Fix(
                 severity=_severity_for(name),
@@ -175,6 +201,29 @@ _FIX_HINTS = {
         'home: <script type="application/ld+json">{"@context":"...","@type":"Person",...}</script>'
     ),
 }
+
+
+def _needs_sitemap_fallback(content: str | None) -> bool:
+    """True si /sitemap.xml no parece XML valido (404 o catch-all HTML).
+
+    Astro genera por default `/sitemap-index.xml` y NO `/sitemap.xml`,
+    asi que el endpoint canonico devuelve HTML del catch-all. Caemos
+    al index si lo detectamos.
+    """
+    if not content:
+        return True
+    return not content.lstrip().startswith(
+        ('<?xml', '<urlset', '<sitemapindex'),
+    )
+
+
+def _status_weight(status: str) -> float:
+    """Pondera el status para el score: pass=1.0, neutral=0.5, fail=0.0."""
+    if status == 'pass':
+        return 1.0
+    if status == 'neutral':
+        return 0.5
+    return 0.0
 
 
 def _severity_for(check: str) -> Severity:

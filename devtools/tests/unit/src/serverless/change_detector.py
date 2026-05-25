@@ -15,6 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+
 from serverless.change_detector import ChangeKind
 from serverless.change_detector import classify_path
 from serverless.change_detector import detect_affected_lambdas
@@ -290,11 +291,10 @@ class TestCmdDetectChanges:
         """
         import json
 
-        from serverless.change_detector import cmd_detect_changes
-
         # Mockear detect_affected_lambdas para no depender del git real
         # de los tests (puede ser unstable).
         from serverless import change_detector
+        from serverless.change_detector import cmd_detect_changes
 
         monkeypatch.setattr(
             change_detector,

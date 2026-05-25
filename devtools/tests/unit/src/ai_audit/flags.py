@@ -6,8 +6,9 @@ Path mirroring: devtools/ai_audit/flags.py -> this file.
 import sys
 from unittest import mock
 
-from ai_audit.flags import flag
 import pytest
+
+from ai_audit.flags import flag
 
 
 pytestmark = pytest.mark.unit

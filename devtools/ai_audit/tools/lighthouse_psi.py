@@ -13,12 +13,10 @@ performance y seo.
 """
 
 import os
-import subprocess
 import time
 from typing import Any
 
 import httpx
-from shared.paths import PROJECT_ROOT
 
 from ai_audit.tools.base import BlockedError
 from ai_audit.tools.base import Fix
@@ -26,6 +24,7 @@ from ai_audit.tools.base import ParseError
 from ai_audit.tools.base import Severity
 from ai_audit.tools.base import Status
 from ai_audit.tools.base import ToolResult
+from shared.paths import PROJECT_ROOT
 
 
 _PSI_URL = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
@@ -47,8 +46,9 @@ class LighthousePsi:
         """Resuelve PSI_API_KEY desde docker/env/dev-cli/.{env}.
 
         El env se lee de PSI_ENV (seteado por main.py) con fallback
-        'prod'. Extraccion via `grep -m1 '^PSI_API_KEY='` para nunca
-        volcar el archivo completo al contexto (cumple env-files.md).
+        'prod'. Lee el archivo linea por linea y solo extrae la
+        PRIMERA que matchea `PSI_API_KEY=` — ningun otro valor llega
+        al runtime (cumple el espiritu de env-files.md).
         Devuelve None si no esta seteada o el archivo no existe.
         """
         env = os.environ.get('PSI_ENV', 'prod')
@@ -56,21 +56,15 @@ class LighthousePsi:
         if not env_file.exists():
             return None
         try:
-            result = subprocess.run(  # noqa: S603
-                ['grep', '-m1', '^PSI_API_KEY=', str(env_file)],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-            )
-        except (subprocess.SubprocessError, FileNotFoundError):
+            with env_file.open(encoding='utf-8') as f:
+                for raw_line in f:
+                    if raw_line.startswith('PSI_API_KEY='):
+                        _, _, value = raw_line.partition('=')
+                        value = value.strip().strip('"').strip("'")
+                        return value or None
+        except OSError:
             return None
-        if result.returncode != 0 or not result.stdout.strip():
-            return None
-        line = result.stdout.strip()
-        _, _, value = line.partition('=')
-        value = value.strip().strip('"').strip("'")
-        return value or None
+        return None
 
     async def scrape(self, page: Any, target: str) -> ToolResult:
         """GET al PSI API. SKIPPED si no hay API key."""
@@ -170,7 +164,7 @@ class LighthousePsi:
         )
 
 
-def _build_fixes(lighthouse: dict[str, Any]) -> tuple[Fix, ...]:
+def _build_fixes(lighthouse: dict[str, Any]) -> tuple[Fix, ...]:  # noqa: C901
     """Top audits con weight>0 y score<1.0 ordenados por impacto."""
     audits = lighthouse.get('audits') or {}
     cats = lighthouse.get('categories') or {}

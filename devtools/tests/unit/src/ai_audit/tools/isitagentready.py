@@ -11,11 +11,12 @@ mezclados y `nextLevel.requirements` poblado).
 import json
 from pathlib import Path
 
+import pytest
+
 from ai_audit.tools.base import ParseError
 from ai_audit.tools.base import Severity
 from ai_audit.tools.base import Status
 from ai_audit.tools.isitagentready import IsItAgentReady
-import pytest
 
 
 pytestmark = pytest.mark.unit

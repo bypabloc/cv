@@ -209,7 +209,7 @@ def auto_install_chromium() -> None:
         msg = 'playwright no instalado. Correr: cd devtools && uv sync'
         raise RuntimeError(msg) from None
     # Idempotente: si chromium ya esta, no descarga nada.
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         [sys.executable, '-m', 'playwright', 'install', 'chromium'],
         check=True,
         capture_output=True,

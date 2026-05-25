@@ -20,8 +20,7 @@ pytestmark = pytest.mark.unit
 _VALID_LLMS = '# Portfolio\n\n- [Home](https://x.com/)\n'
 _VALID_ROBOTS = 'User-agent: *\nAllow: /\n'
 _VALID_SITEMAP = (
-    '<?xml version="1.0"?>'
-    '<urlset><url><loc>https://x.com/</loc></url></urlset>'
+    '<?xml version="1.0"?><urlset><url><loc>https://x.com/</loc></url></urlset>'
 )
 _VALID_HOME = (
     '<html><script type="application/ld+json">'
@@ -175,6 +174,101 @@ class TestRunValidators:
         )
 
         assert result.target == 'https://the-full-stack.com/cv'
+
+
+class TestRunValidatorsNeutralStatus:
+    """Scoring con status='neutral' (intencional, ej. Cloudflare managed)."""
+
+    def test_neutral_robots_counts_as_half(self) -> None:
+        """
+        Given robots Cloudflare-managed (status=neutral) + otros 3 pass,
+        When _run_validators,
+        Then score=(1+0.5+1+1)/4*100=88, category robots=50.
+        """
+        tool = Validators()
+        cloudflare_managed = (
+            '# BEGIN Cloudflare Managed content\n'
+            'User-agent: GPTBot\nDisallow: /\n'
+        )
+        fetched = {
+            'llms.txt': _VALID_LLMS,
+            'robots.txt': cloudflare_managed,
+            'sitemap.xml': _VALID_SITEMAP,
+            'home': _VALID_HOME,
+        }
+
+        result = tool._run_validators(
+            'https://x.com',
+            fetched,
+        )
+
+        assert result.score == 88
+        assert result.categories['robots.txt'] == 50
+
+    def test_neutral_does_not_generate_fix(self) -> None:
+        """
+        Given robots Cloudflare-managed + sitemap fail,
+        When _run_validators,
+        Then fixes incluye sitemap pero NO robots (neutral no genera Fix).
+        """
+        tool = Validators()
+        cloudflare_managed = (
+            '# BEGIN Cloudflare Managed content\n'
+            'User-agent: GPTBot\nDisallow: /\n'
+        )
+        fetched = {
+            'llms.txt': _VALID_LLMS,
+            'robots.txt': cloudflare_managed,
+            'sitemap.xml': None,
+            'home': _VALID_HOME,
+        }
+
+        result = tool._run_validators(
+            'https://x.com',
+            fetched,
+        )
+
+        fix_categories = {f.category for f in result.fixes}
+        assert 'sitemap.xml' in fix_categories
+        assert 'robots.txt' not in fix_categories
+
+
+class TestNeedsSitemapFallback:
+    """_needs_sitemap_fallback detecta sitemap.xml ausente o no-XML."""
+
+    def test_none_content_returns_true(self) -> None:
+        """Given content None (HTTP 4xx), Then fallback necesario."""
+        from ai_audit.tools.validators import _needs_sitemap_fallback
+
+        assert _needs_sitemap_fallback(None) is True
+
+    def test_html_content_returns_true(self) -> None:
+        """Given catch-all HTML del 404 de Astro, Then fallback necesario."""
+        from ai_audit.tools.validators import _needs_sitemap_fallback
+
+        assert _needs_sitemap_fallback('<!DOCTYPE html><html>...') is True
+
+    def test_xml_urlset_returns_false(self) -> None:
+        """Given XML valido (urlset), Then fallback NO necesario."""
+        from ai_audit.tools.validators import _needs_sitemap_fallback
+
+        assert (
+            _needs_sitemap_fallback(
+                '<?xml version="1.0"?><urlset>...</urlset>',
+            )
+            is False
+        )
+
+    def test_xml_sitemapindex_returns_false(self) -> None:
+        """Given sitemapindex valido, Then fallback NO necesario."""
+        from ai_audit.tools.validators import _needs_sitemap_fallback
+
+        assert (
+            _needs_sitemap_fallback(
+                '<?xml version="1.0"?><sitemapindex>...</sitemapindex>',
+            )
+            is False
+        )
 
 
 class TestMetadata:

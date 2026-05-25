@@ -8,12 +8,13 @@ from datetime import datetime
 import json
 from pathlib import Path
 
+import pytest
+
 from ai_audit import report
 from ai_audit.tools.base import Fix
 from ai_audit.tools.base import Severity
 from ai_audit.tools.base import Status
 from ai_audit.tools.base import ToolResult
-import pytest
 
 
 pytestmark = pytest.mark.unit

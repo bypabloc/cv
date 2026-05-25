@@ -32,6 +32,15 @@ from bs4 import BeautifulSoup
 
 
 _LLMS_TXT_MAX_BYTES = 100_000  # spec limit informal (100 KB)
+
+# Firmas reconocibles del bloque robots.txt managed por Cloudflare
+# "Content Signals" feature. Cuando estos comentarios aparecen, los
+# bloqueos de AI bots son intencionales (decision del owner via
+# Cloudflare dashboard), no un descuido del sitio.
+_CF_MANAGED_SIGNATURES = (
+    '# BEGIN Cloudflare Managed content',
+    'As a condition of accessing this website, you agree to abide',
+)
 _AI_BOTS = (
     'GPTBot',
     'ChatGPT-User',
@@ -119,10 +128,30 @@ def validate_robots_ai_bots(content: str | None) -> dict[str, Any]:
             blocked.extend(ai_in_block)
 
     if blocked:
+        # Si el bloqueo viene de Cloudflare Content Signals managed, es
+        # intencional -> reportar como 'neutral' (no fail), para que el
+        # validator no penalice una decision de policy del owner.
+        managed = _is_cloudflare_managed(content)
+        if managed:
+            return {
+                'status': 'neutral',
+                'message': (
+                    'AI bots bloqueados por Cloudflare Content Signals '
+                    '(decision intencional del owner): '
+                    f'{", ".join(sorted(set(blocked)))}'
+                ),
+                'details': {
+                    'managed': True,
+                    'blocked': sorted(set(blocked)),
+                },
+            }
         return {
             'status': 'fail',
             'message': f'AI bots bloqueados: {", ".join(sorted(set(blocked)))}',
-            'details': {'blocked': sorted(set(blocked))},
+            'details': {
+                'managed': False,
+                'blocked': sorted(set(blocked)),
+            },
         }
     return {
         'status': 'pass',
@@ -192,7 +221,7 @@ def validate_json_ld_person(html: str | None) -> dict[str, Any]:
             continue
         try:
             data = json.loads(s.string)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError:  # noqa: S112 - skip broken JSON-LD scripts
             continue
         found_types.extend(_extract_types(data))
 
@@ -255,6 +284,17 @@ def _is_full_disallow(rule: str) -> bool:
         return False
     key, value = (part.strip() for part in rule.split(':', 1))
     return key.lower() == 'disallow' and value == '/'
+
+
+def _is_cloudflare_managed(content: str) -> bool:
+    """True si el robots.txt viene de la feature Cloudflare Content Signals.
+
+    Cloudflare inyecta firmas reconocibles (un comentario header
+    explicando los content signals + el marker `# BEGIN Cloudflare
+    Managed content`). Si la firma esta, los bloqueos de AI bots son
+    intencionales (decision via dashboard de la zone).
+    """
+    return any(sig in content for sig in _CF_MANAGED_SIGNATURES)
 
 
 def _extract_types(data: object) -> list[str]:

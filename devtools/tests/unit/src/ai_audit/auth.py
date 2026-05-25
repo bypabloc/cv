@@ -8,8 +8,9 @@ scraper.py. Estos tests verifican que el stub no falla y reporta lo
 esperado.
 """
 
-from ai_audit import auth
 import pytest
+
+from ai_audit import auth
 
 
 pytestmark = pytest.mark.unit

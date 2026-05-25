@@ -24,12 +24,11 @@ import os
 from pathlib import Path
 import sys
 
-from shared.paths import PROJECT_ROOT
-
 from ai_audit import catalog
 from ai_audit import report
 from ai_audit import scraper
 from ai_audit.tools.base import Status
+from shared.paths import PROJECT_ROOT
 
 
 def main(flags: dict) -> int:

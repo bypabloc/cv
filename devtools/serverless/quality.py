@@ -1,6 +1,6 @@
 """Quality commands for the SAM backend.
 
-Ruff lint + format + typecheck (mypy) sobre serverless/src/. Alineado
+Ruff lint + format + typecheck (mypy) sobre serverless/lambda/. Alineado
 con el patron de devtools/docker/quality.py pero scoped al modulo
 serverless (Python 3.13, no Python 3.14 como devtools).
 """
@@ -20,16 +20,18 @@ from shared.console import _err
 
 
 _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
-_SRC_DIR = _SERVERLESS_DIR / 'src'
-_TESTS_DIR = _SERVERLESS_DIR / 'tests'
+# Codigo del backend: services (lambdas) + shared (libreria comun).
+_LAMBDA_DIR = _SERVERLESS_DIR / 'lambda'
+_SERVICES_DIR = _LAMBDA_DIR / 'services'
+_SHARED_DIR = _LAMBDA_DIR / 'shared'
 
 
 def _resolve_target(flags: dict[str, Any]) -> list[str]:
     """Devuelve la lista de paths a lintear segun flags.
 
-    --files=path1,path2  -> esos paths
-    --module-path=src/X/ -> ese subdir
-    sin flag             -> src/ + tests/
+    --files=path1,path2          -> esos paths
+    --module-path=lambda/X/      -> ese subdir
+    sin flag                     -> lambda/services/ + lambda/shared/
     """
     files = flags.get('files')
     if files:
@@ -39,7 +41,7 @@ def _resolve_target(flags: dict[str, Any]) -> list[str]:
     if module_path:
         return [str(_SERVERLESS_DIR / module_path)]
 
-    return [str(_SRC_DIR), str(_TESTS_DIR)]
+    return [str(_SERVICES_DIR), str(_SHARED_DIR)]
 
 
 def cmd_lint(flags: dict[str, Any]) -> int:
@@ -81,8 +83,8 @@ def cmd_format(flags: dict[str, Any]) -> int:
 
 
 def cmd_typecheck(flags: dict[str, Any]) -> int:
-    """mypy strict sobre src/."""
-    module_path = flags.get('module_path', 'src')
+    """mypy strict sobre lambda/."""
+    module_path = flags.get('module_path', 'lambda')
     args = ['mypy', '--strict', module_path]
 
     print(_c(CYAN, f'$ {" ".join(args)}'))

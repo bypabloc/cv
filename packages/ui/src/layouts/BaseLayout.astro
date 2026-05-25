@@ -28,6 +28,10 @@ import '../styles/mesh-gradients.css'
 import '../styles/scroll-driven.css'
 import '../styles/global.css'
 import '../styles/breakpoints.css'
+// Spec tracking-data-completeness: page nav fade 300ms + stagger
+// fade-in en listas + strict reduced-motion. View transitions activas
+// via <ClientRouter /> (mas abajo en el <head>).
+import '../styles/view-transitions.css'
 
 interface Alternate {
   hreflang: string
@@ -44,6 +48,8 @@ interface Props {
   llmsTxtHref?: string
   siteName?: string
   alternates?: Alternate[]
+  /** Texto del skip-link de accesibilidad (del YAML i18n `layout`). */
+  skipToContentLabel: string
 }
 
 const {
@@ -56,6 +62,7 @@ const {
   llmsTxtHref = '/llms.txt',
   siteName = 'Pablo Contreras',
   alternates,
+  skipToContentLabel,
 } = Astro.props
 
 const ogLocale = locale === 'es' ? 'es_ES' : 'en_US'
@@ -114,7 +121,7 @@ const jsonLdBlocks = jsonLd === undefined ? [] : [jsonLd].flat()
     <ClientRouter />
   </head>
   <body>
-    <a class="sr-only" href="#main">Skip to content</a>
+    <a class="sr-only" href="#main">{skipToContentLabel}</a>
     <slot name="nav" />
     <main id="main">
       <slot />

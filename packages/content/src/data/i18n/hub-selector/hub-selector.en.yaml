@@ -1,0 +1,36 @@
+# @i18n hub-selector.en
+# Hub multi-niche selector exclusive texts (English).
+# Validated by HubSelectorStringsSchema. Its pair is hub-selector.es.yaml.
+
+heroEyebrow: "Pablo Contreras · Lima, Peru · Remote LATAM/US"
+
+# Mega-headline split into 3 visual segments (lead with gradient, tail
+# dimmed). The render concatenates them with line breaks.
+heroHeadline:
+  lead: "Five"
+  mid: "angles."
+  tail: "Pick the one that fits."
+
+heroIntro: "Pick how to read my profile: fintech, architecture, leadership, vibe coding or full stack. Five angles, one single story."
+
+cardCta: "Enter"
+otherLocaleLink: "Versión en español →"
+
+# The 5 selector cards, in render order. The accent and URL are resolved in
+# code (SITE_URLS + DS tokens) — only the text lives here.
+cards:
+  - niche: generic
+    title: "Senior Full Stack"
+    blurb: "Vue + Django + AWS · 8 years · all skills"
+  - niche: fintech
+    title: "LATAM Fintech"
+    blurb: "Chile, Mexico · debt settlement · scoring · credit"
+  - niche: architect
+    title: "Architect"
+    blurb: "Microservices · microfrontend · scalable systems"
+  - niche: leader
+    title: "Tech Lead"
+    blurb: "Team leadership · mentoring · shipping product"
+  - niche: vibe
+    title: "Vibe Coding"
+    blurb: "Claude Code · Cursor · dev tools · AI workflows"

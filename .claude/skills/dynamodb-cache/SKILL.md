@@ -202,8 +202,8 @@ CacheTable:
 6 modulos listos en [06-python-implementation.md](../../docs/dynamodb-cache/06-python-implementation.md).
 
 ```bash
-# 1. Copiar a serverless/src/common/cache/
-mkdir -p serverless/src/common/cache
+# 1. Copiar a serverless/lambda/shared/cache/
+mkdir -p serverless/lambda/shared/cache
 # cache/__init__.py, client.py, decorator.py, swr.py, serializers.py, types.py
 
 # 2. IAM: dar Lambda permiso a tabla cache

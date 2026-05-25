@@ -10,18 +10,19 @@
  * @props {string} email - Email a obfuscar (b64 en data-attr)
  * @props {string} linkedin - URL completa al perfil
  * @props {string} github - URL completa al perfil
- * @props {'es'|'en'} [locale='es']
+ * @props {object} strings - Textos del componente (components.contactLinks)
  */
+import type { ComponentsStrings } from '@portfolio/content'
 import { obfuscateEmail } from '../lib/obfuscate-email'
 
 interface Props {
   email: string
   linkedin: string
   github: string
-  locale?: 'es' | 'en'
+  strings: ComponentsStrings['contactLinks']
 }
 
-const { email, linkedin, github, locale = 'es' } = Astro.props
+const { email, linkedin, github, strings } = Astro.props
 const emailB64 = obfuscateEmail(email)
 
 const extractUsername = (url: string): string => {
@@ -33,21 +34,12 @@ const linkedinUser = extractUsername(linkedin)
 const githubUser = extractUsername(github)
 
 const t = {
-  es: {
-    email: 'Email',
-    emailFallback: '(habilitar JS)',
-    copy: 'Copiar email',
-    copied: 'Copiado',
-    copyError: 'Error al copiar',
-  },
-  en: {
-    email: 'Email',
-    emailFallback: '(enable JS)',
-    copy: 'Copy email',
-    copied: 'Copied',
-    copyError: 'Copy failed',
-  },
-}[locale]
+  email: strings.emailLabel,
+  emailFallback: strings.enableJs,
+  copy: strings.copyEmail,
+  copied: strings.copied,
+  copyError: strings.copyFailed,
+}
 ---
 
 <ul class="contact-links">
@@ -114,7 +106,7 @@ const t = {
       target="_blank"
       rel="me noopener noreferrer"
     >
-      <span class="contact-links__label">LinkedIn</span>
+      <span class="contact-links__label">{strings.linkedin}</span>
       <span class="contact-links__value">{linkedinUser}</span>
     </a>
   </li>
@@ -126,7 +118,7 @@ const t = {
       target="_blank"
       rel="me noopener noreferrer"
     >
-      <span class="contact-links__label">GitHub</span>
+      <span class="contact-links__label">{strings.github}</span>
       <span class="contact-links__value">{githubUser}</span>
     </a>
   </li>
@@ -148,9 +140,11 @@ const t = {
       link.textContent = email
 
       const status = button.querySelector<HTMLSpanElement>('[data-copy-status]')
-      const labelCopy = button.dataset.labelCopy ?? 'Copy email'
-      const labelCopied = button.dataset.labelCopied ?? 'Copied'
-      const labelError = button.dataset.labelError ?? 'Copy failed'
+      // Los labels vienen de los data-label-* serializados desde el YAML
+      // i18n por el componente (siempre presentes).
+      const labelCopy = button.dataset.labelCopy ?? ''
+      const labelCopied = button.dataset.labelCopied ?? ''
+      const labelError = button.dataset.labelError ?? ''
       let resetTimer: number | undefined
 
       const setState = (state: 'idle' | 'ok' | 'error', message: string) => {

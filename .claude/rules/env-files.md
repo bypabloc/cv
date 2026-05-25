@@ -3,6 +3,11 @@
 > Claude y los subagentes NUNCA leen, importan ni vuelcan el contenido de un
 > archivo de entorno del repo. Si se necesita una key, se extrae SOLO esa key
 > con bash y se pasa inline al comando — nunca el archivo completo.
+>
+> **Esta rule complementa [secrets-strategy.md](secrets-strategy.md)**: la
+> umbrella define las 3 categorias (`client`, `server`, `dev-cli`) y el
+> comando hermetico de sync; esta rule es la politica de NO leer el `.env`
+> desde dentro de Claude/subagentes (aplica a las 3 categorias).
 
 ## Activacion
 
@@ -51,6 +56,24 @@ Los archivos `*.example` (ej. `docker/env/server/.example`) SI se pueden
 leer: estan versionados en git y contienen solo placeholders, sin valores
 reales. Sirven de plantilla — leerlos es seguro y a veces necesario para
 saber que keys existen.
+
+## Excepcion: devtools en flujo de deploy automatizado
+
+`devtools/serverless/secrets_sync.py` lee `docker/env/server/.{stage}`
+durante `serverless deploy --stage=<env>` para sincronizar a SSM. Es la
+unica excepcion a la regla "NUNCA leer un .env":
+
+- El valor pasa del archivo a un dict Python local a SSM, NUNCA a Claude.
+- Tests automaticos (`test_secrets_sync.py`) verifican que el valor no
+  aparece en stdout/stderr/subprocess args con un canary.
+- El subprocess `aws ssm put-parameter` recibe el valor via tempfile
+  (`--value file:///tmp/portfolio-ssm-X.tmp` con perms 0600), no como
+  argumento (que seria visible en `ps aux`).
+
+Claude y los subagentes NO ejecutan `serverless deploy` directamente:
+solo el dev humano lo hace. Si Claude necesita revisar el estado del
+sync, usa `serverless secrets-status --stage=<env>` (muestra hash
+truncado a 4 chars, nunca el valor).
 
 ## Patron obligatorio: extraer una key
 

@@ -1,0 +1,36 @@
+# @i18n curriculum/architect.en
+# CV override for the architect app (Frontend Architect & Microservices).
+
+meta:
+  title: "Pablo Contreras — Frontend Architect & Microservices"
+  description: "Frontend Architect experienced in microservices, microfrontends and scalable systems. Vue/Nuxt + Django + AWS. Documented design and architecture decisions."
+
+hero:
+  eyebrow: "Pablo Contreras · Architect · Lima, Peru · Remote LATAM/US"
+  headline: "Frontend Architect & Microservices"
+  summary: "I design and ship distributed systems: Vue/Nuxt microfrontend + 8+ Django microservices on AWS. Every architectural decision is documented and tested in fintech production."
+  nicheLabel: "Architect"
+
+sections:
+  experienceSubtitle: "Architecture and tech leadership roles first (Destacame, Dibal)."
+  projectsSubtitle: "Projects with explicit architectural decisions and a documented stack."
+
+atsKeywords:
+  - "Frontend Architect"
+  - "Software Architect"
+  - "Microservices"
+  - "Microfrontend"
+  - "Distributed Systems"
+  - "System Design"
+  - "Vue 3"
+  - "Nuxt"
+  - "TypeScript"
+  - "Django"
+  - "AWS"
+  - "EC2"
+  - "RDS"
+  - "S3"
+  - "AutoScaling"
+  - "API Gateway"
+  - "PostgreSQL"
+  - "Clean Architecture"

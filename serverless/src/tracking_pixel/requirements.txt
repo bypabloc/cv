@@ -1,2 +1,0 @@
-# Dependencies del tracking_pixel Lambda (additional to CommonLayer)
-# CommonLayer ya incluye todas las deps necesarias.

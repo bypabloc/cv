@@ -1,0 +1,69 @@
+# Manifiesto del Lambda `contact_form` — fuente de verdad de su config.
+#
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni funciones intrinsecas.
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=contact_form
+#
+# devtools provisiona el Lambda sin SAM ni CloudFormation: el rol IAM, el
+# LogGroup, la funcion y el wiring del trigger se crean con `aws ...` y el
+# estado queda en serverless/lambda/.state/ (efimero, gitignored).
+
+# --- Identidad ---
+name: contact-form
+description: Atiende el form de contacto (valida, rate-limit, Turnstile, email).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 512       # MB
+timeout: 30       # segundos
+
+# --- Como se invoca este Lambda ---
+# http: expone un endpoint en la API del backend.
+trigger:
+  type: http
+  method: POST
+  path: /contact
+
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  # Spec direct-neon-writes: la tabla `contacts` ya no se usa — el Lambda
+  # escribe directo a Neon (`contacts`). Solo quedan las tablas de
+  # infraestructura (cache + rate-limit).
+  tables:
+    cache: read-write              # @cached
+    rate-limit-rules: read-write   # rate-limit per-IP
+    rate-limit-buckets: read-write
+  # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
+  secrets:
+    - turnstile-secret        # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
+    - owner-email             # destinatario de la notificacion
+    - ses-from-address        # remitente verificado en SES
+    - neon-url                # connection string Neon (escritura directa de contacts)
+  # Envia email transaccional por SES al recibir un form.
+  sends-email: true
+
+# --- Variables de entorno por stage ---
+# CORS_ALLOWED_ORIGINS define la whitelist de origins permitidos por
+# el handler HTTP (common/cors.py) Y el set de hostnames validos del
+# widget Turnstile (shared/http/turnstile._expected_hostnames). Por eso
+# debe coincidir con el dominio publico de cada stage; si falta, el
+# siteverify rechaza con CAPTCHA_HOSTNAME_MISMATCH (defensa contra
+# widget hijacking). Misma whitelist que tracking_pixel y cv.
+env:
+  default:
+    LOG_LEVEL: INFO
+    AWS_SES_REGION: us-east-1
+  dev:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
+  stage:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

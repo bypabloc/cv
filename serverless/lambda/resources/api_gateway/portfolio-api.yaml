@@ -1,0 +1,46 @@
+# Esquema devtools — NO CloudFormation: esquema plano, sin funciones
+# intrinsecas. devtools lo lee y emite las llamadas AWS CLI.
+# API Gateway REST + rol CloudWatch + access log group. devtools la
+# provisiona con `aws iam create-role` + `aws apigateway update-account` +
+# `aws logs create-log-group` + `aws apigateway create-rest-api` y publica
+# id/root-resource-id/access-log-group-arn en SSM. Los metodos /contact y
+# /track los agrega el provisioner de cada Lambda sobre esta API.
+kind: rest-api
+name: portfolio-api-${stage}
+endpoint_type: REGIONAL
+access_log_group: /aws/apigateway/portfolio-api-${stage}
+access_log_retention_days: 7
+cloudwatch_role_name: portfolio-api-cwlogs-role-${stage}
+publishes_ssm:
+  id: /portfolio/${stage}/api_gateway/portfolio-api/id
+  root_resource_id: /portfolio/${stage}/api_gateway/portfolio-api/root-resource-id
+  access_log_group_arn: /portfolio/${stage}/api_gateway/portfolio-api/access-log-group-arn
+# Custom domains por stage. devtools recrea el domain si el
+# endpoint_type aprovisionado en AWS difiere del declarado aqui
+# (drift detection). EDGE expone CloudFront-Viewer-Country al Lambda.
+# Cert wildcard *.the-full-stack.com en us-east-1; mismo cert para
+# los 3 envs.
+custom_domain_by_stage:
+  # base_path_mappings.stage es el DEPLOYMENT STAGE de la API GW (no el
+  # stage del repo). En este proyecto coincide nominalmente con el env:
+  # api.portfolio.dev -> stage 'dev'; api.portfolio.stage -> 'stage';
+  # api.portfolio -> 'prod'.
+  dev:
+    domain_name: api.portfolio.dev.the-full-stack.com
+    endpoint_type: EDGE
+    certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
+    base_path_mappings:
+      - { base_path: '', stage: dev }
+  stage:
+    domain_name: api.portfolio.stage.the-full-stack.com
+    endpoint_type: EDGE
+    certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
+    base_path_mappings:
+      - { base_path: '', stage: stage }
+  prod:
+    domain_name: api.portfolio.the-full-stack.com
+    endpoint_type: EDGE
+    certificate_arn: arn:aws:acm:us-east-1:637423614564:certificate/50c750aa-abbf-4b88-885b-17e4d243b439
+    base_path_mappings:
+      - { base_path: '', stage: prod }
+tags: { Project: portfolio, ManagedBy: devtools }

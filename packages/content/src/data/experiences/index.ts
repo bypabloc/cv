@@ -1,21 +1,20 @@
 /**
  * @module experiences
  * @description 9 puestos laborales de Pablo Contreras (2013-presente).
- *   Data en archivos YAML 1-por-entry (slug-based filename). Este modulo
- *   solo orquesta: glob de los .yaml + validacion Zod + sort por slug.
+ *   Origen: cache JSON generado por `scripts/fetch-cv-cache.mjs` que pega
+ *   al API GET /cv?action=experiences (Lambda cv -> Neon).
  *
- * Para agregar/modificar un puesto: editar el `.yaml` correspondiente o
- * crear `<slug>.yaml` nuevo. El campo `slug` del YAML debe matchear el
- * filename (enforced por loadYamlEntries).
+ * Para agregar/modificar un puesto: hacerlo en la DB (Lambda db, command
+ * seed) y regenerar el cache JSON. NO editar el cache a mano.
  */
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/experiences.json'
 import { type Experience, ExperienceSchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly Experience[] = (raw as readonly unknown[]).map((entry) =>
+  ExperienceSchema.parse(entry),
+)
 
-export const experiences: readonly Experience[] = loadYamlEntries<Experience>(
-  modules,
-  ExperienceSchema,
+// Ordenamiento estable por slug (igual que el patron loadYamlEntries).
+export const experiences: readonly Experience[] = [...items].sort((a, b) =>
+  a.slug.localeCompare(b.slug),
 )

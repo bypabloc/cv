@@ -1,0 +1,311 @@
+name: Deploy Backend
+
+# Dispara en cada merge a una rama de entorno. workflow_dispatch permite
+# disparar manual desde la UI de GitHub Actions.
+on:
+  push:
+    branches: [dev, stage, main]
+  workflow_dispatch:
+
+# Queue por env: si entran 2 pushes a dev seguidos, el segundo workflow
+# se encola y espera al primero. NO cancel-in-progress (cancelar mid-deploy
+# dejaria AWS en estado parcial).
+concurrency:
+  group: deploy-backend-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write  # OIDC (aws-actions/configure-aws-credentials)
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  DEVTOOLS_STATE_BACKEND: s3
+  DEVTOOLS_STATE_BUCKET: portfolio-devtools-state
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Mapea la branch al stage y al IAM role correspondiente.
+  # ---------------------------------------------------------------------------
+  resolve-env:
+    name: Resolve env (${{ github.ref_name }})
+    runs-on: ubuntu-24.04
+    outputs:
+      stage: ${{ steps.resolve.outputs.stage }}
+      role-arn: ${{ steps.resolve.outputs.role-arn }}
+    steps:
+      - id: resolve
+        run: |
+          case "${{ github.ref_name }}" in
+            dev)
+              echo "stage=dev"     >> "$GITHUB_OUTPUT"
+              echo "role-arn=arn:aws:iam::637423614564:role/portfolio-deploy-dev" >> "$GITHUB_OUTPUT"
+              ;;
+            stage)
+              echo "stage=stage"   >> "$GITHUB_OUTPUT"
+              echo "role-arn=arn:aws:iam::637423614564:role/portfolio-deploy-stage" >> "$GITHUB_OUTPUT"
+              ;;
+            main)
+              echo "stage=prod"    >> "$GITHUB_OUTPUT"
+              echo "role-arn=arn:aws:iam::637423614564:role/portfolio-deploy-prod" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "ERROR: branch ${{ github.ref_name }} no es dev/stage/main"
+              exit 1
+              ;;
+          esac
+
+  # ---------------------------------------------------------------------------
+  # 1. Re-deploy del Lambda `db` y aplicar migraciones Alembic.
+  # Si falla, detect-changes y deploy-lambdas NO corren.
+  # ---------------------------------------------------------------------------
+  migrate-db:
+    name: Apply DB migrations (${{ needs.resolve-env.outputs.stage }})
+    needs: resolve-env
+    runs-on: ubuntu-24.04
+    # GitHub Environment: hace visible los Environment Secrets de
+    # este stage. Aplica la deployment branch policy (prod -> main).
+    environment: ${{ needs.resolve-env.outputs.stage }}
+    timeout-minutes: 10
+    # Inyecta las 20 keys del docker/env/server/.example como env vars
+    # del job. devtools/serverless/secrets_sync.py las resuelve desde
+    # os.environ cuando no existe el .env local (modo CI).
+    env:
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      TURNSTILE_BYPASS_SECRET: ${{ secrets.TURNSTILE_BYPASS_SECRET }}
+      DB_URL: ${{ secrets.DB_URL }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_FROM_NAME: ${{ secrets.EMAIL_FROM_NAME }}
+      EMAIL_BACKEND: ${{ secrets.EMAIL_BACKEND }}
+      AWS_SES_REGION: ${{ secrets.AWS_SES_REGION }}
+      AWS_S3_REGION_NAME: ${{ secrets.AWS_S3_REGION_NAME }}
+      AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
+      SSM_PATH_PREFIX: ${{ secrets.SSM_PATH_PREFIX }}
+      KMS_KEY_ALIAS: ${{ secrets.KMS_KEY_ALIAS }}
+      DB_DB: ${{ secrets.DB_DB }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
+      DB_CHANNEL_BINDING: ${{ secrets.DB_CHANNEL_BINDING }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ needs.resolve-env.outputs.role-arn }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup uv (devtools bootstrap)
+        run: pip install uv
+
+      # Re-deploy del Lambda db ANTES de invocar migrate: puede haber
+      # cambios en migrations / models que requieren el codigo actualizado.
+      - name: Re-deploy Lambda db
+        run: |
+          python devtools/run.py serverless deploy \
+            --lambda=db --stage=${{ needs.resolve-env.outputs.stage }}
+
+      # update-function-code es async: retorna mientras la Lambda sigue
+      # en estado Pending. La proxima invocacion falla con
+      # ResourceConflictException. `aws lambda wait function-updated`
+      # bloquea hasta que LastUpdateStatus = Successful.
+      - name: Wait for Lambda db update to complete
+        run: |
+          aws lambda wait function-updated \
+            --function-name portfolio-db-${{ needs.resolve-env.outputs.stage }}
+
+      # Aplicar migraciones (Alembic upgrade head). Idempotente: si no hay
+      # nada pending, exit 0. El path de --event es relativo al directorio
+      # del lambda (devtools lo resuelve como <lambda_dir>/<event_path>).
+      - name: Apply migrations
+        run: |
+          python devtools/run.py serverless run \
+            --lambda=db \
+            --stage=${{ needs.resolve-env.outputs.stage }} \
+            --event=events/migrate.json
+
+      - name: Show current revision (audit)
+        run: |
+          python devtools/run.py serverless run \
+            --lambda=db \
+            --stage=${{ needs.resolve-env.outputs.stage }} \
+            --event=events/current.json
+
+      # Seed del CV: idempotente (ON CONFLICT DO NOTHING en cada upsert).
+      # Re-correr el seed en cada deploy garantiza que la data del CV
+      # este sincronizada con los YAMLs del repo en TODOS los stages.
+      # Datos del visitante (contacts, sessions, tracking_events) NO se
+      # tocan — el seed solo escribe en cv_*, tax_*, i18n_*.
+      - name: Run CV seed (idempotent)
+        run: |
+          python devtools/run.py serverless run \
+            --lambda=db \
+            --stage=${{ needs.resolve-env.outputs.stage }} \
+            --event=events/seed.json
+
+  # ---------------------------------------------------------------------------
+  # 2. Detect lambdas afectados (path-based + cierre shared) entre el sha
+  # del push anterior y el actual. Excluye `db` (ya redeployado).
+  # ---------------------------------------------------------------------------
+  detect-changes:
+    name: Detect affected lambdas
+    needs: [resolve-env, migrate-db]
+    runs-on: ubuntu-24.04
+    outputs:
+      affected: ${{ steps.detect.outputs.affected }}
+      has-affected: ${{ steps.detect.outputs.has-affected }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # necesitamos historia para git diff
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup uv (devtools bootstrap)
+        run: pip install uv
+
+      - id: detect
+        name: Run change detector
+        run: |
+          # base = sha previo al push. workflow_dispatch o primer push a la
+          # rama no traen un sha valido -> fallback a HEAD~10.
+          base="${{ github.event.before }}"
+          if [[ -z "$base" || "$base" == "0000000000000000000000000000000000000000" ]]; then
+            base=$(git rev-parse HEAD~10)
+          fi
+          head="${{ github.sha }}"
+
+          # `db` ya fue redeployado en migrate-db; lo excluimos del matrix.
+          raw=$(python devtools/run.py serverless detect-changes \
+            --base="$base" --head="$head" \
+            | tail -1)
+          affected=$(jq -c '.affected | map(select(. != "db"))' <<< "$raw")
+
+          {
+            echo "affected=$affected"
+            echo "has-affected=$(jq 'length > 0' <<< "$affected")"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Affected lambdas (excluding db): $affected"
+
+  # ---------------------------------------------------------------------------
+  # 3. Deploy de cada lambda afectado en paralelo. fail-fast: false para
+  # que un fallo en cv no aborte el deploy de contact_form.
+  # ---------------------------------------------------------------------------
+  deploy-lambdas:
+    name: Deploy ${{ matrix.lambda }}
+    needs: [resolve-env, detect-changes]
+    if: needs.detect-changes.outputs.has-affected == 'true'
+    runs-on: ubuntu-24.04
+    # GitHub Environment para Environment Secrets + branch policy.
+    environment: ${{ needs.resolve-env.outputs.stage }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        lambda: ${{ fromJSON(needs.detect-changes.outputs.affected) }}
+    # Mismas 20 keys que migrate-db (el deploy de cada lambda invoca
+    # internamente secrets_sync para publicar sus secretos a SSM).
+    env:
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      TURNSTILE_BYPASS_SECRET: ${{ secrets.TURNSTILE_BYPASS_SECRET }}
+      DB_URL: ${{ secrets.DB_URL }}
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_FROM_NAME: ${{ secrets.EMAIL_FROM_NAME }}
+      EMAIL_BACKEND: ${{ secrets.EMAIL_BACKEND }}
+      AWS_SES_REGION: ${{ secrets.AWS_SES_REGION }}
+      AWS_S3_REGION_NAME: ${{ secrets.AWS_S3_REGION_NAME }}
+      AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
+      SSM_PATH_PREFIX: ${{ secrets.SSM_PATH_PREFIX }}
+      KMS_KEY_ALIAS: ${{ secrets.KMS_KEY_ALIAS }}
+      DB_DB: ${{ secrets.DB_DB }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
+      DB_CHANNEL_BINDING: ${{ secrets.DB_CHANNEL_BINDING }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ needs.resolve-env.outputs.role-arn }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup uv (devtools bootstrap)
+        run: pip install uv
+
+      - name: Deploy ${{ matrix.lambda }}
+        run: |
+          python devtools/run.py serverless deploy \
+            --lambda=${{ matrix.lambda }} \
+            --stage=${{ needs.resolve-env.outputs.stage }}
+
+      - name: Verify status (drift check)
+        run: |
+          python devtools/run.py serverless status \
+            --lambda=${{ matrix.lambda }} \
+            --stage=${{ needs.resolve-env.outputs.stage }}
+
+  # ---------------------------------------------------------------------------
+  # 4. Resumen del deploy posteado como commit comment. if: always() corre
+  # tambien si pasos previos fallan (vemos el resultado consolidado).
+  # ---------------------------------------------------------------------------
+  report:
+    name: Report backend deploy summary
+    needs: [resolve-env, migrate-db, detect-changes, deploy-lambdas]
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      # commit-comment posts a comment on the merge commit:
+      # POST /repos/:owner/:repo/commits/:sha/comments requires contents:write
+      # (NOT pull-requests:write — that's for PR threads).
+      contents: write
+    steps:
+      - name: Build report body
+        id: build-report
+        run: |
+          stage="${{ needs.resolve-env.outputs.stage }}"
+          affected='${{ needs.detect-changes.outputs.affected }}'
+          migrate_result='${{ needs.migrate-db.result }}'
+          deploy_result='${{ needs.deploy-lambdas.result }}'
+
+          {
+            echo "## Backend deploy report — \`${stage}\`"
+            echo
+            echo "| Step | Result |"
+            echo "|------|--------|"
+            echo "| Migrations (lambda \`db\`) | ${migrate_result} |"
+            echo "| Lambdas affected | \`${affected:-N/A}\` |"
+            echo "| Lambdas deploy | ${deploy_result:-skipped} |"
+            echo
+            echo "Workflow: [run #${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          } > /tmp/body.md
+
+          {
+            echo "body<<EOF"
+            cat /tmp/body.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post commit comment
+        uses: peter-evans/commit-comment@v3
+        with:
+          sha: ${{ github.sha }}
+          body: ${{ steps.build-report.outputs.body }}

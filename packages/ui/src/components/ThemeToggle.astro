@@ -4,20 +4,22 @@
  * @description Boton que cicla system -> dark -> light. Persiste en localStorage.
  *   El BaseLayout aplica el theme inicial antes de pintar (sin FOUC).
  *
+ *   Los aria-labels vienen del YAML i18n (`components.themeToggle`). Se
+ *   serializan en `data-label-*` para que el script de cliente los lea sin
+ *   strings hardcodeados.
+ *
+ * @props {object} label - aria-labels de los 3 estados (system/dark/light)
+ *
  * @example
- *   <ThemeToggle />
+ *   <ThemeToggle label={strings.components.themeToggle} />
  */
+import type { ComponentsStrings } from '@portfolio/content'
+
 interface Props {
-  label?: { system: string; dark: string; light: string }
+  label: ComponentsStrings['themeToggle']
 }
 
-const {
-  label = {
-    system: 'Tema: Sistema',
-    dark: 'Tema: Oscuro',
-    light: 'Tema: Claro',
-  },
-} = Astro.props
+const { label } = Astro.props
 ---
 
 <button
@@ -97,10 +99,12 @@ const {
   if (btn) {
     const update = (t: Theme) => {
       btn.dataset.themeState = t
+      // Los aria-labels vienen de los data-label-* que el componente
+      // serializa desde el YAML i18n (siempre presentes).
       const labels = {
-        system: btn.dataset.labelSystem ?? 'Theme: System',
-        dark: btn.dataset.labelDark ?? 'Theme: Dark',
-        light: btn.dataset.labelLight ?? 'Theme: Light',
+        system: btn.dataset.labelSystem ?? '',
+        dark: btn.dataset.labelDark ?? '',
+        light: btn.dataset.labelLight ?? '',
       }
       btn.setAttribute('aria-label', labels[t])
     }
@@ -109,11 +113,63 @@ const {
     applyTheme(initial)
     update(initial)
 
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async (event) => {
       const current = (btn.dataset.themeState as Theme) ?? 'system'
       const next = nextTheme(current)
-      storeTheme(next)
-      update(next)
+
+      // Spec tracking-data-completeness: theme toggle con circular
+      // clip-path expansion. Requiere startViewTransition (Chrome/
+      // Edge/Safari). Firefox: cae al apply directo sin animacion.
+      // Reduced-motion: salta tambien (sin animacion).
+      const prefersReduced = window.matchMedia?.(
+        '(prefers-reduced-motion: reduce)',
+      ).matches
+      const supports =
+        typeof (document as Document & {
+          startViewTransition?: (cb: () => void) => {
+            ready: Promise<void>
+          }
+        }).startViewTransition === 'function'
+
+      if (!supports || prefersReduced) {
+        storeTheme(next)
+        update(next)
+        return
+      }
+
+      const pe = event as PointerEvent
+      const x = pe.clientX
+      const y = pe.clientY
+      const endRadius = Math.hypot(
+        Math.max(x, innerWidth - x),
+        Math.max(y, innerHeight - y),
+      )
+
+      const transition = (
+        document as Document & {
+          startViewTransition: (cb: () => void) => {
+            ready: Promise<void>
+          }
+        }
+      ).startViewTransition(() => {
+        storeTheme(next)
+        update(next)
+      })
+
+      await transition.ready
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 400,
+          easing: 'ease-in-out',
+          pseudoElement: '::view-transition-new(root)',
+        },
+      )
     })
   }
 </script>

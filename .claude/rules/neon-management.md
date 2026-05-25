@@ -1,6 +1,6 @@
 ---
-description: "Gestion operativa de Neon PostgreSQL en el backend serverless del portfolio: connection string en SSM, runner de migrations versionado, branches git-style, comandos devtools, reglas de seguridad y rollback"
-globs: "serverless/migrations/**/*.sql,serverless/scripts/migrate.py,devtools/serverless/database.py"
+description: "Gestion operativa de Neon PostgreSQL en el backend serverless del portfolio: connection string en SSM, migraciones Alembic via la Lambda db, branches git-style, comandos devtools, reglas de seguridad y rollback"
+globs: "serverless/lambda/shared/db/**/*.py,serverless/lambda/services/db/**/*.py,devtools/serverless/**/*.py"
 ---
 
 # Gestion de Neon PostgreSQL - Portfolio
@@ -17,9 +17,10 @@ globs: "serverless/migrations/**/*.sql,serverless/scripts/migrate.py,devtools/se
 
 Aplica SIEMPRE que se trabaje con:
 
-- Archivos `.sql` bajo `serverless/migrations/`
-- `serverless/scripts/migrate.py` (runner de migrations)
-- `devtools/serverless/database.py` (comandos `serverless db-*`)
+- Los modelos SQLAlchemy en `serverless/lambda/shared/db/`
+- Las migraciones Alembic en `serverless/lambda/shared/db/alembic/`
+- La Lambda `db` (`serverless/lambda/services/db/`)
+- La operacion de la DB via el CLI (`serverless run --lambda=db`)
 - Connection string de Neon en SSM (`/portfolio/neon-url`)
 - Branches de Neon (testing, recovery, per-PR)
 - Cualquier consulta SQL contra la DB del portfolio
@@ -29,20 +30,21 @@ Aplica SIEMPRE que se trabaje con:
 - **SIEMPRE** leer la connection string desde SSM Parameter Store
   (`/portfolio/neon-url`, `/portfolio/dev/neon-url`, `/portfolio/prod/neon-url`),
   type `SecureString`. NUNCA hardcodear `DATABASE_URL` ni `DB_URL` en codigo,
-  `template.yaml`, `samconfig.toml` ni archivos `.env` commiteados.
+  en el `manifest.yaml` del Lambda ni en archivos `.env` commiteados.
 - **SIEMPRE** usar el endpoint **pooled** (`-pooler` en el host) para las
-  Lambdas. El endpoint directo solo para `psql` interactivo o `migrate.py`.
+  Lambdas. El endpoint directo solo para `psql` interactivo.
 - **SIEMPRE** agregar `sslmode=require&channel_binding=require` a la URL.
 - **SIEMPRE** usar `psycopg` v3 — NUNCA `psycopg2` (deprecado).
-- **SIEMPRE** versionar el schema en `serverless/migrations/` con archivos
-  numerados `NNN_<nombre>.sql` + su par `NNN_<nombre>.down.sql`.
+- **SIEMPRE** versionar el schema con los modelos SQLAlchemy de
+  `serverless/lambda/shared/db/models/` + migraciones Alembic en
+  `serverless/lambda/shared/db/alembic/versions/`. Es la unica fuente de
+  verdad.
 - **NUNCA** modificar el schema de Neon a mano via `psql` o la consola web —
-  todo cambio de schema pasa por una migration nueva (auditabilidad).
-- **NUNCA** editar una migration ya aplicada en `prod`. El runner valida
-  `checksum` (SHA256) en `schema_migrations`; cambiar el SQL rompe la
-  integridad. Crear una migration nueva.
-- **NUNCA** correr `down`/`rollback` contra `prod` sin `--confirm` y sin
-  haber probado el `.down.sql` antes en un branch Neon.
+  todo cambio de schema pasa por una migracion Alembic nueva (auditabilidad).
+- **NUNCA** editar una migracion Alembic ya aplicada en `prod` — rompe la
+  cadena de revisiones. Crear una migracion nueva.
+- **NUNCA** correr `downgrade`/`rollback` contra `prod` sin `confirm` y sin
+  haber probado el `downgrade()` antes en un branch Neon.
 - **NUNCA** crear ni borrar el branch `main` de Neon — es la rama de
   produccion, inmutable.
 - El auto-suspend tras 5 min de inactividad es **normal y sin costo** — no
@@ -62,7 +64,7 @@ Aplica SIEMPRE que se trabaje con:
 
 ### Parametros SSM por stage
 
-`devtools/serverless/database.py` resuelve el nombre asi:
+El `manifest.yaml` de la Lambda `db` resuelve el nombre del parametro asi:
 
 | Stage | Parametro SSM |
 |-------|---------------|
@@ -76,131 +78,137 @@ Crear/rotar un parametro:
 python devtools/run.py serverless setup-ssm --name=/portfolio/neon-url
 ```
 
-## Migrations: el runner versionado
+## Migrations: Alembic via la Lambda `db`
 
-Las migrations viven en `serverless/migrations/` como pares de archivos:
+El schema lo definen los modelos SQLAlchemy de
+`serverless/lambda/shared/db/models/` — esa es la unica fuente de verdad.
+Las migraciones son archivos Alembic en
+`serverless/lambda/shared/db/alembic/versions/`. La Lambda `db`
+(`serverless/lambda/services/db/`) corre Alembic dentro de AWS; el CLI
+de devtools la invoca.
 
-```text
-serverless/migrations/
-├── 001_init_schema.sql           # forward
-├── 001_init_schema.down.sql      # rollback
-├── 002_indexes.sql
-├── 002_indexes.down.sql
-├── 005_migrations_log.sql        # crea la tabla schema_migrations
-└── 005_migrations_log.down.sql
-```
+> El runner SQL viejo (`migrate.py` + los `.sql` numerados +
+> `schema_migrations`) esta archivado en `serverless/migrations/_archive/`
+> — referencia historica, NO se aplica mas. Ver su README.
 
-### Como funciona `serverless/scripts/migrate.py`
+### Operacion via el CLI: `serverless run --lambda=db`
 
-- Lee `DB_URL` de env (lo inyecta devtools desde
-  `docker/env/server/.{stage}` — categoria `server`).
-- Itera `migrations/*.sql` en orden numerico ascendente.
-- Mantiene la tabla `schema_migrations` (`version`, `checksum`, `duration_ms`)
-  para no re-aplicar. Una migration ya registrada se salta.
-- Cada migration corre dentro de **una transaccion**: si falla, `rollback`
-  completo (no deja el schema a medias).
-- `down` revierte en orden inverso usando los `.down.sql`.
-
-### Comandos del runner
+Los comandos `db-*` dedicados se eliminaron del CLI. La DB se opera
+invocando la Lambda `db` con `serverless run`, que resuelve el stage y
+ejecuta `aws lambda invoke` (`--stage=local` corre el Lambda con el
+Runtime Interface Emulator o en modo directo). El payload de cada
+`command` vive como event en `serverless/lambda/services/db/events/`:
 
 ```bash
-cd serverless
-
-# Aplicar todas las pendientes (default)
-DB_URL=<...> python scripts/migrate.py up
-
-# Ver estado: applied / pending
-DB_URL=<...> python scripts/migrate.py status
-
-# Rollback (todas, o hasta una version con --target)
-DB_URL=<...> python scripts/migrate.py down --target=003
+# upgrade head
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/migrate.json --aws-profile=tfs-dev
+# downgrade -1 (el event lleva confirm: true)
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/downgrade.json --aws-profile=tfs-dev
+# revision aplicada
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/current.json --aws-profile=tfs-dev
+# historial de migraciones
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/show_migrations.json --aws-profile=tfs-dev
+# adoptar el schema existente sin recrear (stamp head)
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/stamp.json --aws-profile=tfs-dev
+# tablas + row counts
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/tables.json --aws-profile=tfs-dev
+# seed de datos (CV)
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/seed.json --aws-profile=tfs-dev
 ```
 
-### Comandos via devtools CLI (forma preferida)
+> `serverless db-shell` y `serverless db-branch` ya NO existen en el CLI.
+> Para una sesion `psql` interactiva, usar `psql "<connection-string>"`
+> directo (la URL se extrae de SSM). Para gestionar branches de Neon,
+> usar el CLI `neonctl` directo (ver "Branches Neon" abajo).
 
-`devtools/serverless/database.py` resuelve la URL desde SSM automaticamente —
-no hay que exportar `DB_URL` a mano:
+### Invocacion directa de la Lambda `db`
 
-```bash
-python devtools/run.py serverless db-migrate --stage=dev          # aplicar pendientes
-python devtools/run.py serverless db-migrate --stage=dev --dry-run # ver que correria
-python devtools/run.py serverless db-rollback --stage=dev --confirm # rollback ultima
-python devtools/run.py serverless db-tables --stage=dev           # tablas + row counts
-python devtools/run.py serverless db-shell --stage=dev            # psql interactivo
-python devtools/run.py serverless db-seed --stage=local           # data de prueba
+La Lambda `db` tiene estructura factory — el payload trae `command`. Los
+commands soportados (cada uno con su event en `events/`):
+
+```jsonc
+{"command": "migrate"}                                  // upgrade head
+{"command": "migrate", "args": {"target": "<rev>"}}     // hasta una rev
+{"command": "downgrade", "args": {"target": "-1", "confirm": true}}
+{"command": "current"}                                  // revision aplicada
+{"command": "show-migrations"}                          // historial
+{"command": "stamp", "args": {"target": "head"}}        // adoptar sin recrear
+{"command": "seed"}                                     // seed de datos (CV)
+{"command": "tables"}                                   // tablas + row counts
 ```
-
-`db-rollback` exige `--confirm` (es destructivo). Requiere `psql` instalado
-(`apt install postgresql-client`).
 
 ## Crear una migration nueva
 
-1. Elegir el siguiente numero correlativo (`006_...`).
-2. Crear el par de archivos:
+1. Modificar los modelos SQLAlchemy en
+   `serverless/lambda/shared/db/models/` (agregar columna, tabla, indice).
+2. Autogenerar la migracion con Alembic (en local, con `DATABASE_URL`
+   apuntando a un branch Neon de prueba):
 
-```bash
-cat > serverless/migrations/006_<nombre>.sql <<'EOF'
--- forward: descripcion de que hace
-ALTER TABLE contacts ADD COLUMN last_contact_at timestamptz;
-EOF
+   ```bash
+   cd serverless/lambda
+   DATABASE_URL=<branch-de-prueba> \
+     .venv/bin/alembic -c shared/db/alembic.ini revision \
+     --autogenerate -m "<descripcion>"
+   ```
 
-cat > serverless/migrations/006_<nombre>.down.sql <<'EOF'
--- rollback exacto del forward
-ALTER TABLE contacts DROP COLUMN last_contact_at;
-EOF
-```
+3. **Revisar el archivo generado** en `shared/db/alembic/versions/` —
+   Alembic no autogenera todo (particiones, triggers, extensiones,
+   `op.execute()` queda manual; ver `_init_schema_extras.py`).
+4. **Probar `upgrade` + `downgrade` en un branch Neon** antes de tocar
+   `dev`/`prod` (ver "Branches Neon" abajo).
+5. Aplicar a dev: `python devtools/run.py serverless run --stage=dev
+   --lambda=db --event=events/migrate.json --aws-profile=tfs-dev`.
+6. Verificar: `python devtools/run.py serverless run --stage=dev
+   --lambda=db --event=events/current.json --aws-profile=tfs-dev`.
 
-3. **Probar en un branch Neon antes de tocar `dev`/`prod`** (ver abajo).
-4. Aplicar: `python devtools/run.py serverless db-migrate --stage=dev`.
-5. Verificar: `python devtools/run.py serverless db-tables --stage=dev`.
+Reglas para una migracion:
 
-Reglas para el SQL de la migration:
-
-- El `.down.sql` debe revertir EXACTAMENTE el `.sql` (idempotente al volver).
-- Sin `BEGIN`/`COMMIT` dentro del archivo — el runner ya envuelve en
-  transaccion. (Excepcion: `CREATE INDEX CONCURRENTLY`, que no puede ir en
-  transaccion — si se usa, documentarlo y aplicarlo aparte.)
-- Cambios destructivos (`DROP COLUMN`, `DROP TABLE`) requieren migration
+- El `downgrade()` debe revertir EXACTAMENTE el `upgrade()`.
+- Cambios destructivos (`DROP COLUMN`, `DROP TABLE`) requieren migracion
   separada y revision explicita.
-- Una migration = un cambio logico coherente.
+- Una migracion = un cambio logico coherente.
+- NUNCA editar una migracion ya aplicada en prod (rompe la cadena de
+  revisiones de Alembic). Crear una nueva.
 
 ## Branches Neon: testing, recovery, per-PR
 
 Un branch de Neon es un clon instantaneo (copy-on-write, ~1 seg, sin costo de
-storage hasta que diverge). Usos en este proyecto:
+storage hasta que diverge). El CLI de devtools ya NO tiene un comando
+`db-branch`: los branches se gestionan con el CLI `neonctl` directo
+(`npm i -g neonctl`):
 
 ```bash
 # Listar branches
-python devtools/run.py serverless db-branch list
+neon branches list
 
 # Crear branch para probar una migration nueva (antes de tocar prod)
-python devtools/run.py serverless db-branch create --branch=test-006-migration --parent=main
+neon branches create --name test-006-migration --parent main
 
-# Borrar el branch cuando termina la prueba (exige --confirm)
-python devtools/run.py serverless db-branch delete --branch=test-006-migration --confirm
-```
-
-Tambien via `neon` CLI directo (`npm i -g neonctl`):
-
-```bash
-neon branches list
-neon branches create --name test-X --parent main
-neon branches delete test-X
+# Borrar el branch cuando termina la prueba
+neon branches delete test-006-migration
 ```
 
 Workflow obligatorio para una migration de schema:
 
 ```text
-1. crear branch:  db-branch create --branch=test-NNN --parent=main
+1. crear branch:  neon branches create --name test-NNN --parent main
 2. apuntar DB_URL al branch y correr migrate up + down (probar ambos)
 3. validar queries que usan el cambio
 4. si OK  -> aplicar la migration a dev, luego prod
 5. si mal -> iterar; el branch se descarta sin afectar main
-6. borrar branch:  db-branch delete --branch=test-NNN --confirm
+6. borrar branch:  neon branches delete test-NNN
 ```
 
 Recovery point-in-time: crear un branch desde un `--lsn` o timestamp pasado
-(retencion 7 dias en Free tier). No reemplaza tener `.down.sql` correctos.
+(retencion 7 dias en Free tier). No reemplaza tener un `downgrade()`
+correcto en cada migracion.
 
 ## Conexion desde las Lambdas
 
@@ -230,45 +238,85 @@ Patron obligatorio (detalle completo en
 
 ## Verificacion (antes de declarar listo)
 
-Tras crear/modificar una migration:
+Tras crear/modificar una migracion Alembic:
 
 ```bash
-# 1. Probar forward + rollback en un branch Neon
-python devtools/run.py serverless db-branch create --branch=test-verify --parent=main
-#    (apuntar al branch) migrate up && migrate down && migrate up
+# 1. Probar upgrade + downgrade + upgrade en un branch Neon de prueba
+neon branches create --name test-verify --parent main
+#    apuntar DATABASE_URL al branch y correr (en local, con el alembic del repo):
+#      alembic -c shared/db/alembic.ini upgrade head
+#      alembic -c shared/db/alembic.ini downgrade base
+#      alembic -c shared/db/alembic.ini upgrade head
 
-# 2. Estado de migrations coherente
-python devtools/run.py serverless db-migrate --stage=dev --dry-run
+# 2. Aplicar a dev y verificar
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/migrate.json --aws-profile=tfs-dev
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/current.json --aws-profile=tfs-dev
+python devtools/run.py serverless run --stage=dev --lambda=db \
+  --event=events/tables.json --aws-profile=tfs-dev
 
-# 3. Aplicar y verificar inventario
-python devtools/run.py serverless db-migrate --stage=dev
-python devtools/run.py serverless db-tables --stage=dev
-
-# 4. Limpiar
-python devtools/run.py serverless db-branch delete --branch=test-verify --confirm
+# 3. Limpiar el branch de prueba
+neon branches delete test-verify
 ```
 
 ## Anti-patrones
 
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
-| Modificar schema via `psql`/consola web | Sin auditabilidad, drift con `migrations/` | Migration numerada nueva |
-| Editar un `.sql` ya aplicado en prod | Rompe el checksum de `schema_migrations` | Crear migration nueva |
-| Hardcodear `DATABASE_URL` en codigo o `template.yaml` | Secreto expuesto en git | SSM Parameter Store |
+| Modificar schema via `psql`/consola web | Sin auditabilidad, drift con los modelos | Migracion Alembic nueva |
+| Editar una migracion Alembic ya aplicada en prod | Rompe la cadena de revisiones | Crear una migracion nueva |
+| Hardcodear `DATABASE_URL` en codigo o `manifest.yaml` | Secreto expuesto en git | SSM Parameter Store |
 | Endpoint directo (no `-pooler`) en Lambda | Agota `max_connections` bajo concurrencia | Endpoint pooled |
 | `psycopg2` | Deprecado | `psycopg` v3 |
-| Crear cliente DB dentro del handler | Cold start ~250ms cada invocacion | Module scope |
-| `rollback` en prod sin probar el `.down.sql` | Puede dejar el schema inconsistente | Probar en branch Neon primero |
+| Crear el engine SQLAlchemy dentro del handler | Cold start cada invocacion | Module scope (`get_engine` con lru_cache) |
+| `downgrade` en prod sin probar el `downgrade()` | Puede dejar el schema inconsistente | Probar en branch Neon primero |
 | Crear/borrar el branch `main` | Es la produccion | Branches efimeros desde `main` |
 | Preocuparse por el auto-suspend de 5 min | Es normal y gratis | Ignorar; el resume es transparente |
+
+## Schema unificado — un solo Alembic, una Lambda `db`
+
+Desde mayo de 2026 el Neon del portfolio tiene UN solo schema gestionado
+por UN solo Alembic. Antes habia dos sistemas (runner SQL para el backend
++ Alembic aparte para el CV); se unificaron.
+
+| Aspecto | Valor actual |
+|---------|--------------|
+| Modelos (fuente de verdad) | `serverless/lambda/shared/db/models/` — 35 tablas SQLAlchemy 2.x (CV + datos del visitante) |
+| Migraciones | un solo Alembic en `serverless/lambda/shared/db/alembic/` |
+| Tabla de versiones | la estandar `alembic_version` |
+| Runner | la Lambda `db` (`serverless/lambda/services/db/`) corre Alembic dentro de AWS |
+| Comandos | `serverless run --stage=<env> --lambda=db --event=events/<X>.json` |
+
+Reglas duras:
+
+- TODO cambio de schema (backend o CV) es una migracion Alembic nueva en
+  `serverless/lambda/shared/db/alembic/versions/`. NO se editan los `.sql`
+  archivados.
+- El runner SQL viejo (`serverless/scripts/migrate.py` + los `.sql`) esta
+  archivado en `serverless/migrations/_archive/` — solo referencia
+  historica, NO se aplica mas.
+- En prod (que ya tiene el schema creado por los `.sql` viejos) se corre
+  el event `current.json` y, si hace falta adoptar Alembic, el event
+  `stamp.json` (`{"command": "stamp"}`) — NUNCA un `migrate` que intente
+  recrear tablas existentes.
+- La connection string es la `DATABASE_URL` que devtools inyecta como
+  env var del Lambda desde SSM (`SSM_NEON_URL_PATH`, declarada en el
+  `manifest.yaml`); el modulo `shared/db/url.py` la resuelve. Mismo
+  patron de secretos que el resto.
+
+Detalle operativo: `serverless/lambda/shared/db/` (modelos + Alembic) y
+`serverless/lambda/services/db/` (la Lambda).
 
 ## Referencias cruzadas
 
 - Arquitectura, pricing, comparativas, integracion Lambda detallada:
   skill `neon` + `.claude/docs/neon/` (5 archivos)
-- Backend serverless (estructura, diagramas, propuesta hibrida):
-  `serverless/ARCHITECTURE.md` + `serverless/INTEGRATION.md`
+- Backend serverless (recursos gestionados por devtools, estructura,
+  diagramas, datos): `.claude/docs/serverless-backend/`
 - Schema de las tablas + queries analiticas:
   `.claude/docs/postgresql-18-analytics/README.md`
+- Schema PostgreSQL unificado (modelos SQLAlchemy + Alembic):
+  `serverless/lambda/shared/db/` + diagrama `docs/diagrams/db-er.mmd`
 - Secretos en SSM (patron general): `serverless/docs/secrets.md`
 - PostgreSQL 18 (features del motor): skill `postgresql-18`

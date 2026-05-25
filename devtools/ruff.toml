@@ -149,7 +149,7 @@ ignore = [
 
 # Tests genericos (heredados del base previo)
 "tests/**/*.py" = [
-    "T20", "S101", "S106", "S108", "S311", "PT011",
+    "T20", "S101", "S105", "S106", "S108", "S311", "PT011",
     "ANN001", "ANN002", "ANN003", "ANN201", "ANN202",
     "SLF001", "DTZ",
 ]
@@ -171,6 +171,12 @@ ignore = [
     "ANN001", "ANN201", "ANN202",   # don't require type hints on test methods
     "PLR2004",                      # magic values in assertions are fine
     "INP001",                       # tests don't need __init__.py
+]
+
+# sync_secrets: CLI tools (gh) en PATH, no path absoluto
+"sync_secrets/**/*.py" = [
+    "S607",  # gh es un CLI conocido, no se llama por path absoluto
+    "BLE001",  # except Exception OK en orquestadores (mapean a counters)
 ]
 
 # ============================================================================

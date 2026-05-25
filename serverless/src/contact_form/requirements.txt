@@ -1,3 +1,0 @@
-# Dependencies del Lambda contact_form (additional to CommonLayer)
-# CommonLayer ya incluye: aws-lambda-powertools[all], httpx, pydantic, pydantic-settings
-# No hay deps adicionales especificas de este Lambda.

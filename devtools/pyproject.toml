@@ -20,6 +20,10 @@ dependencies = [
     # Test runner for devtools/tests/
     "pytest>=9.0.3",
     "pytest-asyncio>=1.3.0",
+    "pyyaml>=6",
+    # AWS SDK (used by serverless/state.py S3StateBackend when
+    # DEVTOOLS_STATE_BACKEND=s3 — the CI path)
+    "boto3>=1.35.0",
 ]
 
 [tool.uv]

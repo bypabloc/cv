@@ -1,14 +1,10 @@
 /**
  * @module publications
- * @description Articulos publicados (Medium, etc). Data en YAML 1-por-articulo
- *   (slug = filename). Schema en `../../schemas/PublicationSchema`.
+ * @description Articulos publicados (Medium, etc).
+ *   Coleccion VACIA en la base de datos actual: no hay publications todavia.
+ *   Cuando se agreguen, se publicaran via la Lambda `db` (command seed) y se
+ *   expondran via GET /cv?action=publications (action a agregar en `cv_service`).
  */
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
-import { type Publication, PublicationSchema } from '../../schemas'
+import type { Publication } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
-
-export const publications: readonly Publication[] =
-  loadYamlEntries<Publication>(modules, PublicationSchema)
+export const publications: readonly Publication[] = []

@@ -1,0 +1,180 @@
+# @i18n elements.es
+# Labels reutilizables de UI en espanol. Identicos para las 6 apps.
+# Validado por ElementsStringsSchema. Su par es elements.en.yaml — ambos
+# archivos DEBEN tener exactamente las mismas claves (test de paridad).
+
+# Items del menu de navegacion. `key` es estable; `label` es el texto visible.
+# El href se construye en codigo (depende del locale y del basePrefix).
+nav:
+  - key: experience
+    label: "Experiencia"
+  - key: projects
+    label: "Proyectos"
+  - key: skills
+    label: "Skills"
+  - key: about
+    label: "Sobre mí"
+  - key: certificates
+    label: "Certificados"
+  - key: contact
+    label: "Contacto"
+  - key: hub
+    label: "Otras vistas"
+
+# Etiquetas de la barra de estadisticas (StatsBar).
+stats:
+  eyebrow: "Track record"
+  yearsExperience: "Años entregando producto"
+  companies: "Empresas"
+  countries: "Países LATAM"
+  certifications: "Certificaciones"
+
+# Titulos de cada bloque del CV. Los subtitulos son especificos por app
+# (viven en curriculum/), aqui solo el titulo generico.
+sections:
+  experience:
+    title: "Experiencia"
+  projects:
+    title: "Proyectos"
+  skills:
+    title: "Skills técnicas"
+  about:
+    title: "Sobre mí"
+  contact:
+    title: "Contacto"
+  certificates:
+    title: "Certificados"
+  publications:
+    title: "Publicaciones"
+  awards:
+    title: "Premios"
+  education:
+    title: "Educación"
+  languages:
+    title: "Idiomas"
+  references:
+    title: "Referencias"
+
+# Labels genericos reutilizables en componentes y secciones.
+labels:
+  home: "Inicio"
+  downloadCv: "Descargar CV"
+  viewAllExperience: "Ver toda la experiencia"
+  viewDetail: "Ver detalle"
+  viewSite: "Ver sitio"
+  viewRepo: "Repositorio"
+  currentView: "Vista actual"
+  confidential: "Bajo NDA — métricas detalladas en privado"
+  technicalSkills: "Técnicas"
+  softSkills: "Blandas"
+  responsibilities: "Responsabilidades"
+  achievements: "Logros"
+  caseStudyCta: "Ver caso de estudio"
+  caseStudyProblem: "Problema"
+  caseStudyProcess: "Proceso"
+  caseStudyResult: "Resultado"
+  caseStudyMetrics: "Métricas"
+  ctaPrimary: "Ver experiencia"
+  ctaSecondary: "Descargar CV"
+
+# Etiquetas de los 5 niches (usadas en el dropdown del nav y otros sitios).
+nicheLabels:
+  fintech: "Fintech"
+  architect: "Arquitecto"
+  leader: "Liderazgo"
+  vibe: "Vibe Coding"
+  generic: "Full Stack"
+
+# Textos de los componentes interactivos.
+components:
+  contactForm:
+    labelName: "Nombre"
+    labelEmail: "Email"
+    labelCompany: "Empresa"
+    labelRole: "Cargo / Rol"
+    labelServiceType: "Tipo de servicio"
+    labelBudget: "Presupuesto"
+    labelTimeline: "Timeline"
+    labelMessage: "Mensaje"
+    optionalSummary: "Datos opcionales (para conocerte mejor)"
+    serviceTypeUnset: "(sin especificar)"
+    serviceTypeConsulting: "Consultoria"
+    serviceTypeFulltime: "Full-time"
+    serviceTypeContract: "Contrato / freelance"
+    serviceTypeOther: "Otro"
+    budgetPlaceholder: "Ej: USD 5k-15k / mes"
+    timelinePlaceholder: "Ej: empieza en 2 semanas"
+    submit: "Enviar"
+    submitting: "Enviando..."
+    sentCardTitle: "Mensaje enviado"
+    sentCardBody: "Ya enviaste un mensaje el {date}. Te respondere en menos de 24h."
+    sentCardRefLabel: "Ref:"
+    sentCardResend: "Enviar otro mensaje"
+    statusSuccess: "Mensaje enviado. Te respondere en menos de 24h."
+    statusInvalidFields: "Hay datos invalidos en el formulario. Revisa los campos marcados."
+    statusCaptchaMissing: "Por favor completa el captcha antes de enviar."
+    errorEndpointMissing: "API endpoint no configurado"
+    errorCaptchaInvalid: "Captcha invalido. Por favor recargá la pagina e intentá nuevamente."
+    errorTooManyAttempts: "Demasiados intentos. Esperá unos minutos antes de reintentar."
+    errorServer: "Error del servidor. Intentá nuevamente en unos minutos."
+    errorNetwork: "Error de red. Verificá tu conexion y reintentá."
+    errorCaptchaLoad: "Error cargando el captcha. Recargá la pagina."
+    validationRequired: "Este campo es obligatorio."
+    validationTooShort: "Minimo {min} caracteres."
+    validationTooLong: "Maximo {max} caracteres."
+    validationEmail: "Email invalido. Revisa el formato."
+    validationFormat: "Formato invalido."
+    validationNotAllowed: "Valor no permitido."
+    validationInvalid: "Valor invalido."
+  footer:
+    copyright: "© {year} {name}. Todos los derechos reservados."
+    linkedin: "LinkedIn"
+    github: "GitHub"
+  nav:
+    openMenu: "Abrir menú"
+    closeMenu: "Cerrar menú"
+    mainMenu: "Menú principal"
+    switchToOtherLocale: "EN"
+  themeToggle:
+    system: "Tema: Sistema"
+    dark: "Tema: Oscuro"
+    light: "Tema: Claro"
+  contactLinks:
+    emailLabel: "Email"
+    enableJs: "(habilitar JS)"
+    copyEmail: "Copiar email"
+    copied: "Copiado"
+    copyFailed: "Error al copiar"
+    linkedin: "LinkedIn"
+    github: "GitHub"
+  filters:
+    bar: "Filtros"
+    clear: "Limpiar filtros"
+    tech: "Tecnologias"
+    seniority: "Seniority"
+    type: "Tipo"
+    confidential: "Ocultar confidenciales"
+    skillsTechnical: "Tecnicas"
+    skillsSoft: "Blandas"
+    emptyExperiences: "No hay experiencias con estos filtros."
+    emptyProjects: "No hay proyectos con estos filtros."
+  contactPage:
+    heading: "Contacto"
+    intro: "Si querés contratarme, colaborar o consultar algo técnico, dejame un mensaje. Te respondo en menos de 24h."
+    otherChannels: "Otros canales"
+    fallback: "El formulario aún no está configurado en este ambiente. Mientras tanto, escribime directo a {email}."
+  layout:
+    skipToContent: "Saltar al contenido"
+
+# Meta de las paginas secundarias. `titlePrefix` se concatena con el title
+# del curriculum: "{titlePrefix} — {meta.title}".
+pages:
+  about:
+    titlePrefix: "Sobre mí"
+    description: "Educación, idiomas, premios, publicaciones y referencias de Pablo Contreras."
+  certificates:
+    titlePrefix: "Certificados"
+    description: "Certificaciones técnicas relevantes para este perfil."
+  contact:
+    titlePrefix: "Contacto"
+    description: "Hablemos de tu proyecto. Respondo en menos de 24h."

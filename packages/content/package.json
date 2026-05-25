@@ -12,6 +12,7 @@
     "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
+    "fetch-cache": "node scripts/fetch-cv-cache.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run",

@@ -1,0 +1,14 @@
+# @i18n curriculum/hub.en
+# CV override for the hub app (multi-niche selector). The hub does not
+# render CvSections; it uses meta + hero. Section subtitles and atsKeywords
+# fall back to _base (not shown).
+
+meta:
+  title: "Pablo Contreras — 5 angles. Pick the one that fits."
+  description: "Senior Full Stack Engineer. 5 specialized portfolios: Full Stack, LATAM Fintech, Architect, Tech Lead, Vibe Coding."
+
+hero:
+  eyebrow: "Pablo Contreras · Lima, Peru · Remote LATAM/US"
+  headline: "Five angles. Pick the one that fits."
+  summary: "I am a Senior Full Stack Engineer with 12+ years in Vue, Django and AWS. Each site tells the same story with a different accent. Enter through the one you care about — all five versions are up to date."
+  nicheLabel: "Hub"

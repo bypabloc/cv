@@ -1,6 +1,6 @@
 """Flag validation and configuration for serverless CLI script.
 
-Validates and normalizes flags for the AWS SAM backend module. Like
+Validates and normalizes flags for the serverless backend module. Like
 ``docker``, this module takes a positional subcommand (NOT `--command=`)
 plus flag-based parameters. See ``.claude/rules/devtools.md`` for the
 posicional-vs-flag policy.
@@ -14,71 +14,57 @@ from utils.flags_to_dict import set_default_values
 from utils.flags_to_dict import validate_allowed_flags
 
 
-# Stages soportados por el backend SAM. Se mapean a samconfig.toml
-# environments. ``local`` no es un stage AWS real — apunta a sam local
-# invoke + sam local start-api + moto mocks.
+# Stages soportados por el backend serverless. ``local`` no es un stage
+# AWS real — apunta a la ejecucion local del Lambda (RIE / modo directo).
 VALID_STAGES = ['local', 'dev', 'stage', 'prod']
 
 STAGE_DESCRIPTIONS = {
-    'local': 'sam local invoke / start-api con moto mocks (sin AWS)',
-    'dev': 'Stack desplegado en us-east-1 (cuenta dev / sandbox)',
-    'stage': 'Stack de pre-produccion en us-east-1 (replica prod)',
-    'prod': 'Stack desplegado en us-east-1 (cuenta productiva)',
+    'local': 'Ejecucion local del Lambda (RIE / modo directo, sin AWS)',
+    'dev': 'Recursos provisionados en us-east-1 (cuenta dev / sandbox)',
+    'stage': 'Recursos de pre-produccion en us-east-1 (replica prod)',
+    'prod': 'Recursos provisionados en us-east-1 (cuenta productiva)',
 }
 
-# Funciones Lambda del modulo. Coinciden con el LogicalId del template.yaml.
-VALID_FUNCTIONS = [
-    'contact-form',
-    'tracking-pixel',
-    'stream-processor',  # DynamoDB Streams -> Neon PG
-]
+# Tipos de test soportados por el comando `tests`.
+VALID_TEST_TYPES = ['unit', 'integration', 'coverage']
 
-# Tablas DynamoDB administradas por el modulo. Usadas por subcomandos
-# ``db-*`` para scope explicito.
-VALID_TABLES = ['contacts', 'tracking']
+# Modos de ejecucion local del comando `run --stage=local`.
+VALID_RUNTIME_MODES = ['rie', 'direct']
 
 VALID_COMMANDS = [
-    # Lifecycle
-    'init',  # uv sync + first-time setup (alias de pyproject)
-    'validate',  # sam validate template.yaml
-    'build',  # sam build --use-container (cross-platform arm64)
-    'deploy',  # sam deploy (guided si stage no existe)
-    'delete',  # sam delete (destructivo, requiere --confirm)
-    # Local development (no AWS)
-    'invoke',  # sam local invoke <function> --event events/X.json
-    'start-api',  # sam local start-api --port 3000
-    'logs',  # sam logs -n <function> --tail
-    # Quality
-    'lint',  # Ruff check sobre serverless/src/
+    # Setup / Maintenance
+    'init',  # uv sync + verifica aws CLI + uv
+    'clean',  # rm caches + artefactos efimeros (build/, core/shared)
+    # Quality (Ruff + mypy sobre serverless/lambda/shared/ y serverless/lambda/services/)
+    'lint',  # Ruff check
     'lint-fix',  # Ruff check --fix
+    'lint-deps',  # Valida la regla de dedup D-3 (deps lambda vs shared/)
+    'detect-changes',  # Detecta lambdas afectados entre 2 shas (CI)
     'format',  # Ruff format
-    'typecheck',  # mypy (si configurado) sobre src/
-    # Tests
-    'test',  # pytest tests/unit + integration
-    'test-unit',  # pytest tests/unit -m unit
-    'test-integration',  # pytest tests/integration -m integration
-    'test-coverage',  # pytest --cov=src
+    'typecheck',  # mypy
+    # Tests: unico comando, --type=unit|integration|coverage + target
+    'tests',  # pytest de un lambda (--lambda), shared (--shared) o todo
+    # lambda-controller: ciclo de vida de cada Lambda con AWS CLI directo.
+    'run',  # ejecuta un lambda: --stage=local -> RIE/directo; resto -> aws invoke
+    'deploy',  # provisiona el lambda en un stage (AWS CLI + estado local)
+    'destroy',  # borra los recursos de un stage (lambda(s) + infra)
+    'status',  # estado local vs AWS, por scope
+    # Infra: recursos compartidos provisionados con AWS CLI directo
+    'provision-infra',  # provisiona TODOS los recursos de resources/
+    'list-resources',  # lista los recursos declarados en resources/
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
+    'sync-secrets',  # Sync .env del stage -> SSM (idempotente, hash-based)
+    'secrets-status',  # .env vs SSM por entrada del catalogo (sin valores)
+    'validate-catalog',  # Valida resources/secrets/*.yaml
     'verify-ses-dns',  # dig DKIM/SPF/DMARC contra Cloudflare
     'request-ses-prod',  # Imprime plantilla del ticket SES production access
-    # Database (Neon PostgreSQL)
-    'db-shell',  # psql interactivo contra Neon (lee connection string de SSM)
-    'db-migrate',  # Aplica migrations SQL desde serverless/migrations/
-    'db-rollback',  # Rollback de la ultima migration
-    'db-seed',  # Carga data de prueba en Neon
-    'db-branch',  # Crea / lista / borra branches de Neon (neon CLI)
-    'db-tables',  # Lista tablas + row counts
     # Observability
-    'tail',  # sam logs -n <function> --tail (alias verbose de `logs --follow`)
     'metrics',  # CloudWatch metrics summary del stack
     'alarms',  # Lista alarmas y su estado
     # Rate-limit management (alternativa $0 a AWS WAF)
     'rate-limit',  # Dispatcher: list|show|set|allow|block|unblock|stats|clear-buckets
-    # Smoke / Maintenance
-    'smoke',  # scripts/smoke_test.sh (curl contra endpoint real)
-    'clean',  # rm -rf .aws-sam/ + __pycache__ + .pytest_cache
     'help',  # Ayuda colorizada
 ]
 
@@ -87,21 +73,16 @@ VALID_COMMANDS = [
 ALLOWED_FLAGS = [
     # Stage
     'stage',
-    # Lifecycle
-    'guided',  # sam deploy --guided
-    'confirm',  # required para 'delete' (no destructivo accidental)
-    'no_cache',  # sam build --no-cache (rebuild from scratch)
-    'parameter_overrides',  # sam deploy --parameter-overrides
-    # Local invoke
-    'function',  # --function=contact-form
-    'event',  # --event=events/contact_form_valid.json
-    'port',  # sam local start-api --port=3000
-    'debug',  # sam local invoke --debug
-    # Logs
-    'tail',  # --tail (continuous follow)
-    'follow',  # alias de tail
-    'since',  # --since=10m (timeframe de logs)
-    'filter',  # --filter='ERROR' (CloudWatch filter pattern)
+    # lambda-controller: como apuntar al lambda objetivo
+    'lambda',  # --lambda=<nombre> resuelto contra serverless/lambda/services/* (recomendado)
+    'path',  # --path=<dir> del lambda (dir con manifest.yaml, cualquier ubicacion)
+    'module',  # alias de --path
+    'shared',  # --shared o --shared=<subpaquete> (target del comando tests)
+    # Deploy / run
+    'confirm',  # required para comandos destructivos
+    'yes',  # confirmacion no interactiva de `destroy`
+    'event',  # --event=events/<X>.json (run)
+    'runtime_mode',  # --runtime-mode=rie|direct (run --stage=local)
     # Quality / Tests
     'module_path',  # Subset del codigo (ej. src/contact_form/)
     'files',  # Subset de archivos especificos
@@ -110,17 +91,17 @@ ALLOWED_FLAGS = [
     'quiet',
     'output_format',
     # Test
-    'marker',  # pytest -m <marker>
+    'type',  # --type=unit|integration|coverage (comando tests)
     'coverage_threshold',  # default 80
     # Secrets
     'name',  # --name=/portfolio/turnstile-secret
     'value',  # --value=... (preferir leer de stdin para no leak shell history)
     'key_id',  # --key-id=alias/portfolio-lambdas
-    # Database
-    'table',  # --table=contacts
-    'branch',  # --branch=dev-feature-X (Neon branching)
-    'parent',  # --parent=main (parent branch)
-    'sql_file',  # --sql-file=migrations/001_init.sql
+    'only',  # --only=turnstile-secret,neon-url (subset del catalogo)
+    # detect-changes (CI)
+    'base',  # --base=<sha> SHA base del diff
+    'head',  # --head=<sha> SHA head del diff (default HEAD)
+    # Cross-cutting
     'dry_run',  # No aplica, solo imprime acciones
     # Rate-limit management
     'endpoint',  # --endpoint=/contact (rate-limit set)
@@ -133,6 +114,8 @@ ALLOWED_FLAGS = [
     'reason',  # --reason="why" (audit string)
     # Cross-cutting
     'output',  # json|text
+    'since',  # --since=10m|1h|24h (ventana de metrics / rate-limit stats)
+    'aws_profile',  # --aws-profile=tfs-dev (perfil AWS CLI)
     # Internal
     'command',
     'subcommands',
@@ -141,12 +124,23 @@ ALLOWED_FLAGS = [
 
 
 # Comandos destructivos. Cada uno requiere --confirm o --dry-run primero.
+# `destroy` NO esta aqui: usa su propio flag --yes (validado en cmd_destroy).
 DESTRUCTIVE_COMMANDS = frozenset(
     {
-        'delete',
         'clean',
-        'db-rollback',
         'rotate-secret',
+    }
+)
+
+
+# Comandos del modo lambda-controller: requieren apuntar a un lambda con
+# --lambda=<nombre> (resuelto contra serverless/lambda/services/*) o --path=<dir>.
+# `tests` NO esta aqui: sin target corre toda la suite, o usa --shared.
+# `destroy` / `status` NO estan: sin --lambda operan sobre todo el stage.
+PATH_REQUIRED_COMMANDS = frozenset(
+    {
+        'run',
+        'deploy',
     }
 )
 
@@ -156,46 +150,36 @@ JSON_OUTPUT_COMMANDS = frozenset(
     {
         'metrics',
         'alarms',
-        'db-tables',
-        'logs',
     }
 )
 
 
 # Resumenes 1-line por comando (usados por describe() y help).
 _COMMAND_SUMMARIES: dict[str, str] = {
-    'init': 'Setup inicial (uv sync + verifica AWS CLI + SAM)',
-    'validate': 'sam validate template.yaml',
-    'build': 'sam build --use-container (arm64 cross-platform)',
-    'deploy': 'sam deploy a stage (--guided si primera vez)',
-    'delete': 'sam delete del stack (DESTRUCTIVO)',
-    'invoke': 'sam local invoke <function> --event events/X.json',
-    'start-api': 'sam local start-api (server HTTP local)',
-    'logs': 'sam logs -n <function> (real-time o ventana)',
-    'lint': 'Ruff check sobre src/',
+    'init': 'Setup inicial (uv sync + verifica AWS CLI + uv)',
+    'clean': 'Eliminar caches + artefactos efimeros (build/, vendor)',
+    'lint': 'Ruff check sobre shared/ y src/',
     'lint-fix': 'Ruff check --fix',
+    'lint-deps': 'Valida que un lambda no duplique deps de shared/ (D-3)',
     'format': 'Ruff format',
-    'typecheck': 'mypy strict sobre src/',
-    'test': 'pytest unit + integration',
-    'test-unit': 'pytest tests/unit -m unit',
-    'test-integration': 'pytest tests/integration -m integration',
-    'test-coverage': 'pytest --cov=src (threshold 80% per-file)',
+    'typecheck': 'mypy strict sobre shared/ y src/',
+    'tests': 'pytest --type=unit|integration|coverage (--lambda / --shared)',
+    'run': 'Ejecuta un lambda: --stage=local -> RIE/directo; resto -> aws invoke',
+    'deploy': 'Provisiona el lambda en un stage (AWS CLI + estado local)',
+    'destroy': 'Borra los recursos de un stage (lambda(s) + infra) — requiere --yes',
+    'status': 'Estado local vs AWS, por scope',
+    'provision-infra': 'Provisiona TODOS los recursos de resources/ con AWS CLI',
+    'list-resources': 'Lista los recursos declarados en resources/',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
+    'sync-secrets': 'Sync .env del stage -> SSM (idempotente, hash-based)',
+    'secrets-status': '.env vs SSM por entrada del catalogo (sin valores)',
+    'validate-catalog': 'Valida resources/secrets/*.yaml',
     'verify-ses-dns': 'dig CNAMEs DKIM + TXT SPF/DMARC vs Cloudflare',
     'request-ses-prod': 'Plantilla del ticket de production access SES',
-    'db-shell': 'psql contra Neon (lee URL de SSM)',
-    'db-migrate': 'Aplicar migrations SQL pendientes',
-    'db-rollback': 'Rollback ultima migration (DESTRUCTIVO)',
-    'db-seed': 'Cargar data de prueba',
-    'db-branch': 'CRUD de branches Neon (create/list/delete)',
-    'db-tables': 'Listar tablas Neon + row counts',
-    'tail': 'sam logs --tail (alias verbose de logs --follow)',
     'metrics': 'Resumen CloudWatch metrics del stack',
     'alarms': 'Lista alarmas + estado',
     'rate-limit': 'Gestion de reglas rate-limit (list|set|allow|block|stats|...)',
-    'smoke': 'curl contra endpoint deployed (smoke test)',
-    'clean': 'Eliminar .aws-sam/ + caches Python',
     'help': 'Ayuda colorizada',
 }
 
@@ -203,36 +187,55 @@ _COMMAND_SUMMARIES: dict[str, str] = {
 # Flags relevantes por comando (informativo para describe() y completion).
 _COMMAND_FLAGS: dict[str, list[str]] = {
     'init': [],
-    'validate': [],
-    'build': ['no_cache', 'function'],
-    'deploy': ['stage', 'guided', 'parameter_overrides'],
-    'delete': ['stage', 'confirm', 'dry_run'],
-    'invoke': ['function', 'event', 'debug'],
-    'start-api': ['port', 'debug'],
-    'logs': ['function', 'tail', 'follow', 'since', 'filter', 'output'],
+    'clean': ['dry_run'],
     'lint': ['module_path', 'files', 'output_format'],
     'lint-fix': ['module_path', 'files'],
+    'lint-deps': ['lambda', 'path', 'module'],
     'format': ['module_path', 'files'],
     'typecheck': ['module_path'],
-    'test': ['verbose', 'coverage_threshold'],
-    'test-unit': ['verbose', 'marker', 'files'],
-    'test-integration': ['verbose', 'marker'],
-    'test-coverage': ['coverage_threshold'],
-    'setup-ssm': ['stage', 'name', 'value', 'key_id'],
-    'rotate-secret': ['stage', 'name', 'value', 'confirm'],
+    'tests': [
+        'type',
+        'lambda',
+        'path',
+        'module',
+        'shared',
+        'verbose',
+        'coverage_threshold',
+    ],
+    'run': [
+        'lambda',
+        'path',
+        'module',
+        'stage',
+        'event',
+        'runtime_mode',
+        'aws_profile',
+    ],
+    'deploy': [
+        'lambda',
+        'path',
+        'module',
+        'stage',
+        'aws_profile',
+        'dry_run',
+        'skip_sync',
+    ],
+    'destroy': ['lambda', 'path', 'module', 'stage', 'yes', 'aws_profile'],
+    'status': ['lambda', 'path', 'module', 'stage', 'aws_profile'],
+    'provision-infra': ['stage', 'aws_profile', 'dry_run'],
+    'list-resources': ['stage'],
+    'setup-ssm': ['stage', 'name', 'value', 'key_id', 'aws_profile'],
+    'rotate-secret': ['stage', 'name', 'value', 'confirm', 'aws_profile'],
+    'sync-secrets': ['stage', 'only', 'aws_profile', 'dry_run'],
+    'secrets-status': ['stage', 'aws_profile', 'output'],
+    'validate-catalog': [],
     'verify-ses-dns': [],
     'request-ses-prod': [],
-    'db-shell': ['stage', 'branch'],
-    'db-migrate': ['stage', 'sql_file', 'dry_run'],
-    'db-rollback': ['stage', 'confirm', 'dry_run'],
-    'db-seed': ['stage', 'dry_run'],
-    'db-branch': ['parent', 'branch', 'subcommands'],
-    'db-tables': ['stage', 'output'],
-    'tail': ['function', 'since', 'filter'],
     'metrics': ['stage', 'since', 'output'],
     'alarms': ['stage', 'output'],
     'rate-limit': [
         'subcommands',
+        'stage',
         'endpoint',
         'country',
         'limit',
@@ -246,9 +249,8 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
         'confirm',
         'dry_run',
         'name',
+        'aws_profile',
     ],
-    'smoke': ['stage'],
-    'clean': ['dry_run'],
     'help': [],
 }
 
@@ -256,21 +258,17 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
 # Defaults aplicados por set_default_values cuando un flag no se provee.
 _DEFAULTS: dict[str, Any] = {
     'stage': 'local',
-    'guided': False,
     'confirm': False,
-    'no_cache': False,
-    'port': 3000,
-    'debug': False,
-    'tail': False,
-    'follow': False,
+    'yes': False,
+    'runtime_mode': 'rie',
     'since': '10m',
     'verbose': False,
     'quiet': False,
     'output_format': 'text',
     'coverage_threshold': 80,
     'dry_run': False,
+    'skip_sync': False,
     'output': 'text',
-    'parent': 'main',
 }
 
 
@@ -329,18 +327,37 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
             f'Stage invalido: {stage!r}. Validos: {", ".join(VALID_STAGES)}',
         )
 
-    function = flags_dict.get('function')
-    if function is not None and function not in VALID_FUNCTIONS:
-        raise ValueError(
-            f'Function invalida: {function!r}. '
-            f'Validas: {", ".join(VALID_FUNCTIONS)}',
-        )
-
     if command in DESTRUCTIVE_COMMANDS and not (
         flags_dict.get('confirm') or flags_dict.get('dry_run')
     ):
         raise ValueError(
             f'{command!r} es destructivo. Agrega --confirm o --dry-run.',
+        )
+
+    if command in PATH_REQUIRED_COMMANDS and not (
+        flags_dict.get('lambda')
+        or flags_dict.get('path')
+        or flags_dict.get('module')
+    ):
+        raise ValueError(
+            f'{command!r} opera sobre un lambda-controller: requiere '
+            f'--lambda=<nombre> (resuelto contra serverless/lambda/services/*) '
+            f'o --path=<dir> (directorio con manifest.yaml).',
+        )
+
+    if command == 'tests':
+        test_type = flags_dict.get('type')
+        if test_type not in VALID_TEST_TYPES:
+            raise ValueError(
+                'tests requiere --type=unit|integration|coverage '
+                f'(recibido: {test_type!r}).',
+            )
+
+    runtime_mode = flags_dict.get('runtime_mode')
+    if runtime_mode is not None and runtime_mode not in VALID_RUNTIME_MODES:
+        raise ValueError(
+            f'--runtime-mode invalido: {runtime_mode!r}. '
+            f'Validos: {", ".join(VALID_RUNTIME_MODES)}.',
         )
 
     validate_allowed_flags(flags_dict, ALLOWED_FLAGS)
@@ -354,7 +371,11 @@ def describe() -> ScriptDescribe:
     return {
         'name': 'serverless',
         'kind': 'subcommand',
-        'summary': 'Gestion del backend SAM (Lambdas + API GW + DynamoDB + SES + Neon)',
+        'summary': (
+            'Backend serverless del portfolio: infra compartida + 4 Lambdas '
+            'lambda-controller, provisionados con AWS CLI directo (sin SAM). '
+            'Cada Lambda se opera con --lambda=<nombre>'
+        ),
         'commands': [
             {
                 'name': cmd,
@@ -370,31 +391,69 @@ def describe() -> ScriptDescribe:
                 'type': 'choice',
                 'choices': list(VALID_STAGES),
                 'default': 'local',
-                'summary': 'Stage del stack SAM (local|dev|prod)',
+                'summary': 'Stage objetivo (local|dev|prod)',
             },
-            'function': {
-                'type': 'choice',
-                'choices': list(VALID_FUNCTIONS),
-                'summary': 'Funcion Lambda objetivo',
+            'lambda': {
+                'type': 'string',
+                'summary': (
+                    'Nombre corto de un lambda, resuelto contra '
+                    'serverless/lambda/services/<nombre>/. Forma recomendada de '
+                    'apuntar a un lambda-controller'
+                ),
+            },
+            'path': {
+                'type': 'string',
+                'summary': (
+                    'Directorio de un lambda (dir con manifest.yaml), '
+                    'cualquier ubicacion. Alternativa a --lambda'
+                ),
             },
             'event': {
                 'type': 'string',
                 'summary': 'Path a event JSON (events/<X>.json)',
             },
-            'port': {
-                'type': 'int',
-                'default': 3000,
-                'summary': 'Puerto local API (start-api)',
+            'runtime_mode': {
+                'type': 'choice',
+                'choices': list(VALID_RUNTIME_MODES),
+                'default': 'rie',
+                'summary': (
+                    'Modo de ejecucion local (run --stage=local): rie '
+                    '(Runtime Interface Emulator via Docker) o direct '
+                    '(importa el handler en el proceso)'
+                ),
             },
-            'tail': {
+            'yes': {
                 'type': 'bool',
                 'default': False,
-                'summary': 'Continuous log streaming',
+                'summary': 'Confirmacion no interactiva de `destroy`',
+            },
+            'type': {
+                'type': 'choice',
+                'choices': list(VALID_TEST_TYPES),
+                'summary': (
+                    'Tipo de test para el comando tests '
+                    '(unit | integration | coverage)'
+                ),
+            },
+            'shared': {
+                'type': 'string',
+                'summary': (
+                    'Target del comando tests: --shared para toda la '
+                    'libreria comun, --shared=<subpaquete> para uno solo'
+                ),
+            },
+            'aws_profile': {
+                'type': 'string',
+                'summary': (
+                    'Perfil AWS CLI a inyectar en los comandos aws '
+                    '(ej. --aws-profile=tfs-dev). Si se omite, se usa el '
+                    'perfil por defecto (AWS_PROFILE o [default])'
+                ),
             },
             'since': {
                 'type': 'string',
                 'default': '10m',
-                'summary': 'Ventana de logs (ej. 10m, 1h, 1d)',
+                'summary': 'Ventana de metrics / rate-limit stats (10m, 1h)',
             },
             'confirm': {
                 'type': 'bool',
@@ -405,6 +464,11 @@ def describe() -> ScriptDescribe:
                 'type': 'bool',
                 'default': False,
                 'summary': 'Imprime acciones sin ejecutar',
+            },
+            'skip_sync': {
+                'type': 'bool',
+                'default': False,
+                'summary': 'Saltar sync de secretos al desplegar',
             },
             'coverage_threshold': {
                 'type': 'int',

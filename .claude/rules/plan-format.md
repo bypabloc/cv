@@ -26,20 +26,85 @@ Anthropic recomienda 4 fases para cambios no triviales:
 
 Para features grandes o requisitos ambiguos, considerar fase de **Interview** previa con `AskUserQuestion` cubriendo edge cases, tradeoffs y constraints.
 
+## Regla de ejecucion: rama, verificacion y push/PR (OBLIGATORIA)
+
+Al pasar a la fase **Implement**, antes de tocar codigo:
+
+1. **Verificar la rama actual.** Si es una rama protegida (`dev`, `stage`,
+   `main`, `master`), NUNCA trabajar ahi: crear una rama de trabajo nueva
+   (`feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/` con `/`)
+   partiendo de `dev`. Si ya se esta en una rama de trabajo, continuar en
+   ella. Esto se hace ANTES del primer commit del plan.
+
+   ```bash
+   branch=$(git branch --show-current)
+   case "$branch" in
+     dev|stage|main|master)
+       git checkout -b feature/<nombre-del-plan>  # parte de dev
+       ;;
+   esac
+   ```
+
+2. **Implementar y verificar.** Ejecutar el plan commit a commit. NO se
+   hace push ni PR mientras quede trabajo sin verificar.
+
+3. **Gate de cierre: push + PR SOLO con todo verde.** Hacer `git push` y
+   crear el PR UNICAMENTE cuando la bateria completa de la seccion 11
+   pasa: lint + typecheck + unit + build + (E2E si aplica) en verde,
+   coverage >= 80% per-file, cero tests rojos. Si algo falla: corregir,
+   re-ejecutar la suite, repetir. NUNCA `push`/PR con un comando de la
+   bateria fallando.
+
+Resumen del orden NO negociable:
+
+```text
+verificar rama -> (si protegida) crear rama de trabajo
+  -> implementar + commits con verificacion incremental
+  -> bateria E2E completa (seccion 11) en VERDE
+  -> recien ahi: git push + crear PR
+```
+
+## Todo plan vive en una carpeta
+
+Todo plan se materializa como una carpeta `docs/specs/<nombre-kebab>/`, NUNCA
+un archivo suelto:
+
+```text
+docs/specs/<nombre-kebab>/
+├── README.md                 # indice navegable + estado por fase + decisiones
+├── 01-contexto-y-decision.md # secciones 1-3 (contexto, solucion, AC)
+├── 02-<fase>.md              # una fase de implementacion por archivo
+├── ...
+├── NN-commits.md             # SECCION 9 — listado de commits
+├── NN-paralelizacion-worktrees.md  # SECCION 10 — git worktrees
+└── NN-verificacion-e2e.md    # SECCION 11 — verificacion E2E iterativa
+```
+
+El `README.md` es el indice (tabla "Cuando leer", estado por fase, decisiones
+no-reabribles, reglas criticas, matriz de verificacion). Cada `.md` < 300
+lineas (ver `.claude/rules/markdown-docs.md`). En **Micro** la carpeta puede
+ser solo `README.md` con todo adentro. El detalle del formato de la carpeta y
+de las secciones 8-11 esta en `.claude/docs/plan-format-large/README.md`.
+
 ## Escala del plan (scope-based ceremony)
 
 | Tamano | Archivos | Formato |
 |--------|----------|---------|
-| **Micro** | 1-2 archivos, hotfix | Plan corto: 3 lineas (objetivo + archivo + done). Saltar template. |
-| **Small** | 3-5 archivos | Template completo, secciones condicionales colapsadas |
-| **Medium** | 6-10 archivos | Template completo, todas las secciones aplicables |
-| **Large** | 11+ archivos | Template completo + Seccion 8 (ver `.claude/docs/plan-format-large/README.md`) |
+| **Micro** | 1-2 archivos, hotfix | Carpeta con solo `README.md`. Secciones 1-3 condensadas; 9, 10 y 11 en forma minima (1 commit, worktrees N/A, verificacion corta). |
+| **Small** | 3-5 archivos | Carpeta + un `.md` por fase. Template completo, condicionales colapsadas. |
+| **Medium** | 6-10 archivos | Carpeta + un `.md` por fase. Template completo, todas las secciones aplicables. |
+| **Large** | 11+ archivos | Carpeta + un `.md` por fase. Template completo, descomposicion detallada (seccion 8). |
 
-Si puedes describir el diff en una oracion, NO uses el template. Anti-pattern: forzar 8 secciones para un cambio de 5 lineas.
+NO existe el "plan de 3 lineas". Incluso un hotfix Micro tiene carpeta con las
+secciones de ejecucion (9, 10, 11) — minimas, pero presentes. Anti-pattern:
+forzar diagramas o 10 tareas para un cambio de 5 lineas; las secciones se
+escriben pero condensadas.
 
 ## Secciones obligatorias (en orden)
 
-Para Small/Medium/Large, incluir en este orden. Secciones 4, 5, 6 y 8 son condicionales.
+Incluir en este orden. Secciones 4, 5 y 6 son condicionales por contenido.
+Las secciones **8, 9, 10 y 11 son obligatorias en TODO plan** (en Micro, en
+forma minima). La seccion 8 se condensa a `N/A — cambio atomico` en Micro.
 
 ---
 
@@ -182,17 +247,83 @@ Reglas:
 
 ---
 
-### 8. Descomposicion para Paralelizacion — CONDICIONAL: solo Large
+### 8. Descomposicion para Paralelizacion — OBLIGATORIA (`N/A` en Micro)
 
-Aplicar solo si el plan es Large (11+ archivos) o se planea implementacion con multiples agentes en git worktrees.
+Descomposicion del plan en tareas atomicas. En Micro: `N/A — cambio atomico`.
 
-**Documento detallado**: `.claude/docs/plan-format-large/README.md` (plantilla, reglas de paralelizabilidad, granularidad, anti-patrones).
+**Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 1
+(plantilla, reglas de paralelizabilidad, granularidad, anti-patrones).
 
-Resumen: cada tarea debe pasar 3 checks (File Exclusivity, Interface Stability, Bounded Scope) y tener 6 campos (**Archivos**, **AC referenciados**, **Depende de**, **Paralelizable con**, **Verify**, **Done**). Limite practico: 5-7 agentes concurrentes.
+Resumen: cada tarea pasa 3 checks (File Exclusivity, Interface Stability,
+Bounded Scope) y tiene 6 campos (**Archivos**, **AC referenciados**, **Depende
+de**, **Paralelizable con**, **Verify**, **Done**). Limite: 5-7 agentes
+concurrentes. Granularidad: Small 3-5, Medium 5-10, Large 10-20 tareas.
 
 ---
 
-### 9. Validacion y Definition of Done
+### 9. Commits — OBLIGATORIA
+
+Listado de commits incrementales que implementan el plan. Archivo dedicado
+`NN-commits.md` (subseccion del README en Micro). Cada commit:
+
+- Mensaje en Conventional Commits espanol, ya redactado en el plan.
+- Deja el repo verde (lint + typecheck + tests del scope).
+- Es atomico y revisable (un commit = un cambio coherente).
+- Indica que AC cubre + su verificacion incremental.
+
+El primer commit suele ser la carpeta del plan (`docs(specs): ...`); el ultimo
+es el de la seccion 11 e incluye el `git rm -r docs/specs/<nombre>/` — la
+carpeta del plan es efimera y se elimina al mergear (ver "Ciclo de vida de la
+carpeta del plan" abajo). Cada commit ejecuta su verificacion incremental
+ANTES de commitear — no se difiere al final. Un solo PR
+`feature/<nombre> -> dev`.
+
+**Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 2
+(plantilla, regla por commit, resumen de secuencia, PR).
+
+---
+
+### 10. Paralelizacion con git worktrees — OBLIGATORIA (`N/A` en Micro)
+
+Desde que commit se puede paralelizar la implementacion con git worktrees /
+subagentes concurrentes, y que fases son worktree-safe. Archivo dedicado
+`NN-paralelizacion-worktrees.md`. En Micro: `N/A — cambio secuencial`.
+
+Define: la **base secuencial** (commits que todos los worktrees necesitan o
+que tocan archivos transversales), la tabla de fases worktree-safe (archivos
+disjuntos), lo que NO se paraleliza (config central, grilla de comandos,
+limpieza, la seccion 11), y como lanzar cada worktree.
+
+**Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 3
+(regla base, tabla de colisiones, plantilla, anti-patrones).
+
+---
+
+### 11. Verificacion E2E iterativa (fase final) — OBLIGATORIA
+
+Fase de cierre del plan. Archivo dedicado `NN-verificacion-e2e.md`. SIEMPRE es
+la ultima fase y el ultimo commit. Dos partes:
+
+- **Parte A — refactor de tests**: ningun test viejo referencia codigo
+  eliminado; tests nuevos en ruta y convencion correctas; barrido global con
+  `rg -l` (cero resultados esperados).
+- **Parte B — bateria de comandos reales**: ejecutar la verificacion completa
+  de punta a punta con el codigo final. Bucle "no parar hasta que funcione":
+  ejecutar -> si falla, diagnosticar -> corregir -> re-ejecutar la suite ->
+  repetir. NO se marca completa con un comando fallando, un test rojo o
+  coverage < 80%.
+
+Esta fase consolida — no sustituye — la verificacion incremental de cada fase.
+El "Como probar" del PR reutiliza esta bateria. Es el gate del PR: el `git
+push` y la creacion del PR ocurren SOLO cuando esta bateria pasa completa en
+verde (ver "Regla de ejecucion" arriba).
+
+**Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 4
+(plantilla, bucle de correccion, regla de cierre).
+
+---
+
+### 12. Validacion y Definition of Done
 
 Dos checklists:
 
@@ -220,22 +351,63 @@ Dos checklists:
 
 ## Reglas generales
 
+- Todo plan es una carpeta `docs/specs/<nombre-kebab>/`, nunca un archivo suelto
 - Idioma espanol; ingles para terminos tecnicos
 - Sin emojis
 - Conciso: cada seccion lo mas corta posible sin perder informacion
 - Seccion condicional que no aplica → escribir `N/A — [razon]`
+- Secciones 8, 9, 10 y 11 son obligatorias en TODO plan; en Micro se condensan
+  (8 y 10 → `N/A`, 9 → 1 commit, 11 → verificacion corta) pero NUNCA se omiten
 - NO Mermaid en el plan, solo ASCII inline (portabilidad)
 - Si un diagrama justifica `.mmd` permanente, anotarlo en seccion 7
 - AC numerados son la fuente de verdad: tests y tareas los referencian
-- Para Large/Huge: considerar implementacion con subagentes paralelos en git worktrees
+- El ultimo commit del plan es SIEMPRE la seccion 11 (verificacion E2E)
+- La carpeta del plan es efimera: se elimina al mergear (ver abajo)
+- Implementar SIEMPRE en una rama de trabajo: si la rama actual es protegida
+  (`dev`/`stage`/`main`/`master`), crear una rama nueva ANTES del primer
+  commit (ver "Regla de ejecucion" arriba)
+- `git push` + PR SOLO con la bateria de la seccion 11 completa en verde —
+  nunca con tests rojos o coverage < 80%
+
+## Ciclo de vida de la carpeta del plan
+
+La carpeta `docs/specs/<nombre-kebab>/` es un artefacto **efimero del plan**,
+no documentacion permanente del producto. Cuando el plan esta implementado y
+su PR `feature/<nombre> -> dev` se mergea, la carpeta se **elimina**:
+
+- El ultimo commit del PR (el de la seccion 11) incluye el
+  `git rm -r docs/specs/<nombre>/`, o se hace un commit de limpieza dedicado
+  inmediatamente despues del merge.
+- Si una decision de arquitectura o convencion de la spec debe sobrevivir, se
+  promueve a una rule de `.claude/rules/` o a un doc de producto (`docs/cv/`,
+  `docs/guide/`, etc.) ANTES de borrar la carpeta. El codigo, los tests y las
+  rules son la fuente de verdad — no la spec.
+- La trazabilidad del plan queda en `git log` y en el PR mergeado.
+- Las specs de planes **aun no implementados o en curso** SI permanecen en
+  `docs/specs/`. La eliminacion aplica solo al cerrar el plan completo.
+
+Asi `docs/specs/` solo contiene planes pendientes o en ejecucion, nunca
+planes obsoletos ya implementados.
 
 ## Anti-patrones
 
-- Forzar template completo en cambios Micro
+- Plan como archivo suelto en vez de carpeta `docs/specs/<nombre>/`
+- Omitir las secciones 9, 10 u 11 "porque el cambio es chico" (en Micro van
+  minimas, no ausentes)
 - Presentar multiples alternativas en seccion 2 (converger antes)
 - AC vagos sin formato BDD/EARS
 - Tests sin referencia a AC (rompe trazabilidad)
 - Lista de archivos sin verificacion explicita (no es ejecutable)
+- Commits que dejan el repo en rojo (cada commit debe ser verde)
+- Diferir TODA la verificacion al final (cada commit verifica lo suyo)
+- Lanzar worktrees antes de commitear la base secuencial (conflictos)
 - Mermaid inline en plan (usar ASCII + `.mmd` separado)
 - Definition of Done implicita en lugar de criterios observables
 - Descomposicion para paralelizacion sin verificar file exclusivity (race conditions)
+- Declarar el plan "listo" sin que la bateria de la seccion 11 pase completa
+- Dejar la carpeta `docs/specs/<nombre>/` viva tras mergear el plan (es
+  efimera: el ultimo commit la elimina con `git rm -r`)
+- Implementar el plan directo sobre `dev`/`stage`/`main` sin crear una rama
+  de trabajo
+- `git push` o crear el PR con tests rojos, build roto o coverage < 80%
+  (el push/PR es el gate de cierre, no un paso intermedio)

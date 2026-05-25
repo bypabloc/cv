@@ -10,7 +10,8 @@
     "preview": "astro preview --port 4326",
     "astro": "astro",
     "typecheck": "astro check",
-    "prebuild": "vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs"
+    "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs",
+    "predev": "pnpm --filter @portfolio/content run fetch-cache"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",

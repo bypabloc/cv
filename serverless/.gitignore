@@ -1,6 +1,15 @@
-# SAM build artifacts
-.aws-sam/
-samconfig.toml.local
+# Artefacto de deploy que devtools arma con uv (efimero, por lambda).
+lambda/services/*/build/
+lambda/services/*/build.zip
+lambda/services/*/core/shared/
+lambda/services/*/.invoke/
+
+# Estado local del backend (efimero, regenerable, por entorno).
+lambda/.state/*.json
+
+# requirements.txt efimero (la fuente de verdad es pyproject.toml + uv.lock).
+lambda/services/*/requirements.txt
+lambda/services/*/requirements-dev.txt
 
 # Python
 .venv/

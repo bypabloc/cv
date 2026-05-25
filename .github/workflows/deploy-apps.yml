@@ -1,0 +1,324 @@
+name: Deploy Apps
+
+# Dispara en cada merge a una rama de entorno. workflow_dispatch permite
+# disparar manual desde la UI (con el env como input).
+on:
+  push:
+    branches: [dev, stage, main]
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options: [dev, stage, main]
+
+# Queue por env. Alineado con deploy-backend.yml para que dos pushes
+# seguidos al mismo env no compitan.
+concurrency:
+  group: deploy-apps-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "11.0.9"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Mapea branch -> stage + sufijo del proyecto Cloudflare Pages.
+  # ---------------------------------------------------------------------------
+  resolve-env:
+    name: Resolve env (${{ github.ref_name }})
+    runs-on: ubuntu-24.04
+    outputs:
+      stage: ${{ steps.resolve.outputs.stage }}
+      project-suffix: ${{ steps.resolve.outputs.project-suffix }}
+    steps:
+      - id: resolve
+        run: |
+          # workflow_dispatch trae el env via inputs.env; push lo trae via ref_name.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            branch="${{ github.event.inputs.env }}"
+          else
+            branch="${{ github.ref_name }}"
+          fi
+
+          case "$branch" in
+            dev)
+              echo "stage=dev"             >> "$GITHUB_OUTPUT"
+              echo "project-suffix=-dev"   >> "$GITHUB_OUTPUT"
+              ;;
+            stage)
+              echo "stage=stage"           >> "$GITHUB_OUTPUT"
+              echo "project-suffix=-stage" >> "$GITHUB_OUTPUT"
+              ;;
+            main)
+              echo "stage=prod"            >> "$GITHUB_OUTPUT"
+              echo "project-suffix="       >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "ERROR: branch $branch no es dev/stage/main"
+              exit 1
+              ;;
+          esac
+
+  # ---------------------------------------------------------------------------
+  # Build de las 6 apps. SIEMPRE rebuildea (NO reusa el artifact de ci.yml).
+  #
+  # Razon: el artifact de ci.yml se construye sin env vars del environment
+  # destino, entonces todas las URLs y endpoints caen al fallback de
+  # produccion. deploy-apps necesita inyectar BASE_DOMAIN, APEX_DOMAIN,
+  # PUBLIC_API_ENDPOINT, PUBLIC_TURNSTILE_SITEKEY del GH Environment del
+  # stage destino — esas se hornean en build time via import.meta.env.*
+  # y `site-urls.ts`.
+  #
+  # `environment: <stage>` da acceso a vars.* del environment del mismo
+  # nombre (poblados por `python devtools/run.py sync_secrets --env=<X>
+  # --category=client` desde docker/env/client/.{env}).
+  # ---------------------------------------------------------------------------
+  build-apps:
+    name: Build apps
+    needs: resolve-env
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ${{ needs.resolve-env.outputs.stage }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build cv-filters bundle (needed by apps prebuild)
+        run: pnpm --filter @portfolio/cv-filters run build
+
+      - name: Build all apps with env vars del stage
+        # Las vars vienen de GH Environment (dev/stage/prod) pobladas por
+        # `python devtools/run.py sync_secrets --env=<X> --category=client`.
+        # Son publicas (PUBLIC_*) — no se mascarean en logs porque son
+        # Variables, no Secrets.
+        env:
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          BASE_SCHEME: ${{ vars.BASE_SCHEME }}
+          APEX_DOMAIN: ${{ vars.APEX_DOMAIN }}
+          PUBLIC_API_ENDPOINT: ${{ vars.PUBLIC_API_ENDPOINT }}
+          PUBLIC_TURNSTILE_SITEKEY: ${{ vars.PUBLIC_TURNSTILE_SITEKEY }}
+        run: |
+          # Verificacion explicita: las vars requeridas deben estar
+          # presentes. Si falta alguna, fallar temprano con mensaje claro
+          # (el guard de TrackingPixel.astro tambien atrapa esto, pero
+          # mejor reportarlo aqui antes que en un stack trace de Astro).
+          : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py sync_secrets --env=${{ needs.resolve-env.outputs.stage }} --category=client' para poblarlo.}"
+          : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre sync_secrets --category=client.}"
+          : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre sync_secrets --category=client.}"
+          pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
+
+      # Subir el artifact con un nombre estable para los jobs del matrix.
+      - name: Re-upload artifact for matrix
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-dist-${{ github.run_id }}
+          path: apps/*/dist
+          retention-days: 1
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Deploy de las 6 apps en paralelo. Mapeo:
+  #   dev   -> {niche}-dev
+  #   stage -> {niche}-stage
+  #   main  -> {niche}    (sin sufijo)
+  # ---------------------------------------------------------------------------
+  deploy-pages:
+    name: Deploy ${{ matrix.niche }}
+    needs: [resolve-env, build-apps]
+    runs-on: ubuntu-24.04
+    # SIN `environment:` a proposito: los secrets CLOUDFLARE_* son
+    # Repository Secrets (mismo valor en dev/stage/prod, no varian).
+    # Cuando un job declara `environment:`, GitHub OCULTA los Repository
+    # Secrets — solo los Environment Secrets del env activo son visibles.
+    # Si en el futuro los CF tokens varian por env, migrarlos a
+    # Environment Secrets y restaurar `environment: <stage>`.
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        niche: [generic, hub, fintech, architect, leader, vibe]
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-dist-${{ github.run_id }}
+          path: apps/
+
+      - name: Setup Node (wrangler-action lo necesita)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy apps/${{ matrix.niche }}/dist
+            --project-name=${{ matrix.niche }}${{ needs.resolve-env.outputs.project-suffix }}
+            --branch=${{ github.ref_name }}
+
+  # ---------------------------------------------------------------------------
+  # Capa C del plan build-env-vars-per-env: smoke test post-deploy.
+  # Curl al hostname desplegado + grep:
+  #   - data-api-endpoint matchea PUBLIC_API_ENDPOINT del stage
+  #   - hrefs del dropdown NO apuntan a prod cuando stage != prod
+  # Detecta drift entre lo que sube el matrix y lo que sirve Cloudflare
+  # (cache stale, deploy parcial, etc.).
+  # ---------------------------------------------------------------------------
+  verify-deploy:
+    name: Verify ${{ matrix.niche }} dist matches env
+    needs: [resolve-env, deploy-pages]
+    if: needs.deploy-pages.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        niche: [generic, hub, fintech, architect, leader, vibe]
+    steps:
+      - name: Resolve expected URL + API endpoint
+        id: url
+        run: |
+          stage="${{ needs.resolve-env.outputs.stage }}"
+          niche="${{ matrix.niche }}"
+
+          if [[ "$stage" == "prod" ]]; then
+            base="portfolio.the-full-stack.com"
+            api="https://api.portfolio.the-full-stack.com"
+            if [[ "$niche" == "generic" ]]; then
+              url="https://the-full-stack.com"
+            else
+              url="https://${niche}.${base}"
+            fi
+          else
+            base="portfolio.${stage}.the-full-stack.com"
+            api="https://api.${base}"
+            if [[ "$niche" == "generic" ]]; then
+              url="https://${base}"
+            else
+              url="https://${niche}.${base}"
+            fi
+          fi
+
+          echo "url=$url"   >> "$GITHUB_OUTPUT"
+          echo "api=$api"   >> "$GITHUB_OUTPUT"
+          echo "stage=$stage" >> "$GITHUB_OUTPUT"
+          echo "Verificando: $url (api esperado: $api)"
+
+      - name: Curl y assert data-api-endpoint
+        run: |
+          # Esperar un poco a que Cloudflare propague el deploy
+          sleep 5
+          html=$(curl -fsSL --max-time 30 "${{ steps.url.outputs.url }}/" || true)
+          if [[ -z "$html" ]]; then
+            echo "::error::No pude curl ${{ steps.url.outputs.url }}/"
+            exit 1
+          fi
+          expected='data-api-endpoint="${{ steps.url.outputs.api }}"'
+          if ! grep -qF "$expected" <<<"$html"; then
+            echo "::error::data-api-endpoint missing/wrong en ${{ steps.url.outputs.url }}"
+            echo "Esperado: $expected"
+            echo "Lo que hay en cf-tracking-pixel:"
+            grep -oE 'cf-tracking-pixel[^>]*' <<<"$html" | head -3 || echo "(no match)"
+            exit 1
+          fi
+
+      - name: Curl y assert dropdown hrefs no apunten a prod en dev/stage
+        if: steps.url.outputs.stage != 'prod'
+        run: |
+          html=$(curl -fsSL --max-time 30 "${{ steps.url.outputs.url }}/")
+          bad=$(grep -oE 'href="https://[a-z]+\.portfolio\.the-full-stack\.com[^"]*"' <<<"$html" | head -5 || true)
+          if [[ -n "$bad" ]]; then
+            echo "::error::Dropdown hrefs apuntan a prod desde ${{ steps.url.outputs.stage }}:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "OK: dropdown hrefs apuntan a *.${{ steps.url.outputs.stage }}.*"
+
+  # ---------------------------------------------------------------------------
+  # Resumen del deploy posteado como commit comment. if: always() para
+  # ver el resultado consolidado aun si algun deploy fallo.
+  # ---------------------------------------------------------------------------
+  report:
+    name: Report apps deploy summary
+    needs: [resolve-env, deploy-pages]
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      # commit-comment posts a comment on the merge commit:
+      # POST /repos/:owner/:repo/commits/:sha/comments requires contents:write
+      # (NOT pull-requests:write — that's for PR threads).
+      contents: write
+    steps:
+      - name: Build report body
+        id: build-report
+        run: |
+          stage="${{ needs.resolve-env.outputs.stage }}"
+          suffix="${{ needs.resolve-env.outputs.project-suffix }}"
+          deploy_result='${{ needs.deploy-pages.result }}'
+
+          # URLs canonicas por env. prod (main) -> sin etiqueta de env;
+          # generic en prod usa el apex the-full-stack.com directamente.
+          if [[ "$stage" == "prod" ]]; then
+            base_url="portfolio.the-full-stack.com"
+          else
+            base_url="portfolio.${stage}.the-full-stack.com"
+          fi
+
+          {
+            echo "## Apps deploy report — \`${stage}\`"
+            echo
+            echo "| Niche | Project | URL |"
+            echo "|-------|---------|-----|"
+            for niche in generic hub fintech architect leader vibe; do
+              project="${niche}${suffix}"
+              if [[ "$niche" == "generic" ]]; then
+                if [[ "$stage" == "prod" ]]; then
+                  url="https://the-full-stack.com"
+                else
+                  url="https://${base_url}"
+                fi
+              else
+                url="https://${niche}.${base_url}"
+              fi
+              echo "| \`${niche}\` | \`${project}\` | ${url} |"
+            done
+            echo
+            echo "Overall: ${deploy_result}"
+            echo
+            echo "Workflow: [run #${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          } > /tmp/body.md
+
+          {
+            echo "body<<EOF"
+            cat /tmp/body.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post commit comment
+        uses: peter-evans/commit-comment@v3
+        with:
+          sha: ${{ github.sha }}
+          body: ${{ steps.build-report.outputs.body }}

@@ -1,16 +1,16 @@
 /**
  * @module skills
  * @description Categorias de skills agrupadas por dominio (technical/soft).
- *   Data en YAML 1-por-categoria (slug = filename).
+ *   Origen: cache JSON generado por `scripts/fetch-cv-cache.mjs`
+ *   (API GET /cv?action=skills).
  */
-import { loadYamlEntries } from '../../lib/load-yaml-entries'
+import raw from '../../data-cache/skills.json'
 import { type SkillCategory, SkillCategorySchema } from '../../schemas'
 
-const modules = import.meta.glob<{ default: unknown }>('./*.yaml', {
-  eager: true,
-})
+const items: readonly SkillCategory[] = (raw as readonly unknown[]).map(
+  (entry) => SkillCategorySchema.parse(entry),
+)
 
-export const skills: readonly SkillCategory[] = loadYamlEntries<SkillCategory>(
-  modules,
-  SkillCategorySchema,
+export const skills: readonly SkillCategory[] = [...items].sort((a, b) =>
+  a.slug.localeCompare(b.slug),
 )

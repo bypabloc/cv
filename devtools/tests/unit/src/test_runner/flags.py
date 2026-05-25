@@ -3,7 +3,7 @@
 Path mirroring: devtools/test_runner/flags.py -> this file.
 
 Cubre las flags de Playwright (--project, --shard, --shard-total,
---fail-on-flaky) que requieren --module=dashboard|landing y --type=feature
+--fail-on-flaky) que requieren --module=feature y --type=feature
 (mayo 2026: el módulo top-level `e2e` fue eliminado y cada producto
 tiene su `--type=feature`). La validación existente de module/type/env
 ya esta probada implicitamente al usarse en cada invocacion.
@@ -28,7 +28,7 @@ class TestProjectFlag:
 
         result = flag(
             {
-                'module': 'dashboard',
+                'module': 'feature',
                 'type': 'feature',
                 'project': 'desktop-chromium',
             },
@@ -39,7 +39,7 @@ class TestProjectFlag:
     def test_project_defaults_to_empty(self):
         from test_runner.flags import flag
 
-        result = flag({'module': 'dashboard', 'type': 'feature'})
+        result = flag({'module': 'feature', 'type': 'feature'})
 
         assert result.get('project', '') == ''
 
@@ -48,7 +48,7 @@ class TestProjectFlag:
 
         with pytest.raises(
             ValueError,
-            match=r'--project requiere --module=dashboard\|landing y --type=feature',
+            match=r'--project requiere --module=feature y --type=feature',
         ):
             flag(
                 {
@@ -72,7 +72,7 @@ class TestShardFlags:
 
         result = flag(
             {
-                'module': 'landing',
+                'module': 'feature',
                 'type': 'feature',
                 'shard': '1',
                 'shard_total': '4',
@@ -87,13 +87,13 @@ class TestShardFlags:
         from test_runner.flags import flag
 
         with pytest.raises(ValueError, match='--shard requiere --shard-total'):
-            flag({'module': 'dashboard', 'type': 'feature', 'shard': '1'})
+            flag({'module': 'feature', 'type': 'feature', 'shard': '1'})
 
     def test_shard_total_requires_shard(self):
         from test_runner.flags import flag
 
         with pytest.raises(ValueError, match='--shard-total requiere --shard'):
-            flag({'module': 'dashboard', 'type': 'feature', 'shard_total': '4'})
+            flag({'module': 'feature', 'type': 'feature', 'shard_total': '4'})
 
     def test_shard_must_be_positive(self):
         from test_runner.flags import flag
@@ -101,7 +101,7 @@ class TestShardFlags:
         with pytest.raises(ValueError, match='--shard debe ser >= 1'):
             flag(
                 {
-                    'module': 'dashboard',
+                    'module': 'feature',
                     'type': 'feature',
                     'shard': '0',
                     'shard_total': '4',
@@ -117,7 +117,7 @@ class TestShardFlags:
         ):
             flag(
                 {
-                    'module': 'dashboard',
+                    'module': 'feature',
                     'type': 'feature',
                     'shard': '5',
                     'shard_total': '4',
@@ -129,7 +129,7 @@ class TestShardFlags:
 
         with pytest.raises(
             ValueError,
-            match=r'--shard requiere --module=dashboard\|landing y --type=feature',
+            match=r'--shard requiere --module=feature y --type=feature',
         ):
             flag(
                 {
@@ -154,7 +154,7 @@ class TestFailOnFlakyFlag:
 
         result = flag(
             {
-                'module': 'dashboard',
+                'module': 'feature',
                 'type': 'feature',
                 'fail_on_flaky': True,
             },
@@ -165,7 +165,7 @@ class TestFailOnFlakyFlag:
     def test_defaults_to_false(self):
         from test_runner.flags import flag
 
-        result = flag({'module': 'dashboard', 'type': 'feature'})
+        result = flag({'module': 'feature', 'type': 'feature'})
 
         assert result.get('fail_on_flaky', False) is False
 
@@ -174,7 +174,7 @@ class TestFailOnFlakyFlag:
 
         with pytest.raises(
             ValueError,
-            match=r'--fail-on-flaky requiere --module=dashboard\|landing y --type=feature',
+            match=r'--fail-on-flaky requiere --module=feature y --type=feature',
         ):
             flag(
                 {
@@ -201,7 +201,7 @@ class TestDockerEnvDefault:
         import test_runner.flags as flags_mod
 
         importlib.reload(flags_mod)
-        result = flags_mod.flag({'module': 'dashboard', 'type': 'feature'})
+        result = flags_mod.flag({'module': 'feature', 'type': 'feature'})
 
         assert result['env'] == 'test'
 
@@ -218,7 +218,7 @@ class TestDockerEnvDefault:
         importlib.reload(flags_mod)
         result = flags_mod.flag(
             {
-                'module': 'dashboard',
+                'module': 'feature',
                 'type': 'feature',
                 'env': 'local',
             },
@@ -236,7 +236,7 @@ class TestDockerEnvDefault:
         import test_runner.flags as flags_mod
 
         importlib.reload(flags_mod)
-        result = flags_mod.flag({'module': 'dashboard', 'type': 'feature'})
+        result = flags_mod.flag({'module': 'feature', 'type': 'feature'})
 
         assert result['env'] == 'local'
 
@@ -254,7 +254,7 @@ class TestCIFlagCombination:
 
         result = flag(
             {
-                'module': 'dashboard',
+                'module': 'feature',
                 'type': 'feature',
                 'project': 'desktop-chromium',
                 'shard': '2',
@@ -263,7 +263,7 @@ class TestCIFlagCombination:
             },
         )
 
-        assert result['module'] == 'dashboard'
+        assert result['module'] == 'feature'
         assert result['type'] == 'feature'
         assert result['project'] == 'desktop-chromium'
         assert result['shard'] == 2
@@ -308,4 +308,4 @@ class TestE2EMigrationErrors:
             ValueError,
             match='--type=e2e fue eliminado',
         ):
-            flag({'module': 'dashboard', 'type': 'e2e'})
+            flag({'module': 'feature', 'type': 'e2e'})

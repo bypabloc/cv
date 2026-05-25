@@ -1,9 +1,8 @@
 /**
  * @description Tests de track-event: la API unica de emision de eventos.
  *   Verifica que `trackEvent` arma el payload con `event_id`/`session_id`/
- *   `event_type_id`/`event_props` [AC-3], y que respeta el gating de
- *   consentimiento (`cf_consent`) y el bypass de QA `?cf_track=force`
- *   [AC-12].
+ *   `event_type_id`/`event_props` y siempre emite (tracking always-on,
+ *   sin gating de consentimiento).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -11,8 +10,6 @@ import {
   configureTracking,
   generateEventId,
   getSessionId,
-  hasTrackingConsent,
-  isTrackingForced,
   resetTrackingConfig,
   sendBeaconPayload,
   type TrackEventPayload,
@@ -57,39 +54,6 @@ describe('track-event', () => {
     })
   })
 
-  describe('isTrackingForced', () => {
-    it('Given URL with ?cf_track=force When isTrackingForced Then returns true', () => {
-      setSearch('?cf_track=force')
-      expect(isTrackingForced()).toBe(true)
-    })
-
-    it('Given URL without the QA flag When isTrackingForced Then returns false', () => {
-      setSearch('?utm_source=x')
-      expect(isTrackingForced()).toBe(false)
-    })
-  })
-
-  describe('hasTrackingConsent', () => {
-    it('Given cf_consent=accepted When hasTrackingConsent Then returns true', () => {
-      localStorage.setItem('cf_consent', 'accepted')
-      expect(hasTrackingConsent()).toBe(true)
-    })
-
-    it('Given no cf_consent and no flag When hasTrackingConsent Then returns false', () => {
-      expect(hasTrackingConsent()).toBe(false)
-    })
-
-    it('Given cf_consent=rejected When hasTrackingConsent Then returns false', () => {
-      localStorage.setItem('cf_consent', 'rejected')
-      expect(hasTrackingConsent()).toBe(false)
-    })
-
-    it('Given no consent but ?cf_track=force When hasTrackingConsent Then returns true', () => {
-      setSearch('?cf_track=force')
-      expect(hasTrackingConsent()).toBe(true)
-    })
-  })
-
   describe('getSessionId', () => {
     it('Given empty localStorage When getSessionId Then creates and persists cf_session', () => {
       const sid = getSessionId()
@@ -112,10 +76,21 @@ describe('track-event', () => {
 
   describe('sendBeaconPayload', () => {
     const payload: TrackEventPayload = {
+      operation: 'tracking',
+      action: 'track',
       session_id: 's',
       event_id: 'e',
       event_type_id: PAGE_LOAD,
       page_url: 'https://x.test/',
+      page_path: '/',
+      page_title: '',
+      referrer: '',
+      utm_source: '',
+      utm_medium: '',
+      utm_campaign: '',
+      utm_content: '',
+      viewport_width: 1280,
+      viewport_height: 800,
       niche: 'generic',
     }
 
@@ -139,17 +114,31 @@ describe('track-event', () => {
   })
 
   describe('buildTrackPayload', () => {
-    it('Given an event type and props When buildTrackPayload Then includes event_id, session_id, event_type_id and event_props', () => {
+    it('Given an event type and props When buildTrackPayload Then includes core fields + page/utm/viewport (spec tracking-data-completeness)', () => {
       localStorage.setItem('cf_session', 'session000000000000000000000000')
       const payload = buildTrackPayload(CTA_CLICK, { href: '/contact' })
-      expect(payload).toEqual({
+      expect(payload).toMatchObject({
+        operation: 'tracking',
+        action: 'track',
         session_id: 'session000000000000000000000000',
-        event_id: payload.event_id,
         event_type_id: CTA_CLICK,
         page_url: 'https://x.test/',
+        page_path: '/',
+        page_title: '',
+        referrer: '',
+        utm_source: '',
+        utm_medium: '',
+        utm_campaign: '',
+        utm_content: '',
         niche: 'generic',
         event_props: { href: '/contact' },
       })
+      // event_id es generado, solo verifica forma
+      expect(payload.event_id).toMatch(/^[0-9a-f]{32}$/i)
+      // viewport numeros (happy-dom default: 1024x768)
+      expect(payload.viewport_width).toBeGreaterThan(0)
+      expect(payload.viewport_height).toBeGreaterThan(0)
+      expect(payload.device_pixel_ratio).toBeGreaterThan(0)
     })
 
     it('Given the event_id field When buildTrackPayload Then it is a 32-char hex string', () => {
@@ -166,31 +155,47 @@ describe('track-event', () => {
       const payload = buildTrackPayload(PAGE_LOAD, {})
       expect(payload.event_props).toBe(undefined)
     })
-  })
 
-  describe('trackEvent gating', () => {
-    it('Given no consent and no QA flag When trackEvent Then does NOT send and returns false [AC-12]', () => {
-      const result = trackEvent(CTA_CLICK, { href: '/x' })
-      expect(result).toBe(false)
-      expect(navigator.sendBeacon).toHaveBeenCalledTimes(0)
+    it('Given URL with utm_source/medium When buildTrackPayload Then payload trae los 4 utm_* (vacio cuando no aplica) [AC-9]', () => {
+      setSearch('?utm_source=linkedin&utm_medium=organic')
+      const payload = buildTrackPayload(PAGE_LOAD)
+      expect(payload.utm_source).toBe('linkedin')
+      expect(payload.utm_medium).toBe('organic')
+      expect(payload.utm_campaign).toBe('')
+      expect(payload.utm_content).toBe('')
     })
 
-    it('Given cf_consent=accepted When trackEvent Then sends a beacon to /track and returns true', () => {
-      localStorage.setItem('cf_consent', 'accepted')
+    it('Given no query string When buildTrackPayload Then los 4 utm_* son string vacio (nunca undefined) [AC-9]', () => {
+      setSearch('')
+      const payload = buildTrackPayload(PAGE_LOAD)
+      expect(payload.utm_source).toBe('')
+      expect(payload.utm_medium).toBe('')
+      expect(payload.utm_campaign).toBe('')
+      expect(payload.utm_content).toBe('')
+    })
+  })
+
+  describe('trackEvent (always-on)', () => {
+    it('Given no previous localStorage state When trackEvent Then sends a beacon and returns true', () => {
       const result = trackEvent(CTA_CLICK, { href: '/contact' })
       expect(result).toBe(true)
       expect(navigator.sendBeacon).toHaveBeenCalledTimes(1)
     })
 
-    it('Given consent When trackEvent Then beacon URL is the configured endpoint + /track', () => {
-      localStorage.setItem('cf_consent', 'accepted')
+    it('Given no configured endpoint When trackEvent Then does NOT send and returns false', () => {
+      resetTrackingConfig()
+      const result = trackEvent(PAGE_LOAD)
+      expect(result).toBe(false)
+      expect(navigator.sendBeacon).toHaveBeenCalledTimes(0)
+    })
+
+    it('Given an event When trackEvent Then beacon URL is the configured endpoint + /track', () => {
       trackEvent(PAGE_LOAD)
       const [url] = vi.mocked(navigator.sendBeacon).mock.calls[0] ?? []
       expect(url).toBe('https://api.test/track')
     })
 
-    it('Given consent When trackEvent Then the beacon body carries event_type_id and event_props', async () => {
-      localStorage.setItem('cf_consent', 'accepted')
+    it('Given an event with props When trackEvent Then the beacon body carries event_type_id and event_props', async () => {
       trackEvent(CTA_CLICK, { href: '/contact' })
       const [, blob] = vi.mocked(navigator.sendBeacon).mock.calls[0] ?? []
       const text = await (blob as Blob).text()
@@ -202,18 +207,10 @@ describe('track-event', () => {
       expect(body.event_props).toEqual({ href: '/contact' })
     })
 
-    it('Given consent When trackEvent Then the beacon Blob is text/plain (CORS-safelisted, no preflight)', () => {
-      localStorage.setItem('cf_consent', 'accepted')
+    it('Given an event When trackEvent Then the beacon Blob is text/plain (CORS-safelisted, no preflight)', () => {
       trackEvent(PAGE_LOAD)
       const [, blob] = vi.mocked(navigator.sendBeacon).mock.calls[0] ?? []
       expect((blob as Blob).type).toBe('text/plain')
-    })
-
-    it('Given no consent but ?cf_track=force When trackEvent Then sends the beacon (QA bypass)', () => {
-      setSearch('?cf_track=force')
-      const result = trackEvent(PAGE_LOAD)
-      expect(result).toBe(true)
-      expect(navigator.sendBeacon).toHaveBeenCalledTimes(1)
     })
   })
 })

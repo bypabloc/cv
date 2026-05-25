@@ -29,6 +29,7 @@ API CLI:
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import time
@@ -44,13 +45,44 @@ from shared.console import _err
 
 
 # Las tablas DynamoDB siguen el patron `portfolio-<recurso>-<stage>` definido
-# en serverless/template.yaml. El stage por default es `dev` (lo unico que existe
-# hoy ademas de prod). Si se necesita gestionar otro stage, agregar flag --stage
-# y resolver el sufijo aqui.
-_STAGE = 'dev'
-_RULES_TABLE = f'portfolio-rate-limit-rules-{_STAGE}'
-_BUCKETS_TABLE = f'portfolio-rate-limit-buckets-{_STAGE}'
+# por devtools al provisionar. El stage default es `dev` (el unico que el
+# laptop opera habitualmente). Pasar `--stage=prod` para gestionar produccion.
+_DEFAULT_STAGE = 'dev'
+_VALID_STAGES = ('dev', 'stage', 'prod')
 _REGION = 'us-east-1'
+
+# Tablas resueltas por la cmd_rate_limit() del dispatcher segun --stage.
+# Default apunta a dev (caso comun del laptop). Reescrito por el dispatcher
+# en cada invocacion antes de llamar al handler.
+_RULES_TABLE = f'portfolio-rate-limit-rules-{_DEFAULT_STAGE}'
+_BUCKETS_TABLE = f'portfolio-rate-limit-buckets-{_DEFAULT_STAGE}'
+
+
+def _resolve_stage(flags: dict[str, Any]) -> str:
+    """Resuelve el stage del CLI, validando contra el set permitido.
+
+    Si el parser pasa 'local' (default del flag global de serverless), cae
+    al default `_DEFAULT_STAGE` porque las tablas de rate-limit no existen
+    en local (DynamoDB local no esta provisionado).
+    """
+    stage = flags.get('stage') or _DEFAULT_STAGE
+    if stage == 'local':
+        return _DEFAULT_STAGE
+    if stage not in _VALID_STAGES:
+        _err(
+            f'--stage={stage!r} invalido. Validos: {", ".join(_VALID_STAGES)}',
+        )
+        return _DEFAULT_STAGE
+    return stage
+
+
+def _rules_table(stage: str) -> str:
+    return f'portfolio-rate-limit-rules-{stage}'
+
+
+def _buckets_table(stage: str) -> str:
+    return f'portfolio-rate-limit-buckets-{stage}'
+
 
 _VALID_ACTIONS = [
     'list',
@@ -59,6 +91,7 @@ _VALID_ACTIONS = [
     'allow',
     'block',
     'unblock',
+    'unblock-all',
     'stats',
     'clear-buckets',
 ]
@@ -93,6 +126,19 @@ def cmd_rate_limit(flags: dict[str, Any]) -> int:
     if not _ensure_aws_cli():
         return 1
 
+    # Resuelve el stage y reescribe las tablas globales para los handlers.
+    # No se pasa como arg para no tocar las 8 firmas existentes.
+    global _RULES_TABLE, _BUCKETS_TABLE
+    stage = _resolve_stage(flags)
+    _RULES_TABLE = _rules_table(stage)
+    _BUCKETS_TABLE = _buckets_table(stage)
+
+    # Propaga --aws-profile como env var para que los `aws ...` heredados lo
+    # usen sin tocar la firma de _run_aws.
+    aws_profile = flags.get('aws_profile')
+    if aws_profile:
+        os.environ['AWS_PROFILE'] = aws_profile
+
     subcommands = flags.get('subcommands', []) or []
     action = subcommands[1] if len(subcommands) > 1 else 'list'
 
@@ -108,10 +154,76 @@ def cmd_rate_limit(flags: dict[str, Any]) -> int:
         'allow': _rate_limit_allow,
         'block': _rate_limit_block,
         'unblock': _rate_limit_unblock,
+        'unblock-all': _rate_limit_unblock_all,
         'stats': _rate_limit_stats,
         'clear-buckets': _rate_limit_clear_buckets,
     }
     return handlers[action](flags)
+
+
+def _rate_limit_unblock_all(flags: dict[str, Any]) -> int:
+    """Elimina TODAS las entries kind=ip_blacklist (manual + auto).
+
+    Util para limpiar el estado durante testing (cuando una IP del dev
+    quedo blacklisteada y dispara 403 en /track o /contact). Requiere
+    --confirm para evitar accidentes.
+    """
+    if not flags.get('confirm'):
+        _err('Falta --confirm. Esta accion borra TODAS las IPs blacklisted.')
+        print(
+            f'{DIM}  Ejemplo: serverless rate-limit unblock-all --confirm{NC}'
+        )
+        return 2
+
+    # 1. Scan filtrado por kind=ip_blacklist
+    code, stdout, stderr = _run_aws(
+        [
+            'dynamodb',
+            'scan',
+            '--table-name',
+            _RULES_TABLE,
+            '--filter-expression',
+            'kind = :k',
+            '--expression-attribute-values',
+            json.dumps({':k': {'S': 'ip_blacklist'}}),
+            '--output',
+            'json',
+        ]
+    )
+    if code != 0:
+        _err(f'Scan fallo: {stderr.strip()}')
+        return code
+
+    items = json.loads(stdout).get('Items', [])
+    if not items:
+        print(_c(GREEN, 'No hay IPs blacklisted. Nada que limpiar.'))
+        return 0
+
+    # 2. Delete uno por uno (no hay BatchWriteItem keyed por SK aqui)
+    removed = 0
+    for item in items:
+        rule_key = item.get('rule_key', {}).get('S')
+        kind = item.get('kind', {}).get('S')
+        if not (rule_key and kind):
+            continue
+        del_code, _, del_stderr = _run_aws(
+            [
+                'dynamodb',
+                'delete-item',
+                '--table-name',
+                _RULES_TABLE,
+                '--key',
+                json.dumps({'rule_key': {'S': rule_key}, 'kind': {'S': kind}}),
+            ]
+        )
+        if del_code != 0:
+            _err(f'Fallo borrar {rule_key}: {del_stderr.strip()}')
+            continue
+        removed += 1
+        print(f'  - {_c(GREEN, "removed")} {rule_key}')
+
+    print(_c(GREEN, f'\nOK: {removed} IP(s) blacklisted eliminada(s).'))
+    return 0
 
 
 # ---------------------------------------------------------------------------

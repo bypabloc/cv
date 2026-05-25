@@ -11,7 +11,6 @@ import {
   sortByPriority,
 } from '@portfolio/content'
 import AwardCard from '@portfolio/ui/components/AwardCard.astro'
-import CaseStudyExpander from '@portfolio/ui/components/CaseStudyExpander.astro'
 import ExperienceTimeline from '@portfolio/ui/components/ExperienceTimeline.astro'
 /**
  * @component CvSections
@@ -35,6 +34,7 @@ import SkillsMarquee from '@portfolio/ui/components/SkillsMarquee.astro'
 import StatsBar from '@portfolio/ui/components/StatsBar.astro'
 import TimelineItem from '@portfolio/ui/components/TimelineItem.astro'
 import { buildStats } from '../lib/build-stats'
+import { isDetailedCv, visibleResponsibilities } from '../lib/cv-detail'
 import { getNicheExtras } from '../lib/get-niche-extras'
 import type { I18nStrings } from '../lib/site-config'
 import AiWorkflowSection from './AiWorkflowSection.astro'
@@ -62,6 +62,8 @@ const {
   cvHref = '/cv.html',
   enableFilters = false,
 } = Astro.props
+// Prefijo de ruta segun locale: el ingles vive bajo /en.
+const localePrefix = locale === 'en' ? '/en' : ''
 const exps = sortByPriority(filterByNiche(experiences, niche), niche)
 const projs = sortByPriority(filterByNiche(projects, niche), niche)
 const sks = filterByNiche(skills, niche)
@@ -87,28 +89,16 @@ const uniqueProjectTypes = enableFilters
   ? Array.from(new Set(projs.map((p) => p.projectType))).sort()
   : []
 
-const filterLabels =
-  locale === 'es'
-    ? {
-        bar: 'Filtros',
-        clear: 'Limpiar filtros',
-        tech: 'Tecnologias',
-        seniority: 'Seniority',
-        type: 'Tipo',
-        confidential: 'Ocultar confidenciales',
-        skillsTechnical: 'Tecnicas',
-        skillsSoft: 'Blandas',
-      }
-    : {
-        bar: 'Filters',
-        clear: 'Clear filters',
-        tech: 'Technologies',
-        seniority: 'Seniority',
-        type: 'Type',
-        confidential: 'Hide confidential',
-        skillsTechnical: 'Technical',
-        skillsSoft: 'Soft',
-      }
+const filterLabels = {
+  bar: t.components.filters.bar,
+  clear: t.components.filters.clear,
+  tech: t.components.filters.tech,
+  seniority: t.components.filters.seniority,
+  type: t.components.filters.type,
+  confidential: t.components.filters.confidential,
+  skillsTechnical: t.components.filters.skillsTechnical,
+  skillsSoft: t.components.filters.skillsSoft,
+}
 
 // Stack para marquee: top 5 skills tecnicas, top 5 dominios/herramientas
 const marqueeRowOne = technicalSkills
@@ -262,12 +252,40 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           dataSeniority={e.seniority}
           dataStart={e.start}
           dataEnd={e.end ?? ''}
+          detailHref={`${localePrefix}/experience/${e.slug}`}
+          detailLabel={t.labels.viewDetail}
         >
-          <ul class="exp-bullets">
-            {e.responsibilities[locale].slice(0, 3).map((r) => (
-              <li>{r}</li>
-            ))}
-          </ul>
+          {e.summary ? (
+            <p class="exp-summary">{e.summary[locale]}</p>
+          ) : (
+            <>
+              {isDetailedCv(niche) && (
+                <p class="exp-bullets__heading text-label">
+                  {t.labels.responsibilities}
+                </p>
+              )}
+              <ul class="exp-bullets">
+                {visibleResponsibilities(
+                  e.responsibilities[locale],
+                  niche,
+                ).map((r) => (
+                  <li>{r}</li>
+                ))}
+              </ul>
+              {isDetailedCv(niche) && e.achievements[locale].length > 0 && (
+                <>
+                  <p class="exp-bullets__heading text-label">
+                    {t.labels.achievements}
+                  </p>
+                  <ul class="exp-bullets exp-bullets--achievements">
+                    {e.achievements[locale].map((a) => (
+                      <li>{a}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
+          )}
         </TimelineItem>
       ))
     }
@@ -275,9 +293,7 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   {
     enableFilters && (
       <p class="filter-empty text-muted" data-filter-empty hidden>
-        {locale === 'es'
-          ? 'No hay experiencias con estos filtros.'
-          : 'No experiences match these filters.'}
+        {t.components.filters.emptyExperiences}
       </p>
     )
   }
@@ -301,13 +317,18 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
           summary={p.summary[locale]}
           stack={p.stack}
           url={p.url}
+          links={p.links?.map((l) => ({ label: l.label[locale], url: l.url }))}
           repo={p.repo}
           status={p.status}
           isConfidential={p.isConfidential}
           bentoSpan={bentoSpans[idx % bentoSpans.length] ?? 'md'}
           caseStudyLabel={t.labels.confidential}
+          viewSiteLabel={t.labels.viewSite}
+          viewRepoLabel={t.labels.viewRepo}
           filterable={enableFilters}
           dataProjectType={p.projectType}
+          detailHref={`${localePrefix}/projects/${p.slug}`}
+          detailLabel={t.labels.viewDetail}
         />
       ))
     }
@@ -315,35 +336,8 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   {
     enableFilters && (
       <p class="filter-empty text-muted" data-filter-empty hidden>
-        {locale === 'es'
-          ? 'No hay proyectos con estos filtros.'
-          : 'No projects match these filters.'}
+        {t.components.filters.emptyProjects}
       </p>
-    )
-  }
-
-  {
-    projs.filter((p) => p.caseStudyDetailed).length > 0 && (
-      <div class="case-studies">
-        {projs
-          .filter((p) => p.caseStudyDetailed)
-          .map((p) => (
-            <CaseStudyExpander
-              title={p.name}
-              problem={p.caseStudyDetailed!.problem[locale]}
-              process={p.caseStudyDetailed!.process[locale]}
-              result={p.caseStudyDetailed!.result[locale]}
-              metrics={p.metrics ? Object.values(p.metrics) : []}
-              labels={{
-                cta: t.labels.caseStudyCta,
-                problem: t.labels.caseStudyProblem,
-                process: t.labels.caseStudyProcess,
-                result: t.labels.caseStudyResult,
-                metricsTitle: t.labels.caseStudyMetrics,
-              }}
-            />
-          ))}
-      </div>
     )
   }
 </section>
@@ -414,6 +408,10 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   .section--compact {
     padding-block: var(--space-24);
   }
+  .exp-summary {
+    margin: 0;
+    line-height: var(--line-height-relaxed);
+  }
   .exp-bullets {
     list-style: disc inside;
     margin-top: var(--space-8);
@@ -422,6 +420,15 @@ const bentoSpans: Array<'sm' | 'md' | 'lg' | 'xl'> = ['lg', 'md', 'md', 'lg']
   }
   .exp-bullets li {
     margin-bottom: var(--space-4);
+  }
+  /* Encabezado de cada lista (solo en el CV generico detallado). */
+  .exp-bullets__heading {
+    display: block;
+    margin-top: var(--space-12);
+    color: var(--color-text-muted);
+  }
+  .exp-bullets--achievements {
+    color: var(--color-text-muted);
   }
   .awards-grid {
     display: grid;

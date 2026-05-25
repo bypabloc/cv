@@ -1,0 +1,20 @@
+{
+  "httpMethod": "POST",
+  "path": "/track",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://the-full-stack.com",
+    "CF-Connecting-IP": "1.2.3.4",
+    "CF-IPCountry": "CL",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/118.0.0.0 Safari/537.36"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "isBase64Encoded": false,
+  "body": "{\"session_id\":\"session-uuid-1234567890abcdef\",\"event_id\":\"a1b2c3d4e5f60718293a4b5c6d7e8f90\",\"event_type_id\":\"019e372b-e0a7-7154-8279-8829bcf6a08c\",\"page_url\":\"https://the-full-stack.com/projects\",\"page_title\":\"Projects\",\"page_path\":\"/projects\",\"utm_source\":\"twitter\",\"viewport_width\":1920,\"viewport_height\":1080,\"niche\":\"fintech\"}",
+  "requestContext": {
+    "identity": { "sourceIp": "1.2.3.4" },
+    "requestId": "track-example-request-id",
+    "stage": "dev"
+  }
+}

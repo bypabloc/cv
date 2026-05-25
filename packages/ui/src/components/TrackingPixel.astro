@@ -7,9 +7,10 @@
  * de clicks (`initClickTracking`) y el de scroll depth (`initScrollDepth`), y
  * emite `page_exit` cuando la pestana pasa a `hidden`.
  *
- * Toda emision pasa por `track-event.ts`: gating de consentimiento
- * (`localStorage.cf_consent === 'accepted'`) con bypass de QA `?cf_track=force`.
- * Sin consentimiento ni flag: cero eventos (GDPR por defecto).
+ * Toda emision pasa por `track-event.ts`. Tracking always-on: sin gating de
+ * consentimiento. Privacy stance: no PII, no cookies, anonimo, TTL 60 dias
+ * en DynamoDB. El unico estado persistido del lado del cliente es
+ * `cf_session` (UUID por sesion).
  *
  * El flag `window.__cfTrackingPixelInit` evita registrar listeners dos veces
  * cuando View Transitions re-ejecuta el script en cada navegacion.
@@ -21,12 +22,18 @@
  *   <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="generic" />
  */
 import { EVENT_TYPES } from '@portfolio/content/lib/event-types'
+import { validateApiEndpoint } from '../lib/validate-build-env'
 
 interface Props {
   apiEndpoint: string
   niche?: string
 }
-const { apiEndpoint, niche = 'generic' } = Astro.props
+const { apiEndpoint: rawApiEndpoint, niche = 'generic' } = Astro.props
+// Guard build-time: si la prop esta vacia o no matchea BASE_DOMAIN,
+// el build FALLA en vez de hornear un atributo ausente y desactivar
+// el tracking en silencio (bug original que motivo el plan
+// build-env-vars-per-env).
+const apiEndpoint = validateApiEndpoint(rawApiEndpoint)
 ---
 
 <div
@@ -93,12 +100,6 @@ const { apiEndpoint, niche = 'generic' } = Astro.props
         if (document.visibilityState === 'hidden') {
           trackEvent(pageExitId, { page_path: window.location.pathname })
         }
-      })
-
-      // Re-emite page_load si el consentimiento cambia despues (banner).
-      document.addEventListener('portfolio:consent-changed', (e) => {
-        const detail = (e as CustomEvent<{ value?: string }>).detail
-        if (detail?.value === 'accepted') emitPageLoad()
       })
     }
   }

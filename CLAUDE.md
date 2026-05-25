@@ -224,6 +224,12 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 │   ├── env/{client,server,dev-cli}/  # env vars por categoria de sensibilidad
 │   └── scripts/          # entrypoints sh
 ├── devtools/             # Python 3.14 + uv (CLI orquestador)
+├── serverless/
+│   └── lambda/           # backend serverless Python (Lambdas AWS)
+│       ├── resources/    # un stack CloudFormation por recurso compartido
+│       ├── services/     # los 4 Lambdas (contact_form, tracking_pixel,
+│       │                 #   stream_processor, db)
+│       └── shared/       # libreria comun (8 subpaquetes por dominio)
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
 ├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
 ├── .claude/              # rules, skills, agents, hooks de Claude Code
@@ -249,7 +255,9 @@ Antes de trabajar, identifica que contexto necesitas:
 | Git hooks | [.claude/rules/git-hooks.md](.claude/rules/git-hooks.md) | Quality gates pre-commit / pre-push |
 | Security | [.claude/rules/security.md](.claude/rules/security.md) | Secrets, CSP, headers, supply chain |
 | Archivos .env | [.claude/rules/env-files.md](.claude/rules/env-files.md) | NUNCA leer/importar `.env` (incl. `docker/env/**`): extraer solo la key con bash e inyectarla inline al comando |
-| Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) | En plan mode o al planificar features |
+| Secrets (umbrella) | [.claude/rules/secrets-strategy.md](.claude/rules/secrets-strategy.md) o skill `secrets-management` | Politica unificada de las 3 categorias (`client` -> GH Variables, `server` -> SSM, `dev-cli` -> local). Comando: `python devtools/run.py sync_secrets --env=<X> [--category=...]`. Matriz de decisiones (donde va una key nueva), pre-requisitos por categoria, anti-patrones |
+| Client env sync | [.claude/rules/client-env-sync.md](.claude/rules/client-env-sync.md) | Detalle del flujo client (rule hija de secrets-strategy): catalogo, rotacion de Turnstile sitekey, comando `sync_secrets --category=client` |
+| Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) + [.claude/docs/plan-format-large/README.md](.claude/docs/plan-format-large/README.md) | En plan mode o al planificar features. Todo plan vive en `docs/specs/<nombre>/` y trae 4 secciones de ejecucion obligatorias: descomposicion, commits, paralelizacion con worktrees y verificacion E2E iterativa |
 | Harness protocol | [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md) | Subagentes, feature_list, current/history |
 | Markdown docs | [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md) | Editar archivos de `docs/` |
 | Skills (frontmatter) | [.claude/rules/skills.md](.claude/rules/skills.md) | Crear / modificar skills |
@@ -266,14 +274,16 @@ Antes de trabajar, identifica que contexto necesitas:
 | AWS SES | [.claude/docs/aws-ses/README.md](.claude/docs/aws-ses/README.md) o skill `aws-ses` | Email transaccional v2: DKIM/SPF/DMARC, sandbox→prod, bounces, costos |
 | Cloudflare Turnstile | [.claude/docs/cloudflare-turnstile/README.md](.claude/docs/cloudflare-turnstile/README.md) o skill `cloudflare-turnstile` | CAPTCHA alternativa: Managed mode, frontend Astro, validation backend |
 | Neon PostgreSQL | [.claude/docs/neon/README.md](.claude/docs/neon/README.md) o skill `neon` | Serverless PG 18, scale-to-zero, branching git-style, psycopg3 en Lambda, vs RDS/Supabase |
-| Gestion de Neon (operativa) | [.claude/rules/neon-management.md](.claude/rules/neon-management.md) | Como gestionar Neon: connection string en SSM, runner de migrations versionado, branches, rollback, comandos `serverless db-*`, seguridad |
+| Gestion de Neon (operativa) | [.claude/rules/neon-management.md](.claude/rules/neon-management.md) | Como gestionar Neon: connection string en SSM, migrations Alembic versionadas, branches (via `neonctl`), rollback, operacion de la Lambda `db` con `serverless run --lambda=db --event=events/<X>.json`, seguridad |
 | Secrets serverless | [.claude/rules/serverless-secrets.md](.claude/rules/serverless-secrets.md) | Inventario SSM (`/portfolio/*`), KMS key, IAM scopes por Lambda, rotacion de Turnstile/Neon/emails, estado de AWS SES (production access, DKIM/SPF/DMARC) |
 | PostgreSQL 18 Analytics | [.claude/docs/postgresql-18-analytics/README.md](.claude/docs/postgresql-18-analytics/README.md) | Schema de las 4 tablas del backend, window functions, partitioning, JSONB, queries dashboard. Complementa skill `postgresql-18` |
-| DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/src/common/cache/` |
-| Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/src/common/rate_limit/` |
-| Backend serverless | [serverless/ARCHITECTURE.md](serverless/ARCHITECTURE.md) + [INTEGRATION.md](serverless/INTEGRATION.md) | Estructura + diagramas ASCII + propuesta hibrida DynamoDB+Neon+Cache. Costo $0/mes (todo free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
-| Specs tracking + SES | [docs/specs/tracking-and-ses/README.md](docs/specs/tracking-and-ses/README.md) | Plan en 2 fases: activar el email del form de contacto (SES) y el sistema de tracking de eventos. 8 specs (SPEC-100..204) con AC BDD + archivos afectados + verify commands + DoD. Incluye el historial de migracion del antiguo `serverless/specs/` (eliminado) |
-| Devtools serverless CLI | [devtools/serverless/README.md](devtools/serverless/README.md) | `python devtools/run.py serverless <command>` — build, deploy, invoke, logs, db-migrate, db-branch, rate-limit, cache, smoke |
+| DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/lambda/shared/cache/` |
+| Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/lambda/shared/rate_limit/` |
+| Backend serverless | [.claude/docs/serverless-backend/README.md](.claude/docs/serverless-backend/README.md) | Recursos gestionados por devtools con AWS CLI directo y estado local (sin SAM ni CloudFormation): recursos compartidos (tablas DynamoDB + API GW + DLQ SQS, publican identificadores a SSM) + 4 Lambdas Python `lambda-controller`. Flujos ASCII de cada Lambda, schema de tablas DynamoDB + Neon, archivo de estado local. Costo $0/mes (free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
+| Devtools serverless CLI | [.claude/docs/serverless-backend/04-deploy-operacion.md](.claude/docs/serverless-backend/04-deploy-operacion.md) | `python devtools/run.py serverless <command>` — opera el backend: `provision-infra`/`list-resources` (los recursos compartidos, provisionados con AWS CLI) y, con `--lambda=<nombre>` o `--path=<dir>`, los Lambdas `lambda-controller` (`run --stage=<env>`, `deploy`, `destroy`, `status`, `tests --type=<unit\|integration\|coverage>`). La DB se opera con `run --lambda=db --event=events/<X>.json`. Mas rate-limit, setup-ssm, metrics |
+| Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/lambda/shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. El `stream_processor` usa el ORM. El seed del CV (YAML -> DB) lo corre la Lambda `db` con el command `seed` |
+| Formato de Lambdas Python | [.claude/rules/lambda-controller.md](.claude/rules/lambda-controller.md) + [.claude/docs/lambda-controller/](.claude/docs/lambda-controller/) o skill `lambda-controller` | Patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold en `.claude/templates/lambda-controller/`. Cada lambda trae un `manifest.yaml` (manifiesto) que devtools lee directamente para provisionar el Lambda con AWS CLI, y un `pyproject.toml` (PEP 621, deps gestionadas con uv) en vez de `requirements*.txt`. El deploy arma el zip con uv, vendoriza selectivamente los subpaquetes de `serverless/lambda/shared/` que el lambda usa y registra el resultado en un archivo de estado local. Operacion: `serverless run --stage=<env> --lambda=<nombre>` y `serverless tests --type=<tipo> --lambda=<nombre>`. Aplica a los Lambdas Python del backend, NO al frontend Astro |
+| CI/CD pipeline | [.claude/rules/ci-cd-pipeline.md](.claude/rules/ci-cd-pipeline.md) + [.claude/docs/ci-cd-pipeline/](.claude/docs/ci-cd-pipeline/) o skill `ci-cd-pipeline` | Workflows GitHub Actions del backend serverless y las apps Astro. AWS auth via OIDC (cero secrets), state de devtools en S3, concurrency queue por env. `ci.yml` (lint+build, ~45s); `deploy-backend.yml` (migrate-db -> detect-changes -> deploy-lambdas matrix); `deploy-apps.yml` (matrix 6 niches a Cloudflare Pages multi-env). Mapeo branch -> stage -> IAM role + Pages projects + URLs canonicas |
 
 ## Skills disponibles
 
@@ -299,11 +309,13 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 
 ### Backend AWS serverless (form contacto + tracking pixel)
 
-Skills consolidadas para el backend del portfolio: 3 Lambdas Python 3.13
-(contact-form, tracking-pixel, stream-processor) detras de API Gateway
-REST + rate-limit per-IP con DynamoDB (sin WAF), persistencia en DynamoDB
-On-Demand, replica analitica en Neon PostgreSQL, notificacion via SES,
-anti-bot con Cloudflare Turnstile. Stack IaC: AWS SAM. Costo: $0/mes
+Skills consolidadas para el backend del portfolio: 4 Lambdas Python 3.13
+(contact_form, tracking_pixel, stream_processor, db) detras de API
+Gateway REST + rate-limit per-IP con DynamoDB (sin WAF), persistencia en
+DynamoDB On-Demand, replica analitica en Neon PostgreSQL, notificacion
+via SES, anti-bot con Cloudflare Turnstile. devtools provisiona cada
+recurso compartido y cada Lambda con AWS CLI directo, manteniendo el
+estado en archivos locales (sin SAM ni CloudFormation). Costo: $0/mes
 (todo free tier perpetuo).
 
 | Skill | Uso |
@@ -315,8 +327,11 @@ anti-bot con Cloudflare Turnstile. Stack IaC: AWS SAM. Costo: $0/mes
 | `cloudflare-turnstile` | CAPTCHA alternativa privacy-preserving: 1 sitekey para 6 subdominios, Managed mode form + Invisible tracking, idempotency_key, CSP directives |
 | `neon` | Neon serverless PostgreSQL: scale-to-zero, branching git-style, integracion con AWS Lambda Python via psycopg3, free tier 0.5GB + 191.9h compute/mes, vs RDS/Supabase/PlanetScale |
 | `postgresql-18` | PostgreSQL 18 (AIO, UUIDv7, virtual generated columns, skip scan, `RETURNING OLD/NEW`, psycopg3) — referencia del motor que usa Neon |
-| `dynamodb-cache` | Sistema de cache con DynamoDB TTL: `@cached(ttl)` decorator, lock distribuido (cache stampede prevention), stale-while-revalidate, tag invalidation. Vive en `serverless/src/common/cache/` y se usa desde todas las Lambdas |
-| `serverless-rate-limit` | Rate-limiting per-IP self-managed con DynamoDB (alternativa $0/mes a AWS WAF Web ACL que cuesta $7/mes). Sliding window weighted, atomic counters, auto-blacklist bot detection (3+ tokens Turnstile validos en 60s -> blacklist 24h), IP whitelist/blacklist, country rules. Vive en `serverless/src/common/rate_limit/` + 2 tablas DynamoDB |
+| `dynamodb-cache` | Sistema de cache con DynamoDB TTL: `@cached(ttl)` decorator, lock distribuido (cache stampede prevention), stale-while-revalidate, tag invalidation. Vive en `serverless/lambda/shared/cache/` y se usa desde todas las Lambdas |
+| `serverless-rate-limit` | Rate-limiting per-IP self-managed con DynamoDB (alternativa $0/mes a AWS WAF Web ACL que cuesta $7/mes). Sliding window weighted, atomic counters, auto-blacklist bot detection (3+ tokens Turnstile validos en 60s -> blacklist 24h), IP whitelist/blacklist, country rules. Vive en `serverless/lambda/shared/rate_limit/` + 2 tablas DynamoDB |
+| `lambda-controller` | Formato para crear/refactorizar Lambdas Python con el patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold reproducible en `.claude/templates/lambda-controller/`, docs en `.claude/docs/lambda-controller/`. Pensado para los Lambdas Python del backend serverless |
+| `ci-cd-pipeline` | Pipeline CI/CD del portfolio: workflows de deploy del backend serverless (lambdas + migrations) y las apps Astro (Cloudflare Pages multi-env). AWS auth via OIDC, devtools state en S3, concurrency queue por env. Troubleshooting de errores comunes |
+| `secrets-management` | Politica unificada de las 3 categorias de secretos del portfolio (`client` -> GH Variables, `server` -> AWS SSM SecureString + KMS, `dev-cli` -> LOCAL-ONLY). Comando hermetico unificado `python devtools/run.py sync_secrets --env=<X> --category=...`. Decision: donde va una key nueva. Rotacion de Turnstile sitekey + secret, Neon URL, etc. Anti-patrones (gh/aws CLI a mano, PUBLIC_* como Secret, sync de dev-cli) |
 
 ## Convenciones (resumen)
 
@@ -333,9 +348,10 @@ anti-bot con Cloudflare Turnstile. Stack IaC: AWS SAM. Costo: $0/mes
 `docs/` tiene dos zonas separadas — NO mezclar:
 
 - **Producto** (Knowledge Tree navegable): `cv/`, `guide/`, `design-system/`,
-  `diagrams/`, `specs/`, `claude/` — cambia raramente, audiencia: reviewers
-- **Harness interno**: `progress/`, `<area>/feature_list.json`,
-  `CHECKPOINTS.md` — cambia constantemente, audiencia: el orquestador
+  `diagrams/`, `claude/` — cambia raramente, audiencia: reviewers
+- **Harness interno**: `progress/`, `specs/`, `<area>/feature_list.json`,
+  `CHECKPOINTS.md` — cambia constantemente, audiencia: el orquestador.
+  `docs/specs/<plan>/` es efimero: se elimina al mergear el plan a `dev`
 
 Reglas: [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md)
 y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).

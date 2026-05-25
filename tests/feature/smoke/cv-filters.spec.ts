@@ -23,22 +23,11 @@ const APPS_WITH_FILTERS = [
 ] as const
 
 test.describe('Feature: CV filters via query params', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
+  test.beforeEach(async (_, testInfo) => {
     test.skip(
       testInfo.project.name !== 'desktop-chromium',
       'Spec corre solo en desktop-chromium',
     )
-    // El CookieBanner (SPEC-201) es un overlay fixed bottom z-index 9999 que
-    // aparece en la primera visita e intercepta clicks en los controles del
-    // filtro. Pre-sembrar cf_consent en localStorage evita que se muestre y
-    // mantiene estas pruebas de filtros aisladas del flujo de consentimiento.
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem('cf_consent', 'rejected')
-      } catch {
-        /* private mode: el banner igual no bloquea si storage falla */
-      }
-    })
   })
 
   test.describe('AC-4: tech filter hides non-matching items', () => {

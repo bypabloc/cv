@@ -1,2 +1,0 @@
-# stream_processor: no requiere deps adicionales.
-# CommonLayer + PostgresLayer cubren todas las deps.

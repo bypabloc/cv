@@ -19,7 +19,6 @@ describe('click-tracking', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
     localStorage.clear()
-    localStorage.setItem('cf_consent', 'accepted')
     resetTrackingConfig()
     configureTracking({ apiEndpoint: 'https://api.test', niche: 'generic' })
     navigator.sendBeacon = vi.fn().mockReturnValue(true)
@@ -148,20 +147,6 @@ describe('click-tracking', () => {
       a.click()
 
       expect(navigator.sendBeacon).toHaveBeenCalledTimes(0)
-    })
-
-    it('Given no consent When a data-track element is clicked Then sends nothing (gating) [AC-12]', () => {
-      localStorage.removeItem('cf_consent')
-      const a = document.createElement('a')
-      a.href = 'https://x.test/contact'
-      a.setAttribute('data-track', 'cta_click')
-      document.body.appendChild(a)
-
-      const cleanup = initClickTracking()
-      a.click()
-
-      expect(navigator.sendBeacon).toHaveBeenCalledTimes(0)
-      cleanup()
     })
   })
 })

@@ -157,6 +157,11 @@ export function buildContactPayload(
   ctx: ContactPayloadContext,
 ): Record<string, string> {
   const payload: Record<string, string> = {
+    // El handler HTTP generico del backend exige operation y action en el
+    // body (shared.lambda_kit.http_handler resuelve ambos del cuerpo en
+    // metodos con body). Lo demas son los campos del form.
+    operation: 'contact',
+    action: 'create',
     niche: ctx.niche,
     cf_token: ctx.cfToken,
   }

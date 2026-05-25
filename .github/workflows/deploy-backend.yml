@@ -113,6 +113,15 @@ jobs:
           python devtools/run.py serverless deploy \
             --lambda=db --stage=${{ needs.resolve-env.outputs.stage }}
 
+      # update-function-code es async: retorna mientras la Lambda sigue
+      # en estado Pending. La proxima invocacion falla con
+      # ResourceConflictException. `aws lambda wait function-updated`
+      # bloquea hasta que LastUpdateStatus = Successful.
+      - name: Wait for Lambda db update to complete
+        run: |
+          aws lambda wait function-updated \
+            --function-name portfolio-db-${{ needs.resolve-env.outputs.stage }}
+
       # Aplicar migraciones (Alembic upgrade head). Idempotente: si no hay
       # nada pending, exit 0. El path de --event es relativo al directorio
       # del lambda (devtools lo resuelve como <lambda_dir>/<event_path>).

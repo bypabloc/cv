@@ -14,6 +14,10 @@ Exit codes:
   2 -> error interno (config invalida, playwright no instalado)
 """
 
+import asyncio
+
+from ai_audit import auth
+
 
 def main(flags: dict) -> int:
     """Router de subcomandos. flags ya validado por flags.py."""
@@ -25,10 +29,23 @@ def main(flags: dict) -> int:
     return _run_audit(flags)
 
 
-def _run_setup(_flags: dict) -> int:
-    """Pendiente: implementado en C3 (fase auth)."""
-    msg = 'setup subcommand: pendiente — ver docs/specs/ai-audit-tool/03-fase-auth.md'
-    raise NotImplementedError(msg)
+def _run_setup(flags: dict) -> int:
+    """Setup interactivo o check-only de storageState."""
+    tool = flags['tool']
+    if flags.get('check_only', False):
+        state = auth.check(tool)
+        print(state.value)
+        return 0 if state == auth.AuthState.VALID else 1
+
+    login_url = auth.LOGIN_URLS.get(tool)
+    if not login_url:
+        print(
+            f"setup: tool '{tool}' no requiere auth "
+            '(isitagentready y aibotchecker son anonimas)',
+        )
+        return 2
+    asyncio.run(auth.setup_interactive(tool, login_url))
+    return 0
 
 
 def _run_report(_flags: dict) -> int:

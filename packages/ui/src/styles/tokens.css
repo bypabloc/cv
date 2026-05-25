@@ -51,7 +51,9 @@
   /* === Texto === */
   --color-text: #f7f7f5;
   --color-text-muted: var(--color-grey-40);
-  --color-text-subtle: var(--color-grey-50);
+  /* WCAG AA: grey-50 (#5c5c57) sobre #0a0a0a = 3.42:1 < 4.5:1 (fail).
+     grey-40 (#7a7a74) sobre #0a0a0a = 5.71:1 (ok). */
+  --color-text-subtle: var(--color-grey-40);
 
   /* === Tipografia === */
   --font-sans:
@@ -183,7 +185,9 @@
   --color-border-strong: var(--color-grey-15);
   --color-text: var(--color-grey-95);
   --color-text-muted: var(--color-grey-50);
-  --color-text-subtle: var(--color-grey-40);
+  /* WCAG AA: grey-40 (#7a7a74) sobre #f7f7f5 = 4.31:1 < 4.5:1 (fail).
+     grey-60 (#46463f) sobre #f7f7f5 = 8.95:1 (ok). */
+  --color-text-subtle: var(--color-grey-60);
   --color-primary-muted: rgba(79, 110, 247, 0.1);
   --shadow-light: 0 1px 4px rgba(0, 0, 0, 0.04);
   --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.08);

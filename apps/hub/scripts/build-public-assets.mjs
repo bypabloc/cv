@@ -10,7 +10,12 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildHeaders, buildRobotsTxt } from '@portfolio/seo'
+import {
+  buildApiCatalog,
+  buildHeaders,
+  buildRedirects,
+  buildRobotsTxt,
+} from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
@@ -74,6 +79,15 @@ async function main() {
   await write('robots.txt', buildRobotsTxt(SITE_URL))
   await write('llms.txt', buildHubLlmsTxt())
   await write('_headers', buildHeaders({ apiEndpoint: API_ENDPOINT }))
+
+  // 5. _redirects (alias /sitemap.xml -> /sitemap-index.xml)
+  await write('_redirects', buildRedirects())
+
+  // 6. .well-known/api-catalog (RFC9727 linkset apuntando al openapi.json)
+  await write(
+    '.well-known/api-catalog',
+    buildApiCatalog({ siteUrl: SITE_URL, apiEndpoint: API_ENDPOINT }),
+  )
 }
 
 main().catch((err) => {

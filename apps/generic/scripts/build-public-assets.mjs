@@ -12,7 +12,13 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { profile } from '@portfolio/content'
 import { renderCvHtml } from '@portfolio/cv-pdf'
-import { buildHeaders, buildLlmsTxt, buildRobotsTxt } from '@portfolio/seo'
+import {
+  buildApiCatalog,
+  buildHeaders,
+  buildLlmsTxt,
+  buildRedirects,
+  buildRobotsTxt,
+} from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
@@ -117,6 +123,15 @@ async function main() {
 
   // 4. _headers (Cloudflare Pages) con CSP connect-src del env actual
   await write('_headers', buildHeaders({ apiEndpoint: API_ENDPOINT }))
+
+  // 5. _redirects (alias /sitemap.xml -> /sitemap-index.xml)
+  await write('_redirects', buildRedirects())
+
+  // 6. .well-known/api-catalog (RFC9727 linkset apuntando al openapi.json)
+  await write(
+    '.well-known/api-catalog',
+    buildApiCatalog({ siteUrl: SITE_URL, apiEndpoint: API_ENDPOINT }),
+  )
 }
 
 main().catch((err) => {

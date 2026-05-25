@@ -1,6 +1,14 @@
 """Unit tests for shared.classification frontend classifier.
 
-Path mirroring: devtools/shared/classification.py -> this file.
+Path mirroring: devtools/shared/classification.py -> este archivo.
+
+Portfolio modulos:
+- Apps Astro: 'hub', 'generic', 'fintech', 'architect', 'leader', 'vibe'
+  -> source: apps/<APP>/src/<X>.{ts,astro}
+  -> test:   apps/<APP>/tests/unit/<X>.test.ts
+- Packages:  'pkg-app-shared', 'pkg-content', 'pkg-cv-pdf', 'pkg-seo', 'pkg-ui'
+  -> source: packages/<PKG>/src/<X>.ts
+  -> test:   packages/<PKG>/tests/unit/<X>.test.ts
 """
 
 import pytest
@@ -10,210 +18,92 @@ pytestmark = pytest.mark.unit
 
 
 # ---------------------------------------------------------------------------
-# classify_frontend_files - dashboard module
+# classify_frontend_files — Astro app (representada por 'generic')
 # ---------------------------------------------------------------------------
 
 
-class TestClassifyFrontendFilesDashboard:
-    """Mirror dashboard/<X> -> dashboard/tests/unit/src/<X>."""
+class TestClassifyFrontendFilesApp:
+    """Mirror apps/<APP>/src/<X> -> apps/<APP>/tests/unit/<X>."""
 
-    def test_source_with_existing_mirror_returns_pair(self, tmp_path):
+    def test_ts_source_with_existing_mirror_returns_pair(self, tmp_path):
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'dashboard' / 'lib').mkdir(parents=True)
-        (tmp_path / 'dashboard' / 'lib' / 'foo.ts').write_text('')
-        (tmp_path / 'dashboard' / 'tests' / 'unit' / 'src' / 'lib').mkdir(
+        (tmp_path / 'apps' / 'generic' / 'src' / 'lib').mkdir(parents=True)
+        (tmp_path / 'apps' / 'generic' / 'src' / 'lib' / 'foo.ts').write_text(
+            ''
+        )
+        (tmp_path / 'apps' / 'generic' / 'tests' / 'unit' / 'lib').mkdir(
             parents=True
         )
         (
             tmp_path
-            / 'dashboard'
+            / 'apps'
+            / 'generic'
             / 'tests'
             / 'unit'
-            / 'src'
             / 'lib'
             / 'foo.test.ts'
         ).write_text('')
 
         result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/lib/foo.ts'],
+            'generic',
+            ['apps/generic/src/lib/foo.ts'],
             project_root=tmp_path,
         )
 
         assert result['unit_pairs'] == [
             (
-                'dashboard/lib/foo.ts',
-                'dashboard/tests/unit/src/lib/foo.test.ts',
+                'apps/generic/src/lib/foo.ts',
+                'apps/generic/tests/unit/lib/foo.test.ts',
             ),
         ]
         assert result['missing_mirrors'] == []
         assert result['run_coverage'] is True
 
-    def test_shadcn_ui_source_is_excluded(self, tmp_path):
-        """`components/ui/` (shadcn copy-paste) excluido del coverage 80%.
+    def test_astro_source_excluded_from_coverage(self, tmp_path):
+        """`.astro` excluido del coverage 80% (template-only, testeado E2E).
 
-        Razón: shadcn/ui son componentes copy-paste verbatim del registry,
-        no se modifican con lógica de negocio. Lógica testeable vive en
-        components/features/ y modules/.
+        FRONTEND_COVERAGE_EXCLUDES contiene '.astro', asi que un source
+        .astro NO aparece en pairs ni en missing_mirrors —
+        is_excluded_from_coverage corta la clasificacion.
         """
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'dashboard' / 'components' / 'ui').mkdir(parents=True)
+        (tmp_path / 'apps' / 'generic' / 'src' / 'components').mkdir(
+            parents=True
+        )
         (
-            tmp_path / 'dashboard' / 'components' / 'ui' / 'button.tsx'
+            tmp_path / 'apps' / 'generic' / 'src' / 'components' / 'Hero.astro'
         ).write_text('')
 
         result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/components/ui/button.tsx'],
+            'generic',
+            ['apps/generic/src/components/Hero.astro'],
             project_root=tmp_path,
         )
 
-        # components/ui/ excluido: no aparece en pairs ni en missing_mirrors
         assert result['unit_pairs'] == []
         assert result['missing_mirrors'] == []
-
-    def test_stores_root_is_supported(self, tmp_path):
-        from shared.classification import classify_frontend_files
-
-        (tmp_path / 'dashboard' / 'stores').mkdir(parents=True)
-        (tmp_path / 'dashboard' / 'stores' / 'use-auth.ts').write_text('')
-        (tmp_path / 'dashboard' / 'tests' / 'unit' / 'src' / 'stores').mkdir(
-            parents=True
-        )
-        (
-            tmp_path
-            / 'dashboard'
-            / 'tests'
-            / 'unit'
-            / 'src'
-            / 'stores'
-            / 'use-auth.test.ts'
-        ).write_text('')
-
-        result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/stores/use-auth.ts'],
-            project_root=tmp_path,
-        )
-
-        assert (
-            'dashboard/stores/use-auth.ts',
-            'dashboard/tests/unit/src/stores/use-auth.test.ts',
-        ) in result['unit_pairs']
-
-    def test_lib_root_is_supported(self, tmp_path):
-        """Sources en dashboard/lib/ también tienen mirror obligatorio."""
-        from shared.classification import classify_frontend_files
-
-        (tmp_path / 'dashboard' / 'lib' / 'validators').mkdir(parents=True)
-        (tmp_path / 'dashboard' / 'lib' / 'validators' / 'rut.ts').write_text(
-            ''
-        )
-        (
-            tmp_path
-            / 'dashboard'
-            / 'tests'
-            / 'unit'
-            / 'src'
-            / 'lib'
-            / 'validators'
-        ).mkdir(parents=True)
-        (
-            tmp_path
-            / 'dashboard'
-            / 'tests'
-            / 'unit'
-            / 'src'
-            / 'lib'
-            / 'validators'
-            / 'rut.test.ts'
-        ).write_text('')
-
-        result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/lib/validators/rut.ts'],
-            project_root=tmp_path,
-        )
-
-        assert (
-            'dashboard/lib/validators/rut.ts',
-            'dashboard/tests/unit/src/lib/validators/rut.test.ts',
-        ) in result['unit_pairs']
-
-    def test_tsx_source_pairs_with_test_ts(self, tmp_path):
-        """`.tsx` source mapea a `.test.ts` en mirror (siempre).
-
-        Usa `dashboard/modules/items/schemas/` (lógica testeable Zod, NO
-        excluido) en lugar de actions/api/store que están excluidos por
-        ser wrappers thin testeados via E2E.
-        """
-        from shared.classification import classify_frontend_files
-
-        (tmp_path / 'dashboard' / 'modules' / 'items' / 'schemas').mkdir(
-            parents=True
-        )
-        (
-            tmp_path
-            / 'dashboard'
-            / 'modules'
-            / 'items'
-            / 'schemas'
-            / 'item.tsx'
-        ).write_text('')
-        (
-            tmp_path
-            / 'dashboard'
-            / 'tests'
-            / 'unit'
-            / 'src'
-            / 'modules'
-            / 'items'
-            / 'schemas'
-        ).mkdir(parents=True)
-        (
-            tmp_path
-            / 'dashboard'
-            / 'tests'
-            / 'unit'
-            / 'src'
-            / 'modules'
-            / 'items'
-            / 'schemas'
-            / 'item.test.ts'
-        ).write_text('')
-
-        result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/modules/items/schemas/item.tsx'],
-            project_root=tmp_path,
-        )
-
-        assert result['unit_pairs'] == [
-            (
-                'dashboard/modules/items/schemas/item.tsx',
-                'dashboard/tests/unit/src/modules/items/schemas/item.test.ts',
-            ),
-        ]
 
     def test_source_without_mirror_is_missing(self, tmp_path):
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'dashboard' / 'lib').mkdir(parents=True)
-        (tmp_path / 'dashboard' / 'lib' / 'orphan.ts').write_text('')
+        (tmp_path / 'apps' / 'generic' / 'src' / 'lib').mkdir(parents=True)
+        (
+            tmp_path / 'apps' / 'generic' / 'src' / 'lib' / 'orphan.ts'
+        ).write_text('')
 
         result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/lib/orphan.ts'],
+            'generic',
+            ['apps/generic/src/lib/orphan.ts'],
             project_root=tmp_path,
         )
 
         assert result['unit_pairs'] == []
         assert result['missing_mirrors'] == [
             (
-                'dashboard/lib/orphan.ts',
-                'dashboard/tests/unit/src/lib/orphan.test.ts',
+                'apps/generic/src/lib/orphan.ts',
+                'apps/generic/tests/unit/lib/orphan.test.ts',
             ),
         ]
         assert result['run_coverage'] is False
@@ -222,51 +112,53 @@ class TestClassifyFrontendFilesDashboard:
         """A staged test file pairs back to its source if the source exists."""
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'dashboard' / 'lib').mkdir(parents=True)
-        (tmp_path / 'dashboard' / 'lib' / 'foo.ts').write_text('')
-        (tmp_path / 'dashboard' / 'tests' / 'unit' / 'src' / 'lib').mkdir(
+        (tmp_path / 'apps' / 'generic' / 'src' / 'lib').mkdir(parents=True)
+        (tmp_path / 'apps' / 'generic' / 'src' / 'lib' / 'foo.ts').write_text(
+            ''
+        )
+        (tmp_path / 'apps' / 'generic' / 'tests' / 'unit' / 'lib').mkdir(
             parents=True
         )
         (
             tmp_path
-            / 'dashboard'
+            / 'apps'
+            / 'generic'
             / 'tests'
             / 'unit'
-            / 'src'
             / 'lib'
             / 'foo.test.ts'
         ).write_text('')
 
         result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/tests/unit/src/lib/foo.test.ts'],
+            'generic',
+            ['apps/generic/tests/unit/lib/foo.test.ts'],
             project_root=tmp_path,
         )
 
         assert result['unit_pairs'] == [
             (
-                'dashboard/lib/foo.ts',
-                'dashboard/tests/unit/src/lib/foo.test.ts',
+                'apps/generic/src/lib/foo.ts',
+                'apps/generic/tests/unit/lib/foo.test.ts',
             ),
         ]
 
     def test_files_under_tests_are_not_treated_as_source(self, tmp_path):
-        """Tests under tests/ never become source candidates."""
+        """Archivos bajo tests/ nunca son source candidates."""
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'dashboard' / 'tests' / 'unit' / 'src').mkdir(parents=True)
+        (tmp_path / 'apps' / 'generic' / 'tests' / 'unit').mkdir(parents=True)
         (
             tmp_path
-            / 'dashboard'
+            / 'apps'
+            / 'generic'
             / 'tests'
             / 'unit'
-            / 'src'
             / 'isolated.test.ts'
         ).write_text('')
 
         result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/tests/unit/src/isolated.test.ts'],
+            'generic',
+            ['apps/generic/tests/unit/isolated.test.ts'],
             project_root=tmp_path,
         )
 
@@ -277,8 +169,21 @@ class TestClassifyFrontendFilesDashboard:
         from shared.classification import classify_frontend_files
 
         result = classify_frontend_files(
-            'dashboard',
-            ['dashboard/node_modules/pkg/index.ts'],
+            'generic',
+            ['apps/generic/node_modules/pkg/index.ts'],
+            project_root=tmp_path,
+        )
+
+        assert result['unit_pairs'] == []
+        assert result['missing_mirrors'] == []
+
+    def test_astro_build_dir_excluded(self, tmp_path):
+        """Archivos bajo .astro/ (cache de build) se ignoran."""
+        from shared.classification import classify_frontend_files
+
+        result = classify_frontend_files(
+            'generic',
+            ['apps/generic/.astro/content.d.ts'],
             project_root=tmp_path,
         )
 
@@ -288,26 +193,28 @@ class TestClassifyFrontendFilesDashboard:
     def test_dedupe_when_source_and_test_both_staged(self, tmp_path):
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'dashboard' / 'lib').mkdir(parents=True)
-        (tmp_path / 'dashboard' / 'lib' / 'foo.ts').write_text('')
-        (tmp_path / 'dashboard' / 'tests' / 'unit' / 'src' / 'lib').mkdir(
+        (tmp_path / 'apps' / 'generic' / 'src' / 'lib').mkdir(parents=True)
+        (tmp_path / 'apps' / 'generic' / 'src' / 'lib' / 'foo.ts').write_text(
+            ''
+        )
+        (tmp_path / 'apps' / 'generic' / 'tests' / 'unit' / 'lib').mkdir(
             parents=True
         )
         (
             tmp_path
-            / 'dashboard'
+            / 'apps'
+            / 'generic'
             / 'tests'
             / 'unit'
-            / 'src'
             / 'lib'
             / 'foo.test.ts'
         ).write_text('')
 
         result = classify_frontend_files(
-            'dashboard',
+            'generic',
             [
-                'dashboard/lib/foo.ts',
-                'dashboard/tests/unit/src/lib/foo.test.ts',
+                'apps/generic/src/lib/foo.ts',
+                'apps/generic/tests/unit/lib/foo.test.ts',
             ],
             project_root=tmp_path,
         )
@@ -316,85 +223,91 @@ class TestClassifyFrontendFilesDashboard:
 
 
 # ---------------------------------------------------------------------------
-# classify_frontend_files - landing module
+# classify_frontend_files — Package (representado por 'pkg-content')
 # ---------------------------------------------------------------------------
 
 
-class TestClassifyFrontendFilesLanding:
-    """Mirror landing/src/<X> -> landing/tests/unit/src/<X>."""
+class TestClassifyFrontendFilesPackage:
+    """Mirror packages/<PKG>/src/<X> -> packages/<PKG>/tests/unit/<X>."""
 
-    def test_source_with_existing_mirror_returns_pair(self, tmp_path):
+    def test_ts_source_with_existing_mirror_returns_pair(self, tmp_path):
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'landing' / 'src' / 'utils').mkdir(parents=True)
-        (tmp_path / 'landing' / 'src' / 'utils' / 'bar.ts').write_text('')
-        (tmp_path / 'landing' / 'tests' / 'unit' / 'src' / 'utils').mkdir(
+        (tmp_path / 'packages' / 'content' / 'src').mkdir(parents=True)
+        (tmp_path / 'packages' / 'content' / 'src' / 'schemas.ts').write_text(
+            ''
+        )
+        (tmp_path / 'packages' / 'content' / 'tests' / 'unit').mkdir(
             parents=True
         )
         (
-            tmp_path / 'landing' / 'tests' / 'unit' / 'src' / 'utils' / 'bar.ts'
+            tmp_path
+            / 'packages'
+            / 'content'
+            / 'tests'
+            / 'unit'
+            / 'schemas.test.ts'
         ).write_text('')
 
         result = classify_frontend_files(
-            'landing',
-            ['landing/src/utils/bar.ts'],
+            'pkg-content',
+            ['packages/content/src/schemas.ts'],
             project_root=tmp_path,
         )
 
         assert result['unit_pairs'] == [
-            ('landing/src/utils/bar.ts', 'landing/tests/unit/src/utils/bar.ts'),
+            (
+                'packages/content/src/schemas.ts',
+                'packages/content/tests/unit/schemas.test.ts',
+            ),
         ]
         assert result['run_coverage'] is True
 
-    def test_astro_source_excluded_from_coverage(self, tmp_path):
-        """`.astro` files (Astro components/pages) excluidos del coverage 80%.
-
-        Razón: Astro es template-only, no business logic. /pages/ es
-        file-based routing testeado via E2E specs.
-        """
+    def test_astro_is_not_a_package_source_extension(self, tmp_path):
+        """Packages no aceptan .astro como source (solo .ts)."""
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'landing' / 'src' / 'pages').mkdir(parents=True)
-        (tmp_path / 'landing' / 'src' / 'pages' / 'about.astro').write_text('')
-
         result = classify_frontend_files(
-            'landing',
-            ['landing/src/pages/about.astro'],
+            'pkg-content',
+            ['packages/content/src/Foo.astro'],
             project_root=tmp_path,
         )
 
-        # .astro y /pages/ excluidos: no exigen mirror
+        # .astro no es source_extension valida para packages -> nada para reportar
         assert result['unit_pairs'] == []
         assert result['missing_mirrors'] == []
 
     def test_source_without_mirror_is_missing(self, tmp_path):
         from shared.classification import classify_frontend_files
 
-        (tmp_path / 'landing' / 'src' / 'utils').mkdir(parents=True)
-        (tmp_path / 'landing' / 'src' / 'utils' / 'orphan.ts').write_text('')
+        (tmp_path / 'packages' / 'content' / 'src').mkdir(parents=True)
+        (tmp_path / 'packages' / 'content' / 'src' / 'orphan.ts').write_text('')
 
         result = classify_frontend_files(
-            'landing',
-            ['landing/src/utils/orphan.ts'],
+            'pkg-content',
+            ['packages/content/src/orphan.ts'],
             project_root=tmp_path,
         )
 
         assert result['unit_pairs'] == []
         assert result['missing_mirrors'] == [
             (
-                'landing/src/utils/orphan.ts',
-                'landing/tests/unit/src/utils/orphan.ts',
+                'packages/content/src/orphan.ts',
+                'packages/content/tests/unit/orphan.test.ts',
             ),
         ]
         assert result['run_coverage'] is False
 
     def test_files_outside_src_are_ignored(self, tmp_path):
-        """Config files like landing/astro.config.mjs are not source candidates."""
+        """Files outside packages/<PKG>/src/ son ignorados."""
         from shared.classification import classify_frontend_files
 
         result = classify_frontend_files(
-            'landing',
-            ['landing/astro.config.mjs', 'landing/package.json'],
+            'pkg-content',
+            [
+                'packages/content/package.json',
+                'packages/content/vitest.config.ts',
+            ],
             project_root=tmp_path,
         )
 

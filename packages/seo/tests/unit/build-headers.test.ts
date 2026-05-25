@@ -69,4 +69,23 @@ describe('buildHeaders', () => {
     expect(out).toContain("default-src 'self'")
     expect(out).toContain("frame-ancestors 'none'")
   })
+
+  it('Given build When inspecciono Then incluye 3 directivas Link para crawlers IA', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('Link: </sitemap-index.xml>; rel="sitemap"')
+    expect(out).toContain(
+      'Link: </llms.txt>; rel="alternate"; type="text/plain"; title="llms.txt"',
+    )
+    expect(out).toContain('Link: </.well-known/api-catalog>; rel="api-catalog"')
+  })
+
+  it('Given build When inspecciono Then expone Content-Type JSON para api-catalog', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('/.well-known/api-catalog\n')
+    expect(out).toContain('  Content-Type: application/json')
+  })
 })

@@ -1,6 +1,6 @@
 ---
 import { getHubSelector, profile } from '@portfolio/content'
-import { buildPersonSchema } from '@portfolio/seo'
+import { buildPersonSchema, buildWebSiteSchema } from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
 import Footer from '@portfolio/ui/components/Footer.astro'
 import MeshGradientBg from '@portfolio/ui/components/MeshGradientBg.astro'
@@ -21,7 +21,7 @@ const t = STRINGS.es
 const sel = getHubSelector('es')
 const cards = getNicheCards('es')
 
-const jsonLd = buildPersonSchema({
+const personLd = buildPersonSchema({
   profile,
   niche: 'generic',
   locale: 'es',
@@ -39,6 +39,16 @@ const jsonLd = buildPersonSchema({
     'Cursor',
   ],
 })
+
+// WebSite schema: nombre del sitio + idiomas (es/en). Crawlers IA + Google
+// usan esto para resolver "el nombre del sitio" en respuestas generativas.
+const websiteLd = buildWebSiteSchema({
+  siteUrl: SITE,
+  name: profile.name,
+  inLanguage: ['es', 'en'],
+})
+
+const jsonLd = [personLd, websiteLd]
 
 const hubStyle = nicheTokensToCssVars('hub')
 ---

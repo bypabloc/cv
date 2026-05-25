@@ -1126,11 +1126,29 @@ def _provision_update_config(
     profile: str | None,
     region: str,
 ) -> None:
-    """Secuencia `Action.UPDATE_CONFIG`: config de funcion + IAM inline."""
-    import json
+    """Secuencia `Action.UPDATE_CONFIG`: config de funcion + IAM inline.
 
+    Garantiza que el rol canonico (`rendered.role_name`) existe y que el
+    Lambda esta amarrado a el via `--role`. Sin `--role`, un Lambda
+    creado originalmente por SAM/CFN nunca cambiaria de rol y quedaria
+    bloqueado en las permisos del legado (causa raiz del incidente del
+    25/05/2026 en prod /track y /contact: las nuevas Lambdas leen los
+    nombres de tablas DynamoDB desde SSM en cold start, pero el rol
+    legacy SAM no tenia `ssm:GetParameter`).
+    """
     account = _resolve_account(profile=profile, region=region)
     policy = _concrete_iam_policy(rendered, account)
+
+    resources: dict[str, str | None] = {}
+    _create_iam_role(
+        rendered,
+        policy,
+        account,
+        profile=profile,
+        region=region,
+        resources=resources,
+    )
+    role_arn = str(resources['role_arn'])
 
     _wait_function_active(
         rendered.function_name, profile=profile, region=region
@@ -1141,6 +1159,8 @@ def _provision_update_config(
             'update-function-configuration',
             '--function-name',
             rendered.function_name,
+            '--role',
+            role_arn,
             '--runtime',
             rendered.runtime,
             '--handler',
@@ -1151,20 +1171,6 @@ def _provision_update_config(
             str(rendered.timeout),
             '--environment',
             _environment_arg(rendered.env_vars),
-        ],
-        profile=profile,
-        region=region,
-    )
-    aws(
-        [
-            'iam',
-            'put-role-policy',
-            '--role-name',
-            rendered.role_name,
-            '--policy-name',
-            _INLINE_POLICY_NAME,
-            '--policy-document',
-            json.dumps(policy),
         ],
         profile=profile,
         region=region,

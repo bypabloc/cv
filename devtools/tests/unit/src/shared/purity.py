@@ -3,9 +3,9 @@
 find_forbidden_js_files(module, files, project_root) -> list[str]
 
 Returns files that violate "TypeScript only" policy:
-  - .js, .jsx, .mjs, .cjs are forbidden inside <module>/
-  - Allowlist: <module>/{*.config,vitest.config}.{js,mjs,cjs} at module root
-  - node_modules/ and dist/ paths are ignored
+  - .js, .jsx, .mjs, .cjs forbidden inside apps/<APP>/ y packages/<PKG>/
+  - Allowlist: <module-root>/{*.config,vitest.config,postcss.config}.{js,mjs,cjs}
+  - node_modules/, dist/, .astro/, coverage/ paths ignored
 """
 
 import pytest
@@ -15,75 +15,79 @@ pytestmark = pytest.mark.unit
 
 
 # ---------------------------------------------------------------------------
-# find_forbidden_js_files
+# find_forbidden_js_files - Astro app (representado por 'generic')
 # ---------------------------------------------------------------------------
 
 
-class TestFindForbiddenJsFilesDashboard:
-    def test_js_file_in_dashboard_root_is_forbidden(self, tmp_path):
+class TestFindForbiddenJsFilesApp:
+    def test_js_file_in_app_src_is_forbidden(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/app/utils/foo.js'],
+            'generic',
+            ['apps/generic/src/utils/foo.js'],
             project_root=tmp_path,
         )
 
-        assert result == ['dashboard/app/utils/foo.js']
+        assert result == ['apps/generic/src/utils/foo.js']
 
-    def test_jsx_file_in_dashboard_is_forbidden(self, tmp_path):
+    def test_jsx_file_in_app_is_forbidden(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/app/components/Foo.jsx'],
+            'generic',
+            ['apps/generic/src/components/Foo.jsx'],
             project_root=tmp_path,
         )
 
-        assert result == ['dashboard/app/components/Foo.jsx']
+        assert result == ['apps/generic/src/components/Foo.jsx']
 
     def test_mjs_in_subdir_is_forbidden(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/app/utils/helper.mjs'],
+            'generic',
+            ['apps/generic/src/utils/helper.mjs'],
             project_root=tmp_path,
         )
 
-        assert result == ['dashboard/app/utils/helper.mjs']
+        assert result == ['apps/generic/src/utils/helper.mjs']
 
     def test_cjs_in_subdir_is_forbidden(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/stores/legacy.cjs'],
+            'generic',
+            ['apps/generic/src/legacy.cjs'],
             project_root=tmp_path,
         )
 
-        assert result == ['dashboard/stores/legacy.cjs']
+        assert result == ['apps/generic/src/legacy.cjs']
 
-    def test_ts_files_are_allowed(self, tmp_path):
+    def test_ts_and_astro_files_are_allowed(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/app/utils/foo.ts', 'dashboard/app/components/Foo.vue'],
+            'generic',
+            [
+                'apps/generic/src/utils/foo.ts',
+                'apps/generic/src/components/Hero.astro',
+            ],
             project_root=tmp_path,
         )
 
         assert result == []
 
     def test_config_js_at_root_is_allowed(self, tmp_path):
+        """Configs `*.config.{js,mjs,cjs}` permitidos en module root."""
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
+            'generic',
             [
-                'dashboard/next.config.js',
-                'dashboard/vitest.config.mjs',
-                'dashboard/postcss.config.cjs',
+                'apps/generic/astro.config.mjs',
+                'apps/generic/vitest.config.mjs',
+                'apps/generic/postcss.config.cjs',
             ],
             project_root=tmp_path,
         )
@@ -94,45 +98,49 @@ class TestFindForbiddenJsFilesDashboard:
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/vitest.config.js'],
+            'generic',
+            ['apps/generic/vitest.config.js'],
             project_root=tmp_path,
         )
 
         assert result == []
 
     def test_config_in_subdir_is_not_allowed(self, tmp_path):
-        """Allowlist applies only at module root."""
+        """Allowlist aplica solo al module root, no a subdirs."""
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/app/utils/my.config.js'],
+            'generic',
+            ['apps/generic/src/utils/my.config.js'],
             project_root=tmp_path,
         )
 
-        assert result == ['dashboard/app/utils/my.config.js']
+        assert result == ['apps/generic/src/utils/my.config.js']
 
     def test_node_modules_ignored(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
+            'generic',
             [
-                'dashboard/node_modules/lodash/index.js',
-                'dashboard/node_modules/foo/bar.jsx',
+                'apps/generic/node_modules/lodash/index.js',
+                'apps/generic/node_modules/foo/bar.jsx',
             ],
             project_root=tmp_path,
         )
 
         assert result == []
 
-    def test_dist_ignored(self, tmp_path):
+    def test_dist_and_astro_cache_ignored(self, tmp_path):
+        """dist/ y .astro/ son excluidos."""
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['dashboard/dist/bundle.js', 'dashboard/.next/server/output.js'],
+            'generic',
+            [
+                'apps/generic/dist/bundle.js',
+                'apps/generic/.astro/content.d.ts',
+            ],
             project_root=tmp_path,
         )
 
@@ -142,8 +150,12 @@ class TestFindForbiddenJsFilesDashboard:
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
-            ['server/manage.py', 'landing/src/foo.ts'],
+            'generic',
+            [
+                'server/manage.py',
+                'packages/content/src/foo.ts',
+                'apps/hub/src/x.js',  # otra app, no la pedida
+            ],
             project_root=tmp_path,
         )
 
@@ -153,49 +165,77 @@ class TestFindForbiddenJsFilesDashboard:
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'dashboard',
+            'generic',
             [
-                'dashboard/app/utils/a.js',
-                'dashboard/app/utils/b.ts',
-                'dashboard/stores/c.jsx',
-                'dashboard/next.config.js',  # allowed
+                'apps/generic/src/utils/a.js',
+                'apps/generic/src/utils/b.ts',
+                'apps/generic/src/c.jsx',
+                'apps/generic/astro.config.mjs',  # allowed
             ],
             project_root=tmp_path,
         )
 
-        assert result == ['dashboard/app/utils/a.js', 'dashboard/stores/c.jsx']
+        assert result == [
+            'apps/generic/src/utils/a.js',
+            'apps/generic/src/c.jsx',
+        ]
 
 
-class TestFindForbiddenJsFilesLanding:
-    def test_js_in_landing_src_is_forbidden(self, tmp_path):
+# ---------------------------------------------------------------------------
+# find_forbidden_js_files - Package (representado por 'pkg-content')
+# ---------------------------------------------------------------------------
+
+
+class TestFindForbiddenJsFilesPackage:
+    def test_js_in_package_src_is_forbidden(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'landing',
-            ['landing/src/utils/foo.js'],
+            'pkg-content',
+            ['packages/content/src/utils/foo.js'],
             project_root=tmp_path,
         )
 
-        assert result == ['landing/src/utils/foo.js']
+        assert result == ['packages/content/src/utils/foo.js']
 
-    def test_astro_config_at_root_is_allowed(self, tmp_path):
+    def test_vitest_config_at_root_is_allowed(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'landing',
-            ['landing/astro.config.mjs', 'landing/vitest.config.mjs'],
+            'pkg-content',
+            [
+                'packages/content/vitest.config.mjs',
+                'packages/content/postcss.config.cjs',
+            ],
             project_root=tmp_path,
         )
 
         assert result == []
 
-    def test_dist_in_landing_ignored(self, tmp_path):
+    def test_dist_in_package_ignored(self, tmp_path):
         from shared.purity import find_forbidden_js_files
 
         result = find_forbidden_js_files(
-            'landing',
-            ['landing/dist/index.js'],
+            'pkg-content',
+            ['packages/content/dist/index.js'],
             project_root=tmp_path,
         )
 
         assert result == []
+
+
+# ---------------------------------------------------------------------------
+# Invalid module
+# ---------------------------------------------------------------------------
+
+
+class TestFindForbiddenJsFilesInvalid:
+    def test_unknown_module_raises(self, tmp_path):
+        from shared.purity import find_forbidden_js_files
+
+        with pytest.raises(ValueError, match='module'):
+            find_forbidden_js_files(
+                'unknown',
+                [],
+                project_root=tmp_path,
+            )

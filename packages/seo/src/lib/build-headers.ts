@@ -52,6 +52,12 @@ export function buildHeaders(opts: { apiEndpoint: string }): string {
     '  Permissions-Policy: camera=(), microphone=(), geolocation=()',
     `  Content-Security-Policy: ${csp}`,
     '  X-Frame-Options: DENY',
+    '  Link: </sitemap-index.xml>; rel="sitemap"',
+    '  Link: </llms.txt>; rel="alternate"; type="text/plain"; title="llms.txt"',
+    '  Link: </.well-known/api-catalog>; rel="api-catalog"',
+    '',
+    '/.well-known/api-catalog',
+    '  Content-Type: application/json',
     '',
   ].join('\n')
 }

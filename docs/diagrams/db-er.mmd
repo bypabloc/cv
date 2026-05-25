@@ -1,346 +1,300 @@
----
-title: Schema PostgreSQL unificado del portfolio (Neon, PG18) — 3NF
----
 erDiagram
+  cv_profiles {
+    uuid id PK
+    varchar name
+    varchar handle UK
+    varchar location
+    varchar email
+    varchar phone "nullable"
+    varchar linkedin_url
+    varchar github_url
+    varchar website_url "nullable"
+    varchar avatar_url
+  }
+  cv_profile_stats {
+    uuid id PK
+    uuid profile_id FK,UK "cascade"
+    int years_experience
+    int companies
+    int countries
+    int certifications
+  }
+  cv_profile_niches {
+    uuid profile_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_profiles ||--o| cv_profile_stats : has
+  cv_profiles ||--o{ cv_profile_niches : tagged_with
+  tax_niches  ||--o{ cv_profile_niches : applies_to
 
-    %% =====================================================================
-    %% CATALOGOS / VOCABULARIOS COMPARTIDOS
-    %% =====================================================================
-    NICHES {
-        uuid     id        PK "uuidv7()"
-        string   slug      UK "fintech|architect|leader|vibe|generic"
-        int      position
-        datetime created_at
-        datetime updated_at
-    }
-    SKILLS {
-        uuid     id        PK "uuidv7()"
-        string   name      UK "competencia deduplicada"
-        datetime created_at
-        datetime updated_at
-    }
-    TECH_TAGS {
-        uuid     id        PK "uuidv7()"
-        string   name      UK "stack tecnico deduplicado"
-        datetime created_at
-        datetime updated_at
-    }
+  cv_experiences {
+    uuid id PK
+    varchar slug UK
+    varchar company
+    varchar country
+    varchar company_url "nullable"
+    date started_on
+    date ended_on "nullable"
+    seniority seniority
+    boolean metrics_estimated
+  }
+  cv_experience_bullets {
+    uuid id PK
+    uuid experience_id FK "cascade"
+    bullet_kind kind "responsibility|achievement"
+    int position
+  }
+  cv_experience_niches {
+    uuid experience_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_experience_skills {
+    uuid experience_id PK,FK "cascade"
+    uuid skill_id PK,FK "cascade"
+    skill_kind kind PK "technical|soft"
+  }
+  cv_experiences ||--o{ cv_experience_bullets : detailed_by
+  cv_experiences ||--o{ cv_experience_niches  : tagged_with
+  tax_niches     ||--o{ cv_experience_niches  : applies_to
+  cv_experiences ||--o{ cv_experience_skills  : requires
+  cv_skills      ||--o{ cv_experience_skills  : used_in
 
-    %% =====================================================================
-    %% PERFIL
-    %% =====================================================================
-    PROFILE {
-        uuid     id           PK "uuidv7()"
-        string   name
-        string   handle       UK
-        string   location
-        string   email
-        string   phone        "nullable"
-        string   linkedin_url
-        string   github_url
-        string   website_url  "nullable"
-        string   avatar_url
-        datetime created_at
-        datetime updated_at
-    }
-    PROFILE_STATS {
-        uuid     id               PK "uuidv7()"
-        uuid     profile_id       FK,UK
-        int      years_experience
-        int      companies
-        int      countries
-        int      certifications
-    }
+  cv_education_entries {
+    uuid id PK
+    varchar slug UK
+    varchar institution
+    date started_on
+    date ended_on "nullable"
+    varchar url "nullable"
+  }
+  cv_education_entry_niches {
+    uuid education_entry_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_education_entries ||--o{ cv_education_entry_niches : tagged_with
+  tax_niches           ||--o{ cv_education_entry_niches : applies_to
 
-    %% =====================================================================
-    %% EXPERIENCIA
-    %% =====================================================================
-    EXPERIENCES {
-        uuid     id          PK "uuidv7()"
-        string   slug        UK
-        string   company
-        string   company_url "nullable"
-        string   start_ym    "YYYY-MM (CHECK)"
-        string   end_ym      "nullable YYYY-MM"
-        enum     seniority   "intern|junior|mid|senior|lead"
-        datetime created_at
-        datetime updated_at
-    }
-    EXPERIENCE_BULLETS {
-        uuid     id            PK "uuidv7()"
-        uuid     experience_id FK
-        enum     kind          "responsibility|achievement"
-        int      position
-        datetime created_at
-        datetime updated_at
-    }
+  cv_projects {
+    uuid id PK
+    varchar slug UK
+    varchar name
+    varchar url "nullable"
+    jsonb links "nullable, multi-site"
+    varchar repo "nullable"
+    project_status status
+    project_type project_type
+    boolean is_confidential
+    boolean metrics_estimated
+  }
+  cv_project_case_studies {
+    uuid id PK
+    uuid project_id FK,UK "cascade"
+  }
+  cv_project_metrics {
+    uuid id PK
+    uuid project_id FK "cascade"
+    varchar metric_key
+    varchar metric_value
+    int position
+  }
+  cv_project_niches {
+    uuid project_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_project_tech_tags {
+    uuid project_id PK,FK "cascade"
+    uuid tech_tag_id PK,FK "cascade"
+    int position
+  }
+  cv_projects ||--o| cv_project_case_studies : has
+  cv_projects ||--o{ cv_project_metrics      : measured_by
+  cv_projects ||--o{ cv_project_niches       : tagged_with
+  tax_niches  ||--o{ cv_project_niches       : applies_to
+  cv_projects ||--o{ cv_project_tech_tags    : uses
+  tax_tech_tags||--o{ cv_project_tech_tags   : applied_in
 
-    %% =====================================================================
-    %% PROYECTOS
-    %% =====================================================================
-    PROJECTS {
-        uuid     id              PK "uuidv7()"
-        string   slug            UK
-        string   name            "nombre propio"
-        string   url             "nullable"
-        string   repo            "nullable"
-        enum     status          "active|inactive|concept"
-        enum     project_type    "web|mobile|cli|library|ai|fintech-platform"
-        boolean  is_confidential
-        datetime created_at
-        datetime updated_at
-    }
-    PROJECT_CASE_STUDIES {
-        uuid     id         PK "uuidv7()"
-        uuid     project_id FK,UK
-        datetime created_at
-        datetime updated_at
-    }
-    PROJECT_METRICS {
-        uuid     id           PK "uuidv7()"
-        uuid     project_id   FK
-        string   metric_key
-        string   metric_value
-        int      position
-        datetime created_at
-        datetime updated_at
-    }
+  cv_skills {
+    uuid id PK
+    varchar slug UK
+    varchar name
+  }
+  cv_skill_categories {
+    uuid id PK
+    varchar slug UK
+    skill_kind kind "technical|soft"
+  }
+  cv_skill_category_skills {
+    uuid skill_category_id PK,FK "cascade"
+    uuid skill_id PK,FK "cascade"
+    int position
+  }
+  cv_skill_category_niches {
+    uuid skill_category_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_skill_categories ||--o{ cv_skill_category_skills : groups
+  cv_skills           ||--o{ cv_skill_category_skills : classified_in
+  cv_skill_categories ||--o{ cv_skill_category_niches : tagged_with
+  tax_niches          ||--o{ cv_skill_category_niches : applies_to
 
-    %% =====================================================================
-    %% OTRAS ENTIDADES DEL CV
-    %% =====================================================================
-    SKILL_CATEGORIES {
-        uuid     id        PK "uuidv7()"
-        string   slug      UK
-        enum     kind      "technical|soft"
-        datetime created_at
-        datetime updated_at
-    }
-    CERTIFICATES {
-        uuid     id        PK "uuidv7()"
-        string   slug      UK
-        string   title
-        string   issuer
-        date     issued_on
-        string   url
-        datetime created_at
-        datetime updated_at
-    }
-    AWARDS {
-        uuid     id         PK "uuidv7()"
-        string   slug       UK
-        string   issuer
-        string   awarded_ym "YYYY-MM (CHECK)"
-        string   url        "nullable"
-        datetime created_at
-        datetime updated_at
-    }
-    EDUCATION {
-        uuid     id          PK "uuidv7()"
-        string   slug        UK
-        string   institution
-        string   start_year
-        string   end_year
-        string   url         "nullable"
-        datetime created_at
-        datetime updated_at
-    }
-    REFERENCES {
-        uuid     id           PK "uuidv7()"
-        string   slug         UK
-        string   name
-        string   role
-        string   company      "nullable"
-        string   linkedin_url
-        datetime created_at
-        datetime updated_at
-    }
-    LANGUAGES {
-        uuid     id        PK "uuidv7()"
-        string   slug      UK
-        datetime created_at
-        datetime updated_at
-    }
-    PUBLICATIONS {
-        uuid     id            PK "uuidv7()"
-        string   slug          UK
-        string   title
-        string   platform
-        string   url
-        string   canonical_url "nullable"
-        date     published_on
-        datetime created_at
-        datetime updated_at
-    }
+  cv_awards {
+    uuid id PK
+    varchar slug UK
+    varchar issuer
+    date awarded_on
+    varchar url "nullable"
+  }
+  cv_award_niches {
+    uuid award_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_certificates {
+    uuid id PK
+    varchar slug UK
+    varchar title
+    varchar issuer
+    date issued_on
+    varchar url
+  }
+  cv_certificate_niches {
+    uuid certificate_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_languages {
+    uuid id PK
+    varchar slug UK
+  }
+  cv_language_niches {
+    uuid language_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_publications {
+    uuid id PK
+    varchar slug UK
+    varchar title
+    varchar platform
+    varchar url
+    varchar canonical_url "nullable"
+    date published_on
+  }
+  cv_publication_niches {
+    uuid publication_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_endorsements {
+    uuid id PK
+    varchar slug UK
+    varchar name
+    varchar role
+    varchar company "nullable"
+    varchar linkedin_url
+  }
+  cv_endorsement_niches {
+    uuid endorsement_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_awards        ||--o{ cv_award_niches        : tagged_with
+  tax_niches       ||--o{ cv_award_niches        : applies_to
+  cv_certificates  ||--o{ cv_certificate_niches  : tagged_with
+  tax_niches       ||--o{ cv_certificate_niches  : applies_to
+  cv_languages     ||--o{ cv_language_niches     : tagged_with
+  tax_niches       ||--o{ cv_language_niches     : applies_to
+  cv_publications  ||--o{ cv_publication_niches  : tagged_with
+  tax_niches       ||--o{ cv_publication_niches  : applies_to
+  cv_endorsements  ||--o{ cv_endorsement_niches  : tagged_with
+  tax_niches       ||--o{ cv_endorsement_niches  : applies_to
 
-    %% =====================================================================
-    %% TABLAS POLIMORFICAS (genericas a cualquier entidad)
-    %% =====================================================================
-    TRANSLATIONS {
-        enum     entity_type PK "tipo de la entidad"
-        uuid     entity_id   PK "polimorfico (trigger)"
-        string   field       PK "role|summary|title|..."
-        enum     locale      PK "es|en"
-        text     value
-        datetime created_at
-        datetime updated_at
-    }
-    NICHE_PRIORITIES {
-        enum     entity_type PK "tipo de la entidad"
-        uuid     entity_id   PK "polimorfico (trigger)"
-        uuid     niche_id    PK,FK
-        int      priority
-        datetime created_at
-        datetime updated_at
-    }
+  tax_niches {
+    uuid id PK
+    varchar slug UK "fintech|architect|leader|vibe|generic"
+    int display_order
+  }
+  tax_tech_tags {
+    uuid id PK
+    varchar slug UK
+    varchar name
+  }
+  tax_niche_priorities {
+    entity_type entity_type PK "polymorphic"
+    uuid entity_id PK "polymorphic"
+    uuid niche_id PK,FK "cascade"
+    int priority
+  }
+  tax_event_types {
+    uuid id PK
+    text code_name UK "16 fixed"
+    text description
+    timestamptz created_at
+  }
+  tax_niches ||--o{ tax_niche_priorities : weights
 
-    %% =====================================================================
-    %% TABLAS DE UNION N:M — entidad <-> niche
-    %% =====================================================================
-    EXPERIENCE_NICHES {
-        uuid experience_id PK,FK
-        uuid niche_id      PK,FK
-    }
-    PROJECT_NICHES {
-        uuid project_id PK,FK
-        uuid niche_id   PK,FK
-    }
-    CERTIFICATE_NICHES {
-        uuid certificate_id PK,FK
-        uuid niche_id       PK,FK
-    }
-    AWARD_NICHES {
-        uuid award_id PK,FK
-        uuid niche_id PK,FK
-    }
-    EDUCATION_NICHES {
-        uuid education_id PK,FK
-        uuid niche_id     PK,FK
-    }
-    REFERENCE_NICHES {
-        uuid reference_id PK,FK
-        uuid niche_id     PK,FK
-    }
-    LANGUAGE_NICHES {
-        uuid language_id PK,FK
-        uuid niche_id    PK,FK
-    }
-    PUBLICATION_NICHES {
-        uuid publication_id PK,FK
-        uuid niche_id       PK,FK
-    }
-    SKILL_CATEGORY_NICHES {
-        uuid skill_category_id PK,FK
-        uuid niche_id          PK,FK
-    }
+  i18n_translations {
+    entity_type entity_type PK "12 valid types"
+    uuid entity_id PK "polymorphic"
+    varchar field PK
+    locale locale PK "es|en"
+    text value
+  }
 
-    %% =====================================================================
-    %% TABLAS DE UNION N:M — vocabularios
-    %% =====================================================================
-    EXPERIENCE_SKILLS {
-        uuid experience_id PK,FK
-        uuid skill_id      PK,FK
-        enum kind          PK "technical|soft"
-    }
-    SKILL_CATEGORY_SKILLS {
-        uuid skill_category_id PK,FK
-        uuid skill_id          PK,FK
-        int  position
-    }
-    PROJECT_TECH_TAGS {
-        uuid project_id  PK,FK
-        uuid tech_tag_id PK,FK
-        int  position
-    }
-
-    %% =====================================================================
-    %% DATOS DEL VISITANTE (replica de DynamoDB via DynamoDB Streams)
-    %% =====================================================================
-    %% Estas 4 tablas las puebla la Lambda stream_processor. NO tienen
-    %% relacion FK con el CV — son dominios separados en la misma DB.
-    CONTACTS {
-        uuid     id              PK "generado por la Lambda"
-        text     stream_event_id UK "idempotency key del Stream"
-        text     name
-        citext   email             "case-insensitive (CRM)"
-        text     message
-        text     niche
-        text     session_id        "correlacion con tracking"
-        text     status            "new|contacted|qualified|..."
-        datetime created_at
-    }
-    EVENT_TYPES {
-        uuid     id          PK "UUIDv7 literal (seed)"
-        text     code_name   UK "page_load|cta_click|..."
-        text     description
-        datetime created_at
-    }
-    TRACKING_EVENTS {
-        text     session_id     "parte de la PK logica"
-        uuid     page_id        "parte de la PK logica"
-        uuid     event_type_id  FK "-> event_types"
-        jsonb    event_props       "datos por tipo de evento"
-        text     niche
-        datetime created_at        "PARTITION BY RANGE"
-    }
-    PROCESSED_STREAM_EVENTS {
-        text     event_id    PK "eventID del Stream (idempotencia)"
-        text     table_name    "contacts|tracking"
-        datetime processed_at
-    }
-
-    %% =====================================================================
-    %% RELACIONES
-    %% =====================================================================
-
-    %% Perfil
-    PROFILE ||--o| PROFILE_STATS : "tiene"
-
-    %% Experiencia
-    EXPERIENCES ||--o{ EXPERIENCE_BULLETS : "tiene bullets"
-    EXPERIENCES ||--o{ EXPERIENCE_NICHES : "filtrada en"
-    EXPERIENCES ||--o{ EXPERIENCE_SKILLS : "declara"
-    NICHES ||--o{ EXPERIENCE_NICHES : "agrupa"
-    SKILLS ||--o{ EXPERIENCE_SKILLS : "usada en"
-
-    %% Proyectos
-    PROJECTS ||--o| PROJECT_CASE_STUDIES : "tiene case study"
-    PROJECTS ||--o{ PROJECT_METRICS : "tiene metricas"
-    PROJECTS ||--o{ PROJECT_NICHES : "filtrado en"
-    PROJECTS ||--o{ PROJECT_TECH_TAGS : "usa stack"
-    NICHES ||--o{ PROJECT_NICHES : "agrupa"
-    TECH_TAGS ||--o{ PROJECT_TECH_TAGS : "usado en"
-
-    %% Skill categories
-    SKILL_CATEGORIES ||--o{ SKILL_CATEGORY_SKILLS : "agrupa"
-    SKILL_CATEGORIES ||--o{ SKILL_CATEGORY_NICHES : "filtrada en"
-    SKILLS ||--o{ SKILL_CATEGORY_SKILLS : "pertenece a"
-    NICHES ||--o{ SKILL_CATEGORY_NICHES : "agrupa"
-
-    %% Resto de entidades <-> niches
-    CERTIFICATES ||--o{ CERTIFICATE_NICHES : "filtrado en"
-    AWARDS ||--o{ AWARD_NICHES : "filtrado en"
-    EDUCATION ||--o{ EDUCATION_NICHES : "filtrada en"
-    REFERENCES ||--o{ REFERENCE_NICHES : "filtrada en"
-    LANGUAGES ||--o{ LANGUAGE_NICHES : "filtrado en"
-    PUBLICATIONS ||--o{ PUBLICATION_NICHES : "filtrada en"
-    NICHES ||--o{ CERTIFICATE_NICHES : "agrupa"
-    NICHES ||--o{ AWARD_NICHES : "agrupa"
-    NICHES ||--o{ EDUCATION_NICHES : "agrupa"
-    NICHES ||--o{ REFERENCE_NICHES : "agrupa"
-    NICHES ||--o{ LANGUAGE_NICHES : "agrupa"
-    NICHES ||--o{ PUBLICATION_NICHES : "agrupa"
-
-    %% Priority (polimorfica): niche_id si tiene FK real; entity_id no
-    NICHES ||--o{ NICHE_PRIORITIES : "pondera"
-
-    %% TRANSLATIONS y NICHE_PRIORITIES referencian entity_id de forma
-    %% polimorfica (sin FK SQL — validado por el trigger assert_entity_exists).
-    %% Las relaciones punteadas marcan esa dependencia logica:
-    EXPERIENCES }o..o{ TRANSLATIONS : "role (polimorfico)"
-    PROJECTS }o..o{ TRANSLATIONS : "summary (polimorfico)"
-    NICHE_PRIORITIES }o..o{ EXPERIENCES : "prioriza (polimorfico)"
-
-    %% Datos del visitante: event_types es el unico FK real del dominio.
-    %% contacts.session_id NO es FK (tracking_events tiene TTL 60d).
-    EVENT_TYPES ||--o{ TRACKING_EVENTS : "tipa"
+  vis_sessions {
+    text session_id PK
+    timestamptz first_seen_at
+    timestamptz last_seen_at
+    text user_agent "nullable"
+    text browser "nullable"
+    text browser_version "nullable"
+    text os "nullable"
+    text device_type "nullable"
+  }
+  vis_session_visits {
+    uuid visit_id PK "uuidv7 server-gen"
+    text session_id FK
+    timestamptz started_at
+    timestamptz ended_at "nullable"
+    int event_count "cache"
+    inet ip "nullable"
+    char country "ISO-2 nullable"
+    text utm_source "nullable"
+    text utm_medium "nullable"
+    text utm_campaign "nullable"
+    text utm_content "nullable"
+    text utm_term "nullable"
+    text referrer "nullable"
+    text landing_page_path "nullable"
+    text niche "nullable"
+  }
+  vis_tracking_events {
+    timestamptz created_at PK "partition key"
+    uuid visit_id PK,FK "NOT NULL"
+    uuid page_id PK
+    text session_id FK "NOT NULL"
+    timestamptz received_at
+    text page_path "nullable"
+    int viewport_width "nullable"
+    int viewport_height "nullable"
+    text niche "nullable"
+    uuid event_type_id FK "nullable"
+    jsonb event_props "nullable"
+  }
+  vis_contacts {
+    uuid id PK "client-gen"
+    timestamptz created_at
+    timestamptz received_at
+    varchar name
+    citext email
+    text message
+    varchar company "nullable"
+    varchar role "nullable"
+    varchar service_type "CHECK"
+    varchar budget "nullable"
+    varchar timeline "nullable"
+    varchar niche "nullable"
+    varchar status "new|contacted|qualified|converted|rejected"
+    text notes "nullable"
+    text session_id FK "NOT NULL"
+  }
+  vis_sessions       ||--o{ vis_session_visits  : groups
+  vis_sessions       ||--o{ vis_tracking_events : produces
+  vis_session_visits ||--o{ vis_tracking_events : produced_in
+  tax_event_types    ||--o{ vis_tracking_events : classifies
+  vis_sessions       ||--o{ vis_contacts        : submitted_in

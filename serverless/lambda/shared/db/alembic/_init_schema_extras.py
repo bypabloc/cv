@@ -22,12 +22,12 @@ def create_citext_extension() -> str:
 
 
 def create_partition_default() -> str:
-    """SQL: la particion default de `tracking_events`. Sin ella, un INSERT
+    """SQL: la particion default de `vis_tracking_events`. Sin ella, un INSERT
     cuya `created_at` no cae en ninguna particion explicita falla.
     """
     return (
-        'CREATE TABLE IF NOT EXISTS tracking_events_default '
-        'PARTITION OF tracking_events DEFAULT'
+        'CREATE TABLE IF NOT EXISTS vis_tracking_events_default '
+        'PARTITION OF vis_tracking_events DEFAULT'
     )
 
 
@@ -42,19 +42,19 @@ DECLARE
     found boolean;
 BEGIN
     target_table := CASE NEW.entity_type
-        WHEN 'profile'            THEN 'profile'
-        WHEN 'experience'         THEN 'experiences'
-        WHEN 'experience_bullet'  THEN 'experience_bullets'
-        WHEN 'project'            THEN 'projects'
-        WHEN 'project_case_study' THEN 'project_case_studies'
-        WHEN 'project_metric'     THEN 'project_metrics'
-        WHEN 'skill_category'     THEN 'skill_categories'
-        WHEN 'certificate'        THEN 'certificates'
-        WHEN 'award'              THEN 'awards'
-        WHEN 'education'          THEN 'education'
-        WHEN 'reference'          THEN 'references'
-        WHEN 'language'           THEN 'languages'
-        WHEN 'publication'        THEN 'publications'
+        WHEN 'profile'            THEN 'cv_profiles'
+        WHEN 'experience'         THEN 'cv_experiences'
+        WHEN 'experience_bullet'  THEN 'cv_experience_bullets'
+        WHEN 'project'            THEN 'cv_projects'
+        WHEN 'project_case_study' THEN 'cv_project_case_studies'
+        WHEN 'project_metric'     THEN 'cv_project_metrics'
+        WHEN 'skill_category'     THEN 'cv_skill_categories'
+        WHEN 'certificate'        THEN 'cv_certificates'
+        WHEN 'award'              THEN 'cv_awards'
+        WHEN 'education'          THEN 'cv_education_entries'
+        WHEN 'endorsement'        THEN 'cv_endorsements'
+        WHEN 'language'           THEN 'cv_languages'
+        WHEN 'publication'        THEN 'cv_publications'
     END;
     IF target_table IS NULL THEN
         RAISE EXCEPTION
@@ -73,8 +73,8 @@ END;
 $$ LANGUAGE plpgsql;
 """
 
-# Tablas polimorficas a las que se les engancha el trigger.
-entity_trigger_tables = ('translations', 'niche_priorities')
+# Tablas polimorficas a las que se les engancha el trigger (post-rename).
+entity_trigger_tables = ('i18n_translations', 'tax_niche_priorities')
 
 # ENUMs nativos creados por el autogenerate — Alembic no los dropea en el
 # downgrade, hay que hacerlo explicito.

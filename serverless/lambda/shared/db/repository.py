@@ -18,13 +18,28 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import BigInteger, Column, MetaData, String, Table
+from sqlalchemy import func as sa_func
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session as OrmSession
 
 from .models import Contact, SessionVisit, TrackingEvent
 from .models import Session as SessionRow
 from .session import get_engine
+
+# `pg_stat_user_tables` es una system view del catalogo de Postgres
+# (no tiene modelo ORM porque NO es una tabla del schema del portfolio).
+# La declaramos como `Table` independiente para construir el SELECT con
+# Core en vez de raw SQL. MetaData propia para que el reflejo no toque
+# el `Base.metadata` del schema del portfolio.
+_pg_stat_user_tables = Table(
+    'pg_stat_user_tables',
+    MetaData(),
+    Column('schemaname', String),
+    Column('relname', String),
+    Column('n_live_tup', BigInteger),
+)
 
 
 class RepositoryError(Exception):
@@ -47,16 +62,6 @@ class RepositoryError(Exception):
         self.error_code = error_code
 
 
-# La query de listado de tablas: estimado de filas via las estadisticas
-# del planner (`pg_stat_user_tables`), sin contar fila por fila.
-_TABLES_QUERY = (
-    "SELECT schemaname || '.' || relname AS table_name, "
-    'n_live_tup AS estimated_rows '
-    'FROM pg_stat_user_tables '
-    'ORDER BY n_live_tup DESC'
-)
-
-
 def list_tables() -> dict[str, Any]:
     """Lista las tablas de la DB con un estimado de filas por tabla.
 
@@ -77,10 +82,21 @@ def list_tables() -> dict[str, Any]:
         Si la query falla (DB inaccesible, schema sin migrar, etc.) con
         `code=5000` y `error_code='DB_QUERY_FAILED'`.
     """
+    schemaname = _pg_stat_user_tables.c.schemaname
+    relname = _pg_stat_user_tables.c.relname
+    n_live_tup = _pg_stat_user_tables.c.n_live_tup
+    stmt = (
+        select(
+            (schemaname + '.' + relname).label('table_name'),
+            n_live_tup.label('estimated_rows'),
+        )
+        .select_from(_pg_stat_user_tables)
+        .order_by(n_live_tup.desc())
+    )
     try:
         engine = get_engine()
         with engine.connect() as conn:
-            rows = conn.execute(text(_TABLES_QUERY)).all()
+            rows = conn.execute(stmt).all()
     except Exception as exc:
         raise RepositoryError(
             f'No se pudo listar las tablas: {exc}',
@@ -207,7 +223,7 @@ def ensure_session_and_visit(
     )
     sessions_upsert = sessions_insert.on_conflict_do_update(
         index_elements=['session_id'],
-        set_={'last_seen_at': text('now()')},
+        set_={'last_seen_at': sa_func.now()},
     )
     session.execute(sessions_upsert)
 
@@ -217,19 +233,21 @@ def ensure_session_and_visit(
     # el payload (str plano sin mascara) fallaba SIEMPRE. host() devuelve
     # solo la direccion sin mascara, alineado con el formato del payload.
     last_visit_query = (
-        text(
-            'SELECT visit_id, host(ip) AS ip, utm_source, utm_medium, '
-            'utm_campaign, utm_content, utm_term '
-            'FROM vis_session_visits '
-            'WHERE session_id = :sid '
-            'ORDER BY started_at DESC '
-            'LIMIT 1 '
-            'FOR UPDATE'
+        select(
+            SessionVisit.visit_id,
+            sa_func.host(SessionVisit.ip).label('ip'),
+            SessionVisit.utm_source,
+            SessionVisit.utm_medium,
+            SessionVisit.utm_campaign,
+            SessionVisit.utm_content,
+            SessionVisit.utm_term,
         )
+        .where(SessionVisit.session_id == session_id)
+        .order_by(SessionVisit.started_at.desc())
+        .limit(1)
+        .with_for_update()
     )
-    last_visit = session.execute(
-        last_visit_query, {'sid': session_id}
-    ).first()
+    last_visit = session.execute(last_visit_query).first()
 
     incoming: dict[str, str | None] = {
         'ip': ip,
@@ -267,13 +285,12 @@ def ensure_session_and_visit(
     # --- Paso 3b: UPDATE visit existente (ended_at + event_count) --
     visit_id = str(last_visit.visit_id)
     session.execute(
-        text(
-            'UPDATE session_visits '
-            'SET ended_at = now(), '
-            '    event_count = event_count + :delta '
-            'WHERE visit_id = :vid'
-        ),
-        {'delta': bump_delta, 'vid': visit_id},
+        update(SessionVisit)
+        .where(SessionVisit.visit_id == visit_id)
+        .values(
+            ended_at=sa_func.now(),
+            event_count=SessionVisit.event_count + bump_delta,
+        )
     )
     return session_id, visit_id
 

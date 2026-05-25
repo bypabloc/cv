@@ -139,6 +139,18 @@ jobs:
             --stage=${{ needs.resolve-env.outputs.stage }} \
             --event=events/current.json
 
+      # Seed del CV: idempotente (ON CONFLICT DO NOTHING en cada upsert).
+      # Re-correr el seed en cada deploy garantiza que la data del CV
+      # este sincronizada con los YAMLs del repo en TODOS los stages.
+      # Datos del visitante (contacts, sessions, tracking_events) NO se
+      # tocan — el seed solo escribe en cv_*, tax_*, i18n_*.
+      - name: Run CV seed (idempotent)
+        run: |
+          python devtools/run.py serverless run \
+            --lambda=db \
+            --stage=${{ needs.resolve-env.outputs.stage }} \
+            --event=events/seed.json
+
   # ---------------------------------------------------------------------------
   # 2. Detect lambdas afectados (path-based + cierre shared) entre el sha
   # del push anterior y el actual. Excluye `db` (ya redeployado).

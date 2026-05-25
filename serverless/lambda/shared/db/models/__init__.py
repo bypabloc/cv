@@ -1,52 +1,56 @@
 """@module models — barrel del schema unificado del portfolio.
 
-Importa TODOS los modelos (las 36 tablas: datos del visitante + contenido
-del CV). Al importarse, `Base.metadata` queda poblada con cada tabla — es el
-`target_metadata` unico del autogenerate de Alembic.
+Importa TODOS los modelos. Al importarse, `Base.metadata` queda poblada con
+cada tabla — es el `target_metadata` unico del autogenerate de Alembic.
 
-Import plano, sin jerarquia de dominio:
-    from shared.db.models import Contact, Experience, TrackingEvent
+Organizado en 4 subpaquetes por dominio:
+- `cv/`        — 28 tablas del CV
+- `visitor/`   — 4 tablas del tracking
+- `taxonomy/`  — 4 tablas de catalogos compartidos
+- `i18n/`      — 1 tabla de traducciones
 
-NO contiene logica — solo imports y re-exports.
+API publica preservada: `from shared.db.models import Profile` sigue
+funcionando (los re-exports planos lo permiten).
 """
 
-from .catalog import Niche, Skill, TechTag
-from .contact import Contact
-from .cv_entities import (
+from .cv import (
     Award,
-    Certificate,
-    Education,
-    Language,
-    Publication,
-    Reference,
-    SkillCategory,
-)
-from .experience import Experience, ExperienceBullet
-from .junctions import (
     AwardNiche,
+    Certificate,
     CertificateNiche,
+    Education,
     EducationNiche,
+    Experience,
+    ExperienceBullet,
     ExperienceNiche,
     ExperienceSkill,
+    Language,
     LanguageNiche,
+    Profile,
+    ProfileNiche,
+    ProfileStats,
+    Project,
+    ProjectCaseStudy,
+    ProjectMetric,
     ProjectNiche,
     ProjectTechTag,
+    Publication,
     PublicationNiche,
+    Reference,
     ReferenceNiche,
+    Skill,
+    SkillCategory,
     SkillCategoryNiche,
     SkillCategorySkill,
 )
-from .profile import Profile, ProfileNiche, ProfileStats
-from .project import Project, ProjectCaseStudy, ProjectMetric
-from .session import Session
-from .session_visit import SessionVisit
-from .tracking import EventType, TrackingEvent
-from .translations import NichePriority, Translation
+from .i18n import Translation
+from .taxonomy import EventType, Niche, NichePriority, TechTag
+from .visitor import Contact, Session, SessionVisit, TrackingEvent
 
-# Agrupado por dominio (visitante / CV), no alfabetico — RUF022 off a
+# Agrupado por dominio (visitante / CV / taxonomy / i18n) — RUF022 off a
 # proposito: el agrupamiento documenta el origen de cada tabla.
 __all__ = [  # noqa: RUF022
-    # Datos del visitante (replica de DynamoDB)
+    # Datos del visitante
     'Contact',
     'EventType',
     'Session',

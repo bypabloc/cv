@@ -1,6 +1,11 @@
 """Unit tests for shared.deletion_mirror.
 
-Path mirroring: devtools/shared/deletion_mirror.py -> this file.
+Path mirroring: devtools/shared/deletion_mirror.py -> este archivo.
+
+Portfolio mirroring (server + apps Astro + packages):
+  server:    server/<X>.py            -> server/tests/unit/src/<X>.py
+  apps:      apps/<APP>/src/<X>.{ts,astro} -> apps/<APP>/tests/unit/<X>.test.ts
+  packages:  packages/<PKG>/src/<X>.ts     -> packages/<PKG>/tests/unit/<X>.test.ts
 """
 
 from pathlib import Path
@@ -17,7 +22,7 @@ pytestmark = pytest.mark.unit
 
 
 class TestClassifyDeletedFiles:
-    """Clasifica una lista plana de paths eliminados por módulo."""
+    """Clasifica una lista plana de paths eliminados por modulo."""
 
     def test_classifies_server_python_files(self):
         from shared.deletion_mirror import classify_deleted_files
@@ -33,42 +38,42 @@ class TestClassifyDeletedFiles:
             'server/apps/foo/services/bar.py',
             'server/tests/unit/src/apps/foo/services/bar.py',
         ]
-        assert result['dashboard'] == []
-        assert result['landing'] == []
+        assert result['generic'] == []
+        assert result['pkg-content'] == []
 
-    def test_classifies_app_ts_and_vue(self):
+    def test_classifies_app_ts_and_astro(self):
         from shared.deletion_mirror import classify_deleted_files
 
         result = classify_deleted_files(
             [
-                'dashboard/stores/useFoo.ts',
-                'dashboard/app/components/DFCard.vue',
+                'apps/generic/src/lib/foo.ts',
+                'apps/generic/src/components/Hero.astro',
             ]
         )
 
-        assert result['dashboard'] == [
-            'dashboard/stores/useFoo.ts',
-            'dashboard/app/components/DFCard.vue',
+        assert result['generic'] == [
+            'apps/generic/src/lib/foo.ts',
+            'apps/generic/src/components/Hero.astro',
         ]
         assert result['server'] == []
-        assert result['landing'] == []
+        assert result['pkg-content'] == []
 
-    def test_classifies_landing_ts_and_astro(self):
+    def test_classifies_package_ts(self):
         from shared.deletion_mirror import classify_deleted_files
 
         result = classify_deleted_files(
             [
-                'landing/src/lib/foo.ts',
-                'landing/src/components/Hero.astro',
+                'packages/content/src/schemas.ts',
+                'packages/content/src/index.ts',
             ]
         )
 
-        assert result['landing'] == [
-            'landing/src/lib/foo.ts',
-            'landing/src/components/Hero.astro',
+        assert result['pkg-content'] == [
+            'packages/content/src/schemas.ts',
+            'packages/content/src/index.ts',
         ]
         assert result['server'] == []
-        assert result['dashboard'] == []
+        assert result['generic'] == []
 
     def test_ignores_non_relevant_extensions(self):
         from shared.deletion_mirror import classify_deleted_files
@@ -77,12 +82,14 @@ class TestClassifyDeletedFiles:
             [
                 'README.md',
                 'docker/Dockerfile',
-                'dashboard/package.json',
+                'apps/generic/package.json',
                 'devtools/shared/foo.py',
             ]
         )
 
-        assert result == {'server': [], 'dashboard': [], 'landing': []}
+        # Solo verificamos que TODAS las listas (server + apps + packages)
+        # esten vacias para extensiones no relevantes.
+        assert all(v == [] for v in result.values())
 
 
 # ---------------------------------------------------------------------------
@@ -90,13 +97,26 @@ class TestClassifyDeletedFiles:
 # ---------------------------------------------------------------------------
 
 
+def _make_file(root: Path, path: str) -> None:
+    target = root / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text('')
+
+
+def _empty_module_map() -> dict[str, list[str]]:
+    """Base dict con todos los modulos vacios + server."""
+    apps = ('hub', 'generic', 'fintech', 'architect', 'leader', 'vibe')
+    pkgs = ('app-shared', 'content', 'cv-pdf', 'seo', 'ui')
+    base: dict[str, list[str]] = {'server': []}
+    for app in apps:
+        base[app] = []
+    for pkg in pkgs:
+        base[f'pkg-{pkg}'] = []
+    return base
+
+
 class TestCollectOrphanPairsServer:
     """Detecta huerfanos cuando solo se elimina un lado del par server."""
-
-    def _make_file(self, root: Path, path: str) -> None:
-        target = root / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text('')
 
     def test_orphan_test_when_source_deleted_and_mirror_remains(
         self,
@@ -104,20 +124,15 @@ class TestCollectOrphanPairsServer:
     ):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        # El test mirror sigue en disco, el source fue eliminado
-        self._make_file(
+        _make_file(
             tmp_path,
             'server/tests/unit/src/apps/foo/services/bar.py',
         )
 
-        result = collect_orphan_pairs(
-            {
-                'server': ['server/apps/foo/services/bar.py'],
-                'dashboard': [],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['server'] = ['server/apps/foo/services/bar.py']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_tests'] == [
             (
@@ -134,17 +149,12 @@ class TestCollectOrphanPairsServer:
     ):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        # El source sigue en disco, el test fue eliminado
-        self._make_file(tmp_path, 'server/apps/foo/services/bar.py')
+        _make_file(tmp_path, 'server/apps/foo/services/bar.py')
 
-        result = collect_orphan_pairs(
-            {
-                'server': ['server/tests/unit/src/apps/foo/services/bar.py'],
-                'dashboard': [],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['server'] = ['server/tests/unit/src/apps/foo/services/bar.py']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_sources'] == [
             (
@@ -158,18 +168,13 @@ class TestCollectOrphanPairsServer:
     def test_no_orphan_when_both_sides_deleted(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        # Ningun archivo en disco, ambos eliminados
-        result = collect_orphan_pairs(
-            {
-                'server': [
-                    'server/apps/foo/services/bar.py',
-                    'server/tests/unit/src/apps/foo/services/bar.py',
-                ],
-                'dashboard': [],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['server'] = [
+            'server/apps/foo/services/bar.py',
+            'server/tests/unit/src/apps/foo/services/bar.py',
+        ]
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_tests'] == []
         assert result['orphan_sources'] == []
@@ -177,177 +182,123 @@ class TestCollectOrphanPairsServer:
     def test_excluded_paths_do_not_trigger_orphan(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        # Eliminamos un __init__.py (excluido). No debe haber orphan ni siquiera
-        # si su mirror existiera (lo cual es absurdo, pero verificamos exclusión).
-        self._make_file(tmp_path, 'server/tests/unit/src/apps/foo/__init__.py')
+        # __init__.py esta en SERVER_COVERAGE_EXCLUDES
+        _make_file(tmp_path, 'server/tests/unit/src/apps/foo/__init__.py')
 
-        result = collect_orphan_pairs(
-            {
-                'server': ['server/apps/foo/__init__.py'],
-                'dashboard': [],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['server'] = ['server/apps/foo/__init__.py']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_tests'] == []
         assert result['orphan_sources'] == []
 
 
 # ---------------------------------------------------------------------------
-# collect_orphan_pairs - app
+# collect_orphan_pairs - app Astro
 # ---------------------------------------------------------------------------
 
 
 class TestCollectOrphanPairsApp:
-    """Detecta huerfanos en el módulo dashboard."""
-
-    def _make_file(self, root: Path, path: str) -> None:
-        target = root / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text('')
+    """Detecta huerfanos en apps/<APP>/."""
 
     def test_orphan_test_when_ts_source_deleted(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        self._make_file(tmp_path, 'dashboard/tests/unit/src/stores/useFoo.ts')
+        _make_file(tmp_path, 'apps/generic/tests/unit/lib/foo.test.ts')
 
-        result = collect_orphan_pairs(
-            {
-                'server': [],
-                'dashboard': ['dashboard/stores/useFoo.ts'],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['generic'] = ['apps/generic/src/lib/foo.ts']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_tests'] == [
             (
-                'dashboard',
-                'dashboard/stores/useFoo.ts',
-                'dashboard/tests/unit/src/stores/useFoo.ts',
+                'generic',
+                'apps/generic/src/lib/foo.ts',
+                'apps/generic/tests/unit/lib/foo.test.ts',
             )
         ]
 
     def test_orphan_source_when_ts_test_deleted(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        self._make_file(tmp_path, 'dashboard/stores/useFoo.ts')
+        _make_file(tmp_path, 'apps/generic/src/lib/foo.ts')
 
-        result = collect_orphan_pairs(
-            {
-                'server': [],
-                'dashboard': ['dashboard/tests/unit/src/stores/useFoo.ts'],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['generic'] = ['apps/generic/tests/unit/lib/foo.test.ts']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_sources'] == [
             (
-                'dashboard',
-                'dashboard/tests/unit/src/stores/useFoo.ts',
-                'dashboard/stores/useFoo.ts',
+                'generic',
+                'apps/generic/tests/unit/lib/foo.test.ts',
+                'apps/generic/src/lib/foo.ts',
             )
         ]
 
-    def test_vue_source_excluded_from_deletion_check(self, tmp_path):
-        """Componentes .vue están excluidos de coverage, no deben triggerear orphan."""
+    def test_astro_source_excluded_from_deletion_check(self, tmp_path):
+        """`.astro` esta en FRONTEND_COVERAGE_EXCLUDES, no triggerea orphan."""
         from shared.deletion_mirror import collect_orphan_pairs
 
-        # Aunque borremos el .vue, no debe contar como orphan
-        self._make_file(
+        # Aunque borremos el .astro, no debe contar como orphan
+        _make_file(
             tmp_path,
-            'dashboard/tests/unit/src/app/components/DFCard.ts',
+            'apps/generic/tests/unit/components/Hero.test.ts',
         )
 
-        result = collect_orphan_pairs(
-            {
-                'server': [],
-                'dashboard': ['dashboard/app/components/DFCard.vue'],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['generic'] = ['apps/generic/src/components/Hero.astro']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_tests'] == []
 
 
 # ---------------------------------------------------------------------------
-# collect_orphan_pairs - landing
+# collect_orphan_pairs - package
 # ---------------------------------------------------------------------------
 
 
-class TestCollectOrphanPairsLanding:
-    """Detecta huerfanos en el módulo landing."""
-
-    def _make_file(self, root: Path, path: str) -> None:
-        target = root / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text('')
+class TestCollectOrphanPairsPackage:
+    """Detecta huerfanos en packages/<PKG>/."""
 
     def test_orphan_test_when_ts_source_deleted(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        self._make_file(tmp_path, 'landing/tests/unit/src/lib/foo.ts')
+        _make_file(tmp_path, 'packages/content/tests/unit/schemas.test.ts')
 
-        result = collect_orphan_pairs(
-            {
-                'server': [],
-                'dashboard': [],
-                'landing': ['landing/src/lib/foo.ts'],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['pkg-content'] = ['packages/content/src/schemas.ts']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_tests'] == [
             (
-                'landing',
-                'landing/src/lib/foo.ts',
-                'landing/tests/unit/src/lib/foo.ts',
+                'pkg-content',
+                'packages/content/src/schemas.ts',
+                'packages/content/tests/unit/schemas.test.ts',
             )
         ]
 
     def test_orphan_source_when_ts_test_deleted(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs
 
-        self._make_file(tmp_path, 'landing/src/lib/foo.ts')
+        _make_file(tmp_path, 'packages/content/src/schemas.ts')
 
-        result = collect_orphan_pairs(
-            {
-                'server': [],
-                'dashboard': [],
-                'landing': ['landing/tests/unit/src/lib/foo.ts'],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['pkg-content'] = ['packages/content/tests/unit/schemas.test.ts']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert result['orphan_sources'] == [
             (
-                'landing',
-                'landing/tests/unit/src/lib/foo.ts',
-                'landing/src/lib/foo.ts',
+                'pkg-content',
+                'packages/content/tests/unit/schemas.test.ts',
+                'packages/content/src/schemas.ts',
             )
         ]
-
-    def test_astro_source_excluded(self, tmp_path):
-        from shared.deletion_mirror import collect_orphan_pairs
-
-        self._make_file(
-            tmp_path,
-            'landing/tests/unit/src/components/Hero.ts',
-        )
-
-        result = collect_orphan_pairs(
-            {
-                'server': [],
-                'dashboard': [],
-                'landing': ['landing/src/components/Hero.astro'],
-            },
-            project_root=tmp_path,
-        )
-
-        assert result['orphan_tests'] == []
 
 
 # ---------------------------------------------------------------------------
@@ -356,49 +307,33 @@ class TestCollectOrphanPairsLanding:
 
 
 class TestCollectOrphanPairsMixed:
-    """Casos combinados: empty inputs, multiples módulos, etc."""
+    """Casos combinados: empty inputs, multiples modulos, etc."""
 
     def test_empty_input_returns_empty_result(self, tmp_path):
         from shared.deletion_mirror import collect_orphan_pairs
 
         result = collect_orphan_pairs(
-            {'server': [], 'dashboard': [], 'landing': []},
+            _empty_module_map(),
             project_root=tmp_path,
         )
 
         assert result == {'orphan_tests': [], 'orphan_sources': []}
 
     def test_multiple_modules_in_single_changeset(self, tmp_path):
-        """Server source y app test eliminados, ambos con contraparte en disco."""
+        """Server source + app test eliminados, ambos con contraparte en disco."""
         from shared.deletion_mirror import collect_orphan_pairs
 
         # Server source eliminado, test sigue en disco
-        (tmp_path / 'server' / 'tests' / 'unit' / 'src' / 'apps' / 'foo').mkdir(
-            parents=True,
-        )
-        (
-            tmp_path
-            / 'server'
-            / 'tests'
-            / 'unit'
-            / 'src'
-            / 'apps'
-            / 'foo'
-            / 'bar.py'
-        ).write_text('')
+        _make_file(tmp_path, 'server/tests/unit/src/apps/foo/bar.py')
 
         # App test eliminado, source sigue en disco
-        (tmp_path / 'dashboard' / 'stores').mkdir(parents=True)
-        (tmp_path / 'dashboard' / 'stores' / 'useFoo.ts').write_text('')
+        _make_file(tmp_path, 'apps/generic/src/lib/foo.ts')
 
-        result = collect_orphan_pairs(
-            {
-                'server': ['server/apps/foo/bar.py'],
-                'dashboard': ['dashboard/tests/unit/src/stores/useFoo.ts'],
-                'landing': [],
-            },
-            project_root=tmp_path,
-        )
+        deleted = _empty_module_map()
+        deleted['server'] = ['server/apps/foo/bar.py']
+        deleted['generic'] = ['apps/generic/tests/unit/lib/foo.test.ts']
+
+        result = collect_orphan_pairs(deleted, project_root=tmp_path)
 
         assert (
             'server',
@@ -406,7 +341,7 @@ class TestCollectOrphanPairsMixed:
             'server/tests/unit/src/apps/foo/bar.py',
         ) in result['orphan_tests']
         assert (
-            'dashboard',
-            'dashboard/tests/unit/src/stores/useFoo.ts',
-            'dashboard/stores/useFoo.ts',
+            'generic',
+            'apps/generic/tests/unit/lib/foo.test.ts',
+            'apps/generic/src/lib/foo.ts',
         ) in result['orphan_sources']

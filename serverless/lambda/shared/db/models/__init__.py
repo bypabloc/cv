@@ -16,10 +16,8 @@ from .cv import (
     AwardNiche,
     Certificate,
     CertificateNiche,
-    Education,             # alias deprecado de EducationEntry
     EducationEntry,
     EducationEntryNiche,
-    EducationNiche,        # alias deprecado
     Endorsement,
     EndorsementNiche,
     Experience,
@@ -38,8 +36,6 @@ from .cv import (
     ProjectTechTag,
     Publication,
     PublicationNiche,
-    Reference,             # alias deprecado de Endorsement
-    ReferenceNiche,        # alias deprecado
     Skill,
     SkillCategory,
     SkillCategoryNiche,
@@ -61,10 +57,8 @@ __all__ = [  # noqa: RUF022
     'AwardNiche',
     'Certificate',
     'CertificateNiche',
-    'Education',              # alias deprecado
     'EducationEntry',
     'EducationEntryNiche',
-    'EducationNiche',         # alias deprecado
     'Endorsement',
     'EndorsementNiche',
     'Experience',
@@ -85,8 +79,6 @@ __all__ = [  # noqa: RUF022
     'ProjectTechTag',
     'Publication',
     'PublicationNiche',
-    'Reference',              # alias deprecado
-    'ReferenceNiche',         # alias deprecado
     'Skill',
     'SkillCategory',
     'SkillCategoryNiche',

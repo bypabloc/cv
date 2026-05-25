@@ -76,7 +76,7 @@ class EntityType(StrEnum):
     CERTIFICATE = 'certificate'
     AWARD = 'award'
     EDUCATION = 'education'
-    REFERENCE = 'reference'  # rename a 'endorsement' en commit 4 (Alembic)
+    ENDORSEMENT = 'endorsement'
     LANGUAGE = 'language'
     PUBLICATION = 'publication'
 

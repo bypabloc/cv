@@ -42,19 +42,10 @@ from .skill import (
     SkillCategorySkill,
 )
 
-# DEPRECATED aliases — backward compat para call-sites legacy.
-# Se eliminan en el commit 9 (refactor lambdas downstream) cuando todos
-# los call-sites usen los nombres nuevos.
-Education = EducationEntry              # noqa: F841
-EducationNiche = EducationEntryNiche    # noqa: F841
-Reference = Endorsement                 # noqa: F841
-ReferenceNiche = EndorsementNiche       # noqa: F841
-
 __all__ = [
     'Award', 'AwardNiche',
     'Certificate', 'CertificateNiche',
-    'Education', 'EducationEntry',
-    'EducationEntryNiche', 'EducationNiche',
+    'EducationEntry', 'EducationEntryNiche',
     'Endorsement', 'EndorsementNiche',
     'Experience', 'ExperienceBullet', 'ExperienceNiche', 'ExperienceSkill',
     'Language', 'LanguageNiche',
@@ -62,6 +53,5 @@ __all__ = [
     'Project', 'ProjectCaseStudy', 'ProjectMetric',
     'ProjectNiche', 'ProjectTechTag',
     'Publication', 'PublicationNiche',
-    'Reference', 'ReferenceNiche',
     'Skill', 'SkillCategory', 'SkillCategoryNiche', 'SkillCategorySkill',
 ]

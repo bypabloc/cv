@@ -1,0 +1,118 @@
+slug: dibal
+role:
+  es: Líder de Equipo de Desarrollo y Desarrollador
+  en: Development Team Lead and Developer
+company: Dibal
+country: Perú
+companyUrl: https://dibal.pe
+start: 2018-12
+end: 2021-09
+niches:
+  - architect
+  - leader
+  - generic
+priority:
+  architect: 90
+  leader: 95
+  generic: 85
+metricsEstimated: true
+responsibilities:
+  es:
+    - >-
+      Liderazgo del equipo de desarrollo de la startup, organizando el trabajo, definiendo
+      prioridades y acompañando técnicamente a cada integrante.
+    - >-
+      Definición e implementación de arquitecturas de sistema adaptadas a las necesidades cambiantes
+      del negocio, incluyendo un modelo de microfrontends.
+    - >-
+      Primer desarrollador contratado, responsable de construir desde cero un sistema web para
+      múltiples restaurantes con jQuery y Laravel.
+    - >-
+      Desarrollo de un e-commerce en Vue que integró la gestión de los restaurantes con la
+      experiencia del cliente, minimizando la interacción humana.
+    - >-
+      Responsable del despliegue de las aplicaciones en AWS, usando EC2, RDS, S3, Route 53, SES,
+      AutoScaling y Load Balancer.
+    - >-
+      Definición de estándares de desarrollo y de los flujos de trabajo del equipo a medida que la
+      startup escalaba.
+    - >-
+      Incorporación y onboarding técnico de los nuevos desarrolladores que se sumaron al equipo.
+  en:
+    - >-
+      Led the startup's development team, organizing the work, setting priorities and technically
+      supporting every team member.
+    - >-
+      Defined and implemented system architectures adapted to evolving business needs, including a
+      microfrontends model.
+    - >-
+      First developer hired, responsible for building a multi-restaurant web system from scratch
+      with jQuery and Laravel.
+    - >-
+      Built a Vue e-commerce that integrated restaurant management with the customer experience,
+      minimizing human interaction.
+    - >-
+      Owned application deployments on AWS using EC2, RDS, S3, Route 53, SES, AutoScaling and Load
+      Balancer.
+    - >-
+      Defined development standards and team workflows as the startup scaled.
+    - >-
+      Onboarded and technically ramped up the new developers who joined the team.
+achievements:
+  es:
+    - >-
+      Lideré el crecimiento del equipo de desarrollo desde un único desarrollador hasta un grupo de
+      aproximadamente cuatro a seis personas, definiendo sus estándares de trabajo.
+    - >-
+      Diseñé una arquitectura de microfrontends que permitió evolucionar partes de la plataforma de
+      forma independiente y reducir el acoplamiento del sistema.
+    - >-
+      Construí desde cero la plataforma multi-restaurante, llevándola de un prototipo inicial a un
+      sistema en uso productivo por varios restaurantes.
+    - >-
+      Diseñé el despliegue en AWS con AutoScaling y Load Balancer, sosteniendo la disponibilidad del
+      servicio durante los picos de demanda de los restaurantes.
+    - >-
+      Reduje el tiempo de despliegue de nuevas versiones de jornadas manuales a un proceso
+      repetible de pocas horas sobre infraestructura AWS.
+    - >-
+      Acompañé el crecimiento de la startup durante casi tres años, adaptando la tecnología a cada
+      nueva necesidad del negocio.
+  en:
+    - >-
+      Led the development team's growth from a single developer to a group of roughly four to six
+      people, defining their working standards.
+    - >-
+      Designed a microfrontends architecture that allowed parts of the platform to evolve
+      independently and reduced system coupling.
+    - >-
+      Built the multi-restaurant platform from scratch, taking it from an initial prototype to a
+      system in productive use by several restaurants.
+    - >-
+      Designed the AWS deployment with AutoScaling and Load Balancer, sustaining service
+      availability through the restaurants' demand peaks.
+    - >-
+      Cut new-version deployment time from manual full-day efforts to a repeatable few-hour process
+      on AWS infrastructure.
+    - >-
+      Supported the startup's growth for nearly three years, adapting the technology to every new
+      business need.
+skillsTechnical:
+  - Despliegue en AWS
+  - Laravel
+  - Vue
+  - Arquitectura de Sistemas
+  - Microfrontend
+  - Desarrollo de E-commerce
+  - Computación en la Nube
+skillsSoft:
+  - Liderazgo de Equipo
+  - Metodologías Ágiles
+  - Gestión de Equipos
+  - Orientado al Cliente
+seniority: senior
+summary:
+  es: >-
+    Tech lead y primer desarrollador de Dibal: lleve el equipo de 1 a ~5 personas y defini sus estandares de trabajo.
+  en: >-
+    Tech lead and first dev at Dibal: grew the team from 1 to ~5 people and defined their engineering standards.

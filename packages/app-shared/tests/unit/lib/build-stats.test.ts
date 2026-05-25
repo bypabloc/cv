@@ -2,7 +2,13 @@
  * @description Tests para buildStats: derivacion de stats desde profile o
  *   calculo desde data si profile.stats no esta definido.
  */
-import type { Experience, Profile } from '@portfolio/content'
+import {
+  certificates,
+  type Experience,
+  experiences,
+  type Profile,
+  profile,
+} from '@portfolio/content'
 import { describe, expect, it } from 'vitest'
 import {
   buildStats,
@@ -79,11 +85,11 @@ describe('buildStats', () => {
     expect(result.countries).toBe(4)
   })
 
-  it('Given profile sin stats When buildStats Then companies refleja experiences unicas (5: Destacame, Dibal, GoodMeal, Independiente/Academico, Laboratorio Cofasa)', () => {
+  it('Given profile sin stats When buildStats Then companies refleja experiences unicas (8: CORPOELEC, IPASME, Destacame, Dibal, GoodMeal, Cofasa, Proyecto academico, Asesoria de proyectos de grado)', () => {
     const profileWithoutStats: Profile = { ...baseProfile, stats: undefined }
     const result = buildStats(profileWithoutStats)
-    // experiences.ts tiene 9 roles agrupados en 5 companias unicas
-    expect(result.companies).toBe(5)
+    // experiences.ts tiene 9 roles agrupados en 8 companias unicas
+    expect(result.companies).toBe(8)
   })
 
   it('Given profile sin stats When buildStats Then certifications coincide con array certificates', () => {
@@ -154,5 +160,32 @@ describe('countCompanies', () => {
       }) as unknown as Experience
     const list = [make('A'), make('A'), make('B')]
     expect(countCompanies(list)).toBe(2)
+  })
+})
+
+describe('profile real: consistencia de stats con la data', () => {
+  it('Given el profile real When se lee stats.companies Then vale 8 (empresas distintas en experiences)', () => {
+    // Las 9 experiencias agrupan 8 nombres de empresa distintos.
+    expect(profile.stats?.companies).toBe(8)
+    expect(profile.stats?.companies).toBe(countCompanies(experiences))
+  })
+
+  it('Given el profile real When se lee stats.certifications Then coincide con la cantidad de certificates', () => {
+    expect(profile.stats?.certifications).toBe(certificates.length)
+    expect(profile.stats?.certifications).toBe(11)
+  })
+
+  it('Given el profile real When se lee stats.yearsExperience Then vale 12', () => {
+    expect(profile.stats?.yearsExperience).toBe(12)
+  })
+
+  it('Given el profile real When se lee el summary Then menciona "12 años" y NO "8 años"', () => {
+    expect(profile.summary.es).toContain('12 años')
+    expect(profile.summary.es).not.toContain('8 años')
+  })
+
+  it('Given el profile real When se lee el summary en ingles Then menciona "12 years" y NO "8 years"', () => {
+    expect(profile.summary.en).toContain('12 years')
+    expect(profile.summary.en).not.toContain('8 years')
   })
 })

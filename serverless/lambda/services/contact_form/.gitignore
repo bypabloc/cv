@@ -1,0 +1,23 @@
+# Artefactos efimeros generados por devtools — NO versionar.
+
+# Artefacto de deploy: devtools lo arma con uv (deps + core/ + shared/).
+build/
+build.zip
+
+# Respuesta de `aws lambda invoke` (run contra un stage deployado).
+.invoke/
+
+# requirements.txt efimero (si alguna herramienta lo genera desde uv).
+requirements.txt
+requirements-dev.txt
+
+# Libreria comun vendorizada por devtools (fuente: serverless/lambda/shared/).
+core/shared/
+
+# Caches de Python / pytest.
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,32 @@
+# @i18n curriculum/vibe.es
+# Override del CV para la app vibe (Vibe Coding / Claude Code / Dev Tools).
+
+meta:
+  title: "Pablo Contreras — Vibe Coding / Claude Code / Dev Tools"
+  description: "Ingeniero que documenta workflows reales con Claude Code (desde el lanzamiento, mayo 2025) y antes Claude web + FastStruct. FastStruct (VS Code), monorepo Astro de este portfolio y un CV builder construido en una sola noche."
+
+hero:
+  eyebrow: "Pablo Contreras · Vibe Coding · Lima, Perú · Remoto LATAM/US"
+  headline: "AI-Augmented Full Stack · Claude Code"
+  summary: "Llevo usando Claude Code desde su lanzamiento (mayo 2025). Antes ya pasaba contexto a Claude web con mi propia extensión FastStruct. Construyo herramientas que aceleran ese flujo y publico prompts reales. La IA es herramienta — el código lo reviso, testeo y mantengo yo."
+  nicheLabel: "Vibe Coding"
+
+sections:
+  experienceSubtitle: "Roles donde integro IA en el día a día (Destacame actual)."
+  projectsSubtitle: "FastStruct + CV builder (bypabloc/cv) + monorepo Astro de este portfolio. Tools que uso para entregar."
+
+atsKeywords:
+  - "AI-Augmented Developer"
+  - "Vibe Coding"
+  - "Claude Code"
+  - "Cursor"
+  - "Prompt Engineering"
+  - "Sub-agents"
+  - "MCP Servers"
+  - "GitHub Copilot"
+  - "VS Code Extension Development"
+  - "TypeScript"
+  - "Astro 6"
+  - "Python 3.14"
+  - "Developer Tools"
+  - "AI Workflow Documentation"

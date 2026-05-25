@@ -1,0 +1,73 @@
+/**
+ * @config: packages/ui/src/styles/view-transitions.css
+ * @description: estilos globales de view transitions del portfolio.
+ *
+ * Spec tracking-data-completeness:
+ *   1. Page nav default = fade 300ms ease-in-out (sobreescribe el default
+ *      de Astro a una curva especifica).
+ *   2. Stagger fade-in para listas (.stagger-pending / .stagger-visible),
+ *      delay incremental via --stagger-idx, una vez por lista
+ *      (IntersectionObserver `once: true` en lib/stagger.ts).
+ *   3. prefers-reduced-motion strict: navigation: none + animation 0.01ms
+ *      en TODAS las pseudo-classes view-transition-*.
+ *
+ * El layout importa este archivo via BaseLayout.astro (despues de
+ * global.css). Los `transition:name` por elemento (hero-identity,
+ * project-{slug}) los declara cada component Astro; el browser ata el
+ * morph automaticamente cuando ambos lados tienen el mismo name.
+ */
+
+/* 1. Page nav default: fade 300ms ease-in-out (Astro default = 220ms
+ * lineal). El selector ::view-transition-old/new(root) aplica al swap
+ * cross-document orquestado por <ClientRouter />. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: ease-in-out;
+}
+
+/* 2. Stagger fade-in en listas. La pagina marca el container con
+ * data-stagger; el script de lib/stagger.ts agrega --stagger-idx a cada
+ * item + clase .stagger-pending (oculto) -> al entrar al viewport pasa
+ * a .stagger-visible y arranca la animacion con animation-delay
+ * proporcional a su indice. */
+.stagger-pending {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.stagger-visible {
+  animation: stagger-in 400ms ease-out forwards;
+  animation-delay: calc(var(--stagger-idx, 0) * 40ms);
+}
+
+@keyframes stagger-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 3. Strict reduced-motion. WCAG 2.2 SC 2.2.2 + 2.3.3:
+ *   - navigation: none -> el View Transitions API hace swap instantaneo
+ *     (sin animar). Disponible Chrome/Safari/Firefox 2026.
+ *   - duration 0.01ms en old/new(*) -> mata cualquier transition residual
+ *     declarada por shared elements (hero-identity, project-{slug}).
+ *   - stagger se vuelve no-op: opacity:1 + sin transform. */
+@media (prefers-reduced-motion: reduce) {
+  /* :where() tiene specificity 0; combinado con animation: none + 0.01ms
+   * mata cualquier override sin necesidad de !important. */
+  :where(::view-transition-old(*)),
+  :where(::view-transition-new(*)) {
+    animation: none;
+    animation-duration: 0.01ms;
+    animation-delay: 0s;
+  }
+
+  .stagger-pending,
+  .stagger-visible {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}

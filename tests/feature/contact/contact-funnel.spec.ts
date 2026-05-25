@@ -7,7 +7,7 @@
  *   - `contact_form_submit` + `contact_form_success` al enviar con exito [AC-6]
  *   - `contact_form_error` con el codigo del error si el envio falla [AC-7]
  *
- *   El gating de consentimiento se fuerza con `?cf_track=force` (flag de QA).
+ *   Tracking always-on: los eventos se emiten sin gating de consentimiento.
  *   Los eventos viajan por `navigator.sendBeacon`; el test lo neutraliza con
  *   `addInitScript` para que `trackEvent` caiga al path `fetch`, cuyo
  *   `postData` SI es legible por Playwright.
@@ -83,7 +83,7 @@ async function gotoContactFunnel(
   page: Page,
   captured: TrackPayload[],
 ): Promise<void> {
-  await page.goto(`${subdomainUrl()}/contact?cf_track=force`, {
+  await page.goto(`${subdomainUrl()}/contact`, {
     waitUntil: 'domcontentloaded',
   })
   await expect(page.locator('input[name="name"]')).toBeVisible()
@@ -105,7 +105,7 @@ test.describe('Feature: embudo de contacto (SPEC-200)', () => {
     }
   })
 
-  test('Given /contact con ?cf_track=force When carga Then emite contact_view [AC-4]', async ({
+  test('Given /contact When carga Then emite contact_view [AC-4]', async ({
     page,
   }) => {
     // Arrange
@@ -113,7 +113,7 @@ test.describe('Feature: embudo de contacto (SPEC-200)', () => {
     const captured = await captureTrackRequests(page)
 
     // Act
-    await page.goto(`${subdomainUrl()}/contact?cf_track=force`, {
+    await page.goto(`${subdomainUrl()}/contact`, {
       waitUntil: 'domcontentloaded',
     })
     await expect(page.getByTestId('contact-form')).toBeVisible()

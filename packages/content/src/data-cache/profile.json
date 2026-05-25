@@ -1,0 +1,38 @@
+{
+  "name": "Pablo Contreras",
+  "handle": "bypabloc",
+  "location": "Lima, Perú",
+  "avatarUrl": "https://images-bypabloc.s3.sa-east-1.amazonaws.com/cv/1.avif",
+  "contacts": {
+    "email": "pacg1991@gmail.com",
+    "phone": "+51 918490148",
+    "linkedin": "https://linkedin.com/in/bypabloc",
+    "github": "https://github.com/bypabloc",
+    "website": "https://the-full-stack.com"
+  },
+  "headline": {
+    "es": "Ingeniero Full Stack senior — Fintech LATAM, microservicios, AWS",
+    "en": "Senior Full Stack Engineer — LATAM fintech, microservices, AWS"
+  },
+  "summary": {
+    "es": "Ingeniero de software con más de 12 años de experiencia, especializado en desarrollo Full Stack con Python y JavaScript. Experto en crear soluciones tecnológicas con Vue, Django, microservicios y AWS, he desarrollado con éxito y liderado la implementación de sistemas ERP y plataformas fintech, mejorando significativamente la eficiencia operativa y la experiencia del usuario. Habilidoso en la coordinación y motivación de equipos, me adapto fácilmente a entornos dinámicos y desafiantes, siempre enfocado en la calidad y la innovación.",
+    "en": "Software engineer with over 12 years of experience, specialized in Full Stack development with Python and JavaScript. Expert in building technology solutions with Vue, Django, microservices and AWS, I have successfully delivered and led the implementation of ERP systems and fintech platforms, significantly improving operational efficiency and user experience. Skilled in coordinating and motivating teams, I adapt easily to dynamic and challenging environments, always focused on quality and innovation."
+  },
+  "availability": {
+    "es": "Disponible remoto · zona horaria LATAM/US",
+    "en": "Remote-friendly · LATAM/US timezone"
+  },
+  "niches": [
+    "fintech",
+    "architect",
+    "leader",
+    "vibe",
+    "generic"
+  ],
+  "stats": {
+    "yearsExperience": 12,
+    "companies": 8,
+    "countries": 4,
+    "certifications": 11
+  }
+}

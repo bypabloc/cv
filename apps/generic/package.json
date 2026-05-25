@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Generic portfolio site — the-full-stack.com (apex)",
+  "description": "Generic portfolio site \u2014 the-full-stack.com (apex)",
   "scripts": {
     "dev": "astro dev --port 4321",
     "build": "astro build",
@@ -11,7 +11,8 @@
     "astro": "astro",
     "typecheck": "astro check",
     "test": "echo 'no app-level tests in v1'",
-    "prebuild": "vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs"
+    "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs",
+    "predev": "pnpm --filter @portfolio/content run fetch-cache"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",

@@ -29,7 +29,7 @@
     "issuer": "Udemy",
     "date": "2024-01-04",
     "url": "http://ude.my/UC-8297be13-d656-4e62-b64b-642819930c71",
-    "niches": ["generic", "vibe"]
+    "niches": ["vibe", "generic"]
   },
   {
     "slug": "node-clean-architecture-2023",
@@ -85,6 +85,6 @@
     "issuer": "Udemy",
     "date": "2023-05-30",
     "url": "http://ude.my/UC-a217906e-84eb-40dc-9303-36de5b71e0cc",
-    "niches": ["generic", "fintech", "architect"]
+    "niches": ["fintech", "architect", "generic"]
   }
 ]

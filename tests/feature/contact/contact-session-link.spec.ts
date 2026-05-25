@@ -1,12 +1,13 @@
 /**
- * @feature Enlace contacto <-> tracking via session_id (SPEC-202 AC-1/AC-2)
+ * @feature Enlace contacto <-> tracking via session_id (SPEC-202)
  * @description Verifica que el formulario de contacto envia el `session_id`
  *   de tracking en el body del `POST /contact`:
- *   - Con tracking aceptado: el `session_id` del `POST /contact` es el MISMO
- *     que el de los eventos de `/track` (misma `localStorage.cf_session`)
- *     [AC-1].
- *   - Con tracking rechazado (sin `cf_session`): el contacto se envia SIN la
- *     clave `session_id` y el form igual funciona [AC-2].
+ *   - El `session_id` del `POST /contact` es el MISMO que el de los eventos
+ *     de `/track` (misma `localStorage.cf_session`).
+ *
+ *   Tracking always-on: no hay rama "sin consentimiento". El `cf_session`
+ *   se crea al primer trackEvent del page_load y el form de contacto lo
+ *   reutiliza.
  *
  *   El `POST /contact` se intercepta con `page.route` para inspeccionar el
  *   body sin depender del backend AWS. El bypass de Turnstile se inyecta solo
@@ -119,9 +120,7 @@ async function fillContactForm(page: Page): Promise<void> {
 }
 
 /**
- * Espera a que el island este interactivo de forma estable. Sin
- * consentimiento el island no emite `/track`: la estabilidad se verifica con
- * `fillContactForm`, que re-rellena hasta que los valores se mantienen.
+ * Espera a que el island este interactivo de forma estable.
  */
 async function waitIslandReady(page: Page): Promise<void> {
   await expect(page.locator('input[name="name"]')).toBeVisible()
@@ -141,7 +140,7 @@ test.describe('Feature: enlace contacto <-> tracking por session_id (SPEC-202)',
     }, BYPASS_SECRET)
   })
 
-  test('Given tracking aceptado When envio el form Then el POST /contact lleva el mismo session_id que /track [AC-1]', async ({
+  test('Given tracking always-on When envio el form Then el POST /contact lleva el mismo session_id que /track [AC-1]', async ({
     page,
   }) => {
     // Arrange
@@ -149,8 +148,8 @@ test.describe('Feature: enlace contacto <-> tracking por session_id (SPEC-202)',
     const contactPosts = await captureContactPosts(page)
     const trackPosts = await captureTrackRequests(page)
 
-    // Act: con ?cf_track=force el tracking emite eventos -> hay cf_session
-    await page.goto(`${subdomainUrl()}/contact?cf_track=force`, {
+    // Act
+    await page.goto(`${subdomainUrl()}/contact`, {
       waitUntil: 'domcontentloaded',
     })
     await waitIslandReady(page)
@@ -167,32 +166,5 @@ test.describe('Feature: enlace contacto <-> tracking por session_id (SPEC-202)',
     const trackingSessionId = trackPosts[0].session_id
     expect(trackingSessionId.length).toBeGreaterThanOrEqual(20)
     expect(contactPosts[0].session_id).toBe(trackingSessionId)
-  })
-
-  test('Given tracking rechazado When envio el form Then el POST /contact NO lleva session_id [AC-2]', async ({
-    page,
-  }) => {
-    // Arrange
-    await disableSendBeacon(page)
-    const contactPosts = await captureContactPosts(page)
-
-    // Act: SIN ?cf_track=force y sin cf_consent -> no hay cf_session
-    await page.goto(`${subdomainUrl()}/contact`, {
-      waitUntil: 'domcontentloaded',
-    })
-    await waitIslandReady(page)
-    // fillContactForm re-rellena si Vite recarga el island; al terminar el
-    // form esta estable. Recien entonces se limpia el storage de tracking.
-    await fillContactForm(page)
-    await page.evaluate(() => {
-      window.localStorage.removeItem('cf_session')
-      window.localStorage.removeItem('cf_consent')
-    })
-    await page.getByTestId('contact-submit').click()
-    await expect.poll(() => contactPosts.length, { timeout: 10000 }).toBe(1)
-
-    // Assert: el contacto se envia y NO incluye la clave session_id
-    expect('session_id' in contactPosts[0]).toBe(false)
-    expect(contactPosts[0].name).toBe('Pablo Session')
   })
 })

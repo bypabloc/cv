@@ -12,16 +12,30 @@
  * @props {string} apiEndpoint - Full URL del POST /contact
  * @props {string} turnstileSitekey - Sitekey publica del widget Turnstile
  * @props {string} [niche] - Nicho del subdominio
+ * @props {object} strings - Textos del form (components.contactForm del i18n)
  */
-import { EVENT_TYPES } from '@portfolio/content'
+import { type ComponentsStrings, EVENT_TYPES } from '@portfolio/content'
 import ContactFormReact from './ContactFormReact.tsx'
 
 interface Props {
   apiEndpoint: string
   turnstileSitekey: string
   niche?: string
+  strings: ComponentsStrings['contactForm']
 }
-const { apiEndpoint, turnstileSitekey, niche = 'generic' } = Astro.props
+// NOTA: este componente NO valida apiEndpoint/turnstileSitekey con los
+// guards de validate-build-env porque el contrato de las paginas
+// /contact es que apiEndpoint puede llegar como `${base}/contact`
+// (sufijado, no base), y porque el .astro padre ya gateaa con
+// `contactEndpoint && turnstileSitekey ? <Form /> : <Fallback />`.
+// La fuente del bug del plan era TrackingPixel (silent fail SIN gating
+// graceful); ahi SI corre el guard de validateApiEndpoint.
+const {
+  apiEndpoint,
+  turnstileSitekey,
+  niche = 'generic',
+  strings,
+} = Astro.props
 
 const funnelEventTypes = {
   contactView: EVENT_TYPES.CONTACT_VIEW,
@@ -37,6 +51,7 @@ const funnelEventTypes = {
   turnstileSitekey={turnstileSitekey}
   niche={niche}
   funnelEventTypes={funnelEventTypes}
+  strings={strings}
   client:load
 />
 

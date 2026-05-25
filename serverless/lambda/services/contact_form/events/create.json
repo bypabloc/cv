@@ -1,0 +1,20 @@
+{
+  "httpMethod": "POST",
+  "path": "/contact",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://the-full-stack.com",
+    "CF-Connecting-IP": "203.0.113.10",
+    "CF-IPCountry": "CL",
+    "User-Agent": "Mozilla/5.0"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": "{\"name\": \"Pablo Contreras\", \"email\": \"user@example.com\", \"message\": \"Hola, me interesa colaborar contigo en un proyecto.\", \"cf_token\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"niche\": \"fintech\"}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "identity": { "sourceIp": "203.0.113.10" },
+    "requestId": "local-request-id",
+    "stage": "dev"
+  }
+}

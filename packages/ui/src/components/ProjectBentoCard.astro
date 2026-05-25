@@ -25,20 +25,35 @@
  *     bentoSpan="lg"
  *   />
  */
+interface ProjectLink {
+  label: string
+  url: string
+}
+
 interface Props {
   name: string
   summary: string
   stack: string[]
   url?: string
+  /** Links adicionales (sitios alternos, demos). Si tiene >1, se muestran como botones multiples. */
+  links?: ProjectLink[]
   repo?: string
   status: 'active' | 'inactive' | 'concept'
   isConfidential?: boolean
   bentoSpan?: 'sm' | 'md' | 'lg' | 'xl'
   caseStudyLabel?: string
+  /** Label del CTA principal cuando solo hay url (no links[]). Default: "Ver sitio". */
+  viewSiteLabel?: string
+  /** Label del CTA al repo. Default: "Repo". */
+  viewRepoLabel?: string
   /** Opt-in: marca el item como filterable y expone data-* attrs. */
   filterable?: boolean
   /** projectType para `data-project-type`. */
   dataProjectType?: string
+  /** Si esta presente, agrega un enlace a la pagina de detalle. */
+  detailHref?: string
+  /** Texto del enlace al detalle (default: "Ver detalle"). */
+  detailLabel?: string
 }
 
 const {
@@ -46,14 +61,22 @@ const {
   summary,
   stack,
   url,
+  links,
   repo,
   status,
   isConfidential = false,
   bentoSpan = 'md',
   caseStudyLabel = 'Caso bajo NDA',
+  viewSiteLabel = 'Ver sitio',
+  viewRepoLabel = 'Repo',
   filterable = false,
   dataProjectType,
+  detailHref,
+  detailLabel = 'Ver detalle',
 } = Astro.props
+
+const hasMultiLinks = Array.isArray(links) && links.length > 1
+const primaryUrl = url ?? links?.[0]?.url
 
 const visibleStack = stack.slice(0, 6)
 const remaining = Math.max(0, stack.length - visibleStack.length)
@@ -95,23 +118,47 @@ const techCsv = stack.join(',')
         </ul>
       )
     }
+    {
+      isConfidential && (
+        <p class="bento-card__confidential text-mono-label text-muted">{caseStudyLabel}</p>
+      )
+    }
     <footer class="bento-card__footer">
       {
-        url && !isConfidential ? (
-          <a href={url} target="_blank" rel="noopener" class="bento-card__link magnetic">
-            Ver producto
+        hasMultiLinks ? (
+          links!.map((l, idx) => (
+            <a
+              href={l.url}
+              target="_blank"
+              rel="noopener"
+              class:list={['bento-card__link', 'magnetic', { 'bento-card__link--ghost': idx > 0 }]}
+            >
+              {l.label}
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          ))
+        ) : primaryUrl ? (
+          <a href={primaryUrl} target="_blank" rel="noopener" class="bento-card__link magnetic">
+            {viewSiteLabel}
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </a>
-        ) : isConfidential ? (
-          <span class="bento-card__confidential text-mono-label text-muted">{caseStudyLabel}</span>
         ) : null
       }
       {
         repo && (
           <a href={repo} target="_blank" rel="noopener" class="bento-card__link bento-card__link--ghost magnetic">
-            Repo
+            {viewRepoLabel}
+          </a>
+        )
+      }
+      {
+        detailHref && (
+          <a href={detailHref} class="bento-card__link bento-card__link--ghost magnetic">
+            {detailLabel}
           </a>
         )
       }
@@ -296,6 +343,11 @@ const techCsv = stack.join(',')
     color: var(--niche-accent);
   }
   .bento-card__confidential {
-    align-self: center;
+    margin: 0;
+    padding: var(--space-6) var(--space-12);
+    border-radius: var(--radius-sm);
+    background: rgba(var(--niche-accent-rgb), 0.06);
+    border: 1px solid rgba(var(--niche-accent-rgb), 0.18);
+    color: var(--color-text-muted);
   }
 </style>

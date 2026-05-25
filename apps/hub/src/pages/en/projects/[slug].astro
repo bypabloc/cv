@@ -1,0 +1,26 @@
+---
+import ProjectDetail from '@portfolio/app-shared/components/ProjectDetail.astro'
+import { projects } from '@portfolio/content'
+import PageLayout from '../../../layouts/PageLayout.astro'
+import { NICHE, STRINGS } from '../../../lib/site-config'
+
+export function getStaticPaths() {
+  return projects.map((proj) => ({
+    params: { slug: proj.slug },
+    props: { project: proj },
+  }))
+}
+
+const { project } = Astro.props
+const t = STRINGS.en
+---
+
+<PageLayout
+  title={`${project.name} — ${t.meta.title}`}
+  description={project.summary.en}
+  canonicalPath={`/en/projects/${project.slug}`}
+  locale="en"
+  otherLocalePath={`/projects/${project.slug}`}
+>
+  <ProjectDetail project={project} locale="en" strings={t} />
+</PageLayout>

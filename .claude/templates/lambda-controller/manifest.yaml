@@ -1,0 +1,41 @@
+# Manifiesto del Lambda — fuente de verdad de la configuracion.
+#
+# devtools lo lee directamente: provisioner.py lo traduce a llamadas
+# AWS CLI (rol IAM, LogGroup, funcion, wiring del trigger) en cada
+#   python devtools/run.py serverless deploy --path=<este-dir> --stage=<env>
+#
+# No hay capa intermedia: este manifest.yaml es la unica entrada. Para
+# cambiar algo se edita aqui y se re-deploya.
+
+# --- Obligatorios ---
+name: example-lambda                    # nombre logico (kebab-case)
+runtime: python3.13                     # python3.12 | python3.13
+handler: core.handler.lambda_handler    # el handler vive en core/
+
+# --- Opcionales (con defaults) ---
+memory: 256                             # MB    (default 256)
+timeout: 30                             # seg   (default 30)
+region: us-east-1                       # AWS region (default us-east-1)
+
+# Layers ARN compartidos (opcional)
+layers: []
+# - arn:aws:lambda:us-east-1:000000000000:layer:shared-deps:1
+
+# IAM: managed policy names o ARNs adicionales (opcional)
+iam_policies: []
+# - AWSLambdaBasicExecutionRole
+# - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+
+# Variables de entorno por stage. 'default' aplica a todos los stages;
+# las claves de un stage especifico sobrescriben las de 'default'.
+environment:
+  default:
+    LOG_LEVEL: INFO
+    ENVIRONMENT: dev
+  dev:
+    ENVIRONMENT: dev
+  stage:
+    ENVIRONMENT: stage
+  prod:
+    LOG_LEVEL: WARNING
+    ENVIRONMENT: prod

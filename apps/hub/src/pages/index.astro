@@ -1,8 +1,7 @@
 ---
-import { profile } from '@portfolio/content'
+import { getHubSelector, profile } from '@portfolio/content'
 import { buildPersonSchema } from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
-import CookieBanner from '@portfolio/ui/components/CookieBanner.astro'
 import Footer from '@portfolio/ui/components/Footer.astro'
 import MeshGradientBg from '@portfolio/ui/components/MeshGradientBg.astro'
 import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
@@ -10,15 +9,17 @@ import TrackingPixel from '@portfolio/ui/components/TrackingPixel.astro'
  * @page index (es) — hub selector
  * @description Landing en the-full-stack.com. 5 cards para los 5 sitios.
  *   Mesh gradient global + tilt 3D en cards + display mega headline.
+ *   Todos los textos vienen del YAML i18n (hub-selector + curriculum/hub).
  */
 import BaseLayout from '@portfolio/ui/layouts/BaseLayout.astro'
-import { NICHE_CARDS } from '../lib/niches'
+import { getNicheCards } from '../lib/niches'
+import { SITE_URL, STRINGS } from '../lib/site-config'
 
-const SITE = 'https://the-full-stack.com'
+const SITE = SITE_URL
 const canonicalUrl = `${SITE}/`
-const title = `Pablo Contreras — 5 enfoques. Elige el que conecta.`
-const description =
-  'Ingeniero Full Stack senior. 5 portfolios especializados: Full Stack, Fintech LATAM, Architect, Tech Lead, Vibe Coding.'
+const t = STRINGS.es
+const sel = getHubSelector('es')
+const cards = getNicheCards('es')
 
 const jsonLd = buildPersonSchema({
   profile,
@@ -43,38 +44,39 @@ const hubStyle = nicheTokensToCssVars('hub')
 ---
 
 <BaseLayout
-  title={title}
-  description={description}
+  title={t.meta.title}
+  description={t.meta.description}
   canonicalUrl={canonicalUrl}
   locale="es"
   jsonLd={jsonLd}
   ogImage={`${SITE}/og-image.svg`}
+  skipToContentLabel={t.components.layout.skipToContent}
 >
   <div class="hub-root" data-niche="hub" style={hubStyle}>
-    <section class="container-medium hub-hero">
+    <section class="hub-hero">
       <MeshGradientBg variant="vivid" aurora />
-      <p class="text-mono-label hub-hero__eyebrow">
-        <span class="hub-hero__dot" aria-hidden="true"></span>
-        Pablo Contreras · Lima, Perú · Remoto LATAM/US
-      </p>
-      <h1 class="text-display-mega hub-hero__title">
-        <span class="gradient-text">Cinco</span><br />
-        <span>enfoques.</span><br />
-        <span class="hub-hero__title-light">Elige el que conecta.</span>
-      </h1>
-      <p class="text-body-lg text-muted hub-hero__intro">
-        Soy ingeniero Full Stack senior con 12+ años en Vue, Django y AWS. Cada
-        sitio cuenta la misma historia con un acento diferente. Entra por el que
-        te interese — las cinco versiones están al día.
-      </p>
-      <p class="text-mono hub-hero__lang">
-        <a href="/en/" class="anim-underline">English version →</a>
-      </p>
+      <div class="hub-hero__inner">
+        <p class="text-mono-label hub-hero__eyebrow">
+          <span class="hub-hero__dot" aria-hidden="true"></span>
+          {sel.heroEyebrow}
+        </p>
+        <h1 class="text-display-mega hub-hero__title">
+          <span class="gradient-text">{sel.heroHeadline.lead}</span><br />
+          <span>{sel.heroHeadline.mid}</span><br />
+          <span class="hub-hero__title-light">{sel.heroHeadline.tail}</span>
+        </h1>
+        <p class="text-body text-muted hub-hero__intro">
+          {sel.heroIntro}
+        </p>
+        <p class="text-mono hub-hero__lang">
+          <a href="/en/" class="anim-underline">{sel.otherLocaleLink}</a>
+        </p>
+      </div>
     </section>
 
     <section class="container-medium hub-grid">
       {
-        NICHE_CARDS.map((card, i) => (
+        cards.map((card, i) => (
           <a
             class="hub-card tilt-3d scroll-reveal"
             href={card.url}
@@ -83,13 +85,13 @@ const hubStyle = nicheTokensToCssVars('hub')
           >
             <div class="tilt-3d__inner hub-card__inner">
               <span class="hub-card__niche text-mono-label">
-                <span class="hub-card__niche-dot" aria-hidden="true"></span>
+                <span class="hub-card__niche-dot" aria-hidden="true" />
                 {card.niche}
               </span>
-              <h2 class="hub-card__title text-h3">{card.title.es}</h2>
-              <p class="hub-card__blurb text-body text-muted">{card.blurb.es}</p>
+              <h2 class="hub-card__title text-h3">{card.title}</h2>
+              <p class="hub-card__blurb text-body text-muted">{card.blurb}</p>
               <span class="hub-card__cta text-mono">
-                Entrar
+                {sel.cardCta}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                   <path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
@@ -103,15 +105,11 @@ const hubStyle = nicheTokensToCssVars('hub')
 
   <Footer
     slot="footer"
-    name="Pablo Contreras"
+    name={profile.name}
     contacts={profile.contacts}
-    locale="es"
+    strings={t.components.footer}
   />
-  <TrackingPixel
-    apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT}
-    niche="hub"
-  />
-  <CookieBanner locale="es" />
+  <TrackingPixel apiEndpoint={import.meta.env.PUBLIC_API_ENDPOINT} niche="hub" />
 </BaseLayout>
 
 <style>
@@ -124,6 +122,17 @@ const hubStyle = nicheTokensToCssVars('hub')
     text-align: left;
     overflow: hidden;
     isolation: isolate;
+    /* Full-bleed: el fondo escapa el wrapper del layout y ocupa 100vw. */
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+  .hub-hero__inner {
+    position: relative;
+    z-index: 2;
+    max-width: var(--container-medium, 960px);
+    margin-inline: auto;
+    padding-inline: clamp(var(--space-16), 4vw, var(--space-40));
   }
   .hub-hero__eyebrow {
     display: inline-flex;
@@ -153,7 +162,7 @@ const hubStyle = nicheTokensToCssVars('hub')
     font-variation-settings: 'wght' 600;
   }
   .hub-hero__intro {
-    max-width: 56ch;
+    max-width: 62ch;
     margin-bottom: var(--space-24);
   }
   .hub-hero__lang a {

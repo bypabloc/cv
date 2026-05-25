@@ -305,7 +305,7 @@ def handler_payment_webhook(event, context):
 ## Configuracion de Powertools
 
 ```python
-# serverless/src/config/idempotency_config.py
+# core/settings/idempotency_config.py (dentro del Lambda)
 from aws_lambda_powertools.utilities.idempotency import IdempotencyConfig
 
 idempotency_config = IdempotencyConfig(
@@ -314,7 +314,7 @@ idempotency_config = IdempotencyConfig(
     use_local_cache=False,  # Usar DynamoDB, no in-memory
 )
 
-# serverless/src/handlers/webhook.py
+# core/handler.py (dentro del Lambda)
 from aws_lambda_powertools.utilities.idempotency import idempotent
 from config.idempotency_config import idempotency_config
 

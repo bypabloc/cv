@@ -14,16 +14,69 @@ Skip por env:
     SKIP_STEPS="build" git push ...
     SKIP_STEPS="feature_tests" git push ...
     SKIP_STEPS="typecheck,build" git push ...
+
+Opt-in:
+    RUN_BUILD_TESTS=1 git push ...     # corre Capa B (build-tests del dist)
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import sys
 
 
 HOOK_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(HOOK_DIR))
+
+
+# Catalogo de env vars que el build de las apps Astro consume via
+# import.meta.env.* o process.env. Si no estan presentes en os.environ,
+# se inyectan desde docker/env/client/.local antes de correr `pnpm build`.
+# Espejo del SYNCED_KEYS de devtools/github_sync/catalog.py.
+_BUILD_CATALOG_KEYS = (
+    'BASE_DOMAIN',
+    'BASE_SCHEME',
+    'APEX_DOMAIN',
+    'PUBLIC_API_ENDPOINT',
+    'PUBLIC_TURNSTILE_SITEKEY',
+)
+
+
+def _inject_local_build_env() -> None:
+    """Carga las keys del catalogo desde docker/env/client/.local al
+    os.environ del hook, asi los subprocess de `pnpm build` heredan las
+    env vars sin que el dev tenga que setearlas a mano. Hermetico: ningun
+    valor llega a stdout. Si una key ya esta en os.environ, NO la pisa
+    (la del shell gana). Si .local no existe o falta una key, sigue
+    silenciosamente — el guard de TrackingPixel atrapara el problema.
+    """
+    env_file = HOOK_DIR.parent / 'docker' / 'env' / 'client' / '.local'
+    if not env_file.is_file():
+        return
+    try:
+        for line in env_file.read_text(encoding='utf-8').splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#') or '=' not in stripped:
+                continue
+            key, _, value = stripped.partition('=')
+            key = key.strip()
+            if key not in _BUILD_CATALOG_KEYS or key in os.environ:
+                continue
+            # Strip quotes (single or double) si envuelven todo el value
+            value = value.strip()
+            if (
+                len(value) >= 2
+                and value[0] == value[-1]
+                and value[0] in '"\''
+            ):
+                value = value[1:-1]
+            os.environ[key] = value
+    except OSError:
+        pass
+
+
+_inject_local_build_env()
 
 from _common import (  # noqa: E402
     PROJECT_ROOT,
@@ -178,6 +231,37 @@ def step_build(step_label: str) -> int:
     return 0
 
 
+def step_build_tests(step_label: str) -> int:
+    """Build-tests del dist (Capa B del plan build-env-vars-per-env).
+
+    Opt-in con RUN_BUILD_TESTS=1 porque son lentos (~15s) y solo importan
+    cuando se toca packages/ui/src/components/TrackingPixel.astro,
+    packages/ui/src/lib/validate-build-env.ts, o el cableado de env vars
+    en el deploy. Verifica que el dist tenga el data-api-endpoint
+    correcto y que el build sin env vars FALLA con el guard.
+    """
+    section(f'[PASO {step_label}] Build Tests (Capa B: dist regression)')
+    if os.environ.get('RUN_BUILD_TESTS', '') != '1':
+        skip('RUN_BUILD_TESTS!=1 -> omitido (opt-in)')
+        tip('Para correr: RUN_BUILD_TESTS=1 git push ...')
+        ok(f'Paso {step_label}: Build Tests')
+        return 0
+    info('vitest --config vitest.build.config.ts en packages/ui')
+    rc = run_pnpm(
+        ['run', 'test:build'],
+        cwd=PROJECT_ROOT / 'packages' / 'ui',
+        timeout=300,
+    )
+    if rc != 0:
+        return fail(
+            f'Paso {step_label}: build-tests - FALLO',
+            'PUSH BLOQUEADO',
+            HOOK_NAME,
+        )
+    ok(f'Paso {step_label}: Build Tests')
+    return 0
+
+
 def _docker_available() -> bool:
     """True si docker CLI esta instalado y daemon corriendo."""
     import shutil
@@ -273,6 +357,7 @@ def main() -> int:
         ('typecheck', lambda lbl: step_typecheck(modified_apps, modified_packages, lbl)),
         ('unit_tests', lambda lbl: step_unit_tests(modified_packages, lbl)),
         ('build', lambda lbl: step_build(lbl)),
+        ('build_tests', lambda lbl: step_build_tests(lbl)),
         ('feature_tests', lambda lbl: step_feature_tests(lbl)),
     ]
 

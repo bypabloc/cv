@@ -46,7 +46,7 @@ const LABELS = {
   es: {
     summary: 'Resumen',
     experience: 'Experiencia',
-    projects: 'Proyectos destacados',
+    projects: 'Proyectos',
     education: 'Educación',
     certificates: 'Certificaciones',
     publications: 'Publicaciones',
@@ -68,7 +68,7 @@ const LABELS = {
   en: {
     summary: 'Summary',
     experience: 'Experience',
-    projects: 'Featured projects',
+    projects: 'Projects',
     education: 'Education',
     certificates: 'Certifications',
     publications: 'Publications',

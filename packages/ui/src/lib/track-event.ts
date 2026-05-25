@@ -7,9 +7,9 @@
  *   sendBeacon), adjunta `session_id` (localStorage `cf_session`, la misma
  *   key del pixel page_load), `page_url`, y `event_props` opcional.
  *
- *   GATING: solo emite si hay consentimiento — `localStorage.cf_consent`
- *   debe ser `'accepted'`. El flag de QA `?cf_track=force` lo bypassa (para
- *   E2E). Sin consentimiento ni flag: cero eventos (GDPR por defecto).
+ *   Tracking always-on: NO hay gating de consentimiento. Privacy stance:
+ *   no PII, no cookies, anonimo, TTL 60 dias en DynamoDB. El unico estado
+ *   persistido del lado del cliente es `cf_session` (UUID por sesion).
  *
  *   `TrackingPixel.astro` y los inicializadores `initClickTracking` /
  *   `initScrollDepth` usan este modulo: nadie duplica la logica de envio.
@@ -20,11 +20,7 @@
  *   trackEvent(EVENT_TYPES.CTA_CLICK, { href: '/contact' })
  */
 
-const STORAGE_CONSENT = 'cf_consent'
 const STORAGE_SESSION = 'cf_session'
-const CONSENT_ACCEPTED = 'accepted'
-const QA_FLAG = 'cf_track'
-const QA_FLAG_VALUE = 'force'
 
 /**
  * @type TrackingConfig
@@ -40,14 +36,107 @@ export interface TrackingConfig {
 /**
  * @type TrackEventPayload
  * @description Forma del body que se envia a `POST /track`.
+ *
+ *   Spec tracking-data-completeness: page_path, page_url, page_title,
+ *   viewport_width, viewport_height y utm_source/medium/campaign/content
+ *   son REQUIRED (string vacio cuando no aplica). `referrer` queda
+ *   best-effort (string vacio si `document.referrer` esta vacio).
+ *   `device_pixel_ratio` y `utm_term` son opcionales con defaults.
  */
 export interface TrackEventPayload {
+  // El handler HTTP generico del backend exige operation y action en el
+  // body. Son constantes para tracking pero el shape los requiere.
+  operation: 'tracking'
+  action: 'track'
   session_id: string
   event_id: string
   event_type_id: string
+  // Page metadata (required en el backend)
   page_url: string
+  page_path: string
+  page_title: string
+  // Best-effort: '' cuando document.referrer esta vacio
+  referrer: string
+  // UTM params del query string (required en el payload, '' cuando no aplica)
+  utm_source: string
+  utm_medium: string
+  utm_campaign: string
+  utm_content: string
+  utm_term?: string
+  // Viewport del browser real (required en el backend)
+  viewport_width: number
+  viewport_height: number
+  device_pixel_ratio?: number
+  // Niche del subdominio
   niche: string
   event_props?: Record<string, unknown>
+}
+
+/**
+ * @function getPageMetadata
+ * @description Captura page_path, page_url, page_title, referrer del
+ *   document/location del browser. Funcion pura (testeable).
+ */
+export function getPageMetadata(): {
+  page_url: string
+  page_path: string
+  page_title: string
+  referrer: string
+} {
+  const loc = globalThis.location
+  const doc = globalThis.document
+  return {
+    page_url: (loc?.href ?? '').slice(0, 500),
+    page_path: (loc?.pathname ?? '').slice(0, 300),
+    page_title: (doc?.title ?? '').slice(0, 200),
+    referrer: (doc?.referrer ?? '').slice(0, 500),
+  }
+}
+
+/**
+ * @function parseUtmParams
+ * @description Extrae los 4 utm_* del query string del `searchUrl`. Si la
+ *   URL no trae alguno, devuelve string vacio (no `undefined`). Tope de
+ *   100 chars por valor (matchea el max_length del Pydantic).
+ */
+export function parseUtmParams(searchUrl?: string): {
+  utm_source: string
+  utm_medium: string
+  utm_campaign: string
+  utm_content: string
+} {
+  const source = searchUrl ?? globalThis.location?.search ?? ''
+  let params: URLSearchParams
+  try {
+    params = new URLSearchParams(source)
+  } catch {
+    params = new URLSearchParams()
+  }
+  const pick = (k: string): string => (params.get(k) ?? '').slice(0, 100)
+  return {
+    utm_source: pick('utm_source'),
+    utm_medium: pick('utm_medium'),
+    utm_campaign: pick('utm_campaign'),
+    utm_content: pick('utm_content'),
+  }
+}
+
+/**
+ * @function getViewport
+ * @description Captura viewport_width/height y devicePixelRatio del
+ *   browser. Devuelve `0` si window no esta disponible (SSR / tests).
+ */
+export function getViewport(): {
+  viewport_width: number
+  viewport_height: number
+  device_pixel_ratio: number
+} {
+  const win = globalThis.window as (Window & typeof globalThis) | undefined
+  return {
+    viewport_width: Math.trunc(win?.innerWidth ?? 0),
+    viewport_height: Math.trunc(win?.innerHeight ?? 0),
+    device_pixel_ratio: Number(win?.devicePixelRatio ?? 1) || 1,
+  }
 }
 
 let config: TrackingConfig | null = null
@@ -86,34 +175,6 @@ export function generateEventId(): string {
 }
 
 /**
- * @function isTrackingForced
- * @description True si la URL lleva `?cf_track=force` (bypass de QA del
- *   gating de consentimiento, usado por los tests E2E).
- */
-export function isTrackingForced(): boolean {
-  try {
-    const search = globalThis.location?.search ?? ''
-    return new URLSearchParams(search).get(QA_FLAG) === QA_FLAG_VALUE
-  } catch {
-    return false
-  }
-}
-
-/**
- * @function hasTrackingConsent
- * @description True si el usuario acepto el tracking (`cf_consent` =
- *   `'accepted'`) o si la URL lleva el flag de QA `?cf_track=force`.
- */
-export function hasTrackingConsent(): boolean {
-  if (isTrackingForced()) return true
-  try {
-    return localStorage.getItem(STORAGE_CONSENT) === CONSENT_ACCEPTED
-  } catch {
-    return false
-  }
-}
-
-/**
  * @function getSessionId
  * @description Lee (o crea) el `session_id` persistido en localStorage
  *   `cf_session` — la misma key del pixel page_load, para que clicks,
@@ -145,11 +206,18 @@ export function buildTrackPayload(
   eventTypeId: string,
   props?: Record<string, unknown>,
 ): TrackEventPayload {
+  const pageMeta = getPageMetadata()
+  const utm = parseUtmParams()
+  const viewport = getViewport()
   const payload: TrackEventPayload = {
+    operation: 'tracking',
+    action: 'track',
     session_id: getSessionId(),
     event_id: generateEventId(),
     event_type_id: eventTypeId,
-    page_url: (globalThis.location?.href ?? '').slice(0, 500),
+    ...pageMeta,
+    ...utm,
+    ...viewport,
     niche: config?.niche ?? 'generic',
   }
   if (props && Object.keys(props).length > 0) {
@@ -205,12 +273,13 @@ export function sendBeaconPayload(payload: TrackEventPayload): boolean {
 
 /**
  * @function trackEvent
- * @description Emite un evento de tracking. GATING: si no hay consentimiento
- *   ni el flag `?cf_track=force`, NO emite nada y retorna false.
+ * @description Emite un evento de tracking. Always-on: sin gating. Retorna
+ *   `false` solo si no hay endpoint configurado o si `sendBeacon` reporta
+ *   fallo.
  *
  * @param {string} eventTypeId - UUID del tipo de evento (de `EVENT_TYPES`)
  * @param {Record<string, unknown>} [props] - contexto del evento
- * @returns {boolean} true si se emitio, false si el gating lo bloqueo
+ * @returns {boolean} true si se emitio, false si no se pudo entregar
  *
  * @example
  *   trackEvent(EVENT_TYPES.THEME_TOGGLE, { theme: 'dark' })
@@ -219,7 +288,6 @@ export function trackEvent(
   eventTypeId: string,
   props?: Record<string, unknown>,
 ): boolean {
-  if (!hasTrackingConsent()) return false
   const payload = buildTrackPayload(eventTypeId, props)
   return sendBeaconPayload(payload)
 }

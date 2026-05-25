@@ -1,0 +1,300 @@
+erDiagram
+  cv_profiles {
+    uuid id PK
+    varchar name
+    varchar handle UK
+    varchar location
+    varchar email
+    varchar phone "nullable"
+    varchar linkedin_url
+    varchar github_url
+    varchar website_url "nullable"
+    varchar avatar_url
+  }
+  cv_profile_stats {
+    uuid id PK
+    uuid profile_id FK,UK "cascade"
+    int years_experience
+    int companies
+    int countries
+    int certifications
+  }
+  cv_profile_niches {
+    uuid profile_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_profiles ||--o| cv_profile_stats : has
+  cv_profiles ||--o{ cv_profile_niches : tagged_with
+  tax_niches  ||--o{ cv_profile_niches : applies_to
+
+  cv_experiences {
+    uuid id PK
+    varchar slug UK
+    varchar company
+    varchar country
+    varchar company_url "nullable"
+    date started_on
+    date ended_on "nullable"
+    seniority seniority
+    boolean metrics_estimated
+  }
+  cv_experience_bullets {
+    uuid id PK
+    uuid experience_id FK "cascade"
+    bullet_kind kind "responsibility|achievement"
+    int position
+  }
+  cv_experience_niches {
+    uuid experience_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_experience_skills {
+    uuid experience_id PK,FK "cascade"
+    uuid skill_id PK,FK "cascade"
+    skill_kind kind PK "technical|soft"
+  }
+  cv_experiences ||--o{ cv_experience_bullets : detailed_by
+  cv_experiences ||--o{ cv_experience_niches  : tagged_with
+  tax_niches     ||--o{ cv_experience_niches  : applies_to
+  cv_experiences ||--o{ cv_experience_skills  : requires
+  cv_skills      ||--o{ cv_experience_skills  : used_in
+
+  cv_education_entries {
+    uuid id PK
+    varchar slug UK
+    varchar institution
+    date started_on
+    date ended_on "nullable"
+    varchar url "nullable"
+  }
+  cv_education_entry_niches {
+    uuid education_entry_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_education_entries ||--o{ cv_education_entry_niches : tagged_with
+  tax_niches           ||--o{ cv_education_entry_niches : applies_to
+
+  cv_projects {
+    uuid id PK
+    varchar slug UK
+    varchar name
+    varchar url "nullable"
+    jsonb links "nullable, multi-site"
+    varchar repo "nullable"
+    project_status status
+    project_type project_type
+    boolean is_confidential
+    boolean metrics_estimated
+  }
+  cv_project_case_studies {
+    uuid id PK
+    uuid project_id FK,UK "cascade"
+  }
+  cv_project_metrics {
+    uuid id PK
+    uuid project_id FK "cascade"
+    varchar metric_key
+    varchar metric_value
+    int position
+  }
+  cv_project_niches {
+    uuid project_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_project_tech_tags {
+    uuid project_id PK,FK "cascade"
+    uuid tech_tag_id PK,FK "cascade"
+    int position
+  }
+  cv_projects ||--o| cv_project_case_studies : has
+  cv_projects ||--o{ cv_project_metrics      : measured_by
+  cv_projects ||--o{ cv_project_niches       : tagged_with
+  tax_niches  ||--o{ cv_project_niches       : applies_to
+  cv_projects ||--o{ cv_project_tech_tags    : uses
+  tax_tech_tags||--o{ cv_project_tech_tags   : applied_in
+
+  cv_skills {
+    uuid id PK
+    varchar slug UK
+    varchar name
+  }
+  cv_skill_categories {
+    uuid id PK
+    varchar slug UK
+    skill_kind kind "technical|soft"
+  }
+  cv_skill_category_skills {
+    uuid skill_category_id PK,FK "cascade"
+    uuid skill_id PK,FK "cascade"
+    int position
+  }
+  cv_skill_category_niches {
+    uuid skill_category_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_skill_categories ||--o{ cv_skill_category_skills : groups
+  cv_skills           ||--o{ cv_skill_category_skills : classified_in
+  cv_skill_categories ||--o{ cv_skill_category_niches : tagged_with
+  tax_niches          ||--o{ cv_skill_category_niches : applies_to
+
+  cv_awards {
+    uuid id PK
+    varchar slug UK
+    varchar issuer
+    date awarded_on
+    varchar url "nullable"
+  }
+  cv_award_niches {
+    uuid award_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_certificates {
+    uuid id PK
+    varchar slug UK
+    varchar title
+    varchar issuer
+    date issued_on
+    varchar url
+  }
+  cv_certificate_niches {
+    uuid certificate_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_languages {
+    uuid id PK
+    varchar slug UK
+  }
+  cv_language_niches {
+    uuid language_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_publications {
+    uuid id PK
+    varchar slug UK
+    varchar title
+    varchar platform
+    varchar url
+    varchar canonical_url "nullable"
+    date published_on
+  }
+  cv_publication_niches {
+    uuid publication_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_endorsements {
+    uuid id PK
+    varchar slug UK
+    varchar name
+    varchar role
+    varchar company "nullable"
+    varchar linkedin_url
+  }
+  cv_endorsement_niches {
+    uuid endorsement_id PK,FK "cascade"
+    uuid niche_id PK,FK "cascade"
+  }
+  cv_awards        ||--o{ cv_award_niches        : tagged_with
+  tax_niches       ||--o{ cv_award_niches        : applies_to
+  cv_certificates  ||--o{ cv_certificate_niches  : tagged_with
+  tax_niches       ||--o{ cv_certificate_niches  : applies_to
+  cv_languages     ||--o{ cv_language_niches     : tagged_with
+  tax_niches       ||--o{ cv_language_niches     : applies_to
+  cv_publications  ||--o{ cv_publication_niches  : tagged_with
+  tax_niches       ||--o{ cv_publication_niches  : applies_to
+  cv_endorsements  ||--o{ cv_endorsement_niches  : tagged_with
+  tax_niches       ||--o{ cv_endorsement_niches  : applies_to
+
+  tax_niches {
+    uuid id PK
+    varchar slug UK "fintech|architect|leader|vibe|generic"
+    int display_order
+  }
+  tax_tech_tags {
+    uuid id PK
+    varchar slug UK
+    varchar name
+  }
+  tax_niche_priorities {
+    entity_type entity_type PK "polymorphic"
+    uuid entity_id PK "polymorphic"
+    uuid niche_id PK,FK "cascade"
+    int priority
+  }
+  tax_event_types {
+    uuid id PK
+    text code_name UK "16 fixed"
+    text description
+    timestamptz created_at
+  }
+  tax_niches ||--o{ tax_niche_priorities : weights
+
+  i18n_translations {
+    entity_type entity_type PK "12 valid types"
+    uuid entity_id PK "polymorphic"
+    varchar field PK
+    locale locale PK "es|en"
+    text value
+  }
+
+  vis_sessions {
+    text session_id PK
+    timestamptz first_seen_at
+    timestamptz last_seen_at
+    text user_agent "nullable"
+    text browser "nullable"
+    text browser_version "nullable"
+    text os "nullable"
+    text device_type "nullable"
+  }
+  vis_session_visits {
+    uuid visit_id PK "uuidv7 server-gen"
+    text session_id FK
+    timestamptz started_at
+    timestamptz ended_at "nullable"
+    int event_count "cache"
+    inet ip "nullable"
+    char country "ISO-2 nullable"
+    text utm_source "nullable"
+    text utm_medium "nullable"
+    text utm_campaign "nullable"
+    text utm_content "nullable"
+    text utm_term "nullable"
+    text referrer "nullable"
+    text landing_page_path "nullable"
+    text niche "nullable"
+  }
+  vis_tracking_events {
+    timestamptz created_at PK "partition key"
+    uuid visit_id PK,FK "NOT NULL"
+    uuid page_id PK
+    text session_id FK "NOT NULL"
+    timestamptz received_at
+    text page_path "nullable"
+    int viewport_width "nullable"
+    int viewport_height "nullable"
+    text niche "nullable"
+    uuid event_type_id FK "nullable"
+    jsonb event_props "nullable"
+  }
+  vis_contacts {
+    uuid id PK "client-gen"
+    timestamptz created_at
+    timestamptz received_at
+    varchar name
+    citext email
+    text message
+    varchar company "nullable"
+    varchar role "nullable"
+    varchar service_type "CHECK"
+    varchar budget "nullable"
+    varchar timeline "nullable"
+    varchar niche "nullable"
+    varchar status "new|contacted|qualified|converted|rejected"
+    text notes "nullable"
+    text session_id FK "NOT NULL"
+  }
+  vis_sessions       ||--o{ vis_session_visits  : groups
+  vis_sessions       ||--o{ vis_tracking_events : produces
+  vis_session_visits ||--o{ vis_tracking_events : produced_in
+  tax_event_types    ||--o{ vis_tracking_events : classifies
+  vis_sessions       ||--o{ vis_contacts        : submitted_in

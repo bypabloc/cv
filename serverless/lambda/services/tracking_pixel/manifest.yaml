@@ -1,0 +1,57 @@
+# Manifiesto del Lambda `tracking_pixel` — fuente de verdad de su config.
+#
+# Este archivo describe el Lambda en terminos de DESARROLLADOR, no de
+# infraestructura: no hay ARNs, ni politicas IAM, ni funciones intrinsecas.
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=tracking_pixel
+#
+# devtools provisiona el Lambda sin SAM ni CloudFormation: el rol IAM, el
+# LogGroup, la funcion y el wiring del trigger se crean con `aws ...` y el
+# estado queda en serverless/lambda/.state/ (efimero, gitignored).
+
+# --- Identidad ---
+name: tracking-pixel
+description: Registra eventos de tracking del portfolio (page views, clicks).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 256       # MB
+timeout: 10       # segundos
+
+# --- Como se invoca este Lambda ---
+# http: expone un endpoint en la API del backend. devtools conecta la
+# ruta a la API Gateway compartida automaticamente.
+trigger:
+  type: http
+  method: POST
+  path: /track
+
+# --- Que recursos del backend usa ---
+# devtools traduce esto a los permisos IAM y los imports necesarios.
+uses:
+  # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  # Spec direct-neon-writes: la tabla `tracking` ya no se usa — el Lambda
+  # escribe directo a Neon (`tracking_events`). Solo quedan las tablas
+  # de infraestructura (cache + rate-limit).
+  tables:
+    cache: read-write          # @cached del parsing de user-agent
+    rate-limit-rules: read-write   # rate-limit per-IP
+    rate-limit-buckets: read-write
+  # neon-url: connection string del Neon dev/stage/prod (escritura
+  # directa de tracking_events tras spec direct-neon-writes).
+  secrets:
+    - neon-url
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+  dev:
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
+  stage:
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

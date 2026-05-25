@@ -36,17 +36,16 @@ import textwrap
 import time
 from typing import Any
 
-from shared.console import CYAN
-from shared.console import GREEN
-from shared.console import YELLOW
-from shared.console import _c
-from shared.console import _err
-
 from serverless.packaging import PackagingError
 from serverless.packaging import package_lambda
 from serverless.resolve import ResolvedLambda
 from serverless.vendoring import VendoringError
 from serverless.vendoring import vendored_shared
+from shared.console import CYAN
+from shared.console import GREEN
+from shared.console import YELLOW
+from shared.console import _c
+from shared.console import _err
 
 
 # Imagen base oficial del runtime de AWS Lambda Python. Trae el RIE

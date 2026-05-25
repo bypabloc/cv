@@ -163,18 +163,18 @@ class TestFilesForModule:
         flags = fake_structure['calls'][0]
         assert flags['module'] == 'server'
         assert flags['git_mode'] == 'staged'
-        assert flags['only_extension'] == ['py', 'pyi']
+        assert flags['only_extension'] == ['py']
         assert flags['_module_config']['root'] == 'server/'
 
     def test_filters_by_extension_suffix(
         self,
         fake_structure: dict[str, Any],
     ) -> None:
-        """Solo archivos con extensiones válidas del módulo deben volver."""
+        """Solo archivos con extension valida del modulo deben volver."""
         fake_structure['return_value'] = {
             'files': {
                 'server/x.py': {},
-                'server/x.pyi': {},
+                'server/x.pyi': {},  # .pyi NO esta en extensions
                 'server/y.txt': {},
                 'server/z.md': {},
             },
@@ -182,22 +182,31 @@ class TestFilesForModule:
 
         result = files_for_module(module='server', git_mode='changed')
 
-        assert sorted(result) == ['server/x.py', 'server/x.pyi']
+        # 'server' modulo solo permite 'py' (no 'pyi'/'txt'/'md').
+        assert sorted(result) == ['server/x.py']
 
     def test_purpose_appends_excludes(
         self,
         fake_structure: dict[str, Any],
     ) -> None:
-        """``purpose='coverage'`` debe sumar los excludes especificos."""
+        """``purpose='coverage'`` debe sumar los excludes especificos.
+
+        El modulo 'server' tiene purpose_excludes['coverage']=[] (es stub).
+        Probamos con 'generic' (app Astro) que SI tiene coverage excludes
+        documentados ('tests/**', '*.config.ts').
+        """
         fake_structure['return_value'] = {'files': {}}
 
         files_for_module(
-            module='server',
+            module='generic',
             git_mode='staged',
             purpose='coverage',
         )
 
         flags = fake_structure['calls'][0]
-        # ignore_patterns debe contener al menos los exclude_patterns base
-        # del módulo + los purpose_excludes (e.g. '**/__init__.py').
-        assert any('__init__.py' in p for p in flags['ignore_patterns'])
+        # ignore_patterns debe contener los exclude_patterns base + los
+        # purpose_excludes para coverage (apps/generic/tests/** + *.config.ts).
+        assert any(
+            'apps/generic/tests/**' in p for p in flags['ignore_patterns']
+        )
+        assert any('*.config.ts' in p for p in flags['ignore_patterns'])

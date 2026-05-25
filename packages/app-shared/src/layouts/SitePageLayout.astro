@@ -21,6 +21,7 @@ import { filterByNiche, profile, skills } from '@portfolio/content'
 import {
   buildProfilePageSchema,
   buildSiteNavigationSchema,
+  buildWebSiteSchema,
 } from '@portfolio/seo'
 import { nicheTokensToCssVars } from '@portfolio/ui'
 import Footer from '@portfolio/ui/components/Footer.astro'
@@ -84,7 +85,17 @@ const siteNavigationLd = buildSiteNavigationSchema({
   items: navSchemaItems,
 })
 
-const jsonLd = [profilePageLd, siteNavigationLd]
+// WebSite schema: nombre del sitio + idiomas. Complementa al ProfilePage
+// (que describe a Pablo Contreras como Person) y a SiteNavigationElement
+// (que describe la jerarquia de paginas). Crawlers IA + Google lo usan
+// para resolver "el nombre del sitio" en respuestas generativas.
+const websiteLd = buildWebSiteSchema({
+  siteUrl,
+  name: profile.name,
+  inLanguage: ['es', 'en'],
+})
+
+const jsonLd = [profilePageLd, siteNavigationLd, websiteLd]
 
 // hreflang: par es <-> en de la pagina actual, URLs absolutas.
 const alternates = [

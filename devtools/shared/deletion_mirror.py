@@ -56,6 +56,11 @@ def _frontend_mirror_path(module: str, source: str) -> str | None:
     """Build frontend test mirror path from a source path.
 
     Returns None if the path does not match a known source convention.
+
+    Portfolio convention (igual que shared.classification._build_test_path):
+      apps/<APP>/src/X/Y.ts     -> apps/<APP>/tests/unit/X/Y.test.ts
+      apps/<APP>/src/X/Y.astro  -> apps/<APP>/tests/unit/X/Y.test.ts
+      packages/<PKG>/src/X/Y.ts -> packages/<PKG>/tests/unit/X/Y.test.ts
     """
     if module not in _FRONTEND_LAYOUT:
         return None
@@ -68,8 +73,11 @@ def _frontend_mirror_path(module: str, source: str) -> str | None:
 
     relative = source.removeprefix(layout['strip_for_mirror'])
     p = Path(relative)
-    if p.suffix in ('.vue', '.astro'):
-        relative = str(p.with_suffix(layout['test_extension']))
+    test_ext = layout['test_extension']
+    if test_ext == '.test.ts':
+        relative = f'{p.with_suffix("")}.test.ts'
+    elif p.suffix in ('.vue', '.astro'):
+        relative = str(p.with_suffix(test_ext))
     return f'{layout["test_prefix"]}{relative}'
 
 

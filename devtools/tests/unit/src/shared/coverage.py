@@ -1,4 +1,9 @@
-"""Unit tests for shared.coverage frontend verifier."""
+"""Unit tests for shared.coverage frontend verifier.
+
+Portfolio frontend modulos:
+- Apps Astro: 'hub'/'generic'/etc. summary en apps/<APP>/coverage/coverage-summary.json
+- Packages:   'pkg-<X>' summary en packages/<X>/coverage/coverage-summary.json
+"""
 
 import json
 
@@ -15,16 +20,20 @@ def _write_summary(path, files: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# verify_frontend_coverage - dashboard module
+# verify_frontend_coverage - Astro app (representado por 'generic')
 # ---------------------------------------------------------------------------
 
 
-class TestVerifyFrontendCoverageDashboard:
+class TestVerifyFrontendCoverageApp:
     def test_file_above_threshold_is_passed(self, tmp_path):
         from shared.coverage import verify_frontend_coverage
 
-        summary = tmp_path / 'dashboard' / 'coverage' / 'coverage-summary.json'
-        abs_source = str(tmp_path / 'dashboard' / 'lib' / 'foo.ts')
+        summary = (
+            tmp_path / 'apps' / 'generic' / 'coverage' / 'coverage-summary.json'
+        )
+        abs_source = str(
+            tmp_path / 'apps' / 'generic' / 'src' / 'lib' / 'foo.ts'
+        )
         _write_summary(
             summary,
             {
@@ -33,18 +42,18 @@ class TestVerifyFrontendCoverageDashboard:
         )
 
         passed, failed = verify_frontend_coverage(
-            'dashboard',
+            'generic',
             [
                 (
-                    'dashboard/lib/foo.ts',
-                    'dashboard/tests/unit/src/lib/foo.test.ts',
+                    'apps/generic/src/lib/foo.ts',
+                    'apps/generic/tests/unit/lib/foo.test.ts',
                 )
             ],
             project_root=tmp_path,
         )
 
         assert len(passed) == 1
-        assert passed[0]['source'] == 'dashboard/lib/foo.ts'
+        assert passed[0]['source'] == 'apps/generic/src/lib/foo.ts'
         assert passed[0]['pct'] == 95.0
         assert passed[0]['status'] == 'OK'
         assert failed == []
@@ -52,8 +61,12 @@ class TestVerifyFrontendCoverageDashboard:
     def test_file_below_threshold_is_failed(self, tmp_path):
         from shared.coverage import verify_frontend_coverage
 
-        summary = tmp_path / 'dashboard' / 'coverage' / 'coverage-summary.json'
-        abs_source = str(tmp_path / 'dashboard' / 'lib' / 'foo.ts')
+        summary = (
+            tmp_path / 'apps' / 'generic' / 'coverage' / 'coverage-summary.json'
+        )
+        abs_source = str(
+            tmp_path / 'apps' / 'generic' / 'src' / 'lib' / 'foo.ts'
+        )
         _write_summary(
             summary,
             {
@@ -62,11 +75,11 @@ class TestVerifyFrontendCoverageDashboard:
         )
 
         passed, failed = verify_frontend_coverage(
-            'dashboard',
+            'generic',
             [
                 (
-                    'dashboard/lib/foo.ts',
-                    'dashboard/tests/unit/src/lib/foo.test.ts',
+                    'apps/generic/src/lib/foo.ts',
+                    'apps/generic/tests/unit/lib/foo.test.ts',
                 )
             ],
             project_root=tmp_path,
@@ -74,15 +87,19 @@ class TestVerifyFrontendCoverageDashboard:
 
         assert passed == []
         assert len(failed) == 1
-        assert failed[0]['source'] == 'dashboard/lib/foo.ts'
+        assert failed[0]['source'] == 'apps/generic/src/lib/foo.ts'
         assert failed[0]['pct'] == 50.0
         assert failed[0]['status'] == 'FAIL'
 
     def test_custom_threshold(self, tmp_path):
         from shared.coverage import verify_frontend_coverage
 
-        summary = tmp_path / 'dashboard' / 'coverage' / 'coverage-summary.json'
-        abs_source = str(tmp_path / 'dashboard' / 'lib' / 'foo.ts')
+        summary = (
+            tmp_path / 'apps' / 'generic' / 'coverage' / 'coverage-summary.json'
+        )
+        abs_source = str(
+            tmp_path / 'apps' / 'generic' / 'src' / 'lib' / 'foo.ts'
+        )
         _write_summary(
             summary,
             {
@@ -91,11 +108,11 @@ class TestVerifyFrontendCoverageDashboard:
         )
 
         passed, _ = verify_frontend_coverage(
-            'dashboard',
+            'generic',
             [
                 (
-                    'dashboard/lib/foo.ts',
-                    'dashboard/tests/unit/src/lib/foo.test.ts',
+                    'apps/generic/src/lib/foo.ts',
+                    'apps/generic/tests/unit/lib/foo.test.ts',
                 )
             ],
             project_root=tmp_path,
@@ -108,15 +125,17 @@ class TestVerifyFrontendCoverageDashboard:
     def test_file_not_in_summary_is_skipped(self, tmp_path):
         from shared.coverage import verify_frontend_coverage
 
-        summary = tmp_path / 'dashboard' / 'coverage' / 'coverage-summary.json'
+        summary = (
+            tmp_path / 'apps' / 'generic' / 'coverage' / 'coverage-summary.json'
+        )
         _write_summary(summary, {})
 
         passed, failed = verify_frontend_coverage(
-            'dashboard',
+            'generic',
             [
                 (
-                    'dashboard/lib/missing.ts',
-                    'dashboard/tests/unit/src/lib/missing.test.ts',
+                    'apps/generic/src/lib/missing.ts',
+                    'apps/generic/tests/unit/lib/missing.test.ts',
                 )
             ],
             project_root=tmp_path,
@@ -131,11 +150,11 @@ class TestVerifyFrontendCoverageDashboard:
         from shared.coverage import verify_frontend_coverage
 
         passed, failed = verify_frontend_coverage(
-            'dashboard',
+            'generic',
             [
                 (
-                    'dashboard/lib/foo.ts',
-                    'dashboard/tests/unit/src/lib/foo.test.ts',
+                    'apps/generic/src/lib/foo.ts',
+                    'apps/generic/tests/unit/lib/foo.test.ts',
                 )
             ],
             project_root=tmp_path,
@@ -145,17 +164,20 @@ class TestVerifyFrontendCoverageDashboard:
         assert len(failed) == 1
         assert failed[0]['status'] == 'MISSING'
 
-    def test_vue_source_marked_excluded(self, tmp_path):
-        """`.vue` files marcados como EXCLUDED del coverage 80%.
+    def test_astro_source_marked_excluded(self, tmp_path):
+        """`.astro` files marcados como EXCLUDED del coverage 80%.
 
-        verify_frontend_coverage detecta .vue via is_excluded_from_coverage
-        y los reporta con status 'EXCLUDED' (passed) sin verificar pct.
+        verify_frontend_coverage detecta '.astro' via
+        is_excluded_from_coverage y los reporta con status 'EXCLUDED'
+        (passed) sin verificar pct.
         """
         from shared.coverage import verify_frontend_coverage
 
-        summary = tmp_path / 'dashboard' / 'coverage' / 'coverage-summary.json'
+        summary = (
+            tmp_path / 'apps' / 'generic' / 'coverage' / 'coverage-summary.json'
+        )
         abs_source = str(
-            tmp_path / 'dashboard' / 'app' / 'components' / 'Foo.vue'
+            tmp_path / 'apps' / 'generic' / 'src' / 'components' / 'Hero.astro'
         )
         _write_summary(
             summary,
@@ -165,11 +187,11 @@ class TestVerifyFrontendCoverageDashboard:
         )
 
         passed, failed = verify_frontend_coverage(
-            'dashboard',
+            'generic',
             [
                 (
-                    'dashboard/app/components/Foo.vue',
-                    'dashboard/tests/unit/src/app/components/Foo.ts',
+                    'apps/generic/src/components/Hero.astro',
+                    'apps/generic/tests/unit/components/Hero.test.ts',
                 )
             ],
             project_root=tmp_path,
@@ -182,16 +204,24 @@ class TestVerifyFrontendCoverageDashboard:
 
 
 # ---------------------------------------------------------------------------
-# verify_frontend_coverage - landing module
+# verify_frontend_coverage - Package (representado por 'pkg-content')
 # ---------------------------------------------------------------------------
 
 
-class TestVerifyFrontendCoverageLanding:
-    def test_landing_uses_landing_coverage_dir(self, tmp_path):
+class TestVerifyFrontendCoveragePackage:
+    def test_package_uses_packages_coverage_dir(self, tmp_path):
         from shared.coverage import verify_frontend_coverage
 
-        summary = tmp_path / 'landing' / 'coverage' / 'coverage-summary.json'
-        abs_source = str(tmp_path / 'landing' / 'src' / 'utils' / 'bar.ts')
+        summary = (
+            tmp_path
+            / 'packages'
+            / 'content'
+            / 'coverage'
+            / 'coverage-summary.json'
+        )
+        abs_source = str(
+            tmp_path / 'packages' / 'content' / 'src' / 'schemas.ts'
+        )
         _write_summary(
             summary,
             {
@@ -200,11 +230,11 @@ class TestVerifyFrontendCoverageLanding:
         )
 
         passed, failed = verify_frontend_coverage(
-            'landing',
+            'pkg-content',
             [
                 (
-                    'landing/src/utils/bar.ts',
-                    'landing/tests/unit/src/utils/bar.ts',
+                    'packages/content/src/schemas.ts',
+                    'packages/content/tests/unit/schemas.test.ts',
                 )
             ],
             project_root=tmp_path,

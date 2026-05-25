@@ -24,12 +24,6 @@ import shutil
 import subprocess
 from typing import Any
 
-from shared.console import CYAN
-from shared.console import GREEN
-from shared.console import YELLOW
-from shared.console import _c
-from shared.console import _err
-
 from serverless import local_runtime
 from serverless import provisioner
 from serverless import state as state_mod
@@ -43,6 +37,11 @@ from serverless.resolve import ResolvedLambda
 from serverless.resolve import available_lambdas
 from serverless.resolve import resolve_lambda
 from serverless.vendoring import VendoringError
+from shared.console import CYAN
+from shared.console import GREEN
+from shared.console import YELLOW
+from shared.console import _c
+from shared.console import _err
 
 
 # Raiz del backend serverless del portfolio. La suite CENTRALIZADA de la

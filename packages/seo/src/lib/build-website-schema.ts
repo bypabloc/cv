@@ -19,26 +19,26 @@ interface WebSiteSchemaParams {
 
 /**
  * @function buildWebSiteSchema
- * @description Devuelve el objeto JSON-LD listo para serializar.
+ * @description Devuelve el JSON-LD ya stringificado listo para inyectar
+ *   al `<head>` como `<script type="application/ld+json">{...}</script>`.
+ *   Consistente con buildProfilePageSchema/buildSiteNavigationSchema.
  *
  * @param {WebSiteSchemaParams} params
- * @returns {Record<string, unknown>} Schema.org WebSite serializable.
+ * @returns {string} JSON serializado (sin indent).
  *
  * @example
  *   buildWebSiteSchema({
  *     siteUrl: 'https://the-full-stack.com',
  *     name: 'Pablo Contreras — Portfolio',
  *   })
- *   // {'@context':'https://schema.org','@type':'WebSite',name,url,inLanguage}
+ *   // '{"@context":"https://schema.org","@type":"WebSite","name":...}'
  */
-export function buildWebSiteSchema(
-  params: WebSiteSchemaParams,
-): Record<string, unknown> {
-  return {
+export function buildWebSiteSchema(params: WebSiteSchemaParams): string {
+  return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: params.name,
     url: params.siteUrl,
     inLanguage: [...(params.inLanguage ?? ['es', 'en'])],
-  }
+  })
 }

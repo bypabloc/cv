@@ -106,7 +106,8 @@ def _parse_fixes(soup: BeautifulSoup) -> tuple[Fix, ...]:
         if not (sev_el and cat_el and issue_el and fix_el):
             continue
         severity = _SEVERITY_MAP.get(
-            sev_el.get_text(strip=True).lower(), Severity.LOW,
+            sev_el.get_text(strip=True).lower(),
+            Severity.LOW,
         )
         file_el = item.find(attrs={'data-test': 'file'})
         fixes.append(

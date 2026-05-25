@@ -66,7 +66,7 @@ def check(tool_name: str) -> AuthState:
         return AuthState.MISSING
     try:
         data = json.loads(path.read_text(encoding='utf-8'))
-    except (json.JSONDecodeError, OSError):
+    except json.JSONDecodeError, OSError:
         return AuthState.EXPIRED
     if not isinstance(data, dict):
         return AuthState.EXPIRED

@@ -220,7 +220,7 @@ def ensure_session_and_visit(
         text(
             'SELECT visit_id, host(ip) AS ip, utm_source, utm_medium, '
             'utm_campaign, utm_content, utm_term '
-            'FROM session_visits '
+            'FROM vis_session_visits '
             'WHERE session_id = :sid '
             'ORDER BY started_at DESC '
             'LIMIT 1 '

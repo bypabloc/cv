@@ -180,16 +180,34 @@ def upgrade() -> None:
     #    nombres con tildes ('Análisis' -> 'analisis', no 'an-lisis')
     op.execute('CREATE EXTENSION IF NOT EXISTS unaccent')
 
-    # 1. Drop CheckConstraints viejos de fechas. Los constraints reales
-    #    en la DB tienen nombres `ck_<table>_ck_<table>_<field>_format`
-    #    porque la naming_convention de Alembic prefijo `ck_<table>_` al
-    #    nombre del CheckConstraint (que ya era `<field>_format`).
-    op.execute('ALTER TABLE experiences DROP CONSTRAINT IF EXISTS '
-               'ck_experiences_ck_experiences_start_ym_format')
-    op.execute('ALTER TABLE experiences DROP CONSTRAINT IF EXISTS '
-               'ck_experiences_ck_experiences_end_ym_format')
-    op.execute('ALTER TABLE awards DROP CONSTRAINT IF EXISTS '
-               'ck_awards_ck_awards_awarded_ym_format')
+    # 1. Drop CheckConstraints viejos de fechas. Hay 2 variantes de
+    #    nombres segun cuando se aplico la migracion inicial:
+    #    - Branches viejas: `ck_<table>_ck_<table>_<field>_format`
+    #      (la naming_convention de Alembic prefijo `ck_<table>_` al
+    #      nombre del CheckConstraint que ya era `<field>_format`)
+    #    - Branches nuevas: `ck_<table>_<field>_format` directo
+    #    IF EXISTS cubre ambos casos sin fallar.
+    for cname in (
+        'ck_experiences_ck_experiences_start_ym_format',
+        'ck_experiences_start_ym_format',
+    ):
+        op.execute(
+            f'ALTER TABLE experiences DROP CONSTRAINT IF EXISTS {cname}'
+        )
+    for cname in (
+        'ck_experiences_ck_experiences_end_ym_format',
+        'ck_experiences_end_ym_format',
+    ):
+        op.execute(
+            f'ALTER TABLE experiences DROP CONSTRAINT IF EXISTS {cname}'
+        )
+    for cname in (
+        'ck_awards_ck_awards_awarded_ym_format',
+        'ck_awards_awarded_ym_format',
+    ):
+        op.execute(
+            f'ALTER TABLE awards DROP CONSTRAINT IF EXISTS {cname}'
+        )
 
     # 2. ALTER COLUMN tipo VARCHAR -> DATE con USING (antes del rename,
     #    para usar los nombres de columna viejos)

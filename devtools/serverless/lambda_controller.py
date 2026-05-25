@@ -468,10 +468,18 @@ def _invoke_remote(flags: dict[str, Any]) -> int:
     function_name = rendered.function_name
     region = str(resolved.manifest.get('region', 'us-east-1'))
 
+    # Timeouts del aws CLI mas generosos: el default (60s read) corta
+    # invocaciones legitimas de Lambdas que tardan mas en cold start
+    # (ej. seed del CV, ~90s). Usamos 600s para cubrir el max timeout
+    # de Lambda (15 min) y cualquier cold start.
     args = [
         'aws',
         'lambda',
         'invoke',
+        '--cli-read-timeout',
+        '600',
+        '--cli-connect-timeout',
+        '60',
         '--function-name',
         function_name,
         '--region',

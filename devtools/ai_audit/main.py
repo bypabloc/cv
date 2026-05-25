@@ -15,11 +15,17 @@ Exit codes:
 """
 
 import asyncio
+from datetime import UTC
+from datetime import datetime
 from pathlib import Path
 import sys
 
 from ai_audit import auth
+from ai_audit import catalog
 from ai_audit import report
+from ai_audit import scraper
+from ai_audit.tools.base import Status
+from shared.paths import PROJECT_ROOT
 
 
 def main(flags: dict) -> int:
@@ -69,7 +75,66 @@ def _run_report(flags: dict) -> int:
     return 0
 
 
-def _run_audit(_flags: dict) -> int:
-    """Pendiente: implementado en C9 (fase cli)."""
-    msg = 'audit subcommand: pendiente — ver docs/specs/ai-audit-tool/06-fase-cli.md'
-    raise NotImplementedError(msg)
+def _run_audit(flags: dict) -> int:
+    """Comando default: scrapea targets x tools y produce snapshot+report."""
+    scraper.auto_install_chromium()
+
+    targets = catalog.resolve_targets(
+        env=flags['env'],
+        niches=flags['niches'],
+        targets_override=flags.get('targets') or None,
+    )
+    tool_names: list[str] = flags['tools']
+
+    if not targets or not tool_names:
+        print(
+            'ERROR: no targets o tools resueltos',
+            file=sys.stderr,
+        )
+        return 2
+
+    ran_at = datetime.now(UTC)
+    run_dir = (
+        PROJECT_ROOT / 'tmp' / 'ai-audit' / ran_at.strftime('%Y-%m-%dT%H-%M-%S')
+    )
+    run_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_path = run_dir / 'snapshot.json'
+    report_path = run_dir / 'report.md'
+
+    print(
+        f'[ai_audit] env={flags["env"]} '
+        f'targets={len(targets)} x tools={len(tool_names)} '
+        f'= {len(targets) * len(tool_names)} audits',
+    )
+
+    results = asyncio.run(
+        scraper.run_audit(
+            targets=targets,
+            tool_names=tool_names,
+            headless=flags.get('headless', True),
+        ),
+    )
+
+    report.write_snapshot(
+        results=results,
+        env=flags['env'],
+        ran_at=ran_at,
+        path=snapshot_path,
+    )
+    report.render_markdown(
+        snapshot_path=snapshot_path,
+        output_path=report_path,
+    )
+
+    _print_summary(results, report_path)
+    return scraper.resolve_exit_code(results)
+
+
+def _print_summary(results: list, report_path: Path) -> None:
+    """Imprime tabla resumen + path al reporte."""
+    by_status: dict[str, int] = {s.value: 0 for s in Status}
+    for r in results:
+        by_status[r.status.value] += 1
+    summary = '  '.join(f'{k}: {v}' for k, v in by_status.items())
+    print(f'[ai_audit] {summary}')
+    print(f'[ai_audit] report: {report_path}')

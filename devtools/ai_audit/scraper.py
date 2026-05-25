@@ -185,18 +185,20 @@ def auto_install_chromium() -> None:
     """Instala chromium si no esta presente. Idempotente.
 
     Se invoca en el primer run para evitar fallo silencioso por
-    binario faltante.
+    binario faltante. Usa `python -m playwright` (no `playwright`
+    bare) porque el ejecutable vive en devtools/.venv/bin y NO esta
+    en el PATH del shell del caller — solo del Python actual.
     """
+    import sys
+
     try:
         from playwright.async_api import async_playwright
     except ImportError:
         msg = 'playwright no instalado. Correr: cd devtools && uv sync'
         raise RuntimeError(msg) from None
-    # El check del binario lo hace Playwright al lanzar; aca corremos
-    # `playwright install chromium` para garantizar que esta el binario.
-    # Es idempotente: si ya esta, no descarga nada.
-    subprocess.run(
-        ['playwright', 'install', 'chromium'],  # noqa: S607
+    # Idempotente: si chromium ya esta, no descarga nada.
+    subprocess.run(  # noqa: S603
+        [sys.executable, '-m', 'playwright', 'install', 'chromium'],
         check=True,
         capture_output=True,
         timeout=600,

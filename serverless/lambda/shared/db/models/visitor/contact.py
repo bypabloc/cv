@@ -1,4 +1,4 @@
-"""@module visitor.contact — tabla `contacts` (envios del formulario)."""
+"""@module visitor.contact — tabla `vis_contacts` (envios del formulario)."""
 
 from datetime import datetime
 
@@ -23,7 +23,7 @@ _STATUSES = ('new', 'contacted', 'qualified', 'converted', 'rejected')
 class Contact(Base):
     """Un envio del formulario de contacto (replica de DynamoDB)."""
 
-    __tablename__ = 'contacts'
+    __tablename__ = 'vis_contacts'
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
 
@@ -49,7 +49,7 @@ class Contact(Base):
 
     session_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey('sessions.session_id'),
+        ForeignKey('vis_sessions.session_id'),
         nullable=False,
     )
 
@@ -64,20 +64,20 @@ class Contact(Base):
             f"({', '.join(repr(v) for v in _STATUSES)})",
             name='status_valid',
         ),
-        Index('idx_contacts_email', 'email'),
-        Index('idx_contacts_created_at', text('created_at DESC')),
+        Index('idx_vis_contacts_email', 'email'),
+        Index('idx_vis_contacts_created_at', text('created_at DESC')),
         Index(
-            'idx_contacts_niche_created', 'niche', text('created_at DESC')
+            'idx_vis_contacts_niche_created', 'niche', text('created_at DESC')
         ),
         Index(
-            'idx_contacts_status',
+            'idx_vis_contacts_status',
             'status',
             postgresql_where=text("status IN ('new', 'contacted')"),
         ),
         Index(
-            'idx_contacts_message_fts',
+            'idx_vis_contacts_message_fts',
             text("to_tsvector('spanish', message)"),
             postgresql_using='gin',
         ),
-        Index('idx_contacts_session_id', 'session_id'),
+        Index('idx_vis_contacts_session_id', 'session_id'),
     )

@@ -1,4 +1,4 @@
-"""@module taxonomy.event_type — catalogo de tipos de eventos de tracking."""
+"""@module taxonomy.event_type — catalogo `tax_event_types`."""
 
 from datetime import datetime
 
@@ -10,13 +10,9 @@ from ...base import Base
 
 
 class EventType(Base):
-    """Catalogo de tipos de evento de tracking.
+    """Catalogo de tipos de evento de tracking (16 fijos)."""
 
-    Seed: 16 tipos. El frontend los replica como constantes TS en
-    build-time. Por eso el `id` es un UUIDv7 literal fijo (sembrado).
-    """
-
-    __tablename__ = 'event_types'
+    __tablename__ = 'tax_event_types'
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
     code_name: Mapped[str] = mapped_column(

@@ -1,4 +1,4 @@
-"""@module visitor.session — tabla `sessions` (identidad estable del visitante)."""
+"""@module visitor.session — tabla `vis_sessions` (identidad del visitante)."""
 
 from datetime import datetime
 
@@ -11,7 +11,7 @@ from ...base import Base
 class Session(Base):
     """Un visitante (1 row por session_id de localStorage)."""
 
-    __tablename__ = 'sessions'
+    __tablename__ = 'vis_sessions'
 
     session_id: Mapped[str] = mapped_column(Text, primary_key=True)
 
@@ -30,9 +30,9 @@ class Session(Base):
 
     __table_args__ = (
         Index(
-            'idx_sessions_first_seen_brin',
+            'idx_vis_sessions_first_seen_brin',
             'first_seen_at',
             postgresql_using='brin',
         ),
-        Index('idx_sessions_last_seen', text('last_seen_at DESC')),
+        Index('idx_vis_sessions_last_seen', text('last_seen_at DESC')),
     )

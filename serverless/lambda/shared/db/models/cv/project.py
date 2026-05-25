@@ -18,13 +18,9 @@ from ...enums import project_status_enum, project_type_enum
 
 
 class Project(UUIDPKMixin, TimestampMixin, Base):
-    """Un proyecto del CV.
+    """Un proyecto del CV."""
 
-    Textos bilingues en `translations` (entity_type='project'): `summary`,
-    `description`, `case_study`.
-    """
-
-    __tablename__ = 'projects'
+    __tablename__ = 'cv_projects'
 
     slug: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -44,10 +40,10 @@ class Project(UUIDPKMixin, TimestampMixin, Base):
 class ProjectCaseStudy(UUIDPKMixin, TimestampMixin, Base):
     """Case study detallado de un proyecto (relacion 1:1)."""
 
-    __tablename__ = 'project_case_studies'
+    __tablename__ = 'cv_project_case_studies'
 
     project_id: Mapped[str] = mapped_column(
-        ForeignKey('projects.id', ondelete='CASCADE'),
+        ForeignKey('cv_projects.id', ondelete='CASCADE'),
         nullable=False,
         unique=True,
     )
@@ -56,10 +52,10 @@ class ProjectCaseStudy(UUIDPKMixin, TimestampMixin, Base):
 class ProjectMetric(UUIDPKMixin, TimestampMixin, Base):
     """Una metrica de un proyecto (par clave/valor ordenado)."""
 
-    __tablename__ = 'project_metrics'
+    __tablename__ = 'cv_project_metrics'
 
     project_id: Mapped[str] = mapped_column(
-        ForeignKey('projects.id', ondelete='CASCADE'),
+        ForeignKey('cv_projects.id', ondelete='CASCADE'),
         nullable=False,
     )
     metric_key: Mapped[str] = mapped_column(String(80), nullable=False)
@@ -74,28 +70,28 @@ class ProjectMetric(UUIDPKMixin, TimestampMixin, Base):
 class ProjectNiche(Base):
     """Union project <-> niche."""
 
-    __tablename__ = 'project_niches'
+    __tablename__ = 'cv_project_niches'
 
     project_id: Mapped[str] = mapped_column(
-        ForeignKey('projects.id', ondelete='CASCADE'), nullable=False
+        ForeignKey('cv_projects.id', ondelete='CASCADE'), nullable=False
     )
     niche_id: Mapped[str] = mapped_column(
-        ForeignKey('niches.id', ondelete='CASCADE'), nullable=False
+        ForeignKey('tax_niches.id', ondelete='CASCADE'), nullable=False
     )
 
     __table_args__ = (PrimaryKeyConstraint('project_id', 'niche_id'),)
 
 
 class ProjectTechTag(Base):
-    """Proyecto <-> tech tag (el `stack[]`). `position` preserva el orden."""
+    """Proyecto <-> tech tag (el `stack[]`)."""
 
-    __tablename__ = 'project_tech_tags'
+    __tablename__ = 'cv_project_tech_tags'
 
     project_id: Mapped[str] = mapped_column(
-        ForeignKey('projects.id', ondelete='CASCADE'), nullable=False
+        ForeignKey('cv_projects.id', ondelete='CASCADE'), nullable=False
     )
     tech_tag_id: Mapped[str] = mapped_column(
-        ForeignKey('tech_tags.id', ondelete='CASCADE'), nullable=False
+        ForeignKey('tax_tech_tags.id', ondelete='CASCADE'), nullable=False
     )
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 

@@ -1,18 +1,26 @@
-"""Re-exports planos del dominio CV."""
+"""Re-exports planos del dominio CV.
+
+Renames respecto al schema previo:
+- `Education` -> `EducationEntry` (tabla `cv_education_entries`)
+- `EducationNiche` -> `EducationEntryNiche`
+- `Reference` -> `Endorsement` (tabla `cv_endorsements`, `references` es
+  palabra reservada SQL)
+- `ReferenceNiche` -> `EndorsementNiche`
+"""
 
 from .cv_entity import (
     Award,
     AwardNiche,
     Certificate,
     CertificateNiche,
+    Endorsement,
+    EndorsementNiche,
     Language,
     LanguageNiche,
     Publication,
     PublicationNiche,
-    Reference,
-    ReferenceNiche,
 )
-from .education import Education, EducationNiche
+from .education import EducationEntry, EducationEntryNiche
 from .experience import (
     Experience,
     ExperienceBullet,
@@ -34,10 +42,20 @@ from .skill import (
     SkillCategorySkill,
 )
 
+# DEPRECATED aliases — backward compat para call-sites legacy.
+# Se eliminan en el commit 9 (refactor lambdas downstream) cuando todos
+# los call-sites usen los nombres nuevos.
+Education = EducationEntry              # noqa: F841
+EducationNiche = EducationEntryNiche    # noqa: F841
+Reference = Endorsement                 # noqa: F841
+ReferenceNiche = EndorsementNiche       # noqa: F841
+
 __all__ = [
     'Award', 'AwardNiche',
     'Certificate', 'CertificateNiche',
-    'Education', 'EducationNiche',
+    'Education', 'EducationEntry',
+    'EducationEntryNiche', 'EducationNiche',
+    'Endorsement', 'EndorsementNiche',
     'Experience', 'ExperienceBullet', 'ExperienceNiche', 'ExperienceSkill',
     'Language', 'LanguageNiche',
     'Profile', 'ProfileNiche', 'ProfileStats',

@@ -1,4 +1,4 @@
-"""@module visitor.session_visit — tabla `session_visits` (visits multi-touch)."""
+"""@module visitor.session_visit — tabla `vis_session_visits`."""
 
 from datetime import datetime
 
@@ -21,7 +21,7 @@ from ...base import Base
 class SessionVisit(Base):
     """Una visita logica del visitante (cambio de network/utm)."""
 
-    __tablename__ = 'session_visits'
+    __tablename__ = 'vis_session_visits'
 
     visit_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
@@ -30,7 +30,7 @@ class SessionVisit(Base):
     )
     session_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey('sessions.session_id'),
+        ForeignKey('vis_sessions.session_id'),
         nullable=False,
     )
 
@@ -59,27 +59,27 @@ class SessionVisit(Base):
 
     __table_args__ = (
         Index(
-            'idx_visits_session_started',
+            'idx_vis_visits_session_started',
             'session_id',
             text('started_at DESC'),
         ),
         Index(
-            'idx_visits_started_brin',
+            'idx_vis_visits_started_brin',
             'started_at',
             postgresql_using='brin',
         ),
         Index(
-            'idx_visits_country',
+            'idx_vis_visits_country',
             'country',
             postgresql_where=text('country IS NOT NULL'),
         ),
         Index(
-            'idx_visits_niche',
+            'idx_vis_visits_niche',
             'niche',
             postgresql_where=text('niche IS NOT NULL'),
         ),
         Index(
-            'idx_visits_utm_source',
+            'idx_vis_visits_utm_source',
             'utm_source',
             postgresql_where=text('utm_source IS NOT NULL'),
         ),

@@ -1,16 +1,14 @@
-"""@module models — barrel del schema unificado del portfolio.
+"""@module models — barrel del schema unificado post-rename.
 
-Importa TODOS los modelos. Al importarse, `Base.metadata` queda poblada con
-cada tabla — es el `target_metadata` unico del autogenerate de Alembic.
+Renames respecto al schema pre-rename (commit anterior):
+- `Education` -> `EducationEntry`, `EducationNiche` -> `EducationEntryNiche`
+- `Reference` -> `Endorsement`, `ReferenceNiche` -> `EndorsementNiche`
 
-Organizado en 4 subpaquetes por dominio:
-- `cv/`        — 28 tablas del CV
-- `visitor/`   — 4 tablas del tracking
-- `taxonomy/`  — 4 tablas de catalogos compartidos
-- `i18n/`      — 1 tabla de traducciones
+Las clases legacy `Education`, `Reference`, `EducationNiche`, `ReferenceNiche`
+ya NO existen — callers deben usar los nuevos nombres.
 
-API publica preservada: `from shared.db.models import Profile` sigue
-funcionando (los re-exports planos lo permiten).
+API publica: `from shared.db.models import Profile, Contact, ...` sigue
+funcionando para todas las clases sin rename.
 """
 
 from .cv import (
@@ -18,8 +16,12 @@ from .cv import (
     AwardNiche,
     Certificate,
     CertificateNiche,
-    Education,
-    EducationNiche,
+    Education,             # alias deprecado de EducationEntry
+    EducationEntry,
+    EducationEntryNiche,
+    EducationNiche,        # alias deprecado
+    Endorsement,
+    EndorsementNiche,
     Experience,
     ExperienceBullet,
     ExperienceNiche,
@@ -36,8 +38,8 @@ from .cv import (
     ProjectTechTag,
     Publication,
     PublicationNiche,
-    Reference,
-    ReferenceNiche,
+    Reference,             # alias deprecado de Endorsement
+    ReferenceNiche,        # alias deprecado
     Skill,
     SkillCategory,
     SkillCategoryNiche,
@@ -47,22 +49,24 @@ from .i18n import Translation
 from .taxonomy import EventType, Niche, NichePriority, TechTag
 from .visitor import Contact, Session, SessionVisit, TrackingEvent
 
-# Agrupado por dominio (visitante / CV / taxonomy / i18n) — RUF022 off a
-# proposito: el agrupamiento documenta el origen de cada tabla.
 __all__ = [  # noqa: RUF022
-    # Datos del visitante
+    # Datos del visitante (vis_)
     'Contact',
     'EventType',
     'Session',
     'SessionVisit',
     'TrackingEvent',
-    # Contenido del CV
+    # Contenido del CV (cv_)
     'Award',
     'AwardNiche',
     'Certificate',
     'CertificateNiche',
-    'Education',
-    'EducationNiche',
+    'Education',              # alias deprecado
+    'EducationEntry',
+    'EducationEntryNiche',
+    'EducationNiche',         # alias deprecado
+    'Endorsement',
+    'EndorsementNiche',
     'Experience',
     'ExperienceBullet',
     'ExperienceNiche',
@@ -81,8 +85,8 @@ __all__ = [  # noqa: RUF022
     'ProjectTechTag',
     'Publication',
     'PublicationNiche',
-    'Reference',
-    'ReferenceNiche',
+    'Reference',              # alias deprecado
+    'ReferenceNiche',         # alias deprecado
     'Skill',
     'SkillCategory',
     'SkillCategoryNiche',

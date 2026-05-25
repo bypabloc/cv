@@ -25,7 +25,7 @@ def _result(
     tool: str = 'isitagentready',
     target: str = 'https://the-full-stack.com/',
     status: Status = Status.OK,
-    score: int | None = 78,
+    score: int | None = 3,
     categories: dict | None = None,
     fixes: tuple[Fix, ...] = (),
     skipped_reason: str | None = None,
@@ -81,7 +81,7 @@ def test_write_snapshot_when_ok_result_then_json_has_all_fields(
     assert data['tools'] == ['isitagentready']
     assert data['interrupted'] is False
     assert len(data['results']) == 1
-    assert data['results'][0]['score'] == 78
+    assert data['results'][0]['score'] == 3
     assert data['results'][0]['status'] == 'OK'
     assert data['results'][0]['fixes'][0]['severity'] == 'high'
 
@@ -95,8 +95,8 @@ def test_render_markdown_when_6_targets_then_table_rows_alphabetical(
     Then la tabla resumen tiene filas ordenadas por target.
     """
     results = [
-        _result(target='https://b.example.com/', score=50),
-        _result(target='https://a.example.com/', score=80),
+        _result(target='https://b.example.com/', score=2),
+        _result(target='https://a.example.com/', score=4),
     ]
     snap = tmp_path / 'snapshot.json'
     report.write_snapshot(
@@ -115,8 +115,8 @@ def test_render_markdown_when_6_targets_then_table_rows_alphabetical(
     a_pos = md.index('https://a.example.com/')
     b_pos = md.index('https://b.example.com/')
     assert a_pos < b_pos
-    assert '80/100' in md
-    assert '50/100' in md
+    assert '4/5' in md
+    assert '2/5' in md
 
 
 def test_render_markdown_when_no_fixes_then_section_says_empty(

@@ -45,11 +45,23 @@ async def run_audit(
                 for j, tool_name in enumerate(tool_names):
                     if j > 0:
                         await asyncio.sleep(TOOL_SLEEP_SECONDS)
-                    result = await _scrape_with_retry(
-                        browser=browser,
-                        tool_name=tool_name,
-                        target=target,
-                    )
+                    # Hard guard: ningun fallo de un (target, tool)
+                    # aborta el run. Si `_scrape_with_retry` peta por
+                    # algo no contemplado (browser context, auth
+                    # corrupto, etc.), capturamos y seguimos.
+                    try:
+                        result = await _scrape_with_retry(
+                            browser=browser,
+                            tool_name=tool_name,
+                            target=target,
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        result = _error_result(
+                            tool_name=tool_name,
+                            target=target,
+                            error=f'{type(exc).__name__}: {exc}',
+                            start=time.monotonic(),
+                        )
                     results.append(result)
         finally:
             await browser.close()

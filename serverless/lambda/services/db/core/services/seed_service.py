@@ -35,8 +35,10 @@ from shared.db.models import (
     AwardNiche,
     Certificate,
     CertificateNiche,
-    Education,
-    EducationNiche,
+    EducationEntry,
+    EducationEntryNiche,
+    Endorsement,
+    EndorsementNiche,
     Experience,
     ExperienceBullet,
     ExperienceNiche,
@@ -55,8 +57,6 @@ from shared.db.models import (
     ProjectTechTag,
     Publication,
     PublicationNiche,
-    Reference,
-    ReferenceNiche,
     Skill,
     SkillCategory,
     SkillCategoryNiche,
@@ -64,6 +64,7 @@ from shared.db.models import (
     TechTag,
     Translation,
 )
+from shared.db.seed_helpers import _parse_ym, _to_slug
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -298,7 +299,7 @@ def _resolve_niches(session: Session) -> dict[str, str]:
             session,
             Niche,
             'slug',
-            {'slug': slug, 'position': _NICHES.index(slug)},
+            {'slug': slug, 'display_order': _NICHES.index(slug)},
         )
         out[slug] = nid
     return out
@@ -307,10 +308,16 @@ def _resolve_niches(session: Session) -> dict[str, str]:
 def _resolve_named_vocab(
     session: Session, model: type, names: set[str]
 ) -> dict[str, str]:
-    """Upsert de un vocabulario con clave natural `name` (skills/tech_tags)."""
+    """Upsert de un vocabulario con clave natural `slug` (cv_skills /
+    tax_tech_tags). El `slug` se deriva del `name` via `_to_slug` (ASCII
+    normalizado, kebab-case). El `name` se persiste como display canonico.
+    """
     out: dict[str, str] = {}
     for name in sorted(names):
-        nid = _upsert_returning_id(session, model, 'name', {'name': name})
+        slug = _to_slug(name)
+        nid = _upsert_returning_id(
+            session, model, 'slug', {'slug': slug, 'name': name}
+        )
         out[name] = nid
     return out
 
@@ -447,8 +454,8 @@ def _seed_experiences(
                 'company': data['company'],
                 'country': data['country'],
                 'company_url': data.get('companyUrl'),
-                'start_ym': data['start'],
-                'end_ym': data.get('end'),
+                'started_on': _parse_ym(data['start']),
+                'ended_on': _parse_ym(data.get('end')),
                 'seniority': data['seniority'],
                 'metrics_estimated': data.get('metricsEstimated', False),
             },
@@ -672,7 +679,7 @@ def _seed_awards(session: Session, niche_ids: dict[str, str]) -> None:
             {
                 'slug': slug,
                 'issuer': data['issuer'],
-                'awarded_ym': data['date'],
+                'awarded_on': _parse_ym(data['date']),
                 'url': data.get('url'),
             },
         )
@@ -694,13 +701,13 @@ def _seed_education(session: Session, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('education'):
         edu_id = _upsert_returning_id(
             session,
-            Education,
+            EducationEntry,
             'slug',
             {
                 'slug': slug,
                 'institution': data['institution'],
-                'start_year': str(data['start']),
-                'end_year': str(data['end']),
+                'started_on': _parse_ym(str(data['start'])),
+                'ended_on': _parse_ym(str(data['end'])),
                 'url': data.get('url'),
             },
         )
@@ -712,19 +719,22 @@ def _seed_education(session: Session, niche_ids: dict[str, str]) -> None:
         )
         _link_niches(
             session,
-            EducationNiche,
-            'education_id',
+            EducationEntryNiche,
+            'education_entry_id',
             edu_id,
             data.get('niches'),
             niche_ids,
         )
 
 
-def _seed_references(session: Session, niche_ids: dict[str, str]) -> None:
-    for slug, data in _load_dir('references'):
-        ref_id = _upsert_returning_id(
+def _seed_endorsements(session: Session, niche_ids: dict[str, str]) -> None:
+    """Antes `_seed_references`. Renombrado: ENUM entity_type pasa de
+    'reference' a 'endorsement' tras la migracion group_tables_by_domain.
+    """
+    for slug, data in _load_dir('endorsements'):
+        end_id = _upsert_returning_id(
             session,
-            Reference,
+            Endorsement,
             'slug',
             {
                 'slug': slug,
@@ -735,13 +745,13 @@ def _seed_references(session: Session, niche_ids: dict[str, str]) -> None:
             },
         )
         _set_translation(
-            session, 'reference', ref_id, 'relation', data['relation']
+            session, 'endorsement', end_id, 'relation', data['relation']
         )
         _link_niches(
             session,
-            ReferenceNiche,
-            'reference_id',
-            ref_id,
+            EndorsementNiche,
+            'endorsement_id',
+            end_id,
             data.get('niches'),
             niche_ids,
         )
@@ -795,13 +805,13 @@ def _seed_publications(session: Session, niche_ids: dict[str, str]) -> None:
 def _seed_simple_entities(
     session: Session, niche_ids: dict[str, str]
 ) -> None:
-    """Inserta certificates, awards, education, references, languages,
-    publications — entidades sin sub-tablas propias.
+    """Inserta certificates, awards, education_entries, endorsements,
+    languages, publications — entidades sin sub-tablas propias.
     """
     _seed_certificates(session, niche_ids)
     _seed_awards(session, niche_ids)
     _seed_education(session, niche_ids)
-    _seed_references(session, niche_ids)
+    _seed_endorsements(session, niche_ids)
     _seed_languages(session, niche_ids)
     _seed_publications(session, niche_ids)
 
@@ -845,8 +855,8 @@ _COUNT_MODELS: tuple[tuple[str, type], ...] = (
     ('skill_categories', SkillCategory),
     ('certificates', Certificate),
     ('awards', Award),
-    ('education', Education),
-    ('references', Reference),
+    ('education_entries', EducationEntry),
+    ('endorsements', Endorsement),
     ('languages', Language),
     ('publications', Publication),
     ('niches', Niche),

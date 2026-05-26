@@ -30,6 +30,7 @@ from shared.cache import cached
 from shared.core.ulid import new_uuidv7
 from shared.db.repository import ensure_session_and_visit, insert_tracking
 from shared.db.session import db_session
+from shared.queue import send_to_queue
 from ua_parser import user_agent_parser
 
 # --- Enrichment ---
@@ -247,3 +248,70 @@ def process_tracking_event(
         },
     )
     return result
+
+
+def enqueue_tracking_message(
+    *,
+    page_id: str,
+    created_at: datetime,
+    validated_input: dict[str, Any],
+    ip: str,
+    user_agent: str | None,
+    country: str | None = None,
+) -> str:
+    """Encola un mensaje SQS hacia `tracking_worker` (modo ASYNC_MODE=true).
+
+    NOTA: el encoder NO hace UA parsing — el worker lo hace (cacheado).
+    Asi el encoder es minimo y responde rapido (TTFB ~5-15ms vs ~80ms
+    del sync path). El cache del UA queda compartido (namespace='ua')
+    entre encoder sync legacy y worker.
+
+    Parameters
+    ----------
+    page_id : str
+        UUIDv7 generado por el encoder. El worker NO lo regenera.
+    created_at : datetime
+        Timestamp fijado por el encoder. Evita time-skew si SQS demora.
+    validated_input : dict[str, Any]
+        Payload validado por TrackEventModel.tracking_payload().
+    ip : str
+        IP del cliente.
+    user_agent : str | None
+        Header User-Agent crudo. El worker lo parsea.
+    country : str | None
+        Country code (cloudfront-viewer-country o cf-ipcountry).
+
+    Returns
+    -------
+    str
+        MessageId de SQS (para correlacionar en CloudWatch).
+    """
+    payload: dict[str, Any] = {
+        'schema_version': 1,
+        'page_id': page_id,
+        'created_at': created_at.isoformat(),
+        'session_id': validated_input['session_id'],
+        'event_id': validated_input['event_id'],
+        'event_type_id': validated_input['event_type_id'],
+        'page_path': validated_input.get('page_path'),
+        'page_url': validated_input.get('page_url'),
+        'page_title': validated_input.get('page_title'),
+        'niche': validated_input.get('niche'),
+        'viewport_width': validated_input['viewport_width'],
+        'viewport_height': validated_input['viewport_height'],
+        'device_pixel_ratio': validated_input.get('device_pixel_ratio'),
+        'event_props': validated_input.get('event_props'),
+        'utm_source': validated_input.get('utm_source'),
+        'utm_medium': validated_input.get('utm_medium'),
+        'utm_campaign': validated_input.get('utm_campaign'),
+        'utm_content': validated_input.get('utm_content'),
+        'utm_term': validated_input.get('utm_term'),
+        'referrer': validated_input.get('referrer'),
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+    }
+    return send_to_queue(
+        queue_short_name='tracking-events',
+        payload=payload,
+    )

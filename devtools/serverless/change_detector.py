@@ -9,6 +9,12 @@ hay que disparar. Reglas:
 2. `serverless/lambda/shared/<Y>/**` cambia -> redeploy TODOS los
    lambdas cuyo cierre transitivo incluye `shared.<Y>` (resuelto via
    `shared_resolver`). Excluye `shared/<Y>/tests/`.
+3. `devtools/serverless/{provisioner,packaging,vendoring,
+   shared_resolver,state}.py` cambia -> redeploy TODOS los lambdas:
+   son el motor del deploy, un cambio en como se renderizan/empaquetan
+   se debe materializar en AWS. Sin este caso, fixes al provisioner
+   (ej. limpieza de permission legacy) quedan dormidos hasta que algun
+   otro cambio dispare un redeploy.
 
 El comando CLI `serverless detect-changes --base=<sha> --head=<sha>`
 imprime JSON `{"affected": ["cv", ...]}` para que GitHub Actions lo
@@ -33,6 +39,20 @@ _EXCLUDED_SERVICE_SUBPATHS: tuple[str, ...] = (
 
 # Paths dentro de shared/<Y>/ que NO disparan redeploy.
 _EXCLUDED_SHARED_SUBPATHS: tuple[str, ...] = ('tests/',)
+
+# Archivos en devtools/serverless/ que tocan el motor del deploy: un
+# cambio aqui se debe materializar en TODOS los lambdas (redeploy
+# completo). Lista cerrada — agregar archivos solo si su comportamiento
+# afecta el shape del artefacto, del wiring o del state.
+_DEVTOOLS_DEPLOY_ENGINE_FILES: frozenset[str] = frozenset(
+    {
+        'devtools/serverless/provisioner.py',
+        'devtools/serverless/packaging.py',
+        'devtools/serverless/vendoring.py',
+        'devtools/serverless/shared_resolver.py',
+        'devtools/serverless/state.py',
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -174,6 +194,9 @@ def detect_affected_lambdas(
 
     affected: set[str] = set()
     affected_shared: set[str] = set()
+    engine_changed = any(
+        path in _DEVTOOLS_DEPLOY_ENGINE_FILES for path in file_list
+    )
 
     for path in file_list:
         kind = classify_path(path)
@@ -182,7 +205,19 @@ def detect_affected_lambdas(
         elif kind.kind == 'shared' and kind.name is not None:
             affected_shared.add(kind.name)
 
-    lambda_names = available_lambdas() if affected_shared or affected else []
+    # Si cambio el motor del deploy (provisioner, packaging, vendoring,
+    # shared_resolver, state) hay que redeployar TODOS los lambdas: un
+    # cambio en como se renderizan/empaquetan se debe materializar en
+    # AWS y el detector por-archivo no lo capta solo. Tambien se carga
+    # la lista de lambdas si hay shared o service afectado (logica vieja).
+    lambda_names = (
+        available_lambdas()
+        if affected_shared or affected or engine_changed
+        else []
+    )
+
+    if engine_changed:
+        affected.update(lambda_names)
 
     if affected_shared:
         consumers = _consumers_of_shared(

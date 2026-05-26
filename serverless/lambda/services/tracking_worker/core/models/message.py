@@ -44,10 +44,13 @@ class TrackingQueueMessage(BaseModel):
     session_id: str
     event_id: str
     event_type_id: str
+    page_url: str | None = None
+    page_title: str | None = None
     page_path: str
     niche: str | None = None
     viewport_width: int
     viewport_height: int
+    device_pixel_ratio: float | None = None
     event_props: dict[str, Any] | None = None
 
     # UTM + referrer (alimentan ensure_session_and_visit).

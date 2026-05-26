@@ -16,8 +16,10 @@ description: Encoder del form de contacto (valida + Turnstile + encola SQS).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 256       # MB — encoder liviano (antes 512 cuando hacia SES+Neon).
-timeout: 10       # segundos — encoder responde rapido (antes 30).
+memory: 384       # MB — 256 daba poca CPU al handler (INIT ~200MB).
+                  # 384 sostiene Turnstile siteverify + DDB rate-limit
+                  # + SQS publish con holgura.
+timeout: 15       # segundos — incluye Turnstile siteverify HTTP (1-2s)
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend.

@@ -28,11 +28,10 @@ def test_register_warmup_logs_ok_when_all_clients_succeed(
     with patch(
         'shared.lambda_kit.snap_start_warmup._build_client',
         return_value=mock_client,
-    ):
-        with caplog.at_level(logging.INFO, logger='snap_start_warmup'):
-            from shared.lambda_kit.snap_start_warmup import register_warmup
+    ), caplog.at_level(logging.INFO, logger='snap_start_warmup'):
+        from shared.lambda_kit.snap_start_warmup import register_warmup
 
-            register_warmup(['sqs', 'dynamodb', 'ssm'])
+        register_warmup(['sqs', 'dynamodb', 'ssm'])
 
     # Assert
     ok_logs = [r for r in caplog.records if 'ok' in r.message]

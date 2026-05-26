@@ -40,11 +40,22 @@ from typing import Any
 from settings.config import AppConfig
 from settings.operations import OPERATIONS
 from shared.lambda_kit import build_event_model, http_handler
+from shared.lambda_kit.snap_start_warmup import register_warmup
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 from shared.observability.tracer import tracer
 
 __version__ = '4.0.0'
+
+# SnapStart warmup hook: pre-calienta handshakes TLS de boto3 antes del
+# snapshot (durante PublishVersion). Reduce ~200-500ms de la primera
+# invocacion post-restore. Lista alineada con `uses.tables` + `uses.queues`
+# + `uses.secrets` del manifest: dynamodb (rate_limit + cache), sqs
+# (publicar a portfolio-contact-form-${stage}), ssm (queue URL +
+# turnstile-secret + bypass-secret). Solo aplica cuando snap_start: true
+# en manifest.yaml; sin SnapStart, el snapshot no existe y los handshakes
+# se pagan en cada cold start (no daniado, solo no aprovechado).
+register_warmup(clients=['sqs', 'dynamodb', 'ssm'])
 
 # Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
 _EVENT_MODEL = build_event_model(OPERATIONS)

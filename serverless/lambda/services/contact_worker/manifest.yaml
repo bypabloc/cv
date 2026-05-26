@@ -1,0 +1,57 @@
+# Manifiesto del Lambda `contact_worker` — fuente de verdad de su config.
+#
+# Worker SQS-driven: consume mensajes de la cola
+# `portfolio-contact-form-${stage}` (batch_size=1, ReportBatchItemFailures)
+# que el encoder `contact_form` publica. Persiste el contact en Neon con
+# `ON CONFLICT (id) DO NOTHING` (idempotente) y envia el email al owner
+# por SES. Sigue el patron lambda-controller.
+#
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=contact_worker
+
+# --- Identidad ---
+name: contact-worker
+description: Procesa mensajes SQS de la cola contact-form (Neon + SES).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 512       # MB — SES + Neon necesitan headroom
+timeout: 30       # segundos — visibility_timeout=180 (6x timeout)
+
+# --- Trigger SQS ---
+# batch_size=1: cada invocacion procesa 1 mensaje. Combinado con
+# ReportBatchItemFailures, SQS solo borra el mensaje si el handler retorna
+# un batchItemFailures vacio; si falla, reintenta hasta
+# max_receive_count=3 antes de mandarlo a la DLQ.
+trigger:
+  type: sqs
+  queue: portfolio-contact-form-${stage}
+  batch_size: 1
+  function_response_types:
+    - ReportBatchItemFailures
+
+# --- Recursos que usa ---
+uses:
+  queues:
+    - name: portfolio-contact-form-${stage}
+      access: consumer
+  tables:
+    cache: read-write           # @cached para SSM cache de Powertools
+  secrets:
+    - neon-url                  # connection string PostgreSQL (SecureString)
+    - owner-email               # destinatario(s) del email
+    - ses-from-address          # remitente verificado en SES
+  sends-email: true             # PR a IAM para sesv2:SendEmail
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+    AWS_SES_REGION: us-east-1
+  dev:
+    LOG_LEVEL: INFO
+  stage:
+    LOG_LEVEL: INFO
+  prod:
+    LOG_LEVEL: WARNING

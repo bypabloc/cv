@@ -18,9 +18,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import BigInteger, Column, MetaData, String, Table
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    MetaData,
+    String,
+    Table,
+    select,
+    update,
+)
 from sqlalchemy import func as sa_func
-from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session as OrmSession
 
@@ -141,15 +148,24 @@ def insert_contact_idempotent(
     Returns
     -------
     bool
-        True si la fila se inserto (rowcount==1); False si ya existia
-        (rowcount==0). El worker usa este bool para decidir si manda
-        email (evita duplicados de notificacion).
+        True si la fila se inserto; False si ya existia. Detecta el
+        caso via `RETURNING id`: el statement retorna 1 fila si hubo
+        INSERT real, 0 filas si `ON CONFLICT DO NOTHING` corto el
+        INSERT. NO confiar en `result.rowcount` con
+        `on_conflict_do_nothing` — psycopg/SQLAlchemy reportan rowcount
+        inconsistente segun el driver (verificado en runtime: row se
+        inserta pero rowcount llega como 0 en algunas combinaciones).
+        El worker usa este bool para decidir si manda email (evita
+        duplicados de notificacion).
     """
-    stmt = pg_insert(Contact).values(**payload).on_conflict_do_nothing(
-        index_elements=['id'],
+    stmt = (
+        pg_insert(Contact)
+        .values(**payload)
+        .on_conflict_do_nothing(index_elements=['id'])
+        .returning(Contact.id)
     )
     result = session.execute(stmt)
-    return (result.rowcount or 0) > 0
+    return result.first() is not None
 
 
 def insert_tracking_idempotent(
@@ -167,13 +183,20 @@ def insert_tracking_idempotent(
     Returns
     -------
     bool
-        True si inserto; False si ya existia.
+        True si inserto; False si ya existia. Detecta el caso via
+        `RETURNING created_at` (ver nota en `insert_contact_idempotent`
+        sobre por que NO confiar en `rowcount`).
     """
-    stmt = pg_insert(TrackingEvent).values(**payload).on_conflict_do_nothing(
-        index_elements=['created_at', 'visit_id', 'page_id'],
+    stmt = (
+        pg_insert(TrackingEvent)
+        .values(**payload)
+        .on_conflict_do_nothing(
+            index_elements=['created_at', 'visit_id', 'page_id'],
+        )
+        .returning(TrackingEvent.created_at)
     )
     result = session.execute(stmt)
-    return (result.rowcount or 0) > 0
+    return result.first() is not None
 
 
 # Las 6 claves del visit-trigger (decision 9 del plan). Cambio en

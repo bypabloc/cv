@@ -212,22 +212,25 @@ test.describe('Feature: embudo de contacto (SPEC-200)', () => {
       expect(errorEvent?.event_props).toEqual({ code: '429' })
     })
 
-    test('Given un envio 201 When submit Then emite submit seguido de success [AC-6]', async ({
+    test('Given un envio 202 When submit Then emite submit seguido de success [AC-6]', async ({
       page,
     }) => {
-      // Arrange: el POST /contact se mockea con 201 para no depender del
-      // backend AWS (el embudo se mide en el cliente, no en el Lambda).
+      // Arrange: el POST /contact se mockea con 202 (modo async actual:
+      // el encoder publica a SQS y el worker procesa despues) para no
+      // depender del backend AWS — el embudo se mide en el cliente, no
+      // en el Lambda.
       await disableSendBeacon(page)
       const captured = await captureTrackRequests(page)
       await page.route(
         /https:\/\/[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com\/[a-z]+\/contact$/,
         async (route) => {
           await route.fulfill({
-            status: 201,
+            status: 202,
             contentType: 'application/json',
             body: JSON.stringify({
               contact_id: '019e28fc-b97d-7d79-91a5-44c9b19465b4',
               created_at: new Date().toISOString(),
+              accepted: true,
             }),
           })
         },

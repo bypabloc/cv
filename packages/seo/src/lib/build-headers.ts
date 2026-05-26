@@ -66,6 +66,12 @@ export function buildHeaders(opts: { apiEndpoint: string }): string {
     '/.well-known/api-catalog.json',
     '  Content-Type: application/linkset+json; charset=UTF-8',
     '',
+    // Cloudflare Transform Rule (cloudflare/transform-rules.md, TR-1)
+    // reescribe URLs a /index.md cuando Accept: text/markdown llega.
+    // Este bloque garantiza el MIME correcto cuando el .md se sirve.
+    '/*.md',
+    '  Content-Type: text/markdown; charset=UTF-8',
+    '',
   ].join('\n')
 }
 

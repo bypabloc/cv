@@ -102,4 +102,14 @@ describe('buildHeaders', () => {
       /\/\.well-known\/api-catalog\.json\n\s+Content-Type: application\/linkset\+json; charset=UTF-8/,
     )
   })
+
+  it('Given build When inspecciono Then expone Content-Type text/markdown para /*.md', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('/*.md\n')
+    expect(out).toMatch(
+      /\/\*\.md\n\s+Content-Type: text\/markdown; charset=UTF-8/,
+    )
+  })
 })

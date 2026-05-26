@@ -31,7 +31,6 @@ from shared.lambda_kit.import_controller import (
     resolve_operation,
 )
 from shared.lambda_kit.log_metrics import LogMetricType
-from shared.lambda_kit.snap_start_warmup import register_warmup
 from shared.lambda_kit.validation.event import validate_event
 
 __all__ = [
@@ -45,7 +44,6 @@ __all__ = [
     'extract_request',
     'http_handler',
     'import_controller',
-    'register_warmup',
     'resolve_operation',
     'run_controller',
     'set_app_config',

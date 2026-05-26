@@ -28,16 +28,6 @@ timeout: 15       # segundos — incluye Turnstile siteverify HTTP (1-2s)
 # cold start (no se mantiene warm como /track).
 snap_start: true
 
-# Pre-warmup de handshakes TLS de boto3 antes del snapshot. Reduce la
-# primera invocacion post-restore en ~200-500ms por servicio. Cada nombre
-# corresponde a un cliente boto3 que el lambda usa en el path HTTP. El
-# wire REAL esta en core/handler.py (register_warmup module-scope); este
-# campo es DOCUMENTAL (devtools no lo consume).
-snap_start_warmup:
-  - sqs        # publica a portfolio-contact-form-${stage}
-  - dynamodb   # rate_limit + cache
-  - ssm        # queue URL + turnstile-secret + bypass-secret
-
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend.
 trigger:

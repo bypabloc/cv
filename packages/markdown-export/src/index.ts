@@ -7,6 +7,7 @@
  *   gemelo via Transform Rule.
  */
 
+export { bundlePagesFunction } from './lib/bundle-pages-function'
 export { extractMainContent } from './lib/extract-main-content'
 export { htmlToMarkdown } from './lib/html-to-markdown'
 export { postbuildExport } from './lib/postbuild-export'

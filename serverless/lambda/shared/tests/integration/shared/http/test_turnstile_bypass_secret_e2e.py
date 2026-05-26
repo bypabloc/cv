@@ -22,7 +22,8 @@ def test_turnstile_bypass_secret_e2e(
     # Arrange
     monkeypatch.setenv('STAGE', 'dev')
     monkeypatch.setenv(
-        'SSM_TURNSTILE_BYPASS_PATH', '/portfolio/dev/turnstile-bypass-secret'
+        'SSM_TURNSTILE_BYPASS_SECRET_PATH',
+        '/portfolio/dev/turnstile-bypass-secret',
     )
     import boto3
 

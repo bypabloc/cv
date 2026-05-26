@@ -969,22 +969,45 @@ def _wire_http_trigger(
     )
     path_part = (trigger.path or '').lstrip('/')
 
-    resource_result = aws(
+    # Idempotente: si el resource /path ya existe (caso CREATE tras
+    # deploy parcial previo o re-corrida del provisioner), reutilizar
+    # su id en vez de fallar con BadRequest.
+    existing_resources = aws(
         [
             'apigateway',
-            'create-resource',
+            'get-resources',
             '--rest-api-id',
             api_id,
-            '--parent-id',
-            root_id,
-            '--path-part',
-            path_part,
+            '--query',
+            f'items[?pathPart==`{path_part}`].id | [0]',
+            '--output',
+            'text',
         ],
         profile=profile,
         region=region,
-        parse_json=True,
+        check=False,
     )
-    resource_id = str(resource_result.json['id'])
+    existing_id = (existing_resources.stdout or '').strip()
+    if existing_id and existing_id != 'None':
+        resource_id = existing_id
+        print(f'  OK  resource /{path_part} ya existe ({resource_id})')
+    else:
+        resource_result = aws(
+            [
+                'apigateway',
+                'create-resource',
+                '--rest-api-id',
+                api_id,
+                '--parent-id',
+                root_id,
+                '--path-part',
+                path_part,
+            ],
+            profile=profile,
+            region=region,
+            parse_json=True,
+        )
+        resource_id = str(resource_result.json['id'])
     resources['api_resource_id'] = resource_id
     resources['api_method'] = f'{trigger.method} {trigger.path}'
 

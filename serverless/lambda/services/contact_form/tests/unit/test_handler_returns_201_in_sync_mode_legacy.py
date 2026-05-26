@@ -1,13 +1,13 @@
-"""Handler — exito en modo sync legacy devuelve HTTP 201.
+"""Handler — sync legacy mode (flag false) sigue devolviendo HTTP 201.
 
-Given ASYNC_MODE=false (rollback path) + un evento API Gateway con un
-     form valido y Turnstile mock success,
+Given ASYNC_MODE=false (rollback path) + un evento API Gateway con form
+     valido y Turnstile mock success,
 When lambda_handler procesa el evento,
-Then devuelve HTTP 201 con el contact_id en el body y el echo CORS.
+Then devuelve HTTP 201 con el contact_id y NO publica nada a SQS
+     (process_contact_form persiste sincronamente).
 
-Spec lambdas-async-sqs (fase 07): mantiene la garantia del flujo viejo
-para el rollback path. El happy-path async (HTTP 202) se cubre en
-test_handler_returns_202_with_contact_id_in_async_mode.py.
+Spec lambdas-async-sqs (fase 07): garantiza que flipear la env var a
+'false' restaura el flujo viejo sin redeploy del worker. AC-5.
 """
 
 import json
@@ -23,18 +23,16 @@ pytestmark = pytest.mark.unit
 
 
 @respx.mock
-def test_handler_returns_201_with_contact_id(
+def test_handler_returns_201_in_sync_mode_legacy(
     monkeypatch: pytest.MonkeyPatch,
     mock_neon_writes: list[dict],
+    mock_sqs: list[dict],
     contact_form_aws: None,
 ) -> None:
     import handler
     from settings.config import AppConfig
 
-    # Arrange: forzar SYNC mode (legacy). AppConfig.async_mode es atributo
-    # de clase (evaluado en cold start); monkeypatch lo sobrescribe para
-    # el alcance del test. El handler lo lee en cada invocacion para
-    # decidir success_status, asi que no requiere reimport del modulo.
+    # Arrange: forzar SYNC mode (rollback path explicito).
     monkeypatch.setattr(AppConfig, 'async_mode', False)
 
     respx.post(TURNSTILE_SITEVERIFY_URL).mock(
@@ -46,11 +44,11 @@ def test_handler_returns_201_with_contact_id(
         body={
             'name': 'Pablo Contreras',
             'email': 'user@example.com',
-            'message': 'Hola, me interesa colaborar contigo.',
+            'message': 'Hola, me interesa colaborar contigo en fintech.',
             'cf_token': 'x' * 30,
             'niche': 'fintech',
         },
-        ip='203.0.113.30',
+        ip='203.0.113.40',
     )
 
     # Act
@@ -60,7 +58,8 @@ def test_handler_returns_201_with_contact_id(
     assert response['statusCode'] == 201
     body = json.loads(response['body'])
     assert len(body['contact_id']) == 36
-    assert (
-        response['headers']['Access-Control-Allow-Origin']
-        == 'https://the-full-stack.com'
-    )
+    # SYNC mode NUNCA toca SQS.
+    assert mock_sqs == []
+    # SYNC mode SI persiste a Neon (mock_neon_writes captura el insert).
+    assert len(mock_neon_writes) == 1
+    assert mock_neon_writes[0]['email'] == 'user@example.com'

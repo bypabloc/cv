@@ -11,13 +11,13 @@
 
 # --- Identidad ---
 name: contact-form
-description: Atiende el form de contacto (valida, rate-limit, Turnstile, email).
+description: Encoder del form de contacto (valida + Turnstile + encola SQS).
 
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB
-timeout: 30       # segundos
+memory: 256       # MB — encoder liviano (antes 512 cuando hacia SES+Neon).
+timeout: 10       # segundos — encoder responde rapido (antes 30).
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend.
@@ -29,6 +29,12 @@ trigger:
 # --- Que recursos del backend usa ---
 # devtools traduce esto a los permisos IAM y los imports necesarios.
 uses:
+  # Cola SQS hacia donde el encoder publica el mensaje cuando
+  # ASYNC_MODE=true. devtools concede sqs:SendMessage al rol IAM y
+  # inyecta SSM_CONTACT_FORM_QUEUE_URL_PATH al runtime.
+  queues:
+    - name: portfolio-contact-form-${stage}
+      access: producer
   # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
   # Spec direct-neon-writes: la tabla `contacts` ya no se usa — el Lambda
   # escribe directo a Neon (`contacts`). Solo quedan las tablas de
@@ -38,13 +44,18 @@ uses:
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
   # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
+  # NOTA: owner-email, ses-from-address y neon-url SOLO los necesita el
+  # flujo sync legacy (ASYNC_MODE=false). Mientras dure el feature flag
+  # se mantienen aqui para que el rollback siga funcionando; una vez que
+  # el flag se deprecque, se borraran de la lista (y los permisos IAM con
+  # ellos).
   secrets:
     - turnstile-secret        # validacion del captcha Cloudflare Turnstile
     - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
-    - owner-email             # destinatario de la notificacion
-    - ses-from-address        # remitente verificado en SES
-    - neon-url                # connection string Neon (escritura directa de contacts)
-  # Envia email transaccional por SES al recibir un form.
+    - owner-email             # destinatario (solo sync legacy)
+    - ses-from-address        # remitente verificado SES (solo sync legacy)
+    - neon-url                # connection string Neon (solo sync legacy)
+  # Envia email transaccional por SES al recibir un form (solo en sync).
   sends-email: true
 
 # --- Variables de entorno por stage ---
@@ -54,16 +65,25 @@ uses:
 # debe coincidir con el dominio publico de cada stage; si falta, el
 # siteverify rechaza con CAPTCHA_HOSTNAME_MISMATCH (defensa contra
 # widget hijacking). Misma whitelist que tracking_pixel y cv.
+#
+# ASYNC_MODE ('true' / 'false') decide en runtime si el Lambda actua
+# como ENCODER (publica a SQS + 202, default) o SYNC LEGACY (Neon+SES+
+# 201, rollback). Se evalua una vez por cold start via AppConfig; los
+# rollouts/rollback se hacen flipeando este valor + redeploy.
 env:
   default:
     LOG_LEVEL: INFO
     AWS_SES_REGION: us-east-1
+    ASYNC_MODE: 'true'
   dev:
     LOG_LEVEL: INFO
+    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
   stage:
     LOG_LEVEL: INFO
+    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
+    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

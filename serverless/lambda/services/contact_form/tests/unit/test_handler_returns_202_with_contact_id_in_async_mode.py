@@ -1,13 +1,13 @@
-"""Handler — exito en modo sync legacy devuelve HTTP 201.
+"""Handler — exito en modo async devuelve HTTP 202 con contact_id.
 
-Given ASYNC_MODE=false (rollback path) + un evento API Gateway con un
-     form valido y Turnstile mock success,
+Given ASYNC_MODE=true + un evento API Gateway con form valido y
+     Turnstile mock success,
 When lambda_handler procesa el evento,
-Then devuelve HTTP 201 con el contact_id en el body y el echo CORS.
+Then devuelve HTTP 202 con `{contact_id, created_at, accepted: true}`
+     en el body, el echo CORS y publica EXACTAMENTE 1 mensaje a SQS.
 
-Spec lambdas-async-sqs (fase 07): mantiene la garantia del flujo viejo
-para el rollback path. El happy-path async (HTTP 202) se cubre en
-test_handler_returns_202_with_contact_id_in_async_mode.py.
+Spec lambdas-async-sqs (fase 07): el encoder pre-genera el contact_id
+(UUIDv7) y lo retorna sin haber tocado Neon ni SES. AC-1.
 """
 
 import json
@@ -23,19 +23,16 @@ pytestmark = pytest.mark.unit
 
 
 @respx.mock
-def test_handler_returns_201_with_contact_id(
+def test_handler_returns_202_with_contact_id_in_async_mode(
     monkeypatch: pytest.MonkeyPatch,
-    mock_neon_writes: list[dict],
+    mock_sqs: list[dict],
     contact_form_aws: None,
 ) -> None:
     import handler
     from settings.config import AppConfig
 
-    # Arrange: forzar SYNC mode (legacy). AppConfig.async_mode es atributo
-    # de clase (evaluado en cold start); monkeypatch lo sobrescribe para
-    # el alcance del test. El handler lo lee en cada invocacion para
-    # decidir success_status, asi que no requiere reimport del modulo.
-    monkeypatch.setattr(AppConfig, 'async_mode', False)
+    # Arrange: ASYNC mode (default, pero explicito para claridad).
+    monkeypatch.setattr(AppConfig, 'async_mode', True)
 
     respx.post(TURNSTILE_SITEVERIFY_URL).mock(
         return_value=httpx.Response(
@@ -57,10 +54,20 @@ def test_handler_returns_201_with_contact_id(
     response = handler.lambda_handler(event, lambda_context())
 
     # Assert
-    assert response['statusCode'] == 201
+    assert response['statusCode'] == 202
     body = json.loads(response['body'])
     assert len(body['contact_id']) == 36
+    assert body['accepted'] is True
+    assert 'created_at' in body
     assert (
         response['headers']['Access-Control-Allow-Origin']
         == 'https://the-full-stack.com'
     )
+    assert len(mock_sqs) == 1
+    sent = mock_sqs[0]
+    assert sent['queue'] == 'contact-form'
+    assert sent['payload']['contact_id'] == body['contact_id']
+    assert sent['payload']['schema_version'] == 1
+    assert sent['payload']['name'] == 'Pablo Contreras'
+    assert sent['payload']['email'] == 'user@example.com'
+    assert sent['payload']['niche'] == 'fintech'

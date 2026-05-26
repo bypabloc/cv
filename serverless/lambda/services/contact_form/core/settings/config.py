@@ -9,6 +9,7 @@ v3 que vive en `shared/` (vendorizado en `core/shared/` por devtools).
 lo importe desde un solo lugar, como pide el estandar lambda-controller.
 """
 
+import os
 from enum import Enum
 
 from shared.lambda_kit import BaseSettings
@@ -128,6 +129,14 @@ class AppConfig(BaseSettings):
     def is_testing(self) -> bool:
         """Devuelve True si el servicio corre en modo testing."""
         return self.testing == '1'
+
+    # Feature flag ASYNC_MODE: decide en cada cold start si el Lambda
+    # actua como ENCODER (publica a SQS, retorna 202) o SYNC LEGACY
+    # (Neon+SES, retorna 201, rollback path). String para que MATCHEE
+    # exactamente el contrato de env var del manifest ('true'/'false').
+    # Se lee a nivel de clase (no instancia) porque el modulo se importa
+    # en cold start y el valor de env var ya esta inyectado por AWS.
+    async_mode: bool = os.environ.get('ASYNC_MODE', 'true').lower() == 'true'
 
 
 # Singleton de configuracion: se evalua una vez en el cold start.

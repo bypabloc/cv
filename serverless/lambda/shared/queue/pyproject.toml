@@ -14,7 +14,10 @@ dependencies = [
 ]
 
 [tool.shared]
-internal-deps = ["shared.observability", "shared.aws"]
+# Convencion shared_resolver: nombres SIN prefijo `shared.` (el resolver
+# scopa contra serverless/lambda/shared/<name>). Ver shared/db,
+# shared/cache, shared/rate_limit como referencia.
+internal-deps = ["observability", "aws"]
 
 [dependency-groups]
 dev = [

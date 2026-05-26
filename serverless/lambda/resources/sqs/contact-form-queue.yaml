@@ -1,0 +1,14 @@
+# Cola principal del worker contact_worker. visibility_timeout = 180s
+# (6x el timeout del worker que es 30s) — recomendado AWS para evitar
+# duplicate processing por timeout antes de ack.
+kind: sqs-queue
+name: portfolio-contact-form-${stage}
+message_retention_seconds: 345600        # 4 dias (default SQS)
+visibility_timeout_seconds: 180
+redrive_policy:
+  target: portfolio-contact-form-dlq-${stage}
+  max_receive_count: 3
+publishes_ssm:
+  arn: /portfolio/${stage}/sqs/contact-form/arn
+  url: /portfolio/${stage}/sqs/contact-form/url
+tags: { Project: portfolio, ManagedBy: devtools }

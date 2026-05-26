@@ -13,7 +13,9 @@ pytestmark = pytest.mark.unit
 
 
 def test_track_controller_persists_and_normalizes_ok(
-    mock_neon_writes: list[dict], tracking_aws: None
+    sync_mode: None,
+    mock_neon_writes: list[dict],
+    tracking_aws: None,
 ) -> None:
     from controllers.tracking.track import Track
 

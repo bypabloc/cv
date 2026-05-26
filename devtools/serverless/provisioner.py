@@ -20,6 +20,7 @@ identificadores de infra (Stream ARN, ApiId) se leen de SSM con
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 import json
@@ -1778,6 +1779,7 @@ def rendered_config(rendered: RenderedLambda) -> dict[str, Any]:
     dict[str, Any]
         Campos de config que, al cambiar, fuerzan un re-deploy de config.
     """
+
     return {
         'runtime': rendered.runtime,
         'architecture': rendered.architecture,
@@ -1786,6 +1788,13 @@ def rendered_config(rendered: RenderedLambda) -> dict[str, Any]:
         'timeout': rendered.timeout,
         'env_vars': rendered.env_vars,
         'iam_policy': rendered.iam_policy,
+        # Wiring del trigger: si cambia type/method/path/queue/snap_start
+        # el diff debe materializar el cambio en API GW / EventSourceMapping
+        # (URI con qualifier `:live`, statement-id del add-permission).
+        # Sin esto, el provisioner se queda en NOOP y el cambio queda
+        # registrado solo en el manifest, no en AWS.
+        'trigger': asdict(rendered.trigger),
+        'snap_start': rendered.snap_start,
     }
 
 

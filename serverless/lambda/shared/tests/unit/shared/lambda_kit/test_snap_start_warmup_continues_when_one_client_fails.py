@@ -1,5 +1,5 @@
 """
-Given dynamodb falla con BotoCoreError pero sqs y ssm exito,
+Given _build_client falla con BotoCoreError para dynamodb pero ok para sqs y ssm,
 When register_warmup(['sqs', 'dynamodb', 'ssm']) corre,
 Then loguea WARNING para dynamodb, completa sin raise.
 """
@@ -18,16 +18,12 @@ pytestmark = pytest.mark.unit
 def test_register_warmup_continues_when_one_client_fails(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Un client fallando NO aborta el resto ni propaga la excepcion."""
-    # Arrange: build_client devuelve un mock distinto por servicio.
+    """Un build falla NO aborta el resto ni propaga la excepcion."""
+    # Arrange: build_client devuelve un mock para sqs/ssm, raise para dynamodb
     def build_client_factory(service: str, _region: str) -> MagicMock:
-        c = MagicMock()
         if service == 'dynamodb':
-            c.describe_endpoints.side_effect = BotoCoreError()
-        else:
-            c.list_queues.return_value = {'QueueUrls': []}
-            c.describe_parameters.return_value = {'Parameters': []}
-        return c
+            raise BotoCoreError
+        return MagicMock()
 
     # Act
     with patch(

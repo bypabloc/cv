@@ -1,5 +1,5 @@
 """
-Given los 3 clientes (sqs, dynamodb, ssm) responden exito,
+Given los 3 clientes (sqs, dynamodb, ssm) se instancian sin error,
 When register_warmup(['sqs', 'dynamodb', 'ssm']) corre,
 Then loguea 3 lineas INFO con prefijo [snap_start_warmup] X: ok (Yms).
 """
@@ -17,12 +17,9 @@ pytestmark = pytest.mark.unit
 def test_register_warmup_logs_ok_when_all_clients_succeed(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Los 3 clientes exitosos producen 3 lineas INFO 'ok'."""
-    # Arrange
+    """Las 3 instanciaciones exitosas producen 3 lineas INFO 'ok'."""
+    # Arrange: build_client retorna un mock cualquiera (no se llama nada)
     mock_client = MagicMock()
-    mock_client.list_queues.return_value = {'QueueUrls': []}
-    mock_client.describe_endpoints.return_value = {'Endpoints': []}
-    mock_client.describe_parameters.return_value = {'Parameters': []}
 
     # Act
     with patch(

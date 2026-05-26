@@ -130,8 +130,51 @@ Ninguno en esta fase.
 
 ## Done
 
-- [ ] Bug reproducido localmente con `wrangler pages dev`
-- [ ] Confirmado que el archivo existe en el dist pero Cloudflare sirve
+- [x] Bug reproducido contra prod (`https://the-full-stack.com`)
+- [x] Confirmado que el archivo existe en el dist pero Cloudflare sirve
   `index.html` con `content-length` >> 245 bytes
-- [ ] Evidencia agregada al final de este archivo
-- [ ] Commit `docs(specs): fase 0 - diagnostico bug SPA fallback en api-catalog`
+- [x] Evidencia agregada al final de este archivo
+- [x] Commit `docs(specs): fase 0 - diagnostico bug SPA fallback en api-catalog`
+
+## Evidencia de reproduccion (Fase 0 ejecutada)
+
+- **Fecha**: 2026-05-26
+- **Comando**:
+
+```bash
+curl -sI -X GET https://the-full-stack.com/.well-known/api-catalog
+```
+
+- **Headers observados**:
+
+```text
+content-type: application/json    # viene de _headers del prebuild
+content-length: 83433             # BUG: el archivo real es 245 bytes
+```
+
+- **Body** (50 primeros caracteres):
+
+```text
+<!DOCTYPE html><html lang="es"> <head><meta charset="UTF-8">
+```
+
+- **Tamano del archivo real en el dist**:
+
+```bash
+wc -c apps/generic/dist/.well-known/api-catalog
+# 245 apps/generic/dist/.well-known/api-catalog
+```
+
+- **Conclusion**: bug confirmado. Cloudflare Pages devuelve el
+  `index.html` del SPA fallback (~83 KB) cuando la URL es
+  `.well-known/api-catalog` (sin extension), aunque el archivo JSON
+  exista en el bucket de assets. El header `Content-Type:
+  application/json` del `_headers` se aplica al body equivocado
+  (un HTML).
+- **Fix decidido**: Fase 1A — renombrar a `.well-known/api-catalog.json`
+  (la extension `.json` evita el SPA fallback) + rewrite 200 en
+  `_redirects` desde la URL canonica RFC 9727.
+- **Reproduccion local con wrangler**: NO necesaria — el bug ya esta
+  confirmado contra prod (donde Cloudflare aplica las mismas reglas
+  que en preview). Saltarse `wrangler pages dev` reduce el riesgo de
+  divergencia entre runtime local vs CF Pages prod.

@@ -78,14 +78,28 @@ describe('buildHeaders', () => {
     expect(out).toContain(
       'Link: </llms.txt>; rel="alternate"; type="text/plain"; title="llms.txt"',
     )
-    expect(out).toContain('Link: </.well-known/api-catalog>; rel="api-catalog"')
+    expect(out).toContain(
+      'Link: </.well-known/api-catalog.json>; rel="api-catalog"; type="application/linkset+json"',
+    )
   })
 
-  it('Given build When inspecciono Then expone Content-Type JSON para api-catalog', () => {
+  it('Given build When inspecciono Then expone Content-Type linkset+json para api-catalog (URL canonica)', () => {
     const out = buildHeaders({
       apiEndpoint: 'https://api.portfolio.the-full-stack.com',
     })
     expect(out).toContain('/.well-known/api-catalog\n')
-    expect(out).toContain('  Content-Type: application/json')
+    expect(out).toMatch(
+      /\/\.well-known\/api-catalog\n\s+Content-Type: application\/linkset\+json; charset=UTF-8/,
+    )
+  })
+
+  it('Given build When inspecciono Then expone Content-Type linkset+json para api-catalog.json (path real)', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('/.well-known/api-catalog.json\n')
+    expect(out).toMatch(
+      /\/\.well-known\/api-catalog\.json\n\s+Content-Type: application\/linkset\+json; charset=UTF-8/,
+    )
   })
 })

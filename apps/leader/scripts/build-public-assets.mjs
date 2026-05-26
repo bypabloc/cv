@@ -1,4 +1,4 @@
-import { copyFile, mkdir, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { profile } from '@portfolio/content'
@@ -111,9 +111,14 @@ async function main() {
   // 5. _redirects (alias /sitemap.xml -> /sitemap-index.xml)
   await write('_redirects', buildRedirects())
 
-  // 6. .well-known/api-catalog (RFC9727 linkset apuntando al openapi.json)
+  // 6a. Limpia el archivo viejo .well-known/api-catalog (sin extension)
+  //     que existia antes del fix SPA fallback de Fase 1A. Si no se borra,
+  //     queda colgado en public/ y se sirve junto al .json.
+  await rm(resolve(PUBLIC_DIR, '.well-known/api-catalog'), { force: true })
+
+  // 6b. .well-known/api-catalog.json (RFC9727 linkset; _redirects 200 sirve la URL canonica sin .json)
   await write(
-    '.well-known/api-catalog',
+    '.well-known/api-catalog.json',
     buildApiCatalog({ siteUrl: SITE_URL, apiEndpoint: API_ENDPOINT }),
   )
 }

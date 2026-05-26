@@ -54,10 +54,17 @@ export function buildHeaders(opts: { apiEndpoint: string }): string {
     '  X-Frame-Options: DENY',
     '  Link: </sitemap-index.xml>; rel="sitemap"',
     '  Link: </llms.txt>; rel="alternate"; type="text/plain"; title="llms.txt"',
-    '  Link: </.well-known/api-catalog>; rel="api-catalog"',
+    '  Link: </.well-known/api-catalog.json>; rel="api-catalog"; type="application/linkset+json"',
     '',
+    // El archivo real vive en .json para evitar el SPA fallback de
+    // Cloudflare Pages (rutas sin extension caen en index.html).
+    // Mantenemos tambien el bloque sin extension porque _redirects hace
+    // rewrite 200, asi que ambas URLs sirven el mismo body.
     '/.well-known/api-catalog',
-    '  Content-Type: application/json',
+    '  Content-Type: application/linkset+json; charset=UTF-8',
+    '',
+    '/.well-known/api-catalog.json',
+    '  Content-Type: application/linkset+json; charset=UTF-8',
     '',
   ].join('\n')
 }

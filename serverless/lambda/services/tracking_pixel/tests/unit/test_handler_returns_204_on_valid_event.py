@@ -1,8 +1,9 @@
-"""Handler — evento de tracking valido.
+"""Handler — evento de tracking valido en modo sync legacy.
 
-Given un evento API Gateway con un body de tracking valido,
+Given un evento API Gateway con un body de tracking valido y ASYNC_MODE=false,
 When lambda_handler lo procesa,
-Then devuelve HTTP 204 No Content con body vacio (fire-and-forget).
+Then devuelve HTTP 204 No Content con body vacio (fire-and-forget) Y
+     persiste a Neon en la misma invocacion (sync legacy).
 """
 
 import pytest
@@ -13,7 +14,9 @@ pytestmark = pytest.mark.unit
 
 
 def test_handler_returns_204_on_valid_event(
-    mock_neon_writes: list[dict], tracking_aws: None
+    sync_mode: None,
+    mock_neon_writes: list[dict],
+    tracking_aws: None,
 ) -> None:
     import handler
 

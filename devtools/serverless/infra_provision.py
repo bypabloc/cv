@@ -27,14 +27,15 @@ from dataclasses import field
 from pathlib import Path
 from typing import Any
 
-from serverless import aws_cli
-from serverless import state
-from serverless.aws_cli import AwsError
 from shared.console import CYAN
 from shared.console import GREEN
 from shared.console import YELLOW
 from shared.console import _c
 from shared.console import _err
+
+from serverless import aws_cli
+from serverless import state
+from serverless.aws_cli import AwsError
 
 
 # Raiz del backend serverless del portfolio.
@@ -44,7 +45,7 @@ _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 _RESOURCES_DIR = _SERVERLESS_DIR / 'lambda' / 'resources'
 
 # Subdirectorios de _RESOURCES_DIR que contienen fragmentos de recurso.
-_RESOURCE_TYPES = ('sqs', 'dynamodb', 'api_gateway')
+_RESOURCE_TYPES = ('sqs', 'dynamodb', 'api_gateway', 'cloudwatch_alarms')
 
 # Region por defecto del backend.
 _REGION = aws_cli.DEFAULT_REGION
@@ -57,9 +58,15 @@ _APIGW_CWLOGS_POLICY = (
     'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
 )
 
-# Orden de provision: SQS, luego tablas DynamoDB, luego API Gateway. El
-# deprovision recorre la lista inversa.
-_PROVISION_ORDER = ('sqs-queue', 'dynamodb-table', 'rest-api')
+# Orden de provision: SQS (DLQs primero, principales despues) -> tablas
+# DynamoDB -> API Gateway -> alarmas CloudWatch (necesitan los ARNs SQS).
+# El deprovision recorre la lista inversa.
+_PROVISION_ORDER = (
+    'sqs-queue',
+    'dynamodb-table',
+    'rest-api',
+    'cloudwatch-alarm',
+)
 
 # SQS bloquea recrear una cola con el mismo nombre por 60s tras borrarla
 # (QueueDeletedRecently). El ciclo destroy + provision-infra reintenta.
@@ -219,10 +226,15 @@ def render_resource(path: Path, *, stage: str) -> RenderedResource:
     interpolated: dict[str, Any] = _interpolate(raw, stage)
 
     kind = interpolated.get('kind')
-    if kind not in {'dynamodb-table', 'rest-api', 'sqs-queue'}:
+    if kind not in {
+        'dynamodb-table',
+        'rest-api',
+        'sqs-queue',
+        'cloudwatch-alarm',
+    }:
         raise ValueError(
-            f'kind invalido en {path}: {kind!r}. '
-            f'Validos: dynamodb-table, rest-api, sqs-queue.',
+            f'kind invalido en {path}: {kind!r}. Validos: '
+            f'dynamodb-table, rest-api, sqs-queue, cloudwatch-alarm.',
         )
 
     name = interpolated.get('name')
@@ -479,12 +491,26 @@ def _provision_sqs_queue(
     region: str,
     dry_run: bool,
 ) -> tuple[dict[str, str | None], list[str]]:
-    """Provisiona una cola SQS. Idempotente via `get-queue-url`."""
-    spec = rendered.spec
+    """Provisiona una cola SQS. Idempotente via `get-queue-url`.
+
+    Tras crear/reusar la cola, aplica via `set-queue-attributes` los
+    bloques opcionales `visibility_timeout_seconds` y `redrive_policy`
+    (DLQ wiring). El RedrivePolicy resuelve el ARN de la DLQ por nombre
+    en runtime con `get-queue-url` + `get-queue-attributes` — la DLQ
+    debe existir antes (las DLQs van primero en `_ordered_rendered`).
+    """
     queue_name = rendered.name
 
     if dry_run:
         print(_c(YELLOW, f'[dry-run] sqs create-queue {queue_name}'))
+        if rendered.spec.get('redrive_policy'):
+            print(
+                _c(
+                    YELLOW,
+                    f'[dry-run] sqs set-queue-attributes {queue_name} '
+                    f'(redrive_policy + visibility_timeout)',
+                )
+            )
         queue_url: str | None = None
         queue_arn: str | None = None
     else:
@@ -506,6 +532,12 @@ def _provision_sqs_queue(
             profile=profile,
             region=region,
         )
+        _apply_sqs_attributes(
+            rendered,
+            queue_url,
+            profile=profile,
+            region=region,
+        )
 
     values: dict[str, str | None] = {'arn': queue_arn, 'url': queue_url}
     published = _publish_ssm(
@@ -519,9 +551,73 @@ def _provision_sqs_queue(
         f'sqs:{queue_name}:url': queue_url,
         f'sqs:{queue_name}:arn': queue_arn,
     }
-    # Marca para que mypy/ruff no consideren `spec` sin uso.
-    _ = spec.get('message_retention_seconds')
     return resources, published
+
+
+def _apply_sqs_attributes(
+    rendered: RenderedResource,
+    queue_url: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Aplica `VisibilityTimeout` + `RedrivePolicy` via set-queue-attributes.
+
+    Idempotente: AWS hace diff internamente y solo aplica si cambia.
+    Si el spec no declara ninguno de los dos, NO se llama (set-queue-
+    attributes con dict vacio falla).
+    """
+    import json as _json
+
+    spec = rendered.spec
+    attributes: dict[str, str] = {}
+
+    visibility = spec.get('visibility_timeout_seconds')
+    if visibility is not None:
+        attributes['VisibilityTimeout'] = str(visibility)
+
+    redrive = spec.get('redrive_policy')
+    if redrive:
+        dlq_name = redrive['target']
+        dlq_url = _resolve_queue_url(
+            dlq_name,
+            profile=profile,
+            region=region,
+        )
+        if dlq_url is None:
+            raise RuntimeError(
+                f'DLQ {dlq_name!r} no existe — debe provisionarse antes '
+                f'que la cola principal {rendered.name!r}. Revisar el '
+                f'orden de _ordered_rendered (DLQs primero).'
+            )
+        dlq_arn = _describe_queue_arn(
+            dlq_url,
+            profile=profile,
+            region=region,
+        )
+        attributes['RedrivePolicy'] = _json.dumps(
+            {
+                'deadLetterTargetArn': dlq_arn,
+                'maxReceiveCount': redrive.get('max_receive_count', 3),
+            }
+        )
+
+    if not attributes:
+        return
+
+    aws_cli.aws(
+        [
+            'sqs',
+            'set-queue-attributes',
+            '--queue-url',
+            queue_url,
+            '--attributes',
+            _json.dumps(attributes),
+        ],
+        profile=profile,
+        region=region,
+    )
+    print(_c(GREEN, f'  OK  atributos aplicados a {rendered.name}'))
 
 
 def _resolve_queue_url(
@@ -1182,21 +1278,98 @@ def _ensure_custom_domain(
 # --------------------------------------------------------------------------
 # Orquestacion de la provision y la limpieza de la infra
 # --------------------------------------------------------------------------
+def _provision_cloudwatch_alarm(
+    rendered: RenderedResource,
+    *,
+    profile: str | None,
+    region: str,
+    dry_run: bool,
+) -> tuple[dict[str, str | None], list[str]]:
+    """Provisiona una alarma CloudWatch. Idempotente via `put-metric-alarm`.
+
+    `put-metric-alarm` es upsert: re-aplica los mismos args y AWS hace
+    diff internamente. Si la alarma no existe la crea; si existe la
+    actualiza con los args nuevos.
+    """
+    spec = rendered.spec
+    alarm_name = rendered.name
+
+    if dry_run:
+        print(_c(YELLOW, f'[dry-run] cloudwatch put-metric-alarm {alarm_name}'))
+        return {f'cloudwatch:{alarm_name}': None}, []
+
+    metric = spec['metric']
+    args = [
+        'cloudwatch',
+        'put-metric-alarm',
+        '--alarm-name',
+        alarm_name,
+        '--namespace',
+        metric['namespace'],
+        '--metric-name',
+        metric['name'],
+        '--statistic',
+        spec.get('statistic', 'Maximum'),
+        '--period',
+        str(spec.get('period_seconds', 300)),
+        '--evaluation-periods',
+        str(spec.get('evaluation_periods', 1)),
+        '--threshold',
+        str(spec['threshold']),
+        '--comparison-operator',
+        spec.get('comparison', 'GreaterThanThreshold'),
+        '--treat-missing-data',
+        spec.get('treat_missing_data', 'notBreaching'),
+    ]
+    description = spec.get('description')
+    if description:
+        # YAML `description: >` (folded) puede dejar trailing newline
+        # que AWS CLI no maneja bien.
+        args.extend(['--alarm-description', description.strip()])
+
+    dims = metric.get('dimensions') or {}
+    if dims:
+        args.append('--dimensions')
+        args.extend([f'Name={k},Value={v}' for k, v in dims.items()])
+
+    actions = spec.get('alarm_actions') or []
+    if actions:
+        args.append('--alarm-actions')
+        args.extend(actions)
+
+    aws_cli.aws(args, profile=profile, region=region)
+    print(_c(GREEN, f'  OK  alarma {alarm_name} configurada'))
+
+    return {f'cloudwatch:{alarm_name}': alarm_name}, []
+
+
 _PROVISIONERS = {
     'dynamodb-table': _provision_dynamodb_table,
     'rest-api': _provision_rest_api,
     'sqs-queue': _provision_sqs_queue,
+    'cloudwatch-alarm': _provision_cloudwatch_alarm,
 }
 
 
 def _ordered_rendered(stage: str) -> list[RenderedResource]:
-    """Renderiza todos los fragmentos y los ordena por `_PROVISION_ORDER`."""
+    """Renderiza todos los fragmentos y los ordena por `_PROVISION_ORDER`.
+
+    Sub-orden dentro de `sqs-queue`: las DLQs (sin `redrive_policy`) van
+    PRIMERO porque las colas principales con `redrive_policy.target` las
+    necesitan creadas para resolver el ARN de la DLQ.
+    """
     rendered = [
         render_resource(path, stage=stage) for path in discover_resources()
     ]
     return sorted(
         rendered,
-        key=lambda r: _PROVISION_ORDER.index(r.kind),
+        key=lambda r: (
+            _PROVISION_ORDER.index(r.kind),
+            # Sub-key para SQS: 0 = sin redrive (DLQ), 1 = con redrive (main).
+            1
+            if (r.kind == 'sqs-queue' and r.spec.get('redrive_policy'))
+            else 0,
+        ),
     )
 
 

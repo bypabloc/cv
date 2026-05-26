@@ -1,0 +1,20 @@
+Nuevo contacto recibido en {{niche}}
+
+De: {{name}} <{{email}}>
+{{#company}}Empresa: {{company}}{{/company}}
+{{#role}}Cargo: {{role}}{{/role}}
+{{#service_type}}Tipo de servicio: {{service_type}}{{/service_type}}
+{{#budget}}Presupuesto: {{budget}}{{/budget}}
+{{#timeline}}Timeline: {{timeline}}{{/timeline}}
+
+Mensaje:
+{{message}}
+
+---
+Metadata:
+- Contact ID: {{contact_id}}
+- Created at: {{created_at}}
+- IP: {{ip}}
+{{#country}}- Country: {{country}}{{/country}}
+
+Portfolio: the-full-stack.com

@@ -10,6 +10,15 @@ cosas:
      Sin tocar AWS. Es lo testeable.
   2. `provision(rendered, action, ...)` — ejecuta las llamadas AWS CLI
      segun la `Action` que decidio `state.diff` (CREATE / UPDATE_* ).
+     En UPDATE_CONFIG y UPDATE_BOTH, ademas, llama a
+     `_rewire_trigger_on_update` para que cambios en `trigger.*` y
+     `snap_start` se materializen en API GW / EventSourceMapping
+     (URI con qualifier `:live`, statement-id del add-permission).
+     El wiring corre `_cleanup_legacy_permissions` antes del
+     add-permission canonico, borrando statements obsoletos del
+     resource-policy del Lambda (legacy SAM o devtools previo con
+     qualifier distinto), scoped por `source_arn` para NO tocar
+     permisos legitimos de otros origenes.
   3. `deprovision(state, ...)` — borra los recursos en orden inverso.
 
 La traduccion `uses` -> IAM resuelve los ARNs a strings concretos

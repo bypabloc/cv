@@ -46,7 +46,18 @@ _VALID_ENV_STAGES = ('default', 'dev', 'stage', 'prod')
 # Tipos de trigger soportados. `on-table-changes` se elimino con el
 # stream_processor (spec direct-neon-writes): los Lambdas HTTP escriben
 # directo a Neon en vez de via DDB Stream.
-_VALID_TRIGGERS = ('direct', 'http')
+_VALID_TRIGGERS = ('direct', 'http', 'sqs')
+
+# Mapeo de access -> acciones IAM para colas SQS.
+_SQS_ACTIONS: dict[str, list[str]] = {
+    'producer': ['sqs:SendMessage'],
+    'consumer': [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+        'sqs:ChangeMessageVisibility',
+    ],
+}
 
 # Espera de propagacion del rol IAM recien creado antes de
 # `create-function`: un rol nuevo puede no estar disponible aun.
@@ -130,16 +141,26 @@ class TriggerSpec:
     Attributes
     ----------
     type : str
-        `direct` | `http`.
+        `direct` | `http` | `sqs`.
     method : str | None
         Metodo HTTP (solo `http`). Ej. `POST`.
     path : str | None
         Path del endpoint (solo `http`). Ej. `/contact`.
+    queue_name : str | None
+        Nombre de la cola SQS (solo `sqs`), ya interpolado.
+    batch_size : int
+        Tamano del batch del Event Source Mapping (solo `sqs`). Default 1.
+    function_response_types : tuple[str, ...]
+        Function response types para retries parciales (solo `sqs`). Ej.
+        `('ReportBatchItemFailures',)`.
     """
 
     type: str
     method: str | None = None
     path: str | None = None
+    queue_name: str | None = None
+    batch_size: int = 1
+    function_response_types: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -281,6 +302,25 @@ def _build_env_vars(manifest: dict[str, Any], stage: str) -> dict[str, str]:
         sdef = _secret_def(short_name)
         env[sdef['env']] = _interp(sdef['path'], stage)
 
+    # uses.queues -> env vars SSM_<UPPER>_QUEUE_URL_PATH para que el
+    # publisher de shared.queue resuelva la URL en cold start.
+    for queue in uses.get('queues') or []:
+        if not isinstance(queue, dict):
+            continue
+        access = queue.get('access', 'producer')
+        if access != 'producer':
+            # Solo los producers leen la URL desde SSM (envian mensajes).
+            # Los consumers reciben el evento Lambda con los records.
+            continue
+        queue_full = _interp(str(queue['name']), stage)
+        # Derivar el "short_name" SSM: portfolio-contact-form-${stage} ->
+        # contact-form (sin prefijo portfolio- ni sufijo -<stage>).
+        short = queue_full.removeprefix('portfolio-').removesuffix(
+            f'-{stage}',
+        )
+        env_key = 'SSM_' + short.upper().replace('-', '_') + '_QUEUE_URL_PATH'
+        env[env_key] = f'/portfolio/{stage}/sqs/{short}/url'
+
     return env
 
 
@@ -349,10 +389,38 @@ def _build_statements(
         uses.get('tables') or {}, stage, region=region, account=account
     )
 
+    # Statements SQS por cola declarada en uses.queues.
+    queues = uses.get('queues') or []
+    queue_ssm_paths: list[str] = []
+    for queue in queues:
+        if not isinstance(queue, dict):
+            continue
+        queue_full = _interp(str(queue['name']), stage)
+        access = queue.get('access', 'producer')
+        actions = _SQS_ACTIONS.get(access)
+        if not actions:
+            raise ManifestError(
+                f'acceso invalido {access!r} para la cola '
+                f'{queue_full!r}. Usa producer | consumer.',
+            )
+        statements.append(
+            {
+                'Effect': 'Allow',
+                'Action': actions,
+                'Resource': f'arn:aws:sqs:{region}:{account}:{queue_full}',
+            }
+        )
+        if access == 'producer':
+            # Producers leen la URL SQS desde SSM en cold start.
+            short = queue_full.removeprefix('portfolio-').removesuffix(
+                f'-{stage}'
+            )
+            queue_ssm_paths.append(f'/portfolio/{stage}/sqs/{short}/url')
+
     secrets = uses.get('secrets') or []
     ssm_read_arns = [
         f'arn:aws:ssm:{region}:{account}:parameter{path}'
-        for path in table_ssm_paths
+        for path in table_ssm_paths + queue_ssm_paths
     ]
     for short_name in secrets:
         sdef = _secret_def(short_name)
@@ -426,6 +494,19 @@ def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
         if not method or not path:
             raise ManifestError("trigger http requiere 'method' y 'path'.")
         return TriggerSpec(type='http', method=method, path=path)
+
+    if ttype == 'sqs':
+        queue_name = trigger.get('queue')
+        if not queue_name:
+            raise ManifestError("trigger sqs requiere 'queue'.")
+        batch_size = int(trigger.get('batch_size', 1))
+        response_types = tuple(trigger.get('function_response_types') or ())
+        return TriggerSpec(
+            type='sqs',
+            queue_name=queue_name,
+            batch_size=batch_size,
+            function_response_types=response_types,
+        )
 
     return TriggerSpec(type='direct')
 
@@ -1014,6 +1095,92 @@ def _wire_trigger(
             region=region,
             resources=resources,
         )
+    elif rendered.trigger.type == 'sqs':
+        _wire_sqs_trigger(
+            rendered,
+            stage,
+            account,
+            profile=profile,
+            region=region,
+            resources=resources,
+        )
+
+
+def _wire_sqs_trigger(
+    rendered: RenderedLambda,
+    stage: str,
+    account: str,
+    *,
+    profile: str | None,
+    region: str,
+    resources: dict[str, str | None],
+) -> None:
+    """Crea o actualiza el Event Source Mapping SQS -> Lambda.
+
+    Idempotente: lista los ESM existentes para el (function, queue) y si
+    ya hay uno solo lo actualiza con batch_size + function_response_types.
+
+    El ARN de la cola se construye con el nombre interpolado del trigger
+    (la cola debe existir; se provisiona en `infra_provision`).
+    """
+    queue_name = _interp(rendered.trigger.queue_name or '', stage)
+    queue_arn = f'arn:aws:sqs:{region}:{account}:{queue_name}'
+    fn = rendered.function_name
+
+    existing = aws(
+        [
+            'lambda',
+            'list-event-source-mappings',
+            '--function-name',
+            fn,
+            '--event-source-arn',
+            queue_arn,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    mappings = (existing.json or {}).get('EventSourceMappings') or []
+
+    response_types = list(rendered.trigger.function_response_types)
+
+    if mappings:
+        uuid = mappings[0]['UUID']
+        args = [
+            'lambda',
+            'update-event-source-mapping',
+            '--uuid',
+            uuid,
+            '--batch-size',
+            str(rendered.trigger.batch_size),
+        ]
+        if response_types:
+            args.append('--function-response-types')
+            args.extend(response_types)
+        aws(args, profile=profile, region=region, check=False)
+        resources[f'event_source_mapping:{queue_name}'] = uuid
+        print(f'  OK  ESM {fn} <- {queue_name} actualizado ({uuid})')
+        return
+
+    args = [
+        'lambda',
+        'create-event-source-mapping',
+        '--function-name',
+        fn,
+        '--event-source-arn',
+        queue_arn,
+        '--batch-size',
+        str(rendered.trigger.batch_size),
+        '--enabled',
+    ]
+    if response_types:
+        args.append('--function-response-types')
+        args.extend(response_types)
+    result = aws(args, profile=profile, region=region, parse_json=True)
+    uuid = (result.json or {}).get('UUID', '')
+    resources[f'event_source_mapping:{queue_name}'] = uuid
+    print(f'  OK  ESM {fn} <- {queue_name} creado ({uuid})')
 
 
 def _provision_create(

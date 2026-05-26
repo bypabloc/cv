@@ -11,13 +11,15 @@
 
 # --- Identidad ---
 name: tracking-pixel
-description: Registra eventos de tracking del portfolio (page views, clicks).
+description: Encoder de eventos de tracking (valida + rate-limit + encola SQS).
 
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 256       # MB
-timeout: 10       # segundos
+memory: 256       # MB — 128 era insuficiente: INIT ya usa 118MB y queda
+                  # sin RAM libre para el handler. Resultado: handler cuelga
+                  # sin loguear hasta el timeout. Mantenemos 256MB.
+timeout: 10       # segundos — primer call cold paga SSM + boto3 init
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend. devtools conecta la
@@ -30,16 +32,23 @@ trigger:
 # --- Que recursos del backend usa ---
 # devtools traduce esto a los permisos IAM y los imports necesarios.
 uses:
+  # Cola SQS donde el encoder publica los eventos para que el worker
+  # `tracking_worker` los persista en Neon (batch=10). El encoder es
+  # producer; el worker consumer.
+  queues:
+    - name: portfolio-tracking-events-${stage}
+      access: producer
   # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
   # Spec direct-neon-writes: la tabla `tracking` ya no se usa — el Lambda
   # escribe directo a Neon (`tracking_events`). Solo quedan las tablas
   # de infraestructura (cache + rate-limit).
   tables:
-    cache: read-write          # @cached del parsing de user-agent
+    cache: read-write          # @cached del parsing de user-agent (sync path)
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
-  # neon-url: connection string del Neon dev/stage/prod (escritura
-  # directa de tracking_events tras spec direct-neon-writes).
+  # neon-url: connection string del Neon dev/stage/prod. SE MANTIENE
+  # mientras dure el flag ASYNC_MODE — el sync path (ASYNC_MODE=false)
+  # sigue escribiendo a Neon directamente.
   secrets:
     - neon-url
   sends-email: false
@@ -48,10 +57,16 @@ uses:
 env:
   default:
     LOG_LEVEL: INFO
+    ASYNC_MODE: 'true'
   dev:
+    LOG_LEVEL: INFO
+    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
   stage:
+    LOG_LEVEL: INFO
+    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
+    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

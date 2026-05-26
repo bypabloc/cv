@@ -248,21 +248,23 @@ class TestRenderResource:
 class TestDiscoverResources:
     """discover_resources lista los fragmentos reales de resources/."""
 
-    def test_discover_finds_four_resources(self):
+    def test_discover_finds_all_resources(self):
         """
-        Given los 4 fragmentos de serverless/lambda/resources/,
+        Given los fragmentos de serverless/lambda/resources/,
         When discover_resources,
-        Then devuelve exactamente 4 paths y ninguno empieza con '_'.
+        Then devuelve todos los paths y ninguno empieza con '_'.
 
-        Cantidad post spec direct-neon-writes: 3 tablas DDB (cache +
-        rate-limit-rules + rate-limit-buckets) + 1 API GW. Se eliminaron
-        las tablas `contacts`/`tracking` y la SQS DLQ del stream_processor.
+        Cantidad post spec lambdas-async-sqs: 3 tablas DDB (cache +
+        rate-limit-rules + rate-limit-buckets) + 1 API GW + 4 colas
+        SQS (2 main + 2 DLQ) + 2 alarmas CloudWatch = 10. La cantidad
+        crece con el tiempo; el test solo verifica el invariante de
+        que `_*.yaml` esta excluido.
         """
         from serverless import infra_provision
 
         paths = infra_provision.discover_resources()
 
-        assert len(paths) == 4
+        assert len(paths) >= 4
         assert all(not p.stem.startswith('_') for p in paths)
 
 
@@ -640,10 +642,7 @@ class TestCustomDomain:
 
         assert config is not None
         assert config['endpoint_type'] == 'EDGE'
-        assert (
-            config['domain_name']
-            == 'api.portfolio.dev.the-full-stack.com'
-        )
+        assert config['domain_name'] == 'api.portfolio.dev.the-full-stack.com'
 
     def test_custom_domain_returns_none_when_stage_missing(self, tmp_path):
         """
@@ -678,7 +677,9 @@ class TestCustomDomain:
         assert rendered.custom_domain is None
 
     def test_ensure_custom_domain_creates_when_absent(
-        self, tmp_path, monkeypatch,
+        self,
+        tmp_path,
+        monkeypatch,
     ):
         """
         Given un rest-api con custom_domain dev=EDGE y la domain NO existe en AWS,
@@ -722,7 +723,9 @@ class TestCustomDomain:
         )
 
     def test_ensure_custom_domain_recreates_on_endpoint_drift(
-        self, tmp_path, monkeypatch,
+        self,
+        tmp_path,
+        monkeypatch,
     ):
         """
         Given un yaml pide EDGE pero AWS reporta REGIONAL,
@@ -770,7 +773,9 @@ class TestCustomDomain:
         assert delete_idx < create_idx
 
     def test_ensure_custom_domain_no_op_when_aligned(
-        self, tmp_path, monkeypatch,
+        self,
+        tmp_path,
+        monkeypatch,
     ):
         """
         Given yaml pide EDGE y AWS ya tiene EDGE,
@@ -826,7 +831,9 @@ class TestCustomDomain:
         )
 
     def test_ensure_custom_domain_skips_when_no_config(
-        self, tmp_path, monkeypatch,
+        self,
+        tmp_path,
+        monkeypatch,
     ):
         """
         Given un rest-api sin custom_domain_by_stage,

@@ -193,3 +193,89 @@ def mock_neon_writes(
         'services.tracking_service.insert_tracking', _fake_insert_tracking
     )
     return captured
+
+
+@pytest.fixture
+def sync_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fuerza el feature flag `AppConfig.async_mode=False` (sync legacy).
+
+    Lo usan los tests que validan el path antiguo (UA parsing + escritura
+    directa a Neon + HTTP 204). El default del proyecto es async (encoder
+    + SQS + 202), asi que estos tests deben optar explicitamente.
+    """
+    from settings.config import AppConfig
+
+    monkeypatch.setattr(AppConfig, 'async_mode', False)
+
+
+@pytest.fixture
+def async_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fuerza el feature flag `AppConfig.async_mode=True` (encoder + SQS).
+
+    Default del proyecto pero los tests lo declaran explicitamente para
+    documentar intencion y resistir cambios futuros del default.
+    """
+    from settings.config import AppConfig
+
+    monkeypatch.setattr(AppConfig, 'async_mode', True)
+
+
+@pytest.fixture
+def captured_queue(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura las llamadas a `send_to_queue` del encoder async.
+
+    Reemplaza `shared.queue.send_to_queue` (importado en
+    `services.tracking_service` como `send_to_queue`) por un fake que
+    registra cada kwargs y retorna un MessageId predecible.
+    """
+    captured: list[dict] = []
+
+    def _fake_send_to_queue(**kwargs: object) -> str:
+        captured.append(dict(kwargs))
+        return 'fake-message-id-0001'
+
+    monkeypatch.setattr(
+        'services.tracking_service.send_to_queue', _fake_send_to_queue
+    )
+    return captured
+
+
+@pytest.fixture
+def neon_off(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
+    """Garantiza que el encoder async NO toca Neon.
+
+    Mockea `db_session`, `ensure_session_and_visit` e `insert_tracking`
+    de `services.tracking_service` para que cada invocacion lance un
+    AssertionError si el codigo los llamara. Devuelve un contador
+    (siempre 0 al final del test si todo OK) para asserts adicionales.
+    """
+    from contextlib import contextmanager
+
+    counter = {'db_session': 0, 'ensure_session_and_visit': 0, 'insert': 0}
+
+    @contextmanager
+    def _explode_db_session():
+        counter['db_session'] += 1
+        raise AssertionError('encoder async NO debe abrir db_session()')
+        yield  # pragma: no cover
+
+    def _explode_ensure(*args: object, **kwargs: object) -> tuple[str, str]:
+        counter['ensure_session_and_visit'] += 1
+        raise AssertionError(
+            'encoder async NO debe llamar ensure_session_and_visit'
+        )
+
+    def _explode_insert(*args: object, **kwargs: object) -> None:
+        counter['insert'] += 1
+        raise AssertionError('encoder async NO debe llamar insert_tracking')
+
+    monkeypatch.setattr(
+        'services.tracking_service.db_session', _explode_db_session
+    )
+    monkeypatch.setattr(
+        'services.tracking_service.ensure_session_and_visit', _explode_ensure
+    )
+    monkeypatch.setattr(
+        'services.tracking_service.insert_tracking', _explode_insert
+    )
+    return counter

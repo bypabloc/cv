@@ -617,6 +617,34 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(lightningcss@1.32.0)
 
+  packages/mcp:
+    dependencies:
+      '@portfolio/content':
+        specifier: workspace:*
+        version: link:../content
+    devDependencies:
+      '@modyfi/vite-plugin-yaml':
+        specifier: ^1.1.1
+        version: 1.1.1(rollup@4.60.3)(vite@7.3.3(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.9.0))
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@vitest/coverage-v8':
+        specifier: ^2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@24.12.4)(happy-dom@15.11.7)(lightningcss@1.32.0))
+      js-yaml:
+        specifier: ^4.1.1
+        version: 4.1.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.3
+        version: 7.3.3(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.9.0)
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@24.12.4)(happy-dom@15.11.7)(lightningcss@1.32.0)
+
   packages/seo:
     dependencies:
       '@portfolio/content':

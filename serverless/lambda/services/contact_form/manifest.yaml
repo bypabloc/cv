@@ -21,6 +21,13 @@ memory: 384       # MB — 256 daba poca CPU al handler (INIT ~200MB).
                   # + SQS publish con holgura.
 timeout: 15       # segundos — incluye Turnstile siteverify HTTP (1-2s)
 
+# SnapStart: reduce cold start de 3.4s a ~830ms (Restore Duration).
+# Cuando true, cada deploy hace publish-version + update-alias `live`,
+# y el trigger HTTP apunta al alias `:live` (no $LATEST).
+# Critico para /contact: low traffic prod hace que cada submit pague
+# cold start (no se mantiene warm como /track).
+snap_start: true
+
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend.
 trigger:

@@ -49,8 +49,9 @@ async function disableSendBeacon(page: Page): Promise<void> {
 }
 
 /**
- * Intercepta el `POST /contact` (al API Gateway), responde 201 y captura el
- * body en el array devuelto.
+ * Intercepta el `POST /contact` (al API Gateway), responde 202 (modo async
+ * actual: el encoder publica a SQS y el worker procesa despues) y captura
+ * el body en el array devuelto.
  */
 async function captureContactPosts(page: Page): Promise<ContactPayload[]> {
   const captured: ContactPayload[] = []
@@ -65,11 +66,12 @@ async function captureContactPosts(page: Page): Promise<ContactPayload[]> {
       }
     }
     await route.fulfill({
-      status: 201,
+      status: 202,
       contentType: 'application/json',
       body: JSON.stringify({
         contact_id: '019e28fc-b97d-7d79-91a5-44c9b19465b4',
         created_at: new Date().toISOString(),
+        accepted: true,
       }),
     })
   })

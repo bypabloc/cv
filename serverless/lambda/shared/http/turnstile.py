@@ -81,7 +81,7 @@ def _load_bypass_secret() -> str:
     Resuelve el bypass secret. Solo se llama si STAGE in {dev,local}.
 
     Catalogo: resources/secrets/turnstile-bypass-secret.yaml. Cloud:
-    devtools inyecta SSM_TURNSTILE_BYPASS_PATH; local: TURNSTILE_BYPASS_SECRET.
+    devtools inyecta SSM_TURNSTILE_BYPASS_SECRET_PATH; local: TURNSTILE_BYPASS_SECRET.
 
     Si ninguna env var esta configurada, retorna string vacio (bypass
     queda inerte, regla #2).

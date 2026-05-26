@@ -209,7 +209,7 @@ class TestVerifyTurnstileToken:
         """
         monkeypatch.setenv('STAGE', 'dev')
         monkeypatch.setenv(
-            'SSM_TURNSTILE_BYPASS_PATH',
+            'SSM_TURNSTILE_BYPASS_SECRET_PATH',
             '/portfolio/dev/turnstile-bypass-secret',
         )
         monkeypatch.setattr(

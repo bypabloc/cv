@@ -193,8 +193,9 @@ class TestRender:
         assert rendered.trigger.path == '/contact'
 
     def test_render_when_invalid_trigger_raises_manifest_error(self):
-        from serverless import provisioner
         from serverless.resolve import ManifestError
+
+        from serverless import provisioner
 
         manifest = _manifest_direct()
         manifest['trigger'] = {'type': 'cron'}
@@ -207,8 +208,9 @@ class TestProvisionCreate:
     """provision() con Action.CREATE corre la secuencia completa."""
 
     def test_provision_create_call_order(self, monkeypatch):
-        from serverless import provisioner
         from serverless.state import Action
+
+        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(
@@ -244,6 +246,9 @@ class TestProvisionCreate:
             'lambda.create-function',
             'ssm.get-parameter',
             'ssm.get-parameter',
+            # Idempotencia: get-resources verifica si /path ya existe
+            # antes de create-resource (evita BadRequest en re-corrida).
+            'apigateway.get-resources',
             'apigateway.create-resource',
             'apigateway.put-method',
             'apigateway.put-integration',
@@ -257,8 +262,9 @@ class TestProvisionCreate:
         assert state.resources['function_name'] == 'portfolio-contact-form-dev'
 
     def test_provision_create_records_resources(self, monkeypatch):
-        from serverless import provisioner
         from serverless.state import Action
+
+        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(
@@ -286,6 +292,54 @@ class TestProvisionCreate:
         )
         assert state.resources['api_resource_id'] == 'res9'
 
+    def test_provision_create_reuses_existing_api_resource(self, monkeypatch):
+        """Si /path ya existe en el API GW (re-corrida tras deploy parcial),
+        reutilizar su id y NO llamar create-resource."""
+        from serverless.aws_cli import AwsResult
+        from serverless.state import Action
+
+        from serverless import provisioner
+
+        calls = []
+        responses = _default_responses()
+        # get-resources devuelve el id existente via stdout (text output).
+        existing_resource_id = 'existing-res-id-42'
+
+        def fake(args, **_kwargs):
+            calls.append(args)
+            key = '.'.join(args[:2])
+            if key == 'apigateway.get-resources':
+                return AwsResult(
+                    returncode=0,
+                    stdout=existing_resource_id,
+                    stderr='',
+                    json=None,
+                )
+            return AwsResult(
+                returncode=0,
+                stdout='',
+                stderr='',
+                json=responses.get(key),
+            )
+
+        monkeypatch.setattr(provisioner, 'aws', fake)
+        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
+
+        rendered = provisioner.render(_manifest_http(), stage='dev')
+        state = provisioner.provision(
+            rendered,
+            action=Action.CREATE,
+            zip_path=_ZIP_PATH,
+            previous=None,
+            profile=None,
+            region='us-east-1',
+        )
+
+        verbs = ['.'.join(c[:2]) for c in calls]
+        assert 'apigateway.get-resources' in verbs
+        assert 'apigateway.create-resource' not in verbs
+        assert state.resources['api_resource_id'] == existing_resource_id
+
 
 class TestProvisionUpdate:
     """provision() con Action.UPDATE_* corre solo lo que cambio."""
@@ -293,9 +347,10 @@ class TestProvisionUpdate:
     def test_provision_update_code_only_calls_update_function_code(
         self, monkeypatch
     ):
-        from serverless import provisioner
         from serverless.state import Action
         from serverless.state import LambdaState
+
+        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(provisioner, 'aws', _fake_aws(calls))
@@ -327,9 +382,10 @@ class TestProvisionUpdate:
     def test_provision_update_config_calls_config_and_role_policy(
         self, monkeypatch
     ):
-        from serverless import provisioner
         from serverless.state import Action
         from serverless.state import LambdaState
+
+        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(
@@ -378,9 +434,10 @@ class TestProvisionUpdate:
         assert role_arn == 'arn:aws:iam::111122223333:role/portfolio-x'
 
     def test_provision_update_both_runs_code_and_config(self, monkeypatch):
-        from serverless import provisioner
         from serverless.state import Action
         from serverless.state import LambdaState
+
+        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(
@@ -420,9 +477,10 @@ class TestProvisionUpdate:
         ]
 
     def test_provision_noop_makes_no_aws_calls(self, monkeypatch):
-        from serverless import provisioner
         from serverless.state import Action
         from serverless.state import LambdaState
+
+        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(provisioner, 'aws', _fake_aws(calls))
@@ -454,10 +512,11 @@ class TestProvisionPartialFailure:
     def test_provision_partial_failure_records_created_resources(
         self, monkeypatch
     ):
-        from serverless import provisioner
         from serverless.aws_cli import AwsError
         from serverless.aws_cli import AwsResult
         from serverless.state import Action
+
+        from serverless import provisioner
 
         calls = []
         responses = _default_responses()
@@ -508,9 +567,10 @@ class TestDeprovision:
     """deprovision() borra los recursos en orden inverso al de creacion."""
 
     def test_deprovision_reverse_order(self, monkeypatch):
-        from serverless import provisioner
         from serverless.aws_cli import AwsResult
         from serverless.state import LambdaState
+
+        from serverless import provisioner
 
         calls = []
 
@@ -558,9 +618,10 @@ class TestDeprovision:
     def test_deprovision_stream_deletes_event_source_mappings(
         self, monkeypatch
     ):
-        from serverless import provisioner
         from serverless.aws_cli import AwsResult
         from serverless.state import LambdaState
+
+        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(

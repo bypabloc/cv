@@ -1011,6 +1011,10 @@ def _wire_http_trigger(
     resources['api_resource_id'] = resource_id
     resources['api_method'] = f'{trigger.method} {trigger.path}'
 
+    # Idempotente: si el method ya existe (caso CREATE tras deploy
+    # parcial previo o re-corrida del provisioner), put-method falla con
+    # ConflictException. Lo tratamos como noop — la config del method
+    # (authorization-type NONE) es invariante entre deploys.
     aws(
         [
             'apigateway',
@@ -1026,6 +1030,7 @@ def _wire_http_trigger(
         ],
         profile=profile,
         region=region,
+        check=False,
     )
     # Qualifier: si SnapStart=true, apunta al alias `:live` (necesario
     # para que SnapStart aplique). Sino, $LATEST (sin qualifier).

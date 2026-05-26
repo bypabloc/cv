@@ -46,6 +46,13 @@ from shared.observability.tracer import tracer
 
 __version__ = '4.0.0'
 
+# NOTA: el SnapStart warmup hook (register_warmup) fue removido en este
+# commit porque causaba INIT timeout de 11-12s en el lambda (max 10s).
+# El modulo shared/lambda_kit/snap_start_warmup.py sigue disponible para
+# futuro uso pero requiere investigacion del root cause antes de
+# re-activarlo. La paralelizacion del rate_limit del PR #153 sigue
+# activa y aporta el speedup principal del plan latency-optim.
+
 # Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
 _EVENT_MODEL = build_event_model(OPERATIONS)
 

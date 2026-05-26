@@ -115,7 +115,7 @@ def register_warmup(clients: list[str]) -> None:
                 client_name,
                 elapsed_ms,
             )
-        except Exception as exc:  # noqa: BLE001 — fail-safe deliberado
+        except Exception as exc:
             _logger.warning(
                 '[snap_start_warmup] %s: failed (%s: %s)',
                 client_name,

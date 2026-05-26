@@ -200,6 +200,7 @@ class RenderedLambda:
     handler: str
     memory: int
     timeout: int
+    snap_start: bool = False
     env_vars: dict[str, str] = field(default_factory=dict)
     iam_policy: dict[str, Any] = field(default_factory=dict)
     trigger: TriggerSpec = field(default_factory=lambda: TriggerSpec('direct'))
@@ -555,6 +556,7 @@ def render(manifest: dict[str, Any], *, stage: str) -> RenderedLambda:
         handler=str(manifest['handler']),
         memory=int(manifest.get('memory', 256)),
         timeout=int(manifest.get('timeout', 30)),
+        snap_start=bool(manifest.get('snap_start', False)),
         env_vars=_build_env_vars(manifest, stage),
         iam_policy=iam_policy,
         trigger=_build_trigger(manifest),
@@ -1002,10 +1004,13 @@ def _wire_http_trigger(
         profile=profile,
         region=region,
     )
+    # Qualifier: si SnapStart=true, apunta al alias `:live` (necesario
+    # para que SnapStart aplique). Sino, $LATEST (sin qualifier).
+    qualifier = _snap_start_qualifier(rendered)
     invoke_arn = (
         f'arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/'
         f'arn:aws:lambda:{region}:{account}:function:'
-        f'{rendered.function_name}/invocations'
+        f'{rendered.function_name}{qualifier}/invocations'
     )
     aws(
         [
@@ -1056,23 +1061,28 @@ def _wire_http_trigger(
         f'arn:aws:execute-api:{region}:{account}:{api_id}/{stage}/'
         f'{trigger.method}{trigger.path}'
     )
+    permission_args = [
+        'lambda',
+        'add-permission',
+        '--function-name',
+        rendered.function_name,
+        '--statement-id',
+        f'apigw-{stage}',
+        '--action',
+        'lambda:InvokeFunction',
+        '--principal',
+        'apigateway.amazonaws.com',
+        '--source-arn',
+        source_arn,
+    ]
+    if rendered.snap_start:
+        permission_args += ['--qualifier', _SNAP_START_ALIAS]
+        permission_args[5] = f'apigw-{stage}-live'  # statement-id distinto
     aws(
-        [
-            'lambda',
-            'add-permission',
-            '--function-name',
-            rendered.function_name,
-            '--statement-id',
-            f'apigw-{stage}',
-            '--action',
-            'lambda:InvokeFunction',
-            '--principal',
-            'apigateway.amazonaws.com',
-            '--source-arn',
-            source_arn,
-        ],
+        permission_args,
         profile=profile,
         region=region,
+        check=False,  # Idempotente: el statement-id puede ya existir
     )
 
 
@@ -1228,6 +1238,15 @@ def _provision_create(
         region=region,
         resources=resources,
     )
+    if rendered.snap_start:
+        _ensure_snap_start_config(rendered, profile=profile, region=region)
+        alias_arn = _publish_and_update_alias(
+            rendered,
+            profile=profile,
+            region=region,
+        )
+        if alias_arn:
+            resources['snap_start_alias_arn'] = alias_arn
     _wire_trigger(
         rendered,
         rendered.function_name.rsplit('-', 1)[-1],
@@ -1262,6 +1281,154 @@ def _wait_function_active(
     )
 
 
+# --------------------------------------------------------------------------
+# SnapStart (publish-version + alias `live`)
+# --------------------------------------------------------------------------
+_SNAP_START_ALIAS = 'live'
+
+
+def _ensure_snap_start_config(
+    rendered: RenderedLambda,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Aplica `--snap-start ApplyOn=PublishedVersions` (idempotente).
+
+    Si la funcion ya tiene SnapStart activo, este update es no-op (AWS
+    devuelve la misma config sin cambios). Si no, lo activa.
+    """
+    target = 'PublishedVersions' if rendered.snap_start else 'None'
+    current = aws(
+        [
+            'lambda',
+            'get-function-configuration',
+            '--function-name',
+            rendered.function_name,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    current_apply = (
+        (current.json or {}).get('SnapStart', {}).get('ApplyOn', 'None')
+    )
+    if current_apply == target:
+        return
+    _wait_function_active(
+        rendered.function_name,
+        profile=profile,
+        region=region,
+    )
+    aws(
+        [
+            'lambda',
+            'update-function-configuration',
+            '--function-name',
+            rendered.function_name,
+            '--snap-start',
+            f'ApplyOn={target}',
+        ],
+        profile=profile,
+        region=region,
+    )
+
+
+def _publish_and_update_alias(
+    rendered: RenderedLambda,
+    *,
+    profile: str | None,
+    region: str,
+) -> str | None:
+    """Publica nueva version + actualiza alias `live` para SnapStart.
+
+    Solo se invoca cuando `rendered.snap_start=True`. Returns el ARN del
+    alias (o None si snap_start=False).
+    """
+    if not rendered.snap_start:
+        return None
+    _wait_function_active(
+        rendered.function_name,
+        profile=profile,
+        region=region,
+    )
+    pub = aws(
+        [
+            'lambda',
+            'publish-version',
+            '--function-name',
+            rendered.function_name,
+            '--description',
+            f'devtools deploy at {now_iso()}',
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+    )
+    version = (pub.json or {}).get('Version')
+    if not version:
+        raise RuntimeError(
+            f'publish-version de {rendered.function_name} no retorno Version',
+        )
+
+    # Crear o actualizar alias `live`.
+    existing = aws(
+        [
+            'lambda',
+            'get-alias',
+            '--function-name',
+            rendered.function_name,
+            '--name',
+            _SNAP_START_ALIAS,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    if existing.ok:
+        aws(
+            [
+                'lambda',
+                'update-alias',
+                '--function-name',
+                rendered.function_name,
+                '--name',
+                _SNAP_START_ALIAS,
+                '--function-version',
+                version,
+            ],
+            profile=profile,
+            region=region,
+        )
+        alias_arn = (existing.json or {}).get('AliasArn', '')
+    else:
+        created = aws(
+            [
+                'lambda',
+                'create-alias',
+                '--function-name',
+                rendered.function_name,
+                '--name',
+                _SNAP_START_ALIAS,
+                '--function-version',
+                version,
+            ],
+            profile=profile,
+            region=region,
+            parse_json=True,
+        )
+        alias_arn = (created.json or {}).get('AliasArn', '')
+    print(f'  OK  alias {_SNAP_START_ALIAS} -> version {version}')
+    return alias_arn
+
+
+def _snap_start_qualifier(rendered: RenderedLambda) -> str:
+    """Sufijo de qualifier para integraciones: `:live` o `` (vacio)."""
+    return f':{_SNAP_START_ALIAS}' if rendered.snap_start else ''
+
+
 def _provision_update_code(
     rendered: RenderedLambda,
     zip_path: Path,
@@ -1269,7 +1436,12 @@ def _provision_update_code(
     profile: str | None,
     region: str,
 ) -> None:
-    """Secuencia `Action.UPDATE_CODE`: solo `update-function-code`."""
+    """Secuencia `Action.UPDATE_CODE`: solo `update-function-code`.
+
+    Si `snap_start=True`: tras el update, publish-version genera un nuevo
+    snapshot y el alias `live` se mueve a esa version, exponiendo el
+    nuevo codigo al trigger (API GW/SQS apuntan a `:live`).
+    """
     _wait_function_active(
         rendered.function_name, profile=profile, region=region
     )
@@ -1285,6 +1457,9 @@ def _provision_update_code(
         profile=profile,
         region=region,
     )
+    if rendered.snap_start:
+        _ensure_snap_start_config(rendered, profile=profile, region=region)
+        _publish_and_update_alias(rendered, profile=profile, region=region)
 
 
 def _provision_update_config(
@@ -1342,6 +1517,9 @@ def _provision_update_config(
         profile=profile,
         region=region,
     )
+    if rendered.snap_start:
+        _ensure_snap_start_config(rendered, profile=profile, region=region)
+        _publish_and_update_alias(rendered, profile=profile, region=region)
 
 
 def provision(

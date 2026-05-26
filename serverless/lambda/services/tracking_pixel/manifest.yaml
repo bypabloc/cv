@@ -17,7 +17,7 @@ description: Encoder de eventos de tracking (valida + rate-limit + encola SQS).
 runtime: python3.13
 handler: core.handler.lambda_handler
 memory: 128       # MB — encoder ligero (antes 256, era el sync path)
-timeout: 5        # segundos — encoder responde rapido (antes 10)
+timeout: 10       # segundos — primer call cold paga SSM + boto3 init
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend. devtools conecta la

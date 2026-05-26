@@ -10,6 +10,15 @@ cosas:
      Sin tocar AWS. Es lo testeable.
   2. `provision(rendered, action, ...)` — ejecuta las llamadas AWS CLI
      segun la `Action` que decidio `state.diff` (CREATE / UPDATE_* ).
+     En UPDATE_CONFIG y UPDATE_BOTH, ademas, llama a
+     `_rewire_trigger_on_update` para que cambios en `trigger.*` y
+     `snap_start` se materializen en API GW / EventSourceMapping
+     (URI con qualifier `:live`, statement-id del add-permission).
+     El wiring corre `_cleanup_legacy_permissions` antes del
+     add-permission canonico, borrando statements obsoletos del
+     resource-policy del Lambda (legacy SAM o devtools previo con
+     qualifier distinto), scoped por `source_arn` para NO tocar
+     permisos legitimos de otros origenes.
   3. `deprovision(state, ...)` — borra los recursos en orden inverso.
 
 La traduccion `uses` -> IAM resuelve los ARNs a strings concretos
@@ -20,8 +29,10 @@ identificadores de infra (Stream ARN, ApiId) se leen de SSM con
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+import json
 import time
 from typing import TYPE_CHECKING
 from typing import Any
@@ -946,6 +957,78 @@ def _wire_cors_options(
     )
 
 
+def _cleanup_legacy_permissions(
+    *,
+    function_name: str,
+    keep_sid: str,
+    source_arn: str,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Borra statements obsoletos del resource-policy del Lambda.
+
+    Scoped al mismo `source_arn`: solo elimina statements cuyo SourceArn
+    apunta al mismo path API GW (`POST /contact` para contact-form) y
+    cuyo Sid no es `keep_sid`. Asi NO toca permisos legitimos de otros
+    origenes (EventBridge, otra API GW, otro path).
+
+    Cubre 2 casos reales:
+    - Statement legacy de SAM (`portfolio-backend-<stage>-...Permission...`),
+      que devtools nunca limpio tras la migracion de SAM a AWS CLI directo.
+    - Statement viejo de devtools cuando cambio el qualifier (`apigw-dev`
+      sin live -> `apigw-dev-live` tras activar snap_start).
+
+    Idempotente: si el policy no existe (ResourceNotFoundException) o
+    no hay statements obsoletos, no-op.
+    """
+    pol_result = aws(
+        [
+            'lambda',
+            'get-policy',
+            '--function-name',
+            function_name,
+            '--query',
+            'Policy',
+            '--output',
+            'text',
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+    raw = (pol_result.stdout or '').strip()
+    if not raw or pol_result.returncode != 0:
+        return
+    try:
+        policy = json.loads(raw)
+    except (ValueError, TypeError):
+        return
+    for stmt in policy.get('Statement', []) or []:
+        sid = stmt.get('Sid', '')
+        if not sid or sid == keep_sid:
+            continue
+        cond_arn = (
+            stmt.get('Condition', {})
+            .get('ArnLike', {})
+            .get('AWS:SourceArn', '')
+        )
+        if cond_arn != source_arn:
+            continue
+        aws(
+            [
+                'lambda',
+                'remove-permission',
+                '--function-name',
+                function_name,
+                '--statement-id',
+                sid,
+            ],
+            profile=profile,
+            region=region,
+            check=False,
+        )
+
+
 def _wire_http_trigger(
     rendered: RenderedLambda,
     stage: str,
@@ -1089,13 +1172,26 @@ def _wire_http_trigger(
         f'arn:aws:execute-api:{region}:{account}:{api_id}/{stage}/'
         f'{trigger.method}{trigger.path}'
     )
+    target_sid = (
+        f'apigw-{stage}-live' if rendered.snap_start else f'apigw-{stage}'
+    )
+    # Borra statements obsoletos del policy del Lambda (legacy SAM o
+    # statement viejo de devtools cuando cambio el qualifier). Scoped al
+    # mismo source_arn para NO tocar permisos legitimos de otros origenes.
+    _cleanup_legacy_permissions(
+        function_name=rendered.function_name,
+        keep_sid=target_sid,
+        source_arn=source_arn,
+        profile=profile,
+        region=region,
+    )
     permission_args = [
         'lambda',
         'add-permission',
         '--function-name',
         rendered.function_name,
         '--statement-id',
-        f'apigw-{stage}',
+        target_sid,
         '--action',
         'lambda:InvokeFunction',
         '--principal',
@@ -1105,7 +1201,6 @@ def _wire_http_trigger(
     ]
     if rendered.snap_start:
         permission_args += ['--qualifier', _SNAP_START_ALIAS]
-        permission_args[5] = f'apigw-{stage}-live'  # statement-id distinto
     aws(
         permission_args,
         profile=profile,
@@ -1142,6 +1237,45 @@ def _wire_trigger(
             region=region,
             resources=resources,
         )
+
+
+def _rewire_trigger_on_update(
+    rendered: RenderedLambda,
+    stage: str,
+    *,
+    profile: str | None,
+    region: str,
+    resources: dict[str, str | None],
+) -> None:
+    """Re-aplica el wiring del trigger en `provision()` con UPDATE_*.
+
+    Antes de este fix, `_wire_trigger` solo corria en `_provision_create`.
+    Si un manifest cambiaba `trigger.method`, `trigger.path` o
+    `snap_start` (que afecta el qualifier `:live` de la URI de API GW y
+    el statement-id del `add-permission`), el cambio NO se aplicaba al
+    redeployar (solo al borrar+recrear). Tambien dejaba colgando el
+    statement-id legacy de SAM en Lambdas migrados.
+
+    Cada paso de `_wire_trigger` es idempotente:
+    - `get-resources`/`create-resource` reutiliza el resource existente.
+    - `put-method`/`put-integration` aceptan re-aplicacion.
+    - `_cleanup_legacy_permissions` borra obsoletos antes de `add-permission`.
+
+    Solo aplica a triggers `http`. El trigger `sqs` re-wirea su
+    EventSourceMapping en `provision_create` (un cambio de cola obliga
+    a destroy+create, no hay UPDATE) y `direct` no tiene wiring.
+    """
+    if rendered.trigger.type != 'http':
+        return
+    account = _resolve_account(profile=profile, region=region)
+    _wire_trigger(
+        rendered,
+        stage,
+        account,
+        profile=profile,
+        region=region,
+        resources=resources,
+    )
 
 
 def _wire_sqs_trigger(
@@ -1608,11 +1742,25 @@ def provision(
             )
         elif action == _Action.UPDATE_CONFIG:
             _provision_update_config(rendered, profile=profile, region=region)
+            _rewire_trigger_on_update(
+                rendered,
+                stage,
+                profile=profile,
+                region=region,
+                resources=resources,
+            )
         elif action == _Action.UPDATE_BOTH:
             _provision_update_code(
                 rendered, zip_path, profile=profile, region=region
             )
             _provision_update_config(rendered, profile=profile, region=region)
+            _rewire_trigger_on_update(
+                rendered,
+                stage,
+                profile=profile,
+                region=region,
+                resources=resources,
+            )
     except Exception as exc:
         # El estado parcial (con role_arn / log_group ya creados) se
         # adjunta a la excepcion para que el llamador lo persista y la
@@ -1640,6 +1788,7 @@ def rendered_config(rendered: RenderedLambda) -> dict[str, Any]:
     dict[str, Any]
         Campos de config que, al cambiar, fuerzan un re-deploy de config.
     """
+
     return {
         'runtime': rendered.runtime,
         'architecture': rendered.architecture,
@@ -1648,6 +1797,13 @@ def rendered_config(rendered: RenderedLambda) -> dict[str, Any]:
         'timeout': rendered.timeout,
         'env_vars': rendered.env_vars,
         'iam_policy': rendered.iam_policy,
+        # Wiring del trigger: si cambia type/method/path/queue/snap_start
+        # el diff debe materializar el cambio en API GW / EventSourceMapping
+        # (URI con qualifier `:live`, statement-id del add-permission).
+        # Sin esto, el provisioner se queda en NOOP y el cambio queda
+        # registrado solo en el manifest, no en AWS.
+        'trigger': asdict(rendered.trigger),
+        'snap_start': rendered.snap_start,
     }
 
 

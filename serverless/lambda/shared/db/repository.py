@@ -18,9 +18,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import BigInteger, Column, MetaData, String, Table
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    MetaData,
+    String,
+    Table,
+    select,
+    update,
+)
 from sqlalchemy import func as sa_func
-from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session as OrmSession
 
@@ -127,6 +134,69 @@ def insert_tracking(session: OrmSession, payload: dict[str, Any]) -> None:
     `session_id` Y `visit_id` (ambas FKs NOT NULL).
     """
     session.add(TrackingEvent(**payload))
+
+
+def insert_contact_idempotent(
+    session: OrmSession, payload: dict[str, Any],
+) -> bool:
+    """INSERT en contacts con ON CONFLICT (id) DO NOTHING.
+
+    Para los workers async (spec lambdas-async-sqs). Si SQS re-entrega
+    el mismo mensaje (same contact_id UUIDv7 pre-generado por el
+    encoder), el INSERT es no-op.
+
+    Returns
+    -------
+    bool
+        True si la fila se inserto; False si ya existia. Detecta el
+        caso via `RETURNING id`: el statement retorna 1 fila si hubo
+        INSERT real, 0 filas si `ON CONFLICT DO NOTHING` corto el
+        INSERT. NO confiar en `result.rowcount` con
+        `on_conflict_do_nothing` — psycopg/SQLAlchemy reportan rowcount
+        inconsistente segun el driver (verificado en runtime: row se
+        inserta pero rowcount llega como 0 en algunas combinaciones).
+        El worker usa este bool para decidir si manda email (evita
+        duplicados de notificacion).
+    """
+    stmt = (
+        pg_insert(Contact)
+        .values(**payload)
+        .on_conflict_do_nothing(index_elements=['id'])
+        .returning(Contact.id)
+    )
+    result = session.execute(stmt)
+    return result.first() is not None
+
+
+def insert_tracking_idempotent(
+    session: OrmSession, payload: dict[str, Any],
+) -> bool:
+    """INSERT en tracking_events con ON CONFLICT (PK compuesta) DO NOTHING.
+
+    Para el tracking_worker (spec lambdas-async-sqs). La PK fisica es
+    (created_at, visit_id, page_id). Para idempotencia:
+      - `created_at` y `page_id` los pre-genera el ENCODER.
+      - `visit_id` lo resuelve `ensure_session_and_visit` (UPSERT
+        idempotente); en el segundo intento del mismo mensaje, las
+        keys del visit coinciden y reusa el mismo visit_id.
+
+    Returns
+    -------
+    bool
+        True si inserto; False si ya existia. Detecta el caso via
+        `RETURNING created_at` (ver nota en `insert_contact_idempotent`
+        sobre por que NO confiar en `rowcount`).
+    """
+    stmt = (
+        pg_insert(TrackingEvent)
+        .values(**payload)
+        .on_conflict_do_nothing(
+            index_elements=['created_at', 'visit_id', 'page_id'],
+        )
+        .returning(TrackingEvent.created_at)
+    )
+    result = session.execute(stmt)
+    return result.first() is not None
 
 
 # Las 6 claves del visit-trigger (decision 9 del plan). Cambio en

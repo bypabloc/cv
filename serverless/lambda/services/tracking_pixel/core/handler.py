@@ -35,6 +35,7 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
+from settings.config import AppConfig
 from settings.operations import OPERATIONS
 from shared.lambda_kit import build_event_model, http_handler
 from shared.observability.logger import logger
@@ -56,14 +57,20 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Entrypoint Lambda tracking_pixel (POST /track).
 
     Delega en `http_handler` con CORS publico (`*`, exigido por
-    navigator.sendBeacon en modo ping), HTTP 204 fire-and-forget y las 3
-    metricas CloudWatch (Received/Rejected/Error).
+    navigator.sendBeacon en modo ping). El status code de exito depende
+    del feature flag `AppConfig.async_mode`:
+
+      - True  -> HTTP 202 (Accepted; el worker persistira async).
+      - False -> HTTP 204 (fire-and-forget legacy; sync write a Neon).
+
+    Las 3 metricas CloudWatch (Received/Rejected/Error) son las mismas
+    en ambos modos.
     """
     return http_handler(
         event,
         event_model=_EVENT_MODEL,
         cors_origin='public',
-        success_status=204,
+        success_status=202 if AppConfig.async_mode else 204,
         metric_names={
             'submitted': 'TrackingEventReceived',
             'rejected': 'TrackingEventRejected',

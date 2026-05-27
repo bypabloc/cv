@@ -37,6 +37,7 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
+from settings.config import AppConfig
 from settings.operations import OPERATIONS
 from shared.lambda_kit import build_event_model, http_handler
 from shared.observability.logger import logger
@@ -57,14 +58,21 @@ _EVENT_MODEL = build_event_model(OPERATIONS)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Entrypoint Lambda contact_form (POST /contact).
 
-    Delega en `http_handler` con CORS echo (form del visitante), HTTP 201
-    en exito y las 3 metricas CloudWatch (Submitted/Rejected/Error).
+    Delega en `http_handler` con CORS echo (form del visitante) y las 3
+    metricas CloudWatch (Submitted/Rejected/Error).
+
+    El status de exito depende del feature flag `ASYNC_MODE`:
+      - `true`  (encoder): HTTP 202 Accepted (publicacion a SQS).
+      - `false` (sync legacy): HTTP 201 Created (persistencia inmediata).
+
+    `AppConfig.async_mode` se evalua en el cold start (module-scope), asi
+    que el if dentro del handler NO penaliza invocaciones warm.
     """
     return http_handler(
         event,
         event_model=_EVENT_MODEL,
         cors_origin='echo',
-        success_status=201,
+        success_status=202 if AppConfig.async_mode else 201,
         metric_names={
             'submitted': 'ContactFormSubmitted',
             'rejected': 'ContactFormRejected',

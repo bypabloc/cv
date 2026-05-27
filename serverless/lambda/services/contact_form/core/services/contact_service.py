@@ -40,6 +40,7 @@ from shared.db.repository import ensure_session_and_visit, insert_contact
 from shared.db.session import db_session
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
+from shared.queue import send_to_queue
 
 # templates/ vive dentro de core/ para que el deploy lo incluya en el zip.
 # Este archivo esta en core/services/, asi que parents[1] = core/.
@@ -232,7 +233,8 @@ def send_owner_email(contact: dict[str, Any]) -> str:
     # En cloud: devtools inyecta SSM_<UPPER>_PATH (path SSM); en local,
     # devtools inyecta <source_env_var> (valor directo).
     from_address = get_secret_by_name(
-        'ses-from-address', local_env='EMAIL_FROM',
+        'ses-from-address',
+        local_env='EMAIL_FROM',
     )
     recipients = parse_recipients(
         get_secret_by_name('owner-email', local_env='OWNER_EMAIL'),
@@ -364,3 +366,97 @@ def process_contact_form(
         )
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Modo async (encoder): publica el mensaje a SQS hacia `contact_worker`.
+# ---------------------------------------------------------------------------
+
+
+def enqueue_contact_message(
+    *,
+    contact_id: str,
+    created_at: datetime,
+    form_fields: dict[str, Any],
+    session_id: str,
+    ip: str,
+    country: str | None,
+    user_agent: str | None,
+    origin_niche: str | None,
+) -> str:
+    """Encola el mensaje SQS hacia el Lambda `contact_worker`.
+
+    Modo `ASYNC_MODE=true`: el encoder NO toca Neon ni SES — publica el
+    payload validado a la cola `portfolio-contact-form-${stage}` y el
+    worker hace la persistencia + email de forma asincrona.
+
+    El payload SIGUE el shape de `ContactQueueMessage` (definido en
+    `contact_worker/core/models/message.py`). NO importamos ese modelo
+    aca para mantener la independencia de deploy entre los dos Lambdas:
+    el shape se mantiene compatible via tests.
+
+    Parameters
+    ----------
+    contact_id : str
+        UUIDv7 pre-generado por el encoder. Clave de idempotencia: SQS
+        puede re-entregar el mensaje y el worker hace
+        `ON CONFLICT (id) DO NOTHING`.
+    created_at : datetime
+        Timestamp de cuando el encoder acepto el form.
+    form_fields : dict[str, Any]
+        Campos del form ya validados (sin `cf_token` ni `_meta`).
+        Incluye `session_id` resuelto.
+    session_id, ip, country, user_agent : str | None
+        Metadata HTTP del request (la usa el worker para
+        `ensure_session_and_visit`).
+    origin_niche : str | None
+        Niche derivado del header Origin con `niche_from_origin`. Si el
+        form ya envia `niche`, el worker prefiere ese.
+
+    Returns
+    -------
+    str
+        SQS MessageId. NO se devuelve al cliente — solo se logea para
+        correlar con CloudWatch.
+
+    Raises
+    ------
+    shared.queue.QueuePublishError
+        Si SQS falla. El controller la deja propagar para que el handler
+        traduzca a HTTP 5xx (NO se hace fallback automatico a sync —
+        comportamiento explicito, ver spec).
+    """
+    # extra: explicit drop de campos sensibles. El cf_token ya fue
+    # consumido por el encoder; jamas debe viajar en el mensaje SQS.
+    payload: dict[str, Any] = {
+        'schema_version': 1,
+        'contact_id': contact_id,
+        'created_at': created_at.isoformat(),
+        'session_id': session_id,
+        'name': form_fields['name'],
+        'email': form_fields['email'],
+        'message': form_fields['message'],
+        'company': form_fields.get('company'),
+        'role': form_fields.get('role'),
+        'service_type': form_fields.get('service_type'),
+        'budget': form_fields.get('budget'),
+        'timeline': form_fields.get('timeline'),
+        'niche': form_fields.get('niche'),
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+        'origin_niche': origin_niche,
+    }
+    message_id = send_to_queue(
+        queue_short_name='contact-form',
+        payload=payload,
+    )
+    logger.info(
+        'contact form enqueued',
+        extra={
+            'contact_id': contact_id,
+            'session_id': session_id,
+            'message_id': message_id,
+        },
+    )
+    return message_id

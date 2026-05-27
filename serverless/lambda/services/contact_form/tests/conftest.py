@@ -67,18 +67,20 @@ def contact_form_aws(
 ) -> Generator[None]:
     """Monta el entorno AWS mockeado del Lambda contact_form.
 
-    Crea con moto las cuatro tablas DynamoDB (contacts, cache,
-    rate-limit-rules, rate-limit-buckets), los tres parametros SSM
-    (turnstile-secret, owner-email, ses-from-address) y la identidad SES
-    `the-full-stack.com`. Setea las env vars que apuntan a esos recursos.
+    Crea con moto las tablas DynamoDB (cache, rate-limit-rules,
+    rate-limit-buckets), los parametros SSM (turnstile-secret,
+    owner-email, ses-from-address), la identidad SES y la cola SQS
+    `portfolio-contact-form-test` (encoder ASYNC_MODE).
+
+    Setea las env vars que apuntan a esos recursos. Spec
+    lambdas-async-sqs (fase 07): el encoder publica a SQS, asi que la
+    cola debe existir en los tests aunque el flujo sync no la use.
     """
     # CONTACTS_TABLE_NAME se elimino (spec direct-neon-writes): el Lambda
     # ya no escribe a DynamoDB.contacts. La connection string de Neon va
     # por DATABASE_URL/DB_URL que mockeamos por test (no hace falta default
     # aqui — los tests que persisten usan mock_neon_writes).
-    monkeypatch.setenv(
-        'DATABASE_URL', 'postgresql://test:test@localhost/test'
-    )
+    monkeypatch.setenv('DATABASE_URL', 'postgresql://test:test@localhost/test')
     monkeypatch.setenv('CACHE_TABLE_NAME', 'portfolio-cache-test')
     monkeypatch.setenv(
         'RATE_LIMIT_RULES_TABLE_NAME', 'portfolio-rate-limit-rules-test'
@@ -102,6 +104,12 @@ def contact_form_aws(
         'https://architect.portfolio.the-full-stack.com,'
         'https://leader.portfolio.the-full-stack.com,'
         'https://vibe.portfolio.the-full-stack.com',
+    )
+    # SSM path donde vive la URL de la cola SQS (resolver del
+    # shared.queue espera SSM_<UPPER_SNAKE>_QUEUE_URL_PATH).
+    monkeypatch.setenv(
+        'SSM_CONTACT_FORM_QUEUE_URL_PATH',
+        '/portfolio-test/sqs/contact-form/url',
     )
 
     with mock_aws():
@@ -165,11 +173,69 @@ def contact_form_aws(
 
         ses = boto3.client('sesv2', region_name='us-east-1')
         ses.create_email_identity(EmailIdentity='the-full-stack.com')
-        ses.create_email_identity(
-            EmailIdentity='no-reply@the-full-stack.com'
+        ses.create_email_identity(EmailIdentity='no-reply@the-full-stack.com')
+
+        # Cola SQS del encoder (ASYNC_MODE=true). Su URL se publica en
+        # SSM bajo el path declarado en SSM_CONTACT_FORM_QUEUE_URL_PATH.
+        sqs = boto3.client('sqs', region_name='us-east-1')
+        queue_url = sqs.create_queue(
+            QueueName='portfolio-contact-form-test',
+        )['QueueUrl']
+        ssm.put_parameter(
+            Name='/portfolio-test/sqs/contact-form/url',
+            Value=queue_url,
+            Type='String',
         )
 
+        # shared.queue cachea el SQS client + el SSM resolver. Limpiar
+        # las caches para que el fixture aisle el estado entre tests.
+        from shared.aws import ssm as _ssm_mod
+        from shared.queue.client import get_sqs_client
+
+        get_sqs_client.cache_clear()
+        if hasattr(_ssm_mod, 'get_secret') and hasattr(
+            _ssm_mod.get_secret,
+            'cache_clear',
+        ):
+            _ssm_mod.get_secret.cache_clear()
+
         yield
+
+
+_SQS_QUEUE_URL = (
+    'https://sqs.us-east-1.amazonaws.com/123456789012/'
+    'portfolio-contact-form-test'
+)
+"""URL determinista de la cola SQS (la real la asigna moto)."""
+
+
+@pytest.fixture
+def mock_sqs(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura los payloads publicados via `shared.queue.send_to_queue`.
+
+    Mockea el helper en `services.contact_service` para evitar tocar
+    SQS en los tests unit del encoder. El test puede inspeccionar el
+    payload exacto que el encoder armaria para el worker.
+
+    Returns
+    -------
+    list[dict]
+        Lista de payloads (dict) que el encoder envio. El test asserta
+        len(captured) y el shape del primero.
+    """
+    captured: list[dict] = []
+    counter = {'n': 0}
+
+    def _fake_send(*, queue_short_name: str, payload: dict, **_kw) -> str:
+        captured.append({'queue': queue_short_name, 'payload': payload})
+        counter['n'] += 1
+        return f'fake-msg-id-{counter["n"]:08d}'
+
+    monkeypatch.setattr(
+        'services.contact_service.send_to_queue',
+        _fake_send,
+    )
+    return captured
 
 
 _STUB_VISIT_ID = '019e5c50-0000-7000-8000-000000000002'
@@ -225,9 +291,7 @@ def mock_neon_writes(
     def _fake_insert_contact(_session: object, payload: dict) -> None:
         captured.append(payload)
 
-    monkeypatch.setattr(
-        'services.contact_service.db_session', _fake_db_session
-    )
+    monkeypatch.setattr('services.contact_service.db_session', _fake_db_session)
     monkeypatch.setattr(
         'services.contact_service.insert_contact', _fake_insert_contact
     )

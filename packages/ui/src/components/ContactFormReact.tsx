@@ -376,7 +376,9 @@ export default function ContactFormReact({
   }, [funnelEventTypes.contactFormStart])
 
   function handleSuccess(contactId: string): void {
-    // Embudo: la respuesta fue 201. Emite `contact_form_success` [AC-6].
+    // Embudo: la respuesta fue 201 (sync legacy) o 202 (async — encoder
+    // publico a SQS y el worker procesara despues). Emite
+    // `contact_form_success` [AC-6].
     trackEvent(funnelEventTypes.contactFormSuccess)
     const record = saveContactRecord(contactId)
     setSentRecord(record)
@@ -463,7 +465,12 @@ export default function ContactFormReact({
         body: JSON.stringify(payload),
       })
       const body = await parseJsonSafe(response)
-      if (response.status === 201 && body?.contact_id) {
+      // 201 (sync legacy) o 202 (async — encoder publico a SQS y el
+      // worker procesara despues). Ambos llevan `contact_id` en el body.
+      if (
+        (response.status === 201 || response.status === 202) &&
+        body?.contact_id
+      ) {
         handleSuccess(body.contact_id)
         return
       }

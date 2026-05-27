@@ -19,6 +19,7 @@ sin un segundo canal de datos paralelo.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -116,9 +117,7 @@ class TrackEventModel(BaseModel):
     # Default vacio: si el handler no lo provee, el modelo no rompe. El
     # http_handler generico lo inyecta como `_meta` (con guion bajo, mismo
     # patron que contact_form para consistencia); aqui se acepta via alias.
-    meta: TrackEventMeta = Field(
-        default_factory=TrackEventMeta, alias='_meta'
-    )
+    meta: TrackEventMeta = Field(default_factory=TrackEventMeta, alias='_meta')
 
     @field_validator('event_props')
     @classmethod
@@ -174,3 +173,18 @@ class TrackEventModel(BaseModel):
             exclude={'cf_token', 'meta'},
             exclude_none=True,
         )
+
+
+class TrackAcceptedOutput(BaseModel):
+    """Response del encoder en modo `ASYNC_MODE=true`.
+
+    El encoder pre-genera `page_id` (UUIDv7) y `created_at` antes de
+    encolar el evento a SQS, asi que ambos viajan en la respuesta sin
+    esperar a que el worker persista. `session_id` se conserva tal cual
+    viene del cliente. `accepted=True` marca la semantica HTTP 202.
+    """
+
+    page_id: str
+    session_id: str
+    created_at: datetime
+    accepted: bool = True

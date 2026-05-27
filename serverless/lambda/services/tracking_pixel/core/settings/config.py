@@ -15,6 +15,7 @@ carga de env vars no detectaria los campos. Las anotaciones deben ser los
 tipos reales.
 """
 
+import os
 from enum import Enum
 
 from shared.lambda_kit import BaseSettings
@@ -111,6 +112,15 @@ class AppConfig(BaseSettings):
 
     # Testing
     testing: str = '0'
+
+    # Feature flag de modo asincrono (encoder). True -> el controller
+    # encola el evento a SQS y responde 202. False -> sync legacy (UA
+    # parsing + escritura directa a Neon + 204). Default True; el sync
+    # path es rollback de emergencia mientras dure el flag.
+    # Se inicializa module-scope (lee la env var ASYNC_MODE en el cold
+    # start). BaseSettings solo carga str/list desde env, por eso este
+    # se resuelve directo via os.environ.
+    async_mode: bool = os.environ.get('ASYNC_MODE', 'true').lower() == 'true'
 
     def is_testing(self) -> bool:
         """Devuelve True si el servicio corre en modo testing."""

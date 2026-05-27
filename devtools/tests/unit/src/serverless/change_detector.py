@@ -242,6 +242,41 @@ class TestDetectAffectedLambdas:
         assert 'contact_form' in result
         assert {'cv', 'db', 'tracking_pixel'}.issubset(result)
 
+    def test_cambio_en_provisioner_dispara_todos_los_lambdas(self):
+        """
+        Given un cambio SOLO en devtools/serverless/provisioner.py,
+        When invoco detect_affected_lambdas,
+        Then devuelve TODOS los lambdas del repo: el provisioner es el
+             motor del deploy, un fix ahi (ej. limpieza del legacy SAM
+             permission) tiene que materializarse en cada lambda.
+        """
+        from serverless.resolve import available_lambdas
+
+        all_lambdas = set(available_lambdas())
+        result = detect_affected_lambdas(
+            base_sha='_unused',
+            head_sha='_unused',
+            lambdas_root=_lambdas_root(),
+            files=['devtools/serverless/provisioner.py'],
+        )
+        assert result == all_lambdas
+
+    def test_cambio_en_otro_archivo_devtools_no_dispara(self):
+        """
+        Given un cambio en devtools/serverless/flags.py (NO esta en la
+            whitelist del motor de deploy),
+        When invoco detect_affected_lambdas,
+        Then devuelve set() (un cambio a flags del CLI no requiere
+             redeployar lambdas).
+        """
+        result = detect_affected_lambdas(
+            base_sha='_unused',
+            head_sha='_unused',
+            lambdas_root=_lambdas_root(),
+            files=['devtools/serverless/flags.py'],
+        )
+        assert result == set()
+
     def test_archivos_irrelevantes_returns_empty(self):
         """
         Given files con solo cambios en docs/ y apps/,

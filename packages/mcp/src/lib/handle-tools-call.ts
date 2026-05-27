@@ -1,12 +1,13 @@
 /**
  * @module handle-tools-call
  * @description Maneja `tools/call` de MCP. Valida params, busca el tool
- *   por nombre, invoca execute, mapea errores a JSON-RPC.
+ *   por nombre, invoca execute con el `MCPDataProvider` inyectado, mapea
+ *   errores a JSON-RPC.
  */
 import { ERROR_CODES, makeError } from './errors'
 import { makeSuccess } from './jsonrpc'
 import { getToolByName } from './tools'
-import type { JsonRpcId, JsonRpcResponse } from './types'
+import type { JsonRpcId, JsonRpcResponse, MCPDataProvider } from './types'
 
 interface CallParams {
   name?: unknown
@@ -16,6 +17,7 @@ interface CallParams {
 export async function handleToolsCall(
   id: JsonRpcId,
   params: unknown,
+  data: MCPDataProvider,
 ): Promise<JsonRpcResponse> {
   if (typeof params !== 'object' || params === null) {
     return makeError(id, ERROR_CODES.INVALID_PARAMS, 'params must be object')
@@ -37,7 +39,7 @@ export async function handleToolsCall(
       ? (p.arguments as Record<string, unknown>)
       : {}
   try {
-    const result = await tool.execute(args)
+    const result = await tool.execute(args, data)
     return makeSuccess(id, result)
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)

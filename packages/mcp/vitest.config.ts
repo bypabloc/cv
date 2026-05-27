@@ -1,14 +1,12 @@
 /**
  * @config vitest
- * @description Vitest config para @portfolio/mcp. Registra vite-plugin-yaml
- *   con JSON_SCHEMA porque las tools importan @portfolio/content (YAMLs).
+ * @description Vitest config para @portfolio/mcp. Tras Fase 1
+ *   (ai-audit-level-4), el package NO importa @portfolio/content en
+ *   runtime; los tests usan fakes/mocks puros. Sin plugin yaml.
  */
-import yaml from '@modyfi/vite-plugin-yaml'
-import { JSON_SCHEMA } from 'js-yaml'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  plugins: [yaml({ schema: JSON_SCHEMA })],
   test: {
     globals: true,
     environment: 'node',

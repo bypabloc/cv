@@ -1,10 +1,10 @@
 /**
  * @module tools/list-projects
  * @description Tool MCP: lista los proyectos del CV, opcionalmente
- *   filtrados por keyword en el stack.
+ *   filtrados por keyword en el stack. Los datos los recibe via
+ *   `MCPDataProvider` inyectado por el caller.
  */
-import { projects } from '@portfolio/content'
-import type { ToolDefinition, ToolResult } from '../types'
+import type { MCPDataProvider, ToolDefinition, ToolResult } from '../types'
 
 export const definition: ToolDefinition = {
   name: 'list_projects',
@@ -24,10 +24,12 @@ export const definition: ToolDefinition = {
 
 export async function execute(
   args: Record<string, unknown>,
+  data: MCPDataProvider,
 ): Promise<ToolResult> {
   const raw = args.tech_stack
   const filter =
     typeof raw === 'string' && raw.trim().length > 0 ? raw.toLowerCase() : null
+  const projects = data.getProjects()
   const filtered = filter
     ? projects.filter((p) =>
         p.stack.some((s) => s.toLowerCase().includes(filter)),

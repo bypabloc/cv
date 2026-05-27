@@ -1,8 +1,11 @@
 /**
  * @description Tests para buildRedirects. Genera el contenido de
- *   _redirects de Cloudflare Pages con 2 reglas activas:
+ *   _redirects de Cloudflare Pages con 1 regla activa:
  *   1. alias /sitemap.xml -> sitemap-index.xml (301)
- *   2. rewrite 200 /.well-known/api-catalog -> .json (evita SPA fallback)
+ *
+ *   El rewrite 200 /.well-known/api-catalog -> .json se ELIMINO en
+ *   ai-audit-level-4: los archivos en .well-known/ no se uploadean
+ *   (regla de dotfiles); ahora los sirven Pages Functions.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -15,12 +18,10 @@ describe('buildRedirects', () => {
     expect(out).toContain('/sitemap.xml /sitemap-index.xml 301')
   })
 
-  it('Given se invoca When build Then incluye rewrite 200 api-catalog -> .json', () => {
+  it('Given se invoca When build Then NO incluye el rewrite legacy de api-catalog', () => {
     const out = buildRedirects()
 
-    expect(out).toContain(
-      '/.well-known/api-catalog /.well-known/api-catalog.json 200',
-    )
+    expect(out).not.toContain('/.well-known/api-catalog')
   })
 
   it('Given se invoca When inspecciono Then termina con newline (req Cloudflare Pages)', () => {
@@ -29,13 +30,10 @@ describe('buildRedirects', () => {
     expect(out.endsWith('\n')).toBe(true)
   })
 
-  it('Given se invoca When cuento reglas Then hay exactamente 2 reglas (sin lineas vacias intermedias)', () => {
+  it('Given se invoca When cuento reglas Then hay exactamente 1 regla', () => {
     const out = buildRedirects()
     const reglas = out.split('\n').filter((linea) => linea.trim().length > 0)
 
-    expect(reglas).toEqual([
-      '/sitemap.xml /sitemap-index.xml 301',
-      '/.well-known/api-catalog /.well-known/api-catalog.json 200',
-    ])
+    expect(reglas).toEqual(['/sitemap.xml /sitemap-index.xml 301'])
   })
 })

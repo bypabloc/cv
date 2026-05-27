@@ -4,10 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { profile } from '@portfolio/content'
 import { renderCvHtml } from '@portfolio/cv-pdf'
 import {
-  buildApiCatalog,
   buildHeaders,
   buildLlmsTxt,
-  buildMcpServerCard,
+  buildOpenApi,
   buildRedirects,
   buildRobotsTxt,
 } from '@portfolio/seo'
@@ -115,22 +114,17 @@ async function main() {
   // 5. _redirects (alias /sitemap.xml -> /sitemap-index.xml)
   await write('_redirects', buildRedirects())
 
-  // 6a. Limpia el archivo viejo .well-known/api-catalog (sin extension)
-  //     que existia antes del fix SPA fallback de Fase 1A. Si no se borra,
-  //     queda colgado en public/ y se sirve junto al .json.
-  await rm(resolve(PUBLIC_DIR, '.well-known/api-catalog'), { force: true })
+  // 6b. /openapi.json (OpenAPI 3.1 spec del backend serverless)
+  //     Servido desde el portfolio (mismo origen), no del API Gateway.
+  //     El api-catalog.json (Pages Function) linkea aqui via service-desc.
+  await write('openapi.json', buildOpenApi({ apiEndpoint: API_ENDPOINT }))
 
-  // 6b. .well-known/api-catalog.json (RFC9727 linkset; _redirects 200 sirve la URL canonica sin .json)
-  await write(
-    '.well-known/api-catalog.json',
-    buildApiCatalog({ siteUrl: SITE_URL, apiEndpoint: API_ENDPOINT }),
-  )
-
-  // 7. .well-known/mcp/server-card.json (MCP server descriptor)
-  await write(
-    '.well-known/mcp/server-card.json',
-    buildMcpServerCard({ siteUrl: SITE_URL }),
-  )
+  // 6. Limpieza historica: .well-known/* eran assets en plan ai-audit-level-3-4
+  //    pero Cloudflare Pages excluye dotdirs del upload (regla de dotfiles).
+  //    Plan ai-audit-level-4 los sirve via Pages Functions
+  //    (apps/<niche>/functions/.well-known/*.ts). Si quedan archivos en
+  //    public/.well-known/ de builds anteriores, eliminarlos.
+  await rm(resolve(PUBLIC_DIR, '.well-known'), { recursive: true, force: true })
 }
 
 main().catch((err) => {

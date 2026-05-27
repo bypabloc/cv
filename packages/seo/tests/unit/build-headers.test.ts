@@ -70,7 +70,7 @@ describe('buildHeaders', () => {
     expect(out).toContain("frame-ancestors 'none'")
   })
 
-  it('Given build When inspecciono Then incluye 3 directivas Link para crawlers IA', () => {
+  it('Given build When inspecciono Then incluye 4 directivas Link para crawlers IA', () => {
     const out = buildHeaders({
       apiEndpoint: 'https://api.portfolio.the-full-stack.com',
     })
@@ -78,14 +78,51 @@ describe('buildHeaders', () => {
     expect(out).toContain(
       'Link: </llms.txt>; rel="alternate"; type="text/plain"; title="llms.txt"',
     )
-    expect(out).toContain('Link: </.well-known/api-catalog>; rel="api-catalog"')
+    expect(out).toContain(
+      'Link: </.well-known/api-catalog.json>; rel="api-catalog"; type="application/linkset+json"',
+    )
+    expect(out).toContain(
+      'Link: </.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"',
+    )
   })
 
-  it('Given build When inspecciono Then expone Content-Type JSON para api-catalog', () => {
+  it('Given build When inspecciono Then expone Content-Type linkset+json para api-catalog (URL canonica)', () => {
     const out = buildHeaders({
       apiEndpoint: 'https://api.portfolio.the-full-stack.com',
     })
     expect(out).toContain('/.well-known/api-catalog\n')
-    expect(out).toContain('  Content-Type: application/json')
+    expect(out).toMatch(
+      /\/\.well-known\/api-catalog\n\s+Content-Type: application\/linkset\+json; charset=UTF-8/,
+    )
+  })
+
+  it('Given build When inspecciono Then expone Content-Type linkset+json para api-catalog.json (path real)', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('/.well-known/api-catalog.json\n')
+    expect(out).toMatch(
+      /\/\.well-known\/api-catalog\.json\n\s+Content-Type: application\/linkset\+json; charset=UTF-8/,
+    )
+  })
+
+  it('Given build When inspecciono Then expone Content-Type text/markdown para /*.md', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('/*.md\n')
+    expect(out).toMatch(
+      /\/\*\.md\n\s+Content-Type: text\/markdown; charset=UTF-8/,
+    )
+  })
+
+  it('Given build When inspecciono Then expone Content-Type JSON para mcp/server-card.json', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('/.well-known/mcp/server-card.json\n')
+    expect(out).toMatch(
+      /\/\.well-known\/mcp\/server-card\.json\n\s+Content-Type: application\/json; charset=UTF-8/,
+    )
   })
 })

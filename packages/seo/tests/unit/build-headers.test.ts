@@ -70,7 +70,7 @@ describe('buildHeaders', () => {
     expect(out).toContain("frame-ancestors 'none'")
   })
 
-  it('Given build When inspecciono Then incluye 3 directivas Link para crawlers IA', () => {
+  it('Given build When inspecciono Then incluye 4 directivas Link para crawlers IA', () => {
     const out = buildHeaders({
       apiEndpoint: 'https://api.portfolio.the-full-stack.com',
     })
@@ -80,6 +80,9 @@ describe('buildHeaders', () => {
     )
     expect(out).toContain(
       'Link: </.well-known/api-catalog.json>; rel="api-catalog"; type="application/linkset+json"',
+    )
+    expect(out).toContain(
+      'Link: </.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"',
     )
   })
 
@@ -110,6 +113,16 @@ describe('buildHeaders', () => {
     expect(out).toContain('/*.md\n')
     expect(out).toMatch(
       /\/\*\.md\n\s+Content-Type: text\/markdown; charset=UTF-8/,
+    )
+  })
+
+  it('Given build When inspecciono Then expone Content-Type JSON para mcp/server-card.json', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).toContain('/.well-known/mcp/server-card.json\n')
+    expect(out).toMatch(
+      /\/\.well-known\/mcp\/server-card\.json\n\s+Content-Type: application\/json; charset=UTF-8/,
     )
   })
 })

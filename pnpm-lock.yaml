@@ -671,6 +671,9 @@ importers:
       '@portfolio/content':
         specifier: workspace:*
         version: link:../content
+      '@portfolio/mcp':
+        specifier: workspace:*
+        version: link:../mcp
     devDependencies:
       '@modyfi/vite-plugin-yaml':
         specifier: ^1.1.1

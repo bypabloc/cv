@@ -55,6 +55,7 @@ export function buildHeaders(opts: { apiEndpoint: string }): string {
     '  Link: </sitemap-index.xml>; rel="sitemap"',
     '  Link: </llms.txt>; rel="alternate"; type="text/plain"; title="llms.txt"',
     '  Link: </.well-known/api-catalog.json>; rel="api-catalog"; type="application/linkset+json"',
+    '  Link: </.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"',
     '',
     // El archivo real vive en .json para evitar el SPA fallback de
     // Cloudflare Pages (rutas sin extension caen en index.html).
@@ -71,6 +72,9 @@ export function buildHeaders(opts: { apiEndpoint: string }): string {
     // Este bloque garantiza el MIME correcto cuando el .md se sirve.
     '/*.md',
     '  Content-Type: text/markdown; charset=UTF-8',
+    '',
+    '/.well-known/mcp/server-card.json',
+    '  Content-Type: application/json; charset=UTF-8',
     '',
   ].join('\n')
 }

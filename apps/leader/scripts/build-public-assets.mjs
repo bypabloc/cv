@@ -6,6 +6,7 @@ import { renderCvHtml } from '@portfolio/cv-pdf'
 import {
   buildApiCatalog,
   buildHeaders,
+  buildMcpServerCard,
   buildLlmsTxt,
   buildRedirects,
   buildRobotsTxt,
@@ -120,6 +121,12 @@ async function main() {
   await write(
     '.well-known/api-catalog.json',
     buildApiCatalog({ siteUrl: SITE_URL, apiEndpoint: API_ENDPOINT }),
+  )
+
+  // 7. .well-known/mcp/server-card.json (MCP server descriptor)
+  await write(
+    '.well-known/mcp/server-card.json',
+    buildMcpServerCard({ siteUrl: SITE_URL }),
   )
 }
 

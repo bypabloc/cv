@@ -4,19 +4,29 @@
  *   portfolio (Model Context Protocol via JSON-RPC 2.0). Wrapper thin
  *   que delega a `@portfolio/mcp` (codigo compartido entre los 6 niches).
  *
- *   Se bundlea con esbuild en el postbuild (apps/<niche>/scripts/
- *   postbuild-functions.mjs) a `dist/functions/mcp.js`. Wrangler la
- *   recoge automaticamente al hacer `pages deploy dist`.
+ *   Los datos del CV vienen de `./_data/cv-snapshot.json` (generado en
+ *   build por `packages/mcp/scripts/build-snapshot.mjs` y escrito por
+ *   `scripts/postbuild-functions.mjs`). NO se importa `@portfolio/content`
+ *   en runtime: ese paquete usa `import.meta.glob` (Vite-only) y el
+ *   runtime de Cloudflare Workers no lo implementa.
+ *
+ *   Se bundlea con esbuild en el postbuild a `dist/functions/mcp.js`.
+ *   Wrangler la recoge automaticamente al hacer `pages deploy dist`.
  */
-import { handleRequest } from '@portfolio/mcp'
+
+import type { CvSnapshot } from '@portfolio/mcp'
+import { createSnapshotProvider, handleRequest } from '@portfolio/mcp'
+import snapshot from './_data/cv-snapshot.json'
 
 interface PagesContext {
   request: Request
 }
 
+const dataProvider = createSnapshotProvider(snapshot as unknown as CvSnapshot)
+
 export const onRequestPost = async (ctx: PagesContext): Promise<Response> => {
   const body = await ctx.request.text()
-  const response = await handleRequest(body)
+  const response = await handleRequest(body, dataProvider)
   return new Response(JSON.stringify(response), {
     status: 200,
     headers: {

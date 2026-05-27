@@ -1,16 +1,10 @@
 /**
  * @module tools/get-cv-section
  * @description Tool MCP: devuelve una seccion del CV en Markdown
- *   (en ingles por default).
+ *   (en ingles por default). Los datos los recibe via `MCPDataProvider`
+ *   inyectado por el caller (la Pages Function).
  */
-import {
-  education,
-  experiences,
-  profile,
-  projects,
-  skills,
-} from '@portfolio/content'
-import type { ToolDefinition, ToolResult } from '../types'
+import type { MCPDataProvider, ToolDefinition, ToolResult } from '../types'
 
 const SECTIONS = [
   'about',
@@ -41,6 +35,7 @@ export const definition: ToolDefinition = {
 
 export async function execute(
   args: Record<string, unknown>,
+  data: MCPDataProvider,
 ): Promise<ToolResult> {
   const section = args.section
   if (typeof section !== 'string' || !isSection(section)) {
@@ -48,7 +43,7 @@ export async function execute(
       `unknown section: ${String(section)}. Valid: ${SECTIONS.join(', ')}`,
     )
   }
-  const text = renderSection(section)
+  const text = renderSection(section, data)
   return { content: [{ type: 'text', text }] }
 }
 
@@ -56,7 +51,8 @@ function isSection(s: string): s is Section {
   return (SECTIONS as readonly string[]).includes(s)
 }
 
-function renderSection(section: Section): string {
+function renderSection(section: Section, data: MCPDataProvider): string {
+  const profile = data.getProfile()
   switch (section) {
     case 'about':
       return [
@@ -73,16 +69,18 @@ function renderSection(section: Section): string {
       return [
         '# Experience',
         '',
-        ...experiences.map((e) =>
-          [
-            `## ${e.role.en} @ ${e.company} (${e.start} - ${e.end ?? 'Present'})`,
-            '',
-            e.summary?.en ?? '',
-            '',
-            '**Achievements**:',
-            ...e.achievements.en.map((a) => `- ${a}`),
-          ].join('\n'),
-        ),
+        ...data
+          .getExperiences()
+          .map((e) =>
+            [
+              `## ${e.role.en} @ ${e.company} (${e.start} - ${e.end ?? 'Present'})`,
+              '',
+              e.summary?.en ?? '',
+              '',
+              '**Achievements**:',
+              ...e.achievements.en.map((a) => `- ${a}`),
+            ].join('\n'),
+          ),
         '',
       ].join('\n\n')
 
@@ -90,16 +88,18 @@ function renderSection(section: Section): string {
       return [
         '# Projects',
         '',
-        ...projects.map((p) =>
-          [
-            `## ${p.name}`,
-            '',
-            p.summary.en,
-            '',
-            `**Stack**: ${p.stack.join(', ')}`,
-            ...(p.url ? [`**URL**: ${p.url}`] : []),
-          ].join('\n'),
-        ),
+        ...data
+          .getProjects()
+          .map((p) =>
+            [
+              `## ${p.name}`,
+              '',
+              p.summary.en,
+              '',
+              `**Stack**: ${p.stack.join(', ')}`,
+              ...(p.url ? [`**URL**: ${p.url}`] : []),
+            ].join('\n'),
+          ),
         '',
       ].join('\n\n')
 
@@ -107,13 +107,15 @@ function renderSection(section: Section): string {
       return [
         '# Skills',
         '',
-        ...skills.map((cat) =>
-          [
-            `## ${cat.name.en}`,
-            '',
-            cat.skills.map((s) => `- ${s}`).join('\n'),
-          ].join('\n'),
-        ),
+        ...data
+          .getSkills()
+          .map((cat) =>
+            [
+              `## ${cat.name.en}`,
+              '',
+              cat.skills.map((s) => `- ${s}`).join('\n'),
+            ].join('\n'),
+          ),
         '',
       ].join('\n\n')
 
@@ -121,7 +123,7 @@ function renderSection(section: Section): string {
       return [
         '# Education',
         '',
-        ...education.map((ed) => {
+        ...data.getEducation().map((ed) => {
           const label = ed.degree?.en ?? ed.institution
           return `- **${label}**, ${ed.institution} (${ed.start ?? '?'} - ${ed.end ?? 'Present'})`
         }),

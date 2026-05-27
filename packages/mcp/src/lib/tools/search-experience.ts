@@ -1,10 +1,10 @@
 /**
  * @module tools/search-experience
  * @description Tool MCP: busca en experiencias por keyword (case-insensitive)
- *   sobre role, company, achievements y skillsTechnical.
+ *   sobre role, company, achievements y skillsTechnical. Los datos los
+ *   recibe via `MCPDataProvider` inyectado por el caller.
  */
-import { experiences } from '@portfolio/content'
-import type { ToolDefinition, ToolResult } from '../types'
+import type { MCPDataProvider, ToolDefinition, ToolResult } from '../types'
 
 export const definition: ToolDefinition = {
   name: 'search_experience',
@@ -24,13 +24,14 @@ export const definition: ToolDefinition = {
 
 export async function execute(
   args: Record<string, unknown>,
+  data: MCPDataProvider,
 ): Promise<ToolResult> {
   const keyword = args.keyword
   if (typeof keyword !== 'string' || keyword.trim().length === 0) {
     throw new Error('keyword must be a non-empty string')
   }
   const kw = keyword.toLowerCase()
-  const matches = experiences.filter((e) => {
+  const matches = data.getExperiences().filter((e) => {
     const haystack = [
       e.role.en,
       e.company,

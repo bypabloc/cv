@@ -30,6 +30,7 @@ export async function bundlePagesFunction(params: BundleParams): Promise<void> {
     platform: 'neutral',
     conditions: ['worker', 'browser'],
     mainFields: ['module', 'main'],
+    loader: { '.json': 'json' },
     sourcemap: false,
     minify: false,
     logLevel: 'warning',

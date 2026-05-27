@@ -18,7 +18,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@portfolio/content": "workspace:*"
+    "@portfolio/content": "workspace:*",
+    "@portfolio/mcp": "workspace:*"
   },
   "devDependencies": {
     "@modyfi/vite-plugin-yaml": "^1.1.1",

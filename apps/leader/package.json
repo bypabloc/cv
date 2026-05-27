@@ -11,7 +11,8 @@
     "astro": "astro",
     "typecheck": "astro check",
     "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs",
-    "predev": "pnpm --filter @portfolio/content run fetch-cache"
+    "predev": "pnpm --filter @portfolio/content run fetch-cache",
+    "postbuild": "vite-node --config scripts/vite.config.ts scripts/postbuild-markdown.mjs && vite-node --config scripts/vite.config.ts scripts/postbuild-functions.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
@@ -20,6 +21,8 @@
     "@portfolio/content": "workspace:*",
     "@portfolio/cv-filters": "workspace:*",
     "@portfolio/cv-pdf": "workspace:*",
+    "@portfolio/mcp": "workspace:*",
+    "@portfolio/markdown-export": "workspace:*",
     "@portfolio/seo": "workspace:*",
     "@portfolio/ui": "workspace:*",
     "@tailwindcss/vite": "^4.0.18",

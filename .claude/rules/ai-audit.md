@@ -176,6 +176,62 @@ Detalle de cada descarte: [.claude/docs/ai-audit/01-tools-evaluadas.md](../docs/
 | Scrapear paths internos sin override explicito | PSI cobra quota por request; gastar en `/404` es desperdicio | Default = home; paths internos via `--targets=` |
 | Re-anadir aibotchecker/Ahrefs/Semrush sin discutir | Ya descartados con razones documentadas | Si crees que reapareciera valor, abrir issue antes de PR |
 
+## Ceiling intencional del score isitagentready
+
+El portfolio NO implementa estos checks por decision arquitectonica:
+
+- `/.well-known/openid-configuration` — el portfolio NO tiene auth real.
+  Publicar un stub OAuth/OIDC es anti-pattern y confunde a los agentes
+  (intentaran iniciar un flujo OAuth que no existe). Joost.blog (83/100
+  = Level 5) deliberadamente rechaza este check por la misma razon.
+- `/.well-known/oauth-protected-resource` — idem. Turnstile CAPTCHA del
+  Lambda de contacto NO es OAuth standard.
+
+**Ceiling esperado**: isitagentready 3-4/5. Aceptar la penalizacion
+intencional de esos 2 checks es correcto. Cualquier "fix" que publique
+stubs de auth se debe rechazar en code review.
+
+## MCP server endpoint (Pages Functions, Free tier)
+
+Los 6 niches del portfolio exponen un MCP server (Model Context Protocol
+2025-11-25, JSON-RPC 2.0 sobre HTTP) en `/mcp`:
+
+- **Codigo compartido**: paquete `@portfolio/mcp` con handlers
+  `initialize`, `tools/list`, `tools/call`.
+- **3 tools fijas**: `get_cv_section(section)`, `list_projects(tech_stack?)`,
+  `search_experience(keyword)`. NO se agregan tools nuevas sin
+  justificacion + actualizar el server card builder.
+- **Bundling**: `apps/<niche>/scripts/postbuild-functions.mjs` bundlea
+  `apps/<niche>/functions/mcp.ts` a `apps/<niche>/dist/functions/mcp.js`
+  via esbuild (Workers-compatible ESM). Wrangler recoge `dist/functions/`
+  al hacer `pages deploy dist`.
+- **Server card publico**: `/.well-known/mcp/server-card.json` generado
+  por prebuild via `packages/seo/src/lib/build-mcp-server-card.ts`
+  (importa los 3 tools de `@portfolio/mcp` para evitar duplicacion).
+
+**SIEMPRE** ANTES de extender el MCP server con tools nuevas, leer la
+decision de scope arriba. Cualquier tool nueva implica: (1) modulo en
+`packages/mcp/src/lib/tools/`, (2) registro en
+`packages/mcp/src/lib/tools/index.ts`, (3) tests con BDD-style,
+(4) verificar que el server card se regenera correcto en build local.
+
+## Bug Cloudflare Pages: rutas sin extension caen en SPA fallback
+
+Documentado en `docs/specs/ai-audit-level-3-4/02-fase-0-diagnostico.md`:
+Cloudflare Pages devuelve el `index.html` (~83 KB) para cualquier ruta
+sin extension reconocida, aunque el archivo real exista en el bucket.
+
+**Workaround estandar**: publicar el archivo con extension (`.json`,
+`.xml`, `.txt`) + agregar rewrite `200` en `_redirects` para mantener
+la URL canonica sirviendo el mismo body:
+
+```text
+/.well-known/api-catalog /.well-known/api-catalog.json 200
+```
+
+Si en el futuro se agrega otro `.well-known/<X>` sin extension, aplicar
+el mismo patron.
+
 ## Referencias cruzadas
 
 - Skill: [`/ai-audit`](../skills/ai-audit/SKILL.md) — invocacion

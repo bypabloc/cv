@@ -7,6 +7,7 @@
  *   gemelo via Transform Rule.
  */
 
+export { buildMarkdownMiddleware } from './lib/build-middleware'
 export { bundlePagesFunction } from './lib/bundle-pages-function'
 export { extractMainContent } from './lib/extract-main-content'
 export { htmlToMarkdown } from './lib/html-to-markdown'

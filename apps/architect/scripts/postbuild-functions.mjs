@@ -50,6 +50,11 @@ console.info(
   '[postbuild-functions] api-catalog.json + mcp-server-card.json -> _data/',
 )
 
+// _middleware.ts es convencion de Cloudflare Pages (file-based routing)
+// y DEBE bundlearse. El resto de archivos con prefijo _ son auxiliares
+// (helpers, fixtures) y se excluyen.
+const ALLOWED_UNDERSCORE = new Set(['_middleware.ts'])
+
 async function* walkTs(dir) {
   for (const entry of await readdir(dir)) {
     if (entry === '_data') continue
@@ -57,7 +62,10 @@ async function* walkTs(dir) {
     const s = await stat(full)
     if (s.isDirectory()) {
       yield* walkTs(full)
-    } else if (entry.endsWith('.ts') && !entry.startsWith('_')) {
+    } else if (
+      entry.endsWith('.ts') &&
+      (!entry.startsWith('_') || ALLOWED_UNDERSCORE.has(entry))
+    ) {
       yield full
     }
   }

@@ -54,6 +54,13 @@ legolambda-stacks).
 - **SIEMPRE** el lambda se opera con el script `serverless` de devtools
   (`run --stage=...`, `deploy`, `destroy`, `status`, `tests --type=...`)
   — ver "Operacion con devtools" abajo.
+- **SIEMPRE** los `core/**/*.py` del service importan paquetes externos
+  (pydantic, sqlalchemy, boto3, aws-lambda-powertools, ...) SOLO via
+  `shared.<subpaquete>`. NUNCA `from pydantic`, `from sqlalchemy`,
+  `import boto3` ni `from aws_lambda_powertools` en `core/`. El
+  catalogo de portadores y procedimientos esta en
+  `.claude/rules/lambda-shared-imports.md`; `serverless lint-deps`
+  valida el contrato.
 - **NUNCA** poner logica de negocio en `handler.py` ni en los
   controllers — el handler enruta, el controller orquesta.
 - **NUNCA** registrar controllers a mano: se descubren por convencion
@@ -397,6 +404,9 @@ python devtools/run.py serverless tests --type=unit --lambda=<nombre>
 - Scaffold: `.claude/templates/lambda-controller/`
 - Docs (6 capitulos): `.claude/docs/lambda-controller/`
 - Skill: `lambda-controller`
+- Shared-only imports (catalogo de portadores + enforcement):
+  `.claude/rules/lambda-shared-imports.md` + skill
+  `lambda-shared-imports` + `.claude/docs/lambda-shared-imports/`
 - AWS Lambda Python (runtime, Powertools, IAM, costos):
   `.claude/docs/aws-lambda/` o skill `aws-lambda-python`
 - Estado local de devtools: `.claude/docs/serverless-backend/05-estado-local.md`

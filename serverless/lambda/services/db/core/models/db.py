@@ -6,7 +6,7 @@ Un modelo por action. Cada modelo valida el campo `data` del evento
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from shared.core import BaseModel
 
 
 class MigrateModel(BaseModel):

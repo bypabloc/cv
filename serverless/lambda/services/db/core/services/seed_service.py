@@ -64,10 +64,8 @@ from shared.db.models import (
     TechTag,
     Translation,
 )
+from shared.db import Session, delete, func, pg_insert as insert, select
 from shared.db.seed_helpers import _parse_ym, _to_slug
-from sqlalchemy import delete, select
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
 
 # seeds/data/ vive dentro de core/ para que el packaging del deploy lo
 # incluya en el zip (packaging.py solo copia core/ al artefacto). Este
@@ -888,8 +886,6 @@ def _run_seed_on_session(session: Session) -> dict[str, int]:
         _seed_experience_skills(session, exp_ids[slug], data, skill_ids)
 
     # 4. Conteos de verificacion: COUNT(*) por modelo via select.
-    from sqlalchemy import func
-
     counts: dict[str, int] = {}
     for label, model in _COUNT_MODELS:
         n = session.execute(select(func.count()).select_from(model)).scalar()

@@ -13,7 +13,7 @@ siguen procesando v1). En esta version solo existe v1.
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from shared.core import BaseModel, ConfigDict, EmailStr, Field
 
 
 class ContactQueueMessage(BaseModel):

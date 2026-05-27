@@ -5,6 +5,7 @@
 export { buildApiCatalog } from './lib/build-api-catalog'
 export { buildHeaders } from './lib/build-headers'
 export { buildLlmsTxt } from './lib/build-llms-txt'
+export { buildMcpServerCard } from './lib/build-mcp-server-card'
 export { buildPersonSchema } from './lib/build-person-schema'
 export { buildProfilePageSchema } from './lib/build-profile-page-schema'
 export { buildRedirects } from './lib/build-redirects'

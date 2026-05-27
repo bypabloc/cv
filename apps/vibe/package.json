@@ -12,8 +12,7 @@
     "typecheck": "astro check",
     "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs",
     "predev": "pnpm --filter @portfolio/content run fetch-cache",
-    "postbuild": "vite-node --config scripts/vite.config.ts scripts/postbuild-markdown.mjs && vite-node --config scripts/vite.config.ts scripts/postbuild-functions.mjs",
-    "pretypecheck": "node ../../packages/mcp/scripts/build-snapshot.mjs functions/_data/cv-snapshot.json"
+    "postbuild": "vite-node --config scripts/vite.config.ts scripts/postbuild-markdown.mjs && vite-node --config scripts/vite.config.ts scripts/postbuild-functions.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",

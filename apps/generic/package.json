@@ -10,7 +10,6 @@
     "preview": "astro preview --port 4321",
     "astro": "astro",
     "typecheck": "astro check",
-    "pretypecheck": "node ../../packages/mcp/scripts/build-snapshot.mjs functions/_data/cv-snapshot.json",
     "test": "echo 'no app-level tests in v1'",
     "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs",
     "predev": "pnpm --filter @portfolio/content run fetch-cache",

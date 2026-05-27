@@ -22,7 +22,13 @@ description: >
   para LLM", "preparado para crawlers", "que tan preparado para IA",
   "medir IA seo", "validar llms.txt", "validar robots.txt para AI",
   "lighthouse psi", "pagespeed insights", "ai_audit", "devtools
-  ai_audit", "compare niche ai score", "compare niche performance".
+  ai_audit", "compare niche ai score", "compare niche performance",
+  "mcp server portfolio", "mcp endpoint /mcp", "agent-native",
+  "level 5 isitagentready", "subir score isitagentready",
+  "oauth para portfolio", "openid-configuration portfolio",
+  "ceiling ai audit", "que tan agent-ready se puede llegar",
+  "que tan agent-capable", "mcp server card", "well-known mcp",
+  "model context protocol portfolio".
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash
 argument-hint: "[--env=prod|stage|dev] [--niches=...] [--tools=...] [--targets=niche:/path,...]"
@@ -172,6 +178,30 @@ Detalle en [01-tools-evaluadas.md](../../docs/ai-audit/01-tools-evaluadas.md).
 - Bloquear el run si un tool falla (las 3 son ortogonales y
   scraper.py tiene hard guard).
 - Implementar tracker historico JSONL en MVP (scope creep).
+
+## Ceiling intencional del score (mayo 2026)
+
+isitagentready se queda en 3-4/5 INTENCIONALMENTE. El portfolio NO publica
+`/.well-known/openid-configuration` ni `/.well-known/oauth-protected-resource`
+porque no tiene auth real. Publicar stubs OAuth es anti-pattern.
+
+Para subir de 2/5 a 3-4/5 se implemento (plan
+`docs/specs/ai-audit-level-3-4/`, mergeado en `feature/ai-audit-level-3-4`):
+
+1. Fix bug Cloudflare Pages SPA fallback en `/.well-known/api-catalog`
+   (renombrar a `.json` + rewrite 200 en `_redirects`).
+2. Markdown estatico: postbuild genera `.md` gemelo por cada `index.html`
+   via `@portfolio/markdown-export` (turndown + GFM).
+3. Cloudflare Transform Rule reescribe `Accept: text/markdown` -> `.md`
+   (ver `cloudflare/transform-rules.md`).
+4. MCP server `/mcp` en cada niche via Pages Functions (paquete
+   `@portfolio/mcp` con 3 tools: `get_cv_section`, `list_projects`,
+   `search_experience`).
+5. MCP server card publico `/.well-known/mcp/server-card.json`
+   (builder `packages/seo/src/lib/build-mcp-server-card.ts`).
+
+NO subir de 4/5 publicando stubs OAuth. Cualquier propuesta en esa
+direccion se rechaza.
 
 ## Documentos relacionados
 

@@ -67,5 +67,77 @@ export interface ToolResult {
 
 export interface ToolModule {
   definition: ToolDefinition
-  execute(args: Record<string, unknown>): Promise<ToolResult>
+  execute(
+    args: Record<string, unknown>,
+    data: MCPDataProvider,
+  ): Promise<ToolResult>
+}
+
+/**
+ * Snapshot shapes (subset de `@portfolio/content`). Definidos aqui para
+ * que el bundle de la Pages Function NO arrastre `@portfolio/content`
+ * en runtime (ese paquete usa `import.meta.glob` de Vite, incompatible
+ * con Cloudflare Workers).
+ */
+export interface SnapshotBiLang {
+  readonly en: string
+}
+
+export interface SnapshotProfile {
+  readonly summary: SnapshotBiLang
+  readonly location: string
+  readonly availability?: SnapshotBiLang
+  readonly contacts: {
+    readonly email: string
+    readonly linkedin: string
+    readonly github: string
+    readonly website: string
+  }
+}
+
+export interface SnapshotExperience {
+  readonly slug: string
+  readonly role: SnapshotBiLang
+  readonly company: string
+  readonly start: string
+  readonly end?: string | null
+  readonly summary?: SnapshotBiLang
+  readonly achievements: { readonly en: readonly string[] }
+  readonly skillsTechnical?: readonly string[]
+}
+
+export interface SnapshotProject {
+  readonly slug: string
+  readonly name: string
+  readonly summary: SnapshotBiLang
+  readonly stack: readonly string[]
+  readonly url?: string | null
+}
+
+export interface SnapshotSkillCategory {
+  readonly name: SnapshotBiLang
+  readonly skills: readonly string[]
+}
+
+export interface SnapshotEducation {
+  readonly institution: string
+  readonly degree?: SnapshotBiLang
+  readonly start?: string | null
+  readonly end?: string | null
+}
+
+export interface CvSnapshot {
+  readonly profile: SnapshotProfile
+  readonly experiences: readonly SnapshotExperience[]
+  readonly projects: readonly SnapshotProject[]
+  readonly skills: readonly SnapshotSkillCategory[]
+  readonly education: readonly SnapshotEducation[]
+}
+
+export interface MCPDataProvider {
+  getProfile(): SnapshotProfile
+  getExperiences(): readonly SnapshotExperience[]
+  getProjects(): readonly SnapshotProject[]
+  getSkills(): readonly SnapshotSkillCategory[]
+  getEducation(): readonly SnapshotEducation[]
 }

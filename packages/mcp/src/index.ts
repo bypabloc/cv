@@ -9,15 +9,24 @@
  *   `apps/<niche>/functions/mcp.ts` (wrapper thin que llama handleRequest).
  */
 export { handleRequest } from './lib/handle-request'
+export { createSnapshotProvider } from './lib/snapshot-provider'
 export { getToolByName, TOOLS } from './lib/tools'
 export type {
   Capabilities,
+  CvSnapshot,
   JsonRpcId,
   JsonRpcRequest,
   JsonRpcResponse,
   JsonRpcResponseError,
   JsonRpcResponseSuccess,
+  MCPDataProvider,
   ServerInfo,
+  SnapshotBiLang,
+  SnapshotEducation,
+  SnapshotExperience,
+  SnapshotProfile,
+  SnapshotProject,
+  SnapshotSkillCategory,
   ToolContent,
   ToolDefinition,
   ToolInputSchema,

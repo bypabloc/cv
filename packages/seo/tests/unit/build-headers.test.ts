@@ -1,6 +1,8 @@
 /**
  * @description Tests para buildHeaders. CSP connect-src debe incluir solo
- *   el API del env, NO los 3 (prod+dev+stage).
+ *   el API del env, NO los 3 (prod+dev+stage). Los bloques de
+ *   .well-known/*.json se removieron en ai-audit-level-4 (los sirven
+ *   Pages Functions con sus propios headers).
  */
 import { describe, expect, it } from 'vitest'
 
@@ -86,24 +88,14 @@ describe('buildHeaders', () => {
     )
   })
 
-  it('Given build When inspecciono Then expone Content-Type linkset+json para api-catalog (URL canonica)', () => {
+  it('Given build When inspecciono Then NO incluye bloques Content-Type para api-catalog (los sirven Functions)', () => {
     const out = buildHeaders({
       apiEndpoint: 'https://api.portfolio.the-full-stack.com',
     })
-    expect(out).toContain('/.well-known/api-catalog\n')
-    expect(out).toMatch(
-      /\/\.well-known\/api-catalog\n\s+Content-Type: application\/linkset\+json; charset=UTF-8/,
-    )
-  })
-
-  it('Given build When inspecciono Then expone Content-Type linkset+json para api-catalog.json (path real)', () => {
-    const out = buildHeaders({
-      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
-    })
-    expect(out).toContain('/.well-known/api-catalog.json\n')
-    expect(out).toMatch(
-      /\/\.well-known\/api-catalog\.json\n\s+Content-Type: application\/linkset\+json; charset=UTF-8/,
-    )
+    // Las URLs canonicas las atiende Pages Functions con sus headers propios.
+    expect(out).not.toMatch(/\n\/\.well-known\/api-catalog\n/)
+    expect(out).not.toMatch(/\n\/\.well-known\/api-catalog\.json\n/)
+    expect(out).not.toMatch(/\n\/\.well-known\/mcp\/server-card\.json\n/)
   })
 
   it('Given build When inspecciono Then expone Content-Type text/markdown para /*.md', () => {
@@ -113,16 +105,6 @@ describe('buildHeaders', () => {
     expect(out).toContain('/*.md\n')
     expect(out).toMatch(
       /\/\*\.md\n\s+Content-Type: text\/markdown; charset=UTF-8/,
-    )
-  })
-
-  it('Given build When inspecciono Then expone Content-Type JSON para mcp/server-card.json', () => {
-    const out = buildHeaders({
-      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
-    })
-    expect(out).toContain('/.well-known/mcp/server-card.json\n')
-    expect(out).toMatch(
-      /\/\.well-known\/mcp\/server-card\.json\n\s+Content-Type: application\/json; charset=UTF-8/,
     )
   })
 })

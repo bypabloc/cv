@@ -57,25 +57,20 @@ export function buildHeaders(opts: { apiEndpoint: string }): string {
     '  Link: </.well-known/api-catalog.json>; rel="api-catalog"; type="application/linkset+json"',
     '  Link: </.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"',
     '',
-    // El archivo real vive en .json para evitar el SPA fallback de
-    // Cloudflare Pages (rutas sin extension caen en index.html).
-    // Mantenemos tambien el bloque sin extension porque _redirects hace
-    // rewrite 200, asi que ambas URLs sirven el mismo body.
-    '/.well-known/api-catalog',
-    '  Content-Type: application/linkset+json; charset=UTF-8',
-    '',
-    '/.well-known/api-catalog.json',
-    '  Content-Type: application/linkset+json; charset=UTF-8',
-    '',
-    // Cloudflare Transform Rule (cloudflare/transform-rules.md, TR-1)
-    // reescribe URLs a /index.md cuando Accept: text/markdown llega.
-    // Este bloque garantiza el MIME correcto cuando el .md se sirve.
+    // Content-Type para los .md generados por el postbuild markdown-export.
+    // El middleware functions/_middleware.ts hace la negociacion via
+    // Accept: text/markdown -> reescribe a /<path>/index.md y este header
+    // asegura el MIME correcto cuando el .md se sirve directo o reescrito.
     '/*.md',
     '  Content-Type: text/markdown; charset=UTF-8',
     '',
-    '/.well-known/mcp/server-card.json',
-    '  Content-Type: application/json; charset=UTF-8',
-    '',
+    // Los bloques /.well-known/api-catalog{,.json} y
+    // /.well-known/mcp/server-card.json se removieron en el plan
+    // ai-audit-level-4. Cloudflare Pages excluye dotdirs del upload,
+    // por lo que esos archivos NO estaban en el deploy y el _headers
+    // aplicaba el Content-Type al SPA fallback (cuerpo HTML).
+    // Ahora los sirven Pages Functions en
+    // apps/<niche>/functions/.well-known/*.ts con sus propios headers.
   ].join('\n')
 }
 

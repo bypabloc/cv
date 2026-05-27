@@ -6,8 +6,8 @@ import { renderCvHtml } from '@portfolio/cv-pdf'
 import {
   buildApiCatalog,
   buildHeaders,
-  buildMcpServerCard,
   buildLlmsTxt,
+  buildMcpServerCard,
   buildRedirects,
   buildRobotsTxt,
 } from '@portfolio/seo'

@@ -1,7 +1,7 @@
 /**
  * @description Tests para handleToolsList — devuelve la lista de tools
- *   registrados. En Fase 2A el registro esta vacio; en Fase 2B se llena
- *   con 3 tools y este test se actualiza.
+ *   registrados. Fase 2B: 3 tools (get_cv_section, list_projects,
+ *   search_experience).
  */
 import { describe, expect, it } from 'vitest'
 
@@ -24,5 +24,16 @@ describe('handleToolsList', () => {
     const tools = (out.result as { tools: unknown[] }).tools
 
     expect(tools.length).toBe(TOOLS.length)
+  })
+
+  it('Given Fase 2B completa When leo nombres Then son los 3 tools esperados en orden estable', () => {
+    const out = handleToolsList(1)
+    const tools = (out.result as { tools: Array<{ name: string }> }).tools
+
+    expect(tools.map((t) => t.name)).toEqual([
+      'get_cv_section',
+      'list_projects',
+      'search_experience',
+    ])
   })
 })

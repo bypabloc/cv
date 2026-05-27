@@ -29,7 +29,7 @@ from shared.db.repository import (
     ensure_session_and_visit,
     insert_tracking_idempotent,
 )
-from sqlalchemy.orm import Session as OrmSession
+from shared.db import Session as OrmSession
 from ua_parser import user_agent_parser
 
 # TTL del cache de UA parsing: 24h. Un mismo User-Agent string

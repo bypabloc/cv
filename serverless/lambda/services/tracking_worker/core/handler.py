@@ -34,7 +34,7 @@ if _CORE_DIR not in sys.path:
 import json
 from typing import Any
 
-from aws_lambda_powertools.metrics import MetricUnit
+from shared.observability import MetricUnit
 from controllers.worker.process_batch import ProcessBatch
 from settings.operations import OPERATIONS
 from shared.lambda_kit import build_event_model

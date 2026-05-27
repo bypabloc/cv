@@ -6,6 +6,7 @@ import { renderCvHtml } from '@portfolio/cv-pdf'
 import {
   buildHeaders,
   buildLlmsTxt,
+  buildOpenApi,
   buildRedirects,
   buildRobotsTxt,
 } from '@portfolio/seo'
@@ -109,6 +110,11 @@ async function main() {
 
   // 5. _redirects (alias /sitemap.xml -> /sitemap-index.xml)
   await write('_redirects', buildRedirects())
+
+  // 6b. /openapi.json (OpenAPI 3.1 spec del backend serverless)
+  //     Servido desde el portfolio (mismo origen), no del API Gateway.
+  //     El api-catalog.json (Pages Function) linkea aqui via service-desc.
+  await write('openapi.json', buildOpenApi({ apiEndpoint: API_ENDPOINT }))
 
   // 6. Limpieza historica: .well-known/* eran assets en plan ai-audit-level-3-4
   //    pero Cloudflare Pages excluye dotdirs del upload (regla de dotfiles).

@@ -9,18 +9,14 @@ version = "0.1.0"
 description = "Worker SQS del form de contacto: persiste en Neon y notifica via SES."
 requires-python = ">=3.13"
 
-# El core/ del Lambda casi no declara deps de runtime propias:
-# powertools, boto3, pydantic, pydantic-settings y sqlalchemy le llegan
-# por el vendoring del cierre de shared/ (shared.lambda_kit,
-# shared.observability, shared.aws, shared.db, shared.core).
-#
-# EXCEPCION D-3 (regla de dedup del plan
-# docs/specs/serverless-lambda-independence/): el extra `email` de
-# pydantic (libreria email-validator) lo usa `core/models/message.py`
-# (EmailStr) y NINGUN subpaquete de shared/ lo aporta. Se declara aca.
-dependencies = [
-  "pydantic[email]>=2.5,<3.0",
-]
+# El core/ del Lambda no declara deps de runtime propias: powertools,
+# boto3, pydantic[email], pydantic-settings y sqlalchemy le llegan por
+# el vendoring del cierre de shared/ (shared.lambda_kit,
+# shared.observability, shared.aws, shared.db, shared.core). shared.core
+# aporta pydantic[email] desde el plan d-shared-only-imports — el extra
+# `email` (email-validator) ya viaja por shared.core, NO se redeclara
+# aca (ver `.claude/rules/lambda-shared-imports.md`).
+dependencies = []
 
 # Deps de DESARROLLO: pytest + coverage + mocks. NO van al artefacto de
 # deploy (solo [project.dependencies] llega al zip).

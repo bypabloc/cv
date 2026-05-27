@@ -15,13 +15,12 @@ max_receive_count=3) en vez de perder el lead silenciosamente. Como
 el mismo email max 3 veces — trade-off aceptable.
 """
 
-import os
 import re
 from pathlib import Path
 from typing import Any
 
-import boto3
 from models.message import ContactQueueMessage
+from shared.aws import send_email
 from shared.aws.ssm import get_secret_by_name
 from shared.db.repository import (
     ensure_session_and_visit,
@@ -172,23 +171,13 @@ def send_owner_email_safe(
         f'Portfolio · Nuevo contacto de {msg.name} ({msg.niche or "generic"})'
     )
 
-    ses = boto3.client(
-        'sesv2',
-        region_name=os.environ.get('AWS_SES_REGION', 'us-east-1'),
-    )
-    response = ses.send_email(
-        FromEmailAddress=f'The Full Stack <{from_address}>',
-        Destination={'ToAddresses': recipients},
-        ReplyToAddresses=[msg.email],
-        Content={
-            'Simple': {
-                'Subject': {'Data': subject, 'Charset': 'UTF-8'},
-                'Body': {
-                    'Text': {'Data': text_body, 'Charset': 'UTF-8'},
-                    'Html': {'Data': html_body, 'Charset': 'UTF-8'},
-                },
-            },
-        },
+    response = send_email(
+        from_address=f'The Full Stack <{from_address}>',
+        to_addresses=recipients,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+        reply_to=[msg.email],
     )
 
     message_id: str = response.get('MessageId', '')

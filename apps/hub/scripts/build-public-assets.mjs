@@ -10,7 +10,12 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildHeaders, buildRedirects, buildRobotsTxt } from '@portfolio/seo'
+import {
+  buildHeaders,
+  buildOpenApi,
+  buildRedirects,
+  buildRobotsTxt,
+} from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')

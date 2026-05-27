@@ -6,15 +6,17 @@
  *   1. `/sitemap.xml` -> `/sitemap-index.xml` (301): compat con crawlers
  *      que chequean el path canonico cuando Astro genera el sitemap como
  *      index.
- *   2. `/.well-known/api-catalog` -> `/.well-known/api-catalog.json`
- *      (200 = rewrite interno): el archivo real se publica con extension
- *      `.json` para evitar el SPA fallback de Cloudflare Pages (que
- *      devuelve `index.html` para rutas sin extension reconocida). El
- *      rewrite 200 mantiene la URL canonica RFC 9727 sirviendo el JSON.
  *
  *   Sintaxis de Cloudflare Pages _redirects:
  *     <from> <to> <status>
  *   Una regla por linea. 301 = redirect permanente, 200 = rewrite interno.
+ *
+ *   Historico: en plan ai-audit-level-3-4 hubo una regla
+ *   `/.well-known/api-catalog -> /.well-known/api-catalog.json 200` para
+ *   evitar el SPA fallback. Se eliminó en ai-audit-level-4: los archivos
+ *   en `.well-known/` NO se uploadean (regla de dotfiles), por lo que el
+ *   target del rewrite tampoco existia. Ahora los `.well-known/*` los
+ *   sirven Pages Functions en `apps/<niche>/functions/.well-known/*.ts`.
  */
 
 /**
@@ -26,13 +28,8 @@
  *
  * @example
  *   buildRedirects()
- *   // "/sitemap.xml /sitemap-index.xml 301\n
- *   //  /.well-known/api-catalog /.well-known/api-catalog.json 200\n"
+ *   // "/sitemap.xml /sitemap-index.xml 301\n"
  */
 export function buildRedirects(): string {
-  return [
-    '/sitemap.xml /sitemap-index.xml 301',
-    '/.well-known/api-catalog /.well-known/api-catalog.json 200',
-    '',
-  ].join('\n')
+  return ['/sitemap.xml /sitemap-index.xml 301', ''].join('\n')
 }

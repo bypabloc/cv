@@ -19,6 +19,7 @@ sin un segundo canal de datos paralelo.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -46,6 +47,13 @@ class TrackEventMeta(BaseModel):
     # el http_handler generico siempre lo inyecta para uniformidad. Se
     # acepta para no romper el extra:forbid del sub-modelo.
     bypass_secret: str | None = Field(default=None)
+    # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
+    # API GW los expone). El controller lo pasa al service para
+    # persistirlo en la columna cloudfront_meta JSONB.
+    cloudfront_meta: dict[str, str] = Field(default_factory=dict)
+    # Origin header raw del request. Inyectado por http_handler para
+    # uniformidad entre Lambdas. tracking_pixel no lo usa hoy.
+    origin: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
@@ -69,22 +77,30 @@ class TrackEventModel(BaseModel):
     # evento debe estar tipado (page_load, etc.).
     event_type_id: str = Field(..., min_length=36, max_length=36)
 
-    # Page metadata (cliente lo provee)
+    # Page metadata. REQUIRED: el frontend siempre los provee desde
+    # location/document. Si falta alguno -> HTTP 400 (request mal armado).
     page_url: str = Field(..., max_length=500)
-    page_title: str | None = Field(default=None, max_length=200)
-    page_path: str | None = Field(default=None, max_length=300)
-    referrer: str | None = Field(default=None, max_length=500)
+    page_title: str = Field(..., max_length=200)
+    page_path: str = Field(..., max_length=300)
+    # referrer queda best-effort (string vacio cuando document.referrer = '').
+    referrer: str = Field(default='', max_length=500)
 
-    # UTM params (campaign tracking)
-    utm_source: str | None = Field(default=None, max_length=100)
-    utm_medium: str | None = Field(default=None, max_length=100)
-    utm_campaign: str | None = Field(default=None, max_length=100)
-    utm_content: str | None = Field(default=None, max_length=100)
+    # UTM params (campaign tracking). REQUIRED en payload: el frontend
+    # parsea URLSearchParams y manda los 4 siempre — string vacio si la URL
+    # no tiene ese query param. utm_term queda opcional (legacy poco usado).
+    utm_source: str = Field(..., max_length=100)
+    utm_medium: str = Field(..., max_length=100)
+    utm_campaign: str = Field(..., max_length=100)
+    utm_content: str = Field(..., max_length=100)
     utm_term: str | None = Field(default=None, max_length=100)
 
-    # Viewport (cliente lo manda)
-    viewport_width: int | None = Field(default=None, ge=0, le=10000)
-    viewport_height: int | None = Field(default=None, ge=0, le=10000)
+    # Viewport. REQUIRED: window.innerWidth/Height siempre disponibles en
+    # el browser real. Si llega 0 -> probablemente bot/scraper.
+    viewport_width: int = Field(..., ge=0, le=10000)
+    viewport_height: int = Field(..., ge=0, le=10000)
+    # devicePixelRatio: backup analitico para distinguir retina (no
+    # required estrictamente, default 1.0 para clientes legacy).
+    device_pixel_ratio: float = Field(default=1.0, ge=0.1, le=10.0)
 
     # Niche (que subdominio)
     niche: str | None = Field(default=None, max_length=50)
@@ -101,9 +117,7 @@ class TrackEventModel(BaseModel):
     # Default vacio: si el handler no lo provee, el modelo no rompe. El
     # http_handler generico lo inyecta como `_meta` (con guion bajo, mismo
     # patron que contact_form para consistencia); aqui se acepta via alias.
-    meta: TrackEventMeta = Field(
-        default_factory=TrackEventMeta, alias='_meta'
-    )
+    meta: TrackEventMeta = Field(default_factory=TrackEventMeta, alias='_meta')
 
     @field_validator('event_props')
     @classmethod
@@ -159,3 +173,18 @@ class TrackEventModel(BaseModel):
             exclude={'cf_token', 'meta'},
             exclude_none=True,
         )
+
+
+class TrackAcceptedOutput(BaseModel):
+    """Response del encoder en modo `ASYNC_MODE=true`.
+
+    El encoder pre-genera `page_id` (UUIDv7) y `created_at` antes de
+    encolar el evento a SQS, asi que ambos viajan en la respuesta sin
+    esperar a que el worker persista. `session_id` se conserva tal cual
+    viene del cliente. `accepted=True` marca la semantica HTTP 202.
+    """
+
+    page_id: str
+    session_id: str
+    created_at: datetime
+    accepted: bool = True

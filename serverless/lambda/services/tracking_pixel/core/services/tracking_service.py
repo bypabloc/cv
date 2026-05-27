@@ -2,7 +2,7 @@
 
 Concentra la logica de negocio del Lambda `tracking_pixel`:
   - parseo del User-Agent (browser / os / device type).
-  - persistencia del evento en DynamoDB con TTL 60d.
+  - persistencia del evento en Neon PostgreSQL (escritura directa).
   - orquestacion enrichment -> persist (`process_tracking_event`).
 
 Regla de separacion:
@@ -12,56 +12,68 @@ Regla de separacion:
 
 El service NO conoce el evento Lambda ni el evento HTTP: recibe datos ya
 extraidos (validated_input, ip, user_agent, country).
+
+Decision (spec `direct-neon-writes`): escribimos a Neon directo en la
+misma invocacion (sin pasar por DynamoDB + Stream + stream_processor).
+La tabla `tracking_events` en Neon NO tiene PK fisica, asi que no usamos
+`ON CONFLICT` — aceptamos duplicados raros (sendBeacon no reintenta y
+el volumen es bajo).
 """
 
 from __future__ import annotations
 
-import re
-import time
 from datetime import UTC, datetime
 from typing import Any
 
 from settings.config import logger
 from shared.cache import cached
 from shared.core.ulid import new_uuidv7
-from shared.dynamodb import TrackingEventItem
-
-# --- Persistence ---
-
-# 60 dias en segundos. El TTL service de AWS borra el item ~48h despues
-# de expires_at sin consumir WCU.
-TTL_SECONDS = 60 * 24 * 60 * 60
+from shared.db.repository import ensure_session_and_visit, insert_tracking
+from shared.db.session import db_session
+from shared.queue import send_to_queue
+from ua_parser import user_agent_parser
 
 # --- Enrichment ---
 
 # TTL del cache de UA parsing: 24h. Un mismo User-Agent string repetido en
-# invocaciones warm no re-ejecuta el regex (SPEC-204).
+# invocaciones warm no re-ejecuta el parser (SPEC-204).
 _UA_CACHE_TTL_SECONDS = 24 * 60 * 60
 
-# Simple UA parser - regex patterns (sin dependencia externa para evitar bloat)
-_BROWSER_PATTERNS = (
-    ('Chrome', re.compile(r'Chrome/(\d+)')),
-    ('Firefox', re.compile(r'Firefox/(\d+)')),
-    ('Safari', re.compile(r'Version/(\d+).*Safari')),
-    ('Edge', re.compile(r'Edg/(\d+)')),
-)
+# Devices considerados mobile/tablet por ua-parser (family contains).
+_TABLET_HINTS = ('Tablet', 'iPad', 'Kindle')
+_BOT_HINTS = ('bot', 'crawler', 'spider', 'http')
 
-_OS_PATTERNS = (
-    ('iOS', re.compile(r'iPhone|iPad|iPod')),
-    ('Android', re.compile(r'Android')),
-    ('Windows', re.compile(r'Windows NT (\d+\.\d+)')),
-    ('macOS', re.compile(r'Mac OS X (\d+[._]\d+)')),
-    ('Linux', re.compile(r'Linux')),
-)
+
+def _ua_device_type(parsed: dict[str, Any], ua_string: str) -> str:
+    """Mapea el output de ua-parser a desktop|mobile|tablet|bot.
+
+    `ua-parser` devuelve `device.family` (Apple iPhone, Generic Tablet,
+    Other, etc.). Combinamos con el UA crudo para clasificacion final.
+    """
+    device_family = (parsed.get('device') or {}).get('family') or ''
+    os_family = (parsed.get('os') or {}).get('family') or ''
+    ua_lower = ua_string.lower()
+
+    if any(hint in ua_lower for hint in _BOT_HINTS):
+        return 'bot'
+    if any(hint in device_family for hint in _TABLET_HINTS):
+        return 'tablet'
+    if os_family in {'iOS', 'Android'}:
+        # ua-parser marca tablets de Android como Tablet en device.family
+        return 'mobile'
+    if 'Mobile' in ua_string:
+        return 'mobile'
+    return 'desktop'
 
 
 @cached(ttl=_UA_CACHE_TTL_SECONDS, namespace='ua', tags=['user-agent'])
 def parse_user_agent(user_agent: str | None) -> dict[str, str]:
-    """Parsea el User-Agent: browser + os + device type.
+    """Parsea el User-Agent con ua-parser (uap-python): browser+os+device.
 
-    El resultado se cachea 24h via DynamoDB (`@cached`): la cache key se
-    deriva del string User-Agent, asi UA repetidos en invocaciones warm
-    no re-ejecutan el regex y UA distintos no colisionan (SPEC-204).
+    El resultado se cachea 24h via DynamoDB (`@cached`): la cache key
+    deriva del string UA. ua-parser usa los regex specs mantenidos por
+    la comunidad (uap-core) — mejor accuracy que el regex custom previo,
+    en particular para Chrome iOS WebView, browsers embebidos y bots.
 
     Parameters
     ----------
@@ -81,29 +93,14 @@ def parse_user_agent(user_agent: str | None) -> dict[str, str]:
             'device_type': 'unknown',
         }
 
-    browser, browser_version = 'unknown', ''
-    for name, pattern in _BROWSER_PATTERNS:
-        match = pattern.search(user_agent)
-        if match:
-            browser = name
-            browser_version = match.group(1) if match.groups() else ''
-            break
+    parsed = user_agent_parser.Parse(user_agent)
+    ua_block = parsed.get('user_agent') or {}
+    os_block = parsed.get('os') or {}
 
-    os_name = 'unknown'
-    for name, pattern in _OS_PATTERNS:
-        if pattern.search(user_agent):
-            os_name = name
-            break
-
-    # Device type heuristico
-    if 'Mobile' in user_agent or 'iPhone' in user_agent:
-        device_type = 'mobile'
-    elif 'iPad' in user_agent or 'Tablet' in user_agent:
-        device_type = 'tablet'
-    elif 'bot' in user_agent.lower() or 'crawler' in user_agent.lower():
-        device_type = 'bot'
-    else:
-        device_type = 'desktop'
+    browser = ua_block.get('family') or 'unknown'
+    browser_version = ua_block.get('major') or ''
+    os_name = os_block.get('family') or 'unknown'
+    device_type = _ua_device_type(parsed, user_agent)
 
     return {
         'browser': browser,
@@ -114,10 +111,24 @@ def parse_user_agent(user_agent: str | None) -> dict[str, str]:
 
 
 def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
-    """Persiste un evento de tracking en DynamoDB con TTL +60d.
+    """Persiste sessions + session_visits + tracking_events en 1 tx.
 
-    PK: session_id, SK: page_id (UUIDv7). El TTL service de AWS borra el
-    item ~48h despues de expires_at sin consumir WCU.
+    Spec sessions-normalize: el INSERT del tracking_event va junto con
+    el UPSERT de su `session` y `session_visit` en la MISMA transaccion
+    (atomicidad — si el INSERT falla, todo rollback).
+
+    Pasos:
+    1. `ensure_session_and_visit(...)` UPSERTea session + visit y
+       devuelve `(session_id, visit_id)`. El helper incrementa
+       `event_count` del visit en 1 (bump_event_count=True).
+    2. INSERT en `tracking_events` con el `visit_id` retornado.
+    3. Commit al salir del `with db_session()`.
+
+    Genera `page_id = uuidv7()` server-side y arma el payload ORM:
+    `created_at` con `datetime.now(UTC)`, `event_props` como dict
+    (SQLAlchemy lo adapta a JSONB). Las columnas ip/country/ua/utm_*
+    se persisten en sessions/session_visits via el helper — el ORM de
+    tracking_events YA NO las tiene.
 
     Parameters
     ----------
@@ -127,51 +138,55 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     Returns
     -------
     dict[str, Any]
-        Dict con `session_id`, `page_id` y `expires_at` del item escrito.
+        Dict con `session_id`, `page_id` y `visit_id` de la fila escrita.
     """
     page_id = new_uuidv7()
-    created_at = datetime.now(UTC).isoformat()
-    expires_at = int(time.time()) + TTL_SECONDS
+    created_at = datetime.now(UTC)
 
-    # TrackingEventItem (ORM) arma el Item y lo persiste: omite los campos
-    # opcionales no provistos (DynamoDB no permite empty strings) y reusa
-    # el resource boto3 singleton entre invocaciones warm. event_props es
-    # un Map de DynamoDB (datos especificos por tipo de evento, SPEC-200).
-    TrackingEventItem(
-        session_id=payload['session_id'],
-        page_id=page_id,
-        created_at=created_at,
-        expires_at=expires_at,
-        page_url=payload['page_url'],
-        # Identificadores del evento (SPEC-102): event_id da idempotencia,
-        # event_type_id es el tipo del catalogo event_types.
-        event_id=payload['event_id'],
-        event_type_id=payload['event_type_id'],
-        page_title=payload.get('page_title'),
-        page_path=payload.get('page_path'),
-        referrer=payload.get('referrer'),
-        utm_source=payload.get('utm_source'),
-        utm_medium=payload.get('utm_medium'),
-        utm_campaign=payload.get('utm_campaign'),
-        utm_content=payload.get('utm_content'),
-        utm_term=payload.get('utm_term'),
-        niche=payload.get('niche'),
-        viewport_width=payload.get('viewport_width'),
-        viewport_height=payload.get('viewport_height'),
-        ip=payload.get('ip'),
-        country=payload.get('country'),
-        user_agent=payload.get('user_agent'),
-        browser=payload.get('browser'),
-        browser_version=payload.get('browser_version'),
-        os=payload.get('os'),
-        device_type=payload.get('device_type'),
-        event_props=payload.get('event_props'),
-    ).save()
+    with db_session() as session:
+        # Paso 1: UPSERT session + visit (en la misma tx). El helper
+        # incrementa event_count del visit en 1.
+        session_id, visit_id = ensure_session_and_visit(
+            session,
+            session_id=payload['session_id'],
+            ip=payload.get('ip'),
+            country=payload.get('country'),
+            user_agent=payload.get('user_agent'),
+            browser=payload.get('browser'),
+            browser_version=payload.get('browser_version'),
+            os_name=payload.get('os'),
+            device_type=payload.get('device_type'),
+            utm_source=payload.get('utm_source'),
+            utm_medium=payload.get('utm_medium'),
+            utm_campaign=payload.get('utm_campaign'),
+            utm_content=payload.get('utm_content'),
+            utm_term=payload.get('utm_term'),
+            referrer=payload.get('referrer'),
+            landing_page_path=payload.get('landing_page_path'),
+            niche=payload.get('niche'),
+            bump_event_count=True,
+        )
+
+        # Paso 2: INSERT en tracking_events con visit_id.
+        neon_payload: dict[str, Any] = {
+            'session_id': session_id,
+            'visit_id': visit_id,
+            'page_id': page_id,
+            'created_at': created_at,
+            'event_id': payload['event_id'],
+            'event_type_id': payload['event_type_id'],
+            'page_path': payload.get('page_path'),
+            'niche': payload.get('niche'),
+            'viewport_width': payload.get('viewport_width'),
+            'viewport_height': payload.get('viewport_height'),
+            'event_props': payload.get('event_props'),
+        }
+        insert_tracking(session, neon_payload)
 
     return {
         'session_id': payload['session_id'],
         'page_id': page_id,
-        'expires_at': expires_at,
+        'visit_id': visit_id,
     }
 
 
@@ -184,6 +199,13 @@ def process_tracking_event(
 ) -> dict[str, Any]:
     """Orquesta enrichment + persistencia del evento de tracking.
 
+    Spec sessions-normalize: el payload se enriquece con `ip`/`country`/
+    UA-parser-result y se pasa entero al helper `save_tracking_event`,
+    que UPSERTea session + visit y luego inserta el tracking_event.
+    `landing_page_path` se deriva de `page_path` (el primer evento de
+    una visit es el landing; las navegaciones internas reusan visit y
+    NO actualizan `landing_page_path`).
+
     Parameters
     ----------
     validated_input : dict[str, Any]
@@ -193,12 +215,12 @@ def process_tracking_event(
     user_agent : str | None
         Header User-Agent de la request.
     country : str | None
-        Country code (CF-IPCountry).
+        Country code (cloudfront-viewer-country o cf-ipcountry).
 
     Returns
     -------
     dict[str, Any]
-        Dict con `session_id`, `page_id` y `expires_at` del item escrito.
+        Dict con `session_id`, `page_id` y `visit_id` de la fila escrita.
     """
     # Enrichment: parse UA
     ua_info = parse_user_agent(user_agent)
@@ -208,6 +230,9 @@ def process_tracking_event(
         'ip': ip,
         'user_agent': user_agent or '',
         **ua_info,
+        # landing_page_path = page_path del evento. Solo se usa al
+        # crear un visit nuevo (el helper ignora este campo en UPDATE).
+        'landing_page_path': validated_input.get('page_path'),
     }
     if country:
         payload['country'] = country
@@ -218,7 +243,75 @@ def process_tracking_event(
         extra={
             'session_id': result['session_id'],
             'page_id': result['page_id'],
+            'visit_id': result['visit_id'],
             'device_type': ua_info['device_type'],
         },
     )
     return result
+
+
+def enqueue_tracking_message(
+    *,
+    page_id: str,
+    created_at: datetime,
+    validated_input: dict[str, Any],
+    ip: str,
+    user_agent: str | None,
+    country: str | None = None,
+) -> str:
+    """Encola un mensaje SQS hacia `tracking_worker` (modo ASYNC_MODE=true).
+
+    NOTA: el encoder NO hace UA parsing — el worker lo hace (cacheado).
+    Asi el encoder es minimo y responde rapido (TTFB ~5-15ms vs ~80ms
+    del sync path). El cache del UA queda compartido (namespace='ua')
+    entre encoder sync legacy y worker.
+
+    Parameters
+    ----------
+    page_id : str
+        UUIDv7 generado por el encoder. El worker NO lo regenera.
+    created_at : datetime
+        Timestamp fijado por el encoder. Evita time-skew si SQS demora.
+    validated_input : dict[str, Any]
+        Payload validado por TrackEventModel.tracking_payload().
+    ip : str
+        IP del cliente.
+    user_agent : str | None
+        Header User-Agent crudo. El worker lo parsea.
+    country : str | None
+        Country code (cloudfront-viewer-country o cf-ipcountry).
+
+    Returns
+    -------
+    str
+        MessageId de SQS (para correlacionar en CloudWatch).
+    """
+    payload: dict[str, Any] = {
+        'schema_version': 1,
+        'page_id': page_id,
+        'created_at': created_at.isoformat(),
+        'session_id': validated_input['session_id'],
+        'event_id': validated_input['event_id'],
+        'event_type_id': validated_input['event_type_id'],
+        'page_path': validated_input.get('page_path'),
+        'page_url': validated_input.get('page_url'),
+        'page_title': validated_input.get('page_title'),
+        'niche': validated_input.get('niche'),
+        'viewport_width': validated_input['viewport_width'],
+        'viewport_height': validated_input['viewport_height'],
+        'device_pixel_ratio': validated_input.get('device_pixel_ratio'),
+        'event_props': validated_input.get('event_props'),
+        'utm_source': validated_input.get('utm_source'),
+        'utm_medium': validated_input.get('utm_medium'),
+        'utm_campaign': validated_input.get('utm_campaign'),
+        'utm_content': validated_input.get('utm_content'),
+        'utm_term': validated_input.get('utm_term'),
+        'referrer': validated_input.get('referrer'),
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+    }
+    return send_to_queue(
+        queue_short_name='tracking-events',
+        payload=payload,
+    )

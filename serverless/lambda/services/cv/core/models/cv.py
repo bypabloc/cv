@@ -1,11 +1,14 @@
 """Modelo Pydantic del Lambda `cv`.
 
 `CvQueryModel` valida los argumentos de cualquier action de `cv`:
-- `niche`: opcional, uno de los 5 niches validos o None.
+- `niche`: opcional, uno de los 5 niches con CV (`CV_NICHES`) o None.
 - `locale`: opcional, 'es' o 'en' (default 'es').
 
 El `_meta` lo inyecta el `http_handler` para uniformidad — no se usa en
 `cv` (read-only sin rate-limit), pero se acepta para no romper el shape.
+
+Niches: fuente unica en `shared.core.niches` (spec sessions-normalize,
+decision 13). `CV_NICHES` excluye `hub` (no tiene CV propio).
 """
 
 from __future__ import annotations
@@ -14,10 +17,7 @@ from typing import Literal
 
 from shared.core import BaseModel, Field
 
-# Niches validos del portfolio.
-_VALID_NICHES = frozenset(
-    {'fintech', 'architect', 'leader', 'vibe', 'generic'}
-)
+from shared.core.niches import CV_NICHES
 
 
 class CvRequestMeta(BaseModel):
@@ -27,6 +27,10 @@ class CvRequestMeta(BaseModel):
     country: str | None = None
     user_agent: str | None = None
     bypass_secret: str | None = None
+    cloudfront_meta: dict[str, str] = Field(default_factory=dict)
+    # Origin header raw del request. Inyectado por http_handler para
+    # uniformidad entre Lambdas. cv no lo usa hoy.
+    origin: str | None = None
 
     model_config = {'extra': 'forbid'}
 
@@ -44,7 +48,7 @@ class CvQueryModel(BaseModel):
     model_config = {'extra': 'forbid', 'populate_by_name': True}
 
     def normalized_niche(self) -> str | None:
-        """Devuelve el niche si es valido, sino None (sin filtro)."""
+        """Devuelve el niche si es valido (CV_NICHES), sino None."""
         if self.niche is None:
             return None
-        return self.niche if self.niche in _VALID_NICHES else None
+        return self.niche if self.niche in CV_NICHES else None

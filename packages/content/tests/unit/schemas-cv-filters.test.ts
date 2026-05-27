@@ -180,12 +180,11 @@ describe('backfill completeness [AC-3]', () => {
 
   it('Given current projects fixture Then expected slug -> projectType mapping matches', () => {
     const map = new Map(projects.map((p) => [p.slug, p.projectType]))
-    expect(map.get('cv-builder')).toBe('web')
     expect(map.get('destacame-credit-mexico')).toBe('fintech-platform')
     expect(map.get('destacame-debt-chile')).toBe('fintech-platform')
     expect(map.get('faststruct')).toBe('cli')
     expect(map.get('mvp-template-full-stack')).toBe('library')
-    expect(map.get('portfolio-astro')).toBe('web')
+    expect(projects.length).toBe(4)
   })
 })
 

@@ -21,7 +21,12 @@ _ZIP_PATH = Path('build') / 'build.zip'
 
 
 def _manifest_http():
-    """Manifiesto de un Lambda con trigger http y uses (contact-form)."""
+    """Manifiesto de un Lambda con trigger http y uses (contact-form).
+
+    Tablas: solo infra (cache + rate-limit-buckets). Spec
+    direct-neon-writes elimino `contacts` y `tracking` del catalogo
+    `_TABLES` del provisioner — los Lambdas escriben directo a Neon.
+    """
     return {
         'name': 'contact-form',
         'runtime': 'python3.13',
@@ -32,7 +37,7 @@ def _manifest_http():
         'trigger': {'type': 'http', 'method': 'POST', 'path': '/contact'},
         'uses': {
             'tables': {
-                'contacts': 'read-write',
+                'rate-limit-buckets': 'read-write',
                 'cache': 'read-write',
             },
             'secrets': ['turnstile-secret', 'owner-email'],
@@ -42,28 +47,6 @@ def _manifest_http():
             'default': {'LOG_LEVEL': 'INFO'},
             'dev': {'LOG_LEVEL': 'INFO'},
         },
-    }
-
-
-def _manifest_stream():
-    """Manifiesto de un Lambda con trigger on-table-changes."""
-    return {
-        'name': 'stream-processor',
-        'runtime': 'python3.13',
-        'handler': 'core.handler.lambda_handler',
-        'memory': 512,
-        'timeout': 60,
-        'region': 'us-east-1',
-        'trigger': {
-            'type': 'on-table-changes',
-            'tables': ['contacts', 'tracking'],
-        },
-        'uses': {
-            'tables': [],
-            'secrets': ['neon-url'],
-            'sends-email': False,
-        },
-        'env': {'default': {'LOG_LEVEL': 'INFO'}},
     }
 
 
@@ -142,7 +125,7 @@ class TestRender:
         assert len(dynamo) == 2
         assert dynamo[0]['Resource'] == [
             'arn:aws:dynamodb:us-east-1:${account}:'
-            'table/portfolio-contacts-dev',
+            'table/portfolio-rate-limit-buckets-dev',
         ]
 
     def test_render_iam_policy_when_uses_secrets(self):
@@ -181,27 +164,6 @@ class TestRender:
             in ses[0]['Resource']
         )
 
-    def test_render_iam_policy_when_on_table_changes(self):
-        from serverless import provisioner
-
-        rendered = provisioner.render(_manifest_stream(), stage='dev')
-
-        statements = rendered.iam_policy['Statement']
-        stream = [s for s in statements if 'dynamodb:GetRecords' in s['Action']]
-        sqs = [s for s in statements if s['Action'] == ['sqs:SendMessage']]
-        assert len(stream) == 1
-        assert len(sqs) == 1
-        assert stream[0]['Resource'] == [
-            'arn:aws:dynamodb:us-east-1:${account}:'
-            'table/portfolio-contacts-dev/stream/*',
-            'arn:aws:dynamodb:us-east-1:${account}:'
-            'table/portfolio-tracking-dev/stream/*',
-        ]
-        assert sqs[0]['Resource'] == [
-            'arn:aws:sqs:us-east-1:${account}:'
-            'portfolio-stream-processor-dlq-dev',
-        ]
-
     def test_render_is_pure_same_input_same_output(self):
         from serverless import provisioner
 
@@ -231,9 +193,8 @@ class TestRender:
         assert rendered.trigger.path == '/contact'
 
     def test_render_when_invalid_trigger_raises_manifest_error(self):
-        from serverless.resolve import ManifestError
-
         from serverless import provisioner
+        from serverless.resolve import ManifestError
 
         manifest = _manifest_direct()
         manifest['trigger'] = {'type': 'cron'}
@@ -246,9 +207,8 @@ class TestProvisionCreate:
     """provision() con Action.CREATE corre la secuencia completa."""
 
     def test_provision_create_call_order(self, monkeypatch):
-        from serverless.state import Action
-
         from serverless import provisioner
+        from serverless.state import Action
 
         calls = []
         monkeypatch.setattr(
@@ -269,6 +229,11 @@ class TestProvisionCreate:
         )
 
         verbs = ['.'.join(c[:2]) for c in calls]
+        # Orden post fix CORS preflight (PR #107): el _wire_http_trigger
+        # crea POST + OPTIONS con sus put-method-response/put-integration-
+        # response antes de la deployment. La 2a `apigateway.put-method`
+        # corresponde a OPTIONS y las 2 put-*-response son su respuesta
+        # mockeada para devolver headers CORS al preflight.
         assert verbs == [
             'sts.get-caller-identity',
             'iam.create-role',
@@ -279,18 +244,29 @@ class TestProvisionCreate:
             'lambda.create-function',
             'ssm.get-parameter',
             'ssm.get-parameter',
+            # Idempotencia: get-resources verifica si /path ya existe
+            # antes de create-resource (evita BadRequest en re-corrida).
+            'apigateway.get-resources',
             'apigateway.create-resource',
             'apigateway.put-method',
             'apigateway.put-integration',
+            'apigateway.put-method',
+            'apigateway.put-integration',
+            'apigateway.put-method-response',
+            'apigateway.put-integration-response',
             'apigateway.create-deployment',
+            # get-policy: inspecciona statements obsoletos
+            # (legacy SAM o devtools previo con qualifier distinto)
+            # antes de add-permission. En CREATE el policy esta vacio
+            # asi que no se llama remove-permission.
+            'lambda.get-policy',
             'lambda.add-permission',
         ]
         assert state.resources['function_name'] == 'portfolio-contact-form-dev'
 
     def test_provision_create_records_resources(self, monkeypatch):
-        from serverless.state import Action
-
         from serverless import provisioner
+        from serverless.state import Action
 
         calls = []
         monkeypatch.setattr(
@@ -318,22 +294,39 @@ class TestProvisionCreate:
         )
         assert state.resources['api_resource_id'] == 'res9'
 
-    def test_provision_create_stream_creates_event_source_mappings(
-        self, monkeypatch
-    ):
+    def test_provision_create_reuses_existing_api_resource(self, monkeypatch):
+        """Si /path ya existe en el API GW (re-corrida tras deploy parcial),
+        reutilizar su id y NO llamar create-resource."""
+        from serverless import provisioner
+        from serverless.aws_cli import AwsResult
         from serverless.state import Action
 
-        from serverless import provisioner
-
         calls = []
-        monkeypatch.setattr(
-            provisioner,
-            'aws',
-            _fake_aws(calls, _default_responses()),
-        )
+        responses = _default_responses()
+        # get-resources devuelve el id existente via stdout (text output).
+        existing_resource_id = 'existing-res-id-42'
+
+        def fake(args, **_kwargs):
+            calls.append(args)
+            key = '.'.join(args[:2])
+            if key == 'apigateway.get-resources':
+                return AwsResult(
+                    returncode=0,
+                    stdout=existing_resource_id,
+                    stderr='',
+                    json=None,
+                )
+            return AwsResult(
+                returncode=0,
+                stdout='',
+                stderr='',
+                json=responses.get(key),
+            )
+
+        monkeypatch.setattr(provisioner, 'aws', fake)
         monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
 
-        rendered = provisioner.render(_manifest_stream(), stage='dev')
+        rendered = provisioner.render(_manifest_http(), stage='dev')
         state = provisioner.provision(
             rendered,
             action=Action.CREATE,
@@ -343,13 +336,10 @@ class TestProvisionCreate:
             region='us-east-1',
         )
 
-        mappings = [
-            c
-            for c in calls
-            if '.'.join(c[:2]) == 'lambda.create-event-source-mapping'
-        ]
-        assert len(mappings) == 2
-        assert state.resources['event_source_uuids'] == 'uuid-1,uuid-1'
+        verbs = ['.'.join(c[:2]) for c in calls]
+        assert 'apigateway.get-resources' in verbs
+        assert 'apigateway.create-resource' not in verbs
+        assert state.resources['api_resource_id'] == existing_resource_id
 
 
 class TestProvisionUpdate:
@@ -358,10 +348,9 @@ class TestProvisionUpdate:
     def test_provision_update_code_only_calls_update_function_code(
         self, monkeypatch
     ):
+        from serverless import provisioner
         from serverless.state import Action
         from serverless.state import LambdaState
-
-        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(provisioner, 'aws', _fake_aws(calls))
@@ -393,10 +382,9 @@ class TestProvisionUpdate:
     def test_provision_update_config_calls_config_and_role_policy(
         self, monkeypatch
     ):
+        from serverless import provisioner
         from serverless.state import Action
         from serverless.state import LambdaState
-
-        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(
@@ -424,19 +412,49 @@ class TestProvisionUpdate:
         )
 
         verbs = ['.'.join(c[:2]) for c in calls]
+        # Post-fix: tras `_provision_update_config` ahora `provision()`
+        # re-aplica el wiring del trigger (`_rewire_trigger_on_update`)
+        # para que cambios de `trigger.*` o `snap_start` en el manifest
+        # se materialicen en API GW (URI :live, statement-id correcto).
+        # La secuencia del wiring es la misma que en CREATE (post `_create_function`).
         assert verbs == [
             'sts.get-caller-identity',
+            'iam.create-role',
+            'iam.put-role-policy',
+            'iam.attach-role-policy',
             'lambda.wait',
             'lambda.update-function-configuration',
-            'iam.put-role-policy',
+            'sts.get-caller-identity',
+            'ssm.get-parameter',
+            'ssm.get-parameter',
+            'apigateway.get-resources',
+            'apigateway.create-resource',
+            'apigateway.put-method',
+            'apigateway.put-integration',
+            'apigateway.put-method',
+            'apigateway.put-integration',
+            'apigateway.put-method-response',
+            'apigateway.put-integration-response',
+            'apigateway.create-deployment',
+            'lambda.get-policy',
+            'lambda.add-permission',
         ]
         assert 'lambda.create-function' not in verbs
 
+        update_call = next(
+            c
+            for c in calls
+            if c[:2] == ['lambda', 'update-function-configuration']
+        )
+        assert '--role' in update_call
+        role_arn = update_call[update_call.index('--role') + 1]
+        # _default_responses devuelve este ARN fijo para iam.create-role.
+        assert role_arn == 'arn:aws:iam::111122223333:role/portfolio-x'
+
     def test_provision_update_both_runs_code_and_config(self, monkeypatch):
+        from serverless import provisioner
         from serverless.state import Action
         from serverless.state import LambdaState
-
-        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(
@@ -464,20 +482,150 @@ class TestProvisionUpdate:
         )
 
         verbs = ['.'.join(c[:2]) for c in calls]
+        # Post-fix: el wiring del trigger se re-aplica tambien en
+        # UPDATE_BOTH para alinear API GW con el manifest actual.
         assert verbs == [
             'lambda.wait',
             'lambda.update-function-code',
             'sts.get-caller-identity',
+            'iam.create-role',
+            'iam.put-role-policy',
+            'iam.attach-role-policy',
             'lambda.wait',
             'lambda.update-function-configuration',
-            'iam.put-role-policy',
+            'sts.get-caller-identity',
+            'ssm.get-parameter',
+            'ssm.get-parameter',
+            'apigateway.get-resources',
+            'apigateway.create-resource',
+            'apigateway.put-method',
+            'apigateway.put-integration',
+            'apigateway.put-method',
+            'apigateway.put-integration',
+            'apigateway.put-method-response',
+            'apigateway.put-integration-response',
+            'apigateway.create-deployment',
+            'lambda.get-policy',
+            'lambda.add-permission',
         ]
 
-    def test_provision_noop_makes_no_aws_calls(self, monkeypatch):
+    def test_provision_update_config_cleans_sam_legacy_permission(
+        self, monkeypatch
+    ):
+        """
+        Given un Lambda con statement-id legacy de SAM en su policy
+            (Sid `portfolio-backend-dev-...PermissionDev-XYZ`, mismo
+            source_arn que el target),
+        When provision() corre con Action.UPDATE_CONFIG (re-aplica el
+            wiring del trigger via `_rewire_trigger_on_update`),
+        Then remove-permission borra el statement legacy ANTES del
+            add-permission del statement canonico (`apigw-dev`).
+        """
+        import json as _json
+
+        from serverless import provisioner
+        from serverless.aws_cli import AwsResult
         from serverless.state import Action
         from serverless.state import LambdaState
 
+        # Arrange: policy con UN solo statement legacy de SAM, scoped al
+        # mismo source_arn que devtools ensamblara para `POST /contact`.
+        api_id = 'api-abc123'
+        source_arn = (
+            f'arn:aws:execute-api:us-east-1:111122223333:{api_id}'
+            '/dev/POST/contact'
+        )
+        legacy_sid = (
+            'portfolio-backend-dev-ContactFormFunctionPostContactPermission'
+            'Dev-GyamVaKP4q9J'
+        )
+        legacy_policy = _json.dumps(
+            {
+                'Statement': [
+                    {
+                        'Sid': legacy_sid,
+                        'Effect': 'Allow',
+                        'Principal': {'Service': 'apigateway.amazonaws.com'},
+                        'Action': 'lambda:InvokeFunction',
+                        'Resource': (
+                            'arn:aws:lambda:us-east-1:111122223333:function:'
+                            'portfolio-contact-form-dev'
+                        ),
+                        'Condition': {'ArnLike': {'AWS:SourceArn': source_arn}},
+                    }
+                ],
+            }
+        )
+
+        calls = []
+        responses = _default_responses()
+
+        def fake(args, **_kwargs):
+            calls.append(args)
+            key = '.'.join(args[:2])
+            if key == 'lambda.get-policy':
+                # stdout (text output con --query/--output text)
+                return AwsResult(
+                    returncode=0,
+                    stdout=legacy_policy,
+                    stderr='',
+                    json=None,
+                )
+            return AwsResult(
+                returncode=0,
+                stdout='',
+                stderr='',
+                json=responses.get(key),
+            )
+
+        monkeypatch.setattr(provisioner, 'aws', fake)
+
+        rendered = provisioner.render(_manifest_http(), stage='dev')
+        previous = LambdaState(
+            scope='contact-form',
+            stage='dev',
+            config_hash='sha256:OLD',
+            code_hash='sha256:k',
+            resources={'function_name': 'portfolio-contact-form-dev'},
+            updated_at='2026-05-21T10:00:00Z',
+        )
+
+        # Act
+        provisioner.provision(
+            rendered,
+            action=Action.UPDATE_CONFIG,
+            zip_path=_ZIP_PATH,
+            previous=previous,
+            profile=None,
+            region='us-east-1',
+        )
+
+        # Assert: remove-permission del Sid legacy ocurre ANTES del add-permission canonico.
+        verbs = ['.'.join(c[:2]) for c in calls]
+        assert 'lambda.remove-permission' in verbs
+        assert verbs.index('lambda.remove-permission') < verbs.index(
+            'lambda.add-permission'
+        )
+
+        remove_call = next(
+            c for c in calls if c[:2] == ['lambda', 'remove-permission']
+        )
+        assert '--statement-id' in remove_call
+        sid_idx = remove_call.index('--statement-id') + 1
+        assert remove_call[sid_idx] == legacy_sid
+
+        add_call = next(
+            c for c in calls if c[:2] == ['lambda', 'add-permission']
+        )
+        add_sid_idx = add_call.index('--statement-id') + 1
+        # El manifest test NO tiene snap_start, asi que el target Sid es
+        # `apigw-{stage}` sin sufijo `-live`.
+        assert add_call[add_sid_idx] == 'apigw-dev'
+
+    def test_provision_noop_makes_no_aws_calls(self, monkeypatch):
         from serverless import provisioner
+        from serverless.state import Action
+        from serverless.state import LambdaState
 
         calls = []
         monkeypatch.setattr(provisioner, 'aws', _fake_aws(calls))
@@ -509,11 +657,10 @@ class TestProvisionPartialFailure:
     def test_provision_partial_failure_records_created_resources(
         self, monkeypatch
     ):
+        from serverless import provisioner
         from serverless.aws_cli import AwsError
         from serverless.aws_cli import AwsResult
         from serverless.state import Action
-
-        from serverless import provisioner
 
         calls = []
         responses = _default_responses()
@@ -564,10 +711,9 @@ class TestDeprovision:
     """deprovision() borra los recursos en orden inverso al de creacion."""
 
     def test_deprovision_reverse_order(self, monkeypatch):
+        from serverless import provisioner
         from serverless.aws_cli import AwsResult
         from serverless.state import LambdaState
-
-        from serverless import provisioner
 
         calls = []
 
@@ -615,10 +761,9 @@ class TestDeprovision:
     def test_deprovision_stream_deletes_event_source_mappings(
         self, monkeypatch
     ):
+        from serverless import provisioner
         from serverless.aws_cli import AwsResult
         from serverless.state import LambdaState
-
-        from serverless import provisioner
 
         calls = []
         monkeypatch.setattr(

@@ -76,7 +76,7 @@ class EntityType(StrEnum):
     CERTIFICATE = 'certificate'
     AWARD = 'award'
     EDUCATION = 'education'
-    REFERENCE = 'reference'
+    ENDORSEMENT = 'endorsement'
     LANGUAGE = 'language'
     PUBLICATION = 'publication'
 

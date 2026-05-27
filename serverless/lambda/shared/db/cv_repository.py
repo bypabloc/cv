@@ -34,8 +34,10 @@ from .models import (
     AwardNiche,
     Certificate,
     CertificateNiche,
-    Education,
-    EducationNiche,
+    EducationEntry,
+    EducationEntryNiche,
+    Endorsement,
+    EndorsementNiche,
     Experience,
     ExperienceBullet,
     ExperienceNiche,
@@ -52,8 +54,6 @@ from .models import (
     ProjectMetric,
     ProjectNiche,
     ProjectTechTag,
-    Reference,
-    ReferenceNiche,
     Skill,
     SkillCategory,
     SkillCategoryNiche,
@@ -387,17 +387,25 @@ def list_experiences(
 
             result: list[dict[str, Any]] = []
             for exp in experiences:
+                summary = translations.get(exp.id, {}).get('summary') or None
                 exp_dict: dict[str, Any] = _drop_nones(
                     {
                         'slug': exp.slug,
                         'company': exp.company,
                         'country': exp.country,
                         'companyUrl': exp.company_url,
-                        'start': exp.start_ym,
-                        'end': exp.end_ym,
+                        # Schema externo del CV mantiene formato YYYY-MM
+                        # (legacy del frontend); DB ahora persiste DATE.
+                        'start': exp.started_on.strftime('%Y-%m'),
+                        'end': (
+                            exp.ended_on.strftime('%Y-%m')
+                            if exp.ended_on
+                            else None
+                        ),
                         'seniority': exp.seniority,
                         'metricsEstimated': exp.metrics_estimated,
                         'role': translations.get(exp.id, {}).get('role', {}),
+                        'summary': summary,
                         'responsibilities': bullets_by_exp[exp.id][
                             'responsibility'
                         ],
@@ -507,6 +515,7 @@ def list_projects(
                         'slug': proj.slug,
                         'name': proj.name,
                         'url': proj.url,
+                        'links': proj.links or None,
                         'repo': proj.repo,
                         'status': proj.status,
                         'projectType': proj.project_type,
@@ -619,7 +628,7 @@ def list_awards(
                     {
                         'slug': a.slug,
                         'issuer': a.issuer,
-                        'date': a.awarded_ym,
+                        'date': a.awarded_on.strftime('%Y-%m'),
                         'url': a.url,
                         'title': translations.get(a.id, {}).get('title', {}),
                         'motivation': translations.get(a.id, {}).get(
@@ -642,27 +651,37 @@ def list_education(
     niche = _ensure_niche(niche)
     try:
         with db_session() as session:
-            stmt = select(Education)
+            stmt = select(EducationEntry)
             filtered_ids = _ids_for_niche(
-                session, EducationNiche, 'education_id', niche
+                session, EducationEntryNiche, 'education_entry_id', niche
             )
             if filtered_ids is not None:
                 if not filtered_ids:
                     return []
-                stmt = stmt.where(Education.id.in_(filtered_ids))
+                stmt = stmt.where(EducationEntry.id.in_(filtered_ids))
             educations = list(session.execute(stmt).scalars())
             ids = [e.id for e in educations]
             translations = _translations_map(session, 'education', ids)
             niches_by_edu = _niches_by_entity(
-                session, EducationNiche, 'education_id', ids
+                session, EducationEntryNiche, 'education_entry_id', ids
             )
             return [
                 _drop_nones(
                     {
                         'slug': e.slug,
                         'institution': e.institution,
-                        'start': e.start_year,
-                        'end': e.end_year,
+                        # Schema externo mantiene 'start'/'end' como str
+                        # (legacy del frontend); DB persiste DATE.
+                        'start': (
+                            e.started_on.strftime('%Y')
+                            if e.started_on
+                            else None
+                        ),
+                        'end': (
+                            e.ended_on.strftime('%Y')
+                            if e.ended_on
+                            else None
+                        ),
                         'url': e.url,
                         'degree': translations.get(e.id, {}).get('degree')
                         or None,
@@ -726,24 +745,29 @@ def list_languages(
 def list_references(
     *, niche: str | None = None, locale: str = 'es'
 ) -> list[dict[str, Any]]:
-    """Devuelve las referencias filtradas por niche."""
+    """Devuelve los endorsements filtrados por niche.
+
+    Nombre legacy `list_references` preservado para no romper call-sites
+    del controller (cambia en commit 10). entity_type DB ahora es
+    'endorsement'.
+    """
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
         with db_session() as session:
-            stmt = select(Reference)
+            stmt = select(Endorsement)
             filtered_ids = _ids_for_niche(
-                session, ReferenceNiche, 'reference_id', niche
+                session, EndorsementNiche, 'endorsement_id', niche
             )
             if filtered_ids is not None:
                 if not filtered_ids:
                     return []
-                stmt = stmt.where(Reference.id.in_(filtered_ids))
+                stmt = stmt.where(Endorsement.id.in_(filtered_ids))
             references = list(session.execute(stmt).scalars())
             ids = [r.id for r in references]
-            translations = _translations_map(session, 'reference', ids)
+            translations = _translations_map(session, 'endorsement', ids)
             niches_by_ref = _niches_by_entity(
-                session, ReferenceNiche, 'reference_id', ids
+                session, EndorsementNiche, 'endorsement_id', ids
             )
             return [
                 _drop_nones(

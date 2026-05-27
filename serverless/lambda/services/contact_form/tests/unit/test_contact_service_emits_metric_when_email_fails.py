@@ -32,7 +32,12 @@ def test_contact_service_emits_metric_when_email_fails(monkeypatch):
             'name': 'Pablo',
             'email': 'p@example.com',
             'message': 'Hola mundo largo de prueba',
-        }
+        },
+        session_id='sess-test-01234567890123456789',
+        ip='1.2.3.4',
+        country='CL',
+        user_agent='Mozilla/5.0',
+        origin_niche='hub',
     )
 
     # Assert

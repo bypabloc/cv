@@ -25,8 +25,9 @@ def test_track_model_tracking_payload_excludes_cf_token_and_meta():
     # Act
     payload = model.tracking_payload()
 
-    # Assert
+    # Assert: cf_token + meta excluidos; el resto SI presente (page_title
+    # ahora es required en el modelo, no se omite por defecto vacio).
     assert 'cf_token' not in payload
     assert 'meta' not in payload
-    assert 'page_title' not in payload
+    assert payload['page_title'] == 'Projects'
     assert payload['session_id'] == valid_body()['session_id']

@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run",
+    "test:build": "vitest run --config vitest.build.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },

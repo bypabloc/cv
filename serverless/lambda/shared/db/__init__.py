@@ -17,7 +17,7 @@ los `core/` de los services NO importen `from sqlalchemy` directo
     from shared.db.models import Contact, Experience
 """
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -33,11 +33,10 @@ from .migrations import (
 )
 from .repository import (
     RepositoryError,
+    ensure_session_and_visit,
     insert_contact,
     insert_tracking,
-    is_event_processed,
     list_tables,
-    mark_event_processed,
 )
 from .session import db_session, get_engine
 
@@ -50,13 +49,13 @@ __all__ = [
     'build_config',
     'current_revision',
     'db_session',
+    'delete',
+    'ensure_session_and_visit',
     'func',
     'get_engine',
     'insert_contact',
     'insert_tracking',
-    'is_event_processed',
     'list_tables',
-    'mark_event_processed',
     'pg_insert',
     'run_current',
     'run_downgrade',

@@ -1,14 +1,17 @@
 """Flag validation for test_runner script.
 
 Validates and normalizes flags for the unified test runner that
-orchestrates tests across all project modules (server, dashboard, landing,
-devtools).
+orchestrates tests across all project modules (apps Astro, packages,
+devtools, feature E2E global).
 
 Mayo 2026: el módulo `e2e` y el tipo `--type=e2e` fueron eliminados.
-Ahora cada módulo expone su propio `--type=feature` (BDD-style):
-  - server: pytest -m feature contra tests/feature/ (DRF APIClient + DB seed)
-  - dashboard: Playwright contra dashboard/tests/feature/
-  - landing:   Playwright contra landing/tests/feature/
+Ahora los E2E del portfolio viven en `feature` (Playwright global contra
+los 6 sitios del stack local), separado de los unit tests por app:
+  - feature: Playwright contra tests/feature/ (los 6 niches via nginx)
+  - hub / generic / fintech / architect / leader / vibe: unit + coverage
+  - pkg-*: unit + coverage para los packages del workspace
+  - devtools: unit (Python 3.14)
+  - server: unit (Python serverless backend)
 """
 
 import os
@@ -99,8 +102,8 @@ def _validate_module(flags_dict: dict[str, Any]) -> None:
     """Validate --module flag against known modules with tests.
 
     Mayo 2026: rechaza explicitamente ``--module=e2e`` y ``--module=tests``
-    con mensaje de migración (ya no son módulos válidos; cada feature
-    test vive bajo el módulo de su producto: dashboard, landing, server).
+    con mensaje de migración (ya no son módulos válidos; los E2E del
+    portfolio viven en el módulo global ``feature``).
     """
     module = flags_dict.get('module')
     if module is None:
@@ -110,10 +113,8 @@ def _validate_module(flags_dict: dict[str, Any]) -> None:
     if module in {'e2e', 'tests'}:
         raise ValueError(
             f'--module={module} fue eliminado en mayo 2026.\n'
-            'Usa el módulo del producto y --type=feature:\n'
-            '  python devtools/run.py test_runner --module=dashboard --type=feature\n'
-            '  python devtools/run.py test_runner --module=landing --type=feature\n'
-            '  python devtools/run.py test_runner --module=server --type=feature',
+            'Usa el módulo `feature` (global Playwright) y --type=feature:\n'
+            '  python devtools/run.py test_runner --module=feature --type=feature',
         )
 
     valid_modules = [m for m, types in MODULE_TEST_TYPES.items() if types]
@@ -132,8 +133,8 @@ def _validate_type(flags_dict: dict[str, Any]) -> None:
     If not, validates that at least one module supports the type.
 
     Mayo 2026: rechaza ``--type=e2e`` con mensaje de migración. Antes el
-    tipo `e2e` solo aplicaba al módulo `e2e`; ahora cada producto tiene
-    su `--type=feature` (BDD-style).
+    tipo `e2e` solo aplicaba al módulo `e2e`; ahora los E2E del portfolio
+    viven en el módulo global `feature` con `--type=feature`.
     """
     test_type = flags_dict.get('type', 'all')
     if test_type == 'all':
@@ -142,10 +143,8 @@ def _validate_type(flags_dict: dict[str, Any]) -> None:
     if test_type == 'e2e':
         raise ValueError(
             '--type=e2e fue eliminado en mayo 2026. '
-            'Usa --type=feature por módulo:\n'
-            '  python devtools/run.py test_runner --module=dashboard --type=feature\n'
-            '  python devtools/run.py test_runner --module=landing --type=feature\n'
-            '  python devtools/run.py test_runner --module=server --type=feature',
+            'Usa --module=feature --type=feature:\n'
+            '  python devtools/run.py test_runner --module=feature --type=feature',
         )
 
     module = flags_dict.get('module')
@@ -201,7 +200,7 @@ def _validate_env(flags_dict: dict[str, Any]) -> None:
 def _validate_feature_flags(flags_dict: dict[str, Any]) -> None:
     """Validate --screenshots and --ui-review require feature context.
 
-    Estos flags solo aplican a Playwright (feature tests de dashboard/landing).
+    Estos flags solo aplican a Playwright (feature tests E2E del portfolio).
     Si ``--module=server --type=feature`` los usa, error: pytest no genera
     screenshots ni alimenta el UI review.
     """
@@ -218,7 +217,7 @@ def _validate_feature_flags(flags_dict: dict[str, Any]) -> None:
     if not is_playwright_feature:
         flag_name = '--screenshots' if screenshots else '--ui-review'
         raise ValueError(
-            f'{flag_name} requiere --module=dashboard|landing y --type=feature '
+            f'{flag_name} requiere --module=feature y --type=feature '
             '(solo Playwright soporta screenshots).',
         )
 
@@ -248,7 +247,7 @@ def _validate_playwright_only_flag(
     server o con --type distinto de feature.
 
     Sharding y projects son features de Playwright, así que requieren
-    --module=dashboard|landing y --type=feature.
+    --module=feature y --type=feature.
     """
     if not present:
         return
@@ -258,7 +257,7 @@ def _validate_playwright_only_flag(
     if not is_playwright_feature:
         raise ValueError(
             f'--{key.replace("_", "-")} requiere '
-            '--module=dashboard|landing y --type=feature',
+            '--module=feature y --type=feature',
         )
 
 
@@ -266,7 +265,7 @@ def _validate_sharding_flags(flags_dict: dict[str, Any]) -> None:
     """Válida --project, --shard, --shard-total, --fail-on-flaky.
 
     Reglas:
-    - Las 4 flags requieren --module=dashboard|landing y --type=feature
+    - Las 4 flags requieren --module=feature y --type=feature
     - --shard y --shard-total deben usarse juntos
     - shard y shard_total son enteros >= 1
     - shard <= shard_total
@@ -351,8 +350,8 @@ def describe() -> ScriptDescribe:
         'name': 'test_runner',
         'kind': 'monocommand',
         'summary': (
-            'Orquestador de tests (server pytest, dashboard+landing Vitest, '
-            'feature: Playwright en frontend / DRF APIClient en server)'
+            'Orquestador de tests (apps Astro Vitest + packages Vitest + '
+            'devtools pytest + feature Playwright global)'
         ),
         'commands': [],
         'flags': {
@@ -404,7 +403,7 @@ def describe() -> ScriptDescribe:
                 'default': False,
                 'summary': (
                     'Generar screenshots durante --type=feature '
-                    '(solo dashboard/landing)'
+                    '(solo --module=feature)'
                 ),
             },
             'ui_review': {
@@ -412,7 +411,7 @@ def describe() -> ScriptDescribe:
                 'default': False,
                 'summary': (
                     'Revisar screenshots con Gemini CLI tras feature tests '
-                    '(solo dashboard/landing)'
+                    '(solo --module=feature)'
                 ),
             },
             'project': {
@@ -426,7 +425,7 @@ def describe() -> ScriptDescribe:
                 'type': 'int',
                 'summary': (
                     'Shard index 1-based (requiere shard_total). '
-                    'Solo aplica a --type=feature en dashboard/landing.'
+                    'Solo aplica a --module=feature --type=feature.'
                 ),
             },
             'shard_total': {

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nuevo contacto - the-full-stack.com</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f7f7f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f7f7f5;padding:24px 0;">
+<tr>
+<td align="center">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+<tr>
+<td style="background-color:#0a0a0a;color:#ffffff;padding:24px 32px;">
+<h1 style="margin:0;font-size:20px;font-weight:600;">Nuevo contacto - {{niche}}</h1>
+<p style="margin:8px 0 0 0;font-size:13px;color:#a0a0a0;">portfolio · the-full-stack.com</p>
+</td>
+</tr>
+<tr>
+<td style="padding:32px;color:#0a0a0a;">
+<p style="margin:0 0 8px 0;font-size:13px;color:#666;">De</p>
+<p style="margin:0 0 16px 0;font-size:16px;font-weight:600;">{{name}} &lt;<a href="mailto:{{email}}" style="color:#4f6ef7;text-decoration:none;">{{email}}</a>&gt;</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin-bottom:24px;">
+{{#company}}<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#666;width:30%;">Empresa</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;">{{company}}</td></tr>{{/company}}
+{{#role}}<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#666;">Cargo</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;">{{role}}</td></tr>{{/role}}
+{{#service_type}}<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#666;">Tipo</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;">{{service_type}}</td></tr>{{/service_type}}
+{{#budget}}<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#666;">Presupuesto</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;">{{budget}}</td></tr>{{/budget}}
+{{#timeline}}<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#666;">Timeline</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;">{{timeline}}</td></tr>{{/timeline}}
+</table>
+<p style="margin:0 0 8px 0;font-size:13px;color:#666;">Mensaje</p>
+<div style="padding:16px;background-color:#f7f7f5;border-left:3px solid #4f6ef7;border-radius:4px;font-size:14px;line-height:1.6;white-space:pre-wrap;">{{message}}</div>
+</td>
+</tr>
+<tr>
+<td style="padding:16px 32px;background-color:#fafafa;border-top:1px solid #eee;color:#888;font-size:12px;line-height:1.6;">
+<strong>Metadata</strong><br/>
+Contact ID: <code>{{contact_id}}</code><br/>
+Created at: {{created_at}}<br/>
+IP: {{ip}}{{#country}} · {{country}}{{/country}}
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>

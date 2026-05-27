@@ -10,15 +10,16 @@ description:
   en: >-
     Product built at Destacame for the Mexican market. Vue/Nuxt frontend + Django microservices +
     credit-bureau integrations.
+url: https://www.destacame.com.mx/
 status: active
 niches:
   - fintech
-  - architect
+  - leader
   - generic
 priority:
-  fintech: 95
-  architect: 85
-  generic: 65
+  fintech: 90
+  leader: 95
+  generic: 80
 stack:
   - Vue
   - Nuxt

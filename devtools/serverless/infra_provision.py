@@ -45,7 +45,7 @@ _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 _RESOURCES_DIR = _SERVERLESS_DIR / 'lambda' / 'resources'
 
 # Subdirectorios de _RESOURCES_DIR que contienen fragmentos de recurso.
-_RESOURCE_TYPES = ('sqs', 'dynamodb', 'api_gateway')
+_RESOURCE_TYPES = ('sqs', 'dynamodb', 'api_gateway', 'cloudwatch_alarms')
 
 # Region por defecto del backend.
 _REGION = aws_cli.DEFAULT_REGION
@@ -58,9 +58,15 @@ _APIGW_CWLOGS_POLICY = (
     'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
 )
 
-# Orden de provision: SQS, luego tablas DynamoDB, luego API Gateway. El
-# deprovision recorre la lista inversa.
-_PROVISION_ORDER = ('sqs-queue', 'dynamodb-table', 'rest-api')
+# Orden de provision: SQS (DLQs primero, principales despues) -> tablas
+# DynamoDB -> API Gateway -> alarmas CloudWatch (necesitan los ARNs SQS).
+# El deprovision recorre la lista inversa.
+_PROVISION_ORDER = (
+    'sqs-queue',
+    'dynamodb-table',
+    'rest-api',
+    'cloudwatch-alarm',
+)
 
 # SQS bloquea recrear una cola con el mismo nombre por 60s tras borrarla
 # (QueueDeletedRecently). El ciclo destroy + provision-infra reintenta.
@@ -82,17 +88,38 @@ class RenderedResource:
         Resto del fragmento con todos los `${stage}` interpolados.
     source : Path
         Ruta del fragmento YAML del que se renderizo.
+    stage : str
+        Entorno (`dev` | `stage` | `prod`); usado por providers que
+        seleccionan config por stage (ej. `custom_domain_by_stage` del
+        `rest-api`).
     """
 
     kind: str
     name: str
     spec: dict[str, Any]
     source: Path
+    stage: str = ''
 
     @property
     def publishes_ssm(self) -> dict[str, str]:
         """Mapa atributo -> path SSM declarado en el fragmento."""
         return self.spec.get('publishes_ssm', {})
+
+    @property
+    def custom_domain(self) -> dict[str, Any] | None:
+        """Config del custom domain del stage actual, o None.
+
+        Lee `custom_domain_by_stage[<stage>]` del spec. El bloque trae
+        `domain_name`, `endpoint_type` (`EDGE` | `REGIONAL`),
+        `certificate_arn`, y opcionalmente `base_path_mappings`.
+        """
+        by_stage = self.spec.get('custom_domain_by_stage')
+        if not isinstance(by_stage, dict):
+            return None
+        config = by_stage.get(self.stage)
+        if not isinstance(config, dict):
+            return None
+        return config
 
 
 @dataclass
@@ -199,10 +226,15 @@ def render_resource(path: Path, *, stage: str) -> RenderedResource:
     interpolated: dict[str, Any] = _interpolate(raw, stage)
 
     kind = interpolated.get('kind')
-    if kind not in {'dynamodb-table', 'rest-api', 'sqs-queue'}:
+    if kind not in {
+        'dynamodb-table',
+        'rest-api',
+        'sqs-queue',
+        'cloudwatch-alarm',
+    }:
         raise ValueError(
-            f'kind invalido en {path}: {kind!r}. '
-            f'Validos: dynamodb-table, rest-api, sqs-queue.',
+            f'kind invalido en {path}: {kind!r}. Validos: '
+            f'dynamodb-table, rest-api, sqs-queue, cloudwatch-alarm.',
         )
 
     name = interpolated.get('name')
@@ -215,6 +247,7 @@ def render_resource(path: Path, *, stage: str) -> RenderedResource:
         name=name,
         spec=spec,
         source=path,
+        stage=stage,
     )
 
 
@@ -458,12 +491,26 @@ def _provision_sqs_queue(
     region: str,
     dry_run: bool,
 ) -> tuple[dict[str, str | None], list[str]]:
-    """Provisiona una cola SQS. Idempotente via `get-queue-url`."""
-    spec = rendered.spec
+    """Provisiona una cola SQS. Idempotente via `get-queue-url`.
+
+    Tras crear/reusar la cola, aplica via `set-queue-attributes` los
+    bloques opcionales `visibility_timeout_seconds` y `redrive_policy`
+    (DLQ wiring). El RedrivePolicy resuelve el ARN de la DLQ por nombre
+    en runtime con `get-queue-url` + `get-queue-attributes` — la DLQ
+    debe existir antes (las DLQs van primero en `_ordered_rendered`).
+    """
     queue_name = rendered.name
 
     if dry_run:
         print(_c(YELLOW, f'[dry-run] sqs create-queue {queue_name}'))
+        if rendered.spec.get('redrive_policy'):
+            print(
+                _c(
+                    YELLOW,
+                    f'[dry-run] sqs set-queue-attributes {queue_name} '
+                    f'(redrive_policy + visibility_timeout)',
+                )
+            )
         queue_url: str | None = None
         queue_arn: str | None = None
     else:
@@ -485,6 +532,12 @@ def _provision_sqs_queue(
             profile=profile,
             region=region,
         )
+        _apply_sqs_attributes(
+            rendered,
+            queue_url,
+            profile=profile,
+            region=region,
+        )
 
     values: dict[str, str | None] = {'arn': queue_arn, 'url': queue_url}
     published = _publish_ssm(
@@ -498,9 +551,73 @@ def _provision_sqs_queue(
         f'sqs:{queue_name}:url': queue_url,
         f'sqs:{queue_name}:arn': queue_arn,
     }
-    # Marca para que mypy/ruff no consideren `spec` sin uso.
-    _ = spec.get('message_retention_seconds')
     return resources, published
+
+
+def _apply_sqs_attributes(
+    rendered: RenderedResource,
+    queue_url: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Aplica `VisibilityTimeout` + `RedrivePolicy` via set-queue-attributes.
+
+    Idempotente: AWS hace diff internamente y solo aplica si cambia.
+    Si el spec no declara ninguno de los dos, NO se llama (set-queue-
+    attributes con dict vacio falla).
+    """
+    import json as _json
+
+    spec = rendered.spec
+    attributes: dict[str, str] = {}
+
+    visibility = spec.get('visibility_timeout_seconds')
+    if visibility is not None:
+        attributes['VisibilityTimeout'] = str(visibility)
+
+    redrive = spec.get('redrive_policy')
+    if redrive:
+        dlq_name = redrive['target']
+        dlq_url = _resolve_queue_url(
+            dlq_name,
+            profile=profile,
+            region=region,
+        )
+        if dlq_url is None:
+            raise RuntimeError(
+                f'DLQ {dlq_name!r} no existe — debe provisionarse antes '
+                f'que la cola principal {rendered.name!r}. Revisar el '
+                f'orden de _ordered_rendered (DLQs primero).'
+            )
+        dlq_arn = _describe_queue_arn(
+            dlq_url,
+            profile=profile,
+            region=region,
+        )
+        attributes['RedrivePolicy'] = _json.dumps(
+            {
+                'deadLetterTargetArn': dlq_arn,
+                'maxReceiveCount': redrive.get('max_receive_count', 3),
+            }
+        )
+
+    if not attributes:
+        return
+
+    aws_cli.aws(
+        [
+            'sqs',
+            'set-queue-attributes',
+            '--queue-url',
+            queue_url,
+            '--attributes',
+            _json.dumps(attributes),
+        ],
+        profile=profile,
+        region=region,
+    )
+    print(_c(GREEN, f'  OK  atributos aplicados a {rendered.name}'))
 
 
 def _resolve_queue_url(
@@ -626,6 +743,14 @@ def _provision_rest_api(
             )
         )
         print(_c(YELLOW, f'[dry-run] apigateway create-rest-api {api_name}'))
+        # Anunciar tambien el custom domain si esta declarado.
+        _, _ = _ensure_custom_domain(
+            rendered,
+            api_id=None,
+            profile=profile,
+            region=region,
+            dry_run=True,
+        )
         values: dict[str, str | None] = {
             'id': None,
             'root_resource_id': None,
@@ -648,6 +773,14 @@ def _provision_rest_api(
         region=region,
     )
 
+    domain_resources, _ = _ensure_custom_domain(
+        rendered,
+        api_id=api_id,
+        profile=profile,
+        region=region,
+        dry_run=False,
+    )
+
     values = {
         'id': api_id,
         'root_resource_id': root_resource_id,
@@ -665,6 +798,7 @@ def _provision_rest_api(
         f'rest-api:{api_name}:root_resource_id': root_resource_id,
         f'rest-api:{api_name}:access_log_group_arn': log_group_arn,
     }
+    resources.update(domain_resources)
     return resources, published
 
 
@@ -897,23 +1031,345 @@ def _find_root_resource_id(
 
 
 # --------------------------------------------------------------------------
+# Custom domains de API Gateway (EDGE vs REGIONAL)
+# --------------------------------------------------------------------------
+# Stages de deployment de API Gateway (no confundir con `stage` del repo
+# que es dev/stage/prod): convencion del proyecto, usar 'prod' para todo.
+_APIGW_DEPLOYMENT_STAGE = 'prod'
+
+
+def _describe_custom_domain(
+    domain_name: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> dict[str, Any] | None:
+    """Describe un custom domain de API Gateway, o None si no existe."""
+    result = aws_cli.aws(
+        ['apigateway', 'get-domain-name', '--domain-name', domain_name],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    return result.json or None
+
+
+def _domain_endpoint_type(domain: dict[str, Any] | None) -> str | None:
+    """Extrae `endpointConfiguration.types[0]` de un describe."""
+    if not domain:
+        return None
+    types = (domain.get('endpointConfiguration') or {}).get('types') or []
+    return types[0] if types else None
+
+
+def _create_custom_domain(
+    domain_name: str,
+    endpoint_type: str,
+    certificate_arn: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Crea un custom domain con el endpoint_type pedido.
+
+    Para EDGE: el flag es `--certificate-arn` (cert global, debe vivir
+    en us-east-1). Para REGIONAL: `--regional-certificate-arn`.
+    """
+    cert_flag = (
+        '--certificate-arn'
+        if endpoint_type == 'EDGE'
+        else '--regional-certificate-arn'
+    )
+    aws_cli.aws(
+        [
+            'apigateway',
+            'create-domain-name',
+            '--domain-name',
+            domain_name,
+            cert_flag,
+            certificate_arn,
+            '--endpoint-configuration',
+            f'types={endpoint_type}',
+            '--security-policy',
+            'TLS_1_2',
+        ],
+        profile=profile,
+        region=region,
+    )
+
+
+def _ensure_base_path_mapping(
+    domain_name: str,
+    api_id: str,
+    base_path: str,
+    stage_name: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Asegura que existe un base-path-mapping domain -> api_id/stage.
+
+    `base_path` vacio significa root mapping (paths `/` del custom
+    domain enrutan al `/` de la API).
+    """
+    existing = aws_cli.aws(
+        [
+            'apigateway',
+            'get-base-path-mappings',
+            '--domain-name',
+            domain_name,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    expected_path = base_path or '(none)'
+    for item in (existing.json or {}).get('items', []):
+        current_path = item.get('basePath', '(none)')
+        # AWS devuelve '(none)' cuando es root (base_path vacio en yaml).
+        if (
+            current_path == expected_path
+            and item.get('restApiId') == api_id
+            and item.get('stage') == stage_name
+        ):
+            return  # mapping ya existe correctamente
+
+    args = [
+        'apigateway',
+        'create-base-path-mapping',
+        '--domain-name',
+        domain_name,
+        '--rest-api-id',
+        api_id,
+        '--stage',
+        stage_name,
+    ]
+    if base_path:
+        args.extend(['--base-path', base_path])
+    aws_cli.aws(args, profile=profile, region=region, check=False)
+
+
+def _ensure_custom_domain(
+    rendered: RenderedResource,
+    api_id: str | None,
+    *,
+    profile: str | None,
+    region: str,
+    dry_run: bool,
+) -> tuple[dict[str, str | None], list[str]]:
+    """Provisiona o reconcilia el custom domain del stage actual.
+
+    Si el yaml declara `custom_domain_by_stage[<stage>]` y el endpoint
+    type difiere de lo aprovisionado en AWS, recrea el custom domain
+    (delete + create) y re-aplica el base-path-mapping. Si no existe,
+    lo crea. Si ya esta alineado, no-op.
+
+    Returns
+    -------
+    tuple[dict, list[str]]
+        `resources` (claves planas con identificadores), `published`
+        (paths SSM publicados — vacio por ahora; placeholder para
+        futura publicacion del CloudFront distribution domain).
+    """
+    config = rendered.custom_domain
+    if not config:
+        return {}, []
+
+    domain_name = config['domain_name']
+    desired_type = config.get('endpoint_type', 'REGIONAL')
+    certificate_arn = config['certificate_arn']
+    base_paths = config.get('base_path_mappings') or [{'base_path': ''}]
+
+    if dry_run:
+        print(
+            _c(
+                YELLOW,
+                f'[dry-run] apigateway ensure-domain {domain_name} '
+                f'(endpoint={desired_type})',
+            ),
+        )
+        return {}, []
+
+    current = _describe_custom_domain(
+        domain_name,
+        profile=profile,
+        region=region,
+    )
+    current_type = _domain_endpoint_type(current)
+
+    if current and current_type != desired_type:
+        print(
+            _c(
+                YELLOW,
+                f'  custom domain {domain_name}: drift {current_type} -> '
+                f'{desired_type}, recreando...',
+            ),
+        )
+        aws_cli.aws(
+            [
+                'apigateway',
+                'delete-domain-name',
+                '--domain-name',
+                domain_name,
+            ],
+            profile=profile,
+            region=region,
+        )
+        current = None
+
+    if current is None:
+        print(
+            _c(
+                YELLOW,
+                f'  creando custom domain {domain_name} ({desired_type})...',
+            ),
+        )
+        _create_custom_domain(
+            domain_name,
+            desired_type,
+            certificate_arn,
+            profile=profile,
+            region=region,
+        )
+        current = _describe_custom_domain(
+            domain_name,
+            profile=profile,
+            region=region,
+        )
+
+    if api_id is None:
+        print(
+            _c(
+                YELLOW,
+                f'  WARN: no se pudo aplicar base-path-mapping de '
+                f'{domain_name}: api_id desconocido',
+            ),
+        )
+    else:
+        for mapping in base_paths:
+            base_path = mapping.get('base_path', '')
+            stage_name = mapping.get('stage', _APIGW_DEPLOYMENT_STAGE)
+            _ensure_base_path_mapping(
+                domain_name,
+                api_id,
+                base_path,
+                stage_name,
+                profile=profile,
+                region=region,
+            )
+
+    print(_c(GREEN, f'  OK  custom domain {domain_name} ({desired_type})'))
+
+    resources: dict[str, str | None] = {
+        f'custom-domain:{domain_name}:endpoint_type': desired_type,
+    }
+    if current:
+        cf_domain = current.get('distributionDomainName') or current.get(
+            'regionalDomainName',
+        )
+        if cf_domain:
+            resources[f'custom-domain:{domain_name}:gateway_domain'] = cf_domain
+
+    return resources, []
+
+
+# --------------------------------------------------------------------------
 # Orquestacion de la provision y la limpieza de la infra
 # --------------------------------------------------------------------------
+def _provision_cloudwatch_alarm(
+    rendered: RenderedResource,
+    *,
+    profile: str | None,
+    region: str,
+    dry_run: bool,
+) -> tuple[dict[str, str | None], list[str]]:
+    """Provisiona una alarma CloudWatch. Idempotente via `put-metric-alarm`.
+
+    `put-metric-alarm` es upsert: re-aplica los mismos args y AWS hace
+    diff internamente. Si la alarma no existe la crea; si existe la
+    actualiza con los args nuevos.
+    """
+    spec = rendered.spec
+    alarm_name = rendered.name
+
+    if dry_run:
+        print(_c(YELLOW, f'[dry-run] cloudwatch put-metric-alarm {alarm_name}'))
+        return {f'cloudwatch:{alarm_name}': None}, []
+
+    metric = spec['metric']
+    args = [
+        'cloudwatch',
+        'put-metric-alarm',
+        '--alarm-name',
+        alarm_name,
+        '--namespace',
+        metric['namespace'],
+        '--metric-name',
+        metric['name'],
+        '--statistic',
+        spec.get('statistic', 'Maximum'),
+        '--period',
+        str(spec.get('period_seconds', 300)),
+        '--evaluation-periods',
+        str(spec.get('evaluation_periods', 1)),
+        '--threshold',
+        str(spec['threshold']),
+        '--comparison-operator',
+        spec.get('comparison', 'GreaterThanThreshold'),
+        '--treat-missing-data',
+        spec.get('treat_missing_data', 'notBreaching'),
+    ]
+    description = spec.get('description')
+    if description:
+        # YAML `description: >` (folded) puede dejar trailing newline
+        # que AWS CLI no maneja bien.
+        args.extend(['--alarm-description', description.strip()])
+
+    dims = metric.get('dimensions') or {}
+    if dims:
+        args.append('--dimensions')
+        args.extend([f'Name={k},Value={v}' for k, v in dims.items()])
+
+    actions = spec.get('alarm_actions') or []
+    if actions:
+        args.append('--alarm-actions')
+        args.extend(actions)
+
+    aws_cli.aws(args, profile=profile, region=region)
+    print(_c(GREEN, f'  OK  alarma {alarm_name} configurada'))
+
+    return {f'cloudwatch:{alarm_name}': alarm_name}, []
+
+
 _PROVISIONERS = {
     'dynamodb-table': _provision_dynamodb_table,
     'rest-api': _provision_rest_api,
     'sqs-queue': _provision_sqs_queue,
+    'cloudwatch-alarm': _provision_cloudwatch_alarm,
 }
 
 
 def _ordered_rendered(stage: str) -> list[RenderedResource]:
-    """Renderiza todos los fragmentos y los ordena por `_PROVISION_ORDER`."""
+    """Renderiza todos los fragmentos y los ordena por `_PROVISION_ORDER`.
+
+    Sub-orden dentro de `sqs-queue`: las DLQs (sin `redrive_policy`) van
+    PRIMERO porque las colas principales con `redrive_policy.target` las
+    necesitan creadas para resolver el ARN de la DLQ.
+    """
     rendered = [
         render_resource(path, stage=stage) for path in discover_resources()
     ]
     return sorted(
         rendered,
-        key=lambda r: _PROVISION_ORDER.index(r.kind),
+        key=lambda r: (
+            _PROVISION_ORDER.index(r.kind),
+            # Sub-key para SQS: 0 = sin redrive (DLQ), 1 = con redrive (main).
+            1
+            if (r.kind == 'sqs-queue' and r.spec.get('redrive_policy'))
+            else 0,
+        ),
     )
 
 

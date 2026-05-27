@@ -85,16 +85,55 @@ def extract_ip(event: dict[str, Any]) -> str:
 
 def extract_country(event: dict[str, Any]) -> str | None:
     """
-    Resuelve el country code (ISO 3166-1 alpha-2) desde headers CF.
+    Resuelve el country code (ISO 3166-1 alpha-2) desde headers Edge.
 
-    Cloudflare inyecta `CF-IPCountry` con el country del cliente derivado
-    de su DB de geolocalizacion. Es free y mucho mas confiable que un
-    GeoIP lookup en runtime de Lambda.
+    Prioridad:
+    1. `CloudFront-Viewer-Country` (AWS Edge-Optimized API GW custom domain
+       lo inyecta automaticamente con la geoloc de CloudFront).
+    2. `CF-IPCountry` (header de Cloudflare; fallback para entornos que
+       todavia pasen por CF, o para tests).
+
+    Both son ISO 3166-1 alpha-2 (2 chars uppercase).
 
     Returns:
         Country code 2 chars upper, o None si no esta presente.
     """
-    cf_country = _get_header(event.get('headers'), 'CF-IPCountry')
+    headers = event.get('headers')
+    # 1. CloudFront-Viewer-Country (AWS Edge-Optimized)
+    cf_viewer = _get_header(headers, 'CloudFront-Viewer-Country')
+    if cf_viewer and len(cf_viewer) == 2:
+        return cf_viewer.upper()
+    # 2. CF-IPCountry (Cloudflare)
+    cf_country = _get_header(headers, 'CF-IPCountry')
     if cf_country and len(cf_country) == 2:
         return cf_country.upper()
     return None
+
+
+def extract_cloudfront_meta(event: dict[str, Any]) -> dict[str, str]:
+    """
+    Captura TODOS los headers cloudfront-* del request en un dict.
+
+    Edge-Optimized API Gateway expone ~22 headers `CloudFront-*` con
+    geo/device/network/tls metadata: viewer-country / country-region /
+    city / postal-code / latitude / longitude / metro-code / time-zone /
+    address / asn / ja3-fingerprint / tls / http-version + device flags
+    (is-desktop/mobile/tablet/smarttv/ios/android-viewer) +
+    forwarded-proto.
+
+    Las keys del dict resultante son lowercase canonicas
+    (`cloudfront-viewer-city`, `cloudfront-is-mobile-viewer`, etc.)
+    para queries JSONB consistentes en Neon.
+
+    Returns:
+        Dict con todos los headers cloudfront-* (vacio si no hay).
+    """
+    headers = event.get('headers') or {}
+    result: dict[str, str] = {}
+    for key, value in headers.items():
+        if not isinstance(key, str):
+            continue
+        lower = key.lower()
+        if lower.startswith('cloudfront-') and value is not None:
+            result[lower] = str(value)
+    return result

@@ -13,6 +13,101 @@ x-app-environment: &app-environment
   PUBLIC_TURNSTILE_SITEKEY: ${PUBLIC_TURNSTILE_SITEKEY:-}
 
 services:
+  # --- Backend del lambda local: Postgres + DynamoDB Local --------------
+  # postgres-local: PG18 (match con Neon). Puerto 5433 en host (5432
+  # interno) para evitar choque con un Postgres del sistema. Datos
+  # persisten en el volume `portfolio_postgres_local`.
+  postgres-local:
+    image: postgres:18-alpine
+    container_name: portfolio-postgres-local
+    environment:
+      POSTGRES_USER: portfolio
+      POSTGRES_PASSWORD: portfolio
+      POSTGRES_DB: portfolio
+    ports:
+      - "5437:5432"
+    volumes:
+      - portfolio_postgres_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  # db-migrate-local: corre `alembic upgrade head` contra postgres-local
+  # al startup y termina. Bind-monta shared/ para que cambios al schema
+  # se apliquen sin rebuild de la imagen.
+  db-migrate-local:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/db-migrate/Dockerfile
+    container_name: portfolio-db-migrate-local
+    depends_on:
+      postgres-local:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://portfolio:portfolio@postgres-local:5432/portfolio
+    volumes:
+      - ../../serverless/lambda/shared:/app/shared:ro
+    restart: "no"
+
+  # dynamodb-local: emula DynamoDB para cache + rate-limit. Puerto 8000.
+  # `-sharedDb` hace que todos los SDK clients vean la misma DB
+  # (independiente de region/credenciales). Datos persisten en el volume.
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: portfolio-dynamodb-local
+    ports:
+      - "8000:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/home/dynamodblocal/data"]
+    user: root
+    volumes:
+      - portfolio_dynamodb_local:/home/dynamodblocal/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000 || exit 1"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  # ddb-setup-local: crea las 3 tablas (cache + rate-limit-rules +
+  # rate-limit-buckets) en dynamodb-local. Idempotente (ignora errores
+  # si ya existen). Termina cuando termina la ultima `create-table`.
+  ddb-setup-local:
+    image: amazon/aws-cli:latest
+    container_name: portfolio-ddb-setup-local
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        EP=http://dynamodb-local:8000
+        aws --endpoint-url $$EP dynamodb create-table \
+          --table-name portfolio-cache-local \
+          --attribute-definitions AttributeName=cache_key,AttributeType=S \
+          --key-schema AttributeName=cache_key,KeyType=HASH \
+          --billing-mode PAY_PER_REQUEST 2>/dev/null || true
+        aws --endpoint-url $$EP dynamodb create-table \
+          --table-name portfolio-rate-limit-rules-local \
+          --attribute-definitions AttributeName=rule_key,AttributeType=S AttributeName=kind,AttributeType=S \
+          --key-schema AttributeName=rule_key,KeyType=HASH AttributeName=kind,KeyType=RANGE \
+          --billing-mode PAY_PER_REQUEST 2>/dev/null || true
+        aws --endpoint-url $$EP dynamodb create-table \
+          --table-name portfolio-rate-limit-buckets-local \
+          --attribute-definitions AttributeName=bucket_key,AttributeType=S \
+          --key-schema AttributeName=bucket_key,KeyType=HASH \
+          --billing-mode PAY_PER_REQUEST 2>/dev/null || true
+        echo "[ddb-setup-local] tablas DDB locales listas"
+    restart: "no"
+
+  # --- Apps Astro -------------------------------------------------------
   nginx:
     image: nginx:alpine
     container_name: portfolio-nginx-local
@@ -141,3 +236,5 @@ services:
 volumes:
   portfolio_node_modules:
   feature_node_modules:
+  portfolio_postgres_local:
+  portfolio_dynamodb_local:

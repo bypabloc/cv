@@ -22,7 +22,7 @@
  */
 import type { CurriculumApp, Niche } from '@portfolio/content'
 import { buildStrings, type I18nStrings } from './site-config'
-import { buildSiteUrl, SITE_URLS } from './site-urls'
+import { buildSiteUrl } from './site-urls'
 
 export interface DefineSiteConfigInput {
   /** Nicho del sitio. Ver `NICHES` en `@portfolio/content`. */
@@ -43,10 +43,10 @@ export interface DefineSiteConfigInput {
    */
   ogImagePath?: string
   /**
-   * URL del hub para el item "Otras vistas" del nav. Si se omite, se usa
-   * `SITE_URLS.hub`. La app hub debe pasar `null` para NO enlazarse a si misma.
+   * Si `true`, omite el dropdown "Otras vistas" del nav. La app hub debe
+   * pasarlo en `true` para NO mostrar el dropdown a si misma. Default: false.
    */
-  hubHref?: string | null
+  omitNicheDropdown?: boolean
 }
 
 export interface DefineSiteConfigOutput {
@@ -76,10 +76,10 @@ export function defineSiteConfig(
   const app: CurriculumApp = input.app ?? (NICHE as CurriculumApp)
   const SITE_URL = input.siteUrl ?? defaultSiteUrlFor(NICHE)
   const OG_IMAGE = `${SITE_URL}${input.ogImagePath ?? DEFAULT_OG_PATH}`
-  // Auto-inject hubHref para que el navbar muestre "Otras vistas" -> hub.
-  // `hubHref: null` desactiva el item (la app hub no se enlaza a si misma).
-  const hubHref =
-    input.hubHref === null ? undefined : (input.hubHref ?? SITE_URLS.hub)
-  const STRINGS = buildStrings(app, hubHref)
+  // currentNiche del nav: si la app pidio omitir el dropdown (caso hub),
+  // pasamos null; en cualquier otro caso pasamos el niche del sitio para
+  // que la entry actual quede marcada con aria-current.
+  const currentNiche = input.omitNicheDropdown ? null : NICHE
+  const STRINGS = buildStrings(app, currentNiche)
   return { NICHE, SITE_URL, OG_IMAGE, STRINGS }
 }

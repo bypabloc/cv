@@ -14,6 +14,7 @@ del form, asi que vive en el modelo del form, no en `_meta`.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 
 from shared.core import BaseModel, EmailStr, Field, field_validator
@@ -32,6 +33,14 @@ class RequestMeta(BaseModel):
     country: str | None = None
     user_agent: str | None = None
     bypass_secret: str | None = None
+    # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
+    # API GW los expone). El service lo persiste en la columna
+    # cloudfront_meta JSONB.
+    cloudfront_meta: dict[str, str] = Field(default_factory=dict)
+    # Origin header raw del request (https://hub.portfolio.dev...). El
+    # controller lo usa para inferir niche cuando el form no lo envia
+    # (spec sessions-normalize, decision 6).
+    origin: str | None = None
 
     model_config = {'extra': 'forbid'}
 
@@ -93,7 +102,10 @@ class ContactCreateModel(BaseModel):
 
         Es el payload que el service persiste y usa para el email: el
         equivalente de `parsed.model_dump(exclude={'cf_token'})` del
-        Lambda plano.
+        Lambda plano. Spec drop-cloudfront-meta: el dict NO incluye
+        `cloudfront_meta` (columna dropeada en alembic c3d4e5f6a7b8);
+        `RequestMeta.cloudfront_meta` sigue aceptandolo en entrada pero
+        ya no se propaga al payload de persistencia.
         """
         return self.model_dump(
             exclude={'cf_token', 'meta'},
@@ -106,3 +118,17 @@ class ContactCreatedOutput(BaseModel):
 
     contact_id: str
     created_at: str  # ISO 8601 UTC
+
+
+class ContactAcceptedOutput(BaseModel):
+    """Respuesta 202 cuando el encoder publica el form a SQS (modo ASYNC).
+
+    El cliente recibe el contact_id pre-generado por el encoder (UUIDv7)
+    para correlar future status checks. `accepted=True` documenta que la
+    request fue aceptada para procesamiento asincrono — el worker la
+    persiste en Neon + dispara el email despues.
+    """
+
+    contact_id: str
+    created_at: datetime
+    accepted: bool = True

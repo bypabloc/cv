@@ -1,50 +1,80 @@
 # Portfolio - Variables de categoria SERVER.
 #
-# Config del backend serverless (Lambdas: contact_form, tracking, etc.) y de
-# email/DB. Incluye SECRETOS de runtime.
+# Config del backend serverless (Lambdas: contact_form, tracking_pixel,
+# stream_processor, db). Incluye SECRETOS de runtime.
 #
-# IMPORTANTE: los valores SECRETOS (DB_URL, DB_PASSWORD, TURNSTILE_SECRET_KEY,
-# TURNSTILE_BYPASS_SECRET) NO se escriben crudos en estos archivos. Viven en
-# AWS SSM Parameter Store (SecureString + KMS). Aqui quedan como placeholder
-# vacio — las Lambdas los leen de SSM en runtime. Ver .claude/rules/
-# neon-management.md y .claude/rules/security.md.
+# Fuente de verdad del inventario:
+#   serverless/lambda/resources/secrets/*.yaml (catalogo declarativo)
+# devtools (en `serverless deploy --stage=<env>`) lee este .env y publica
+# cada secreto a SSM Parameter Store. Las Lambdas leen SSM en runtime.
 #
 # Copiar a docker/env/server/.{local,dev,stage,test,prod}.
 # Los archivos .{env} estan en .gitignore; este .example si se versiona.
 
-# --- Email (SES + sender) -------------------------------------------------
-# Backend de email: `ses` (cloud) | `console` (dev, imprime a stdout).
-EMAIL_BACKEND=
-# Direccion remitente verificada en SES (domain the-full-stack.com).
-EMAIL_FROM=
-EMAIL_FROM_NAME=
-# Destinatario del form de contacto.
+# === Catalogo: serverless/lambda/resources/secrets/ ========================
+# Cada entrada de abajo corresponde a un archivo YAML del catalogo.
+
+# --- turnstile-secret.yaml (SecureString) ---
+# Cloudflare Turnstile secret key (siteverify)
+# SSM: /portfolio/${stage}/turnstile-secret
+TURNSTILE_SECRET_KEY=
+
+# --- turnstile-bypass-secret.yaml (SecureString, solo dev) ---
+# Bypass token para Playwright E2E. Generar: openssl rand -hex 32
+# SSM: /portfolio/dev/turnstile-bypass-secret
+TURNSTILE_BYPASS_SECRET=
+
+# --- neon-url.yaml (SecureString) ---
+# Neon PostgreSQL connection string completa (pooled, sslmode=require)
+# SSM: /portfolio/${stage}/neon-url
+DB_URL=
+
+# --- owner-email.yaml (String, global compartido) ---
+# Email destino del form de contacto.
+# SSM: /portfolio/owner-email
 OWNER_EMAIL=
 
-# --- AWS region / recursos (NO secretos) ----------------------------------
+# --- ses-from-address.yaml (String, global compartido) ---
+# Direccion remitente verificada en SES (domain the-full-stack.com).
+# SSM: /portfolio/ses-from-address
+EMAIL_FROM=
+
+# --- ses-from-name.yaml (String, global compartido, opcional) ---
+# Display name del remitente en emails SES.
+# SSM: /portfolio/ses-from-name
+EMAIL_FROM_NAME=
+
+# === Variables NO catalogadas (inline en manifest.yaml de cada Lambda) =====
+
+# --- AWS endpoints (override para local-dev con dynamodb-local) ---
+# Solo en .local y .test: apunta boto3 al container amazon/dynamodb-local
+# del compose. boto3 1.28+ respeta AWS_ENDPOINT_URL_<SERVICE> nativamente.
+# En .dev/.stage/.prod debe quedar vacio para usar el endpoint AWS real.
+#   .local -> http://localhost:8000
+#   .test  -> http://localhost:8001
+AWS_ENDPOINT_URL_DYNAMODB=
+
+# --- Email backend (decision de runtime) ---
+# `ses` (cloud) | `console` (dev, imprime a stdout).
+EMAIL_BACKEND=
+
+# --- AWS region / recursos (constantes derivables) ---
 AWS_REGION=us-east-1
 AWS_SES_REGION=us-east-1
 AWS_S3_REGION_NAME=us-east-1
 AWS_STORAGE_BUCKET_NAME=
 
-# --- AWS SSM Parameter Store (paths que leen las Lambdas) -----------------
+# --- AWS SSM Parameter Store (prefijo y KMS key) ---
 SSM_PATH_PREFIX=/portfolio
 KMS_KEY_ALIAS=alias/portfolio-lambdas
 
-# --- Database Neon: campos NO sensibles -----------------------------------
+# --- Database Neon: campos NO sensibles (informativos, embebidos en DB_URL) ---
 DB_DB=neondb
 DB_USER=neondb_owner
 DB_PORT=5432
 DB_SSLMODE=require
-# DB_HOST no es secreto pero identifica el branch/proyecto Neon.
+DB_CHANNEL_BINDING=require
+# DB_HOST identifica el branch/proyecto Neon (no es secreto pero varia por stage).
 DB_HOST=
-
-# --- SECRETOS (placeholder — valor real en SSM SecureString) --------------
-# Connection string completa. SSM: /portfolio[/{stage}]/neon-url
-DB_URL=
-# Password del rol neondb_owner. Embebida en DB_URL.
+# DB_PASSWORD esta embebida en DB_URL; declararla aparte es opcional.
 DB_PASSWORD=
-# Secret key del widget Turnstile. SSM: /portfolio[/{stage}]/turnstile-secret
-TURNSTILE_SECRET_KEY=
-# Token de bypass para Playwright E2E. Generar: openssl rand -hex 32
-TURNSTILE_BYPASS_SECRET=

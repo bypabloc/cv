@@ -55,8 +55,26 @@ def _dynamodb_fragment(*, with_stream: bool) -> str:
     )
 
 
-def _rest_api_fragment() -> str:
-    """Fragmento YAML de la API Gateway REST."""
+def _rest_api_fragment(with_custom_domain: bool = False) -> str:
+    """Fragmento YAML de la API Gateway REST.
+
+    Si `with_custom_domain` es True, incluye un bloque
+    `custom_domain_by_stage` con dev EDGE y stage REGIONAL para probar
+    drift detection.
+    """
+    custom = ''
+    if with_custom_domain:
+        custom = (
+            'custom_domain_by_stage:\n'
+            '  dev:\n'
+            '    domain_name: api.portfolio.dev.the-full-stack.com\n'
+            '    endpoint_type: EDGE\n'
+            '    certificate_arn: arn:aws:acm:us-east-1:111:cert/test\n'
+            '  stage:\n'
+            '    domain_name: api.portfolio.stage.the-full-stack.com\n'
+            '    endpoint_type: REGIONAL\n'
+            '    certificate_arn: arn:aws:acm:us-east-1:111:cert/test\n'
+        )
     return (
         'kind: rest-api\n'
         'name: portfolio-api-${stage}\n'
@@ -70,6 +88,7 @@ def _rest_api_fragment() -> str:
         'portfolio-api/root-resource-id\n'
         '  access_log_group_arn: /portfolio/${stage}/api_gateway/'
         'portfolio-api/access-log-group-arn\n'
+        f'{custom}'
     )
 
 
@@ -229,17 +248,23 @@ class TestRenderResource:
 class TestDiscoverResources:
     """discover_resources lista los fragmentos reales de resources/."""
 
-    def test_discover_finds_seven_resources(self):
+    def test_discover_finds_all_resources(self):
         """
-        Given los 7 fragmentos de serverless/lambda/resources/,
+        Given los fragmentos de serverless/lambda/resources/,
         When discover_resources,
-        Then devuelve exactamente 7 paths y ninguno empieza con '_'.
+        Then devuelve todos los paths y ninguno empieza con '_'.
+
+        Cantidad post spec lambdas-async-sqs: 3 tablas DDB (cache +
+        rate-limit-rules + rate-limit-buckets) + 1 API GW + 4 colas
+        SQS (2 main + 2 DLQ) + 2 alarmas CloudWatch = 10. La cantidad
+        crece con el tiempo; el test solo verifica el invariante de
+        que `_*.yaml` esta excluido.
         """
         from serverless import infra_provision
 
         paths = infra_provision.discover_resources()
 
-        assert len(paths) == 7
+        assert len(paths) >= 4
         assert all(not p.stem.startswith('_') for p in paths)
 
 
@@ -574,3 +599,267 @@ class TestDeprovisionInfra:
             'sqs.delete-queue',
         ]
         assert not (tmp_path / '.state' / 'infra-dev.json').exists()
+
+
+# --------------------------------------------------------------------------
+# Custom domains (Edge-Optimized vs Regional)
+# --------------------------------------------------------------------------
+class TestCustomDomain:
+    """Render + provision del custom_domain_by_stage del rest-api."""
+
+    def test_render_exposes_stage_in_rendered_resource(self, tmp_path):
+        """
+        Given un yaml rest-api,
+        When render_resource(stage='dev'),
+        Then el RenderedResource expone stage='dev'.
+        """
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(),
+        )
+
+        rendered = infra_provision.render_resource(path, stage='dev')
+
+        assert rendered.stage == 'dev'
+
+    def test_custom_domain_returns_config_for_current_stage(self, tmp_path):
+        """
+        Given un rest-api con custom_domain_by_stage,
+        When stage='dev',
+        Then .custom_domain devuelve la config de dev (EDGE).
+        """
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(with_custom_domain=True),
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+
+        config = rendered.custom_domain
+
+        assert config is not None
+        assert config['endpoint_type'] == 'EDGE'
+        assert config['domain_name'] == 'api.portfolio.dev.the-full-stack.com'
+
+    def test_custom_domain_returns_none_when_stage_missing(self, tmp_path):
+        """
+        Given un rest-api con custom_domain_by_stage que no incluye prod,
+        When stage='prod',
+        Then .custom_domain devuelve None.
+        """
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(with_custom_domain=True),
+        )
+        rendered = infra_provision.render_resource(path, stage='prod')
+
+        assert rendered.custom_domain is None
+
+    def test_custom_domain_returns_none_when_block_absent(self, tmp_path):
+        """
+        Given un rest-api sin custom_domain_by_stage,
+        When cualquier stage,
+        Then .custom_domain devuelve None (campo opcional).
+        """
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(with_custom_domain=False),
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+
+        assert rendered.custom_domain is None
+
+    def test_ensure_custom_domain_creates_when_absent(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        """
+        Given un rest-api con custom_domain dev=EDGE y la domain NO existe en AWS,
+        When _ensure_custom_domain corre,
+        Then llama create-domain-name + create-base-path-mapping.
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(with_custom_domain=True),
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+
+        # describe -> 404 (None); get-base-path-mappings -> sin items
+        fake = _FakeAws(
+            {
+                'apigateway.get-domain-name': None,
+                'apigateway.get-base-path-mappings': {'items': []},
+            },
+        )
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        resources, _ = infra_provision._ensure_custom_domain(
+            rendered,
+            api_id='api123',
+            profile=None,
+            region='us-east-1',
+            dry_run=False,
+        )
+
+        verbs = ['.'.join(c[:2]) for c in fake.calls]
+        assert 'apigateway.create-domain-name' in verbs
+        assert 'apigateway.create-base-path-mapping' in verbs
+        assert (
+            resources[
+                'custom-domain:api.portfolio.dev.the-full-stack.com:endpoint_type'
+            ]
+            == 'EDGE'
+        )
+
+    def test_ensure_custom_domain_recreates_on_endpoint_drift(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        """
+        Given un yaml pide EDGE pero AWS reporta REGIONAL,
+        When _ensure_custom_domain corre,
+        Then llama delete-domain-name + create-domain-name (recrear).
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(with_custom_domain=True),
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+
+        # describe -> REGIONAL existente; tras delete describe -> None
+        fake = _FakeAws(
+            {
+                'apigateway.get-domain-name': [
+                    {
+                        'domainName': 'api.portfolio.dev.the-full-stack.com',
+                        'endpointConfiguration': {'types': ['REGIONAL']},
+                    },
+                    None,
+                ],
+                'apigateway.get-base-path-mappings': {'items': []},
+            },
+        )
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        infra_provision._ensure_custom_domain(
+            rendered,
+            api_id='api123',
+            profile=None,
+            region='us-east-1',
+            dry_run=False,
+        )
+
+        verbs = ['.'.join(c[:2]) for c in fake.calls]
+        assert 'apigateway.delete-domain-name' in verbs
+        assert 'apigateway.create-domain-name' in verbs
+        # Orden: primero delete, luego create
+        delete_idx = verbs.index('apigateway.delete-domain-name')
+        create_idx = verbs.index('apigateway.create-domain-name')
+        assert delete_idx < create_idx
+
+    def test_ensure_custom_domain_no_op_when_aligned(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        """
+        Given yaml pide EDGE y AWS ya tiene EDGE,
+        When _ensure_custom_domain corre,
+        Then NO llama delete ni create (solo describe + ensure mapping).
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(with_custom_domain=True),
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+
+        fake = _FakeAws(
+            {
+                'apigateway.get-domain-name': {
+                    'domainName': 'api.portfolio.dev.the-full-stack.com',
+                    'endpointConfiguration': {'types': ['EDGE']},
+                    'distributionDomainName': 'd123.cloudfront.net',
+                },
+                'apigateway.get-base-path-mappings': {
+                    'items': [
+                        {
+                            'basePath': '(none)',
+                            'restApiId': 'api123',
+                            'stage': 'prod',
+                        },
+                    ],
+                },
+            },
+        )
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        resources, _ = infra_provision._ensure_custom_domain(
+            rendered,
+            api_id='api123',
+            profile=None,
+            region='us-east-1',
+            dry_run=False,
+        )
+
+        verbs = ['.'.join(c[:2]) for c in fake.calls]
+        assert 'apigateway.delete-domain-name' not in verbs
+        assert 'apigateway.create-domain-name' not in verbs
+        assert 'apigateway.create-base-path-mapping' not in verbs
+        assert (
+            resources[
+                'custom-domain:api.portfolio.dev.the-full-stack.com:gateway_domain'
+            ]
+            == 'd123.cloudfront.net'
+        )
+
+    def test_ensure_custom_domain_skips_when_no_config(
+        self,
+        tmp_path,
+        monkeypatch,
+    ):
+        """
+        Given un rest-api sin custom_domain_by_stage,
+        When _ensure_custom_domain corre,
+        Then no llama nada y retorna ({}, []).
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'portfolio-api.yaml',
+            _rest_api_fragment(with_custom_domain=False),
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+
+        fake = _FakeAws()
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        resources, published = infra_provision._ensure_custom_domain(
+            rendered,
+            api_id='api123',
+            profile=None,
+            region='us-east-1',
+            dry_run=False,
+        )
+
+        assert resources == {}
+        assert published == []
+        assert fake.calls == []

@@ -10,6 +10,15 @@ cosas:
      Sin tocar AWS. Es lo testeable.
   2. `provision(rendered, action, ...)` — ejecuta las llamadas AWS CLI
      segun la `Action` que decidio `state.diff` (CREATE / UPDATE_* ).
+     En UPDATE_CONFIG y UPDATE_BOTH, ademas, llama a
+     `_rewire_trigger_on_update` para que cambios en `trigger.*` y
+     `snap_start` se materializen en API GW / EventSourceMapping
+     (URI con qualifier `:live`, statement-id del add-permission).
+     El wiring corre `_cleanup_legacy_permissions` antes del
+     add-permission canonico, borrando statements obsoletos del
+     resource-policy del Lambda (legacy SAM o devtools previo con
+     qualifier distinto), scoped por `source_arn` para NO tocar
+     permisos legitimos de otros origenes.
   3. `deprovision(state, ...)` — borra los recursos en orden inverso.
 
 La traduccion `uses` -> IAM resuelve los ARNs a strings concretos
@@ -20,8 +29,10 @@ identificadores de infra (Stream ARN, ApiId) se leen de SSM con
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+import json
 import time
 from typing import TYPE_CHECKING
 from typing import Any
@@ -43,66 +54,49 @@ if TYPE_CHECKING:
 # Stages validos del bloque `env` del manifiesto.
 _VALID_ENV_STAGES = ('default', 'dev', 'stage', 'prod')
 
-# Tipos de trigger soportados.
-_VALID_TRIGGERS = ('direct', 'http', 'on-table-changes')
+# Tipos de trigger soportados. `on-table-changes` se elimino con el
+# stream_processor (spec direct-neon-writes): los Lambdas HTTP escriben
+# directo a Neon en vez de via DDB Stream.
+_VALID_TRIGGERS = ('direct', 'http', 'sqs')
+
+# Mapeo de access -> acciones IAM para colas SQS.
+_SQS_ACTIONS: dict[str, list[str]] = {
+    'producer': ['sqs:SendMessage'],
+    'consumer': [
+        'sqs:ReceiveMessage',
+        'sqs:DeleteMessage',
+        'sqs:GetQueueAttributes',
+        'sqs:ChangeMessageVisibility',
+    ],
+}
 
 # Espera de propagacion del rol IAM recien creado antes de
 # `create-function`: un rol nuevo puede no estar disponible aun.
 _IAM_PROPAGATION_SECONDS = 10
 
 # Tablas DynamoDB: nombre corto -> definicion del catalogo. Sin
-# marcadores CloudFormation: nombres y ARNs concretos.
+# marcadores CloudFormation: nombres y ARNs concretos. Solo tablas de
+# infraestructura (cache + rate-limit). Las tablas `contacts` y
+# `tracking` se eliminaron en spec direct-neon-writes — esos datos
+# viven ahora en Neon directo.
 _TABLES: dict[str, dict[str, str]] = {
-    'contacts': {
-        'physical': 'portfolio-contacts-${stage}',
-        'env': 'SSM_CONTACTS_TABLE_PATH',
-        'has_stream': 'yes',
-    },
-    'tracking': {
-        'physical': 'portfolio-tracking-${stage}',
-        'env': 'SSM_TRACKING_TABLE_PATH',
-        'has_stream': 'yes',
-    },
     'cache': {
         'physical': 'portfolio-cache-${stage}',
         'env': 'SSM_CACHE_TABLE_PATH',
-        'has_stream': '',
     },
     'rate-limit-rules': {
         'physical': 'portfolio-rate-limit-rules-${stage}',
         'env': 'SSM_RATE_LIMIT_RULES_TABLE_PATH',
-        'has_stream': '',
     },
     'rate-limit-buckets': {
         'physical': 'portfolio-rate-limit-buckets-${stage}',
         'env': 'SSM_RATE_LIMIT_BUCKETS_TABLE_PATH',
-        'has_stream': '',
     },
 }
 
-# Secretos SSM: nombre corto -> (path SSM, env var del codigo).
-_SECRETS: dict[str, dict[str, str]] = {
-    'neon-url': {
-        'path': '/portfolio/${stage}/neon-url',
-        'env': 'SSM_NEON_URL_PATH',
-    },
-    'turnstile-secret': {
-        'path': '/portfolio/${stage}/turnstile-secret',
-        'env': 'SSM_TURNSTILE_SECRET_PATH',
-    },
-    'turnstile-bypass-secret': {
-        'path': '/portfolio/dev/turnstile-bypass-secret',
-        'env': 'SSM_TURNSTILE_BYPASS_PATH',
-    },
-    'owner-email': {
-        'path': '/portfolio/owner-email',
-        'env': 'SSM_OWNER_EMAIL_PATH',
-    },
-    'ses-from-address': {
-        'path': '/portfolio/ses-from-address',
-        'env': 'SSM_SES_FROM_PATH',
-    },
-}
+# El inventario de secretos SSM vive en
+# `serverless/lambda/resources/secrets/*.yaml`. Lo consume
+# `_secret_def(short_name)` via `serverless.secrets_catalog.Catalog`.
 
 # Identidades verificadas en SES sobre las que el Lambda puede enviar.
 _SES_IDENTITIES = (
@@ -158,19 +152,26 @@ class TriggerSpec:
     Attributes
     ----------
     type : str
-        `direct` | `http` | `on-table-changes`.
+        `direct` | `http` | `sqs`.
     method : str | None
         Metodo HTTP (solo `http`). Ej. `POST`.
     path : str | None
         Path del endpoint (solo `http`). Ej. `/contact`.
-    tables : tuple[str, ...]
-        Nombres cortos de las tablas (solo `on-table-changes`).
+    queue_name : str | None
+        Nombre de la cola SQS (solo `sqs`), ya interpolado.
+    batch_size : int
+        Tamano del batch del Event Source Mapping (solo `sqs`). Default 1.
+    function_response_types : tuple[str, ...]
+        Function response types para retries parciales (solo `sqs`). Ej.
+        `('ReportBatchItemFailures',)`.
     """
 
     type: str
     method: str | None = None
     path: str | None = None
-    tables: tuple[str, ...] = ()
+    queue_name: str | None = None
+    batch_size: int = 1
+    function_response_types: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -210,6 +211,7 @@ class RenderedLambda:
     handler: str
     memory: int
     timeout: int
+    snap_start: bool = False
     env_vars: dict[str, str] = field(default_factory=dict)
     iam_policy: dict[str, Any] = field(default_factory=dict)
     trigger: TriggerSpec = field(default_factory=lambda: TriggerSpec('direct'))
@@ -238,14 +240,24 @@ def _table_def(short_name: str) -> dict[str, str]:
 
 
 def _secret_def(short_name: str) -> dict[str, str]:
-    """Resuelve un nombre corto de secreto a su definicion del catalogo."""
-    secret = _SECRETS.get(short_name)
-    if secret is None:
-        raise ManifestError(
-            f'secreto desconocido: {short_name!r}. '
-            f'Validos: {", ".join(sorted(_SECRETS))}',
-        )
-    return secret
+    """Resuelve un nombre corto de secreto a su definicion del catalogo.
+
+    Lee del catalogo YAML en `serverless/lambda/resources/secrets/`
+    (fuente de verdad). Devuelve la estructura {path, env} compatible
+    con los consumers historicos de este modulo.
+    """
+    from serverless.secrets_catalog import Catalog
+    from serverless.secrets_catalog import CatalogError
+
+    try:
+        spec = Catalog.load().get(short_name)
+    except CatalogError as exc:
+        raise ManifestError(str(exc)) from exc
+
+    return {
+        'path': spec.path_template,
+        'env': spec.target_env_var,
+    }
 
 
 def _resolve_env(manifest: dict[str, Any], stage: str) -> dict[str, str]:
@@ -302,6 +314,25 @@ def _build_env_vars(manifest: dict[str, Any], stage: str) -> dict[str, str]:
         sdef = _secret_def(short_name)
         env[sdef['env']] = _interp(sdef['path'], stage)
 
+    # uses.queues -> env vars SSM_<UPPER>_QUEUE_URL_PATH para que el
+    # publisher de shared.queue resuelva la URL en cold start.
+    for queue in uses.get('queues') or []:
+        if not isinstance(queue, dict):
+            continue
+        access = queue.get('access', 'producer')
+        if access != 'producer':
+            # Solo los producers leen la URL desde SSM (envian mensajes).
+            # Los consumers reciben el evento Lambda con los records.
+            continue
+        queue_full = _interp(str(queue['name']), stage)
+        # Derivar el "short_name" SSM: portfolio-contact-form-${stage} ->
+        # contact-form (sin prefijo portfolio- ni sufijo -<stage>).
+        short = queue_full.removeprefix('portfolio-').removesuffix(
+            f'-{stage}',
+        )
+        env_key = 'SSM_' + short.upper().replace('-', '_') + '_QUEUE_URL_PATH'
+        env[env_key] = f'/portfolio/{stage}/sqs/{short}/url'
+
     return env
 
 
@@ -351,58 +382,6 @@ def _dynamodb_statements(
     return statements, table_ssm_paths
 
 
-def _stream_statements(
-    trigger: dict[str, Any],
-    stage: str,
-    *,
-    region: str,
-    account: str,
-) -> list[dict[str, Any]]:
-    """Statements IAM de un trigger `on-table-changes`.
-
-    Permisos de lectura de los Streams de las tablas + `sqs:SendMessage`
-    al DLQ del stream processor. Los ARNs concretos del Stream y del DLQ
-    se resuelven contra SSM en `provision` (aqui se usa el ARN base de la
-    tabla, que cubre `table/<name>/stream/*`).
-    """
-    statements: list[dict[str, Any]] = []
-    stream_resources: list[str] = []
-    for short_name in trigger.get('tables') or []:
-        tdef = _table_def(short_name)
-        if not tdef['has_stream']:
-            raise ManifestError(
-                f'la tabla {short_name!r} no tiene Stream — no puede '
-                f'usarse en on-table-changes.',
-            )
-        physical = _interp(tdef['physical'], stage)
-        stream_resources.append(
-            f'arn:aws:dynamodb:{region}:{account}:table/{physical}/stream/*',
-        )
-    statements.append(
-        {
-            'Effect': 'Allow',
-            'Action': [
-                'dynamodb:DescribeStream',
-                'dynamodb:GetRecords',
-                'dynamodb:GetShardIterator',
-                'dynamodb:ListStreams',
-            ],
-            'Resource': stream_resources,
-        }
-    )
-    statements.append(
-        {
-            'Effect': 'Allow',
-            'Action': ['sqs:SendMessage'],
-            'Resource': [
-                f'arn:aws:sqs:{region}:{account}:'
-                f'portfolio-stream-processor-dlq-{stage}',
-            ],
-        }
-    )
-    return statements
-
-
 def _build_statements(
     manifest: dict[str, Any],
     stage: str,
@@ -414,8 +393,7 @@ def _build_statements(
 
     Cada tabla -> Statement DynamoDB; cada secreto -> Statement SSM
     `GetParameter` + un Statement `kms:Decrypt`; `sends-email` ->
-    Statement SES; `on-table-changes` ->
-    Statements de Stream + SQS al DLQ. Sin `Fn::Sub`: ARNs concretos.
+    Statement SES. Sin `Fn::Sub`: ARNs concretos.
     """
     uses = manifest.get('uses') or {}
 
@@ -423,10 +401,38 @@ def _build_statements(
         uses.get('tables') or {}, stage, region=region, account=account
     )
 
+    # Statements SQS por cola declarada en uses.queues.
+    queues = uses.get('queues') or []
+    queue_ssm_paths: list[str] = []
+    for queue in queues:
+        if not isinstance(queue, dict):
+            continue
+        queue_full = _interp(str(queue['name']), stage)
+        access = queue.get('access', 'producer')
+        actions = _SQS_ACTIONS.get(access)
+        if not actions:
+            raise ManifestError(
+                f'acceso invalido {access!r} para la cola '
+                f'{queue_full!r}. Usa producer | consumer.',
+            )
+        statements.append(
+            {
+                'Effect': 'Allow',
+                'Action': actions,
+                'Resource': f'arn:aws:sqs:{region}:{account}:{queue_full}',
+            }
+        )
+        if access == 'producer':
+            # Producers leen la URL SQS desde SSM en cold start.
+            short = queue_full.removeprefix('portfolio-').removesuffix(
+                f'-{stage}'
+            )
+            queue_ssm_paths.append(f'/portfolio/{stage}/sqs/{short}/url')
+
     secrets = uses.get('secrets') or []
     ssm_read_arns = [
         f'arn:aws:ssm:{region}:{account}:parameter{path}'
-        for path in table_ssm_paths
+        for path in table_ssm_paths + queue_ssm_paths
     ]
     for short_name in secrets:
         sdef = _secret_def(short_name)
@@ -473,12 +479,6 @@ def _build_statements(
             }
         )
 
-    trigger = manifest.get('trigger') or {}
-    if trigger.get('type') == 'on-table-changes':
-        statements += _stream_statements(
-            trigger, stage, region=region, account=account
-        )
-
     return statements
 
 
@@ -489,7 +489,7 @@ def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
     ------
     ManifestError
         Si el tipo de trigger no es valido o falta `method`/`path` en un
-        trigger `http`, o `tables` en `on-table-changes`.
+        trigger `http`.
     """
     trigger = manifest.get('trigger') or {}
     ttype = trigger.get('type')
@@ -507,15 +507,18 @@ def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
             raise ManifestError("trigger http requiere 'method' y 'path'.")
         return TriggerSpec(type='http', method=method, path=path)
 
-    if ttype == 'on-table-changes':
-        tables = trigger.get('tables') or []
-        for short_name in tables:
-            tdef = _table_def(short_name)
-            if not tdef['has_stream']:
-                raise ManifestError(
-                    f'la tabla {short_name!r} no tiene Stream.',
-                )
-        return TriggerSpec(type='on-table-changes', tables=tuple(tables))
+    if ttype == 'sqs':
+        queue_name = trigger.get('queue')
+        if not queue_name:
+            raise ManifestError("trigger sqs requiere 'queue'.")
+        batch_size = int(trigger.get('batch_size', 1))
+        response_types = tuple(trigger.get('function_response_types') or ())
+        return TriggerSpec(
+            type='sqs',
+            queue_name=queue_name,
+            batch_size=batch_size,
+            function_response_types=response_types,
+        )
 
     return TriggerSpec(type='direct')
 
@@ -564,6 +567,7 @@ def render(manifest: dict[str, Any], *, stage: str) -> RenderedLambda:
         handler=str(manifest['handler']),
         memory=int(manifest.get('memory', 256)),
         timeout=int(manifest.get('timeout', 30)),
+        snap_start=bool(manifest.get('snap_start', False)),
         env_vars=_build_env_vars(manifest, stage),
         iam_policy=iam_policy,
         trigger=_build_trigger(manifest),
@@ -825,6 +829,206 @@ def _ssm_value(path: str, *, profile: str | None, region: str) -> str:
     return str(result.json['Parameter']['Value'])
 
 
+def _wire_cors_options(
+    *,
+    api_id: str,
+    resource_id: str,
+    method: str,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Crea el method OPTIONS para CORS preflight en un resource de API GW.
+
+    Patron estandar de CORS:
+    - PUT method OPTIONS authType=NONE.
+    - MOCK integration con request template para application/json y
+      passthroughBehavior=WHEN_NO_TEMPLATES (sin este flag, browsers que
+      hacen preflight sin Content-Type reciben 500).
+    - method-response + integration-response con los 4 headers
+      Access-Control-* (Origin=*, Methods, Headers, Max-Age=600).
+
+    Headers permitidos: Content-Type + los headers Turnstile del form de
+    contacto. Si en el futuro el frontend manda headers custom, ampliar
+    aqui (anyway el preflight los lista en Access-Control-Request-Headers
+    y el navegador valida contra Access-Control-Allow-Headers).
+
+    Idempotente: cada `aws apigateway put-*` acepta re-aplicacion sobre
+    una entidad existente (sobrescribe). Para flexibilidad ante re-deploys,
+    los errores "ConflictException: Method already exists" se ignoran.
+    """
+    allowed_headers = 'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'
+    allowed_methods = f'{method},OPTIONS'
+
+    # 1. put-method OPTIONS — puede fallar con ConflictException si ya
+    # existe. Lo tratamos como noop.
+    aws(
+        [
+            'apigateway',
+            'put-method',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--authorization-type',
+            'NONE',
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+    # 2. put-integration MOCK
+    aws(
+        [
+            'apigateway',
+            'put-integration',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--type',
+            'MOCK',
+            '--request-templates',
+            '{"application/json":"{\\"statusCode\\":200}"}',
+            '--passthrough-behavior',
+            'WHEN_NO_TEMPLATES',
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+    # 3. put-method-response 200 declarando los 4 headers CORS
+    aws(
+        [
+            'apigateway',
+            'put-method-response',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--status-code',
+            '200',
+            '--response-parameters',
+            (
+                'method.response.header.Access-Control-Allow-Origin=true,'
+                'method.response.header.Access-Control-Allow-Methods=true,'
+                'method.response.header.Access-Control-Allow-Headers=true,'
+                'method.response.header.Access-Control-Max-Age=true'
+            ),
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+    # 4. put-integration-response 200 con los VALORES de los headers
+    aws(
+        [
+            'apigateway',
+            'put-integration-response',
+            '--rest-api-id',
+            api_id,
+            '--resource-id',
+            resource_id,
+            '--http-method',
+            'OPTIONS',
+            '--status-code',
+            '200',
+            '--response-parameters',
+            (
+                '{'
+                '"method.response.header.Access-Control-Allow-Origin":"\'*\'",'
+                f'"method.response.header.Access-Control-Allow-Methods":"\'{allowed_methods}\'",'
+                f'"method.response.header.Access-Control-Allow-Headers":"\'{allowed_headers}\'",'
+                '"method.response.header.Access-Control-Max-Age":"\'600\'"'
+                '}'
+            ),
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+
+
+def _cleanup_legacy_permissions(
+    *,
+    function_name: str,
+    keep_sid: str,
+    source_arn: str,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Borra statements obsoletos del resource-policy del Lambda.
+
+    Scoped al mismo `source_arn`: solo elimina statements cuyo SourceArn
+    apunta al mismo path API GW (`POST /contact` para contact-form) y
+    cuyo Sid no es `keep_sid`. Asi NO toca permisos legitimos de otros
+    origenes (EventBridge, otra API GW, otro path).
+
+    Cubre 2 casos reales:
+    - Statement legacy de SAM (`portfolio-backend-<stage>-...Permission...`),
+      que devtools nunca limpio tras la migracion de SAM a AWS CLI directo.
+    - Statement viejo de devtools cuando cambio el qualifier (`apigw-dev`
+      sin live -> `apigw-dev-live` tras activar snap_start).
+
+    Idempotente: si el policy no existe (ResourceNotFoundException) o
+    no hay statements obsoletos, no-op.
+    """
+    pol_result = aws(
+        [
+            'lambda',
+            'get-policy',
+            '--function-name',
+            function_name,
+            '--query',
+            'Policy',
+            '--output',
+            'text',
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+    raw = (pol_result.stdout or '').strip()
+    if not raw or pol_result.returncode != 0:
+        return
+    try:
+        policy = json.loads(raw)
+    except (ValueError, TypeError):
+        return
+    for stmt in policy.get('Statement', []) or []:
+        sid = stmt.get('Sid', '')
+        if not sid or sid == keep_sid:
+            continue
+        cond_arn = (
+            stmt.get('Condition', {})
+            .get('ArnLike', {})
+            .get('AWS:SourceArn', '')
+        )
+        if cond_arn != source_arn:
+            continue
+        aws(
+            [
+                'lambda',
+                'remove-permission',
+                '--function-name',
+                function_name,
+                '--statement-id',
+                sid,
+            ],
+            profile=profile,
+            region=region,
+            check=False,
+        )
+
+
 def _wire_http_trigger(
     rendered: RenderedLambda,
     stage: str,
@@ -848,25 +1052,52 @@ def _wire_http_trigger(
     )
     path_part = (trigger.path or '').lstrip('/')
 
-    resource_result = aws(
+    # Idempotente: si el resource /path ya existe (caso CREATE tras
+    # deploy parcial previo o re-corrida del provisioner), reutilizar
+    # su id en vez de fallar con BadRequest.
+    existing_resources = aws(
         [
             'apigateway',
-            'create-resource',
+            'get-resources',
             '--rest-api-id',
             api_id,
-            '--parent-id',
-            root_id,
-            '--path-part',
-            path_part,
+            '--query',
+            f'items[?pathPart==`{path_part}`].id | [0]',
+            '--output',
+            'text',
         ],
         profile=profile,
         region=region,
-        parse_json=True,
+        check=False,
     )
-    resource_id = str(resource_result.json['id'])
+    existing_id = (existing_resources.stdout or '').strip()
+    if existing_id and existing_id != 'None':
+        resource_id = existing_id
+        print(f'  OK  resource /{path_part} ya existe ({resource_id})')
+    else:
+        resource_result = aws(
+            [
+                'apigateway',
+                'create-resource',
+                '--rest-api-id',
+                api_id,
+                '--parent-id',
+                root_id,
+                '--path-part',
+                path_part,
+            ],
+            profile=profile,
+            region=region,
+            parse_json=True,
+        )
+        resource_id = str(resource_result.json['id'])
     resources['api_resource_id'] = resource_id
     resources['api_method'] = f'{trigger.method} {trigger.path}'
 
+    # Idempotente: si el method ya existe (caso CREATE tras deploy
+    # parcial previo o re-corrida del provisioner), put-method falla con
+    # ConflictException. Lo tratamos como noop — la config del method
+    # (authorization-type NONE) es invariante entre deploys.
     aws(
         [
             'apigateway',
@@ -882,11 +1113,15 @@ def _wire_http_trigger(
         ],
         profile=profile,
         region=region,
+        check=False,
     )
+    # Qualifier: si SnapStart=true, apunta al alias `:live` (necesario
+    # para que SnapStart aplique). Sino, $LATEST (sin qualifier).
+    qualifier = _snap_start_qualifier(rendered)
     invoke_arn = (
         f'arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/'
         f'arn:aws:lambda:{region}:{account}:function:'
-        f'{rendered.function_name}/invocations'
+        f'{rendered.function_name}{qualifier}/invocations'
     )
     aws(
         [
@@ -908,6 +1143,19 @@ def _wire_http_trigger(
         profile=profile,
         region=region,
     )
+    # CORS preflight: agrega OPTIONS al resource para que los browsers que
+    # disparan preflight (Content-Type application/json o headers custom)
+    # reciban un 200 con los headers Access-Control-* correctos. Sin esto,
+    # API Gateway responde MissingAuthenticationTokenException (HTTP 403) y
+    # el browser bloquea la request real. Idempotente — los `put-*` aceptan
+    # re-aplicacion sobre un metodo existente.
+    _wire_cors_options(
+        api_id=api_id,
+        resource_id=resource_id,
+        method=str(trigger.method),
+        profile=profile,
+        region=region,
+    )
     aws(
         [
             'apigateway',
@@ -924,66 +1172,41 @@ def _wire_http_trigger(
         f'arn:aws:execute-api:{region}:{account}:{api_id}/{stage}/'
         f'{trigger.method}{trigger.path}'
     )
-    aws(
-        [
-            'lambda',
-            'add-permission',
-            '--function-name',
-            rendered.function_name,
-            '--statement-id',
-            f'apigw-{stage}',
-            '--action',
-            'lambda:InvokeFunction',
-            '--principal',
-            'apigateway.amazonaws.com',
-            '--source-arn',
-            source_arn,
-        ],
+    target_sid = (
+        f'apigw-{stage}-live' if rendered.snap_start else f'apigw-{stage}'
+    )
+    # Borra statements obsoletos del policy del Lambda (legacy SAM o
+    # statement viejo de devtools cuando cambio el qualifier). Scoped al
+    # mismo source_arn para NO tocar permisos legitimos de otros origenes.
+    _cleanup_legacy_permissions(
+        function_name=rendered.function_name,
+        keep_sid=target_sid,
+        source_arn=source_arn,
         profile=profile,
         region=region,
     )
-
-
-def _wire_table_changes_trigger(
-    rendered: RenderedLambda,
-    stage: str,
-    *,
-    profile: str | None,
-    region: str,
-    resources: dict[str, str | None],
-) -> None:
-    """Conecta el Lambda a los DynamoDB Streams (`on-table-changes`)."""
-    uuids: list[str] = []
-    for short_name in rendered.trigger.tables:
-        stream_arn = _ssm_value(
-            f'/portfolio/{stage}/dynamodb/{short_name}/stream-arn',
-            profile=profile,
-            region=region,
-        )
-        result = aws(
-            [
-                'lambda',
-                'create-event-source-mapping',
-                '--function-name',
-                rendered.function_name,
-                '--event-source-arn',
-                stream_arn,
-                '--starting-position',
-                'LATEST',
-                '--batch-size',
-                '100',
-                '--maximum-batching-window-in-seconds',
-                '10',
-                '--function-response-types',
-                'ReportBatchItemFailures',
-            ],
-            profile=profile,
-            region=region,
-            parse_json=True,
-        )
-        if result.json:
-            uuids.append(str(result.json.get('UUID')))
-    resources['event_source_uuids'] = ','.join(uuids)
+    permission_args = [
+        'lambda',
+        'add-permission',
+        '--function-name',
+        rendered.function_name,
+        '--statement-id',
+        target_sid,
+        '--action',
+        'lambda:InvokeFunction',
+        '--principal',
+        'apigateway.amazonaws.com',
+        '--source-arn',
+        source_arn,
+    ]
+    if rendered.snap_start:
+        permission_args += ['--qualifier', _SNAP_START_ALIAS]
+    aws(
+        permission_args,
+        profile=profile,
+        region=region,
+        check=False,  # Idempotente: el statement-id puede ya existir
+    )
 
 
 def _wire_trigger(
@@ -1005,14 +1228,131 @@ def _wire_trigger(
             region=region,
             resources=resources,
         )
-    elif rendered.trigger.type == 'on-table-changes':
-        _wire_table_changes_trigger(
+    elif rendered.trigger.type == 'sqs':
+        _wire_sqs_trigger(
             rendered,
             stage,
+            account,
             profile=profile,
             region=region,
             resources=resources,
         )
+
+
+def _rewire_trigger_on_update(
+    rendered: RenderedLambda,
+    stage: str,
+    *,
+    profile: str | None,
+    region: str,
+    resources: dict[str, str | None],
+) -> None:
+    """Re-aplica el wiring del trigger en `provision()` con UPDATE_*.
+
+    Antes de este fix, `_wire_trigger` solo corria en `_provision_create`.
+    Si un manifest cambiaba `trigger.method`, `trigger.path` o
+    `snap_start` (que afecta el qualifier `:live` de la URI de API GW y
+    el statement-id del `add-permission`), el cambio NO se aplicaba al
+    redeployar (solo al borrar+recrear). Tambien dejaba colgando el
+    statement-id legacy de SAM en Lambdas migrados.
+
+    Cada paso de `_wire_trigger` es idempotente:
+    - `get-resources`/`create-resource` reutiliza el resource existente.
+    - `put-method`/`put-integration` aceptan re-aplicacion.
+    - `_cleanup_legacy_permissions` borra obsoletos antes de `add-permission`.
+
+    Solo aplica a triggers `http`. El trigger `sqs` re-wirea su
+    EventSourceMapping en `provision_create` (un cambio de cola obliga
+    a destroy+create, no hay UPDATE) y `direct` no tiene wiring.
+    """
+    if rendered.trigger.type != 'http':
+        return
+    account = _resolve_account(profile=profile, region=region)
+    _wire_trigger(
+        rendered,
+        stage,
+        account,
+        profile=profile,
+        region=region,
+        resources=resources,
+    )
+
+
+def _wire_sqs_trigger(
+    rendered: RenderedLambda,
+    stage: str,
+    account: str,
+    *,
+    profile: str | None,
+    region: str,
+    resources: dict[str, str | None],
+) -> None:
+    """Crea o actualiza el Event Source Mapping SQS -> Lambda.
+
+    Idempotente: lista los ESM existentes para el (function, queue) y si
+    ya hay uno solo lo actualiza con batch_size + function_response_types.
+
+    El ARN de la cola se construye con el nombre interpolado del trigger
+    (la cola debe existir; se provisiona en `infra_provision`).
+    """
+    queue_name = _interp(rendered.trigger.queue_name or '', stage)
+    queue_arn = f'arn:aws:sqs:{region}:{account}:{queue_name}'
+    fn = rendered.function_name
+
+    existing = aws(
+        [
+            'lambda',
+            'list-event-source-mappings',
+            '--function-name',
+            fn,
+            '--event-source-arn',
+            queue_arn,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    mappings = (existing.json or {}).get('EventSourceMappings') or []
+
+    response_types = list(rendered.trigger.function_response_types)
+
+    if mappings:
+        uuid = mappings[0]['UUID']
+        args = [
+            'lambda',
+            'update-event-source-mapping',
+            '--uuid',
+            uuid,
+            '--batch-size',
+            str(rendered.trigger.batch_size),
+        ]
+        if response_types:
+            args.append('--function-response-types')
+            args.extend(response_types)
+        aws(args, profile=profile, region=region, check=False)
+        resources[f'event_source_mapping:{queue_name}'] = uuid
+        print(f'  OK  ESM {fn} <- {queue_name} actualizado ({uuid})')
+        return
+
+    args = [
+        'lambda',
+        'create-event-source-mapping',
+        '--function-name',
+        fn,
+        '--event-source-arn',
+        queue_arn,
+        '--batch-size',
+        str(rendered.trigger.batch_size),
+        '--enabled',
+    ]
+    if response_types:
+        args.append('--function-response-types')
+        args.extend(response_types)
+    result = aws(args, profile=profile, region=region, parse_json=True)
+    uuid = (result.json or {}).get('UUID', '')
+    resources[f'event_source_mapping:{queue_name}'] = uuid
+    print(f'  OK  ESM {fn} <- {queue_name} creado ({uuid})')
 
 
 def _provision_create(
@@ -1060,6 +1400,15 @@ def _provision_create(
         region=region,
         resources=resources,
     )
+    if rendered.snap_start:
+        _ensure_snap_start_config(rendered, profile=profile, region=region)
+        alias_arn = _publish_and_update_alias(
+            rendered,
+            profile=profile,
+            region=region,
+        )
+        if alias_arn:
+            resources['snap_start_alias_arn'] = alias_arn
     _wire_trigger(
         rendered,
         rendered.function_name.rsplit('-', 1)[-1],
@@ -1094,6 +1443,154 @@ def _wait_function_active(
     )
 
 
+# --------------------------------------------------------------------------
+# SnapStart (publish-version + alias `live`)
+# --------------------------------------------------------------------------
+_SNAP_START_ALIAS = 'live'
+
+
+def _ensure_snap_start_config(
+    rendered: RenderedLambda,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Aplica `--snap-start ApplyOn=PublishedVersions` (idempotente).
+
+    Si la funcion ya tiene SnapStart activo, este update es no-op (AWS
+    devuelve la misma config sin cambios). Si no, lo activa.
+    """
+    target = 'PublishedVersions' if rendered.snap_start else 'None'
+    current = aws(
+        [
+            'lambda',
+            'get-function-configuration',
+            '--function-name',
+            rendered.function_name,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    current_apply = (
+        (current.json or {}).get('SnapStart', {}).get('ApplyOn', 'None')
+    )
+    if current_apply == target:
+        return
+    _wait_function_active(
+        rendered.function_name,
+        profile=profile,
+        region=region,
+    )
+    aws(
+        [
+            'lambda',
+            'update-function-configuration',
+            '--function-name',
+            rendered.function_name,
+            '--snap-start',
+            f'ApplyOn={target}',
+        ],
+        profile=profile,
+        region=region,
+    )
+
+
+def _publish_and_update_alias(
+    rendered: RenderedLambda,
+    *,
+    profile: str | None,
+    region: str,
+) -> str | None:
+    """Publica nueva version + actualiza alias `live` para SnapStart.
+
+    Solo se invoca cuando `rendered.snap_start=True`. Returns el ARN del
+    alias (o None si snap_start=False).
+    """
+    if not rendered.snap_start:
+        return None
+    _wait_function_active(
+        rendered.function_name,
+        profile=profile,
+        region=region,
+    )
+    pub = aws(
+        [
+            'lambda',
+            'publish-version',
+            '--function-name',
+            rendered.function_name,
+            '--description',
+            f'devtools deploy at {now_iso()}',
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+    )
+    version = (pub.json or {}).get('Version')
+    if not version:
+        raise RuntimeError(
+            f'publish-version de {rendered.function_name} no retorno Version',
+        )
+
+    # Crear o actualizar alias `live`.
+    existing = aws(
+        [
+            'lambda',
+            'get-alias',
+            '--function-name',
+            rendered.function_name,
+            '--name',
+            _SNAP_START_ALIAS,
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    if existing.ok:
+        aws(
+            [
+                'lambda',
+                'update-alias',
+                '--function-name',
+                rendered.function_name,
+                '--name',
+                _SNAP_START_ALIAS,
+                '--function-version',
+                version,
+            ],
+            profile=profile,
+            region=region,
+        )
+        alias_arn = (existing.json or {}).get('AliasArn', '')
+    else:
+        created = aws(
+            [
+                'lambda',
+                'create-alias',
+                '--function-name',
+                rendered.function_name,
+                '--name',
+                _SNAP_START_ALIAS,
+                '--function-version',
+                version,
+            ],
+            profile=profile,
+            region=region,
+            parse_json=True,
+        )
+        alias_arn = (created.json or {}).get('AliasArn', '')
+    print(f'  OK  alias {_SNAP_START_ALIAS} -> version {version}')
+    return alias_arn
+
+
+def _snap_start_qualifier(rendered: RenderedLambda) -> str:
+    """Sufijo de qualifier para integraciones: `:live` o `` (vacio)."""
+    return f':{_SNAP_START_ALIAS}' if rendered.snap_start else ''
+
+
 def _provision_update_code(
     rendered: RenderedLambda,
     zip_path: Path,
@@ -1101,7 +1598,12 @@ def _provision_update_code(
     profile: str | None,
     region: str,
 ) -> None:
-    """Secuencia `Action.UPDATE_CODE`: solo `update-function-code`."""
+    """Secuencia `Action.UPDATE_CODE`: solo `update-function-code`.
+
+    Si `snap_start=True`: tras el update, publish-version genera un nuevo
+    snapshot y el alias `live` se mueve a esa version, exponiendo el
+    nuevo codigo al trigger (API GW/SQS apuntan a `:live`).
+    """
     _wait_function_active(
         rendered.function_name, profile=profile, region=region
     )
@@ -1117,6 +1619,9 @@ def _provision_update_code(
         profile=profile,
         region=region,
     )
+    if rendered.snap_start:
+        _ensure_snap_start_config(rendered, profile=profile, region=region)
+        _publish_and_update_alias(rendered, profile=profile, region=region)
 
 
 def _provision_update_config(
@@ -1125,11 +1630,29 @@ def _provision_update_config(
     profile: str | None,
     region: str,
 ) -> None:
-    """Secuencia `Action.UPDATE_CONFIG`: config de funcion + IAM inline."""
-    import json
+    """Secuencia `Action.UPDATE_CONFIG`: config de funcion + IAM inline.
 
+    Garantiza que el rol canonico (`rendered.role_name`) existe y que el
+    Lambda esta amarrado a el via `--role`. Sin `--role`, un Lambda
+    creado originalmente por SAM/CFN nunca cambiaria de rol y quedaria
+    bloqueado en las permisos del legado (causa raiz del incidente del
+    25/05/2026 en prod /track y /contact: las nuevas Lambdas leen los
+    nombres de tablas DynamoDB desde SSM en cold start, pero el rol
+    legacy SAM no tenia `ssm:GetParameter`).
+    """
     account = _resolve_account(profile=profile, region=region)
     policy = _concrete_iam_policy(rendered, account)
+
+    resources: dict[str, str | None] = {}
+    _create_iam_role(
+        rendered,
+        policy,
+        account,
+        profile=profile,
+        region=region,
+        resources=resources,
+    )
+    role_arn = str(resources['role_arn'])
 
     _wait_function_active(
         rendered.function_name, profile=profile, region=region
@@ -1140,6 +1663,8 @@ def _provision_update_config(
             'update-function-configuration',
             '--function-name',
             rendered.function_name,
+            '--role',
+            role_arn,
             '--runtime',
             rendered.runtime,
             '--handler',
@@ -1154,20 +1679,9 @@ def _provision_update_config(
         profile=profile,
         region=region,
     )
-    aws(
-        [
-            'iam',
-            'put-role-policy',
-            '--role-name',
-            rendered.role_name,
-            '--policy-name',
-            _INLINE_POLICY_NAME,
-            '--policy-document',
-            json.dumps(policy),
-        ],
-        profile=profile,
-        region=region,
-    )
+    if rendered.snap_start:
+        _ensure_snap_start_config(rendered, profile=profile, region=region)
+        _publish_and_update_alias(rendered, profile=profile, region=region)
 
 
 def provision(
@@ -1228,11 +1742,25 @@ def provision(
             )
         elif action == _Action.UPDATE_CONFIG:
             _provision_update_config(rendered, profile=profile, region=region)
+            _rewire_trigger_on_update(
+                rendered,
+                stage,
+                profile=profile,
+                region=region,
+                resources=resources,
+            )
         elif action == _Action.UPDATE_BOTH:
             _provision_update_code(
                 rendered, zip_path, profile=profile, region=region
             )
             _provision_update_config(rendered, profile=profile, region=region)
+            _rewire_trigger_on_update(
+                rendered,
+                stage,
+                profile=profile,
+                region=region,
+                resources=resources,
+            )
     except Exception as exc:
         # El estado parcial (con role_arn / log_group ya creados) se
         # adjunta a la excepcion para que el llamador lo persista y la
@@ -1260,6 +1788,7 @@ def rendered_config(rendered: RenderedLambda) -> dict[str, Any]:
     dict[str, Any]
         Campos de config que, al cambiar, fuerzan un re-deploy de config.
     """
+
     return {
         'runtime': rendered.runtime,
         'architecture': rendered.architecture,
@@ -1268,6 +1797,13 @@ def rendered_config(rendered: RenderedLambda) -> dict[str, Any]:
         'timeout': rendered.timeout,
         'env_vars': rendered.env_vars,
         'iam_policy': rendered.iam_policy,
+        # Wiring del trigger: si cambia type/method/path/queue/snap_start
+        # el diff debe materializar el cambio en API GW / EventSourceMapping
+        # (URI con qualifier `:live`, statement-id del add-permission).
+        # Sin esto, el provisioner se queda en NOOP y el cambio queda
+        # registrado solo en el manifest, no en AWS.
+        'trigger': asdict(rendered.trigger),
+        'snap_start': rendered.snap_start,
     }
 
 

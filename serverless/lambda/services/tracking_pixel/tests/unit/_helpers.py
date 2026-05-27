@@ -40,12 +40,25 @@ def lambda_context() -> MagicMock:
 
 
 def valid_body(**overrides: Any) -> dict[str, Any]:
-    """Devuelve un body de tracking valido (campos minimos + overrides)."""
+    """Devuelve un body de tracking valido (todos los required + overrides).
+
+    Spec tracking-data-completeness: page_path/page_url/page_title +
+    viewport_* + utm_* son required. Defaults realistas para los tests
+    no enfocados en validacion del modelo.
+    """
     body: dict[str, Any] = {
         'session_id': SESSION_ID,
         'event_id': EVENT_ID,
         'event_type_id': EVENT_TYPE_ID,
         'page_url': 'https://the-full-stack.com/projects',
+        'page_path': '/projects',
+        'page_title': 'Projects',
+        'viewport_width': 1280,
+        'viewport_height': 800,
+        'utm_source': '',
+        'utm_medium': '',
+        'utm_campaign': '',
+        'utm_content': '',
     }
     body.update(overrides)
     return body

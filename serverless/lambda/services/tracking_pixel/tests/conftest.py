@@ -41,7 +41,11 @@ os.environ.setdefault('ENVIRONMENT', 'dev')
 os.environ.setdefault('STAGE', 'dev')
 os.environ.setdefault('TESTING', '1')
 os.environ.setdefault('LOG_LEVEL', 'INFO')
-os.environ.setdefault('TRACKING_TABLE_NAME', 'portfolio-tracking-test')
+# TRACKING_TABLE_NAME se elimino (spec direct-neon-writes): el Lambda
+# ya no escribe a DynamoDB.tracking. La connection string de Neon va por
+# el env var DATABASE_URL que mockeamos por test (no hace falta default
+# aqui — los tests que persisten usan mock_neon_writes).
+os.environ.setdefault('DATABASE_URL', 'postgresql://test:test@localhost/test')
 os.environ.setdefault('CACHE_TABLE_NAME', 'portfolio-cache-test')
 os.environ.setdefault(
     'RATE_LIMIT_RULES_TABLE_NAME', 'portfolio-rate-limit-rules-test'
@@ -70,11 +74,13 @@ def aws_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def tracking_aws() -> Generator[None]:
-    """Setup AWS mock con tracking/cache/rate-limit tables.
+    """Setup AWS mock con cache/rate-limit tables.
 
-    Crea las 4 tablas DynamoDB que el Lambda usa bajo `mock_aws()` y
+    Crea las 3 tablas DynamoDB que el Lambda usa bajo `mock_aws()` y
     resetea el resource singleton de boto3 para que no quede apuntando a
-    un mock de un test anterior.
+    un mock de un test anterior. La tabla `tracking` se elimino (spec
+    direct-neon-writes): el Lambda escribe directo a Neon ahora —
+    los tests de persistencia usan el fixture `mock_neon_writes`.
     """
     import boto3
     from moto import mock_aws
@@ -86,18 +92,6 @@ def tracking_aws() -> Generator[None]:
         reset_resource_cache()
         ddb = boto3.client('dynamodb', region_name='us-east-1')
 
-        ddb.create_table(
-            TableName='portfolio-tracking-test',
-            AttributeDefinitions=[
-                {'AttributeName': 'session_id', 'AttributeType': 'S'},
-                {'AttributeName': 'page_id', 'AttributeType': 'S'},
-            ],
-            KeySchema=[
-                {'AttributeName': 'session_id', 'KeyType': 'HASH'},
-                {'AttributeName': 'page_id', 'KeyType': 'RANGE'},
-            ],
-            BillingMode='PAY_PER_REQUEST',
-        )
         ddb.create_table(
             TableName='portfolio-cache-test',
             AttributeDefinitions=[
@@ -128,3 +122,160 @@ def tracking_aws() -> Generator[None]:
         )
 
         yield
+
+
+_STUB_VISIT_ID = '019e5c50-0000-7000-8000-000000000001'
+"""visit_id determinista (UUIDv7 valido) que el mock de
+`ensure_session_and_visit` retorna. Lo usan asserts de tests."""
+
+
+@pytest.fixture
+def session_visit_calls(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura los kwargs de cada invocacion a `ensure_session_and_visit`.
+
+    Retorna un visit_id determinista (`_STUB_VISIT_ID`) para que los
+    asserts de tests downstream sean predecibles. Mockea el helper en
+    `services.tracking_service` (donde se importa).
+
+    Spec sessions-normalize: el service ahora UPSERTea session + visit
+    via este helper antes del INSERT de tracking_events. Los tests
+    verifican QUE ARGS recibio el helper — el comportamiento real del
+    helper (idempotencia, visit-trigger) se valida en sus propios
+    tests / integration.
+    """
+    captured: list[dict] = []
+
+    def _fake_ensure(_session: object, **kwargs: object) -> tuple[str, str]:
+        captured.append(dict(kwargs))
+        return str(kwargs['session_id']), _STUB_VISIT_ID
+
+    monkeypatch.setattr(
+        'services.tracking_service.ensure_session_and_visit', _fake_ensure
+    )
+    return captured
+
+
+@pytest.fixture
+def mock_neon_writes(
+    monkeypatch: pytest.MonkeyPatch,
+    session_visit_calls: list[dict],
+) -> list[dict]:
+    """Mockea las 3 escrituras a Neon: db_session + ensure_session_and_visit
+    (via `session_visit_calls`) + insert_tracking. Captura los payloads
+    de `insert_tracking`.
+
+    El `db_session()` yield un `object()` falso (no se usa porque los
+    mocks downstream no tocan el session).
+
+    Spec sessions-normalize: tests verifican el SHAPE del payload de
+    `tracking_events` (sin ip/country/ua/utm — esos viven en sessions y
+    session_visits). Si el test tambien quiere verificar los args del
+    helper, agrega `session_visit_calls` como fixture explicito.
+    """
+    from contextlib import contextmanager
+
+    # `session_visit_calls` se inyecta y registra el mock del helper.
+    _ = session_visit_calls
+
+    captured: list[dict] = []
+
+    @contextmanager
+    def _fake_db_session():
+        yield object()  # Session falso — los mocks no lo usan.
+
+    def _fake_insert_tracking(_session: object, payload: dict) -> None:
+        captured.append(payload)
+
+    monkeypatch.setattr(
+        'services.tracking_service.db_session', _fake_db_session
+    )
+    monkeypatch.setattr(
+        'services.tracking_service.insert_tracking', _fake_insert_tracking
+    )
+    return captured
+
+
+@pytest.fixture
+def sync_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fuerza el feature flag `AppConfig.async_mode=False` (sync legacy).
+
+    Lo usan los tests que validan el path antiguo (UA parsing + escritura
+    directa a Neon + HTTP 204). El default del proyecto es async (encoder
+    + SQS + 202), asi que estos tests deben optar explicitamente.
+    """
+    from settings.config import AppConfig
+
+    monkeypatch.setattr(AppConfig, 'async_mode', False)
+
+
+@pytest.fixture
+def async_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fuerza el feature flag `AppConfig.async_mode=True` (encoder + SQS).
+
+    Default del proyecto pero los tests lo declaran explicitamente para
+    documentar intencion y resistir cambios futuros del default.
+    """
+    from settings.config import AppConfig
+
+    monkeypatch.setattr(AppConfig, 'async_mode', True)
+
+
+@pytest.fixture
+def captured_queue(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura las llamadas a `send_to_queue` del encoder async.
+
+    Reemplaza `shared.queue.send_to_queue` (importado en
+    `services.tracking_service` como `send_to_queue`) por un fake que
+    registra cada kwargs y retorna un MessageId predecible.
+    """
+    captured: list[dict] = []
+
+    def _fake_send_to_queue(**kwargs: object) -> str:
+        captured.append(dict(kwargs))
+        return 'fake-message-id-0001'
+
+    monkeypatch.setattr(
+        'services.tracking_service.send_to_queue', _fake_send_to_queue
+    )
+    return captured
+
+
+@pytest.fixture
+def neon_off(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
+    """Garantiza que el encoder async NO toca Neon.
+
+    Mockea `db_session`, `ensure_session_and_visit` e `insert_tracking`
+    de `services.tracking_service` para que cada invocacion lance un
+    AssertionError si el codigo los llamara. Devuelve un contador
+    (siempre 0 al final del test si todo OK) para asserts adicionales.
+    """
+    from contextlib import contextmanager
+
+    counter = {'db_session': 0, 'ensure_session_and_visit': 0, 'insert': 0}
+
+    @contextmanager
+    def _explode_db_session():
+        counter['db_session'] += 1
+        raise AssertionError('encoder async NO debe abrir db_session()')
+        yield  # pragma: no cover
+
+    def _explode_ensure(*args: object, **kwargs: object) -> tuple[str, str]:
+        counter['ensure_session_and_visit'] += 1
+        raise AssertionError(
+            'encoder async NO debe llamar ensure_session_and_visit'
+        )
+
+    def _explode_insert(*args: object, **kwargs: object) -> None:
+        counter['insert'] += 1
+        raise AssertionError('encoder async NO debe llamar insert_tracking')
+
+    monkeypatch.setattr(
+        'services.tracking_service.db_session', _explode_db_session
+    )
+    monkeypatch.setattr(
+        'services.tracking_service.ensure_session_and_visit', _explode_ensure
+    )
+    monkeypatch.setattr(
+        'services.tracking_service.insert_tracking', _explode_insert
+    )
+    return counter

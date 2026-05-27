@@ -15,21 +15,40 @@
  */
 import type { ComponentsStrings } from '@portfolio/content'
 
+interface NavDropdownItem {
+  href: string
+  label: string
+  niche?: string
+  current?: boolean
+}
+
 interface NavItem {
   href: string
   label: string
   /** target=_blank cuando true (link a dominio externo). */
   external?: boolean
+  /** Si esta presente, el item se expande en una seccion con sub-items. */
+  dropdownItems?: NavDropdownItem[]
 }
 
 interface Props {
   items: NavItem[]
   currentLocale?: 'es' | 'en'
   otherLocaleHref?: string
+  /** Label "Vista actual" para marcar el niche actual en el dropdown. */
+  currentViewLabel?: string
   strings: ComponentsStrings['nav']
 }
 
-const { items, currentLocale = 'es', otherLocaleHref, strings } = Astro.props
+const {
+  items,
+  // currentLocale reservado para futura logica i18n del drawer.
+  currentLocale: _currentLocale = 'es',
+  otherLocaleHref,
+  currentViewLabel,
+  strings,
+} = Astro.props
+void _currentLocale
 
 const closeLabel = strings.closeMenu
 const otherLocaleLabel = strings.switchToOtherLocale
@@ -69,39 +88,95 @@ const navLabel = strings.mainMenu
     <nav aria-label={navLabel}>
       <ul class="mobile-nav-drawer__list">
         {
-          items.map((item) => (
-            <li>
-              <a
-                href={item.href}
-                class:list={[
-                  'mobile-nav-drawer__link',
-                  Astro.url.pathname === item.href && 'is-current',
-                  item.external && 'mobile-nav-drawer__link--external',
-                ]}
-                target={item.external ? '_blank' : undefined}
-                rel={item.external ? 'noopener noreferrer' : undefined}
-              >
-                {item.label}
-                {item.external && (
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
-                )}
-              </a>
-            </li>
-          ))
+          items.map((item) =>
+            item.dropdownItems ? (
+              <li class="mobile-nav-drawer__section">
+                {/* Spec tracking-data-completeness (AC-13): el bloque de
+                 * sub-items se renderiza como <details> cerrado por
+                 * default. <summary> muestra el label + chevron rotativo;
+                 * click expande/colapsa. Sin JS extra: HTML nativo. */}
+                <details
+                  class="mobile-nav-drawer__details"
+                  data-mobile-niche-details
+                >
+                  <summary class="mobile-nav-drawer__summary">
+                    <span class="mobile-nav-drawer__section-title text-mono-label">
+                      {item.label}
+                    </span>
+                    <svg
+                      class="mobile-nav-drawer__summary-chevron"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4 6L8 10L12 6"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </summary>
+                  <ul class="mobile-nav-drawer__sublist">
+                    {item.dropdownItems.map((sub) => (
+                      <li>
+                        <a
+                          href={sub.href}
+                          class:list={[
+                            'mobile-nav-drawer__sublink',
+                            { 'is-current': sub.current },
+                          ]}
+                          aria-current={sub.current ? 'page' : undefined}
+                        >
+                          <span>{sub.label}</span>
+                          {sub.current && currentViewLabel && (
+                            <span class="mobile-nav-drawer__sublink-meta text-mono-label">
+                              {currentViewLabel}
+                            </span>
+                          )}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
+            ) : (
+              <li>
+                <a
+                  href={item.href}
+                  class:list={[
+                    'mobile-nav-drawer__link',
+                    Astro.url.pathname === item.href && 'is-current',
+                    item.external && 'mobile-nav-drawer__link--external',
+                  ]}
+                  target={item.external ? '_blank' : undefined}
+                  rel={item.external ? 'noopener noreferrer' : undefined}
+                >
+                  {item.label}
+                  {item.external && (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  )}
+                </a>
+              </li>
+            ),
+          )
         }
       </ul>
     </nav>
@@ -230,6 +305,78 @@ const navLabel = strings.mainMenu
   .mobile-nav-drawer__link--external:hover,
   .mobile-nav-drawer__link--external:focus-visible {
     color: var(--color-primary);
+  }
+  .mobile-nav-drawer__section {
+    margin-top: var(--space-12);
+    padding-top: var(--space-12);
+    border-top: 1px solid var(--color-border);
+  }
+  /* Spec tracking-data-completeness (AC-13): seccion dropdown como
+   * <details> colapsable. Cerrado por default; click summary expande. */
+  .mobile-nav-drawer__details {
+    /* sin reset de listas/native marker */
+  }
+  .mobile-nav-drawer__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    padding: var(--space-8) var(--space-12);
+    margin: 0;
+    cursor: pointer;
+    list-style: none;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--motion-fast) var(--easing-out);
+  }
+  .mobile-nav-drawer__summary::-webkit-details-marker {
+    display: none;
+  }
+  .mobile-nav-drawer__summary:hover,
+  .mobile-nav-drawer__summary:focus-visible {
+    background: var(--color-surface-2);
+    outline: none;
+  }
+  .mobile-nav-drawer__summary-chevron {
+    color: var(--color-text-muted);
+    transition: transform var(--motion-fast) var(--easing-out);
+  }
+  .mobile-nav-drawer__details[open] .mobile-nav-drawer__summary-chevron {
+    transform: rotate(180deg);
+  }
+  .mobile-nav-drawer__section-title {
+    display: block;
+    margin: 0 var(--space-12) var(--space-8);
+    color: var(--color-text-muted);
+  }
+  .mobile-nav-drawer__sublist {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .mobile-nav-drawer__sublink {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-10) var(--space-12);
+    font-size: var(--font-size-14);
+    color: var(--color-text);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: background-color var(--motion-fast) var(--easing-out);
+  }
+  .mobile-nav-drawer__sublink:hover,
+  .mobile-nav-drawer__sublink:focus-visible {
+    background: var(--color-surface-2);
+    outline: none;
+  }
+  .mobile-nav-drawer__sublink.is-current {
+    background: rgba(var(--niche-accent-rgb), 0.1);
+    color: var(--niche-accent);
+  }
+  .mobile-nav-drawer__sublink-meta {
+    opacity: 0.7;
   }
   .mobile-nav-drawer__footer {
     border-top: 1px solid var(--color-border);

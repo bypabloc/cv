@@ -32,11 +32,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from shared.aws import send_email
-from shared.aws.ssm import get_parameter
+import boto3
+from aws_lambda_powertools.metrics import MetricUnit
+from shared.aws.ssm import get_secret_by_name
 from shared.core.ulid import new_uuidv7
-from shared.dynamodb import ContactItem
-from shared.observability import MetricUnit, logger, metrics
+from shared.db.repository import ensure_session_and_visit, insert_contact
+from shared.db.session import db_session
+from shared.observability.logger import logger
+from shared.observability.metrics import metrics
+from shared.queue import send_to_queue
 
 # templates/ vive dentro de core/ para que el deploy lo incluya en el zip.
 # Este archivo esta en core/services/, asi que parents[1] = core/.
@@ -64,52 +68,102 @@ class ServiceError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# Persistencia DynamoDB (antes persistence.py)
+# Persistencia Neon (spec direct-neon-writes)
 # ---------------------------------------------------------------------------
 
 
 def save_contact(payload: dict[str, Any]) -> dict[str, str]:
-    """Persiste un contact submission en DynamoDB.
+    """Persiste un contact submission en Neon (sessions + visits + contact).
+
+    Spec sessions-normalize:
+    - `session_id` es OBLIGATORIO en el payload (el controller lo
+      genera si no viene del form: si el visitante no tiene tracking
+      previo, el cliente del form arma uno on-the-fly).
+    - El service UPSERTea `sessions` + `session_visits` via el helper
+      `ensure_session_and_visit` en la MISMA tx del INSERT del contact.
+    - `bump_event_count=True`: cada contact suma 1 al event_count del
+      visit (un contact tambien es un "evento" del visitante).
+    - ip/country/user_agent ya NO se persisten en `contacts` (viven en
+      sessions/session_visits via FK).
+    - El `niche` del visit se infiere del Origin si no hay visit previa
+      (lo calcula el controller con `niche_from_origin`).
 
     Parameters
     ----------
     payload : dict[str, Any]
-        Campos validados del form.
+        Campos del form + metadata de session: name, email, message,
+        ..., niche, session_id, ip, country, user_agent, origin_niche.
 
     Returns
     -------
     dict[str, str]
-        Dict con `contact_id` y `created_at` (ISO 8601 UTC).
+        Dict con `contact_id` (UUID v7) y `created_at` (ISO 8601 UTC).
     """
     contact_id = new_uuidv7()
-    created_at = datetime.now(UTC).isoformat()
+    created_at = datetime.now(UTC)
+    session_id = payload['session_id']
 
-    # ContactItem (ORM) arma el Item: omite los campos opcionales no
-    # provistos (DynamoDB no permite empty strings) y reusa el resource
-    # boto3 singleton. session_id enlaza el contacto con tracking_events;
-    # el origen (ip/country/user_agent) NO se duplica aqui — se consulta
-    # en tracking via JOIN por session_id.
-    ContactItem(
-        id=contact_id,
-        created_at=created_at,
-        name=payload['name'],
-        email=payload['email'],
-        message=payload['message'],
-        company=payload.get('company'),
-        role=payload.get('role'),
-        service_type=payload.get('service_type'),
-        budget=payload.get('budget'),
-        timeline=payload.get('timeline'),
-        niche=payload.get('niche'),
-        session_id=payload.get('session_id'),
-    ).save()
+    # niche del visit: el niche que viene del form (la pagina donde se
+    # mostro el form) o, si falta, el `origin_niche` calculado por el
+    # controller con niche_from_origin.
+    visit_niche = payload.get('niche') or payload.get('origin_niche')
 
-    return {'contact_id': contact_id, 'created_at': created_at}
+    with db_session() as session:
+        # Paso 1: UPSERT session + visit (en la misma tx). Si no hay
+        # tracking previo el visit se crea on-the-fly con ip/ua/country
+        # del request y niche del Origin (decision 2 + 6).
+        ensure_session_and_visit(
+            session,
+            session_id=session_id,
+            ip=payload.get('ip'),
+            country=payload.get('country'),
+            user_agent=payload.get('user_agent'),
+            browser=None,
+            browser_version=None,
+            os_name=None,
+            device_type=None,
+            utm_source=None,
+            utm_medium=None,
+            utm_campaign=None,
+            utm_content=None,
+            utm_term=None,
+            referrer=None,
+            landing_page_path=None,
+            niche=visit_niche,
+            bump_event_count=True,
+        )
+
+        # Paso 2: INSERT del contact. El ORM de `contacts` ya NO tiene
+        # ip/country/user_agent (movidos a sessions).
+        neon_payload: dict[str, Any] = {
+            'id': contact_id,
+            'created_at': created_at,
+            'name': payload['name'],
+            'email': payload['email'],
+            'message': payload['message'],
+            'company': payload.get('company'),
+            'role': payload.get('role'),
+            'service_type': payload.get('service_type'),
+            'budget': payload.get('budget'),
+            'timeline': payload.get('timeline'),
+            'niche': payload.get('niche'),
+            'session_id': session_id,
+        }
+        insert_contact(session, neon_payload)
+
+    return {'contact_id': contact_id, 'created_at': created_at.isoformat()}
 
 
 # ---------------------------------------------------------------------------
 # Notificacion SES (antes notification.py)
 # ---------------------------------------------------------------------------
+
+
+def _ses_client() -> Any:
+    """Cliente SES lazy (no module-scope, para compat con moto)."""
+    return boto3.client(
+        'sesv2', region_name=os.environ.get('AWS_SES_REGION', 'us-east-1')
+    )
 
 
 def _render_mustache_lite(template: str, context: dict[str, Any]) -> str:
@@ -175,15 +229,16 @@ def send_owner_email(contact: dict[str, Any]) -> str:
     str
         SES MessageId.
     """
-    from_address_path = os.environ.get(
-        'SSM_SES_FROM_PATH', '/portfolio/ses-from-address'
+    # Catalogo: serverless/lambda/resources/secrets/{ses-from-address,owner-email}.yaml
+    # En cloud: devtools inyecta SSM_<UPPER>_PATH (path SSM); en local,
+    # devtools inyecta <source_env_var> (valor directo).
+    from_address = get_secret_by_name(
+        'ses-from-address',
+        local_env='EMAIL_FROM',
     )
-    owner_email_path = os.environ.get(
-        'SSM_OWNER_EMAIL_PATH', '/portfolio/owner-email'
+    recipients = parse_recipients(
+        get_secret_by_name('owner-email', local_env='OWNER_EMAIL'),
     )
-
-    from_address = get_parameter(from_address_path)
-    recipients = parse_recipients(get_parameter(owner_email_path))
 
     html_template = (_TEMPLATES_DIR / 'owner_email.html').read_text(
         encoding='utf-8'
@@ -201,13 +256,19 @@ def send_owner_email(contact: dict[str, Any]) -> str:
         f'({contact.get("niche", "generic")})'
     )
 
-    response = send_email(
-        from_address=f'The Full Stack <{from_address}>',
-        to_addresses=recipients,
-        subject=subject,
-        text_body=text_body,
-        html_body=html_body,
-        reply_to=[contact.get('email', from_address)],
+    response = _ses_client().send_email(
+        FromEmailAddress=f'The Full Stack <{from_address}>',
+        Destination={'ToAddresses': recipients},
+        ReplyToAddresses=[contact.get('email', from_address)],
+        Content={
+            'Simple': {
+                'Subject': {'Data': subject, 'Charset': 'UTF-8'},
+                'Body': {
+                    'Text': {'Data': text_body, 'Charset': 'UTF-8'},
+                    'Html': {'Data': html_body, 'Charset': 'UTF-8'},
+                },
+            },
+        },
     )
 
     message_id: str = response.get('MessageId', '')
@@ -227,19 +288,38 @@ def send_owner_email(contact: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def process_contact_form(*, form_fields: dict[str, Any]) -> dict[str, str]:
-    """Persiste el contacto y notifica al owner por email.
+def process_contact_form(
+    *,
+    form_fields: dict[str, Any],
+    session_id: str,
+    ip: str,
+    country: str | None,
+    user_agent: str | None,
+    origin_niche: str | None,
+) -> dict[str, str]:
+    """Persiste el contacto (sessions + visit + contact) y notifica owner.
 
     Logica de negocio del Lambda: a esta altura la verificacion Turnstile
     y el rate-limit YA pasaron (los orquesta el controller). El service
-    persiste en DynamoDB y dispara el email.
+    UPSERTea sessions + session_visits y INSERTea el contact en la misma
+    tx (spec sessions-normalize) y dispara el email.
 
     Parameters
     ----------
     form_fields : dict[str, Any]
         Campos del form ya validados (sin `cf_token` ni metadata de
-        transporte). Incluye `session_id` opcional, clave de correlacion
-        con tracking_events.
+        transporte). Incluye `session_id` opcional del form.
+    session_id : str
+        Identidad del visitante. El controller lo resuelve: form ->
+        session_id si el visitante tiene tracking, sino genera uno
+        on-the-fly (decision 2).
+    ip, country, user_agent : str | None
+        Metadata HTTP del request. Se pasan al helper
+        `ensure_session_and_visit` (no se persisten en `contacts`).
+    origin_niche : str | None
+        Niche derivado del header Origin con `niche_from_origin`. Si el
+        form ya envia `niche`, este se ignora; sino, se usa como fallback
+        para `session_visits.niche` (decision 6).
 
     Returns
     -------
@@ -248,18 +328,25 @@ def process_contact_form(*, form_fields: dict[str, Any]) -> dict[str, str]:
 
     Notes
     -----
-    contacts NO duplica datos de origen (ip/country/user_agent): se
-    consultan en tracking_events via JOIN por session_id (SPEC-202).
+    contacts NO duplica datos de origen (ip/country/user_agent): viven
+    en sessions/session_visits via FK (spec sessions-normalize).
 
     El fallo del email NO se propaga: el contacto ya quedo persistido en
-    DynamoDB y el lead no se pierde. El fallo se hace visible con la
+    Neon y el lead no se pierde. El fallo se hace visible con la
     metrica CloudWatch `OwnerEmailFailed`, sin romper la respuesta 201.
     """
-    payload = dict(form_fields)
+    payload = {
+        **form_fields,
+        'session_id': session_id,
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+        'origin_niche': origin_niche,
+    }
     result = save_contact(payload)
     logger.info(
         'contact persisted',
-        extra={'contact_id': result['contact_id']},
+        extra={'contact_id': result['contact_id'], 'session_id': session_id},
     )
 
     try:
@@ -270,7 +357,7 @@ def process_contact_form(*, form_fields: dict[str, Any]) -> dict[str, str]:
             'failed to send owner email (contact already persisted)',
             extra={'contact_id': result['contact_id']},
         )
-        # NO re-raise: el form se guardo en DynamoDB. El fallo se hace
+        # NO re-raise: el form se guardo en Neon. El fallo se hace
         # visible con una metrica para detectarlo sin romper el 201.
         metrics.add_metric(
             name='OwnerEmailFailed',
@@ -279,3 +366,97 @@ def process_contact_form(*, form_fields: dict[str, Any]) -> dict[str, str]:
         )
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Modo async (encoder): publica el mensaje a SQS hacia `contact_worker`.
+# ---------------------------------------------------------------------------
+
+
+def enqueue_contact_message(
+    *,
+    contact_id: str,
+    created_at: datetime,
+    form_fields: dict[str, Any],
+    session_id: str,
+    ip: str,
+    country: str | None,
+    user_agent: str | None,
+    origin_niche: str | None,
+) -> str:
+    """Encola el mensaje SQS hacia el Lambda `contact_worker`.
+
+    Modo `ASYNC_MODE=true`: el encoder NO toca Neon ni SES — publica el
+    payload validado a la cola `portfolio-contact-form-${stage}` y el
+    worker hace la persistencia + email de forma asincrona.
+
+    El payload SIGUE el shape de `ContactQueueMessage` (definido en
+    `contact_worker/core/models/message.py`). NO importamos ese modelo
+    aca para mantener la independencia de deploy entre los dos Lambdas:
+    el shape se mantiene compatible via tests.
+
+    Parameters
+    ----------
+    contact_id : str
+        UUIDv7 pre-generado por el encoder. Clave de idempotencia: SQS
+        puede re-entregar el mensaje y el worker hace
+        `ON CONFLICT (id) DO NOTHING`.
+    created_at : datetime
+        Timestamp de cuando el encoder acepto el form.
+    form_fields : dict[str, Any]
+        Campos del form ya validados (sin `cf_token` ni `_meta`).
+        Incluye `session_id` resuelto.
+    session_id, ip, country, user_agent : str | None
+        Metadata HTTP del request (la usa el worker para
+        `ensure_session_and_visit`).
+    origin_niche : str | None
+        Niche derivado del header Origin con `niche_from_origin`. Si el
+        form ya envia `niche`, el worker prefiere ese.
+
+    Returns
+    -------
+    str
+        SQS MessageId. NO se devuelve al cliente — solo se logea para
+        correlar con CloudWatch.
+
+    Raises
+    ------
+    shared.queue.QueuePublishError
+        Si SQS falla. El controller la deja propagar para que el handler
+        traduzca a HTTP 5xx (NO se hace fallback automatico a sync —
+        comportamiento explicito, ver spec).
+    """
+    # extra: explicit drop de campos sensibles. El cf_token ya fue
+    # consumido por el encoder; jamas debe viajar en el mensaje SQS.
+    payload: dict[str, Any] = {
+        'schema_version': 1,
+        'contact_id': contact_id,
+        'created_at': created_at.isoformat(),
+        'session_id': session_id,
+        'name': form_fields['name'],
+        'email': form_fields['email'],
+        'message': form_fields['message'],
+        'company': form_fields.get('company'),
+        'role': form_fields.get('role'),
+        'service_type': form_fields.get('service_type'),
+        'budget': form_fields.get('budget'),
+        'timeline': form_fields.get('timeline'),
+        'niche': form_fields.get('niche'),
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+        'origin_niche': origin_niche,
+    }
+    message_id = send_to_queue(
+        queue_short_name='contact-form',
+        payload=payload,
+    )
+    logger.info(
+        'contact form enqueued',
+        extra={
+            'contact_id': contact_id,
+            'session_id': session_id,
+            'message_id': message_id,
+        },
+    )
+    return message_id

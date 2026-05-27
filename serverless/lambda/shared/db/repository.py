@@ -1,35 +1,52 @@
 """@module shared.db.repository — acceso a datos del schema PostgreSQL.
 
-Concentra las operaciones de lectura/escritura ORM del portfolio que
-antes vivian dispersas en el `core/` de los Lambdas:
+Concentra las operaciones de lectura/escritura ORM del portfolio:
 
-- `list_tables`           — listado de tablas con estimado de filas.
-- `is_event_processed`    — chequeo de idempotencia del stream.
-- `mark_event_processed`  — registro de idempotencia del stream.
-- `insert_contact` / `insert_tracking` — escritura ORM de los datos
-  replicados desde DynamoDB Streams.
+- `list_tables`               — listado de tablas con estimado de filas.
+- `insert_contact`            — escritura del form de contacto (Neon).
+- `insert_tracking`           — escritura de evento de tracking (Neon).
+- `ensure_session_and_visit`  — UPSERT atomico de session + visit
+                                (helper del plan sessions-normalize).
 
-Esta logica vivia en `db/core/services/db_service.py` y
-`stream_processor/core/services/stream_service.py`. Se movio aca porque
-SQLAlchemy es responsabilidad de dominio de `shared.db`: el `core/` de
+Las Lambdas HTTP (`contact_form`, `tracking_pixel`) escriben directo a
+Neon en la misma invocacion (spec `direct-neon-writes`). El `core/` de
 un Lambda NO importa `sqlalchemy` directo, solo consume estas funciones
 (`from shared.db.repository import ...`).
-
-Las funciones de transformacion de un Stream Record a kwargs del modelo
-(parseo de la imagen type-tagged de DynamoDB) NO viven aca: NO usan
-SQLAlchemy, son logica de negocio del `stream_processor` y se quedan en
-su `core/services/`.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    MetaData,
+    String,
+    Table,
+    select,
+    update,
+)
+from sqlalchemy import func as sa_func
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session as OrmSession
 
-from .models import Contact, ProcessedStreamEvent, TrackingEvent
+from .models import Contact, SessionVisit, TrackingEvent
+from .models import Session as SessionRow
 from .session import get_engine
+
+# `pg_stat_user_tables` es una system view del catalogo de Postgres
+# (no tiene modelo ORM porque NO es una tabla del schema del portfolio).
+# La declaramos como `Table` independiente para construir el SELECT con
+# Core en vez de raw SQL. MetaData propia para que el reflejo no toque
+# el `Base.metadata` del schema del portfolio.
+_pg_stat_user_tables = Table(
+    'pg_stat_user_tables',
+    MetaData(),
+    Column('schemaname', String),
+    Column('relname', String),
+    Column('n_live_tup', BigInteger),
+)
 
 
 class RepositoryError(Exception):
@@ -52,16 +69,6 @@ class RepositoryError(Exception):
         self.error_code = error_code
 
 
-# La query de listado de tablas: estimado de filas via las estadisticas
-# del planner (`pg_stat_user_tables`), sin contar fila por fila.
-_TABLES_QUERY = (
-    "SELECT schemaname || '.' || relname AS table_name, "
-    'n_live_tup AS estimated_rows '
-    'FROM pg_stat_user_tables '
-    'ORDER BY n_live_tup DESC'
-)
-
-
 def list_tables() -> dict[str, Any]:
     """Lista las tablas de la DB con un estimado de filas por tabla.
 
@@ -82,10 +89,21 @@ def list_tables() -> dict[str, Any]:
         Si la query falla (DB inaccesible, schema sin migrar, etc.) con
         `code=5000` y `error_code='DB_QUERY_FAILED'`.
     """
+    schemaname = _pg_stat_user_tables.c.schemaname
+    relname = _pg_stat_user_tables.c.relname
+    n_live_tup = _pg_stat_user_tables.c.n_live_tup
+    stmt = (
+        select(
+            (schemaname + '.' + relname).label('table_name'),
+            n_live_tup.label('estimated_rows'),
+        )
+        .select_from(_pg_stat_user_tables)
+        .order_by(n_live_tup.desc())
+    )
     try:
         engine = get_engine()
         with engine.connect() as conn:
-            rows = conn.execute(text(_TABLES_QUERY)).all()
+            rows = conn.execute(stmt).all()
     except Exception as exc:
         raise RepositoryError(
             f'No se pudo listar las tablas: {exc}',
@@ -98,51 +116,265 @@ def list_tables() -> dict[str, Any]:
     return {'tables': tables}
 
 
-def is_event_processed(session: Session, event_id: str) -> bool:
-    """`True` si el `event_id` ya esta en `processed_stream_events`."""
-    from sqlalchemy import select
-
-    stmt = select(ProcessedStreamEvent.event_id).where(
-        ProcessedStreamEvent.event_id == event_id,
-    )
-    return session.execute(stmt).first() is not None
-
-
-def mark_event_processed(
-    session: Session,
-    event_id: str,
-    *,
-    event_type: str,
-    table_name: str,
-) -> None:
-    """Registra el `event_id` como procesado (fila de idempotencia).
-
-    Se llama dentro de la misma `Session`/transaccion que el INSERT del
-    contacto/evento — ambos confirman juntos o ninguno.
-    """
-    session.add(
-        ProcessedStreamEvent(
-            event_id=event_id,
-            event_type=event_type,
-            table_name=table_name,
-        ),
-    )
-
-
-def insert_contact(session: Session, payload: dict[str, Any]) -> None:
+def insert_contact(session: OrmSession, payload: dict[str, Any]) -> None:
     """Inserta una fila en `contacts` desde el payload del transformer.
 
-    `session_id` enlaza el contacto con `tracking_events` (correlacion
-    via JOIN). `ip`/`country`/`user_agent` son columnas legacy: los
-    contactos nuevos las reciben en NULL.
+    `session_id` enlaza el contacto con `sessions` (FK NOT NULL). Spec
+    sessions-normalize: ip/country/user_agent ya no se persisten aqui
+    (viven en sessions/session_visits via FK).
     """
     session.add(Contact(**payload))
 
 
-def insert_tracking(session: Session, payload: dict[str, Any]) -> None:
+def insert_tracking(session: OrmSession, payload: dict[str, Any]) -> None:
     """Inserta una fila en `tracking_events` desde el payload.
 
     `event_props` es un dict plano: SQLAlchemy lo adapta a JSONB sin
-    envoltura manual.
+    envoltura manual. Spec sessions-normalize: el payload debe incluir
+    `session_id` Y `visit_id` (ambas FKs NOT NULL).
     """
     session.add(TrackingEvent(**payload))
+
+
+def insert_contact_idempotent(
+    session: OrmSession, payload: dict[str, Any],
+) -> bool:
+    """INSERT en contacts con ON CONFLICT (id) DO NOTHING.
+
+    Para los workers async (spec lambdas-async-sqs). Si SQS re-entrega
+    el mismo mensaje (same contact_id UUIDv7 pre-generado por el
+    encoder), el INSERT es no-op.
+
+    Returns
+    -------
+    bool
+        True si la fila se inserto; False si ya existia. Detecta el
+        caso via `RETURNING id`: el statement retorna 1 fila si hubo
+        INSERT real, 0 filas si `ON CONFLICT DO NOTHING` corto el
+        INSERT. NO confiar en `result.rowcount` con
+        `on_conflict_do_nothing` — psycopg/SQLAlchemy reportan rowcount
+        inconsistente segun el driver (verificado en runtime: row se
+        inserta pero rowcount llega como 0 en algunas combinaciones).
+        El worker usa este bool para decidir si manda email (evita
+        duplicados de notificacion).
+    """
+    stmt = (
+        pg_insert(Contact)
+        .values(**payload)
+        .on_conflict_do_nothing(index_elements=['id'])
+        .returning(Contact.id)
+    )
+    result = session.execute(stmt)
+    return result.first() is not None
+
+
+def insert_tracking_idempotent(
+    session: OrmSession, payload: dict[str, Any],
+) -> bool:
+    """INSERT en tracking_events con ON CONFLICT (PK compuesta) DO NOTHING.
+
+    Para el tracking_worker (spec lambdas-async-sqs). La PK fisica es
+    (created_at, visit_id, page_id). Para idempotencia:
+      - `created_at` y `page_id` los pre-genera el ENCODER.
+      - `visit_id` lo resuelve `ensure_session_and_visit` (UPSERT
+        idempotente); en el segundo intento del mismo mensaje, las
+        keys del visit coinciden y reusa el mismo visit_id.
+
+    Returns
+    -------
+    bool
+        True si inserto; False si ya existia. Detecta el caso via
+        `RETURNING created_at` (ver nota en `insert_contact_idempotent`
+        sobre por que NO confiar en `rowcount`).
+    """
+    stmt = (
+        pg_insert(TrackingEvent)
+        .values(**payload)
+        .on_conflict_do_nothing(
+            index_elements=['created_at', 'visit_id', 'page_id'],
+        )
+        .returning(TrackingEvent.created_at)
+    )
+    result = session.execute(stmt)
+    return result.first() is not None
+
+
+# Las 6 claves del visit-trigger (decision 9 del plan). Cambio en
+# cualquiera respecto al ultimo visit del session -> nuevo visit.
+_VISIT_KEYS: tuple[str, ...] = (
+    'ip',
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_content',
+    'utm_term',
+)
+
+
+def ensure_session_and_visit(
+    session: OrmSession,
+    *,
+    session_id: str,
+    ip: str | None,
+    country: str | None,
+    user_agent: str | None,
+    browser: str | None,
+    browser_version: str | None,
+    os_name: str | None,
+    device_type: str | None,
+    utm_source: str | None,
+    utm_medium: str | None,
+    utm_campaign: str | None,
+    utm_content: str | None,
+    utm_term: str | None,
+    referrer: str | None,
+    landing_page_path: str | None,
+    niche: str | None,
+    bump_event_count: bool = True,
+) -> tuple[str, str]:
+    """UPSERT atomico de `sessions` + `session_visits`.
+
+    Helper que ambos Lambdas (`tracking_pixel`, `contact_form`) invocan
+    dentro de la misma transaccion del INSERT del event/contact.
+
+    Algoritmo (decisiones 1, 8, 9, 12 del plan sessions-normalize):
+
+    1. UPSERT en `sessions`: INSERT con `ON CONFLICT (session_id) DO
+       UPDATE SET last_seen_at = now()`. Los demas campos
+       (ua/browser/os/device_type) NO se sobrescriben — snapshot
+       inmutable del primer evento.
+    2. SELECT del ultimo visit del session por `started_at DESC LIMIT 1
+       FOR UPDATE` (evita race conditions entre eventos concurrentes
+       del mismo session_id).
+    3. Compara las 6 claves `_VISIT_KEYS` (`ip` + 5 `utm_*`) entre el
+       payload y el ultimo visit. Si NO existe ultimo visit O alguna
+       de las 6 claves difiere -> INSERT nuevo `session_visits` con
+       `event_count = 1` (si `bump_event_count`) o `0`. Si todas
+       coinciden -> UPDATE `ended_at = now()` y opcionalmente
+       `event_count = event_count + 1`. Reusa el `visit_id`.
+
+    Parameters
+    ----------
+    session : OrmSession
+        Sesion SQLAlchemy con la transaccion del Lambda. NO se commitea
+        aqui — el caller controla el ciclo.
+    session_id : str
+        Identidad del visitante (texto, viene del cliente).
+    ip, country, user_agent, browser, browser_version, os_name,
+    device_type :
+        Datos de la session/visit. `os_name` se renombra para no chocar
+        con el modulo builtin `os`. Todos pueden ser None.
+    utm_source, utm_medium, utm_campaign, utm_content, utm_term :
+        Los 5 campos UTM del visit. None si no estan presentes.
+    referrer, landing_page_path, niche :
+        Metadata del landing de la visit (solo se persiste al crear un
+        visit nuevo; UPDATE no las toca).
+    bump_event_count : bool, default True
+        Si True, el `event_count` del visit (nuevo o reusado) se
+        incrementa en 1. El caller debe llamar el helper UNA vez por
+        evento/contact a persistir.
+
+    Returns
+    -------
+    tuple[str, str]
+        `(session_id, visit_id)`. El caller usa `visit_id` para el
+        INSERT del `tracking_events`/`contacts`.
+    """
+    # --- Paso 1: UPSERT en sessions --------------------------------
+    # `ON CONFLICT DO UPDATE SET last_seen_at=now()` mantiene snapshot
+    # inmutable del resto de campos (decision 1).
+    sessions_insert = pg_insert(SessionRow).values(
+        session_id=session_id,
+        user_agent=user_agent,
+        browser=browser,
+        browser_version=browser_version,
+        os=os_name,
+        device_type=device_type,
+    )
+    sessions_upsert = sessions_insert.on_conflict_do_update(
+        index_elements=['session_id'],
+        set_={'last_seen_at': sa_func.now()},
+    )
+    session.execute(sessions_upsert)
+
+    # --- Paso 2: SELECT ultimo visit del session, FOR UPDATE --------
+    # host(ip) en vez de ip::text: INET cast a text agrega sufijo de
+    # mascara (/32 para IPv4, /128 para IPv6) y la comparacion contra
+    # el payload (str plano sin mascara) fallaba SIEMPRE. host() devuelve
+    # solo la direccion sin mascara, alineado con el formato del payload.
+    last_visit_query = (
+        select(
+            SessionVisit.visit_id,
+            sa_func.host(SessionVisit.ip).label('ip'),
+            SessionVisit.utm_source,
+            SessionVisit.utm_medium,
+            SessionVisit.utm_campaign,
+            SessionVisit.utm_content,
+            SessionVisit.utm_term,
+        )
+        .where(SessionVisit.session_id == session_id)
+        .order_by(SessionVisit.started_at.desc())
+        .limit(1)
+        .with_for_update()
+    )
+    last_visit = session.execute(last_visit_query).first()
+
+    incoming: dict[str, str | None] = {
+        'ip': ip,
+        'utm_source': utm_source,
+        'utm_medium': utm_medium,
+        'utm_campaign': utm_campaign,
+        'utm_content': utm_content,
+        'utm_term': utm_term,
+    }
+
+    bump_delta = 1 if bump_event_count else 0
+
+    if last_visit is None or _visit_keys_differ(last_visit, incoming):
+        # --- Paso 3a: INSERT nuevo visit ----------------------------
+        new_visit = SessionVisit(
+            session_id=session_id,
+            ip=ip,
+            country=country,
+            utm_source=utm_source,
+            utm_medium=utm_medium,
+            utm_campaign=utm_campaign,
+            utm_content=utm_content,
+            utm_term=utm_term,
+            referrer=referrer,
+            landing_page_path=landing_page_path,
+            niche=niche,
+            event_count=bump_delta,
+        )
+        session.add(new_visit)
+        # Flush para obtener el visit_id generado server-side
+        # (uuidv7()). NO commitea: solo emite el INSERT al server.
+        session.flush()
+        return session_id, str(new_visit.visit_id)
+
+    # --- Paso 3b: UPDATE visit existente (ended_at + event_count) --
+    visit_id = str(last_visit.visit_id)
+    session.execute(
+        update(SessionVisit)
+        .where(SessionVisit.visit_id == visit_id)
+        .values(
+            ended_at=sa_func.now(),
+            event_count=SessionVisit.event_count + bump_delta,
+        )
+    )
+    return session_id, visit_id
+
+
+def _visit_keys_differ(
+    last_visit: Any, incoming: dict[str, str | None]
+) -> bool:
+    """True si alguna de las 6 claves de _VISIT_KEYS cambio.
+
+    Compara el row del ultimo `session_visits` (devuelto por SELECT)
+    con el payload del nuevo evento. La comparacion es case-sensitive y
+    None == None (visitante sin utm sigue en el mismo visit).
+    """
+    for key in _VISIT_KEYS:
+        if getattr(last_visit, key) != incoming[key]:
+            return True
+    return False

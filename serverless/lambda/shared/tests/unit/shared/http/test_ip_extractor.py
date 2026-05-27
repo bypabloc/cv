@@ -114,3 +114,72 @@ class TestExtractCountry:
         """Given header con longitud != 2, When extract_country, Then None."""
         assert extract_country({'headers': {'CF-IPCountry': 'CHL'}}) is None
         assert extract_country({'headers': {'CF-IPCountry': 'C'}}) is None
+
+    def test_when_cloudfront_viewer_country_then_returns_it(self) -> None:
+        """
+        Given header CloudFront-Viewer-Country='US',
+        When extract_country,
+        Then retorna 'US' (prioridad sobre CF-IPCountry). [AC-3]
+        """
+        event = {
+            'headers': {
+                'CloudFront-Viewer-Country': 'US',
+                'CF-IPCountry': 'CL',  # ignorado, cloudfront-viewer-country gana
+            },
+        }
+        assert extract_country(event) == 'US'
+
+    def test_when_cloudfront_viewer_country_lowercase_header_then_matches(
+        self,
+    ) -> None:
+        """
+        Given header 'cloudfront-viewer-country' (lowercase),
+        When extract_country,
+        Then matchea (case-insensitive lookup). [AC-3]
+        """
+        event = {'headers': {'cloudfront-viewer-country': 'BR'}}
+        assert extract_country(event) == 'BR'
+
+
+class TestExtractCloudfrontMeta:
+    """extract_cloudfront_meta - captura TODOS los headers cloudfront-*."""
+
+    def test_captures_all_cloudfront_headers_lowercased(self) -> None:
+        """
+        Given headers con multiples cloudfront-*,
+        When extract_cloudfront_meta,
+        Then dict resultante trae los keys lowercased (cloudfront-*). [AC-3]
+        """
+        from shared.http.ip_extractor import extract_cloudfront_meta
+
+        event = {
+            'headers': {
+                'CloudFront-Viewer-Country': 'US',
+                'CloudFront-Viewer-City': 'San Francisco',
+                'CloudFront-Is-Mobile-Viewer': 'true',
+                'CloudFront-Viewer-Time-Zone': 'America/Los_Angeles',
+                'User-Agent': 'foo',  # NO se incluye
+                'CF-Connecting-IP': '1.2.3.4',  # NO se incluye
+            },
+        }
+
+        meta = extract_cloudfront_meta(event)
+
+        assert meta == {
+            'cloudfront-viewer-country': 'US',
+            'cloudfront-viewer-city': 'San Francisco',
+            'cloudfront-is-mobile-viewer': 'true',
+            'cloudfront-viewer-time-zone': 'America/Los_Angeles',
+        }
+
+    def test_returns_empty_when_no_cloudfront_headers(self) -> None:
+        """
+        Given headers sin cloudfront-* (custom domain REGIONAL),
+        When extract_cloudfront_meta,
+        Then dict vacio.
+        """
+        from shared.http.ip_extractor import extract_cloudfront_meta
+
+        event = {'headers': {'User-Agent': 'foo', 'CF-IPCountry': 'CL'}}
+
+        assert extract_cloudfront_meta(event) == {}

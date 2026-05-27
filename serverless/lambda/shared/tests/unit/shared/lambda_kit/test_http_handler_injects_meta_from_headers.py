@@ -70,4 +70,7 @@ def test_http_handler_injects_meta_from_headers() -> None:
         'country': 'CL',
         'user_agent': 'curl/8.0',
         'bypass_secret': 'secret-123',
+        # cloudfront_meta vacio porque el evento de test no trae headers
+        # cloudfront-* (REGIONAL). En Edge-Optimized llegan ~22 headers.
+        'cloudfront_meta': {},
     }

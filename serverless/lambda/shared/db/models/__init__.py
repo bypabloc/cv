@@ -1,62 +1,66 @@
-"""@module models — barrel del schema unificado del portfolio.
+"""@module models — barrel del schema unificado post-rename.
 
-Importa TODOS los modelos (las 36 tablas: datos del visitante + contenido
-del CV). Al importarse, `Base.metadata` queda poblada con cada tabla — es el
-`target_metadata` unico del autogenerate de Alembic.
+Renames respecto al schema pre-rename (commit anterior):
+- `Education` -> `EducationEntry`, `EducationNiche` -> `EducationEntryNiche`
+- `Reference` -> `Endorsement`, `ReferenceNiche` -> `EndorsementNiche`
 
-Import plano, sin jerarquia de dominio:
-    from shared.db.models import Contact, Experience, TrackingEvent
+Las clases legacy `Education`, `Reference`, `EducationNiche`, `ReferenceNiche`
+ya NO existen — callers deben usar los nuevos nombres.
 
-NO contiene logica — solo imports y re-exports.
+API publica: `from shared.db.models import Profile, Contact, ...` sigue
+funcionando para todas las clases sin rename.
 """
 
-from .catalog import Niche, Skill, TechTag
-from .contact import Contact
-from .cv_entities import (
+from .cv import (
     Award,
-    Certificate,
-    Education,
-    Language,
-    Publication,
-    Reference,
-    SkillCategory,
-)
-from .experience import Experience, ExperienceBullet
-from .junctions import (
     AwardNiche,
+    Certificate,
     CertificateNiche,
-    EducationNiche,
+    EducationEntry,
+    EducationEntryNiche,
+    Endorsement,
+    EndorsementNiche,
+    Experience,
+    ExperienceBullet,
     ExperienceNiche,
     ExperienceSkill,
+    Language,
     LanguageNiche,
+    Profile,
+    ProfileNiche,
+    ProfileStats,
+    Project,
+    ProjectCaseStudy,
+    ProjectMetric,
     ProjectNiche,
     ProjectTechTag,
+    Publication,
     PublicationNiche,
-    ReferenceNiche,
+    Skill,
+    SkillCategory,
     SkillCategoryNiche,
     SkillCategorySkill,
 )
-from .profile import Profile, ProfileNiche, ProfileStats
-from .project import Project, ProjectCaseStudy, ProjectMetric
-from .stream import ProcessedStreamEvent
-from .tracking import EventType, TrackingEvent
-from .translations import NichePriority, Translation
+from .i18n import Translation
+from .taxonomy import EventType, Niche, NichePriority, TechTag
+from .visitor import Contact, Session, SessionVisit, TrackingEvent
 
-# Agrupado por dominio (visitante / CV), no alfabetico — RUF022 off a
-# proposito: el agrupamiento documenta el origen de cada tabla.
 __all__ = [  # noqa: RUF022
-    # Datos del visitante (replica de DynamoDB)
+    # Datos del visitante (vis_)
     'Contact',
     'EventType',
-    'ProcessedStreamEvent',
+    'Session',
+    'SessionVisit',
     'TrackingEvent',
-    # Contenido del CV
+    # Contenido del CV (cv_)
     'Award',
     'AwardNiche',
     'Certificate',
     'CertificateNiche',
-    'Education',
-    'EducationNiche',
+    'EducationEntry',
+    'EducationEntryNiche',
+    'Endorsement',
+    'EndorsementNiche',
     'Experience',
     'ExperienceBullet',
     'ExperienceNiche',
@@ -75,8 +79,6 @@ __all__ = [  # noqa: RUF022
     'ProjectTechTag',
     'Publication',
     'PublicationNiche',
-    'Reference',
-    'ReferenceNiche',
     'Skill',
     'SkillCategory',
     'SkillCategoryNiche',

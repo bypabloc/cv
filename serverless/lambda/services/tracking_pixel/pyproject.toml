@@ -11,12 +11,25 @@ version = "0.1.0"
 description = "Lambda del tracking pixel: registra eventos de pagina en DynamoDB."
 requires-python = ">=3.13"
 
-# El core/ del Lambda no declara dependencias propias: todo le llega por
-# el vendoring del cierre de shared/ (shared.lambda_kit aporta pydantic;
+# Deps propias del Lambda. El resto le llega por el vendoring del
+# cierre de shared/ (shared.lambda_kit aporta pydantic;
 # shared.observability aporta aws-lambda-powertools; shared.aws +
-# shared.rate_limit + shared.cache aportan boto3) — ver la regla de dedup
-# D-3 del plan docs/specs/serverless-lambda-independence/.
-dependencies = []
+# shared.rate_limit + shared.cache + shared.queue + shared.db aportan
+# boto3 + sqlalchemy + psycopg) — regla D-3.
+#
+# El cierre transitivo de shared/ se resuelve via AST scan de core/ por
+# devtools/serverless/shared_resolver.py — el lambda NO declara
+# `[tool.shared] internal-deps` (eso es solo para subpaquetes DENTRO de
+# shared/). El cierre actual del encoder incluye:
+#   shared.lambda_kit, shared.observability, shared.aws, shared.rate_limit,
+#   shared.http, shared.core, shared.cache, shared.db (sync legacy),
+#   shared.queue (encoder async).
+dependencies = [
+  # uap-python: parser de User-Agent oficial; regex specs mantenidos por
+  # la comunidad (uap-core). Reemplaza el regex custom previo del
+  # service para mejor accuracy en Chrome iOS, WebView, bots modernos.
+  "ua-parser>=0.18.0,<2.0",
+]
 
 # Deps de DESARROLLO: pytest + coverage + mocks. NO van al artefacto de
 # deploy (solo a [project.dependencies] llega al zip).

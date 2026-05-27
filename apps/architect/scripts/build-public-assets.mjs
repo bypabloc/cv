@@ -1,15 +1,26 @@
-import { copyFile, mkdir, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { profile } from '@portfolio/content'
 import { renderCvHtml } from '@portfolio/cv-pdf'
-import { buildLlmsTxt, buildRobotsTxt } from '@portfolio/seo'
+import {
+  buildHeaders,
+  buildLlmsTxt,
+  buildOpenApi,
+  buildRedirects,
+  buildRobotsTxt,
+} from '@portfolio/seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = resolve(__dirname, '../public')
 const SITE_URL =
   process.env.SITE_URL ?? 'https://architect.portfolio.the-full-stack.com'
 const NICHE = 'architect'
+const API_ENDPOINT =
+  process.env.PUBLIC_API_ENDPOINT ||
+  (process.env.BASE_DOMAIN
+    ? `https://api.${process.env.BASE_DOMAIN}`
+    : 'https://api.portfolio.the-full-stack.com')
 const ATS_KEYWORDS = [
   'Frontend Architect',
   'Software Architect',
@@ -98,6 +109,22 @@ async function main() {
     }),
   )
   await write('robots.txt', buildRobotsTxt(SITE_URL))
+  await write('_headers', buildHeaders({ apiEndpoint: API_ENDPOINT }))
+
+  // 5. _redirects (alias /sitemap.xml -> /sitemap-index.xml)
+  await write('_redirects', buildRedirects())
+
+  // 6b. /openapi.json (OpenAPI 3.1 spec del backend serverless)
+  //     Servido desde el portfolio (mismo origen), no del API Gateway.
+  //     El api-catalog.json (Pages Function) linkea aqui via service-desc.
+  await write('openapi.json', buildOpenApi({ apiEndpoint: API_ENDPOINT }))
+
+  // 6. Limpieza historica: .well-known/* eran assets en plan ai-audit-level-3-4
+  //    pero Cloudflare Pages excluye dotdirs del upload (regla de dotfiles).
+  //    Plan ai-audit-level-4 los sirve via Pages Functions
+  //    (apps/<niche>/functions/.well-known/*.ts). Si quedan archivos en
+  //    public/.well-known/ de builds anteriores, eliminarlos.
+  await rm(resolve(PUBLIC_DIR, '.well-known'), { recursive: true, force: true })
 }
 
 main().catch((err) => {

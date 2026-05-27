@@ -23,6 +23,13 @@ interface Props {
   niche?: string
   strings: ComponentsStrings['contactForm']
 }
+// NOTA: este componente NO valida apiEndpoint/turnstileSitekey con los
+// guards de validate-build-env porque el contrato de las paginas
+// /contact es que apiEndpoint puede llegar como `${base}/contact`
+// (sufijado, no base), y porque el .astro padre ya gateaa con
+// `contactEndpoint && turnstileSitekey ? <Form /> : <Fallback />`.
+// La fuente del bug del plan era TrackingPixel (silent fail SIN gating
+// graceful); ahi SI corre el guard de validateApiEndpoint.
 const {
   apiEndpoint,
   turnstileSitekey,

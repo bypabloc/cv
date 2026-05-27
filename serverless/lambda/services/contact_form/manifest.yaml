@@ -11,13 +11,22 @@
 
 # --- Identidad ---
 name: contact-form
-description: Atiende el form de contacto (valida, rate-limit, Turnstile, email).
+description: Encoder del form de contacto (valida + Turnstile + encola SQS).
 
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB
-timeout: 30       # segundos
+memory: 384       # MB — 256 daba poca CPU al handler (INIT ~200MB).
+                  # 384 sostiene Turnstile siteverify + DDB rate-limit
+                  # + SQS publish con holgura.
+timeout: 15       # segundos — incluye Turnstile siteverify HTTP (1-2s)
+
+# SnapStart: reduce cold start de 3.4s a ~830ms (Restore Duration).
+# Cuando true, cada deploy hace publish-version + update-alias `live`,
+# y el trigger HTTP apunta al alias `:live` (no $LATEST).
+# Critico para /contact: low traffic prod hace que cada submit pague
+# cold start (no se mantiene warm como /track).
+snap_start: true
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend.
@@ -29,29 +38,61 @@ trigger:
 # --- Que recursos del backend usa ---
 # devtools traduce esto a los permisos IAM y los imports necesarios.
 uses:
+  # Cola SQS hacia donde el encoder publica el mensaje cuando
+  # ASYNC_MODE=true. devtools concede sqs:SendMessage al rol IAM y
+  # inyecta SSM_CONTACT_FORM_QUEUE_URL_PATH al runtime.
+  queues:
+    - name: portfolio-contact-form-${stage}
+      access: producer
   # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
+  # Spec direct-neon-writes: la tabla `contacts` ya no se usa — el Lambda
+  # escribe directo a Neon (`contacts`). Solo quedan las tablas de
+  # infraestructura (cache + rate-limit).
   tables:
-    contacts: read-write           # persiste el form recibido
     cache: read-write              # @cached
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
   # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
+  # NOTA: owner-email, ses-from-address y neon-url SOLO los necesita el
+  # flujo sync legacy (ASYNC_MODE=false). Mientras dure el feature flag
+  # se mantienen aqui para que el rollback siga funcionando; una vez que
+  # el flag se deprecque, se borraran de la lista (y los permisos IAM con
+  # ellos).
   secrets:
     - turnstile-secret        # validacion del captcha Cloudflare Turnstile
     - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
-    - owner-email             # destinatario de la notificacion
-    - ses-from-address        # remitente verificado en SES
-  # Envia email transaccional por SES al recibir un form.
+    - owner-email             # destinatario (solo sync legacy)
+    - ses-from-address        # remitente verificado SES (solo sync legacy)
+    - neon-url                # connection string Neon (solo sync legacy)
+  # Envia email transaccional por SES al recibir un form (solo en sync).
   sends-email: true
 
 # --- Variables de entorno por stage ---
+# CORS_ALLOWED_ORIGINS define la whitelist de origins permitidos por
+# el handler HTTP (common/cors.py) Y el set de hostnames validos del
+# widget Turnstile (shared/http/turnstile._expected_hostnames). Por eso
+# debe coincidir con el dominio publico de cada stage; si falta, el
+# siteverify rechaza con CAPTCHA_HOSTNAME_MISMATCH (defensa contra
+# widget hijacking). Misma whitelist que tracking_pixel y cv.
+#
+# ASYNC_MODE ('true' / 'false') decide en runtime si el Lambda actua
+# como ENCODER (publica a SQS + 202, default) o SYNC LEGACY (Neon+SES+
+# 201, rollback). Se evalua una vez por cold start via AppConfig; los
+# rollouts/rollback se hacen flipeando este valor + redeploy.
 env:
   default:
     LOG_LEVEL: INFO
     AWS_SES_REGION: us-east-1
+    ASYNC_MODE: 'true'
   dev:
     LOG_LEVEL: INFO
+    ASYNC_MODE: 'true'
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
   stage:
     LOG_LEVEL: INFO
+    ASYNC_MODE: 'true'
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
+    ASYNC_MODE: 'true'
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

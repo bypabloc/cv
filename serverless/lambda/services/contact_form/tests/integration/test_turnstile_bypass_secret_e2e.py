@@ -31,7 +31,8 @@ def test_turnstile_bypass_secret_e2e(aws_env, monkeypatch):
     # de bypass en verify_turnstile_token (no se contacta a Cloudflare).
     monkeypatch.setenv('STAGE', 'dev')
     monkeypatch.setenv(
-        'SSM_TURNSTILE_BYPASS_PATH', '/portfolio-test/turnstile-bypass'
+        'SSM_TURNSTILE_BYPASS_SECRET_PATH',
+        '/portfolio-test/turnstile-bypass',
     )
     ssm = boto3.client('ssm', region_name='us-east-1')
     ssm.put_parameter(

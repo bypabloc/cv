@@ -78,20 +78,23 @@ _BYPASS_ALLOWED_STAGES = frozenset({'dev', 'local'})
 
 def _load_bypass_secret() -> str:
     """
-    Resuelve el bypass secret desde SSM. Solo se llama si STAGE in {dev,local}.
+    Resuelve el bypass secret. Solo se llama si STAGE in {dev,local}.
 
-    Si el SSM_TURNSTILE_BYPASS_PATH no esta configurado o el param no existe,
-    retorna string vacio (bypass queda inerte, regla #2).
+    Catalogo: resources/secrets/turnstile-bypass-secret.yaml. Cloud:
+    devtools inyecta SSM_TURNSTILE_BYPASS_SECRET_PATH; local: TURNSTILE_BYPASS_SECRET.
+
+    Si ninguna env var esta configurada, retorna string vacio (bypass
+    queda inerte, regla #2).
     """
-    bypass_path = os.environ.get('SSM_TURNSTILE_BYPASS_PATH', '')
-    if not bypass_path:
-        return ''
+    from shared.aws.ssm import get_secret_by_name
+
     try:
-        return get_secret(bypass_path)
-    except Exception:  # SSM ParameterNotFound, ClientError, etc.
+        return get_secret_by_name(
+            'turnstile-bypass-secret', local_env='TURNSTILE_BYPASS_SECRET',
+        )
+    except (RuntimeError, Exception):
         logger.info(
-            'bypass secret not configured in SSM; bypass disabled',
-            extra={'path': bypass_path},
+            'bypass secret not configured; bypass disabled',
         )
         return ''
 
@@ -163,10 +166,13 @@ def verify_turnstile_token(
         msg = 'cf_token vacio y bypass no aplica'
         raise TurnstileError(msg, code='CAPTCHA_INVALID')
 
-    secret_path = os.environ.get(
-        'SSM_TURNSTILE_SECRET_PATH', '/portfolio/turnstile-secret'
+    # Catalogo: serverless/lambda/resources/secrets/turnstile-secret.yaml.
+    # Cloud: devtools inyecta SSM_TURNSTILE_SECRET_PATH; local: TURNSTILE_SECRET_KEY.
+    from shared.aws.ssm import get_secret_by_name
+
+    secret = get_secret_by_name(
+        'turnstile-secret', local_env='TURNSTILE_SECRET_KEY',
     )
-    secret = get_secret(secret_path)
 
     payload: dict[str, str] = {'secret': secret, 'response': cf_response}
     if remote_ip:

@@ -35,7 +35,7 @@ sections:
   experience:
     title: "Experience"
   projects:
-    title: "Featured projects"
+    title: "Projects"
   skills:
     title: "Technical skills"
   about:
@@ -61,6 +61,9 @@ labels:
   downloadCv: "Download CV"
   viewAllExperience: "View full experience"
   viewDetail: "View detail"
+  viewSite: "View site"
+  viewRepo: "Repository"
+  currentView: "Current view"
   confidential: "Under NDA — detailed metrics on request"
   technicalSkills: "Technical"
   softSkills: "Soft"
@@ -73,6 +76,14 @@ labels:
   caseStudyMetrics: "Metrics"
   ctaPrimary: "View experience"
   ctaSecondary: "Download CV"
+
+# Niche labels (used by the nav dropdown and other contexts).
+nicheLabels:
+  fintech: "Fintech"
+  architect: "Architect"
+  leader: "Leadership"
+  vibe: "Vibe Coding"
+  generic: "Full Stack"
 
 # Interactive component strings.
 components:

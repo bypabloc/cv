@@ -169,7 +169,7 @@ test.describe('Feature: Contact form (React 18 + Zod)', () => {
       )
     })
 
-    test('Given form valido When submit con bypass Then 201 + card de confirmacion', async ({
+    test('Given form valido When submit con bypass Then 202 + card de confirmacion', async ({
       page,
     }) => {
       await gotoContactReady(page)
@@ -178,14 +178,16 @@ test.describe('Feature: Contact form (React 18 + Zod)', () => {
       await page.locator('input[name="email"]').fill('pacg1991@gmail.com')
       await page.locator('textarea[name="message"]').fill(uniqueMsg)
 
-      // Capturar la response al backend para verificar status 201
+      // Capturar la response al backend para verificar status 202 (modo
+      // async actual; el encoder publica a SQS y el worker procesa
+      // despues).
       const responsePromise = page.waitForResponse(
         (res) =>
           res.url().includes('/contact') && res.request().method() === 'POST',
       )
       await page.getByTestId('contact-submit').click()
       const response = await responsePromise
-      expect(response.status()).toBe(201)
+      expect(response.status()).toBe(202)
       const body = (await response.json()) as { contact_id: string }
       expect(body.contact_id).toMatch(/^[0-9a-f-]{36}$/i)
 

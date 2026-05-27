@@ -26,15 +26,14 @@ packaging del deploy lo incluya en el zip (`packaging.py` solo copia
 
 from __future__ import annotations
 
-import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import boto3
-from aws_lambda_powertools.metrics import MetricUnit
+from shared.aws import send_email
 from shared.aws.ssm import get_secret_by_name
+from shared.observability import MetricUnit
 from shared.core.ulid import new_uuidv7
 from shared.db.repository import ensure_session_and_visit, insert_contact
 from shared.db.session import db_session
@@ -159,13 +158,6 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 
-def _ses_client() -> Any:
-    """Cliente SES lazy (no module-scope, para compat con moto)."""
-    return boto3.client(
-        'sesv2', region_name=os.environ.get('AWS_SES_REGION', 'us-east-1')
-    )
-
-
 def _render_mustache_lite(template: str, context: dict[str, Any]) -> str:
     """Render minimo mustache-style: {{var}} y {{#var}}block{{/var}}.
 
@@ -256,19 +248,13 @@ def send_owner_email(contact: dict[str, Any]) -> str:
         f'({contact.get("niche", "generic")})'
     )
 
-    response = _ses_client().send_email(
-        FromEmailAddress=f'The Full Stack <{from_address}>',
-        Destination={'ToAddresses': recipients},
-        ReplyToAddresses=[contact.get('email', from_address)],
-        Content={
-            'Simple': {
-                'Subject': {'Data': subject, 'Charset': 'UTF-8'},
-                'Body': {
-                    'Text': {'Data': text_body, 'Charset': 'UTF-8'},
-                    'Html': {'Data': html_body, 'Charset': 'UTF-8'},
-                },
-            },
-        },
+    response = send_email(
+        from_address=f'The Full Stack <{from_address}>',
+        to_addresses=recipients,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+        reply_to=[contact.get('email', from_address)],
     )
 
     message_id: str = response.get('MessageId', '')

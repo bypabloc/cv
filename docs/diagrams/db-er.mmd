@@ -298,3 +298,62 @@ erDiagram
   vis_session_visits ||--o{ vis_tracking_events : produced_in
   tax_event_types    ||--o{ vis_tracking_events : classifies
   vis_sessions       ||--o{ vis_contacts        : submitted_in
+
+  auth_users {
+    uuid id PK "uuidv7"
+    citext email UK "lowercased"
+    auth_user_status status "pending|active|disabled|locked|deleted"
+    uuid profile_id FK "nullable, SET NULL"
+    timestamptz email_verified_at "nullable"
+    timestamptz password_set_at "nullable"
+    timestamptz locked_until "nullable"
+    timestamptz last_login_at "nullable"
+    int failed_attempts
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  auth_credentials {
+    uuid user_id PK,FK "cascade"
+    text password_hash
+    varchar algo "argon2id"
+    timestamptz password_set_at
+    timestamptz last_change_at
+  }
+  auth_email_codes {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea code_hash "SHA-256"
+    auth_code_kind kind "register|login|password_reset"
+    int attempts
+    timestamptz expires_at
+    timestamptz consumed_at "nullable"
+    timestamptz created_at
+  }
+  auth_magic_links {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea token_hash UK "SHA-256"
+    auth_link_kind kind "register|login|password_reset"
+    timestamptz expires_at
+    timestamptz consumed_at "nullable"
+    timestamptz created_at
+    inet ip "nullable"
+    text user_agent "nullable"
+  }
+  auth_audit_log {
+    uuid id PK "uuidv7"
+    uuid user_id FK "nullable, SET NULL"
+    varchar event
+    boolean success
+    varchar error_code "nullable"
+    inet ip "nullable"
+    text user_agent "nullable"
+    varchar niche "nullable"
+    jsonb metadata "nullable"
+    timestamptz created_at
+  }
+  cv_profiles ||--o| auth_users        : owns_account
+  auth_users  ||--o| auth_credentials  : authenticates_with
+  auth_users  ||--o{ auth_email_codes  : verified_by
+  auth_users  ||--o{ auth_magic_links  : verified_by
+  auth_users  ||--o{ auth_audit_log    : audited_in

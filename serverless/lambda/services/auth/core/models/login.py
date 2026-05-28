@@ -15,7 +15,11 @@ class LoginStartIn(BaseModel):
     """POST /auth operation=login action=start."""
 
     email: EmailStr
-    cf_turnstile_response: str = Field(..., min_length=1, max_length=2048)
+    # default='' (no min_length): habilita el bypass de Turnstile para
+    # tests E2E (cf_response vacio, solo dev/local). En prod, vacio + sin
+    # bypass -> TurnstileError 403 en el controller (AC-12). Igual que
+    # register.start y contact_form.
+    cf_turnstile_response: str = Field(default='', max_length=2048)
     niche: Niche | None = None
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
 

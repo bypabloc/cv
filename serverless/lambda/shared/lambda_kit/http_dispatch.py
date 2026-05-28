@@ -293,13 +293,42 @@ def http_handler(
             ) else None
             if isinstance(app_error, ApplicationError):
                 raise app_error
+            # Si el controller pidio un status HTTP explicito (404, 409,
+            # 423, 429, 401, ...), se respeta y se devuelve el `data` del
+            # controller tal cual (sin envolver en INVALID_REQUEST). Es
+            # la via para errores de negocio con status especifico sin
+            # construir una ApplicationError. Para 429 se agrega
+            # Retry-After si el data trae `retry_after`.
+            if result.status is not None:
+                if 'rejected' in metric_names:
+                    metrics.add_metric(
+                        name=metric_names['rejected'],
+                        unit=MetricUnit.Count,
+                        value=1,
+                    )
+                extra_headers: dict[str, str] = {}
+                retry_after = (
+                    result.data.get('retry_after')
+                    if isinstance(result.data, dict)
+                    else None
+                )
+                if result.status == 429 and retry_after is not None:
+                    extra_headers['Retry-After'] = str(retry_after)
+                return json_response(
+                    result.status,
+                    result.data,
+                    origin=origin,
+                    extra_headers=extra_headers or None,
+                )
             raise ValidationError(
                 'Validation failed',
                 code='INVALID_REQUEST',
                 extra={'detail': result.data},
             )
 
-        # 6. Exito.
+        # 6. Exito. El controller puede pedir un status explicito (ej.
+        #    204 en session.logout); si no, usa el `success_status` del
+        #    handler.
         if 'submitted' in metric_names:
             metrics.add_metric(
                 name=metric_names['submitted'],
@@ -307,9 +336,10 @@ def http_handler(
                 value=1,
             )
 
-        if success_status == 204:
+        effective_status = result.status or success_status
+        if effective_status == 204:
             return no_content_response(origin=origin)
-        return json_response(success_status, result.data, origin=origin)
+        return json_response(effective_status, result.data, origin=origin)
 
     except ApplicationError as exc:
         logger.warning(

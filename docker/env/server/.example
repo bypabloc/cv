@@ -78,3 +78,9 @@ DB_CHANNEL_BINDING=require
 DB_HOST=
 # DB_PASSWORD esta embebida en DB_URL; declararla aparte es opcional.
 DB_PASSWORD=
+
+# --- jwt-secret.yaml (SecureString) ---
+# HS256 secret del dominio auth (firma/verifica temp/access/refresh).
+# Generar: python -c "import secrets; print(secrets.token_urlsafe(64))"
+# SSM: /portfolio/${stage}/jwt-secret
+JWT_SECRET=

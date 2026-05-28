@@ -1,0 +1,80 @@
+# Manifiesto del Lambda `auth` — fuente de verdad de su config.
+#
+# Encoder HTTP del dominio auth: register / login / verify / session.
+# Valida Pydantic + Turnstile + rate-limit, persiste estado a Neon + DDB
+# (blacklist JWT), publica mensajes a SQS hacia `auth_email_worker` (NO
+# envia email directo). Sigue el patron lambda-controller con
+# operation+action.
+#
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=auth
+
+# --- Identidad ---
+name: auth
+description: HTTP endpoint POST /auth (register/login/verify/session).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 384       # MB — Turnstile siteverify + Neon write + DDB
+                  # blacklist + SQS publish con holgura.
+timeout: 15       # segundos — incluye Turnstile siteverify HTTP (1-2s)
+
+# SnapStart: reduce cold start de ~3s a ~830ms (Restore Duration).
+# Critico en /auth: low traffic prod hace que cada request pague cold
+# start si no se mantiene warm.
+snap_start: true
+
+# --- Como se invoca este Lambda ---
+trigger:
+  type: http
+  method: POST
+  path: /auth
+
+# --- Que recursos del backend usa ---
+uses:
+  # Cola SQS hacia donde el encoder publica el email a enviar (magic
+  # link o code). El worker `auth_email_worker` consume + envia via SES
+  # + audita.
+  queues:
+    - name: portfolio-auth-email-${stage}
+      access: producer
+  # Tablas DynamoDB: cache (Powertools), rate-limit y jwt-blacklist.
+  tables:
+    cache: read-write              # @cached SSM cache
+    rate-limit-rules: read-write   # rate-limit per-IP
+    rate-limit-buckets: read-write
+    jwt-blacklist: read-write      # blacklist con GSI by_family_id
+  # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
+  secrets:
+    - turnstile-secret        # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
+    - neon-url                # connection string Neon (auth_*)
+    - jwt-secret              # JWT HS256 secret (SecureString + KMS)
+    - ses-from-address        # publica mensajes con este From (lo usa worker)
+  # El Lambda NO envia email directo: publica a SQS y el worker hace SES.
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+    POWERTOOLS_SERVICE_NAME: auth
+    POWERTOOLS_METRICS_NAMESPACE: Portfolio/Auth
+    JWT_ISSUER: portfolio-auth
+    JWT_AUDIENCE: portfolio
+  dev:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com,http://localhost:9970'
+    MAGIC_LINK_BASE_URL: https://api.portfolio.dev.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.dev.the-full-stack.com/callback
+  stage:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com,https://admin.portfolio.stage.the-full-stack.com'
+    MAGIC_LINK_BASE_URL: https://api.portfolio.stage.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.stage.the-full-stack.com/callback
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'
+    MAGIC_LINK_BASE_URL: https://api.portfolio.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.the-full-stack.com/callback

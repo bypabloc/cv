@@ -92,6 +92,10 @@ _TABLES: dict[str, dict[str, str]] = {
         'physical': 'portfolio-rate-limit-buckets-${stage}',
         'env': 'SSM_RATE_LIMIT_BUCKETS_TABLE_PATH',
     },
+    'jwt-blacklist': {
+        'physical': 'portfolio-jwt-blacklist-${stage}',
+        'env': 'SSM_JWT_BLACKLIST_TABLE_PATH',
+    },
 }
 
 # El inventario de secretos SSM vive en
@@ -373,6 +377,11 @@ def _dynamodb_statements(
                 'Action': actions,
                 'Resource': [
                     f'arn:aws:dynamodb:{region}:{account}:table/{physical}',
+                    # Indices (GSI/LSI) de la tabla: el Query sobre un GSI
+                    # (ej. jwt-blacklist#by_family_id) exige el ARN del
+                    # indice ademas del de la tabla. Scoped a la tabla; las
+                    # tablas sin indices simplemente no matchean nada.
+                    f'arn:aws:dynamodb:{region}:{account}:table/{physical}/index/*',
                 ],
             }
         )

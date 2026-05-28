@@ -96,7 +96,24 @@ _VALID_ACTIONS = [
     'clear-buckets',
 ]
 
-_VALID_ENDPOINTS = ['/contact', '/track', '*']
+# Endpoints validos para `rate-limit set`. El Lambda `auth` usa keys
+# compuestas `/auth#<operation>.<action>` (el controller las pasa a
+# shared.rate_limit.check_or_raise) para tener una regla por accion.
+_VALID_ENDPOINTS = [
+    '/contact',
+    '/track',
+    '*',
+    '/auth#register.start',
+    '/auth#register.verify-magic-link',
+    '/auth#register.verify-code',
+    '/auth#login.start',
+    '/auth#login.verify-magic-link',
+    '/auth#login.verify-code',
+    '/auth#verify.set-password',
+    '/auth#verify.resend-code',
+    '/auth#session.refresh',
+    '/auth#session.logout',
+]
 
 
 def _ensure_aws_cli() -> bool:

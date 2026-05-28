@@ -1,0 +1,45 @@
+"""EventModel del Lambda `auth`.
+
+Construye `EVENT_MODEL` con `build_event_model(OPERATIONS)` del kit
+(`shared.lambda_kit`). El handler lo usa para validar la estructura
+`{operation, action, data}` del evento sintetico y resolver el
+controller correspondiente.
+
+Los modelos Pydantic concretos por action (`RegisterStartIn`,
+`LoginStartIn`, ...) se importan aqui para garantizar que sus
+modulos se cargan al cold start; los controllers los reutilizan para
+validar el payload concreto dentro de `validate()`.
+"""
+
+from __future__ import annotations
+
+from settings.operations import OPERATIONS
+from shared.lambda_kit import build_event_model
+
+# Side-effect: importar los modelos garantiza que se cargan en cold
+# start (algunos controllers los importan via `models.<operation>` y
+# nos beneficiamos del module caching de Python).
+from .login import LoginStartIn, LoginVerifyCodeIn, LoginVerifyMagicLinkIn
+from .register import (
+    RegisterStartIn,
+    RegisterVerifyCodeIn,
+    RegisterVerifyMagicLinkIn,
+)
+from .session import SessionLogoutIn, SessionRefreshIn
+from .verify import VerifyResendCodeIn, VerifySetPasswordIn
+
+# Eviten F401 (los imports estan para forzar la carga del modulo).
+_ = (
+    RegisterStartIn,
+    RegisterVerifyMagicLinkIn,
+    RegisterVerifyCodeIn,
+    LoginStartIn,
+    LoginVerifyMagicLinkIn,
+    LoginVerifyCodeIn,
+    VerifySetPasswordIn,
+    VerifyResendCodeIn,
+    SessionRefreshIn,
+    SessionLogoutIn,
+)
+
+EVENT_MODEL = build_event_model(OPERATIONS)

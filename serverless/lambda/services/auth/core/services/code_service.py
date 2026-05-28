@@ -19,6 +19,7 @@ from shared.db import db_session
 from shared.db.models import AuthCodeKind, AuthUser
 from shared.db.repositories.auth import (
     consume_email_code,
+    get_last_email_code,
     insert_email_code,
 )
 
@@ -56,6 +57,30 @@ class CodeService:
                 expires_at=expires_at,
             )
         return code, code_hash
+
+    def seconds_until_resend_allowed(
+        self,
+        *,
+        user_id: UUID | str,
+        kind: AuthCodeKind,
+        min_interval: timedelta = timedelta(seconds=60),
+    ) -> int:
+        """Segundos que faltan para permitir un resend (AC-21).
+
+        Mira el ultimo code emitido para (user, kind) — consumed o no —
+        y compara `now - created_at` contra `min_interval`. Retorna 0 si
+        ya se puede reenviar (no hay code previo o paso el intervalo), o
+        los segundos restantes (> 0) si todavia esta throttled.
+        """
+        with db_session() as session:
+            last = get_last_email_code(
+                session, user_id=str(user_id), kind=kind,
+            )
+            if last is None:
+                return 0
+            elapsed = datetime.now(tz=last.created_at.tzinfo) - last.created_at
+            remaining = min_interval - elapsed
+        return max(int(remaining.total_seconds()), 0)
 
     def verify(
         self,

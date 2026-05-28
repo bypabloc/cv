@@ -126,6 +126,35 @@ class JwtService:
                 )
         return claims
 
+    def verify_allow_revoked(
+        self,
+        token_str: str,
+        *,
+        expected_typ: JwtType | None = None,
+    ) -> JwtClaims:
+        """Verifica signature + exp + aud + iss + typ, SIN chequear blacklist.
+
+        Devuelve los claims aunque el jti (o su familia) esten revocados.
+        Lo usa `session.refresh` para detectar token reuse: necesita el
+        `family_id` del refresh recibido ANTES de decidir si revocar la
+        familia completa (AC-8). El caller consulta `is_blacklisted` por
+        separado.
+
+        Raises:
+            JwtExpiredError, JwtInvalidError (NUNCA JwtRevokedError).
+        """
+        return verify_jwt(
+            token_str,
+            secret=self._secret,
+            expected_typ=expected_typ,
+            audience=self._audience,
+            issuer=self._issuer,
+        )
+
+    def is_blacklisted(self, *, jti: UUID | str) -> bool:
+        """True si el jti esta en la blacklist DDB (delega al service)."""
+        return self._blacklist.is_blacklisted(jti=jti)
+
     def blacklist(
         self,
         *,

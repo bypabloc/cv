@@ -84,6 +84,116 @@ def _make_event_with_code(
     }
 
 
+def _make_event_set_password(
+    *,
+    password: str = 'a-very-strong-passphrase-1',  # noqa: S107
+    temp_token: str = 'FAKE-TEMP-TOKEN-FOR-TEST-XXXXXXXXXXX',
+    ip: str = '203.0.113.10',
+    country: str = 'CL',
+    user_agent: str = 'pytest',
+) -> dict[str, Any]:
+    """Evento de verify/set-password."""
+    return {
+        'password': password,
+        'temp_token': temp_token,
+        '_meta': {
+            'ip': ip,
+            'country': country,
+            'user_agent': user_agent,
+            'bypass_secret': None,
+            'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+            'cloudfront_meta': {},
+        },
+    }
+
+
+def _make_event_resend_code(
+    *,
+    temp_token: str = 'FAKE-TEMP-TOKEN-FOR-TEST-XXXXXXXXXXX',
+    ip: str = '203.0.113.10',
+    country: str = 'CL',
+    user_agent: str = 'pytest',
+) -> dict[str, Any]:
+    """Evento de verify/resend-code."""
+    return {
+        'temp_token': temp_token,
+        '_meta': {
+            'ip': ip,
+            'country': country,
+            'user_agent': user_agent,
+            'bypass_secret': None,
+            'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+            'cloudfront_meta': {},
+        },
+    }
+
+
+def _make_event_refresh(
+    *,
+    refresh_token: str = 'FAKE-REFRESH-TOKEN-FOR-TEST-XXXXXXXX',
+    ip: str = '203.0.113.10',
+    country: str = 'CL',
+    user_agent: str = 'pytest',
+) -> dict[str, Any]:
+    """Evento de session/refresh."""
+    return {
+        'refresh_token': refresh_token,
+        '_meta': {
+            'ip': ip,
+            'country': country,
+            'user_agent': user_agent,
+            'bypass_secret': None,
+            'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+            'cloudfront_meta': {},
+        },
+    }
+
+
+def _make_event_logout(
+    *,
+    access_token: str = 'FAKE-ACCESS-TOKEN-FOR-TEST-XXXXXXXXX',
+    refresh_token: str | None = None,
+    ip: str = '203.0.113.10',
+    country: str = 'CL',
+    user_agent: str = 'pytest',
+) -> dict[str, Any]:
+    """Evento de session/logout."""
+    event: dict[str, Any] = {
+        'access_token': access_token,
+        '_meta': {
+            'ip': ip,
+            'country': country,
+            'user_agent': user_agent,
+            'bypass_secret': None,
+            'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+            'cloudfront_meta': {},
+        },
+    }
+    if refresh_token is not None:
+        event['refresh_token'] = refresh_token
+    return event
+
+
+def _make_session_claims(
+    *,
+    user_id: UUID | None = None,
+    typ: str = 'refresh',
+    jti: UUID | None = None,
+    family_id: UUID | None = None,
+    exp: int = 9999999999,
+) -> Any:
+    """Mock de JwtClaims para access/refresh (session)."""
+    return SimpleNamespace(
+        sub=user_id or uuid4(),
+        jti=jti or uuid4(),
+        flow=None,
+        step=None,
+        exp=exp,
+        typ=typ,
+        family_id=family_id if family_id is not None else uuid4(),
+    )
+
+
 def _make_user(
     *,
     user_id: UUID | None = None,

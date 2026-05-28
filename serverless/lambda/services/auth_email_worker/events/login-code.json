@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "messageId": "01H9V0K000000000000000000",
+      "receiptHandle": "AQEBfake-receipt-handle-for-local-invoke",
+      "body": "{\"kind\":\"login-code\",\"to\":\"test@example.com\",\"user_id\":\"01900000-0000-7000-8000-000000000001\",\"niche\":\"fintech\",\"subject_id\":\"auth.login.code.subject\",\"data\":{\"code\":\"A4PR8KQZ\",\"expires_in_min\":15}}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1716660000000",
+        "SenderId": "AIDAFAKE",
+        "ApproximateFirstReceiveTimestamp": "1716660001000"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "00000000000000000000000000000000",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-east-1:000000000000:portfolio-auth-email-dev",
+      "awsRegion": "us-east-1"
+    }
+  ]
+}

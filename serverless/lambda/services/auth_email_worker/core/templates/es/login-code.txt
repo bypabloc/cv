@@ -1,0 +1,11 @@
+Hola,
+
+Tu codigo de acceso para iniciar sesion en the-full-stack.com es:
+
+${code}
+
+Este codigo expira en ${expires_in_min} minutos.
+
+Si no solicitaste este codigo, ignora este email y revisa la seguridad de tu cuenta.
+
+— the-full-stack.com

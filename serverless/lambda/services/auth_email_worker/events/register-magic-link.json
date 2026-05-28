@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "messageId": "01H9V0K000000000000000000",
+      "receiptHandle": "AQEBfake-receipt-handle-for-local-invoke",
+      "body": "{\"kind\":\"register-magic-link\",\"to\":\"test@example.com\",\"user_id\":\"01900000-0000-7000-8000-000000000001\",\"niche\":null,\"subject_id\":\"auth.register.magic-link.subject\",\"data\":{\"verify_url\":\"https://api.portfolio.dev.the-full-stack.com/auth?operation=register&action=verify-magic-link&token=demo\",\"expires_in_min\":15}}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1716660000000",
+        "SenderId": "AIDAFAKE",
+        "ApproximateFirstReceiveTimestamp": "1716660001000"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "00000000000000000000000000000000",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-east-1:000000000000:portfolio-auth-email-dev",
+      "awsRegion": "us-east-1"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+Hola,
+
+Tu codigo de verificacion para registrarte en the-full-stack.com es:
+
+${code}
+
+Este codigo expira en ${expires_in_min} minutos.
+
+Si no solicitaste este codigo, ignora este email.
+
+— the-full-stack.com

@@ -1,0 +1,11 @@
+Hola,
+
+Hace click en el siguiente enlace para iniciar sesion en the-full-stack.com:
+
+${verify_url}
+
+Este enlace expira en ${expires_in_min} minutos.
+
+Si no fuiste tu, ignora este email y revisa la seguridad de tu cuenta.
+
+— the-full-stack.com

@@ -4,10 +4,14 @@
 > docstring Given/When/Then, asserts EXACTOS, 1 archivo = 1 escenario).
 > Aqui los tests nuevos son del scope MFA + WebAuthn + login extension.
 
-## Tests unit `shared.auth` (nuevos)
+## Tests unit `shared.auth` + `shared.aws.kms` (nuevos)
 
 Ya listados en [03-shared-auth-extension.md](03-shared-auth-extension.md):
-17 archivos (TOTP, QR, WebAuthn, recovery codes, envelope encryption).
+
+- 13 archivos en `shared/auth/` (TOTP, WebAuthn, recovery codes).
+  NO incluyen `test_qr_svg_*` ni `test_envelope_*` — el QR es
+  frontend, no hay envelope encryption (decision 1 + 8).
+- 4 archivos en `shared/aws/` (KMS Encrypt/Decrypt con moto).
 
 ## Tests unit `shared/db/repositories/auth_mfa.py`
 
@@ -62,7 +66,7 @@ Ya listados en [03-shared-auth-extension.md](03-shared-auth-extension.md):
 | `test_mfa_confirm_totp_no_pending.py` | — | 404 NO_PENDING_TOTP |
 | `test_mfa_set_preferred_ok.py` | AC-4 | UPDATE OK |
 | `test_mfa_set_preferred_unknown_kind.py` | — | 400 |
-| `test_mfa_disable_keeps_one.py` | AC-5 | 409 MUST_KEEP_ONE_METHOD |
+| `test_mfa_disable_keeps_one.py` | AC-5 | 409 MUST_KEEP_ONE_MFA_METHOD (cuenta transversal: total_mfa-1 == 0) |
 | `test_mfa_disable_with_two.py` | AC-6 | OK |
 | `test_mfa_list_returns_active.py` | — | 200 con metodos del user |
 | `test_mfa_recovery_codes_generate_first.py` | AC-7 | 10 codes en response |
@@ -109,9 +113,12 @@ Ya listados en [03-shared-auth-extension.md](03-shared-auth-extension.md):
 | `test_webauthn_register_full_flow_e2e.py` | register-options -> verify -> list -> delete |
 | `test_webauthn_login_full_flow_e2e.py` | register -> login-options -> login-verify -> JWT |
 | `test_login_with_password_and_mfa_e2e.py` | set-password -> setup-totp -> logout -> login con pass + TOTP |
-| `test_disable_last_method_e2e.py` | disable solo metodo -> 409 |
+| `test_disable_last_method_e2e.py` | AC-5/AC-17 — disable o delete-credential que dejaria total_mfa=0 -> 409 MUST_KEEP_ONE_MFA_METHOD |
 | `test_migration_00000003_up_down_e2e.py` | AC-23 |
-| `test_totp_secret_at_rest_encrypted_e2e.py` | AC-24 — query directa muestra ciphertext, no plain |
+| `test_totp_secret_at_rest_encrypted_e2e.py` | AC-24 — query directa muestra ciphertext (output de kms:Encrypt), no plain |
+| `test_passkey_does_not_migrate_envs_e2e.py` | AC-26 — passkey de dev (RP_ID `portfolio.dev....`) no funciona en prod (RP_ID `the-full-stack.com`) |
+| `test_first_mfa_confirm_revokes_sessions_e2e.py` | AC-27 — al confirmar el primer metodo MFA, refresh tokens previos quedan invalidos |
+| `test_recovery_requires_strong_factor_e2e.py` | AC-9b — temp JWT step=2 con prev=magic-link rechaza recovery-codes-consume -> 403 |
 
 ## Fixtures de WebAuthn
 
@@ -129,10 +136,19 @@ serverless/lambda/services/auth/tests/unit/controllers/webauthn/_fixtures.py
 
 ## Cobertura objetivo
 
-- shared.auth (modulos nuevos): 95%+
-- services/ (lambda auth nuevos): 85%+
-- controllers/ (nuevos): 85%+
-- models/ (nuevos): 100%
+Alineado con `.claude/rules/git-hooks.md` (>= 80% per-file en archivos
+modificados — gate del pre-push):
+
+- shared.auth (modulos nuevos): >= 80% per-file.
+- shared.aws.kms: >= 80% per-file.
+- services/ (lambda auth nuevos): >= 80% per-file.
+- controllers/ (nuevos): >= 80% per-file.
+- models/ (nuevos Pydantic): >= 80% per-file. NO se exige 100% porque
+  los schemas son mayormente declaracion — un par de branches en
+  validators custom pueden no rendir tests utiles.
+
+Tests integration NO cuentan a coverage (corren contra AWS real, no
+en el pipeline de coverage).
 
 ## Comandos
 
@@ -152,8 +168,9 @@ python devtools/run.py serverless tests --type=integration --lambda=auth
 
 - **SIEMPRE** WebAuthn fixtures usan SoftWebauthnDevice de python-fido2;
   no fixtures hardcoded de YubiKey reales (no reproducibles).
-- **SIEMPRE** envelope encryption tests usan moto.mock_aws() para KMS
-  (no AWS real en unit).
+- **SIEMPRE** tests de `kms_encrypt` / `kms_decrypt` usan
+  `moto.mock_aws()` para KMS (no AWS real en unit). Encryption es
+  CMK directa, no envelope (decision 1).
 - **SIEMPRE** TOTP test que verifica el code usa `pyotp.TOTP(secret).now()`
   como source-of-truth, no codes hardcodeados.
 - **NUNCA** test que dependa de un browser real para WebAuthn (E2E con

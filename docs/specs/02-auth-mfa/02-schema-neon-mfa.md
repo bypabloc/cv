@@ -25,11 +25,9 @@ auth_mfa_methods    auth_mfa_recovery_codes    auth_webauthn_credentials   auth_
  last_used_at ts                                 attestation_format varchar
  -- TOTP-only:                                   aaguid          uuid NULL
  totp_secret_ciphertext bytea NULL               nickname        varchar
- totp_secret_nonce       bytea NULL              created_at      ts
- totp_data_key_ciphertext bytea NULL             last_used_at    ts NULL
- totp_algorithm           varchar NULL           disabled_at     ts NULL
- totp_digits              int NULL  (default 6)
- totp_period              int NULL  (default 30)
+ totp_algorithm   varchar NULL                   created_at      ts
+ totp_digits      int NULL  (default 6)          last_used_at    ts NULL
+ totp_period      int NULL  (default 30)         disabled_at     ts NULL
  created_at  ts
 ```
 
@@ -65,9 +63,8 @@ def upgrade() -> None:
         sa.Column('confirmed_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('disabled_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('last_used_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('totp_secret_ciphertext', postgresql.BYTEA(), nullable=True),
-        sa.Column('totp_secret_nonce', postgresql.BYTEA(), nullable=True),
-        sa.Column('totp_data_key_ciphertext', postgresql.BYTEA(), nullable=True),
+        sa.Column('totp_secret_ciphertext', postgresql.BYTEA(), nullable=True,
+                  comment='kms:Encrypt output (CMK alias/portfolio-lambdas + EncryptionContext={user_id, purpose:totp}). Sin nonce — KMS lo gestiona internamente.'),
         sa.Column('totp_algorithm', sa.String(16), nullable=True,
                   server_default='SHA1'),
         sa.Column('totp_digits', sa.Integer(), nullable=True,
@@ -151,10 +148,12 @@ class AuthMfaMethod(UUIDPKMixin, Base):
     disabled_at: Mapped[datetime | None]
     last_used_at: Mapped[datetime | None]
 
-    # TOTP-only campos (NULL para email_code)
+    # TOTP-only campos (NULL para email_code). El ciphertext es la
+    # salida de `kms:Encrypt` con la CMK `alias/portfolio-lambdas` +
+    # `EncryptionContext={user_id, purpose:totp}`. NO envelope
+    # encryption — sin nonce, sin data_key. Ver `.claude/rules/
+    # serverless-secrets.md` y la decision 1 del README del plan.
     totp_secret_ciphertext: Mapped[bytes | None]
-    totp_secret_nonce: Mapped[bytes | None]
-    totp_data_key_ciphertext: Mapped[bytes | None]
     totp_algorithm: Mapped[str | None] = mapped_column(default='SHA1')
     totp_digits: Mapped[int | None] = mapped_column(default=6)
     totp_period: Mapped[int | None] = mapped_column(default=30)
@@ -175,8 +174,12 @@ class AuthMfaMethod(UUIDPKMixin, Base):
 ```python
 def list_mfa_methods(session, *, user_id) -> list[AuthMfaMethod]: ...
 def get_mfa_method(session, *, user_id, kind) -> AuthMfaMethod | None: ...
-def upsert_totp_method(session, *, user_id, ciphertext, nonce, dk_ct) -> AuthMfaMethod: ...
+def upsert_totp_method(session, *, user_id, ciphertext: bytes) -> AuthMfaMethod: ...
 def confirm_mfa(session, *, method_id) -> None: ...
+def count_active_mfa(session, *, user_id) -> int:
+    """Cuenta transversal: auth_mfa_methods activos (confirmed_at NOT NULL,
+    disabled_at NULL) + auth_webauthn_credentials activos (disabled_at NULL).
+    Usada por AC-5 y AC-17 para validar MUST_KEEP_ONE_MFA_METHOD."""
 def disable_mfa(session, *, user_id, kind) -> None: ...
 def set_preferred(session, *, user_id, kind) -> None: ...
 

@@ -82,8 +82,8 @@ T1 plan + claude docs                          (raiz)
 ### T3: shared.aws KMS wrappers
 
 - **Archivos**:
-  - `shared/aws/__init__.py` (modificar — re-exports kms_generate_data_key, kms_decrypt)
-  - `shared/aws/kms.py` (NUEVO — wrappers boto3)
+  - `shared/aws/__init__.py` (modificar — re-exports kms_encrypt, kms_decrypt)
+  - `shared/aws/kms.py` (NUEVO — wrappers boto3 Encrypt/Decrypt, CMK directa)
   - `shared/aws/pyproject.toml` (sin cambios — boto3 ya esta)
   - `shared/tests/unit/shared/aws/test_kms_*.py` (4 tests con moto)
 - **AC**: soporta AC-24 indirectamente.
@@ -93,10 +93,11 @@ T1 plan + claude docs                          (raiz)
 - **Done**: 4 tests verdes; T2 puede importar de aqui (depende de la
   publicacion de shared.aws.kms_* re-exports).
 
-> Nota: T2 (`shared.auth.encryption.py`) importa de `shared.aws.kms_*`.
-> Por orden topologico: T3 antes que T2. Si se trabajan en paralelo,
-> T2 puede stub `shared.aws.kms_*` con `# type: ignore[attr-defined]`
-> hasta que T3 merge. Recomendado: completar T3 antes de T2.
+> Nota: T2 (`shared.auth`) NO importa directamente KMS — los
+> controllers del Lambda son los que llaman a `shared.aws.kms_*`.
+> shared.auth solo conoce TOTP secret en plaintext, sin cifrado. Por
+> eso T2 y T3 son totalmente independientes y se pueden paralelizar
+> en worktrees separados sin coordinacion.
 
 ### T4: Schema Neon + repositories
 

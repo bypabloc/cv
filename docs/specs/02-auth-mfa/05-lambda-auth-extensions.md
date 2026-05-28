@@ -71,20 +71,21 @@ serverless/lambda/services/auth/core/
 ## Patron de un controller MFA — ejemplo `mfa.setup-totp`
 
 ```python
-"""mfa.setup-totp  genera secret + QR.
+"""mfa.setup-totp  genera secret + otpauth_url.
 
 Requiere: access JWT valido (header Authorization).
-Retorna: {secret_b32, otpauth_url, qr_code_svg}. NO persiste todavia
-un row confirmado  guarda con confirmed_at=NULL.
+Retorna: {secret_b32, otpauth_url}. El QR lo renderiza el frontend
+desde el otpauth_url (decision 8). NO persiste todavia un row
+confirmado — guarda con confirmed_at=NULL.
+
+El secret se cifra con kms:Encrypt CMK directa
+(EncryptionContext={user_id, purpose:totp}) antes de persistir.
+SIN envelope encryption (decision 1).
 """
 
+from shared.aws import kms_encrypt
+from shared.auth import build_otpauth_url, generate_totp_secret_b32
 from shared.lambda_kit import BaseController
-from shared.auth import (
-    build_otpauth_url,
-    encrypt_envelope,
-    generate_totp_secret_b32,
-    qr_code_svg,
-)
 from shared.observability import logger, metrics
 
 from ...services.audit_service import AuditService
@@ -106,7 +107,6 @@ class SetupTotp(BaseController):
         check_or_raise(
             ip=self.data['_meta']['ip'],
             endpoint='/auth#mfa.setup-totp',
-            key_override=str(user.id),
         )
         self.context = {'user': user}
         return {'is_valid': True, 'data': {}, 'code': 0}
@@ -117,27 +117,21 @@ class SetupTotp(BaseController):
         audit = AuditService(app_config)
 
         secret_b32 = generate_totp_secret_b32()
-        envelope = encrypt_envelope(
+        ciphertext = kms_encrypt(
             plaintext=secret_b32.encode('utf-8'),
-            kms_key_id=app_config.kms_totp_key_id,
+            key_id=app_config.kms_totp_key_id,
             encryption_context={
                 'user_id': str(user.id),
                 'purpose': 'totp',
             },
         )
-        mfa_svc.upsert_pending_totp(
-            user_id=user.id,
-            ciphertext=envelope['ciphertext'],
-            nonce=envelope['nonce'],
-            data_key_ciphertext=envelope['data_key_ciphertext'],
-        )
+        mfa_svc.upsert_pending_totp(user_id=user.id, ciphertext=ciphertext)
 
         otpauth_url = build_otpauth_url(
             secret_b32=secret_b32,
             account_email=user.email,
             issuer='the-full-stack.com',
         )
-        svg = qr_code_svg(otpauth_url)
 
         audit.log(event='mfa.setup-totp', success=True, user_id=user.id,
                   ip=self.data['_meta']['ip'])
@@ -148,9 +142,28 @@ class SetupTotp(BaseController):
             'data': {
                 'secret_b32': secret_b32,   # mostrar UNA vez; NUNCA logear
                 'otpauth_url': otpauth_url,
-                'qr_code_svg': svg,
             },
         }
+```
+
+### Side effect critico de `mfa.confirm-totp` y `webauthn.register-verify`
+
+Cuando confirman el PRIMER metodo MFA del user (transicion
+`total_mfa: 0 -> 1`), el controller revoca la familia de refresh
+tokens activa del user (AC-27 / decision 15). Implementacion en el
+`MfaMethodService.confirm()` y `WebauthnService.persist_credential()`:
+
+```python
+def confirm(self, *, user_id, method_id):
+    with db_session() as session:
+        before = count_active_mfa(session, user_id=user_id)
+        # ... UPDATE confirmed_at=now() ...
+        after = count_active_mfa(session, user_id=user_id)
+    if before == 0 and after == 1:
+        # primera transicion a "tiene MFA": cerrar sesiones previas
+        SessionService(app_config).revoke_all_for_user(user_id=user_id)
+        logger.info('mfa.first_method_confirmed.sessions_revoked',
+                    extra={'user_id': str(user_id)})
 ```
 
 ## Patron de `webauthn.register-options`
@@ -211,17 +224,19 @@ POST /auth operation=login action=start
               v
        password en body?
          no  ->  busca methods (magic-link + email-code + totp + webauthn)
-                 emite temp JWT step=1
+                 emite temp JWT step=1 (claim prev=email-prove)
                  envia magic-link / code via SQS
                  (igual que plan 01)
          si  ->  valida con argon2.verify
                  fail -> 401 INVALID_PASSWORD + incrementa failed_attempts
                  ok   -> user tiene MFA?
                           no  -> emite access+refresh (login terminado)
-                          si  -> emite temp JWT step=2
-                                 methods = [totp, webauthn]
-                                 (continuar con verify-totp / webauthn.login-verify
-                                  / mfa.recovery-codes-consume)
+                          si  -> emite temp JWT step=2 con claim prev=password
+                                 methods = [totp, webauthn]  (NO email-code,
+                                                              decision 10)
+                                 (continuar con login.verify-totp /
+                                  webauthn.login-verify /
+                                  mfa.recovery-codes-consume)
                                  |
                                  v
                  emite access+refresh
@@ -315,8 +330,8 @@ class LoginVerifyPasswordIn(BaseModel):
 |--------|-------------|
 | `MFA_NOT_CONFIGURED` | El user no tiene metodos MFA y intenta `set-preferred` o similar |
 | `INVALID_TOTP_CODE` | code TOTP no matchea el secret |
-| `MUST_KEEP_ONE_METHOD` | el `disable` dejaria al user sin metodos MFA |
-| `MUST_KEEP_ONE_CREDENTIAL` | el `webauthn.delete-credential` dejaria al user con 0 passkeys habiendo otros metodos dependientes |
+| `MUST_KEEP_ONE_MFA_METHOD` | el `disable` o `webauthn.delete-credential` dejaria al user con `total_mfa == 0` (cuenta transversal — AC-5 y AC-17) |
+| `RECOVERY_REQUIRES_STRONG_FACTOR` | temp JWT step=2 con `prev=magic-link` o `prev=email-code` intenta `recovery-codes-consume` (AC-9b, decision 10) |
 | `RECOVERY_CODE_CONSUMED` | code ya usado |
 | `RECOVERY_CODE_INVALID` | code no matchea (incremento de attempts) |
 | `WEBAUTHN_CHALLENGE_NOT_FOUND` | challenge_id no esta en DDB o expiro |

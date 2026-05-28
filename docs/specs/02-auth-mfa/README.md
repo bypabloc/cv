@@ -16,19 +16,21 @@
 
 ## Que entrega este plan
 
-- **Schema Neon (migration 00000003)**:
+- **Schema Neon (migration 00000003)** — 3 tablas nuevas:
   - `auth_mfa_methods`: enum `mfa_kind` (totp|email_code), preferred,
-    user_id FK, secret encrypted (solo TOTP), recovery_codes_hash JSONB,
-    confirmed_at, last_used_at, disabled_at.
+    user_id FK, `totp_secret_ciphertext` (BYTEA, KMS-encrypted via CMK
+    directa — NO envelope), confirmed_at, last_used_at, disabled_at.
+  - `auth_mfa_recovery_codes`: tabla aparte con `user_id`, `code_hash`
+    UK, `consumed_at`. Auditoria individual por code.
   - `auth_webauthn_credentials`: credential_id (BYTEA UK), public_key
     BYTEA, sign_count INT, transports JSONB, attestation_format, aaguid,
-    user_id FK, nickname, created_at, last_used_at.
-  - `auth_webauthn_challenges`: tabla efimera de challenges (TTL via
-    DELETE despues de 5 min). En realidad: usar DynamoDB con TTL en
-    vez de tabla Neon — decision en seccion 1.
+    user_id FK, nickname, created_at, last_used_at, disabled_at.
 - **Shared subpackage `shared.auth` (extension)**: agrega `pyotp`
-  + `fido2`. Modulos nuevos: `totp.py`, `webauthn.py`,
-  `recovery_codes.py`. Sigue siendo UN solo portador.
+  + `python-fido2`. Modulos nuevos: `totp.py`, `webauthn.py`,
+  `recovery_codes.py`. NO `encryption.py` (envelope encryption se
+  descarto a favor de KMS CMK directa — el secret TOTP de 20 bytes
+  entra en el limite de 4KB de `kms:Encrypt`). Sigue siendo UN solo
+  portador.
 - **DynamoDB nueva**: `portfolio-webauthn-challenges-${stage}` (PK
   `challenge_id`, TTL `expires_at` = 5 min). Challenges WebAuthn son
   por naturaleza efimeros y MUCHOS por segundo en uso.
@@ -79,20 +81,20 @@
 
 ## Estado por fase
 
-| Fase | Descripcion | Estado |
-|------|-------------|--------|
-| 0 | Plan 01 mergeado a `dev` (prerequisito) | pending (depende de 01) |
-| 1 | Plan escrito + carpeta `docs/specs/02-auth-mfa/` commiteada | pending |
-| 2 | Schema Neon `auth_mfa_methods` + `auth_webauthn_credentials` (migration 00000003) | pending |
-| 3 | `shared.auth` extension (pyotp + fido2 + totp/webauthn/recovery_codes) | pending |
-| 4 | DynamoDB `webauthn-challenges` + SSM `webauthn-encryption-key` | pending |
-| 5 | Lambda `auth` operation `mfa` (setup-totp, confirm-totp, setup-email-code, set-preferred, disable) | pending |
-| 6 | Lambda `auth` operation `mfa` (recovery-codes-generate, recovery-codes-consume) | pending |
-| 7 | Lambda `auth` operation `webauthn` (register-options, register-verify) | pending |
-| 8 | Lambda `auth` operation `webauthn` (login-options, login-verify, list, delete) | pending |
-| 9 | Extension de `login.start` para detectar metodos MFA del user + nuevos `login.verify-*` (password, totp) | pending |
-| 10 | Rate-limit rules nuevas + integracion + audit log events nuevos | pending |
-| 11 | Verificacion E2E + actualizacion ER + limpieza spec | pending |
+Mapeo 1:1 con las 12 tareas (T1..T12) de [08-descomposicion-paralelizacion.md](08-descomposicion-paralelizacion.md)
+y los 8 PRs de [09-commits.md](09-commits.md).
+
+| Fase | Tarea | PR | Descripcion |
+|------|-------|----|-------------|
+| 0 | — | — | Plan 01 mergeado a `dev` (prerequisito) |
+| 1 | T1 | PR 1 | Plan + docs/claude permanentes (NO catalogo de portadores aun) |
+| 2 | T2 + T3 | PR 2 | `shared.auth` ext (pyotp + fido2 + recovery_codes) + `shared.aws` KMS wrappers + catalogo |
+| 3 | T4 | PR 3 | Schema Neon (migration 00000003) + modelos + repositories |
+| 4 | T5 + T6 | PR 4 | DynamoDB `webauthn-challenges` + manifest update (IAM kms) |
+| 5 | T7 + T8 | PR 5 | Lambda `auth`: services internos + EventModel + Pydantic models |
+| 6 | T9 + T10 | PR 6 | Controllers `mfa.*` + `webauthn.*` (worktrees paralelos) |
+| 7 | T11 | PR 7 | Login extension: verify-password + verify-totp + login.start delta + rate-limit + deploy dev |
+| 8 | T12 | PR 8 | Verificacion E2E + integration tests + ER + cleanup carpeta spec |
 
 ## Decisiones no-reabribles
 
@@ -101,65 +103,125 @@
    activo pueden ser muchos por usuario. TTL nativo + lookup O(1)
    justifican DDB. La tabla `auth_webauthn_challenges` propuesta
    originalmente se descarta.
-2. **TOTP secret cifrado at-rest con KMS DataKey**: el secret de
-   TOTP es un secreto sensible (permite generar codes validos). Se
-   cifra con AWS KMS GenerateDataKey + AES-256-GCM antes de guardarlo
-   en `auth_mfa_methods.totp_secret_ciphertext`. La envelope encryption
-   key se identifica por `data_key_ciphertext` (almacenado al lado).
+2. **TOTP secret cifrado at-rest con KMS CMK directa (sin envelope)**:
+   el secret TOTP de 20 bytes entra holgado en el limite de 4 KB de
+   `kms:Encrypt`. Llamamos `kms:Encrypt` con la CMK
+   `alias/portfolio-lambdas` + `EncryptionContext={user_id, purpose:totp}`
+   y guardamos UNICAMENTE `totp_secret_ciphertext` (BYTEA) en
+   `auth_mfa_methods`. Sin envelope encryption, sin DataKey por user,
+   sin `nonce`/`data_key_ciphertext`. Trade-off: cada
+   `verify-totp` llama a `kms:Decrypt` (cacheable in-memory dentro
+   del Lambda con TTL 5 min para no martillar KMS). Razon del cambio:
+   envelope encryption con DataKey-por-user no aporta seguridad
+   adicional sobre CMK directa con encryption-context (el CMK sigue
+   siendo el unico punto de compromiso) y agrega ~30% mas de codigo
+   + 2 columnas + latencia adicional.
 3. **Recovery codes: 10 codes de 10 chars Crockford, mostrados UNA vez**:
    se muestran al setear MFA exitoso por primera vez. Hash SHA-256 en
-   DB (`auth_mfa_recovery_codes` tabla nueva o JSONB en
-   `auth_mfa_methods.recovery_codes_hash`). Decision: tabla aparte
-   `auth_mfa_recovery_codes` (id, user_id FK, code_hash UK, consumed_at
-   NULL) para auditoria individual por code consumido.
+   DB en tabla aparte `auth_mfa_recovery_codes` (`id`, `user_id` FK,
+   `code_hash` UK, `consumed_at` NULL) para auditoria individual por
+   code consumido. NUNCA en JSONB de `auth_mfa_methods`.
 4. **fido2 lib**: `python-fido2>=1.1,<2.0` (Yubico). Soporta WebAuthn
    L2 + L3 partial. Implementa validacion de attestation (`none`,
-   `direct`, `indirect`, `packed`, `tpm`, `android-key`).
-5. **WebAuthn RP_ID y origin**: `RP_ID = 'the-full-stack.com'`
-   (matchea el apex + todos los subdomains). `expected_origin` lista
-   de los 6 hostnames de prod + sus equivalentes dev/stage. En el cold
-   start, leer de env var `WEBAUTHN_ALLOWED_ORIGINS`.
+   `direct`, `indirect`, `packed`, `tpm`, `android-key`). **Spike
+   obligatorio en T2** (commit 2.2 — antes de redactar el codigo
+   final): validar firma actual de `Fido2Server.register_begin` /
+   `register_complete` / `authenticate_begin` / `authenticate_complete`
+   (state es `dict` JSON-serializable, no `bytes`). Si la firma
+   difiere, ajustar `shared.auth.webauthn` y `ChallengeService`.
+5. **WebAuthn RP_ID por env (passkeys no migran)**: en `prod`
+   `RP_ID=the-full-stack.com` (apex cubre los 6 subdomains). En `dev`
+   `RP_ID=portfolio.dev.the-full-stack.com`. En `stage` idem con
+   `stage`. **Consecuencia explicita**: un passkey registrado en
+   `dev` NO funciona en `prod` (RP_ID es sufijo del origin, distinto
+   por env). Se acepta como diseno — un passkey por env. Los tests
+   E2E lo cubren en AC-26.
 6. **User verification (UV)**: requerir UV=`preferred` en register,
    `required` en login (ie biometric/PIN confirm). Trade-off: algunos
    YubiKeys no tienen UV; preferimos seguridad sobre cobertura
    universal.
 7. **TOTP issuer label**: `the-full-stack.com:<email>` para que el QR
    muestre nombre del sitio + email en Google/Authy. RFC 6238 standard.
-8. **Login con password opcional**: `login.start` acepta `password`
+8. **QR del TOTP lo renderiza el frontend (NO el backend)**: el
+   Lambda devuelve solo `secret_b32` + `otpauth_url`; el cliente
+   renderiza el QR con `qrcode` JS (~5KB gzipped). Razon: evita una
+   dep mas en `shared.auth` (`segno`), reduce ~3-5 KB por response,
+   y mantiene el Lambda mas chico (mejor cold start). El AC-1 refleja
+   el contrato actual.
+9. **Login con password opcional**: `login.start` acepta `password`
    opcional en el body. Si password presente: valida ANTES de devolver
    los methods. Si match: emite temp JWT con flow=`login-mfa` step=2
    y devuelve la lista de MFA methods. Si MFA no configurado: emite
    access+refresh directo (skip MFA). Si MFA configurado: el cliente
    llama a `login.verify-totp` o `webauthn.login-verify`.
-9. **Bypass MFA con recovery code**: action
-   `mfa.recovery-codes-consume` acepta temp JWT del flujo login (con
-   step=2 post-password) + el code. Si match: emite access+refresh y
-   marca el code como consumed. NO se puede recovery-code-consume sin
-   haber pasado password primero (defense in depth).
-10. **Migration 00000003 forward-only en prod**: el downgrade tira
+10. **Bypass MFA con recovery code SOLO post-password o post-webauthn**:
+    `mfa.recovery-codes-consume` exige temp JWT step=2 con claim
+    `prev=password` o `prev=webauthn`. NUNCA acepta step=2 con
+    `prev=magic-link` o `prev=email-code` (ambos son verificables con
+    acceso al email — permitir recovery-bypass desde ahi anularia
+    el segundo factor). Defense in depth.
+11. **Migration 00000003 forward-only en prod**: el downgrade tira
     `auth_webauthn_credentials` que puede tener data real de usuarios.
     El `downgrade()` se implementa (para branches de prueba) pero NO
     se corre en `prod` nunca.
+12. **`provisioner.py` para `uses.kms`: spike-first**: si el manifest
+    actual NO soporta el bloque `uses.kms` declarativo, T6 se hace
+    DENTRO de este plan (1 commit chico). Si el cambio requiere
+    refactor mayor del provisioner (>200 lineas, tests propios),
+    se saca a un plan devtools-aparte y T6 se reemplaza por una
+    inline policy declarada en el shape ya soportado. **Antes de
+    PR 4** se decide cual de los dos. La decision queda anotada en
+    el body del PR 4.
+13. **`shared.rate_limit` custom keys (`user_id` en vez de IP)**:
+    se saca de este plan. Si hoy `shared.rate_limit` SOLO soporta
+    rate-limit por IP, todas las reglas MFA usan IP. Soporte para
+    custom keys es un plan separado. **Consecuencia**: AC del rate
+    limit usan IP, no user_id (ver seccion 04 actualizada). Evita
+    enumeration de emails via timing del rate-limit.
+14. **Clone detection (sign_count regresion) -> disable obligatorio**:
+    AC-15 sin "opcional". Al detectar `new <= stored`, el credential
+    se marca `disabled_at=now()` y se loggea
+    `webauthn.login.clone_detected`. La reactivacion solo por endpoint
+    admin (futuro plan 03 / users-management).
+15. **Sesiones activas tras setup TOTP/WebAuthn**: cuando el user
+    habilita su PRIMER metodo MFA confirmado, se revoca la familia de
+    refresh tokens activa del user (igual que `session.logout-all`).
+    El frontend recibe `401` en el proximo refresh y obliga a re-login
+    con MFA. Se documenta como AC-27. Razon: cerrar la ventana donde
+    un atacante con refresh previo seguiria operando sin pasar MFA.
 
 ## Reglas criticas (siempre activas)
 
-- **SIEMPRE** TOTP secret se cifra con envelope encryption (KMS
-  DataKey + AES-256-GCM) antes de persistir en Neon. NUNCA en plain
-  text.
+- **SIEMPRE** TOTP secret se cifra con `kms:Encrypt` (CMK directa
+  `alias/portfolio-lambdas` + `EncryptionContext={user_id, purpose:totp}`)
+  antes de persistir. NUNCA en plain text. NUNCA envelope encryption
+  con DataKey-por-user.
 - **SIEMPRE** las recovery codes se muestran UNA sola vez (response
   de `recovery-codes-generate`). El frontend debe guardarlas. El
   backend SOLO guarda el hash SHA-256.
 - **SIEMPRE** WebAuthn challenge se valida contra DDB con TTL antes de
   consumir. Single-use: tras verificar exitosa, DELETE del row.
 - **SIEMPRE** sign_count se valida monotonicamente creciente. Si
-  llega un sign_count <= sotrado -> rechazar (token cloning detection).
+  llega un sign_count <= stored -> rechazar Y marcar el credential
+  `disabled_at=now()` (clone detection, decision 14).
 - **SIEMPRE** el flujo de MFA setup requiere el user ya autenticado
   (access JWT valido).
-- **NUNCA** logear el TOTP secret, ni el plaintext del DataKey, ni el
-  contenido de la cookie/credential WebAuthn.
-- **NUNCA** permitir disable de TODOS los metodos MFA: si el user
-  tiene `mfa.disable` para su unico metodo, devolver
-  `409 MUST_KEEP_ONE_METHOD`.
+- **SIEMPRE** tras confirmar el PRIMER metodo MFA, revocar la familia
+  de refresh tokens activa del user (decision 15 / AC-27).
+- **SIEMPRE** `mfa.recovery-codes-consume` exige temp JWT con
+  `prev=password` o `prev=webauthn`. NUNCA `prev=magic-link` ni
+  `prev=email-code` (decision 10).
+- **SIEMPRE** rate-limit de auth se aplica por IP (decision 13);
+  custom keys por `user_id` quedan fuera de scope.
+- **NUNCA** logear el TOTP secret (ni `secret_b32` plaintext ni el
+  resultado de `kms:Decrypt`), ni el contenido de la cookie/credential
+  WebAuthn.
+- **NUNCA** permitir disable de TODOS los metodos MFA del user. Si
+  `mfa.disable` o `webauthn.delete-credential` dejaria al user con 0
+  metodos MFA totales (suma de `auth_mfa_methods` activos +
+  `auth_webauthn_credentials` activos), devolver
+  `409 MUST_KEEP_ONE_MFA_METHOD`. La cuenta se hace sobre TODOS los
+  metodos del user, no por tipo.
 
 ## Matriz de verificacion (rapida)
 

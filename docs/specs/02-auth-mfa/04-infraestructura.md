@@ -5,8 +5,8 @@
 | Recurso | Archivo | Que es |
 |---------|---------|--------|
 | DynamoDB `portfolio-webauthn-challenges-${stage}` | `resources/dynamodb/webauthn-challenges.yaml` | Challenges efimeros (TTL 5 min) |
-| KMS key existente `alias/portfolio-lambdas` | (sin cambios) | Para envelope encryption del TOTP secret |
-| IAM update Lambda `auth` | (via manifest) | Agregar permisos `kms:GenerateDataKey` + `kms:Decrypt` + DDB nuevo + tablas Neon nuevas |
+| KMS key existente `alias/portfolio-lambdas` | (sin cambios) | Para cifrar el TOTP secret via `kms:Encrypt` (CMK directa, decision 1) |
+| IAM update Lambda `auth` | (via manifest) | Agregar permisos `kms:Encrypt` + `kms:Decrypt` + DDB nuevo + tablas Neon nuevas |
 
 NO se crean SSM nuevos. NO se crea SQS nueva. La cola
 `auth-email-queue` del plan 01 ya alcanza para los emails MFA
@@ -52,6 +52,7 @@ tags:
 ```
 
 **Operaciones**:
+
 - `PutItem` al construir options (register/login).
 - `GetItem` + `DeleteItem` (transactional) al verificar.
 
@@ -67,40 +68,47 @@ uses:
     webauthn-challenges: read-write       # NUEVO
   kms:
     - alias: portfolio-lambdas
-      actions: [GenerateDataKey, Decrypt]  # NUEVO
+      actions: [Encrypt, Decrypt]         # NUEVO — CMK directa (NO GenerateDataKey)
 ```
 
-El provisioner del repo (segun el snapshot que tengo) ya genera IAM
-scoped por table_name del `tables` block. Para `kms`, hay que verificar
-si el manifest del repo lo soporta:
+**Spike-first obligatorio (decision 12 del README)**: ANTES de redactar
+el codigo de PR 4, ejecutar `python devtools/run.py serverless
+deploy --lambda=auth --stage=dev --dry-run --aws-profile=tfs-dev` con
+un `manifest.yaml` que ya declare el bloque `uses.kms`. Tres
+escenarios:
 
-- Si SI: declarar como arriba.
-- Si NO: agregar IAM inline policy patch en
-  `devtools/serverless/provisioner.py` (cambio fuera de scope estricto
-  del plan auth — proponer como T-aparte).
+1. **Provisioner soporta `uses.kms` declarativo**: declarar como
+   arriba, sin cambios en devtools. PR 4 trae solo el cambio al
+   manifest.
+2. **Provisioner NO soporta `uses.kms`, refactor < 200 lineas + tests
+   chicos**: hacerlo dentro de PR 4 (commit 4.2). Es la opcion mas
+   probable segun la arquitectura actual del provisioner.
+3. **Provisioner requiere refactor mayor (>200 lineas, tests
+   estructurales)**: sacar a un plan devtools-aparte. PR 4 se
+   reemplaza por inline policy declarada en el shape ya soportado
+   (`uses.iam_extra_policies` o equivalente actual). Anotar la
+   decision en el body de PR 4 + crear issue del plan devtools.
 
-**Decision**: revisar `provisioner.py`. Si no soporta `kms` declarativo,
-implementarlo en este plan (1 commit operativo). Es una extension del
-shape del manifest, no cambia el contrato existente.
+El spike toma 30 minutos. Su resultado decide cual de los 3 caminos.
 
 ## 3. Update al SSM (catalogo de secretos)
 
 NO se crean SSM nuevos. El `jwt-secret` del plan 01 alcanza.
 
-Opcional: si decidimos en el futuro tener una KMS key dedicada SOLO
-para envelope encryption de TOTP (separada de la del SSM SecureString),
+Opcional: si en el futuro se decide tener una KMS key dedicada SOLO
+para cifrar el TOTP secret (separada de la del SSM SecureString),
 se crearia con un YAML similar a:
 
 ```yaml
 # OPCIONAL — futuro
 kind: kms-key
-alias: portfolio-totp-envelope
-description: KMS key para envelope encryption del TOTP secret
+alias: portfolio-totp
+description: KMS key dedicada para cifrar el TOTP secret (CMK directa)
 key_spec: SYMMETRIC_DEFAULT
 key_usage: ENCRYPT_DECRYPT
 rotation: true     # rotacion automatica anual
 publishes_ssm:
-  arn: /portfolio/${stage}/kms/totp-envelope/arn
+  arn: /portfolio/${stage}/kms/totp/arn
 ```
 
 Decision: reusar `alias/portfolio-lambdas` por simplicidad (zero costo
@@ -112,7 +120,7 @@ adicional). Si se quiere separar, es un commit independiente y futuro.
 env:
   default:
     # ... existentes
-    KMS_TOTP_KEY_ID: alias/portfolio-lambdas   # NUEVO — para envelope encryption
+    KMS_TOTP_KEY_ID: alias/portfolio-lambdas   # NUEVO — para kms:Encrypt CMK directa del TOTP secret
     WEBAUTHN_RP_NAME: 'The Full Stack Portfolio'
   dev:
     WEBAUTHN_RP_ID: portfolio.dev.the-full-stack.com
@@ -135,20 +143,29 @@ correcto.
 
 ## 5. Rate-limit rules nuevas
 
+**Decision 13 del README**: TODAS las reglas de rate-limit usan
+`IP` como key. NO `user_id`. Razones:
+
+- `shared.rate_limit` actual SOLO soporta keys por IP (sliding
+  window weighted, ver skill `serverless-rate-limit`). Soporte para
+  custom keys es un plan devtools separado, fuera de scope.
+- Rate-limit por `user_id` antes de password-validate filtra info
+  (un atacante mide el rate-limit para enumerar emails validos).
+  Rate-limit por IP no tiene este problema.
+
 ```bash
 # mfa.setup-totp: 3/h/IP (raro setear, no debe brute force)
 serverless rate-limit set --stage=dev \
   --endpoint='/auth#mfa.setup-totp' --limit=3 --window=3600 --aws-profile=tfs-dev
 
-# mfa.confirm-totp: 5/min/user_id (no IP) — proteger contra brute force del code TOTP
+# mfa.confirm-totp: 10/min/IP (brute force del code TOTP ya esta cubierto
+# por las 3 intentos de AC-3 — el rate-limit es defense in depth)
 serverless rate-limit set --stage=dev \
-  --endpoint='/auth#mfa.confirm-totp' --limit=5 --window=60 \
-  --key=user_id --aws-profile=tfs-dev
+  --endpoint='/auth#mfa.confirm-totp' --limit=10 --window=60 --aws-profile=tfs-dev
 
-# mfa.recovery-codes-consume: 3/min/user_id (no IP)
+# mfa.recovery-codes-consume: 5/min/IP
 serverless rate-limit set --stage=dev \
-  --endpoint='/auth#mfa.recovery-codes-consume' --limit=3 --window=60 \
-  --key=user_id --aws-profile=tfs-dev
+  --endpoint='/auth#mfa.recovery-codes-consume' --limit=5 --window=60 --aws-profile=tfs-dev
 
 # webauthn.register-options: 10/min/IP
 serverless rate-limit set --stage=dev \
@@ -162,21 +179,22 @@ serverless rate-limit set --stage=dev \
 serverless rate-limit set --stage=dev \
   --endpoint='/auth#webauthn.login-verify' --limit=10 --window=60 --aws-profile=tfs-dev
 
-# login.verify-totp: 5/min/user_id
+# login.verify-totp: 10/min/IP (defense in depth — el temp JWT step=2 ya
+# requiere haber pasado password; aqui solo limitamos brute force adicional)
 serverless rate-limit set --stage=dev \
-  --endpoint='/auth#login.verify-totp' --limit=5 --window=60 \
-  --key=user_id --aws-profile=tfs-dev
+  --endpoint='/auth#login.verify-totp' --limit=10 --window=60 --aws-profile=tfs-dev
 
-# login.verify-password: 5/min/user_id + 30/min/IP (doble check)
+# login.verify-password: 30/min/IP. La proteccion principal contra brute
+# force por user es el lock-out de cuenta (failed_attempts) del plan 01,
+# que SI usa user_id (es un contador en auth_users, no rate-limit).
 serverless rate-limit set --stage=dev \
-  --endpoint='/auth#login.verify-password' --limit=5 --window=60 \
-  --key=user_id --aws-profile=tfs-dev
+  --endpoint='/auth#login.verify-password' --limit=30 --window=60 --aws-profile=tfs-dev
 ```
 
-Decision: `--key=user_id` requiere que el sistema de rate-limit del
-repo soporte keys customizadas (no solo IP). Si NO lo soporta hoy,
-implementar el soporte como parte de este plan (extension de
-`shared.rate_limit`).
+**Compensacion** (la perdida del rate-limit por user_id): el contador
+`auth_users.failed_attempts` del plan 01 sigue siendo el mecanismo
+principal de proteccion por user (lock-out tras N intentos fallidos).
+El rate-limit por IP es defense in depth, no la primera linea.
 
 ## 6. CI auto-detect
 

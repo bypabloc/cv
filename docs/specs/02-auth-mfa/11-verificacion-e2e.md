@@ -10,7 +10,10 @@
 | `services/auth/tests/integration/test_webauthn_*.py` (2) | CREAR |
 | `services/auth/tests/integration/test_login_with_password_and_mfa_e2e.py` | CREAR |
 | `services/auth/tests/integration/test_migration_00000003_up_down_e2e.py` | CREAR |
-| `services/auth/tests/integration/test_totp_secret_at_rest_encrypted_e2e.py` | CREAR |
+| `services/auth/tests/integration/test_totp_secret_at_rest_encrypted_e2e.py` | CREAR — AC-24 (verifica kms:Encrypt output, sin nonce ni data_key) |
+| `services/auth/tests/integration/test_passkey_does_not_migrate_envs_e2e.py` | CREAR — AC-26 |
+| `services/auth/tests/integration/test_first_mfa_confirm_revokes_sessions_e2e.py` | CREAR — AC-27 |
+| `services/auth/tests/integration/test_recovery_requires_strong_factor_e2e.py` | CREAR — AC-9b |
 | `services/auth/tests/unit/...` | sin cambios (creados en PRs 5-7) |
 | `services/auth/tests/unit/controllers/login/test_login_start_*.py` (plan 01) | revisar — algunos pueden necesitar adaptarse al nuevo body con `password` opcional |
 | `docs/diagrams/db-er.mmd` | MODIFICAR |
@@ -46,8 +49,9 @@ python devtools/run.py serverless lint --shared
 
 python devtools/run.py serverless lint-deps --lambda=auth
 python devtools/run.py serverless lint-deps --shared
-# Esperado: shared.auth ahora declara pyotp+fido2+cryptography+segno
-# Lambda auth NO duplica (D-3 OK)
+# Esperado: shared.auth ahora declara pyotp+python-fido2 (NO cryptography,
+# NO segno — decision 1 + 8); shared.aws declara boto3 (ya existia).
+# Lambda auth NO duplica (D-3 OK).
 ```
 
 ### Bloque 2 — tests unit + coverage
@@ -67,7 +71,8 @@ python devtools/run.py serverless tests --type=coverage --lambda=auth
 # El event JSON debe traer un JWT generado en setup local
 python devtools/run.py serverless run --stage=local --lambda=auth \
   --event=events/mfa-setup-totp.json
-# Esperado: 200 con secret_b32 + otpauth_url + qr_code_svg
+# Esperado: 200 con secret_b32 + otpauth_url (sin qr_code_svg — el QR
+# lo renderiza el frontend, decision 8)
 
 python devtools/run.py serverless run --stage=local --lambda=auth \
   --event=events/mfa-confirm-totp.json
@@ -148,7 +153,8 @@ curl -sS -X POST "$API" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $ACCESS" \
   -d '{"operation":"mfa","action":"setup-totp","data":{}}' | jq .
-# Esperado: data.secret_b32 (string base32), data.otpauth_url, data.qr_code_svg
+# Esperado: data.secret_b32 (string base32), data.otpauth_url. Sin
+# data.qr_code_svg — el frontend renderiza el QR.
 # AC-1 verificada
 
 # 3. mfa.confirm-totp con code generado por pyotp
@@ -172,9 +178,32 @@ curl -sS -X POST "$API" \
 # 5. Verificar at-rest encryption del TOTP secret
 # (consulta directa a Neon — la lambda no lo expone)
 psql "<DATABASE_URL del branch dev>" \
-  -c "SELECT user_id, encode(totp_secret_ciphertext, 'hex') FROM auth_mfa_methods WHERE kind='totp' LIMIT 1;"
-# Esperado: ciphertext en hex, NO el secret_b32 plain
+  -c "SELECT user_id, encode(totp_secret_ciphertext, 'hex'),
+             totp_secret_ciphertext IS NOT NULL AS has_ct
+      FROM auth_mfa_methods WHERE kind='totp' LIMIT 1;"
+# Esperado: ciphertext en hex (output de kms:Encrypt con CMK directa),
+# NO el secret_b32 plain. NO existen columnas totp_secret_nonce ni
+# totp_data_key_ciphertext (decision 1).
 # AC-24 verificada
+
+# 6. Verificar que passkeys no migran entre envs (AC-26)
+# Smoke manual: registrar passkey en dev (RP_ID portfolio.dev.the-full-stack.com),
+# luego intentar login en prod (RP_ID the-full-stack.com).
+# Esperado: webauthn.login-options en prod devuelve allowCredentials=[]
+# para el mismo user_id, porque los credentials del user en prod
+# tienen RP_ID distinto y no matchean.
+# El test integration `test_passkey_does_not_migrate_envs_e2e.py`
+# automatiza esto con dos SoftWebauthnDevice configurados con RP_ID
+# distinto.
+
+# 7. Verificar revocacion de sessions tras primer MFA (AC-27)
+# Flow:
+#   a) login.start con password (no MFA) -> access+refresh
+#   b) mfa.setup-totp -> mfa.confirm-totp con primer code
+#   c) /session/refresh con el refresh anterior
+# Esperado: 401 TOKEN_FAMILY_REVOKED
+# El test integration `test_first_mfa_confirm_revokes_sessions_e2e.py`
+# automatiza esto.
 ```
 
 ### Bloque 7 — verificacion del PR 8 (cierre)
@@ -225,7 +254,8 @@ re-ejecutar el bloque que fallo
 
 | Sintoma | Diagnostico | Correccion |
 |---------|-------------|------------|
-| `KMS not authorized to GenerateDataKey` | IAM role del lambda sin `kms:GenerateDataKey` | Verificar `manifest.yaml.uses.kms` esta declarado + provisioner aplica policy |
+| `KMS not authorized to Encrypt` / `Decrypt` | IAM role del lambda sin `kms:Encrypt` o `kms:Decrypt` | Verificar `manifest.yaml.uses.kms` declara ambas actions + provisioner aplica policy (decision 1 — CMK directa, NO envelope) |
+| `InvalidCiphertextException` en `kms:Decrypt` | `EncryptionContext` no matchea el del encrypt (suele ser `user_id` distinto si se cachea mal) | Verificar que el `user_id` en `data['_meta']` coincide con el del row `auth_mfa_methods` |
 | `Webauthn challenge expired` aun en < 5min | DDB TTL aplico antes — clock drift | Aumentar TTL a 600s en el commit del scaffold (o ver clock skew Lambda) |
 | `Webauthn rp_id mismatch` | `WEBAUTHN_RP_ID` no matchea el `origin` del header | Ajustar env var por stage (apex en prod, subdomain en dev/stage) |
 | `pyotp.TOTP(secret).verify(code) returns False` aun con code correcto | Clock drift entre client y server > 30s | `valid_window=1` en `verify_totp_code` (ya esta por default) |
@@ -241,8 +271,8 @@ NO se marca completa mientras:
 
 - Algun bloque falle,
 - Algun test rojo,
-- Coverage per-file < 85% en controllers nuevos,
-- < 95% en `shared/auth/{totp,webauthn,recovery_codes,encryption}.py`,
+- Coverage per-file < 80% en archivos modificados (alineado con
+  `.claude/rules/git-hooks.md` y `.claude/rules/verify-before-done.md`),
 - La carpeta `docs/specs/02-auth-mfa/` siga viva.
 
 Iterar hasta verde. Solo entonces:

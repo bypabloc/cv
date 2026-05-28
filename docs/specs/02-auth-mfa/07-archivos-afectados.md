@@ -21,23 +21,30 @@
   para los 3 dominios + tests (~14 archivos).
   - Verificar: `serverless tests --type=unit --shared`.
 
-### Shared.auth extension
+### Shared.auth extension (TOTP + WebAuthn + recovery codes)
 
-- `serverless/lambda/shared/auth/totp.py`
-- `serverless/lambda/shared/auth/webauthn.py`
-- `serverless/lambda/shared/auth/recovery_codes.py`
-- `serverless/lambda/shared/auth/encryption.py`
+- `serverless/lambda/shared/auth/totp.py` — pyotp wrappers (sin QR).
+- `serverless/lambda/shared/auth/webauthn.py` — fido2 wrappers (post-spike).
+- `serverless/lambda/shared/auth/recovery_codes.py`.
 - `serverless/lambda/shared/auth/__init__.py` — agregar re-exports.
-- `serverless/lambda/shared/auth/pyproject.toml` — agregar pyotp,
-  python-fido2, cryptography, segno.
+- `serverless/lambda/shared/auth/pyproject.toml` — agregar SOLO pyotp +
+  python-fido2. NO `cryptography`, NO `segno` (decision 1 + 8 del README).
 - `serverless/lambda/shared/auth/uv.lock` — regenerar con `uv lock`.
-- `serverless/lambda/shared/aws/__init__.py` — agregar wrapper
-  `kms_generate_data_key` y `kms_decrypt` (re-exports nuevos para
-  shared.auth.encryption los consuma).
-- `serverless/lambda/shared/aws/pyproject.toml` — agregar boto3
-  ya esta declarado.
-- `serverless/lambda/shared/tests/unit/shared/auth/` — 17 archivos
-  nuevos (listados en seccion 03).
+- `serverless/lambda/shared/tests/unit/shared/auth/` — 13 archivos
+  nuevos (listados en seccion 03; menos que la version inicial — sin
+  envelope encryption ni QR SVG).
+
+### Shared.aws (KMS wrappers — CMK directa)
+
+- `serverless/lambda/shared/aws/kms.py` — `kms_encrypt` +
+  `kms_decrypt` (KMS Encrypt/Decrypt directos, sin
+  GenerateDataKey).
+- `serverless/lambda/shared/aws/__init__.py` — agregar re-exports.
+- `serverless/lambda/shared/aws/pyproject.toml` — sin cambios (boto3
+  ya esta declarado).
+- `serverless/lambda/shared/tests/unit/shared/aws/test_kms_*.py` — 4
+  tests con moto (listados en seccion 03).
+
   - Verificar: `serverless lint-deps --shared` +
     `serverless tests --type=unit --shared`.
 
@@ -55,7 +62,7 @@
   agregando:
   - `uses.tables.webauthn-challenges: read-write`
   - `uses.kms` con `alias/portfolio-lambdas` + actions
-    `GenerateDataKey`, `Decrypt`
+    `Encrypt`, `Decrypt` (CMK directa, decision 1)
   - env vars `KMS_TOTP_KEY_ID`, `WEBAUTHN_RP_ID`,
     `WEBAUTHN_RP_NAME`, `WEBAUTHN_ALLOWED_ORIGINS`
 - `serverless/lambda/services/auth/core/settings/config.py` —
@@ -110,7 +117,8 @@
 - `.claude/rules/auth-system.md` — MODIFICAR agregando seccion MFA +
   WebAuthn.
 - `.claude/rules/lambda-shared-imports.md` — MODIFICAR el catalogo de
-  portadores (agregar pyotp, python-fido2, cryptography, segno).
+  portadores (agregar pyotp, python-fido2, boto3.kms). NO se agrega
+  `cryptography` ni `segno` (decision 1 + 8).
 - `.claude/skills/auth-system/SKILL.md` — MODIFICAR el frontmatter
   para incluir keywords MFA + WebAuthn (`mfa`, `totp`, `passkey`,
   `webauthn`, `2fa`, `autenticacion en dos pasos`, `factor doble`).
@@ -155,12 +163,12 @@
 |-----------|-------|-----------|----------|-------|
 | Migration Alembic | 1 | 0 | 0 | 1 |
 | Modelos SQLAlchemy + repositories | 4 + ~14 tests | 1 | 0 | ~19 |
-| `shared.auth/` (impl + tests + pyproject) | ~25 | 2 | 0 | 27 |
-| `shared.aws/` (wrappers KMS) | 0 | 2 | 0 | 2 |
+| `shared.auth/` (impl + tests + pyproject) | 16 (3 modulos + 13 tests) | 2 | 0 | 18 |
+| `shared.aws/` (impl + tests KMS) | 5 (1 modulo + 4 tests) | 1 | 0 | 6 |
 | Infra resources | 1 | 0 | 0 | 1 |
 | Lambda `auth` (controllers + services + models + events + tests) | ~85 | 5 | 0 | 90 |
 | Documentacion permanente (.claude/) | 2 | 3 | 0 | 5 |
 | Plan efimero (`docs/specs/02-...`) | 12 | 0 | -12 | 0 |
 | Diagrama ER | 0 | 1 | 0 | 1 |
-| Devtools provisioner (eventual) | 0 | 1 | 0 | 1 |
-| **Total neto** |  |  |  | **~147 archivos nuevos** |
+| Devtools provisioner (post-spike, condicional) | 0 | 0 o 1 | 0 | 0 o 1 |
+| **Total neto** | | | | **~140 archivos** (vs ~147 inicial — sin `encryption.py` ni `segno`) |

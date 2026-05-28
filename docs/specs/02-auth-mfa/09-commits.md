@@ -5,7 +5,8 @@
 
 ## Modelo de PRs
 
-7 PRs en total. Cada uno deja el repo verde y deployable.
+**8 PRs en total**. Cada uno deja el repo verde y deployable. Mapeo
+1:1 con las fases del README + tareas del 08-descomposicion.
 
 ### Ramas
 
@@ -32,9 +33,13 @@ dev (post plan 01 mergeado)
 
 - Agrega `.claude/docs/auth-system/04-mfa.md`, `05-webauthn.md`.
 - Modifica `.claude/rules/auth-system.md` agregando secciones.
-- Modifica `.claude/rules/lambda-shared-imports.md` (catalogo
-  portadores: pyotp, python-fido2, cryptography, segno).
-- Modifica `.claude/skills/auth-system/SKILL.md` agregando keywords.
+- Modifica `.claude/skills/auth-system/SKILL.md` agregando keywords
+  (`mfa`, `totp`, `passkey`, `webauthn`, `2fa`, etc.).
+- **NO modifica `.claude/rules/lambda-shared-imports.md`** — el
+  catalogo se actualiza en Commit 2.3 (PR 2), una vez que el codigo
+  publicado de `shared.auth` + `shared.aws.kms` ya existe (evita la
+  ventana de incoherencia donde el catalogo cita paquetes que aun
+  no estan en `pyproject.toml`).
 - **Verificacion**:
   - markdownlint
   - 5 prompts ES via `claude -p` (validacion skill).
@@ -44,22 +49,39 @@ dev (post plan 01 mergeado)
 
 ---
 
-## PR 2 — `feat(shared): auth.totp + auth.webauthn + auth.recovery_codes + auth.encryption + aws.kms wrappers`
+## PR 2 — `feat(shared): aws.kms (CMK directa) + auth.totp + auth.webauthn + auth.recovery_codes + catalogo de portadores`
 
-#### Commit 2.1 — `feat(shared/aws): wrappers kms generate_data_key + decrypt`
+#### Commit 2.1 — `feat(shared/aws): wrappers kms_encrypt + kms_decrypt (CMK directa)`
 
-- Agrega `shared/aws/kms.py` + 4 tests (con moto).
+- Agrega `shared/aws/kms.py` con `kms_encrypt` / `kms_decrypt`
+  (Encrypt/Decrypt directos, NO GenerateDataKey).
 - Modifica `shared/aws/__init__.py` re-exports.
+- Agrega 4 tests con moto en `shared/tests/unit/shared/aws/test_kms_*.py`.
 - **Verificacion**: `serverless tests --type=unit --shared`.
 
-#### Commit 2.2 — `feat(shared/auth): envelope encryption + totp + webauthn + recovery codes`
+#### Commit 2.2 — `feat(shared/auth): totp + webauthn (post-spike) + recovery codes`
 
-- Agrega `shared/auth/{encryption,totp,webauthn,recovery_codes}.py`.
-- Modifica `shared/auth/__init__.py`, `pyproject.toml`, `uv.lock`.
-- Agrega 17 tests en `shared/tests/unit/shared/auth/`.
+- **Pre-commit**: spike de 30 min validando python-fido2 API actual
+  (ver decision 4 + nota en 03-shared-auth-extension.md). Ajustar
+  el codigo del webauthn.py si la firma difiere.
+- Agrega `shared/auth/{totp,webauthn,recovery_codes}.py`. NO
+  `encryption.py` (decision 1 — KMS CMK directa hace el cifrado).
+- Modifica `shared/auth/__init__.py`, `pyproject.toml` (agregar
+  SOLO pyotp + python-fido2, sin cryptography ni segno), `uv.lock`.
+- Agrega 13 tests en `shared/tests/unit/shared/auth/`.
 - **Verificacion**:
   - `serverless lint-deps --shared`
-  - `serverless tests --type=coverage --shared` (>= 95%)
+  - `serverless tests --type=coverage --shared` (>= 80% per-file).
+
+#### Commit 2.3 — `docs(claude): catalogo de portadores con pyotp + python-fido2 + boto3.kms`
+
+- Modifica `.claude/rules/lambda-shared-imports.md` agregando los 3
+  paquetes nuevos al catalogo. Hace este commit en PR 2 (NO en PR 1)
+  para que el catalogo refleje SIEMPRE el codigo publicado, sin
+  ventana de incoherencia.
+- **Verificacion**:
+  - markdownlint
+  - skill validation (`.claude/rules/claude-config-testing.md`)
 
 > Merge PR 2.
 
@@ -240,14 +262,14 @@ Worktrees T9 + T10. Mergear los 2 en un solo PR para reducir overhead.
 ## Resumen de la secuencia
 
 ```text
-PR 1  spec + docs/claude                       (sin codigo)
-PR 2  shared.auth ext + shared.aws kms         transversal
+PR 1  spec + docs/claude (sin catalogo aun)    (sin codigo)
+PR 2  shared.aws.kms + shared.auth ext + catalogo  transversal
 PR 3  schema + repos                           AC-23
-PR 4  infra (DDB + manifest + kms)             AC-12 (IAM)
+PR 4  infra (DDB + manifest + spike provisioner)  AC-12 (IAM)
 PR 5  services internos del lambda             transversal
 PR 6  controllers mfa + webauthn (paralelos)   AC-1..17, AC-25
-PR 7  login extension (pass + TOTP) + deploy   AC-18..22
-PR 8  E2E + ER + cleanup spec                  AC-24, AC-23
+PR 7  login ext (pass + TOTP) + rate-limit IP + deploy  AC-18..22
+PR 8  E2E + ER + cleanup spec                  AC-23, AC-24, AC-26, AC-27
 ```
 
 ## Body de PR — template

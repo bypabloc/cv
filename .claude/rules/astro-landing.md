@@ -146,11 +146,23 @@ const { role, company, startDate, endDate } = Astro.props
 
 ## TypeScript
 
+- **TypeScript-only** — todo codigo de aplicacion en `.ts`, `.tsx` o
+  bloques `<script lang="ts">` / frontmatter TS dentro de `.astro`.
+  **JavaScript nativo PROHIBIDO** (`.js`, `.jsx`, `.mjs`, `.cjs`) en
+  `src/` y `tests/`. La unica excepcion son configs de root que el
+  toolchain exige como `.mjs` (caso a caso, documentado).
 - `strict: true` obligatorio
-- `noImplicitAny`, `strictNullChecks`, `noUnusedLocals`, `noUnusedParameters`
+- `noImplicitAny`, `strictNullChecks`, `strictPropertyInitialization`,
+  `noUnusedLocals`, `noUnusedParameters`, `noUncheckedIndexedAccess`,
+  `verbatimModuleSyntax`
 - Type-only imports/exports: `import type { Foo } from './bar'`
-- NO usar `any` — usar `unknown` con narrow apropiado
-- `tsconfig.json` extiende de `astro/tsconfigs/strict` o `strictest`
+- **`any` PROHIBIDO** — sin excepciones, ni en tests ni en mocks. Usar
+  `unknown` con narrow (type guard, `typeof`, `instanceof`), `satisfies`
+  para preservar literal inference, o Zod `z.infer` cuando hay validacion
+  runtime.
+- `tsconfig.json` extiende de `astro/tsconfigs/strict` + base custom del
+  monorepo (que agrega `noUncheckedIndexedAccess` + `verbatimModuleSyntax`)
+- Detalle TS 6: `.claude/rules/typescript.md` + skill `typescript-6`
 
 ## Astro-specific gotchas
 

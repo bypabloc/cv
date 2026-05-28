@@ -36,11 +36,18 @@ pnpm exec playwright test  # E2E tests (si aplica)
 
 ## Codigo (resumen — ver rules especificas)
 
+- **Lenguaje obligatorio**: TypeScript en todo codigo de aplicacion (`.ts`,
+  `.tsx`, `<script lang="ts">` en `.astro`). JavaScript nativo (`.js`,
+  `.jsx`, `.mjs`, `.cjs`) PROHIBIDO salvo configs de root que el toolchain
+  exija como `.mjs` (excepcion acotada). Detalle: `.claude/rules/typescript.md`.
+- **Type safety**: TS 6 strict + `noUncheckedIndexedAccess` +
+  `verbatimModuleSyntax`. `any` PROHIBIDO sin excepciones — usar `unknown`
+  con narrow, `satisfies` para preservar inference, o Zod schema con
+  `z.infer`. Tests/mocks tampoco pueden usar `any`.
 - **Estructura**: convenciones en `.claude/rules/astro-landing.md`
 - **Design system**: tokens, fonts, theme dark/light en `.claude/rules/design-system.md`
 - **Docstrings**: estandar agnostico de lenguaje en `.claude/rules/docstring-standard.md`
 - **Naming**: componentes Astro PascalCase, utilities kebab-case, branches feature/fix con `/`
-- **Type safety**: TS strict, NO `any` (usar `unknown` con narrow), `import type` cuando aplica
 - **Tokens del DS**: nunca hex inline en componentes, usar CSS vars
 - **Fonts**: self-hosted via `@fontsource/*`, nunca Google Fonts CDN
 - **Archivos temporales**: en `./tmp/` del proyecto, NUNCA `/tmp/` del sistema

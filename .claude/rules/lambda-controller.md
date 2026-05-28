@@ -86,7 +86,7 @@ legolambda-stacks).
 ├── core/
 │   ├── handler.py                # ENTRYPOINT (router delgado)
 │   ├── controllers/<operation>/  # ORQUESTADORES por operation
-│   │   └── <action>.py           # clase <Action>(BaseController)
+│   │   └── <action_snake>.py     # clase <ActionPascal>(BaseController)
 │   ├── services/                 # LOGICA DE NEGOCIO
 │   │   └── <operation>_service.py
 │   ├── models/

@@ -1,0 +1,16 @@
+# Cola principal del worker auth_email_worker. visibility_timeout = 180s
+# (6x el timeout del worker que es 30s) — recomendado AWS para evitar
+# duplicate processing por timeout antes de ack. El Lambda `auth`
+# publica magic-link / register-code / login-code / password-reset; el
+# worker renderiza la plantilla y manda via SES.
+kind: sqs-queue
+name: portfolio-auth-email-${stage}
+message_retention_seconds: 345600        # 4 dias (default SQS)
+visibility_timeout_seconds: 180
+redrive_policy:
+  target: portfolio-auth-email-dlq-${stage}
+  max_receive_count: 3
+publishes_ssm:
+  arn: /portfolio/${stage}/sqs/auth-email/arn
+  url: /portfolio/${stage}/sqs/auth-email/url
+tags: { Project: portfolio, Module: auth, ManagedBy: devtools }

@@ -1,0 +1,11 @@
+# Esquema devtools — NO CloudFormation: esquema plano, sin funciones
+# intrinsecas. DLQ del worker auth_email_worker. SQS retiene los
+# mensajes 14 dias para inspeccion + reproceso manual.
+kind: sqs-queue
+name: portfolio-auth-email-dlq-${stage}
+message_retention_seconds: 1209600       # 14 dias (max SQS)
+visibility_timeout_seconds: 30
+publishes_ssm:
+  arn: /portfolio/${stage}/sqs/auth-email-dlq/arn
+  url: /portfolio/${stage}/sqs/auth-email-dlq/url
+tags: { Project: portfolio, Module: auth, ManagedBy: devtools }

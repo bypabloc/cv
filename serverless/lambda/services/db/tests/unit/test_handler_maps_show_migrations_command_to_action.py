@@ -3,7 +3,7 @@
 
 Given un payload {command: 'show-migrations'},
 When lambda_handler lo procesa,
-Then resuelve el controller Show_migrations y devuelve su resultado.
+Then resuelve el controller ShowMigrations y devuelve su resultado.
 """
 
 from unittest.mock import patch

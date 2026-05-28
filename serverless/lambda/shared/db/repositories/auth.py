@@ -15,7 +15,7 @@ Convencion de retorno:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -36,15 +36,18 @@ __all__ = [
     'consume_email_code',
     'consume_magic_link',
     'create_pending_user',
+    'get_magic_link_state',
     'get_user_by_email',
     'increment_failed_attempts',
     'insert_audit_event',
     'insert_email_code',
     'insert_magic_link',
+    'invalidate_active_codes_and_links',
     'lock_user',
     'mark_user_active',
     'reset_failed_attempts',
     'set_password_hash',
+    'update_last_login',
 ]
 
 
@@ -102,6 +105,56 @@ def lock_user(
     """Cambia status a `locked` y setea `locked_until`."""
     user.status = AuthUserStatus.LOCKED
     user.locked_until = until
+    session.flush()
+
+
+def update_last_login(
+    session: Session,
+    user: AuthUser,
+    *,
+    when: datetime | None = None,
+) -> None:
+    """Setea `last_login_at` + resetea `failed_attempts` (AC-22).
+
+    Lo llaman los controllers `login/verify_magic_link` y
+    `login/verify_code` tras un login exitoso.
+    """
+    user.last_login_at = when or datetime.now(tz=user.created_at.tzinfo)
+    user.failed_attempts = 0
+    session.flush()
+
+
+def invalidate_active_codes_and_links(
+    session: Session,
+    *,
+    user_id: str,
+    kind_code: AuthCodeKind,
+    kind_link: AuthLinkKind,
+    when: datetime | None = None,
+) -> None:
+    """Marca consumed_at=now en codes y magic_links activos del user (AC-19).
+
+    Usado por `register.start` cuando el visitante reinicia el flow:
+    invalida los artefactos pendientes para que solo el ultimo par
+    code+link sea valido. NO toca rows consumed_at!=None.
+    """
+    now = when or datetime.now(tz=UTC)
+    # Codes activos
+    codes_stmt = select(AuthEmailCode).where(
+        AuthEmailCode.user_id == user_id,
+        AuthEmailCode.kind == kind_code,
+        AuthEmailCode.consumed_at.is_(None),
+    )
+    for row in session.execute(codes_stmt).scalars():
+        row.consumed_at = now
+    # Magic links activos
+    links_stmt = select(AuthMagicLink).where(
+        AuthMagicLink.user_id == user_id,
+        AuthMagicLink.kind == kind_link,
+        AuthMagicLink.consumed_at.is_(None),
+    )
+    for row in session.execute(links_stmt).scalars():
+        row.consumed_at = now
     session.flush()
 
 
@@ -220,6 +273,19 @@ def insert_magic_link(
     session.add(link)
     session.flush()
     return link
+
+
+def get_magic_link_state(
+    session: Session, *, token_hash: bytes,
+) -> AuthMagicLink | None:
+    """Devuelve el row sin consumirlo. Para distinguir consumed/expired.
+
+    Usado por los controllers `verify_magic_link` para devolver el codigo
+    de error correcto (LINK_CONSUMED vs LINK_EXPIRED) cuando
+    `consume_magic_link` retorna `None`.
+    """
+    stmt = select(AuthMagicLink).where(AuthMagicLink.token_hash == token_hash)
+    return session.execute(stmt).scalar_one_or_none()
 
 
 def consume_magic_link(

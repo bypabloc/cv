@@ -18,6 +18,7 @@ from shared.db import db_session
 from shared.db.models import AuthLinkKind, AuthMagicLink
 from shared.db.repositories.auth import (
     consume_magic_link,
+    get_magic_link_state,
     insert_magic_link,
 )
 
@@ -69,3 +70,15 @@ class MagicLinkService:
         h = hash_token(plain)
         with db_session() as session:
             return consume_magic_link(session, token_hash=h)
+
+    def get_state(self, *, plain: str) -> AuthMagicLink | None:
+        """Devuelve el row SIN consumirlo, para distinguir errores.
+
+        Lo usan los controllers `verify_magic_link` cuando `verify`
+        retorna `None`, para diferenciar `LINK_CONSUMED` (consumed_at
+        is not None) vs `LINK_EXPIRED` (expires_at <= now) vs no
+        existe (None).
+        """
+        h = hash_token(plain)
+        with db_session() as session:
+            return get_magic_link_state(session, token_hash=h)

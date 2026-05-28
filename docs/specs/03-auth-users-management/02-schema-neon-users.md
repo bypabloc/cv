@@ -97,7 +97,16 @@ def upgrade() -> None:
     )
 
     # 3. ALTER TYPE auth_link_kind ADD VALUE 'email-change'
-    op.execute("ALTER TYPE auth_link_kind ADD VALUE IF NOT EXISTS 'email-change'")
+    #
+    # CRITICAL: ALTER TYPE ... ADD VALUE NO se puede ejecutar dentro
+    # de un bloque transaccional en PostgreSQL (PG18 mantiene la
+    # limitacion para enums con datos existentes). Alembic envuelve
+    # upgrade() en transaction por default, asi que hay que usar el
+    # autocommit_block del context.
+    with op.get_context().autocommit_block():
+        op.execute(
+            "ALTER TYPE auth_link_kind ADD VALUE IF NOT EXISTS 'email-change'"
+        )
 
     # 4. auth_user_sessions
     op.create_table(
@@ -184,10 +193,27 @@ def downgrade() -> None:
     op.drop_column('auth_users', 'display_name')
 ```
 
-> **Importante**: `ALTER TYPE ADD VALUE` no se puede revertir en
-> PostgreSQL sin recrear el tipo. El `downgrade()` deja `email-change`
-> en el enum. En prod NO se corre downgrade; en branches de prueba es
-> aceptable.
+> **Importante (1)**: `ALTER TYPE ADD VALUE` no se puede ejecutar
+> dentro de una transaction (limitacion de PG, no removida en PG18).
+> Por eso el `upgrade()` envuelve el `op.execute` en
+> `op.get_context().autocommit_block()`. El `alembic.ini` del repo
+> NO necesita `transactional_ddl=false` global — el bloque
+> autocommit es local a esa instruccion.
+>
+> **Importante (2)**: `ALTER TYPE ADD VALUE` no se puede revertir en
+> PostgreSQL sin recrear el tipo. El `downgrade()` deja
+> `email-change` en el enum. En prod NO se corre downgrade; en
+> branches de prueba es aceptable.
+>
+> **Importante (3) — sobre AC-25 (idempotencia up/down/up)**: tras
+> `downgrade -1` el enum conserva `email-change`. El segundo
+> `upgrade head` re-ejecuta `ADD VALUE IF NOT EXISTS` (no-op) y
+> recrea las 3 tablas + columnas. El resultado es idempotente en
+> schema y datos, pero el catalogo del enum queda con el valor
+> extra. Documentar este detalle en el test
+> `test_migration_00000004_up_down_e2e.py`: la asercion final NO
+> debe exigir que el enum vuelva al set original, solo que las
+> columnas/tablas se recreen correctamente.
 
 ## Modelos SQLAlchemy (delta)
 
@@ -204,7 +230,12 @@ serverless/lambda/shared/db/models/auth/
 
 ```python
 class AuthUser(UUIDPKMixin, TimestampMixin, Base):
-    # ... existentes del plan 01
+    # MODIFICAR — quitar `unique=True` de la columna email; el unique
+    # ahora es PARTIAL (solo WHERE deleted_at IS NULL) y se declara
+    # como Index en __table_args__. Si se deja `unique=True` aqui,
+    # SQLAlchemy `Base.metadata.create_all()` recrea la constraint
+    # full y rompe AC-27 (re-uso de email tras soft-delete).
+    email: Mapped[str] = mapped_column(CITEXT(), nullable=False)
 
     # NUEVOS del plan 03
     display_name: Mapped[str | None] = mapped_column(String(64))
@@ -215,13 +246,24 @@ class AuthUser(UUIDPKMixin, TimestampMixin, Base):
     deleted_at: Mapped[datetime | None]
 
     __table_args__ = (
-        # ... existentes
+        # ... existentes (mantener ix_auth_users_status y los del plan 01,
+        #     PERO RETIRAR cualquier `UniqueConstraint('email')` viejo)
         CheckConstraint("locale IN ('en', 'es')", name='ck_auth_users_locale'),
         Index('ux_auth_users_email_active', 'email', unique=True,
               postgresql_where=sa.text('deleted_at IS NULL')),
         Index('ix_auth_users_deleted_at', 'deleted_at'),
     )
 ```
+
+> **Drift modelo/DB**: el modelo del plan 01 declara
+> `email: Mapped[str] = mapped_column(CITEXT(), unique=True, ...)`.
+> La migration 00000004 hace `op.drop_constraint('auth_users_email_key')`
+> y crea el partial unique como `Index` separado, pero **si el modelo
+> SQLAlchemy del plan 01 no se modifica para retirar `unique=True`**,
+> queda drift: cualquier `create_all()` (tests integration, branches
+> Neon nuevos) recreara la constraint full y rompera AC-27. El
+> commit `feat(db/models): auth_users extension` debe incluir esta
+> modificacion del modelo del plan 01 ademas de las columnas nuevas.
 
 `user_session.py`:
 

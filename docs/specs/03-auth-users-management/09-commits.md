@@ -13,8 +13,10 @@ dev (post planes 01 + 02)
  ├── feature/auth-users-mgmt-4-infra                   (T4)
  ├── feature/auth-users-mgmt-5-email-worker-ext        (T5)
  ├── feature/auth-users-mgmt-6-users-scaffold          (T6)
- ├── feature/auth-users-mgmt-7-controllers-paralel     (T7 + T8 + T9 worktrees)
- ├── feature/auth-users-mgmt-8-sessions-tracking-auth  (T10)
+ ├── feature/auth-users-mgmt-7a-profile-controllers    (T7 — WT-A)
+ ├── feature/auth-users-mgmt-7b-status-controllers     (T8 — WT-B)
+ ├── feature/auth-users-mgmt-7c-admin-controllers      (T9 — WT-C)
+ ├── feature/auth-users-mgmt-8-sessions-tracking-auth  (T10 — WT-D)
  └── feature/auth-users-mgmt-9-verificacion-e2e        (T11 + T12)
 ```
 
@@ -149,28 +151,60 @@ dev (post planes 01 + 02)
 
 ---
 
-## PR 7 — `feat(users): controllers profile + status + admin (worktrees paralelos)`
+## PR 7a — `feat(users/profile): controllers profile (4 actions)`
 
-3 worktrees: T7 (profile) + T8 (status) + T9 (admin). Mergear en un
-solo PR para reducir overhead.
+Rama: `feature/auth-users-mgmt-7a-profile-controllers` (worktree
+WT-A). Disjunto de PR 7b y PR 7c — mergear en cualquier orden.
 
-### Commit 7.1 — `feat(users/profile): 4 controllers + 10 tests`
+### Commit 7a.1 — `feat(users/profile): 4 controllers + 10 tests`
 
-- Agrega controllers + events + tests.
-- **AC**: AC-1..AC-6, AC-26.
+- Agrega `controllers/profile/{get,update,change_email,delete_account}.py`.
+- Agrega 4 events JSON + 10 tests.
+- **AC**: AC-1..AC-6, AC-26, AC-29 (guard self-delete admin).
 - **Verificacion**: `serverless tests --type=unit --lambda=users`.
 
-### Commit 7.2 — `feat(users/status): 3 controllers + 4 tests`
+> Merge PR 7a a `dev`.
 
-- Idem.
+---
+
+## PR 7b — `feat(users/status): controllers status (3 actions)`
+
+Rama: `feature/auth-users-mgmt-7b-status-controllers` (worktree
+WT-B). Disjunto de PR 7a y PR 7c.
+
+### Commit 7b.1 — `feat(users/status): 3 controllers + 4 tests`
+
+- Agrega `controllers/status/{get,list_sessions,revoke_session}.py`.
+- Agrega 3 events JSON + 4 tests.
 - **AC**: AC-7..AC-10.
+- **Verificacion**: `serverless tests --type=unit --lambda=users`.
 
-### Commit 7.3 — `feat(users/admin): 7 controllers + 13 tests`
+> Merge PR 7b a `dev`.
 
-- Idem.
+---
+
+## PR 7c — `feat(users/admin): controllers admin (7 actions)`
+
+Rama: `feature/auth-users-mgmt-7c-admin-controllers` (worktree
+WT-C). Disjunto de PR 7a y PR 7b.
+
+### Commit 7c.1 — `feat(users/admin): 7 controllers + 13 tests`
+
+- Agrega
+  `controllers/admin/{list_users,get_user,disable_user,enable_user,force_logout,delete_user,list_admin_actions}.py`.
+- Agrega 7 events JSON + 13 tests.
 - **AC**: AC-11..AC-21, AC-28.
+- **Verificacion**: `serverless tests --type=unit --lambda=users`.
 
-> Merge PR 7.
+> Merge PR 7c a `dev`.
+>
+> **Por que 3 PRs en vez de 1**: cumple
+> [git-workflow.md](../../../.claude/rules/git-workflow.md) ("PRs
+> pequenos y atomicos"). Los 3 worktrees son disjuntos en su zona
+> de write (subcarpetas `controllers/<op>/` + events `<op>-*.json` +
+> tests por op) — `event.py` y `models/{profile,status,admin}.py`
+> ya estan cerrados en PR 6. El review humano de 4-7 controllers
+> por PR es manejable, en cambio uno solo de 14 es ruido.
 
 ---
 
@@ -244,7 +278,9 @@ PR 3  schema + repos                           AC-25
 PR 4  SSM admin-emails                         infra
 PR 5  auth_email_worker plantillas             notifications
 PR 6  users scaffold + services + models       transversal
-PR 7  controllers profile + status + admin     AC-1..21, AC-26..28
+PR 7a controllers profile                      AC-1..6, AC-26, AC-29
+PR 7b controllers status                       AC-7..10
+PR 7c controllers admin                        AC-11..21, AC-28
 PR 8  sessions tracking en auth                AC-22..24
 PR 9  deploy + integration + ER + cleanup      consolida
 ```

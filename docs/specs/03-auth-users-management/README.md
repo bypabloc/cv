@@ -38,11 +38,14 @@
     list-users (paginado), get-user, disable-user, enable-user,
     force-logout, delete-user (hard delete con cascada audit),
     list-admin-actions.
-- **Integracion con `auth`**: el Lambda `auth` queda intocable. Las
-  acciones admin (`disable-user`) actualizan `auth_users.status =
-  disabled` -> el siguiente login de ese user devuelve `401
-  ACCOUNT_DISABLED` (logica que ya esta en `auth.login.start` desde
-  plan 01).
+- **Integracion con `auth`**: el Lambda `auth` recibe una modificacion
+  minima (1 helper nuevo `session_tracking_service.py` + 8 puntos de
+  inyeccion de 2-3 lineas en `verify-*` / `refresh` / `logout`) para
+  poblar `auth_user_sessions`. Ver PR 8 en
+  [09-commits.md](09-commits.md). Las acciones admin (`disable-user`)
+  actualizan `auth_users.status = disabled` -> el siguiente
+  `auth.login.start` de ese user devuelve `403 ACCOUNT_DISABLED`
+  (logica que ya esta en `auth.login.start` desde plan 01).
 - **Rate-limit**: reglas nuevas para `users#*` (mas relajadas que auth
   porque requieren access JWT).
 - **Audit**: todas las operations admin escriben a
@@ -153,9 +156,11 @@
   tambien `admin.force-logout`.
 - **NUNCA** un admin puede ver el password_hash, TOTP secret o
   recovery codes hash de otro user (solo metadata).
-- **NUNCA** un user puede `delete-account` si tiene roles administrativos
-  asignados (no aplica hoy: si Pablo intenta, hay que asignar admin a
-  otro email primero — guard).
+- **NUNCA** un user puede `delete-account` si su email esta en la
+  whitelist SSM `admin-emails` (AC-29). Hoy aplica directamente a
+  Pablo: para borrar su cuenta, primero hay que sacar el email de la
+  whitelist (rotar SSM) — guard contra "el ultimo admin se borra a
+  si mismo".
 - **NUNCA** retornar `email` de otro user en respuestas no-admin.
 
 ## Matriz de verificacion (rapida)

@@ -153,5 +153,16 @@ python devtools/run.py serverless tests --type=integration --lambda=auth
   (c) JWT blacklisted en DDB,
   (d) auth_audit_log preservado.
 - **SIEMPRE** mock SSM `admin-emails` con admin email del test fixture.
+- **SIEMPRE** los tests que toquen `shared.auth.admin.is_admin` /
+  `load_admin_emails` (directa o transitivamente) deben **resetear
+  el cache module-level** antes y despues. Patron recomendado:
+  fixture `autouse=True` en `shared/tests/unit/shared/auth/conftest.py`
+  que llame a `shared.auth.admin._CACHE.update({'emails':
+  frozenset(), 'expires_at': 0.0})`. Sin esto, el orden de tests
+  cambia el resultado (cache hit de un test anterior con emails
+  mockeados distintos).
+- **SIEMPRE** test de `delete-account` con AC-29 verifica: si el
+  user esta en `admin-emails`, recibe `409 CANNOT_DELETE_ADMIN_ACCOUNT`
+  y NO se borra nada.
 - **NUNCA** test de admin contra un user real del repo (usar fixtures
   con uuidv7 nuevos).

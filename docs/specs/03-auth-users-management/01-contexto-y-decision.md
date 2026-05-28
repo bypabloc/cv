@@ -219,9 +219,13 @@ borrado).
   action='disable', metadata={reason}, ip, created_at)` + devuelve 204.
 
 - **AC-16**: Given user disabled, When intenta `auth.login.start`,
-  Then `auth.login.start` (logica del plan 01) devuelve `403
-  ACCOUNT_DISABLED`. (Re-validacion del comportamiento del plan 01,
-  con el nuevo path.)
+  Then `auth.login.start` (logica del plan 01) devuelve HTTP `403`
+  con `{error: 'ACCOUNT_DISABLED'}`. Si en cambio tiene un access
+  JWT vivo de antes del disable y llama `/users` o `auth.session.*`,
+  `require_active_user` tambien devuelve `403 ACCOUNT_DISABLED` (no
+  401 — el JWT es valido pero el user esta bloqueado). 401 queda
+  reservado para token invalido/ausente. (Re-validacion del
+  comportamiento del plan 01, con el nuevo path.)
 
 - **AC-17**: Given admin, When llama `admin.enable-user` con
   `{user_id}`, Then UPDATE `auth_users.status='active'`, audit row,
@@ -281,3 +285,10 @@ borrado).
 - **AC-28**: Given un user soft-deleted, When admin llama
   `admin.get-user`, Then devuelve el row con `deleted_at` poblado +
   email anonimizado (`deleted-<id>@invalid.local`).
+
+- **AC-29**: Given un user activo cuyo `email` esta en
+  `/portfolio/${stage}/admin-emails` SSM (es admin), When intenta
+  `profile.delete-account`, Then devuelve `409
+  CANNOT_DELETE_ADMIN_ACCOUNT` con mensaje pidiendo que el email se
+  remueva de la whitelist antes (defensa contra "ultimo admin se
+  borra a si mismo").

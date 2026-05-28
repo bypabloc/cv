@@ -158,6 +158,16 @@ modifica** 1 archivo:
   - `controllers/webauthn/login_verify.py` (post-emision)
   - `controllers/mfa/recovery_codes_consume.py` (post-emision)
 
+> **Sobre `family_id`**: el refresh JWT del plan 01 ya lleva
+> `family_id` en sus claims (uuidv7), generado en
+> `register.verify-*` / `login.verify-*` y rotado en
+> `session.refresh`. El helper `session_tracking_service` lo recibe
+> como argumento; **no necesita inferirlo**. En cada controller del
+> lambda `auth`, tras emitir los tokens, el codigo ya tiene en
+> memoria el `family_id` viejo (de los claims del refresh entrante,
+> solo aplica a `session.refresh`) y el `family_id` nuevo
+> (recien generado). Ambos se pasan al helper.
+
 `session_tracking_service.py`:
 
 ```python
@@ -255,19 +265,27 @@ CI matrix se arma automaticamente.
 
 ## 7. Orden de provisioning
 
+El **orden es estricto**: `auth` (con sessions tracking) debe estar
+deployado ANTES que `users` se exponga, porque
+`status.list-sessions` lee de `auth_user_sessions` y esa tabla solo
+empieza a poblarse tras el deploy de `auth` con el helper inyectado.
+
 ```bash
-# 1. Aplicar migration 00000004
+# 1. Aplicar migration 00000004 (crea auth_user_sessions, etc.)
 serverless run --stage=dev --lambda=db --event=events/migrate.json --aws-profile=tfs-dev
 
 # 2. SSM admin-emails
 serverless provision-infra --stage=dev --aws-profile=tfs-dev
 serverless sync-secrets --stage=dev --aws-profile=tfs-dev
 
-# 3. Deploy auth (con sessions tracking) + auth_email_worker (3 plantillas nuevas)
+# 3. Deploy auth (con sessions tracking) PRIMERO
+#    A partir de aqui, cada nueva sesion (register/login/refresh)
+#    inserta o actualiza la row en auth_user_sessions.
 serverless deploy --lambda=auth --stage=dev --aws-profile=tfs-dev
 serverless deploy --lambda=auth_email_worker --stage=dev --aws-profile=tfs-dev
 
-# 4. Deploy users
+# 4. Deploy users (lee auth_user_sessions ya poblado por el lambda
+#    auth desde el paso 3)
 serverless deploy --lambda=users --stage=dev --aws-profile=tfs-dev
 
 # 5. Seed rate-limit rules
@@ -275,3 +293,21 @@ serverless deploy --lambda=users --stage=dev --aws-profile=tfs-dev
 
 # 6. Smoke E2E (ver verificacion-e2e.md)
 ```
+
+> **Sesiones pre-deploy quedan invisibles**: refresh tokens emitidos
+> ANTES del deploy de `auth` con session tracking NO tienen row en
+> `auth_user_sessions`. Para esos users, `status.list-sessions`
+> devuelve vacio hasta que hagan `session.refresh` (que rota family
+> y entra al INSERT/UPDATE del helper) o re-login. Es comportamiento
+> esperado, no un bug. Documentar en el frontend cuando exista:
+> "si la lista de sesiones aparece vacia, hacer logout+login para
+> reactivar el tracking".
+>
+> **Dependencia del integration test multi-device** (AC-8): el test
+> `test_status_list_sessions_multi_device_e2e.py` (06-testing)
+> requiere que T10 (sessions tracking en auth) ya este deployado
+> en dev. La descomposicion en 08 hace WT-C (T9) y WT-D (T10)
+> paralelos en codigo, pero **el integration test del paso de E2E
+> en `users` depende del deploy de `auth` post-T10**. Reflejar en
+> PR 9 (verificacion E2E): correr integration tests SOLO tras
+> mergear PR 8.

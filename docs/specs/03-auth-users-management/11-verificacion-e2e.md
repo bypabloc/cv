@@ -280,7 +280,7 @@ ejecutar bloque N
 |---------|-------------|------------|
 | `admin.list-users` siempre 404 incluso siendo admin | SSM admin-emails vacio o desactualizado | `serverless secrets-status --stage=dev` + sync_secrets |
 | `IntegrityError: duplicate key value violates unique constraint ux_auth_users_email_active` | El partial unique no esta como esperado | Verificar migration 00000004 aplicada + el old UNIQUE removido |
-| `profile.delete-account` no anonimiza email | Logica del service incorrecta o cascade falla | Verificar `profile_service.soft_delete` y models cascade='all, delete-orphan' |
+| `profile.delete-account` no anonimiza email | Logica del service incorrecta | Verificar `profile_service.soft_delete` — recordar que el soft-delete es UPDATE de `auth_users` mas DELETE explicitos en credentials/mfa/sessions; las FK CASCADE NO se disparan (las cascades reaccionan a DELETE, no a UPDATE) |
 | `status.list-sessions` retorna vacio aun con sessions activas | session_tracking_service no se llama o falla silenciosamente | logs CloudWatch + verify_session_tracking en auth (T10) |
 | `force-logout` no invalida JWT viejo | Blacklist no se persiste o GSI query falla | Test integration del blacklist family detection |
 | Migration 00000004 falla con `cannot add value to enum used by table` | El ALTER TYPE en transaction | Ejecutar el ALTER TYPE fuera de transaction (con autocommit) |

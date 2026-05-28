@@ -271,13 +271,17 @@ class AdminDeleteUserIn(BaseModel):
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
     model_config = {'populate_by_name': True}
 
-    @field_validator('confirm')
-    @classmethod
-    def confirm_matches_user_id(cls, v, info):
-        user_id = info.data.get('user_id')
-        if user_id and v != f'HARD-DELETE-USER-{user_id}':
+    # IMPORTANTE: usamos model_validator(mode='after') en vez de
+    # field_validator porque field_validator NO garantiza el orden
+    # de validacion en Pydantic v2 — `info.data.get('user_id')`
+    # podria estar vacio si confirm se valida primero. Con
+    # mode='after' los dos campos ya pasaron por su validacion
+    # individual y estan poblados en `self`.
+    @model_validator(mode='after')
+    def confirm_matches_user_id(self) -> 'AdminDeleteUserIn':
+        if self.confirm != f'HARD-DELETE-USER-{self.user_id}':
             raise ValueError('Confirm sentinel must match user_id')
-        return v
+        return self
 ```
 
 ## EventModel
@@ -311,8 +315,58 @@ EVENT_MODEL = build_event_model({
 
 | Service | Responsabilidad |
 |---------|-----------------|
-| `ProfileService` | CRUD `auth_users`: get_by_id, update, change_email, soft_delete, hard_delete, disable, enable |
+| `ProfileService` | CRUD `auth_users`: get_by_id, update, change_email, soft_delete (ver nota abajo), hard_delete, disable, enable |
 | `SessionService` | CRUD `auth_user_sessions`: list_for_user, revoke, revoke_all_for_user |
+
+> **`ProfileService.soft_delete` — borrado explicito, NO FK cascade**.
+> El `soft_delete` NO borra la fila de `auth_users` (solo setea
+> `deleted_at` + anonimiza `email`). Por lo tanto los FK
+> `ON DELETE CASCADE` declarados en `auth_credentials`,
+> `auth_mfa_methods`, `auth_mfa_recovery_codes`,
+> `auth_webauthn_credentials`, `auth_user_sessions`, etc. **NO se
+> disparan** (las cascades reaccionan a DELETE, no a UPDATE). El
+> service debe ejecutar los DELETE manuales en una sola transaccion
+> SQLAlchemy, en este orden:
+>
+> ```python
+> def soft_delete(self, *, user_id: UUID, ip: str | None,
+>                 user_agent: str | None) -> list[UUID]:
+>     """Soft-delete del user + DELETE explicito de credentials/mfa.
+>     Retorna la lista de family_ids cuyas sesiones se borraron, para
+>     que el controller las blacklisteen en DDB."""
+>     with db_session() as session:
+>         # 1. DELETE explicito en cascada (auth_users.id NO se borra)
+>         session.execute(delete(AuthCredential).where(
+>             AuthCredential.user_id == user_id))
+>         session.execute(delete(AuthMfaMethod).where(
+>             AuthMfaMethod.user_id == user_id))
+>         session.execute(delete(AuthMfaRecoveryCode).where(
+>             AuthMfaRecoveryCode.user_id == user_id))
+>         session.execute(delete(AuthWebauthnCredential).where(
+>             AuthWebauthnCredential.user_id == user_id))
+>         session.execute(delete(AuthEmailCode).where(
+>             AuthEmailCode.user_id == user_id))
+>         session.execute(delete(AuthMagicLink).where(
+>             AuthMagicLink.user_id == user_id))
+>         # 2. Recolectar y borrar sessions activas (para blacklist
+>         #    posterior por el controller)
+>         families = session.execute(
+>             select(AuthUserSession.family_id).where(
+>                 AuthUserSession.user_id == user_id)
+>         ).scalars().all()
+>         session.execute(delete(AuthUserSession).where(
+>             AuthUserSession.user_id == user_id))
+>         # 3. Soft-delete del user (UPDATE — NO DELETE)
+>         user = session.get(AuthUser, user_id)
+>         user.deleted_at = func.now()
+>         user.email = f'deleted-{user.id}@invalid.local'
+>         session.commit()
+>         return families
+> ```
+>
+> En contraste, `ProfileService.hard_delete` (admin only) **si**
+> hace `DELETE FROM auth_users WHERE id=?` y las FK cascades operan
+> normalmente.
 | `AdminService` | `require_admin_user` helper |
 | `AuditAdminService` | INSERT `auth_user_admin_actions` |
 | `ConsentService` | INSERT `auth_user_consent_log` |

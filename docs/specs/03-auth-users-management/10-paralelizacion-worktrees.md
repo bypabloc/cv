@@ -136,8 +136,10 @@ PR 6 users scaffold + services ─┘
        │           │            │            │ (en lambda auth)
        └───────────┴────────────┴────────────┘
                                 │
-                       PR 7 (T7+T8+T9 mergeados)
-                       PR 8 (T10 mergeado)
+                       PR 7a (T7 mergeado)
+                       PR 7b (T8 mergeado)
+                       PR 7c (T9 mergeado)
+                       PR 8  (T10 mergeado)
                                 │
                                 v
                        PR 9 verificacion E2E + cleanup (SEC. 11)

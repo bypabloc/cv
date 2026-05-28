@@ -245,6 +245,7 @@ Antes de trabajar, identifica que contexto necesitas:
 |------|---------|-------------|
 | Reglas generales | [.claude/rules/general.md](.claude/rules/general.md) | Indice de reglas + estructura del repo |
 | Astro + Biome + TS | [.claude/rules/astro-landing.md](.claude/rules/astro-landing.md) | Antes de crear componente / página / utility |
+| TypeScript 6 (politica raiz) | [.claude/rules/typescript.md](.claude/rules/typescript.md) o skill `typescript-6` | Antes de tocar cualquier `.ts`/`.tsx`/`tsconfig.json`. **Solo TypeScript** en codigo de aplicacion (JavaScript nativo prohibido). **`any` PROHIBIDO** sin excepciones — usar `unknown` con narrow, `satisfies` o Zod `z.infer`. Strict + `noUncheckedIndexedAccess` + `verbatimModuleSyntax`. tsconfig canonicos para Astro 6 / Next 16 / packages. Codemod `ts5to6` para migracion 5.x→6.0 |
 | Design System | [.claude/rules/design-system.md](.claude/rules/design-system.md) | Tokens CSS, dark/light, tipografia, fonts |
 | YAML data loading | [.claude/rules/yaml-data-loading.md](.claude/rules/yaml-data-loading.md) | Antes de agregar/modificar entry del CV o tocar plugin yaml |
 | Docstrings | [.claude/rules/docstring-standard.md](.claude/rules/docstring-standard.md) | Antes de documentar cualquier unidad de codigo |

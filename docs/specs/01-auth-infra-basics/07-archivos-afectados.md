@@ -55,8 +55,6 @@
 
 - `serverless/lambda/resources/dynamodb/jwt-blacklist.yaml` — tabla +
   GSI by_family_id, TTL=`exp`.
-- `serverless/lambda/resources/dynamodb/auth-codes.yaml` — tabla,
-  TTL=`expires_at`.
 - `serverless/lambda/resources/sqs/auth-email-queue.yaml` — cola
   principal.
 - `serverless/lambda/resources/sqs/auth-email-dlq.yaml` — DLQ.

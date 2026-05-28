@@ -94,29 +94,32 @@ Ya listado en [03-shared-auth.md](03-shared-auth.md) — 17 archivos.
 | `test_register_start_turnstile_invalid_403.py` | Turnstile fail -> 403 antes de tocar Neon | AC-12 |
 | `test_register_start_rate_limited_429.py` | 4ta request en 1h -> 429 | AC-13 |
 | `test_register_verify_magic_link_ok.py` | token valido -> 200 con access+refresh | AC-3 |
-| `test_register_verify_magic_link_consumed.py` | ya consumido -> 400 LINK_CONSUMED |  |
-| `test_register_verify_magic_link_expired.py` | expirado -> 400 LINK_EXPIRED |  |
+| `test_register_verify_magic_link_consumed.py` | ya consumido -> 400 LINK_CONSUMED | AC-16 |
+| `test_register_verify_magic_link_expired.py` | expirado -> 400 LINK_EXPIRED | AC-17 |
 | `test_register_verify_code_ok.py` | code correcto + temp_token valido -> 200 con access+refresh | AC-4 |
-| `test_register_verify_code_wrong_increments.py` | code wrong -> 400 + attempts incremented |  |
+| `test_register_verify_code_wrong_increments.py` | code wrong -> 400 + attempts incremented | AC-11 |
 | `test_register_verify_code_locks_after_5_fail.py` | 5to fail -> 423 ACCOUNT_LOCKED | AC-11 |
-| `test_register_verify_code_temp_token_expired.py` | temp_token exp pasado -> 401 |  |
+| `test_register_verify_code_temp_token_expired.py` | temp_token exp pasado -> 401 | AC-18 |
 | `test_register_verify_code_temp_token_blacklisted.py` | replay del viejo -> 401 TOKEN_BLACKLISTED | AC-10 |
+| `test_register_start_email_pending_reemits.py` | pending -> re-emite magic + code (idempotente) | AC-19 |
+| `test_register_start_email_disabled_404.py` | disabled -> 404 EMAIL_NOT_FOUND (anti-enumeration) | AC-20 |
 | `test_login_start_email_not_found_404.py` | email no existe -> 404 + suggest_register | AC-5 |
 | `test_login_start_email_active_no_password.py` | active sin password -> 200 + methods=[magic-link, email-code] | AC-6 |
-| `test_login_start_email_locked_423.py` | locked -> 423 ACCOUNT_LOCKED |  |
-| `test_login_start_email_pending_409.py` | pending -> 409 (debe completar register) |  |
-| `test_login_verify_magic_link_ok.py` | login flow magic-link OK -> access+refresh |  |
-| `test_login_verify_code_ok.py` | login flow code OK -> access+refresh |  |
-| `test_verify_set_password_ok.py` | password seteada en auth_credentials |  |
-| `test_verify_set_password_too_short.py` | < 12 chars -> 400 |  |
-| `test_verify_resend_code_ok.py` | nuevo code + sqs publish |  |
-| `test_verify_resend_code_throttled.py` | menos de 60s desde el ultimo -> 429 RESEND_THROTTLED |  |
+| `test_login_start_email_locked_404.py` | locked -> 404 EMAIL_NOT_FOUND (anti-enumeration) | AC-20 |
+| `test_login_start_email_disabled_404.py` | disabled -> 404 EMAIL_NOT_FOUND (anti-enumeration) | AC-20 |
+| `test_login_start_email_pending_409.py` | pending -> 409 PENDING_VERIFICATION (debe completar register) | AC-6 |
+| `test_login_verify_magic_link_ok_updates_last_login.py` | login flow magic-link OK -> access+refresh + `last_login_at` updated + `failed_attempts=0` | AC-22 |
+| `test_login_verify_code_ok_updates_last_login.py` | login flow code OK -> idem | AC-22 |
+| `test_verify_set_password_ok.py` | password seteada en auth_credentials | AC-4 |
+| `test_verify_set_password_too_short.py` | < 12 chars -> 400 | AC-4 |
+| `test_verify_resend_code_ok.py` | nuevo code + sqs publish | AC-19 |
+| `test_verify_resend_code_throttled.py` | menos de 60s desde el ultimo -> 429 RESEND_THROTTLED | AC-21 |
 | `test_session_refresh_ok.py` | refresh valido -> nuevo access+refresh, viejo blacklisted | AC-7 |
 | `test_session_refresh_reuse_detected.py` | refresh ya consumed -> 401 + revoca family | AC-8 |
-| `test_session_refresh_invalid_signature.py` | signature wrong -> 401 |  |
+| `test_session_refresh_invalid_signature.py` | signature wrong -> 401 | AC-10 |
 | `test_session_logout_access_ok.py` | access valido -> 204 + blacklist | AC-9 |
-| `test_session_logout_access_and_refresh.py` | ambos -> 204 + blacklist ambos + family |  |
-| `test_session_logout_already_blacklisted.py` | jti ya blacklisted -> 204 (idempotente) |  |
+| `test_session_logout_access_and_refresh.py` | ambos -> 204 + blacklist ambos + family | AC-9 |
+| `test_session_logout_already_blacklisted.py` | jti ya blacklisted -> 204 (idempotente) | AC-23 |
 
 ### `models/` (`tests/unit/models/`)
 
@@ -182,7 +185,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:9999
 TURNSTILE_BYPASS_SECRET=<test-bypass-placeholder>
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/test
 SSM_JWT_BLACKLIST_TABLE_PATH=/portfolio/test/dynamodb/jwt-blacklist/name
-SSM_AUTH_CODES_TABLE_PATH=/portfolio/test/dynamodb/auth-codes/name
+SSM_AUTH_EMAIL_QUEUE_URL_PATH=/portfolio/test/sqs/auth-email/url
 ```
 
 Los placeholders `<...>` se sustituyen por valores aleatorios generados

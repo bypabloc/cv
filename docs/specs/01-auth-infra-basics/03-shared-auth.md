@@ -135,7 +135,15 @@ REFRESH_TTL = 30 * 24 * 3600  # 30 dias
 
 
 class JwtClaims(BaseModel):
-    """Claims canonicos. Subset de RFC 7519 + custom."""
+    """Claims canonicos. Subset de RFC 7519 + custom.
+
+    Diseno: el JWT contiene SOLO `sub` (user_id) como identificador
+    del usuario. El `email` y otros datos de perfil NO viajan en el
+    token — JWT no es secret (jwt.io lo decodifica), y filtrarlo via
+    Referer/logs/history expondria PII. Los Lambdas que necesiten
+    email hacen lookup a Neon (cacheable con `shared.cache.cached` si
+    el caller lo amerita).
+    """
     sub: UUID                          # subject = user_id
     jti: UUID                          # JWT ID (uuidv7)
     typ: Literal['temp', 'access', 'refresh']
@@ -143,25 +151,28 @@ class JwtClaims(BaseModel):
     exp: int                           # expires at (unix)
     iss: str = 'portfolio-auth'
     aud: str = 'portfolio'
-    # custom
+    # custom (NO incluyen PII)
     flow: str | None = None            # solo en typ=temp
     step: int | None = None            # solo en typ=temp
     family_id: UUID | None = None      # solo en typ=refresh
-    email: str | None = None           # incluido en access para evitar lookup
-    niche: str | None = None           # opcional para tracking
 
 
 def issue_temp_jwt(
     *, user_id: UUID, flow: str, step: int, secret: str,
-    ttl: int = TEMP_TTL, niche: str | None = None,
+    ttl: int = TEMP_TTL,
 ) -> tuple[str, JwtClaims]:
     """Emite un JWT temporal. Retorna (token_string, claims)."""
 
 def issue_access_jwt(
-    *, user_id: UUID, email: str, secret: str,
-    ttl: int = ACCESS_TTL, niche: str | None = None,
+    *, user_id: UUID, secret: str,
+    ttl: int = ACCESS_TTL,
 ) -> tuple[str, JwtClaims]:
-    """Emite un JWT access. Retorna (token_string, claims)."""
+    """Emite un JWT access. Retorna (token_string, claims).
+
+    El access NO incluye email ni otros datos de perfil. El consumidor
+    (dashboard) obtiene esos datos del response del endpoint de login
+    /verify y los persiste en su Zustand store.
+    """
 
 def issue_refresh_jwt(
     *, user_id: UUID, family_id: UUID, secret: str,

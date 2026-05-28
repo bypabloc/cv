@@ -14,8 +14,8 @@
 >
 > Entrega el esqueleto del dominio de autenticacion del portfolio: schema Neon
 > `auth_*`, nuevo shared subpackage `shared.auth` (JWT HS256 + argon2 +
-> generador de codigos), 2 tablas DynamoDB nuevas (`jwt-blacklist`,
-> `auth-codes`), cola SQS `auth-email-queue` + Lambda worker
+> generador de codigos), 1 tabla DynamoDB nueva (`jwt-blacklist` con GSI
+> `by_family_id`), cola SQS `auth-email-queue` + Lambda worker
 > `auth_email_worker`, y Lambda HTTP `auth` con SOLO los flujos basicos (sin
 > MFA, sin WebAuthn, sin CRUD de users): `register`, `login`, `verify`
 > (magic-link + email-code), `logout`, `refresh-token`.
@@ -28,8 +28,9 @@
   `argon2-cffi`; funciones `issue_temp_jwt`, `issue_access_jwt`,
   `issue_refresh_jwt`, `verify_jwt`, `hash_password`, `verify_password`,
   `generate_code` (8 chars Crockford-like sin O/0/I/1/L), `generate_token`.
-- DynamoDB: tablas `portfolio-jwt-blacklist-${stage}` (TTL `exp`) y
-  `portfolio-auth-codes-${stage}` (TTL `expires_at`, hash bcrypt-style).
+- DynamoDB: tabla `portfolio-jwt-blacklist-${stage}` (TTL `exp`) con
+  GSI `by_family_id` (KEYS_ONLY) para revocar familias de refresh
+  tokens.
 - SSM: parametro nuevo `/portfolio/${stage}/jwt-secret` (SecureString +
   KMS `alias/portfolio-lambdas`).
 - SQS: cola `portfolio-auth-email-${stage}` + DLQ.
@@ -81,7 +82,7 @@
 | 0 | Plan escrito + carpeta `docs/specs/auth-infra-basics/` commiteada | pending |
 | 1 | Schema Neon `auth_*` + Alembic migration 00000002 | pending |
 | 2 | `shared.auth` subpackage (pyjwt + argon2-cffi + code/token gen + tests) | pending |
-| 3 | DynamoDB tables (`jwt-blacklist`, `auth-codes`) + SSM `jwt-secret` + SQS `auth-email-queue` | pending |
+| 3 | DynamoDB table (`jwt-blacklist` + GSI `by_family_id`) + SSM `jwt-secret` + SQS `auth-email-queue` | pending |
 | 4 | Lambda `auth_email_worker` (consume cola, envia SES) | pending |
 | 5 | Lambda `auth` scaffold (manifest + AppConfig + handler + EventModel + OPERATIONS) | pending |
 | 6 | Operation `register` (start + verify-magic-link + verify-code) | pending |
@@ -96,8 +97,12 @@
 Cerradas en el dialogo previo y NO se vuelven a discutir:
 
 1. **Split de lambdas**: `auth` + `users`. Este plan entrega `auth`. `users` -> plan 3.
-2. **Persistencia hibrida**: estado relacional en Neon (`auth_*`),
-   estado efimero con TTL en DynamoDB (`jwt-blacklist`, `auth-codes`).
+2. **Persistencia hibrida minima**: estado relacional + codes + magic
+   links en Neon (`auth_*`), blacklist de JWTs en DynamoDB
+   (`jwt-blacklist` con GSI `by_family_id`). Solo blacklist va a DDB
+   porque cada request autenticada hace lookup O(1) por `jti`; codes y
+   magic links se verifican una sola vez por flow, latencia Neon
+   ~10-30ms es invisible. Decision documentada en el contexto.
 3. **JWT**: HS256 + secret en SSM SecureString. Tres tipos:
    - **temp** (`typ=temp`): 5 min, rolling refresh (cada API del flujo
      emite uno nuevo y blacklistea el anterior).
@@ -143,7 +148,9 @@ Cerradas en el dialogo previo y NO se vuelven a discutir:
 - **SIEMPRE** `auth_users.email` se guarda lowercased (`email.lower().strip()`).
 - **SIEMPRE** logs NO incluyen: email completo (solo hash truncado),
   password, JWT, magic-link token, code. Auditoria queda en
-  `auth_audit_log`.
+  `auth_audit_log`. Aplica la politica general de
+  [.claude/rules/security.md](../../../.claude/rules/security.md)
+  ("Credenciales y secretos").
 - **SIEMPRE** verificar antes de commitear (lint + tests unit del scope).
 - **NUNCA** devolver `404` con body distinto entre "email no existe" y
   "email existe pero esta deshabilitado". Solo `register.start` y

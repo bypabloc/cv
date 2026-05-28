@@ -1,11 +1,36 @@
 # Dashboard SPA (`dashboard/*`) — convenciones del portfolio
 
-> Reglas para el dashboard admin del portfolio: Next.js 16 SPA estatico
-> (`output: 'export'`) + React 18 + TypeScript 6 strict + Biome v2 +
-> Tailwind v4 + shadcn/ui + Tanstack Query + Zustand, deployado a
-> Cloudflare Pages en `admin.portfolio.{dev|stage|prod}.the-full-stack.com`.
-> Consume el Lambda `auth` (planes 01-02) + Lambda `analytics`
-> (plan analytics-dashboard-api) del backend serverless del repo.
+> Reglas para el dashboard admin del portfolio: Next.js 16.2.6 SPA
+> estatico (`output: 'export'`) + React 19.2.6 + TypeScript 6 strict +
+> Biome v2 + Tailwind v4 + shadcn/ui + Tanstack Query v5 + Zustand 5,
+> deployado a Cloudflare Pages en
+> `admin.portfolio.{dev|stage|prod}.the-full-stack.com`. Consume el
+> Lambda `auth` (planes 01-02) + Lambda `analytics` (plan
+> analytics-dashboard-api) del backend serverless del repo.
+
+## Versiones canonicas (mayo 2026)
+
+| Capa | Version |
+|------|---------|
+| Next.js | **16.2.6** (May 7, 2026) — Turbopack default, async APIs, `proxy.ts` reemplaza `middleware.ts` |
+| React + React DOM | **19.2.6** (May 6, 2026) — obligatorio en Next 16.x |
+| TypeScript | **6.0.6** strict + `noUncheckedIndexedAccess` |
+| Biome | **2.0.0+** sin ESLint, override en `components/ui/**` |
+| Tailwind | **4.1.4** con `@tailwindcss/postcss` |
+| shadcn/ui | latest oct 2025+ (React 19 support, sin `forwardRef` en codegen) |
+| Tanstack Query / Persist / Table / Virtual | **5.52.3** / **8.20.5** / **3.5.1** |
+| Zustand | **5.0.14** (Jan 2026 state consistency fix) |
+| react-hook-form | **7.53.0** |
+| Zod | **3.24.1** |
+| Recharts | **2.14.2** (override `react-is@19.2.6` necesario) |
+| sonner | **1.7.2** |
+| lucide-react | **0.416.0** |
+| next-themes | **0.4.8** |
+| MSW | **2.3.2** |
+| Vitest | **2.2.5** + Testing Library v16 + happy-dom 16 |
+| Node | >=24, pnpm 11.0.9 |
+
+Tabla extendida en `.claude/skills/dashboard-stack/SKILL.md`.
 
 ## Activacion
 
@@ -31,26 +56,64 @@ Esas siguen `.claude/rules/astro-landing.md`.
 
 - **SIEMPRE** el dashboard vive en `dashboard/` (no en `apps/dashboard/`).
   Entra al pnpm workspace como `@portfolio/dashboard`.
-- **SIEMPRE** Next.js 16.x con `output: 'export'` en `next.config.ts`.
+- **SIEMPRE** Next.js 16.2.6 con `output: 'export'` en `next.config.ts`.
   Sin SSR, sin RSC server-only, sin Server Actions, sin ISR, sin
-  middleware, sin Route Handlers.
-- **SIEMPRE** React 18.3.x (NO React 19). Los hooks de React 19
-  (`use()`, `useFormStatus`, `useActionState`) son para Server Components
-  + Server Actions, ambos NO disponibles en export mode.
-- **SIEMPRE** TypeScript 6.x con `strict: true`, `noUncheckedIndexedAccess`,
-  `noUnusedLocals`, `noUnusedParameters`. NO `any`; usar `unknown` con
-  narrow.
+  middleware/proxy, sin Route Handlers.
+- **SIEMPRE** React 19.2.6 (obligatorio en Next 16.x). NUNCA pinear a
+  React 18 — Next 16 requiere React 19 minimo.
+- **SIEMPRE** TypeScript 6.x con `strict: true`,
+  `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`.
+  NO `any`; usar `unknown` con narrow.
 - **SIEMPRE** App Router (`src/app/`), NO Pages Router. Todas las pages
   y layouts son Client Components (`'use client'` en primera linea).
 - **SIEMPRE** Biome v2 (sin ESLint). El `biome.json` del dashboard
-  extiende del root con override para `src/components/ui/*.tsx`
-  (shadcn primitives no respetan reglas strict).
+  extiende del root con override para `src/components/ui/*.tsx`. En
+  `next.config.ts`: `eslint.ignoreDuringBuilds: true`.
+- **SIEMPRE** Turbopack (default en Next 16, sin config).
+- **SIEMPRE** `reactCompiler: true` en `next.config.ts` (Compiler stable
+  en Next 16). Opt-out per file con `'use no memo'` solo si rompe algo
+  medido.
 - **NUNCA** API routes (`app/api/*/route.ts`) — fail build en export mode.
-  Todas las API calls van al backend Lambda.
-- **NUNCA** `middleware.ts`, `proxy.ts` — no corren en SPA estatica.
+- **NUNCA** `middleware.ts`, `proxy.ts`, Server Components con `async
+  fetch`, Server Actions, `'use cache'`. Todo server-only.
 - **NUNCA** `<Image>` con optimizacion. `images.unoptimized: true` en
   config; usar `<img>` regular para casos simples.
 - **NUNCA** mezclar npm/yarn con pnpm. Solo pnpm 11.0.9.
+
+### React 19 patterns (obligatorios)
+
+- **SIEMPRE** componentes nuevos reciben `ref` como prop normal — NUNCA
+  `forwardRef`. shadcn 2.x ya migrado.
+- **SIEMPRE** Rules of React (el Compiler las enforces): components
+  pure, no mutar props/state, side effects en useEffect, hooks
+  unconditional.
+- **SIEMPRE** `useFormState` esta DEPRECADO: usar `useActionState` de
+  `react` (NO `react-dom`).
+- **SIEMPRE** forms simples (1-2 fields, single submit): usar
+  `useActionState` + `useFormStatus`. Forms complejos (auth, multi-step,
+  validation custom): react-hook-form + Zod + shadcn `<Form>` + Tanstack
+  `useMutation`.
+- **SIEMPRE** elegir UNO por mutation: `useOptimistic` (puntual, local)
+  O Tanstack `onMutate` (con cache, refetch, invalidation). NO mezclar.
+- **SIEMPRE** `useSuspenseQuery` cuando la data es required para
+  renderizar (Error Boundary cubre fails). `useQuery` cuando es
+  opcional o inline.
+- **SIEMPRE** `useDeferredValue(value, initialValue)` con
+  `initialValue` para evitar flicker en filtros / tabs.
+- **SIEMPRE** Document Metadata:
+  - Static metadata (titulo fijo): Next `metadata` export en pages.
+  - Dynamic metadata (depende de state/data): React 19 `<title>` /
+    `<meta>` dentro del componente (auto-hoist al `<head>`).
+- **SIEMPRE** `useSearchParams()` dentro de `<Suspense>` boundary (req
+  del export mode — sin Suspense, build fail).
+- **NUNCA** `forwardRef` en componentes nuevos.
+- **NUNCA** mezclar `useState` para `isPending` con `useActionState`
+  (conflict, doble state).
+- **NUNCA** mutar props/state ni en handlers ni en helpers (el Compiler
+  no optimiza + bugs de concurrent rendering).
+- **NUNCA** hooks en conditionals/loops/after early returns.
+- **NUNCA** `'use server'` (Server Actions, no aplican en export).
+- **NUNCA** `'use cache'` (Cache Components, server-only).
 
 ### Estructura de componentes — Hybrid Atomic Design
 
@@ -157,18 +220,36 @@ Reglas duras del layout:
 
 ### Auth (consume Lambda `auth` de planes 01-02)
 
-- **SIEMPRE** access JWT en memoria (Zustand store, campo NO persisted).
-  Refresh JWT en HttpOnly cookie (preferido — backend setea
-  `Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=Strict;
-  Path=/auth; Max-Age=2592000`). Fallback: `localStorage` con CSP
-  estricta + SRI documentado.
+> **Contexto: el dashboard es un SPA estatico (Next.js `output:
+> 'export'`) deployado en Cloudflare Pages**. NO hay backend bajo el
+> mismo origen que pueda setear cookies HttpOnly del dominio del API
+> (`api.portfolio.{env}.the-full-stack.com`) — el dashboard vive en
+> `admin.portfolio.{env}.the-full-stack.com` y consume el Lambda
+> `auth` via fetch CORS cross-subdomain. Una cookie HttpOnly del API
+> tendria que ser `SameSite=None; Secure; Domain=.the-full-stack.com`,
+> lo que abre vectores CSRF en todos los subdominios y limita la
+> portabilidad si el dashboard se aloja en otro origin (mobile app,
+> embebido en widgets, etc.). **Decision**: tokens viajan en el body de
+> la respuesta del backend, el dashboard los persiste en
+> `localStorage`. Mitigaciones: CSP estricta `default-src 'self'` sin
+> `unsafe-inline`/`unsafe-eval` (Next 16 export lo soporta),
+> Subresource Integrity en todos los scripts third-party, access JWT
+> corto (15 min), refresh rotation + family detection en el backend.
+
+- **SIEMPRE** access JWT y refresh JWT en `localStorage`
+  (`access_token`, `refresh_token`, `user` como JSON). El store
+  Zustand espeja el valor para que `useAuthStore` lo exponga
+  reactivamente, con `persist({storage: localStorage})` o lectura
+  manual de `localStorage` en el bootstrap del provider.
 - **SIEMPRE** fetch wrapper (`lib/api-client.ts`) implementa el mutex
   de refresh: solo UN `/session/refresh` en vuelo a la vez; los demas
   requests con 401 esperan el resultado y reintentan.
+- **SIEMPRE** el access token viaja en `Authorization: Bearer <JWT>`
+  (header). NUNCA como query param.
 - **SIEMPRE** magic link callback en `/callback`: decodifica
   `window.location.hash` (fragment), extrae `access` y `refresh`,
-  guarda en Zustand, limpia el hash con `history.replaceState`,
-  redirect a `/dashboard`.
+  guarda en `localStorage` via Zustand, limpia el hash con
+  `history.replaceState`, redirect a `/dashboard`.
 - **SIEMPRE** Turnstile en `LoginForm` y `RegisterForm` (action
   `start`). Sitekey de `NEXT_PUBLIC_TURNSTILE_SITEKEY` (mismo de las 6
   apps; agregar hostname `admin.portfolio.*.the-full-stack.com` a la
@@ -183,15 +264,25 @@ Reglas duras del layout:
   >5 min, verificar JWT + refresh si hace falta.
 - **SIEMPRE** BroadcastChannel API: canal `portfolio_auth`, mensajes
   `LOGOUT` y `TOKEN_REFRESH`. Logout en una tab = logout en todas.
+  Tambien escuchar `storage` event de `localStorage` para tabs en
+  navegadores que no soportan BroadcastChannel.
 - **SIEMPRE** logout llama POST `/auth?operation=session&action=logout`
   ANTES de limpiar el estado local (backend blacklistea la familia en
   DynamoDB). Si la llamada al backend falla, igual se limpia el estado
   local + redirect.
+- **SIEMPRE** CSP estricta en `public/_headers`: `default-src 'self';
+  script-src 'self'; connect-src 'self' https://api.portfolio.*
+  https://challenges.cloudflare.com; ...`. Sin `unsafe-inline` ni
+  `unsafe-eval`. Bloquea robo de tokens via XSS de inline scripts.
 - **SIEMPRE** el flujo de registro/login completo: ver
   `.claude/docs/dashboard/04-auth.md` (10+ pages).
 - **NUNCA** tokens en URL query params (`?access=...`). Solo fragment
   hash (`#access=...`) en el callback del magic link.
-- **NUNCA** persistir `accessToken` en localStorage o cookie no-HttpOnly.
+- **NUNCA** intentar setear HttpOnly cookies desde el backend para el
+  dashboard: el origen es distinto, requeriria `SameSite=None` cross-
+  site + `Domain=.the-full-stack.com` (vector CSRF en los 6 niches
+  publicos) y rompe portabilidad. La defensa contra XSS es la CSP
+  estricta, NO HttpOnly cookies cross-origin.
 - **NUNCA** logear el JWT, refresh token, magic link token, email
   completo, ni el contenido del codigo 8 chars.
 - **NUNCA** mostrar mensajes que filtren si un email existe o no fuera
@@ -199,6 +290,9 @@ Reglas duras del layout:
   404 con `suggest_register: true` ya lo hace explicito el backend).
 - **NUNCA** llamar al refresh sin pasar por el mutex (race condition
   garantizada con concurrent requests).
+- **NUNCA** cargar scripts third-party sin SRI (`integrity` attribute).
+  Lista permitida hoy: `challenges.cloudflare.com/turnstile/v0/api.js`
+  (Cloudflare publica los hashes oficiales por version).
 
 ### UI (shadcn + Tailwind v4 + theming)
 
@@ -440,7 +534,9 @@ python devtools/run.py test_runner --module=feature --type=feature --env=local
 | `useEffect(() => fetch(...))` | Sin cache, sin invalidation, sin retry | Tanstack Query `useQuery` |
 | Concurrent refresh requests | Backend revoca familia por reuse | Mutex en `lib/api-client.ts` |
 | Tokens en query (`?access=...`) | Leak via Referer + browser history | Fragment hash en callback |
-| `localStorage.setItem('access_token', ...)` | XSS = robo total | Zustand in-memory, no persist del access |
+| Cargar script third-party sin `integrity` (SRI) | Script comprometido roba el token de localStorage | SRI obligatorio + CSP `script-src 'self' + allowlist con hash` |
+| HttpOnly cookie cross-origin del API al dashboard (`SameSite=None; Domain=.the-full-stack.com`) | Vector CSRF en los 6 niches publicos + rompe portabilidad | Tokens en `localStorage` + CSP estricta (decision documentada arriba) |
+| CSP con `unsafe-inline` o `unsafe-eval` | XSS de inline scripts = robo de tokens | CSP `script-src 'self'` con SRI para third-party |
 | Promote a `components/ui/` con 1 uso | Premature abstraction | Vive en `features/<X>/components/` |
 | Server Component async fetch | Build fail en export | `'use client'` + Tanstack Query |
 | Importar `@radix-ui/react-*` directo | Pierde theming shadcn | Pasar por `components/ui/<comp>` |

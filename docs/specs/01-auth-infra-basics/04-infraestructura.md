@@ -4,8 +4,7 @@
 
 | Recurso | Archivo (resources/...) | Que es | Quien lo lee |
 |---------|------------------------|--------|--------------|
-| DynamoDB `portfolio-jwt-blacklist-${stage}` | `dynamodb/jwt-blacklist.yaml` | Blacklist de JWTs (temp/access/refresh) con TTL=exp | Lambda `auth` |
-| DynamoDB `portfolio-auth-codes-${stage}` | `dynamodb/auth-codes.yaml` | Cache O(1) de codes activos (espejo de auth_email_codes) | Lambda `auth` |
+| DynamoDB `portfolio-jwt-blacklist-${stage}` | `dynamodb/jwt-blacklist.yaml` | Blacklist de JWTs (temp/access/refresh) con TTL=exp + GSI by_family_id | Lambda `auth` |
 | SSM `/portfolio/${stage}/jwt-secret` | `resources/secrets/jwt-secret.yaml` | SecureString + KMS, secret del HS256 | Lambdas `auth`, futuro `users` |
 | SQS `portfolio-auth-email-${stage}` | `sqs/auth-email-queue.yaml` | Cola de emails a enviar (magic-link, code, ...) | productor: `auth`; consumidor: `auth_email_worker` |
 | SQS DLQ `portfolio-auth-email-dlq-${stage}` | `sqs/auth-email-dlq.yaml` | DLQ de la cola anterior | n/a |
@@ -77,54 +76,31 @@ Aclaracion: el GSI agrega ~2x write cost en items con `family_id`
 (refresh JWTs). En el modo PAY_PER_REQUEST esto es marginal a escala
 portfolio.
 
-## 2. DynamoDB — `portfolio-auth-codes-${stage}`
+**Family revoke — limite y atomicidad**: cuando se detecta reuso de un
+refresh (AC-8) o se hace logout total (AC-9), hay que revocar TODOS
+los refresh JWTs vivos de esa `family_id`. DynamoDB NO soporta
+`UPDATE WHERE family_id = X` atomico: el flujo es:
 
-`serverless/lambda/resources/dynamodb/auth-codes.yaml`:
+1. `Query` el GSI `by_family_id` con `KeyConditionExpression='family_id
+   = :fid'` (devuelve `[jti, ...]` por la projection KEYS_ONLY).
+2. Por cada `jti` devuelto, `PutItem`/`UpdateItem` marcando
+   `revoked_at=now`, `reason='reuse'|'logout'`, preservando TTL=`exp`.
+3. Si N > 25, usar `BatchWriteItem` paginando de a 25 por call
+   (limite duro de la API).
 
-```yaml
-kind: dynamodb-table
-name: portfolio-auth-codes-${stage}
-billing_mode: PAY_PER_REQUEST
-hash_key:
-  name: pk
-  type: S
-range_key: null
-stream: null
-ttl_attribute: expires_at
-encryption: true
-publishes_ssm:
-  name: /portfolio/${stage}/dynamodb/auth-codes/name
-  arn: /portfolio/${stage}/dynamodb/auth-codes/arn
-tags:
-  Project: portfolio
-  Module: auth
-  ManagedBy: devtools
-```
+Limites operativos:
 
-**Schema de item**:
+- **MAX_FAMILY_SIZE = 10**: cada login emite un `family_id` nuevo
+  (uuidv7), y cada uso del refresh rota a otro `jti` dentro de la
+  misma familia. En la practica una familia tiene 1-3 refresh activos
+  simultaneos (el actual + grace period del anterior); 10 es un cap
+  defensivo para detectar bug de rotation. Si el `Query` devuelve > 10,
+  loggear `family.oversized` y revocar igual.
+- **Timeout del controller**: con 30 items + `BatchWriteItem` de 25,
+  la operacion completa toma < 200ms (un round-trip + un batch). Bien
+  dentro del timeout de 15s del Lambda.
 
-```jsonc
-{
-  "pk": "register#01H9V...",      // PK (formato '<kind>#<user_id>')
-  "code_hash_b64": "...",         // SHA-256 b64
-  "attempts": 0,
-  "created_at": 1717000000,
-  "expires_at": 1717000900,       // TTL attribute
-  "neon_id": "01H9X..."           // referencia al row de Neon
-}
-```
-
-**Justificacion del doble store (Neon + DynamoDB)**:
-- Neon es la fuente de verdad y la auditoria (queries por user, por
-  kind, historial).
-- DynamoDB da lookup O(1) por `pk` en cada `verify-code` request sin
-  pagar latencia de Neon (~10-30ms a Neon Pooler us-east-1).
-- Cuando se inserta un code, el handler escribe ambos en paralelo. Si
-  Neon falla, abortamos toda la operacion. Si DynamoDB falla pero Neon
-  exito -> log warning, fallback a Neon en verify (degrada
-  graciosamente, ~10ms peor).
-
-## 3. SSM — `/portfolio/${stage}/jwt-secret`
+## 2. SSM — `/portfolio/${stage}/jwt-secret`
 
 `serverless/lambda/resources/secrets/jwt-secret.yaml`:
 
@@ -161,7 +137,7 @@ python devtools/run.py serverless sync-secrets --stage=prod --aws-profile=tfs-de
 Efecto: todos los JWTs vivos quedan invalidos (signature mismatch) y
 los users deben re-loguear. NO hacer en horario de uso real.
 
-## 4. SQS — `portfolio-auth-email-${stage}` + DLQ
+## 3. SQS — `portfolio-auth-email-${stage}` + DLQ
 
 `serverless/lambda/resources/sqs/auth-email-queue.yaml`:
 
@@ -217,7 +193,7 @@ tags:
 }
 ```
 
-## 5. Lambda `auth_email_worker` (manifest)
+## 4. Lambda `auth_email_worker` (manifest)
 
 `serverless/lambda/services/auth_email_worker/manifest.yaml`:
 
@@ -226,7 +202,11 @@ name: auth-email-worker
 trigger:
   type: sqs
   queue: portfolio-auth-email-${stage}
-  batch_size: 1
+  # batch_size=5: SES tolera batch (envia sequenciales en una
+  # invocacion). 5x menos invocaciones del Lambda a cambio de latencia
+  # ~ms que NO importa (worker async). ReportBatchItemFailures permite
+  # fallar uno y reintentar solo ese.
+  batch_size: 5
   function_response_types:
     - ReportBatchItemFailures
 runtime: python3.13
@@ -240,7 +220,11 @@ uses:
   tables: {}
   secrets:
     - ses-from-address
-    - owner-email                    # para BCC opcional al owner en eventos sensibles
+    # owner-email NO se incluye en plan 01. Plan original lo mencionaba
+    # para "BCC opcional al owner en eventos sensibles" pero ningun AC
+    # lo describe. Si en plan 02 (MFA) o 03 (users management) se
+    # decide notificar al owner ante eventos sensibles (ej. set-password,
+    # MFA reset), se agrega ahi con un AC explicito.
   sends-email: true
 env:
   default:
@@ -263,7 +247,7 @@ El worker:
 6. Si falla por motivo retryable (throttling), levanta excepcion ->
    SQS reintenta. Tras `max_receive_count=3` -> DLQ.
 
-## 6. Lambda `auth` (manifest)
+## 5. Lambda `auth` (manifest)
 
 `serverless/lambda/services/auth/manifest.yaml`:
 
@@ -286,8 +270,7 @@ uses:
     cache: read-write                # @cached SSM cache
     rate-limit-rules: read-write
     rate-limit-buckets: read-write
-    jwt-blacklist: read-write        # nueva
-    auth-codes: read-write           # nueva
+    jwt-blacklist: read-write        # nueva (con GSI by_family_id)
   secrets:
     - turnstile-secret
     - turnstile-bypass-secret
@@ -303,19 +286,31 @@ env:
     JWT_ISSUER: portfolio-auth
     JWT_AUDIENCE: portfolio
     MAGIC_LINK_BASE_URL: https://api.portfolio.dev.the-full-stack.com/auth
+    # Paths SSM publicados por el provisioner al crear los recursos
+    # compartidos (resources/dynamodb/jwt-blacklist.yaml + auth-email).
+    # AppConfig los lee en cold start con `get_parameter()`.
+    SSM_JWT_BLACKLIST_TABLE_PATH: /portfolio/${stage}/dynamodb/jwt-blacklist/name
+    SSM_AUTH_EMAIL_QUEUE_URL_PATH: /portfolio/${stage}/sqs/auth-email/url
+    # Callback URL del dashboard (admin SPA), donde el magic-link
+    # redirige con `#access=&refresh=&user_id=&email=`. El controller
+    # construye la URL final concatenando el fragment.
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.dev.the-full-stack.com/callback
   dev:
-    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,http://localhost:9970'
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com,http://localhost:9970'
     MAGIC_LINK_BASE_URL: https://api.portfolio.dev.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.dev.the-full-stack.com/callback
   stage:
-    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com,https://admin.portfolio.stage.the-full-stack.com'
     MAGIC_LINK_BASE_URL: https://api.portfolio.stage.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.stage.the-full-stack.com/callback
   prod:
     LOG_LEVEL: WARNING
-    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'
     MAGIC_LINK_BASE_URL: https://api.portfolio.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.the-full-stack.com/callback
 ```
 
-## 7. IAM scopes esperados (los genera el provisioner desde el manifest)
+## 6. IAM scopes esperados (los genera el provisioner desde el manifest)
 
 `auth` IAM role:
 - `dynamodb:GetItem`, `PutItem`, `Query` sobre las 5 tablas declaradas en `uses.tables`.
@@ -326,45 +321,72 @@ env:
 
 `auth_email_worker` IAM role:
 - `sqs:ReceiveMessage`, `DeleteMessage`, `GetQueueAttributes` sobre
-  `portfolio-auth-email-${stage}`.
-- `ssm:GetParameter` sobre `ses-from-address`, `owner-email`.
-- `ses:SendEmail`, `SendRawEmail` sobre la identidad
-  `no-reply@the-full-stack.com` (scoped por condition Resource).
+  `portfolio-auth-email-${stage}` (ARN exacto, NO wildcard).
+- `ssm:GetParameter` sobre el ARN exacto
+  `arn:aws:ssm:us-east-1:<account-id>:parameter/portfolio/ses-from-address`.
+- `ses:SendEmail`, `ses:SendRawEmail` scoped por **identity ARN exacto**:
+  `Resource: arn:aws:ses:us-east-1:<account-id>:identity/the-full-stack.com`.
+  NUNCA `Resource: *` ni `ses:*`. La identity es la del domain
+  verificado; cubre cualquier `From` con sufijo `@the-full-stack.com`
+  (incl. `no-reply@`). El provisioner debe generar la policy con el
+  ARN explicito leyendo `account_id` de
+  `aws sts get-caller-identity` y `domain` del `manifest.yaml`.
 
-## 8. Rate-limit rules (seed)
+## 7. Rate-limit rules (seed)
 
-Insertar 5 reglas en la tabla `portfolio-rate-limit-rules-${stage}`
+Insertar 7 reglas en la tabla `portfolio-rate-limit-rules-${stage}`
 via el subcomando `serverless rate-limit set` (existente). Hacer 1 vez
-por stage:
+por stage.
+
+**Formato del endpoint key**: `<operation>.<action>` literal — el
+controller pasa `endpoint=f"{operation}.{action}"` a
+`shared.rate_limit.check_or_raise()`. El matching es **exacto** (NO
+prefix). Por eso `verify-magic-link` no comparte rate-limit con
+`verify-code`: cada operacion+action tiene su key propia.
 
 ```bash
 # register.start: 3 req/h/IP, blacklist 24h si excede 10/h
 python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='/auth#register.start' --limit=3 --window=3600 \
+  --endpoint='register.start' --limit=3 --window=3600 \
   --hard-cap=10 --hard-cap-action=blacklist-24h --aws-profile=tfs-dev
 
 # login.start: 5/min/IP
 python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='/auth#login.start' --limit=5 --window=60 \
+  --endpoint='login.start' --limit=5 --window=60 \
   --hard-cap=20 --hard-cap-action=blacklist-1h --aws-profile=tfs-dev
 
-# verify.*: 10/min/IP (incluye verify-magic-link, verify-code,
-#   set-password, resend-code)
+# register.verify-magic-link, register.verify-code: 10/min/IP cada uno
 python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='/auth#verify' --limit=10 --window=60 --aws-profile=tfs-dev
+  --endpoint='register.verify-magic-link' --limit=10 --window=60 --aws-profile=tfs-dev
+python devtools/run.py serverless rate-limit set --stage=dev \
+  --endpoint='register.verify-code' --limit=10 --window=60 --aws-profile=tfs-dev
+
+# login.verify-magic-link, login.verify-code: 10/min/IP cada uno
+python devtools/run.py serverless rate-limit set --stage=dev \
+  --endpoint='login.verify-magic-link' --limit=10 --window=60 --aws-profile=tfs-dev
+python devtools/run.py serverless rate-limit set --stage=dev \
+  --endpoint='login.verify-code' --limit=10 --window=60 --aws-profile=tfs-dev
+
+# verify.set-password: 5/min/IP (operacion sensible)
+python devtools/run.py serverless rate-limit set --stage=dev \
+  --endpoint='verify.set-password' --limit=5 --window=60 --aws-profile=tfs-dev
+
+# verify.resend-code: 3/5min/IP (anti-spam de emails)
+python devtools/run.py serverless rate-limit set --stage=dev \
+  --endpoint='verify.resend-code' --limit=3 --window=300 --aws-profile=tfs-dev
 
 # session.refresh: 30/min/IP
 python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='/auth#session.refresh' --limit=30 --window=60 --aws-profile=tfs-dev
+  --endpoint='session.refresh' --limit=30 --window=60 --aws-profile=tfs-dev
 
 # session.logout: 30/min/IP
 python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='/auth#session.logout' --limit=30 --window=60 --aws-profile=tfs-dev
+  --endpoint='session.logout' --limit=30 --window=60 --aws-profile=tfs-dev
 ```
 
 Repetir para `stage` y `prod`. Idempotente (overwrite).
 
-## 9. Como se aplica todo
+## 8. Como se aplica todo
 
 Orden de provisioning:
 

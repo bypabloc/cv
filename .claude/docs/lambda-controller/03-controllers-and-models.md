@@ -81,7 +81,11 @@ class Create(BaseController):
 
 Reglas del controller:
 
-- El **nombre de la clase** es `action.capitalize()` (`create` -> `Create`).
+- El **nombre del archivo** es la forma snake_case de `action`
+  (`create` -> `create.py`, `verify-magic-link` ->
+  `verify_magic_link.py`).
+- El **nombre de la clase** es la forma PascalCase de `action`
+  (`create` -> `Create`, `verify-magic-link` -> `VerifyMagicLink`).
 - `event_model` - modelo Pydantic; lo usa la fase `validate`.
 - `arn_config_key` - campo de `AppConfig` con el ARN downstream; lo usa
   la fase `preload`. Dejar `''` si no invoca otro Lambda.

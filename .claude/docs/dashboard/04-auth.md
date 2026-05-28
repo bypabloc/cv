@@ -6,13 +6,35 @@
 
 El dashboard consume el Lambda `auth` de los planes 01-02 del repo. Tres
 tipos de JWT (temp 5min rolling, access 15min, refresh 30dias con
-family_id rotation). Storage:
+family_id rotation).
 
-- **access**: Zustand in-memory (NO persistido — XSS = 15 min de exposicion max).
-- **refresh**: HttpOnly cookie (preferido — backend setea
-  `Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=Strict; Path=/`)
-  o `localStorage` con CSP estricta (fallback documentado).
-- **temp**: in-memory durante el flujo de registro/login multi-step.
+### Decision: tokens en `localStorage` (NO HttpOnly cookies)
+
+El dashboard es un **SPA estatico** (Next.js `output: 'export'`)
+deployado en Cloudflare Pages bajo `admin.portfolio.{env}.the-full-stack.com`.
+El backend Lambda vive en `api.portfolio.{env}.the-full-stack.com` —
+**otro origen**. Para que el backend pudiera setear cookies HttpOnly
+accesibles desde el dashboard, la cookie tendria que ser
+`SameSite=None; Secure; Domain=.the-full-stack.com`, lo que abre
+vectores CSRF en los 6 niches publicos del portfolio y rompe
+portabilidad (mobile app, embebido en widgets).
+
+**Conclusion**: los tres tokens (access, refresh, temp) viajan en el
+body de la respuesta y se persisten en `localStorage`. La defensa
+contra XSS es CSP estricta + SRI en third-party + access JWT corto
+(15 min) + refresh rotation con detection de reuso.
+
+Storage:
+
+- **access** (`localStorage['access_token']`): TTL 15 min. Persisted
+  en Zustand. Reaplicado en `Authorization: Bearer` de cada request.
+- **refresh** (`localStorage['refresh_token']`): TTL 30 dias.
+  Persisted. Solo el wrapper `lib/api-client.ts` lo lee (jamas pasa
+  por componentes UI). Cada uso lo rota (la respuesta de
+  `/session/refresh` devuelve uno nuevo, el viejo queda blacklisteado
+  en DynamoDB con `family_id`).
+- **temp** (`localStorage['temp_token']`): TTL 5 min, rolling. Vive
+  solo durante el flujo multi-step de register/login.
 
 ## Auth store (Zustand)
 
@@ -32,19 +54,17 @@ export interface User {
 }
 
 interface AuthState {
-  // in-memory ONLY (no persist)
   accessToken: string | null
+  refreshToken: string | null
   tempToken: string | null
-  refreshExpiry: number | null  // epoch ms del exp del refresh actual
-
-  // persisted (solo el user, para skeleton inicial)
   user: User | null
 
   // actions
   setAccessToken: (token: string | null) => void
+  setRefreshToken: (token: string | null) => void
   setTempToken: (token: string | null) => void
   setUser: (user: User | null) => void
-  setRefreshExpiry: (exp: number | null) => void
+  setTokens: (access: string, refresh: string, user: User) => void
   reset: () => void
 
   // derived
@@ -56,19 +76,21 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       accessToken: null,
+      refreshToken: null,
       tempToken: null,
-      refreshExpiry: null,
       user: null,
 
       setAccessToken: (token) => set({accessToken: token}),
+      setRefreshToken: (token) => set({refreshToken: token}),
       setTempToken: (token) => set({tempToken: token}),
       setUser: (user) => set({user}),
-      setRefreshExpiry: (exp) => set({refreshExpiry: exp}),
+      setTokens: (access, refresh, user) =>
+        set({accessToken: access, refreshToken: refresh, user}),
 
       reset: () => set({
         accessToken: null,
+        refreshToken: null,
         tempToken: null,
-        refreshExpiry: null,
         user: null,
       }),
 
@@ -92,8 +114,13 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'portfolio-dashboard-auth',
       storage: createJSONStorage(() => localStorage),
-      // Solo persistir el user (UI skeleton). NUNCA accessToken ni tempToken.
-      partialize: (state) => ({user: state.user, refreshExpiry: state.refreshExpiry}),
+      // Persistir access, refresh y user. NO persist temp (vive solo
+      // durante el flujo multi-step).
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        user: state.user,
+      }),
     },
   ),
 )
@@ -176,7 +203,8 @@ export async function apiFetch<T = unknown>(
   const init: RequestInit = {
     ...rest,
     headers,
-    credentials: 'include', // para HttpOnly cookies (refresh token)
+    // SPA cross-origin: tokens viajan en localStorage + Authorization
+    // header. NO se usan cookies (ver decision en encabezado de este doc).
     body: body !== undefined ? JSON.stringify(body) : undefined,
   }
 
@@ -223,16 +251,23 @@ export async function apiFetch<T = unknown>(
 
 async function performRefresh(): Promise<boolean> {
   try {
+    const refreshToken = useAuthStore.getState().refreshToken
+    if (!refreshToken) return false
     const response = await fetch(`${env.NEXT_PUBLIC_API_ENDPOINT}/auth`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      credentials: 'include', // cookie HttpOnly refresh_token
-      body: JSON.stringify({operation: 'session', action: 'refresh', data: {}}),
+      body: JSON.stringify({
+        operation: 'session',
+        action: 'refresh',
+        data: {refresh_token: refreshToken},
+      }),
     })
     if (!response.ok) return false
     const {data} = await response.json()
+    // Backend rota el refresh: el viejo queda blacklisteado en DynamoDB
+    // (family_id detection). Reemplazamos los dos en el store.
     useAuthStore.getState().setAccessToken(data.access_token)
-    // El backend ya rotaria la HttpOnly cookie del refresh
+    useAuthStore.getState().setRefreshToken(data.refresh_token)
     return true
   } catch {
     return false
@@ -265,9 +300,7 @@ import {toast} from 'sonner'
 
 export default function CallbackPage() {
   const router = useRouter()
-  const setAccessToken = useAuthStore((s) => s.setAccessToken)
-  const setUser = useAuthStore((s) => s.setUser)
-  const setRefreshExpiry = useAuthStore((s) => s.setRefreshExpiry)
+  const setTokens = useAuthStore((s) => s.setTokens)
   const ran = useRef(false)
 
   useEffect(() => {
@@ -281,34 +314,33 @@ export default function CallbackPage() {
       return
     }
 
+    // El backend redirige con:
+    //   /callback#access=<JWT>&refresh=<JWT>&user_id=<X>&email=<Y>
     const params = new URLSearchParams(fragment)
     const accessToken = params.get('access')
+    const refreshToken = params.get('refresh')
     const userId = params.get('user_id')
     const email = params.get('email')
-    const refreshExp = params.get('refresh_exp') // epoch seconds
 
-    if (!accessToken) {
-      toast.error('Link sin token')
+    if (!accessToken || !refreshToken || !userId || !email) {
+      toast.error('Link incompleto')
       router.replace('/login')
       return
     }
 
     try {
       // Validar shape del JWT (no firma — eso lo hace el backend)
-      const payload = jwtDecode<{sub: string; email: string; exp: number}>(accessToken)
-      setAccessToken(accessToken)
-      setUser({
-        id: payload.sub,
-        email: payload.email,
+      jwtDecode<{sub: string; exp: number}>(accessToken)
+      setTokens(accessToken, refreshToken, {
+        id: userId,
+        email,
         status: 'active',
         has_password: false,
         mfa_methods: [],
       })
-      if (refreshExp) {
-        setRefreshExpiry(Number.parseInt(refreshExp, 10) * 1000)
-      }
 
-      // CRITICO: limpiar el fragment ANTES de cualquier navegacion
+      // CRITICO: limpiar el fragment ANTES de cualquier navegacion para
+      // que el token no quede en window.location.hash ni en el history.
       window.history.replaceState(null, '', '/dashboard')
       router.replace('/dashboard')
       toast.success('Sesion iniciada')
@@ -316,7 +348,7 @@ export default function CallbackPage() {
       toast.error('Token invalido')
       router.replace('/login')
     }
-  }, [router, setAccessToken, setUser, setRefreshExpiry])
+  }, [router, setTokens])
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -812,23 +844,25 @@ export function useRegisterStart() {
 
 | Amenaza | Mitigacion implementada |
 |---------|--------------------------|
-| XSS roba accessToken | Access in-memory, 15 min TTL. CSP estricta sin `unsafe-inline` (scripts) |
-| XSS roba refreshToken | HttpOnly cookie inaccesible a JS (preferido). Fallback: localStorage + Trusted Types + audit deps |
+| XSS roba accessToken | Access TTL 15 min. CSP estricta sin `unsafe-inline`/`unsafe-eval`. SRI en third-party scripts. Trusted Types (cuando disponible). |
+| XSS roba refreshToken | Misma defensa: CSP + SRI + audit deps. Backup: family_id rotation + reuse detection invalidan el refresh apenas un atacante intenta usarlo en paralelo a la sesion legitima. |
 | Refresh token reuse (token stolen) | Family_id rotation backend. Reuse detection → revoke familia entera |
 | Concurrent refresh race | Mutex client-side: 1 sola call in-flight |
-| CSRF | Bearer auth (no cookies para access). Refresh cookie `SameSite=Strict` |
+| CSRF | NO se usan cookies (Bearer auth en Authorization header). Sin cookies cross-origin = sin vector CSRF. |
 | Phishing (evilginx MitM) | WebAuthn (plan 02) es origin-bound = inmune. JWT/TOTP NO resisten |
 | Magic link leak via Referer | Tokens en fragment hash (NO query). `Referrer-Policy: strict-origin-when-cross-origin` |
-| Multi-tab desync | BroadcastChannel `portfolio_auth` |
+| Multi-tab desync | BroadcastChannel `portfolio_auth` + `storage` event listener fallback |
 | Logout incompleto | Backend blacklist familia + `queryClient.clear()` + Zustand reset + broadcast |
 | Email enumeration (login.start 404 vs 200) | Decision aceptada del backend; mitigado con Turnstile + rate-limit 5/min/IP |
+| Tokens persisten en `localStorage` (vector si script malicioso ejecuta) | Defensa primaria: CSP estricta + SRI. Defensa secundaria: access TTL corto + family detection. Decision documentada en encabezado. |
 
 ## Anti-patrones
 
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
-| Persistir `accessToken` en Zustand `persist()` | XSS = robo total | Solo `user` y `refreshExpiry` en partialize |
-| `localStorage.setItem('jwt', token)` | XSS roba | Zustand in-memory |
+| Persistir `accessToken` con `name` predecible globalmente (ej. `'jwt'`) | Otros scripts del mismo origen pueden leer | Usar `name: 'portfolio-dashboard-auth'` (namespaced) + CSP estricta |
+| Cargar script third-party sin `integrity` (SRI) | Script comprometido lee `localStorage` | SRI obligatorio + allowlist en CSP `script-src` |
+| Intentar setear HttpOnly cookie cross-origin (`SameSite=None; Domain=.the-full-stack.com`) | Vector CSRF en los 6 niches publicos | Tokens en `localStorage` (decision documentada arriba) |
 | 2 fetch concurrent → 2 refresh | Backend revoca familia | Mutex |
 | Magic link `?access=X` | Leak Referer + history | Fragment hash `#access=X` |
 | `useEffect` sin `ran` guard en callback | StrictMode dev ejecuta 2 veces | `useRef(false)` + `if (ran.current) return` |

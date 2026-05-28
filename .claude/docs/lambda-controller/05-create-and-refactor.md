@@ -29,8 +29,10 @@ En todos los archivos, reemplazar:
   campos Pydantic al payload real.
 - Renombrar `services/example_service.py` a
   `services/<operation>_service.py` y escribir la logica de negocio.
-- En cada `controllers/<operation>/<action>.py`, ajustar imports y
-  dejar la clase `<Action>` (= `action.capitalize()`).
+- En cada `controllers/<operation>/<action_snake>.py`, ajustar imports
+  y dejar la clase `<ActionPascal>` (PascalCase de cada segmento del
+  `action` kebab-case; `create` -> `Create`, `verify-magic-link` ->
+  `VerifyMagicLink`).
 
 ### 4. Registrar la operacion
 
@@ -141,7 +143,9 @@ Si el Lambda no puede reescribirse de una sola vez:
 - [ ] Cada operacion tiene controller + service + modelo.
 - [ ] La logica de negocio vive en `services/`, no en controllers.
 - [ ] Toda operacion esta registrada en `OPERATIONS`.
-- [ ] Las clases controller se llaman `action.capitalize()`.
+- [ ] Los archivos controller se llaman `action_snake.py` (kebab `-`
+      del wire -> `_`) y las clases PascalCase de cada segmento
+      (`create` -> `Create`, `verify-magic-link` -> `VerifyMagicLink`).
 - [ ] `execute()` y las fases devuelven `{is_valid, data, code}`.
 - [ ] `python -m compileall -q core` pasa.
 - [ ] `pytest tests/unit` pasa; cada accion tiene tests.

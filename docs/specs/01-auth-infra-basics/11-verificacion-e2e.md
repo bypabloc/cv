@@ -83,7 +83,7 @@ python devtools/run.py serverless tests --type=coverage --lambda=auth_email_work
 # Los eventos de events/ deben dar resultado esperado
 python devtools/run.py serverless run --stage=local --lambda=auth \
   --event=events/register-start.json
-# Esperado: 201 con {temp_token, user_id, expires_in: 300}
+# Esperado: 200 con {temp_token, user_id, expires_in: 300}
 
 python devtools/run.py serverless run --stage=local --lambda=auth \
   --event=events/register-verify-code.json

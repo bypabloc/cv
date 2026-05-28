@@ -188,10 +188,6 @@ class AppConfig(Settings):
         return _resolve_table_name_from_ssm('SSM_JWT_BLACKLIST_TABLE_PATH')
 
     @cached_property
-    def auth_codes_table(self) -> str:
-        return _resolve_table_name_from_ssm('SSM_AUTH_CODES_TABLE_PATH')
-
-    @cached_property
     def auth_email_queue_url(self) -> str:
         return _resolve_from_ssm('SSM_AUTH_EMAIL_QUEUE_URL_PATH')
 
@@ -243,7 +239,16 @@ EVENT_MODEL = build_event_model({
 `models/register.py`:
 
 ```python
+from typing import Literal
+
 from shared.core import BaseModel, EmailStr, Field, model_validator
+
+
+# Lista cerrada: los 6 niches del portfolio. Cualquier otro valor en
+# el payload del cliente -> ValidationError 400. Esto evita que un
+# atacante meta strings arbitrarios (incluyendo HTML/script) en el
+# audit log o templates de email.
+Niche = Literal['generic', 'hub', 'fintech', 'architect', 'leader', 'vibe']
 
 
 class _Meta(BaseModel):
@@ -258,7 +263,7 @@ class RegisterStartIn(BaseModel):
     """POST /auth operation=register action=start."""
     email: EmailStr
     cf_turnstile_response: str = Field(min_length=1)
-    niche: str | None = Field(default=None, max_length=32)
+    niche: Niche | None = None
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
 
     model_config = {'populate_by_name': True}
@@ -450,72 +455,110 @@ else:
     return {'temp_token': new_temp, 'expires_in': 300, ...}
 ```
 
-## Flujo de magic-link (GET)
+## Flujo de magic-link (GET → 302 redirect al dashboard)
 
 El magic-link es una URL que el user clickea desde su email. API
 Gateway recibe `GET /auth?operation=register&action=verify-magic-link&token=<X>`.
-La Lambda devuelve un HTML 200 inline (no redirect):
+La Lambda **responde con HTTP 302** y un header `Location:` que apunta
+al dashboard con los tokens en el **fragment hash**.
 
-```html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>Verificando tu correo...</title>
-  <style>body{font-family:system-ui;padding:2rem;text-align:center}</style>
-</head>
-<body>
-  <h1>Correo verificado</h1>
-  <p>Te estamos redirigiendo a tu portfolio...</p>
-  <script>
-    const data = /* JSON con access/refresh tokens, inyectado por la lambda */;
-    localStorage.setItem('access_token', data.access_token);
-    localStorage.setItem('refresh_token', data.refresh_token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    window.location.replace(
-      'https://hub.portfolio.{env}.the-full-stack.com/dashboard'
-    );
-  </script>
-  <noscript>
-    <p>Tu navegador no soporta JS. Continua manualmente:</p>
-    <a href="https://hub.portfolio.{env}.the-full-stack.com/login">Continuar</a>
-  </noscript>
-</body>
-</html>
+```text
+HTTP/1.1 302 Found
+Location: https://admin.portfolio.{env}.the-full-stack.com/callback#access=<JWT>&refresh=<JWT>&user_id=<X>&email=<Y>
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
 ```
 
-> NOTA seguridad: inyectar tokens via `localStorage` en HTML servido
-> por API Gateway acepta el tradeoff de NO usar HttpOnly cookies (decidido
-> en la fase de preguntas — el portfolio es API-first multi-subdomain).
-> Mitigaciones: CSP `default-src 'self'` en el HTML, tokens cortos
-> (access 15min), refresh con rotation + family detection.
+Por que **fragment hash** y NO query string:
 
-El handler de este GET es un caso especial: devuelve `Content-Type:
-text/html` en vez de `application/json`. Para soportarlo, el controller
-`register.verify_magic_link.VerifyMagicLink` setea un flag en el
-DispatchResult que `http_handler` interpreta como "envuelve esto en
-HTML". Implementacion: agregar un `Literal['json'|'html']` opcional al
-DispatchResult o usar un nuevo campo `content_type` en el data.
++ El fragment (`#...`) NUNCA se envia al servidor en el siguiente
+  request — vive solo en el browser.
++ NO aparece en logs de CloudFront / CloudWatch / nginx / proxies
+  intermedios.
++ NO se incluye en `Referer` headers de subsequent navigations.
++ El dashboard lee `window.location.hash` desde JS, decodifica los
+  tokens, los guarda en `localStorage` via Zustand, limpia el hash con
+  `history.replaceState`, y redirige a `/dashboard`.
 
-> **Refinamiento**: por simplicidad, podemos publicar el magic-link
-> apuntando a un endpoint POST y servir SOLO JSON. La pagina HTML
-> intermedia la genera apps/hub en plan futuro. Esto evita complicar el
-> http_handler. **Decision: el magic-link apunta a `GET` y la Lambda
-> devuelve HTML inline. El http_handler se extiende con soporte HTML en
-> esta fase.**
+Ventajas vs servir HTML inline desde la Lambda:
+
++ **El handler `http_handler` NO se extiende**. Sigue devolviendo
+  JSON-only para el resto de actions. El 302 lo expresa el controller
+  retornando un `DispatchResult` con el header `Location` populated
+  (patron que `http_handler` ya soporta — solo agrega el header al
+  response final, sin tocar `content_type`).
++ Cero HTML servido por API Gateway: si el dashboard tiene XSS, el
+  blast radius esta acotado al dashboard (no a la API).
++ El callback del dashboard se reusa para el flujo de login y
+  password-reset (mismo handler `/callback` del dashboard).
+
+Implementacion del controller (`register.verify_magic_link.VerifyMagicLink`):
+
+```python
+def execute(self):
+    # ... verificar token, marcar consumido, emitir JWT ...
+    callback_url = (
+        f"https://admin.portfolio.{stage_to_env_label(app_config.stage)}"
+        f".the-full-stack.com/callback"
+        f"#access={access_token}&refresh={refresh_token}"
+        f"&user_id={user.id}&email={user.email}"
+    )
+    return {
+        'is_valid': True,
+        'code': 0,
+        'data': {},
+        'redirect': {
+            'status': 302,
+            'location': callback_url,
+            'cache_control': 'no-store, no-cache, must-revalidate',
+        },
+    }
+```
+
+`http_handler` interpreta el campo opcional `redirect` del
+DispatchResult y, en lugar de devolver el JSON estandar, construye:
+
+```python
+{
+    'statusCode': dispatch.redirect['status'],
+    'headers': {
+        'Location': dispatch.redirect['location'],
+        'Cache-Control': dispatch.redirect['cache_control'],
+        # CORS sigue aplicando segun cors_origin del handler
+    },
+    'body': '',
+}
+```
+
+Este cambio es **aditivo** (campo opcional `redirect`) y NO rompe el
+contrato JSON existente del resto de actions. Se documenta en
+`shared.lambda_kit.http_handler` y se cubre con un test unit nuevo
+(`test_http_handler_redirect.py` en `shared/tests/unit/shared/lambda_kit/`).
+
+### Por que el redirect apunta a admin (no a un niche)
+
+Antes de plan auth no habia "dashboard" — los usuarios del portfolio
+son visitantes anonimos de las 6 apps publicas. El **dashboard
+(`admin.portfolio.{env}.the-full-stack.com`)** es el unico contexto
+autenticado del proyecto (admin de Pablo, futuras areas privadas).
+Los magic-links siempre llevan ahi.
+
+Si un futuro plan agrega areas autenticadas en algun niche (ej.
+`fintech.portfolio.../app/dashboard`), se parametrizara via `niche`
+en el payload del controller — pero ese cambio NO entra en plan 01.
 
 ## Que toca cada controller (matriz resumen)
 
 | Controller | Neon (lectura/escritura) | DDB (lectura/escritura) | SQS publish | JWT issue/verify/blacklist |
 |------------|--------------------------|-------------------------|-------------|----------------------------|
-| register.start | R/W auth_users, W auth_email_codes/links, W audit | W auth-codes | 2 (magic-link + code) | issue temp |
-| register.verify-magic-link | R/W links, R/W user, W audit | R/W blacklist (temp), R auth-codes | 0 | verify temp, issue access+refresh, blacklist temp |
-| register.verify-code | R/W codes, R/W user, W audit | R/W blacklist (temp), R/W auth-codes | 0 | idem |
-| login.start | R user, W audit, W codes/links | W auth-codes | 0..2 | issue temp (si user existe) |
+| register.start | R/W auth_users, W auth_email_codes/links, W audit | (ninguna) | 2 (magic-link + code) | issue temp |
+| register.verify-magic-link | R/W links, R/W user, W audit | R/W blacklist (temp) | 0 | verify temp, issue access+refresh, blacklist temp |
+| register.verify-code | R/W codes, R/W user, W audit | R/W blacklist (temp) | 0 | idem |
+| login.start | R user, W audit, W codes/links | (ninguna) | 0..2 | issue temp (si user existe) |
 | login.verify-magic-link | mismo que register | mismo | 0 | idem |
 | login.verify-code | mismo | mismo | 0 | idem |
 | verify.set-password | R user, W auth_credentials, W audit | R/W blacklist (temp) | 0 | verify temp, issue temp nuevo |
-| verify.resend-code | R/W codes/links, W audit | W auth-codes | 1-2 | verify temp, issue temp nuevo |
+| verify.resend-code | R/W codes/links, W audit | (ninguna) | 1-2 | verify temp, issue temp nuevo |
 | session.refresh | R user, W audit | R/W blacklist | 0 | verify refresh, issue access+refresh rotado |
 | session.logout | W audit | W blacklist (jti + family_id) | 0 | verify access, blacklist access+refresh |
 

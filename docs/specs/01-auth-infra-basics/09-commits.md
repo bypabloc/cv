@@ -161,14 +161,14 @@ Rama: `feature/auth-infra-basics-3-schema-neon` desde `dev` (post PR 2).
 
 ---
 
-### PR 4 — `feat(resources): DynamoDB jwt-blacklist + auth-codes + SQS auth-email + SSM jwt-secret`
+### PR 4 — `feat(resources): DynamoDB jwt-blacklist + SQS auth-email + SSM jwt-secret`
 
 Rama: `feature/auth-infra-basics-4-resources` desde `dev` (post PR 3).
 
-#### Commit 4.1 — `feat(resources/dynamodb): jwt-blacklist y auth-codes`
+#### Commit 4.1 — `feat(resources/dynamodb): jwt-blacklist con GSI by_family_id`
 
-- Agrega `resources/dynamodb/jwt-blacklist.yaml` (con GSI by_family_id)
-  y `resources/dynamodb/auth-codes.yaml`.
+- Agrega `resources/dynamodb/jwt-blacklist.yaml` (con GSI by_family_id
+  KEYS_ONLY, TTL `exp`).
 - **Verificacion incremental**: `serverless validate-catalog --stage=dev`.
 
 #### Commit 4.2 — `feat(resources/sqs): auth-email-queue + DLQ`

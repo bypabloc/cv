@@ -67,15 +67,16 @@ Estado:
   - `portfolio-jwt-blacklist-${stage}`: PK `jti`, columnas
     `revoked_at`, `reason`, `user_id`, TTL `exp`. Cubre temp + access +
     refresh.
-  - `portfolio-auth-codes-${stage}`: PK `pk` (formato
-    `<kind>#<user_id>` p. ej. `register#01H...`), columnas
-    `code_hash`, `attempts`, `created_at`, TTL `expires_at`. Espejo
-    rapido del row de Neon para chequeo O(1) sin tocar Neon en cada
-    intento. (Se inserta en paralelo; la fuente de verdad es Neon.)
 
-> Nota: mantenemos los 2 stores (Neon + DynamoDB) deliberadamente. Neon
-> guarda la auditoria + multi-device + queries relacionales; DynamoDB
-> da lookup O(1) en cada request HTTP sin pagar latencia de Neon.
+> Nota: los codes (`auth_email_codes`) viven SOLO en Neon. Plan
+> original consideraba un espejo en DynamoDB para lookup O(1); se
+> descarto en revision: a escala portfolio (~10-50 logins/dia) la
+> latencia de Neon Pooler us-east-1 (~10-30ms) es invisible y mantener
+> consistencia entre 2 stores agrega complejidad (¿que pasa si Neon OK
+> + DDB falla?) que no compensa el ahorro. La unica tabla DynamoDB
+> del dominio auth es `jwt-blacklist` (que SI necesita O(1) por cada
+> request autenticada). Si en produccion la latencia molesta, se
+> agrega DDB en plan posterior con datos reales.
 
 - **JWT HS256** firmado con secret leido de SSM en cold start de cada
   Lambda. 3 tipos:
@@ -157,7 +158,14 @@ niches deben poder consumirlo desde cualquier subdominio.
   (a) crea row `auth_users` con status=`pending`,
   (b) genera magic-link + code de 8 chars,
   (c) publica 1 mensaje SQS para email magic-link + 1 para email code,
-  (d) devuelve `201 {temp_token, user_id, expires_in: 300}`.
+  (d) devuelve `200 {temp_token, user_id, expires_in: 300}`.
+
+  > Nota: el HTTP status es `200` (no `201`) — uniforme para todo el
+  > lambda `auth` via `http_handler(success_status=200)`. AC-1
+  > anteriormente decia `201`; se cambio a `200` para no requerir
+  > override per-action del handler. La semantica de "registro
+  > iniciado pero no completo" se expresa en el body (`temp_token`
+  > significa que falta verificar).
 
 - **AC-2**: Given `register.start` con email ya `active` y mismo Turnstile,
   When se procesa, Then devuelve `409 {error: 'EMAIL_ALREADY_REGISTERED'}`
@@ -227,3 +235,47 @@ niches deben poder consumirlo desde cualquier subdominio.
   un branch Neon de prueba, When se ejecuta `downgrade -1` y luego
   `upgrade head`, Then el schema vuelve al estado original y vuelve a
   crear las 5 tablas `auth_*` sin errores.
+
+- **AC-16**: Given un POST `verify-magic-link` con un token cuyo
+  `consumed_at IS NOT NULL` en Neon, Then devuelve `400 {error:
+  'LINK_CONSUMED'}` y NO emite JWTs.
+
+- **AC-17**: Given un POST `verify-magic-link` con un token cuyo
+  `expires_at < now()`, Then devuelve `400 {error: 'LINK_EXPIRED'}` y
+  NO emite JWTs.
+
+- **AC-18**: Given un POST `verify-code` con un `temp_token` JWT cuyo
+  `exp < now`, Then devuelve `401 {error: 'TEMP_TOKEN_EXPIRED'}` antes
+  de tocar Neon o DDB.
+
+- **AC-19**: Given un POST `register.start` con email cuyo
+  `auth_users.status = 'pending'` (registro previo no verificado),
+  When Turnstile es valido, Then re-emite un magic-link y code
+  nuevos (idempotencia), devuelve `200 {temp_token, user_id,
+  expires_in: 300}` con el mismo `user_id`. Los magic links + codes
+  anteriores que no esten consumidos se marcan como `consumed_at = now`
+  para invalidarlos.
+
+- **AC-20**: Given un POST `register.start` o `login.start` con
+  email cuyo `auth_users.status = 'disabled'` o `'locked'`, Then
+  devuelve `404 {error: 'EMAIL_NOT_FOUND', suggest_register: false}`
+  para no revelar el status (anti-enumeration). Audit log registra el
+  intento con `error_code='ACCOUNT_DISABLED'` o `'ACCOUNT_LOCKED'`.
+
+- **AC-21**: Given un POST `verify.resend-code` con menos de 60 segs
+  desde la ultima emision para ese user/kind, Then devuelve `429
+  {error: 'RESEND_THROTTLED', retry_after: <segs>}`.
+
+- **AC-22**: Given un POST `login.verify-magic-link` o `verify-code`
+  para un user `active`, Then ademas de emitir access+refresh
+  actualiza `auth_users.last_login_at = now()` y resetea
+  `failed_attempts = 0`.
+
+- **AC-23**: Given un POST `session.logout` con un access JWT cuyo
+  `jti` YA esta en la blacklist (logout idempotente), Then devuelve
+  `204` sin error (idempotencia).
+
+- **AC-24**: Given un controller que recibe `niche` fuera de la lista
+  cerrada `['generic', 'hub', 'fintech', 'architect', 'leader', 'vibe']`,
+  Then devuelve `400 ValidationError` antes de tocar la logica de
+  negocio (Pydantic Literal lo rechaza).

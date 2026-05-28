@@ -28,8 +28,13 @@ legolambda-stacks).
 - **SIEMPRE** el evento de entrada tiene la forma
   `{operation, action, data}` — `operation` el dominio, `action` el
   verbo, `data` el payload (objeto).
-- **SIEMPRE** el nombre de la clase controller es `action.capitalize()`
-  (`create` -> `Create`, `check` -> `Check`).
+- **SIEMPRE** el archivo del controller es la forma snake_case de
+  `action` (`create` -> `create.py`, `verify-magic-link` ->
+  `verify_magic_link.py`).
+- **SIEMPRE** el nombre de la clase controller es la forma PascalCase
+  de `action` — capitaliza la primera letra de cada segmento separado
+  por guion (`create` -> `Create`, `verify-magic-link` ->
+  `VerifyMagicLink`, `set-password` -> `SetPassword`).
 - **SIEMPRE** todo controller hereda de `BaseController` e implementa
   `execute()`.
 - **SIEMPRE** la logica de negocio vive en `core/services/`, NUNCA en

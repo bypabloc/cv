@@ -98,7 +98,6 @@ T1 plan                                  (raiz, sin codigo)
 
 - **Archivos**:
   - `serverless/lambda/resources/dynamodb/jwt-blacklist.yaml`
-  - `serverless/lambda/resources/dynamodb/auth-codes.yaml`
   - `serverless/lambda/resources/sqs/auth-email-queue.yaml`
   - `serverless/lambda/resources/sqs/auth-email-dlq.yaml`
   - `serverless/lambda/resources/secrets/jwt-secret.yaml`
@@ -108,11 +107,10 @@ T1 plan                                  (raiz, sin codigo)
 - **Verify**:
   `serverless validate-catalog --stage=dev`
   `serverless provision-infra --stage=dev --aws-profile=tfs-dev`
-  `serverless list-resources --stage=dev` muestra los 5 nuevos.
-- **Done**: las 2 DDB tables + GSI + SQS + DLQ + SSM publicados en
-  AWS dev. SSM paths
-  `/portfolio/dev/dynamodb/{jwt-blacklist,auth-codes}/name`
-  resolvibles. Cola DLQ asociada con `redrive_policy`.
+  `serverless list-resources --stage=dev` muestra los 4 nuevos.
+- **Done**: DDB table + GSI by_family_id + SQS + DLQ + SSM publicados en
+  AWS dev. SSM path `/portfolio/dev/dynamodb/jwt-blacklist/name`
+  resolvible. Cola DLQ asociada con `redrive_policy`.
 
 ### T6: Lambda `auth_email_worker`
 

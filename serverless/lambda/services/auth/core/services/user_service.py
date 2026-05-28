@@ -27,6 +27,7 @@ from shared.db.repositories.auth import (
     lock_user,
     mark_user_active,
     reset_failed_attempts,
+    set_password_hash,
     update_last_login,
 )
 
@@ -87,6 +88,28 @@ class UserService:
         with db_session() as session:
             session.add(user)
             lock_user(session, user, until=until)
+
+    def set_password_hash(
+        self,
+        *,
+        user_id: str,
+        password_hash: str,
+        algo: str = 'argon2id',
+    ) -> None:
+        """Upsert del password_hash del user (AC-4).
+
+        Delega al repository `shared.db.repositories.auth.set_password_hash`
+        que upserta el row en `auth_credentials` (1-to-0..1 con `auth_users`).
+        Lo invoca el controller `verify.set-password` tras validar el
+        rolling temp JWT del flujo y antes de emitir access+refresh.
+        """
+        with db_session() as session:
+            set_password_hash(
+                session,
+                user_id=user_id,
+                password_hash=password_hash,
+                algo=algo,
+            )
 
     def update_last_login(self, user: AuthUser) -> None:
         """Setea last_login_at=now + resetea failed_attempts (AC-22).

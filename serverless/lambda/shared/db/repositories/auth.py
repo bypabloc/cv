@@ -36,6 +36,7 @@ __all__ = [
     'consume_email_code',
     'consume_magic_link',
     'create_pending_user',
+    'get_last_email_code',
     'get_magic_link_state',
     'get_user_by_email',
     'increment_failed_attempts',
@@ -201,6 +202,30 @@ def insert_email_code(
     session.add(code)
     session.flush()
     return code
+
+
+def get_last_email_code(
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthCodeKind,
+) -> AuthEmailCode | None:
+    """Devuelve el ultimo `auth_email_codes` emitido para (user, kind).
+
+    NO filtra por `consumed_at`: lo usa el throttle de
+    `verify.resend-code` que mide `now - created_at` del ultimo code
+    (consumed o no) para evitar abuso del endpoint (AC-21).
+    """
+    stmt = (
+        select(AuthEmailCode)
+        .where(
+            AuthEmailCode.user_id == user_id,
+            AuthEmailCode.kind == kind,
+        )
+        .order_by(AuthEmailCode.created_at.desc())
+        .limit(1)
+    )
+    return session.execute(stmt).scalar_one_or_none()
 
 
 def consume_email_code(

@@ -99,9 +99,21 @@ class Refresh(BaseController):
                 'data': {'error': 'TOKEN_INVALID'},
             }
 
-        # Reuso detectado: el refresh ya fue rotado (su jti esta en la
-        # blacklist). Revoca TODA la familia y rechaza (AC-8).
-        if jwt_svc.is_blacklisted(jti=claims.jti):
+        # Reuso detectado en 2 casos (AC-8 — "revocar TODA la familia"):
+        #  a) el jti de ESTE refresh ya esta blacklisted (fue rotado y se
+        #     re-presenta): reuso clasico de un token viejo.
+        #  b) la FAMILIA ya fue revocada por un reuso previo: el centinela
+        #     (jti == family_id, escrito por revoke_family con reason='reuse')
+        #     esta presente. Sin este chequeo, el refresh AUN VIGENTE de una
+        #     familia ya comprometida sobreviviria a la revocacion — el gap
+        #     que rompe la garantia de AC-8. El centinela usa jti==family_id,
+        #     asi que un GetItem por family_id lo detecta (no hay colision:
+        #     jti y family_id son uuidv7 independientes en cada emision).
+        family_revoked = (
+            claims.family_id is not None
+            and jwt_svc.is_blacklisted(jti=claims.family_id)
+        )
+        if jwt_svc.is_blacklisted(jti=claims.jti) or family_revoked:
             if claims.family_id is not None:
                 jwt_svc.revoke_family(
                     family_id=claims.family_id,

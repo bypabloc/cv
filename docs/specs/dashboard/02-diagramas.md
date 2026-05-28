@@ -96,8 +96,8 @@ Las 6 apps Astro: SIN CAMBIOS (continuan en sus subdominios)
     - POST /auth?operation=register&action=verify-code body: {code, temp_token}
     - Backend valida hash + ttl + attempts < 5
     - Response 200 {access_token, refresh_token, expires_in, user}
-    - Frontend: Zustand.setTokens(access, refresh, user), redirect /dashboard
-      (tokens persistidos en localStorage via Zustand persist)
+    - Frontend: Zustand.setTokens(access, refresh, user, refreshExpiry), redirect /dashboard
+      (accessToken queda en memoria; refreshToken + refreshExpiry + user persistidos en localStorage)
 ```
 
 ## Flujo de auth: login con magic link / code
@@ -215,18 +215,30 @@ Las 6 apps Astro: SIN CAMBIOS (continuan en sus subdominios)
 ```text
 ┌────────────────────────────────────────────────────────────────┐
 │                       Zustand auth store                       │
+│                                                                │
+│  EN MEMORIA (NO persist) — rotan / expiran:                    │
 │  ┌──────────────────────┐         ┌──────────────────────┐     │
-│  │  accessToken (mem)   │         │  tempToken (mem)     │     │
-│  │  null | JWT string   │         │  null | JWT string   │     │
+│  │  accessToken         │         │  tempToken           │     │
+│  │  null | JWT (15 min) │         │  null | JWT (5 min)  │     │
 │  └──────────────────────┘         └──────────────────────┘     │
 │                                                                │
+│  PERSISTIDO en localStorage (partialize):                      │
 │  ┌──────────────────────┐         ┌──────────────────────┐     │
-│  │  user (persist)      │         │  refreshExpiry       │     │
-│  │  {id, email, status} │         │  null | epoch ms     │     │
+│  │  refreshToken        │         │  refreshExpiry       │     │
+│  │  null | JWT (rot.)   │         │  null | epoch ms     │     │
 │  └──────────────────────┘         └──────────────────────┘     │
+│  ┌──────────────────────┐                                      │
+│  │  user                │                                      │
+│  │  {id, email, status} │                                      │
+│  └──────────────────────┘                                      │
 │                                                                │
-│  Actions: setAccessToken, setUser, setTempToken, reset         │
+│  Actions: setTokens, setAccessToken, setUser, setTempToken,    │
+│           setRefreshExpiry, clearTokens, reset                 │
 │  Derived: isAuthenticated(), isAccessExpired()                 │
+│                                                                │
+│  Bootstrap on reload: accessToken arranca null. useAuthTimer   │
+│  detecta refreshToken + refreshExpiry > now -> dispara         │
+│  /session/refresh para hidratar accessToken en memoria.        │
 └────────────────────────────────────────────────────────────────┘
                        ▲              ▲
                        |              |

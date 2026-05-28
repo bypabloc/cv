@@ -16,10 +16,10 @@ permanente). Aqui solo el plan ejecutable: que archivo, que verifica.
 | `dashboard/package.json` | name `@portfolio/dashboard`, engines node>=24, scripts dev/build/lint/typecheck/test, deps de la seccion 01-stack del KT | `pnpm install` sin errores |
 | `dashboard/.gitignore` | `.next`, `out`, `node_modules`, `*.tsbuildinfo`, `.env*.local`, `coverage` | `git status` no muestra basura |
 | `dashboard/next.config.ts` | `output: 'export'`, `images.unoptimized: true`, `trailingSlash: true`, `poweredByHeader: false` | `pnpm exec next build` arranca |
-| `dashboard/tsconfig.json` | strict + `noUncheckedIndexedAccess` + paths `@/*` apuntando a `./src/*` | `pnpm typecheck` sin errores |
+| `dashboard/tsconfig.json` | strict + `noUncheckedIndexedAccess` + paths `@/*` apuntando a `./src/*` + paths `@tests/*` apuntando a `./tests/*` (necesario para que `await import('@tests/mocks/browser')` resuelva en build/tests; `tests/` esta fuera de `src/`) | `pnpm typecheck` sin errores |
 | `dashboard/biome.json` | `extends: ["../biome.json"]` + override `src/components/ui/**` | `pnpm lint` sin errores |
 | `dashboard/postcss.config.mjs` | `@tailwindcss/postcss` plugin | (validado en build) |
-| `dashboard/vitest.config.ts` | happy-dom + coverage + alias `@` | `pnpm test` corre sin archivos |
+| `dashboard/vitest.config.ts` | happy-dom + coverage + alias `@` (= `./src`) y `@tests` (= `./tests`) en `resolve.alias`, espejando los paths del `tsconfig.json` | `pnpm test` corre sin archivos |
 | `dashboard/README.md` | corto, link a knowledge tree + plan | (revision visual) |
 | `pnpm-workspace.yaml` | agregar `'dashboard'` al array `packages` | `pnpm install` recoge el package |
 

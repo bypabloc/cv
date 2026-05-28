@@ -28,7 +28,7 @@
 | UI: shadcn + Tailwind v4 + theming + componentes ui/ | [05-ui-components.md](05-ui-components.md) |
 | Auth feature: store + hooks + magic link + MSW handlers | [06-auth-feature.md](06-auth-feature.md) |
 | Dashboard features: analytics + sessions + events + ... | [07-dashboard-features.md](07-dashboard-features.md) |
-| Tests (unit + E2E) + cobertura | [08-tests.md](08-tests.md) |
+| Descomposicion para paralelizacion + tests (unit + E2E) + cobertura | [08-descomposicion.md](08-descomposicion.md) |
 | Deploy: devtools + GH Actions + Cloudflare Pages | [09-commits.md](09-commits.md) (incluye fase de deploy) |
 | Paralelizacion con git worktrees | [10-paralelizacion-worktrees.md](10-paralelizacion-worktrees.md) |
 | Verificacion E2E iterativa (fase final, gate del PR) | [11-verificacion-e2e.md](11-verificacion-e2e.md) |
@@ -123,7 +123,17 @@ seccion "Decisiones no-reabribles"). Resumen:
 - **SIEMPRE** Hybrid Atomic: `components/ui/` (genericos, 2+ features
   uses) vs `features/<X>/components/` (especificos).
 - **SIEMPRE** rama de trabajo `feature/dashboard-frontend` (NUNCA
-  trabajar en `dev`/`stage`/`main` directo).
+  trabajar en `dev`/`stage`/`main` directo). Bootstrap explicito (ANTES
+  del primer commit del plan):
+
+  ```bash
+  git checkout dev && git pull origin dev
+  git checkout -b feature/dashboard-frontend
+  ```
+
+  Si la rama actual al iniciar el plan no es `feature/dashboard-frontend`,
+  ese par de comandos es la primera accion del implementador. NUNCA
+  asumir que la rama actual coincide.
 - **SIEMPRE** verificar incrementalmente por commit (lint + typecheck +
   unit del scope).
 - **SIEMPRE** push + PR SOLO con la bateria de la seccion 11 completa
@@ -143,7 +153,7 @@ seccion "Decisiones no-reabribles"). Resumen:
 | Build estatico | `pnpm --filter @portfolio/dashboard build` |
 | Preview local | `pnpm --filter @portfolio/dashboard preview` |
 | Dev con MSW | `NEXT_PUBLIC_USE_MSW=true pnpm --filter @portfolio/dashboard dev` |
-| Devtools cloudflare config | `python devtools/run.py cloudflare_setup status --env=dev` |
+| Devtools cloudflare config | `python devtools/run.py cloudflare_setup projects --env=dev --dry-run` |
 | Devtools sync_secrets | `python devtools/run.py sync_secrets --env=dev --category=client --dry-run` |
 | E2E Playwright (cuando stack arriba) | `python devtools/run.py test_runner --module=feature --type=feature --env=local` |
 | CI local | `act -W .github/workflows/ci.yml` (skill github-actions) |

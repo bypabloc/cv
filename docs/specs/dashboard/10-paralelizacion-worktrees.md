@@ -35,17 +35,17 @@ worktree-safe (file exclusivity garantizada).
 | Worktree | Fase | Archivos exclusivos | Verifica antes de push |
 |----------|------|---------------------|------------------------|
 | `wt-analytics` | D.1 (analytics) | `dashboard/src/features/analytics/**` + `dashboard/src/app/(dashboard)/{page,analytics/page}.tsx` + tests mirror | `pnpm test:coverage tests/unit/features/analytics` |
-| `wt-sessions` | D.2 (sessions) | `dashboard/src/features/sessions/**` + `dashboard/src/app/(dashboard)/sessions/**` + tests | `pnpm test:coverage tests/unit/features/sessions` |
-| `wt-events` | D.3 (events) | `dashboard/src/features/events/**` + `dashboard/src/app/(dashboard)/events/page.tsx` + tests | `pnpm test:coverage tests/unit/features/events` |
+| `wt-sessions-events` | D.2 + D.3 (sessions + events) | `dashboard/src/features/{sessions,events}/**` + `dashboard/src/app/(dashboard)/{sessions,events}/**` + tests | `pnpm test:coverage tests/unit/features/{sessions,events}` |
 | `wt-visits-geo` | D.4 (visits + geo) | `dashboard/src/features/{visits,geo}/**` + `dashboard/src/app/(dashboard)/{visits,geo}/page.tsx` + tests | `pnpm test:coverage tests/unit/features/{visits,geo}` |
 | `wt-devices-funnel` | D.5 (devices + funnel) | `dashboard/src/features/{devices,funnel}/**` + `dashboard/src/app/(dashboard)/{devices,funnel}/page.tsx` + tests | `pnpm test:coverage tests/unit/features/{devices,funnel}` |
-| `wt-contacts` | D.6 (contacts) | `dashboard/src/features/contacts/**` + `dashboard/src/app/(dashboard)/contacts/page.tsx` + tests | `pnpm test:coverage tests/unit/features/contacts` |
-| `wt-settings` | D.7 (settings) | `dashboard/src/features/settings/**` + `dashboard/src/app/(dashboard)/settings/**` + tests | `pnpm test:coverage tests/unit/features/settings` |
+| `wt-contacts-settings` | D.6 + D.7 (contacts + settings) | `dashboard/src/features/{contacts,settings}/**` + `dashboard/src/app/(dashboard)/{contacts,settings}/**` + tests | `pnpm test:coverage tests/unit/features/{contacts,settings}` |
 | `wt-devtools` | E.1 + E.2 | `devtools/cloudflare_setup/config.py` + `devtools/sync_secrets/catalog.py` + `docker/env/client/.example` | `python devtools/run.py {cloudflare_setup,sync_secrets} ... --dry-run` |
 
-Total: 8 worktrees posibles. **Limite recomendado: 5-7 concurrentes**
-(cognitive overhead + memoria de maquina). Si tenes 8GB RAM o menos,
-4-5 concurrent worktrees.
+Total: **6 worktrees** (dentro del limite 5-7 recomendado por
+`.claude/rules/plan-format.md` capitulo 1). Si tenes 8GB RAM o menos,
+limitar a 3-4 concurrentes. Cada worktree consolida features
+cercanas para mantener el conteo bajo el limite (D.2 + D.3 comparten
+patrones de Table/Drawer; D.6 + D.7 son ambas settings/admin).
 
 ## Lo que NO se paraleliza
 
@@ -63,13 +63,18 @@ Total: 8 worktrees posibles. **Limite recomendado: 5-7 concurrentes**
 git status                              # working tree clean
 git pull origin feature/dashboard-frontend  # sync
 
-# Crear worktree (otra carpeta apuntando a la misma branch)
-git worktree add ../portfolio-wt-analytics feature/dashboard-frontend
+# Crear worktree con SU PROPIA branch (clave: el flag -b crea una branch
+# nueva partiendo de feature/dashboard-frontend). NUNCA reutilizar
+# feature/dashboard-frontend como branch del worktree secundario — esa
+# branch ya esta checked out en el worktree principal y git lo rechaza
+# con "fatal: 'feature/dashboard-frontend' is already checked out"
+git worktree add -b feature/dashboard-wt-analytics \
+  ../portfolio-wt-analytics feature/dashboard-frontend
 cd ../portfolio-wt-analytics
 
-# Setup en el worktree
-pnpm install                            # comparte node_modules con el principal via .pnpm-store? NO, cada worktree tiene su node_modules
-# Mejor: para velocidad, usar symlink al pnpm store global
+# Setup en el worktree (cada worktree tiene su node_modules; pnpm store
+# global ya reduce el duplicado via hardlinks)
+pnpm install
 
 # Trabajar D.1 (analytics):
 # ... crear archivos, commits, tests ...
@@ -79,16 +84,23 @@ pnpm --filter @portfolio/dashboard test:coverage tests/unit/features/analytics
 pnpm --filter @portfolio/dashboard typecheck
 pnpm --filter @portfolio/dashboard lint
 
-# Commit
+# Commit en la branch del worktree
 git add dashboard/src/features/analytics dashboard/src/app/\(dashboard\)/page.tsx dashboard/src/app/\(dashboard\)/analytics dashboard/tests/unit/features/analytics
 git commit -m "feat(dashboard,analytics): 7 hooks + 8 componentes ..."
 
-# Push a la misma branch
+# Push de la branch del worktree
+git push -u origin feature/dashboard-wt-analytics
+
+# Integrar a feature/dashboard-frontend desde el worktree principal:
+cd ../portfolio
+git checkout feature/dashboard-frontend
+git merge --no-ff feature/dashboard-wt-analytics  # merge commit, sin rebase
 git push origin feature/dashboard-frontend
 
 # Limpiar al terminar
-cd ../portfolio  # volver al worktree principal
 git worktree remove ../portfolio-wt-analytics
+git branch -d feature/dashboard-wt-analytics       # ya mergeada
+git push origin --delete feature/dashboard-wt-analytics
 ```
 
 ## Coordinacion entre worktrees

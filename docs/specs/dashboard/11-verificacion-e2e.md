@@ -23,28 +23,31 @@ NO se marca completa con un comando fallando, un test rojo o coverage
 ### A.1 — Verifica que NO hay tests viejos huerfanos
 
 ```bash
-# Listar tests que referencien archivos eliminados o renombrados
-# (en este plan no hay archivos eliminados — todo es nuevo)
-find dashboard/tests -type f -name '*.test.*'
+# Listar tests que referencien archivos eliminados o renombrados.
+# (En este plan no hay archivos eliminados — todo es nuevo.)
+# OJO WSL2: `find` esta aliasado a `fd` y la sintaxis GNU falla silenciosamente.
+# Usar `rg --files` (mejor disponibilidad cross-platform) o `fd` directo.
+rg --files dashboard/tests/ -g '*.test.*'
 ```
 
 ### A.2 — Verifica que TODOS los tests nuevos estan en la ruta correcta
 
 ```bash
-# Mirror: cada src/<X>/<Y>.ts(x) debe tener tests/unit/<X>/<Y>.test.ts(x)
-# Listar fuentes
-find dashboard/src -type f \( -name '*.ts' -o -name '*.tsx' \) \
-  -not -path '*/components/ui/*' \
-  -not -name 'index.ts' \
-  -not -name '*.d.ts' \
-  -not -path '*/app/*' \
-  | sort > /tmp/dashboard-sources.txt
+# Mirror: cada src/<X>/<Y>.ts(x) debe tener tests/unit/<X>/<Y>.test.ts(x).
+# Usamos `rg --files` con globs (-g) en vez de `find` (aliasado a `fd` en WSL2).
+mkdir -p tmp
+rg --files dashboard/src/ \
+  -g '*.ts' -g '*.tsx' \
+  -g '!**/components/ui/**' \
+  -g '!**/app/**' \
+  -g '!**/index.ts' \
+  -g '!**/*.d.ts' \
+  | sort > tmp/dashboard-sources.txt
 
-# Listar tests
-find dashboard/tests/unit -type f -name '*.test.*' | sort > /tmp/dashboard-tests.txt
+rg --files dashboard/tests/unit/ -g '*.test.*' | sort > tmp/dashboard-tests.txt
 
-# Compare: cada source deberia tener test correspondiente
-# (revision manual o con script)
+# Comparar: cada source deberia tener test correspondiente (revision manual
+# con `diff` o script python en tmp/).
 ```
 
 ### A.3 — Barrido global de referencias eliminadas
@@ -67,10 +70,12 @@ rg -l "href=\"/dashboard" dashboard/src/  # debe estar SOLO en src/lib/routes.ts
 ### A.5 — Verifica que `process.env.NEXT_PUBLIC_*` solo se usa en `env.ts`
 
 ```bash
-# Todos los componentes deben importar `env` de @/lib/env (validacion Zod)
-# NUNCA process.env.* directo
-rg "process\.env\." dashboard/src/ --type ts --type tsx
-# Resultado esperado: SOLO src/lib/env.ts y vitest.config.ts (excluido)
+# Todos los componentes deben importar `env` de @/lib/env (validacion Zod).
+# NUNCA process.env.* directo. `tsx` NO es un type built-in de rg —
+# `rg --type ts` ya cubre .ts y .tsx via la definicion built-in `typescript`.
+# Confirmar con: rg --type-list | rg ^typescript
+rg "process\.env\." dashboard/src/ --type ts
+# Resultado esperado: SOLO src/lib/env.ts. vitest.config.ts vive fuera de dashboard/src/.
 ```
 
 ## Parte B — Bateria completa de comandos
@@ -160,18 +165,36 @@ sleep 5
 kill $DEV_PID
 ```
 
-### B.8 — Verify devtools cloudflare_setup dry-run
+### B.8 — Verify devtools cloudflare_setup config
 
 ```bash
-python devtools/run.py cloudflare_setup status --env=dev --dry-run
-# Esperado: lista el project portfolio-dashboard-dev con config correcta
+# El subcomando `status` NO existe en cloudflare_setup. Las fases validas
+# son: projects, domains, triggers, all. Para verificar que el
+# project del dashboard esta declarado correctamente en config.py,
+# re-aplicar la fase projects con --dry-run (idempotente, sin side
+# effects si el config matchea el remoto):
+export CLOUDFLARE_API_TOKEN=$(grep -m1 '^CLOUDFLARE_API_TOKEN=' docker/env/dev-cli/.dev | cut -d= -f2-)
+export ACCOUNT_ID=$(grep -m1 '^CLOUDFLARE_ACCOUNT_ID=' docker/env/dev-cli/.dev | cut -d= -f2-)
+python devtools/run.py cloudflare_setup projects --env=dev --dry-run
+# Esperado: lista los 7 projects (6 Astro + dashboard) con build_config + env_vars
+# diff. Sin --dry-run aplicaria los cambios al remoto.
+
+# Alternativa: leer la config declarada
+python -c "from devtools.cloudflare_setup.config import APPS, app_for; print(app_for('dashboard'))"
+# Esperado: AppConfig(name='dashboard', root_dir='dashboard', app_type='nextjs', build_output_dir='out', ...)
 ```
 
 ### B.9 — Verify devtools sync_secrets dry-run
 
 ```bash
 python devtools/run.py sync_secrets --env=dev --category=client --dry-run
-# Esperado: 4 keys NEXT_PUBLIC_* (DASHBOARD_URL, API_ENDPOINT, TURNSTILE_SITEKEY, AUTH_REFRESH_LEAD_MS) muestran su status (CREATE/PUSH/SKIP)
+# Esperado: las 6 keys NEXT_PUBLIC_* del dashboard muestran su status (CREATE/PUSH/SKIP):
+#   - NEXT_PUBLIC_API_ENDPOINT
+#   - NEXT_PUBLIC_TURNSTILE_SITEKEY
+#   - NEXT_PUBLIC_DASHBOARD_URL
+#   - NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS
+#   - NEXT_PUBLIC_FEATURE_MFA               (flag para activar la Fase 16 cuando plan 02-auth-mfa este mergeado)
+#   - NEXT_PUBLIC_WEBAUTHN_RP_ID            (hostname admin.portfolio.{env}.the-full-stack.com, requerido por la API WebAuthn)
 ```
 
 ### B.10 — GH Actions local (act + skill github-actions)
@@ -301,9 +324,16 @@ Estructura Hybrid Atomic Design:
   dashboard-shell)
 - src/app/ — Next App Router con groups (auth) y (dashboard)
 
-Auth contra Lambda `auth` (planes 01-02): JWT in-memory + refresh
-HttpOnly cookie + mutex client-side + magic link callback con fragment
-hash + BroadcastChannel multi-tab sync.
+Auth contra Lambda `auth` (planes 01-02): tokens en localStorage
+(accessToken en memoria Zustand, refreshToken + refreshExpiry + user
+persistidos). NO HttpOnly cookies cross-origin — el dashboard vive en
+admin.portfolio.{env}.the-full-stack.com y el API en api.portfolio.{env},
+una cookie HttpOnly tendria que ser SameSite=None + Domain=.the-full-stack.com
+y abrir CSRF en los 6 niches publicos. Defensa primaria contra XSS: CSP
+estricta sin unsafe-inline/unsafe-eval + SRI en third-party + access JWT
+corto (15 min) + family_id refresh rotation backend (RFC 9700). Mutex
+client-side garantiza 1 sola /session/refresh in-flight. Magic link
+callback con fragment hash + BroadcastChannel multi-tab sync.
 
 Data fetching contra Lambda `analytics` (plan analytics-dashboard-api):
 Tanstack Query v5 con persister + 19 endpoints typed.

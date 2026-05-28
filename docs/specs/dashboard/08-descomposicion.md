@@ -158,7 +158,7 @@ deben completar ANTES de paralelizar.
   - Tests mirror
 - **AC**: AC-15, AC-16, AC-17, AC-18
 - **Depende de**: B.1
-- **Paralelizable con**: C.1, D.1 (analytics primero — feature mas grande)
+- **Paralelizable con**: C.1 — NO con tareas del bloque D (D.1 a D.7 dependen transitivamente de B.2 via la cadena B.2 -> B.3 -> C.2; lanzar una tarea D antes de cerrar B.2 invalida el bloqueo de auth components y rompe el merge a feature/dashboard-frontend)
 - **Verify**: `pnpm test tests/unit/features/auth/hooks`
 - **Done**: 12 hooks + tests verdes
 
@@ -169,7 +169,7 @@ deben completar ANTES de paralelizar.
   - Tests mirror
 - **AC**: AC-8, AC-9, AC-10, AC-11, AC-19, AC-20, AC-26
 - **Depende de**: B.2
-- **Paralelizable con**: C.1, D.* (otras features no auth)
+- **Paralelizable con**: C.1 (dashboard-shell — no toca features/auth/). Tareas D y B.4 esperan a B.3 porque consumen `AuthGuard` y el barrel `features/auth/index.ts`.
 - **Verify**: `pnpm test:coverage tests/unit/features/auth`
 - **Done**: 10 componentes + tests >= 80%
 
@@ -224,8 +224,8 @@ correr en paralelo (limite 5-7 worktrees).
 
 #### D.2 — `sessions/` (fase 12)
 - **Archivos**:
-  - `dashboard/src/features/sessions/**`
-  - `dashboard/src/app/(dashboard)/sessions/{page,[id]/page}.tsx`
+  - `dashboard/src/features/sessions/**` (incluye `SessionDetailDrawer` con deep-link via `?session=<id>`)
+  - `dashboard/src/app/(dashboard)/sessions/page.tsx` (SOLO la list; el detalle vive en drawer lateral. NO se crea ruta dinamica `[id]` — Next 16 con `output: 'export'` la rechaza sin `generateStaticParams()`)
   - Tests mirror
 - **AC**: AC-23
 - **Depende de**: A.8, B.1, C.2
@@ -297,8 +297,8 @@ correr en paralelo (limite 5-7 worktrees).
 - **AC**: AC-30
 - **Depende de**: A.2 (existe el package)
 - **Paralelizable con**: D.* (toca archivos Python, no TS)
-- **Verify**: `python devtools/run.py cloudflare_setup status --env=dev --dry-run`
-- **Done**: dry-run lista el dashboard como 7mo project
+- **Verify**: `python devtools/run.py cloudflare_setup projects --env=dev --dry-run` (la fase `status` NO existe; las fases validas son projects / domains / triggers / all)
+- **Done**: dry-run lista el dashboard como 7mo project con app_type='nextjs' + build_output_dir='out'
 
 #### E.2 — devtools/sync_secrets + docker/env extension (fase 18)
 - **Archivos**:
@@ -363,11 +363,14 @@ A.1 -> A.2 -> A.3 -> A.4 -> A.5 -> A.6 -> A.7 -> A.8
                                           |
               B.4 (auth pages) <----------+
                                           |
-                +-------------------------+--------------+--------+--------+--------+--------+
-                |          |              |              |        |        |        |        |
-              D.1 anal.  D.2 sess.   D.3 events    D.4 v/g    D.5 d/f   D.6 cont   D.7 sett (paralelo, max 5-7 worktrees)
-                |          |              |              |        |        |        |        |
-                +----------+--------------+--------------+--------+--------+--------+--------+
+                +-------------------------+--------------+----------------+
+                |                |                 |                |
+              D.1 anal.   D.2 sess.+events    D.4 visits+geo    D.5 dev+fun
+                |                |                 |                |        D.6 cont +
+                |                |                 |                |        D.7 sett (consolidados, max 5-7 worktrees)
+                +----------------+-----------------+----------------+----+
+                |                                                        |
+                +--------------------------------------------------------+
                                           |
               (mientras tanto en otra worktree: E.1, E.2, E.3 paralelo a D)
                                           |
@@ -378,29 +381,45 @@ A.1 -> A.2 -> A.3 -> A.4 -> A.5 -> A.6 -> A.7 -> A.8
 
 ## Granularidad
 
-Total tareas: ~17 (A.1-A.8, B.1-B.4, C.1-C.2, D.1-D.7, E.1-E.3, F.1-F.2)
+Total tareas: **26** (A.1-A.8 = 8, B.1-B.4 = 4, C.1-C.2 = 2, D.1-D.7 = 7, E.1-E.3 = 3, F.1-F.2 = 2).
 
-Plan Large = 10-20 tareas. Cumple.
+Plan Large = 10-20 tareas. Con 26 tareas el plan esta por encima del
+limite alto, justificado por el scope: scaffold + auth + 7 features
+de data + infra de deploy + E2E. La paralelizacion via worktrees (ver
+seccion 10) consolida D.* en 5-6 worktrees concurrentes (limite
+recomendado por `.claude/rules/plan-format.md` capitulo 1).
 
 ## Lanzar worktrees (ejemplo)
 
 ```bash
-# Desde la rama feature/dashboard-frontend, despues de A.8 + B.2 + C.2:
+# Desde la rama feature/dashboard-frontend, despues de A.8 + B.3 + C.2.
+# CADA worktree usa SU PROPIA branch (-b) — no se puede reutilizar
+# feature/dashboard-frontend porque esa branch ya esta checked out en el
+# worktree principal y git lo rechaza (`fatal: ... is already checked out`).
 
-git worktree add ../portfolio-wt-analytics feature/dashboard-frontend
-git worktree add ../portfolio-wt-sessions feature/dashboard-frontend
-git worktree add ../portfolio-wt-events feature/dashboard-frontend
-git worktree add ../portfolio-wt-contacts feature/dashboard-frontend
+git worktree add -b feature/dashboard-wt-analytics       ../portfolio-wt-analytics       feature/dashboard-frontend
+git worktree add -b feature/dashboard-wt-sessions-events ../portfolio-wt-sessions-events feature/dashboard-frontend
+git worktree add -b feature/dashboard-wt-contacts-settings ../portfolio-wt-contacts-settings feature/dashboard-frontend
+git worktree add -b feature/dashboard-wt-devtools        ../portfolio-wt-devtools        feature/dashboard-frontend
 
-# Cada uno trabaja una D.X distinta. Commits van a feature/dashboard-frontend
-# directamente (worktree es solo otro checkout). Coordinar push para evitar
-# conflictos en archivos compartidos (deberian ser cero por File Exclusivity).
+# Cada worktree commitea a SU branch. Despues del verify del scope, el
+# worktree principal mergea cada branch a feature/dashboard-frontend
+# con merge commit (sin rebase, ver .claude/rules/git-workflow.md):
+#   cd ../portfolio
+#   git checkout feature/dashboard-frontend
+#   git merge --no-ff feature/dashboard-wt-analytics
+#   git push origin feature/dashboard-frontend
+# Despues del merge, eliminar la branch del worktree (local + remoto).
 
-# Al terminar:
+# Al terminar todas las worktrees:
 git worktree remove ../portfolio-wt-analytics
-git worktree remove ../portfolio-wt-sessions
-git worktree remove ../portfolio-wt-events
-git worktree remove ../portfolio-wt-contacts
+git worktree remove ../portfolio-wt-sessions-events
+git worktree remove ../portfolio-wt-contacts-settings
+git worktree remove ../portfolio-wt-devtools
+
+# Limpiar branches mergeadas
+git branch -d feature/dashboard-wt-analytics feature/dashboard-wt-sessions-events feature/dashboard-wt-contacts-settings feature/dashboard-wt-devtools
+git push origin --delete feature/dashboard-wt-analytics feature/dashboard-wt-sessions-events feature/dashboard-wt-contacts-settings feature/dashboard-wt-devtools
 ```
 
 Ver detalle en [10-paralelizacion-worktrees.md](10-paralelizacion-worktrees.md).

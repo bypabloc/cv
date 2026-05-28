@@ -158,7 +158,7 @@ feat(dashboard,tests): MSW handlers (auth + analytics) + Vitest setup + render w
 ```text
 feat(dashboard,auth): Zustand store + refresh mutex + broadcast + auth-client typed
 
-- src/features/auth/store/use-auth-store.ts con persist partialize (solo user + refreshExpiry, NUNCA accessToken)
+- src/features/auth/store/use-auth-store.ts con persist partialize (solo refreshToken + refreshExpiry + user; NUNCA accessToken ni tempToken — rotan/expiran y dejarian estado stale tras reload). Bootstrap: `useAuthTimer` hidrata accessToken en memoria via /session/refresh al detectar refreshToken + refreshExpiry > now
 - src/features/auth/lib/refresh-mutex.ts singleton in-flight Promise
 - src/features/auth/lib/broadcast.ts BroadcastChannel helpers (LOGOUT, TOKEN_REFRESH) con guard SSR
 - src/features/auth/lib/token-expiry.ts (getJwtExpiry, isJwtExpired)
@@ -218,7 +218,20 @@ feat(dashboard,auth): pages (auth)/ login/register/verify/callback/set-password
 - Cumple AC-12, AC-13
 ```
 
-**Verify**: `pnpm --filter @portfolio/dashboard build && curl preview /login` (200)
+**Verify**:
+
+```bash
+pnpm --filter @portfolio/dashboard build
+pnpm --filter @portfolio/dashboard preview &
+PREVIEW_PID=$!
+sleep 3
+curl -sI http://localhost:3000/login/ | head -1 | grep -q "200" || echo "FAIL /login"
+curl -sI http://localhost:3000/register/ | head -1 | grep -q "200" || echo "FAIL /register"
+curl -sI http://localhost:3000/verify/ | head -1 | grep -q "200" || echo "FAIL /verify"
+curl -sI http://localhost:3000/callback/ | head -1 | grep -q "200" || echo "FAIL /callback"
+curl -sI http://localhost:3000/set-password/ | head -1 | grep -q "200" || echo "FAIL /set-password"
+kill $PREVIEW_PID
+```
 
 ### 14. Dashboard shell + layout protegido (fase 10)
 
@@ -233,7 +246,24 @@ feat(dashboard,shell): Sidebar + Header + MobileSidebar + (dashboard)/layout con
 - Cumple AC-7, AC-19, AC-20
 ```
 
-**Verify**: navegar entre pages mantiene sidebar (no remontaje)
+**Verify**:
+
+```bash
+pnpm --filter @portfolio/dashboard test tests/unit/features/dashboard-shell
+pnpm --filter @portfolio/dashboard build
+pnpm --filter @portfolio/dashboard preview &
+PREVIEW_PID=$!
+sleep 3
+# El (dashboard)/layout esta protegido por AuthGuard. Sin token, redirige a /login.
+# Verificar que la layout renderiza (sirve HTML del SPA, JS aplica el guard en el cliente):
+curl -sI http://localhost:3000/dashboard/ | head -1 | grep -q "200" || echo "FAIL /dashboard"
+curl -sI http://localhost:3000/dashboard/analytics/ | head -1 | grep -q "200" || echo "FAIL /dashboard/analytics"
+# Manual: con MSW activado (NEXT_PUBLIC_USE_MSW=true) y user logueado, navegar entre
+# /dashboard, /dashboard/analytics, /dashboard/sessions y confirmar que Sidebar no remontea
+# (verificar en React DevTools que el componente Sidebar mantiene su instancia, o que el
+# scroll del sidebar persiste entre navegaciones — comportamiento esperado del layout group).
+kill $PREVIEW_PID
+```
 
 ### 15-21. Features data (fases 11-16) — paralelizables
 
@@ -267,15 +297,18 @@ feat(devtools,dashboard): extiende cloudflare_setup para soportar app_type='next
 - Cumple AC-30
 ```
 
-**Verify**: `python devtools/run.py cloudflare_setup status --env=dev --dry-run`
+**Verify**: `python devtools/run.py cloudflare_setup projects --env=dev --dry-run` (la fase `status` NO existe; las fases validas son projects / domains / triggers / all). Aplica el config con `--dry-run` para validar sin tocar el remoto.
 
 ### 23. Devtools sync_secrets + docker/env (fase 18)
 
 ```text
 feat(devtools,dashboard): extiende sync_secrets catalog con NEXT_PUBLIC_*
 
-- devtools/sync_secrets/catalog.py: agrega 4 SecretDefinition (NEXT_PUBLIC_API_ENDPOINT, NEXT_PUBLIC_TURNSTILE_SITEKEY, NEXT_PUBLIC_DASHBOARD_URL, NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS)
-- docker/env/client/.example: agrega placeholders para los 4 nuevos
+- devtools/sync_secrets/catalog.py: agrega 6 SecretDefinition (NEXT_PUBLIC_API_ENDPOINT, NEXT_PUBLIC_TURNSTILE_SITEKEY, NEXT_PUBLIC_DASHBOARD_URL, NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS, NEXT_PUBLIC_FEATURE_MFA, NEXT_PUBLIC_WEBAUTHN_RP_ID)
+- docker/env/client/.example: agrega placeholders para los 6 nuevos
+- Valores por env:
+  - NEXT_PUBLIC_FEATURE_MFA: false en dev/stage/prod hasta que el plan 02-auth-mfa este mergeado; luego flip a true (rotacion puntual via --keys)
+  - NEXT_PUBLIC_WEBAUTHN_RP_ID: admin.portfolio.dev.the-full-stack.com (dev), admin.portfolio.stage.the-full-stack.com (stage), admin.portfolio.the-full-stack.com (prod). Requerido por `navigator.credentials.create({publicKey: {rp: {id}}})` en la Fase 16. Sin este valor el flujo de passkeys falla.
 ```
 
 **Verify**: `python devtools/run.py sync_secrets --env=dev --category=client --dry-run`

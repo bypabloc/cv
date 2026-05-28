@@ -103,6 +103,31 @@ export default function DashboardLayout({children}: {children: ReactNode}) {
 
 **Commit**: `feat(dashboard,shell): Sidebar + Header + MobileSidebar + (dashboard)/layout protegido`
 
+## Fases 11-15 — Nota de seguridad sobre el backend `/analytics`
+
+> **GAP CONOCIDO** — el plan `docs/specs/analytics-dashboard-api/`
+> (Decision 1) declara explicitamente que el Lambda `analytics` NO
+> valida el JWT en su primera entrega: solo aplica rate-limit por IP.
+> El dashboard manda `Authorization: Bearer <accessToken>` en todos
+> los requests a `/analytics` (consistencia con el resto del API y
+> compatibilidad forward cuando el plan agregue auth), pero el backend
+> lo ignora hasta que se mergee la fase posterior del plan analytics.
+>
+> Implicacion: cualquier cliente que conozca el endpoint puede leer la
+> data analitica del portfolio (sessions, visits, geo, devices,
+> events, contacts) sin auth.
+>
+> **Bloqueante para merge a `main`**: si los datos de la feature
+> `contacts/` (Fase 15) incluyen PII real (email del visitante,
+> mensaje), el cutover a prod del dashboard DEBE esperar a que la fase
+> de auth del plan analytics-dashboard-api este mergeada. Mientras
+> tanto, prod queda capada al subset publico-safe (analytics
+> agregadas, no contacts).
+>
+> No requiere cambios en el codigo del dashboard mas alla de mandar el
+> Bearer; cuando el backend habilite la validacion, el flujo ya esta
+> listo y no cambia el contrato cliente.
+
 ## Fase 11 — Feature `analytics/` (7 endpoints)
 
 Hooks (Tanstack Query):
@@ -147,12 +172,18 @@ Pages:
 
 Componentes:
 - `SessionsTable` (DataTable con columnas: session_id, first_seen_at, country, device_type, event_count, action)
-- `SessionDetailDialog` (Dialog con info de session + lista de visits + event_count)
+- `SessionDetailDrawer` (shadcn Sheet lateral right con info de session + lista de visits + event_count; abre desde la fila + URL search param `?session=<id>` para deep-link sin ruta dinamica)
 - `SessionsFilters` (DateRangePicker + country/device Select)
 
 Pages:
-- `src/app/(dashboard)/sessions/page.tsx`: SessionsFilters + SessionsTable
-- `src/app/(dashboard)/sessions/[id]/page.tsx`: client-fetch por `useParams().id` + render detail. NO usa `generateStaticParams` (route dinamica client-side).
+- `src/app/(dashboard)/sessions/page.tsx`: SessionsFilters + SessionsTable + SessionDetailDrawer. El drawer lee `?session=<id>` (via `useSearchParams`, dentro de Suspense boundary). Clickear una fila ejecuta `router.push('/sessions/?session=<id>', {scroll: false})`. Cerrar el drawer hace `router.push('/sessions/')`.
+
+> Decision: NO usar ruta dinamica `sessions/[id]/page.tsx`. Next 16 con
+> `output: 'export'` rechaza rutas dinamicas sin `generateStaticParams()`
+> (build fail fatal). Como las sessions son data-driven (no pre-renderizables
+> a build time), el detalle vive en un drawer lateral con deep-link via
+> query param. Patron consistente con el resto del dashboard (SPA puro,
+> sin rutas dinamicas estaticas).
 
 **Commit**: `feat(dashboard,sessions): hooks list + detail + tabla + dialog detail`
 
@@ -230,9 +261,19 @@ Pages:
 - `src/app/(dashboard)/settings/page.tsx`: Tabs con Profile + Security
 - `src/app/(dashboard)/settings/security/page.tsx`: MfaMethodsList + WebAuthnCredentialsList + RecoveryCodesSection
 
-**Nota**: las acciones MFA (TOTP setup, WebAuthn registration) son del
-plan 02 — si el backend aun no las tiene, MSW provee mocks o
-deshabilitar las pages con feature flag `NEXT_PUBLIC_FEATURE_MFA=false`.
+**Notas**:
+
+- Las acciones MFA (TOTP setup, WebAuthn registration) son del plan 02.
+  Mientras `02-auth-mfa` no este mergeado, MSW provee mocks O el flag
+  `NEXT_PUBLIC_FEATURE_MFA=false` esconde las pages de MFA. El flag esta
+  declarado en el catalogo de `sync_secrets` (commit 23) con valor `false`
+  por env en dev/stage/prod hasta el cutover.
+- WebAuthn requiere `NEXT_PUBLIC_WEBAUTHN_RP_ID` (hostname del dashboard
+  per env: `admin.portfolio.dev.the-full-stack.com`,
+  `admin.portfolio.stage.the-full-stack.com`,
+  `admin.portfolio.the-full-stack.com`). Se pasa a `navigator.credentials.create({publicKey: {rp: {id}}})`.
+  Sin esta var, el browser rechaza el flujo con `SecurityError`. Declarada
+  en el catalogo de `sync_secrets` junto con `NEXT_PUBLIC_FEATURE_MFA`.
 
 **Commit**: `feat(dashboard,settings): profile + change-password + MFA management + recovery codes`
 

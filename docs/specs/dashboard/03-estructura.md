@@ -156,7 +156,7 @@ features/auth/
 │   ├── auth-client.ts                 # endpoints typed
 │   └── query-keys.ts
 ├── store/
-│   └── use-auth-store.ts              # Zustand (accessToken mem + user persist)
+│   └── use-auth-store.ts              # Zustand (accessToken + tempToken en memoria; refreshToken + user + refreshExpiry persist en localStorage)
 ├── lib/
 │   ├── refresh-mutex.ts               # singleton in-flight Promise
 │   ├── broadcast.ts                   # BroadcastChannel helpers
@@ -215,7 +215,7 @@ features/analytics/
 features/sessions/
 ├── components/
 │   ├── sessions-table.tsx
-│   ├── session-detail-dialog.tsx
+│   ├── session-detail-drawer.tsx     # Sheet lateral, lee ?session=<id> con useSearchParams
 │   └── sessions-filters.tsx
 ├── hooks/
 │   ├── use-sessions-list.ts
@@ -357,9 +357,7 @@ src/app/
     ├── layout.tsx                     # AuthGuard + Sidebar + Header
     ├── page.tsx                       # /dashboard (overview)
     ├── analytics/page.tsx
-    ├── sessions/
-    │   ├── page.tsx                   # list
-    │   └── [id]/page.tsx              # detail (client-fetch por params.id)
+    ├── sessions/page.tsx              # list + SessionDetailDrawer (deep-link via ?session=<id>; NO ruta dinamica [id], incompatible con output: 'export')
     ├── events/page.tsx
     ├── visits/page.tsx
     ├── geo/page.tsx
@@ -455,7 +453,7 @@ tests/
         ├── sessions/
         │   ├── components/
         │   │   ├── sessions-table.test.tsx
-        │   │   └── session-detail-dialog.test.tsx
+        │   │   └── session-detail-drawer.test.tsx
         │   └── hooks/
         ├── events/
         ├── visits/
@@ -482,7 +480,7 @@ pnpm-workspace.yaml                    # +'dashboard' al array packages
 ### `docker/env/client/`
 
 ```
-.example                               # +NEXT_PUBLIC_API_ENDPOINT, NEXT_PUBLIC_TURNSTILE_SITEKEY, NEXT_PUBLIC_DASHBOARD_URL, NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS
+.example                               # +6 vars del dashboard: NEXT_PUBLIC_API_ENDPOINT, NEXT_PUBLIC_TURNSTILE_SITEKEY, NEXT_PUBLIC_DASHBOARD_URL, NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS, NEXT_PUBLIC_FEATURE_MFA, NEXT_PUBLIC_WEBAUTHN_RP_ID
 .local                                 # (gitignored, dev local)
 .dev, .stage, .prod                    # (gitignored, sync_secrets los lee)
 ```

@@ -151,9 +151,14 @@ pudiera setear cookies HttpOnly accesibles desde el dashboard, la
 cookie tendria que ser `SameSite=None; Secure; Domain=.the-full-stack.com`,
 lo que (a) abre vectores CSRF en los 6 niches publicos del portfolio
 y (b) rompe portabilidad (mobile app, embebido en widgets).
-**Decision**: los tres tokens (access, refresh, temp) viajan en el
-body de la respuesta y se persisten en `localStorage` via Zustand
-`persist`. Mitigaciones a XSS: (1) CSP estricta `default-src 'self'`
+**Decision**: los tokens viajan en el body de la respuesta. El **refreshToken**,
+`refreshExpiry` y `user` se persisten en `localStorage` via Zustand
+`persist` (`partialize`). El **accessToken** queda solo en memoria del store
+(NO persist) — rota en cada `/session/refresh`, persistirlo solo deja stale
+token tras reload. El **tempToken** tambien queda solo en memoria
+(efimero, 5 min). Al reload, `useAuthTimer` detecta `refreshToken` con
+`refreshExpiry > now` y dispara `/session/refresh` para rehidratar el
+accessToken en memoria. Mitigaciones a XSS: (1) CSP estricta `default-src 'self'`
 sin `unsafe-inline`/`unsafe-eval` en scripts, (2) Subresource Integrity
 (SRI) obligatorio en third-party scripts (Turnstile), (3) access JWT
 corto (15 min TTL), (4) refresh rotation + family_id detection en el

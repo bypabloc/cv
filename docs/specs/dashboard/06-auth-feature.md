@@ -11,25 +11,33 @@ el inventario ejecutable.
 
 Zustand 5 store con `persist` middleware a `localStorage`. Campos:
 
-- `accessToken: string | null` (persist en localStorage)
-- `refreshToken: string | null` (persist en localStorage)
-- `tempToken: string | null` (in-memory, NO persist — flujo corto register/login)
+- `accessToken: string | null` (**in-memory, NO persist** — rotado en cada refresh; persistirlo deja stale token tras reload)
+- `tempToken: string | null` (in-memory, NO persist — flujo corto register/login, 5 min)
+- `refreshToken: string | null` (persist en localStorage — sobrevive reload, necesario para reanudar sesion)
+- `refreshExpiry: number | null` (persist; epoch ms del `exp` del refresh, evita decodear el JWT en cada render)
 - `user: User | null` (persist en localStorage)
-- Actions: `setTokens(access, refresh, user)`, `setTempToken`,
+- Actions: `setTokens(access, refresh, user, refreshExpiry)`, `setTempToken`,
   `setAccessToken`, `clearTokens`, `reset`
 - Derived: `isAuthenticated()`, `isAccessExpired()`
 
-**SIEMPRE** `partialize: (state) => ({accessToken, refreshToken, user})`. NUNCA persist `tempToken` (es efimero, 5 min).
+**SIEMPRE** `partialize: (state) => ({refreshToken, refreshExpiry, user})`.
+NUNCA persistir `accessToken` (rota en cada `/session/refresh`; persistido queda stale).
+NUNCA persistir `tempToken` (es efimero, 5 min).
 **SIEMPRE** `name: 'portfolio-dashboard-auth'` + `storage: createJSONStorage(() => localStorage)`.
+
+**Bootstrap al cargar la app**: el `accessToken` arranca en `null` (no persistido).
+`useAuthTimer` detecta `refreshToken + refreshExpiry > now` y dispara
+`/session/refresh` automaticamente para hidratar el `accessToken` en memoria.
+Si el refresh esta expirado, `reset()` + redirect a `/login`.
 
 **Tests** (`tests/unit/features/auth/store/use-auth-store.test.ts`):
 
-- `setTokens` actualiza access + refresh + user
+- `setTokens` actualiza access (memoria) + refresh + refreshExpiry + user
 - `isAuthenticated()` retorna false sin token
 - `isAccessExpired()` retorna true con JWT expirado (mock con `exp` pasado)
 - `clearTokens()` y `reset()` limpian estado y localStorage
-- `partialize` excluye `tempToken` (verificar localStorage no contiene tempToken)
-- Persistencia: setTokens -> reload pagina simulada -> tokens restaurados
+- `partialize` excluye `accessToken` y `tempToken` (assert exacto: `JSON.parse(localStorage.getItem('portfolio-dashboard-auth')).state` solo contiene `refreshToken`, `refreshExpiry`, `user`)
+- Persistencia: setTokens -> reload simulado (re-crear store) -> `accessToken === null`, `refreshToken` y `user` restaurados
 
 ### `src/features/auth/lib/refresh-mutex.ts`
 
@@ -266,15 +274,26 @@ import {setupWorker} from 'msw/browser'
 export const worker = setupWorker(...)
 ```
 
-Init en dev opcional via `NEXT_PUBLIC_USE_MSW=true`:
+Init en dev opcional via `NEXT_PUBLIC_USE_MSW=true`. El alias `@/`
+apunta a `./src/*` y la carpeta `tests/` esta FUERA de `src/` — usar
+import relativo (`../../tests/...`) o agregar un segundo alias dedicado.
+Recomendado: agregar `"@tests/*": ["../tests/*"]` a `tsconfig.json#paths`
+y al `vitest.config.ts#resolve.alias` para que el import compile en build
+y en tests:
 
 ```typescript
-// src/app/layout.tsx (en useEffect del provider)
+// src/app/layout.tsx (en un Client Component wrapper con useEffect)
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_USE_MSW === 'true') {
-  const {worker} = await import('@/tests/mocks/browser')
+  const {worker} = await import('@tests/mocks/browser')
   await worker.start({onUnhandledRequest: 'bypass'})
 }
 ```
+
+Si NO se quiere agregar el alias, usar el path relativo explicito desde
+el archivo que importa (ej. `../../tests/mocks/browser` desde
+`src/app/layout.tsx`). NUNCA usar `@/tests/...` porque `@/` se resuelve
+a `src/tests/` que no existe — el build de Next + el typecheck fallan
+con `Module not found`.
 
 Tambien: `npx msw init public/` para generar `mockServiceWorker.js`.
 

@@ -390,19 +390,63 @@ def _build_create_table_args(rendered: RenderedResource) -> list[str]:
     hash_key = spec['hash_key']
     range_key = spec.get('range_key')
 
-    attribute_defs = [
-        {'AttributeName': hash_key['name'], 'AttributeType': hash_key['type']},
-    ]
+    # Acumulamos los attribute definitions con un dict para deduplicar:
+    # el GSI puede compartir attribute con la PK o agregar uno nuevo.
+    attribute_defs_by_name: dict[str, dict[str, str]] = {
+        hash_key['name']: {
+            'AttributeName': hash_key['name'],
+            'AttributeType': hash_key['type'],
+        },
+    }
     key_schema = [{'AttributeName': hash_key['name'], 'KeyType': 'HASH'}]
     if range_key:
-        attribute_defs.append(
-            {
-                'AttributeName': range_key['name'],
-                'AttributeType': range_key['type'],
-            },
-        )
+        attribute_defs_by_name[range_key['name']] = {
+            'AttributeName': range_key['name'],
+            'AttributeType': range_key['type'],
+        }
         key_schema.append(
             {'AttributeName': range_key['name'], 'KeyType': 'RANGE'},
+        )
+
+    # Global Secondary Indexes (opcional). Cada GSI declara su hash_key
+    # (+ range_key opcional) y la projection (KEYS_ONLY / ALL / INCLUDE).
+    # En PAY_PER_REQUEST no se declara ProvisionedThroughput.
+    gsis_input = spec.get('global_secondary_indexes') or []
+    gsis_aws: list[dict[str, object]] = []
+    for gsi in gsis_input:
+        gsi_hash = gsi['hash_key']
+        attribute_defs_by_name.setdefault(
+            gsi_hash['name'],
+            {
+                'AttributeName': gsi_hash['name'],
+                'AttributeType': gsi_hash['type'],
+            },
+        )
+        gsi_key_schema = [
+            {'AttributeName': gsi_hash['name'], 'KeyType': 'HASH'},
+        ]
+        gsi_range = gsi.get('range_key')
+        if gsi_range:
+            attribute_defs_by_name.setdefault(
+                gsi_range['name'],
+                {
+                    'AttributeName': gsi_range['name'],
+                    'AttributeType': gsi_range['type'],
+                },
+            )
+            gsi_key_schema.append(
+                {'AttributeName': gsi_range['name'], 'KeyType': 'RANGE'},
+            )
+        projection_type = gsi.get('projection', 'KEYS_ONLY')
+        projection: dict[str, object] = {'ProjectionType': projection_type}
+        if projection_type == 'INCLUDE':
+            projection['NonKeyAttributes'] = gsi.get('non_key_attributes', [])
+        gsis_aws.append(
+            {
+                'IndexName': gsi['name'],
+                'KeySchema': gsi_key_schema,
+                'Projection': projection,
+            },
         )
 
     import json as _json
@@ -415,10 +459,12 @@ def _build_create_table_args(rendered: RenderedResource) -> list[str]:
         '--billing-mode',
         spec.get('billing_mode', 'PAY_PER_REQUEST'),
         '--attribute-definitions',
-        _json.dumps(attribute_defs),
+        _json.dumps(list(attribute_defs_by_name.values())),
         '--key-schema',
         _json.dumps(key_schema),
     ]
+    if gsis_aws:
+        args += ['--global-secondary-indexes', _json.dumps(gsis_aws)]
     if spec.get('stream'):
         args += [
             '--stream-specification',

@@ -100,12 +100,20 @@ def mock_check_or_raise(mocker):
 
 @pytest.fixture
 def no_cache(mocker):
-    """Convierte @cached en passthrough — testea el computo real, no la shell."""
+    """Convierte @cached en passthrough — testea el computo real, no la shell.
+
+    Usa `new=...` (no `side_effect`): `side_effect` invocaria el callable
+    con los kwargs del decorador y retornaria su resultado SIN reemplazar
+    al callable patcheado, dejando que el cache real se ejecute igual
+    (falsos positivos en todos los tests que dependen del fixture).
+    `new=_passthrough` reemplaza el simbolo `shared.cache.cached` en su
+    namespace, asi `@cached(ttl=60)` evalua a `_passthrough(ttl=60)` que
+    retorna el decorador identidad."""
     def _passthrough(**_dec_kwargs):
         def _wrap(fn):
             return fn
         return _wrap
-    mocker.patch('shared.cache.cached', side_effect=_passthrough)
+    mocker.patch('shared.cache.cached', new=_passthrough)
 ```
 
 ## 4. `conftest.py` integration

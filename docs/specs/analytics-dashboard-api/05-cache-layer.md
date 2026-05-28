@@ -102,20 +102,31 @@ TTL 10s. Razon:
   un dashboard de un visitante (no es ticker de bolsa).
 
 ```python
+from datetime import datetime, timezone
+
 @cached(ttl=10, namespace='analytics:active-now', tags=['analytics-live'])
 def active_now() -> dict[str, Any]:
     with db_session() as s:
         active = s.scalar(
             select(func.count())
             .select_from(Session)
-            .where(Session.last_seen_at >= func.now() - func.make_interval(0, 0, 0, 0, 0, 5, 0))
+            .where(Session.last_seen_at >= func.now() - func.make_interval(mins=5))
         )
     return {
         'active_sessions': int(active or 0),
         'threshold_minutes': 5,
-        'as_of': datetime.utcnow().isoformat() + 'Z',
+        'as_of': datetime.now(timezone.utc).isoformat(),
     }
 ```
+
+NOTAS:
+
+- `datetime.now(timezone.utc)` reemplaza al deprecado `datetime.utcnow()`
+  (DeprecationWarning desde Python 3.12). `isoformat()` ya emite el
+  sufijo `+00:00`; no se concatena `'Z'` para evitar duplicacion del
+  marcador UTC.
+- `func.make_interval(mins=5)` es equivalente a `make_interval(0,0,0,0,0,5,0)`
+  pero legible: solo el argumento relevante por nombre.
 
 NOTA: la function `now()` se evalua en Neon, asi que el cache es
 correcto durante 10s, despues miss y nueva eval.

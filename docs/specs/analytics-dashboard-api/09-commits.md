@@ -402,8 +402,9 @@ python devtools/run.py serverless tests --type=unit --lambda=analytics
 python devtools/run.py serverless tests --type=integration --lambda=analytics --aws-profile=tfs-dev
 python devtools/run.py serverless tests --type=coverage --lambda=analytics  # >= 80% per-file
 python devtools/run.py serverless lint-deps --lambda=analytics
-# Smoke contra dev (curl con cada operation+action)
-bash docs/specs/analytics-dashboard-api/scripts/smoke.sh dev  # si lo armamos
+# Smoke contra dev: usar los curls de la bateria B.1..B.6 en el archivo
+# 11-verificacion-e2e.md (no hay smoke.sh dedicado, los `curl` inline son
+# la fuente de verdad del test E2E manual).
 ```
 
 ---

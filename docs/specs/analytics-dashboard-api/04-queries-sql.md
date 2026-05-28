@@ -292,8 +292,18 @@ LIMIT :page_size OFFSET :offset;
 3 queries:
 
 ```sql
--- 1. La sesion
-SELECT * FROM vis_sessions WHERE session_id = :session_id;
+-- 1. La sesion (columnas explicitas para no filtrar PII no intencionada
+--    y evitar romper el Pydantic model si el schema agrega columnas)
+SELECT
+  session_id,
+  first_seen_at,
+  last_seen_at,
+  browser,
+  browser_version,
+  os,
+  device_type
+FROM vis_sessions
+WHERE session_id = :session_id;
 
 -- 2. Sus visits (todas, ordenadas)
 SELECT visit_id, started_at, ended_at, event_count, ip, country,
@@ -352,16 +362,50 @@ LIMIT :limit;
 ## 15. `geo/by-country`
 
 ```sql
+WITH session_data AS (
+  SELECT
+    COALESCE(country, 'XX') AS country,
+    session_id
+  FROM vis_session_visits
+  WHERE started_at >= :date_from AND started_at < :date_to
+),
+country_sessions_visits AS (
+  SELECT
+    country,
+    count(DISTINCT session_id) AS sessions,
+    count(*) AS visits
+  FROM session_data
+  GROUP BY country
+),
+country_events AS (
+  SELECT
+    sd.country,
+    count(*) AS events
+  FROM session_data sd
+  JOIN vis_tracking_events e
+    ON e.session_id = sd.session_id
+   AND e.occurred_at >= :date_from
+   AND e.occurred_at < :date_to
+  GROUP BY sd.country
+)
 SELECT
-  COALESCE(country, 'XX') AS country,
-  count(DISTINCT session_id) AS sessions,
-  count(*) AS visits
-FROM vis_session_visits
-WHERE started_at >= :date_from AND started_at < :date_to
-GROUP BY country
-ORDER BY sessions DESC
+  csv.country,
+  csv.sessions,
+  csv.visits,
+  COALESCE(ce.events, 0) AS events
+FROM country_sessions_visits csv
+LEFT JOIN country_events ce USING (country)
+ORDER BY csv.sessions DESC
 LIMIT :limit;
 ```
+
+El CTE `session_data` materializa las sesiones del rango con su country.
+`country_sessions_visits` cuenta sesiones y visits (PV) por pais.
+`country_events` hace `JOIN` (no `LEFT JOIN`) sobre `vis_tracking_events`
+limitado al mismo rango — paises sin eventos en el rango no aparecen aqui.
+El `LEFT JOIN ... USING (country)` final preserva paises con sesiones pero
+0 eventos: el `COALESCE(ce.events, 0)` garantiza `events: 0` (no NULL) en
+el response, cumpliendo el shape de AC-13 `{country, sessions, visits, events}`.
 
 ## 16. `devices/breakdown`
 

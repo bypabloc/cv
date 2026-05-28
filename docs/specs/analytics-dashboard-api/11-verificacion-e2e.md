@@ -44,15 +44,16 @@ test o re-apuntarlo.
 ### A.2 Tests en ruta y convencion correcta
 
 ```bash
-# Convencion: tests en tests/unit o tests/integration
-find tests -type f -name "test_*.py" | grep -v "^tests/\\(unit\\|integration\\)/" \
+# Convencion: tests en tests/unit o tests/integration. Usar `rg` (no
+# `find`): en WSL2 `find` esta aliasado a `fd` y la sintaxis GNU falla.
+rg --files -g 'test_*.py' tests | rg -v '^tests/(unit|integration)/' \
   | wc -l    # debe dar 0
 
 # Cada test_*.py tiene UN test function (regla del repo)
-for f in $(find tests/unit -type f -name "test_*.py"); do
-  n=$(grep -c "^def test_" "$f")
+for f in $(rg --files -g 'test_*.py' tests/unit); do
+  n=$(rg -c '^def test_' "$f")
   if [ "$n" != "1" ]; then echo "BAD: $f tiene $n funciones test_*"; fi
-done | grep BAD     # debe dar 0
+done | rg BAD     # debe dar 0
 ```
 
 ### A.3 conftest.py limpio
@@ -250,6 +251,15 @@ for i in {1..11}; do
 done
 # Esperado: las primeras 10 con 200, la 11va con 429
 ```
+
+**Known limitation**: el test asume que las 11 requests salen con la
+misma IP de origen. Detras de NAT corporativo, VPN o cuando el cliente
+usa un pool de IPs (CGNAT movil, ciertos proxies), la IP extraida por
+API Gateway puede rotar entre requests y el contador del rate-limit no
+acumula sobre el mismo bucket. Si la 11va request devuelve 200 en lugar
+de 429, verificar con `curl --interface <iface>` o ejecutar el bucle
+desde una conexion con IP estable (laptop en wifi residencial) antes
+de declarar regresion.
 
 ### B.5 Cache hit verificacion (AC-8)
 

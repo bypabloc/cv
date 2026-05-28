@@ -71,7 +71,7 @@ Notas:
   endpoint; no la inserta (la insertamos via seed con la Lambda `db`).
 - `tables.cache: read-write` -> `@cached` decorator necesita ambos.
 - `secrets: [neon-url]` -> devtools inyecta env var
-  `SSM_NEON_URL_PATH=/portfolio/<stage>/secrets/neon-url`. La Lambda lee
+  `SSM_NEON_URL_PATH=/portfolio/<stage>/neon-url`. La Lambda lee
   el secret en runtime via `shared.db.url.resolve_database_url()`.
 
 ## 2. `pyproject.toml`
@@ -215,7 +215,7 @@ manifest. Resultado esperado para `analytics`:
 | `dynamodb:GetItem`, `Query`, `PutItem`, `UpdateItem`, `DeleteItem` | `arn:.../portfolio-cache-<stage>` | `tables.cache: read-write` |
 | `dynamodb:GetItem`, `Query` | `arn:.../portfolio-rate-limit-rules-<stage>` | `tables.rate-limit-rules: read` |
 | `dynamodb:GetItem`, `Query`, `PutItem`, `UpdateItem`, `DeleteItem` | `arn:.../portfolio-rate-limit-buckets-<stage>` | `tables.rate-limit-buckets: read-write` |
-| `ssm:GetParameter` | `arn:.../portfolio/<stage>/secrets/neon-url` | `secrets: [neon-url]` |
+| `ssm:GetParameter` | `arn:.../portfolio/<stage>/neon-url` | `secrets: [neon-url]` |
 | `kms:Decrypt` | `arn:.../alias/portfolio-lambdas` | implicito (SSM SecureString) |
 | `logs:CreateLogGroup`, `CreateLogStream`, `PutLogEvents` | log group del Lambda | base |
 | `xray:PutTraceSegments`, `PutTelemetryRecords` | * | tracer |

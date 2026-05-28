@@ -137,7 +137,7 @@ for branch in \
   feature/analytics-op-geo-devices \
   feature/analytics-op-sessions \
   feature/analytics-op-visits ; do
-    git merge --no-ff "$branch" -m "merge: $branch"
+    git merge --no-ff "$branch" -m "chore(analytics): merge $branch"
 done
 
 # Verificar nada se rompio

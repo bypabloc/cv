@@ -279,7 +279,7 @@ El PR `feature/dashboard-frontend -> dev` se crea con:
 
 ```bash
 gh pr create --base dev --head feature/dashboard-frontend \
-  --title "feat(dashboard): admin SPA Next.js 16 + React 18 + shadcn + Tanstack" \
+  --title "feat(dashboard): admin SPA Next.js 16.2.6 + React 19.2.6 + shadcn + Tanstack" \
   --body "$(cat <<'EOF'
 ## Problema
 
@@ -289,8 +289,9 @@ solo se accede con psql o consola Neon.
 
 ## Solucion
 
-Dashboard SPA estatico Next.js 16 + React 18 + shadcn/ui + Tanstack
-Query + Zustand, deployado a Cloudflare Pages en
+Dashboard SPA estatico Next.js 16.2.6 + React 19.2.6 (compiler stable) +
+shadcn/ui + Tanstack Query v5 + Zustand 5 (persist en localStorage),
+deployado a Cloudflare Pages en
 admin.portfolio.{dev|stage|prod}.the-full-stack.com.
 
 Estructura Hybrid Atomic Design:

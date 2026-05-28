@@ -35,8 +35,8 @@ Dashboard admin: NO EXISTE
 Admin browser (1-5 users)
   -> https://admin.portfolio.{dev|stage|prod}.the-full-stack.com
   -> Cloudflare Pages (portfolio-dashboard-{env})
-       -> Next.js 16 SPA estatico (dashboard/out/)
-            -> React 18 + Zustand (auth, theme)
+       -> Next.js 16.2.6 SPA estatico (dashboard/out/)
+            -> React 19.2.6 + Zustand 5 (auth, theme)
                  -> Tanstack Query (con persister + mutex refresh)
                       -> lib/api-client.ts
                            -> https://api.portfolio.{env}.the-full-stack.com
@@ -95,8 +95,9 @@ Las 6 apps Astro: SIN CAMBIOS (continuan en sus subdominios)
     - User vuelve a /verify, ingresa code 8 chars en InputOTP
     - POST /auth?operation=register&action=verify-code body: {code, temp_token}
     - Backend valida hash + ttl + attempts < 5
-    - Response 200 {access_token, refresh_token (HttpOnly cookie), expires_in, user}
-    - Frontend: Zustand.setAccessToken + setUser, redirect /dashboard
+    - Response 200 {access_token, refresh_token, expires_in, user}
+    - Frontend: Zustand.setTokens(access, refresh, user), redirect /dashboard
+      (tokens persistidos en localStorage via Zustand persist)
 ```
 
 ## Flujo de auth: login con magic link / code

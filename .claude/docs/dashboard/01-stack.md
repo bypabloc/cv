@@ -1,18 +1,33 @@
-# 01 — Stack: Next.js 16 + React 18 + TypeScript + Biome
+# 01 — Stack: Next.js 16.2.6 + React 19.2.6 + TypeScript + Biome
 
 [< README](README.md) | [Siguiente: 02-structure >](02-structure.md)
 
-## Next.js 16 — esencial 2025-2026
+## Next.js 16.2.6 — esencial mayo 2026
 
-Release: **Octubre 2025**. Breaking changes relevantes:
+| Release    | Fecha                                  | Highlights |
+| ---------- | -------------------------------------- | ---------- |
+| **16.0**   | Oct 21, 2025 (GA)                      | Turbopack stable + default, `proxy.ts` reemplaza `middleware.ts`, React 19 forzado, async APIs (`cookies()`, `headers()`, `params`), Cache Components (`'use cache'`) |
+| **16.1**   | Dec 2025                               | Filesystem caching en Turbopack dev, bundle analyzer built-in, Node debugger mejorado, React Compiler pasa de experimental a estable |
+| **16.2**   | Mar 2026                               | ~400% faster `next dev` startup, ~50% faster rendering, Build Adapters API stable, browser log forwarding |
+| **16.2.6** | **May 7, 2026** (latest, LTS candidato) | 13 security fixes (7 high, 4 moderate, 2 low), upstream React patches, DoS mitigations, proxy bypass fixes |
 
-| Cambio | Impacto en este dashboard |
-|--------|---------------------------|
-| Turbopack default | Dev server 5-10x mas rapido. Sin custom webpack config. |
-| Async Request APIs (`params`, `cookies()`) | No aplica (Client Components). |
-| `middleware.ts` → `proxy.ts` | No aplica (export mode no soporta ninguno). |
-| React 19 compat opcional | Quedamos en React 18.3 por ecosystem (Tanstack v5, react-hook-form). |
-| `output: 'export'` estable | Soportado en App Router. Funcional. NO deprecated en v17 roadmap. |
+### Cambios relevantes al dashboard SPA
+
+| Cambio | Impacto |
+|--------|---------|
+| **Turbopack default** | Dev server 5-10x mas rapido. Sin custom webpack config. |
+| **React 19.2 obligatorio** | Hooks nuevos disponibles (`useActionState`, `useFormStatus`, `useOptimistic`, etc.). Compiler stable. |
+| **Async Request APIs** | NO aplica (Client Components only). `useSearchParams()` necesita `<Suspense>` boundary. |
+| **`middleware.ts` → `proxy.ts`** | NO aplica (export mode no corre ninguno). Auth guard es Client Component. |
+| **`'use cache'` directive** | Server-only, NO aplica al dashboard. |
+| **`output: 'export'` estable** | Soportado en App Router. NO deprecated en v17 roadmap. |
+
+### React 19.2 features integrados en Next.js 16
+
+- **View Transitions API**: animaciones en navegacion / updates dentro de `<Transition>`.
+- **`useEffectEvent()`**: extrae logica no-reactiva de Effects.
+- **Activity Component**: render "background activity" con `display: none` while maintaining state.
+- **React Compiler stable**: auto-memoization sin `useMemo`/`useCallback` boilerplate.
 
 ## `next.config.ts` canonico del dashboard
 
@@ -20,7 +35,7 @@ Release: **Octubre 2025**. Breaking changes relevantes:
 import type {NextConfig} from 'next'
 
 const nextConfig: NextConfig = {
-  // SPA estatica
+  // SPA estatica para Cloudflare Pages
   output: 'export',
 
   // Cloudflare Pages no optimiza imagenes (no hay server runtime)
@@ -46,12 +61,23 @@ const nextConfig: NextConfig = {
     tsconfigPath: './tsconfig.json',
     // ignoreBuildErrors: false  (default — fail on TS errors)
   },
+
+  // React Compiler stable en Next 16 — auto-memoization
+  reactCompiler: true,
 }
 
 export default nextConfig
 ```
 
+> **Nota**: el flag `reactCompiler: true` en Next 16.2.x es estable
+> (paso de `experimental.reactCompiler` en 16.1 a campo top-level en
+> 16.2). Internamente Next.js SWC aplica `babel-plugin-react-compiler`
+> selectivamente, mas eficiente que correr Babel directo.
+
 ## `package.json` del dashboard
+
+Versiones exactas mayo 2026 (ver tabla en
+`.claude/skills/dashboard-stack/SKILL.md` para fuente):
 
 ```jsonc
 {
@@ -71,58 +97,78 @@ export default nextConfig
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "next": "^16.0.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    // UI
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+
+    // UI / Radix / shadcn helpers
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.0",
-    "lucide-react": "^0.479.0",
-    "next-themes": "^0.4.4",
-    // Data + state
-    "@tanstack/react-query": "^5.62.0",
-    "@tanstack/react-query-persist-client": "^5.62.0",
-    "@tanstack/query-sync-storage-persister": "^5.62.0",
+    "tailwind-merge": "^2.4.0",
+    "lucide-react": "^0.416.0",
+    "next-themes": "^0.4.8",
+
+    // Tanstack stack
+    "@tanstack/react-query": "^5.52.3",
+    "@tanstack/react-query-persist-client": "^5.52.3",
+    "@tanstack/query-sync-storage-persister": "^5.52.3",
     "@tanstack/react-table": "^8.20.5",
-    "@tanstack/react-virtual": "^3.10.8",
-    "zustand": "^5.0.2",
+    "@tanstack/react-virtual": "^3.5.1",
+
+    // State
+    "zustand": "^5.0.14",
     "lz-string": "^1.5.0",
+
     // Forms + validation
-    "react-hook-form": "^7.54.0",
-    "@hookform/resolvers": "^3.9.1",
+    "react-hook-form": "^7.53.0",
+    "@hookform/resolvers": "^3.4.2",
     "zod": "^3.24.1",
-    // Charts (via shadcn chart, depende de Recharts)
-    "recharts": "^2.15.0",
+
+    // Charts (via shadcn add chart) — Recharts requiere react-is matcheado
+    "recharts": "^2.14.2",
+    "react-is": "19.2.6",
+
     // Toasts
-    "sonner": "^1.7.1",
-    // JWT decode (solo para leer exp client-side, NO verificacion)
+    "sonner": "^1.7.2",
+
+    // JWT decode (solo client-side para leer exp)
     "jwt-decode": "^4.0.0",
+
     // Turnstile widget React
-    "@marsidev/react-turnstile": "^1.1.0"
+    "@marsidev/react-turnstile": "^1.2.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
-    "@tanstack/react-query-devtools": "^5.62.0",
+    "@tanstack/react-query-devtools": "^5.52.3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
-    "@types/node": "^24.0.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "happy-dom": "^16.5.0",
-    "msw": "^2.7.0",
-    "tailwindcss": "^4.0.0",
-    "@tailwindcss/postcss": "^4.0.0",
-    "postcss": "^8.5.0",
-    "typescript": "^6.0.0",
-    "vitest": "^2.1.8"
+    "@types/node": "^20.18.2",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.7",
+    "@vitejs/plugin-react": "^4.3.3",
+    "babel-plugin-react-compiler": "^19.0.0-beta.17",
+    "happy-dom": "^16.5.1",
+    "msw": "^2.3.2",
+    "playwright": "^1.48.2",
+    "@playwright/test": "^1.48.2",
+    "tailwindcss": "^4.1.4",
+    "@tailwindcss/postcss": "^4.1.4",
+    "postcss": "^8.4.50",
+    "typescript": "^6.0.6",
+    "vitest": "^2.2.5"
   },
   "engines": {
     "node": ">=24",
     "pnpm": "11.0.9"
+  },
+  // Critico: Recharts internamente importa react-is.
+  // Force el alias a 19.2.6 para evitar mismatch con React 19.
+  "pnpm": {
+    "overrides": {
+      "react-is": "19.2.6"
+    }
   }
 }
 ```
@@ -231,24 +277,54 @@ export default nextConfig
 }
 ```
 
-> Por que ignorar reglas strict en `src/components/ui/**`: shadcn usa
-> `any` para el Slot pattern y `noUselessFragments` falla en wrappers
-> de Radix. Ignorar localmente preserva el resto strict.
+> Por que ignorar reglas strict en `src/components/ui/**`: shadcn 2.x
+> (oct 2025+) ya genera componentes **sin `forwardRef`** (React 19
+> ref-as-prop), pero algunos patterns todavia chocan con reglas strict
+> de Biome (Slot composition con `any` en types polimorficos, fragments
+> en wrappers de Radix). Ignorar localmente preserva el resto strict.
 
-## Reglas React + Next que Biome NO cubre nativamente
+## React 19 + Biome v2 — reglas relevantes
 
-| Regla | Biome | Alternativa |
-|-------|-------|-------------|
+| Regla | Biome v2 | Notas para React 19 |
+|-------|----------|---------------------|
 | `react/jsx-key` | ✅ cubierto | — |
-| `react-hooks/rules-of-hooks` | ✅ cubierto | — |
-| `react-hooks/exhaustive-deps` | ✅ cubierto (`useExhaustiveDependencies`) | — |
-| `next/no-html-link-for-pages` | ❌ no cubierto | Review humano en PR + el lint del root puede detectar `<a href="/...">` si Biome agrega regla |
-| `next/no-img-element` | ❌ no cubierto | Review humano; el dashboard casi no usa imagenes |
-| `jsx-a11y/*` | ⚠ parcial | Radix da accesibilidad de base. Lighthouse a11y en review manual |
+| `react-hooks/rules-of-hooks` | ✅ cubierto | El Compiler las enforces tambien |
+| `react-hooks/exhaustive-deps` | ✅ cubierto (`useExhaustiveDependencies`) | Compiler analiza esto automaticamente |
+| `next/no-html-link-for-pages` | ❌ no cubierto | Review humano en PR (el dashboard tiene pocos `<Link>` candidatos a error) |
+| `next/no-img-element` | ❌ no cubierto | Review humano (casi cero `<img>` en dashboard) |
+| `jsx-a11y/*` | ⚠ parcial | Radix da accesibilidad base; Lighthouse a11y en review manual |
+| `noForwardRef` (custom) | ❌ no cubierto | Review humano — toda creacion de component nuevo debe ser sin `forwardRef` |
 
-Decision: aceptable. El dashboard tiene pocos `<Link>` y casi cero
-`<img>`. Las reglas faltantes se cubren en review humano + Lighthouse
-en preview.
+## React Compiler — habilitar
+
+`reactCompiler: true` en `next.config.ts` activa el compiler. Lo que
+hace:
+
+1. Analisis estatico de cada funcion componente + hooks.
+2. Emite equivalentes memoizados (memo slots manejados internamente).
+3. Reemplaza la necesidad de `React.memo`, `useMemo`, `useCallback` en
+   90%+ de los casos.
+
+**Requisitos**:
+- Strict Mode activo en root (lo cumple Next 16 por default).
+- Rules of React respetadas (Compiler las enforces — si no, omite el
+  componente).
+- `babel-plugin-react-compiler` instalado como devDep.
+
+**Opt-out per file** (solo si rompe algo medido):
+
+```tsx
+'use no memo'
+
+export function ComponenteRaro() {
+  // Compiler NO lo optimiza
+}
+```
+
+**Benefits esperados en el dashboard**:
+- –20–40% re-renders innecesarios en tabs con filtros + Tanstack Table
+  + Tanstack Virtual (medido en dashboards 2026).
+- +5–15% build time (overhead de Babel; menor con Next SWC).
 
 ## Tailwind v4 setup minimo
 
@@ -275,12 +351,10 @@ export default {
 @import "@fontsource/space-mono/400.css";
 @import "@fontsource/space-mono/700.css";
 
-/* Tokens compartidos con el monorepo (sincronizar con design-system.md) */
+/* Tokens compartidos con el monorepo */
 @theme {
   --font-sans: "Space Grotesk", -apple-system, system-ui, sans-serif;
   --font-mono: "Space Mono", Menlo, monospace;
-
-  /* Spacing base 4px ya viene de Tailwind v4 */
 
   /* Radius */
   --radius-xs: 0.375rem;
@@ -383,6 +457,10 @@ export default {
 }
 ```
 
+> Tailwind v4 (4.1.4 mayo 2026) es **5x mas rapido en full builds** y
+> **100x en incrementales** (medido en microsegundos) vs v3. Config
+> CSS-first (sin `tailwind.config.ts`).
+
 ## `src/lib/env.ts` — type-safe env vars
 
 ```typescript
@@ -433,6 +511,7 @@ declare namespace NodeJS {
     NEXT_PUBLIC_TURNSTILE_SITEKEY: string
     NEXT_PUBLIC_DASHBOARD_URL: string
     NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS?: string
+    NEXT_PUBLIC_USE_MSW?: string
   }
 }
 ```
@@ -470,18 +549,19 @@ declare namespace NodeJS {
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.portfolio.dev.the-full-stack.com https://api.portfolio.stage.the-full-stack.com https://api.portfolio.the-full-stack.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; require-trusted-types-for 'script'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.portfolio.dev.the-full-stack.com https://api.portfolio.stage.the-full-stack.com https://api.portfolio.the-full-stack.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; require-trusted-types-for 'script'
 ```
 
 > `'wasm-unsafe-eval'` se requiere para Turbopack runtime en client.
-> `connect-src` lista los 3 endpoints API (dev/stage/prod). Pages
-> serv el _headers per project, podriamos optimizar a 1 endpoint por
-> env si necesario.
+> `connect-src` lista los 3 endpoints API + `challenges.cloudflare.com`
+> (Turnstile). CSP estricta sin `'unsafe-inline'` ni `'unsafe-eval'` en
+> scripts — defense in depth para auth en `localStorage`.
 
 ## Anti-patrones
 
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
+| Pinear `react@^18.x` en `package.json` | Next 16.x requiere React 19 minimo | `react@^19.2.6` |
 | Hardcodear `process.env.NEXT_PUBLIC_*` sin validar | Build pasa, runtime crash | Import desde `@/lib/env` (Zod) |
 | `appDir: false` o Pages Router | Default es App Router; no hay razon de regresar | App Router |
 | Custom webpack config | Turbopack es default, requiere migrar | Aceptar Turbopack |
@@ -489,11 +569,18 @@ declare namespace NodeJS {
 | Olvidar `'use client'` en page con `useState` | Server Component error | Primera linea |
 | Cambiar `output` a `standalone` o `default` | Necesita server runtime | Mantener `'export'` |
 | Olvidar trailing slash | Cloudflare Pages redirect a slash, perf hit | `trailingSlash: true` |
+| Olvidar `reactCompiler: true` | Sin auto-memoization, peor perf | Habilitarlo (stable en 16) |
+| Olvidar `react-is` override | Recharts internamente importa, falla por mismatch | `"pnpm.overrides": {"react-is": "19.2.6"}` |
+| `experimental.reactCompiler` (sintaxis vieja) | En 16.2 paso a campo top-level | `reactCompiler: true` (sin `experimental`) |
 
 ## Referencias
 
-- Next.js 16 release: https://nextjs.org/blog/next-16
+- Next.js 16: https://nextjs.org/blog/next-16
+- Next.js 16.1: https://nextjs.org/blog/next-16-1
+- Next.js 16.2: https://nextjs.org/blog/next-16-2
 - Static Exports: https://nextjs.org/docs/app/guides/static-exports
+- React 19 blog: https://react.dev/blog
+- React Compiler: https://react.dev/learn/react-compiler/installation
 - Biome v2: https://biomejs.dev/blog/biome-v2-0-beta/
 - Tailwind v4: https://tailwindcss.com/blog/tailwindcss-v4
 

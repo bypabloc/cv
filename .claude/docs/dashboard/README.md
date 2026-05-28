@@ -1,8 +1,9 @@
 # Dashboard SPA — Knowledge Tree
 
 > Knowledge tree del dashboard admin del portfolio
-> (`admin.portfolio.{dev|stage|prod}.the-full-stack.com`). Next.js 16
-> SPA + React 18 + shadcn + Tanstack Query + Cloudflare Pages.
+> (`admin.portfolio.{dev|stage|prod}.the-full-stack.com`). Next.js
+> 16.2.6 SPA + React 19.2.6 + shadcn + Tanstack Query v5 + Cloudflare
+> Pages.
 >
 > Esta es la **zona producto** (Knowledge Tree): cambia raramente,
 > audiencia = reviewers. La zona harness del plan es efimera
@@ -13,45 +14,51 @@
 | Tema | Archivo | Cuando |
 |------|---------|--------|
 | Decisiones globales + esta tabla de navegacion | [README.md](README.md) | Primera lectura, decisiones no-reabribles |
-| Stack: Next.js 16 + React 18 + TS 6 + Biome + configs base | [01-stack.md](01-stack.md) | Antes de tocar `next.config.ts`, `tsconfig.json`, `biome.json`, `package.json` |
+| Stack: Next.js 16.2.6 + React 19.2.6 + TS 6 + Biome + configs base | [01-stack.md](01-stack.md) | Antes de tocar `next.config.ts`, `tsconfig.json`, `biome.json`, `package.json` |
 | Estructura Hybrid Atomic Design (folders, decision tree) | [02-structure.md](02-structure.md) | Antes de crear o mover un componente |
-| UI: shadcn + Tailwind v4 + theming + Radix + lucide + charts | [03-ui.md](03-ui.md) | Antes de agregar componente shadcn, definir token, crear variant |
-| Auth: JWT + Tanstack Query mutex + Zustand + magic link + BroadcastChannel | [04-auth.md](04-auth.md) | Antes de tocar fetch wrapper, auth store, protected routes, callback |
+| UI: shadcn + Tailwind v4 + theming + Radix + lucide + charts + React 19 patterns | [03-ui.md](03-ui.md) | Antes de agregar componente shadcn, definir token, crear variant, decidir form pattern |
+| Auth: JWT en `localStorage` + Tanstack Query mutex + Zustand + magic link + BroadcastChannel | [04-auth.md](04-auth.md) | Antes de tocar fetch wrapper, auth store, protected routes, callback |
 | Deploy: Cloudflare Pages + devtools + GH Actions + env vars | [05-deploy.md](05-deploy.md) | Antes de cambiar `deploy-apps.yml`, `cloudflare_setup`, `sync_secrets` |
-| Testing: Vitest + Testing Library + MSW + Playwright | [06-testing.md](06-testing.md) | Antes de escribir un test, configurar MSW handlers, fixtures |
+| Testing: Vitest 2 + Testing Library v16 + MSW v2 + Playwright | [06-testing.md](06-testing.md) | Antes de escribir un test, configurar MSW handlers, fixtures |
 
 ## Decisiones no-reabribles
 
 Estas decisiones se cerraron en el dialogo previo (Q&A inicial) y NO se
 vuelven a discutir en la fase de implementacion:
 
-1. **Framework**: Next.js 16 con `output: 'export'` estricto. NO Vite,
-   NO Astro, NO Next con SSR/RSC. Razon: monorepo consistency +
+1. **Framework**: Next.js 16.2.6 con `output: 'export'` estricto. NO
+   Vite, NO Astro, NO Next con SSR/RSC. Razon: monorepo consistency +
    ecosystem; user choice.
-2. **React 18.3.x**: NO React 19. Razon: hooks de 19 (`use()`,
-   `useFormStatus`) son para Server Components/Actions, ambos no
-   disponibles en export mode; libs (Tanstack) mas maduras en 18.
+2. **React 19.2.6** (obligatorio en Next 16.x). Compiler stable habilitado.
+   Hooks nuevos disponibles (`useActionState`, `useFormStatus`,
+   `useOptimistic`, `useDeferredValue` con `initialValue`, `useEffectEvent`).
+   `ref` como prop normal (sin `forwardRef`). Document Metadata nativo.
 3. **Routing**: App Router. NO Pages Router. Todas las pages Client
    Components.
 4. **TypeScript**: 6.x strict + `noUncheckedIndexedAccess`. NO `any`.
 5. **Linter**: Biome v2 (sin ESLint). Override para `src/components/ui/*`.
-6. **CSS**: Tailwind v4 (CSS-first config via `@theme`). NO `tailwind.config.ts`.
-7. **Componentes**: shadcn/ui (Radix primitives, copy-paste).
-8. **Data fetching**: Tanstack Query v5 + persister localStorage con
-   compresion lz-string.
-9. **State global**: Zustand (auth + theme). Tanstack Query para data.
-   useState local para UI ephemeral.
-10. **Forms**: react-hook-form + Zod + shadcn `<Form>` (vs Tanstack
-    Form). Razon: shadcn lo integra mejor.
+6. **CSS**: Tailwind v4 (CSS-first config via `@theme` inline + plugin
+   `@tailwindcss/postcss`). NO `tailwind.config.ts`.
+7. **Componentes**: shadcn/ui (Radix primitives, copy-paste; codegen
+   sin `forwardRef`).
+8. **Data fetching**: Tanstack Query v5 + `useSuspenseQuery` para data
+   required + persister `localStorage` con compresion lz-string.
+9. **State global**: Zustand 5 (auth + theme). Tanstack Query para
+   data. useState local para UI ephemeral.
+10. **Forms**: react-hook-form 7 + Zod + shadcn `<Form>` para forms
+    complejos (auth, multi-step). `useActionState` + `useFormStatus`
+    para forms simples (1-2 fields, single submit).
 11. **Theme**: next-themes con `attribute="data-theme"` (evita
     hydration mismatch).
 12. **Iconos**: lucide-react.
-13. **Charts**: `pnpm dlx shadcn add chart` (Recharts wrapper).
+13. **Charts**: `pnpm dlx shadcn add chart` (Recharts wrapper). Requiere
+    override `react-is@19.2.6` en `package.json`.
 14. **Tablas**: Tanstack Table v8 + shadcn primitives + Tanstack Virtual
     para listas grandes.
 15. **Toasts**: sonner.
-16. **Tests**: Vitest + Testing Library + MSW. Playwright E2E (suite del
-    monorepo).
+16. **Tests**: Vitest 2 + Testing Library v16 (React 19 support) + MSW
+    v2 (con polyfill BroadcastChannel en happy-dom). Playwright E2E
+    (suite del monorepo).
 17. **Estructura**: **Hybrid Atomic Design** —
     `src/components/ui/` (genericos, 2+ features) +
     `src/features/<X>/components/` (especificos por dominio). NO Atomic
@@ -65,16 +72,43 @@ vuelven a discutir en la fase de implementacion:
 21. **Env vars**: prefijo `NEXT_PUBLIC_*` (requisito Next 16 para
     exponer al bundle). Sincronizadas via
     `sync_secrets --category=client`.
-22. **Auth**: consume Lambda `auth` de planes 01-02 (aun pending). Access
-    JWT in-memory (Zustand) + refresh en HttpOnly cookie (preferido) o
-    localStorage+CSP (fallback). NUNCA tokens en URL query.
+22. **Auth — storage**: tokens (access, refresh, temp) en `localStorage`
+    via Zustand `persist`. **NO HttpOnly cookies** — el dashboard es
+    SPA cross-origin (subdomain admin vs api), una HttpOnly cookie
+    requeriria `SameSite=None` cross-site + `Domain=.the-full-stack.com`
+    abriendo CSRF en los 6 niches publicos y rompiendo portabilidad.
+    Defensa: CSP estricta sin `unsafe-inline`/`unsafe-eval` + SRI en
+    third-party + access JWT corto (15 min) + family_id refresh rotation.
+    NUNCA tokens en URL query.
 23. **Magic link UX**: backend redirect 302 a `/auth/callback#access=...`
-    (fragment hash, NO query). Frontend decodea + limpia con
-    `history.replaceState`.
-24. **Multi-tab**: BroadcastChannel API canal `portfolio_auth`.
-25. **Plan scope**: SOLO frontend dashboard. Las APIs `/auth` y
+    (fragment hash, NO query). Frontend decodea + guarda en
+    `localStorage` via Zustand + limpia con `history.replaceState`.
+24. **Multi-tab**: BroadcastChannel API canal `portfolio_auth` + fallback
+    `storage` event de `localStorage`.
+25. **React Compiler**: habilitado via `reactCompiler: true` (stable en
+    Next 16). Opt-out per file con `'use no memo'` solo si rompe algo
+    medido.
+26. **Plan scope**: SOLO frontend dashboard. Las APIs `/auth` y
     `/analytics` se asumen existentes. Mientras no esten deployadas,
-    MSW provee mocks.
+    MSW v2 provee mocks.
+
+## Versiones canonicas (mayo 2026)
+
+Resumen — ver tabla extendida en
+[.claude/skills/dashboard-stack/SKILL.md](../../skills/dashboard-stack/SKILL.md):
+
+- Next.js **16.2.6** | React + React DOM **19.2.6** | TypeScript **6.0.6**
+- Biome **2.0.0+** | Tailwind **4.1.4** + `@tailwindcss/postcss`
+- shadcn/ui latest (React 19 support, sin `forwardRef`)
+- Tanstack Query/Persist/Table/Virtual **5.52.3** / **8.20.5** / **3.5.1**
+- Zustand **5.0.14** (Jan 2026 state consistency fix)
+- react-hook-form **7.53.0** | Zod **3.24.1** | @hookform/resolvers **3.4.2**
+- Recharts **2.14.2** + override `react-is@19.2.6`
+- next-themes **0.4.8** | sonner **1.7.2** | lucide-react **0.416.0**
+- MSW **2.3.2** | Vitest **2.2.5** + Testing Library **16.1.0** + happy-dom **16.5.1**
+- Playwright **1.48.2**
+- babel-plugin-react-compiler **19.0.0-beta.17**
+- Node >=24, pnpm 11.0.9
 
 ## Reglas duras (siempre activas)
 
@@ -84,14 +118,23 @@ fuente de verdad enforced. Resumen aqui:
 - **SIEMPRE** Client Components (`'use client'`).
 - **SIEMPRE** todas las API calls via `lib/api-client.ts` (fetch wrapper
   con auth interceptor + refresh mutex).
-- **SIEMPRE** access JWT in-memory; refresh en HttpOnly cookie
-  preferido.
+- **SIEMPRE** tokens (access, refresh, temp) en `localStorage` via
+  Zustand `persist`.
 - **SIEMPRE** mutex para concurrent refresh (1 sola call in-flight).
 - **SIEMPRE** Hybrid Atomic: `components/ui/` (genericos, 2+ features)
   vs `features/<X>/components/` (especificos).
 - **SIEMPRE** Turnstile en register.start y login.start.
-- **NUNCA** API routes, middleware, Server Components con async fetch.
-- **NUNCA** tokens en URL query, persistir accessToken, logear JWT.
+- **SIEMPRE** `ref` como prop normal (NO `forwardRef`) en componentes
+  nuevos. shadcn 2.x ya migrado.
+- **SIEMPRE** React Compiler habilitado (`reactCompiler: true`).
+- **SIEMPRE** Rules of React (el Compiler las enforces).
+- **SIEMPRE** forms complejos con react-hook-form + Zod + shadcn
+  `<Form>` + Tanstack `useMutation`. Forms simples con `useActionState`.
+- **NUNCA** API routes, middleware/proxy, Server Components con async
+  fetch, Server Actions, `'use cache'`.
+- **NUNCA** tokens en URL query (magic link usa fragment hash).
+- **NUNCA** logear JWT, refresh, magic link token, codigo.
+- **NUNCA** `forwardRef` en componentes nuevos.
 - **NUNCA** Framer Motion, Google Fonts CDN, hex inline.
 
 ## Diagrama de alto nivel

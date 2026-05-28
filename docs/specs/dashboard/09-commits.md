@@ -18,7 +18,7 @@
 ```text
 docs(specs): agrega plan dashboard SPA admin.portfolio
 
-- Plan Large (~21 fases) para construir el dashboard admin SPA en Next.js 16 + React 18 + shadcn/ui + Tanstack Query + Zustand, deployado a Cloudflare Pages en admin.portfolio.{dev|stage|prod}.the-full-stack.com
+- Plan Large (~21 fases) para construir el dashboard admin SPA en Next.js 16.2.6 + React 19.2.6 (compiler stable) + shadcn/ui + Tanstack Query v5 + Zustand 5 con persist en localStorage, deployado a Cloudflare Pages en admin.portfolio.{dev|stage|prod}.the-full-stack.com
 - Carpeta docs/specs/dashboard/ con README + 11 secciones (contexto, diagramas, estructura, setup-base, ui, auth, dashboard-features, descomposicion, commits, worktrees, verificacion-e2e)
 - Scope: SOLO frontend. APIs auth (planes 01-02) y analytics (analytics-dashboard-api) se asumen existentes; MSW provee mocks hasta deploy
 - 33 criterios de aceptacion numerados, todos referenciados por tests
@@ -45,8 +45,8 @@ docs(dashboard): agrega skill /dashboard-stack + rule + knowledge tree
 feat(dashboard): scaffold inicial Next.js 16 SPA en carpeta dashboard/
 
 - Agrega dashboard/ a pnpm-workspace.yaml como @portfolio/dashboard
-- package.json con engines node>=24, scripts dev/build/lint/typecheck/test, deps Next 16 + React 18.3 + Tanstack v5 + shadcn + Zustand + sonner + lucide
-- next.config.ts con output: 'export', images.unoptimized, trailingSlash, poweredByHeader: false
+- package.json con engines node>=24, scripts dev/build/lint/typecheck/test, deps Next 16.2.6 + React 19.2.6 + react-is@19.2.6 (override Recharts) + Tanstack Query v5.52.3 + Tanstack Table v8.20.5 + shadcn + Zustand 5.0.14 + sonner 1.7.2 + lucide 0.416.0
+- next.config.ts con output: 'export', images.unoptimized, trailingSlash, poweredByHeader: false, reactCompiler: true
 - tsconfig.json strict + noUncheckedIndexedAccess + paths @/* -> ./src/*
 - biome.json extends del root con override en src/components/ui/** (shadcn primitives no respetan reglas strict)
 - postcss.config.mjs (@tailwindcss/postcss), vitest.config.ts (happy-dom + coverage)

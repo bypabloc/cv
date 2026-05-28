@@ -2,15 +2,26 @@
 
 [< 05-deploy](05-deploy.md) | [Volver al README](README.md)
 
-## Stack
+## Stack (versiones canonicas mayo 2026)
 
-| Capa | Herramienta | Comando |
-|------|-------------|---------|
-| Unit | Vitest + Testing Library + happy-dom | `pnpm --filter @portfolio/dashboard test` |
-| Coverage | Vitest v8 coverage | `pnpm --filter @portfolio/dashboard test:coverage` |
-| API mocks (dev + tests) | MSW (Mock Service Worker) | (importado por setup) |
-| E2E | Playwright (suite del monorepo) | `python devtools/run.py test_runner --module=feature --type=feature --env=local` |
-| Type check | tsc | `pnpm --filter @portfolio/dashboard typecheck` |
+| Capa | Herramienta | Version | Comando |
+|------|-------------|---------|---------|
+| Unit | Vitest + Testing Library + happy-dom | **2.2.5** / **16.1.0** / **16.5.1** | `pnpm --filter @portfolio/dashboard test` |
+| User event | @testing-library/user-event | **14.5.2** | (importado por tests) |
+| Jest DOM matchers | @testing-library/jest-dom | **6.6.3** | (en setup global) |
+| Coverage | Vitest v8 coverage | (vitest 2.2.5) | `pnpm --filter @portfolio/dashboard test:coverage` |
+| Vite React plugin | @vitejs/plugin-react | **4.3.3** | (devDep) |
+| API mocks (dev + tests) | MSW | **2.3.2** (con polyfill BroadcastChannel en happy-dom) | (importado por setup) |
+| E2E | Playwright | **1.48.2** (suite del monorepo) | `python devtools/run.py test_runner --module=feature --type=feature --env=local` |
+| Type check | tsc | **6.0.6** | `pnpm --filter @portfolio/dashboard typecheck` |
+
+> **Critico**: Testing Library v16 es el primer release con soporte
+> oficial React 19. `act()` warnings son mas estrictos que antes; envolver
+> state updates en `act(...)` cuando aplique.
+
+> **Critico**: MSW v2 internamente usa `BroadcastChannel` para
+> sincronizar handlers entre worker y client. happy-dom NO lo tiene
+> nativo — por eso el polyfill en `tests/setup.ts` es OBLIGATORIO.
 
 Coverage minimo: **80% per-file** en archivos modificados (mismo que el
 resto del repo).

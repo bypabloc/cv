@@ -1,12 +1,14 @@
 # Plan: Dashboard SPA — admin.portfolio.{env}.the-full-stack.com
 
-> Plan Large (~20 fases). Dashboard admin Next.js 16 SPA estatico
-> (`output: 'export'`) + React 18 + shadcn/ui + Tanstack Query +
-> Zustand, deployado a Cloudflare Pages en
+> Plan Large (~20 fases). Dashboard admin **Next.js 16.2.6** SPA
+> estatico (`output: 'export'`) + **React 19.2.6** (React Compiler
+> stable, `useActionState`, `useOptimistic`, ref-as-prop, Document
+> Metadata nativo) + shadcn/ui + Tanstack Query v5 + Zustand 5,
+> deployado a Cloudflare Pages en
 > `admin.portfolio.{dev|stage|prod}.the-full-stack.com`. Consume el
 > Lambda `auth` (planes 01-02, aun pending) + Lambda `analytics` (plan
 > analytics-dashboard-api, aun pending). Mientras no esten deployadas,
-> MSW provee mocks completos.
+> MSW v2 provee mocks completos.
 >
 > Carpeta `dashboard/` en root del repo (no `apps/dashboard/`). Entra
 > al pnpm workspace como `@portfolio/dashboard`.
@@ -64,31 +66,54 @@ Las 25 decisiones cerradas en el Q&A inicial (ver
 [.claude/docs/dashboard/README.md](../../../.claude/docs/dashboard/README.md)
 seccion "Decisiones no-reabribles"). Resumen:
 
-1. **Next.js 16 SPA** (`output: 'export'`) — NO Vite, NO Astro.
-2. **React 18.3.x** — NO React 19.
+1. **Next.js 16.2.6 SPA** (`output: 'export'`) — NO Vite, NO Astro.
+2. **React 19.2.6** — obligatorio en Next 16.x. Compiler stable
+   habilitado. `useActionState`, `useFormStatus`, `useOptimistic`,
+   `useDeferredValue(value, initialValue)`, `useEffectEvent`, Activity
+   Component, View Transitions disponibles. `ref` como prop normal
+   (NUNCA `forwardRef`). Document Metadata nativo (`<title>`/`<meta>`
+   en componentes auto-hoisteado al `<head>`).
 3. **App Router** — NO Pages Router. Client Components todo.
-4. **TypeScript 6** strict + `noUncheckedIndexedAccess`.
+4. **TypeScript 6.0.6** strict + `noUncheckedIndexedAccess`.
 5. **Biome v2** sin ESLint. Override para `components/ui/*`.
-6. **Tailwind v4** con `@theme` inline.
-7. **shadcn/ui** (Radix primitives, copy-paste).
-8. **Tanstack Query v5** + persister localStorage + lz-string compression.
-9. **Zustand** para auth + theme. Tanstack Query para data.
-10. **react-hook-form + Zod + shadcn `<Form>`**.
-11. **next-themes** con `attribute="data-theme"`.
-12. **lucide-react** para iconos.
-13. **Recharts** via shadcn add chart.
-14. **Tanstack Table v8 + Tanstack Virtual** para listas grandes.
-15. **sonner** para toasts.
-16. **Vitest + Testing Library + MSW + Playwright**.
+6. **Tailwind v4.1.4** con `@theme` inline + `@tailwindcss/postcss`.
+7. **shadcn/ui** (Radix primitives, copy-paste; codegen sin `forwardRef`).
+8. **Tanstack Query v5.52.3** + `useSuspenseQuery` para data required +
+   persister `localStorage` + lz-string compression.
+9. **Zustand 5.0.14** (Jan 2026 state consistency fix) para auth + theme.
+   Tanstack Query para data.
+10. **Forms**: react-hook-form 7 + Zod + shadcn `<Form>` para complejos
+    (auth, multi-step). `useActionState` + `useFormStatus` para simples.
+11. **next-themes 0.4.8** con `attribute="data-theme"`.
+12. **lucide-react 0.416.0** para iconos.
+13. **Recharts 2.14.2** via shadcn add chart + override `react-is@19.2.6`.
+14. **Tanstack Table v8.20.5 + Tanstack Virtual 3.5.1** para listas grandes.
+15. **sonner 1.7.2** para toasts.
+16. **Vitest 2.2.5 + Testing Library v16.1.0 + happy-dom 16.5.1 + MSW
+    v2.3.2 + Playwright 1.48.2**.
 17. **Hybrid Atomic Design** — `components/ui/` + `features/<X>/`.
 18. **Carpeta `dashboard/`** en root (user choice).
 19. **Subdominio `admin.portfolio.{env}.the-full-stack.com`**.
 20. **Cloudflare Pages** via devtools/cloudflare_setup.
 21. **Prefijo `NEXT_PUBLIC_*`** para env vars del cliente.
-22. **JWT in-memory (access) + HttpOnly cookie (refresh preferido)**.
-23. **Magic link callback** con fragment hash (NO query params).
-24. **BroadcastChannel API** para multi-tab logout sync.
-25. **Plan scope** SOLO frontend; MSW mocks hasta que el backend exista.
+22. **Auth — storage**: tokens (access, refresh, temp) en `localStorage`
+    via Zustand `persist`. **NO HttpOnly cookies** — el dashboard es
+    SPA cross-origin (subdomain admin vs api), una cookie HttpOnly
+    requeriria `SameSite=None` cross-site + `Domain=.the-full-stack.com`,
+    abriendo CSRF en los 6 niches publicos y rompiendo portabilidad.
+    Defensa: CSP estricta sin `unsafe-inline`/`unsafe-eval` + SRI en
+    third-party + access JWT corto (15 min) + family_id refresh rotation.
+23. **Magic link callback** con fragment hash (NO query params). Backend
+    redirect 302 a `/auth/callback#access=X&refresh=Y&user=...`.
+    Frontend decodea + guarda en `localStorage` via Zustand + limpia
+    con `history.replaceState`.
+24. **BroadcastChannel API** para multi-tab logout sync + fallback
+    `storage` event de `localStorage`.
+25. **React Compiler** habilitado via `reactCompiler: true` en
+    `next.config.ts`. Opt-out per file con `'use no memo'` solo si
+    rompe algo medido.
+26. **Plan scope** SOLO frontend; MSW v2 mocks hasta que el backend
+    exista (toggle via `NEXT_PUBLIC_USE_MSW=true`).
 
 ## Reglas criticas (siempre activas)
 

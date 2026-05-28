@@ -44,7 +44,7 @@ Para resolverlo:
   planes. Cuando el backend este vivo, el flag `NEXT_PUBLIC_USE_MSW`
   se desactiva.
 - 5 research files generados consolidan 7783 lineas de docs sobre
-  Next.js 16 SPA, React 18 patterns, shadcn + Atomic Design hibrido,
+  Next.js 16.2.6 SPA, React 19.2.6 patterns, shadcn + Atomic Design hibrido,
   JWT auth security, Cloudflare Pages deploy
   (`tmp/research/dashboard/01..05-*.md`).
 
@@ -53,15 +53,19 @@ Para resolverlo:
 Dashboard SPA en `dashboard/` (carpeta nueva en root del repo, entra al
 pnpm workspace como `@portfolio/dashboard`). Stack:
 
-- **Next.js 16** con `output: 'export'` (estatica, Cloudflare Pages).
-- **React 18.3** + TypeScript 6 strict + **Biome v2** (sin ESLint).
+- **Next.js 16.2.6** con `output: 'export'` (estatica, Cloudflare Pages).
+- **React 19.2.6** (obligatorio en Next 16.x; Compiler stable habilitado;
+  `useActionState`, `useFormStatus`, `useOptimistic`, `useDeferredValue`
+  con `initialValue`, ref-as-prop sin `forwardRef`, Document Metadata
+  nativo, View Transitions, `useEffectEvent`, Activity Component) +
+  TypeScript 6.0.6 strict + **Biome v2** (sin ESLint).
 - **Tailwind v4** con `@theme` inline + tokens compartidos con el
   Design System del monorepo.
 - **shadcn/ui** (Radix primitives, copy-paste) + **Tanstack Query v5**
   + **Tanstack Table v8** + **Tanstack Virtual** + **Recharts** (via
   shadcn add chart) + **lucide-react** + **sonner**.
-- **Zustand** para auth (in-memory accessToken, persist user) + theme
-  (next-themes).
+- **Zustand 5.0.14** para auth (tokens en `localStorage` via `persist`
+  — SPA cross-origin, decision detallada abajo) + theme (next-themes).
 - **react-hook-form + Zod** para forms.
 - **MSW** para mocks dev + tests; **Vitest + Testing Library** unit;
   **Playwright** E2E (suite del monorepo).
@@ -82,8 +86,10 @@ Estructura **Hybrid Atomic Design**:
 
 Auth:
 
-- Access JWT in-memory (Zustand). Refresh en HttpOnly cookie
-  (preferido).
+- Access, refresh y temp JWT en `localStorage` via Zustand `persist`.
+  NO HttpOnly cookies — el dashboard es SPA cross-origin (admin vs
+  api). Defensa: CSP estricta + SRI + access JWT corto (15 min) +
+  family_id refresh rotation.
 - **Mutex** en el fetch wrapper: 1 sola `/session/refresh` in-flight,
   evita reuse detection del backend.
 - Magic link callback decodifica fragment hash (`#access=...`) en
@@ -118,11 +124,18 @@ dev. Aceptamos el trade-off porque el dashboard NO es de uso masivo
 (panel admin para 1-5 users) y la DX de file-based routing es mejor
 para mantenimiento futuro.
 
-**Decision 2: React 18.3 vs React 19** — React 18 esta validado por
-todas las libs del stack (Tanstack v5, react-hook-form, shadcn).
-React 19 introduce hooks (`use()`, `useFormStatus`, `useActionState`)
-pensados para Server Components y Server Actions — features NO
-disponibles en `output: 'export'`. No hay valor en migrar.
+**Decision 2: React 19.2.6** — obligatorio en Next 16.x (no
+negotiable). El ecosystem 2026 lo soporta plenamente: shadcn 2.x
+(ref-as-prop, sin `forwardRef`), Tanstack Query v5 (con
+`useSuspenseQuery` + `useOptimistic`), react-hook-form 7 (coexiste con
+`useActionState` — hybrid pattern), Zustand 5.0.14, Testing Library
+v16 (primer release con soporte oficial React 19). React Compiler
+stable habilitado (`reactCompiler: true` en `next.config.ts`) —
+auto-memoization sin `useMemo`/`useCallback` boilerplate. Hooks nuevos
+que SI aplican al SPA: `useActionState`, `useFormStatus`,
+`useOptimistic`, `useDeferredValue(value, initialValue)`,
+`useEffectEvent`, `<Activity>`. Hooks que NO aplican (server-only):
+Server Components con async fetch, Server Actions, `'use cache'`.
 
 **Decision 3: Hybrid Atomic Design vs Atomic clasico** — Atomic
 clasico (atoms/molecules/organisms/templates) genera debates infinitos
@@ -130,11 +143,21 @@ clasico (atoms/molecules/organisms/templates) genera debates infinitos
 2 buckets: generico vs especifico de feature. Promote a `ui/` solo
 con 2+ uses reales (premature abstraction es peor que duplicar).
 
-**Decision 4: JWT in-memory vs localStorage** — Access JWT in-memory
-(Zustand sin persist) reduce ventana de XSS exposure a 15 min (TTL del
-access). Refresh en HttpOnly cookie es inaccesible a JS (XSS-proof).
-Fallback: si el backend no puede setear cookie cross-domain, localStorage
-+ CSP estricta documentado como acceptable.
+**Decision 4: JWT storage — `localStorage` (NO HttpOnly cookies)** —
+El dashboard es SPA estatico cross-origin: vive en
+`admin.portfolio.{env}.the-full-stack.com`, consume el Lambda `auth`
+en `api.portfolio.{env}.the-full-stack.com`. Para que el backend
+pudiera setear cookies HttpOnly accesibles desde el dashboard, la
+cookie tendria que ser `SameSite=None; Secure; Domain=.the-full-stack.com`,
+lo que (a) abre vectores CSRF en los 6 niches publicos del portfolio
+y (b) rompe portabilidad (mobile app, embebido en widgets).
+**Decision**: los tres tokens (access, refresh, temp) viajan en el
+body de la respuesta y se persisten en `localStorage` via Zustand
+`persist`. Mitigaciones a XSS: (1) CSP estricta `default-src 'self'`
+sin `unsafe-inline`/`unsafe-eval` en scripts, (2) Subresource Integrity
+(SRI) obligatorio en third-party scripts (Turnstile), (3) access JWT
+corto (15 min TTL), (4) refresh rotation + family_id detection en el
+backend (RFC 9700, ya implementado por planes 01-02).
 
 **Decision 5: Mutex de refresh client-side** — Sin mutex, 5 requests
 concurrent con 401 disparan 5 `/session/refresh` → backend revoca

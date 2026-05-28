@@ -9,23 +9,27 @@ el inventario ejecutable.
 
 ### `src/features/auth/store/use-auth-store.ts`
 
-Zustand store con campos:
-- `accessToken: string | null` (in-memory ONLY, no persist)
-- `tempToken: string | null` (in-memory)
-- `refreshExpiry: number | null` (epoch ms, persist)
-- `user: User | null` (persist via `partialize`)
-- Actions: `setAccessToken`, `setTempToken`, `setUser`,
-  `setRefreshExpiry`, `reset`
+Zustand 5 store con `persist` middleware a `localStorage`. Campos:
+
+- `accessToken: string | null` (persist en localStorage)
+- `refreshToken: string | null` (persist en localStorage)
+- `tempToken: string | null` (in-memory, NO persist — flujo corto register/login)
+- `user: User | null` (persist en localStorage)
+- Actions: `setTokens(access, refresh, user)`, `setTempToken`,
+  `setAccessToken`, `clearTokens`, `reset`
 - Derived: `isAuthenticated()`, `isAccessExpired()`
 
-**SIEMPRE** `partialize: (state) => ({user: state.user, refreshExpiry: state.refreshExpiry})`. NUNCA persist `accessToken` ni `tempToken`.
+**SIEMPRE** `partialize: (state) => ({accessToken, refreshToken, user})`. NUNCA persist `tempToken` (es efimero, 5 min).
+**SIEMPRE** `name: 'portfolio-dashboard-auth'` + `storage: createJSONStorage(() => localStorage)`.
 
 **Tests** (`tests/unit/features/auth/store/use-auth-store.test.ts`):
-- `setAccessToken` actualiza el estado
+
+- `setTokens` actualiza access + refresh + user
 - `isAuthenticated()` retorna false sin token
 - `isAccessExpired()` retorna true con JWT expirado (mock con `exp` pasado)
-- `reset()` limpia todo
-- `partialize` excluye accessToken (verificar localStorage)
+- `clearTokens()` y `reset()` limpian estado y localStorage
+- `partialize` excluye `tempToken` (verificar localStorage no contiene tempToken)
+- Persistencia: setTokens -> reload pagina simulada -> tokens restaurados
 
 ### `src/features/auth/lib/refresh-mutex.ts`
 

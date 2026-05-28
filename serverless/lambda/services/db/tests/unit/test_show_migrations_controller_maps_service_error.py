@@ -1,7 +1,7 @@
 """Controller db/show_migrations.
 
 Given el service run_show_migrations que lanza un ServiceError,
-When el controller Show_migrations ejecuta su ciclo run(),
+When el controller ShowMigrations ejecuta su ciclo run(),
 Then captura la excepcion y devuelve {is_valid: False} con el error_code,
      message y code del ServiceError.
 """
@@ -14,7 +14,7 @@ pytestmark = pytest.mark.unit
 
 
 def test_show_migrations_controller_maps_service_error():
-    from controllers.db.show_migrations import Show_migrations
+    from controllers.db.show_migrations import ShowMigrations
     from services.db_service import ServiceError
 
     # Arrange
@@ -27,7 +27,7 @@ def test_show_migrations_controller_maps_service_error():
         'controllers.db.show_migrations.run_show_migrations',
         side_effect=error,
     ):
-        controller = Show_migrations(event={})
+        controller = ShowMigrations(event={})
 
         # Act
         result = controller.run()

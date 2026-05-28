@@ -3,7 +3,7 @@
 Given un evento crudo {command: 'show-migrations'} (con guion),
 When se invoca lambda_handler real,
 Then el handler mapea el command 'show-migrations' a la action
-     'show_migrations', el flujo controller Show_migrations ->
+     'show_migrations', el flujo controller ShowMigrations ->
      run_show_migrations consulta el historial de Alembic y devuelve
      {command: 'show-migrations', status: 'ok'} con la lista de lineas.
 """

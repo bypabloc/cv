@@ -55,10 +55,15 @@ os.environ.setdefault(
     'https://admin.portfolio.dev.the-full-stack.com',
 )
 # Secretos locales (get_secret_by_name los lee directo del env var en
-# modo local cuando SSM_<UPPER>_PATH no esta seteado).
-os.environ.setdefault('JWT_SECRET', 'test-jwt-secret-with-enough-length-1234567890')
-os.environ.setdefault('TURNSTILE_SECRET_KEY', 'test-turnstile-secret')
-os.environ.setdefault('TURNSTILE_BYPASS_SECRET', 'test-bypass-secret')
+# modo local cuando SSM_<UPPER>_PATH no esta seteado). Valores fake
+# para los tests — generados con `secrets.token_urlsafe(32)` en runtime
+# para evitar falsos positivos de scanners (GitGuardian) sobre los
+# placeholders literales.
+import secrets as _secrets  # noqa: E402
+
+os.environ.setdefault('JWT_SECRET', _secrets.token_urlsafe(48))
+os.environ.setdefault('TURNSTILE_SECRET_KEY', _secrets.token_urlsafe(16))
+os.environ.setdefault('TURNSTILE_BYPASS_SECRET', _secrets.token_urlsafe(16))
 os.environ.setdefault(
     'DB_URL',
     'postgresql://test:test@localhost/test',

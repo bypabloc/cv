@@ -18,14 +18,16 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from shared.db import db_session
-from shared.db.models import AuthUser
+from shared.db.models import AuthCodeKind, AuthLinkKind, AuthUser
 from shared.db.repositories.auth import (
     create_pending_user,
     get_user_by_email,
     increment_failed_attempts,
+    invalidate_active_codes_and_links,
     lock_user,
     mark_user_active,
     reset_failed_attempts,
+    update_last_login,
 )
 
 # Politica MVP: 15 min de bloqueo tras 5 fallos consecutivos.
@@ -44,6 +46,11 @@ class UserService:
         """Lookup case-insensitive del user por email. None si no existe."""
         with db_session() as session:
             return get_user_by_email(session, email.strip().lower())
+
+    def get_by_id(self, user_id: str) -> AuthUser | None:
+        """Lookup por UUID. None si no existe."""
+        with db_session() as session:
+            return session.get(AuthUser, user_id)
 
     def create_pending(self, *, email: str) -> AuthUser:
         """Crea un user nuevo con status='pending'."""
@@ -80,3 +87,32 @@ class UserService:
         with db_session() as session:
             session.add(user)
             lock_user(session, user, until=until)
+
+    def update_last_login(self, user: AuthUser) -> None:
+        """Setea last_login_at=now + resetea failed_attempts (AC-22).
+
+        Lo llaman los controllers `login/verify_magic_link` y
+        `login/verify_code` tras un login exitoso.
+        """
+        with db_session() as session:
+            session.add(user)
+            update_last_login(session, user)
+
+    def invalidate_active_codes_and_links(
+        self,
+        *,
+        user_id: str,
+        kind_code: AuthCodeKind = AuthCodeKind.REGISTER,
+        kind_link: AuthLinkKind = AuthLinkKind.REGISTER,
+    ) -> None:
+        """Invalida codes + magic_links activos del user (AC-19).
+
+        Usado por `register.start` cuando el visitante reinicia el flow.
+        """
+        with db_session() as session:
+            invalidate_active_codes_and_links(
+                session,
+                user_id=user_id,
+                kind_code=kind_code,
+                kind_link=kind_link,
+            )

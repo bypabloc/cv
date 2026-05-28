@@ -11,6 +11,16 @@ API publica: `from shared.db.models import Profile, Contact, ...` sigue
 funcionando para todas las clases sin rename.
 """
 
+from .auth import (
+    AuthAuditLog,
+    AuthCodeKind,
+    AuthCredentials,
+    AuthEmailCode,
+    AuthLinkKind,
+    AuthMagicLink,
+    AuthUser,
+    AuthUserStatus,
+)
 from .cv import (
     Award,
     AwardNiche,
@@ -46,6 +56,15 @@ from .taxonomy import EventType, Niche, NichePriority, TechTag
 from .visitor import Contact, Session, SessionVisit, TrackingEvent
 
 __all__ = [  # noqa: RUF022
+    # Sistema auth (auth_)
+    'AuthAuditLog',
+    'AuthCodeKind',
+    'AuthCredentials',
+    'AuthEmailCode',
+    'AuthLinkKind',
+    'AuthMagicLink',
+    'AuthUser',
+    'AuthUserStatus',
     # Datos del visitante (vis_)
     'Contact',
     'EventType',

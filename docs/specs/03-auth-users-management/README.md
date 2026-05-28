@@ -133,10 +133,13 @@
    metadata, ip, created_at)`. Inmutable.
 8. **GDPR delete-account**: el `profile.delete-account` (self-service)
    marca `deleted_at`, anonimiza `email` a `deleted-<id>@invalid.local`
-   y borra `auth_credentials`, `auth_mfa_methods`, etc. en cascade.
-   Conserva `auth_audit_log` y `auth_user_admin_actions` para
-   compliance (sin PII personal). En 30 dias, hard-delete
-   programatico via cron Lambda (NO en scope de este plan, planificado).
+   y borra `auth_credentials`, `auth_mfa_methods`, etc. con DELETE
+   explicitos dentro del service (NO via FK cascade — las cascades
+   reaccionan a DELETE, no a UPDATE; ver detalle en
+   `05-lambda-users-arquitectura.md`). Conserva `auth_audit_log` y
+   `auth_user_admin_actions` para compliance (sin PII personal). En
+   30 dias, hard-delete programatico via cron Lambda (NO en scope
+   de este plan, planificado).
 9. **list-users paginado**: cursor-based con `last_id` (uuidv7
    ordenable). page_size default 50, max 200.
 

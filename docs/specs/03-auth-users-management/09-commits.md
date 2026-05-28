@@ -20,7 +20,11 @@ dev (post planes 01 + 02)
  └── feature/auth-users-mgmt-9-verificacion-e2e        (T11 + T12)
 ```
 
-## PR 1 — `docs(specs+claude): plan 03-auth-users-management + claude docs/auth-system users + admin + sessions`
+## PR 1 — `docs(specs): plan 03-auth-users-management + claude docs auth-system extension`
+
+Titulo del PR usa scope `docs(specs)` (scope valido segun
+`.claude/rules/git-workflow.md`). Los dos commits del PR llevan
+scopes distintos para mantener trazabilidad por carpeta tocada.
 
 ### Commit 1.1 — `docs(specs): plan 03-auth-users-management`
 
@@ -29,7 +33,7 @@ dev (post planes 01 + 02)
 
 ### Commit 1.2 — `docs(claude): auth-system 06-users + 07-admin + 08-sessions + rule + skill keywords`
 
-- Agrega 3 docs nuevos.
+- Agrega 3 docs nuevos en `.claude/docs/auth-system/`.
 - Modifica `.claude/rules/auth-system.md`.
 - Modifica `.claude/skills/auth-system/SKILL.md` (keywords).
 - **Verificacion**:
@@ -193,7 +197,11 @@ WT-C). Disjunto de PR 7a y PR 7b.
 - Agrega
   `controllers/admin/{list_users,get_user,disable_user,enable_user,force_logout,delete_user,list_admin_actions}.py`.
 - Agrega 7 events JSON + 13 tests.
-- **AC**: AC-11..AC-21, AC-28.
+- **AC**: AC-11..AC-21, AC-28 (AC-28 lo cubre `admin.get-user`:
+  cuando el target esta soft-deleted, devuelve el row con
+  `deleted_at` poblado + email anonimizado — verificado por
+  `test_admin_get_user_ok.py` + `test_admin_get_user_soft_deleted.py`
+  del listado de 06-testing).
 - **Verificacion**: `serverless tests --type=unit --lambda=users`.
 
 > Merge PR 7c a `dev`.

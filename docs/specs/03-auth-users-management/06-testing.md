@@ -36,7 +36,7 @@ archivos.
 | `test_profile_service_update_partial.py` | parcial OK |
 | `test_profile_service_change_email_new_email_available.py` | INSERT magic_link |
 | `test_profile_service_change_email_taken.py` | levanta EmailAlreadyInUseError |
-| `test_profile_service_soft_delete_anonymizes.py` | email anonimo + cascade |
+| `test_profile_service_soft_delete_anonymizes.py` | email anonimo + DELETE explicitos en credentials/mfa/sessions |
 | `test_profile_service_disable_active.py` | UPDATE status=disabled |
 | `test_profile_service_enable_disabled.py` | UPDATE status=active |
 | `test_profile_service_enable_active_no_op.py` | no cambia si ya active |
@@ -67,7 +67,7 @@ archivos.
 | `test_profile_change_email_ok.py` | AC-4 | magic_link + SQS |
 | `test_profile_change_email_already_in_use.py` | — | 409 |
 | `test_profile_change_email_wrong_password.py` | — | 401 INVALID_PASSWORD |
-| `test_profile_delete_account_ok.py` | AC-6 | soft-delete + cascade + blacklist |
+| `test_profile_delete_account_ok.py` | AC-6 | soft-delete (UPDATE + DELETE explicitos en credentials/mfa/recovery/webauthn/email_codes/magic_links) + blacklist DDB |
 | `test_profile_delete_account_wrong_confirm.py` | — | 400 INVALID_CONFIRM_SENTINEL |
 | `test_status_get_ok.py` | AC-7 | retorna info correcta |
 | `test_status_list_sessions_ok.py` | AC-8 | ordenado last_active_at DESC, current marcado |

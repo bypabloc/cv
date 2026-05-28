@@ -168,7 +168,10 @@ borrado).
   (a) anonimiza `email = 'deleted-<id>@invalid.local'`,
   (b) marca `deleted_at=now()`,
   (c) borra `auth_credentials`, `auth_mfa_methods`,
-      `auth_mfa_recovery_codes`, `auth_webauthn_credentials` (cascade),
+      `auth_mfa_recovery_codes`, `auth_webauthn_credentials`,
+      `auth_email_codes`, `auth_magic_links` con DELETE explicitos
+      dentro de la misma transaccion del UPDATE (NO via FK cascade
+      — el UPDATE de `deleted_at` no dispara la cascade),
   (d) blacklistea TODOS los JWT activos del user
       (DELETE `auth_user_sessions` + INSERT en `jwt-blacklist` DDB),
   (e) devuelve `204`.
@@ -205,8 +208,23 @@ borrado).
   primeros 50 users ordenados por created_at DESC + cursor `next`.
 
 - **AC-13**: Given admin, When llama `admin.list-users` con
-  `{page_size: 20, cursor: '<X>'}`, Then devuelve siguiente pagina con
-  paginacion correcta.
+  `{page_size: 20, cursor: '<last_id_uuid_str>'}`, Then devuelve
+  exactamente esta forma:
+
+  ```jsonc
+  {
+    "users": [ {"id": "...", "email": "...", "status": "active",
+                "created_at": "...", "display_name": "..."}, ... ],
+    "next_cursor": "<uuid_str>|null",  // null si no hay mas paginas
+    "page_size": 20,
+    "total_returned": 20               // count exacto de items en `users`
+  }
+  ```
+
+  Backend filtra `WHERE id > cursor ORDER BY id ASC LIMIT page_size`.
+  `next_cursor = users[-1].id` si `total_returned == page_size`, sino
+  `null`. Si el cliente pasa un `cursor` no decodificable (no es UUID
+  valido), 400 `INVALID_CURSOR`.
 
 - **AC-14**: Given admin, When llama `admin.get-user` con
   `{user_id}`, Then devuelve detalle: profile + status + sessions

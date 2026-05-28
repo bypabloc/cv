@@ -42,6 +42,11 @@ uses:
     - jwt-secret
     - admin-emails                              # NUEVO
     - ses-from-address
+  # publish-only: el Lambda `users` NUNCA invoca SES directamente.
+  # Solo publica mensajes a la cola `auth-email-queue`; el
+  # `auth_email_worker` consume y manda el email. Por eso
+  # `sends-email: false` (no necesita IAM ses:SendEmail) pese a que
+  # operativamente algunas actions terminan disparando un email.
   sends-email: false
 env:
   default:
@@ -143,20 +148,25 @@ opcional, no obligatorio en este plan.)
 
 ## 4. Cambios al Lambda `auth` (minimos para sessions tracking)
 
-El plan 03 NO crea un PR aparte sobre el lambda `auth`, pero **si
-modifica** 1 archivo:
+El plan 03 SI toca el lambda `auth`: agrega **1 archivo nuevo** y
+modifica **10 controllers existentes** con una inyeccion minima
+(2-3 lineas para llamar al helper).
 
 - `services/auth/core/services/session_tracking_service.py` (NUEVO)
-- 4 puntos de invocacion (inyectados en):
+- 10 controllers modificados (post-emision de tokens):
   - `controllers/register/verify_magic_link.py` (post-emision de
-    access+refresh)
-  - `controllers/register/verify_code.py`
-  - `controllers/login/verify_magic_link.py`, `verify_code.py`,
-    `verify_password.py`, `verify_totp.py`
-  - `controllers/session/refresh.py` (rotation: UPDATE family_id)
-  - `controllers/session/logout.py` (DELETE row)
-  - `controllers/webauthn/login_verify.py` (post-emision)
-  - `controllers/mfa/recovery_codes_consume.py` (post-emision)
+    access+refresh — `on_session_created`)
+  - `controllers/register/verify_code.py` (`on_session_created`)
+  - `controllers/login/verify_magic_link.py` (`on_session_created`)
+  - `controllers/login/verify_code.py` (`on_session_created`)
+  - `controllers/login/verify_password.py` (`on_session_created`)
+  - `controllers/login/verify_totp.py` (`on_session_created`)
+  - `controllers/webauthn/login_verify.py` (`on_session_created`)
+  - `controllers/mfa/recovery_codes_consume.py` (`on_session_created`)
+  - `controllers/session/refresh.py` (rotation: `on_session_rotated`
+    con old_family_id + new_family_id)
+  - `controllers/session/logout.py` (`on_session_revoked` tras
+    blacklist family DDB)
 
 > **Sobre `family_id`**: el refresh JWT del plan 01 ya lleva
 > `family_id` en sus claims (uuidv7), generado en
@@ -213,6 +223,13 @@ custom. Para minimizar deps, regex custom inicial — agregar lib si
 necesario.
 
 ## 5. Rate-limit rules nuevas (para `/users`)
+
+> `shared.rate_limit` ya soporta `--key=user_id` desde el plan 02
+> (introducido para `mfa.confirm-totp`, `mfa.recovery-codes-consume`,
+> etc.). El bucket key se computa con `user_id` extraido del access
+> JWT, no de la IP. Si el controller no tiene access JWT, el helper
+> hace fallback a IP automaticamente (defensa contra requests
+> anonimos que igual quieren rate-limitearse).
 
 ```bash
 # profile.get: 30/min/user_id (lectura)

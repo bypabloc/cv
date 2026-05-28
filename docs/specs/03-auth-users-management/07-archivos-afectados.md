@@ -85,17 +85,18 @@
 
 - `services/auth/core/services/session_tracking_service.py` — NUEVO
   helper.
-- 8 archivos donde se inyecta el helper:
-  - `controllers/register/verify_magic_link.py`
-  - `controllers/register/verify_code.py`
-  - `controllers/login/verify_magic_link.py`
-  - `controllers/login/verify_code.py`
-  - `controllers/login/verify_password.py`
-  - `controllers/login/verify_totp.py`
-  - `controllers/webauthn/login_verify.py`
-  - `controllers/mfa/recovery_codes_consume.py`
-  - `controllers/session/refresh.py` (rotation)
-  - `controllers/session/logout.py` (DELETE)
+- 10 controllers modificados con inyeccion minima del helper
+  (2-3 lineas en `execute()`):
+  - `controllers/register/verify_magic_link.py` (on_session_created)
+  - `controllers/register/verify_code.py` (on_session_created)
+  - `controllers/login/verify_magic_link.py` (on_session_created)
+  - `controllers/login/verify_code.py` (on_session_created)
+  - `controllers/login/verify_password.py` (on_session_created)
+  - `controllers/login/verify_totp.py` (on_session_created)
+  - `controllers/webauthn/login_verify.py` (on_session_created)
+  - `controllers/mfa/recovery_codes_consume.py` (on_session_created)
+  - `controllers/session/refresh.py` (on_session_rotated, rotation)
+  - `controllers/session/logout.py` (on_session_revoked, DELETE)
 - tests adicionales `services/auth/tests/integration/test_session_tracking_*.py` (4).
 
 ### En el shared.db
@@ -124,15 +125,32 @@
 
 ## Resumen contable
 
+Recuento item-por-item (todos los archivos del plan, separando
+`Crear` / `Modificar` / `Eliminar` por subcategoria):
+
 | Categoria | Crear | Modificar | Eliminar | Total |
 |-----------|-------|-----------|----------|-------|
-| Migration + modelos + repos | 4 + ~13 tests | 3 | 0 | ~20 |
-| `shared.auth.admin` (impl + tests) | 12 | 1 | 0 | 13 |
-| Infra resources | 1 | 0 | 0 | 1 |
-| auth_email_worker extension | 3 + 12 templates + 3 tests | 2 | 0 | 20 |
-| Lambda `users` (controllers + services + models + events + tests) | ~85 | 0 | 0 | 85 |
-| Lambda `auth` (sessions tracking inyectado) | 1 + 4 tests | 8 | 0 | 13 |
-| Documentacion permanente (.claude/) | 3 | 2 | 0 | 5 |
+| Migration alembic + 3 modelos nuevos + 1 repo + 13 tests repos | 18 | 3 (user.py + enums.py + auth/__init__.py) | 0 | 21 |
+| `shared.auth.admin` (admin.py + 11 tests) | 12 | 1 (`shared/auth/__init__.py`) | 0 | 13 |
+| Infra resources (admin-emails.yaml) | 1 | 0 | 0 | 1 |
+| auth_email_worker extension (3 controllers + 12 templates + 3 tests) | 18 | 2 (operations.py + email.py) | 0 | 20 |
+| Lambda `users` scaffold (manifest+pyproject+uv.lock+.gitignore) | 4 | 0 | 0 | 4 |
+| Lambda `users` core (handler + 2 settings + 4 models + 14 controllers + 10 services) | 31 | 0 | 0 | 31 |
+| Lambda `users` events JSON (1 por action) | 14 | 0 | 0 | 14 |
+| Lambda `users` tests unit (services ~30 + controllers ~25 + models ~10 + helpers) | ~70 | 0 | 0 | ~70 |
+| Lambda `users` tests integration | 9 | 0 | 0 | 9 |
+| Lambda `auth` sessions tracking (1 helper + tests integration) | 5 (1 service + 4 tests) | 8 (4 verify-* + refresh + logout + webauthn.login_verify + mfa.recovery_codes_consume) | 0 | 13 |
+| Documentacion permanente (.claude/) (3 docs nuevos + rule + skill) | 3 | 2 | 0 | 5 |
 | Plan efimero (`docs/specs/03-...`) | 12 | 0 | -12 | 0 |
 | Diagrama ER | 0 | 1 | 0 | 1 |
-| **Total neto** |  |  |  | **~158 archivos nuevos** |
+| __Total neto__ | __~197__ | __~17__ | __-12__ | __~202 archivos tocados__ |
+
+> __Nota__: las cifras de tests unit (`~70` para users, `13` para
+> repos shared, `11` para admin) son aproximadas — la enumeracion
+> exacta vive en [06-testing.md](06-testing.md). El total real puede
+> variar +/- 5% segun se desagreguen casos parametrizados o se
+> consoliden helpers compartidos en `tests/unit/_helpers.py`.
+>
+> __Conteo viejo__ decia "~158 archivos nuevos" — subestimaba el
+> Lambda `users` (85 vs ~128 reales) y omitia desagregar
+> modelos/repos. El numero correcto es __~202__.

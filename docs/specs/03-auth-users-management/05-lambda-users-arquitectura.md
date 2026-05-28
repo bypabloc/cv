@@ -396,7 +396,7 @@ EVENT_MODEL = build_event_model({
 | profile.get | R auth_users + auth_mfa_methods + auth_webauthn_credentials | — | 0 | require_active_user |
 | profile.update | RW auth_users + W consent_log | — | 0 | require_active_user |
 | profile.change-email | R auth_users + W auth_magic_links | — | 1 (magic-link) | require_active_user |
-| profile.delete-account | RW auth_users (soft) + cascade DELETE | RW blacklist (todas las sessions) | 1 (notify) | require_active_user |
+| profile.delete-account | UPDATE auth_users (soft) + DELETE explicitos en credentials/mfa/recovery/webauthn/email_codes/magic_links/user_sessions | RW blacklist (todas las families) | 1 (notify) | require_active_user |
 | status.get | R auth_users + mfa + webauthn | — | 0 | require_active_user |
 | status.list-sessions | R auth_user_sessions | — | 0 | require_active_user |
 | status.revoke-session | RW auth_user_sessions | RW blacklist (family_id) | 0 | require_active_user |

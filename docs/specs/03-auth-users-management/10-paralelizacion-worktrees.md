@@ -43,8 +43,19 @@ worktrees concurrentes seguros.
 | `services/auth/tests/integration/test_session_tracking_*.py` | — | — | — | WRITE (4 nuevos) |
 
 `services/users/events/` es la unica zona compartida en cuanto a
-carpeta. Pero los archivos son disjuntos (`profile-*.json` vs
-`status-*.json` vs `admin-*.json`) — File Exclusivity OK.
+carpeta. Pero los archivos son disjuntos por prefijo
+(`profile-*.json` en WT-A vs `status-*.json` en WT-B vs
+`admin-*.json` en WT-C) — File Exclusivity OK.
+
+> **Nota sobre el orden de merge**: si WT-A mergea PRIMERO, los
+> workflows CI de WT-B y WT-C (no mergeados aun) van a tener
+> `events/profile-*.json` ya en `dev` cuando rebaseen. NO es
+> colision (los archivos son disjuntos), pero el integration test
+> de WT-B/WT-C ahora "ve" 4 events de profile que antes no
+> existian. Como los tests de cada worktree filtran por su
+> operation/action, esto es benigno. Si en el futuro algun test
+> hace `glob('events/*.json')` sin filtrar, podria romperse — fix:
+> filtrar por prefijo (`events/status-*.json`).
 
 ## Fase secuencial final
 

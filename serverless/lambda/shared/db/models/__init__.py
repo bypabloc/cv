@@ -18,8 +18,12 @@ from .auth import (
     AuthEmailCode,
     AuthLinkKind,
     AuthMagicLink,
+    AuthMfaKind,
+    AuthMfaMethod,
+    AuthMfaRecoveryCode,
     AuthUser,
     AuthUserStatus,
+    AuthWebauthnCredential,
 )
 from .cv import (
     Award,
@@ -63,8 +67,12 @@ __all__ = [  # noqa: RUF022
     'AuthEmailCode',
     'AuthLinkKind',
     'AuthMagicLink',
+    'AuthMfaKind',
+    'AuthMfaMethod',
+    'AuthMfaRecoveryCode',
     'AuthUser',
     'AuthUserStatus',
+    'AuthWebauthnCredential',
     # Datos del visitante (vis_)
     'Contact',
     'EventType',

@@ -1,10 +1,10 @@
 """Enums Python del dominio auth.
 
-Mapean 1-a-1 con los tipos PostgreSQL declarados en la migration
-00000002:
-- `auth_user_status`     -> AuthUserStatus
-- `auth_code_kind`       -> AuthCodeKind
-- `auth_link_kind`       -> AuthLinkKind
+Mapean 1-a-1 con los tipos PostgreSQL declarados en las migrations:
+- `auth_user_status`     -> AuthUserStatus   (00000002)
+- `auth_code_kind`       -> AuthCodeKind      (00000002)
+- `auth_link_kind`       -> AuthLinkKind      (00000002)
+- `auth_mfa_kind`        -> AuthMfaKind       (00000003)
 """
 
 from enum import StrEnum
@@ -45,3 +45,18 @@ class AuthLinkKind(StrEnum):
     REGISTER = 'register'
     LOGIN = 'login'
     PASSWORD_RESET = 'password_reset'
+
+
+class AuthMfaKind(StrEnum):
+    """Kind del `auth_mfa_methods.kind` (tipo de metodo MFA).
+
+    - `totp`: RFC 6238 (Google Authenticator / Authy / 1Password).
+    - `email_code`: el code de 8 chars al email, promovido a 2do factor
+      cuando el user ya se autentico con password/passkey.
+
+    WebAuthn / Passkeys NO es un `AuthMfaKind`: vive en su propia tabla
+    `auth_webauthn_credentials`, no en `auth_mfa_methods`.
+    """
+
+    TOTP = 'totp'
+    EMAIL_CODE = 'email_code'

@@ -83,6 +83,14 @@ class AuthUser(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True,
     )
+    # AC-27 (plan 02): epoch de revocacion de sesiones. Cuando el user
+    # confirma su PRIMER metodo MFA, se setea a now(); `session.refresh`
+    # rechaza (401 TOKEN_FAMILY_REVOKED) cualquier refresh cuyo `iat` sea
+    # anterior a este timestamp. Cierra la ventana donde un atacante con
+    # un refresh previo seguiria operando sin pasar MFA.
+    sessions_revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
     failed_attempts: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text('0'),
     )

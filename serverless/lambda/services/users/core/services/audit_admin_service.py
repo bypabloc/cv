@@ -102,7 +102,10 @@ class AuditAdminService:
                     ),
                     'action': row.action,
                     'metadata': row.meta_data,
-                    'ip': row.ip,
+                    # row.ip es INET -> psycopg3 lo devuelve como
+                    # ipaddress.IPv4Address/IPv6Address, NO serializable a
+                    # JSON. str() lo normaliza; None se preserva.
+                    'ip': str(row.ip) if row.ip is not None else None,
                     'created_at': row.created_at.isoformat(),
                 }
                 for row in rows

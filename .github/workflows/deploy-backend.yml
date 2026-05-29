@@ -75,6 +75,7 @@ jobs:
       TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
       TURNSTILE_BYPASS_SECRET: ${{ secrets.TURNSTILE_BYPASS_SECRET }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       DB_URL: ${{ secrets.DB_URL }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
@@ -231,6 +232,7 @@ jobs:
       TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
       TURNSTILE_BYPASS_SECRET: ${{ secrets.TURNSTILE_BYPASS_SECRET }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       DB_URL: ${{ secrets.DB_URL }}
       OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
       EMAIL_FROM: ${{ secrets.EMAIL_FROM }}

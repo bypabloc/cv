@@ -44,7 +44,10 @@ class SessionService:
                 {
                     'session_id': str(row.id),
                     'device_info': _device_summary(row.device_info),
-                    'ip': row.ip,
+                    # row.ip es INET -> psycopg3 lo devuelve como
+                    # ipaddress.IPv4Address/IPv6Address, NO serializable a
+                    # JSON. str() lo normaliza; None se preserva.
+                    'ip': str(row.ip) if row.ip is not None else None,
                     'country': row.country,
                     'created_at': row.created_at.isoformat(),
                     'last_active_at': row.last_active_at.isoformat(),

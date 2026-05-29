@@ -36,6 +36,10 @@ SUPPORTED_KINDS: tuple[str, ...] = (
     'login-magic-link',
     'login-code',
     'password-reset',
+    'email-change-verify',
+    'email-changed',
+    'account-disabled',
+    'account-deleted',
 )
 
 
@@ -54,6 +58,10 @@ _SUBJECTS_ES: dict[str, str] = {
     'login-magic-link': 'Inicia sesion en the-full-stack.com',
     'login-code': 'Tu codigo de acceso',
     'password-reset': 'Restablece tu contrasena',
+    'email-change-verify': 'Confirma tu nuevo email en the-full-stack.com',
+    'email-changed': 'Tu email fue actualizado',
+    'account-disabled': 'Tu cuenta fue deshabilitada',
+    'account-deleted': 'Tu cuenta fue eliminada',
 }
 
 
@@ -61,7 +69,7 @@ def render_template(
     *,
     kind: str,
     data: dict[str, Any],
-    niche: str | None = None,  # noqa: ARG001 — placeholder para niche-aware
+    niche: str | None = None,
 ) -> tuple[str, str, str]:
     """Renderiza subject + text + html para un kind dado.
 

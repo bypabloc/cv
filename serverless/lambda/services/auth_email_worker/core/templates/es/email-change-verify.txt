@@ -1,0 +1,15 @@
+Hola,
+
+Solicitaste cambiar el email de tu cuenta en the-full-stack.com a esta
+direccion (${new_email}).
+
+Hace click en el siguiente enlace para confirmar el cambio:
+
+${verify_url}
+
+Este enlace expira en ${expires_in_min} minutos.
+
+Si no solicitaste este cambio, ignora este email: tu email actual no se
+modificara.
+
+— the-full-stack.com

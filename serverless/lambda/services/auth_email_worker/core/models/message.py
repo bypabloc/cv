@@ -24,12 +24,21 @@ from shared.core import BaseModel, ConfigDict, EmailStr, Field
 
 # Discriminador de tipos de email que el worker sabe enviar. Mantener
 # alineado con `template_service.SUPPORTED_KINDS`.
+#
+# Plan 03 (gestion de usuarios) agrega 4 kinds: `email-change-verify`
+# (magic-link al email NUEVO para confirmar el cambio), `email-changed`
+# (notificacion al email VIEJO de que se cambio), `account-disabled` y
+# `account-deleted` (notificaciones del estado de la cuenta).
 AuthEmailKind = Literal[
     'register-magic-link',
     'register-code',
     'login-magic-link',
     'login-code',
     'password-reset',
+    'email-change-verify',
+    'email-changed',
+    'account-disabled',
+    'account-deleted',
 ]
 
 

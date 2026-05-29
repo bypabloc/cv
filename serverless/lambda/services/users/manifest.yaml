@@ -17,9 +17,10 @@ description: HTTP endpoint POST /users (profile/status/admin).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 384       # MB — verify JWT + Neon read/write + DDB blacklist
-                  # + SQS publish con holgura.
-timeout: 15       # segundos
+memory: 1024      # MB — comparte los imports pesados de auth (shared.auth
+                  # con fido2 + argon2 + pyjwt + sqlalchemy). A 384 MB el
+                  # cold init excedia el timeout; 1024 MB lo deja en ~8.6s.
+timeout: 30       # segundos — cold init + SSM/DDB/Neon frio con margen.
 
 # SnapStart: reduce cold start (~830ms Restore). Mismo criterio que auth:
 # low traffic prod hace que cada request pague cold start.

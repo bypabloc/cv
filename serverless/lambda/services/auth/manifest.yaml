@@ -16,9 +16,11 @@ description: HTTP endpoint POST /auth (register/login/verify/session).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 384       # MB — Turnstile siteverify + Neon write + DDB
-                  # blacklist + SQS publish con holgura.
-timeout: 15       # segundos — incluye Turnstile siteverify HTTP (1-2s)
+memory: 1024      # MB — imports pesados (sqlalchemy + fido2 + pyjwt +
+                  # argon2 + boto3) requieren CPU para cold start <10s.
+                  # A 384 MB el cold init era ~13.8s y excedia el timeout.
+timeout: 30       # segundos — cold init + SSM/DDB/Neon frio + Turnstile
+                  # siteverify HTTP. Margen sobre el cold de ~8.6s a 1024 MB.
 
 # SnapStart: reduce cold start de ~3s a ~830ms (Restore Duration).
 # Critico en /auth: low traffic prod hace que cada request pague cold

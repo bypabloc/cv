@@ -189,7 +189,7 @@ def contact_form_aws(
 
         # shared.queue cachea el SQS client + el SSM resolver. Limpiar
         # las caches para que el fixture aisle el estado entre tests.
-        from shared.aws import ssm as _ssm_mod
+        import shared.aws.ssm as _ssm_mod
         from shared.queue.client import get_sqs_client
 
         get_sqs_client.cache_clear()

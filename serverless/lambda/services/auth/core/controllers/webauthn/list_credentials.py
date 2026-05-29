@@ -14,7 +14,7 @@ from models.webauthn import WebauthnListCredentialsIn
 from services.auth_service import require_active_user
 from services.webauthn_service import WebauthnService
 from settings.config import app_config
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
 class ListCredentials(BaseController):

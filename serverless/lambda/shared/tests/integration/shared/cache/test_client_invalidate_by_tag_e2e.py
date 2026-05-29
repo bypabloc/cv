@@ -7,7 +7,7 @@ Then los 2 keys con el tag quedan expirados y el otro sigue vivo.
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 
 pytestmark = pytest.mark.integration
 

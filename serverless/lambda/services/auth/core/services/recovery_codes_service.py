@@ -10,12 +10,15 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.auth import generate_recovery_codes, hash_recovery_code
-from shared.db import db_session
+from shared.auth.recovery_codes import (
+    generate_recovery_codes,
+    hash_recovery_code,
+)
 from shared.db.repositories.auth_mfa import (
     consume_recovery_code,
     regenerate_recovery_codes,
 )
+from shared.db.session import db_session
 
 
 class RecoveryCodesService:

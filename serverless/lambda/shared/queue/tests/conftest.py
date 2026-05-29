@@ -1,6 +1,7 @@
 """Fixtures de shared.queue tests."""
 
 import sys
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,7 @@ if str(_SHARED_ROOT) not in sys.path:
 
 
 @pytest.fixture(autouse=True)
-def _aws_env(monkeypatch):
+def _aws_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """AWS testing env vars (para boto3/moto)."""
     monkeypatch.setenv('AWS_REGION', 'us-east-1')
     monkeypatch.setenv('AWS_DEFAULT_REGION', 'us-east-1')
@@ -23,7 +24,7 @@ def _aws_env(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _clear_caches():
+def _clear_caches() -> Generator[None]:
     """Limpia los lru_cache entre tests para aislar el estado."""
     from shared.queue.client import get_sqs_client
     get_sqs_client.cache_clear()

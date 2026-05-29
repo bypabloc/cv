@@ -12,7 +12,7 @@ como `event_model` para validar su payload dentro de `validate()`.
 from __future__ import annotations
 
 from settings.operations import OPERATIONS
-from shared.lambda_kit import build_event_model
+from shared.lambda_kit.event_model import build_event_model
 
 from .admin import (
     AdminDeleteUserIn,

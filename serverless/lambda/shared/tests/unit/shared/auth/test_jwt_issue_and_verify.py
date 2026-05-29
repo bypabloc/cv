@@ -7,7 +7,7 @@ Then retorna los claims con sub, jti, flow, step intactos.
 from uuid import uuid4
 
 import pytest
-from shared.auth import issue_temp_jwt, verify_jwt
+from shared.auth.jwt import issue_temp_jwt, verify_jwt
 
 pytestmark = pytest.mark.unit
 

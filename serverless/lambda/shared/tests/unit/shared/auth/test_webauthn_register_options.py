@@ -6,7 +6,7 @@ Then el dict publicKey trae challenge + rp.id + user.id y el state es dict.
 
 from __future__ import annotations
 
-from shared.auth import build_register_options
+from shared.auth.webauthn import build_register_options
 
 
 def test_webauthn_register_options() -> None:

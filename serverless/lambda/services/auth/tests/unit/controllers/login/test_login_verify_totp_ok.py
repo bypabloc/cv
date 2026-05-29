@@ -14,7 +14,7 @@ from .._helpers import _make_jwt_claims, _make_temp_event
 def test_login_verify_totp_ok(monkeypatch):
     """AC-19: code correcto -> access+refresh."""
     from controllers.login import verify_totp
-    from shared.db.models import AuthMfaKind
+    from shared.db.models.auth import AuthMfaKind
 
     uid = uuid4()
     claims = _make_jwt_claims(user_id=uid, flow='login-mfa', step=2)

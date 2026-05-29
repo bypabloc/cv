@@ -15,12 +15,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.db import db_session
 from shared.db.repositories.auth_users import (
     delete_session_by_family,
     insert_user_session,
     rotate_session_family_id,
 )
+from shared.db.session import db_session
 from shared.observability.logger import logger
 
 

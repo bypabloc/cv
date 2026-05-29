@@ -15,8 +15,8 @@ from services.jwt_service import JwtService, authenticate
 from services.rate_limit_service import RateLimitService
 from services.session_service import SessionService
 from settings.config import app_config
-from shared.lambda_kit import BaseController
-from shared.observability import MetricUnit, metrics
+from shared.lambda_kit.base_controller import BaseController
+from shared.observability.metrics import MetricUnit, metrics
 
 _ENDPOINT = '/users#status'
 

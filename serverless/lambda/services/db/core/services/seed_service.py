@@ -29,8 +29,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from shared.db import db_session
-from shared.db.models import (
+from shared.db.models.cv import (
     Award,
     AwardNiche,
     Certificate,
@@ -45,8 +44,6 @@ from shared.db.models import (
     ExperienceSkill,
     Language,
     LanguageNiche,
-    Niche,
-    NichePriority,
     Profile,
     ProfileNiche,
     ProfileStats,
@@ -61,11 +58,13 @@ from shared.db.models import (
     SkillCategory,
     SkillCategoryNiche,
     SkillCategorySkill,
-    TechTag,
-    Translation,
 )
-from shared.db import Session, delete, func, pg_insert as insert, select
+from shared.db.models.i18n import Translation
+from shared.db.models.taxonomy import Niche, NichePriority, TechTag
+from shared.db.sa import Session, delete, func, select
+from shared.db.sa import pg_insert as insert
 from shared.db.seed_helpers import _parse_ym, _to_slug
+from shared.db.session import db_session
 
 # seeds/data/ vive dentro de core/ para que el packaging del deploy lo
 # incluya en el zip (packaging.py solo copia core/ al artefacto). Este

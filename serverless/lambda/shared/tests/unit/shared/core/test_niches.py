@@ -9,7 +9,6 @@ Cubre AC-13 del plan sessions-normalize:
 from __future__ import annotations
 
 import pytest
-
 from shared.core.niches import ALL_NICHES, CV_NICHES, niche_from_origin
 
 pytestmark = pytest.mark.unit
@@ -24,9 +23,9 @@ class TestNicheConstants:
         When se inspecciona ALL_NICHES,
         Then es exactamente {hub, fintech, architect, leader, vibe, generic}.
         """
-        assert ALL_NICHES == frozenset(
+        assert frozenset(
             {'hub', 'fintech', 'architect', 'leader', 'vibe', 'generic'},
-        )
+        ) == ALL_NICHES
 
     def test_when_inspecting_cv_niches_then_excludes_hub(self) -> None:
         """
@@ -34,7 +33,7 @@ class TestNicheConstants:
         When se inspecciona CV_NICHES,
         Then es ALL_NICHES sin hub (5 niches).
         """
-        assert CV_NICHES == ALL_NICHES - {'hub'}
+        assert ALL_NICHES - {'hub'} == CV_NICHES
         assert 'hub' not in CV_NICHES
         assert len(CV_NICHES) == 5
 

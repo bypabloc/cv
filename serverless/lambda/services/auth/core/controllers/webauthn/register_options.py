@@ -18,7 +18,7 @@ from services.rate_limit_service import RateLimitService
 from services.webauthn_service import WebauthnService
 from settings.config import app_config
 from shared.core.ulid import new_uuidv7
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#webauthn.register-options'
 

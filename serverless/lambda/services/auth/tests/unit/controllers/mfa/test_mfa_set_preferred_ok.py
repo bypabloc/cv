@@ -13,7 +13,7 @@ from .._helpers import _make_authed_event, _make_user
 def test_mfa_set_preferred_ok(monkeypatch):
     """AC-4: set-preferred OK -> 204."""
     from controllers.mfa import set_preferred
-    from shared.db.models import AuthMfaKind
+    from shared.db.models.auth import AuthMfaKind
 
     user = _make_user(status='active')
 

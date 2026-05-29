@@ -20,7 +20,7 @@ modulo agrega otra clase y el handler enruta segun el valor.
 from datetime import datetime
 from typing import Any, Literal
 
-from shared.core import BaseModel, ConfigDict
+from shared.core.pydantic_types import BaseModel, ConfigDict
 
 
 class TrackingQueueMessage(BaseModel):

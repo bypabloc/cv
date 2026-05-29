@@ -67,7 +67,7 @@ def _aws_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture(autouse=True)
 def _reset_admin_cache():
     """Resetea el cache de shared.auth.admin entre tests."""
-    from shared.auth import admin
+    import shared.auth.admin as admin
 
     admin._CACHE.update({'emails': frozenset(), 'expires_at': 0.0})
     yield

@@ -9,7 +9,7 @@ tests del controller lo mockeen facil.
 
 from __future__ import annotations
 
-from shared.rate_limit import check_or_raise
+from shared.rate_limit.check import check_or_raise
 
 
 class RateLimitService:

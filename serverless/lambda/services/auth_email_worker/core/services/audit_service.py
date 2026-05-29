@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from shared.db import db_session
 from shared.db.repositories.auth import insert_audit_event
+from shared.db.session import db_session
 from shared.observability.logger import logger
 
 __all__ = ['log_email_audit']

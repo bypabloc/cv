@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from shared.core import BaseModel, ConfigDict, EmailStr, Field
+from shared.core.pydantic_types import BaseModel, ConfigDict, EmailStr, Field
 
 from ._common import _Meta
 

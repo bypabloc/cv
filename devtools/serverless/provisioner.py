@@ -848,8 +848,10 @@ def _create_function(
             rendered.architecture,
             '--environment',
             _environment_arg(rendered.env_vars),
+            # X-Ray NO se usa en este backend (sin aws-xray-sdk). PassThrough
+            # = no instrumenta. Ver .claude/rules/lambda-config.md.
             '--tracing-config',
-            'Mode=Active',
+            'Mode=PassThrough',
         ],
         profile=profile,
         region=region,
@@ -1723,6 +1725,9 @@ def _provision_update_config(
             str(rendered.timeout),
             '--environment',
             _environment_arg(rendered.env_vars),
+            # Apaga X-Ray en funciones ya existentes (Mode=Active legacy).
+            '--tracing-config',
+            'Mode=PassThrough',
         ],
         profile=profile,
         region=region,

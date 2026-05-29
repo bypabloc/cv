@@ -29,7 +29,7 @@ def test_profile_verify_password_wrong(monkeypatch):
     monkeypatch.setattr(
         profile_service,
         'verify_password',
-        lambda *, password, hashed: False,  # noqa: ARG005
+        lambda *, password, hashed: False,
     )
 
     svc = profile_service.ProfileService(app_config=object())

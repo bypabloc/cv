@@ -21,7 +21,7 @@ from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
 from shared.core.ulid import new_uuidv7
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#login.verify-magic-link'
 

@@ -15,9 +15,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.auth import NeedsRehashError, verify_password
-from shared.db import db_session
-from shared.db.models import AuthCredentials
+from shared.auth.password import NeedsRehashError, verify_password
+from shared.db.models.auth import AuthCredentials
+from shared.db.session import db_session
 
 
 def get_password_hash(*, user_id: UUID | str) -> str | None:

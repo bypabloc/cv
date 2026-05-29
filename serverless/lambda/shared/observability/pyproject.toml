@@ -1,15 +1,15 @@
 # @config: shared/observability/pyproject.toml
 # @description: manifiesto de dependencias del subpaquete
-#   shared.observability (logger, tracer, metrics — Powertools v3). Ver
+#   shared.observability (logger, metrics — Powertools v3, sin X-Ray). Ver
 #   shared/core/pyproject.toml para el formato. NO es un paquete publicable.
 
 [project]
 name = "shared-observability"
 version = "0"
-description = "Logging, tracing y metrics con AWS Lambda Powertools v3."
+description = "Logging y metrics con AWS Lambda Powertools v3 (sin X-Ray)."
 requires-python = ">=3.13"
 dependencies = [
-  "aws-lambda-powertools[all]>=3.0.0,<4.0",
+  "aws-lambda-powertools>=3.0.0,<4.0",
 ]
 
 [tool.shared]

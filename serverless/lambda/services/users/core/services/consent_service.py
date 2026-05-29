@@ -7,8 +7,8 @@ Lo usa `profile.update` cuando `marketing_consent` (o
 
 from __future__ import annotations
 
-from shared.db import db_session
 from shared.db.repositories.auth_users import insert_consent_log
+from shared.db.session import db_session
 
 
 class ConsentService:

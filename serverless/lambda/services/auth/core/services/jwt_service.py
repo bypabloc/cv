@@ -18,15 +18,15 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.auth import (
+from shared.auth.jwt import (
     JwtClaims,
     JwtRevokedError,
+    JwtType,
     issue_access_jwt,
     issue_refresh_jwt,
     issue_temp_jwt,
     verify_jwt,
 )
-from shared.auth.jwt import JwtType
 
 from .blacklist_service import BlacklistService
 
@@ -115,7 +115,7 @@ class JwtService:
             issuer=self._issuer,
         )
         if expected_flow is not None and claims.flow != expected_flow:
-            from shared.auth import JwtInvalidError
+            from shared.auth.jwt import JwtInvalidError
             raise JwtInvalidError(
                 f'JWT flow mismatch: expected {expected_flow!r}, '
                 f'got {claims.flow!r}',

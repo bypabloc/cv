@@ -25,7 +25,7 @@ def test_rate_limit_failure_does_not_enqueue(
 ) -> None:
     from controllers.tracking.track import Track
     from settings.config import ErrorCode
-    from shared.rate_limit import RateLimitExceededError
+    from shared.rate_limit.exceptions import RateLimitExceededError
 
     # Arrange
     event = {

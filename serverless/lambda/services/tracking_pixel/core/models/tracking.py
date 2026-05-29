@@ -23,7 +23,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from shared.core import BaseModel, Field, field_validator
+from shared.core.pydantic_types import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+)
 
 # Tamano maximo del event_props serializado a JSON. event_props es un dict
 # libre con datos especificos por tipo de evento (href del link, scroll %,
@@ -59,7 +64,7 @@ class TrackEventMeta(BaseModel):
     # romper el extra:forbid del sub-modelo.
     authorization: str | None = Field(default=None)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class TrackEventModel(BaseModel):
@@ -163,7 +168,7 @@ class TrackEventModel(BaseModel):
     # populate_by_name permite que `meta` se asigne tanto por el alias
     # `_meta` (inyectado por http_handler) como por el nombre del campo
     # (compatibilidad con codigo que ya pasaba `meta` directo).
-    model_config = {'extra': 'forbid', 'populate_by_name': True}
+    model_config = ConfigDict(extra='forbid', populate_by_name=True)
 
     def tracking_payload(self) -> dict[str, Any]:
         """Devuelve el payload de tracking validado, sin `cf_token` ni `meta`.

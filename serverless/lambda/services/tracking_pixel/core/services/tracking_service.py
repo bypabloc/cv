@@ -26,11 +26,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from settings.config import logger
-from shared.cache import cached
+from shared.cache.decorator import cached
 from shared.core.ulid import new_uuidv7
 from shared.db.repository import ensure_session_and_visit, insert_tracking
 from shared.db.session import db_session
-from shared.queue import send_to_queue
+from shared.queue.publisher import send_to_queue
 from ua_parser import user_agent_parser
 
 # --- Enrichment ---

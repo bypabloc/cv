@@ -13,8 +13,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from shared.db import db_session
-from shared.db.models import AuthUser
+from shared.db.models.auth import AuthUser
+from shared.db.session import db_session
 
 
 class SessionService:

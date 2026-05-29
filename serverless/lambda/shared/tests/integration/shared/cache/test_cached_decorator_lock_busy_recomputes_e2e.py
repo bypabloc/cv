@@ -9,7 +9,8 @@ Then tras el busy-wait el lock sigue ocupado y la funcion recomputa
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache, cached
+from shared.cache.client import DynamoDBCache
+from shared.cache.decorator import cached
 from shared.cache.stampede import acquire_lock
 
 pytestmark = pytest.mark.integration

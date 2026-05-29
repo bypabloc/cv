@@ -147,7 +147,7 @@ def dynamodb_tables() -> Generator[None]:
 
     Usa `BaseModel.create_table()` para ejercitar tambien la ruta DDL.
     """
-    from shared.dynamodb import (
+    from shared.dynamodb.models import (
         CacheItem,
         ContactItem,
         RateLimitBucketItem,

@@ -33,20 +33,24 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
+import shared.db.models.auth  # noqa: F401 -- warmup INIT: registra dominio
 from models.event import EVENT_MODEL
 from settings.operations import OPERATIONS
-from shared.lambda_kit import http_handler
+from shared.db.warmup import warm_db
+from shared.lambda_kit.http_dispatch import http_handler
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
-from shared.observability.tracer import tracer
 
 __version__ = '0.1.0'
+
+# SnapStart: precalienta engine (NullPool) + configure_mappers del dominio
+# auth en el INIT -> queda en el snapshot. Best-effort. Ver lambda-config.md.
+warm_db()
 
 
 @logger.inject_lambda_context(
     log_event=False, correlation_id_path='requestContext.requestId'
 )
-@tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Entrypoint Lambda users (POST /users).

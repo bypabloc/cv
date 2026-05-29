@@ -10,7 +10,7 @@ import pytest
 
 def test_jwt_require_active_user_missing_header_401():
     from services import jwt_service
-    from shared.core import ApplicationError
+    from shared.core.exceptions import ApplicationError
 
     with pytest.raises(ApplicationError) as exc:
         jwt_service.require_active_user(None, app_config=object())

@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from freezegun import freeze_time
-from shared.cache import cached
+from shared.cache.decorator import cached
 
 pytestmark = pytest.mark.integration
 

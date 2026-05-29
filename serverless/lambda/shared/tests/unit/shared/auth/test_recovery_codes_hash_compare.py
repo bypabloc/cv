@@ -6,7 +6,7 @@ Then matchea el correcto (True) y rechaza uno distinto (False).
 
 from __future__ import annotations
 
-from shared.auth import compare_recovery_code, hash_recovery_code
+from shared.auth.recovery_codes import compare_recovery_code, hash_recovery_code
 
 
 def test_recovery_codes_hash_compare() -> None:

@@ -12,7 +12,7 @@ Importar SIEMPRE de forma explicita desde el subpaquete correspondiente:
 Subpaquetes:
 - `core`          — config, excepciones, tipos, ulid (primitivos sin deps).
 - `aws`           — clientes boto3: DynamoDB, SES, SSM.
-- `observability` — logger, tracer, metrics (Powertools v3).
+- `observability` — logger, metrics (Powertools v3, sin X-Ray).
 - `http`          — CORS, responses, ip_extractor, turnstile, validators.
 - `db`            — ORM SQLAlchemy + Alembic para Neon PostgreSQL.
 - `dynamodb`      — ORM minimalista para DynamoDB (modelos Pydantic).

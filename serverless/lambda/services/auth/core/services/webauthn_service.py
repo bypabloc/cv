@@ -13,14 +13,13 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from shared.auth import (
+from shared.auth.webauthn import (
     WebauthnCloneError,
     build_login_options,
     build_register_options,
     verify_authentication,
     verify_registration,
 )
-from shared.db import db_session
 from shared.db.repositories.auth_mfa import (
     count_active_mfa,
     delete_webauthn_credential,
@@ -29,6 +28,7 @@ from shared.db.repositories.auth_mfa import (
     insert_webauthn_credential,
     update_sign_count,
 )
+from shared.db.session import db_session
 
 from .session_service import SessionService
 

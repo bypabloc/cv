@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 import sqlalchemy
-from shared.db import Session, func, pg_insert, select
+from shared.db.sa import Session, func, pg_insert, select
 from sqlalchemy.dialects.postgresql import insert as sa_pg_insert
 from sqlalchemy.orm import Session as SAOrmSession
 

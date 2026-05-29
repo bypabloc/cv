@@ -14,7 +14,7 @@ validar el payload concreto dentro de `validate()`.
 from __future__ import annotations
 
 from settings.operations import OPERATIONS
-from shared.lambda_kit import build_event_model
+from shared.lambda_kit.event_model import build_event_model
 
 # Side-effect: importar los modelos garantiza que se cargan en cold
 # start (algunos controllers los importan via `models.<operation>` y

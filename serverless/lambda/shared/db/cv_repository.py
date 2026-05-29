@@ -29,7 +29,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import (
+from .models.cv import (
     Award,
     AwardNiche,
     Certificate,
@@ -44,8 +44,6 @@ from .models import (
     ExperienceSkill,
     Language,
     LanguageNiche,
-    Niche,
-    NichePriority,
     Profile,
     ProfileNiche,
     ProfileStats,
@@ -58,9 +56,9 @@ from .models import (
     SkillCategory,
     SkillCategoryNiche,
     SkillCategorySkill,
-    TechTag,
-    Translation,
 )
+from .models.i18n import Translation
+from .models.taxonomy import Niche, NichePriority, TechTag
 from .repository import RepositoryError
 from .session import db_session
 
@@ -270,7 +268,7 @@ def get_profile(*, locale: str = 'es') -> dict[str, Any]:
                 session, 'profile', [profile.id]
             ).get(profile.id, {})
             # Niches del profile (singleton).
-            from .models import Niche
+            from .models.taxonomy import Niche
 
             niches_stmt = (
                 select(Niche.slug)

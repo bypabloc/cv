@@ -14,7 +14,7 @@ from models.mfa import MfaListIn
 from services.auth_service import require_active_user
 from services.mfa_method_service import MfaMethodService
 from settings.config import app_config
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
 class List(BaseController):

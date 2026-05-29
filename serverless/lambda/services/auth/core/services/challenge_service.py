@@ -12,7 +12,7 @@ import time
 from typing import Any
 from uuid import UUID
 
-from shared.aws import get_table
+from shared.aws.dynamodb import get_table
 
 _TTL_SECONDS = 300
 

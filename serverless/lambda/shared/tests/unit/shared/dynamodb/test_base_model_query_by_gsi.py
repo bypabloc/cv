@@ -7,8 +7,7 @@ Then devuelve los items de ese nicho via el indice (AC-10).
 from __future__ import annotations
 
 import pytest
-
-from shared.dynamodb import TrackingEventItem
+from shared.dynamodb.models import TrackingEventItem
 
 
 def _event(

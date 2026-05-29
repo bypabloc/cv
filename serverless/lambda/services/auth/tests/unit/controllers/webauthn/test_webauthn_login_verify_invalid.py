@@ -14,7 +14,7 @@ from .._helpers import _make_temp_event
 def test_webauthn_login_verify_invalid(monkeypatch):
     """Assertion invalida -> 401 WEBAUTHN_VERIFY_FAILED."""
     from controllers.webauthn import login_verify
-    from shared.auth import WebauthnVerifyError
+    from shared.auth.webauthn import WebauthnVerifyError
 
     uid = uuid4()
     jwt_svc = MagicMock()

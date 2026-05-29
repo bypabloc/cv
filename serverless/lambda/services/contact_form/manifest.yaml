@@ -16,11 +16,11 @@ description: Encoder del form de contacto (valida + Turnstile + encola SQS).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 384       # MB — minimo medido. Form submit (interactivo, usa
-                  # SnapStart). Cold no-restore ~7.6s a 384 / ~9.9s a 256;
-                  # con restore ~5.5s a 384. handler = Turnstile siteverify
-                  # HTTP + DDB rate-limit + SQS. NO subir sin medir
-                  # (ver .claude/rules/lambda-config.md).
+memory: 256       # MB — minimo medido (dev, 2026-05, cold $LATEST tras
+                  # lazy+warmup). Footprint base Neon (sqlalchemy+httpx+DDB):
+                  # 117/128 a 128 MB (solo 11 MB headroom -> riesgo OOM en el
+                  # submit completo) vs 157 MB a 256 (comodo). 128 NO.
+                  # Bajo de 384 a 256. Ver .claude/rules/lambda-config.md.
 timeout: 30       # segundos — cubre el cold sin SnapStart restore + Turnstile.
 
 # SnapStart: reduce cold start de 3.4s a ~830ms (Restore Duration).

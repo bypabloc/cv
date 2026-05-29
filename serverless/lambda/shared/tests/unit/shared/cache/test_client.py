@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from shared.cache.client import DynamoDBCache
 
 pytestmark = pytest.mark.unit

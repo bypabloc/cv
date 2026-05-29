@@ -143,11 +143,11 @@ class TestPackageLambda:
 
         _, _, all_deps = package_lambda(lambda_root, runtime='python3.13')
 
-        # shared.core aporta pydantic + pydantic-settings; el lambda aporta
-        # some-extra-pkg. Union ordenada.
+        # shared.core aporta pydantic[email] + pydantic-settings; el lambda
+        # aporta some-extra-pkg. Union ordenada.
         assert all_deps == [
             'pydantic-settings>=2.0,<3.0',
-            'pydantic>=2.5,<3.0',
+            'pydantic[email]>=2.5,<3.0',
             'some-extra-pkg>=1.0',
         ]
 

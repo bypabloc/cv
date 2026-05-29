@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from shared.cache.decorator import cached
 
 pytestmark = pytest.mark.unit

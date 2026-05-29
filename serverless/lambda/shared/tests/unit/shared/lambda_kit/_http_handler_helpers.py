@@ -12,7 +12,8 @@ from typing import Any
 from unittest.mock import patch
 
 from pydantic import BaseModel
-from shared.lambda_kit import BaseController, build_event_model
+from shared.lambda_kit.base_controller import BaseController
+from shared.lambda_kit.event_model import build_event_model
 
 
 class _FakeModel(BaseModel):

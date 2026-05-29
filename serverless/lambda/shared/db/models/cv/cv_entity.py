@@ -23,7 +23,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from ...base import Base, TimestampMixin, UUIDPKMixin
 
-
 # Awards -------------------------------------------------------------------
 
 class Award(UUIDPKMixin, TimestampMixin, Base):

@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from shared.db import db_session
 from shared.db.repositories.auth import insert_audit_event
+from shared.db.session import db_session
 
 
 class AuditService:

@@ -18,7 +18,7 @@ from services.persistence import (
     send_owner_email_safe,
 )
 from settings.config import logger
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
 class Process(BaseController):

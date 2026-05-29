@@ -12,11 +12,11 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from shared.db import db_session
 from shared.db.repositories.auth_users import (
     insert_admin_action,
     list_admin_actions,
 )
+from shared.db.session import db_session
 
 
 class AuditAdminService:

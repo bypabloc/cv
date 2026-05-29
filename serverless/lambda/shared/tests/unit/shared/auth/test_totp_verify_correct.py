@@ -7,7 +7,7 @@ Then retorna True.
 from __future__ import annotations
 
 import pyotp
-from shared.auth import verify_totp_code
+from shared.auth.totp import verify_totp_code
 
 
 def test_totp_verify_correct() -> None:

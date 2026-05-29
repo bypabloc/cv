@@ -21,7 +21,7 @@ def _fake_session_returning(user):
 
 def test_require_active_user_no_header_raises():
     from services.auth_service import require_active_user
-    from shared.core import ApplicationError
+    from shared.core.exceptions import ApplicationError
 
     with pytest.raises(ApplicationError) as exc:
         require_active_user(None, app_config=object())
@@ -31,8 +31,8 @@ def test_require_active_user_no_header_raises():
 
 def test_require_active_user_invalid_jwt_raises(monkeypatch):
     from services import auth_service
-    from shared.auth import JwtInvalidError
-    from shared.core import ApplicationError
+    from shared.auth.jwt import JwtInvalidError
+    from shared.core.exceptions import ApplicationError
 
     fake_jwt = MagicMock()
     fake_jwt.verify.side_effect = JwtInvalidError('bad')
@@ -49,8 +49,8 @@ def test_require_active_user_invalid_jwt_raises(monkeypatch):
 
 def test_require_active_user_inactive_raises(monkeypatch):
     from services import auth_service
-    from shared.core import ApplicationError
-    from shared.db.models import AuthUserStatus
+    from shared.core.exceptions import ApplicationError
+    from shared.db.models.auth import AuthUserStatus
 
     claims = SimpleNamespace(sub=uuid4())
     fake_jwt = MagicMock()
@@ -73,7 +73,7 @@ def test_require_active_user_inactive_raises(monkeypatch):
 
 def test_require_active_user_active_returns_user(monkeypatch):
     from services import auth_service
-    from shared.db.models import AuthUserStatus
+    from shared.db.models.auth import AuthUserStatus
 
     claims = SimpleNamespace(sub=uuid4())
     fake_jwt = MagicMock()

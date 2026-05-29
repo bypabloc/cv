@@ -36,7 +36,7 @@ from typing import Any
 
 import boto3
 
-from shared.core import ApplicationError
+from shared.core.exceptions import ApplicationError
 
 
 class KmsError(ApplicationError):

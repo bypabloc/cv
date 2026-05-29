@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, unquote, urlparse
 
-from shared.auth import build_otpauth_url
+from shared.auth.totp import build_otpauth_url
 
 
 def test_totp_otpauth_url_format() -> None:

@@ -12,8 +12,8 @@ import pytest
 
 def test_jwt_require_active_user_invalid_jwt_401(monkeypatch):
     from services import jwt_service
-    from shared.auth import JwtError
-    from shared.core import ApplicationError
+    from shared.auth.jwt import JwtError
+    from shared.core.exceptions import ApplicationError
 
     fake_jwt = MagicMock()
     fake_jwt.verify.side_effect = JwtError('bad')

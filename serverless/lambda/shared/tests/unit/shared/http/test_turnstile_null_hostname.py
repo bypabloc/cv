@@ -15,8 +15,10 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-
-from shared.http.turnstile import TURNSTILE_SITEVERIFY_URL, verify_turnstile_token
+from shared.http.turnstile import (
+    TURNSTILE_SITEVERIFY_URL,
+    verify_turnstile_token,
+)
 
 pytestmark = pytest.mark.unit
 

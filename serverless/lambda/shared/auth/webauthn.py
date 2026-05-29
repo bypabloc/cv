@@ -53,7 +53,7 @@ from fido2.webauthn import (
     UserVerificationRequirement,
 )
 
-from shared.core import ApplicationError
+from shared.core.exceptions import ApplicationError
 
 
 class WebauthnError(ApplicationError):

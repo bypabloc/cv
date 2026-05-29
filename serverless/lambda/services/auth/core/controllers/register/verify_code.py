@@ -24,10 +24,10 @@ from services.rate_limit_service import RateLimitService
 from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
-from shared.auth import JwtExpiredError, JwtInvalidError, JwtRevokedError
+from shared.auth.jwt import JwtExpiredError, JwtInvalidError, JwtRevokedError
 from shared.core.ulid import new_uuidv7
-from shared.db.models import AuthCodeKind
-from shared.lambda_kit import BaseController
+from shared.db.models.auth import AuthCodeKind
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#register.verify-code'
 _LOCK_DURATION = timedelta(hours=1)

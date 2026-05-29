@@ -13,14 +13,14 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from shared.auth import generate_opaque_token, hash_token
-from shared.db import db_session
-from shared.db.models import AuthLinkKind, AuthMagicLink
+from shared.auth.tokens import generate_opaque_token, hash_token
+from shared.db.models.auth import AuthLinkKind, AuthMagicLink
 from shared.db.repositories.auth import (
     consume_magic_link,
     get_magic_link_state,
     insert_magic_link,
 )
+from shared.db.session import db_session
 
 # TTL del magic-link (politica MVP).
 # LINK_TTL_MINUTES es la fuente unica: el email que envia el worker muestra

@@ -15,9 +15,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from shared.core import BaseModel, Field
-
 from shared.core.niches import CV_NICHES
+from shared.core.pydantic_types import BaseModel, ConfigDict, Field
 
 
 class CvRequestMeta(BaseModel):
@@ -36,7 +35,7 @@ class CvRequestMeta(BaseModel):
     # romper el extra:forbid del sub-modelo.
     authorization: str | None = None
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class CvQueryModel(BaseModel):
@@ -49,7 +48,7 @@ class CvQueryModel(BaseModel):
         default_factory=CvRequestMeta, alias='_meta'
     )
 
-    model_config = {'extra': 'forbid', 'populate_by_name': True}
+    model_config = ConfigDict(extra='forbid', populate_by_name=True)
 
     def normalized_niche(self) -> str | None:
         """Devuelve el niche si es valido (CV_NICHES), sino None."""

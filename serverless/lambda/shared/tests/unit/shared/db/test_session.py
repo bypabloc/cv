@@ -5,8 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-
-from shared.db import session as session_mod
+import shared.db.session as session_mod
 
 pytestmark = pytest.mark.unit
 

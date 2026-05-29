@@ -7,8 +7,7 @@ Then el item se persiste y se recupera identico (AC-5).
 from __future__ import annotations
 
 import pytest
-
-from shared.dynamodb import ContactItem, TrackingEventItem
+from shared.dynamodb.models import ContactItem, TrackingEventItem
 
 
 @pytest.mark.usefixtures('dynamodb_tables')

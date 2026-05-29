@@ -7,7 +7,7 @@ Then se borra el row y retorna True.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models import AuthWebauthnCredential
+from shared.db.models.auth import AuthWebauthnCredential
 from shared.db.repositories.auth_mfa import delete_webauthn_credential
 
 pytestmark = pytest.mark.unit

@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import pytest
 from boto3.dynamodb.conditions import Key
-
-from shared.dynamodb import TrackingEventItem
+from shared.dynamodb.models import TrackingEventItem
 
 
 def _event(session_id: str, page_id: str, created_at: str) -> TrackingEventItem:

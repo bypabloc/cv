@@ -16,7 +16,7 @@ from .._helpers import _make_authed_event
 def test_mfa_setup_totp_no_auth(monkeypatch):
     """Sin Authorization -> ApplicationError(401) propaga."""
     from controllers.mfa import setup_totp
-    from shared.core import ApplicationError
+    from shared.core.exceptions import ApplicationError
 
     monkeypatch.setattr(setup_totp, 'RateLimitService', lambda _c: MagicMock())
 

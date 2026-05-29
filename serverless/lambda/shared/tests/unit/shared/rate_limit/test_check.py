@@ -6,7 +6,6 @@ import time
 
 import boto3
 import pytest
-
 from shared.cache.client import DynamoDBCache
 from shared.rate_limit.check import check_or_raise
 from shared.rate_limit.exceptions import (

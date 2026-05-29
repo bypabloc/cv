@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import pytest
-
-from shared.http.validators import is_valid_country, is_valid_email, sanitize_text
+from shared.http.validators import (
+    is_valid_country,
+    is_valid_email,
+    sanitize_text,
+)
 
 pytestmark = pytest.mark.unit
 

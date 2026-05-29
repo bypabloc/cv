@@ -14,9 +14,9 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from shared.auth import generate_opaque_token, hash_token, verify_password
-from shared.db import db_session
-from shared.db.models import AuthCredentials, AuthMagicLink, AuthUser
+from shared.auth.password import verify_password
+from shared.auth.tokens import generate_opaque_token, hash_token
+from shared.db.models.auth import AuthCredentials, AuthMagicLink, AuthUser
 from shared.db.repositories.auth import get_user_by_email
 from shared.db.repositories.auth_mfa import (
     count_active_mfa,
@@ -38,6 +38,7 @@ from shared.db.repositories.auth_users import (
     update_profile,
     update_user_email,
 )
+from shared.db.session import db_session
 
 # TTL del magic-link de change-email (15 min, igual que register/login).
 _EMAIL_CHANGE_TTL = timedelta(minutes=15)

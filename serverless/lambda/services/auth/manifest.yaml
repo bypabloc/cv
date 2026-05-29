@@ -16,11 +16,13 @@ description: HTTP endpoint POST /auth (register/login/verify/session).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB — minimo medido. Con la carga lazy de shared.auth
-                  # (fido2 no se importa salvo en acciones WebAuthn) el
-                  # INIT bajo a ~3s. A 512 MB el handler (SSM+DDB+Neon
-                  # audit) tarda ~2.7s; a 256 ~7.6s (Neon lento). cv usa
-                  # 512. NO subir sin medir (ver .claude/rules/lambda-config.md).
+memory: 256       # MB — minimo medido (dev, 2026-05, cold $LATEST sin
+                  # SnapStart restore, con warmup en INIT). login.start:
+                  # 174 MB usados, handler 2.2s. webauthn (carga fido2/
+                  # cryptography): a 256 entra con headroom. 128 NO: webauthn
+                  # llega a 127/128 MB (OOM inminente) y tarda 21s (CPU
+                  # starved) ~ al borde del timeout. Bajo de 512 (sobre-
+                  # dimensionado) a 256. Ver .claude/rules/lambda-config.md.
 timeout: 30       # segundos — cubre el cold sin SnapStart restore (~6s a
                   # 512 MB) + Turnstile siteverify HTTP, con margen.
 

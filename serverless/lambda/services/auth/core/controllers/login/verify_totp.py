@@ -18,9 +18,9 @@ from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.totp_service import TotpService
 from settings.config import app_config
-from shared.auth import JwtError
-from shared.db.models import AuthMfaKind
-from shared.lambda_kit import BaseController
+from shared.auth.jwt import JwtError
+from shared.db.models.auth import AuthMfaKind
+from shared.lambda_kit.base_controller import BaseController
 
 from ._mfa_login import issue_terminal_tokens
 

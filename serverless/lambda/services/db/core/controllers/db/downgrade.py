@@ -10,7 +10,7 @@ from __future__ import annotations
 from models.db import DowngradeModel
 from services.db_service import ServiceError, run_downgrade
 from settings.config import ErrorCode
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
 class Downgrade(BaseController):

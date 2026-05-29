@@ -8,7 +8,7 @@ Then acquire_lock devuelve un holder_id y release_lock devuelve True.
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 from shared.cache.stampede import acquire_lock, release_lock
 
 pytestmark = pytest.mark.integration

@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import time
 
-from shared.aws import get_secret_by_name
-from shared.core import ApplicationError
+from shared.aws.ssm import get_secret_by_name
+from shared.core.exceptions import ApplicationError
 
 
 class AdminAuthzError(ApplicationError):

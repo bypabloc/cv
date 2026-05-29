@@ -12,15 +12,14 @@ from collections.abc import Generator
 
 import pytest
 from moto import mock_aws
-
-from shared.dynamodb import (
+from shared.aws.dynamodb import reset_resource_cache
+from shared.dynamodb.models import (
     CacheItem,
     ContactItem,
     RateLimitBucketItem,
     RateLimitRuleItem,
     TrackingEventItem,
 )
-from shared.aws.dynamodb import reset_resource_cache
 
 _ALL_MODELS = (
     ContactItem,

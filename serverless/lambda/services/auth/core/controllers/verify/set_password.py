@@ -19,13 +19,9 @@ from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-from shared.auth import (
-    JwtExpiredError,
-    JwtInvalidError,
-    JwtRevokedError,
-    hash_password,
-)
-from shared.lambda_kit import BaseController
+from shared.auth.jwt import JwtExpiredError, JwtInvalidError, JwtRevokedError
+from shared.auth.password import hash_password
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#verify.set-password'
 

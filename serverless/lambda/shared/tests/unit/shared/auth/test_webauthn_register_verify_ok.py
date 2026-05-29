@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import fido2.cbor as cbor
 import pytest
-from shared.auth import webauthn as wa
+import shared.auth.webauthn as wa
 
 
 def test_webauthn_register_verify_ok(monkeypatch: pytest.MonkeyPatch) -> None:

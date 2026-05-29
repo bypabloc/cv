@@ -8,7 +8,7 @@ Then la 2a llamada sigue devolviendo la rule desde el cache @cached
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb import RateLimitRuleItem
+from shared.dynamodb.models import RateLimitRuleItem
 from shared.rate_limit.rules import get_endpoint_rule
 
 pytestmark = pytest.mark.integration

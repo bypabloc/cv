@@ -17,8 +17,8 @@ from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
 from services.session_tracking_service import SessionTrackingService
 from settings.config import app_config
-from shared.auth import JwtError
-from shared.lambda_kit import BaseController
+from shared.auth.jwt import JwtError
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#session.logout'
 

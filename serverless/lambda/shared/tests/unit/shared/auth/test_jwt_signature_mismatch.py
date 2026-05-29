@@ -7,7 +7,7 @@ Then levanta JwtInvalidError por signature mismatch.
 from uuid import uuid4
 
 import pytest
-from shared.auth import JwtInvalidError, issue_temp_jwt, verify_jwt
+from shared.auth.jwt import JwtInvalidError, issue_temp_jwt, verify_jwt
 
 pytestmark = pytest.mark.unit
 

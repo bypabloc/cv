@@ -6,7 +6,7 @@ Then verify_password levanta NeedsRehashError.
 
 import pytest
 from argon2 import PasswordHasher
-from shared.auth import NeedsRehashError, verify_password
+from shared.auth.password import NeedsRehashError, verify_password
 
 pytestmark = pytest.mark.unit
 

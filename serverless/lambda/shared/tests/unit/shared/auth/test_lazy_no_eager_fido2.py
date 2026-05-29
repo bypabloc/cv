@@ -1,59 +1,67 @@
 """
-Given el subpaquete shared.auth con carga lazy (PEP 562),
-When se importa shared.auth y se accede a un simbolo de jwt,
-Then NO se carga fido2/webauthn; recien al acceder un simbolo de webauthn
-     se importa fido2.
+Given el subpaquete shared.auth con imports CONCRETOS por modulo,
+When se importa `shared.auth.jwt`,
+Then NO se carga fido2/webauthn; recien al importar `shared.auth.webauthn`
+     se carga fido2.
 
-Guard de regresion del cold start: el __init__ eager hacia
-`from shared.auth.webauthn import ...` y arrastraba fido2/cryptography (el
-import mas pesado) en TODA accion que importara shared.auth, aunque no
-usara WebAuthn (login.start, session.refresh, ...). El lazy hace que cada
-accion solo pague los submodulos que toca. Ver .claude/rules/lambda-config.md.
+Guard de regresion del cold start: importar un simbolo de jwt
+(`login.start`, `session.refresh`) NO debe arrastrar fido2/cryptography (el
+import mas pesado). Con imports concretos por modulo esto es natural; el
+test protege contra que alguien agregue `import fido2` a `jwt.py` o a una
+dep transitiva suya. Ver `.claude/rules/lambda-config.md`.
+
+Se ejecuta en un SUBPROCESO para no contaminar el `sys.modules` de la suite
+(un purgado in-process de fido2 rompe `get_type_hints` de las dataclasses
+de fido2 en tests posteriores).
 """
 
-import importlib
+import os
+import subprocess
 import sys
 
 import pytest
+import shared
 
 pytestmark = pytest.mark.unit
 
+# Dir que contiene el paquete `shared` (.../serverless/lambda). Es el UNICO
+# entry que el subproceso necesita en PYTHONPATH: poner `.../shared` directo
+# haria que `shared/http` shadowee el `http` de la stdlib.
+_LAMBDA_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(shared.__file__)))
 
-def _purge_auth_and_fido2() -> None:
-    for mod in list(sys.modules):
-        if (
-            mod == 'shared.auth'
-            or mod.startswith('shared.auth.')
-            or mod == 'fido2'
-            or mod.startswith('fido2.')
-        ):
-            del sys.modules[mod]
+_CHECK = """
+import sys
+
+import shared.auth.jwt as _jwt
+assert callable(_jwt.verify_jwt)
+# jwt cargado; fido2/webauthn NO (jwt no los arrastra).
+assert 'shared.auth.jwt' in sys.modules
+assert 'fido2' not in sys.modules, 'jwt arrastra fido2 (regresion cold start)'
+assert 'shared.auth.webauthn' not in sys.modules
+
+import shared.auth.webauthn as _wa
+assert callable(_wa.verify_authentication)
+# ahora si: webauthn carga fido2.
+assert 'shared.auth.webauthn' in sys.modules
+assert 'fido2' in sys.modules
+print('OK')
+"""
 
 
-def test_shared_auth_does_not_eager_load_fido2():
-    # Arrange: estado limpio para medir que se carga y que no.
-    _purge_auth_and_fido2()
+def test_jwt_import_does_not_eager_load_fido2() -> None:
+    # Arrange: subproceso con SOLO el lambda root en PYTHONPATH (shared
+    # importable como paquete; sin que shared/http shadowee la stdlib).
+    env = {**os.environ, 'PYTHONPATH': _LAMBDA_ROOT}
 
-    # Act 1: importar shared.auth NO debe cargar ningun submodulo aun.
-    auth = importlib.import_module('shared.auth')
+    # Act
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, '-c', _CHECK],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
 
-    # Assert 1: el __init__ es lazy -> ni webauthn ni fido2 cargados.
-    assert 'shared.auth.webauthn' not in sys.modules
-    assert 'fido2' not in sys.modules
-
-    # Act 2: acceder a un simbolo jwt dispara solo la carga de jwt.
-    _jwt = auth.verify_jwt
-    assert callable(_jwt) is True
-
-    # Assert 2: jwt cargado, fido2/webauthn NO (jwt no los arrastra).
-    assert 'shared.auth.jwt' in sys.modules
-    assert 'fido2' not in sys.modules
-    assert 'shared.auth.webauthn' not in sys.modules
-
-    # Act 3: acceder a un simbolo webauthn SI carga fido2.
-    _wa = auth.verify_authentication
-    assert callable(_wa) is True
-
-    # Assert 3: ahora si estan cargados.
-    assert 'shared.auth.webauthn' in sys.modules
-    assert 'fido2' in sys.modules
+    # Assert
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == 'OK'

@@ -17,8 +17,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from shared.db import db_session
-from shared.db.models import AuthCodeKind, AuthLinkKind, AuthUser
+from shared.db.models.auth import AuthCodeKind, AuthLinkKind, AuthUser
 from shared.db.repositories.auth import (
     create_pending_user,
     get_user_by_email,
@@ -30,6 +29,7 @@ from shared.db.repositories.auth import (
     set_password_hash,
     update_last_login,
 )
+from shared.db.session import db_session
 
 # Politica MVP: 15 min de bloqueo tras 5 fallos consecutivos.
 _LOCK_DURATION = timedelta(minutes=15)

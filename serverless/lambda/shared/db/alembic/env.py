@@ -22,15 +22,16 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 # El directorio alembic/ debe estar en el path: los scripts de migracion
 # importan `_init_schema_extras` (piezas que Alembic no autogenera).
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import shared.db.models  # noqa: F401  -- puebla Base.metadata
-from shared.db import Base
+import shared.db.models.registry  # noqa: F401  -- puebla Base.metadata
+from shared.db.base import Base
 from shared.db.url import resolve_database_url
 
 config = context.config

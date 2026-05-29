@@ -5,7 +5,6 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-
 from shared.core.exceptions import TurnstileError
 from shared.http.turnstile import (
     TURNSTILE_SITEVERIFY_URL,
@@ -208,16 +207,10 @@ class TestVerifyTurnstileToken:
         si cf_response vacio).
         """
         monkeypatch.setenv('STAGE', 'dev')
-        monkeypatch.setenv(
-            'SSM_TURNSTILE_BYPASS_SECRET_PATH',
-            '/portfolio/dev/turnstile-bypass-secret',
-        )
-        monkeypatch.setattr(
-            'shared.http.turnstile.get_secret',
-            lambda _path: 'test-bypass-123',
-        )
 
-        # Sin respx activo, la llamada HTTP real falla -> CAPTCHA_FAILED.
+        # cf_response NO vacio -> el bypass se ignora ANTES de resolver el
+        # secret (no se llama get_secret_by_name). Sin respx activo, la
+        # llamada HTTP real a Cloudflare falla -> CAPTCHA_FAILED.
         with pytest.raises(TurnstileError):
             verify_turnstile_token(
                 'some-real-cf-token',

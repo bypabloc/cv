@@ -31,8 +31,8 @@ from sqlalchemy import func as sa_func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session as OrmSession
 
-from .models import Contact, SessionVisit, TrackingEvent
-from .models import Session as SessionRow
+from .models.visitor import Contact, SessionVisit, TrackingEvent
+from .models.visitor import Session as SessionRow
 from .session import get_engine
 
 # `pg_stat_user_tables` es una system view del catalogo de Postgres
@@ -374,7 +374,6 @@ def _visit_keys_differ(
     con el payload del nuevo evento. La comparacion es case-sensitive y
     None == None (visitante sin utm sigue en el mismo visit).
     """
-    for key in _VISIT_KEYS:
-        if getattr(last_visit, key) != incoming[key]:
-            return True
-    return False
+    return any(
+        getattr(last_visit, key) != incoming[key] for key in _VISIT_KEYS
+    )

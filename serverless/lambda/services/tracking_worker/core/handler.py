@@ -34,13 +34,11 @@ if _CORE_DIR not in sys.path:
 import json
 from typing import Any
 
-from shared.observability import MetricUnit
 from controllers.worker.process_batch import ProcessBatch
 from settings.operations import OPERATIONS
-from shared.lambda_kit import build_event_model
+from shared.lambda_kit.event_model import build_event_model
 from shared.observability.logger import logger
-from shared.observability.metrics import metrics
-from shared.observability.tracer import tracer
+from shared.observability.metrics import MetricUnit, metrics
 
 __version__ = '1.0.0'
 
@@ -54,7 +52,6 @@ _EVENT_MODEL = build_event_model(OPERATIONS)
 @logger.inject_lambda_context(
     log_event=False, correlation_id_path='requestContext.requestId'
 )
-@tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Procesa un batch SQS (hasta 10 records). Retorna batchItemFailures.

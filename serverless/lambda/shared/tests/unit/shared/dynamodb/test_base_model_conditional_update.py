@@ -7,8 +7,7 @@ Then actualiza solo si la condicion pasa, sino devuelve None (AC-4).
 from __future__ import annotations
 
 import pytest
-
-from shared.dynamodb import CacheItem
+from shared.dynamodb.models import CacheItem
 
 
 def _seed_lock(holder: str = 'holder-1') -> None:

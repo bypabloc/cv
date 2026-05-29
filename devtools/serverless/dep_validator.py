@@ -255,10 +255,15 @@ def cmd_lint_deps(flags: dict) -> int:
        `services/<X>/core/**/*.py` no importan directamente paquetes
        externos que tienen un portador shared (pydantic, sqlalchemy,
        boto3, aws_lambda_powertools, ...).
+    3) No-submodule (`scan_tree`): NINGUN .py de `serverless/lambda/`
+       (services + shared, incl. tests) importa un submodulo de `shared`
+       via su barrel (`from shared.auth import webauthn`). Se exige el
+       simbolo concreto (`from shared.auth.webauthn import ...`) o, para
+       acceso al modulo, `import shared.auth.webauthn as webauthn`.
 
     Con `--lambda=<x>` / `--path=<dir>` valida ese lambda; sin target
-    valida los 4 lambdas del backend. Exit 0 si ningun lambda viola
-    ninguno de los 2 checks; 1 si alguno los viola.
+    valida los 4 lambdas del backend. El check 3 es global (toda la
+    carpeta) y corre SIEMPRE. Exit 0 si ningun check falla; 1 si alguno.
     """
     from shared.console import GREEN
     from shared.console import RED
@@ -302,4 +307,16 @@ def cmd_lint_deps(flags: dict) -> int:
             print(
                 _c(GREEN, f'OK  {root.name}: cero imports prohibidos en core/.')
             )
+
+    # Check 3: no-submodule via barrel shared (global, toda la carpeta).
+    from serverless.resolve import _PORTFOLIO_SERVERLESS_DIR
+    from serverless.submodule_import_validator import format_report as fmt_sub
+    from serverless.submodule_import_validator import scan_tree
+
+    scan_root = _PORTFOLIO_SERVERLESS_DIR / 'lambda'
+    sub_violations = scan_tree(scan_root, scan_root / 'shared')
+    report = fmt_sub(sub_violations, scan_root)
+    print(_c(RED, report) if sub_violations else _c(GREEN, report))
+    if sub_violations:
+        rc = 1
     return rc

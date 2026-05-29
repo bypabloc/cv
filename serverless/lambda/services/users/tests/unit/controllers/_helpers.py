@@ -67,7 +67,7 @@ def _make_user(
     failed_attempts: int = 0,
 ) -> Any:
     """Mock de AuthUser con los campos que usan los controllers de users."""
-    from shared.db.models import AuthUserStatus
+    from shared.db.models.auth import AuthUserStatus
 
     user = MagicMock()
     user.id = str(user_id) if user_id is not None else str(uuid4())

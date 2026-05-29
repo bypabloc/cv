@@ -21,7 +21,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from shared.db.models import (
+from shared.db.models.auth import (
     AuthAuditLog,
     AuthCodeKind,
     AuthCredentials,

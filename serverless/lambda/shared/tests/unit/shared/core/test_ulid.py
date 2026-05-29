@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from shared.core.ulid import new_uuidv7
 
 pytestmark = pytest.mark.unit

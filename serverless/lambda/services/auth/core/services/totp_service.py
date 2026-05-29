@@ -12,12 +12,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.auth import (
+from shared.auth.totp import (
     build_otpauth_url,
     generate_totp_secret_b32,
     verify_totp_code,
 )
-from shared.aws import kms_decrypt, kms_encrypt
+from shared.aws.kms import kms_decrypt, kms_encrypt
 
 
 class TotpService:

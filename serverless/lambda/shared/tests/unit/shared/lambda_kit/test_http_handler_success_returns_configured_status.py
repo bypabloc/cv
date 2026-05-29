@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from shared.lambda_kit import http_handler
+from shared.lambda_kit.http_dispatch import http_handler
 from tests.unit.shared.lambda_kit._http_handler_helpers import (
     make_fake_controller,
     with_registered_controller,

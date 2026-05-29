@@ -31,8 +31,8 @@ from sqlalchemy import func as sa_func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session as OrmSession
 
-from .models import Contact, SessionVisit, TrackingEvent
-from .models import Session as SessionRow
+from .models.visitor import Contact, SessionVisit, TrackingEvent
+from .models.visitor import Session as SessionRow
 from .session import get_engine
 
 # `pg_stat_user_tables` es una system view del catalogo de Postgres

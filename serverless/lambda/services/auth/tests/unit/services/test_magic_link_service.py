@@ -11,7 +11,7 @@ def _fake_session():
 
 def test_generate_and_persist_returns_plain_and_hash(monkeypatch):
     from services import magic_link_service
-    from shared.db.models import AuthLinkKind
+    from shared.db.models.auth import AuthLinkKind
 
     monkeypatch.setattr(magic_link_service, 'db_session', _fake_session)
     monkeypatch.setattr(

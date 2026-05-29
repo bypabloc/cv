@@ -30,13 +30,13 @@ def test_send_to_queue_publishes_payload_to_sqs(monkeypatch):
     )
 
     # Clear ssm cache para que resuelva fresh
-    from shared.aws import ssm as ssm_module
+    import shared.aws.ssm as ssm_module
     if hasattr(ssm_module, 'get_secret') and hasattr(
         ssm_module.get_secret, 'cache_clear'
     ):
         ssm_module.get_secret.cache_clear()
 
-    from shared.queue import send_to_queue
+    from shared.queue.publisher import send_to_queue
 
     payload = {
         'contact_id': '01900000-0000-7000-8000-000000000001',

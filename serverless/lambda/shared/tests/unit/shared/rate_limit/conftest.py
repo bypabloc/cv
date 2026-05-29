@@ -7,7 +7,6 @@ from collections.abc import Generator
 import boto3
 import pytest
 from moto import mock_aws
-
 from shared.aws.dynamodb import reset_resource_cache
 
 

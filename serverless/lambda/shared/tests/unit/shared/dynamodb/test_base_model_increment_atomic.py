@@ -7,8 +7,7 @@ Then se suma atomicamente y devuelve los valores ALL_NEW como int (AC-3).
 from __future__ import annotations
 
 import pytest
-
-from shared.dynamodb import RateLimitBucketItem
+from shared.dynamodb.models import RateLimitBucketItem
 
 
 @pytest.mark.usefixtures('dynamodb_tables')

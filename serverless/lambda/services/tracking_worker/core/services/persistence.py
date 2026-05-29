@@ -24,12 +24,12 @@ from typing import Any
 
 from models.message import TrackingQueueMessage
 from settings.config import logger
-from shared.cache import cached
+from shared.cache.decorator import cached
 from shared.db.repository import (
     ensure_session_and_visit,
     insert_tracking_idempotent,
 )
-from shared.db import Session as OrmSession
+from shared.db.sa import Session as OrmSession
 from ua_parser import user_agent_parser
 
 # TTL del cache de UA parsing: 24h. Un mismo User-Agent string

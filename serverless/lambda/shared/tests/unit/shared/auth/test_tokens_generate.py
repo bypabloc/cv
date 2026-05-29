@@ -5,7 +5,7 @@ Then son url-safe (sin +, /, =) y length >= 32 chars.
 """
 
 import pytest
-from shared.auth import generate_opaque_token
+from shared.auth.tokens import generate_opaque_token
 
 pytestmark = pytest.mark.unit
 

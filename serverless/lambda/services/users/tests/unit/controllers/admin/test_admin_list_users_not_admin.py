@@ -8,7 +8,7 @@ Then require_admin_user lanza AdminAuthzError('NOT_FOUND').
 from unittest.mock import MagicMock
 
 import pytest
-from shared.auth import AdminAuthzError
+from shared.auth.admin import AdminAuthzError
 
 from .._helpers import _make_authed_event, _make_user
 

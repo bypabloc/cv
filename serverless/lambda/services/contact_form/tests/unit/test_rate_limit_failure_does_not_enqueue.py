@@ -11,7 +11,7 @@ y corre antes de Turnstile y antes del encolar. AC-3.
 """
 
 import pytest
-from shared.rate_limit import RateLimitExceededError
+from shared.rate_limit.exceptions import RateLimitExceededError
 
 from tests.unit._helpers import api_gw_event, lambda_context
 

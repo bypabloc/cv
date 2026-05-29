@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from shared.core import BaseModel, ConfigDict, Field
+from shared.core.pydantic_types import BaseModel, ConfigDict, Field
 
 from ._common import _Meta
 

@@ -21,8 +21,8 @@ import os
 from enum import Enum
 from functools import cached_property
 
-from shared.aws import get_parameter, get_secret_by_name
-from shared.lambda_kit import BaseSettings
+from shared.aws.ssm import get_parameter, get_secret_by_name
+from shared.lambda_kit.base_settings import BaseSettings
 from shared.observability.logger import logger
 
 __all__ = ['AppConfig', 'ErrorCode', 'LogMetricType', 'app_config', 'logger']

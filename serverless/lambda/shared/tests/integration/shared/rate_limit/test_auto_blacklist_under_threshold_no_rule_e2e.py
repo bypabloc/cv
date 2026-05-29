@@ -9,7 +9,7 @@ from __future__ import annotations
 import time
 
 import pytest
-from shared.dynamodb import RateLimitRuleItem
+from shared.dynamodb.models import RateLimitRuleItem
 from shared.rate_limit.check import check_or_raise
 
 from ._fixtures import _add_endpoint_rule

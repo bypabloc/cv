@@ -37,7 +37,8 @@ from typing import Any
 
 from settings.config import AppConfig
 from settings.operations import OPERATIONS
-from shared.lambda_kit import build_event_model, http_handler
+from shared.lambda_kit.event_model import build_event_model
+from shared.lambda_kit.http_dispatch import http_handler
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
 

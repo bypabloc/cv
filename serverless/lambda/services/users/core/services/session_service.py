@@ -10,13 +10,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from shared.db import db_session
 from shared.db.repositories.auth_users import (
     get_session_by_id,
     list_user_sessions,
     revoke_all_user_sessions,
     revoke_session,
 )
+from shared.db.session import db_session
 
 
 def _device_summary(device_info: dict[str, Any] | None) -> dict[str, Any]:

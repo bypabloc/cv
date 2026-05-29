@@ -36,8 +36,8 @@ from services.tracking_service import (
 from settings.config import AppConfig, ErrorCode
 from shared.core.exceptions import ApplicationError
 from shared.core.ulid import new_uuidv7
-from shared.lambda_kit import BaseController
-from shared.rate_limit import check_or_raise
+from shared.lambda_kit.base_controller import BaseController
+from shared.rate_limit.check import check_or_raise
 
 # Endpoint que el rate-limit usa para resolver las rules.
 _TRACK_ENDPOINT = '/track'

@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 from freezegun import freeze_time
-from shared.auth import JwtExpiredError, issue_temp_jwt, verify_jwt
+from shared.auth.jwt import JwtExpiredError, issue_temp_jwt, verify_jwt
 
 pytestmark = pytest.mark.unit
 

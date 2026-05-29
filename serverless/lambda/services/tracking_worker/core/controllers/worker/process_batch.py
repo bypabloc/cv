@@ -30,7 +30,7 @@ from typing import Any
 from models.message import TrackingQueueMessage
 from services.persistence import process_tracking_message
 from shared.db.session import db_session
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 from shared.observability.logger import logger
 
 

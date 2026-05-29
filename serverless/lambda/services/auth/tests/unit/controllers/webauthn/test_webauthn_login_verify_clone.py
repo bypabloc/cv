@@ -15,7 +15,7 @@ from .._helpers import _make_temp_event
 def test_webauthn_login_verify_clone(monkeypatch):
     """AC-15: clone detected -> 401 + audit."""
     from controllers.webauthn import login_verify
-    from shared.auth import WebauthnCloneError
+    from shared.auth.webauthn import WebauthnCloneError
 
     uid = uuid4()
     jwt_svc = MagicMock()

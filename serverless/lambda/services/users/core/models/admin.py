@@ -11,7 +11,12 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from shared.core import BaseModel, ConfigDict, Field, model_validator
+from shared.core.pydantic_types import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+)
 
 from ._common import _Meta
 

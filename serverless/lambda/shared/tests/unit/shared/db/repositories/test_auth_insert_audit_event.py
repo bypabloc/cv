@@ -7,9 +7,7 @@ Then se inserta un AuthAuditLog con esos campos.
 from unittest.mock import MagicMock
 
 import pytest
-
 from shared.db.repositories.auth import insert_audit_event
-
 
 pytestmark = pytest.mark.unit
 

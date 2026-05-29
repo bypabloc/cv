@@ -14,9 +14,8 @@ pytestmark = pytest.mark.unit
 
 
 def test_niche_has_display_order_and_no_position():
-    from sqlalchemy.orm import InstrumentedAttribute
-
     from shared.db.models.taxonomy.catalog import Niche
+    from sqlalchemy.orm import InstrumentedAttribute
 
     # La columna correcta existe y es usable en un order_by.
     assert isinstance(Niche.display_order, InstrumentedAttribute)
@@ -30,7 +29,7 @@ def test_cv_repository_orders_niches_by_display_order():
     """El codigo de cv_repository referencia display_order, no position."""
     import inspect
 
-    from shared.db import cv_repository
+    import shared.db.cv_repository as cv_repository
 
     src = inspect.getsource(cv_repository)
     assert 'Niche.position' not in src

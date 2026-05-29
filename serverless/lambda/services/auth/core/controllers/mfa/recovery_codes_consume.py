@@ -26,9 +26,9 @@ from services.rate_limit_service import RateLimitService
 from services.recovery_codes_service import RecoveryCodesService
 from services.session_tracking_service import SessionTrackingService
 from settings.config import app_config
-from shared.auth import JwtError
+from shared.auth.jwt import JwtError
 from shared.core.ulid import new_uuidv7
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#mfa.recovery-codes-consume'
 # El temp JWT step=2 producido tras un factor FUERTE (password / webauthn)

@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 from settings.config import app_config
-from shared.auth import AdminAuthzError, require_admin
+from shared.auth.admin import AdminAuthzError, require_admin
 
 from .audit_admin_service import AuditAdminService
 

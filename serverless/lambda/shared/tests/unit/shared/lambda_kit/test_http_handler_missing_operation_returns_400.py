@@ -8,7 +8,8 @@ Then devuelve HTTP 400 sin invocar ningun controller.
 from __future__ import annotations
 
 import pytest
-from shared.lambda_kit import build_event_model, http_handler
+from shared.lambda_kit.event_model import build_event_model
+from shared.lambda_kit.http_dispatch import http_handler
 
 pytestmark = pytest.mark.unit
 

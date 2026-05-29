@@ -5,7 +5,7 @@ Then compare_token devuelve True / False correctamente.
 """
 
 import pytest
-from shared.auth import compare_token, generate_opaque_token, hash_token
+from shared.auth.tokens import compare_token, generate_opaque_token, hash_token
 
 pytestmark = pytest.mark.unit
 

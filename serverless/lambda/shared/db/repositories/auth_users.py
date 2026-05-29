@@ -27,7 +27,7 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from shared.db.models import (
+from shared.db.models.auth import (
     AuthAuditLog,
     AuthCredentials,
     AuthEmailCode,

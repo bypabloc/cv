@@ -9,7 +9,7 @@ from __future__ import annotations
 import time
 
 import pyotp
-from shared.auth import verify_totp_code
+from shared.auth.totp import verify_totp_code
 
 
 def test_totp_verify_drift_acceptable() -> None:

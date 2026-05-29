@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from shared.aws import send_email
+from shared.aws.ses import send_email
 from shared.aws.ssm import get_secret_by_name
 from shared.observability.logger import logger
 

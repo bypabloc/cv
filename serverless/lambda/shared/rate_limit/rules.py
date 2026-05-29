@@ -28,7 +28,7 @@ import time
 from typing import Any, TypedDict
 
 from shared.cache.decorator import cached
-from shared.dynamodb import RateLimitRuleItem
+from shared.dynamodb.models import RateLimitRuleItem
 
 
 class RateLimitRule(TypedDict, total=False):

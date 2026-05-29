@@ -15,7 +15,7 @@ import httpx
 import pytest
 import respx
 from shared.http.turnstile import TURNSTILE_SITEVERIFY_URL
-from shared.queue import QueuePublishError
+from shared.queue.publisher import QueuePublishError
 
 from tests.unit._helpers import api_gw_event, lambda_context
 

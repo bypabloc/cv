@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from shared.http.cors import (
     cors_headers,
     is_allowed_origin,

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.auth import JwtClaims
+from shared.auth.jwt import JwtClaims
 from shared.core.ulid import new_uuidv7
 
 from .jwt_service import JwtService

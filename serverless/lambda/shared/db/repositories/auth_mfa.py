@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from shared.db.models import (
+from shared.db.models.auth import (
     AuthMfaKind,
     AuthMfaMethod,
     AuthMfaRecoveryCode,

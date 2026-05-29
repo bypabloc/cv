@@ -12,10 +12,10 @@ Levanta `ApplicationError(status_code=401)` ante cualquier fallo; el
 
 from __future__ import annotations
 
-from shared.auth import JwtError
-from shared.core import ApplicationError
-from shared.db import db_session
-from shared.db.models import AuthUser, AuthUserStatus
+from shared.auth.jwt import JwtError
+from shared.core.exceptions import ApplicationError
+from shared.db.models.auth import AuthUser, AuthUserStatus
+from shared.db.session import db_session
 
 from .jwt_service import JwtService
 

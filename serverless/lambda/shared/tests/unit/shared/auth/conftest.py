@@ -17,7 +17,7 @@ import pytest
 @pytest.fixture(autouse=True)
 def _reset_admin_cache() -> Generator[None]:
     """Resetea el cache de admin emails antes y despues de cada test."""
-    from shared.auth import admin
+    import shared.auth.admin as admin
 
     admin._CACHE.update({'emails': frozenset(), 'expires_at': 0.0})
     yield

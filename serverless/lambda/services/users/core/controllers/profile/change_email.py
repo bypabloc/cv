@@ -17,8 +17,8 @@ from services.jwt_service import require_active_user
 from services.profile_service import ProfileService
 from services.rate_limit_service import RateLimitService
 from settings.config import app_config
-from shared.core import new_uuidv7
-from shared.lambda_kit import BaseController
+from shared.core.ulid import new_uuidv7
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/users#profile.change-email'
 

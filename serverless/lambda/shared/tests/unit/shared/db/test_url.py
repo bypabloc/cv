@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import pytest
-
-from shared.db import url as url_mod
+import shared.db.url as url_mod
 
 pytestmark = pytest.mark.unit
 

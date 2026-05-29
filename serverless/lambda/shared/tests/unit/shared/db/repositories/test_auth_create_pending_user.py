@@ -7,10 +7,8 @@ Then se inserta un AuthUser con status=pending y se hace flush().
 from unittest.mock import MagicMock
 
 import pytest
-
-from shared.db.models import AuthUserStatus
+from shared.db.models.auth import AuthUserStatus
 from shared.db.repositories.auth import create_pending_user
-
 
 pytestmark = pytest.mark.unit
 

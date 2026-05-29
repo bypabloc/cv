@@ -6,7 +6,10 @@ Then son exactamente 10, cada uno de 10 chars en el alfabeto Crockford-like.
 
 from __future__ import annotations
 
-from shared.auth import RECOVERY_CODE_ALPHABET, generate_recovery_codes
+from shared.auth.recovery_codes import (
+    RECOVERY_CODE_ALPHABET,
+    generate_recovery_codes,
+)
 
 
 def test_recovery_codes_generate_10() -> None:

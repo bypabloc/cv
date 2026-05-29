@@ -12,8 +12,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from shared.db import db_session
-from shared.db.models import AuthMfaKind
+from shared.db.models.auth import AuthMfaKind
 from shared.db.repositories.auth_mfa import (
     confirm_mfa,
     count_active_mfa,
@@ -24,6 +23,7 @@ from shared.db.repositories.auth_mfa import (
     set_preferred,
     upsert_totp_method,
 )
+from shared.db.session import db_session
 
 from .session_service import SessionService
 
@@ -136,7 +136,7 @@ class MfaMethodService:
             if existing is None:
                 from datetime import UTC, datetime
 
-                from shared.db.models import AuthMfaMethod
+                from shared.db.models.auth import AuthMfaMethod
 
                 method = AuthMfaMethod(
                     user_id=str(user_id),

@@ -7,7 +7,7 @@ Then status=ACTIVE y retorna True.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models import AuthUserStatus
+from shared.db.models.auth import AuthUserStatus
 from shared.db.repositories.auth_users import enable_user
 
 pytestmark = pytest.mark.unit

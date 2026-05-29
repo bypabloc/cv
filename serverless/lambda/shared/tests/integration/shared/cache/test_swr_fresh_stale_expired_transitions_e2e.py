@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 
 import pytest
 from freezegun import freeze_time
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 from shared.cache.swr import classify_status
 from shared.cache.types import CacheStatus
 

@@ -31,15 +31,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from shared.aws import send_email
+from shared.aws.ses import send_email
 from shared.aws.ssm import get_secret_by_name
-from shared.observability import MetricUnit
 from shared.core.ulid import new_uuidv7
 from shared.db.repository import ensure_session_and_visit, insert_contact
 from shared.db.session import db_session
 from shared.observability.logger import logger
-from shared.observability.metrics import metrics
-from shared.queue import send_to_queue
+from shared.observability.metrics import MetricUnit, metrics
+from shared.queue.publisher import send_to_queue
 
 # templates/ vive dentro de core/ para que el deploy lo incluya en el zip.
 # Este archivo esta en core/services/, asi que parents[1] = core/.

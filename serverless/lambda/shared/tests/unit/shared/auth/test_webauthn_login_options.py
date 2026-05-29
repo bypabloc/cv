@@ -6,7 +6,7 @@ Then publicKey trae challenge + allowCredentials con el credential del user.
 
 from __future__ import annotations
 
-from shared.auth import build_login_options
+from shared.auth.webauthn import build_login_options
 
 
 def test_webauthn_login_options() -> None:

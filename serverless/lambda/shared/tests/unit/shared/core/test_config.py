@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from shared.core.config import Settings, get_settings
 
 pytestmark = pytest.mark.unit

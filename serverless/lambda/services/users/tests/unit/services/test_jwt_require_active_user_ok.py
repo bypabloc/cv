@@ -18,7 +18,7 @@ def _ctx(session):
 
 def test_jwt_require_active_user_ok(monkeypatch):
     from services import jwt_service
-    from shared.db.models import AuthUserStatus
+    from shared.db.models.auth import AuthUserStatus
 
     claims = SimpleNamespace(sub=uuid4(), family_id='fam-1')
     fake_jwt = MagicMock()

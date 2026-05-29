@@ -49,7 +49,7 @@ def test_verify_rejects_when_blacklisted(monkeypatch):
     """JwtService.verify levanta JwtRevokedError si el jti esta en DDB."""
     import pytest
     from services import jwt_service
-    from shared.auth import JwtRevokedError
+    from shared.auth.jwt import JwtRevokedError
 
     monkeypatch.setattr(
         jwt_service.BlacklistService,
@@ -68,7 +68,7 @@ def test_verify_with_expected_flow_mismatch_raises(monkeypatch):
     """verify(expected_flow='login') sobre un temp emitido con flow='register' -> JwtInvalidError."""
     import pytest
     from services import jwt_service
-    from shared.auth import JwtInvalidError
+    from shared.auth.jwt import JwtInvalidError
 
     monkeypatch.setattr(
         jwt_service.BlacklistService,

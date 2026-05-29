@@ -13,7 +13,7 @@ from .._helpers import _make_event_set_password
 def test_verify_set_password_temp_expired(monkeypatch):
     """AC-18: temp expirado -> 401 sin persistir password."""
     from controllers.verify import set_password
-    from shared.auth import JwtExpiredError
+    from shared.auth.jwt import JwtExpiredError
 
     jwt_svc = MagicMock()
     jwt_svc.verify.side_effect = JwtExpiredError('expired')

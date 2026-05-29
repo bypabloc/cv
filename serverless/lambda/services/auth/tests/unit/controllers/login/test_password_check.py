@@ -66,7 +66,7 @@ def test_check_password_true_when_matches(monkeypatch):
 
 def test_check_password_true_when_needs_rehash(monkeypatch):
     from controllers.login import _password_check
-    from shared.auth import NeedsRehashError
+    from shared.auth.password import NeedsRehashError
 
     cred = MagicMock()
     cred.password_hash = '$argon2id$old'

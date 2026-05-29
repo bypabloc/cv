@@ -7,7 +7,7 @@ Then la ConditionExpression falla y el segundo recibe None (lock ocupado).
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 from shared.cache.stampede import acquire_lock
 
 pytestmark = pytest.mark.integration

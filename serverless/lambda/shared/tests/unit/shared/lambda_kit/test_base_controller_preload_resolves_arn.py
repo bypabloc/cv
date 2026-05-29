@@ -11,7 +11,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-from shared.lambda_kit import base_controller as bc
+import shared.lambda_kit.base_controller as bc
 
 pytestmark = pytest.mark.unit
 

@@ -38,8 +38,10 @@ from typing import Any
 
 from settings.operations import OPERATIONS
 from shared.db.url import ensure_database_url
-from shared.lambda_kit import build_event_model, run_controller
-from shared.observability import MetricUnit, logger, metrics
+from shared.lambda_kit.dispatch import run_controller
+from shared.lambda_kit.event_model import build_event_model
+from shared.observability.logger import logger
+from shared.observability.metrics import MetricUnit, metrics
 
 __version__ = '3.0.0'
 

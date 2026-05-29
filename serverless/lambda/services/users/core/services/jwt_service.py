@@ -21,16 +21,16 @@ import time
 from collections.abc import Iterable
 from uuid import UUID
 
-from shared.auth import (
+from shared.auth.jwt import (
     JwtClaims,
     JwtError,
     JwtRevokedError,
+    JwtType,
     verify_jwt,
 )
-from shared.auth.jwt import JwtType
-from shared.core import ApplicationError
-from shared.db import db_session
-from shared.db.models import AuthUser, AuthUserStatus
+from shared.core.exceptions import ApplicationError
+from shared.db.models.auth import AuthUser, AuthUserStatus
+from shared.db.session import db_session
 
 from .blacklist_service import BlacklistService
 

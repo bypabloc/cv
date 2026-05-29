@@ -18,7 +18,7 @@ def _stub_app_config():
 
 def test_advance_step_blacklists_old_jti_and_returns_new_temp(monkeypatch):
     from services import flow_service, jwt_service
-    from shared.auth import issue_temp_jwt
+    from shared.auth.jwt import issue_temp_jwt
 
     monkeypatch.setattr(
         jwt_service.BlacklistService,
@@ -49,7 +49,7 @@ def test_advance_step_blacklists_old_jti_and_returns_new_temp(monkeypatch):
 
 def test_terminate_flow_returns_access_refresh_and_family(monkeypatch):
     from services import flow_service, jwt_service
-    from shared.auth import issue_temp_jwt
+    from shared.auth.jwt import issue_temp_jwt
 
     monkeypatch.setattr(
         jwt_service.BlacklistService,
@@ -86,7 +86,7 @@ def test_terminate_flow_access_carries_family_id(monkeypatch):
     curso. Ahora el family_id va en ambos tokens.
     """
     from services import flow_service, jwt_service
-    from shared.auth import issue_temp_jwt, verify_jwt
+    from shared.auth.jwt import issue_temp_jwt, verify_jwt
 
     monkeypatch.setattr(
         jwt_service.BlacklistService,

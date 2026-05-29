@@ -20,7 +20,7 @@ from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.totp_service import TotpService
 from settings.config import app_config
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#mfa.setup-totp'
 

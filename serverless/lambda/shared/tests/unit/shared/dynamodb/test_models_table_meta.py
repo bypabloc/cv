@@ -9,7 +9,7 @@ cada modelo es correcto". Es la fuente de verdad que check_schema usa.
 
 from __future__ import annotations
 
-from shared.dynamodb import (
+from shared.dynamodb.models import (
     CacheItem,
     ContactItem,
     RateLimitBucketItem,

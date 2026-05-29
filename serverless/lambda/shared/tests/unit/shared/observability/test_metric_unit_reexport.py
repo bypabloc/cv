@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 from aws_lambda_powertools.metrics import MetricUnit as PowertoolsMetricUnit
-from shared.observability import MetricUnit
+from shared.observability.metrics import MetricUnit
 
 pytestmark = pytest.mark.unit
 

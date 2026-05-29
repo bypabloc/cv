@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from models.db import SeedModel
 from services.db_service import ServiceError, run_seed
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
 class Seed(BaseController):

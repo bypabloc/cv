@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import time
 
-from shared.dynamodb import RateLimitBucketItem
+from shared.dynamodb.models import RateLimitBucketItem
 
 
 def _window_start(now: int, window_seconds: int) -> int:

@@ -7,7 +7,7 @@ Then status=DISABLED y retorna True.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models import AuthUserStatus
+from shared.db.models.auth import AuthUserStatus
 from shared.db.repositories.auth_users import disable_user
 
 pytestmark = pytest.mark.unit

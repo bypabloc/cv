@@ -1,5 +1,7 @@
-"""@package shared.queue — publisher SQS para los encoders."""
+"""Subpaquete `queue`: Publisher SQS para los encoders.
 
-from .publisher import QueuePublishError, send_to_queue
+Subpaquete SIN barrel: este `__init__` NO re-exporta nada. Importar
+SIEMPRE del modulo concreto (contrato `.claude/rules/lambda-shared-imports.md`):
 
-__all__ = ['QueuePublishError', 'send_to_queue']
+    from shared.queue.publisher import send_to_queue
+"""

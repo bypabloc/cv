@@ -17,7 +17,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from shared.core import BaseModel, EmailStr, Field, field_validator
+from shared.core.pydantic_types import (
+    BaseModel,
+    EmailStr,
+    Field,
+    field_validator,
+)
 from shared.http.validators import sanitize_text
 
 

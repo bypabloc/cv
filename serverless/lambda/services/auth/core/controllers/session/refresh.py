@@ -19,8 +19,8 @@ from services.rate_limit_service import RateLimitService
 from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
-from shared.auth import JwtExpiredError, JwtInvalidError
-from shared.lambda_kit import BaseController
+from shared.auth.jwt import JwtExpiredError, JwtInvalidError
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#session.refresh'
 

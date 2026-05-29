@@ -12,7 +12,7 @@ import pytest
 
 def test_admin_require_admin_user_non_admin_logs_and_raises(monkeypatch):
     from services import admin_service
-    from shared.auth import AdminAuthzError
+    from shared.auth.admin import AdminAuthzError
 
     calls = {'audit': None}
 

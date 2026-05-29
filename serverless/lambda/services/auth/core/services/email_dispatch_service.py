@@ -24,7 +24,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from shared.queue import send_to_queue
+from shared.queue.publisher import send_to_queue
 
 
 def _subject_id(kind: str) -> str:

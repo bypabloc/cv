@@ -7,7 +7,7 @@ Then setea consumed_at != None y retorna True.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models import AuthMfaRecoveryCode
+from shared.db.models.auth import AuthMfaRecoveryCode
 from shared.db.repositories.auth_mfa import consume_recovery_code
 
 pytestmark = pytest.mark.unit

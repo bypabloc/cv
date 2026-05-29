@@ -5,7 +5,7 @@ Then >= 995 son unicos (colision esperada < 5 por la prob 1-in-30^8).
 """
 
 import pytest
-from shared.auth import generate_code
+from shared.auth.codes import generate_code
 
 pytestmark = pytest.mark.unit
 

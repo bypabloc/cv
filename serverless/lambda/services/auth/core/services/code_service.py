@@ -14,14 +14,14 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from shared.auth import compare_code, generate_code, hash_code
-from shared.db import db_session
-from shared.db.models import AuthCodeKind, AuthUser
+from shared.auth.codes import compare_code, generate_code, hash_code
+from shared.db.models.auth import AuthCodeKind, AuthUser
 from shared.db.repositories.auth import (
     consume_email_code,
     get_last_email_code,
     insert_email_code,
 )
+from shared.db.session import db_session
 
 # TTL del code (politica MVP). El worker debe enviarlo antes del expiry.
 # CODE_TTL_MINUTES es la fuente unica: el email que envia el worker muestra

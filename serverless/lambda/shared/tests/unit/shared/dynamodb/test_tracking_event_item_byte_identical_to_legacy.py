@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from shared.dynamodb import TrackingEventItem
+from shared.dynamodb.models import TrackingEventItem
 
 _LEGACY_OPTIONAL_FIELDS = (
     'page_title',

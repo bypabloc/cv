@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 from boto3.dynamodb.types import TypeDeserializer as BotoTypeDeserializer
 from boto3.dynamodb.types import TypeSerializer as BotoTypeSerializer
-from shared.aws import TypeDeserializer, TypeSerializer
+from shared.aws.dynamodb_types import TypeDeserializer, TypeSerializer
 
 pytestmark = pytest.mark.unit
 

@@ -25,10 +25,14 @@ from typing import Any
 
 from models.message import AuthEmailMessage
 from services.audit_service import log_email_audit
-from services.send_service import SesSendError, SesThrottledError, send_auth_email
+from services.send_service import (
+    SesSendError,
+    SesThrottledError,
+    send_auth_email,
+)
 from services.template_service import TemplateNotFoundError, render_template
 from settings.config import logger
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
 class Process(BaseController):

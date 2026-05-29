@@ -12,10 +12,8 @@ y propaga el resultado.
 from unittest.mock import MagicMock
 
 import pytest
-
-from shared.db.models import AuthUser, AuthUserStatus
+from shared.db.models.auth import AuthUser, AuthUserStatus
 from shared.db.repositories.auth import get_user_by_email
-
 
 pytestmark = pytest.mark.unit
 

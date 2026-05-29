@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pydantic
 import pytest
-from shared.core import (
+from shared.core.pydantic_types import (
     BaseModel,
     ConfigDict,
     EmailStr,

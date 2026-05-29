@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
-from shared.db.models import SessionVisit
+from shared.db.models.visitor import SessionVisit
 from shared.db.repository import ensure_session_and_visit
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import Update

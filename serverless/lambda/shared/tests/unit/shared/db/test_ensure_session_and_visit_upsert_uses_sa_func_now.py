@@ -17,7 +17,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models import Session as SessionRow
+from shared.db.models.visitor import Session as SessionRow
 from shared.db.repository import ensure_session_and_visit
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import Insert as PgInsert

@@ -14,7 +14,7 @@ from services.jwt_service import authenticate
 from services.rate_limit_service import RateLimitService
 from services.session_service import SessionService
 from settings.config import app_config
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/users#status'
 

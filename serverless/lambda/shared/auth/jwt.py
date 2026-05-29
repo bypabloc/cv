@@ -26,12 +26,9 @@ from shared.auth.constants import (
     REFRESH_TTL,
     TEMP_TTL,
 )
-from shared.core import (
-    ApplicationError,
-    BaseModel,
-    ConfigDict,
-    new_uuidv7,
-)
+from shared.core.exceptions import ApplicationError
+from shared.core.pydantic_types import BaseModel, ConfigDict
+from shared.core.ulid import new_uuidv7
 
 __all__ = [
     'JwtClaims',

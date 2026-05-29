@@ -18,7 +18,7 @@ campos. Las anotaciones deben ser los tipos reales.
 
 from enum import Enum
 
-from shared.lambda_kit import BaseSettings
+from shared.lambda_kit.base_settings import BaseSettings
 from shared.observability.logger import logger
 
 __all__ = ['AppConfig', 'ErrorCode', 'LogMetricType', 'app_config', 'logger']

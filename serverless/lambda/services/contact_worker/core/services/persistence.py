@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from models.message import ContactQueueMessage
-from shared.aws import send_email
+from shared.aws.ses import send_email
 from shared.aws.ssm import get_secret_by_name
 from shared.db.repository import (
     ensure_session_and_visit,

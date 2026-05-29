@@ -22,7 +22,6 @@ from typing import Any
 
 import httpx
 
-from shared.aws.ssm import get_secret
 from shared.core.exceptions import TurnstileError
 from shared.observability.logger import logger
 

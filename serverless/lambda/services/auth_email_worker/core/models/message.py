@@ -20,7 +20,7 @@ Campos del mensaje:
 from typing import Any, Literal
 from uuid import UUID
 
-from shared.core import BaseModel, ConfigDict, EmailStr, Field
+from shared.core.pydantic_types import BaseModel, ConfigDict, EmailStr, Field
 
 # Discriminador de tipos de email que el worker sabe enviar. Mantener
 # alineado con `template_service.SUPPORTED_KINDS`.

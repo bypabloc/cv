@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import string
 
-from shared.auth import generate_totp_secret_b32
+from shared.auth.totp import generate_totp_secret_b32
 
 _BASE32_ALPHABET = set(string.ascii_uppercase + '234567')
 

@@ -22,9 +22,9 @@ from services.magic_link_service import LINK_TTL_MINUTES, MagicLinkService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-from shared.db.models import AuthCodeKind, AuthLinkKind, AuthUserStatus
-from shared.http import verify_turnstile_token
-from shared.lambda_kit import BaseController
+from shared.db.models.auth import AuthCodeKind, AuthLinkKind, AuthUserStatus
+from shared.http.turnstile import verify_turnstile_token
+from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#register.start'
 _TEMP_TTL_SECONDS = 300

@@ -13,7 +13,7 @@ from .._helpers import _make_authed_event, _make_user
 def test_webauthn_register_verify_attestation_invalid(monkeypatch):
     """Attestation invalida -> 400 WEBAUTHN_REGISTRATION_FAILED."""
     from controllers.webauthn import register_verify
-    from shared.auth import WebauthnVerifyError
+    from shared.auth.webauthn import WebauthnVerifyError
 
     user = _make_user(status='active')
 

@@ -19,7 +19,7 @@ def _fake_session():
 
 def test_webauthn_service_verify_login_clone(monkeypatch):
     from services import webauthn_service
-    from shared.auth import WebauthnCloneError
+    from shared.auth.webauthn import WebauthnCloneError
 
     cred = MagicMock()
     cred.credential_id = b'\x10' * 16

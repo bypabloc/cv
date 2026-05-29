@@ -14,7 +14,7 @@ from .._helpers import _make_event_with_code
 def test_register_verify_code_temp_token_expired(monkeypatch):
     """AC-18: temp expirado -> 401 TEMP_TOKEN_EXPIRED."""
     from controllers.register import verify_code
-    from shared.auth import JwtExpiredError
+    from shared.auth.jwt import JwtExpiredError
 
     flow_svc = MagicMock()
     flow_svc.verify_temp_token.side_effect = JwtExpiredError('exp')

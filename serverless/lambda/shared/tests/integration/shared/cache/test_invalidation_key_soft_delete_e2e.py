@@ -7,7 +7,7 @@ Then el item sigue en DynamoDB pero get() lo trata como EXPIRED (None).
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 
 pytestmark = pytest.mark.integration
 

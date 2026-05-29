@@ -6,7 +6,6 @@ import time
 
 import boto3
 import pytest
-
 from shared.rate_limit.auto_blacklist import (
     AUTO_BLACKLIST_DURATION_SECONDS,
     AUTO_BLACKLIST_THRESHOLD,

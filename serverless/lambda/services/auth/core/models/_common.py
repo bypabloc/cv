@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from shared.core import BaseModel, ConfigDict, Field
+from shared.core.pydantic_types import BaseModel, ConfigDict, Field
 
 # 6 niches publicos del portfolio. Cualquier otro valor en payload ->
 # ValidationError 400 (defensa contra strings arbitrarios en audit /

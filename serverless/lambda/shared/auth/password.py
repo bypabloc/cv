@@ -19,7 +19,7 @@ from argon2.exceptions import (
     VerifyMismatchError,
 )
 
-from shared.core import ApplicationError
+from shared.core.exceptions import ApplicationError
 
 __all__ = [
     'NeedsRehashError',

@@ -15,9 +15,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from shared.core import BaseModel, Field
-
 from shared.core.niches import CV_NICHES
+from shared.core.pydantic_types import BaseModel, Field
 
 
 class CvRequestMeta(BaseModel):

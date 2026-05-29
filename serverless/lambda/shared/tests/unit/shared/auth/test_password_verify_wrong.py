@@ -5,7 +5,7 @@ Then verify_password retorna False.
 """
 
 import pytest
-from shared.auth import hash_password, verify_password
+from shared.auth.password import hash_password, verify_password
 
 pytestmark = pytest.mark.unit
 

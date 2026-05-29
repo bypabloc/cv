@@ -14,7 +14,7 @@ from .._helpers import _make_event_with_code
 def test_register_verify_code_temp_token_blacklisted(monkeypatch):
     """AC-10: temp blacklisted -> 401 TOKEN_BLACKLISTED."""
     from controllers.register import verify_code
-    from shared.auth import JwtRevokedError
+    from shared.auth.jwt import JwtRevokedError
 
     flow_svc = MagicMock()
     flow_svc.verify_temp_token.side_effect = JwtRevokedError('revoked')

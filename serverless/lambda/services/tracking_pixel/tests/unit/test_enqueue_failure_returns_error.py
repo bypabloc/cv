@@ -25,7 +25,7 @@ def test_enqueue_failure_returns_error(
     tracking_aws: None,
 ) -> None:
     import handler
-    from shared.queue import QueuePublishError
+    from shared.queue.publisher import QueuePublishError
 
     # Arrange: el publish lanza un error simulando SQS caido.
     def _explode(**kwargs: object) -> str:

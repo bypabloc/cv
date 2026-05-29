@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pyotp
 
-from shared.core import ApplicationError
+from shared.core.exceptions import ApplicationError
 
 
 class TotpError(ApplicationError):

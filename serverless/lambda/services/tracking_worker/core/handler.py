@@ -34,12 +34,11 @@ if _CORE_DIR not in sys.path:
 import json
 from typing import Any
 
-from shared.observability import MetricUnit
 from controllers.worker.process_batch import ProcessBatch
 from settings.operations import OPERATIONS
-from shared.lambda_kit import build_event_model
+from shared.lambda_kit.event_model import build_event_model
 from shared.observability.logger import logger
-from shared.observability.metrics import metrics
+from shared.observability.metrics import MetricUnit, metrics
 
 __version__ = '1.0.0'
 

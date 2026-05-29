@@ -26,7 +26,7 @@ from shared.cache.invalidation import invalidate_by_tag, invalidate_key
 from shared.cache.serializers import deserialize, serialize
 from shared.cache.swr import classify_status
 from shared.cache.types import CacheEntry, CacheStatus
-from shared.dynamodb import CacheItem
+from shared.dynamodb.models import CacheItem
 
 
 class DynamoDBCache:

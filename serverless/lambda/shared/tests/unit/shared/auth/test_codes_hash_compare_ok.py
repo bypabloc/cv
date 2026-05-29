@@ -5,7 +5,7 @@ Then compare_code retorna True.
 """
 
 import pytest
-from shared.auth import compare_code, generate_code, hash_code
+from shared.auth.codes import compare_code, generate_code, hash_code
 
 pytestmark = pytest.mark.unit
 

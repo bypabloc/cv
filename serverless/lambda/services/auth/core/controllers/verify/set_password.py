@@ -133,10 +133,14 @@ class SetPassword(BaseController):
             password_hash=password_hash,
         )
 
-        # Cierra el flujo: blacklistea el temp + emite access + refresh.
+        # Cierra el flujo: blacklistea el temp + emite access + refresh
+        # (family_id en ambos) + registra la sesion (best-effort).
         access_token, refresh_token, _ = flow_svc.terminate_flow(
             user_id=user.id,
             claims=claims,
+            ip=meta.ip,
+            country=meta.country,
+            user_agent=meta.user_agent,
         )
 
         audit_svc.log(

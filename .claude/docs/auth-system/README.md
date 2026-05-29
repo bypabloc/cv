@@ -20,6 +20,12 @@
 | DynamoDB `webauthn-challenges` | Challenges efimeros del ceremony WebAuthn (TTL 5 min, single-use) | `serverless/lambda/resources/dynamodb/webauthn-challenges.yaml` |
 | `shared.auth` (plan 02) | + portador de `pyotp` (totp) + `python-fido2` (webauthn) + recovery codes | `serverless/lambda/shared/auth/{totp,webauthn,recovery_codes}.py` |
 | `shared.aws.kms` (plan 02) | Wrappers `kms_encrypt`/`kms_decrypt` (CMK directa, cifra el TOTP secret) | `serverless/lambda/shared/aws/kms.py` |
+| Lambda `users` (plan 03) | HTTP POST `/users` — profile / status / admin (gestion de usuarios) | `serverless/lambda/services/users/` |
+| Schema Neon gestion (plan 03) | +6 cols en `auth_users` + 3 tablas: user_sessions, admin_actions, consent_log | `serverless/lambda/shared/db/models/auth/{user_session,admin_action,consent_log}.py` |
+| `shared.auth.admin` (plan 03) | whitelist SSM admin (`load_admin_emails`/`is_admin`/`require_admin`) | `serverless/lambda/shared/auth/admin.py` |
+| `shared.db.repositories.auth_users` (plan 03) | helpers de gestion (profile/sessions/admin/consent) | `serverless/lambda/shared/db/repositories/auth_users.py` |
+| SSM `/portfolio/${stage}/admin-emails` | whitelist de emails admin (SecureString + KMS) | `serverless/lambda/resources/secrets/admin-emails.yaml` |
+| `SessionTrackingService` (plan 03) | el Lambda `auth` puebla `auth_user_sessions` (best-effort) | `serverless/lambda/services/auth/core/services/session_tracking_service.py` |
 
 ## Cuando leer
 
@@ -30,11 +36,15 @@
 | Reglas de rate-limit activas | [03-rate-limit-rules.md](03-rate-limit-rules.md) |
 | MFA (TOTP, email-code, recovery codes, login con password, AC-27) | [04-mfa.md](04-mfa.md) |
 | WebAuthn / Passkeys (ceremony, RP_ID por env, clone detection, challenges DDB) | [05-webauthn.md](05-webauthn.md) |
+| Lambda `users`: profile (CRUD + change-email + delete-account) + status | [06-users.md](06-users.md) |
+| Admin: whitelist SSM + admin actions + audit (`auth_user_admin_actions`) | [07-admin.md](07-admin.md) |
+| Sessions tracking (`auth_user_sessions`, family_id en access JWT, multi-device) | [08-sessions.md](08-sessions.md) |
 
 ## Decisiones clave (cerradas)
 
-1. **Split de lambdas**: `auth` (signup/signin/session) + futuro `users`
-   (profile/admin). Este dominio entrega `auth` solamente.
+1. **Split de lambdas**: `auth` (signup/signin/session) + `users`
+   (profile/status/admin, plan 03). Ambos lambdas ya entregados; comparten
+   schema Neon + DDB jwt-blacklist + SQS auth-email.
 2. **Persistencia hibrida**: estado relacional + codes + magic links en
    Neon (`auth_*`), blacklist de JWTs en DynamoDB (lookup O(1) por `jti`
    en cada request autenticada).

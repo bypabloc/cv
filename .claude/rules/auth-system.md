@@ -13,19 +13,24 @@ Aplica SIEMPRE que se trabaje con:
   (incluye `core/controllers/{mfa,webauthn}` y los services
   `{mfa_method,totp,webauthn,challenge,recovery_codes,session}_service.py`)
 - Cualquier archivo bajo `serverless/lambda/services/auth_email_worker/`
+- Cualquier archivo bajo `serverless/lambda/services/users/` (Lambda
+  `users` del plan 03: profile / status / admin)
 - Cualquier archivo bajo `serverless/lambda/shared/auth/`
-  (incluye `{totp,webauthn,recovery_codes}.py`)
+  (incluye `{totp,webauthn,recovery_codes,admin}.py`)
 - `serverless/lambda/shared/aws/kms.py`
 - Cualquier archivo bajo `serverless/lambda/shared/db/models/auth/`
-  (incluye `{mfa_method,recovery_code,webauthn_credential}.py`)
+  (incluye `{mfa_method,recovery_code,webauthn_credential,user_session,
+  admin_action,consent_log}.py`)
 - `serverless/lambda/shared/db/repositories/auth.py` +
-  `serverless/lambda/shared/db/repositories/auth_mfa.py`
+  `serverless/lambda/shared/db/repositories/auth_mfa.py` +
+  `serverless/lambda/shared/db/repositories/auth_users.py`
 - `serverless/lambda/shared/db/alembic/versions/*auth*` (incluye
-  `00000003_auth_mfa.py`)
+  `00000003_auth_mfa.py` y `00000004_auth_users_extension.py`)
 - `serverless/lambda/resources/dynamodb/jwt-blacklist.yaml`
 - `serverless/lambda/resources/dynamodb/webauthn-challenges.yaml`
 - `serverless/lambda/resources/sqs/auth-email-{queue,dlq}.yaml`
-- `serverless/lambda/resources/secrets/jwt-secret.yaml`
+- `serverless/lambda/resources/secrets/jwt-secret.yaml` +
+  `serverless/lambda/resources/secrets/admin-emails.yaml`
 - Cualquier referencia a `/portfolio/${stage}/jwt-secret` en SSM
 - Decisiones sobre JWT (HS256, lifetimes, claims, family_id, rotation)
 - Decisiones sobre rate-limit de los endpoints `/auth?operation=...`
@@ -201,6 +206,43 @@ Aplica SIEMPRE que se trabaje con:
 - **NUNCA** editar la migration `00000003_auth_mfa.py` aplicada; nuevo
   cambio = migration nueva. El `downgrade` NO se corre en prod.
 
+### Gestion de usuarios (plan 03 — Lambda `users`)
+
+- **SIEMPRE** el Lambda `users` sigue lambda-controller (handler delgado
+  -> `http_handler` con `cors_origin='echo'`; un controller por action;
+  logica en `core/services/`). 3 operations: `profile`, `status`, `admin`.
+- **SIEMPRE** el `require_active_user` de `users` (en su `jwt_service.py`)
+  devuelve **403 `ACCOUNT_DISABLED`** (no 401) para un user disabled con
+  JWT valido, y 403 `ACCOUNT_LOCKED` para locked (AC-16). 401 queda para
+  token ausente/invalido/revocado o user soft-deleted/inexistente.
+- **SIEMPRE** el scope `admin.*` valida via `shared.auth.require_admin`
+  (whitelist SSM `/portfolio/${stage}/admin-emails`). NO-admin -> **404
+  NOT_FOUND** (anti-enumeration, NO 403).
+- **SIEMPRE** las admin operations escriben `auth_user_admin_actions`
+  ANTES de la accion destructiva (audit pre-hoc, inmutable).
+- **SIEMPRE** el soft-delete (`profile.delete-account`) es UPDATE de
+  `deleted_at` + anonimiza email + DELETE explicito en credentials / mfa /
+  recovery / webauthn / email_codes / magic_links / sessions (las FK
+  CASCADE NO se disparan en UPDATE) + blacklistea las families.
+- **SIEMPRE** el access JWT lleva `family_id` (param opcional de
+  `issue_access_jwt`) para que `status.*` identifique la sesion en curso.
+- **SIEMPRE** el session tracking del Lambda `auth`
+  (`SessionTrackingService`) es best-effort: un fallo de Neon NO rompe
+  login/refresh/logout.
+- **SIEMPRE** el rate-limit de `users` usa `turnstile_validated=False`
+  (endpoints JWT-authed sin Turnstile; True auto-blacklistearia users
+  legitimos con 3+ requests/60s).
+- **SIEMPRE** el dispatcher de email del Lambda `users` publica el schema
+  que valida el worker (`{kind, to, user_id, niche, subject_id, data}` —
+  con `subject_id`, SIN `schema_version`/`locale`).
+- **NUNCA** un admin se borra a si mismo via `profile.delete-account` si
+  su email esta en la whitelist (`409 CANNOT_DELETE_ADMIN_ACCOUNT`, AC-29).
+- **NUNCA** un user revoca su propia sesion via `status.revoke-session`
+  (`400 CANNOT_REVOKE_CURRENT_SESSION` -> usar `auth.session.logout`).
+- **NUNCA** editar la migration `00000004_auth_users_extension.py`
+  aplicada; nuevo cambio = migration nueva. `ALTER TYPE ADD VALUE` corre
+  en `autocommit_block`.
+
 ### Anti-patrones (correcciones criticas)
 
 | Anti-patron | Correccion |
@@ -226,6 +268,12 @@ Aplica SIEMPRE que se trabaje con:
 | Reusar `family_id` entre sesiones | Cada login = `family_id` nuevo (uuidv7) |
 | Editar migration `00000002` ya aplicada | Migration nueva (forward fix) |
 | Rate-limit con prefix matching | Exacto `<operation>.<action>` literal |
+| NO-admin -> `403 FORBIDDEN` | `404 NOT_FOUND` (anti-enumeration, AC-11) |
+| `require_active_user` 401 para user disabled | 403 `ACCOUNT_DISABLED` (JWT valido, AC-16) |
+| soft-delete via `session.delete(user)` esperando cascade | UPDATE `deleted_at` + DELETE explicito por tabla hija |
+| Session tracking que rompe el login si Neon falla | best-effort (try/except + log) |
+| `turnstile_validated=True` en endpoints de `users` | `False` (auto-blacklist a users legitimos) |
+| Dispatcher de `users` con `schema_version`/`locale` | `{kind,to,user_id,niche,subject_id,data}` (lo que valida el worker) |
 
 ## Verificacion antes de commit (recordatorio)
 
@@ -237,9 +285,14 @@ python devtools/run.py serverless tests --type=unit --shared
 python devtools/run.py serverless tests --type=unit --lambda=auth
 python devtools/run.py serverless tests --type=coverage --lambda=auth   # >=80% per-file
 
+# Tests del Lambda users (plan 03)
+python devtools/run.py serverless tests --type=unit --lambda=users
+python devtools/run.py serverless tests --type=coverage --lambda=users   # >=80% per-file
+
 # Lint deps (shared-only imports + dedup D-3)
 python devtools/run.py serverless lint-deps --lambda=auth
 python devtools/run.py serverless lint-deps --lambda=auth_email_worker
+python devtools/run.py serverless lint-deps --lambda=users
 python devtools/run.py serverless lint-deps --shared
 ```
 
@@ -252,6 +305,12 @@ python devtools/run.py serverless lint-deps --shared
 - [.claude/docs/auth-system/03-rate-limit-rules.md](../docs/auth-system/03-rate-limit-rules.md)
 - [.claude/docs/auth-system/04-mfa.md](../docs/auth-system/04-mfa.md) —
   TOTP, email-code, recovery codes, login con password, AC-27
+- [.claude/docs/auth-system/06-users.md](../docs/auth-system/06-users.md)
+  — Lambda `users`: profile + status (plan 03)
+- [.claude/docs/auth-system/07-admin.md](../docs/auth-system/07-admin.md)
+  — whitelist SSM + admin actions + audit
+- [.claude/docs/auth-system/08-sessions.md](../docs/auth-system/08-sessions.md)
+  — sessions tracking (`auth_user_sessions`, family_id en access JWT)
 - [.claude/docs/auth-system/05-webauthn.md](../docs/auth-system/05-webauthn.md)
   — passkeys, RP_ID por env, clone detection, challenges DDB
 - [.claude/rules/lambda-controller.md](lambda-controller.md) — patron

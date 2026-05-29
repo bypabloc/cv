@@ -39,9 +39,11 @@ uses:
   queues:
     - name: portfolio-auth-email-${stage}
       access: producer
-  # Tablas DynamoDB: rate-limit per-IP + jwt-blacklist (revoke-session /
-  # force-logout / delete-account blacklistean families).
+  # Tablas DynamoDB: cache (shared.rate_limit usa @cached para las rules)
+  # + rate-limit per-IP + jwt-blacklist (revoke-session / force-logout /
+  # delete-account blacklistean families).
   tables:
+    cache: read-write
     rate-limit-rules: read-write
     rate-limit-buckets: read-write
     jwt-blacklist: read-write

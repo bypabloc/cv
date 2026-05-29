@@ -11,6 +11,12 @@ Convencion: importar SIEMPRE desde `shared.auth` (o el modulo
 correspondiente si se necesita un simbolo no re-exportado).
 """
 
+from shared.auth.admin import (
+    AdminAuthzError,
+    is_admin,
+    load_admin_emails,
+    require_admin,
+)
 from shared.auth.codes import (
     CODE_ALPHABET,
     CODE_LENGTH,
@@ -86,6 +92,7 @@ __all__ = [
     'REFRESH_TTL',
     'TEMP_TTL',
     'TOKEN_BYTES',
+    'AdminAuthzError',
     'JwtClaims',
     'JwtError',
     'JwtExpiredError',
@@ -111,9 +118,12 @@ __all__ = [
     'hash_password',
     'hash_recovery_code',
     'hash_token',
+    'is_admin',
     'issue_access_jwt',
     'issue_refresh_jwt',
     'issue_temp_jwt',
+    'load_admin_emails',
+    'require_admin',
     'verify_authentication',
     'verify_jwt',
     'verify_password',

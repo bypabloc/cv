@@ -103,7 +103,9 @@ class ProfileService:
             cred = session.get(AuthCredentials, user_id)
             if cred is None:
                 return False
-            return verify_password(password, cred.password_hash)
+            return verify_password(
+                password=password, hashed=cred.password_hash,
+            )
 
     def update(self, *, user_id: str, **fields: object) -> AuthUser | None:
         """Actualiza un subset de campos del perfil (parcial)."""

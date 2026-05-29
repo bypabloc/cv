@@ -24,8 +24,12 @@ def test_profile_verify_password_wrong(monkeypatch):
     monkeypatch.setattr(
         profile_service, 'db_session', lambda: _ctx(fake_session),
     )
+    # Mock keyword-only: replica la firma real `(*, password, hashed)`. Una
+    # llamada posicional (el bug fijado) levantaria TypeError aqui.
     monkeypatch.setattr(
-        profile_service, 'verify_password', lambda _pw, _h: False,
+        profile_service,
+        'verify_password',
+        lambda *, password, hashed: False,  # noqa: ARG005
     )
 
     svc = profile_service.ProfileService(app_config=object())

@@ -16,11 +16,13 @@ description: HTTP endpoint POST /auth (register/login/verify/session).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — imports pesados (sqlalchemy + fido2 + pyjwt +
-                  # argon2 + boto3) requieren CPU para cold start <10s.
-                  # A 384 MB el cold init era ~13.8s y excedia el timeout.
-timeout: 30       # segundos — cold init + SSM/DDB/Neon frio + Turnstile
-                  # siteverify HTTP. Margen sobre el cold de ~8.6s a 1024 MB.
+memory: 512       # MB — minimo medido. Con la carga lazy de shared.auth
+                  # (fido2 no se importa salvo en acciones WebAuthn) el
+                  # INIT bajo a ~3s. A 512 MB el handler (SSM+DDB+Neon
+                  # audit) tarda ~2.7s; a 256 ~7.6s (Neon lento). cv usa
+                  # 512. NO subir sin medir (ver .claude/rules/lambda-config.md).
+timeout: 30       # segundos — cubre el cold sin SnapStart restore (~6s a
+                  # 512 MB) + Turnstile siteverify HTTP, con margen.
 
 # SnapStart: reduce cold start de ~3s a ~830ms (Restore Duration).
 # Critico en /auth: low traffic prod hace que cada request pague cold

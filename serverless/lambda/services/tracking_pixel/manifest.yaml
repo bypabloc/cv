@@ -16,11 +16,12 @@ description: Encoder de eventos de tracking (valida + rate-limit + encola SQS).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB — 256 daba poca CPU: el cold init (boto3 + SSM +
-                  # imports) tardaba ~12s y con timeout 10s devolvia 502
-                  # cuando SnapStart no restauraba. 512 MB baja el cold a ~6s.
-timeout: 30       # segundos — margen sobre el cold init cuando el SnapStart
-                  # restore no aplica (alineado con cv: 512 MB / 30s).
+memory: 256       # MB — minimo medido. Fire-and-forget (sendBeacon, async,
+                  # best-effort, sin SnapStart): la latencia esta oculta al
+                  # usuario. Cold ~10.4s a 256 (<30s timeout) -> 202 OK. El
+                  # 502 previo era por el timeout de 10s, NO por la memoria.
+                  # NO subir sin medir (ver .claude/rules/lambda-config.md).
+timeout: 30       # segundos — cubre el cold (~10s a 256 MB) con margen amplio.
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend. devtools conecta la

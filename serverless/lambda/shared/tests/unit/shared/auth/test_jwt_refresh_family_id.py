@@ -7,9 +7,7 @@ Then los claims preservan exactamente el family_id provisto.
 from uuid import uuid4
 
 import pytest
-
 from shared.auth import issue_refresh_jwt, verify_jwt
-
 
 pytestmark = pytest.mark.unit
 
@@ -22,7 +20,9 @@ def test_jwt_refresh_preserves_family_id():
 
     # Act
     token, claims = issue_refresh_jwt(
-        user_id=user_id, family_id=family_id, secret=secret,
+        user_id=user_id,
+        family_id=family_id,
+        secret=secret,
     )
     verified = verify_jwt(token, secret=secret, expected_typ='refresh')
 

@@ -33,6 +33,8 @@ dependencies = [
   "psycopg[binary]>=3.2,<4.0",
   "pyjwt>=2.9,<3.0",
   "argon2-cffi>=23.1,<24.0",
+  "pyotp>=2.9,<3.0",
+  "fido2>=1.1,<2.0",
 ]
 
 # Deps para correr la suite CENTRALIZADA de shared/ (lambda/shared/tests/).
@@ -51,6 +53,7 @@ dev = [
   "mypy>=1.10,<2.0",
   "boto3-stubs[essential,ses,sns,ssm,kms,events,sqs,logs]>=1.34,<2.0",
   "respx>=0.23.1",
+  "soft-webauthn>=0.1.4,<0.2.0",
 ]
 
 [tool.ruff]

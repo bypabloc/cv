@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import pytest
 from moto import mock_aws
-
 from shared.aws.ssm import clear_cache, get_secret_by_name
-
 
 pytestmark = pytest.mark.unit
 
@@ -45,7 +43,8 @@ class TestCloudMode:
             Type='SecureString',
         )
         monkeypatch.setenv(
-            'SSM_NEON_URL_PATH', '/portfolio/dev/neon-url',
+            'SSM_NEON_URL_PATH',
+            '/portfolio/dev/neon-url',
         )
         clear_cache()
 
@@ -62,7 +61,8 @@ class TestLocalMode:
         monkeypatch.setenv('TURNSTILE_SECRET_KEY', 'local-from-dotenv')
 
         result = get_secret_by_name(
-            'turnstile-secret', local_env='TURNSTILE_SECRET_KEY',
+            'turnstile-secret',
+            local_env='TURNSTILE_SECRET_KEY',
         )
 
         assert result == 'local-from-dotenv'
@@ -82,7 +82,8 @@ class TestLocalMode:
         monkeypatch.setenv('SECRET_TURNSTILE_SECRET', 'fallback')
 
         result = get_secret_by_name(
-            'turnstile-secret', local_env='TURNSTILE_SECRET_KEY',
+            'turnstile-secret',
+            local_env='TURNSTILE_SECRET_KEY',
         )
 
         assert result == 'primary'
@@ -98,7 +99,8 @@ class TestErrors:
 
         with pytest.raises(RuntimeError, match='No se puede resolver'):
             get_secret_by_name(
-                'turnstile-secret', local_env='TURNSTILE_SECRET_KEY',
+                'turnstile-secret',
+                local_env='TURNSTILE_SECRET_KEY',
             )
 
     def test_error_message_lists_candidates(self, monkeypatch):

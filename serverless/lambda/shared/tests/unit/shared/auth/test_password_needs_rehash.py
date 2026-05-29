@@ -6,13 +6,11 @@ Then verify_password levanta NeedsRehashError.
 
 import pytest
 from argon2 import PasswordHasher
-
 from shared.auth import NeedsRehashError, verify_password
-
 
 pytestmark = pytest.mark.unit
 
-_PWD = 'something-strong-for-test'  # noqa: S105
+_PWD = 'something-strong-for-test'
 
 
 def test_password_with_old_params_raises_needs_rehash():

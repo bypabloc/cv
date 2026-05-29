@@ -14,7 +14,8 @@ dependencies = [
 ]
 
 [tool.shared]
-internal-deps = []
+# - core: ApplicationError (base de KmsError en shared.aws.kms).
+internal-deps = ["core"]
 
 # Deps de DESARROLLO del subpaquete: pytest + coverage + mocks. Permiten
 # que el .venv aislado del subpaquete corra su suite. NO van al artefacto

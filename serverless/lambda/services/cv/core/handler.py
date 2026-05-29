@@ -30,7 +30,11 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
+import shared.db.models.cv
+import shared.db.models.i18n
+import shared.db.models.taxonomy  # noqa: F401
 from settings.operations import OPERATIONS
+from shared.db.warmup import warm_db
 from shared.lambda_kit.event_model import build_event_model
 from shared.lambda_kit.http_dispatch import http_handler
 from shared.observability.logger import logger
@@ -40,6 +44,10 @@ __version__ = '1.0.0'
 
 # Clase EventModel ligada al OPERATIONS del Lambda (la construye el kit).
 _EVENT_MODEL = build_event_model(OPERATIONS)
+
+# SnapStart: precalienta engine (NullPool) + configure_mappers de los
+# dominios del CV en el INIT -> queda en el snapshot. Best-effort.
+warm_db()
 
 
 @logger.inject_lambda_context(

@@ -16,12 +16,15 @@ description: Encoder de eventos de tracking (valida + rate-limit + encola SQS).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 256       # MB — minimo medido. Fire-and-forget (sendBeacon, async,
-                  # best-effort, sin SnapStart): la latencia esta oculta al
-                  # usuario. Cold ~10.4s a 256 (<30s timeout) -> 202 OK. El
-                  # 502 previo era por el timeout de 10s, NO por la memoria.
-                  # NO subir sin medir (ver .claude/rules/lambda-config.md).
-timeout: 30       # segundos — cubre el cold (~10s a 256 MB) con margen amplio.
+memory: 256       # MB — se mide en dev tras SnapStart+lazy (lambda-config.md).
+                  # Fire-and-forget (sendBeacon async): latencia oculta al
+                  # usuario. En ASYNC_MODE no toca Neon (publica a SQS).
+timeout: 30       # segundos — cubre el cold sin SnapStart restore con margen.
+
+# SnapStart: snapshotea el INIT (imports + clientes) para bajar el cold y
+# permitir reducir memoria. Aunque la latencia esta oculta (async), el
+# snapshot evita pagar el import completo en cada cold.
+snap_start: true
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend. devtools conecta la

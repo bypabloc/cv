@@ -1,0 +1,78 @@
+# Manifiesto del Lambda `users` — fuente de verdad de su config.
+#
+# HTTP encoder del dominio gestion de usuarios (plan 03): profile (CRUD
+# del perfil propio), status (estado + sesiones activas) y admin (scope
+# para Pablo via whitelist SSM). Requiere access JWT en todas las
+# operations (salvo profile.confirm-email-change, que se autentica por el
+# magic-link). NO usa Turnstile (ya autenticado). Sigue el patron
+# lambda-controller con operation+action + http_handler.
+#
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=users
+
+# --- Identidad ---
+name: users
+description: HTTP endpoint POST /users (profile/status/admin).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 384       # MB — verify JWT + Neon read/write + DDB blacklist
+                  # + SQS publish con holgura.
+timeout: 15       # segundos
+
+# SnapStart: reduce cold start (~830ms Restore). Mismo criterio que auth:
+# low traffic prod hace que cada request pague cold start.
+snap_start: true
+
+# --- Como se invoca este Lambda ---
+trigger:
+  type: http
+  method: POST
+  path: /users
+
+# --- Que recursos del backend usa ---
+uses:
+  # Cola SQS hacia el worker `auth_email_worker`: publica notificaciones
+  # (email-change-verify, email-changed, account-disabled,
+  # account-deleted). NUNCA invoca SES directo.
+  queues:
+    - name: portfolio-auth-email-${stage}
+      access: producer
+  # Tablas DynamoDB: cache (shared.rate_limit usa @cached para las rules)
+  # + rate-limit per-IP + jwt-blacklist (revoke-session / force-logout /
+  # delete-account blacklistean families).
+  tables:
+    cache: read-write
+    rate-limit-rules: read-write
+    rate-limit-buckets: read-write
+    jwt-blacklist: read-write
+  # Secretos que el Lambda lee de SSM (solo el nombre corto).
+  secrets:
+    - neon-url            # connection string Neon (auth_* + gestion)
+    - jwt-secret          # verifica el access JWT (HS256)
+    - admin-emails        # whitelist del scope admin.*
+    - ses-from-address    # se publica en el payload SQS (lo usa el worker)
+  # El Lambda NO envia email directo: publica a SQS y el worker hace SES.
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+    POWERTOOLS_SERVICE_NAME: users
+    POWERTOOLS_METRICS_NAMESPACE: Portfolio/Users
+    JWT_ISSUER: portfolio-auth
+    JWT_AUDIENCE: portfolio
+  dev:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com,http://localhost:9970'
+    USERS_BASE_URL: https://api.portfolio.dev.the-full-stack.com/users
+  stage:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com,https://admin.portfolio.stage.the-full-stack.com'
+    USERS_BASE_URL: https://api.portfolio.stage.the-full-stack.com/users
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'
+    USERS_BASE_URL: https://api.portfolio.the-full-stack.com/users

@@ -166,12 +166,19 @@ def issue_access_jwt(
     ttl: int = ACCESS_TTL,
     issuer: str = DEFAULT_ISSUER,
     audience: str = DEFAULT_AUDIENCE,
+    family_id: UUID | None = None,
 ) -> tuple[str, JwtClaims]:
     """Emite un JWT access (15 min, stateless con blacklist DDB).
 
     El access NO incluye email ni datos de perfil. El consumidor
     (dashboard) obtiene esos datos del response del endpoint de login/
     verify y los persiste en su store.
+
+    `family_id` (opcional, plan 03) embebe la familia de refresh de la
+    sesion en curso, para que el Lambda `users` (`status.list-sessions`,
+    `status.revoke-session`) identifique y bloquee revocar la sesion
+    actual (AC-8/AC-10). Es backward-compatible: si es None, el claim no
+    se incluye (los access tokens previos no lo llevaban).
     """
     now = _now()
     claims = JwtClaims(
@@ -182,6 +189,7 @@ def issue_access_jwt(
         exp=now + ttl,
         iss=issuer,
         aud=audience,
+        family_id=family_id,
     )
     return _encode(claims, secret), claims
 

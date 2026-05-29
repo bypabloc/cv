@@ -17,6 +17,7 @@ from uuid import UUID
 
 from shared.db import db_session
 from shared.db.repositories.auth import insert_audit_event
+from shared.observability.logger import logger
 
 
 class AuditService:
@@ -39,20 +40,27 @@ class AuditService:
     ) -> None:
         """Inserta un row de auditoria. NO propaga si Neon falla.
 
-        Si Neon falla (rollback, DB caida), el audit insert se intenta
-        pero NO bloquea el flujo principal. El controller que falla
-        igual responde a tiempo; CloudWatch captura la excepcion via
-        logger.exception en este caller.
+        Best-effort: si Neon falla (rollback, DB caida, tabla inexistente),
+        la excepcion se SWALLOWea aqui (logger.exception) para no romper el
+        flujo principal de auth — el audit es metadata, no parte del camino
+        critico. Sin este try/except un fallo de Neon convertiria un login
+        exitoso en un 500.
         """
-        with db_session() as session:
-            insert_audit_event(
-                session,
-                event=event,
-                success=success,
-                user_id=str(user_id) if user_id is not None else None,
-                error_code=error_code,
-                ip=ip,
-                user_agent=user_agent,
-                niche=niche,
-                meta_data=meta_data,
+        try:
+            with db_session() as session:
+                insert_audit_event(
+                    session,
+                    event=event,
+                    success=success,
+                    user_id=str(user_id) if user_id is not None else None,
+                    error_code=error_code,
+                    ip=ip,
+                    user_agent=user_agent,
+                    niche=niche,
+                    meta_data=meta_data,
+                )
+        except Exception:
+            logger.exception(
+                'audit log insert failed (best-effort)',
+                extra={'event': event},
             )

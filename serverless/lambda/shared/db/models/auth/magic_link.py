@@ -1,16 +1,19 @@
 """@module auth.magic_link — tabla `auth_magic_links` (URLs single-use)."""
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import (
     DateTime,
-    Enum as SAEnum,
     ForeignKey,
     Text,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import BYTEA, INET, UUID
+from sqlalchemy import (
+    Enum as SAEnum,
+)
+from sqlalchemy.dialects.postgresql import BYTEA, INET, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...base import Base
@@ -72,3 +75,10 @@ class AuthMagicLink(Base):
     )
     ip: Mapped[str | None] = mapped_column(INET(), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # `metadata` jsonb (attr `meta_data` porque SQLAlchemy reserva
+    # `metadata` en la Base). Lo usa el flujo `email-change` (plan 03)
+    # para llevar el `{new_email}` asociado al link hasta su confirmacion.
+    meta_data: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(), name='metadata', nullable=True,
+    )

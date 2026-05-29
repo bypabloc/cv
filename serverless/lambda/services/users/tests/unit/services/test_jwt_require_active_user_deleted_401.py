@@ -1,0 +1,41 @@
+"""require_active_user — user soft-deleted -> 401.
+
+Given un access JWT valido pero el user fue soft-deleted (deleted_at set),
+When se invoca require_active_user,
+Then levanta ApplicationError con status_code 401.
+"""
+
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+from uuid import uuid4
+
+import pytest
+
+
+@contextmanager
+def _ctx(session):
+    yield session
+
+
+def test_jwt_require_active_user_deleted_401(monkeypatch):
+    from services import jwt_service
+    from shared.core import ApplicationError
+
+    claims = SimpleNamespace(sub=uuid4(), family_id='fam-1')
+    fake_jwt = MagicMock()
+    fake_jwt.verify.return_value = claims
+    monkeypatch.setattr(jwt_service, 'JwtService', lambda _c: fake_jwt)
+
+    deleted = MagicMock(deleted_at=datetime.now(tz=UTC))
+    fake_session = MagicMock()
+    fake_session.get.return_value = deleted
+    monkeypatch.setattr(
+        jwt_service, 'db_session', lambda: _ctx(fake_session),
+    )
+
+    with pytest.raises(ApplicationError) as exc:
+        jwt_service.require_active_user('Bearer abc', app_config=object())
+
+    assert exc.value.status_code == 401

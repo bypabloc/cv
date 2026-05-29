@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "messageId": "01H9V0K000000000000000000A4",
+      "receiptHandle": "AQEBfake-receipt-handle-for-local-invoke",
+      "body": "{\"kind\":\"account-deleted\",\"to\":\"user@example.com\",\"user_id\":\"01900000-0000-7000-8000-000000000001\",\"niche\":null,\"subject_id\":\"auth.profile.account-deleted.subject\",\"data\":{}}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1716660000000",
+        "SenderId": "AIDAFAKE",
+        "ApproximateFirstReceiveTimestamp": "1716660001000"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "00000000000000000000000000000000",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-east-1:000000000000:portfolio-auth-email-dev",
+      "awsRegion": "us-east-1"
+    }
+  ]
+}

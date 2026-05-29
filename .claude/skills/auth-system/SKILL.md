@@ -74,7 +74,21 @@ description: >
   "passkey", "passkeys", "webauthn", "2fa", "two factor",
   "autenticacion en dos pasos", "factor doble", "recovery codes",
   "codigos de recuperacion", "clone detection", "sign_count",
-  "kms totp", "cifrar totp secret".
+  "kms totp", "cifrar totp secret",
+  "gestion de usuarios", "user management", "profile get", "profile update",
+  "actualizar perfil", "cambiar email", "change email", "change-email",
+  "confirmar cambio de email", "eliminar cuenta", "delete account",
+  "delete-account", "borrar cuenta", "soft delete usuario", "soft-delete",
+  "marketing consent", "gdpr consent", "consent log", "status del usuario",
+  "user status", "sesiones activas", "active sessions", "list sessions",
+  "revoke session", "cerrar sesion remota", "multi-device", "panel admin",
+  "admin panel", "admin scope", "deshabilitar usuario", "disable user",
+  "habilitar usuario", "enable user", "force logout", "forzar logout",
+  "list users", "listar usuarios", "admin delete user", "hard delete user",
+  "admin actions audit", "admin whitelist", "admin-emails", "whitelist admin",
+  "require_admin", "is_admin", "auth_user_sessions", "auth_user_admin_actions",
+  "auth_user_consent_log", "POST /users", "/users endpoint", "lambda users plan 03",
+  "session tracking", "family_id en access", "current session".
 user-invocable: true
 disable-model-invocation: false
 allowed-tools: Read, Glob, Grep

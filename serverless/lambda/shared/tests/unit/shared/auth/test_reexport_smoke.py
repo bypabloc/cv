@@ -14,6 +14,7 @@ def test_reexport_all_symbols_resolve_and_sorted():
     # Arrange
     expected_symbols = {
         'ACCESS_TTL',
+        'AdminAuthzError',
         'CODE_ALPHABET',
         'CODE_LENGTH',
         'DEFAULT_AUDIENCE',
@@ -50,9 +51,12 @@ def test_reexport_all_symbols_resolve_and_sorted():
         'hash_password',
         'hash_recovery_code',
         'hash_token',
+        'is_admin',
         'issue_access_jwt',
         'issue_refresh_jwt',
         'issue_temp_jwt',
+        'load_admin_emails',
+        'require_admin',
         'verify_authentication',
         'verify_jwt',
         'verify_password',

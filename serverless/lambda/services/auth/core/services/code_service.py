@@ -24,7 +24,10 @@ from shared.db.repositories.auth import (
 )
 
 # TTL del code (politica MVP). El worker debe enviarlo antes del expiry.
-_CODE_TTL = timedelta(minutes=15)
+# CODE_TTL_MINUTES es la fuente unica: el email que envia el worker muestra
+# este mismo valor (lo pasa el caller a EmailDispatchService.publish_code).
+CODE_TTL_MINUTES = 15
+_CODE_TTL = timedelta(minutes=CODE_TTL_MINUTES)
 
 
 class CodeService:

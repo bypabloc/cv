@@ -15,10 +15,10 @@ from typing import Any
 
 from models.login import LoginStartIn
 from services.audit_service import AuditService
-from services.code_service import CodeService
+from services.code_service import CODE_TTL_MINUTES, CodeService
 from services.email_dispatch_service import EmailDispatchService
 from services.jwt_service import JwtService
-from services.magic_link_service import MagicLinkService
+from services.magic_link_service import LINK_TTL_MINUTES, MagicLinkService
 from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
@@ -190,8 +190,8 @@ class Start(BaseController):
             user_id=existing.id,
             niche=niche,
             kind='login-magic-link',
-            plain=token,
             verify_url=verify_url,
+            expires_in_min=LINK_TTL_MINUTES,
         )
         email_svc.publish_code(
             to=existing.email,
@@ -199,6 +199,7 @@ class Start(BaseController):
             niche=niche,
             kind='login-code',
             code=code,
+            expires_in_min=CODE_TTL_MINUTES,
         )
 
         temp_token, _ = jwt_svc.issue_temp(
@@ -264,7 +265,14 @@ class Start(BaseController):
 
         mfa_svc = MfaMethodService(app_config)
         if mfa_svc.count_active(user_id=user.id) == 0:
-            tokens = issue_terminal_tokens(jwt_svc=jwt_svc, user_id=user.id)
+            tokens = issue_terminal_tokens(
+                jwt_svc=jwt_svc,
+                user_id=user.id,
+                app_config=app_config,
+                ip=meta.ip,
+                country=meta.country,
+                user_agent=meta.user_agent,
+            )
             user_svc.update_last_login(user)
             audit_svc.log(
                 event='login.start',

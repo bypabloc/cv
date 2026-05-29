@@ -14,8 +14,8 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
-def test_render_template_supports_all_five_kinds():
-    """Las 5 plantillas estan presentes y renderizan placeholders."""
+def test_render_template_supports_all_kinds():
+    """Todas las plantillas estan presentes y renderizan placeholders."""
     from services.template_service import SUPPORTED_KINDS, render_template
 
     expected_kinds = (
@@ -24,8 +24,12 @@ def test_render_template_supports_all_five_kinds():
         'login-magic-link',
         'login-code',
         'password-reset',
+        'email-change-verify',
+        'email-changed',
+        'account-disabled',
+        'account-deleted',
     )
-    assert SUPPORTED_KINDS == expected_kinds
+    assert expected_kinds == SUPPORTED_KINDS
 
     cases: dict[str, dict[str, object]] = {
         'register-magic-link': {
@@ -48,6 +52,18 @@ def test_render_template_supports_all_five_kinds():
             'verify_url': 'https://example.com/password/reset?t=pqr',
             'expires_in_min': 15,
         },
+        'email-change-verify': {
+            'new_email': 'new@example.com',
+            'verify_url': 'https://example.com/users/confirm?t=ec',
+            'expires_in_min': 15,
+        },
+        'email-changed': {
+            'new_email': 'new@example.com',
+        },
+        'account-disabled': {
+            'reason': 'violacion de terminos',
+        },
+        'account-deleted': {},
     }
 
     expected_subjects = {
@@ -56,6 +72,12 @@ def test_render_template_supports_all_five_kinds():
         'login-magic-link': 'Inicia sesion en the-full-stack.com',
         'login-code': 'Tu codigo de acceso',
         'password-reset': 'Restablece tu contrasena',
+        'email-change-verify': (
+            'Confirma tu nuevo email en the-full-stack.com'
+        ),
+        'email-changed': 'Tu email fue actualizado',
+        'account-disabled': 'Tu cuenta fue deshabilitada',
+        'account-deleted': 'Tu cuenta fue eliminada',
     }
 
     for kind in SUPPORTED_KINDS:

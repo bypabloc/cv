@@ -31,6 +31,10 @@ class CvRequestMeta(BaseModel):
     # Origin header raw del request. Inyectado por http_handler para
     # uniformidad entre Lambdas. cv no lo usa hoy.
     origin: str | None = None
+    # Header Authorization que http_handler inyecta SIEMPRE para uniformidad
+    # (lo usa el Lambda auth). cv es read-only sin auth; se declara para no
+    # romper el extra:forbid del sub-modelo.
+    authorization: str | None = None
 
     model_config = {'extra': 'forbid'}
 

@@ -1,0 +1,29 @@
+"""
+Given un user activo (deleted_at None),
+When se llama enable_user,
+Then status=ACTIVE y retorna True.
+"""
+
+from unittest.mock import MagicMock
+
+import pytest
+from shared.db.models import AuthUserStatus
+from shared.db.repositories.auth_users import enable_user
+
+pytestmark = pytest.mark.unit
+
+
+def test_enable_user_sets_status_active():
+    # Arrange
+    session = MagicMock()
+    user = MagicMock()
+    user.deleted_at = None
+    session.get.return_value = user
+
+    # Act
+    result = enable_user(session, user_id='u1')
+
+    # Assert
+    assert result is True
+    assert user.status == AuthUserStatus.ACTIVE
+    session.flush.assert_called_once()

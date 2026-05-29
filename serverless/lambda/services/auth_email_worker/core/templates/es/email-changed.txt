@@ -1,0 +1,11 @@
+Hola,
+
+El email de tu cuenta en the-full-stack.com se cambio correctamente a
+${new_email}.
+
+A partir de ahora usa esa direccion para iniciar sesion.
+
+Si no reconoces este cambio, escribe a soporte de inmediato: alguien
+podria haber accedido a tu cuenta.
+
+— the-full-stack.com

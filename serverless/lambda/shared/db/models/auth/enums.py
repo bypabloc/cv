@@ -36,15 +36,22 @@ class AuthCodeKind(StrEnum):
 
     REGISTER = 'register'
     LOGIN = 'login'
-    PASSWORD_RESET = 'password_reset'
+    PASSWORD_RESET = 'password_reset'  # noqa: S105 (enum value, no secreto)
 
 
 class AuthLinkKind(StrEnum):
-    """Kind del `auth_magic_links.kind` (tipo de flujo del magic-link)."""
+    """Kind del `auth_magic_links.kind` (tipo de flujo del magic-link).
+
+    `email-change` (plan 03) reusa la tabla `auth_magic_links` para el
+    flujo de cambio de email: el user pide el cambio, recibe un magic-link
+    al email NUEVO y al confirmarlo se actualiza `auth_users.email`. El
+    nuevo email viaja en `auth_magic_links.meta_data` (`{new_email}`).
+    """
 
     REGISTER = 'register'
     LOGIN = 'login'
-    PASSWORD_RESET = 'password_reset'
+    PASSWORD_RESET = 'password_reset'  # noqa: S105 (enum value, no secreto)
+    EMAIL_CHANGE = 'email-change'
 
 
 class AuthMfaKind(StrEnum):

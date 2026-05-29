@@ -16,6 +16,7 @@ from models.session import SessionRefreshIn
 from services.audit_service import AuditService
 from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
+from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
 from shared.auth import JwtExpiredError, JwtInvalidError
@@ -182,10 +183,17 @@ class Refresh(BaseController):
             reason='rotation',
             family_id=claims.family_id,
         )
-        access_token, _ = jwt_svc.issue_access(user_id=claims.sub)
+        access_token, _ = jwt_svc.issue_access(
+            user_id=claims.sub, family_id=claims.family_id,
+        )
         refresh_token, _ = jwt_svc.issue_refresh(
             user_id=claims.sub,
             family_id=claims.family_id,
+        )
+        # Rotation reusa el MISMO family_id -> bump last_active_at (AC-23).
+        SessionTrackingService(app_config).on_session_rotated(
+            old_family_id=claims.family_id,
+            new_family_id=claims.family_id,
         )
 
         audit_svc.log(

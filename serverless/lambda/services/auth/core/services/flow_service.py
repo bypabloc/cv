@@ -26,6 +26,7 @@ from shared.auth import JwtClaims
 from shared.core.ulid import new_uuidv7
 
 from .jwt_service import JwtService
+from .session_tracking_service import SessionTrackingService
 
 
 class FlowService:
@@ -65,13 +66,21 @@ class FlowService:
         )
 
     def terminate_flow(
-        self, *, user_id: UUID | str, claims: JwtClaims,
+        self,
+        *,
+        user_id: UUID | str,
+        claims: JwtClaims,
+        ip: str | None = None,
+        country: str | None = None,
+        user_agent: str | None = None,
     ) -> tuple[str, str, UUID]:
         """Cierra el flujo: blacklistea el temp + emite access + refresh.
 
-        El refresh viene con un `family_id` nuevo (uuidv7). Retorna
-        `(access_token, refresh_token, family_id)` para que el
-        controller los publique al cliente.
+        El `family_id` nuevo (uuidv7) se embebe TANTO en el access (para que
+        el Lambda `users` identifique la sesion en curso) COMO en el refresh
+        (rotation). Si se pasan ip/country/user_agent, registra la sesion en
+        `auth_user_sessions` (best-effort, mismo patron que el login con
+        MFA). Retorna `(access_token, refresh_token, family_id)`.
         """
         self._jwt.blacklist(
             jti=claims.jti,
@@ -80,8 +89,17 @@ class FlowService:
             reason='rotation',
         )
         family_id = UUID(new_uuidv7())
-        access_str, _ = self._jwt.issue_access(user_id=user_id)
+        access_str, _ = self._jwt.issue_access(
+            user_id=user_id, family_id=family_id,
+        )
         refresh_str, _ = self._jwt.issue_refresh(
             user_id=user_id, family_id=family_id,
+        )
+        SessionTrackingService(self.app_config).on_session_created(
+            user_id=user_id,
+            family_id=family_id,
+            ip=ip,
+            country=country,
+            user_agent=user_agent,
         )
         return access_str, refresh_str, family_id

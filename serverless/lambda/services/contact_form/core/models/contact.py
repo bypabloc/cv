@@ -41,6 +41,10 @@ class RequestMeta(BaseModel):
     # controller lo usa para inferir niche cuando el form no lo envia
     # (spec sessions-normalize, decision 6).
     origin: str | None = None
+    # Header Authorization que http_handler inyecta SIEMPRE en `_meta` (lo
+    # usa el Lambda auth). contact_form no autentica, pero debe declararlo
+    # para no romper el `extra='forbid'` del sub-modelo.
+    authorization: str | None = None
 
     model_config = {'extra': 'forbid'}
 

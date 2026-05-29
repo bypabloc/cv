@@ -1,0 +1,22 @@
+{
+  "httpMethod": "POST",
+  "path": "/users",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://admin.portfolio.dev.the-full-stack.com",
+    "CF-Connecting-IP": "203.0.113.10",
+    "CF-IPCountry": "CL",
+    "Authorization": "Bearer REPLACE_WITH_REAL_ACCESS_JWT"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": "{\"operation\": \"admin\", \"action\": \"force-logout\", \"data\": {\"user_id\": \"01900000-0000-7000-8000-000000000abc\", \"reason\": \"smoke test\"}}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "identity": {
+      "sourceIp": "203.0.113.10"
+    },
+    "requestId": "local-request-id",
+    "stage": "dev"
+  }
+}

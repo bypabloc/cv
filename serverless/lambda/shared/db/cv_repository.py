@@ -219,7 +219,7 @@ def _niches_by_entity(
         select(entity_col_attr, Niche.slug)
         .join(Niche, Niche.id == union_model.niche_id)
         .where(entity_col_attr.in_(entity_ids))
-        .order_by(Niche.position)
+        .order_by(Niche.display_order)
     )
     out: dict[str, list[str]] = defaultdict(list)
     for row in session.execute(stmt):
@@ -276,7 +276,7 @@ def get_profile(*, locale: str = 'es') -> dict[str, Any]:
                 select(Niche.slug)
                 .join(ProfileNiche, ProfileNiche.niche_id == Niche.id)
                 .where(ProfileNiche.profile_id == profile.id)
-                .order_by(Niche.position)
+                .order_by(Niche.display_order)
             )
             niche_slugs = [row[0] for row in session.execute(niches_stmt)]
 

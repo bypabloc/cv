@@ -44,6 +44,12 @@ EMAIL_FROM=
 # SSM: /portfolio/ses-from-name
 EMAIL_FROM_NAME=
 
+# --- admin-emails.yaml (SecureString) ---
+# Lista coma-separada de emails admin (whitelist del scope admin.* del
+# Lambda users). Rotar admins = editar este valor + sync_secrets.
+# SSM: /portfolio/${stage}/admin-emails
+ADMIN_EMAILS=
+
 # === Variables NO catalogadas (inline en manifest.yaml de cada Lambda) =====
 
 # --- AWS endpoints (override para local-dev con dynamodb-local) ---

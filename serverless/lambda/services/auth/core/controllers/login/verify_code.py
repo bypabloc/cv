@@ -19,6 +19,7 @@ from services.code_service import CodeService
 from services.flow_service import FlowService
 from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
+from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
 from shared.auth import JwtExpiredError, JwtInvalidError, JwtRevokedError
@@ -175,11 +176,20 @@ class VerifyCode(BaseController):
             reason='rotation',
         )
 
-        access_token, _ = jwt_svc.issue_access(user_id=user.id)
         family_id = UUID(new_uuidv7())
+        access_token, _ = jwt_svc.issue_access(
+            user_id=user.id, family_id=family_id,
+        )
         refresh_token, _ = jwt_svc.issue_refresh(
             user_id=user.id,
             family_id=family_id,
+        )
+        SessionTrackingService(app_config).on_session_created(
+            user_id=user.id,
+            family_id=family_id,
+            ip=meta.ip,
+            country=meta.country,
+            user_agent=meta.user_agent,
         )
 
         audit_svc.log(

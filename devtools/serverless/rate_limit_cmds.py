@@ -122,6 +122,15 @@ _VALID_ENDPOINTS = [
     '/auth#webauthn.login-verify',
     '/auth#login.verify-password',
     '/auth#login.verify-totp',
+    # Plan 03 (gestion de usuarios: profile / status / admin). JWT-authed
+    # (sin Turnstile). status y admin comparten una key por operation.
+    '/users#profile.get',
+    '/users#profile.update',
+    '/users#profile.change-email',
+    '/users#profile.confirm-email-change',
+    '/users#profile.delete-account',
+    '/users#status',
+    '/users#admin',
 ]
 
 

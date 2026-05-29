@@ -19,7 +19,6 @@ from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-
 from shared.auth import (
     JwtExpiredError,
     JwtInvalidError,
@@ -130,12 +129,14 @@ class SetPassword(BaseController):
         # el controller (CPU-bound, sin I/O); el service solo upserta.
         password_hash = hash_password(data.password)
         user_svc.set_password_hash(
-            user_id=str(user.id), password_hash=password_hash,
+            user_id=str(user.id),
+            password_hash=password_hash,
         )
 
         # Cierra el flujo: blacklistea el temp + emite access + refresh.
         access_token, refresh_token, _ = flow_svc.terminate_flow(
-            user_id=user.id, claims=claims,
+            user_id=user.id,
+            claims=claims,
         )
 
         audit_svc.log(

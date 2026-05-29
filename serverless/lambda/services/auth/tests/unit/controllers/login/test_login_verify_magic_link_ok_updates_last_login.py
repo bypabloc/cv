@@ -29,13 +29,19 @@ def test_login_verify_magic_link_ok_updates_last_login(monkeypatch):
     jwt_svc.issue_refresh.return_value = ('LOGIN-REFRESH-JWT', MagicMock())
 
     monkeypatch.setattr(
-        verify_magic_link, 'MagicLinkService', lambda _c: link_svc,
+        verify_magic_link,
+        'MagicLinkService',
+        lambda _c: link_svc,
     )
     monkeypatch.setattr(verify_magic_link, 'UserService', lambda _c: user_svc)
     monkeypatch.setattr(verify_magic_link, 'JwtService', lambda _c: jwt_svc)
-    monkeypatch.setattr(verify_magic_link, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(
-        verify_magic_link, 'RateLimitService', lambda _c: MagicMock(),
+        verify_magic_link, 'AuditService', lambda _c: MagicMock()
+    )
+    monkeypatch.setattr(
+        verify_magic_link,
+        'RateLimitService',
+        lambda _c: MagicMock(),
     )
 
     event = _make_event_with_token(token='L' * 32)

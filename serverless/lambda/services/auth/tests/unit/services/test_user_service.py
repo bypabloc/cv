@@ -21,7 +21,9 @@ def test_get_by_email_returns_user_when_found(monkeypatch):
 
     monkeypatch.setattr(user_service, 'db_session', _fake_session)
     monkeypatch.setattr(
-        user_service, 'get_user_by_email', lambda _s, _e: fake_user,
+        user_service,
+        'get_user_by_email',
+        lambda _s, _e: fake_user,
     )
 
     svc = user_service.UserService(app_config=object())
@@ -111,7 +113,9 @@ def test_increment_failed_attempts_locks_at_fifth_failure(monkeypatch):
 
     monkeypatch.setattr(user_service, 'db_session', _fake_session)
     monkeypatch.setattr(
-        user_service, 'increment_failed_attempts', lambda _s, _u: 5,
+        user_service,
+        'increment_failed_attempts',
+        lambda _s, _u: 5,
     )
 
     def fake_lock(_session, _user, *, until):

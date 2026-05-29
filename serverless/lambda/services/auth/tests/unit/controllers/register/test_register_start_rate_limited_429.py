@@ -19,7 +19,8 @@ def test_register_start_rate_limited_429(monkeypatch):
 
     rl_svc = MagicMock()
     rl_svc.check_or_raise.side_effect = RateLimitExceededError(
-        'limit hit', retry_after_seconds=60,
+        'limit hit',
+        retry_after_seconds=60,
     )
 
     monkeypatch.setattr(start, 'UserService', lambda _c: MagicMock())
@@ -30,7 +31,8 @@ def test_register_start_rate_limited_429(monkeypatch):
     monkeypatch.setattr(start, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: rl_svc)
     monkeypatch.setattr(
-        start, 'verify_turnstile_token',
+        start,
+        'verify_turnstile_token',
         lambda *_a, **_k: {'success': True},
     )
 

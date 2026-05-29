@@ -30,11 +30,13 @@ def test_event_model_rejects_invalid_operation():
     from models.event import EVENT_MODEL
 
     with pytest.raises(ValueError):
-        EVENT_MODEL.validate_event({
-            'operation': 'unknown',
-            'action': 'start',
-            'data': {},
-        })
+        EVENT_MODEL.validate_event(
+            {
+                'operation': 'unknown',
+                'action': 'start',
+                'data': {},
+            }
+        )
 
 
 def test_event_model_rejects_invalid_action():
@@ -42,11 +44,13 @@ def test_event_model_rejects_invalid_action():
     from models.event import EVENT_MODEL
 
     with pytest.raises(ValueError):
-        EVENT_MODEL.validate_event({
-            'operation': 'register',
-            'action': 'unknown-action',
-            'data': {},
-        })
+        EVENT_MODEL.validate_event(
+            {
+                'operation': 'register',
+                'action': 'unknown-action',
+                'data': {},
+            }
+        )
 
 
 def test_event_model_rejects_missing_operation():
@@ -54,7 +58,9 @@ def test_event_model_rejects_missing_operation():
     from models.event import EVENT_MODEL
 
     with pytest.raises(ValueError):
-        EVENT_MODEL.validate_event({
-            'action': 'start',
-            'data': {},
-        })
+        EVENT_MODEL.validate_event(
+            {
+                'action': 'start',
+                'data': {},
+            }
+        )

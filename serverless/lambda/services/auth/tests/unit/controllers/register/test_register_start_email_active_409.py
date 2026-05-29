@@ -31,7 +31,8 @@ def test_register_start_email_active_409(monkeypatch):
     monkeypatch.setattr(start, 'AuditService', lambda _c: audit_svc)
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: rl_svc)
     monkeypatch.setattr(
-        start, 'verify_turnstile_token',
+        start,
+        'verify_turnstile_token',
         lambda *_a, **_k: {'success': True},
     )
 

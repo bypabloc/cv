@@ -22,7 +22,6 @@ from services.magic_link_service import MagicLinkService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-
 from shared.auth import JwtExpiredError, JwtInvalidError, JwtRevokedError
 from shared.db.models import AuthCodeKind, AuthLinkKind
 from shared.lambda_kit import BaseController
@@ -127,7 +126,8 @@ class ResendCode(BaseController):
 
         # Throttle: minimo 60s desde el ultimo code (AC-21).
         retry_after = code_svc.seconds_until_resend_allowed(
-            user_id=user.id, kind=kind_code,
+            user_id=user.id,
+            kind=kind_code,
         )
         if retry_after > 0:
             audit_svc.log(
@@ -154,7 +154,8 @@ class ResendCode(BaseController):
             kind_link=kind_link,
         )
         code, _ = code_svc.generate_and_persist(
-            user_id=user.id, kind=kind_code,
+            user_id=user.id,
+            kind=kind_code,
         )
         token, _ = link_svc.generate_and_persist(
             user_id=user.id,

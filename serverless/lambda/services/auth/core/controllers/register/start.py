@@ -22,7 +22,6 @@ from services.magic_link_service import MagicLinkService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-
 from shared.db.models import AuthCodeKind, AuthLinkKind, AuthUserStatus
 from shared.http import verify_turnstile_token
 from shared.lambda_kit import BaseController

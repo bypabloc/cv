@@ -62,11 +62,15 @@ def test_terminate_flow_returns_access_refresh_and_family(monkeypatch):
     user_id = uuid4()
 
     _, claims = issue_temp_jwt(
-        user_id=user_id, flow='register', step=2, secret=_TEST_JWT_KEY,
+        user_id=user_id,
+        flow='register',
+        step=2,
+        secret=_TEST_JWT_KEY,
     )
 
     access_str, refresh_str, family_id = svc.terminate_flow(
-        user_id=user_id, claims=claims,
+        user_id=user_id,
+        claims=claims,
     )
 
     assert access_str

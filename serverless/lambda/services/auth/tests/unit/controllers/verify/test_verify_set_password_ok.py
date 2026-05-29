@@ -26,7 +26,11 @@ def test_verify_set_password_ok(monkeypatch):
     user_svc.get_by_id.return_value = user
 
     flow_svc = MagicMock()
-    flow_svc.terminate_flow.return_value = ('ACCESS-JWT', 'REFRESH-JWT', uuid4())
+    flow_svc.terminate_flow.return_value = (
+        'ACCESS-JWT',
+        'REFRESH-JWT',
+        uuid4(),
+    )
 
     audit_svc = MagicMock()
     rl_svc = MagicMock()
@@ -47,5 +51,6 @@ def test_verify_set_password_ok(monkeypatch):
     assert result['data']['access_token'] == 'ACCESS-JWT'
     assert result['data']['refresh_token'] == 'REFRESH-JWT'
     user_svc.set_password_hash.assert_called_once_with(
-        user_id=str(uid), password_hash='HASH',
+        user_id=str(uid),
+        password_hash='HASH',
     )

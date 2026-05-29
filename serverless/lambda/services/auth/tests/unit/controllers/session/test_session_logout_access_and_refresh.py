@@ -21,7 +21,9 @@ def test_session_logout_access_and_refresh(monkeypatch):
     fid = uuid4()
     access_claims = _make_session_claims(typ='access', user_id=uid)
     refresh_claims = _make_session_claims(
-        typ='refresh', user_id=uid, family_id=fid,
+        typ='refresh',
+        user_id=uid,
+        family_id=fid,
     )
 
     jwt_svc = MagicMock()
@@ -42,5 +44,7 @@ def test_session_logout_access_and_refresh(monkeypatch):
     assert result['status'] == 204
     jwt_svc.blacklist.assert_called_once()
     jwt_svc.revoke_family.assert_called_once_with(
-        family_id=fid, user_id=uid, exp=refresh_claims.exp,
+        family_id=fid,
+        user_id=uid,
+        exp=refresh_claims.exp,
     )

@@ -14,7 +14,6 @@ contact_form (cf_token default='').
 
 import pytest
 
-
 pytestmark = pytest.mark.unit
 
 

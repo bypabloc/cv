@@ -86,7 +86,7 @@ def _make_event_with_code(
 
 def _make_event_set_password(
     *,
-    password: str = 'a-very-strong-passphrase-1',  # noqa: S107
+    password: str = 'a-very-strong-passphrase-1',
     temp_token: str = 'FAKE-TEMP-TOKEN-FOR-TEST-XXXXXXXXXXX',
     ip: str = '203.0.113.10',
     country: str = 'CL',
@@ -174,6 +174,51 @@ def _make_event_logout(
     return event
 
 
+_FAKE_BEARER = 'Bearer FAKE-ACCESS-JWT-FOR-TEST-XXXXXXXXXXXXXXXXXXXX'
+
+
+def _make_authed_event(
+    *,
+    data: dict[str, Any] | None = None,
+    authorization: str | None = _FAKE_BEARER,
+    ip: str = '203.0.113.10',
+    country: str = 'CL',
+    user_agent: str = 'pytest',
+) -> dict[str, Any]:
+    """Evento autenticado (mfa.* / webauthn.* con Authorization en _meta)."""
+    event: dict[str, Any] = dict(data or {})
+    event['_meta'] = {
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+        'bypass_secret': None,
+        'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+        'authorization': authorization,
+        'cloudfront_meta': {},
+    }
+    return event
+
+
+def _make_temp_event(
+    *,
+    data: dict[str, Any] | None = None,
+    ip: str = '203.0.113.10',
+    country: str = 'CL',
+    user_agent: str = 'pytest',
+) -> dict[str, Any]:
+    """Evento de un step con temp_token (sin Authorization)."""
+    event: dict[str, Any] = dict(data or {})
+    event['_meta'] = {
+        'ip': ip,
+        'country': country,
+        'user_agent': user_agent,
+        'bypass_secret': None,
+        'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+        'cloudfront_meta': {},
+    }
+    return event
+
+
 def _make_session_claims(
     *,
     user_id: UUID | None = None,
@@ -203,6 +248,7 @@ def _make_user(
 ) -> Any:
     """Mock de AuthUser con los campos minimos que usan los controllers."""
     from shared.db.models import AuthUserStatus
+
     user = MagicMock()
     user.id = user_id or uuid4()
     user.email = email
@@ -244,7 +290,8 @@ def _make_magic_link(
     link.consumed_at = datetime.now(tz=UTC) if consumed else None
     link.expires_at = (
         datetime(2020, 1, 1, tzinfo=UTC)
-        if expired else datetime(2099, 1, 1, tzinfo=UTC)
+        if expired
+        else datetime(2099, 1, 1, tzinfo=UTC)
     )
     return link
 

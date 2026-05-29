@@ -55,8 +55,9 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Tests: el nombre del test es el contrato; las firmas no necesitan
-# anotaciones de tipo.
-"tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S105", "S106"]
+# anotaciones de tipo. S105/S106/S107 son falsos positivos en fixtures
+# (tokens/passwords de ejemplo, no secretos reales).
+"tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S105", "S106", "S107"]
 # El handler ajusta sys.path antes de importar: E402 no aplica.
 "core/handler.py" = ["E402"]
 

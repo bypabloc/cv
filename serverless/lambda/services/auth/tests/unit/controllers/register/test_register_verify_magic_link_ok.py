@@ -31,11 +31,15 @@ def test_register_verify_magic_link_ok(monkeypatch):
     audit_svc = MagicMock()
     rl_svc = MagicMock()
 
-    monkeypatch.setattr(verify_magic_link, 'MagicLinkService', lambda _c: link_svc)
+    monkeypatch.setattr(
+        verify_magic_link, 'MagicLinkService', lambda _c: link_svc
+    )
     monkeypatch.setattr(verify_magic_link, 'UserService', lambda _c: user_svc)
     monkeypatch.setattr(verify_magic_link, 'JwtService', lambda _c: jwt_svc)
     monkeypatch.setattr(verify_magic_link, 'AuditService', lambda _c: audit_svc)
-    monkeypatch.setattr(verify_magic_link, 'RateLimitService', lambda _c: rl_svc)
+    monkeypatch.setattr(
+        verify_magic_link, 'RateLimitService', lambda _c: rl_svc
+    )
 
     event = _make_event_with_token(token='B' * 32)
     controller = verify_magic_link.VerifyMagicLink(event=event)

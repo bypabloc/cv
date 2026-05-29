@@ -19,16 +19,23 @@ from services.code_service import CodeService
 from services.email_dispatch_service import EmailDispatchService
 from services.jwt_service import JwtService
 from services.magic_link_service import MagicLinkService
+from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-
 from shared.db.models import AuthCodeKind, AuthLinkKind, AuthUserStatus
 from shared.http import verify_turnstile_token
 from shared.lambda_kit import BaseController
 
+from ._mfa_login import issue_terminal_tokens
+from ._password_check import check_password
+
 _ENDPOINT = '/auth#login.start'
 _TEMP_TTL_SECONDS = 300
+# Factor fuerte: el temp JWT step=2 producido tras password lleva este
+# flow (decision 10). Solo metodos fuertes post-password.
+_MFA_FLOW = 'login-mfa'
+_MFA_METHODS = ['totp', 'webauthn']
 
 
 class Start(BaseController):
@@ -121,7 +128,8 @@ class Start(BaseController):
             }
 
         if existing.status in (
-            AuthUserStatus.DISABLED, AuthUserStatus.LOCKED,
+            AuthUserStatus.DISABLED,
+            AuthUserStatus.LOCKED,
         ):
             audit_svc.log(
                 event='login.start',
@@ -142,6 +150,19 @@ class Start(BaseController):
                 },
             }
 
+        # status active + password en el body (plan 02, decision 9): valida
+        # con argon2 ANTES de la rama passwordless. NO toca el passwordless.
+        if data.password is not None:
+            return self._login_with_password(
+                user=existing,
+                password=data.password,
+                niche=niche,
+                meta=meta,
+                user_svc=user_svc,
+                jwt_svc=jwt_svc,
+                audit_svc=audit_svc,
+            )
+
         # status active: invalidar codes + links previos + generar nuevos.
         user_svc.invalidate_active_codes_and_links(
             user_id=str(existing.id),
@@ -150,7 +171,8 @@ class Start(BaseController):
         )
 
         code, _ = code_svc.generate_and_persist(
-            user_id=existing.id, kind=AuthCodeKind.LOGIN,
+            user_id=existing.id,
+            kind=AuthCodeKind.LOGIN,
         )
         token, _ = link_svc.generate_and_persist(
             user_id=existing.id,
@@ -180,7 +202,9 @@ class Start(BaseController):
         )
 
         temp_token, _ = jwt_svc.issue_temp(
-            user_id=existing.id, flow='login', step=1,
+            user_id=existing.id,
+            flow='login',
+            step=1,
         )
 
         audit_svc.log(
@@ -199,5 +223,78 @@ class Start(BaseController):
                 'temp_token': temp_token,
                 'methods': ['magic-link', 'email-code'],
                 'expires_in': _TEMP_TTL_SECONDS,
+            },
+        }
+
+    def _login_with_password(
+        self,
+        *,
+        user: Any,
+        password: str,
+        niche: str | None,
+        meta: Any,
+        user_svc: Any,
+        jwt_svc: Any,
+        audit_svc: Any,
+    ) -> dict[str, Any]:
+        """Login con password directo (plan 02).
+
+        Returns:
+            401 INVALID_PASSWORD + failed_attempts++ si no matchea (AC-21).
+            200 access+refresh si el user no tiene MFA (AC-20).
+            200 temp step=2 + methods=['totp','webauthn'] si tiene MFA
+            (AC-18).
+        """
+        if not check_password(user_id=user.id, password=password):
+            user_svc.increment_failed_attempts(user)
+            audit_svc.log(
+                event='login.start',
+                success=False,
+                user_id=user.id,
+                error_code='INVALID_PASSWORD',
+                ip=meta.ip,
+                niche=niche,
+            )
+            return {
+                'is_valid': False,
+                'code': 4000,
+                'status': 401,
+                'data': {'error': 'INVALID_PASSWORD'},
+            }
+
+        mfa_svc = MfaMethodService(app_config)
+        if mfa_svc.count_active(user_id=user.id) == 0:
+            tokens = issue_terminal_tokens(jwt_svc=jwt_svc, user_id=user.id)
+            user_svc.update_last_login(user)
+            audit_svc.log(
+                event='login.start',
+                success=True,
+                user_id=user.id,
+                ip=meta.ip,
+                user_agent=meta.user_agent,
+                niche=niche,
+            )
+            return {'is_valid': True, 'code': 0, 'data': tokens}
+
+        temp_token, _ = jwt_svc.issue_temp(
+            user_id=user.id,
+            flow=_MFA_FLOW,
+            step=2,
+        )
+        audit_svc.log(
+            event='login.start',
+            success=True,
+            user_id=user.id,
+            ip=meta.ip,
+            user_agent=meta.user_agent,
+            niche=niche,
+        )
+        return {
+            'is_valid': True,
+            'code': 0,
+            'data': {
+                'temp_token': temp_token,
+                'methods': list(_MFA_METHODS),
+                'step': 2,
             },
         }

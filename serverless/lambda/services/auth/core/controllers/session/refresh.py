@@ -16,8 +16,8 @@ from models.session import SessionRefreshIn
 from services.audit_service import AuditService
 from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
+from services.user_service import UserService
 from settings.config import app_config
-
 from shared.auth import JwtExpiredError, JwtInvalidError
 from shared.lambda_kit import BaseController
 
@@ -70,7 +70,8 @@ class Refresh(BaseController):
         # toda la familia en el caso de reuso.
         try:
             claims = jwt_svc.verify_allow_revoked(
-                data.refresh_token, expected_typ='refresh',
+                data.refresh_token,
+                expected_typ='refresh',
             )
         except JwtExpiredError:
             audit_svc.log(
@@ -142,6 +143,36 @@ class Refresh(BaseController):
                 'data': {'error': 'TOKEN_REUSE_DETECTED'},
             }
 
+        # AC-27: si el user revoco sus sesiones (confirmo su primer MFA)
+        # DESPUES de emitir este refresh, la familia entera queda invalida.
+        # Cierra la ventana donde un atacante con un refresh previo seguiria
+        # operando sin pasar MFA. Compara iat (emision) vs sessions_revoked_at.
+        user = UserService(app_config).get_by_id(str(claims.sub))
+        if (
+            user is not None
+            and user.sessions_revoked_at is not None
+            and claims.iat < user.sessions_revoked_at.timestamp()
+        ):
+            if claims.family_id is not None:
+                jwt_svc.revoke_family(
+                    family_id=claims.family_id,
+                    user_id=claims.sub,
+                    exp=claims.exp,
+                )
+            audit_svc.log(
+                event='session.refresh.family_revoked',
+                success=False,
+                user_id=claims.sub,
+                error_code='TOKEN_FAMILY_REVOKED',
+                ip=meta.ip,
+            )
+            return {
+                'is_valid': False,
+                'code': 4004,
+                'status': 401,
+                'data': {'error': 'TOKEN_FAMILY_REVOKED'},
+            }
+
         # Rotation normal: blacklistea el refresh viejo + emite nuevos
         # tokens con el MISMO family_id.
         jwt_svc.blacklist(
@@ -153,7 +184,8 @@ class Refresh(BaseController):
         )
         access_token, _ = jwt_svc.issue_access(user_id=claims.sub)
         refresh_token, _ = jwt_svc.issue_refresh(
-            user_id=claims.sub, family_id=claims.family_id,
+            user_id=claims.sub,
+            family_id=claims.family_id,
         )
 
         audit_svc.log(

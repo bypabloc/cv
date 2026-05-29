@@ -44,7 +44,9 @@ def test_session_refresh_family_revoked(monkeypatch):
     assert result['status'] == 401
     assert result['data']['error'] == 'TOKEN_REUSE_DETECTED'
     jwt_svc.revoke_family.assert_called_once_with(
-        family_id=fid, user_id=uid, exp=claims.exp,
+        family_id=fid,
+        user_id=uid,
+        exp=claims.exp,
     )
     jwt_svc.issue_access.assert_not_called()
     jwt_svc.issue_refresh.assert_not_called()

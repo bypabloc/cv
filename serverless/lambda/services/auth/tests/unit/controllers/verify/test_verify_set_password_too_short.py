@@ -17,7 +17,9 @@ def test_verify_set_password_too_short(monkeypatch):
 
     user_svc = MagicMock()
     monkeypatch.setattr(set_password, 'UserService', lambda _c: user_svc)
-    monkeypatch.setattr(set_password, 'RateLimitService', lambda _c: MagicMock())
+    monkeypatch.setattr(
+        set_password, 'RateLimitService', lambda _c: MagicMock()
+    )
 
     # 11 chars (< 12 min).
     event = _make_event_set_password(password='short-pass1')

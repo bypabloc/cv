@@ -34,7 +34,8 @@ def test_login_start_email_active_no_password(monkeypatch):
     monkeypatch.setattr(start, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: MagicMock())
     monkeypatch.setattr(
-        start, 'verify_turnstile_token',
+        start,
+        'verify_turnstile_token',
         lambda *_a, **_k: {'success': True},
     )
 

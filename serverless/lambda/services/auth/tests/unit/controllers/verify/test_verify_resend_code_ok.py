@@ -43,7 +43,9 @@ def test_verify_resend_code_ok(monkeypatch):
     monkeypatch.setattr(resend_code, 'CodeService', lambda _c: code_svc)
     monkeypatch.setattr(resend_code, 'MagicLinkService', lambda _c: link_svc)
     monkeypatch.setattr(
-        resend_code, 'EmailDispatchService', lambda _c: email_svc,
+        resend_code,
+        'EmailDispatchService',
+        lambda _c: email_svc,
     )
     monkeypatch.setattr(resend_code, 'FlowService', lambda _c: flow_svc)
     monkeypatch.setattr(resend_code, 'AuditService', lambda _c: audit_svc)

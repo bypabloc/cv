@@ -40,7 +40,6 @@ from settings.operations import OPERATIONS
 from shared.lambda_kit import build_event_model, http_handler
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
-from shared.observability.tracer import tracer
 
 __version__ = '3.0.0'
 
@@ -51,7 +50,6 @@ _EVENT_MODEL = build_event_model(OPERATIONS)
 @logger.inject_lambda_context(
     log_event=False, correlation_id_path='requestContext.requestId'
 )
-@tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Entrypoint Lambda tracking_pixel (POST /track).

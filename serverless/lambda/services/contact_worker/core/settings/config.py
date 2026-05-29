@@ -3,7 +3,7 @@
 Define `AppConfig` (variables de entorno), los enums de codigos de error
 y de metricas de logging, y reexporta el `logger` de la libreria comun.
 
-El Lambda usa el logger / tracer / metrics de Powertools v3 que vive en
+El Lambda usa el logger / metrics de Powertools v3 que vive en
 `shared/` (vendorizado en `core/shared/` por devtools). `config.py`
 reexporta el `logger` para que el resto del codigo `core/` lo importe
 desde un solo lugar, como pide el estandar lambda-controller.

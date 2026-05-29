@@ -40,7 +40,6 @@ from settings.operations import OPERATIONS
 from shared.db.url import ensure_database_url
 from shared.lambda_kit import build_event_model, run_controller
 from shared.observability import MetricUnit, logger, metrics
-from shared.observability.tracer import tracer
 
 __version__ = '3.0.0'
 
@@ -73,7 +72,6 @@ def _available_commands() -> list[str]:
 
 
 @logger.inject_lambda_context(log_event=True)
-@tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Traduce {command, args} a {operation, action, data} y enruta."""

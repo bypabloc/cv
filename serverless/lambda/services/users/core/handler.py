@@ -38,7 +38,6 @@ from settings.operations import OPERATIONS
 from shared.lambda_kit import http_handler
 from shared.observability.logger import logger
 from shared.observability.metrics import metrics
-from shared.observability.tracer import tracer
 
 __version__ = '0.1.0'
 
@@ -46,7 +45,6 @@ __version__ = '0.1.0'
 @logger.inject_lambda_context(
     log_event=False, correlation_id_path='requestContext.requestId'
 )
-@tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     """Entrypoint Lambda users (POST /users).

@@ -128,17 +128,23 @@ def check_or_raise(
             )
         if kind == 'ip_blacklist':
             expires = ip_rule.get('expires_at', 0)
-            retry_after = (
-                max(expires - current_time, 60)
-                if expires
-                else AUTO_BLACKLIST_DURATION_SECONDS
-            )
-            raise IPBlacklistedError(
-                ip_rule.get('reason', 'IP blacklisted'),
-                code='IP_BLACKLISTED',
-                retry_after_seconds=int(retry_after),
-                extra={'ip': ip},
-            )
+            # Respeta expires_at aun cuando la rule viene del cache:
+            # get_ip_rule esta @cached(stale_for=300), asi que puede servir
+            # una blacklist YA VENCIDA hasta 300s pasado su expiry. Si ya
+            # expiro, NO bloquear (caer al resto del rate-limit normal); el
+            # TTL service de DynamoDB borrara la rule.
+            if not expires or expires >= current_time:
+                retry_after = (
+                    max(expires - current_time, 60)
+                    if expires
+                    else AUTO_BLACKLIST_DURATION_SECONDS
+                )
+                raise IPBlacklistedError(
+                    ip_rule.get('reason', 'IP blacklisted'),
+                    code='IP_BLACKLISTED',
+                    retry_after_seconds=int(retry_after),
+                    extra={'ip': ip},
+                )
 
     # 2. Country rule
     if (

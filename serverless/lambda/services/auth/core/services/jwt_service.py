@@ -64,14 +64,23 @@ class JwtService:
         )
 
     def issue_access(
-        self, *, user_id: UUID | str,
+        self,
+        *,
+        user_id: UUID | str,
+        family_id: UUID | str | None = None,
     ) -> tuple[str, JwtClaims]:
-        """Emite un access JWT (15 min, stateless + blacklist DDB)."""
+        """Emite un access JWT (15 min, stateless + blacklist DDB).
+
+        `family_id` (plan 03) embebe la familia de refresh de la sesion
+        para que el Lambda `users` identifique la sesion en curso. Es
+        opcional + backward-compatible.
+        """
         return issue_access_jwt(
             user_id=UUID(str(user_id)),
             secret=self._secret,
             issuer=self._issuer,
             audience=self._audience,
+            family_id=UUID(str(family_id)) if family_id is not None else None,
         )
 
     def issue_refresh(

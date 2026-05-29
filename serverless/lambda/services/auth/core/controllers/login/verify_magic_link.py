@@ -17,6 +17,7 @@ from services.audit_service import AuditService
 from services.jwt_service import JwtService
 from services.magic_link_service import MagicLinkService
 from services.rate_limit_service import RateLimitService
+from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
 from shared.core.ulid import new_uuidv7
@@ -101,11 +102,20 @@ class VerifyMagicLink(BaseController):
         # AC-22: actualiza last_login_at + resetea failed_attempts.
         user_svc.update_last_login(user)
 
-        access_token, _ = jwt_svc.issue_access(user_id=user.id)
         family_id = UUID(new_uuidv7())
+        access_token, _ = jwt_svc.issue_access(
+            user_id=user.id, family_id=family_id,
+        )
         refresh_token, _ = jwt_svc.issue_refresh(
             user_id=user.id,
             family_id=family_id,
+        )
+        SessionTrackingService(app_config).on_session_created(
+            user_id=user.id,
+            family_id=family_id,
+            ip=meta.ip,
+            country=meta.country,
+            user_agent=meta.user_agent,
         )
 
         audit_svc.log(

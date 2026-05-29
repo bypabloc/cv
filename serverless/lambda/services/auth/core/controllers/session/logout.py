@@ -15,6 +15,7 @@ from models.session import SessionLogoutIn
 from services.audit_service import AuditService
 from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
+from services.session_tracking_service import SessionTrackingService
 from settings.config import app_config
 from shared.auth import JwtError
 from shared.lambda_kit import BaseController
@@ -110,6 +111,10 @@ class Logout(BaseController):
                     family_id=refresh_claims.family_id,
                     user_id=refresh_claims.sub,
                     exp=refresh_claims.exp,
+                )
+                # Borra la sesion trackeada de esa family (AC-24).
+                SessionTrackingService(app_config).on_session_revoked(
+                    family_id=refresh_claims.family_id,
                 )
 
         audit_svc.log(

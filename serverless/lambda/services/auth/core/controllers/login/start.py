@@ -264,7 +264,14 @@ class Start(BaseController):
 
         mfa_svc = MfaMethodService(app_config)
         if mfa_svc.count_active(user_id=user.id) == 0:
-            tokens = issue_terminal_tokens(jwt_svc=jwt_svc, user_id=user.id)
+            tokens = issue_terminal_tokens(
+                jwt_svc=jwt_svc,
+                user_id=user.id,
+                app_config=app_config,
+                ip=meta.ip,
+                country=meta.country,
+                user_agent=meta.user_agent,
+            )
             user_svc.update_last_login(user)
             audit_svc.log(
                 event='login.start',

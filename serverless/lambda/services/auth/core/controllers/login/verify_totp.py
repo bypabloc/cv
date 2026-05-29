@@ -130,7 +130,14 @@ class VerifyTotp(BaseController):
             reason='rotation',
         )
         mfa_svc.mark_used(user_id=claims.sub, kind=AuthMfaKind.TOTP)
-        tokens = issue_terminal_tokens(jwt_svc=jwt_svc, user_id=claims.sub)
+        tokens = issue_terminal_tokens(
+            jwt_svc=jwt_svc,
+            user_id=claims.sub,
+            app_config=app_config,
+            ip=meta.ip,
+            country=meta.country,
+            user_agent=meta.user_agent,
+        )
 
         audit_svc.log(
             event='login.verify-totp',

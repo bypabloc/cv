@@ -54,6 +54,10 @@ class TrackEventMeta(BaseModel):
     # Origin header raw del request. Inyectado por http_handler para
     # uniformidad entre Lambdas. tracking_pixel no lo usa hoy.
     origin: str | None = Field(default=None)
+    # Header Authorization que http_handler inyecta SIEMPRE para uniformidad
+    # (lo usa el Lambda auth). tracking_pixel no lo usa; se declara para no
+    # romper el extra:forbid del sub-modelo.
+    authorization: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 

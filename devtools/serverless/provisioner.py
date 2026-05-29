@@ -391,6 +391,37 @@ def _dynamodb_statements(
     return statements, table_ssm_paths
 
 
+def _kms_statements(
+    kms_uses: list[Any],
+    *,
+    region: str,
+    account: str,
+) -> list[dict[str, Any]]:
+    """Traduce `uses.kms` a Statements `kms:Encrypt`/`Decrypt` directos.
+
+    CMK directa (NO via SSM, NO GenerateDataKey): para cifrar secretos
+    at-rest como el TOTP secret (plan 02-auth-mfa, decision 1). Cada
+    entrada es `{alias, actions:[Encrypt, Decrypt, ...]}`. Resource =
+    `key/*` (mismo alcance que el bloque `kms:Decrypt` de SSM; la cuenta
+    solo tiene la CMK `portfolio-lambdas` ademas de las AWS-managed).
+    """
+    statements: list[dict[str, Any]] = []
+    for kms_use in kms_uses:
+        if not isinstance(kms_use, dict):
+            continue
+        actions = [f'kms:{action}' for action in kms_use.get('actions', [])]
+        if not actions:
+            continue
+        statements.append(
+            {
+                'Effect': 'Allow',
+                'Action': actions,
+                'Resource': f'arn:aws:kms:{region}:{account}:key/*',
+            }
+        )
+    return statements
+
+
 def _build_statements(
     manifest: dict[str, Any],
     stage: str,
@@ -470,6 +501,10 @@ def _build_statements(
                 },
             }
         )
+
+    statements.extend(
+        _kms_statements(uses.get('kms') or [], region=region, account=account)
+    )
 
     if uses.get('sends-email'):
         ses_resources = [

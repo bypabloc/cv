@@ -16,6 +16,10 @@
 | DynamoDB `jwt-blacklist` | Blacklist de JWTs (temp/access/refresh) con TTL=exp + GSI `by_family_id` | `serverless/lambda/resources/dynamodb/jwt-blacklist.yaml` |
 | SQS `auth-email-queue` + DLQ | Cola de emails async | `serverless/lambda/resources/sqs/auth-email-{queue,dlq}.yaml` |
 | SSM `/portfolio/${stage}/jwt-secret` | HS256 secret para JWT signing | `serverless/lambda/resources/secrets/jwt-secret.yaml` |
+| Schema Neon MFA (plan 02) | 3 tablas: mfa_methods, mfa_recovery_codes, webauthn_credentials + col `auth_users.sessions_revoked_at` | `serverless/lambda/shared/db/models/auth/{mfa_method,recovery_code,webauthn_credential}.py` |
+| DynamoDB `webauthn-challenges` | Challenges efimeros del ceremony WebAuthn (TTL 5 min, single-use) | `serverless/lambda/resources/dynamodb/webauthn-challenges.yaml` |
+| `shared.auth` (plan 02) | + portador de `pyotp` (totp) + `python-fido2` (webauthn) + recovery codes | `serverless/lambda/shared/auth/{totp,webauthn,recovery_codes}.py` |
+| `shared.aws.kms` (plan 02) | Wrappers `kms_encrypt`/`kms_decrypt` (CMK directa, cifra el TOTP secret) | `serverless/lambda/shared/aws/kms.py` |
 
 ## Cuando leer
 
@@ -24,6 +28,8 @@
 | JWT lifecycle (temp/access/refresh, rotation, blacklist, family detection) | [01-jwt-lifecycle.md](01-jwt-lifecycle.md) |
 | Flujos (diagrama ASCII de cada operacion) | [02-flows.md](02-flows.md) |
 | Reglas de rate-limit activas | [03-rate-limit-rules.md](03-rate-limit-rules.md) |
+| MFA (TOTP, email-code, recovery codes, login con password, AC-27) | [04-mfa.md](04-mfa.md) |
+| WebAuthn / Passkeys (ceremony, RP_ID por env, clone detection, challenges DDB) | [05-webauthn.md](05-webauthn.md) |
 
 ## Decisiones clave (cerradas)
 
@@ -76,6 +82,32 @@
 - **NUNCA** loguear el valor de `JWT_SECRET`, Neon URL, code o magic
   link token.
 - **NUNCA** firmar un JWT con un secret distinto del leido de SSM.
+
+### MFA + WebAuthn (plan 02)
+
+- **SIEMPRE** el TOTP secret se cifra con `kms:Encrypt` CMK directa
+  (`alias/portfolio-lambdas` + `EncryptionContext={user_id, purpose:totp}`)
+  antes de persistir. NUNCA envelope (sin DataKey), NUNCA plain, NUNCA
+  loguear el secret.
+- **SIEMPRE** los recovery codes se guardan como hash SHA-256 y se muestran
+  UNA sola vez; comparacion constant-time (`secrets.compare_digest`).
+- **SIEMPRE** el WebAuthn challenge vive en DDB con TTL 5 min, single-use
+  (`get_and_consume` borra el row). NUNCA en Neon.
+- **SIEMPRE** validar `sign_count` monotonico; `new <= stored` (con stored
+  > 0) -> `WEBAUTHN_CLONE_DETECTED` + `disabled_at=now()` del credential.
+- **SIEMPRE** `mfa.setup-totp` y el resto de la operation `mfa` requieren
+  access JWT (`require_active_user`).
+- **SIEMPRE** al confirmar el PRIMER metodo MFA (`total_mfa: 0 -> 1`) se
+  revoca la familia de refresh via `sessions_revoked_at` (AC-27).
+- **SIEMPRE** `recovery-codes-consume` exige temp JWT `flow='login-mfa'`
+  step=2 (factor fuerte: password / webauthn) — magic-link / email-code
+  -> `403 RECOVERY_REQUIRES_STRONG_FACTOR`.
+- **SIEMPRE** el RP_ID de WebAuthn es por env (apex en prod,
+  `portfolio.{dev,stage}.the-full-stack.com` en dev/stage). Un passkey NO
+  migra entre envs.
+- **NUNCA** `disable`/`delete-credential` que deje `total_mfa == 0` (guard
+  transversal `MUST_KEEP_ONE_MFA_METHOD`); credential de otro user ->
+  `404 NOT_FOUND` (anti-enumeration).
 
 ## Operacion
 

@@ -374,7 +374,6 @@ def _visit_keys_differ(
     con el payload del nuevo evento. La comparacion es case-sensitive y
     None == None (visitante sin utm sigue en el mismo visit).
     """
-    for key in _VISIT_KEYS:
-        if getattr(last_visit, key) != incoming[key]:
-            return True
-    return False
+    return any(
+        getattr(last_visit, key) != incoming[key] for key in _VISIT_KEYS
+    )

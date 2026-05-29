@@ -12,7 +12,9 @@ from moto import mock_aws
 
 
 @mock_aws
-def test_send_to_queue_publishes_payload_to_sqs(monkeypatch):
+def test_send_to_queue_publishes_payload_to_sqs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # Arrange: setup moto SQS + SSM
     sqs = boto3.client('sqs', region_name='us-east-1')
     url = sqs.create_queue(QueueName='portfolio-test-queue')['QueueUrl']
@@ -54,7 +56,9 @@ def test_send_to_queue_publishes_payload_to_sqs(monkeypatch):
     assert body == payload
 
 
-def test_resolve_queue_url_raises_when_env_var_missing(monkeypatch):
+def test_resolve_queue_url_raises_when_env_var_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """
     Given la env var SSM_<X>_QUEUE_URL_PATH no esta seteada,
     When send_to_queue se invoca,

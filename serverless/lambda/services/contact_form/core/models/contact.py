@@ -19,6 +19,7 @@ from typing import Literal
 
 from shared.core.pydantic_types import (
     BaseModel,
+    ConfigDict,
     EmailStr,
     Field,
     field_validator,
@@ -51,7 +52,7 @@ class RequestMeta(BaseModel):
     # para no romper el `extra='forbid'` del sub-modelo.
     authorization: str | None = None
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class ContactCreateModel(BaseModel):
@@ -96,7 +97,7 @@ class ContactCreateModel(BaseModel):
     # No es parte del form: el controller la usa, el service la ignora.
     meta: RequestMeta = Field(default_factory=RequestMeta, alias='_meta')
 
-    model_config = {'extra': 'forbid', 'populate_by_name': True}
+    model_config = ConfigDict(extra='forbid', populate_by_name=True)
 
     @field_validator('name', 'message', 'company', 'role', 'budget', 'timeline')
     @classmethod

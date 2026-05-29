@@ -15,10 +15,10 @@ from typing import Any
 
 from models.login import LoginStartIn
 from services.audit_service import AuditService
-from services.code_service import CodeService
+from services.code_service import CODE_TTL_MINUTES, CodeService
 from services.email_dispatch_service import EmailDispatchService
 from services.jwt_service import JwtService
-from services.magic_link_service import MagicLinkService
+from services.magic_link_service import LINK_TTL_MINUTES, MagicLinkService
 from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
@@ -190,8 +190,8 @@ class Start(BaseController):
             user_id=existing.id,
             niche=niche,
             kind='login-magic-link',
-            plain=token,
             verify_url=verify_url,
+            expires_in_min=LINK_TTL_MINUTES,
         )
         email_svc.publish_code(
             to=existing.email,
@@ -199,6 +199,7 @@ class Start(BaseController):
             niche=niche,
             kind='login-code',
             code=code,
+            expires_in_min=CODE_TTL_MINUTES,
         )
 
         temp_token, _ = jwt_svc.issue_temp(

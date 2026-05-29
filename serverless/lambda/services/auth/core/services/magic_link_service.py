@@ -23,7 +23,10 @@ from shared.db.repositories.auth import (
 )
 
 # TTL del magic-link (politica MVP).
-_LINK_TTL = timedelta(minutes=15)
+# LINK_TTL_MINUTES es la fuente unica: el email que envia el worker muestra
+# este mismo valor (lo pasa el caller a EmailDispatchService.publish_magic_link).
+LINK_TTL_MINUTES = 15
+_LINK_TTL = timedelta(minutes=LINK_TTL_MINUTES)
 
 
 class MagicLinkService:

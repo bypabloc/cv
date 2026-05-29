@@ -3,12 +3,17 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    CheckConstraint,
     DateTime,
-    Enum as SAEnum,
     ForeignKey,
+    Index,
     Integer,
+    String,
     func,
     text,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.dialects.postgresql import CITEXT, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -45,8 +50,14 @@ class AuthUser(Base):
         server_default=text('uuidv7()'),
     )
 
+    # CITEXT case-insensitive. El UNIQUE es PARCIAL (solo
+    # `WHERE deleted_at IS NULL`) — declarado como Index en
+    # `__table_args__`, NO como `unique=True` aqui. Esto permite re-usar
+    # un email tras el soft-delete del user (plan 03, AC-27). Si se
+    # dejara `unique=True`, `create_all()` recrearia la constraint full y
+    # romperia el re-uso.
     email: Mapped[str] = mapped_column(
-        CITEXT(), nullable=False, unique=True,
+        CITEXT(), nullable=False,
     )
 
     # ENUM nativo PG. El `name` DEBE coincidir con el `name` del tipo
@@ -95,6 +106,28 @@ class AuthUser(Base):
         Integer, nullable=False, server_default=text('0'),
     )
 
+    # --- Perfil + preferencias (plan 03) ---
+    display_name: Mapped[str | None] = mapped_column(
+        String(64), nullable=True,
+    )
+    locale: Mapped[str] = mapped_column(
+        String(8), nullable=False, server_default=text("'en'"),
+    )
+    timezone: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default=text("'UTC'"),
+    )
+    marketing_consent: Mapped[bool] = mapped_column(
+        nullable=False, server_default=text('false'),
+    )
+    privacy_policy_version: Mapped[str | None] = mapped_column(
+        String(16), nullable=True,
+    )
+    # Soft-delete (plan 03): UPDATE (NO DELETE de la fila). Al soft-delete
+    # el email se anonimiza y el partial unique index lo libera.
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(),
     )
@@ -103,4 +136,20 @@ class AuthUser(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "locale IN ('en', 'es')", name='ck_auth_users_locale',
+        ),
+        # UNIQUE parcial: un email puede repetirse SOLO si los anteriores
+        # estan soft-deleted (deleted_at IS NOT NULL). Reemplaza el
+        # UNIQUE full de la 00000002 (que se dropea en la 00000004).
+        Index(
+            'ux_auth_users_email_active',
+            'email',
+            unique=True,
+            postgresql_where=text('deleted_at IS NULL'),
+        ),
+        Index('ix_auth_users_deleted_at', 'deleted_at'),
     )

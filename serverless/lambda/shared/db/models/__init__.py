@@ -22,6 +22,9 @@ from .auth import (
     AuthMfaMethod,
     AuthMfaRecoveryCode,
     AuthUser,
+    AuthUserAdminAction,
+    AuthUserConsentLog,
+    AuthUserSession,
     AuthUserStatus,
     AuthWebauthnCredential,
 )
@@ -71,6 +74,9 @@ __all__ = [  # noqa: RUF022
     'AuthMfaMethod',
     'AuthMfaRecoveryCode',
     'AuthUser',
+    'AuthUserAdminAction',
+    'AuthUserConsentLog',
+    'AuthUserSession',
     'AuthUserStatus',
     'AuthWebauthnCredential',
     # Datos del visitante (vis_)

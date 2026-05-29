@@ -11,7 +11,11 @@ description: Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv.
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB — se mide en dev tras SnapStart+warmup (lambda-config.md)
+memory: 256       # MB — minimo medido (dev, 2026-05, cold $LATEST). Read-only
+                  # Neon: a 256 usa 165 MB; a 128 usa 118/128 (10 MB headroom,
+                  # riesgo OOM con CV mas grande). El handler ~9s es Neon-I/O-
+                  # bound (no escala con memoria). Bajo de 512 a 256. 128 NO
+                  # por headroom. Ver .claude/rules/lambda-config.md.
 timeout: 30       # segundos — cubre el cold sin SnapStart restore (warmup INIT)
 
 # SnapStart: el handler precalienta engine + configure_mappers en el INIT

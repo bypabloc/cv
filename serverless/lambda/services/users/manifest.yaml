@@ -17,10 +17,10 @@ description: HTTP endpoint POST /users (profile/status/admin).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB — minimo medido. Misma familia que auth: con la
-                  # carga lazy de shared.auth el INIT bajo a ~3s. 512 MB
-                  # da handler ~2.7s (SSM+DDB+Neon); 256 ~7.6s. NO subir
-                  # sin medir (ver .claude/rules/lambda-config.md).
+memory: 256       # MB — minimo medido (dev, 2026-05). Misma familia que
+                  # auth (shared.auth + Neon). No usa webauthn pero argon2id
+                  # (password) es memory-hard -> 256 da headroom. 128 NO.
+                  # Bajo de 512 (sobre-dimensionado). Ver lambda-config.md.
 timeout: 30       # segundos — cubre el cold sin SnapStart restore con margen.
 
 # SnapStart: reduce cold start (~830ms Restore). Mismo criterio que auth:

@@ -35,9 +35,11 @@ NO aplica al frontend Astro ni a las apps de Cloudflare Pages.
 - **NUNCA** asumir que `128 MB` (el default de AWS) alcanza: el footprint
   base (Python + boto3 + pydantic + el cierre de `shared/`) ya supera
   ~118 MB. Hay que MEDIR; el minimo real de estos Lambdas es >= 256 MB.
-- **NUNCA** un eager import de una dep pesada (fido2/cryptography, argon2,
-  pyotp) en el `__init__.py` de un subpaquete de `shared/`: usar PEP 562
-  `__getattr__` (carga lazy). Ver `shared/auth/__init__.py` como referencia.
+- **NUNCA** un re-export en el `__init__.py` de un subpaquete de `shared/`
+  (deben estar VACIOS): un re-export eager de una dep pesada (fido2/
+  cryptography, argon2, pyotp) la arrastra en toda accion. Importar del
+  modulo concreto (`from shared.auth.webauthn import ...`). Lo enforza
+  `serverless lint-deps`. Ver `.claude/rules/lambda-shared-imports.md`.
 
 ## Por que la memoria importa (memoria == CPU)
 
@@ -47,43 +49,81 @@ el cold init Y el handler (cada request). El handler de un Lambda que toca
 Neon/DynamoDB/SSM escala fuerte con la memoria (medido en auth: handler
 ~2.7s a 512 MB vs ~7.6s a 256 MB).
 
-## Carga lazy: el fix de raiz del cold start
+## Imports concretos: el fix de raiz del cold start
 
 El cold start lo domina el TIEMPO DE IMPORTS. Importar una dep nativa
 pesada (fido2 -> cryptography) cuesta segundos. Reglas:
 
 - **Subir memoria NO arregla la causa** (solo compra CPU para importar mas
   rapido). La causa es importar lo que no se usa.
-- El `__init__.py` de un subpaquete shared que re-exporta simbolos NO debe
-  importar sus submodulos eager. Usar PEP 562 `__getattr__`: cada simbolo
-  carga su submodulo on-demand. Asi `from shared.auth import verify_jwt`
-  carga solo `jwt`, no `fido2`. Patron en `shared/auth/__init__.py`.
+- Los `__init__.py` de `shared/*` estan VACIOS (cero re-exports). Se importa
+  SIEMPRE del modulo concreto: `from shared.auth.jwt import verify_jwt`
+  carga solo `jwt`, NUNCA `fido2`. Esto es inherentemente lazy y lo enforza
+  `serverless lint-deps` (check no-submodule). Ver
+  `.claude/rules/lambda-shared-imports.md`.
 - Los controllers se importan DINAMICAMENTE por accion
   (`import_controller` -> `importlib.import_module('controllers.<op>.<act>')`).
-  Combinado con el `__init__` lazy, una accion solo paga los submodulos que
-  toca (ej. `login.start` no carga fido2).
-- **NO** mover imports al `preload()` de cada controller: no evita el costo
-  (importar cualquier cosa de `shared.auth` ejecuta su `__init__`), es
-  churn en N controllers, y saca el import del snapshot de SnapStart (corre
-  vivo en cada cold post-restore en vez de quedar snapshoteado). El fix
-  correcto es el `__init__` lazy, dejando los imports en el top del modulo.
-- Cada re-export lazy nuevo se cubre con un test que verifica que el
-  import pesado NO se carga hasta acceder su simbolo (ver
-  `shared/tests/unit/shared/auth/test_lazy_no_eager_fido2.py`).
+  Combinado con los imports concretos, una accion solo paga los submodulos
+  que toca (ej. `login.start` no carga fido2).
+- **NO** mover imports al `preload()` de cada controller: es churn en N
+  controllers y saca el import del snapshot de SnapStart. El fix correcto
+  son los imports concretos, dejando los imports en el top del modulo.
+- Los modelos SQLAlchemy se importan POR DOMINIO
+  (`from shared.db.models.auth import AuthUser`), NUNCA del barrel
+  `shared.db.models` (vacio): auth registra ~12 clases, no las 43 ->
+  menos `configure_mappers()` en el cold.
+- Que NO se carga fido2 al importar jwt se cubre con un test en subproceso
+  (`shared/tests/unit/shared/auth/test_lazy_no_eager_fido2.py`).
 
-## Minimos medidos actuales (dev, 2026-05)
+## Warmup en INIT (SnapStart)
+
+Los lambdas Neon precalientan el trabajo CPU caro en el module-scope del
+handler (INIT) para que quede en el SNAPSHOT de SnapStart y NO se pague en
+cada cold/restore:
+
+```python
+import shared.db.models.auth  # noqa: F401 -- registra el dominio
+from shared.db.warmup import warm_db
+
+warm_db()  # engine (NullPool, sin conexion) + configure_mappers (best-effort)
+```
+
+`warm_db()` es best-effort (try/except): NUNCA rompe el INIT (ej. sin
+DATABASE_URL en un test). NullPool no abre conexion en el INIT (las
+conexiones no sobreviven al snapshot).
+
+## Minimos medidos actuales (dev, 2026-05, cold `$LATEST` sin restore)
+
+Medidos tras el refactor shared-no-barrels: lazy imports + X-Ray eliminado
++ models per-dominio + warmup en INIT (`shared.db.warmup.warm_db`).
 
 | Lambda | memory | timeout | Razon medida |
 |--------|--------|---------|--------------|
-| `auth` | 512 | 30 | handler Neon (audit/JWT) ~2.7s; 256 MB daba ~7.6s |
-| `users` | 512 | 30 | misma familia que auth (shared.auth + Neon) |
-| `contact_form` | 384 | 30 | submit interactivo; cold restore ~5.5s; Turnstile HTTP + DDB + SQS |
-| `tracking_pixel` | 256 | 30 | fire-and-forget (sendBeacon async, sin SnapStart); cold ~10s oculto al usuario, < timeout |
-| `cv` | 512 | 30 | read-only Neon |
+| `auth` | 256 | 30 | webauthn (fido2) a 128 MB: 127/128 MB (OOM inminente) + 21s CPU-starved ~ al borde del timeout. A 256 entra comodo (login 174 MB) |
+| `users` | 256 | 30 | misma familia que auth; argon2id (password) es memory-hard |
+| `cv` | 256 | 30 | read-only Neon usa 118-165 MB; a 128 quedan 10 MB headroom. Handler ~9s es Neon-I/O-bound (no escala con memoria) |
+| `contact_form` | 256 | 30 | footprint Neon 117/128 MB a 128 (11 MB headroom); 157 MB a 256 |
+| `tracking_pixel` | 128 | 30 | UNICO a 128: async (sin Neon -> sin sqlalchemy) usa 63/128 MB (65 MB headroom), Init 680ms |
+
+**El footprint base de un lambda Neon (sqlalchemy + pydantic + modelos +
+clientes) es ~117-127 MB** -> 128 MB NO deja headroom seguro: el minimo
+real de cualquier lambda que importe `shared.db`/sqlalchemy es **256 MB**.
+Solo un lambda async sin Neon (como `tracking_pixel` en `ASYNC_MODE`) baja
+a 128. Verificar SIEMPRE con la medicion de abajo, NUNCA asumir 128.
 
 Los workers async (`*_worker`, `stream_processor`) y la Lambda `db` se
 dimensionan por su carga propia (batch SQS / migraciones), no por esta
 tabla.
+
+## X-Ray: NO se usa en este backend
+
+- **NUNCA** agregar `aws-xray-sdk` ni `aws-lambda-powertools[all]` (el extra
+  `[all]` arrastra `aws-xray-sdk`). Usar `aws-lambda-powertools` sin extras.
+- **NUNCA** instanciar un `Tracer` de Powertools ni decorar con
+  `@tracer.capture_lambda_handler`. El provisioner deploya con
+  `--tracing-config Mode=PassThrough` (no instrumenta).
+- Si en el futuro se quiere tracing, es una decision explicita: re-evaluar
+  costo ($ por traza) + el import en el cold start.
 
 ## Como medir el minimo
 
@@ -92,15 +132,15 @@ tabla.
    cold), invocando la accion mas pesada del Lambda:
 
 ```bash
-for mem in 1024 512 384 256; do
+for mem in 512 256 128; do
   aws lambda update-function-configuration --function-name <fn> \
     --memory-size $mem --region us-east-1 --profile tfs-dev >/dev/null
   aws lambda wait function-updated --function-name <fn> \
     --region us-east-1 --profile tfs-dev
   aws lambda invoke --function-name <fn> --payload fileb://<event>.json \
-    --log-type Tail --region us-east-1 --profile tfs-dev /tmp/out.json \
+    --log-type Tail --region us-east-1 --profile tfs-dev ./tmp/out.json \
     --query 'LogResult' --output text | base64 -d \
-    | grep -E 'Init Duration|^REPORT.*Duration'
+    | rg 'Init Duration|^REPORT.*Duration|Max Memory'
 done
 ```
 
@@ -116,15 +156,15 @@ done
 |-------------|---------|------------|
 | Subir a 1024 MB porque "daba 502" | Enmascara un cold start de imports; over-provisioning | Cortar imports (lazy) + medir el minimo |
 | `timeout` ajustado al cold CON restore | El restore no esta garantizado -> 502 en la ventana post-deploy | timeout cubre el cold SIN restore |
-| eager `from shared.x.heavy import ...` en `__init__` | Toda accion paga el import aunque no lo use | PEP 562 `__getattr__` lazy |
-| Mover imports al `preload()` de cada controller | No evita el costo + churn + pelea con SnapStart | `__init__` lazy, imports en el top |
+| Re-export en `__init__` de `shared/*` (deben estar vacios) | Toda accion paga el import aunque no lo use | Importar del modulo concreto; lint-deps lo enforza |
+| Mover imports al `preload()` de cada controller | No evita el costo + churn + pelea con SnapStart | Imports concretos en el top + warmup en INIT |
 | Setear 128 MB "porque es el default" | El footprint base ya supera 128 MB -> OOM/lento | Medir; minimo real >= 256 MB |
 | Subir memoria sin justificar en el manifest | Se pierde el por que; vuelve el over-provisioning | Comentario con la medicion |
 
 ## Referencias cruzadas
 
 - `.claude/rules/lambda-controller.md` — formato general de los Lambdas.
-- `.claude/rules/lambda-shared-imports.md` — portadores shared (donde
-  vive cada dep pesada que conviene cargar lazy).
+- `.claude/rules/lambda-shared-imports.md` — contrato de imports concretos
+  por modulo (inits vacios) + el check no-submodule de `lint-deps`.
 - `.claude/rules/verify-before-done.md` — medir antes de declarar listo.
-- `shared/auth/__init__.py` — implementacion de referencia del lazy PEP 562.
+- `shared/db/warmup.py` — `warm_db()` para el warmup de INIT (SnapStart).

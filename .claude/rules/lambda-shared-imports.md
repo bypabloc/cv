@@ -5,9 +5,11 @@
 > externos. Toda dependencia externa (pydantic, sqlalchemy, alembic,
 > psycopg, boto3, botocore, aws-lambda-powertools, pydantic-settings)
 > viaja por `serverless/lambda/shared/**`. Cada subpaquete shared es el
-> portador unico de su paquete y lo re-exporta. El comando
-> `serverless lint-deps` valida ambos contratos (dedup D-3 + imports
-> shared-only) en una pasada.
+> portador unico de su paquete, en un **modulo concreto** (los `__init__.py`
+> de `shared/*` estan VACIOS: cero re-exports/barrels). Se importa SIEMPRE
+> del modulo concreto, NUNCA del barrel ni el submodulo-objeto. El comando
+> `serverless lint-deps` valida 3 contratos (dedup D-3 + imports shared-only
+> + no-submodule) en una pasada.
 
 ## Activacion
 
@@ -22,16 +24,25 @@ NO aplica al frontend Astro ni a otros repos.
 
 ## Reglas duras (SIEMPRE / NUNCA)
 
-- **SIEMPRE** los services importan paquetes externos como
-  `from shared.<subpaquete> import <simbolo>`.
-- **SIEMPRE** que aparezca un import nuevo prohibido en `core/`, ese
-  paquete se re-exporta primero desde el shared portador (Fase de
-  preparacion antes de migrar).
+- **SIEMPRE** los services importan paquetes externos desde el MODULO
+  concreto del portador: `from shared.<subpaquete>.<modulo> import
+  <simbolo>` (ej. `from shared.aws.ssm import get_secret`). Los paquetes
+  externos sin modulo de dominio propio tienen un portador dedicado:
+  pydantic -> `shared.core.pydantic_types`; sqlalchemy (select/func/
+  delete/pg_insert/Session) -> `shared.db.sa`; MetricUnit ->
+  `shared.observability.metrics`.
+- **SIEMPRE** los modelos SQLAlchemy se importan por DOMINIO:
+  `from shared.db.models.auth import AuthUser` (NUNCA del barrel
+  `shared.db.models`, vacio). El "cargar todo" para Alembic/seed es
+  `import shared.db.models.registry`.
+- **SIEMPRE** que aparezca un import nuevo prohibido en `core/`, se agrega
+  el paquete a un modulo concreto del shared portador (en su pyproject +
+  un re-export en el modulo, NO en el `__init__`).
+- **SIEMPRE** los `__init__.py` de `shared/*` quedan VACIOS (docstring-only).
 - **SIEMPRE** que un re-export nuevo se agregue, se cubre con un test
-  unit en `shared/tests/unit/shared/<X>/test_<X>_reexport.py`.
+  unit en `shared/tests/unit/shared/<X>/`.
 - **SIEMPRE** los services declaran en `pyproject.toml` solo lo que NO
-  aporta el cierre transitivo de shared (caso extremadamente raro,
-  porque cada paquete tiene su shared portador definido abajo).
+  aporta el cierre transitivo de shared.
 - **NUNCA** un archivo `services/<X>/core/**/*.py` contiene:
   - `from pydantic` / `import pydantic` / `from pydantic_settings`.
   - `from sqlalchemy` / `from sqlalchemy.dialects` / `from sqlalchemy.orm`.
@@ -45,6 +56,15 @@ NO aplica al frontend Astro ni a otros repos.
   lint-deps`).
 - **NUNCA** se duplica un cliente boto3 en `core/`: existe el wrapper
   en `shared.aws.<recurso>` o se agrega antes de usarlo.
+- **NUNCA** importar un SUBMODULO de shared via su barrel con `from`:
+  `from shared.auth import webauthn` esta PROHIBIDO. Usar el simbolo
+  concreto (`from shared.auth.webauthn import WebauthnCloneError`) o, si se
+  necesita el objeto-modulo (monkeypatch en tests, import con efecto
+  secundario), `import shared.auth.webauthn as webauthn`. Lo enforza el
+  check no-submodule (`serverless lint-deps`, Check 3) sobre TODO
+  `serverless/lambda/**` (services + shared + tests).
+- **NUNCA** re-exportar en el `__init__.py` de un subpaquete de `shared/`
+  (deben estar vacios: cero barrels).
 - **NUNCA** atribucion de IA en codigo, commits ni docstrings.
 
 ## Catalogo de portadores
@@ -53,28 +73,33 @@ NO aplica al frontend Astro ni a otros repos.
 |-----------------|-----------------|------------------------------|
 | `pydantic` (incluye extra `[email]`) | `shared.core` | `from shared.core import BaseModel, Field, EmailStr, field_validator, model_validator, ConfigDict` |
 | `pydantic_settings` | `shared.core` (declarado en `pyproject.toml`; sin re-export hoy) | Acceder via `shared.core.<algo>` o agregar re-export especifico cuando se use |
-| `sqlalchemy` | `shared.db` | `from shared.db import select, func, pg_insert, Session, Base, db_session, get_engine, TimestampMixin, UUIDPKMixin` |
-| `sqlalchemy.dialects.postgresql.insert` | `shared.db` | `from shared.db import pg_insert` (alias del insert postgresql) |
-| `alembic` | `shared.db` (uso interno por la Lambda `db`) | n/a en services (los services no operan migrations) |
-| `psycopg` | `shared.db` (uso interno via SQLAlchemy engine) | n/a en services (el engine lo crea shared.db.session) |
-| `boto3` (cliente generico) | `shared.aws` | No exponemos `boto3` crudo — usar el wrapper especifico de abajo |
-| `boto3.dynamodb.types.TypeDeserializer` / `TypeSerializer` | `shared.aws` | `from shared.aws import TypeDeserializer, TypeSerializer` |
-| SES (boto3.client('sesv2')) | `shared.aws.ses` | `from shared.aws import send_email` (helper) o `from shared.aws import ses` (cliente module-scope) |
-| DynamoDB Resource / Table | `shared.aws.dynamodb` | `from shared.aws import get_resource, get_table, reset_resource_cache` |
-| SSM Parameter Store / Secrets | `shared.aws.ssm` | `from shared.aws import get_parameter, get_secret, clear_cache` |
-| `aws_lambda_powertools` (logger/metrics/tracer/MetricUnit) | `shared.observability` | `from shared.observability import logger, metrics, tracer, MetricUnit` |
-| HTTP responses + CORS + Turnstile | `shared.http` | `from shared.http import error_response, json_response, no_content_response, resolve_origin, verify_turnstile_token` |
-| `pyotp` (TOTP RFC 6238) | `shared.auth` | `from shared.auth import generate_totp_secret_b32, verify_totp_code, build_otpauth_url` |
-| `fido2` (python-fido2, WebAuthn) | `shared.auth` | `from shared.auth import build_register_options, verify_registration, build_login_options, verify_authentication, WebauthnCloneError` |
-| KMS (`boto3.client('kms')`, Encrypt/Decrypt CMK directa) | `shared.aws` | `from shared.aws import kms_encrypt, kms_decrypt` |
+| `sqlalchemy` (select/func/delete/Session) | `shared.db.sa` | `from shared.db.sa import select, func, delete, Session` |
+| `sqlalchemy.dialects.postgresql.insert` | `shared.db.sa` | `from shared.db.sa import pg_insert` (alias del insert postgresql) |
+| `sqlalchemy` Base / mixins | `shared.db.base` | `from shared.db.base import Base, TimestampMixin, UUIDPKMixin` |
+| engine / Session factory | `shared.db.session` | `from shared.db.session import db_session, get_engine` |
+| `alembic` | `shared.db.migrations` (solo Lambda `db`) | `from shared.db.migrations import run_migrate, ...` (services no migran) |
+| `psycopg` | `shared.db.session` (uso interno) | n/a en services (el engine lo crea shared.db.session) |
+| `boto3` (cliente generico) | `shared.aws.*` | No exponemos `boto3` crudo — usar el wrapper especifico de abajo |
+| `boto3.dynamodb.types.TypeDeserializer` / `TypeSerializer` | `shared.aws.dynamodb_types` | `from shared.aws.dynamodb_types import TypeDeserializer, TypeSerializer` |
+| SES (boto3.client('sesv2')) | `shared.aws.ses` | `from shared.aws.ses import send_email` (helper); `import shared.aws.ses` para el cliente `ses` lazy |
+| DynamoDB Resource / Table | `shared.aws.dynamodb` | `from shared.aws.dynamodb import get_resource, get_table, reset_resource_cache` |
+| SSM Parameter Store / Secrets | `shared.aws.ssm` | `from shared.aws.ssm import get_parameter, get_secret, get_secret_by_name, clear_cache` |
+| `aws_lambda_powertools` (logger) | `shared.observability.logger` | `from shared.observability.logger import logger` |
+| `aws_lambda_powertools` (metrics + MetricUnit) | `shared.observability.metrics` | `from shared.observability.metrics import metrics, MetricUnit` (X-Ray eliminado: sin tracer) |
+| HTTP responses / CORS / Turnstile | `shared.http.{responses,cors,turnstile}` | `from shared.http.responses import json_response`; `from shared.http.cors import resolve_origin`; `from shared.http.turnstile import verify_turnstile_token` |
+| `pyotp` (TOTP RFC 6238) | `shared.auth.totp` | `from shared.auth.totp import generate_totp_secret_b32, verify_totp_code, build_otpauth_url` |
+| `fido2` (python-fido2, WebAuthn) | `shared.auth.webauthn` | `from shared.auth.webauthn import build_register_options, verify_authentication, build_login_options, WebauthnCloneError` |
+| KMS (`boto3.client('kms')`, Encrypt/Decrypt CMK directa) | `shared.aws.kms` | `from shared.aws.kms import kms_encrypt, kms_decrypt` |
 
 ## Patron correcto
 
 ```python
 # services/contact_form/core/services/contact_service.py
-from shared.aws import send_email
-from shared.core import ApplicationError, settings
-from shared.observability import MetricUnit, logger, metrics
+from shared.aws.ses import send_email
+from shared.core.config import settings
+from shared.core.exceptions import ApplicationError
+from shared.observability.logger import logger
+from shared.observability.metrics import MetricUnit, metrics
 
 
 def send_owner_email(payload: dict) -> str:
@@ -98,11 +123,14 @@ def send_owner_email(payload: dict) -> str:
 import boto3
 from aws_lambda_powertools.metrics import MetricUnit
 from pydantic import BaseModel
+from shared.aws import send_email          # barrel vacio -> ImportError
+from shared.auth import webauthn           # submodulo via barrel -> lint-deps FAIL
 
-# BIEN
-from shared.aws import send_email
-from shared.core import BaseModel
-from shared.observability import MetricUnit
+# BIEN — modulo concreto
+from shared.aws.ses import send_email
+from shared.core.pydantic_types import BaseModel
+from shared.observability.metrics import MetricUnit
+from shared.auth.webauthn import WebauthnCloneError  # simbolo, no el submodulo
 ```
 
 ```python

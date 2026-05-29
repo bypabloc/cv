@@ -278,12 +278,12 @@ def http_handler(
                     'detail': result.data,
                 },
             )
-            if 'error' in metric_names:
-                metrics.add_metric(
-                    name=metric_names['error'],
-                    unit=MetricUnit.Count,
-                    value=1,
-                )
+            # NO emitir la metrica 'error' aqui: ValidationError es una
+            # ApplicationError, asi que el `except ApplicationError` de abajo
+            # emite 'rejected' (el contador correcto para un 4xx de cliente).
+            # Emitir 'error' aqui ademas duplicaba la metrica por request.
+            # La metrica 'error' queda reservada para los 5xx reales (el
+            # `except Exception` final).
             raise ValidationError(
                 'Validation failed',
                 code='INVALID_REQUEST',

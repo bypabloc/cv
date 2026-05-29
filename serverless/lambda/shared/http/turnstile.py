@@ -215,7 +215,10 @@ def verify_turnstile_token(
 
     # Validar hostname (defensa en profundidad contra widget hijacking).
     # En stage=dev se permite cualquier *.localhost (ver _hostname_allowed).
-    hostname = result.get('hostname', '').lower()
+    # `or ''` cubre el caso en que siteverify devuelve `"hostname": null`
+    # (key presente pero null): .get(key, '') retorna None, no el default,
+    # y None.lower() crashearia toda la validacion.
+    hostname = (result.get('hostname') or '').lower()
     if hostname and not _hostname_allowed(hostname):
         logger.warning(
             'turnstile hostname mismatch',

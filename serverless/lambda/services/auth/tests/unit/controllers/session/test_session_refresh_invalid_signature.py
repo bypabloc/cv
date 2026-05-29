@@ -13,7 +13,6 @@ from .._helpers import _make_event_refresh
 def test_session_refresh_invalid_signature(monkeypatch):
     """AC-10: signature invalida -> 401."""
     from controllers.session import refresh
-
     from shared.auth import JwtInvalidError
 
     jwt_svc = MagicMock()

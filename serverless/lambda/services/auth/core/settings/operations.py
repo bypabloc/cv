@@ -31,4 +31,12 @@ OPERATIONS = {
         'controller': 'session',
         'arn_key': '',
     },
+    'mfa': {
+        'controller': 'mfa',
+        'arn_key': '',
+    },
+    'webauthn': {
+        'controller': 'webauthn',
+        'arn_key': '',
+    },
 }

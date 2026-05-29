@@ -308,6 +308,7 @@ erDiagram
     timestamptz password_set_at "nullable"
     timestamptz locked_until "nullable"
     timestamptz last_login_at "nullable"
+    timestamptz sessions_revoked_at "nullable, AC-27 epoch revocacion MFA"
     int failed_attempts
     timestamptz created_at
     timestamptz updated_at
@@ -352,8 +353,46 @@ erDiagram
     jsonb metadata "nullable"
     timestamptz created_at
   }
+  auth_mfa_methods {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    auth_mfa_kind kind "totp|email_code, UK(user_id,kind)"
+    boolean preferred
+    timestamptz confirmed_at "nullable, NULL = pendiente"
+    timestamptz disabled_at "nullable"
+    timestamptz last_used_at "nullable"
+    bytea totp_secret_ciphertext "nullable, kms:Encrypt CMK directa"
+    varchar totp_algorithm "nullable, SHA1"
+    int totp_digits "nullable, 6"
+    int totp_period "nullable, 30"
+    timestamptz created_at
+  }
+  auth_mfa_recovery_codes {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea code_hash UK "SHA-256"
+    timestamptz consumed_at "nullable"
+    timestamptz created_at
+  }
+  auth_webauthn_credentials {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea credential_id UK
+    bytea public_key "CBOR"
+    int sign_count "monotonico, clone detection"
+    jsonb transports "nullable"
+    varchar attestation_format "nullable"
+    uuid aaguid "nullable"
+    varchar nickname "nullable"
+    timestamptz created_at
+    timestamptz last_used_at "nullable"
+    timestamptz disabled_at "nullable"
+  }
   cv_profiles ||--o| auth_users        : owns_account
   auth_users  ||--o| auth_credentials  : authenticates_with
   auth_users  ||--o{ auth_email_codes  : verified_by
   auth_users  ||--o{ auth_magic_links  : verified_by
   auth_users  ||--o{ auth_audit_log    : audited_in
+  auth_users  ||--o{ auth_mfa_methods         : protected_by
+  auth_users  ||--o{ auth_mfa_recovery_codes  : recovers_with
+  auth_users  ||--o{ auth_webauthn_credentials : passkey_of

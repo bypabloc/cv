@@ -39,12 +39,20 @@ uses:
   queues:
     - name: portfolio-auth-email-${stage}
       access: producer
-  # Tablas DynamoDB: cache (Powertools), rate-limit y jwt-blacklist.
+  # Tablas DynamoDB: cache (Powertools), rate-limit, jwt-blacklist y
+  # webauthn-challenges (plan 02: challenges efimeros del ceremony).
   tables:
     cache: read-write              # @cached SSM cache
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
     jwt-blacklist: read-write      # blacklist con GSI by_family_id
+    webauthn-challenges: read-write  # challenges WebAuthn (TTL 5 min)
+  # KMS CMK directa (plan 02, decision 1): cifra/descifra el TOTP secret
+  # at-rest con kms:Encrypt/Decrypt + EncryptionContext. NO via SSM, NO
+  # GenerateDataKey (sin envelope encryption).
+  kms:
+    - alias: portfolio-lambdas
+      actions: [Encrypt, Decrypt]
   # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
   secrets:
     - turnstile-secret        # validacion del captcha Cloudflare Turnstile
@@ -63,18 +71,30 @@ env:
     POWERTOOLS_METRICS_NAMESPACE: Portfolio/Auth
     JWT_ISSUER: portfolio-auth
     JWT_AUDIENCE: portfolio
+    # KMS CMK directa para cifrar el TOTP secret (plan 02, decision 1).
+    KMS_TOTP_KEY_ID: alias/portfolio-lambdas
+    WEBAUTHN_RP_NAME: 'The Full Stack Portfolio'
   dev:
     LOG_LEVEL: INFO
     CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com,http://localhost:9970'
     MAGIC_LINK_BASE_URL: https://api.portfolio.dev.the-full-stack.com/auth
     DASHBOARD_CALLBACK_URL: https://admin.portfolio.dev.the-full-stack.com/callback
+    # WebAuthn RP_ID = sufijo comun de los origins de dev (decision 5).
+    # Un passkey de dev NO funciona en prod (RP_ID distinto). Esperado.
+    WEBAUTHN_RP_ID: portfolio.dev.the-full-stack.com
+    WEBAUTHN_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com,http://localhost:9970'
   stage:
     LOG_LEVEL: INFO
     CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com,https://admin.portfolio.stage.the-full-stack.com'
     MAGIC_LINK_BASE_URL: https://api.portfolio.stage.the-full-stack.com/auth
     DASHBOARD_CALLBACK_URL: https://admin.portfolio.stage.the-full-stack.com/callback
+    WEBAUTHN_RP_ID: portfolio.stage.the-full-stack.com
+    WEBAUTHN_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com,https://admin.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
     CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'
     MAGIC_LINK_BASE_URL: https://api.portfolio.the-full-stack.com/auth
     DASHBOARD_CALLBACK_URL: https://admin.portfolio.the-full-stack.com/callback
+    # En prod el apex the-full-stack.com cubre todos los subdomains.
+    WEBAUTHN_RP_ID: the-full-stack.com
+    WEBAUTHN_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'

@@ -49,6 +49,7 @@ def test_http_handler_injects_meta_from_headers() -> None:
             'cf-ipcountry': 'CL',
             'x-turnstile-bypass-secret': 'secret-123',
             'origin': 'https://the-full-stack.com',
+            'authorization': 'Bearer access-jwt-xyz',
         },
         'requestContext': {
             'identity': {'sourceIp': '203.0.113.42'},
@@ -73,4 +74,8 @@ def test_http_handler_injects_meta_from_headers() -> None:
         # cloudfront_meta vacio porque el evento de test no trae headers
         # cloudfront-* (REGIONAL). En Edge-Optimized llegan ~22 headers.
         'cloudfront_meta': {},
+        'origin': 'https://the-full-stack.com',
+        # authorization: header Bearer inyectado para los endpoints
+        # autenticados (mfa.*, webauthn.* del plan 02).
+        'authorization': 'Bearer access-jwt-xyz',
     }

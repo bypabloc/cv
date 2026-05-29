@@ -25,7 +25,10 @@ def test_register_start_new_email_ok(monkeypatch):
     code_svc.generate_and_persist.return_value = ('ABCDEFGH', b'\x00' * 32)
 
     link_svc = MagicMock()
-    link_svc.generate_and_persist.return_value = ('TOKEN' + 'A' * 27, b'\x01' * 32)
+    link_svc.generate_and_persist.return_value = (
+        'TOKEN' + 'A' * 27,
+        b'\x01' * 32,
+    )
 
     jwt_svc = MagicMock()
     jwt_svc.issue_temp.return_value = ('TEMP-JWT-FAKE', MagicMock())
@@ -42,7 +45,8 @@ def test_register_start_new_email_ok(monkeypatch):
     monkeypatch.setattr(start, 'AuditService', lambda _c: audit_svc)
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: rl_svc)
     monkeypatch.setattr(
-        start, 'verify_turnstile_token',
+        start,
+        'verify_turnstile_token',
         lambda *_a, **_k: {'success': True},
     )
 

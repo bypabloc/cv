@@ -5,9 +5,7 @@ Then todos pertenecen al CODE_ALPHABET y tienen length 8.
 """
 
 import pytest
-
 from shared.auth import CODE_ALPHABET, CODE_LENGTH, generate_code
-
 
 pytestmark = pytest.mark.unit
 

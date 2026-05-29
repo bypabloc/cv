@@ -21,7 +21,6 @@ from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-
 from shared.auth import JwtExpiredError, JwtInvalidError, JwtRevokedError
 from shared.core.ulid import new_uuidv7
 from shared.db.models import AuthCodeKind
@@ -70,7 +69,8 @@ class VerifyCode(BaseController):
 
         try:
             claims = flow_svc.verify_temp_token(
-                data.temp_token, expected_flow='login',
+                data.temp_token,
+                expected_flow='login',
             )
         except JwtExpiredError:
             audit_svc.log(
@@ -122,7 +122,9 @@ class VerifyCode(BaseController):
             }
 
         matched = code_svc.verify(
-            user=user, kind=AuthCodeKind.LOGIN, code=data.code,
+            user=user,
+            kind=AuthCodeKind.LOGIN,
+            code=data.code,
         )
         if not matched:
             attempts = user_svc.increment_failed_attempts(user)
@@ -176,7 +178,8 @@ class VerifyCode(BaseController):
         access_token, _ = jwt_svc.issue_access(user_id=user.id)
         family_id = UUID(new_uuidv7())
         refresh_token, _ = jwt_svc.issue_refresh(
-            user_id=user.id, family_id=family_id,
+            user_id=user.id,
+            family_id=family_id,
         )
 
         audit_svc.log(

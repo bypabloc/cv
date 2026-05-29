@@ -10,17 +10,27 @@
 Aplica SIEMPRE que se trabaje con:
 
 - Cualquier archivo bajo `serverless/lambda/services/auth/`
+  (incluye `core/controllers/{mfa,webauthn}` y los services
+  `{mfa_method,totp,webauthn,challenge,recovery_codes,session}_service.py`)
 - Cualquier archivo bajo `serverless/lambda/services/auth_email_worker/`
 - Cualquier archivo bajo `serverless/lambda/shared/auth/`
+  (incluye `{totp,webauthn,recovery_codes}.py`)
+- `serverless/lambda/shared/aws/kms.py`
 - Cualquier archivo bajo `serverless/lambda/shared/db/models/auth/`
-- `serverless/lambda/shared/db/repositories/auth.py`
-- `serverless/lambda/shared/db/alembic/versions/*auth*`
+  (incluye `{mfa_method,recovery_code,webauthn_credential}.py`)
+- `serverless/lambda/shared/db/repositories/auth.py` +
+  `serverless/lambda/shared/db/repositories/auth_mfa.py`
+- `serverless/lambda/shared/db/alembic/versions/*auth*` (incluye
+  `00000003_auth_mfa.py`)
 - `serverless/lambda/resources/dynamodb/jwt-blacklist.yaml`
+- `serverless/lambda/resources/dynamodb/webauthn-challenges.yaml`
 - `serverless/lambda/resources/sqs/auth-email-{queue,dlq}.yaml`
 - `serverless/lambda/resources/secrets/jwt-secret.yaml`
 - Cualquier referencia a `/portfolio/${stage}/jwt-secret` en SSM
 - Decisiones sobre JWT (HS256, lifetimes, claims, family_id, rotation)
 - Decisiones sobre rate-limit de los endpoints `/auth?operation=...`
+- Decisiones sobre MFA (TOTP, email-code, recovery codes, WebAuthn /
+  passkeys, sign_count, RP_ID, cifrado KMS del TOTP secret)
 
 ## Reglas duras (SIEMPRE / NUNCA)
 
@@ -138,11 +148,73 @@ Aplica SIEMPRE que se trabaje con:
   exacto** (`arn:aws:ses:us-east-1:<account-id>:identity/the-full-stack.com`).
   NUNCA `Resource: *` ni `ses:*`.
 
+### MFA + WebAuthn (plan 02)
+
+- **SIEMPRE** el TOTP secret se cifra con `kms:Encrypt` CMK directa
+  (`alias/portfolio-lambdas` + `EncryptionContext={user_id,
+  purpose:totp}`) antes de persistir en `auth_mfa_methods.
+  totp_secret_ciphertext`. NUNCA envelope (sin `GenerateDataKey`, sin
+  AES-GCM propio, sin nonce), NUNCA plain, NUNCA loguear el secret ni el
+  `secret_b32`. Se importa via `shared.aws.kms_encrypt`/`kms_decrypt`.
+- **SIEMPRE** `pyotp` se importa via `shared.auth` (`generate_totp_secret_b32`,
+  `verify_totp_code` con `valid_window=1`, `build_otpauth_url`). El QR lo
+  renderiza el FRONTEND desde el `otpauth_url` (sin `segno` en el Lambda).
+- **SIEMPRE** los recovery codes son 10 codes de 10 chars Crockford-like
+  (CSPRNG via `secrets.choice`), hash SHA-256 en `auth_mfa_recovery_codes`,
+  mostrados UNA sola vez. Comparacion constant-time
+  (`secrets.compare_digest`). NUNCA en plain.
+- **SIEMPRE** `recovery-codes-consume` exige un temp JWT
+  `flow='login-mfa'` step=2 (factor fuerte: password / webauthn). Un temp
+  de magic-link / email-code -> `403 RECOVERY_REQUIRES_STRONG_FACTOR`.
+  NUNCA usar un claim `prev` (JwtClaims tiene `extra='forbid'`): el factor
+  previo se codifica con el `flow`.
+- **SIEMPRE** `python-fido2` se importa via `shared.auth`
+  (`build_register_options`, `verify_registration`, `build_login_options`,
+  `verify_authentication`, `WebauthnError`/`WebauthnVerifyError`/
+  `WebauthnCloneError`). NUNCA `import fido2` en `core/`.
+- **SIEMPRE** el WebAuthn challenge vive en DDB
+  `portfolio-webauthn-challenges-${stage}` con TTL 5 min, single-use
+  (`get_and_consume` borra el row). NUNCA en Neon.
+- **SIEMPRE** validar `sign_count` monotonico: si `new <= stored` (con
+  `stored > 0`) -> `WebauthnCloneError` -> `401 WEBAUTHN_CLONE_DETECTED`
+  + marca el credential `disabled_at=now()` SIEMPRE (clone detection).
+- **SIEMPRE** el `public_key` se guarda como CBOR (`fido2.cbor.encode`) en
+  `auth_webauthn_credentials.public_key`. UV `PREFERRED` en register,
+  `REQUIRED` en login.
+- **SIEMPRE** las actions de la operation `mfa` (salvo
+  `recovery-codes-consume`) y `webauthn` (salvo `login-options`/
+  `login-verify`) requieren access JWT (`require_active_user`).
+- **SIEMPRE** al confirmar el PRIMER metodo MFA del user (`total_mfa: 0
+  -> 1`, via `mfa.confirm-totp`, `mfa.setup-email-code` o
+  `webauthn.register-verify`) se revoca la familia de refresh: setea
+  `auth_users.sessions_revoked_at = now()` y `session.refresh` rechaza
+  refreshes con `iat` anterior con `401 TOKEN_FAMILY_REVOKED` (AC-27).
+- **SIEMPRE** el guard `MUST_KEEP_ONE_MFA_METHOD` es transversal
+  (`count_active_mfa` = `auth_mfa_methods` confirmados activos +
+  `auth_webauthn_credentials` activos). `disable`/`delete-credential` que
+  deje `total_mfa == 0` -> `409`. Credential/metodo de otro user -> `404
+  NOT_FOUND` (anti-enumeration).
+- **SIEMPRE** el `WEBAUTHN_RP_ID` es por env: apex `the-full-stack.com` en
+  prod, `portfolio.dev.the-full-stack.com` en dev,
+  `portfolio.stage.the-full-stack.com` en stage. Un passkey NO migra
+  entre envs (es esperado).
+- **NUNCA** editar la migration `00000003_auth_mfa.py` aplicada; nuevo
+  cambio = migration nueva. El `downgrade` NO se corre en prod.
+
 ### Anti-patrones (correcciones criticas)
 
 | Anti-patron | Correccion |
 |---|---|
 | `import jwt` en el `core/` de auth | `from shared.auth import issue_temp_jwt, verify_jwt, ...` |
+| `import pyotp` / `import fido2` en `core/` | `from shared.auth import verify_totp_code, verify_authentication, ...` |
+| `import boto3` para KMS en `core/` | `from shared.aws import kms_encrypt, kms_decrypt` |
+| Guardar el TOTP secret en plain o con envelope (DataKey) | `kms:Encrypt` CMK directa + EncryptionContext, BYTEA |
+| Recovery code en plain o comparado con `==` | hash SHA-256 + `compare_recovery_code` (constant-time) |
+| WebAuthn challenge en Neon | DDB con TTL 5 min, single-use (`get_and_consume`) |
+| Ignorar regresion de `sign_count` | clone detection -> disable credential + 401 |
+| `recovery-codes-consume` tras magic-link/email-code | exige temp `flow='login-mfa'` step=2 (factor fuerte) |
+| RP_ID unico para todos los envs | RP_ID por env (apex prod, `portfolio.{dev,stage}...`) |
+| Permitir quedar en `total_mfa == 0` | guard transversal `MUST_KEEP_ONE_MFA_METHOD` |
 | `import argon2` o `from passlib import ...` | `from shared.auth import hash_password, verify_password` |
 | Comparar codes con `==` (timing attack) | `from shared.auth import compare_code` (secrets.compare_digest) |
 | Generar code con `random.choice` | `secrets.choice` via `shared.auth.generate_code` (CSPRNG) |
@@ -178,6 +250,10 @@ python devtools/run.py serverless lint-deps --shared
 - [.claude/docs/auth-system/01-jwt-lifecycle.md](../docs/auth-system/01-jwt-lifecycle.md)
 - [.claude/docs/auth-system/02-flows.md](../docs/auth-system/02-flows.md)
 - [.claude/docs/auth-system/03-rate-limit-rules.md](../docs/auth-system/03-rate-limit-rules.md)
+- [.claude/docs/auth-system/04-mfa.md](../docs/auth-system/04-mfa.md) —
+  TOTP, email-code, recovery codes, login con password, AC-27
+- [.claude/docs/auth-system/05-webauthn.md](../docs/auth-system/05-webauthn.md)
+  — passkeys, RP_ID por env, clone detection, challenges DDB
 - [.claude/rules/lambda-controller.md](lambda-controller.md) — patron
   general
 - [.claude/rules/lambda-shared-imports.md](lambda-shared-imports.md) —

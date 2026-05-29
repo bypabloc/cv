@@ -11,9 +11,7 @@ regresiones obvias (ej. si alguien cambia compare_code por '==').
 import time
 
 import pytest
-
 from shared.auth import compare_code, generate_code, hash_code
-
 
 pytestmark = pytest.mark.unit
 

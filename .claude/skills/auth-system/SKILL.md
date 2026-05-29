@@ -70,7 +70,11 @@ description: >
   "auth plan 02", "auth plan 03", "auth-mfa", "auth-users-management",
   "users lambda", "lambda users", "perfil de usuario", "user profile",
   "auth deploy", "rotar jwt secret", "rotate jwt secret", "rotate
-  JWT_SECRET", "como funciona el auth del portfolio".
+  JWT_SECRET", "como funciona el auth del portfolio", "mfa", "totp",
+  "passkey", "passkeys", "webauthn", "2fa", "two factor",
+  "autenticacion en dos pasos", "factor doble", "recovery codes",
+  "codigos de recuperacion", "clone detection", "sign_count",
+  "kms totp", "cifrar totp secret".
 user-invocable: true
 disable-model-invocation: false
 allowed-tools: Read, Glob, Grep

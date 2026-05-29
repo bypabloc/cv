@@ -123,9 +123,13 @@ class TestRender:
             if any(a.startswith('dynamodb:') for a in s['Action'])
         ]
         assert len(dynamo) == 2
+        # El Statement scope a la tabla + a sus indices (index/*) para
+        # soportar Query sobre GSI (ej. jwt-blacklist#by_family_id).
         assert dynamo[0]['Resource'] == [
             'arn:aws:dynamodb:us-east-1:${account}:'
             'table/portfolio-rate-limit-buckets-dev',
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-rate-limit-buckets-dev/index/*',
         ]
 
     def test_render_iam_policy_when_uses_secrets(self):
@@ -142,6 +146,29 @@ class TestRender:
             'arn:aws:ssm:us-east-1:${account}:'
             'parameter/portfolio/dev/turnstile-secret' in ssm[0]['Resource']
         )
+
+    def test_render_iam_policy_when_uses_kms(self):
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['uses']['kms'] = [
+            {'alias': 'portfolio-lambdas', 'actions': ['Encrypt', 'Decrypt']},
+        ]
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        statements = rendered.iam_policy['Statement']
+        kms_direct = [
+            s
+            for s in statements
+            if s['Action'] == ['kms:Encrypt', 'kms:Decrypt']
+        ]
+        assert len(kms_direct) == 1
+        assert kms_direct[0]['Resource'] == (
+            'arn:aws:kms:us-east-1:${account}:key/*'
+        )
+        # No lleva Condition kms:ViaService (es CMK directa, no via SSM).
+        assert 'Condition' not in kms_direct[0]
 
     def test_render_iam_policy_when_sends_email(self):
         from serverless import provisioner

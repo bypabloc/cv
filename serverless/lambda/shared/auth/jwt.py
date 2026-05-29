@@ -18,9 +18,6 @@ from typing import Any, Literal
 from uuid import UUID
 
 import jwt as pyjwt
-
-from shared.core import ApplicationError, BaseModel, ConfigDict, Field, new_uuidv7
-
 from shared.auth.constants import (
     ACCESS_TTL,
     DEFAULT_AUDIENCE,
@@ -28,6 +25,12 @@ from shared.auth.constants import (
     JWT_ALGORITHM,
     REFRESH_TTL,
     TEMP_TTL,
+)
+from shared.core import (
+    ApplicationError,
+    BaseModel,
+    ConfigDict,
+    new_uuidv7,
 )
 
 __all__ = [
@@ -53,17 +56,17 @@ class JwtClaims(BaseModel):
     Pydantic v2 con `model_config` para alias del campo.
     """
 
-    sub: UUID                              # subject = user_id (NO email)
-    jti: UUID                              # JWT ID (uuidv7)
+    sub: UUID  # subject = user_id (NO email)
+    jti: UUID  # JWT ID (uuidv7)
     typ: JwtType
-    iat: int                               # issued at (unix seconds)
-    exp: int                               # expires at (unix seconds)
+    iat: int  # issued at (unix seconds)
+    exp: int  # expires at (unix seconds)
     iss: str = DEFAULT_ISSUER
     aud: str = DEFAULT_AUDIENCE
     # custom
-    flow: str | None = None                # solo en typ=temp
-    step: int | None = None                # solo en typ=temp
-    family_id: UUID | None = None          # solo en typ=refresh
+    flow: str | None = None  # solo en typ=temp
+    step: int | None = None  # solo en typ=temp
+    family_id: UUID | None = None  # solo en typ=refresh
 
     model_config = ConfigDict(extra='forbid')
 
@@ -101,6 +104,7 @@ class JwtRevokedError(JwtError):
 def _now() -> int:
     """Unix seconds. Aislado para mockear con freezegun en tests."""
     import time
+
     return int(time.time())
 
 
@@ -236,7 +240,9 @@ def verify_jwt(
             algorithms=[JWT_ALGORITHM],
             audience=audience,
             issuer=issuer,
-            options={'require': ['sub', 'jti', 'typ', 'iat', 'exp', 'iss', 'aud']},
+            options={
+                'require': ['sub', 'jti', 'typ', 'iat', 'exp', 'iss', 'aud']
+            },
         )
     except pyjwt.ExpiredSignatureError as exc:
         raise JwtExpiredError('JWT expired') from exc
@@ -262,7 +268,9 @@ def verify_jwt(
             aud=payload['aud'],
             flow=payload.get('flow'),
             step=payload.get('step'),
-            family_id=UUID(payload['family_id']) if 'family_id' in payload else None,
+            family_id=UUID(payload['family_id'])
+            if 'family_id' in payload
+            else None,
         )
     except (ValueError, KeyError, TypeError) as exc:
         raise JwtInvalidError(f'JWT claims malformed: {exc}') from exc

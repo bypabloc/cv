@@ -26,10 +26,17 @@ def test_session_refresh_ok(monkeypatch):
 
     audit_svc = MagicMock()
     rl_svc = MagicMock()
+    # AC-27: el user no revoco sus sesiones (sessions_revoked_at=None) ->
+    # la rotacion procede normalmente.
+    user = MagicMock()
+    user.sessions_revoked_at = None
+    user_svc = MagicMock()
+    user_svc.get_by_id.return_value = user
 
     monkeypatch.setattr(refresh, 'JwtService', lambda _c: jwt_svc)
     monkeypatch.setattr(refresh, 'AuditService', lambda _c: audit_svc)
     monkeypatch.setattr(refresh, 'RateLimitService', lambda _c: rl_svc)
+    monkeypatch.setattr(refresh, 'UserService', lambda _c: user_svc)
 
     event = _make_event_refresh()
     controller = refresh.Refresh(event=event)

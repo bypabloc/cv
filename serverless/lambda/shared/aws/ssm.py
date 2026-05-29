@@ -87,7 +87,9 @@ def _short_name_to_upper(short_name: str) -> str:
 
 
 def get_secret_by_name(
-    short_name: str, *, local_env: str | None = None,
+    short_name: str,
+    *,
+    local_env: str | None = None,
 ) -> str:
     """Resuelve un secreto del catalogo (cloud SSM o local env var).
 

@@ -38,6 +38,10 @@ class _Meta(BaseModel):
     user_agent: str | None = None
     bypass_secret: str | None = None
     origin: str | None = None
+    # Header `Authorization: Bearer <access JWT>` inyectado por
+    # `http_handler`. Lo consume `require_active_user` en los endpoints
+    # autenticados (mfa.*, webauthn.*).
+    authorization: str | None = None
     # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
     # API GW los expone). Mismo patron que contact_form para futuras
     # decisiones de geolocation en el worker.

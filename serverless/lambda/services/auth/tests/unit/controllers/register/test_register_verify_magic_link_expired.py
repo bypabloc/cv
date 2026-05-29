@@ -19,13 +19,21 @@ def test_register_verify_magic_link_expired(monkeypatch):
     link_svc.get_state.return_value = None  # no existe
 
     monkeypatch.setattr(
-        verify_magic_link, 'MagicLinkService', lambda _c: link_svc,
+        verify_magic_link,
+        'MagicLinkService',
+        lambda _c: link_svc,
     )
-    monkeypatch.setattr(verify_magic_link, 'UserService', lambda _c: MagicMock())
-    monkeypatch.setattr(verify_magic_link, 'JwtService', lambda _c: MagicMock())
-    monkeypatch.setattr(verify_magic_link, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(
-        verify_magic_link, 'RateLimitService', lambda _c: MagicMock(),
+        verify_magic_link, 'UserService', lambda _c: MagicMock()
+    )
+    monkeypatch.setattr(verify_magic_link, 'JwtService', lambda _c: MagicMock())
+    monkeypatch.setattr(
+        verify_magic_link, 'AuditService', lambda _c: MagicMock()
+    )
+    monkeypatch.setattr(
+        verify_magic_link,
+        'RateLimitService',
+        lambda _c: MagicMock(),
     )
 
     event = _make_event_with_token(token='D' * 32)

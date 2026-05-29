@@ -23,7 +23,6 @@ from services.magic_link_service import MagicLinkService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-
 from shared.core.ulid import new_uuidv7
 from shared.lambda_kit import BaseController
 
@@ -128,7 +127,8 @@ class VerifyMagicLink(BaseController):
         access_token, _ = jwt_svc.issue_access(user_id=user.id)
         family_id = UUID(new_uuidv7())
         refresh_token, _ = jwt_svc.issue_refresh(
-            user_id=user.id, family_id=family_id,
+            user_id=user.id,
+            family_id=family_id,
         )
 
         audit_svc.log(

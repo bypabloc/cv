@@ -231,6 +231,10 @@ def http_handler(
     country = extract_country(event)
     user_agent = _header(headers, 'user-agent')
     bypass_secret = _header(headers, 'x-turnstile-bypass-secret')
+    # Authorization header (Bearer <access JWT>): lo consumen los
+    # endpoints autenticados (ej. mfa.*, webauthn.* del plan 02) via
+    # `require_active_user`. Los modelos `_Meta` lo ignoran si no aplica.
+    authorization = _header(headers, 'authorization')
     # cloudfront_meta: TODOS los headers cloudfront-* del request, en
     # lowercase canonico. Cuando el custom domain es Edge-Optimized
     # llegan ~22 headers (geo/device/tls/asn/ja3). Vacio si REGIONAL.
@@ -256,6 +260,7 @@ def http_handler(
                     'bypass_secret': bypass_secret,
                     'cloudfront_meta': cloudfront_meta,
                     'origin': raw_origin,
+                    'authorization': authorization,
                 },
             },
         }

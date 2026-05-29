@@ -25,7 +25,6 @@ def test_check_or_raise_delegates_to_shared(monkeypatch):
 
 def test_check_or_raise_propagates_exception(monkeypatch):
     import pytest
-
     from services import rate_limit_service
 
     class FakeRLError(Exception):

@@ -60,7 +60,8 @@ def test_app_config_jwt_blacklist_table_uses_env_var(monkeypatch):
     from settings.config import AppConfig
 
     monkeypatch.setenv(
-        'SSM_JWT_BLACKLIST_TABLE_PATH', 'portfolio-jwt-blacklist-test',
+        'SSM_JWT_BLACKLIST_TABLE_PATH',
+        'portfolio-jwt-blacklist-test',
     )
 
     cfg = AppConfig()
@@ -72,10 +73,13 @@ def test_app_config_resolves_table_from_ssm(monkeypatch):
     from settings import config as config_mod
 
     monkeypatch.setenv(
-        'SSM_CACHE_TABLE_PATH', '/portfolio/dev/dynamodb/cache/name',
+        'SSM_CACHE_TABLE_PATH',
+        '/portfolio/dev/dynamodb/cache/name',
     )
     monkeypatch.setattr(
-        config_mod, 'get_parameter', lambda _path: 'portfolio-cache-dev',
+        config_mod,
+        'get_parameter',
+        lambda _path: 'portfolio-cache-dev',
     )
 
     cfg = config_mod.AppConfig()

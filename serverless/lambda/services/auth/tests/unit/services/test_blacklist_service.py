@@ -5,7 +5,9 @@ from unittest.mock import MagicMock
 
 
 def _fake_app_config():
-    return SimpleNamespace(jwt_blacklist_table_name='portfolio-jwt-blacklist-test')
+    return SimpleNamespace(
+        jwt_blacklist_table_name='portfolio-jwt-blacklist-test'
+    )
 
 
 def test_put_writes_item_with_ttl(monkeypatch):
@@ -13,7 +15,9 @@ def test_put_writes_item_with_ttl(monkeypatch):
 
     fake_table = MagicMock()
     monkeypatch.setattr(
-        blacklist_service, 'get_table', lambda _name: fake_table,
+        blacklist_service,
+        'get_table',
+        lambda _name: fake_table,
     )
 
     svc = blacklist_service.BlacklistService(_fake_app_config())
@@ -37,7 +41,9 @@ def test_is_blacklisted_returns_false_when_not_found(monkeypatch):
     fake_table = MagicMock()
     fake_table.get_item.return_value = {}
     monkeypatch.setattr(
-        blacklist_service, 'get_table', lambda _name: fake_table,
+        blacklist_service,
+        'get_table',
+        lambda _name: fake_table,
     )
 
     svc = blacklist_service.BlacklistService(_fake_app_config())
@@ -51,7 +57,9 @@ def test_is_blacklisted_returns_true_when_found(monkeypatch):
     fake_table = MagicMock()
     fake_table.get_item.return_value = {'Item': {'jti': 'x'}}
     monkeypatch.setattr(
-        blacklist_service, 'get_table', lambda _name: fake_table,
+        blacklist_service,
+        'get_table',
+        lambda _name: fake_table,
     )
 
     svc = blacklist_service.BlacklistService(_fake_app_config())
@@ -64,12 +72,16 @@ def test_revoke_family_writes_sentinel_item(monkeypatch):
 
     fake_table = MagicMock()
     monkeypatch.setattr(
-        blacklist_service, 'get_table', lambda _name: fake_table,
+        blacklist_service,
+        'get_table',
+        lambda _name: fake_table,
     )
 
     svc = blacklist_service.BlacklistService(_fake_app_config())
     svc.revoke_family(
-        family_id='fam-1', user_id='user-x', exp=1_700_000_000,
+        family_id='fam-1',
+        user_id='user-x',
+        exp=1_700_000_000,
     )
 
     fake_table.put_item.assert_called_once()
@@ -84,7 +96,9 @@ def test_put_includes_family_id_when_provided(monkeypatch):
 
     fake_table = MagicMock()
     monkeypatch.setattr(
-        blacklist_service, 'get_table', lambda _name: fake_table,
+        blacklist_service,
+        'get_table',
+        lambda _name: fake_table,
     )
 
     svc = blacklist_service.BlacklistService(_fake_app_config())
@@ -108,7 +122,9 @@ def test_query_family_returns_jti_list(monkeypatch):
         'Items': [{'jti': 'a'}, {'jti': 'b'}],
     }
     monkeypatch.setattr(
-        blacklist_service, 'get_table', lambda _name: fake_table,
+        blacklist_service,
+        'get_table',
+        lambda _name: fake_table,
     )
 
     svc = blacklist_service.BlacklistService(_fake_app_config())

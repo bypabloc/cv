@@ -7,9 +7,7 @@ Then retorna los claims con sub, jti, flow, step intactos.
 from uuid import uuid4
 
 import pytest
-
 from shared.auth import issue_temp_jwt, verify_jwt
-
 
 pytestmark = pytest.mark.unit
 
@@ -21,7 +19,10 @@ def test_jwt_issue_and_verify_temp_roundtrip():
 
     # Act
     token, claims = issue_temp_jwt(
-        user_id=user_id, flow='register', step=1, secret=secret,
+        user_id=user_id,
+        flow='register',
+        step=1,
+        secret=secret,
     )
     verified = verify_jwt(token, secret=secret, expected_typ='temp')
 

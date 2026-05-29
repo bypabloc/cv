@@ -64,6 +64,9 @@ NO aplica al frontend Astro ni a otros repos.
 | SSM Parameter Store / Secrets | `shared.aws.ssm` | `from shared.aws import get_parameter, get_secret, clear_cache` |
 | `aws_lambda_powertools` (logger/metrics/tracer/MetricUnit) | `shared.observability` | `from shared.observability import logger, metrics, tracer, MetricUnit` |
 | HTTP responses + CORS + Turnstile | `shared.http` | `from shared.http import error_response, json_response, no_content_response, resolve_origin, verify_turnstile_token` |
+| `pyotp` (TOTP RFC 6238) | `shared.auth` | `from shared.auth import generate_totp_secret_b32, verify_totp_code, build_otpauth_url` |
+| `fido2` (python-fido2, WebAuthn) | `shared.auth` | `from shared.auth import build_register_options, verify_registration, build_login_options, verify_authentication, WebauthnCloneError` |
+| KMS (`boto3.client('kms')`, Encrypt/Decrypt CMK directa) | `shared.aws` | `from shared.aws import kms_encrypt, kms_decrypt` |
 
 ## Patron correcto
 

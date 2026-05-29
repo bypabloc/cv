@@ -33,7 +33,9 @@ def test_issue_temp_and_verify_roundtrip(monkeypatch):
     user_id = uuid4()
 
     token_str, claims = svc.issue_temp(
-        user_id=user_id, flow='register', step=1,
+        user_id=user_id,
+        flow='register',
+        step=1,
     )
     verified = svc.verify(token_str, expected_typ='temp')
 
@@ -46,7 +48,6 @@ def test_issue_temp_and_verify_roundtrip(monkeypatch):
 def test_verify_rejects_when_blacklisted(monkeypatch):
     """JwtService.verify levanta JwtRevokedError si el jti esta en DDB."""
     import pytest
-
     from services import jwt_service
     from shared.auth import JwtRevokedError
 
@@ -66,7 +67,6 @@ def test_verify_rejects_when_blacklisted(monkeypatch):
 def test_verify_with_expected_flow_mismatch_raises(monkeypatch):
     """verify(expected_flow='login') sobre un temp emitido con flow='register' -> JwtInvalidError."""
     import pytest
-
     from services import jwt_service
     from shared.auth import JwtInvalidError
 
@@ -97,7 +97,8 @@ def test_issue_refresh_returns_token_with_family(monkeypatch):
     family_id = uuid4()
 
     token_str, claims = svc.issue_refresh(
-        user_id=user_id, family_id=family_id,
+        user_id=user_id,
+        family_id=family_id,
     )
 
     assert claims.typ == 'refresh'
@@ -113,7 +114,9 @@ def test_revoke_family_delegates_to_blacklist_service(monkeypatch):
 
     svc = jwt_service.JwtService(_stub_app_config())
     svc.revoke_family(
-        family_id='fam-1', user_id='user-x', exp=1_700_000_000,
+        family_id='fam-1',
+        user_id='user-x',
+        exp=1_700_000_000,
     )
 
     fake.assert_called_once()
@@ -128,7 +131,10 @@ def test_blacklist_delegates_to_blacklist_service(monkeypatch):
 
     svc = jwt_service.JwtService(_stub_app_config())
     svc.blacklist(
-        jti='jti-1', exp=1_700_000_000, user_id='user-x', reason='logout',
+        jti='jti-1',
+        exp=1_700_000_000,
+        user_id='user-x',
+        reason='logout',
     )
 
     fake_put.assert_called_once()

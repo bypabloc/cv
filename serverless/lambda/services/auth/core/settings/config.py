@@ -167,12 +167,30 @@ class AppConfig(BaseSettings):
     magic_link_base_url: str = ''
     dashboard_callback_url: str = ''
 
+    # MFA / WebAuthn (plan 02)
+    # KMS CMK directa para cifrar el TOTP secret (decision 1).
+    kms_totp_key_id: str = 'alias/portfolio-lambdas'
+    # WebAuthn: RP_ID = sufijo comun de los origins del env (decision 5).
+    webauthn_rp_id: str = ''
+    webauthn_rp_name: str = 'The Full Stack Portfolio'
+    # CSV de origins permitidos en el ceremony WebAuthn (verify_origin).
+    webauthn_allowed_origins: str = ''
+
     # Testing
     testing: str = '0'
 
     def is_testing(self) -> bool:
         """Devuelve True si el servicio corre en modo testing."""
         return self.testing == '1'
+
+    @property
+    def webauthn_origins(self) -> list[str]:
+        """Lista de origins permitidos (CSV de WEBAUTHN_ALLOWED_ORIGINS)."""
+        return [
+            origin.strip()
+            for origin in self.webauthn_allowed_origins.split(',')
+            if origin.strip()
+        ]
 
     # ----- Secretos lazy desde SSM (cold start) -----
 
@@ -221,6 +239,11 @@ class AppConfig(BaseSettings):
     def jwt_blacklist_table_name(self) -> str:
         """Tabla DynamoDB de jti blacklisted (GSI by_family_id)."""
         return _resolve_from_ssm('SSM_JWT_BLACKLIST_TABLE_PATH')
+
+    @cached_property
+    def webauthn_challenges_table_name(self) -> str:
+        """Tabla DynamoDB de challenges WebAuthn efimeros (TTL 5 min)."""
+        return _resolve_from_ssm('SSM_WEBAUTHN_CHALLENGES_TABLE_PATH')
 
     @cached_property
     def rate_limit_rules_table_name(self) -> str:

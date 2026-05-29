@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from moto import mock_aws
-
 from shared.aws.ssm import clear_cache, get_parameter, get_secret
 
 pytestmark = pytest.mark.unit

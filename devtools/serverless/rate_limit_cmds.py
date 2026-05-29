@@ -113,6 +113,15 @@ _VALID_ENDPOINTS = [
     '/auth#verify.resend-code',
     '/auth#session.refresh',
     '/auth#session.logout',
+    # Plan 02 (MFA + WebAuthn + login con password).
+    '/auth#mfa.setup-totp',
+    '/auth#mfa.confirm-totp',
+    '/auth#mfa.recovery-codes-consume',
+    '/auth#webauthn.register-options',
+    '/auth#webauthn.login-options',
+    '/auth#webauthn.login-verify',
+    '/auth#login.verify-password',
+    '/auth#login.verify-totp',
 ]
 
 

@@ -16,7 +16,6 @@ from services.audit_service import AuditService
 from services.jwt_service import JwtService
 from services.rate_limit_service import RateLimitService
 from settings.config import app_config
-
 from shared.auth import JwtError
 from shared.lambda_kit import BaseController
 
@@ -67,7 +66,8 @@ class Logout(BaseController):
         # signature + exp + typ pero no rechaza por blacklist.
         try:
             access_claims = jwt_svc.verify_allow_revoked(
-                data.access_token, expected_typ='access',
+                data.access_token,
+                expected_typ='access',
             )
         except JwtError:
             audit_svc.log(
@@ -97,7 +97,8 @@ class Logout(BaseController):
         if data.refresh_token is not None:
             try:
                 refresh_claims = jwt_svc.verify_allow_revoked(
-                    data.refresh_token, expected_typ='refresh',
+                    data.refresh_token,
+                    expected_typ='refresh',
                 )
             except JwtError:
                 refresh_claims = None

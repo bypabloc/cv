@@ -9,8 +9,8 @@ from typing import Final
 
 # --- JWT ---
 JWT_ALGORITHM: Final[str] = 'HS256'
-TEMP_TTL: Final[int] = 300              # 5 min  (rolling refresh entre pasos)
-ACCESS_TTL: Final[int] = 900            # 15 min (stateless, blacklisteable)
+TEMP_TTL: Final[int] = 300  # 5 min  (rolling refresh entre pasos)
+ACCESS_TTL: Final[int] = 900  # 15 min (stateless, blacklisteable)
 REFRESH_TTL: Final[int] = 30 * 24 * 3600  # 30 dias (rotation + family_id)
 DEFAULT_ISSUER: Final[str] = 'portfolio-auth'
 DEFAULT_AUDIENCE: Final[str] = 'portfolio'

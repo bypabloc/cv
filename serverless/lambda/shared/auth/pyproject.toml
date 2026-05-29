@@ -12,6 +12,8 @@ requires-python = ">=3.13"
 dependencies = [
   "pyjwt>=2.9,<3.0",
   "argon2-cffi>=23.1,<24.0",
+  "pyotp>=2.9,<3.0",
+  "fido2>=1.1,<2.0",
 ]
 
 [tool.shared]
@@ -33,6 +35,8 @@ dev = [
   "mypy>=1.10,<2.0",
   "ruff>=0.6,<1.0",
   "freezegun>=1.4,<2.0",
+  "moto[kms]>=5.0,<6.0",
+  "soft-webauthn>=0.1.4,<0.2.0",
 ]
 
 [tool.ruff]

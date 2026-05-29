@@ -13,7 +13,6 @@ from .._helpers import _make_event_set_password
 def test_verify_set_password_temp_blacklisted(monkeypatch):
     """AC-10: temp revocado -> 401 sin persistir password."""
     from controllers.verify import set_password
-
     from shared.auth import JwtRevokedError
 
     jwt_svc = MagicMock()
@@ -26,7 +25,9 @@ def test_verify_set_password_temp_blacklisted(monkeypatch):
     monkeypatch.setattr(set_password, 'UserService', lambda _c: user_svc)
     monkeypatch.setattr(set_password, 'FlowService', lambda _c: MagicMock())
     monkeypatch.setattr(set_password, 'AuditService', lambda _c: audit_svc)
-    monkeypatch.setattr(set_password, 'RateLimitService', lambda _c: MagicMock())
+    monkeypatch.setattr(
+        set_password, 'RateLimitService', lambda _c: MagicMock()
+    )
 
     event = _make_event_set_password(password='a-very-strong-pass-1')
     controller = set_password.SetPassword(event=event)

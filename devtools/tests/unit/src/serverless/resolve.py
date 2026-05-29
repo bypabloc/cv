@@ -111,13 +111,18 @@ class TestResolveByLambdaName:
 
         names = available_lambdas()
 
-        # 4 lambdas reales tras spec direct-neon-writes (stream_processor
-        # se elimino: contact_form/tracking_pixel escriben directo a Neon).
+        # 9 lambdas reales: backend de contacto/tracking + el sistema auth
+        # (auth/users + workers) agregado en los planes 01-03.
         assert names == [
+            'auth',
+            'auth_email_worker',
             'contact_form',
+            'contact_worker',
             'cv',
             'db',
             'tracking_pixel',
+            'tracking_worker',
+            'users',
         ]
 
     def test_resolve_lambda_finds_service_by_manifest_yaml(self):

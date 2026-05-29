@@ -96,6 +96,10 @@ _TABLES: dict[str, dict[str, str]] = {
         'physical': 'portfolio-jwt-blacklist-${stage}',
         'env': 'SSM_JWT_BLACKLIST_TABLE_PATH',
     },
+    'webauthn-challenges': {
+        'physical': 'portfolio-webauthn-challenges-${stage}',
+        'env': 'SSM_WEBAUTHN_CHALLENGES_TABLE_PATH',
+    },
 }
 
 # El inventario de secretos SSM vive en

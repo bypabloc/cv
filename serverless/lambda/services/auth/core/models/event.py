@@ -19,7 +19,23 @@ from shared.lambda_kit import build_event_model
 # Side-effect: importar los modelos garantiza que se cargan en cold
 # start (algunos controllers los importan via `models.<operation>` y
 # nos beneficiamos del module caching de Python).
-from .login import LoginStartIn, LoginVerifyCodeIn, LoginVerifyMagicLinkIn
+from .login import (
+    LoginStartIn,
+    LoginVerifyCodeIn,
+    LoginVerifyMagicLinkIn,
+    LoginVerifyPasswordIn,
+    LoginVerifyTotpIn,
+)
+from .mfa import (
+    MfaConfirmTotpIn,
+    MfaDisableIn,
+    MfaListIn,
+    MfaRecoveryCodesConsumeIn,
+    MfaRecoveryCodesGenerateIn,
+    MfaSetPreferredIn,
+    MfaSetupEmailCodeIn,
+    MfaSetupTotpIn,
+)
 from .register import (
     RegisterStartIn,
     RegisterVerifyCodeIn,
@@ -27,6 +43,14 @@ from .register import (
 )
 from .session import SessionLogoutIn, SessionRefreshIn
 from .verify import VerifyResendCodeIn, VerifySetPasswordIn
+from .webauthn import (
+    WebauthnDeleteCredentialIn,
+    WebauthnListCredentialsIn,
+    WebauthnLoginOptionsIn,
+    WebauthnLoginVerifyIn,
+    WebauthnRegisterOptionsIn,
+    WebauthnRegisterVerifyIn,
+)
 
 # Eviten F401 (los imports estan para forzar la carga del modulo).
 _ = (
@@ -36,10 +60,26 @@ _ = (
     LoginStartIn,
     LoginVerifyMagicLinkIn,
     LoginVerifyCodeIn,
+    LoginVerifyPasswordIn,
+    LoginVerifyTotpIn,
     VerifySetPasswordIn,
     VerifyResendCodeIn,
     SessionRefreshIn,
     SessionLogoutIn,
+    MfaSetupTotpIn,
+    MfaConfirmTotpIn,
+    MfaSetupEmailCodeIn,
+    MfaSetPreferredIn,
+    MfaDisableIn,
+    MfaListIn,
+    MfaRecoveryCodesGenerateIn,
+    MfaRecoveryCodesConsumeIn,
+    WebauthnRegisterOptionsIn,
+    WebauthnRegisterVerifyIn,
+    WebauthnLoginOptionsIn,
+    WebauthnLoginVerifyIn,
+    WebauthnListCredentialsIn,
+    WebauthnDeleteCredentialIn,
 )
 
 EVENT_MODEL = build_event_model(OPERATIONS)

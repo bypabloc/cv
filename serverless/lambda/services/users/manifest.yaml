@@ -17,10 +17,11 @@ description: HTTP endpoint POST /users (profile/status/admin).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — comparte los imports pesados de auth (shared.auth
-                  # con fido2 + argon2 + pyjwt + sqlalchemy). A 384 MB el
-                  # cold init excedia el timeout; 1024 MB lo deja en ~8.6s.
-timeout: 30       # segundos — cold init + SSM/DDB/Neon frio con margen.
+memory: 512       # MB — minimo medido. Misma familia que auth: con la
+                  # carga lazy de shared.auth el INIT bajo a ~3s. 512 MB
+                  # da handler ~2.7s (SSM+DDB+Neon); 256 ~7.6s. NO subir
+                  # sin medir (ver .claude/rules/lambda-config.md).
+timeout: 30       # segundos — cubre el cold sin SnapStart restore con margen.
 
 # SnapStart: reduce cold start (~830ms Restore). Mismo criterio que auth:
 # low traffic prod hace que cada request pague cold start.

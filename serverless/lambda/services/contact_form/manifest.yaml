@@ -16,11 +16,12 @@ description: Encoder del form de contacto (valida + Turnstile + encola SQS).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB — 384 quedaba justo: el cold init (Turnstile +
-                  # DDB rate-limit + SQS + imports) podia rozar el timeout
-                  # cuando SnapStart no restauraba. 512 MB baja el cold.
-timeout: 30       # segundos — margen sobre el cold init + Turnstile
-                  # siteverify HTTP cuando el SnapStart restore no aplica.
+memory: 384       # MB — minimo medido. Form submit (interactivo, usa
+                  # SnapStart). Cold no-restore ~7.6s a 384 / ~9.9s a 256;
+                  # con restore ~5.5s a 384. handler = Turnstile siteverify
+                  # HTTP + DDB rate-limit + SQS. NO subir sin medir
+                  # (ver .claude/rules/lambda-config.md).
+timeout: 30       # segundos — cubre el cold sin SnapStart restore + Turnstile.
 
 # SnapStart: reduce cold start de 3.4s a ~830ms (Restore Duration).
 # Cuando true, cada deploy hace publish-version + update-alias `live`,

@@ -8,6 +8,12 @@ Renames respecto al schema previo:
 - `ReferenceNiche` -> `EndorsementNiche`
 """
 
+# Cross-domain FK targets: `cv_*` referencian `tax_niches.id` y
+# `tax_tech_tags.id`. La carga per-dominio debe registrar el dominio
+# taxonomy o esas FK no resuelven (NoReferencedTableError). Ver
+# `.claude/rules/lambda-config.md`.
+import shared.db.models.taxonomy  # noqa: F401
+
 from .cv_entity import (
     Award,
     AwardNiche,

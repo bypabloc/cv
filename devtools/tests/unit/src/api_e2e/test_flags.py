@@ -1,4 +1,8 @@
-"""Tests de validacion de flags de api_e2e (logica pura, sin red)."""
+"""Tests de validacion de flags de api_e2e (logica pura, sin red).
+
+El conftest de devtools (devtools/tests/conftest.py) agrega devtools/ al
+sys.path, asi que `api_e2e` resuelve como paquete.
+"""
 
 import pytest
 

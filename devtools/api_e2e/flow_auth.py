@@ -1,22 +1,27 @@
 """Flujo auth: registro completo (exito) + casos de error.
 
 Flujo de exito (con seed de Neon para el paso verify-code):
-  register.start -> seed code -> register.verify-code (access+refresh)
-  -> session.refresh -> login.start -> verify.set-password
-  -> session.logout
+  register.start -> seed code -> register.verify-code (access1+refresh1)
+  -> session.refresh (access2+refresh2) -> login.start
+  -> verify.set-password -> session.logout(access1)
 
 Shapes confirmados contra dev (campos anidados bajo `data`):
   register.start      -> 200 {data: {temp_token, user_id, expires_in, ...}}
   register.verify-code-> 200 {data: {access_token, refresh_token, ...}}
 
+Detalle critico del token: el logout se hace sobre `access1` (el token de
+verify-code), NO sobre `access2` (el de refresh). logout sin refresh_token
+solo blacklistea el jti del access, no la familia — asi `access2` sigue
+vivo y se devuelve para que el flujo de `users` lo reutilice. Si se
+logouteara `access2`, `users` recibiria 401.
+
 Casos de error: login.start de email inexistente (404), tokens falsos en
 los verify (4xx), mfa/webauthn sin JWT valido (401/4xx).
-
-Devuelve el `access_token` del user creado para que el flujo de `users`
-lo reutilice.
 """
 
 from __future__ import annotations
+
+import secrets
 
 from api_e2e.config import admin_origin
 from api_e2e.config import synthetic_email
@@ -39,7 +44,7 @@ def run_auth(
     bypass: str | None,
     created_emails: list[str],
 ) -> str | None:
-    """Corre el flujo auth. Devuelve el access_token del user creado."""
+    """Corre el flujo auth. Devuelve un access_token VIVO para users."""
     origin = admin_origin(env_name)
     access_token: str | None = None
 
@@ -69,7 +74,7 @@ def _run_success(
     bypass: str,
     created_emails: list[str],
 ) -> str | None:
-    """Flujo de registro->sesion completo. Devuelve access_token final."""
+    """Flujo registro->sesion completo. Devuelve access2 (vivo) para users."""
     email = synthetic_email(run_id, 'auth')
     created_emails.append(email)
 
@@ -96,7 +101,7 @@ def _run_success(
     if not (temp_token and user_id):
         return None
 
-    # 2. seed code + register.verify-code -> access+refresh
+    # 2. seed code + register.verify-code -> access1 + refresh1
     seeded = env.seed_code(
         user_id=user_id,
         kind='register',
@@ -119,29 +124,26 @@ def _run_success(
         expected=200,
         note='code sembrado en Neon' if seeded else 'seed FALLO',
     )
-    access_token = _field(r.body, 'access_token')
-    refresh_token = _field(r.body, 'refresh_token')
+    access1 = _field(r.body, 'access_token')
+    refresh1 = _field(r.body, 'refresh_token')
 
-    # 3. session.refresh -> rota el refresh
-    if refresh_token:
+    # 3. session.refresh(refresh1) -> access2 + refresh2 (rota la familia)
+    access2 = access1
+    if refresh1:
         r = runner.step(
             lambda_name='auth',
             name='session.refresh (success)',
             method='POST',
             call=lambda: http.post(
                 '/auth',
-                body=make_body(
-                    'session',
-                    'refresh',
-                    refresh_token=refresh_token,
-                ),
+                body=make_body('session', 'refresh', refresh_token=refresh1),
                 origin=origin,
             ),
             expected=200,
         )
-        access_token = _field(r.body, 'access_token') or access_token
+        access2 = _field(r.body, 'access_token') or access1
 
-    # 4. login.start (success) -> nuevo temp para set-password
+    # 4. login.start (success) -> temp del login
     r = runner.step(
         lambda_name='auth',
         name='login.start (success)',
@@ -161,7 +163,7 @@ def _run_success(
     )
     login_temp = _field(r.body, 'temp_token')
 
-    # 5. verify.set-password con el temp del login
+    # 5. verify.set-password con el temp del login (user nuevo sin password)
     if login_temp:
         runner.step(
             lambda_name='auth',
@@ -180,22 +182,23 @@ def _run_success(
             expected='2xx',
         )
 
-    # 6. session.logout con el access vigente -> 200/204
-    if access_token:
+    # 6. session.logout(access1) -> blacklistea SOLO ese jti (no la familia,
+    #    no se pasa refresh_token). access2 queda vivo para users.
+    if access1:
         runner.step(
             lambda_name='auth',
             name='session.logout (success)',
             method='POST',
             call=lambda: http.post(
                 '/auth',
-                body=make_body('session', 'logout', access_token=access_token),
+                body=make_body('session', 'logout', access_token=access1),
                 origin=origin,
-                bearer=access_token,
+                bearer=access1,
             ),
             expected=[200, 204],
         )
 
-    return access_token
+    return access2
 
 
 def _run_errors(
@@ -206,6 +209,9 @@ def _run_errors(
 ) -> None:
     """Casos de error de auth (no mutan / no requieren estado valido)."""
     if bypass:
+        # Email aleatorio garantizado-inexistente (un email fijo podria
+        # quedar pending de una corrida previa -> 409 en vez de 404).
+        ghost = f'success+ghost-{secrets.token_hex(4)}@simulator.amazonses.com'
         runner.case(
             lambda_name='auth',
             name='login.start (error: email inexistente)',
@@ -215,7 +221,7 @@ def _run_errors(
                 body=make_body(
                     'login',
                     'start',
-                    email='nadie-api-e2e@simulator.amazonses.com',
+                    email=ghost,
                     cf_turnstile_response='',
                 ),
                 origin=origin,

@@ -48,10 +48,10 @@ def test_synthetic_email_is_unique_per_call() -> None:
     When synthetic_email se llama 2 veces,
     Then los emails difieren (suffix random embebido).
     """
-    a = synthetic_email('run1', 'auth')
-    b = synthetic_email('run1', 'auth')
+    first = synthetic_email('run1', 'auth')
+    second = synthetic_email('run1', 'auth')
 
-    assert a != b
+    assert first != second
 
 
 def test_api_base_dev_is_dev_subdomain() -> None:

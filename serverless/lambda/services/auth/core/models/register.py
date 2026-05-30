@@ -20,9 +20,9 @@ class RegisterStartIn(BaseModel):
     email: EmailStr
     # default='' (no min_length): un cf_turnstile_response vacio es el
     # gatillo del bypass de Turnstile para tests E2E (solo dev/local, ver
-    # shared.http.verify_turnstile_token regla #1). En prod, vacio + sin
-    # bypass secret -> el controller lanza TurnstileError 403 (AC-12). La
-    # exigencia del token NO es a nivel Pydantic sino del controller.
+    # shared.crypto.captcha.verify_captcha_or_bypass). En prod, vacio + sin
+    # bypass token valido -> el controller lanza TurnstileError 403 (AC-12).
+    # La exigencia del token NO es a nivel Pydantic sino del controller.
     cf_turnstile_response: str = Field(default='', max_length=2048)
     niche: Niche | None = None
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')

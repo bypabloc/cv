@@ -6,7 +6,7 @@ que un atacante meta strings arbitrarios (incluyendo HTML/script) en
 el audit log o en templates de email del worker.
 
 `_Meta` modela el bloque `_meta` que `http_handler` inyecta al `data`
-del request (ip, country, user_agent, bypass_secret, origin extraidos
+del request (ip, country, user_agent, bypass_token, origin extraidos
 de los headers de API Gateway). Usa `populate_by_name=True` con
 `alias='_meta'` para que se acepte tanto en entrada como `_meta` como
 en codigo via `.meta`.
@@ -29,14 +29,14 @@ class _Meta(BaseModel):
 
     `http_handler` la inyecta en `data['_meta']` desde los headers de
     API Gateway (CF-Connecting-IP, CF-IPCountry, User-Agent,
-    X-Turnstile-Bypass-Secret, Origin). El service NO la conoce: solo
+    X-Turnstile-Bypass-Token, Origin). El service NO la conoce: solo
     los controllers la usan para rate-limit + Turnstile + audit.
     """
 
     ip: str | None = None
     country: str | None = None
     user_agent: str | None = None
-    bypass_secret: str | None = None
+    bypass_token: str | None = None
     origin: str | None = None
     # Header `Authorization: Bearer <access JWT>` inyectado por
     # `http_handler`. Lo consume `require_active_user` en los endpoints

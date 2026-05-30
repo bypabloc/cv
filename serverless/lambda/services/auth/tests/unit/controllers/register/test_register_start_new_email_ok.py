@@ -46,7 +46,7 @@ def test_register_start_new_email_ok(monkeypatch):
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: rl_svc)
     monkeypatch.setattr(
         start,
-        'verify_turnstile_token',
+        'verify_captcha_or_bypass',
         lambda *_a, **_k: {'success': True},
     )
 

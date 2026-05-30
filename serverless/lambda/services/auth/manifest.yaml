@@ -59,13 +59,16 @@ uses:
   kms:
     - alias: portfolio-lambdas
       actions: [Encrypt, Decrypt]
-  # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
+  # Params SSM que el Lambda lee (String o SecureString; el catalogo
+  # resources/secrets/*.yaml define el tipo). Solo el nombre corto.
   secrets:
-    - turnstile-secret        # validacion del captcha Cloudflare Turnstile
-    - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
-    - neon-url                # connection string Neon (auth_*)
-    - jwt-secret              # JWT HS256 secret (SecureString + KMS)
-    - ses-from-address        # publica mensajes con este From (lo usa worker)
+    - turnstile-secret             # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-public-key  # clave PUBLICA Ed25519 (String) para
+                                   # verificar el token de bypass de tests
+                                   # E2E (solo dev/stage; la PRIVADA es local)
+    - neon-url                     # connection string Neon (auth_*)
+    - jwt-secret                   # JWT HS256 secret (SecureString + KMS)
+    - ses-from-address             # publica mensajes con este From (worker)
   # El Lambda NO envia email directo: publica a SQS y el worker hace SES.
   sends-email: false
 

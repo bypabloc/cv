@@ -22,9 +22,9 @@ class LoginStartIn(BaseModel):
 
     email: EmailStr
     # default='' (no min_length): habilita el bypass de Turnstile para
-    # tests E2E (cf_response vacio, solo dev/local). En prod, vacio + sin
-    # bypass -> TurnstileError 403 en el controller (AC-12). Igual que
-    # register.start y contact_form.
+    # tests E2E (cf_response vacio + token Ed25519 firmado, solo dev/local).
+    # En prod, vacio + sin bypass valido -> TurnstileError 403 en el
+    # controller (AC-12). Igual que register.start y contact_form.
     cf_turnstile_response: str = Field(default='', max_length=2048)
     password: str | None = Field(default=None, max_length=256)
     niche: Niche | None = None

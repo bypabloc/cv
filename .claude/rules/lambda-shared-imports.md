@@ -97,6 +97,7 @@ NO aplica al frontend Astro ni a otros repos.
 | `pyotp` (TOTP RFC 6238) | `shared.auth.totp` | `from shared.auth.totp import generate_totp_secret_b32, verify_totp_code, build_otpauth_url` |
 | `fido2` (python-fido2, WebAuthn) | `shared.auth.webauthn` | `from shared.auth.webauthn import build_register_options, verify_authentication, build_login_options, WebauthnCloneError` |
 | KMS (`boto3.client('kms')`, Encrypt/Decrypt CMK directa) | `shared.aws.kms` | `from shared.aws.kms import kms_encrypt, kms_decrypt` |
+| `cryptography` (Ed25519 sign/verify del bypass token de Turnstile) | `shared.crypto` | `from shared.crypto.captcha import verify_captcha_or_bypass`; `from shared.crypto.bypass_token import verify_bypass_token`. Import lazy de `cryptography` (solo lo vendorizan `contact_form` + `auth`) |
 
 ## Patron correcto
 

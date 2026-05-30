@@ -198,7 +198,7 @@ Contrato uniforme del request:
 `http_handler` realiza el ciclo completo:
 1. `extract_request(event)` resuelve `(operation, action, data, method)`
    del evento crudo de API Gateway.
-2. Inyecta `data['_meta']` con `{ip, country, user_agent, bypass_secret}`
+2. Inyecta `data['_meta']` con `{ip, country, user_agent, bypass_token}`
    extraidos de headers/`requestContext`.
 3. Llama a `run_controller({operation, action, data}, event_model)`.
 4. Traduce el `DispatchResult` a respuesta API GW.

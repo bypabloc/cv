@@ -57,7 +57,7 @@ class ContactQueueMessage(BaseModel):
 
     # Metadata HTTP del request original (para
     # `ensure_session_and_visit`). El worker NUNCA recibe `cf_token` ni
-    # `bypass_secret`: el encoder ya valido Turnstile.
+    # `bypass_token`: el encoder ya valido Turnstile.
     ip: str
     country: str | None = None
     user_agent: str | None = None

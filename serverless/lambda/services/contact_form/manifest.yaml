@@ -60,12 +60,17 @@ uses:
   # se mantienen aqui para que el rollback siga funcionando; una vez que
   # el flag se deprecque, se borraran de la lista (y los permisos IAM con
   # ellos).
+  # Params SSM que el Lambda lee en runtime (String o SecureString; el
+  # catalogo resources/secrets/*.yaml define el tipo). El IAM concede
+  # ssm:GetParameter sobre cada path.
   secrets:
-    - turnstile-secret        # validacion del captcha Cloudflare Turnstile
-    - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
-    - owner-email             # destinatario (solo sync legacy)
-    - ses-from-address        # remitente verificado SES (solo sync legacy)
-    - neon-url                # connection string Neon (solo sync legacy)
+    - turnstile-secret             # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-public-key  # clave PUBLICA Ed25519 (String) para
+                                   # verificar el token de bypass de tests
+                                   # E2E (solo dev/stage; la PRIVADA es local)
+    - owner-email                  # destinatario (solo sync legacy)
+    - ses-from-address             # remitente verificado SES (solo sync legacy)
+    - neon-url                     # connection string Neon (solo sync legacy)
   # Envia email transaccional por SES al recibir un form (solo en sync).
   sends-email: true
 

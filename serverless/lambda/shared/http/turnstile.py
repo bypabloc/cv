@@ -72,97 +72,36 @@ def _hostname_allowed(hostname: str) -> bool:
     return is_dev and _LOCAL_SUBDOMAIN_PATTERN.match(hostname) is not None
 
 
-_BYPASS_ALLOWED_STAGES = frozenset({'dev', 'local'})
-
-
-def _load_bypass_secret() -> str:
-    """
-    Resuelve el bypass secret. Solo se llama si STAGE in {dev,local}.
-
-    Catalogo: resources/secrets/turnstile-bypass-secret.yaml. Cloud:
-    devtools inyecta SSM_TURNSTILE_BYPASS_SECRET_PATH; local: TURNSTILE_BYPASS_SECRET.
-
-    Si ninguna env var esta configurada, retorna string vacio (bypass
-    queda inerte, regla #2).
-    """
-    from shared.aws.ssm import get_secret_by_name
-
-    try:
-        return get_secret_by_name(
-            'turnstile-bypass-secret', local_env='TURNSTILE_BYPASS_SECRET',
-        )
-    except (RuntimeError, Exception):
-        logger.info(
-            'bypass secret not configured; bypass disabled',
-        )
-        return ''
-
-
-def _try_bypass_turnstile(bypass_secret: str | None) -> dict[str, Any] | None:
-    """
-    Intenta usar el bypass de Turnstile para tests E2E.
-
-    Reglas (defense-in-depth):
-    1. SOLO se considera si `cf_response` viene vacio (caller llama esto antes
-       de comparar con CF siteverify).
-    2. SOLO se activa en STAGE in {dev, local}. En stage/prod retorna None.
-    3. Requiere matchear el SSM param `/portfolio/dev/turnstile-bypass-secret`.
-       El secret nunca llega al frontend (lo inyecta Playwright via
-       page.addInitScript -> window.__playwright_turnstile_bypass).
-
-    Returns:
-        Dict con success=true si bypass aplica, `None` si no aplica
-        (el caller debe seguir con el flujo normal de Turnstile).
-    """
-    stage = os.environ.get('STAGE', 'prod').lower()
-    if stage not in _BYPASS_ALLOWED_STAGES:
-        return None
-    if not bypass_secret:
-        return None
-    expected_bypass = _load_bypass_secret()
-    if not expected_bypass:
-        return None
-    if bypass_secret != expected_bypass:
-        logger.warning(
-            'turnstile bypass attempted with invalid secret',
-            extra={'stage': stage},
-        )
-        return None
-    logger.info('turnstile bypassed via secret header', extra={'stage': stage})
-    return {'success': True, 'hostname': 'bypass', 'bypassed': True}
-
-
 def verify_turnstile_token(
     cf_response: str,
     *,
     remote_ip: str | None = None,
-    bypass_secret: str | None = None,
 ) -> dict[str, Any]:
     """
     Valida un Turnstile cf-response contra Cloudflare siteverify.
 
+    httpx-puro: este modulo NO conoce el bypass de testing. El bypass
+    firmado (Ed25519) vive en `shared.crypto.captcha.verify_captcha_or_bypass`,
+    que delega a esta funcion SOLO cuando hay un `cf_response` real. Asi
+    `shared.http` no arrastra `cryptography` a sus consumidores
+    (tracking_pixel, cv).
+
     Args:
         cf_response: valor del campo `cf-turnstile-response` del frontend.
-            Si viene vacio se considera bypass para tests (regla #1).
+            DEBE venir no-vacio: el caller (orquestador) ya separo el path
+            de bypass. Un `cf_response` vacio aca -> CAPTCHA_INVALID.
         remote_ip: IP del cliente (opcional pero recomendado).
-        bypass_secret: header X-Turnstile-Bypass-Secret. Solo se evalua si
-            `cf_response` viene vacio Y STAGE esta en {dev, local}.
 
     Returns:
         Dict con la respuesta de siteverify si success=true.
 
     Raises:
-        TurnstileError: si success=false, hostname inesperado, o timeout.
+        TurnstileError: si cf_response vacio, success=false, hostname
+            inesperado, o timeout.
     """
-    # Regla #1: bypass SOLO si cf_response viene vacio.
-    # Astro nunca envia cf_response vacio (el form requiere el widget Turnstile),
-    # asi que esta rama solo se activa desde tests automatizados.
     if not cf_response or not cf_response.strip():
-        bypassed = _try_bypass_turnstile(bypass_secret)
-        if bypassed is not None:
-            return bypassed
-        # Sin bypass valido y sin cf_response real -> CAPTCHA_INVALID
-        msg = 'cf_token vacio y bypass no aplica'
+        # El bypass ya no vive aca: un cf_response vacio es siempre invalido.
+        msg = 'cf_token vacio'
         raise TurnstileError(msg, code='CAPTCHA_INVALID')
 
     # Catalogo: serverless/lambda/resources/secrets/turnstile-secret.yaml.

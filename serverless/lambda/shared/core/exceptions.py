@@ -63,6 +63,21 @@ class TurnstileError(ApplicationError):
     status_code = 403
 
 
+class BypassTokenError(ApplicationError):
+    """Token de bypass firmado (Ed25519) invalido, expirado o malformado.
+
+    Lo levanta `shared.crypto.bypass_token.verify_bypass_token` cuando un
+    token de bypass no pasa la verificacion (firma, expiracion, stage o
+    formato). El orquestador `shared.crypto.captcha` lo captura y lo
+    traduce a `TurnstileError(CAPTCHA_INVALID)` para que el cliente NO
+    distinga "CAPTCHA real fallido" de "bypass invalido" (defensa en
+    profundidad). NUNCA incluir el token en `message`/`extra`.
+    """
+
+    default_code = 'CAPTCHA_INVALID'
+    status_code = 403
+
+
 class RateLimitExceededError(ApplicationError):
     """Limite sliding window agotado para el IP+endpoint."""
 

@@ -14,7 +14,7 @@ Entrypoint del Lambda. Router delgado que delega TODO el ciclo al
 
 El `http_handler` extrae `operation`/`action`/`data` del body, inyecta
 `data._meta` con la metadata de transporte (IP, country, user-agent,
-bypass-secret) y ejecuta el ciclo `preload -> validate -> execute` del
+bypass-token) y ejecuta el ciclo `preload -> validate -> execute` del
 controller `contact/create`. Toda la logica de negocio sigue en
 `services/contact_service.py`; el comportamiento observable (HTTP 201,
 mismo CORS echo, mismas metricas) es IDENTICO al handler hardcodeado

@@ -68,9 +68,13 @@ python devtools/run.py api_e2e --env=dev --keep-data --aws-profile=tfs-dev
   (solo el hash SHA-256 va a Neon). El harness genera un plaintext
   conocido, UPDATEa el `code_hash` de la fila vigente y envia el
   plaintext. Connection string resuelta de SSM en proceso (hermetico).
-- **Turnstile bypass**: solo `dev` evalua `X-Turnstile-Bypass-Secret`
-  (de SSM). En `stage` el bypass es inerte -> los flujos de exito con
-  Turnstile (contact/auth) se omiten; los casos de error siguen.
+- **Turnstile bypass**: `dev` y `stage` evaluan `X-Turnstile-Bypass-Token`
+  (token Ed25519 firmado). El harness firma el token localmente con la
+  clave privada de `docker/env/dev-cli/.{env}` (la genera
+  `bypass_token keygen`); el backend lo verifica con la clave PUBLICA de
+  SSM. `prod` NUNCA acepta bypass. Si falta la clave privada local, los
+  flujos de exito con Turnstile (contact/auth) se omiten; los casos de
+  error siguen.
 
 ## Hermetico (secretos)
 

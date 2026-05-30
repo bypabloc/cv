@@ -208,14 +208,6 @@ class AppConfig(BaseSettings):
         )
 
     @cached_property
-    def turnstile_bypass_secret(self) -> str:
-        """Token de bypass para tests E2E (solo presente en dev/local)."""
-        return get_secret_by_name(
-            'turnstile-bypass-secret',
-            local_env='TURNSTILE_BYPASS_SECRET',
-        )
-
-    @cached_property
     def neon_url(self) -> str:
         """Connection string PostgreSQL (Neon, schema auth_*)."""
         return get_secret_by_name('neon-url', local_env='DB_URL')

@@ -75,10 +75,9 @@ Aplica SIEMPRE que se trabaje con:
   `localhost`, `127.0.0.1`.
 - **Rotacion**: cuando el widget Turnstile se regenera en Cloudflare (o ante
   sospecha de leak), usar el script dedicado `rotate_secrets turnstile`
-  (rota los 3 widgets dev/stage/prod, escribe `TURNSTILE_SECRET_KEY` +
-  `TURNSTILE_BYPASS_SECRET` en `docker/env/server/.{env}` y
-  `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SITE_KEY` en
-  `docker/env/client/.{env}`):
+  (rota los 3 widgets dev/stage/prod, escribe `TURNSTILE_SECRET_KEY` en
+  `docker/env/server/.{env}` y `PUBLIC_TURNSTILE_SITEKEY` +
+  `TURNSTILE_SITE_KEY` en `docker/env/client/.{env}`):
 
   ```bash
   # 1. Rotar widgets en Cloudflare + actualizar envs locales
@@ -99,6 +98,31 @@ Aplica SIEMPRE que se trabaje con:
 
   Detalle del script: skill `rotate-secrets` o
   `devtools/rotate_secrets/README.md`.
+
+### `/portfolio/{stage}/turnstile-bypass-public-key` (String, dev/stage)
+
+- **Que es**: clave PUBLICA Ed25519 que verifica el **token de bypass de
+  Turnstile** firmado para los tests E2E. NO es secreta (String plano, sin
+  KMS). Reemplaza al viejo `turnstile-bypass-secret` (secreto fijo
+  compartido, eliminado).
+- **Quien lo lee**: Lambdas `contact_form` y `auth` (via
+  `shared.crypto.captcha._load_public_key` ->
+  `get_parameter_by_name('turnstile-bypass-public-key')`). Solo se consulta
+  en el path de bypass (cf_response vacio + STAGE in {dev,local,stage}).
+- **La clave PRIVADA NUNCA vive en SSM**: la firma de tokens la hace el
+  runner E2E / dev local con `TURNSTILE_BYPASS_PRIVATE_KEY` de
+  `docker/env/dev-cli/.{env}` (categoria dev-cli, LOCAL-ONLY). Un leak del
+  entorno del Lambda (solo publica) NO permite forjar tokens.
+- **Stages**: solo `dev` y `stage`. NUNCA prod (prod no acepta bypass).
+- **Rotacion**: regenerar el par con `bypass_token keygen --envs=dev,stage`
+  (escribe privada a dev-cli + publica a server) y publicar la publica:
+
+  ```bash
+  python devtools/run.py bypass_token keygen --envs=dev,stage
+  python devtools/run.py serverless setup-ssm \
+    --name=/portfolio/dev/turnstile-bypass-public-key --env=dev \
+    --aws-profile=tfs-dev
+  ```
 
 ### `/portfolio/{stage}/neon-url` (SecureString + KMS)
 
@@ -184,8 +208,9 @@ aws kms schedule-key-deletion --key-id <KEY_ID_ANTIGUO> \
 
 | Lambda | SSM parameters | KMS Decrypt |
 |--------|----------------|-------------|
-| `contact_form` | `turnstile-secret`, `owner-email`, `ses-from-address` + paths `dynamodb/{contacts,cache,rate-limit-*}` | Si (solo turnstile-secret) |
+| `contact_form` | `turnstile-secret`, `turnstile-bypass-public-key`, `owner-email`, `ses-from-address` + paths `dynamodb/{contacts,cache,rate-limit-*}` | Si (solo turnstile-secret) |
 | `tracking_pixel` | paths `dynamodb/{tracking,cache,rate-limit-*}` | No |
+| `auth` | `turnstile-secret`, `turnstile-bypass-public-key`, `neon-url`, `jwt-secret`, `ses-from-address` | Si (turnstile-secret, neon-url, jwt-secret) |
 | `stream_processor` | `neon-url` + paths `dynamodb/{contacts,tracking}` | Si |
 
 Los paths `/portfolio/{stage}/dynamodb/...` son `String` planos (nombre/ARN

@@ -3,7 +3,7 @@
 Un modelo por action. `ContactCreateModel` valida el campo `data` del
 evento sintetico que el handler arma a partir del evento HTTP de API
 Gateway: los campos del form del visitante MAS un bloque `_meta` con la
-metadata de transporte (IP, country, user-agent, bypass-secret) que el
+metadata de transporte (IP, country, user-agent, bypass-token) que el
 controller necesita para el rate-limit y la validacion Turnstile.
 
 El campo `cf_token` (token de Cloudflare Turnstile) ya venia en el body
@@ -38,7 +38,7 @@ class RequestMeta(BaseModel):
     ip: str = ''
     country: str | None = None
     user_agent: str | None = None
-    bypass_secret: str | None = None
+    bypass_token: str | None = None
     # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
     # API GW los expone). El service lo persiste en la columna
     # cloudfront_meta JSONB.
@@ -72,7 +72,8 @@ class ContactCreateModel(BaseModel):
 
     # Captcha token (Cloudflare Turnstile).
     # Opcional intencionalmente: si viene vacio, el controller evalua el
-    # header X-Turnstile-Bypass-Secret (solo valido en stage in {dev,local}).
+    # header X-Turnstile-Bypass-Token (token Ed25519 firmado, solo valido en
+    # stage in {dev,local}).
     cf_token: str = Field(default='', max_length=2048)
 
     # Campos opcionales (form progresivo)

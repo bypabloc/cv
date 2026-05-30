@@ -147,6 +147,43 @@ class TestRender:
             'parameter/portfolio/dev/turnstile-secret' in ssm[0]['Resource']
         )
 
+    def test_secret_out_of_stage_omitted_from_env_and_iam(self):
+        """Un secreto que el catalogo NO declara en el stage no se inyecta.
+
+        `turnstile-bypass-public-key` solo existe en dev/stage (stages:
+        [dev, stage]). Un deploy a prod NO debe inyectar su path SSM ni
+        conceder IAM sobre el ARN inexistente.
+        """
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['uses']['secrets'] = [
+            'turnstile-secret',  # dev,stage,prod
+            'turnstile-bypass-public-key',  # solo dev,stage
+        ]
+
+        # En dev: el bypass public key SI esta presente (env + IAM).
+        dev = provisioner.render(manifest, stage='dev')
+        assert 'SSM_TURNSTILE_BYPASS_PUBLIC_KEY_PATH' in dev.env_vars
+        dev_ssm = next(
+            s['Resource']
+            for s in dev.iam_policy['Statement']
+            if s['Action'] == ['ssm:GetParameter']
+        )
+        assert any('turnstile-bypass-public-key' in arn for arn in dev_ssm)
+
+        # En prod: el bypass public key NO esta (no declarado para prod);
+        # turnstile-secret (dev,stage,prod) SI sigue.
+        prod = provisioner.render(manifest, stage='prod')
+        assert 'SSM_TURNSTILE_BYPASS_PUBLIC_KEY_PATH' not in prod.env_vars
+        assert 'SSM_TURNSTILE_SECRET_PATH' in prod.env_vars
+        prod_ssm = next(
+            s['Resource']
+            for s in prod.iam_policy['Statement']
+            if s['Action'] == ['ssm:GetParameter']
+        )
+        assert not any('turnstile-bypass-public-key' in arn for arn in prod_ssm)
+
     def test_render_iam_policy_when_uses_kms(self):
         from serverless import provisioner
 

@@ -33,6 +33,9 @@ dependencies = [
     # PostgreSQL driver (used by api_e2e/ to seed code hashes in the deployed
     # Neon dev/stage DB for the auth verify flow + cleanup of synthetic data)
     "psycopg[binary]>=3.2.0",
+    # Ed25519 sign/verify (used by bypass_token/ keygen + api_e2e/ to mint the
+    # signed Turnstile bypass token; mirrors shared.crypto on the backend)
+    "cryptography>=44,<46",
 ]
 
 [tool.uv]

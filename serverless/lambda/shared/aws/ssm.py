@@ -133,3 +133,51 @@ def get_secret_by_name(
         f'No se puede resolver el secreto {short_name!r}: ninguna de '
         f'estas env vars esta seteada: {candidates}',
     )
+
+
+def get_parameter_by_name(
+    short_name: str,
+    *,
+    local_env: str | None = None,
+) -> str:
+    """Resuelve un parametro NO-secreto del catalogo (cloud SSM o env var).
+
+    Variante de `get_secret_by_name` para parametros `String` planos (sin
+    KMS): usa `get_parameter` (sin decrypt) en vez de `get_secret`. Mismo
+    patron de resolucion cloud/local:
+      - cloud: SSM_<UPPER>_PATH = path SSM (lookup con get_parameter)
+      - local: <local_env> = valor directo del .env
+
+    Pensado para valores publicos como la clave PUBLICA del bypass de
+    Turnstile (`turnstile-bypass-public-key`): no es secreta, no requiere
+    KMS, y pedir decrypt sobre un String plano seria semanticamente
+    incorrecto.
+
+    Args:
+        short_name: nombre corto del catalogo
+            (ej: 'turnstile-bypass-public-key').
+        local_env: env var del valor directo en modo local
+            (ej: 'TURNSTILE_BYPASS_PUBLIC_KEY').
+
+    Returns:
+        El valor del parametro.
+
+    Raises:
+        RuntimeError: si ninguna fuente tiene el valor.
+    """
+    upper = _short_name_to_upper(short_name)
+    ssm_path_env = f'SSM_{upper}_PATH'
+    ssm_path = os.environ.get(ssm_path_env)
+    if ssm_path:
+        return get_parameter(ssm_path)
+    if local_env:
+        direct = os.environ.get(local_env)
+        if direct:
+            return direct
+    candidates = [ssm_path_env]
+    if local_env:
+        candidates.append(local_env)
+    raise RuntimeError(
+        f'No se puede resolver el parametro {short_name!r}: ninguna de '
+        f'estas env vars esta seteada: {candidates}',
+    )

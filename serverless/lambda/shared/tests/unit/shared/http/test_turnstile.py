@@ -173,85 +173,31 @@ class TestVerifyTurnstileToken:
 
         assert exc_info.value.code == 'CAPTCHA_HOSTNAME_MISMATCH'
 
-    def test_when_cf_response_empty_and_bypass_matches_in_dev_then_skip(
+    def test_when_cf_response_empty_then_reject(
         self,
         turnstile_env: None,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
-        Given cf_response vacio + STAGE=dev + bypass_secret matchea SSM,
-        When verify,
-        Then bypass aplica (no HTTP call a Cloudflare).
+        Given cf_response vacio,
+        When verify_turnstile_token (httpx-puro, sin bypass),
+        Then CAPTCHA_INVALID (el bypass ya no vive en este modulo: lo
+        maneja shared.crypto.captcha ANTES de delegar aca).
         """
-        monkeypatch.setenv('STAGE', 'dev')
-        monkeypatch.setenv('TURNSTILE_BYPASS_SECRET', 'test-bypass-123')
-
-        result = verify_turnstile_token(
-            '',
-            remote_ip='1.2.3.4',
-            bypass_secret='test-bypass-123',
-        )
-
-        assert result['success'] is True
-        assert result.get('bypassed') is True
-
-    def test_when_cf_response_not_empty_bypass_is_ignored(
-        self,
-        turnstile_env: None,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """
-        Given cf_response NO vacio + bypass_secret presente,
-        When verify,
-        Then ignora el bypass y llama a Cloudflare (regla #1: bypass solo
-        si cf_response vacio).
-        """
-        monkeypatch.setenv('STAGE', 'dev')
-
-        # cf_response NO vacio -> el bypass se ignora ANTES de resolver el
-        # secret (no se llama get_secret_by_name). Sin respx activo, la
-        # llamada HTTP real a Cloudflare falla -> CAPTCHA_FAILED.
-        with pytest.raises(TurnstileError):
-            verify_turnstile_token(
-                'some-real-cf-token',
-                remote_ip='1.2.3.4',
-                bypass_secret='test-bypass-123',
-            )
-
-    def test_when_cf_response_empty_in_prod_then_reject(
-        self,
-        turnstile_env: None,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """
-        Given cf_response vacio + STAGE=prod (incluso con bypass_secret),
-        When verify,
-        Then CAPTCHA_INVALID (regla #2: bypass solo en dev/local).
-        """
-        monkeypatch.setenv('STAGE', 'prod')
-
         with pytest.raises(TurnstileError) as exc_info:
-            verify_turnstile_token(
-                '',
-                remote_ip='1.2.3.4',
-                bypass_secret='any-secret',
-            )
+            verify_turnstile_token('', remote_ip='1.2.3.4')
 
         assert exc_info.value.code == 'CAPTCHA_INVALID'
 
-    def test_when_cf_response_empty_and_no_bypass_secret_then_reject(
+    def test_when_cf_response_whitespace_only_then_reject(
         self,
         turnstile_env: None,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
-        Given cf_response vacio + STAGE=dev + sin bypass_secret,
+        Given cf_response con solo espacios,
         When verify,
-        Then CAPTCHA_INVALID.
+        Then CAPTCHA_INVALID (strip() lo trata como vacio).
         """
-        monkeypatch.setenv('STAGE', 'dev')
-
         with pytest.raises(TurnstileError) as exc_info:
-            verify_turnstile_token('', remote_ip='1.2.3.4', bypass_secret=None)
+            verify_turnstile_token('   ', remote_ip='1.2.3.4')
 
         assert exc_info.value.code == 'CAPTCHA_INVALID'

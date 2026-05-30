@@ -22,12 +22,12 @@ from services.magic_link_service import LINK_TTL_MINUTES, MagicLinkService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
+from shared.crypto.captcha import verify_captcha_or_bypass
 from shared.db.models.auth.enums import (
     AuthCodeKind,
     AuthLinkKind,
     AuthUserStatus,
 )
-from shared.http.turnstile import verify_turnstile_token
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#register.start'
@@ -66,10 +66,10 @@ class Start(BaseController):
             turnstile_validated=False,
         )
 
-        verify_turnstile_token(
+        verify_captcha_or_bypass(
             data.cf_turnstile_response,
             remote_ip=meta.ip,
-            bypass_secret=meta.bypass_secret,
+            bypass_token=meta.bypass_token,
         )
 
         return base

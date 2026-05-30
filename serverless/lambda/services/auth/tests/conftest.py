@@ -63,7 +63,6 @@ import secrets as _secrets  # noqa: E402
 
 os.environ.setdefault('JWT_SECRET', _secrets.token_urlsafe(48))
 os.environ.setdefault('TURNSTILE_SECRET_KEY', _secrets.token_urlsafe(16))
-os.environ.setdefault('TURNSTILE_BYPASS_SECRET', _secrets.token_urlsafe(16))
 os.environ.setdefault(
     'DB_URL',
     'postgresql://test:test@localhost/test',

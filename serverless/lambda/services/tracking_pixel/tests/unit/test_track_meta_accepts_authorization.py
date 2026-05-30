@@ -22,7 +22,7 @@ def test_track_event_meta_accepts_authorization():
         ip='203.0.113.10',
         country='CL',
         user_agent='Mozilla/5.0',
-        bypass_secret=None,
+        bypass_token=None,
         origin='https://hub.portfolio.dev.the-full-stack.com',
         authorization='Bearer abc.def.ghi',
     )

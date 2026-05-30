@@ -5,7 +5,7 @@ del request (ip, country, user_agent, origin, authorization extraidos de
 los headers de API Gateway). Usa `populate_by_name=True` con
 `alias='_meta'` para aceptarlo en entrada como `_meta` y leerlo en codigo
 via `.meta`. `extra='ignore'` tolera campos del `_meta` que el modelo no
-declara (cloudfront_meta, bypass_secret).
+declara (cloudfront_meta, bypass_token).
 """
 
 from __future__ import annotations

@@ -20,7 +20,7 @@ def _event_with_password(password: str) -> dict:
             'ip': '203.0.113.10',
             'country': 'CL',
             'user_agent': 'pytest',
-            'bypass_secret': None,
+            'bypass_token': None,
             'origin': 'https://admin.portfolio.dev.the-full-stack.com',
             'cloudfront_meta': {},
         },
@@ -48,7 +48,7 @@ def test_login_start_with_password_wrong(monkeypatch):
     monkeypatch.setattr(start, 'MfaMethodService', lambda _c: mfa_svc)
     monkeypatch.setattr(
         start,
-        'verify_turnstile_token',
+        'verify_captcha_or_bypass',
         lambda *_a, **_k: {'success': True},
     )
     monkeypatch.setattr(start, 'check_password', lambda **_k: False)

@@ -31,3 +31,10 @@ CLOUDFLARE_API_TOKEN=
 CLOUDFLARE_ACCOUNT_ID=
 # Alias para devtools/cloudflare_setup (script legacy). Mismo valor que CLOUDFLARE_ACCOUNT_ID.
 ACCOUNT_ID=
+
+# --- Turnstile bypass (clave PRIVADA Ed25519, LOCAL-ONLY) ------------------
+# Clave privada que firma el token de bypass de Turnstile para los tests
+# E2E (api_e2e) y dev local. La genera `bypass_token keygen`. NUNCA se
+# sincroniza a ningun remoto: el Lambda solo tiene la PUBLICA (en SSM).
+# Un valor por env (dev/stage); este .example es solo plantilla.
+TURNSTILE_BYPASS_PRIVATE_KEY=

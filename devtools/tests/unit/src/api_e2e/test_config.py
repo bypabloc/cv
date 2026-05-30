@@ -63,11 +63,12 @@ def test_api_base_dev_is_dev_subdomain() -> None:
     assert api_base('dev') == 'https://api.portfolio.dev.the-full-stack.com'
 
 
-def test_turnstile_bypass_only_dev() -> None:
+def test_turnstile_bypass_supported_dev_and_stage() -> None:
     """
     Given los entornos dev y stage,
     When turnstile_bypass_supported,
-    Then solo dev soporta el bypass (stage lo trata inerte).
+    Then ambos soportan el bypass firmado (prod NUNCA, pero el harness no
+    corre contra prod).
     """
     assert turnstile_bypass_supported('dev') is True
-    assert turnstile_bypass_supported('stage') is False
+    assert turnstile_bypass_supported('stage') is True

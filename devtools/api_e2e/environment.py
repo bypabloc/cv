@@ -95,6 +95,9 @@ class Environment:
         ]
         if not ids:
             return 0
+        # NO incluye auth_user_admin_actions: esa tabla referencia por
+        # actor_user_id/target_user_id (no user_id), y el user sintetico
+        # nunca es actor ni target ahi -> no deja filas.
         children = (
             'auth_email_codes',
             'auth_magic_links',
@@ -105,12 +108,12 @@ class Environment:
             'auth_user_sessions',
             'auth_audit_log',
             'auth_user_consent_log',
-            'auth_user_admin_actions',
         )
         total = 0
         for table in children:
+
             total += self._exec(
-                f'DELETE FROM {table} WHERE user_id = ANY(%s)',
+                f'DELETE FROM {table} WHERE user_id = ANY(%s)',  # noqa: S608
                 (ids,),
                 ignore_missing=True,
             )
@@ -127,7 +130,7 @@ class Environment:
         n = 0
         for table in ('tracking_events', 'session_visits', 'sessions'):
             n += self._exec(
-                f'DELETE FROM {table} WHERE session_id = ANY(%s)',
+                f'DELETE FROM {table} WHERE session_id = ANY(%s)',  # noqa: S608
                 (session_ids,),
                 ignore_missing=True,
             )
@@ -159,7 +162,7 @@ class Environment:
             ):
                 cur.execute(sql, params)
                 return cur.rowcount
-        except psycopg.errors.UndefinedTable:
+        except (psycopg.errors.UndefinedTable, psycopg.errors.UndefinedColumn):
             if ignore_missing:
                 return 0
             raise

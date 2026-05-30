@@ -4,14 +4,16 @@ Estrategia:
   - 3 widgets en Cloudflare (uno por env logico: dev, stage, prod).
   - .local y .test reusan el widget dev (su allowlist incluye localhost).
   - Cada widget cubre los hostnames del estandar de subdominios del portfolio.
-  - El TURNSTILE_BYPASS_SECRET se genera con `secrets.token_hex(32)` (no es
-    Cloudflare; es solo para Playwright E2E).
+
+El bypass de Turnstile para tests E2E ya NO se gestiona aca: es un token
+Ed25519 firmado cuyas claves genera `bypass_token keygen` (ver
+devtools/bypass_token/). Este script solo gestiona el secret REAL del
+widget Cloudflare (TURNSTILE_SECRET_KEY) + el sitekey publico.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-import secrets
 
 from shared.paths import PROJECT_ROOT
 
@@ -138,14 +140,13 @@ def _write_env_files(
     envs: list[str],
     dry_run: bool,
 ) -> None:
-    """Escribe sitekey + secret + bypass_secret en server/client envs."""
+    """Escribe sitekey + secret del widget en server/client envs."""
     print('\n=== Escribiendo env files ===')
     for env in envs:
         mapped_to = ENV_TO_WIDGET[env]
         data = widget_data[mapped_to]
         sitekey = data['sitekey']
         secret = data['secret']
-        bypass_secret = secrets.token_hex(32)
 
         print(f'\n  [.{env}] usa widget de "{mapped_to}"')
 
@@ -154,7 +155,6 @@ def _write_env_files(
             server_path,
             {
                 'TURNSTILE_SECRET_KEY': secret,
-                'TURNSTILE_BYPASS_SECRET': bypass_secret,
             },
             dry_run=dry_run,
         )

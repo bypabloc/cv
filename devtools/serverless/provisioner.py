@@ -906,7 +906,7 @@ def _wire_cors_options(
     una entidad existente (sobrescribe). Para flexibilidad ante re-deploys,
     los errores "ConflictException: Method already exists" se ignoran.
     """
-    allowed_headers = 'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'
+    allowed_headers = 'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Token'
     allowed_methods = f'{method},OPTIONS'
 
     # 1. put-method OPTIONS — puede fallar con ConflictException si ya

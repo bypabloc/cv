@@ -73,7 +73,7 @@ jobs:
     # os.environ cuando no existe el .env local (modo CI).
     env:
       TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-      TURNSTILE_BYPASS_SECRET: ${{ secrets.TURNSTILE_BYPASS_SECRET }}
+      TURNSTILE_BYPASS_PUBLIC_KEY: ${{ vars.TURNSTILE_BYPASS_PUBLIC_KEY }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       DB_URL: ${{ secrets.DB_URL }}
@@ -230,7 +230,7 @@ jobs:
     # internamente secrets_sync para publicar sus secretos a SSM).
     env:
       TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-      TURNSTILE_BYPASS_SECRET: ${{ secrets.TURNSTILE_BYPASS_SECRET }}
+      TURNSTILE_BYPASS_PUBLIC_KEY: ${{ vars.TURNSTILE_BYPASS_PUBLIC_KEY }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       DB_URL: ${{ secrets.DB_URL }}

@@ -19,10 +19,11 @@
 # SSM: /portfolio/${stage}/turnstile-secret
 TURNSTILE_SECRET_KEY=
 
-# --- turnstile-bypass-secret.yaml (SecureString, solo dev) ---
-# Bypass token para Playwright E2E. Generar: openssl rand -hex 32
-# SSM: /portfolio/dev/turnstile-bypass-secret
-TURNSTILE_BYPASS_SECRET=
+# --- turnstile-bypass-public-key.yaml (String, dev/stage) ---
+# Clave PUBLICA Ed25519 que verifica el bypass token de los tests E2E.
+# NO es secreta. La genera `bypass_token keygen` (la PRIVADA va a dev-cli,
+# nunca aca). SSM: /portfolio/${stage}/turnstile-bypass-public-key
+TURNSTILE_BYPASS_PUBLIC_KEY=
 
 # --- neon-url.yaml (SecureString) ---
 # Neon PostgreSQL connection string completa (pooled, sslmode=require)

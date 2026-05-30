@@ -45,7 +45,7 @@ def test_create_controller_normalizes_success(
             'ip': '203.0.113.20',
             'country': 'CL',
             'user_agent': 'Mozilla/5.0',
-            'bypass_secret': None,
+            'bypass_token': None,
         },
     }
 

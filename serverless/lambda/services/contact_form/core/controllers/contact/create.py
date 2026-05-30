@@ -46,7 +46,7 @@ from services.contact_service import (
 from settings.config import AppConfig, logger
 from shared.core.niches import niche_from_origin
 from shared.core.ulid import new_uuidv7
-from shared.http.turnstile import verify_turnstile_token
+from shared.crypto.captcha import verify_captcha_or_bypass
 from shared.lambda_kit.base_controller import BaseController
 from shared.rate_limit.auto_blacklist import (
     create_blacklist_rule,
@@ -132,11 +132,12 @@ class Create(BaseController):
             turnstile_validated=False,
         )
 
-        # 2. Verificacion Turnstile. Puede levantar 403 (CAPTCHA_*).
-        verify_turnstile_token(
+        # 2. Verificacion Turnstile (o bypass firmado en dev/stage). Puede
+        #    levantar 403 (CAPTCHA_*).
+        verify_captcha_or_bypass(
             data.cf_token,
             remote_ip=meta.ip,
-            bypass_secret=meta.bypass_secret,
+            bypass_token=meta.bypass_token,
         )
 
         # 3. Resolver session_id + niche fallback del Origin (decision 6).

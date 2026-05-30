@@ -7,11 +7,11 @@
     "CF-Connecting-IP": "203.0.113.11",
     "CF-IPCountry": "CL",
     "User-Agent": "Mozilla/5.0",
-    "X-Turnstile-Bypass-Secret": "REPLACE_WITH_DEV_BYPASS_SECRET"
+    "X-Turnstile-Bypass-Token": "REPLACE_WITH_SIGNED_BYPASS_TOKEN"
   },
   "queryStringParameters": null,
   "pathParameters": null,
-  "body": "{\"name\": \"Pablo Test\", \"email\": \"user@example.com\", \"message\": \"Mensaje de prueba via bypass secret en dev.\", \"cf_token\": \"\"}",
+  "body": "{\"operation\": \"contact\", \"action\": \"create\", \"name\": \"Pablo Test\", \"email\": \"user@example.com\", \"message\": \"Mensaje de prueba via bypass token firmado en dev.\", \"cf_token\": \"\"}",
   "isBase64Encoded": false,
   "requestContext": {
     "identity": { "sourceIp": "203.0.113.11" },

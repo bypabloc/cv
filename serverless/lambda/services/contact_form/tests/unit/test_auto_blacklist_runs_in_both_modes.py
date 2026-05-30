@@ -30,7 +30,7 @@ def _event_data(ip: str) -> dict:
             'ip': ip,
             'country': 'CL',
             'user_agent': 'Mozilla/5.0',
-            'bypass_secret': None,
+            'bypass_token': None,
         },
     }
 

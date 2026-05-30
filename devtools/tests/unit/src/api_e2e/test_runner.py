@@ -1,17 +1,9 @@
 """Tests del runner de api_e2e: clasificacion de status + body helper."""
 
-from pathlib import Path
-import sys
-
-
-_API_E2E_DIR = Path(__file__).resolve().parents[4] / 'api_e2e'
-if str(_API_E2E_DIR) not in sys.path:
-    sys.path.insert(0, str(_API_E2E_DIR))
-
-from reporter import Reporter
-from runner import Runner
-from runner import make_body
-from support import Response
+from api_e2e.reporter import Reporter
+from api_e2e.runner import Runner
+from api_e2e.runner import make_body
+from api_e2e.support import Response
 
 
 def _runner() -> tuple[Runner, Reporter]:

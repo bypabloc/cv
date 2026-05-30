@@ -16,10 +16,11 @@ import hashlib
 from typing import Any
 
 import boto3
-from config import AWS_REGION
-from config import bypass_ssm_path
-from config import neon_ssm_path
 import psycopg
+
+from api_e2e.config import AWS_REGION
+from api_e2e.config import bypass_ssm_path
+from api_e2e.config import neon_ssm_path
 
 
 class Environment:

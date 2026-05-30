@@ -12,8 +12,9 @@ import json
 import time
 from typing import Any
 
-from config import IpRotator
 import httpx
+
+from api_e2e.config import IpRotator
 
 
 class Response:

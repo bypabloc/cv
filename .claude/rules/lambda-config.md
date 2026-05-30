@@ -107,6 +107,29 @@ warm_db()  # engine (NullPool, sin conexion) + configure_mappers (best-effort)
 DATABASE_URL en un test). NullPool no abre conexion en el INIT (las
 conexiones no sobreviven al snapshot).
 
+Los lambdas que NO usan Neon pero SI DynamoDB/SQS (ej. `tracking_pixel`
+async) tienen el mismo problema con **boto3**: el cliente low-level
+(`get_resource().meta.client`) y CADA modelo de operacion (`get_item`,
+`query`, `update_item`, `send_message`) se construyen LAZY en la PRIMERA
+llamada. A 128 MB (~0.07 vCPU) eso cae en EXECUTE y tarda segundos ->
+puede agotar el timeout (sintoma: el log llega a "Starting execute phase"
+y se cuelga 30s -> 502/504, con `Max Memory` al borde de 128). El fix
+(NUNCA subir memoria) es warmear en INIT:
+
+```python
+from shared.aws.warmup import warm_aws_clients
+
+warm_aws_clients(dynamodb=True, sqs=True)  # materializa .meta.client
+# + ejercitar el read-path idempotente (NO writes) para construir los
+#   modelos get_item/query en el snapshot:
+get_ip_rule('0.0.0.0'); get_endpoint_rule('/track')
+get_effective_count(ip='0.0.0.0', endpoint='/track', window_seconds=60)
+```
+
+`warm_aws_clients` es best-effort igual que `warm_db`. Construir el
+cliente NO basta: hay que ejercitar las OPERACIONES reales que el EXECUTE
+usara, porque boto3 las modela por-operacion bajo demanda.
+
 ## Minimos medidos actuales (dev, 2026-05, cold `$LATEST` sin restore)
 
 Medidos tras el refactor shared-no-barrels: lazy imports + X-Ray eliminado
@@ -118,7 +141,7 @@ Medidos tras el refactor shared-no-barrels: lazy imports + X-Ray eliminado
 | `users` | 256 | 30 | misma familia que auth; argon2id (password) es memory-hard |
 | `cv` | 256 | 30 | read-only Neon usa 118-165 MB; a 128 quedan 10 MB headroom. Handler ~9s es Neon-I/O-bound (no escala con memoria) |
 | `contact_form` | 256 | 30 | footprint Neon 117/128 MB a 128 (11 MB headroom); 157 MB a 256 |
-| `tracking_pixel` | 128 | 30 | UNICO a 128: async (sin Neon -> sin sqlalchemy) usa 63/128 MB (65 MB headroom), Init 680ms |
+| `tracking_pixel` | 128 | 30 | UNICO a 128: async (sin Neon -> sin sqlalchemy). Imports de Neon/ua_parser diferidos al path sync legacy (lazy) + warmup de los clientes boto3 y del read-path del rate-limit en INIT (`shared.aws.warmup.warm_aws_clients` + `get_ip/endpoint_rule`). Restore (SnapStart) ~1.16s, warm ~380ms, 111/128 MB (17 MB headroom). SIN warmup, boto3 construia los modelos de operacion (get_item/query) en EXECUTE a 0.07 vCPU -> >30s -> timeout 502/504 |
 
 **El footprint base de un lambda Neon (sqlalchemy + pydantic + modelos +
 clientes) es ~117-127 MB** -> 128 MB NO deja headroom seguro: el minimo

@@ -52,6 +52,23 @@ describe('track-event', () => {
     it('Given two calls When generateEventId Then returns distinct ids', () => {
       expect(generateEventId()).not.toBe(generateEventId())
     })
+
+    it('Given crypto.randomUUID unavailable When generateEventId Then uses the Date+random fallback', () => {
+      const originalCrypto = globalThis.crypto
+      // Simula un entorno sin crypto.randomUUID (rama de fallback).
+      Object.defineProperty(globalThis, 'crypto', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      })
+
+      const id = generateEventId()
+      // El fallback NO es 32-hex: concatena base36 de Date.now() + 2 randoms.
+      expect(id.length).toBeGreaterThan(0)
+      expect(id).not.toMatch(/^[0-9a-f]{32}$/i)
+
+      globalThis.crypto = originalCrypto
+    })
   })
 
   describe('getSessionId', () => {
@@ -110,6 +127,48 @@ describe('track-event', () => {
       const result = sendBeaconPayload(payload)
       expect(result).toBe(true)
       expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('Given navigator.sendBeacon available When sendBeaconPayload Then uses beacon and returns its result', () => {
+      const beacon = vi.fn().mockReturnValue(true)
+      navigator.sendBeacon = beacon
+      const fetchMock = vi.fn()
+      vi.stubGlobal('fetch', fetchMock)
+
+      const result = sendBeaconPayload(payload)
+
+      expect(result).toBe(true)
+      expect(beacon).toHaveBeenCalledTimes(1)
+      // El beacon basto: NO se usa el fallback fetch.
+      expect(fetchMock).toHaveBeenCalledTimes(0)
+    })
+
+    it('Given navigator.sendBeacon throws When sendBeaconPayload Then catches and falls back to fetch', () => {
+      navigator.sendBeacon = vi.fn().mockImplementation(() => {
+        throw new Error('beacon blew up')
+      })
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response(null, { status: 204 }))
+      vi.stubGlobal('fetch', fetchMock)
+
+      const result = sendBeaconPayload(payload)
+
+      expect(result).toBe(true)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('Given fetch throws synchronously When sendBeaconPayload Then returns false', () => {
+      // @ts-expect-error: simulate a browser without sendBeacon
+      navigator.sendBeacon = undefined
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(() => {
+          throw new Error('fetch unavailable')
+        }),
+      )
+
+      expect(sendBeaconPayload(payload)).toBe(false)
     })
   })
 

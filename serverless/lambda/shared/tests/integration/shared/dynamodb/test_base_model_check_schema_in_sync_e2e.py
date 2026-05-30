@@ -7,7 +7,7 @@ Then el SchemaDiff esta in_sync (KeySchema, TTL y GSIs coinciden).
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb.models import TrackingEventItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 pytestmark = pytest.mark.integration
 

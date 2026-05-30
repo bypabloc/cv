@@ -8,7 +8,7 @@ los family_id borrados.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthUserStatus
+from shared.db.models.auth.enums import AuthUserStatus
 from shared.db.repositories.auth_users import soft_delete_user
 
 pytestmark = pytest.mark.unit

@@ -15,7 +15,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from shared.auth.codes import compare_code, generate_code, hash_code
-from shared.db.models.auth import AuthCodeKind, AuthUser
+from shared.db.models.auth.enums import AuthCodeKind
+from shared.db.models.auth.user import AuthUser
 from shared.db.repositories.auth import (
     consume_email_code,
     get_last_email_code,
@@ -77,7 +78,9 @@ class CodeService:
         """
         with db_session() as session:
             last = get_last_email_code(
-                session, user_id=str(user_id), kind=kind,
+                session,
+                user_id=str(user_id),
+                kind=kind,
             )
             if last is None:
                 return 0

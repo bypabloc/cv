@@ -16,6 +16,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import BYTEA, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 
 
@@ -49,31 +51,41 @@ class AuthWebauthnCredential(Base):
     )
 
     credential_id: Mapped[bytes] = mapped_column(
-        BYTEA(), nullable=False, unique=True,
+        BYTEA(),
+        nullable=False,
+        unique=True,
     )
     public_key: Mapped[bytes] = mapped_column(BYTEA(), nullable=False)
 
     sign_count: Mapped[int] = mapped_column(
-        Integer(), nullable=False, server_default=text('0'),
+        Integer(),
+        nullable=False,
+        server_default=text('0'),
     )
 
     transports: Mapped[Any | None] = mapped_column(JSONB(), nullable=True)
     attestation_format: Mapped[str | None] = mapped_column(
-        String(32), nullable=True,
+        String(32),
+        nullable=True,
     )
     aaguid: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=False), nullable=True,
+        UUID(as_uuid=False),
+        nullable=True,
     )
     nickname: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
     last_used_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     disabled_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     __table_args__ = (
@@ -82,6 +94,8 @@ class AuthWebauthnCredential(Base):
             name='uq_auth_webauthn_credentials_credential_id',
         ),
         Index(
-            'ix_webauthn_credentials_user', 'user_id', 'disabled_at',
+            'ix_webauthn_credentials_user',
+            'user_id',
+            'disabled_at',
         ),
     )

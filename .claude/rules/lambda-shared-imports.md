@@ -31,10 +31,17 @@ NO aplica al frontend Astro ni a otros repos.
   pydantic -> `shared.core.pydantic_types`; sqlalchemy (select/func/
   delete/pg_insert/Session) -> `shared.db.sa`; MetricUnit ->
   `shared.observability.metrics`.
-- **SIEMPRE** los modelos SQLAlchemy se importan por DOMINIO:
-  `from shared.db.models.auth import AuthUser` (NUNCA del barrel
-  `shared.db.models`, vacio). El "cargar todo" para Alembic/seed es
-  `import shared.db.models.registry`.
+- **SIEMPRE** los modelos SQLAlchemy se importan del MODULO CONCRETO:
+  `from shared.db.models.auth.user import AuthUser` (NUNCA de un barrel:
+  los `__init__.py` de dominio — `auth/`, `cv/`, `visitor/`, `taxonomy/`,
+  `i18n/` — estan VACIOS, igual que el resto de `shared/`). El "cargar
+  todo" para Alembic/seed es `import shared.db.models.registry` (importa
+  los modulos concretos uno por uno).
+- **SIEMPRE** un modulo de modelo con una `ForeignKey()` a una tabla de
+  OTRO modulo (intra o cross-domain) importa ese modulo concreto al tope
+  (`import shared.db.models.cv.profile  # noqa: F401`), o la FK no resuelve
+  en el INSERT de su tabla (`NoReferencedTableError`). Lo enforza el guard
+  `shared/tests/unit/shared/db/test_model_module_load_resolves_foreign_keys.py`.
 - **SIEMPRE** que aparezca un import nuevo prohibido en `core/`, se agrega
   el paquete a un modulo concreto del shared portador (en su pyproject +
   un re-export en el modulo, NO en el `__init__`).

@@ -17,12 +17,10 @@ from datetime import UTC, datetime
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from shared.db.models.auth import (
-    AuthMfaKind,
-    AuthMfaMethod,
-    AuthMfaRecoveryCode,
-    AuthWebauthnCredential,
-)
+from shared.db.models.auth.enums import AuthMfaKind
+from shared.db.models.auth.mfa_method import AuthMfaMethod
+from shared.db.models.auth.recovery_code import AuthMfaRecoveryCode
+from shared.db.models.auth.webauthn_credential import AuthWebauthnCredential
 
 __all__ = [
     'confirm_mfa',
@@ -53,7 +51,9 @@ def _now(when: datetime | None) -> datetime:
 
 
 def list_mfa_methods(
-    session: Session, *, user_id: str,
+    session: Session,
+    *,
+    user_id: str,
 ) -> list[AuthMfaMethod]:
     """Metodos MFA activos del user (`disabled_at IS NULL`)."""
     stmt = select(AuthMfaMethod).where(
@@ -64,7 +64,10 @@ def list_mfa_methods(
 
 
 def get_mfa_method(
-    session: Session, *, user_id: str, kind: AuthMfaKind,
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
 ) -> AuthMfaMethod | None:
     """El row `(user_id, kind)` (UNIQUE) o None."""
     stmt = select(AuthMfaMethod).where(
@@ -75,7 +78,10 @@ def get_mfa_method(
 
 
 def upsert_totp_method(
-    session: Session, *, user_id: str, ciphertext: bytes,
+    session: Session,
+    *,
+    user_id: str,
+    ciphertext: bytes,
 ) -> AuthMfaMethod:
     """INSERT (o reusa) un row TOTP pendiente (`confirmed_at=NULL`).
 
@@ -83,7 +89,9 @@ def upsert_totp_method(
     resetea `confirmed_at`/`disabled_at` para re-confirmar.
     """
     existing = get_mfa_method(
-        session, user_id=user_id, kind=AuthMfaKind.TOTP,
+        session,
+        user_id=user_id,
+        kind=AuthMfaKind.TOTP,
     )
     if existing is not None:
         existing.totp_secret_ciphertext = ciphertext
@@ -102,7 +110,10 @@ def upsert_totp_method(
 
 
 def confirm_mfa(
-    session: Session, *, user_id: str, kind: AuthMfaKind,
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
     when: datetime | None = None,
 ) -> AuthMfaMethod | None:
     """Marca `confirmed_at=now()` en el row `(user_id, kind)`. None si no existe."""
@@ -116,7 +127,10 @@ def confirm_mfa(
 
 
 def disable_mfa(
-    session: Session, *, user_id: str, kind: AuthMfaKind,
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
     when: datetime | None = None,
 ) -> bool:
     """Marca `disabled_at=now()` en el row `(user_id, kind)`. False si no existe."""
@@ -130,7 +144,10 @@ def disable_mfa(
 
 
 def set_preferred(
-    session: Session, *, user_id: str, kind: AuthMfaKind,
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
 ) -> None:
     """`preferred=True` en el row `(user_id, kind)`, `False` en los demas."""
     for method in list_mfa_methods(session, user_id=user_id):
@@ -139,7 +156,10 @@ def set_preferred(
 
 
 def mark_method_used(
-    session: Session, *, user_id: str, kind: AuthMfaKind,
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
     when: datetime | None = None,
 ) -> None:
     """Setea `last_used_at=now()` en el metodo usado (login con TOTP)."""
@@ -180,7 +200,10 @@ def count_active_mfa(session: Session, *, user_id: str) -> int:
 
 
 def insert_recovery_codes(
-    session: Session, *, user_id: str, code_hashes: list[bytes],
+    session: Session,
+    *,
+    user_id: str,
+    code_hashes: list[bytes],
 ) -> None:
     """Inserta un row por hash de recovery code."""
     for code_hash in code_hashes:
@@ -191,7 +214,10 @@ def insert_recovery_codes(
 
 
 def consume_recovery_code(
-    session: Session, *, user_id: str, code_hash: bytes,
+    session: Session,
+    *,
+    user_id: str,
+    code_hash: bytes,
     when: datetime | None = None,
 ) -> bool:
     """Marca `consumed_at=now()` en el code activo que matchea. False si no hay.
@@ -213,7 +239,10 @@ def consume_recovery_code(
 
 
 def regenerate_recovery_codes(
-    session: Session, *, user_id: str, code_hashes: list[bytes],
+    session: Session,
+    *,
+    user_id: str,
+    code_hashes: list[bytes],
 ) -> None:
     """Borra TODOS los recovery codes del user e inserta los nuevos."""
     session.execute(
@@ -256,7 +285,9 @@ def insert_webauthn_credential(
 
 
 def get_webauthn_credentials(
-    session: Session, *, user_id: str,
+    session: Session,
+    *,
+    user_id: str,
 ) -> list[AuthWebauthnCredential]:
     """Credentials activos del user, ordenados por `last_used_at` DESC."""
     stmt = (
@@ -271,7 +302,9 @@ def get_webauthn_credentials(
 
 
 def get_webauthn_credential_by_id(
-    session: Session, *, credential_id: bytes,
+    session: Session,
+    *,
+    credential_id: bytes,
 ) -> AuthWebauthnCredential | None:
     """Lookup por el `credential_id` (BYTEA UK) emitido por el authenticator."""
     stmt = select(AuthWebauthnCredential).where(
@@ -281,7 +314,10 @@ def get_webauthn_credential_by_id(
 
 
 def update_sign_count(
-    session: Session, *, credential_id: bytes, new_count: int,
+    session: Session,
+    *,
+    credential_id: bytes,
+    new_count: int,
     when: datetime | None = None,
 ) -> bool:
     """Actualiza `sign_count` SOLO si `new_count > stored` (monotonico).
@@ -290,7 +326,8 @@ def update_sign_count(
     (defensa adicional; la clone detection ya corre en `shared.auth`).
     """
     cred = get_webauthn_credential_by_id(
-        session, credential_id=credential_id,
+        session,
+        credential_id=credential_id,
     )
     if cred is None or new_count <= cred.sign_count:
         return False
@@ -301,12 +338,15 @@ def update_sign_count(
 
 
 def disable_webauthn_credential(
-    session: Session, *, credential_id: bytes,
+    session: Session,
+    *,
+    credential_id: bytes,
     when: datetime | None = None,
 ) -> None:
     """Marca `disabled_at=now()` (clone detection — AC-15)."""
     cred = get_webauthn_credential_by_id(
-        session, credential_id=credential_id,
+        session,
+        credential_id=credential_id,
     )
     if cred is not None:
         cred.disabled_at = _now(when)
@@ -314,7 +354,10 @@ def disable_webauthn_credential(
 
 
 def delete_webauthn_credential(
-    session: Session, *, user_id: str, record_id: str,
+    session: Session,
+    *,
+    user_id: str,
+    record_id: str,
 ) -> bool:
     """Borra el credential del user por su `id` (UUID PK). False si no existe.
 

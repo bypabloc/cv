@@ -27,21 +27,18 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from shared.db.models.auth import (
-    AuthAuditLog,
-    AuthCredentials,
-    AuthEmailCode,
-    AuthLinkKind,
-    AuthMagicLink,
-    AuthMfaMethod,
-    AuthMfaRecoveryCode,
-    AuthUser,
-    AuthUserAdminAction,
-    AuthUserConsentLog,
-    AuthUserStatus,
-    AuthWebauthnCredential,
-)
+from shared.db.models.auth.admin_action import AuthUserAdminAction
+from shared.db.models.auth.audit_log import AuthAuditLog
+from shared.db.models.auth.consent_log import AuthUserConsentLog
+from shared.db.models.auth.credentials import AuthCredentials
+from shared.db.models.auth.email_code import AuthEmailCode
+from shared.db.models.auth.enums import AuthLinkKind, AuthUserStatus
+from shared.db.models.auth.magic_link import AuthMagicLink
+from shared.db.models.auth.mfa_method import AuthMfaMethod
+from shared.db.models.auth.recovery_code import AuthMfaRecoveryCode
+from shared.db.models.auth.user import AuthUser
 from shared.db.models.auth.user_session import AuthUserSession
+from shared.db.models.auth.webauthn_credential import AuthWebauthnCredential
 
 __all__ = [
     'consume_email_change_link',
@@ -109,7 +106,10 @@ def get_user_by_id(session: Session, *, user_id: str) -> AuthUser | None:
 
 
 def update_profile(
-    session: Session, *, user_id: str, **fields: Any,
+    session: Session,
+    *,
+    user_id: str,
+    **fields: Any,
 ) -> AuthUser | None:
     """Actualiza un subset de campos del perfil del user (parcial).
 
@@ -127,7 +127,10 @@ def update_profile(
 
 
 def update_user_email(
-    session: Session, *, user_id: str, new_email: str,
+    session: Session,
+    *,
+    user_id: str,
+    new_email: str,
 ) -> AuthUser | None:
     """Cambia el email del user (flujo email-change confirmado). None si
     no existe."""
@@ -270,7 +273,10 @@ def insert_user_session(
 
 
 def update_session_activity(
-    session: Session, *, family_id: str, when: datetime | None = None,
+    session: Session,
+    *,
+    family_id: str,
+    when: datetime | None = None,
 ) -> bool:
     """Actualiza `last_active_at` de la sesion de una family. True si existia."""
     row = session.execute(
@@ -312,7 +318,9 @@ def rotate_session_family_id(
 
 
 def list_user_sessions(
-    session: Session, *, user_id: str,
+    session: Session,
+    *,
+    user_id: str,
 ) -> list[AuthUserSession]:
     """Lista las sesiones activas del user, last_active_at DESC."""
     stmt = (
@@ -324,7 +332,10 @@ def list_user_sessions(
 
 
 def get_session_by_id(
-    session: Session, *, user_id: str, session_id: str,
+    session: Session,
+    *,
+    user_id: str,
+    session_id: str,
 ) -> AuthUserSession | None:
     """Lookup de una sesion por (user_id, id) — dual filter anti-enumeration."""
     return session.execute(
@@ -336,12 +347,17 @@ def get_session_by_id(
 
 
 def revoke_session(
-    session: Session, *, user_id: str, session_id: str,
+    session: Session,
+    *,
+    user_id: str,
+    session_id: str,
 ) -> str | None:
     """Borra una sesion del user (dual filter). Devuelve su family_id (para
     blacklist) o None si no existe / no es del user."""
     row = get_session_by_id(
-        session, user_id=user_id, session_id=session_id,
+        session,
+        user_id=user_id,
+        session_id=session_id,
     )
     if row is None:
         return None
@@ -458,7 +474,9 @@ def insert_email_change_link(
 
 
 def get_email_change_link(
-    session: Session, *, token_hash: bytes,
+    session: Session,
+    *,
+    token_hash: bytes,
 ) -> AuthMagicLink | None:
     """Lookup (read-only) de un magic-link email-change por token_hash."""
     return session.execute(
@@ -520,11 +538,17 @@ def insert_consent_log(
 
 
 def count_users(
-    session: Session, *, status_filter: str | None = None,
+    session: Session,
+    *,
+    status_filter: str | None = None,
 ) -> int:
     """Cuenta total de users (no borrados), opcionalmente por status."""
-    stmt = select(func.count()).select_from(AuthUser).where(
-        AuthUser.deleted_at.is_(None),
+    stmt = (
+        select(func.count())
+        .select_from(AuthUser)
+        .where(
+            AuthUser.deleted_at.is_(None),
+        )
     )
     if status_filter is not None:
         stmt = stmt.where(AuthUser.status == AuthUserStatus(status_filter))
@@ -555,7 +579,10 @@ def count_user_sessions(session: Session, *, user_id: str) -> int:
 
 
 def list_recent_audit(
-    session: Session, *, user_id: str, limit: int = 10,
+    session: Session,
+    *,
+    user_id: str,
+    limit: int = 10,
 ) -> list[AuthAuditLog]:
     """Lista los ultimos `limit` eventos de auth_audit_log del user."""
     stmt = (

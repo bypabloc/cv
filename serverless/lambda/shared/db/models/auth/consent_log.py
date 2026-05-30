@@ -13,6 +13,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import INET, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 
 
@@ -51,5 +53,7 @@ class AuthUserConsentLog(Base):
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )

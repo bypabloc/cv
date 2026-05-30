@@ -11,7 +11,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.visitor import TrackingEvent
+from shared.db.models.visitor.tracking import TrackingEvent
 from shared.db.repository import insert_tracking
 
 pytestmark = pytest.mark.unit

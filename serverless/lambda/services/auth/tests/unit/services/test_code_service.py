@@ -11,7 +11,7 @@ def _fake_session():
 
 def test_generate_and_persist_returns_code_and_hash(monkeypatch):
     from services import code_service
-    from shared.db.models.auth import AuthCodeKind
+    from shared.db.models.auth.enums import AuthCodeKind
 
     monkeypatch.setattr(code_service, 'db_session', _fake_session)
     monkeypatch.setattr(code_service, 'generate_code', lambda: 'ABCDEFGH')
@@ -30,7 +30,7 @@ def test_generate_and_persist_returns_code_and_hash(monkeypatch):
 
 def test_verify_returns_false_when_wrong_code(monkeypatch):
     from services import code_service
-    from shared.db.models.auth import AuthCodeKind
+    from shared.db.models.auth.enums import AuthCodeKind
 
     monkeypatch.setattr(code_service, 'db_session', _fake_session)
     monkeypatch.setattr(code_service, 'hash_code', lambda _c: b'h')
@@ -52,7 +52,7 @@ def test_verify_returns_false_when_wrong_code(monkeypatch):
 
 def test_verify_returns_true_when_match(monkeypatch):
     from services import code_service
-    from shared.db.models.auth import AuthCodeKind
+    from shared.db.models.auth.enums import AuthCodeKind
 
     monkeypatch.setattr(code_service, 'db_session', _fake_session)
     monkeypatch.setattr(code_service, 'hash_code', lambda _c: b'h')

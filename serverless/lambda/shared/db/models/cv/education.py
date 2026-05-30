@@ -5,6 +5,8 @@ from datetime import date
 from sqlalchemy import Date, ForeignKey, PrimaryKeyConstraint, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.taxonomy.catalog  # noqa: F401 -- FK target (catalog)
+
 from ...base import Base, TimestampMixin, UUIDPKMixin
 
 
@@ -39,6 +41,4 @@ class EducationEntryNiche(Base):
         ForeignKey('tax_niches.id', ondelete='CASCADE'), nullable=False
     )
 
-    __table_args__ = (
-        PrimaryKeyConstraint('education_entry_id', 'niche_id'),
-    )
+    __table_args__ = (PrimaryKeyConstraint('education_entry_id', 'niche_id'),)

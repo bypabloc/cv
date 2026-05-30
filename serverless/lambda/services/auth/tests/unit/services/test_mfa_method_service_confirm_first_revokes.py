@@ -17,7 +17,7 @@ def _fake_session():
 
 def test_mfa_method_service_confirm_first_revokes(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     confirmed_method = MagicMock()
     # list_mfa_methods devuelve 1 metodo confirmado (despues del confirm).

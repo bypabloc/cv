@@ -8,6 +8,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.taxonomy.catalog  # noqa: F401 -- FK target (catalog)
+
 from ...base import Base, TimestampMixin
 from ...enums import entity_type_enum
 

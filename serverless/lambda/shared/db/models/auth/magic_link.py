@@ -16,6 +16,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import BYTEA, INET, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 from .enums import AuthLinkKind
 
@@ -50,7 +52,9 @@ class AuthMagicLink(Base):
     )
 
     token_hash: Mapped[bytes] = mapped_column(
-        BYTEA(), nullable=False, unique=True,
+        BYTEA(),
+        nullable=False,
+        unique=True,
     )
 
     kind: Mapped[AuthLinkKind] = mapped_column(
@@ -64,14 +68,18 @@ class AuthMagicLink(Base):
     )
 
     expires_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False,
+        DateTime(timezone=True),
+        nullable=False,
     )
     consumed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
     ip: Mapped[str | None] = mapped_column(INET(), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -80,5 +88,7 @@ class AuthMagicLink(Base):
     # `metadata` en la Base). Lo usa el flujo `email-change` (plan 03)
     # para llevar el `{new_email}` asociado al link hasta su confirmacion.
     meta_data: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB(), name='metadata', nullable=True,
+        JSONB(),
+        name='metadata',
+        nullable=True,
     )

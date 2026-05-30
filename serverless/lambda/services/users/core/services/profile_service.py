@@ -16,7 +16,9 @@ from typing import Any
 
 from shared.auth.password import verify_password
 from shared.auth.tokens import generate_opaque_token, hash_token
-from shared.db.models.auth import AuthCredentials, AuthMagicLink, AuthUser
+from shared.db.models.auth.credentials import AuthCredentials
+from shared.db.models.auth.magic_link import AuthMagicLink
+from shared.db.models.auth.user import AuthUser
 from shared.db.repositories.auth import get_user_by_email
 from shared.db.repositories.auth_mfa import (
     count_active_mfa,
@@ -86,7 +88,8 @@ class ProfileService:
                 if cred.disabled_at is None
             ]
             remaining = count_remaining_recovery_codes(
-                session, user_id=user_id,
+                session,
+                user_id=user_id,
             )
             return {
                 'mfa_configured': total > 0,
@@ -105,7 +108,8 @@ class ProfileService:
             if cred is None:
                 return False
             return verify_password(
-                password=password, hashed=cred.password_hash,
+                password=password,
+                hashed=cred.password_hash,
             )
 
     def update(self, *, user_id: str, **fields: object) -> AuthUser | None:
@@ -142,7 +146,9 @@ class ProfileService:
         return plain, int(_EMAIL_CHANGE_TTL.total_seconds())
 
     def confirm_email_change(
-        self, *, token: str,
+        self,
+        *,
+        token: str,
     ) -> tuple[str, str, str] | None:
         """Confirma el cambio de email via el token del magic-link.
 
@@ -154,7 +160,8 @@ class ProfileService:
         token_hash = hash_token(token)
         with db_session() as session:
             link: AuthMagicLink | None = consume_email_change_link(
-                session, token_hash=token_hash,
+                session,
+                token_hash=token_hash,
             )
             if link is None:
                 return None
@@ -170,7 +177,9 @@ class ProfileService:
                 return None
             old_email = user.email
             update_user_email(
-                session, user_id=link.user_id, new_email=new_email,
+                session,
+                user_id=link.user_id,
+                new_email=new_email,
             )
             return link.user_id, old_email, new_email
 
@@ -240,7 +249,8 @@ class ProfileService:
                 if cred.disabled_at is None
             ]
             remaining = count_remaining_recovery_codes(
-                session, user_id=user_id,
+                session,
+                user_id=user_id,
             )
             sessions_count = count_user_sessions(session, user_id=user_id)
             recent = list_recent_audit(session, user_id=user_id, limit=10)

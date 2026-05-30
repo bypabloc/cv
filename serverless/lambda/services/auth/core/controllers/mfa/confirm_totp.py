@@ -18,7 +18,7 @@ from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.totp_service import TotpService
 from settings.config import app_config
-from shared.db.models.auth import AuthMfaKind
+from shared.db.models.auth.enums import AuthMfaKind
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#mfa.confirm-totp'

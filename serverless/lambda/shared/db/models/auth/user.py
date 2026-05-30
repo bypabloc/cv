@@ -18,6 +18,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import CITEXT, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.cv.profile  # noqa: F401 -- FK target (profile)
+
 from ...base import Base
 from .enums import AuthUserStatus
 
@@ -57,7 +59,8 @@ class AuthUser(Base):
     # dejara `unique=True`, `create_all()` recrearia la constraint full y
     # romperia el re-uso.
     email: Mapped[str] = mapped_column(
-        CITEXT(), nullable=False,
+        CITEXT(),
+        nullable=False,
     )
 
     # ENUM nativo PG. El `name` DEBE coincidir con el `name` del tipo
@@ -83,16 +86,20 @@ class AuthUser(Base):
     )
 
     email_verified_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     password_set_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     locked_until: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     last_login_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     # AC-27 (plan 02): epoch de revocacion de sesiones. Cuando el user
     # confirma su PRIMER metodo MFA, se setea a now(); `session.refresh`
@@ -100,36 +107,49 @@ class AuthUser(Base):
     # anterior a este timestamp. Cierra la ventana donde un atacante con
     # un refresh previo seguiria operando sin pasar MFA.
     sessions_revoked_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     failed_attempts: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default=text('0'),
+        Integer,
+        nullable=False,
+        server_default=text('0'),
     )
 
     # --- Perfil + preferencias (plan 03) ---
     display_name: Mapped[str | None] = mapped_column(
-        String(64), nullable=True,
+        String(64),
+        nullable=True,
     )
     locale: Mapped[str] = mapped_column(
-        String(8), nullable=False, server_default=text("'en'"),
+        String(8),
+        nullable=False,
+        server_default=text("'en'"),
     )
     timezone: Mapped[str] = mapped_column(
-        String(64), nullable=False, server_default=text("'UTC'"),
+        String(64),
+        nullable=False,
+        server_default=text("'UTC'"),
     )
     marketing_consent: Mapped[bool] = mapped_column(
-        nullable=False, server_default=text('false'),
+        nullable=False,
+        server_default=text('false'),
     )
     privacy_policy_version: Mapped[str | None] = mapped_column(
-        String(16), nullable=True,
+        String(16),
+        nullable=True,
     )
     # Soft-delete (plan 03): UPDATE (NO DELETE de la fila). Al soft-delete
     # el email se anonimiza y el partial unique index lo libera.
     deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -140,7 +160,8 @@ class AuthUser(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "locale IN ('en', 'es')", name='ck_auth_users_locale',
+            "locale IN ('en', 'es')",
+            name='ck_auth_users_locale',
         ),
         # UNIQUE parcial: un email puede repetirse SOLO si los anteriores
         # estan soft-deleted (deleted_at IS NOT NULL). Reemplaza el

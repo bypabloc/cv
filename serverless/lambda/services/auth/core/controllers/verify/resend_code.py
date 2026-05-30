@@ -23,7 +23,7 @@ from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
 from shared.auth.jwt import JwtExpiredError, JwtInvalidError, JwtRevokedError
-from shared.db.models.auth import AuthCodeKind, AuthLinkKind
+from shared.db.models.auth.enums import AuthCodeKind, AuthLinkKind
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#verify.resend-code'

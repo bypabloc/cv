@@ -21,7 +21,7 @@ def _ctx(session):
 def test_jwt_require_active_user_disabled_403(monkeypatch):
     from services import jwt_service
     from shared.core.exceptions import ApplicationError
-    from shared.db.models.auth import AuthUserStatus
+    from shared.db.models.auth.enums import AuthUserStatus
 
     claims = SimpleNamespace(sub=uuid4(), family_id='fam-1')
     fake_jwt = MagicMock()
@@ -32,7 +32,9 @@ def test_jwt_require_active_user_disabled_403(monkeypatch):
     fake_session = MagicMock()
     fake_session.get.return_value = disabled
     monkeypatch.setattr(
-        jwt_service, 'db_session', lambda: _ctx(fake_session),
+        jwt_service,
+        'db_session',
+        lambda: _ctx(fake_session),
     )
 
     with pytest.raises(ApplicationError) as exc:

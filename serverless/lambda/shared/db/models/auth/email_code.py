@@ -16,6 +16,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import BYTEA, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 from .enums import AuthCodeKind
 
@@ -68,23 +70,31 @@ class AuthEmailCode(Base):
     )
 
     attempts: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default=text('0'),
+        Integer,
+        nullable=False,
+        server_default=text('0'),
     )
 
     expires_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False,
+        DateTime(timezone=True),
+        nullable=False,
     )
     consumed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     __table_args__ = (
         Index(
             'ix_auth_email_codes_user_kind',
-            'user_id', 'kind', 'consumed_at',
+            'user_id',
+            'kind',
+            'consumed_at',
         ),
     )

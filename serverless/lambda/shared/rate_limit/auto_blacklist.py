@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import time
 
-from shared.dynamodb.models import RateLimitRuleItem
+from shared.dynamodb.models.rate_limit_rule import RateLimitRuleItem
 
 # Threshold: 3+ tokens validos en 60s = sospechoso
 AUTO_BLACKLIST_THRESHOLD = 3

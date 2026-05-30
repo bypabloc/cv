@@ -17,7 +17,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from shared.db.models.auth import AuthCodeKind, AuthLinkKind, AuthUser
+from shared.db.models.auth.enums import AuthCodeKind, AuthLinkKind
+from shared.db.models.auth.user import AuthUser
 from shared.db.repositories.auth import (
     create_pending_user,
     get_user_by_email,

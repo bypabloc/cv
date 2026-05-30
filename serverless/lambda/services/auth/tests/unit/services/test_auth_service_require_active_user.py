@@ -50,7 +50,7 @@ def test_require_active_user_invalid_jwt_raises(monkeypatch):
 def test_require_active_user_inactive_raises(monkeypatch):
     from services import auth_service
     from shared.core.exceptions import ApplicationError
-    from shared.db.models.auth import AuthUserStatus
+    from shared.db.models.auth.enums import AuthUserStatus
 
     claims = SimpleNamespace(sub=uuid4())
     fake_jwt = MagicMock()
@@ -73,7 +73,7 @@ def test_require_active_user_inactive_raises(monkeypatch):
 
 def test_require_active_user_active_returns_user(monkeypatch):
     from services import auth_service
-    from shared.db.models.auth import AuthUserStatus
+    from shared.db.models.auth.enums import AuthUserStatus
 
     claims = SimpleNamespace(sub=uuid4())
     fake_jwt = MagicMock()

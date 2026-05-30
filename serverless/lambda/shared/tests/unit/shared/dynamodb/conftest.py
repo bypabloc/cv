@@ -13,13 +13,11 @@ from collections.abc import Generator
 import pytest
 from moto import mock_aws
 from shared.aws.dynamodb import reset_resource_cache
-from shared.dynamodb.models import (
-    CacheItem,
-    ContactItem,
-    RateLimitBucketItem,
-    RateLimitRuleItem,
-    TrackingEventItem,
-)
+from shared.dynamodb.models.cache import CacheItem
+from shared.dynamodb.models.contact import ContactItem
+from shared.dynamodb.models.rate_limit_bucket import RateLimitBucketItem
+from shared.dynamodb.models.rate_limit_rule import RateLimitRuleItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 _ALL_MODELS = (
     ContactItem,

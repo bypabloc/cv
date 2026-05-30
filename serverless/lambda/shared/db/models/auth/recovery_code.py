@@ -13,6 +13,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import BYTEA, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 
 
@@ -41,22 +43,30 @@ class AuthMfaRecoveryCode(Base):
     )
 
     code_hash: Mapped[bytes] = mapped_column(
-        BYTEA(), nullable=False, unique=True,
+        BYTEA(),
+        nullable=False,
+        unique=True,
     )
 
     consumed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     __table_args__ = (
         UniqueConstraint(
-            'code_hash', name='uq_auth_mfa_recovery_codes_code_hash',
+            'code_hash',
+            name='uq_auth_mfa_recovery_codes_code_hash',
         ),
         Index(
-            'ix_auth_mfa_recovery_user_active', 'user_id', 'consumed_at',
+            'ix_auth_mfa_recovery_user_active',
+            'user_id',
+            'consumed_at',
         ),
     )

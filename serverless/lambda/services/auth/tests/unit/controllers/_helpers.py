@@ -247,7 +247,7 @@ def _make_user(
     failed_attempts: int = 0,
 ) -> Any:
     """Mock de AuthUser con los campos minimos que usan los controllers."""
-    from shared.db.models.auth import AuthUserStatus
+    from shared.db.models.auth.enums import AuthUserStatus
 
     user = MagicMock()
     user.id = user_id or uuid4()

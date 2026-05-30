@@ -21,16 +21,16 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from shared.db.models.auth import (
-    AuthAuditLog,
+from shared.db.models.auth.audit_log import AuthAuditLog
+from shared.db.models.auth.credentials import AuthCredentials
+from shared.db.models.auth.email_code import AuthEmailCode
+from shared.db.models.auth.enums import (
     AuthCodeKind,
-    AuthCredentials,
-    AuthEmailCode,
     AuthLinkKind,
-    AuthMagicLink,
-    AuthUser,
     AuthUserStatus,
 )
+from shared.db.models.auth.magic_link import AuthMagicLink
+from shared.db.models.auth.user import AuthUser
 
 __all__ = [
     'consume_email_code',
@@ -76,7 +76,10 @@ def create_pending_user(session: Session, *, email: str) -> AuthUser:
 
 
 def mark_user_active(
-    session: Session, user: AuthUser, *, when: datetime | None = None,
+    session: Session,
+    user: AuthUser,
+    *,
+    when: datetime | None = None,
 ) -> None:
     """Cambia status a `active` y setea `email_verified_at`."""
     user.status = AuthUserStatus.ACTIVE
@@ -86,7 +89,8 @@ def mark_user_active(
 
 
 def increment_failed_attempts(
-    session: Session, user: AuthUser,
+    session: Session,
+    user: AuthUser,
 ) -> int:
     """Incrementa el contador. Retorna el valor nuevo."""
     user.failed_attempts = (user.failed_attempts or 0) + 1
@@ -101,7 +105,10 @@ def reset_failed_attempts(session: Session, user: AuthUser) -> None:
 
 
 def lock_user(
-    session: Session, user: AuthUser, *, until: datetime,
+    session: Session,
+    user: AuthUser,
+    *,
+    until: datetime,
 ) -> None:
     """Cambia status a `locked` y setea `locked_until`."""
     user.status = AuthUserStatus.LOCKED
@@ -163,14 +170,19 @@ def invalidate_active_codes_and_links(
 
 
 def set_password_hash(
-    session: Session, *, user_id: str, password_hash: str,
+    session: Session,
+    *,
+    user_id: str,
+    password_hash: str,
     algo: str = 'argon2id',
 ) -> AuthCredentials:
     """Upsert del hash de password (1-to-0..1)."""
     existing = session.get(AuthCredentials, user_id)
     if existing is None:
         cred = AuthCredentials(
-            user_id=user_id, password_hash=password_hash, algo=algo,
+            user_id=user_id,
+            password_hash=password_hash,
+            algo=algo,
         )
         session.add(cred)
         session.flush()
@@ -301,7 +313,9 @@ def insert_magic_link(
 
 
 def get_magic_link_state(
-    session: Session, *, token_hash: bytes,
+    session: Session,
+    *,
+    token_hash: bytes,
 ) -> AuthMagicLink | None:
     """Devuelve el row sin consumirlo. Para distinguir consumed/expired.
 
@@ -314,7 +328,9 @@ def get_magic_link_state(
 
 
 def consume_magic_link(
-    session: Session, *, token_hash: bytes,
+    session: Session,
+    *,
+    token_hash: bytes,
 ) -> AuthMagicLink | None:
     """Busca por `token_hash` (UNIQUE).
 

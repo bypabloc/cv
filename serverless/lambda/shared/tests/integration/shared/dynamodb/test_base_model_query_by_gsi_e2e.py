@@ -7,7 +7,7 @@ Then solo devuelve los items del niche consultado, ordenados por la SK.
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb.models import TrackingEventItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 pytestmark = pytest.mark.integration
 

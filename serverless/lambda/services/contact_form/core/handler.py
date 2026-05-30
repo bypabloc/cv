@@ -37,7 +37,10 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
-import shared.db.models.visitor  # noqa: F401 -- warmup INIT: registra dominio
+import shared.db.models.visitor.contact
+import shared.db.models.visitor.session
+import shared.db.models.visitor.session_visit
+import shared.db.models.visitor.tracking  # noqa: F401
 from settings.config import AppConfig
 from settings.operations import OPERATIONS
 from shared.db.warmup import warm_db

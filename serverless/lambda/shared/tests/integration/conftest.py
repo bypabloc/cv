@@ -147,13 +147,11 @@ def dynamodb_tables() -> Generator[None]:
 
     Usa `BaseModel.create_table()` para ejercitar tambien la ruta DDL.
     """
-    from shared.dynamodb.models import (
-        CacheItem,
-        ContactItem,
-        RateLimitBucketItem,
-        RateLimitRuleItem,
-        TrackingEventItem,
-    )
+    from shared.dynamodb.models.cache import CacheItem
+    from shared.dynamodb.models.contact import ContactItem
+    from shared.dynamodb.models.rate_limit_bucket import RateLimitBucketItem
+    from shared.dynamodb.models.rate_limit_rule import RateLimitRuleItem
+    from shared.dynamodb.models.tracking import TrackingEventItem
 
     with mock_aws():
         reset_resource_cache()

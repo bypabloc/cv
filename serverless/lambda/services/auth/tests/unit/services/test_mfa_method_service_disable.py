@@ -16,7 +16,7 @@ def _fake_session():
 
 def test_mfa_method_service_disable_returns_repo_result(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
     monkeypatch.setattr(

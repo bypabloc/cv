@@ -16,7 +16,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from shared.auth.password import NeedsRehashError, verify_password
-from shared.db.models.auth import AuthCredentials
+from shared.db.models.auth.credentials import AuthCredentials
 from shared.db.session import db_session
 
 

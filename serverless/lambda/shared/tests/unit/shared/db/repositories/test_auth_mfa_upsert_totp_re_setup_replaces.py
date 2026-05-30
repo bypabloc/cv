@@ -8,7 +8,8 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthMfaKind, AuthMfaMethod
+from shared.db.models.auth.enums import AuthMfaKind
+from shared.db.models.auth.mfa_method import AuthMfaMethod
 from shared.db.repositories.auth_mfa import upsert_totp_method
 
 pytestmark = pytest.mark.unit

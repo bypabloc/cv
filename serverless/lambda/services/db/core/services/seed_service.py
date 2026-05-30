@@ -29,38 +29,42 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from shared.db.models.cv import (
+from shared.db.models.cv.cv_entity import (
     Award,
     AwardNiche,
     Certificate,
     CertificateNiche,
-    EducationEntry,
-    EducationEntryNiche,
     Endorsement,
     EndorsementNiche,
+    Language,
+    LanguageNiche,
+    Publication,
+    PublicationNiche,
+)
+from shared.db.models.cv.education import EducationEntry, EducationEntryNiche
+from shared.db.models.cv.experience import (
     Experience,
     ExperienceBullet,
     ExperienceNiche,
     ExperienceSkill,
-    Language,
-    LanguageNiche,
-    Profile,
-    ProfileNiche,
-    ProfileStats,
+)
+from shared.db.models.cv.profile import Profile, ProfileNiche, ProfileStats
+from shared.db.models.cv.project import (
     Project,
     ProjectCaseStudy,
     ProjectMetric,
     ProjectNiche,
     ProjectTechTag,
-    Publication,
-    PublicationNiche,
+)
+from shared.db.models.cv.skill import (
     Skill,
     SkillCategory,
     SkillCategoryNiche,
     SkillCategorySkill,
 )
-from shared.db.models.i18n import Translation
-from shared.db.models.taxonomy import Niche, NichePriority, TechTag
+from shared.db.models.i18n.translation import Translation
+from shared.db.models.taxonomy.catalog import Niche, TechTag
+from shared.db.models.taxonomy.priority import NichePriority
 from shared.db.sa import Session, delete, func, select
 from shared.db.sa import pg_insert as insert
 from shared.db.seed_helpers import _parse_ym, _to_slug
@@ -274,9 +278,7 @@ def _link_niches(
     huerfanas eliminadas).
     """
     entity_col_attr = getattr(union_model, entity_col)
-    session.execute(
-        delete(union_model).where(entity_col_attr == entity_id)
-    )
+    session.execute(delete(union_model).where(entity_col_attr == entity_id))
     for niche_slug in niche_slugs or []:
         niche_id = niche_ids.get(niche_slug)
         if niche_id is None:
@@ -641,9 +643,7 @@ def _seed_skill_categories(
             session.execute(stmt)
 
 
-def _seed_certificates(
-    session: Session, niche_ids: dict[str, str]
-) -> None:
+def _seed_certificates(session: Session, niche_ids: dict[str, str]) -> None:
     for slug, data in _load_dir('certificates'):
         cert_id = _upsert_returning_id(
             session,
@@ -799,9 +799,7 @@ def _seed_publications(session: Session, niche_ids: dict[str, str]) -> None:
         )
 
 
-def _seed_simple_entities(
-    session: Session, niche_ids: dict[str, str]
-) -> None:
+def _seed_simple_entities(session: Session, niche_ids: dict[str, str]) -> None:
     """Inserta certificates, awards, education_entries, endorsements,
     languages, publications — entidades sin sub-tablas propias.
     """

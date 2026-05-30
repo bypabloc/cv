@@ -7,7 +7,7 @@ Then devuelve True si existe, False si no (AC-9).
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb.models import ContactItem
+from shared.dynamodb.models.contact import ContactItem
 
 
 @pytest.mark.usefixtures('dynamodb_tables')

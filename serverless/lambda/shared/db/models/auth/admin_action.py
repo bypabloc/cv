@@ -15,6 +15,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 
 
@@ -56,14 +58,18 @@ class AuthUserAdminAction(Base):
     action: Mapped[str] = mapped_column(String(64), nullable=False)
 
     meta_data: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB(), name='metadata', nullable=True,
+        JSONB(),
+        name='metadata',
+        nullable=True,
     )
 
     ip: Mapped[str | None] = mapped_column(INET(), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     __table_args__ = (

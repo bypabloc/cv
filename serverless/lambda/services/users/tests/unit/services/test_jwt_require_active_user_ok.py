@@ -18,7 +18,7 @@ def _ctx(session):
 
 def test_jwt_require_active_user_ok(monkeypatch):
     from services import jwt_service
-    from shared.db.models.auth import AuthUserStatus
+    from shared.db.models.auth.enums import AuthUserStatus
 
     claims = SimpleNamespace(sub=uuid4(), family_id='fam-1')
     fake_jwt = MagicMock()
@@ -29,11 +29,14 @@ def test_jwt_require_active_user_ok(monkeypatch):
     fake_session = MagicMock()
     fake_session.get.return_value = active
     monkeypatch.setattr(
-        jwt_service, 'db_session', lambda: _ctx(fake_session),
+        jwt_service,
+        'db_session',
+        lambda: _ctx(fake_session),
     )
 
     result = jwt_service.require_active_user(
-        'Bearer abc', app_config=object(),
+        'Bearer abc',
+        app_config=object(),
     )
 
     assert result is active

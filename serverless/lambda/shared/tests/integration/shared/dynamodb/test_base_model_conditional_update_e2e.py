@@ -7,7 +7,7 @@ Then la condicion satisfecha actualiza el item y la fallida devuelve None.
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb.models import ContactItem
+from shared.dynamodb.models.contact import ContactItem
 
 pytestmark = pytest.mark.integration
 

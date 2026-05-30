@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 from boto3.dynamodb.conditions import Key
-from shared.dynamodb.models import TrackingEventItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 pytestmark = pytest.mark.integration
 

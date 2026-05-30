@@ -14,7 +14,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from shared.auth.tokens import generate_opaque_token, hash_token
-from shared.db.models.auth import AuthLinkKind, AuthMagicLink
+from shared.db.models.auth.enums import AuthLinkKind
+from shared.db.models.auth.magic_link import AuthMagicLink
 from shared.db.repositories.auth import (
     consume_magic_link,
     get_magic_link_state,

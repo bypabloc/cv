@@ -13,7 +13,7 @@ from .._helpers import _make_authed_event, _make_user
 def test_mfa_confirm_totp_ok(monkeypatch):
     """AC-2: code correcto -> 204 + confirm."""
     from controllers.mfa import confirm_totp
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     user = _make_user(status='active')
 

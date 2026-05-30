@@ -7,7 +7,8 @@ Then setea disabled_at != None, preferred=False y retorna True.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthMfaKind, AuthMfaMethod
+from shared.db.models.auth.enums import AuthMfaKind
+from shared.db.models.auth.mfa_method import AuthMfaMethod
 from shared.db.repositories.auth_mfa import disable_mfa
 
 pytestmark = pytest.mark.unit

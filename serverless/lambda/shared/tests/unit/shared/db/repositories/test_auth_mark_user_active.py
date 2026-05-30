@@ -8,7 +8,8 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthUser, AuthUserStatus
+from shared.db.models.auth.enums import AuthUserStatus
+from shared.db.models.auth.user import AuthUser
 from shared.db.repositories.auth import mark_user_active
 
 pytestmark = pytest.mark.unit

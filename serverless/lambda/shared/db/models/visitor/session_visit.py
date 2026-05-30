@@ -15,6 +15,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import INET, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.visitor.session  # noqa: F401 -- FK target (session)
+
 from ...base import Base
 
 

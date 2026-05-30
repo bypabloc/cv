@@ -5,5 +5,5 @@ SIEMPRE del modulo concreto (contrato `.claude/rules/lambda-shared-imports.md`):
 
     from shared.db.session import db_session, get_engine
     from shared.db.sa import select, func, pg_insert, Session
-    from shared.db.models.auth import AuthUser
+    from shared.db.models.auth.user import AuthUser
 """

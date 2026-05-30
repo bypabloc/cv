@@ -14,7 +14,8 @@ from __future__ import annotations
 
 from shared.auth.jwt import JwtError
 from shared.core.exceptions import ApplicationError
-from shared.db.models.auth import AuthUser, AuthUserStatus
+from shared.db.models.auth.enums import AuthUserStatus
+from shared.db.models.auth.user import AuthUser
 from shared.db.session import db_session
 
 from .jwt_service import JwtService

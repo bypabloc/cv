@@ -16,6 +16,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 
 
@@ -56,7 +58,8 @@ class AuthAuditLog(Base):
     event: Mapped[str] = mapped_column(String(64), nullable=False)
     success: Mapped[bool] = mapped_column(Boolean, nullable=False)
     error_code: Mapped[str | None] = mapped_column(
-        String(64), nullable=True,
+        String(64),
+        nullable=True,
     )
 
     ip: Mapped[str | None] = mapped_column(INET(), nullable=True)
@@ -67,16 +70,22 @@ class AuthAuditLog(Base):
         # En la DB la columna se llama `metadata` (no `meta_data`); SQLAlchemy
         # reserva `metadata` en la clase Base, asi que mapeamos al nombre
         # `meta_data` en Python pero la DDL la mantiene como `metadata`.
-        JSONB(), name='metadata', nullable=True,
+        JSONB(),
+        name='metadata',
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     __table_args__ = (
         Index(
             'ix_auth_audit_log_user_event_ts',
-            'user_id', 'event', 'created_at',
+            'user_id',
+            'event',
+            'created_at',
         ),
     )

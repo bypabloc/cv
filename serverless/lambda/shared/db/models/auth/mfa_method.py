@@ -19,6 +19,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import BYTEA, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 from .enums import AuthMfaKind
 
@@ -64,35 +66,49 @@ class AuthMfaMethod(Base):
     )
 
     preferred: Mapped[bool] = mapped_column(
-        Boolean(), nullable=False, server_default=text('false'),
+        Boolean(),
+        nullable=False,
+        server_default=text('false'),
     )
 
     confirmed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     disabled_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     last_used_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     # --- TOTP-only (NULL para email_code) ---
     totp_secret_ciphertext: Mapped[bytes | None] = mapped_column(
-        BYTEA(), nullable=True,
+        BYTEA(),
+        nullable=True,
     )
     totp_algorithm: Mapped[str | None] = mapped_column(
-        String(16), nullable=True, server_default=text("'SHA1'"),
+        String(16),
+        nullable=True,
+        server_default=text("'SHA1'"),
     )
     totp_digits: Mapped[int | None] = mapped_column(
-        Integer(), nullable=True, server_default=text('6'),
+        Integer(),
+        nullable=True,
+        server_default=text('6'),
     )
     totp_period: Mapped[int | None] = mapped_column(
-        Integer(), nullable=True, server_default=text('30'),
+        Integer(),
+        nullable=True,
+        server_default=text('30'),
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     __table_args__ = (

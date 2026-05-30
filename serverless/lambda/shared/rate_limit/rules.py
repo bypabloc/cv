@@ -28,7 +28,7 @@ import time
 from typing import Any, TypedDict
 
 from shared.cache.decorator import cached
-from shared.dynamodb.models import RateLimitRuleItem
+from shared.dynamodb.models.rate_limit_rule import RateLimitRuleItem
 
 
 class RateLimitRule(TypedDict, total=False):
@@ -55,7 +55,9 @@ def _to_rule_dict(item: RateLimitRuleItem | None) -> RateLimitRule | None:
     return item.model_dump(exclude_none=True)  # type: ignore[return-value]
 
 
-@cached(ttl=60, stale_for=300, namespace='rate_limit', tags=['rate-limit-rules'])
+@cached(
+    ttl=60, stale_for=300, namespace='rate_limit', tags=['rate-limit-rules']
+)
 def get_endpoint_rule(endpoint: str) -> RateLimitRule | None:
     """
     Lookup de rule por endpoint (ej: '/contact', '/track').
@@ -68,7 +70,9 @@ def get_endpoint_rule(endpoint: str) -> RateLimitRule | None:
     )
 
 
-@cached(ttl=60, stale_for=300, namespace='rate_limit', tags=['rate-limit-rules'])
+@cached(
+    ttl=60, stale_for=300, namespace='rate_limit', tags=['rate-limit-rules']
+)
 def get_ip_rule(ip: str) -> RateLimitRule | None:
     """
     Lookup de rule por IP (whitelist o blacklist).
@@ -89,7 +93,9 @@ def get_ip_rule(ip: str) -> RateLimitRule | None:
     return None
 
 
-@cached(ttl=60, stale_for=300, namespace='rate_limit', tags=['rate-limit-rules'])
+@cached(
+    ttl=60, stale_for=300, namespace='rate_limit', tags=['rate-limit-rules']
+)
 def get_country_rule(country: str) -> RateLimitRule | None:
     """
     Lookup de rule por country code.
@@ -97,6 +103,4 @@ def get_country_rule(country: str) -> RateLimitRule | None:
     Returns:
         Rule con kind=country o None.
     """
-    return _to_rule_dict(
-        RateLimitRuleItem.get(f'country#{country}', 'country')
-    )
+    return _to_rule_dict(RateLimitRuleItem.get(f'country#{country}', 'country'))

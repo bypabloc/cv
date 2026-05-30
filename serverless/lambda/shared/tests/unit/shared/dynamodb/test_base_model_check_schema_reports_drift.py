@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import boto3
 import pytest
-from shared.dynamodb.models import ContactItem, TrackingEventItem
+from shared.dynamodb.models.contact import ContactItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 
 @pytest.mark.usefixtures('dynamodb_tables')

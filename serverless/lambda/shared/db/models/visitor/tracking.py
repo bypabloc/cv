@@ -16,6 +16,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.taxonomy.event_type
+import shared.db.models.visitor.session
+import shared.db.models.visitor.session_visit  # noqa: F401 -- FK target (session_visit)
+
 from ...base import Base
 
 
@@ -36,9 +40,7 @@ class TrackingEvent(Base):
         ForeignKey('vis_session_visits.visit_id'),
         nullable=False,
     )
-    page_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), nullable=False
-    )
+    page_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -64,7 +66,9 @@ class TrackingEvent(Base):
         # PK fisica (created_at, visit_id, page_id). created_at incluido
         # por requerimiento de particionado RANGE.
         PrimaryKeyConstraint(
-            'created_at', 'visit_id', 'page_id',
+            'created_at',
+            'visit_id',
+            'page_id',
             name='pk_vis_tracking_events',
         ),
         Index('idx_vis_tracking_session_created', 'session_id', 'created_at'),

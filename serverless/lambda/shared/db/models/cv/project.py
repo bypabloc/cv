@@ -13,6 +13,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.taxonomy.catalog  # noqa: F401 -- FK target (catalog)
+
 from ...base import Base, TimestampMixin, UUIDPKMixin
 from ...enums import project_status_enum, project_type_enum
 

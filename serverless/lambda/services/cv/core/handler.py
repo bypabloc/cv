@@ -30,9 +30,16 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
-import shared.db.models.cv
-import shared.db.models.i18n
-import shared.db.models.taxonomy  # noqa: F401
+import shared.db.models.cv.cv_entity
+import shared.db.models.cv.education
+import shared.db.models.cv.experience
+import shared.db.models.cv.profile
+import shared.db.models.cv.project
+import shared.db.models.cv.skill
+import shared.db.models.i18n.translation
+import shared.db.models.taxonomy.catalog
+import shared.db.models.taxonomy.event_type
+import shared.db.models.taxonomy.priority  # noqa: F401
 from settings.operations import OPERATIONS
 from shared.db.warmup import warm_db
 from shared.lambda_kit.event_model import build_event_model

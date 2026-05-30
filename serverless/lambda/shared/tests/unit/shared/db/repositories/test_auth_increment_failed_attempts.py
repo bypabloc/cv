@@ -7,7 +7,8 @@ Then el contador queda en 5 y se retorna 5.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthUser, AuthUserStatus
+from shared.db.models.auth.enums import AuthUserStatus
+from shared.db.models.auth.user import AuthUser
 from shared.db.repositories.auth import increment_failed_attempts
 
 pytestmark = pytest.mark.unit

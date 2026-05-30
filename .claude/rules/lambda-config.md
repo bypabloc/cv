@@ -68,22 +68,25 @@ pesada (fido2 -> cryptography) cuesta segundos. Reglas:
 - **NO** mover imports al `preload()` de cada controller: es churn en N
   controllers y saca el import del snapshot de SnapStart. El fix correcto
   son los imports concretos, dejando los imports en el top del modulo.
-- Los modelos SQLAlchemy se importan POR DOMINIO
-  (`from shared.db.models.auth import AuthUser`), NUNCA del barrel
-  `shared.db.models.registry` (que carga las 43) salvo Alembic/seed:
-  cargar un dominio paga solo su closure (su dominio + sus FK-targets
-  cross-domain, ver abajo), no las 43 clases.
-- **Cross-domain FK targets**: si una tabla de un dominio tiene una
-  `ForeignKey()` a una tabla de OTRO dominio, ese dominio target DEBE
-  cargarse o la FK no resuelve en INSERT/UPDATE (`NoReferencedTableError`
-  -> 500). Cada `__init__.py` de dominio carga sus FK-targets:
-  `auth -> cv` (`auth_users.profile_id -> cv_profiles.id`),
-  `cv -> taxonomy`, `visitor -> taxonomy`. Costo medido: cargar cv en
-  auth = +~24 ms (negligible vs el resume de Neon). Un SELECT no resuelve
-  la FK (por eso `login.start` 404 no fallaba), pero un INSERT si: el bug
-  de PR #199 fue exactamente esto (register/login/users 500, tracking_worker
+- Los modelos SQLAlchemy se importan del MODULO CONCRETO
+  (`from shared.db.models.auth.user import AuthUser`), NUNCA de un barrel:
+  los `__init__.py` de dominio estan VACIOS (sin re-exports), igual que el
+  resto de `shared/`. `registry.py` importa TODOS los modulos concretos —
+  lo usan solo Alembic/seed (schema completo). Importar un modulo paga solo
+  su closure (ej. `auth.audit_log` carga 7 tablas, no las 43).
+- **FK targets por modulo**: si una tabla tiene una `ForeignKey()` a una
+  tabla de OTRO modulo (intra o cross-domain), ese modulo concreto DEBE
+  importarse o la FK no resuelve en INSERT/UPDATE (`NoReferencedTableError`
+  -> 500). Cada modulo importa sus FK-targets: `auth/user.py` importa
+  `cv/profile.py` (`auth_users.profile_id -> cv_profiles.id`),
+  los modulos `cv/*` importan `taxonomy/catalog.py`,
+  `visitor/tracking.py` importa `taxonomy/event_type.py`. Un SELECT no
+  resuelve la FK (por eso `login.start` 404 no fallaba), pero un INSERT si:
+  el bug de PR #199/#200 fue esto (register/login/users 500, tracking_worker
   a DLQ). Lo enforza el guard
-  `shared/tests/unit/shared/db/test_domain_load_resolves_cross_domain_fks.py`.
+  `shared/tests/unit/shared/db/test_model_module_load_resolves_foreign_keys.py`
+  (importa cada modulo aislado y resuelve sus FK) + el Check 4 de
+  `serverless lint-deps` (`__init__.py` vacios, sin barrels).
 - Que NO se carga fido2 al importar jwt se cubre con un test en subproceso
   (`shared/tests/unit/shared/auth/test_lazy_no_eager_fido2.py`).
 

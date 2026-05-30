@@ -33,7 +33,17 @@ if _CORE_DIR not in sys.path:
 
 from typing import Any
 
-import shared.db.models.auth  # noqa: F401 -- warmup INIT: registra dominio
+import shared.db.models.auth.admin_action
+import shared.db.models.auth.audit_log
+import shared.db.models.auth.consent_log
+import shared.db.models.auth.credentials
+import shared.db.models.auth.email_code
+import shared.db.models.auth.magic_link
+import shared.db.models.auth.mfa_method
+import shared.db.models.auth.recovery_code
+import shared.db.models.auth.user
+import shared.db.models.auth.user_session
+import shared.db.models.auth.webauthn_credential  # noqa: F401
 from models.event import EVENT_MODEL
 from settings.operations import OPERATIONS
 from shared.db.warmup import warm_db

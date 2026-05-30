@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
-from shared.db.models.visitor import SessionVisit
+from shared.db.models.visitor.session_visit import SessionVisit
 from shared.db.repository import ensure_session_and_visit
 
 pytestmark = pytest.mark.unit
@@ -32,9 +32,7 @@ def test_ensure_session_and_visit_inserts_new_visit_when_keys_differ() -> None:
 
     def fake_flush() -> None:
         # uuidv7 simulado para que str(new_visit.visit_id) no falle.
-        added_objects[0].visit_id = UUID(
-            '019e5fce-385d-7530-8f6e-8e17df16f08a'
-        )
+        added_objects[0].visit_id = UUID('019e5fce-385d-7530-8f6e-8e17df16f08a')
 
     session.add.side_effect = fake_add
     session.flush.side_effect = fake_flush

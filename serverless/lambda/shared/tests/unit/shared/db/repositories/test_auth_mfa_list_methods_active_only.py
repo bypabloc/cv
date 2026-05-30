@@ -7,7 +7,8 @@ Then la query filtra disabled_at IS NULL y retorna los activos.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthMfaKind, AuthMfaMethod
+from shared.db.models.auth.enums import AuthMfaKind
+from shared.db.models.auth.mfa_method import AuthMfaMethod
 from shared.db.repositories.auth_mfa import list_mfa_methods
 
 pytestmark = pytest.mark.unit

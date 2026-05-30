@@ -13,6 +13,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.auth.user  # noqa: F401 -- FK target (user)
+
 from ...base import Base
 
 
@@ -42,11 +44,15 @@ class AuthCredentials(Base):
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
 
     algo: Mapped[str] = mapped_column(
-        String(32), nullable=False, server_default=text("'argon2id'"),
+        String(32),
+        nullable=False,
+        server_default=text("'argon2id'"),
     )
 
     password_set_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
     last_change_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

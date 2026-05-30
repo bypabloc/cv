@@ -50,7 +50,7 @@ def test_setup_email_code_not_first_no_revoke(monkeypatch):
 
 def test_confirm_not_first_no_revoke(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     @contextmanager
     def _fake_session():
@@ -96,7 +96,7 @@ def test_confirm_not_first_no_revoke(monkeypatch):
 
 def test_confirm_method_not_found_returns_false(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     @contextmanager
     def _fake_session():

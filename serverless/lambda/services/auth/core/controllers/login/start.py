@@ -23,7 +23,11 @@ from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-from shared.db.models.auth import AuthCodeKind, AuthLinkKind, AuthUserStatus
+from shared.db.models.auth.enums import (
+    AuthCodeKind,
+    AuthLinkKind,
+    AuthUserStatus,
+)
 from shared.http.turnstile import verify_turnstile_token
 from shared.lambda_kit.base_controller import BaseController
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from shared.dynamodb.models import TrackingEventItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 _LEGACY_OPTIONAL_FIELDS = (
     'page_title',
@@ -90,9 +90,7 @@ def test_tracking_item_to_item_matches_legacy_minimal() -> None:
         expires_at=expires_at,
         **payload,
     ).to_item()
-    legacy_item = _legacy_build_item(
-        page_id, created_at, expires_at, payload
-    )
+    legacy_item = _legacy_build_item(page_id, created_at, expires_at, payload)
 
     # Assert
     assert orm_item == legacy_item
@@ -137,9 +135,7 @@ def test_tracking_item_to_item_matches_legacy_full() -> None:
         expires_at=expires_at,
         **payload,
     ).to_item()
-    legacy_item = _legacy_build_item(
-        page_id, created_at, expires_at, payload
-    )
+    legacy_item = _legacy_build_item(page_id, created_at, expires_at, payload)
 
     # Assert
     assert orm_item == legacy_item

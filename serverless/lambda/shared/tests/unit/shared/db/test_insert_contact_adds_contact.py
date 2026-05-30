@@ -10,7 +10,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.visitor import Contact
+from shared.db.models.visitor.contact import Contact
 from shared.db.repository import insert_contact
 
 pytestmark = pytest.mark.unit

@@ -7,7 +7,7 @@ de rules para que el proximo lookup las vea.
 
 from __future__ import annotations
 
-from shared.dynamodb.models import RateLimitRuleItem
+from shared.dynamodb.models.rate_limit_rule import RateLimitRuleItem
 
 
 def _invalidate_rules_cache() -> None:

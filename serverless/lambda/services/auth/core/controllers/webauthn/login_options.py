@@ -18,7 +18,7 @@ from services.user_service import UserService
 from services.webauthn_service import WebauthnService
 from settings.config import app_config
 from shared.core.ulid import new_uuidv7
-from shared.db.models.auth import AuthUserStatus
+from shared.db.models.auth.enums import AuthUserStatus
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#webauthn.login-options'

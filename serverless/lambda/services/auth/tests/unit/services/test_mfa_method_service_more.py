@@ -103,7 +103,7 @@ def test_get_totp_ciphertext_no_method_returns_none(monkeypatch):
 
 def test_set_preferred_ok(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     method = MagicMock()
     method.disabled_at = None
@@ -125,7 +125,7 @@ def test_set_preferred_ok(monkeypatch):
 
 def test_set_preferred_missing_returns_false(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
     monkeypatch.setattr(
@@ -154,7 +154,7 @@ def test_count_active_delegates(monkeypatch):
 
 def test_has_active_method_true(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     method = MagicMock()
     method.disabled_at = None
@@ -177,7 +177,7 @@ def test_has_active_method_true(monkeypatch):
 
 def test_has_active_method_disabled_false(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     method = MagicMock()
     method.disabled_at = datetime.now(tz=UTC)
@@ -200,7 +200,7 @@ def test_has_active_method_disabled_false(monkeypatch):
 
 def test_mark_used_delegates(monkeypatch):
     from services import mfa_method_service
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     captured = {}
     monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)

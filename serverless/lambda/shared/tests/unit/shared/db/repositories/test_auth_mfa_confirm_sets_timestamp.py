@@ -7,7 +7,8 @@ Then setea confirmed_at != None y hace flush.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthMfaKind, AuthMfaMethod
+from shared.db.models.auth.enums import AuthMfaKind
+from shared.db.models.auth.mfa_method import AuthMfaMethod
 from shared.db.repositories.auth_mfa import confirm_mfa
 
 pytestmark = pytest.mark.unit

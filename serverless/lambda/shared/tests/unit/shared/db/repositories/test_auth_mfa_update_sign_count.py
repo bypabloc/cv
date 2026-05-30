@@ -7,7 +7,7 @@ Then 6 -> True y actualiza; 3 -> False y NO actualiza.
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models.auth import AuthWebauthnCredential
+from shared.db.models.auth.webauthn_credential import AuthWebauthnCredential
 from shared.db.repositories.auth_mfa import update_sign_count
 
 pytestmark = pytest.mark.unit

@@ -8,7 +8,7 @@ Then el counter acumula y set_fields actualiza expires_at en el mismo
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb.models import RateLimitBucketItem
+from shared.dynamodb.models.rate_limit_bucket import RateLimitBucketItem
 
 pytestmark = pytest.mark.integration
 

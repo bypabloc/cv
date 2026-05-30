@@ -13,7 +13,7 @@ from .._helpers import _make_authed_event, _make_user
 def test_mfa_disable_with_two(monkeypatch):
     """AC-6: total_mfa == 2 -> 204 + disable."""
     from controllers.mfa import disable
-    from shared.db.models.auth import AuthMfaKind
+    from shared.db.models.auth.enums import AuthMfaKind
 
     user = _make_user(status='active')
 

@@ -29,7 +29,8 @@ from shared.auth.jwt import (
     verify_jwt,
 )
 from shared.core.exceptions import ApplicationError
-from shared.db.models.auth import AuthUser, AuthUserStatus
+from shared.db.models.auth.enums import AuthUserStatus
+from shared.db.models.auth.user import AuthUser
 from shared.db.session import db_session
 
 from .blacklist_service import BlacklistService
@@ -96,8 +97,11 @@ class JwtService:
     ) -> None:
         """Pone un jti en la blacklist (delega al BlacklistService)."""
         self._blacklist.put(
-            jti=jti, exp=exp, user_id=user_id,
-            reason=reason, family_id=family_id,
+            jti=jti,
+            exp=exp,
+            user_id=user_id,
+            reason=reason,
+            family_id=family_id,
         )
 
     def revoke_family(
@@ -109,7 +113,9 @@ class JwtService:
     ) -> None:
         """Marca toda una familia de refresh como revocada."""
         self._blacklist.revoke_family(
-            family_id=family_id, user_id=user_id, exp=exp,
+            family_id=family_id,
+            user_id=user_id,
+            exp=exp,
         )
 
     def revoke_families(
@@ -126,7 +132,9 @@ class JwtService:
         exp = int(time.time()) + _REFRESH_TTL_SECONDS
         for family_id in family_ids:
             self._blacklist.revoke_family(
-                family_id=family_id, user_id=user_id, exp=exp,
+                family_id=family_id,
+                user_id=user_id,
+                exp=exp,
             )
 
 

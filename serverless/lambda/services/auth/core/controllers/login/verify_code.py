@@ -24,7 +24,7 @@ from services.user_service import UserService
 from settings.config import app_config
 from shared.auth.jwt import JwtExpiredError, JwtInvalidError, JwtRevokedError
 from shared.core.ulid import new_uuidv7
-from shared.db.models.auth import AuthCodeKind
+from shared.db.models.auth.enums import AuthCodeKind
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#login.verify-code'
@@ -178,7 +178,8 @@ class VerifyCode(BaseController):
 
         family_id = UUID(new_uuidv7())
         access_token, _ = jwt_svc.issue_access(
-            user_id=user.id, family_id=family_id,
+            user_id=user.id,
+            family_id=family_id,
         )
         refresh_token, _ = jwt_svc.issue_refresh(
             user_id=user.id,

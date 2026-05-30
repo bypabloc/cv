@@ -56,8 +56,14 @@ python devtools/run.py api_e2e --env=dev --keep-data --aws-profile=tfs-dev
 
 ## Como funciona (detalles)
 
-- **Tiempos**: cada caso se invoca N veces; el reporte separa `cold`
-  (1ra muestra) de `warm` (promedio 2..N) y da un promedio global.
+- **Tiempos**: el cold start es POR-LAMBDA (lo paga solo el PRIMER invoke
+  del contenedor). El reporte lo agrupa por Lambda: el bloque
+  `COLD START POR LAMBDA` lista un cold por Lambda (la 1ra muestra de su
+  primer caso) y la tabla `TIEMPOS POR CASO` muestra ese cold solo en el
+  primer caso de cada Lambda (`-` en el resto, que ya corren calientes).
+  El `warm` de un caso es el promedio de sus muestras calientes: del primer
+  caso del Lambda son las muestras 2..N; del resto, TODAS sus muestras. El
+  `GLOBAL` promedia el cold por Lambda (no por caso) y el warm por caso.
 - **Datos sinteticos + cleanup**: emails `success+api-e2e-<run>-<slot>@
   simulator.amazonses.com` (SES mailbox simulator: globalmente
   entregable, sin entrega real). Al final borra users/contacts/tracking

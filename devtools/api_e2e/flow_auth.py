@@ -93,7 +93,7 @@ def _run_success(
                 cf_turnstile_response='',
             ),
             origin=origin,
-            bypass_secret=bypass,
+            bypass_token=bypass,
         ),
         expected=200,
     )
@@ -158,7 +158,7 @@ def _run_success(
                 cf_turnstile_response='',
             ),
             origin=origin,
-            bypass_secret=bypass,
+            bypass_token=bypass,
         ),
         expected=200,
     )
@@ -226,7 +226,7 @@ def _run_errors(
                     cf_turnstile_response='',
                 ),
                 origin=origin,
-                bypass_secret=bypass,
+                bypass_token=bypass,
             ),
             expected=404,
         )

@@ -97,7 +97,7 @@ def run_contact(
                     cf_token='',
                 ),
                 origin=origin,
-                bypass_secret=bypass,
+                bypass_token=bypass,
             ),
             expected='2xx',
             samples=2,
@@ -120,7 +120,7 @@ def run_contact(
                 cf_token='',
             ),
             origin=origin,
-            bypass_secret=bypass,
+            bypass_token=bypass,
         ),
         expected='4xx',
     )
@@ -139,7 +139,7 @@ def run_contact(
                 cf_token='',
             ),
             origin=origin,
-            bypass_secret=bypass,
+            bypass_token=bypass,
         ),
         expected='4xx',
     )

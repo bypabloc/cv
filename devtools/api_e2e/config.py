@@ -33,11 +33,6 @@ _APEX_ORIGIN = {
     'stage': 'https://the-full-stack.com',
 }
 
-_BYPASS_SSM = {
-    'dev': '/portfolio/dev/turnstile-bypass-secret',
-    'stage': '/portfolio/stage/turnstile-bypass-secret',
-}
-
 _NEON_SSM = {
     'dev': '/portfolio/dev/neon-url',
     'stage': '/portfolio/stage/neon-url',
@@ -70,24 +65,19 @@ def apex_origin(env: str) -> str:
     return _APEX_ORIGIN[env]
 
 
-def bypass_ssm_path(env: str) -> str:
-    """SSM path del bypass secret de Turnstile."""
-    return _BYPASS_SSM[env]
-
-
 def neon_ssm_path(env: str) -> str:
     """SSM path de la connection string de Neon."""
     return _NEON_SSM[env]
 
 
 def turnstile_bypass_supported(env: str) -> bool:
-    """True si el entorno evalua el header X-Turnstile-Bypass-Secret.
+    """True si el entorno evalua el header X-Turnstile-Bypass-Token.
 
-    Solo `dev` (y `local`) lo evaluan; en `stage` el bypass es inerte
-    (shared.http.turnstile._BYPASS_ALLOWED_STAGES), asi que los flujos
-    que dependen del bypass se omiten en stage.
+    `dev` y `stage` lo evaluan (shared.crypto.captcha._BYPASS_ALLOWED_STAGES
+    = {dev, local, stage}); prod NUNCA. El harness solo corre contra dev y
+    stage, asi que el bypass aplica a ambos.
     """
-    return env == 'dev'
+    return env in ('dev', 'stage')
 
 
 # Pool de IPs de documentacion (TEST-NET RFC 5737): 1 IP unica por request
@@ -124,7 +114,4 @@ def synthetic_email(run_id: str, slot: str) -> str:
     embebe el RUN_TAG + run_id + slot para unicidad y trazabilidad.
     """
     suffix = _secrets.token_hex(3)
-    return (
-        f'success+{RUN_TAG}-{run_id}-{slot}-{suffix}'
-        '@simulator.amazonses.com'
-    )
+    return f'success+{RUN_TAG}-{run_id}-{slot}-{suffix}@simulator.amazonses.com'

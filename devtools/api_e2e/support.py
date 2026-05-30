@@ -42,7 +42,7 @@ class HttpClient:
         self,
         *,
         origin: str,
-        bypass_secret: str | None,
+        bypass_token: str | None,
         bearer: str | None,
     ) -> dict[str, str]:
         headers = {
@@ -52,8 +52,8 @@ class HttpClient:
             'User-Agent': 'portfolio-api-e2e/1.0',
             'Content-Type': 'application/json',
         }
-        if bypass_secret:
-            headers['X-Turnstile-Bypass-Secret'] = bypass_secret
+        if bypass_token:
+            headers['X-Turnstile-Bypass-Token'] = bypass_token
         if bearer:
             headers['Authorization'] = f'Bearer {bearer}'
         return headers
@@ -68,7 +68,7 @@ class HttpClient:
         """GET con query params (operation/action van en params)."""
         headers = self._headers(
             origin=origin,
-            bypass_secret=None,
+            bypass_token=None,
             bearer=None,
         )
         start = time.monotonic()
@@ -86,13 +86,13 @@ class HttpClient:
         *,
         body: dict[str, Any],
         origin: str,
-        bypass_secret: str | None = None,
+        bypass_token: str | None = None,
         bearer: str | None = None,
     ) -> Response:
         """POST con body JSON (operation/action + campos FLAT en el body)."""
         headers = self._headers(
             origin=origin,
-            bypass_secret=bypass_secret,
+            bypass_token=bypass_token,
             bearer=bearer,
         )
         start = time.monotonic()

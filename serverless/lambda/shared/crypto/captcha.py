@@ -7,11 +7,13 @@ modulo quede httpx-puro y NO arrastre `cryptography` a sus otros
 consumidores (cors, responses, validators -> los importan tracking_pixel
 y cv, que NO deben vendorizar cryptography).
 
-Reglas (defense-in-depth, mismas 2 guardas que el bypass anterior):
+Reglas (defense-in-depth):
 1. El bypass SOLO se considera si `cf_response` viene vacio (el frontend
    nunca lo envia vacio: el form exige el widget).
-2. El bypass SOLO se activa en STAGE in {dev, local}. En stage/prod, un
-   `cf_response` vacio -> CAPTCHA_INVALID directo.
+2. El bypass SOLO se activa en STAGE in {dev, local, stage}. En prod, un
+   `cf_response` vacio -> CAPTCHA_INVALID directo (prod NUNCA acepta
+   bypass). Cada env tiene su propio par de claves Ed25519 (aislamiento):
+   un token firmado para dev NO sirve en stage (stage-binding del payload).
 3. El bypass exige un token Ed25519 valido (firma con la clave PUBLICA del
    stage + no expirado + stage que coincide).
 
@@ -29,7 +31,10 @@ from typing import Any
 from shared.core.exceptions import BypassTokenError, TurnstileError
 from shared.observability.logger import logger
 
-_BYPASS_ALLOWED_STAGES = frozenset({'dev', 'local'})
+# Stages que aceptan el bypass de testing. prod NUNCA (defensa en
+# profundidad). `local` es el modo offline-dev; `dev`/`stage` son los
+# entornos desplegados de no-produccion.
+_BYPASS_ALLOWED_STAGES = frozenset({'dev', 'local', 'stage'})
 
 
 def _resolve_stage() -> str:

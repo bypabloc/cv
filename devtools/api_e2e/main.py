@@ -43,9 +43,7 @@ def main(flags: dict[str, Any]) -> int:
     try:
         env = Environment(env_name, aws_profile=aws_profile)
         bypass = (
-            env.bypass_secret()
-            if turnstile_bypass_supported(env_name)
-            else None
+            env.bypass_token() if turnstile_bypass_supported(env_name) else None
         )
     except Exception as exc:  # noqa: BLE001 -- setup
         print(f'[ERROR] setup del entorno: {type(exc).__name__}: {exc}')
@@ -63,9 +61,15 @@ def main(flags: dict[str, Any]) -> int:
 
     try:
         _run_flows(
-            runner=runner, http=http, env=env, env_name=env_name,
-            only=flags.get('lambda'), run_id=run_id, bypass=bypass,
-            created_emails=created_emails, created_sessions=created_sessions,
+            runner=runner,
+            http=http,
+            env=env,
+            env_name=env_name,
+            only=flags.get('lambda'),
+            run_id=run_id,
+            bypass=bypass,
+            created_emails=created_emails,
+            created_sessions=created_sessions,
         )
     finally:
         http.close()
@@ -106,6 +110,7 @@ def _run_flows(
     created_sessions: list[str],
 ) -> None:
     """Corre los flujos de los Lambdas pedidos (o todos si only es None)."""
+
     def want(name: str) -> bool:
         return only is None or only == name
 
@@ -123,7 +128,13 @@ def _run_flows(
     if want('auth') or want('users'):
         print('\n--- auth ---')
         access_token = run_auth(
-            runner, http, env, env_name, run_id, bypass, created_emails,
+            runner,
+            http,
+            env,
+            env_name,
+            run_id,
+            bypass,
+            created_emails,
         )
     if want('users'):
         print('\n--- users ---')
@@ -142,8 +153,7 @@ def _cleanup(
         contacts = env.cleanup_contacts(emails)
         tracking = env.cleanup_tracking(sessions)
         print(
-            f'  borrados: users={users} contacts={contacts} '
-            f'tracking={tracking}'
+            f'  borrados: users={users} contacts={contacts} tracking={tracking}'
         )
     except Exception as exc:  # noqa: BLE001 -- best-effort
         print(f'  [WARN] cleanup parcial: {type(exc).__name__}: {exc}')

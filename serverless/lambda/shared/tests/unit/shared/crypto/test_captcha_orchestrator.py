@@ -153,6 +153,30 @@ def test_empty_cf_in_dev_without_public_key_rejects(
     assert exc_info.value.code == 'CAPTCHA_INVALID'
 
 
+def test_empty_cf_in_stage_with_valid_token_bypasses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Given cf vacio + STAGE=stage + token valido, Then bypassed=True.
+
+    El bypass se acepta en dev Y stage (no solo dev); prod NUNCA.
+    """
+    token, public_b64 = _make_token('stage')
+    monkeypatch.setattr(captcha, '_load_public_key', lambda: public_b64)
+
+    result = captcha.verify_captcha_or_bypass(
+        '',
+        remote_ip='1.2.3.4',
+        bypass_token=token,
+        stage='stage',
+    )
+
+    assert result == {
+        'success': True,
+        'hostname': 'bypass',
+        'bypassed': True,
+    }
+
+
 def test_stage_resolved_from_env_when_not_passed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

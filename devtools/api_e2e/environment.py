@@ -1,8 +1,10 @@
-"""Acceso al entorno desplegado: secretos SSM + seed/cleanup en Neon.
+"""Acceso al entorno desplegado: bypass firmado + Neon URL (SSM) + seed.
 
-HERMETICO: ningun valor de secreto (bypass, connection string de Neon) se
-imprime jamas en stdout/stderr. Se resuelven en proceso via boto3 y se
-pasan a httpx/psycopg directo. Cumple `.claude/rules/env-files.md`.
+HERMETICO: ningun valor de secreto (clave privada de bypass, connection
+string de Neon) se imprime jamas en stdout/stderr. La Neon URL se resuelve
+de SSM via boto3; el token de bypass se FIRMA localmente con la clave
+privada Ed25519 de `docker/env/dev-cli/.{env}` (extraida sin volcar el
+.env). Cumple `.claude/rules/env-files.md`.
 
 El seed de Neon es necesario para el paso verify-code del flujo auth: el
 backend NO devuelve el code en claro (solo el hash SHA-256 va a Neon).
@@ -13,14 +15,19 @@ UPDATEamos el `code_hash` de la fila vigente, luego enviamos el plaintext.
 from __future__ import annotations
 
 import hashlib
+import time
 from typing import Any
 
 import boto3
 import psycopg
 
 from api_e2e.config import AWS_REGION
-from api_e2e.config import bypass_ssm_path
 from api_e2e.config import neon_ssm_path
+from shared.bypass_token import sign_bypass_token
+from shared.paths import PROJECT_ROOT
+
+
+_PRIVATE_KEY_VAR = 'TURNSTILE_BYPASS_PRIVATE_KEY'
 
 
 class Environment:
@@ -31,21 +38,41 @@ class Environment:
         session = boto3.Session(profile_name=aws_profile)
         self._ssm = session.client('ssm', region_name=AWS_REGION)
         self._neon_url: str | None = None
-        self._bypass: str | None = None
+        self._private_key: str | None = None
 
-    # --- Secretos (nunca a stdout) ---
+    # --- Bypass firmado (nunca a stdout) ---
 
-    def bypass_secret(self) -> str | None:
-        """Bypass de Turnstile desde SSM (None si no esta configurado)."""
-        if self._bypass is None:
-            try:
-                self._bypass = self._ssm.get_parameter(
-                    Name=bypass_ssm_path(self._env),
-                    WithDecryption=True,
-                )['Parameter']['Value']
-            except Exception:  # noqa: BLE001 -- ausente -> sin bypass
-                self._bypass = ''
-        return self._bypass or None
+    def _bypass_private_key(self) -> str | None:
+        """Lee la clave PRIVADA Ed25519 de docker/env/dev-cli/.{env}.
+
+        Extrae SOLO la key (no vuelca el .env, ver env-files.md). El valor
+        vive en proceso; NUNCA se imprime. None si no esta configurada.
+        """
+        if self._private_key is None:
+            self._private_key = ''
+            path = PROJECT_ROOT / 'docker' / 'env' / 'dev-cli' / f'.{self._env}'
+            if path.exists():
+                prefix = f'{_PRIVATE_KEY_VAR}='
+                for line in path.read_text().splitlines():
+                    if line.startswith(prefix):
+                        self._private_key = line[len(prefix) :].strip()
+                        break
+        return self._private_key or None
+
+    def bypass_token(self) -> str | None:
+        """Firma un token de bypass efimero (None si no hay clave privada).
+
+        El token lo verifica el backend con la clave PUBLICA (SSM). TTL 300s
+        cubre la duracion de los flujos encadenados del harness.
+        """
+        private_key = self._bypass_private_key()
+        if not private_key:
+            return None
+        return sign_bypass_token(
+            stage=self._env,
+            private_key_b64=private_key,
+            now=int(time.time()),
+        )
 
     def _neon(self) -> str:
         if self._neon_url is None:
@@ -111,7 +138,6 @@ class Environment:
         )
         total = 0
         for table in children:
-
             total += self._exec(
                 f'DELETE FROM {table} WHERE user_id = ANY(%s)',  # noqa: S608
                 (ids,),

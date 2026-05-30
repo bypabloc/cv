@@ -194,7 +194,7 @@ def http_handler(
     Reemplaza el cuerpo del `lambda_handler` de cada Lambda HTTP:
     1. resuelve el origin CORS y extrae metadata de transporte;
     2. `extract_request(event)` -> `(operation, action, data, method)`;
-    3. inyecta `data['_meta']` con `ip/country/user_agent/bypass_secret`;
+    3. inyecta `data['_meta']` con `ip/country/user_agent/bypass_token`;
     4. invoca `run_controller(synthetic_event, event_model)`;
     5. traduce el `DispatchResult` a una respuesta HTTP.
 
@@ -230,7 +230,7 @@ def http_handler(
     ip = extract_ip(event)
     country = extract_country(event)
     user_agent = _header(headers, 'user-agent')
-    bypass_secret = _header(headers, 'x-turnstile-bypass-secret')
+    bypass_token = _header(headers, 'x-turnstile-bypass-token')
     # Authorization header (Bearer <access JWT>): lo consumen los
     # endpoints autenticados (ej. mfa.*, webauthn.* del plan 02) via
     # `require_active_user`. Los modelos `_Meta` lo ignoran si no aplica.
@@ -257,7 +257,7 @@ def http_handler(
                     'ip': ip,
                     'country': country,
                     'user_agent': user_agent,
-                    'bypass_secret': bypass_secret,
+                    'bypass_token': bypass_token,
                     'cloudfront_meta': cloudfront_meta,
                     'origin': raw_origin,
                     'authorization': authorization,

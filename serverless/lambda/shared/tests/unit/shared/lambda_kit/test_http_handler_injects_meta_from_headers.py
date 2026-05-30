@@ -4,7 +4,7 @@ Given un evento con headers de transporte (user-agent, IP via
      requestContext, country via header CloudFront),
 When se invoca http_handler,
 Then el controller recibe data['_meta'] con ip, country, user_agent y
-     bypass_secret extraidos del evento.
+     bypass_token extraidos del evento.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def test_http_handler_injects_meta_from_headers() -> None:
         'headers': {
             'user-agent': 'curl/8.0',
             'cf-ipcountry': 'CL',
-            'x-turnstile-bypass-secret': 'secret-123',
+            'x-turnstile-bypass-token': 'token-123',
             'origin': 'https://the-full-stack.com',
             'authorization': 'Bearer access-jwt-xyz',
         },
@@ -71,7 +71,7 @@ def test_http_handler_injects_meta_from_headers() -> None:
         'ip': '203.0.113.42',
         'country': 'CL',
         'user_agent': 'curl/8.0',
-        'bypass_secret': 'secret-123',
+        'bypass_token': 'token-123',
         # cloudfront_meta vacio porque el evento de test no trae headers
         # cloudfront-* (REGIONAL). En Edge-Optimized llegan ~22 headers.
         'cloudfront_meta': {},

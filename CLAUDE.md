@@ -260,6 +260,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Client env sync | [.claude/rules/client-env-sync.md](.claude/rules/client-env-sync.md) | Detalle del flujo client (rule hija de secrets-strategy): catalogo, rotacion de Turnstile sitekey, comando `sync_secrets --category=client` |
 | Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) + [.claude/docs/plan-format-large/README.md](.claude/docs/plan-format-large/README.md) | En plan mode o al planificar features. Todo plan vive en `docs/specs/<nombre>/` y trae 4 secciones de ejecucion obligatorias: descomposicion, commits, paralelizacion con worktrees y verificacion E2E iterativa |
 | Harness protocol | [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md) | Subagentes, feature_list, current/history |
+| Orquestacion (workflow/subagents/agents/worktree) | [.claude/rules/orchestration.md](.claude/rules/orchestration.md) o skill `orchestration` | Antes de ejecutar un workflow, diseñar un fan-out, o decidir inline vs subagente vs workflow vs worktree (incl. al crear un plan). CAPS de concurrencia para NO pegar el rate-limit "Server is temporarily limiting requests": **1 workflow a la vez**, **<=4 agentes concurrentes** por workflow en Opus 4.8 (14 -> 429 medido), batching en olas. Politica de modelos: **Opus 4.8 por defecto**, Sonnet 4.6 solo para fan-outs mecanicos de alta concurrencia. Regla de oro: NO 1 agente LLM por tarea deterministica (pytest/lint/build -> Bash) |
 | Markdown docs | [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md) | Editar archivos de `docs/` |
 | Skills (frontmatter) | [.claude/rules/skills.md](.claude/rules/skills.md) | Crear / modificar skills |
 | Testing config Claude | [.claude/rules/claude-config-testing.md](.claude/rules/claude-config-testing.md) | Antes de commitear cambios en `.claude/*` |
@@ -305,6 +306,7 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 | `fix-hooks` | Reparar errores de pre-commit / pre-push iterativamente |
 | `github-actions` | Workflows CI + testing local con `act` (nektos/act) |
 | `mermaid` | Crear / modificar diagramas `.mmd` en `docs/diagrams/` |
+| `orchestration` | Como usar workflow / subagents / agents / worktree y cuando; CAPS de concurrencia (1 workflow a la vez, <=4 agentes) para evitar el rate-limit; politica de modelos (Opus 4.8 default, Sonnet 4.6 acotado); eleccion de primitiva al crear un plan |
 | `python-devtools` | Entorno Python del proyecto (`devtools/` + `.git-hooks/`): interprete correcto (`.venv` 3.14 vs `python3` 3.12 del shell), PEP 758, estructura de paquetes, comandos. Invocar ANTES de tocar/verificar cualquier `.py` |
 | `research` | Deep research de tecnologías y librerías (skill con web habilitada) |
 | `rotate-secrets` | Devtools script `rotate_secrets` para rotar/configurar credenciales de servicios externos (hoy: Cloudflare Turnstile) y escribir `docker/env/{server,client}/.{env}`. Subcommand-style: cada servicio exige sus credenciales como flags explicitas. Paso 1 de la rotacion antes de `serverless setup-ssm` |

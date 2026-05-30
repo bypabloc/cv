@@ -256,8 +256,17 @@ Descomposicion del plan en tareas atomicas. En Micro: `N/A — cambio atomico`.
 
 Resumen: cada tarea pasa 3 checks (File Exclusivity, Interface Stability,
 Bounded Scope) y tiene 6 campos (**Archivos**, **AC referenciados**, **Depende
-de**, **Paralelizable con**, **Verify**, **Done**). Limite: 5-7 agentes
-concurrentes. Granularidad: Small 3-5, Medium 5-10, Large 10-20 tareas.
+de**, **Paralelizable con**, **Verify**, **Done**). Granularidad: Small 3-5,
+Medium 5-10, Large 10-20 tareas.
+
+**Eleccion de primitiva + concurrencia**: que tarea va en subagente vs
+workflow vs worktree, el CAP de concurrencia y la politica de modelos los
+define [orchestration.md](orchestration.md). Cap duro: **<=4 agentes
+simultaneos** y **1 workflow a la vez** (no 5-7) para no pegar el rate-limit
+"Server is temporarily limiting requests"; mas tareas se corren en **olas de
+<=4**. Default **Opus 4.8**; **Sonnet 4.6** solo para fan-outs mecanicos de
+alta concurrencia. NO uses 1 agente LLM por tarea deterministica (pytest /
+lint / build -> Bash).
 
 ---
 
@@ -293,6 +302,11 @@ Define: la **base secuencial** (commits que todos los worktrees necesitan o
 que tocan archivos transversales), la tabla de fases worktree-safe (archivos
 disjuntos), lo que NO se paraleliza (config central, grilla de comandos,
 limpieza, la seccion 11), y como lanzar cada worktree.
+
+`isolation: 'worktree'` SOLO cuando los agentes mutan archivos en paralelo y
+colisionarian (NUNCA read-only). La eleccion de primitiva, el CAP de
+concurrencia (**<=4 agentes**, **1 workflow a la vez**) y la politica de
+modelos los gobierna [orchestration.md](orchestration.md).
 
 **Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 3
 (regla base, tabla de colisiones, plantilla, anti-patrones).

@@ -18,8 +18,16 @@ from api_e2e.support import HttpClient
 
 
 _CV_ACTIONS = (
-    'get', 'profile', 'experiences', 'projects', 'certificates',
-    'awards', 'education', 'languages', 'references', 'skills',
+    'get',
+    'profile',
+    'experiences',
+    'projects',
+    'certificates',
+    'awards',
+    'education',
+    'languages',
+    'references',
+    'skills',
 )
 
 
@@ -53,7 +61,9 @@ def run_cv(runner: Runner, http: HttpClient, env: str) -> None:
         name='cv (error: sin operation)',
         method='GET',
         call=lambda: http.get(
-            '/cv', params={'action': 'get'}, origin=origin,
+            '/cv',
+            params={'action': 'get'},
+            origin=origin,
         ),
         expected='4xx',
     )
@@ -79,12 +89,15 @@ def run_contact(
             call=lambda: http.post(
                 '/contact',
                 body=make_body(
-                    'contact', 'create',
-                    name='API E2E', email=email,
+                    'contact',
+                    'create',
+                    name='API E2E',
+                    email=email,
                     message='Mensaje de prueba E2E del harness api_e2e.',
                     cf_token='',
                 ),
-                origin=origin, bypass_secret=bypass,
+                origin=origin,
+                bypass_secret=bypass,
             ),
             expected='2xx',
             samples=2,
@@ -100,11 +113,14 @@ def run_contact(
         call=lambda: http.post(
             '/contact',
             body=make_body(
-                'contact', 'create',
-                name='API E2E', email='success+e2e@simulator.amazonses.com',
+                'contact',
+                'create',
+                name='API E2E',
+                email='success+e2e@simulator.amazonses.com',
                 cf_token='',
             ),
-            origin=origin, bypass_secret=bypass,
+            origin=origin,
+            bypass_secret=bypass,
         ),
         expected='4xx',
     )
@@ -115,12 +131,15 @@ def run_contact(
         call=lambda: http.post(
             '/contact',
             body=make_body(
-                'contact', 'create',
-                name='API E2E', email='no-es-un-email',
+                'contact',
+                'create',
+                name='API E2E',
+                email='no-es-un-email',
                 message='mensaje suficientemente largo para pasar',
                 cf_token='',
             ),
-            origin=origin, bypass_secret=bypass,
+            origin=origin,
+            bypass_secret=bypass,
         ),
         expected='4xx',
     )
@@ -139,16 +158,21 @@ def run_tracking(
     created_sessions.append(session_id)
 
     def _track_body(**over: object) -> dict:
-        base: dict[str, object] = dict(
-            session_id=session_id,
-            event_id='a1b2c3d4e5f60718293a4b5c6d7e8f90',
-            event_type_id=TRACKING_EVENT_TYPE_ID,
-            page_url='https://the-full-stack.com/projects',
-            page_title='Projects', page_path='/projects',
-            utm_source='e2e', utm_medium='api',
-            utm_campaign='verify', utm_content='run',
-            viewport_width=1920, viewport_height=1080, niche=NICHE,
-        )
+        base: dict[str, object] = {
+            'session_id': session_id,
+            'event_id': 'a1b2c3d4e5f60718293a4b5c6d7e8f90',
+            'event_type_id': TRACKING_EVENT_TYPE_ID,
+            'page_url': 'https://the-full-stack.com/projects',
+            'page_title': 'Projects',
+            'page_path': '/projects',
+            'utm_source': 'e2e',
+            'utm_medium': 'api',
+            'utm_campaign': 'verify',
+            'utm_content': 'run',
+            'viewport_width': 1920,
+            'viewport_height': 1080,
+            'niche': NICHE,
+        }
         base.update(over)
         return make_body('tracking', 'track', **base)
 
@@ -167,14 +191,20 @@ def run_tracking(
         call=lambda: http.post(
             '/track',
             body=make_body(
-                'tracking', 'track',
+                'tracking',
+                'track',
                 session_id=session_id,
                 event_id='a1b2c3d4e5f60718293a4b5c6d7e8f90',
                 page_url='https://the-full-stack.com/p',
-                page_title='P', page_path='/p',
-                utm_source='e2e', utm_medium='api',
-                utm_campaign='verify', utm_content='run',
-                viewport_width=1920, viewport_height=1080, niche=NICHE,
+                page_title='P',
+                page_path='/p',
+                utm_source='e2e',
+                utm_medium='api',
+                utm_campaign='verify',
+                utm_content='run',
+                viewport_width=1920,
+                viewport_height=1080,
+                niche=NICHE,
             ),
             origin=origin,
         ),
@@ -185,7 +215,9 @@ def run_tracking(
         name='tracking.track (error: viewport invalido)',
         method='POST',
         call=lambda: http.post(
-            '/track', body=_track_body(viewport_width=999999), origin=origin,
+            '/track',
+            body=_track_body(viewport_width=999999),
+            origin=origin,
         ),
         expected='4xx',
     )

@@ -31,7 +31,8 @@ from api_e2e.runner import make_body
 from api_e2e.support import HttpClient
 
 
-_STRONG_PASSWORD = 'api-e2e-Str0ng-Passphrase!'
+# Password de prueba del harness (NO es un secreto real).
+_STRONG_PASSWORD = 'api-e2e-Str0ng-Passphrase!'  # noqa: S105
 _FAKE_JWT = 'FAKE-TOKEN-API-E2E-NOT-A-REAL-JWT-XXXXXXXXXXXXXXXXXXXXXXXX'
 
 

@@ -57,7 +57,12 @@ def _load_public_key() -> str:
             'turnstile-bypass-public-key',
             local_env='TURNSTILE_BYPASS_PUBLIC_KEY',
         )
-    except (RuntimeError, Exception):
+    except RuntimeError:
+        # get_parameter_by_name solo levanta RuntimeError cuando NINGUNA
+        # fuente tiene la key (bypass no configurado en este env) -> inerte.
+        # Un fallo transitorio de SSM/IAM (boto3 ClientError) NO se atrapa
+        # aca: propaga para no enmascarar un error real de infra como
+        # "bypass disabled".
         logger.info('bypass public key not configured; bypass disabled')
         return ''
 

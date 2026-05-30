@@ -247,12 +247,14 @@ def _table_def(short_name: str) -> dict[str, str]:
     return table
 
 
-def _secret_def(short_name: str) -> dict[str, str]:
+def _secret_def(short_name: str) -> dict[str, Any]:
     """Resuelve un nombre corto de secreto a su definicion del catalogo.
 
     Lee del catalogo YAML en `serverless/lambda/resources/secrets/`
-    (fuente de verdad). Devuelve la estructura {path, env} compatible
-    con los consumers historicos de este modulo.
+    (fuente de verdad). Devuelve la estructura {path, env, stages}
+    compatible con los consumers de este modulo. `stages` es el set de
+    stages donde el secreto existe (para que el provisioner NO inyecte el
+    path/IAM en un stage donde el catalogo no lo declara).
     """
     from serverless.secrets_catalog import Catalog
     from serverless.secrets_catalog import CatalogError
@@ -265,6 +267,7 @@ def _secret_def(short_name: str) -> dict[str, str]:
     return {
         'path': spec.path_template,
         'env': spec.target_env_var,
+        'stages': spec.stages,
     }
 
 
@@ -320,6 +323,11 @@ def _build_env_vars(manifest: dict[str, Any], stage: str) -> dict[str, str]:
 
     for short_name in uses.get('secrets') or []:
         sdef = _secret_def(short_name)
+        # Omitir el secreto si el catalogo NO lo declara en este stage
+        # (ej. turnstile-bypass-public-key solo existe en dev/stage; un
+        # deploy a prod no debe inyectar un path SSM inexistente).
+        if stage not in sdef['stages']:
+            continue
         env[sdef['env']] = _interp(sdef['path'], stage)
 
     # uses.queues -> env vars SSM_<UPPER>_QUEUE_URL_PATH para que el
@@ -480,6 +488,10 @@ def _build_statements(
     ]
     for short_name in secrets:
         sdef = _secret_def(short_name)
+        # No conceder IAM sobre un secreto que el catalogo no declara en
+        # este stage (coherente con _build_env_vars: el path no se inyecta).
+        if stage not in sdef['stages']:
+            continue
         path = _interp(sdef['path'], stage)
         ssm_read_arns.append(
             f'arn:aws:ssm:{region}:{account}:parameter{path}',

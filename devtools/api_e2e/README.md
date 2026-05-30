@@ -28,9 +28,11 @@ Neon**. Por eso es un comando dedicado, opt-in, fuera de la bateria de CI.
 
 ## Uso
 
+Requiere SSO activo del perfil: `aws sso login --profile tfs-dev`.
+
 ```bash
-# Todos los Lambdas contra dev (requiere SSO activo del perfil)
-AWS_PROFILE=tfs-dev python devtools/run.py api_e2e --env=dev --aws-profile=tfs-dev
+# Todos los Lambdas contra dev
+python devtools/run.py api_e2e --env=dev --aws-profile=tfs-dev
 
 # Un solo Lambda
 python devtools/run.py api_e2e --env=dev --lambda=auth --aws-profile=tfs-dev

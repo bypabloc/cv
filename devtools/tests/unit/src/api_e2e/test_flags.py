@@ -1,17 +1,8 @@
 """Tests de validacion de flags de api_e2e (logica pura, sin red)."""
 
-from pathlib import Path
-import sys
-
 import pytest
 
-
-# Agregar el dir del script api_e2e al path para los imports bare.
-_API_E2E_DIR = Path(__file__).resolve().parents[4] / 'api_e2e'
-if str(_API_E2E_DIR) not in sys.path:
-    sys.path.insert(0, str(_API_E2E_DIR))
-
-from flags import flag
+from api_e2e.flags import flag
 
 
 def test_flag_when_no_args_then_applies_defaults() -> None:

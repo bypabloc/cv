@@ -19,10 +19,11 @@ from typing import Any
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from config import VALID_ENVS
 from utils.describe import ScriptDescribe
 from utils.flags_to_dict import set_default_values
 from utils.flags_to_dict import validate_allowed_flags
+
+from api_e2e.config import VALID_ENVS
 
 
 VALID_LAMBDAS = ('cv', 'contact_form', 'tracking_pixel', 'auth', 'users')

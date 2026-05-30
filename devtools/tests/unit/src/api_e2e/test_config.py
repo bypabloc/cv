@@ -1,17 +1,9 @@
 """Tests de config de api_e2e: IpRotator, emails sinteticos, env helpers."""
 
-from pathlib import Path
-import sys
-
-
-_API_E2E_DIR = Path(__file__).resolve().parents[4] / 'api_e2e'
-if str(_API_E2E_DIR) not in sys.path:
-    sys.path.insert(0, str(_API_E2E_DIR))
-
-from config import IpRotator
-from config import api_base
-from config import synthetic_email
-from config import turnstile_bypass_supported
+from api_e2e.config import IpRotator
+from api_e2e.config import api_base
+from api_e2e.config import synthetic_email
+from api_e2e.config import turnstile_bypass_supported
 
 
 def test_ip_rotator_yields_distinct_ips_consecutively() -> None:

@@ -13,17 +13,17 @@ from __future__ import annotations
 import secrets as _secrets
 from typing import Any
 
-from config import api_base
-from config import turnstile_bypass_supported
-from environment import Environment
-from flow_auth import run_auth
-from flow_readonly import run_contact
-from flow_readonly import run_cv
-from flow_readonly import run_tracking
-from flow_users import run_users
-from reporter import Reporter
-from runner import Runner
-from support import HttpClient
+from api_e2e.config import api_base
+from api_e2e.config import turnstile_bypass_supported
+from api_e2e.environment import Environment
+from api_e2e.flow_auth import run_auth
+from api_e2e.flow_readonly import run_contact
+from api_e2e.flow_readonly import run_cv
+from api_e2e.flow_readonly import run_tracking
+from api_e2e.flow_users import run_users
+from api_e2e.reporter import Reporter
+from api_e2e.runner import Runner
+from api_e2e.support import HttpClient
 
 
 def main(flags: dict[str, Any]) -> int:

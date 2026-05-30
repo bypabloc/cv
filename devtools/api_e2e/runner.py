@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from reporter import CaseResult
-from reporter import Reporter
-from support import Response
+from api_e2e.reporter import CaseResult
+from api_e2e.reporter import Reporter
+from api_e2e.support import Response
 
 
 SAMPLES_DEFAULT = 5

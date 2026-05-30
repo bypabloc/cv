@@ -7,14 +7,14 @@ un contact / tracking event) pero el cleanup borra lo creado.
 
 from __future__ import annotations
 
-from config import NICHE
-from config import TRACKING_EVENT_TYPE_ID
-from config import apex_origin
-from config import cv_origin
-from config import synthetic_email
-from runner import Runner
-from runner import make_body
-from support import HttpClient
+from api_e2e.config import NICHE
+from api_e2e.config import TRACKING_EVENT_TYPE_ID
+from api_e2e.config import apex_origin
+from api_e2e.config import cv_origin
+from api_e2e.config import synthetic_email
+from api_e2e.runner import Runner
+from api_e2e.runner import make_body
+from api_e2e.support import HttpClient
 
 
 _CV_ACTIONS = (

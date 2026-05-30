@@ -18,12 +18,12 @@ lo reutilice.
 
 from __future__ import annotations
 
-from config import admin_origin
-from config import synthetic_email
-from environment import Environment
-from runner import Runner
-from runner import make_body
-from support import HttpClient
+from api_e2e.config import admin_origin
+from api_e2e.config import synthetic_email
+from api_e2e.environment import Environment
+from api_e2e.runner import Runner
+from api_e2e.runner import make_body
+from api_e2e.support import HttpClient
 
 
 _STRONG_PASSWORD = 'api-e2e-Str0ng-Passphrase!'

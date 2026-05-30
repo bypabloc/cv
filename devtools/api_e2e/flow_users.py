@@ -9,10 +9,10 @@ valido -> 401.
 
 from __future__ import annotations
 
-from config import admin_origin
-from runner import Runner
-from runner import make_body
-from support import HttpClient
+from api_e2e.config import admin_origin
+from api_e2e.runner import Runner
+from api_e2e.runner import make_body
+from api_e2e.support import HttpClient
 
 
 _FAKE_JWT = 'FAKE-TOKEN-API-E2E-NOT-A-REAL-JWT-XXXXXXXXXXXXXXXXXXXXXXXX'

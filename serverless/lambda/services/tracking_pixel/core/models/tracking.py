@@ -48,10 +48,11 @@ class TrackEventMeta(BaseModel):
     ip: str = Field(default='')
     country: str | None = Field(default=None)
     user_agent: str | None = Field(default=None)
-    # bypass_secret no se usa en tracking (no hay Turnstile estricto), pero
+    # bypass_token no se usa en tracking (no hay Turnstile estricto), pero
     # el http_handler generico siempre lo inyecta para uniformidad. Se
-    # acepta para no romper el extra:forbid del sub-modelo.
-    bypass_secret: str | None = Field(default=None)
+    # declara para no romper el extra:forbid del sub-modelo (passthrough
+    # ignorado).
+    bypass_token: str | None = Field(default=None)
     # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
     # API GW los expone). El controller lo pasa al service para
     # persistirlo en la columna cloudfront_meta JSONB.

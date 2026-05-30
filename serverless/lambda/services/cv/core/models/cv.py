@@ -25,7 +25,10 @@ class CvRequestMeta(BaseModel):
     ip: str = ''
     country: str | None = None
     user_agent: str | None = None
-    bypass_secret: str | None = None
+    # bypass_token: lo inyecta http_handler para uniformidad. cv es
+    # read-only sin Turnstile; se declara solo para no romper el
+    # extra:forbid del sub-modelo (passthrough ignorado).
+    bypass_token: str | None = None
     cloudfront_meta: dict[str, str] = Field(default_factory=dict)
     # Origin header raw del request. Inyectado por http_handler para
     # uniformidad entre Lambdas. cv no lo usa hoy.

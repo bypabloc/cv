@@ -15,8 +15,9 @@ dependencies = [
 ]
 
 [tool.shared]
-# bypass_token + captcha -> core.exceptions + observability.logger.
-internal-deps = ["core", "observability"]
+# bypass_token -> core.exceptions; captcha -> http.turnstile (CAPTCHA real)
+# + aws.ssm (clave publica) + observability.logger.
+internal-deps = ["core", "observability", "http", "aws"]
 
 # Deps de DESARROLLO del subpaquete: pytest + coverage + mocks. Permiten
 # que el .venv aislado del subpaquete corra su suite. NO van al artefacto

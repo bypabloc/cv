@@ -29,7 +29,6 @@ from api_e2e.support import HttpClient
 def main(flags: dict[str, Any]) -> int:
     """Corre el harness api_e2e segun las flags."""
     env_name = flags['env']
-    only = flags.get('lambda')
     samples = flags.get('samples', 5)
     keep_data = flags.get('keep_data', False)
     aws_profile = flags.get('aws_profile')
@@ -52,6 +51,36 @@ def main(flags: dict[str, Any]) -> int:
         print(f'[ERROR] setup del entorno: {type(exc).__name__}: {exc}')
         return 2
 
+    _print_bypass_note(env_name, bypass)
+
+    run_id = _secrets.token_hex(2)
+    http = HttpClient(base_url=api_base(env_name))
+    reporter = Reporter()
+    runner = Runner(reporter, samples=samples)
+
+    created_emails: list[str] = []
+    created_sessions: list[str] = []
+
+    try:
+        _run_flows(
+            runner=runner, http=http, env=env, env_name=env_name,
+            only=flags.get('lambda'), run_id=run_id, bypass=bypass,
+            created_emails=created_emails, created_sessions=created_sessions,
+        )
+    finally:
+        http.close()
+        if keep_data:
+            print('\n[INFO] --keep-data: datos sinteticos NO eliminados.')
+        else:
+            _cleanup(env, created_emails, created_sessions)
+
+    reporter.print_timing_summary()
+    reporter.print_final()
+    return 0 if reporter.all_passed() else 1
+
+
+def _print_bypass_note(env_name: str, bypass: str | None) -> None:
+    """Avisa si el bypass de Turnstile no esta disponible para el env."""
     if bypass is None and turnstile_bypass_supported(env_name):
         print(
             '[WARN] bypass de Turnstile no disponible: los flujos de '
@@ -63,60 +92,42 @@ def main(flags: dict[str, Any]) -> int:
             'flujos con Turnstile omitidos (solo errores).'
         )
 
-    run_id = _secrets.token_hex(2)
-    http = HttpClient(base_url=api_base(env_name))
-    reporter = Reporter()
-    runner = Runner(reporter, samples=samples)
 
-    created_emails: list[str] = []
-    created_sessions: list[str] = []
-
-    def _want(name: str) -> bool:
+def _run_flows(
+    *,
+    runner: Runner,
+    http: HttpClient,
+    env: Environment,
+    env_name: str,
+    only: str | None,
+    run_id: str,
+    bypass: str | None,
+    created_emails: list[str],
+    created_sessions: list[str],
+) -> None:
+    """Corre los flujos de los Lambdas pedidos (o todos si only es None)."""
+    def want(name: str) -> bool:
         return only is None or only == name
 
-    try:
-        if _want('cv'):
-            print('\n--- cv ---')
-            run_cv(runner, http, env_name)
-        if _want('contact_form'):
-            print('\n--- contact_form ---')
-            run_contact(
-                runner,
-                http,
-                env_name,
-                run_id,
-                bypass,
-                created_emails,
-            )
-        if _want('tracking_pixel'):
-            print('\n--- tracking_pixel ---')
-            run_tracking(runner, http, env_name, run_id, created_sessions)
+    if want('cv'):
+        print('\n--- cv ---')
+        run_cv(runner, http, env_name)
+    if want('contact_form'):
+        print('\n--- contact_form ---')
+        run_contact(runner, http, env_name, run_id, bypass, created_emails)
+    if want('tracking_pixel'):
+        print('\n--- tracking_pixel ---')
+        run_tracking(runner, http, env_name, run_id, created_sessions)
 
-        access_token = None
-        if _want('auth') or _want('users'):
-            print('\n--- auth ---')
-            access_token = run_auth(
-                runner,
-                http,
-                env,
-                env_name,
-                run_id,
-                bypass,
-                created_emails,
-            )
-        if _want('users'):
-            print('\n--- users ---')
-            run_users(runner, http, env_name, access_token)
-    finally:
-        http.close()
-        if not keep_data:
-            _cleanup(env, created_emails, created_sessions)
-        else:
-            print('\n[INFO] --keep-data: datos sinteticos NO eliminados.')
-
-    reporter.print_timing_summary()
-    reporter.print_final()
-    return 0 if reporter.all_passed() else 1
+    access_token = None
+    if want('auth') or want('users'):
+        print('\n--- auth ---')
+        access_token = run_auth(
+            runner, http, env, env_name, run_id, bypass, created_emails,
+        )
+    if want('users'):
+        print('\n--- users ---')
+        run_users(runner, http, env_name, access_token)
 
 
 def _cleanup(
@@ -131,7 +142,8 @@ def _cleanup(
         contacts = env.cleanup_contacts(emails)
         tracking = env.cleanup_tracking(sessions)
         print(
-            f'  borrados: users={users} contacts={contacts} tracking={tracking}'
+            f'  borrados: users={users} contacts={contacts} '
+            f'tracking={tracking}'
         )
     except Exception as exc:  # noqa: BLE001 -- best-effort
         print(f'  [WARN] cleanup parcial: {type(exc).__name__}: {exc}')

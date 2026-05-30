@@ -28,10 +28,49 @@ from typing import Any
 from settings.config import logger
 from shared.cache.decorator import cached
 from shared.core.ulid import new_uuidv7
-from shared.db.repository import ensure_session_and_visit, insert_tracking
-from shared.db.session import db_session
 from shared.queue.publisher import send_to_queue
-from ua_parser import user_agent_parser
+
+# --- Deps pesadas del path sync (lazy) -----------------------------------
+# El cold path async (ASYNC_MODE=true, default) NO toca Neon ni parsea UA:
+# solo encola a SQS. Importar shared.db (sqlalchemy + psycopg) y ua_parser
+# al top inflaba el footprint del encoder de ~63 MB a ~122 MB -> OOM-thrash
+# a 128 MB -> timeout de 30s en EXECUTE (502/504). Se difieren a la primera
+# invocacion del path sync legacy (lambda-config.md: cortar imports, NUNCA
+# subir memoria). Quedan como globals para preservar los monkeypatch de los
+# tests (services.tracking_service.{db_session,ensure_session_and_visit,
+# insert_tracking}).
+db_session: Any = None
+ensure_session_and_visit: Any = None
+insert_tracking: Any = None
+user_agent_parser: Any = None
+
+
+def _ensure_db_deps() -> None:
+    """Importa shared.db.* la primera vez que corre el path sync (lazy)."""
+    global db_session, ensure_session_and_visit, insert_tracking
+    if db_session is None:
+        from shared.db.session import db_session as _db_session
+
+        db_session = _db_session
+    if ensure_session_and_visit is None:
+        from shared.db.repository import ensure_session_and_visit as _ensure
+
+        ensure_session_and_visit = _ensure
+    if insert_tracking is None:
+        from shared.db.repository import insert_tracking as _insert
+
+        insert_tracking = _insert
+
+
+def _parse_ua(user_agent: str) -> dict[str, Any]:
+    """Parsea el UA con ua_parser (lazy import en el primer uso del sync)."""
+    global user_agent_parser
+    if user_agent_parser is None:
+        from ua_parser import user_agent_parser as _ua
+
+        user_agent_parser = _ua
+    return user_agent_parser.Parse(user_agent)
+
 
 # --- Enrichment ---
 
@@ -93,7 +132,7 @@ def parse_user_agent(user_agent: str | None) -> dict[str, str]:
             'device_type': 'unknown',
         }
 
-    parsed = user_agent_parser.Parse(user_agent)
+    parsed = _parse_ua(user_agent)
     ua_block = parsed.get('user_agent') or {}
     os_block = parsed.get('os') or {}
 
@@ -143,6 +182,8 @@ def save_tracking_event(payload: dict[str, Any]) -> dict[str, Any]:
     page_id = new_uuidv7()
     created_at = datetime.now(UTC)
 
+    # Path sync legacy: importa shared.db (sqlalchemy + psycopg) on-demand.
+    _ensure_db_deps()
     with db_session() as session:
         # Paso 1: UPSERT session + visit (en la misma tx). El helper
         # incrementa event_count del visit en 1.

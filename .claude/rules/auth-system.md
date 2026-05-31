@@ -1,8 +1,9 @@
 # Sistema de autenticacion del portfolio
 
-> Reglas duras para trabajar con los Lambdas `auth` + `auth_email_worker`,
-> el subpackage `shared.auth`, el schema `auth_*` en Neon, la tabla DDB
-> `jwt-blacklist` y los flujos register/login/verify/session. Aplica al
+> Reglas duras para trabajar con el Lambda `auth`, el subpackage
+> `shared.auth`, el schema `auth_*` en Neon, la tabla DDB `jwt-blacklist`
+> y los flujos register/login/verify/session. El email transaccional lo
+> envia el Lambda `send_email` (invocado async, sin SQS). Aplica al
 > backend serverless. NO aplica al frontend Astro ni al dashboard Next.
 
 ## Activacion
@@ -12,7 +13,6 @@ Aplica SIEMPRE que se trabaje con:
 - Cualquier archivo bajo `serverless/lambda/services/auth/`
   (incluye `core/controllers/{mfa,webauthn}` y los services
   `{mfa_method,totp,webauthn,challenge,recovery_codes,session}_service.py`)
-- Cualquier archivo bajo `serverless/lambda/services/auth_email_worker/`
 - Cualquier archivo bajo `serverless/lambda/services/users/` (Lambda
   `users` del plan 03: profile / status / admin)
 - Cualquier archivo bajo `serverless/lambda/shared/auth/`
@@ -28,7 +28,6 @@ Aplica SIEMPRE que se trabaje con:
   `00000003_auth_mfa.py` y `00000004_auth_users_extension.py`)
 - `serverless/lambda/resources/dynamodb/jwt-blacklist.yaml`
 - `serverless/lambda/resources/dynamodb/webauthn-challenges.yaml`
-- `serverless/lambda/resources/sqs/auth-email-{queue,dlq}.yaml`
 - `serverless/lambda/resources/secrets/jwt-secret.yaml` +
   `serverless/lambda/resources/secrets/admin-emails.yaml`
 - Cualquier referencia a `/portfolio/${stage}/jwt-secret` en SSM
@@ -129,29 +128,39 @@ Aplica SIEMPRE que se trabaje con:
   con las reglas seedeadas (ver
   [.claude/docs/auth-system/03-rate-limit-rules.md](../docs/auth-system/03-rate-limit-rules.md)).
 - **SIEMPRE** la verificacion de Turnstile + rate-limit ocurre ANTES
-  de tocar Neon o SQS.
+  de tocar Neon o de invocar `send_email`.
 
-### Email async (SQS + worker)
+### Email async (invoke send_email)
 
-- **SIEMPRE** el Lambda `auth` solo publica a la cola SQS
-  `portfolio-auth-email-${stage}`. NUNCA llama SES directo.
-- **SIEMPRE** el `auth_email_worker` consume la cola con
-  `ReportBatchItemFailures` (permite fallar un mensaje del batch y
-  reintentarlo sin afectar al resto).
-- **SIEMPRE** el worker tras enviar exitosamente inserta un row en
-  `auth_audit_log` con `event=email.sent.<kind>` (success=true).
-- **NUNCA** reusar `contact_worker` para emails de auth — aislamiento
-  de dominios.
+- **SIEMPRE** el Lambda `auth` (y `users`) invoca el Lambda `send_email`
+  async (`InvocationType='Event'`) para enviar email transaccional. NUNCA
+  llama SES directo ni usa SQS.
+- **SIEMPRE** el payload del invoke es
+  `{operation:'email', action:'send', data:{kind, to:[to], data:{...}}}`.
+- **SIEMPRE** el Lambda `send_email` resuelve el envio: lee la config del
+  remitente de la tabla DynamoDB `email-config`, baja el template del
+  bucket S3, lo renderiza con Jinja2 y envia por SES.
+- **SIEMPRE** el invoke es best-effort: un fallo al invocar `send_email`
+  NO rompe el request del flujo (register/login/verify/...) — degrada a un
+  log de warning. El audit log de auth (`auth_audit_log`) lo escribe el
+  Lambda `auth`, NO `send_email`.
+- **NUNCA** publicar a una cola SQS para emails de auth ni mantener un
+  Lambda worker SQS-consumer — el modelo es invoke directo a `send_email`.
 
 ### IAM y costos
 
-- **SIEMPRE** el Lambda `auth` tiene IAM scoped: las 5 tablas DDB
-  declaradas en `manifest.yaml#uses.tables`, la cola SQS, los 5 secretos
-  SSM. NUNCA wildcard.
-- **SIEMPRE** el `auth_email_worker` tiene IAM scoped: SQS por ARN
-  exacto, SSM `ses-from-address` por ARN exacto, SES por **identity ARN
-  exacto** (`arn:aws:ses:us-east-1:<account-id>:identity/the-full-stack.com`).
-  NUNCA `Resource: *` ni `ses:*`.
+- **SIEMPRE** el Lambda `auth` tiene IAM scoped: las tablas DDB declaradas
+  en `manifest.yaml#uses.tables`, `lambda:InvokeFunction` solo sobre el ARN
+  de `send_email` (declarado en `manifest.yaml#uses.invokes: [send_email]`,
+  expuesto al runtime via la env var `LAMBDA_SEND_EMAIL_FUNCTION_NAME`) y
+  los 4 secretos SSM (`turnstile-secret`, `turnstile-bypass-public-key`,
+  `neon-url`, `jwt-secret`). NUNCA wildcard. El `auth` ya NO declara la
+  cola SQS auth-email ni `ses-from-address`.
+- **SIEMPRE** el Lambda `send_email` (no `auth`) tiene el IAM scoped para
+  SES por **identity ARN exacto**
+  (`arn:aws:ses:us-east-1:<account-id>:identity/the-full-stack.com`),
+  ademas de la tabla `email-config` y el bucket S3 de templates. NUNCA
+  `Resource: *` ni `ses:*`.
 
 ### MFA + WebAuthn (plan 02)
 
@@ -232,9 +241,11 @@ Aplica SIEMPRE que se trabaje con:
 - **SIEMPRE** el rate-limit de `users` usa `turnstile_validated=False`
   (endpoints JWT-authed sin Turnstile; True auto-blacklistearia users
   legitimos con 3+ requests/60s).
-- **SIEMPRE** el dispatcher de email del Lambda `users` publica el schema
-  que valida el worker (`{kind, to, user_id, niche, subject_id, data}` —
-  con `subject_id`, SIN `schema_version`/`locale`).
+- **SIEMPRE** el dispatcher de email del Lambda `users` invoca `send_email`
+  async con el payload
+  `{operation:'email', action:'send', data:{kind, to:[to], data:{**data,
+  user_id, niche, subject_id}}}` — con `subject_id`, SIN
+  `schema_version`/`locale`. NUNCA publica a SQS.
 - **NUNCA** un admin se borra a si mismo via `profile.delete-account` si
   su email esta en la whitelist (`409 CANNOT_DELETE_ADMIN_ACCOUNT`, AC-29).
 - **NUNCA** un user revoca su propia sesion via `status.revoke-session`
@@ -264,7 +275,8 @@ Aplica SIEMPRE que se trabaje con:
 | Email distinto en respuesta a "no existe" vs "disabled" | Mismo 404, solo `suggest_register` cambia |
 | Token de magic-link como JWT | Opaco 32 bytes b64url; hash SHA-256 en `auth_magic_links.token_hash` |
 | Hardcodear secret en `manifest.yaml` | SSM SecureString + KMS; `@cached_property` en AppConfig |
-| Lambda `auth` enviando SES directo | Publicar a SQS; el worker es quien envia |
+| Lambda `auth` enviando SES directo | Invocar `send_email` async (`InvocationType='Event'`) |
+| Publicar emails de auth a una cola SQS / mantener un worker SQS-consumer | Invoke directo a `send_email` (`{operation:'email', action:'send', data:{...}}`) |
 | Reusar `family_id` entre sesiones | Cada login = `family_id` nuevo (uuidv7) |
 | Editar migration `00000002` ya aplicada | Migration nueva (forward fix) |
 | Rate-limit con prefix matching | Exacto `<operation>.<action>` literal |
@@ -273,7 +285,7 @@ Aplica SIEMPRE que se trabaje con:
 | soft-delete via `session.delete(user)` esperando cascade | UPDATE `deleted_at` + DELETE explicito por tabla hija |
 | Session tracking que rompe el login si Neon falla | best-effort (try/except + log) |
 | `turnstile_validated=True` en endpoints de `users` | `False` (auto-blacklist a users legitimos) |
-| Dispatcher de `users` con `schema_version`/`locale` | `{kind,to,user_id,niche,subject_id,data}` (lo que valida el worker) |
+| Dispatcher de `users` con `schema_version`/`locale` | invoke `send_email` con `data:{**data,user_id,niche,subject_id}` (sin `schema_version`/`locale`) |
 
 ## Verificacion antes de commit (recordatorio)
 
@@ -291,7 +303,6 @@ python devtools/run.py serverless tests --type=coverage --lambda=users   # >=80%
 
 # Lint deps (shared-only imports + dedup D-3)
 python devtools/run.py serverless lint-deps --lambda=auth
-python devtools/run.py serverless lint-deps --lambda=auth_email_worker
 python devtools/run.py serverless lint-deps --lambda=users
 python devtools/run.py serverless lint-deps --shared
 ```

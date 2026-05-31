@@ -142,9 +142,11 @@ uno con su propio `pyproject.toml` que declara sus deps externas en
 `__init__.py` (no re-exporta nada). Subpaquetes actuales:
 
 - `shared/core/` — config, exceptions, types, ulid.
-- `shared/aws/` — clientes AWS: dynamodb, ses, ssm.
-- `shared/observability/` — logger, tracer, metrics.
+- `shared/aws/` — clientes AWS: dynamodb, ses, ssm, s3, kms,
+  lambda_invoke (invoke async de otro Lambda).
+- `shared/observability/` — logger, metrics.
 - `shared/http/` — cors, responses, ip_extractor, turnstile, validators.
+- `shared/templating/` — render Jinja2 de templates de email.
 - `shared/db/`, `shared/dynamodb/`, `shared/cache/`, `shared/rate_limit/`.
 
 devtools **vendoriza** la libreria — la copia dentro de
@@ -228,6 +230,28 @@ Reglas asociadas:
   GET, body JSON en POST). Ningun handler los hardcodea.
 - **NUNCA** duplicar el parsing del evento en cada handler — delegar
   SIEMPRE en `http_handler`.
+
+## Triggers y wiring del `manifest.yaml` (`trigger` + `uses`)
+
+- **SIEMPRE** el `trigger.type` del `manifest.yaml` es uno de **dos**:
+  `http` (detras de API Gateway, usa `http_handler`) o `direct`
+  (invocado por `aws lambda invoke`, ej. el Lambda `send_email`
+  invocado fire-and-forget por otros Lambdas). SQS fue eliminado: el
+  trigger `sqs` (y los workers `*_worker`) ya NO existen.
+- **SIEMPRE** las dependencias del Lambda hacia otros recursos AWS se
+  declaran en el bloque `uses` del `manifest.yaml`; devtools genera de
+  ahi el IAM least-privilege + las env vars:
+  - `uses.invokes: [<lambda>]` -> IAM `lambda:InvokeFunction` al ARN del
+    Lambda target + env var `LAMBDA_<TARGET>_FUNCTION_NAME` (el codigo la
+    lee y se la pasa a `invoke_async`). Reemplaza al viejo `uses.queues`
+    (SQS).
+  - `uses.buckets: [{name, access}]` -> IAM `s3:GetObject` (segun
+    `access`) al bucket + env var `S3_<NAME>_BUCKET` (para leer templates
+    via `shared.aws.s3.get_object_text`).
+  - `uses.tables` / `uses.secrets` siguen igual (DynamoDB / SSM).
+- **NUNCA** declarar `uses.queues` ni un trigger `sqs`: el email async
+  ya no pasa por una cola. El Lambda que necesita enviar un email invoca
+  `send_email` async con `invoke_async` (IAM via `uses.invokes`).
 
 ## Separacion de responsabilidades
 

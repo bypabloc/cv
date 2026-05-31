@@ -1,1 +1,1 @@
-"""Controllers del Lambda `tracking_worker`."""
+"""Controllers del Lambda `tracking_writer`."""

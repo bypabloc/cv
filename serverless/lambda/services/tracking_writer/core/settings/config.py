@@ -1,4 +1,4 @@
-"""Configuracion del Lambda `tracking_worker`.
+"""Configuracion del Lambda `tracking_writer`.
 
 Define `AppConfig` (variables de entorno), los enums de codigos de
 error y de metricas de logging, y reexporta el `logger` de la libreria
@@ -75,7 +75,7 @@ class LogMetricType(Enum):
 
 
 class AppConfig(BaseSettings):
-    """Configuracion del Lambda `tracking_worker`, desde env vars.
+    """Configuracion del Lambda `tracking_writer`, desde env vars.
 
     Cada campo anotado se carga de la env var homonima en MAYUSCULAS.
     Los campos reales (connection string Neon, tabla cache) los

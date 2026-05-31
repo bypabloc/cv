@@ -1,1 +1,1 @@
-"""Modelos Pydantic del Lambda `tracking_worker`."""
+"""Modelos Pydantic del Lambda `tracking_writer`."""

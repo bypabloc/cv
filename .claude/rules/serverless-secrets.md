@@ -132,7 +132,9 @@ Aplica SIEMPRE que se trabaje con:
   `manifest.yaml` de la Lambda `db` declara `SSM_NEON_URL_PATH` como
   `/portfolio/${stage}/neon-url` y devtools la inyecta como env var
   (SPEC-202, Fase 2). El `/portfolio/neon-url` plano queda como legacy/fallback.
-- **Quien lo lee**: Lambda `stream_processor`.
+- **Quien lo lee**: los Lambdas que tocan Neon — `contact_form` (escribe el
+  contacto inline), `tracking_writer` (persiste tracking events), `auth`, `cv`
+  y `users`. La Lambda `db` la usa para las migraciones Alembic.
 - **Rotacion**: cuando se rota el password de `neondb_owner` en Neon Console:
 
   ```bash
@@ -166,7 +168,9 @@ Aplica SIEMPRE que se trabaje con:
 
 - **Que es**: direccion remitente verificada en SES para emails transaccionales.
 - **Valor**: `no-reply@the-full-stack.com`.
-- **Quien lo lee**: Lambda `contact_form` para `SendEmail.FromEmailAddress`.
+- **Quien lo lee**: Lambda `send_email` para `SendEmail.FromEmailAddress`. Es
+  el unico Lambda que llama SES directo: `contact_form`, `auth` y `users` lo
+  invocan async (`InvocationType='Event'`) en vez de mandar SES ellos mismos.
 - **Rotacion**: solo si cambia el domain o alias; requiere re-verificar la
   nueva address en SES.
 
@@ -208,10 +212,11 @@ aws kms schedule-key-deletion --key-id <KEY_ID_ANTIGUO> \
 
 | Lambda | SSM parameters | KMS Decrypt |
 |--------|----------------|-------------|
-| `contact_form` | `turnstile-secret`, `turnstile-bypass-public-key`, `owner-email`, `ses-from-address` + paths `dynamodb/{contacts,cache,rate-limit-*}` | Si (solo turnstile-secret) |
-| `tracking_pixel` | paths `dynamodb/{tracking,cache,rate-limit-*}` | No |
-| `auth` | `turnstile-secret`, `turnstile-bypass-public-key`, `neon-url`, `jwt-secret`, `ses-from-address` | Si (turnstile-secret, neon-url, jwt-secret) |
-| `stream_processor` | `neon-url` + paths `dynamodb/{contacts,tracking}` | Si |
+| `contact_form` | `turnstile-secret`, `turnstile-bypass-public-key`, `owner-email`, `neon-url` + paths `dynamodb/{contacts,cache,rate-limit-*}` + `uses.invokes send_email` | Si (turnstile-secret, neon-url) |
+| `tracking_pixel` | paths `dynamodb/{tracking,cache,rate-limit-*}` + `uses.invokes tracking_writer` | No |
+| `tracking_writer` | `neon-url` + paths `dynamodb/{tracking}` | Si (neon-url) |
+| `send_email` | `ses-from-address` + paths `dynamodb/email-config` + bucket S3 `portfolio-email-templates-${stage}` | No |
+| `auth` | `turnstile-secret`, `turnstile-bypass-public-key`, `neon-url`, `jwt-secret` + `uses.invokes send_email` | Si (turnstile-secret, neon-url, jwt-secret) |
 
 Los paths `/portfolio/{stage}/dynamodb/...` son `String` planos (nombre/ARN
 de recurso, no secreto); su lectura no requiere `kms:Decrypt`. Solo
@@ -234,8 +239,9 @@ recurso se puede recrear sin bloquear a quien lo consume.
 | `/portfolio/{stage}/dynamodb/cache/{name,arn}` | tabla DynamoDB de cache |
 | `/portfolio/{stage}/dynamodb/rate-limit-rules/{name,arn}` | tabla DynamoDB de reglas de rate-limit |
 | `/portfolio/{stage}/dynamodb/rate-limit-buckets/{name,arn}` | tabla DynamoDB de buckets de rate-limit |
+| `/portfolio/{stage}/dynamodb/email-config/{name,arn}` | tabla DynamoDB de config de email (la lee `send_email`) |
+| `/portfolio/{stage}/s3/email-templates/{name,arn}` | bucket S3 de templates Jinja2 (`portfolio-email-templates-${stage}`, lo lee `send_email`) |
 | `/portfolio/{stage}/api_gateway/portfolio-api/{id,root-resource-id,access-log-group-arn}` | API Gateway REST |
-| `/portfolio/{stage}/sqs/stream-processor-dlq/{arn,url}` | DLQ del `stream_processor` |
 
 Las Lambdas resuelven el **nombre de cada tabla DynamoDB en el cold start**
 leyendo el path SSM correspondiente: devtools les inyecta una env var

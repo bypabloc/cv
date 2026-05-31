@@ -1,1 +1,1 @@
-"""Configuracion del Lambda `tracking_worker`."""
+"""Configuracion del Lambda `tracking_writer`."""

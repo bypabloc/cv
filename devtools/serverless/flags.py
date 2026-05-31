@@ -52,6 +52,7 @@ VALID_COMMANDS = [
     # Infra: recursos compartidos provisionados con AWS CLI directo
     'provision-infra',  # provisiona TODOS los recursos de resources/
     'list-resources',  # lista los recursos declarados en resources/
+    'seed-email-config',  # sube templates (S3) + filas (DynamoDB email-config)
     # Secrets / Setup AWS resources fuera del template
     'setup-ssm',  # Crear SSM Parameters (turnstile-secret, neon-url)
     'rotate-secret',  # Rotar valor de un SSM Parameter
@@ -170,6 +171,7 @@ _COMMAND_SUMMARIES: dict[str, str] = {
     'status': 'Estado local vs AWS, por scope',
     'provision-infra': 'Provisiona TODOS los recursos de resources/ con AWS CLI',
     'list-resources': 'Lista los recursos declarados en resources/',
+    'seed-email-config': 'Sube templates (S3) + filas de email-config (DynamoDB)',
     'setup-ssm': 'Crear SSM Parameters con KMS (turnstile, neon-url)',
     'rotate-secret': 'Rotar valor de un SSM Parameter (DESTRUCTIVO)',
     'sync-secrets': 'Sync .env del stage -> SSM (idempotente, hash-based)',
@@ -224,6 +226,7 @@ _COMMAND_FLAGS: dict[str, list[str]] = {
     'status': ['lambda', 'path', 'module', 'stage', 'aws_profile'],
     'provision-infra': ['stage', 'aws_profile', 'dry_run'],
     'list-resources': ['stage'],
+    'seed-email-config': ['stage', 'aws_profile'],
     'setup-ssm': ['stage', 'name', 'value', 'key_id', 'aws_profile'],
     'rotate-secret': ['stage', 'name', 'value', 'confirm', 'aws_profile'],
     'sync-secrets': ['stage', 'only', 'aws_profile', 'dry_run'],

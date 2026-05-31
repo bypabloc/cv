@@ -226,10 +226,10 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 ├── devtools/             # Python 3.14 + uv (CLI orquestador)
 ├── serverless/
 │   └── lambda/           # backend serverless Python (Lambdas AWS)
-│       ├── resources/    # un stack CloudFormation por recurso compartido
-│       ├── services/     # los 4 Lambdas (contact_form, tracking_pixel,
-│       │                 #   stream_processor, db)
-│       └── shared/       # libreria comun (8 subpaquetes por dominio)
+│       ├── resources/    # un yaml por recurso compartido (provisionado por devtools)
+│       ├── services/     # los 8 Lambdas (auth, contact_form, cv, db,
+│       │                 #   send_email, tracking_pixel, tracking_writer, users)
+│       └── shared/       # libreria comun (subpaquetes por dominio)
 ├── .git-hooks/           # pre-commit, pre-push, prepare-commit-msg
 ├── .github/workflows/    # ci.yml, deploy.yml, clean-pr-attribution.yml
 ├── .claude/              # rules, skills, agents, hooks de Claude Code
@@ -281,9 +281,9 @@ Antes de trabajar, identifica que contexto necesitas:
 | PostgreSQL 18 Analytics | [.claude/docs/postgresql-18-analytics/README.md](.claude/docs/postgresql-18-analytics/README.md) | Schema de las 4 tablas del backend, window functions, partitioning, JSONB, queries dashboard. Complementa skill `postgresql-18` |
 | DynamoDB Cache patterns | [.claude/docs/dynamodb-cache/README.md](.claude/docs/dynamodb-cache/README.md) o skill `dynamodb-cache` | Cache TTL + lock distribuido + SWR + tag invalidation. Modulo en `serverless/lambda/shared/cache/` |
 | Serverless rate-limit (sin WAF) | [.claude/docs/serverless-rate-limit/README.md](.claude/docs/serverless-rate-limit/README.md) o skill `serverless-rate-limit` | Rate-limit per-IP con DynamoDB (alternativa $0 a AWS WAF). Sliding window weighted, auto-blacklist bot detection, IP white/blacklist, country rules. Modulo en `serverless/lambda/shared/rate_limit/` |
-| Backend serverless | [.claude/docs/serverless-backend/README.md](.claude/docs/serverless-backend/README.md) | Recursos gestionados por devtools con AWS CLI directo y estado local (sin SAM ni CloudFormation): recursos compartidos (tablas DynamoDB + API GW + DLQ SQS, publican identificadores a SSM) + 4 Lambdas Python `lambda-controller`. Flujos ASCII de cada Lambda, schema de tablas DynamoDB + Neon, archivo de estado local. Costo $0/mes (free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
+| Backend serverless | [.claude/docs/serverless-backend/README.md](.claude/docs/serverless-backend/README.md) | Recursos gestionados por devtools con AWS CLI directo y estado local (sin SAM ni CloudFormation): recursos compartidos (tablas DynamoDB + API GW, publican identificadores a SSM) + 8 Lambdas Python `lambda-controller` (async via invoke Lambda->Lambda, sin SQS). Flujos ASCII de cada Lambda, schema de tablas DynamoDB + Neon, archivo de estado local. Costo $0/mes (free tier perpetuo, sin WAF, sin CloudWatch Alarms) |
 | Devtools serverless CLI | [.claude/docs/serverless-backend/04-deploy-operacion.md](.claude/docs/serverless-backend/04-deploy-operacion.md) | `python devtools/run.py serverless <command>` — opera el backend: `provision-infra`/`list-resources` (los recursos compartidos, provisionados con AWS CLI) y, con `--lambda=<nombre>` o `--path=<dir>`, los Lambdas `lambda-controller` (`run --stage=<env>`, `deploy`, `destroy`, `status`, `tests --type=<unit\|integration\|coverage>`). La DB se opera con `run --lambda=db --event=events/<X>.json`. Mas rate-limit, setup-ssm, metrics |
-| Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/lambda/shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. El `stream_processor` usa el ORM. El seed del CV (YAML -> DB) lo corre la Lambda `db` con el command `seed` |
+| Schema PostgreSQL unificado | [docs/diagrams/db-er.mmd](docs/diagrams/db-er.mmd) | Schema relacional unico de Neon en `serverless/lambda/shared/db/`: 35 tablas (CV + datos del visitante) modeladas en SQLAlchemy 2.x, gestionadas por un solo Alembic. La Lambda `db` corre las migraciones. Los Lambdas `contact_form` y `tracking_writer` usan el ORM para la replica analitica a Neon. El seed del CV (YAML -> DB) lo corre la Lambda `db` con el command `seed` |
 | Formato de Lambdas Python | [.claude/rules/lambda-controller.md](.claude/rules/lambda-controller.md) + [.claude/docs/lambda-controller/](.claude/docs/lambda-controller/) o skill `lambda-controller` | Patron `operation + action` -> controller (orquestador) + service (logica de negocio), validacion Pydantic, ciclo `preload->validate->execute`, testing unit + integration. Scaffold en `.claude/templates/lambda-controller/`. Cada lambda trae un `manifest.yaml` (manifiesto) que devtools lee directamente para provisionar el Lambda con AWS CLI, y un `pyproject.toml` (PEP 621, deps gestionadas con uv) en vez de `requirements*.txt`. El deploy arma el zip con uv, vendoriza selectivamente los subpaquetes de `serverless/lambda/shared/` que el lambda usa y registra el resultado en un archivo de estado local. Operacion: `serverless run --stage=<env> --lambda=<nombre>` y `serverless tests --type=<tipo> --lambda=<nombre>`. Aplica a los Lambdas Python del backend, NO al frontend Astro |
 | Shared-only imports en Lambdas | [.claude/rules/lambda-shared-imports.md](.claude/rules/lambda-shared-imports.md) + [.claude/docs/lambda-shared-imports/](.claude/docs/lambda-shared-imports/) o skill `lambda-shared-imports` | Los `services/*/core/**/*.py` del backend NO importan directamente paquetes externos (pydantic, sqlalchemy, boto3, aws-lambda-powertools, ...): toda dep viaja por `shared.<subpaquete>` que es el portador unico de cada paquete y lo re-exporta. `serverless lint-deps` valida los 2 checks (dedup D-3 + imports prohibidos) con AST scan. Catalogo de portadores + procedimientos para agregar paquete nuevo y migrar service existente. Cero exenciones en `core/`; tests/ exento |
 | Config de Lambdas (memoria/timeout) | [.claude/rules/lambda-config.md](.claude/rules/lambda-config.md) | Antes de crear/editar un `manifest.yaml` o diagnosticar un 502/timeout de cold start. `memory`/`timeout` = MINIMO medido y justificado en el comentario del manifest; NUNCA subir memoria para enmascarar imports lentos: cortar imports con carga lazy (PEP 562 en el `__init__` de subpaquetes shared con deps pesadas como fido2). memoria == CPU; el timeout cubre el cold SIN SnapStart restore. Minimos medidos: auth/users/cv 512, contact_form 384, tracking_pixel 256 |
@@ -315,12 +315,14 @@ prompt. Detalles del frontmatter: [.claude/rules/skills.md](.claude/rules/skills
 
 ### Backend AWS serverless (form contacto + tracking pixel)
 
-Skills consolidadas para el backend del portfolio: 4 Lambdas Python 3.13
-(contact_form, tracking_pixel, stream_processor, db) detras de API
-Gateway REST + rate-limit per-IP con DynamoDB (sin WAF), persistencia en
-DynamoDB On-Demand, replica analitica en Neon PostgreSQL, notificacion
-via SES, anti-bot con Cloudflare Turnstile. devtools provisiona cada
-recurso compartido y cada Lambda con AWS CLI directo, manteniendo el
+Skills consolidadas para el backend del portfolio: 8 Lambdas Python 3.13
+(auth, contact_form, cv, db, send_email, tracking_pixel, tracking_writer,
+users) detras de API Gateway REST + rate-limit per-IP con DynamoDB (sin
+WAF), persistencia en DynamoDB On-Demand, replica analitica en Neon
+PostgreSQL (escritura inline de contact_form + tracking_writer async via
+invoke, sin SQS), email transaccional centralizado en `send_email`
+(invocado async), anti-bot con Cloudflare Turnstile. devtools provisiona
+cada recurso compartido y cada Lambda con AWS CLI directo, manteniendo el
 estado en archivos locales (sin SAM ni CloudFormation). Costo: $0/mes
 (todo free tier perpetuo).
 

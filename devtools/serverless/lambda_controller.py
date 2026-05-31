@@ -51,12 +51,16 @@ from shared.console import _err
 # AISLADO (`venv.ensure_lambda_venv`).
 _PORTFOLIO_SERVERLESS_ROOT = Path(__file__).resolve().parents[2] / 'serverless'
 
-# Scopes que `destroy --stage` sin `--lambda` borra (los 4 lambdas).
+# Scopes que `destroy --stage` sin `--lambda` borra (los 8 lambdas).
 _ALL_LAMBDA_SCOPES = (
+    'auth',
     'contact-form',
-    'tracking-pixel',
-    'stream-processor',
+    'cv',
     'db',
+    'send-email',
+    'tracking-pixel',
+    'tracking-writer',
+    'users',
 )
 
 
@@ -409,7 +413,7 @@ def cmd_destroy(flags: dict[str, Any]) -> int:
 def cmd_status(flags: dict[str, Any]) -> int:
     """Compara el estado local con AWS, por scope.
 
-    Sin `--lambda`: reporta los 4 lambdas. Con `--lambda=<x>`: solo ese.
+    Sin `--lambda`: reporta los 8 lambdas. Con `--lambda=<x>`: solo ese.
     Para cada scope informa si hay estado local y si la funcion existe en
     AWS (`aws lambda get-function`).
     """

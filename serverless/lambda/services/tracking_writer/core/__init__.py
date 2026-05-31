@@ -1,1 +1,1 @@
-"""Codigo del Lambda `tracking_worker` (estandar lambda-controller)."""
+"""Codigo del Lambda `tracking_writer` (estandar lambda-controller)."""

@@ -14,7 +14,7 @@ requires-python = ">=3.13"
 # pydantic-settings, boto3, aws-lambda-powertools, sqlalchemy y pyjwt le
 # llegan por el vendoring del cierre de shared/ que el Lambda usa
 # (shared.lambda_kit, shared.http, shared.observability, shared.aws,
-# shared.rate_limit, shared.core, shared.queue, shared.auth, shared.db) —
+# shared.rate_limit, shared.core, shared.auth, shared.db) —
 # regla de dedup D-3. shared.core aporta pydantic[email].
 dependencies = []
 

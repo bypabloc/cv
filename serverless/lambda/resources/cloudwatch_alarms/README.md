@@ -13,10 +13,10 @@ description: >
   Descripcion legible de cuando dispara y que accion tomar.
 
 metric:
-  namespace: AWS/SQS                       # o AWS/Lambda, AWS/ApiGateway, etc
-  name: ApproximateNumberOfMessagesVisible
+  namespace: AWS/Lambda                     # o AWS/ApiGateway, AWS/DynamoDB, etc
+  name: Errors
   dimensions:
-    QueueName: portfolio-<X>-dlq-${stage}
+    FunctionName: portfolio-<X>-${stage}
 
 threshold: 0
 comparison: GreaterThanThreshold           # GreaterThanThreshold | LessThanThreshold | ...
@@ -33,17 +33,15 @@ tags: { Project: portfolio, ManagedBy: devtools }
 
 ## Convenciones
 
-- Una alarma por DLQ (dispara cuando hay mensajes que el worker no pudo
-  procesar tras max_receive_count retries).
 - `alarm_actions: []` por defecto (solo visible en el dashboard). Futuro:
   SNS topic para notificar por email/Slack.
-- `treat_missing_data: notBreaching` para metricas SQS (default `missing`
-  podria romper la alarma cuando la cola esta vacia y SQS no publica
-  metricas).
+- `treat_missing_data: notBreaching` evita falsos disparos cuando la
+  metrica no se publica (ej. una funcion sin invocaciones en el periodo).
 
 ## Inventario actual
 
-| Archivo | Metrica | Threshold |
-|---------|---------|-----------|
-| `contact-form-dlq-alarm.yaml` | ApproximateNumberOfMessagesVisible (DLQ) | >0 por 5min |
-| `tracking-events-dlq-alarm.yaml` | ApproximateNumberOfMessagesVisible (DLQ) | >0 por 5min |
+Sin alarmas. Las alarmas de DLQ SQS se eliminaron junto con SQS (el
+backend usa invoke async Lambda->Lambda, ver el plan
+serverless-sqs-to-async-invoke). El soporte `cloudwatch-alarm` se
+mantiene en devtools para futuras alarmas (Lambda Errors, throttles,
+API Gateway 5xx, etc.).

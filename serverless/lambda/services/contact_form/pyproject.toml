@@ -15,13 +15,13 @@ requires-python = ">=3.13"
 # pydantic-settings, boto3 y aws-lambda-powertools le llegan por el
 # vendoring del cierre de shared/ que el Lambda usa (shared.lambda_kit,
 # shared.http, shared.observability, shared.aws, shared.rate_limit,
-# shared.core, shared.queue) — ver la regla de dedup D-3 del plan
-# docs/specs/serverless-lambda-independence/. shared.queue se agrego
-# como dep del cierre cuando el Lambda paso a encoder + SQS
-# (docs/specs/lambdas-async-sqs/, fase 07). shared.core aporta
-# pydantic[email] desde el plan d-shared-only-imports — el extra
-# `email` (email-validator) ya viaja por shared.core, NO se redeclara
-# aca (ver `.claude/rules/lambda-shared-imports.md`).
+# shared.core, shared.db) — ver la regla de dedup D-3 del plan
+# docs/specs/serverless-lambda-independence/. El Lambda escribe el
+# contacto a Neon inline (shared.db) e invoca send_email async via
+# shared.aws.lambda_invoke (sin SQS). shared.core aporta pydantic[email]
+# desde el plan d-shared-only-imports — el extra `email` (email-validator)
+# ya viaja por shared.core, NO se redeclara aca (ver
+# `.claude/rules/lambda-shared-imports.md`).
 dependencies = []
 
 # Deps de DESARROLLO: pytest + coverage + mocks. NO van al artefacto de

@@ -1,8 +1,8 @@
 """@module repositories.auth — helpers de queries del dominio auth.
 
 Funciones puras sobre `Session` (no abren transactions, eso lo controla
-el caller). Los services del Lambda `auth` y `auth_email_worker` los
-consumen via `from shared.db.repositories.auth import ...`.
+el caller). Los services del Lambda `auth` los consumen via
+`from shared.db.repositories.auth import ...`.
 
 Convencion de retorno:
 - `get_user_by_email`, `consume_email_code`, `consume_magic_link`

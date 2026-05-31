@@ -54,6 +54,11 @@ os.environ.setdefault(
     'CORS_ALLOWED_ORIGINS',
     'https://admin.portfolio.dev.the-full-stack.com',
 )
+# Nombre de la Lambda send_email (devtools lo inyecta desde uses.invokes
+# en runtime; en tests un placeholder basta — el invoke se mockea).
+os.environ.setdefault(
+    'LAMBDA_SEND_EMAIL_FUNCTION_NAME', 'portfolio-send-email-test'
+)
 # Secretos locales (get_secret_by_name los lee directo del env var en
 # modo local cuando SSM_<UPPER>_PATH no esta seteado). Valores fake
 # para los tests — generados con `secrets.token_urlsafe(32)` en runtime
@@ -67,7 +72,6 @@ os.environ.setdefault(
     'DB_URL',
     'postgresql://test:test@localhost/test',
 )
-os.environ.setdefault('SES_FROM_ADDRESS', 'no-reply@example.com')
 
 
 @pytest.fixture(autouse=True)

@@ -15,7 +15,7 @@ requires-python = ">=3.13"
 # aws-lambda-powertools y sqlalchemy le llegan por el vendoring del
 # cierre de shared/ que el Lambda usa (shared.lambda_kit, shared.http,
 # shared.observability, shared.aws, shared.rate_limit, shared.core,
-# shared.queue, shared.auth, shared.db) — ver la regla de dedup D-3
+# shared.auth, shared.db) — ver la regla de dedup D-3
 # del plan docs/specs/serverless-lambda-independence/. shared.core
 # aporta pydantic[email] desde el plan d-shared-only-imports — el
 # extra `email` (email-validator) ya viaja por shared.core, NO se

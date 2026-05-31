@@ -1,18 +1,17 @@
 """Provision de los recursos compartidos del backend serverless (sin SAM).
 
 Reemplaza `infra_deploy.py`. Antes la infra compartida (tablas DynamoDB,
-API Gateway REST, DLQ SQS) se deployaba como stacks CloudFormation
-autonomos. Tras la migracion sin SAM, devtools lee cada fragmento de
+API Gateway REST) se deployaba como stacks CloudFormation autonomos. Tras
+la migracion sin SAM, devtools lee cada fragmento de
 `serverless/lambda/resources/` — ahora en un esquema plano propio, sin
 `Transform`/`Fn::Sub`/`Ref` — y emite las llamadas AWS CLI directas para
 crear cada recurso, mas `aws ssm put-parameter` para publicar sus
 identificadores (los Lambdas los leen en runtime).
 
-Tres `kind` soportados:
+`kind` soportados:
 
   - `dynamodb-table` -> `aws dynamodb create-table` (+ `update-time-to-live`).
   - `rest-api`       -> rol CloudWatch + log group + `create-rest-api`.
-  - `sqs-queue`      -> `aws sqs create-queue`.
   - `s3-bucket`      -> `aws s3api create-bucket` (+ public-access-block + SSE).
 
 La idempotencia se reconcilia consultando AWS (`describe-*` / `get-*`):
@@ -45,7 +44,7 @@ _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 _RESOURCES_DIR = _SERVERLESS_DIR / 'lambda' / 'resources'
 
 # Subdirectorios de _RESOURCES_DIR que contienen fragmentos de recurso.
-_RESOURCE_TYPES = ('sqs', 'dynamodb', 's3', 'api_gateway', 'cloudwatch_alarms')
+_RESOURCE_TYPES = ('dynamodb', 's3', 'api_gateway', 'cloudwatch_alarms')
 
 # Region por defecto del backend.
 _REGION = aws_cli.DEFAULT_REGION
@@ -58,21 +57,14 @@ _APIGW_CWLOGS_POLICY = (
     'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
 )
 
-# Orden de provision: SQS (DLQs primero, principales despues) -> tablas
-# DynamoDB -> API Gateway -> alarmas CloudWatch (necesitan los ARNs SQS).
-# El deprovision recorre la lista inversa.
+# Orden de provision: tablas DynamoDB -> buckets S3 -> API Gateway ->
+# alarmas CloudWatch. El deprovision recorre la lista inversa.
 _PROVISION_ORDER = (
-    'sqs-queue',
     'dynamodb-table',
     's3-bucket',
     'rest-api',
     'cloudwatch-alarm',
 )
-
-# SQS bloquea recrear una cola con el mismo nombre por 60s tras borrarla
-# (QueueDeletedRecently). El ciclo destroy + provision-infra reintenta.
-_SQS_RECREATE_RETRIES = 5
-_SQS_RECREATE_WAIT = 20
 
 
 @dataclass(frozen=True)
@@ -82,7 +74,7 @@ class RenderedResource:
     Attributes
     ----------
     kind : str
-        `dynamodb-table` | `rest-api` | `sqs-queue`.
+        `dynamodb-table` | `rest-api` | `s3-bucket` | `cloudwatch-alarm`.
     name : str
         Nombre fisico del recurso (con el stage interpolado).
     spec : dict[str, Any]
@@ -148,9 +140,10 @@ class InfraState:
 def discover_resources() -> list[Path]:
     """Lista los `*.yaml` de `serverless/lambda/resources/`.
 
-    Recorre los subdirectorios conocidos (`sqs/`, `dynamodb/`,
-    `api_gateway/`) y devuelve los fragmentos, excluyendo cualquier
-    archivo cuyo nombre empiece con `_` (ej. el viejo `_header.yaml`).
+    Recorre los subdirectorios conocidos (`dynamodb/`, `s3/`,
+    `api_gateway/`, `cloudwatch_alarms/`) y devuelve los fragmentos,
+    excluyendo cualquier archivo cuyo nombre empiece con `_` (ej. el
+    viejo `_header.yaml`).
 
     Returns
     -------
@@ -230,13 +223,12 @@ def render_resource(path: Path, *, stage: str) -> RenderedResource:
     if kind not in {
         'dynamodb-table',
         'rest-api',
-        'sqs-queue',
         's3-bucket',
         'cloudwatch-alarm',
     }:
         raise ValueError(
             f'kind invalido en {path}: {kind!r}. Validos: '
-            f'dynamodb-table, rest-api, sqs-queue, s3-bucket, '
+            f'dynamodb-table, rest-api, s3-bucket, '
             f'cloudwatch-alarm.',
         )
 
@@ -531,235 +523,6 @@ def _describe_dynamodb_ids(
     )
     description = (result.json or {}).get('Table', {})
     return description.get('TableArn'), description.get('LatestStreamArn')
-
-
-def _provision_sqs_queue(
-    rendered: RenderedResource,
-    *,
-    profile: str | None,
-    region: str,
-    dry_run: bool,
-) -> tuple[dict[str, str | None], list[str]]:
-    """Provisiona una cola SQS. Idempotente via `get-queue-url`.
-
-    Tras crear/reusar la cola, aplica via `set-queue-attributes` los
-    bloques opcionales `visibility_timeout_seconds` y `redrive_policy`
-    (DLQ wiring). El RedrivePolicy resuelve el ARN de la DLQ por nombre
-    en runtime con `get-queue-url` + `get-queue-attributes` — la DLQ
-    debe existir antes (las DLQs van primero en `_ordered_rendered`).
-    """
-    queue_name = rendered.name
-
-    if dry_run:
-        print(_c(YELLOW, f'[dry-run] sqs create-queue {queue_name}'))
-        if rendered.spec.get('redrive_policy'):
-            print(
-                _c(
-                    YELLOW,
-                    f'[dry-run] sqs set-queue-attributes {queue_name} '
-                    f'(redrive_policy + visibility_timeout)',
-                )
-            )
-        queue_url: str | None = None
-        queue_arn: str | None = None
-    else:
-        queue_url = _resolve_queue_url(
-            queue_name,
-            profile=profile,
-            region=region,
-        )
-        if queue_url is None:
-            queue_url = _create_sqs_queue(
-                rendered,
-                profile=profile,
-                region=region,
-            )
-        else:
-            print(_c(CYAN, f'  cola {queue_name} ya existe — se reutiliza'))
-        queue_arn = _describe_queue_arn(
-            queue_url,
-            profile=profile,
-            region=region,
-        )
-        _apply_sqs_attributes(
-            rendered,
-            queue_url,
-            profile=profile,
-            region=region,
-        )
-
-    values: dict[str, str | None] = {'arn': queue_arn, 'url': queue_url}
-    published = _publish_ssm(
-        rendered,
-        values,
-        profile=profile,
-        region=region,
-        dry_run=dry_run,
-    )
-    resources: dict[str, str | None] = {
-        f'sqs:{queue_name}:url': queue_url,
-        f'sqs:{queue_name}:arn': queue_arn,
-    }
-    return resources, published
-
-
-def _apply_sqs_attributes(
-    rendered: RenderedResource,
-    queue_url: str,
-    *,
-    profile: str | None,
-    region: str,
-) -> None:
-    """Aplica `VisibilityTimeout` + `RedrivePolicy` via set-queue-attributes.
-
-    Idempotente: AWS hace diff internamente y solo aplica si cambia.
-    Si el spec no declara ninguno de los dos, NO se llama (set-queue-
-    attributes con dict vacio falla).
-    """
-    import json as _json
-
-    spec = rendered.spec
-    attributes: dict[str, str] = {}
-
-    visibility = spec.get('visibility_timeout_seconds')
-    if visibility is not None:
-        attributes['VisibilityTimeout'] = str(visibility)
-
-    redrive = spec.get('redrive_policy')
-    if redrive:
-        dlq_name = redrive['target']
-        dlq_url = _resolve_queue_url(
-            dlq_name,
-            profile=profile,
-            region=region,
-        )
-        if dlq_url is None:
-            raise RuntimeError(
-                f'DLQ {dlq_name!r} no existe — debe provisionarse antes '
-                f'que la cola principal {rendered.name!r}. Revisar el '
-                f'orden de _ordered_rendered (DLQs primero).'
-            )
-        dlq_arn = _describe_queue_arn(
-            dlq_url,
-            profile=profile,
-            region=region,
-        )
-        attributes['RedrivePolicy'] = _json.dumps(
-            {
-                'deadLetterTargetArn': dlq_arn,
-                'maxReceiveCount': redrive.get('max_receive_count', 3),
-            }
-        )
-
-    if not attributes:
-        return
-
-    aws_cli.aws(
-        [
-            'sqs',
-            'set-queue-attributes',
-            '--queue-url',
-            queue_url,
-            '--attributes',
-            _json.dumps(attributes),
-        ],
-        profile=profile,
-        region=region,
-    )
-    print(_c(GREEN, f'  OK  atributos aplicados a {rendered.name}'))
-
-
-def _resolve_queue_url(
-    queue_name: str,
-    *,
-    profile: str | None,
-    region: str,
-) -> str | None:
-    """Devuelve la URL de una cola si existe, o None."""
-    result = aws_cli.aws(
-        ['sqs', 'get-queue-url', '--queue-name', queue_name],
-        profile=profile,
-        region=region,
-        parse_json=True,
-        check=False,
-    )
-    if not result.ok:
-        return None
-    return (result.json or {}).get('QueueUrl')
-
-
-def _create_sqs_queue(
-    rendered: RenderedResource,
-    *,
-    profile: str | None,
-    region: str,
-) -> str | None:
-    """Llama `aws sqs create-queue` y devuelve la URL creada.
-
-    SQS no permite recrear una cola con el mismo nombre dentro de los 60
-    segundos posteriores a su borrado (`QueueDeletedRecently`). Para que
-    el ciclo `destroy` + `provision-infra` no falle, ante ese error se
-    espera y se reintenta.
-    """
-    import time
-
-    print(_c(YELLOW, f'  creando cola {rendered.name}...'))
-    retention = rendered.spec.get('message_retention_seconds', 1209600)
-    args = [
-        'sqs',
-        'create-queue',
-        '--queue-name',
-        rendered.name,
-        '--attributes',
-        f'MessageRetentionPeriod={retention}',
-    ]
-    for attempt in range(_SQS_RECREATE_RETRIES):
-        try:
-            result = aws_cli.aws(
-                args, profile=profile, region=region, parse_json=True
-            )
-        except aws_cli.AwsError as exc:
-            last = attempt == _SQS_RECREATE_RETRIES - 1
-            if 'QueueDeletedRecently' in exc.stderr and not last:
-                print(
-                    _c(
-                        YELLOW,
-                        f'  cola borrada hace poco — reintento en '
-                        f'{_SQS_RECREATE_WAIT}s...',
-                    ),
-                )
-                time.sleep(_SQS_RECREATE_WAIT)
-                continue
-            raise
-        print(_c(GREEN, f'  OK  cola {rendered.name} creada'))
-        return (result.json or {}).get('QueueUrl')
-    return None
-
-
-def _describe_queue_arn(
-    queue_url: str | None,
-    *,
-    profile: str | None,
-    region: str,
-) -> str | None:
-    """Devuelve el ARN de una cola dada su URL."""
-    if queue_url is None:
-        return None
-    result = aws_cli.aws(
-        [
-            'sqs',
-            'get-queue-attributes',
-            '--queue-url',
-            queue_url,
-            '--attribute-names',
-            'QueueArn',
-        ],
-        profile=profile,
-        region=region,
-        parse_json=True,
-        check=False,
-    )
-    return (result.json or {}).get('Attributes', {}).get('QueueArn')
 
 
 def _provision_rest_api(
@@ -1502,32 +1265,17 @@ def _harden_s3_bucket(
 _PROVISIONERS = {
     'dynamodb-table': _provision_dynamodb_table,
     'rest-api': _provision_rest_api,
-    'sqs-queue': _provision_sqs_queue,
     's3-bucket': _provision_s3_bucket,
     'cloudwatch-alarm': _provision_cloudwatch_alarm,
 }
 
 
 def _ordered_rendered(stage: str) -> list[RenderedResource]:
-    """Renderiza todos los fragmentos y los ordena por `_PROVISION_ORDER`.
-
-    Sub-orden dentro de `sqs-queue`: las DLQs (sin `redrive_policy`) van
-    PRIMERO porque las colas principales con `redrive_policy.target` las
-    necesitan creadas para resolver el ARN de la DLQ.
-    """
+    """Renderiza todos los fragmentos y los ordena por `_PROVISION_ORDER`."""
     rendered = [
         render_resource(path, stage=stage) for path in discover_resources()
     ]
-    return sorted(
-        rendered,
-        key=lambda r: (
-            _PROVISION_ORDER.index(r.kind),
-            # Sub-key para SQS: 0 = sin redrive (DLQ), 1 = con redrive (main).
-            1
-            if (r.kind == 'sqs-queue' and r.spec.get('redrive_policy'))
-            else 0,
-        ),
-    )
+    return sorted(rendered, key=lambda r: _PROVISION_ORDER.index(r.kind))
 
 
 def provision_infra(
@@ -1541,8 +1289,8 @@ def provision_infra(
 
     Por cada recurso: si ya existe (consulta `describe-*`/`get-*`) NO se
     recrea; si no, se crea. En ambos casos se re-publican los SSM. El
-    orden es SQS -> DynamoDB -> API Gateway. El resultado se registra en
-    `serverless/lambda/.state/infra-<stage>.json`.
+    orden es DynamoDB -> S3 -> API Gateway -> CloudWatch. El resultado se
+    registra en `serverless/lambda/.state/infra-<stage>.json`.
 
     Parameters
     ----------
@@ -1598,8 +1346,8 @@ def deprovision_infra(
 ) -> None:
     """Borra todos los recursos de infra del stage en orden inverso.
 
-    Orden: API Gateway REST -> tablas DynamoDB -> DLQ SQS. Tras borrar,
-    el `.state/infra-<stage>.json` se limpia.
+    Orden: CloudWatch -> API Gateway REST -> S3 -> tablas DynamoDB. Tras
+    borrar, el `.state/infra-<stage>.json` se limpia.
 
     Parameters
     ----------
@@ -1643,19 +1391,6 @@ def _delete_resource(
             region=region,
             check=False,
         )
-    elif rendered.kind == 'sqs-queue':
-        queue_url = _resolve_queue_url(
-            rendered.name,
-            profile=profile,
-            region=region,
-        )
-        if queue_url:
-            aws_cli.aws(
-                ['sqs', 'delete-queue', '--queue-url', queue_url],
-                profile=profile,
-                region=region,
-                check=False,
-            )
     elif rendered.kind == 'rest-api':
         api_id = _find_rest_api_id(
             rendered.name,

@@ -212,14 +212,6 @@ class AppConfig(BaseSettings):
         """Connection string PostgreSQL (Neon, schema auth_*)."""
         return get_secret_by_name('neon-url', local_env='DB_URL')
 
-    @cached_property
-    def ses_from_address(self) -> str:
-        """From verificado en SES (lo usa el worker via SQS payload)."""
-        return get_secret_by_name(
-            'ses-from-address',
-            local_env='SES_FROM_ADDRESS',
-        )
-
     # ----- Nombres de recursos resueltos en cold start desde SSM -----
 
     @cached_property
@@ -246,11 +238,6 @@ class AppConfig(BaseSettings):
     def rate_limit_buckets_table_name(self) -> str:
         """Tabla DynamoDB con los sliding-window buckets."""
         return _resolve_from_ssm('SSM_RATE_LIMIT_BUCKETS_TABLE_PATH')
-
-    @cached_property
-    def auth_email_queue_url(self) -> str:
-        """URL SQS de la cola hacia el `auth_email_worker`."""
-        return _resolve_from_ssm('SSM_AUTH_EMAIL_QUEUE_URL_PATH')
 
 
 # Singleton de configuracion: se evalua una vez en el cold start (los

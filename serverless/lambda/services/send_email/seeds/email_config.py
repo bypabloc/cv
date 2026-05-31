@@ -11,9 +11,8 @@ El seed (`serverless seed-email-config`) sube los templates de
 
 from __future__ import annotations
 
-# subject por kind (Jinja2). Los 9 de auth/users vienen de
-# auth_email_worker._SUBJECTS_ES; `contact` se arma con el nombre del
-# visitante.
+# subject por kind (Jinja2). Los 9 de auth/users son los subjects de los
+# emails transaccionales; `contact` se arma con el nombre del visitante.
 EMAIL_CONFIG: list[dict[str, str]] = [
     {
         'kind': 'register-magic-link',

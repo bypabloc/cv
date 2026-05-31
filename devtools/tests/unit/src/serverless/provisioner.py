@@ -104,7 +104,6 @@ def _default_responses():
         },
         'ssm.get-parameter': {'Parameter': {'Value': 'api-abc123'}},
         'apigateway.create-resource': {'id': 'res9'},
-        'lambda.create-event-source-mapping': {'UUID': 'uuid-1'},
     }
 
 
@@ -815,49 +814,6 @@ class TestDeprovision:
             'lambda.remove-permission',
             'ssm.get-parameter',
             'apigateway.delete-resource',
-            'lambda.delete-function',
-            'iam.delete-role-policy',
-            'iam.detach-role-policy',
-            'iam.delete-role',
-            'logs.delete-log-group',
-        ]
-
-    def test_deprovision_stream_deletes_event_source_mappings(
-        self, monkeypatch
-    ):
-        from serverless import provisioner
-        from serverless.aws_cli import AwsResult
-        from serverless.state import LambdaState
-
-        calls = []
-        monkeypatch.setattr(
-            provisioner,
-            'aws',
-            lambda args, **_k: (
-                calls.append(args)
-                or AwsResult(returncode=0, stdout='', stderr='', json=None)
-            ),
-        )
-
-        state = LambdaState(
-            scope='stream-processor',
-            stage='dev',
-            config_hash='sha256:c',
-            code_hash='',
-            resources={
-                'role_name': 'portfolio-stream-processor-dev',
-                'function_name': 'portfolio-stream-processor-dev',
-                'log_group': '/aws/lambda/portfolio-stream-processor-dev',
-                'event_source_uuids': 'uuid-1,uuid-2',
-            },
-            updated_at='2026-05-21T10:00:00Z',
-        )
-        provisioner.deprovision(state, profile=None, region='us-east-1')
-
-        verbs = ['.'.join(c[:2]) for c in calls]
-        assert verbs == [
-            'lambda.delete-event-source-mapping',
-            'lambda.delete-event-source-mapping',
             'lambda.delete-function',
             'iam.delete-role-policy',
             'iam.detach-role-policy',

@@ -41,6 +41,11 @@ os.environ.setdefault(
     'USERS_BASE_URL',
     'https://api.portfolio.dev.the-full-stack.com/users',
 )
+# Nombre de la Lambda send_email (devtools lo inyecta desde uses.invokes
+# en runtime; en tests un placeholder basta — el invoke se mockea).
+os.environ.setdefault(
+    'LAMBDA_SEND_EMAIL_FUNCTION_NAME', 'portfolio-send-email-test'
+)
 
 # Secretos locales (get_secret_by_name los lee del env var en modo local).
 # Valores fake generados en runtime para evitar falsos positivos de
@@ -49,7 +54,6 @@ import secrets as _secrets  # noqa: E402
 
 os.environ.setdefault('JWT_SECRET', _secrets.token_urlsafe(48))
 os.environ.setdefault('DB_URL', 'postgresql://test:test@localhost/test')
-os.environ.setdefault('SES_FROM_ADDRESS', 'no-reply@example.com')
 os.environ.setdefault('ADMIN_EMAILS', 'admin@example.com')
 
 

@@ -92,18 +92,6 @@ def _rest_api_fragment(with_custom_domain: bool = False) -> str:
     )
 
 
-def _sqs_fragment() -> str:
-    """Fragmento YAML de la cola SQS."""
-    return (
-        'kind: sqs-queue\n'
-        'name: portfolio-stream-processor-dlq-${stage}\n'
-        'message_retention_seconds: 1209600\n'
-        'publishes_ssm:\n'
-        '  arn: /portfolio/${stage}/sqs/stream-processor-dlq/arn\n'
-        '  url: /portfolio/${stage}/sqs/stream-processor-dlq/url\n'
-    )
-
-
 class _FakeAws:
     """Fake de `aws_cli.aws` que registra cada invocacion.
 
@@ -209,22 +197,6 @@ class TestRenderResource:
             == '/aws/apigateway/portfolio-api-prod'
         )
 
-    def test_render_sqs_queue_fields(self, tmp_path):
-        """
-        Given un fragmento sqs-queue,
-        When render_resource,
-        Then el kind es sqs-queue y la retencion queda en el spec.
-        """
-        from serverless import infra_provision
-
-        path = _write(tmp_path / 'dlq.yaml', _sqs_fragment())
-
-        rendered = infra_provision.render_resource(path, stage='dev')
-
-        assert rendered.kind == 'sqs-queue'
-        assert rendered.name == 'portfolio-stream-processor-dlq-dev'
-        assert rendered.spec['message_retention_seconds'] == 1209600
-
     def test_render_rejects_unknown_kind(self, tmp_path):
         """
         Given un fragmento con kind invalido,
@@ -235,7 +207,7 @@ class TestRenderResource:
 
         path = _write(
             tmp_path / 'bad.yaml',
-            'kind: s3-bucket\nname: x-${stage}\n',
+            'kind: sqs-queue\nname: x-${stage}\n',
         )
 
         with pytest.raises(ValueError, match='kind invalido'):
@@ -254,11 +226,11 @@ class TestDiscoverResources:
         When discover_resources,
         Then devuelve todos los paths y ninguno empieza con '_'.
 
-        Cantidad post spec lambdas-async-sqs: 3 tablas DDB (cache +
-        rate-limit-rules + rate-limit-buckets) + 1 API GW + 4 colas
-        SQS (2 main + 2 DLQ) + 2 alarmas CloudWatch = 10. La cantidad
-        crece con el tiempo; el test solo verifica el invariante de
-        que `_*.yaml` esta excluido.
+        Cantidad tras eliminar SQS: 6 tablas DDB (cache + rate-limit-rules
+        + rate-limit-buckets + jwt-blacklist + webauthn-challenges +
+        email-config) + 1 bucket S3 (email-templates) + 1 API GW = 8. Sin
+        colas SQS. La cantidad crece con el tiempo; el test solo verifica
+        el invariante de que `_*.yaml` esta excluido.
         """
         from serverless import infra_provision
 
@@ -461,8 +433,8 @@ class TestProvisionInfra:
         from serverless import state
 
         path = _write(
-            tmp_path / 'dlq.yaml',
-            _sqs_fragment(),
+            tmp_path / 'contacts.yaml',
+            _dynamodb_fragment(with_stream=False),
         )
         monkeypatch.setattr(
             infra_provision,
@@ -473,11 +445,11 @@ class TestProvisionInfra:
 
         fake = _FakeAws(
             {
-                'sqs.get-queue-url': {
-                    'QueueUrl': 'https://sqs/portfolio-dlq',
-                },
-                'sqs.get-queue-attributes': {
-                    'Attributes': {'QueueArn': 'arn:aws:sqs:::dlq'},
+                'dynamodb.describe-table': {
+                    'Table': {
+                        'TableArn': 'arn:aws:dynamodb:::table/contacts',
+                        'LatestStreamArn': None,
+                    },
                 },
             },
         )
@@ -493,8 +465,8 @@ class TestProvisionInfra:
 
         assert first.resources == second.resources
         assert second.ssm_published == [
-            '/portfolio/dev/sqs/stream-processor-dlq/arn',
-            '/portfolio/dev/sqs/stream-processor-dlq/url',
+            '/portfolio/dev/dynamodb/contacts/name',
+            '/portfolio/dev/dynamodb/contacts/arn',
         ]
 
     def test_provision_dry_run_does_not_touch_aws(self, tmp_path, monkeypatch):
@@ -541,17 +513,20 @@ class TestDeprovisionInfra:
         """
         Given infra desplegada (3 kinds),
         When deprovision_infra,
-        Then se borran API, tabla y DLQ en orden inverso y el
+        Then se borran API, bucket S3 y tabla en orden inverso y el
         .state/infra-<stage>.json se vacia. [AC-3.5]
         """
         from serverless import aws_cli
         from serverless import infra_provision
         from serverless import state
 
-        sqs = _write(tmp_path / 'sqs' / 'dlq.yaml', _sqs_fragment())
         table = _write(
             tmp_path / 'dynamodb' / 'contacts.yaml',
             _dynamodb_fragment(with_stream=True),
+        )
+        bucket = _write(
+            tmp_path / 's3' / 'templates.yaml',
+            'kind: s3-bucket\nname: portfolio-templates-${stage}\n',
         )
         api = _write(
             tmp_path / 'api_gateway' / 'portfolio-api.yaml',
@@ -560,7 +535,7 @@ class TestDeprovisionInfra:
         monkeypatch.setattr(
             infra_provision,
             'discover_resources',
-            lambda: [sqs, table, api],
+            lambda: [table, bucket, api],
         )
         monkeypatch.setattr(state, 'STATE_DIR', tmp_path / '.state')
 
@@ -578,7 +553,6 @@ class TestDeprovisionInfra:
 
         fake = _FakeAws(
             {
-                'sqs.get-queue-url': {'QueueUrl': 'https://sqs/dlq'},
                 'apigateway.get-rest-apis': {
                     'items': [
                         {'name': 'portfolio-api-dev', 'id': 'api123'},
@@ -595,8 +569,8 @@ class TestDeprovisionInfra:
         ]
         assert delete_verbs == [
             'apigateway.delete-rest-api',
+            's3api.delete-bucket',
             'dynamodb.delete-table',
-            'sqs.delete-queue',
         ]
         assert not (tmp_path / '.state' / 'infra-dev.json').exists()
 

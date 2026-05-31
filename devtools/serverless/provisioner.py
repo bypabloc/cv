@@ -349,6 +349,33 @@ def _build_env_vars(manifest: dict[str, Any], stage: str) -> dict[str, str]:
         env_key = 'SSM_' + short.upper().replace('-', '_') + '_QUEUE_URL_PATH'
         env[env_key] = f'/portfolio/{stage}/sqs/{short}/url'
 
+    env.update(_invoke_bucket_env_vars(uses, stage))
+
+    return env
+
+
+def _invoke_bucket_env_vars(uses: dict[str, Any], stage: str) -> dict[str, str]:
+    """Env vars derivadas de `uses.invokes` y `uses.buckets`.
+
+    - invokes -> LAMBDA_<UPPER>_FUNCTION_NAME (el caller resuelve el nombre
+      del target sin hardcodear). El short-name del manifest se da con guion
+      bajo (send_email) y el nombre fisico usa guion (portfolio-send-email-X).
+    - buckets -> S3_<UPPER>_BUCKET con el nombre interpolado.
+    """
+    env: dict[str, str] = {}
+    for target in uses.get('invokes') or []:
+        upper = str(target).upper().replace('-', '_')
+        dashed = str(target).replace('_', '-')
+        env[f'LAMBDA_{upper}_FUNCTION_NAME'] = f'portfolio-{dashed}-{stage}'
+
+    for bucket in uses.get('buckets') or []:
+        if not isinstance(bucket, dict):
+            continue
+        name_full = _interp(str(bucket['name']), stage)
+        short = name_full.removeprefix('portfolio-').removesuffix(f'-{stage}')
+        env_key = 'S3_' + short.upper().replace('-', '_') + '_BUCKET'
+        env[env_key] = name_full
+
     return env
 
 
@@ -429,6 +456,66 @@ def _kms_statements(
                 'Effect': 'Allow',
                 'Action': actions,
                 'Resource': f'arn:aws:kms:{region}:{account}:key/*',
+            }
+        )
+    return statements
+
+
+def _invoke_statements(
+    targets: list[Any],
+    stage: str,
+    *,
+    region: str,
+    account: str,
+) -> list[dict[str, Any]]:
+    """Traduce `uses.invokes` a un Statement `lambda:InvokeFunction`.
+
+    Async invoke Lambda->Lambda (reemplaza SQS). El short-name del manifest
+    se da con guion bajo (ej. `send_email`) y el nombre fisico de la funcion
+    usa guion (`portfolio-send-email-<stage>`). Resource = ARN base (sin
+    qualifier: el invoke async pega a `$LATEST`).
+    """
+    arns = [
+        f'arn:aws:lambda:{region}:{account}:function:'
+        f'portfolio-{str(target).replace("_", "-")}-{stage}'
+        for target in targets
+    ]
+    if not arns:
+        return []
+    return [
+        {
+            'Effect': 'Allow',
+            'Action': ['lambda:InvokeFunction'],
+            'Resource': arns,
+        }
+    ]
+
+
+def _bucket_statements(
+    buckets: list[Any],
+    stage: str,
+) -> list[dict[str, Any]]:
+    """Traduce `uses.buckets` a Statements S3 `s3:GetObject` por bucket.
+
+    Solo se soporta `access: read` (los Lambdas leen templates de email). El
+    nombre del bucket NO va por SSM: se inyecta como env var S3_<X>_BUCKET.
+    """
+    statements: list[dict[str, Any]] = []
+    for bucket in buckets:
+        if not isinstance(bucket, dict):
+            continue
+        name_full = _interp(str(bucket['name']), stage)
+        access = bucket.get('access', 'read')
+        if access != 'read':
+            raise ManifestError(
+                f'acceso invalido {access!r} para el bucket '
+                f'{name_full!r}. Solo se soporta read.',
+            )
+        statements.append(
+            {
+                'Effect': 'Allow',
+                'Action': ['s3:GetObject'],
+                'Resource': f'arn:aws:s3:::{name_full}/*',
             }
         )
     return statements
@@ -521,6 +608,14 @@ def _build_statements(
     statements.extend(
         _kms_statements(uses.get('kms') or [], region=region, account=account)
     )
+
+    statements.extend(
+        _invoke_statements(
+            uses.get('invokes') or [], stage, region=region, account=account
+        )
+    )
+
+    statements.extend(_bucket_statements(uses.get('buckets') or [], stage))
 
     if uses.get('sends-email'):
         ses_resources = [

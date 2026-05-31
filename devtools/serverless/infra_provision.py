@@ -28,15 +28,14 @@ from dataclasses import field
 from pathlib import Path
 from typing import Any
 
+from serverless import aws_cli
+from serverless import state
+from serverless.aws_cli import AwsError
 from shared.console import CYAN
 from shared.console import GREEN
 from shared.console import YELLOW
 from shared.console import _c
 from shared.console import _err
-
-from serverless import aws_cli
-from serverless import state
-from serverless.aws_cli import AwsError
 
 
 # Raiz del backend serverless del portfolio.

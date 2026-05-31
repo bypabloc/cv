@@ -1,108 +1,124 @@
-# Plan: backend serverless — eliminar SQS, email centralizado, encoders sync
+# Plan: backend serverless — cold start, eliminar SQS, email centralizado
 
-> Elimina SQS (3 colas + 3 DLQ + 3 workers) y el feature flag `ASYNC_MODE`,
-> borra las referencias muertas a `stream_processor`, centraliza el envío de
-> email en un Lambda `send_email` (config en DynamoDB + templates en S3 +
-> Jinja2, invocado async con `InvocationType='Event'`), y deja la
-> persistencia a Neon **inline y síncrona** en los encoders
-> (`contact_form`, `tracking_pixel`) con psycopg3 + SnapStart. **NO** se crea
-> `db_writer`. Principio rector: **error-proof, escalable y
-> provider-swappable** — todo acceso AWS detrás de `shared.*`.
+> Reorienta el backend serverless con foco en **latencia real** (medida con
+> datos duros de CloudWatch), además de eliminar SQS (3 colas + 3 DLQ),
+> eliminar `ASYNC_MODE`, eliminar el Lambda real `stream_processor`, y
+> centralizar el email en un Lambda `send_email` (config DynamoDB + templates
+> S3 + Jinja2, invocado async con `InvocationType='Event'`). El async que
+> sobrevive NO usa SQS: usa **invoke Lambda async**. Principio rector:
+> **provider-swappable** — todo acceso AWS detrás de `shared.*`.
 
-Escala: **Large** (1 Lambda nuevo `send_email`, 3 eliminados, 4 services
-migrados, devtools tocado, 1 tabla DynamoDB + 1 bucket S3 nuevos).
+Escala: **Large**.
 
-## Honestidad sobre el cold start (leer primero)
+## Diagnóstico que reorienta el plan (leer PRIMERO)
 
-Este refactor **NO reduce el cold start de los encoders** — lo aclaro porque
-fue la motivación inicial. Con SnapStart (ya activo en `contact_form` y
-`tracking_pixel`) el cold es el *restore* (~1s), no el import: el import ya
-está en el snapshot. `contact_form` ya importaba `shared.db`. El valor real
-del plan es **simplicidad** (−SQS, −3 workers, −`ASYNC_MODE`) y **flexibilidad
-de emails** (config central editable sin redeploy). Ver
-[01 §1](01-contexto-y-decision.md).
+La motivación inicial era "cold start lento". Una auditoría (workflow de 7
+agentes + medición en vivo de CloudWatch/Lambda API, dev) probó con **datos
+duros** que la causa NO es la que se creía:
 
-**Tradeoff conocido**: `tracking_pixel` deja de tocar-Neon-solo-en-sync y pasa
-a escribir inline siempre → **128 MB → 256 MB** (necesita `shared.db`). Es una
-regresión de memoria en el Lambda de mayor volumen, aceptada a cambio de
-eliminar el worker. Mitigación opcional (write path raw psycopg3, más liviano)
-documentada en [05](05-encoders-refactor.md); se evalúa sólo si la medición de
-fase 7 lo justifica.
+| Hecho medido (CloudWatch dev) | Implicación |
+|---|---|
+| **SnapStart YA restaura** (`OptimizationStatus: On` en alias `:live` de los 5; `Restore Duration` cv 1.2-1.4s, auth 1.2s, users 0.9s) | Los **imports ya están en el snapshot**. El Init no es el cuello. |
+| **cv.get tarda 7.3s INCLUSO caliente** (Handler Duration warm) | No es cold start: es la **query** (fan-out de 11 secciones a Neon). |
+| cv cold 10.1s handler vs 7.3s warm → el cold agrega solo ~2.8s | Ese ~2.8s = **wake de Neon scale-to-zero** + connect SSL. |
+| Roundtrip api_e2e cv 13.9s = 1.2s restore + 10.1s handler + ~2.6s red | ~2.6s es **red WSL2(Chile)→us-east-1** del harness, NO del Lambda. |
+| `tracking_pixel` (sin Neon) cold 3.7s — el mejor | Confirma: sin Neon, no hay cold de 2 dígitos. |
+
+**Conclusión central**: lo que se llamaba "cold start" es, en su mayoría, **(a)
+una query lenta de cv + (b) el wake de Neon**. Los **lazy imports tienen ROI
+~nulo** (y pueden EMPEORAR: sacar imports del module-scope los saca del
+snapshot de SnapStart → se pagan en el handler CPU-starved). El detalle en
+[02-fase-0](02-fase-0-medicion-coldstart.md) y
+`tmp/cold-start-analysis/08-diagnostico-final-datos-duros.md`.
+
+→ El foco del plan se **reorienta**: de "lazy imports" a **cache de reads
+(cv) + reducir el toque a Neon + verificar SnapStart**, manteniendo los
+objetivos previos (−SQS, send_email, −ASYNC_MODE, −stream_processor).
 
 ## Cuándo leer cada archivo
 
 | Archivo | Cuándo leer |
 |---------|-------------|
-| [01-contexto-y-decision.md](01-contexto-y-decision.md) | Problema, solución, AC-1..AC-16 (secciones 1-3) |
-| [02-shared-foundations.md](02-shared-foundations.md) | `shared.aws.lambda_invoke` (para invocar send_email) + `shared.templating` (Jinja2) |
-| [03-devtools-provisioning.md](03-devtools-provisioning.md) | `uses.invokes`, `uses.buckets`, recurso S3, tabla email-config, quitar SQS |
-| [04-send-email-lambda.md](04-send-email-lambda.md) | Lambda `send_email` + tabla `email-config` + templates S3 |
-| [05-encoders-refactor.md](05-encoders-refactor.md) | `contact_form`/`tracking_pixel`: quitar `ASYNC_MODE`, escritura inline síncrona, invocar send_email, memoria |
-| [06-migrate-callers-remove-sqs.md](06-migrate-callers-remove-sqs.md) | auth/users → send_email; borrar workers + SQS + `shared.queue` |
-| [07-cleanup-stream-processor.md](07-cleanup-stream-processor.md) | Limpiar refs a `stream_processor` + promover convenciones a rules |
-| [08-descomposicion.md](08-descomposicion.md) | Sección 8 — tareas atómicas + paralelización |
-| [09-commits.md](09-commits.md) | Sección 9 — secuencia de commits |
-| [10-paralelizacion-worktrees.md](10-paralelizacion-worktrees.md) | Sección 10 — worktrees / olas de agentes |
-| [11-verificacion-e2e.md](11-verificacion-e2e.md) | Sección 11 — batería + medición de cold start (gate del PR) |
+| [01-contexto-y-decision.md](01-contexto-y-decision.md) | Problema, diagnóstico, solución, AC-1..AC-20 |
+| [02-fase-0-medicion-coldstart.md](02-fase-0-medicion-coldstart.md) | **Fase 0 (bloqueante)**: medir SnapStart + descomponer el cold + after_restore hook |
+| [03-shared-foundations.md](03-shared-foundations.md) | `shared.aws.lambda_invoke` (invoke async) + `shared.templating` (Jinja2) |
+| [04-devtools-provisioning.md](04-devtools-provisioning.md) | `uses.invokes`, `uses.buckets`, recurso S3, tabla email-config, quitar SQS |
+| [05-send-email-lambda.md](05-send-email-lambda.md) | Lambda `send_email` + tabla `email-config` + templates S3 |
+| [06-encoders-refactor.md](06-encoders-refactor.md) | `contact_form` inline + `tracking_pixel` async-via-invoke (preserva su cold) |
+| [07-cv-cache.md](07-cv-cache.md) | **cv @cached DynamoDB** (el mayor impacto absoluto) + query fan-out |
+| [08-migrate-callers-remove-sqs.md](08-migrate-callers-remove-sqs.md) | auth/users → send_email; borrar colas SQS + `shared.queue`; convertir workers |
+| [09-cleanup-stream-processor.md](09-cleanup-stream-processor.md) | **Eliminar el Lambda real `stream_processor`** (existe en stage/prod) + rules |
+| [10-descomposicion.md](10-descomposicion.md) | Sección 8 — tareas atómicas + paralelización |
+| [11-commits.md](11-commits.md) | Sección 9 — secuencia de commits |
+| [12-paralelizacion-worktrees.md](12-paralelizacion-worktrees.md) | Sección 10 — worktrees / olas de agentes |
+| [13-verificacion-e2e.md](13-verificacion-e2e.md) | Sección 11 — batería + gate de cold (medido en CloudWatch) |
 
 ## Estado por fase
 
 | Fase | Archivo | Estado |
 |------|---------|--------|
-| 0 | docs del plan | `pending` |
-| 1 | Shared foundations (02) | `pending` |
-| 2 | Devtools provisioning (03) | `pending` |
-| 3 | Lambda `send_email` (04) | `pending` |
-| 4 | Encoders refactor (05) | `pending` |
-| 5 | Migrar auth/users + borrar SQS (06) | `pending` |
-| 6 | Limpieza `stream_processor` (07) | `pending` |
-| 7 | Verificación E2E + medición (11) | `pending` |
+| 0 | Medición + SnapStart (02) | `pending` |
+| 1 | Shared foundations (03) | `pending` |
+| 2 | Devtools provisioning (04) | `pending` |
+| 3 | Lambda `send_email` (05) | `pending` |
+| 4 | Encoders refactor (06) | `pending` |
+| 5 | cv cache (07) | `pending` |
+| 6 | Migrar auth/users + borrar SQS (08) | `pending` |
+| 7 | Eliminar `stream_processor` + rules (09) | `pending` |
+| 8 | Verificación E2E + gate de cold (13) | `pending` |
 
 ## Decisiones no-reabribles (confirmadas con el usuario)
 
-1. **NO se crea `db_writer`.** La persistencia a Neon es **inline y síncrona**
-   en `contact_form`/`tracking_pixel` (la investigación mostró que un INSERT
-   warm pooled es ~10-25ms, imperceptible; y que en Lambda no hay
-   "async fire-and-forget en proceso").
-2. **Transporte de email = Lambda `InvocationType='Event'`** hacia
-   `send_email`. **CERO SQS** (ni DLQ). Email best-effort.
-3. **`send_email` puro**: DynamoDB (config) + S3 (template) + Jinja2 + SES.
-   NO toca Neon. Tabla `email-config` (PK=`kind`), **una plantilla por kind**
-   (10 kinds → 10 templates html + 10 txt en S3).
-4. **Owner-email del contacto**: `contact_form` invoca `send_email` async,
-   **siempre** (tras escribir el contacto inline). No idempotente.
-5. **`users` ENTRA en scope** (migra sus 4 kinds a `send_email`).
-6. **Bucket S3 per-env**: `portfolio-email-templates-{dev,stage,prod}`.
-7. **Eliminar `ASYNC_MODE`** y el path sync legacy duplicado: queda un único
-   path (escribir + responder).
-8. **Provider-swappable**: AWS detrás de `shared.*`. Se crean
-   `shared.aws.lambda_invoke` y `shared.templating`; se reusan
-   `shared.aws.s3` (`get_object_text`, ya existe), `shared.aws.ses`,
-   `shared.db`.
-9. **"Consultas async" (reads multi-query con gather) FUERA de scope** — eso
-   pertenece al Lambda de lectura del dashboard (otro plan). Se anota allí.
-10. **`tracking_pixel` 128→256 MB** aceptado (escribe Neon inline). Mitigación
-    raw-psycopg3 sólo si la medición de fase 7 la justifica.
+1. **Fase 0 bloqueante**: medir SnapStart en runtime + descomponer el cold
+   (Init/Restore vs Neon wake vs query) con CloudWatch ANTES de tocar el
+   refactor. No optimizar a ciegas.
+2. **NO lazy imports como foco.** Los datos prueban ROI ~nulo con SnapStart
+   activo; el lazy correcto (fido2/argon2 por acción, `__init__` vacíos) ya
+   está aplicado. Sólo se tocan imports eager redundantes puntuales SI la
+   medición confirma que no empeoran el restore.
+3. **NUNCA subir memoria.** El cuello es Neon I/O, no CPU. Subir memoria no
+   toca el wake de Neon ni la query.
+4. **`contact_form` → escritura inline síncrona** (form, baja frecuencia, el
+   usuario espera la respuesta igual) + invoca `send_email` async siempre.
+5. **`tracking_pixel` → async SIN SQS**: invoca async (`InvocationType='Event'`)
+   a un writer Lambda (el `tracking_worker` reconvertido de SQS-consumer a
+   invoke-target). **Preserva su cold de 3.7s** (no toca Neon en el request).
+   Fire-and-forget (sendBeacon: el browser no espera).
+6. **`cv` → `@cached` DynamoDB** (módulo `shared/cache/` ya existe). Cache hit
+   no toca Neon → cv pasa de 13.9s/7.3s a ~restore/~GetItem. Mayor impacto
+   absoluto. Incluido en este plan.
+7. **Eliminar SQS** (3 colas + 3 DLQ) + `shared.queue` + `ASYNC_MODE`.
+8. **`send_email` puro**: DynamoDB (config) + S3 (template) + Jinja2 + SES. NO
+   toca Neon. Tabla `email-config` (PK=`kind`), una plantilla por kind (10).
+9. **`stream_processor` SE ELIMINA de verdad**: existe como Lambda en stage y
+   prod (consume DynamoDB Streams de `contacts` + `tracking`). Es un `destroy`
+   real, no sólo borrar refs de código.
+10. **Provider-swappable**: AWS detrás de `shared.*`. Nuevos:
+    `shared.aws.lambda_invoke`, `shared.templating`. Reusados: `shared.aws.s3`,
+    `shared.aws.ses`, `shared.db`, `shared.cache`.
 
 ## Reglas críticas (siempre activas)
 
-- **SIEMPRE** los `core/**/*.py` importan AWS sólo vía `shared.*`
-  (`shared.aws.lambda_invoke`, `shared.aws.s3`, `shared.aws.ses`,
-  `shared.aws.dynamodb`, `shared.db`, `shared.templating`). `lint-deps` verde.
-- **SIEMPRE** los `__init__.py` de `shared/*` quedan VACÍOS (sin barrels).
-- **SIEMPRE** los encoders importan `shared.db` al top + `warm_db()` en INIT
-  (van al snapshot de SnapStart). NO lazy si la dep es incondicional.
-- **SIEMPRE** `memory`/`timeout` = MÍNIMO medido y justificado en el manifest
-  (`.claude/rules/lambda-config.md`).
-- **SIEMPRE** invocación async de email = `InvocationType='Event'`; el caller
-  no espera; degrada a log si falla (no rompe el request).
+- **SIEMPRE** medir el cold con `Restore Duration`/`Init Duration`/`Duration`
+  de la REPORT line de CloudWatch — NUNCA con el roundtrip httpx del harness
+  (incluye red WSL2→us-east-1).
+- **SIEMPRE** verificar SnapStart con `--qualifier live` (el alias que invoca
+  API GW). Sin `--qualifier` consulta `$LATEST` que SIEMPRE da `Off`.
+- **SIEMPRE** los `core/**/*.py` importan AWS sólo vía `shared.*`. `lint-deps`
+  verde. Los `__init__.py` de `shared/*` quedan VACÍOS.
+- **SIEMPRE** los imports incondicionales van al top del módulo (snapshot de
+  SnapStart), NO al `preload()` ni al handler.
+- **SIEMPRE** invocación async = `InvocationType='Event'`; el caller no espera;
+  degrada a log si falla (no rompe el request).
+- **SIEMPRE** `memory`/`timeout` = MÍNIMO medido (`.claude/rules/lambda-config.md`).
 - **SIEMPRE** TDD: test primero, asserts EXACTOS, coverage ≥80% per-file.
-- **NUNCA** atribución de IA. **NUNCA** reintroducir SQS. **NUNCA** crear
-  `db_writer`.
+- **NUNCA** atribución de IA. **NUNCA** reintroducir SQS. **NUNCA** subir
+  memoria para enmascarar latencia. **NUNCA** `db_writer` genérico (el writer
+  de tracking es específico y async-via-invoke, no un slave genérico).
 
 ## Ciclo de vida
 
-Carpeta **efímera**: el último commit (fase 7) la elimina con
-`git rm -r`. Convenciones que sobreviven (formato `uses.invokes`/
-`uses.buckets`, portadores `shared.*` nuevos, patrón send_email) se promueven
-a `.claude/rules/` ANTES de borrar (fase 6).
+Carpeta **efímera**: el último commit (fase 8) la elimina con `git rm -r`. Las
+convenciones que sobreviven (formato `uses.invokes`/`uses.buckets`, portadores
+`shared.*` nuevos, patrón send_email, hallazgos de cold start) se promueven a
+`.claude/rules/` ANTES de borrar (fase 7).

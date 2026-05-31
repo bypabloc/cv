@@ -1,6 +1,6 @@
-# 03 — Devtools provisioning (uses.invokes, uses.buckets, quitar SQS)
+# 04 — Devtools provisioning (uses.invokes, uses.buckets, quitar SQS)
 
-[← 02 shared](02-shared-foundations.md) · [siguiente: 04 send_email →](04-send-email-lambda.md)
+[← 03 shared](03-shared-foundations.md) · [siguiente: 05 send_email →](05-send-email-lambda.md)
 
 > Fase 2. Extiende el provisioner para `uses.invokes` (Lambda→Lambda) y
 > `uses.buckets` (S3 read), agrega el recurso `s3-bucket` + la tabla
@@ -143,4 +143,4 @@ Modelar análogo a `rate_limit_cmds.py` (que seedea `rate-limit-rules`):
 ### Eliminar (fase 5, listado aquí por contexto)
 - `serverless/lambda/resources/sqs/` completo (7 archivos).
 
-[← 02 shared](02-shared-foundations.md) · [siguiente: 04 send_email →](04-send-email-lambda.md)
+[← 03 shared](03-shared-foundations.md) · [siguiente: 05 send_email →](05-send-email-lambda.md)

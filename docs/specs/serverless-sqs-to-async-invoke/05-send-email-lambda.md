@@ -1,6 +1,6 @@
-# 04 — Lambda `send_email` (puro: DynamoDB + S3 + Jinja2 + SES)
+# 05 — Lambda `send_email` (puro: DynamoDB + S3 + Jinja2 + SES)
 
-[← 03 devtools](03-devtools-provisioning.md) · [siguiente: 05 encoders →](05-encoders-refactor.md)
+[← 04 devtools](04-devtools-provisioning.md) · [siguiente: 06 encoders →](06-encoders-refactor.md)
 
 > Fase 3. Lambda `direct` puro de envío de email. NO toca Neon. Lee la
 > config del email de DynamoDB (`email-config`), baja el template de S3,
@@ -164,4 +164,4 @@ Integration (`tests/integration/`, opcional, con DynamoDB/S3/SES reales o moto).
   - Verificar: `serverless tests --type=unit --lambda=send_email` (≥80%)
   - Verificar: `serverless lint-deps --lambda=send_email` exit 0
 
-[← 03 devtools](03-devtools-provisioning.md) · [siguiente: 05 encoders →](05-encoders-refactor.md)
+[← 04 devtools](04-devtools-provisioning.md) · [siguiente: 06 encoders →](06-encoders-refactor.md)

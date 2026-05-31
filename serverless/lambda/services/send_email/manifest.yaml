@@ -1,0 +1,44 @@
+# Manifiesto del Lambda `send_email` — fuente de verdad de su config.
+#
+# Lambda puro de envio de email: lee la config de DynamoDB (email-config),
+# baja el template de S3, renderiza con Jinja2 y envia por SES. NO toca Neon.
+# Lo invocan contact_form / auth / users con InvocationType='Event' (async).
+#   python devtools/run.py serverless deploy --lambda=send_email
+
+# --- Identidad ---
+name: send_email
+description: Envia email transaccional (DynamoDB config + S3 template + Jinja2 + SES).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 256       # MB — MEDIR (lambda-config.md). jinja2 + boto3 (dynamodb +
+                  # s3 + ses), SIN Neon (no sqlalchemy). Estimado 256; bajar a
+                  # 128 solo si la medicion del cold lo permite.
+timeout: 30       # segundos — cubre el cold sin SnapStart restore.
+
+# SnapStart: precalienta imports en el INIT -> snapshot. Habilitado.
+snap_start: true
+
+# --- Trigger: invoke directo async (sin HTTP) ---
+trigger:
+  type: direct
+
+# --- Recursos que usa ---
+uses:
+  tables:
+    email-config: read         # mapea kind -> bucket + template paths + subject
+  buckets:
+    - name: portfolio-email-templates-${stage}
+      access: read             # baja los templates html/txt
+  secrets:
+    - ses-from-address         # String: from address verificado en SES
+  sends-email: true            # SES SendEmail
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+    AWS_SES_REGION: us-east-1
+  prod:
+    LOG_LEVEL: WARNING

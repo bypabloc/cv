@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<body style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2>Nuevo mensaje de contacto</h2>
+  <p><strong>Nombre:</strong> {{ name }}</p>
+  <p><strong>Email:</strong> {{ email }}</p>
+  {% if company %}<p><strong>Empresa:</strong> {{ company }}</p>{% endif %}
+  {% if role %}<p><strong>Rol:</strong> {{ role }}</p>{% endif %}
+  {% if service_type %}<p><strong>Servicio:</strong> {{ service_type }}</p>{% endif %}
+  {% if budget %}<p><strong>Presupuesto:</strong> {{ budget }}</p>{% endif %}
+  {% if timeline %}<p><strong>Plazo:</strong> {{ timeline }}</p>{% endif %}
+  {% if niche %}<p><strong>Niche:</strong> {{ niche }}</p>{% endif %}
+  <p><strong>Mensaje:</strong></p>
+  <p>{{ message }}</p>
+</body>
+</html>

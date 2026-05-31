@@ -1,0 +1,6 @@
+Confirma tu cuenta en The Full Stack
+
+Gracias por registrarte. Confirma tu cuenta visitando:
+{{ verify_url }}
+
+Expira en {{ expires_in_min }} minutos.

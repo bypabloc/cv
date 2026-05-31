@@ -46,19 +46,18 @@ def test_bypass_rejected_in_prod(
 def test_bypass_accepts_valid_token_in_dev(
     monkeypatch: pytest.MonkeyPatch,
     contact_form_aws: None,
-    mock_sqs: list[dict],
+    mock_neon_writes: list[dict],
+    mock_invoke: list[dict],
 ) -> None:
     """Given STAGE=dev + cf vacio + token firmado valido, Then acepta [AC-2]."""
     import time
 
     import shared.crypto.captcha as captcha_mod
     from controllers.contact.create import Create
-    from settings.config import AppConfig
     from shared.crypto.bypass_token import sign_bypass_token
     from shared.crypto.ed25519 import generate_keypair
 
     monkeypatch.setenv('STAGE', 'dev')
-    monkeypatch.setattr(AppConfig, 'async_mode', True)
 
     private_b64, public_b64 = generate_keypair()
     monkeypatch.setattr(captcha_mod, '_load_public_key', lambda: public_b64)
@@ -73,6 +72,7 @@ def test_bypass_accepts_valid_token_in_dev(
     # Act
     result = Create(event=event).run()
 
-    # Assert
+    # Assert: persistio inline + invoco send_email async.
     assert result['is_valid'] is True
-    assert len(mock_sqs) == 1
+    assert len(mock_neon_writes) == 1
+    assert len(mock_invoke) == 1

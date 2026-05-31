@@ -1,13 +1,12 @@
-"""Handler — Turnstile invalido NO encola el mensaje a SQS.
+"""Handler — Turnstile invalido NO persiste ni invoca send_email.
 
-Given ASYNC_MODE=true + Turnstile responde success=false,
+Given Turnstile responde success=false,
 When lambda_handler procesa el evento POST /contact,
-Then devuelve HTTP 403 (CAPTCHA_INVALID) Y `send_to_queue` NUNCA se
-     invoca (la verificacion gating debe correr ANTES del branch async).
+Then devuelve HTTP 403 (CAPTCHA_INVALID) Y `invoke_async` NUNCA se invoca
+     (la verificacion gating debe correr ANTES de persistir / notificar).
 
-Spec lambdas-async-sqs (fase 07): la defensa anti-bot va siempre
-antes del encolar — un token invalido NO debe consumir capacidad de la
-cola. AC-2.
+La defensa anti-bot va siempre antes de escribir a Neon — un token
+invalido NO debe persistir un contacto ni gatillar un email. AC-2.
 """
 
 import httpx
@@ -21,16 +20,14 @@ pytestmark = pytest.mark.unit
 
 
 @respx.mock
-def test_turnstile_failure_does_not_enqueue(
-    monkeypatch: pytest.MonkeyPatch,
-    mock_sqs: list[dict],
+def test_turnstile_failure_does_not_persist(
+    mock_neon_writes: list[dict],
+    mock_invoke: list[dict],
     contact_form_aws: None,
 ) -> None:
     import handler
-    from settings.config import AppConfig
 
-    # Arrange: async mode + Turnstile rechaza
-    monkeypatch.setattr(AppConfig, 'async_mode', True)
+    # Arrange: Turnstile rechaza.
     respx.post(TURNSTILE_SITEVERIFY_URL).mock(
         return_value=httpx.Response(
             200,
@@ -52,5 +49,6 @@ def test_turnstile_failure_does_not_enqueue(
 
     # Assert
     assert response['statusCode'] == 403
-    # NUNCA se publica si Turnstile falla.
-    assert mock_sqs == []
+    # NUNCA se persiste ni se invoca send_email si Turnstile falla.
+    assert mock_neon_writes == []
+    assert mock_invoke == []

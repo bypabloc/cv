@@ -14,7 +14,6 @@ del form, asi que vive en el modelo del form, no en `_meta`.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Literal
 
 from shared.core.pydantic_types import (
@@ -129,17 +128,3 @@ class ContactCreatedOutput(BaseModel):
 
     contact_id: str
     created_at: str  # ISO 8601 UTC
-
-
-class ContactAcceptedOutput(BaseModel):
-    """Respuesta 202 cuando el encoder publica el form a SQS (modo ASYNC).
-
-    El cliente recibe el contact_id pre-generado por el encoder (UUIDv7)
-    para correlar future status checks. `accepted=True` documenta que la
-    request fue aceptada para procesamiento asincrono — el worker la
-    persiste en Neon + dispara el email despues.
-    """
-
-    contact_id: str
-    created_at: datetime
-    accepted: bool = True

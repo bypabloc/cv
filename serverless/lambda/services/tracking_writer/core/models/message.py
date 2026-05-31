@@ -1,19 +1,20 @@
-"""@module message — schema del mensaje SQS del tracking_worker.
+"""@module message — schema del `data` del invoke async del tracking_writer.
 
-`TrackingQueueMessage` valida el body JSON de cada record SQS que el
-encoder `tracking_pixel` publica en la cola
-`portfolio-tracking-events-${stage}`. El encoder pre-genera los IDs
-fisicos (`page_id` UUIDv7, `created_at`) ANTES de encolar, de modo
-que el worker sea estrictamente idempotente: si SQS re-entrega el
-mismo mensaje, el INSERT con `ON CONFLICT DO NOTHING` sobre la PK
-compuesta `(created_at, visit_id, page_id)` es no-op.
+`TrackingWriteModel` valida el `data` que el encoder `tracking_pixel`
+arma en `invoke_tracking_writer` y envia por `InvocationType='Event'`
+(sin SQS) en el contrato estandar `{operation:'tracking', action:'write',
+data:{...}}`. El encoder pre-genera los IDs fisicos (`page_id` UUIDv7,
+`created_at`) ANTES de invocar, de modo que el writer sea estrictamente
+idempotente: si AWS reintenta el invoke async, el INSERT con
+`ON CONFLICT DO NOTHING` sobre la PK compuesta `(created_at, visit_id,
+page_id)` es no-op.
 
 `extra='forbid'` rechaza payloads con campos no declarados: si el
-encoder agrega un campo nuevo sin coordinar version, el worker falla
+encoder agrega un campo nuevo sin coordinar version, el writer falla
 ruidoso (preferible a silenciar el cambio).
 
 `schema_version` permite evolucion: cuando el contrato cambie de
-manera incompatible, el encoder publica con `schema_version=2`, este
+manera incompatible, el encoder invoca con `schema_version=2`, este
 modulo agrega otra clase y el handler enruta segun el valor.
 """
 
@@ -23,12 +24,12 @@ from typing import Any, Literal
 from shared.core.pydantic_types import BaseModel, ConfigDict
 
 
-class TrackingQueueMessage(BaseModel):
-    """Mensaje SQS encolado por el encoder `tracking_pixel`.
+class TrackingWriteModel(BaseModel):
+    """`data` del invoke async que arma el encoder `tracking_pixel`.
 
-    Una instancia = un evento de tracking a persistir en Neon. El
-    worker procesa hasta 10 por invocacion, compartiendo una sola
-    `db_session()` entre todos los mensajes del batch.
+    Una instancia = un evento de tracking a persistir en Neon. El writer
+    procesa UN evento por invocacion (a diferencia del worker SQS que
+    reemplaza, que procesaba hasta 10 por batch).
     """
 
     model_config = ConfigDict(extra='forbid')

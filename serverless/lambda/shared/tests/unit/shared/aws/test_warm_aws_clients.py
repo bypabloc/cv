@@ -103,6 +103,32 @@ def test_when_both_false_then_no_client_is_built(
     assert calls == {'dynamodb': 0, 'sqs': 0}
 
 
+def test_when_lambda_true_then_materializes_lambda_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Given warm_aws_clients(lambda_=True),
+    When se invoca,
+    Then materializa el cliente boto3 Lambda via
+         shared.aws.lambda_invoke._client (PEP 562 lambda_client) una vez,
+         sin construir el resource DynamoDB.
+    """
+    calls = {'dynamodb': 0, 'lambda': 0}
+
+    monkeypatch.setattr(
+        'shared.aws.dynamodb.get_resource',
+        lambda: calls.__setitem__('dynamodb', calls['dynamodb'] + 1),
+    )
+    monkeypatch.setattr(
+        'shared.aws.lambda_invoke._client',
+        lambda: calls.__setitem__('lambda', calls['lambda'] + 1),
+    )
+
+    warm_aws_clients(lambda_=True)
+
+    assert calls == {'dynamodb': 0, 'lambda': 1}
+
+
 def test_when_get_resource_raises_then_warmup_is_silent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -1,14 +1,14 @@
-# @config: lambda/services/tracking_worker/pyproject.toml
+# @config: lambda/services/tracking_writer/pyproject.toml
 # @description: manifiesto de dependencias y tooling del Lambda
-#   tracking_worker (spec lambdas-async-sqs). Worker async que consume
-#   la cola SQS portfolio-tracking-events-${stage} y persiste cada
-#   evento en Neon con ON CONFLICT DO NOTHING. Lambda autonomo: tiene
-#   su propio uv.lock y .venv aislado (NO es workspace member).
+#   tracking_writer (refactor cold-start, sin SQS). Writer async que el
+#   encoder tracking_pixel invoca con InvocationType='Event' (1 evento por
+#   invoke) y persiste en Neon con ON CONFLICT DO NOTHING. Lambda autonomo:
+#   tiene su propio uv.lock y .venv aislado (NO es workspace member).
 
 [project]
-name = "tracking-worker"
+name = "tracking-writer"
 version = "0.1.0"
-description = "Worker SQS de eventos de tracking — persiste en Neon, batch=10."
+description = "Writer async de tracking — persiste 1 evento en Neon (idempotente)."
 requires-python = ">=3.13"
 
 # Deps propias del Lambda. El resto le llega por el vendoring del

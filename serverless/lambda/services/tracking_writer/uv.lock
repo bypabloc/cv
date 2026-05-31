@@ -732,7 +732,7 @@ wheels = [
 ]
 
 [[package]]
-name = "tracking-worker"
+name = "tracking-writer"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

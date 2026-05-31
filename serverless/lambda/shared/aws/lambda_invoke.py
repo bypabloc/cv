@@ -17,11 +17,23 @@ import json
 from typing import Any
 
 from shared.core.config import settings
+from shared.core.exceptions import ApplicationError
 from shared.observability.logger import logger
 
 
-class LambdaInvokeError(Exception):
-    """Fallo al invocar una Lambda downstream (el caller decide si degradar)."""
+class LambdaInvokeError(ApplicationError):
+    """Fallo al invocar una Lambda downstream (el caller decide si degradar).
+
+    Es una `ApplicationError` con `status_code=502` (Bad Gateway): cuando un
+    encoder NO la captura y la deja propagar (caso `tracking_pixel`), el
+    `http_handler` la mapea a HTTP 502 — la semantica correcta para "la
+    dependencia downstream no respondio, reintenta". Los encoders que SI la
+    capturan (`contact_form.notify_owner`) degradan a best-effort: el 201/202
+    sale igual, el invoke fallido queda en un log.
+    """
+
+    default_code = 'UPSTREAM_UNAVAILABLE'
+    status_code = 502
 
 
 _client_cache: dict[str, Any] = {}

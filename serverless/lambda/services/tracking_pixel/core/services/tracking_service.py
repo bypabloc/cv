@@ -22,22 +22,24 @@ el volumen es bajo).
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from typing import Any
 
 from settings.config import logger
+from shared.aws.lambda_invoke import invoke_async
 from shared.cache.decorator import cached
 from shared.core.ulid import new_uuidv7
-from shared.queue.publisher import send_to_queue
 
 # --- Deps pesadas del path sync (lazy) -----------------------------------
 # El cold path async (ASYNC_MODE=true, default) NO toca Neon ni parsea UA:
-# solo encola a SQS. Importar shared.db (sqlalchemy + psycopg) y ua_parser
-# al top inflaba el footprint del encoder de ~63 MB a ~122 MB -> OOM-thrash
-# a 128 MB -> timeout de 30s en EXECUTE (502/504). Se difieren a la primera
-# invocacion del path sync legacy (lambda-config.md: cortar imports, NUNCA
-# subir memoria). Quedan como globals para preservar los monkeypatch de los
-# tests (services.tracking_service.{db_session,ensure_session_and_visit,
+# solo invoca tracking_writer (InvocationType='Event'). Importar shared.db
+# (sqlalchemy + psycopg) y ua_parser al top inflaba el footprint del encoder
+# de ~63 MB a ~122 MB -> OOM-thrash a 128 MB -> timeout de 30s en EXECUTE
+# (502/504). Se difieren a la primera invocacion del path sync legacy
+# (lambda-config.md: cortar imports, NUNCA subir memoria). Quedan como
+# globals para preservar los monkeypatch de los tests
+# (services.tracking_service.{db_session,ensure_session_and_visit,
 # insert_tracking}).
 db_session: Any = None
 ensure_session_and_visit: Any = None
@@ -291,7 +293,7 @@ def process_tracking_event(
     return result
 
 
-def enqueue_tracking_message(
+def invoke_tracking_writer(
     *,
     page_id: str,
     created_at: datetime,
@@ -300,34 +302,31 @@ def enqueue_tracking_message(
     user_agent: str | None,
     country: str | None = None,
 ) -> str:
-    """Encola un mensaje SQS hacia `tracking_worker` (modo ASYNC_MODE=true).
+    """Invoca `tracking_writer` async (modo ASYNC_MODE=true), sin SQS.
 
-    NOTA: el encoder NO hace UA parsing — el worker lo hace (cacheado).
-    Asi el encoder es minimo y responde rapido (TTFB ~5-15ms vs ~80ms
-    del sync path). El cache del UA queda compartido (namespace='ua')
-    entre encoder sync legacy y worker.
+    Reemplaza la cola SQS por un invoke Lambda->Lambda
+    (`InvocationType='Event'`, fire-and-forget). El encoder NO hace UA
+    parsing — el writer lo hace (cacheado). Asi el encoder es minimo y
+    responde rapido (TTFB ~5-15ms vs ~80ms del sync path). El cache del
+    UA queda compartido (namespace='ua') entre encoder sync legacy y
+    writer.
 
     Parameters
     ----------
     page_id : str
-        UUIDv7 generado por el encoder. El worker NO lo regenera.
+        UUIDv7 generado por el encoder. El writer NO lo regenera.
     created_at : datetime
-        Timestamp fijado por el encoder. Evita time-skew si SQS demora.
+        Timestamp fijado por el encoder. Evita time-skew.
     validated_input : dict[str, Any]
         Payload validado por TrackEventModel.tracking_payload().
     ip : str
         IP del cliente.
     user_agent : str | None
-        Header User-Agent crudo. El worker lo parsea.
+        Header User-Agent crudo. El writer lo parsea.
     country : str | None
         Country code (cloudfront-viewer-country o cf-ipcountry).
-
-    Returns
-    -------
-    str
-        MessageId de SQS (para correlacionar en CloudWatch).
     """
-    payload: dict[str, Any] = {
+    message: dict[str, Any] = {
         'schema_version': 1,
         'page_id': page_id,
         'created_at': created_at.isoformat(),
@@ -352,7 +351,12 @@ def enqueue_tracking_message(
         'country': country,
         'user_agent': user_agent,
     }
-    return send_to_queue(
-        queue_short_name='tracking-events',
-        payload=payload,
+    function_name = os.environ['LAMBDA_TRACKING_WRITER_FUNCTION_NAME']
+    invoke_async(
+        function_name=function_name,
+        payload={
+            'operation': 'tracking',
+            'action': 'write',
+            'data': message,
+        },
     )

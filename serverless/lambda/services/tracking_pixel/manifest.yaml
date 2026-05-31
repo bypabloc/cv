@@ -11,7 +11,7 @@
 
 # --- Identidad ---
 name: tracking-pixel
-description: Encoder de eventos de tracking (valida + rate-limit + encola SQS).
+description: Encoder de tracking (valida + rate-limit + invoke tracking_writer).
 
 # --- Runtime ---
 runtime: python3.13
@@ -39,14 +39,14 @@ trigger:
 # --- Que recursos del backend usa ---
 # devtools traduce esto a los permisos IAM y los imports necesarios.
 uses:
-  # Cola SQS donde el encoder publica los eventos para que el worker
-  # `tracking_worker` los persista en Neon (batch=10). El encoder es
-  # producer; el worker consumer.
-  queues:
-    - name: portfolio-tracking-events-${stage}
-      access: producer
+  # Lambda que invoca async (InvocationType='Event', sin SQS): el encoder
+  # publica el evento de tracking y `tracking_writer` lo persiste en Neon.
+  # devtools concede lambda:InvokeFunction al rol e inyecta
+  # LAMBDA_TRACKING_WRITER_FUNCTION_NAME al runtime.
+  invokes:
+    - tracking_writer
   # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
-  # Spec direct-neon-writes: la tabla `tracking` ya no se usa — el Lambda
+  # Spec direct-neon-writes: la tabla `tracking` ya no se usa — el writer
   # escribe directo a Neon (`tracking_events`). Solo quedan las tablas
   # de infraestructura (cache + rate-limit).
   tables:

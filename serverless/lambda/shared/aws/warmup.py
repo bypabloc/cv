@@ -20,7 +20,12 @@ from __future__ import annotations
 from shared.observability.logger import logger
 
 
-def warm_aws_clients(*, dynamodb: bool = False, sqs: bool = False) -> None:
+def warm_aws_clients(
+    *,
+    dynamodb: bool = False,
+    sqs: bool = False,
+    lambda_: bool = False,
+) -> None:
     """Crea los clientes boto3 pedidos en INIT (best-effort, idempotente).
 
     Parameters
@@ -31,6 +36,9 @@ def warm_aws_clients(*, dynamodb: bool = False, sqs: bool = False) -> None:
     sqs : bool
         Warmea el cliente boto3 SQS (`shared.queue.client.get_sqs_client`).
         Lo usa el publisher (`send_to_queue`).
+    lambda_ : bool
+        Warmea el cliente boto3 Lambda (`shared.aws.lambda_invoke`). Lo usa
+        `invoke_async` (invoke Lambda->Lambda, reemplazo de SQS).
 
     Cada cliente se cachea a module-scope en su modulo, asi que esta
     llamada solo paga la construccion una vez (las siguientes son no-op).
@@ -45,12 +53,22 @@ def warm_aws_clients(*, dynamodb: bool = False, sqs: bool = False) -> None:
             # credenciales/endpoint en INIT (CPU sin throttle + snapshot),
             # no en el EXECUTE a 0.07 vCPU.
             _ = get_resource().meta.client
-        except Exception as exc:  # noqa: BLE001 -- best-effort
+        except Exception as exc:
             logger.debug('warm dynamodb omitido: %s', type(exc).__name__)
     if sqs:
         try:
             from shared.queue.client import get_sqs_client
 
             get_sqs_client()
-        except Exception as exc:  # noqa: BLE001 -- best-effort
+        except Exception as exc:
             logger.debug('warm sqs omitido: %s', type(exc).__name__)
+    if lambda_:
+        try:
+            import shared.aws.lambda_invoke as lambda_invoke
+
+            # Materializa el cliente boto3 'lambda' (service model +
+            # credenciales/endpoint) en INIT. El EXECUTE a 0.07 vCPU solo
+            # reusa el singleton para el invoke async (InvocationType=Event).
+            _ = lambda_invoke.lambda_client
+        except Exception as exc:
+            logger.debug('warm lambda omitido: %s', type(exc).__name__)

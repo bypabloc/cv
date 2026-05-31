@@ -13,6 +13,7 @@ Tres `kind` soportados:
   - `dynamodb-table` -> `aws dynamodb create-table` (+ `update-time-to-live`).
   - `rest-api`       -> rol CloudWatch + log group + `create-rest-api`.
   - `sqs-queue`      -> `aws sqs create-queue`.
+  - `s3-bucket`      -> `aws s3api create-bucket` (+ public-access-block + SSE).
 
 La idempotencia se reconcilia consultando AWS (`describe-*` / `get-*`):
 si el recurso existe NO se recrea, solo se re-publican los SSM. El estado
@@ -45,7 +46,7 @@ _SERVERLESS_DIR = Path(__file__).resolve().parents[2] / 'serverless'
 _RESOURCES_DIR = _SERVERLESS_DIR / 'lambda' / 'resources'
 
 # Subdirectorios de _RESOURCES_DIR que contienen fragmentos de recurso.
-_RESOURCE_TYPES = ('sqs', 'dynamodb', 'api_gateway', 'cloudwatch_alarms')
+_RESOURCE_TYPES = ('sqs', 'dynamodb', 's3', 'api_gateway', 'cloudwatch_alarms')
 
 # Region por defecto del backend.
 _REGION = aws_cli.DEFAULT_REGION
@@ -64,6 +65,7 @@ _APIGW_CWLOGS_POLICY = (
 _PROVISION_ORDER = (
     'sqs-queue',
     'dynamodb-table',
+    's3-bucket',
     'rest-api',
     'cloudwatch-alarm',
 )
@@ -230,11 +232,13 @@ def render_resource(path: Path, *, stage: str) -> RenderedResource:
         'dynamodb-table',
         'rest-api',
         'sqs-queue',
+        's3-bucket',
         'cloudwatch-alarm',
     }:
         raise ValueError(
             f'kind invalido en {path}: {kind!r}. Validos: '
-            f'dynamodb-table, rest-api, sqs-queue, cloudwatch-alarm.',
+            f'dynamodb-table, rest-api, sqs-queue, s3-bucket, '
+            f'cloudwatch-alarm.',
         )
 
     name = interpolated.get('name')
@@ -1389,10 +1393,118 @@ def _provision_cloudwatch_alarm(
     return {f'cloudwatch:{alarm_name}': alarm_name}, []
 
 
+def _provision_s3_bucket(
+    rendered: RenderedResource,
+    *,
+    profile: str | None,
+    region: str,
+    dry_run: bool,
+) -> tuple[dict[str, str | None], list[str]]:
+    """Provisiona un bucket S3 privado + cifrado. Idempotente.
+
+    Si el bucket ya existe (`head-bucket` retorna 0) NO se recrea: solo se
+    re-aplican el public-access-block + la SSE (idempotentes) y se re-publican
+    los SSM. Bucket privado (todo acceso publico bloqueado) + SSE-S3 (AES256).
+    El nombre del bucket es global; se usa `portfolio-<x>-<stage>` para evitar
+    colisiones entre envs.
+    """
+    bucket = rendered.name
+    arn = f'arn:aws:s3:::{bucket}'
+
+    if dry_run:
+        print(_c(YELLOW, f'[dry-run] s3api create-bucket {bucket}'))
+    else:
+        exists = aws_cli.aws_resource_exists(
+            's3api',
+            ['head-bucket', '--bucket', bucket],
+            profile=profile,
+            region=region,
+        )
+        if exists:
+            print(_c(CYAN, f'  bucket {bucket} ya existe — no se recrea'))
+        else:
+            _create_s3_bucket(bucket, profile=profile, region=region)
+        _harden_s3_bucket(rendered, bucket, profile=profile, region=region)
+
+    values: dict[str, str | None] = {'name': bucket, 'arn': arn}
+    published = _publish_ssm(
+        rendered,
+        values,
+        profile=profile,
+        region=region,
+        dry_run=dry_run,
+    )
+    resources: dict[str, str | None] = {
+        f's3:{bucket}:name': bucket,
+        f's3:{bucket}:arn': arn,
+    }
+    return resources, published
+
+
+def _create_s3_bucket(
+    bucket: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Crea el bucket. us-east-1 NO acepta LocationConstraint (es el default)."""
+    args = ['s3api', 'create-bucket', '--bucket', bucket]
+    if region != 'us-east-1':
+        args += [
+            '--create-bucket-configuration',
+            f'LocationConstraint={region}',
+        ]
+    aws_cli.aws(args, profile=profile, region=region)
+    aws_cli.aws(
+        ['s3api', 'wait', 'bucket-exists', '--bucket', bucket],
+        profile=profile,
+        region=region,
+    )
+
+
+def _harden_s3_bucket(
+    rendered: RenderedResource,
+    bucket: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Aplica public-access-block (todo bloqueado) + SSE-S3 (AES256)."""
+    if rendered.spec.get('block_public_access', True):
+        aws_cli.aws(
+            [
+                's3api',
+                'put-public-access-block',
+                '--bucket',
+                bucket,
+                '--public-access-block-configuration',
+                'BlockPublicAcls=true,IgnorePublicAcls=true,'
+                'BlockPublicPolicy=true,RestrictPublicBuckets=true',
+            ],
+            profile=profile,
+            region=region,
+        )
+    if rendered.spec.get('encryption', True):
+        aws_cli.aws(
+            [
+                's3api',
+                'put-bucket-encryption',
+                '--bucket',
+                bucket,
+                '--server-side-encryption-configuration',
+                '{"Rules":[{"ApplyServerSideEncryptionByDefault":'
+                '{"SSEAlgorithm":"AES256"}}]}',
+            ],
+            profile=profile,
+            region=region,
+        )
+
+
 _PROVISIONERS = {
     'dynamodb-table': _provision_dynamodb_table,
     'rest-api': _provision_rest_api,
     'sqs-queue': _provision_sqs_queue,
+    's3-bucket': _provision_s3_bucket,
     'cloudwatch-alarm': _provision_cloudwatch_alarm,
 }
 
@@ -1558,6 +1670,21 @@ def _delete_resource(
                 region=region,
                 check=False,
             )
+    elif rendered.kind == 's3-bucket':
+        # `rm --recursive` vacia el bucket (delete-bucket falla si no esta
+        # vacio); luego borra el bucket. check=False: tolera bucket ausente.
+        aws_cli.aws(
+            ['s3', 'rm', f's3://{rendered.name}', '--recursive'],
+            profile=profile,
+            region=region,
+            check=False,
+        )
+        aws_cli.aws(
+            ['s3api', 'delete-bucket', '--bucket', rendered.name],
+            profile=profile,
+            region=region,
+            check=False,
+        )
 
 
 # --------------------------------------------------------------------------

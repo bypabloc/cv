@@ -14,8 +14,10 @@ dependencies = [
 ]
 
 [tool.shared]
-# - core: ApplicationError (base de KmsError en shared.aws.kms).
-internal-deps = ["core"]
+# - core: ApplicationError (base de KmsError en shared.aws.kms) + settings
+#   (aws_region en lambda_invoke).
+# - observability: logger (lambda_invoke loggea el invoke async).
+internal-deps = ["core", "observability"]
 
 # Deps de DESARROLLO del subpaquete: pytest + coverage + mocks. Permiten
 # que el .venv aislado del subpaquete corra su suite. NO van al artefacto

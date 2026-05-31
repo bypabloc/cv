@@ -1,0 +1,26 @@
+[project]
+name = "shared-templating"
+version = "0"
+description = "Renderizado de templates HTML/texto con Jinja2 (send_email)."
+requires-python = ">=3.13"
+dependencies = [
+  "jinja2>=3.1,<4.0",
+]
+
+[tool.shared]
+# jinja.py solo usa jinja2 (lazy); no depende de otros subpaquetes shared.
+internal-deps = []
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0,<9.0",
+  "pytest-cov>=5.0,<6.0",
+  "pytest-mock>=3.12,<4.0",
+  "mypy>=1.10,<2.0",
+  "ruff>=0.6,<1.0",
+]
+
+[tool.ruff]
+line-length = 80
+target-version = "py313"
+extend-exclude = [".venv/", "build/"]

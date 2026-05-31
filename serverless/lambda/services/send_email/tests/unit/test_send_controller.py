@@ -1,6 +1,7 @@
 """Controller email/send normaliza exito y error de negocio.
 
-Given un EmailSendRequest valido,
+Given un EmailSendRequest valido (el controller recibe solo el `data`,
+no el evento completo: run_controller pasa controller_event=data),
 When se ejecuta el controller Send,
 Then normaliza el resultado del service a {is_valid, data, code}.
 """
@@ -17,16 +18,13 @@ pytestmark = pytest.mark.unit
 def test_send_controller_normalizes_success():
     from controllers.email.send import Send
 
-    event = {
-        'operation': 'email',
-        'action': 'send',
-        'data': {
-            'kind': 'register-code',
-            'to': ['user@example.com'],
-            'data': {'code': 'X', 'expires_in_min': 15},
-        },
+    # El controller recibe el `data` (no {operation,action,data}).
+    data = {
+        'kind': 'register-code',
+        'to': ['user@example.com'],
+        'data': {'code': 'X', 'expires_in_min': 15},
     }
-    controller = Send(event=event)
+    controller = Send(event=data)
     with patch(
         'controllers.email.send.email_service.send',
         return_value='msg-42',
@@ -50,12 +48,8 @@ def test_send_controller_maps_service_error():
     from controllers.email.send import Send
     from services.email_service import EmailServiceError
 
-    event = {
-        'operation': 'email',
-        'action': 'send',
-        'data': {'kind': 'bad', 'to': ['u@e.com'], 'data': {}},
-    }
-    controller = Send(event=event)
+    data = {'kind': 'bad', 'to': ['u@e.com'], 'data': {}}
+    controller = Send(event=data)
     with patch(
         'controllers.email.send.email_service.send',
         side_effect=EmailServiceError(

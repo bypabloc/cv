@@ -117,11 +117,49 @@ no lo tiene setup.
 No corre typecheck/unit/coverage — ya pasaron en local. astro check
 no corre porque duplica el parsing del grafo con `astro build`.
 
+## Adopcion idempotente de recursos (provision-infra)
+
+`serverless provision-infra --stage=<X>` es **idempotente y ADOPTA**
+recursos preexistentes: para cada tabla DynamoDB / bucket S3 / REST API
+consulta `describe-*`/`get-*` por **nombre fisico** y si ya existe NO la
+recrea (solo lee sus ARNs). Esto permite migrar un backend gestionado por
+otra herramienta (un stack CloudFormation legacy) a devtools sin perder
+datos ni cambiar el endpoint:
+
+- **SIEMPRE** la REST API se matchea por `Name` (`portfolio-api-${stage}`),
+  no por logical-id de CloudFormation. Si el `Name` coincide, devtools
+  reutiliza el **mismo `restApiId`** -> el custom domain NO se re-apunta,
+  el endpoint productivo NO cambia.
+- **SIEMPRE** tras `provision-infra` de un env productivo, verificar que el
+  `restApiId` NO cambio (gate duro):
+
+  ```bash
+  aws ssm get-parameter --name /portfolio/${stage}/api_gateway/portfolio-api/id \
+    --region us-east-1 --query 'Parameter.Value' --output text
+  aws apigateway get-base-path-mappings \
+    --domain-name api.portfolio.${stage}.the-full-stack.com --region us-east-1 \
+    --query 'items[0].restApiId' --output text
+  # Ambos deben coincidir con el ID previo. Si difieren -> ROLLBACK.
+  ```
+
+- **SIEMPRE** al adoptar un env cuya Lambda `db` es vieja (conoce menos
+  migraciones que el repo), re-deployar `db` ANTES de `migrate` (la version
+  vendorizada de Alembic viaja en el zip del Lambda).
+- **NUNCA** `aws cloudformation delete-stack` sobre un stack legacy cuyos
+  recursos tienen `DeletionPolicy: Delete` (default SAM) y son compartidos
+  (REST API, tablas con datos): destruiria la API/tablas que devtools ya
+  adopto. Si no se puede editar el template para poner `Retain` (no esta en
+  el repo), dejar el stack **INERTE** (vivo, sin gestion; sus Lambdas ya
+  reemplazadas in-place; costo idle ~$0). Borrar a mano solo los huerfanos
+  SIN datos (colas SQS vacias, layers, roles de funciones eliminadas).
+
 ## Anti-patrones
 
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
 | IAM access keys en GitHub Secrets | Larga vida, no rotables, leak risk | OIDC con roles federados |
+| `delete-stack` de un stack legacy con `DeletionPolicy: Delete` sobre recursos compartidos | Destruye la REST API / tablas que devtools adopto -> outage + perdida de datos | Stack inerte; borrar a mano solo huerfanos sin datos |
+| Migrar la DB con la Lambda `db` vieja en el env | Su Alembic vendorizado no conoce las migraciones nuevas | Re-deploy `db` ANTES de `migrate` |
 | `cancel-in-progress: true` en deploy | Cancela mid-deploy, AWS queda parcial | `cancel-in-progress: false` |
 | Editar el state JSON a mano (local o S3) | Rompe idempotencia del provisioner | Recrear el recurso (provisioner detecta drift) |
 | `migrate-db` en paralelo con `deploy-lambdas` | Lambdas pueden referenciar columnas inexistentes | Sequencial obligatorio |

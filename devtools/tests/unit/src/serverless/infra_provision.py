@@ -837,3 +837,81 @@ class TestCustomDomain:
         assert resources == {}
         assert published == []
         assert fake.calls == []
+
+
+# --------------------------------------------------------------------------
+# _create_s3_bucket — tolerante a BucketAlreadyOwnedByYou
+# --------------------------------------------------------------------------
+class _FakeAwsRaising:
+    """Fake de `aws_cli.aws` que lanza AwsError en el verbo dado."""
+
+    def __init__(self, *, raise_on: str, stderr: str) -> None:
+        from serverless.aws_cli import AwsError
+
+        self._raise_on = raise_on
+        self._exc = AwsError(
+            'create-bucket fallo',
+            returncode=254,
+            stderr=stderr,
+            args_used=['s3api', 'create-bucket'],
+        )
+        self.calls: list[list[str]] = []
+
+    def __call__(self, args, **_kwargs):
+        from serverless.aws_cli import AwsResult
+
+        self.calls.append(args)
+        if '.'.join(args[:2]) == self._raise_on:
+            raise self._exc
+        return AwsResult(returncode=0, stdout='', stderr='', json=None)
+
+
+class TestCreateS3Bucket:
+    def test_create_bucket_adopts_when_already_owned(self, monkeypatch):
+        """
+        Given create-bucket falla con BucketAlreadyOwnedByYou (el bucket
+        ya existe, head-bucket dio 403 sin s3:ListBucket en el rol),
+        When _create_s3_bucket corre,
+        Then NO re-lanza (lo adopta) y NO llama `wait bucket-exists`.
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+
+        fake = _FakeAwsRaising(
+            raise_on='s3api.create-bucket',
+            stderr='An error occurred (BucketAlreadyOwnedByYou)',
+        )
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        infra_provision._create_s3_bucket(
+            'portfolio-email-templates-dev',
+            profile=None,
+            region='us-east-1',
+        )
+
+        verbs = ['.'.join(c[:2]) for c in fake.calls]
+        assert verbs == ['s3api.create-bucket']
+
+    def test_create_bucket_reraises_other_errors(self, monkeypatch):
+        """
+        Given create-bucket falla con un error que NO es "ya existe"
+        (ej. AccessDenied),
+        When _create_s3_bucket corre,
+        Then re-lanza el AwsError.
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+        from serverless.aws_cli import AwsError
+
+        fake = _FakeAwsRaising(
+            raise_on='s3api.create-bucket',
+            stderr='An error occurred (AccessDenied)',
+        )
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        with pytest.raises(AwsError):
+            infra_provision._create_s3_bucket(
+                'portfolio-email-templates-dev',
+                profile=None,
+                region='us-east-1',
+            )

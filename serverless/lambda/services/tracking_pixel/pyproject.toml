@@ -14,16 +14,16 @@ requires-python = ">=3.13"
 # Deps propias del Lambda. El resto le llega por el vendoring del
 # cierre de shared/ (shared.lambda_kit aporta pydantic;
 # shared.observability aporta aws-lambda-powertools; shared.aws +
-# shared.rate_limit + shared.cache + shared.queue + shared.db aportan
+# shared.rate_limit + shared.cache + shared.db aportan
 # boto3 + sqlalchemy + psycopg) — regla D-3.
 #
 # El cierre transitivo de shared/ se resuelve via AST scan de core/ por
 # devtools/serverless/shared_resolver.py — el lambda NO declara
 # `[tool.shared] internal-deps` (eso es solo para subpaquetes DENTRO de
-# shared/). El cierre actual del encoder incluye:
+# shared/). El encoder registra el evento async via invoke a un writer
+# Lambda (shared.aws.lambda_invoke, sin SQS). El cierre actual incluye:
 #   shared.lambda_kit, shared.observability, shared.aws, shared.rate_limit,
-#   shared.http, shared.core, shared.cache, shared.db (sync legacy),
-#   shared.queue (encoder async).
+#   shared.http, shared.core, shared.cache, shared.db (sync legacy).
 dependencies = [
   # uap-python: parser de User-Agent oficial; regex specs mantenidos por
   # la comunidad (uap-core). Reemplaza el regex custom previo del

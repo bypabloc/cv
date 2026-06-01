@@ -7,7 +7,7 @@ de rules para que el proximo lookup las vea.
 
 from __future__ import annotations
 
-from shared.dynamodb import RateLimitRuleItem
+from shared.dynamodb.models.rate_limit_rule import RateLimitRuleItem
 
 
 def _invalidate_rules_cache() -> None:
@@ -17,7 +17,7 @@ def _invalidate_rules_cache() -> None:
     `@cached(tags=['rate-limit-rules'])`; sin invalidar, un lookup
     posterior a la creacion de una rule devolveria el valor cacheado.
     """
-    from shared.cache import DynamoDBCache
+    from shared.cache.client import DynamoDBCache
 
     DynamoDBCache().invalidate(tag='rate-limit-rules')
 

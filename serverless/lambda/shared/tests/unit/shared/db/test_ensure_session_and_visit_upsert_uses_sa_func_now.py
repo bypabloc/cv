@@ -17,7 +17,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-from shared.db.models import Session as SessionRow
+from shared.db.models.visitor.session import Session as SessionRow
 from shared.db.repository import ensure_session_and_visit
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import Insert as PgInsert
@@ -25,7 +25,9 @@ from sqlalchemy.dialects.postgresql import Insert as PgInsert
 pytestmark = pytest.mark.unit
 
 
-def test_ensure_session_and_visit_upsert_targets_vis_sessions_with_now() -> None:
+def test_ensure_session_and_visit_upsert_targets_vis_sessions_with_now() -> (
+    None
+):
     # Arrange — visit previo None, foco esta en el primer execute (UPSERT)
     session = MagicMock()
     session.execute.return_value.first.return_value = None

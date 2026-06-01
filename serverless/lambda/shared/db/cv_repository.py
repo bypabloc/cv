@@ -2,8 +2,9 @@
 
 Concentra las queries SQLAlchemy que el Lambda `cv` necesita para servir
 el CV. El `core/` del Lambda NO importa `sqlalchemy`; consume estas
-funciones (`from shared.db.cv_repository import ...`), igual que `db` y
-`stream_processor` consumen `shared.db.repository` y `shared.db.migrations`.
+funciones (`from shared.db.cv_repository import ...`), igual que `db`,
+`contact_form` y `tracking_writer` consumen `shared.db.repository` y
+`shared.db.migrations`.
 
 Filtros comunes:
 - `niche` — opcional, `fintech|architect|leader|vibe|generic|None`. Cuando
@@ -29,38 +30,41 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import (
+from shared.db.models.cv.cv_entity import (
     Award,
     AwardNiche,
     Certificate,
     CertificateNiche,
-    EducationEntry,
-    EducationEntryNiche,
     Endorsement,
     EndorsementNiche,
+    Language,
+    LanguageNiche,
+)
+from shared.db.models.cv.education import EducationEntry, EducationEntryNiche
+from shared.db.models.cv.experience import (
     Experience,
     ExperienceBullet,
     ExperienceNiche,
     ExperienceSkill,
-    Language,
-    LanguageNiche,
-    Niche,
-    NichePriority,
-    Profile,
-    ProfileNiche,
-    ProfileStats,
+)
+from shared.db.models.cv.profile import Profile, ProfileNiche, ProfileStats
+from shared.db.models.cv.project import (
     Project,
     ProjectCaseStudy,
     ProjectMetric,
     ProjectNiche,
     ProjectTechTag,
+)
+from shared.db.models.cv.skill import (
     Skill,
     SkillCategory,
     SkillCategoryNiche,
     SkillCategorySkill,
-    TechTag,
-    Translation,
 )
+from shared.db.models.i18n.translation import Translation
+from shared.db.models.taxonomy.catalog import Niche, TechTag
+from shared.db.models.taxonomy.priority import NichePriority
+
 from .repository import RepositoryError
 from .session import db_session
 
@@ -189,9 +193,7 @@ def _all_priorities_by_entity(
         return {}
 
     stmt = (
-        select(
-            NichePriority.entity_id, Niche.slug, NichePriority.priority
-        )
+        select(NichePriority.entity_id, Niche.slug, NichePriority.priority)
         .join(Niche, Niche.id == NichePriority.niche_id)
         .where(
             NichePriority.entity_type == entity_type,
@@ -219,7 +221,7 @@ def _niches_by_entity(
         select(entity_col_attr, Niche.slug)
         .join(Niche, Niche.id == union_model.niche_id)
         .where(entity_col_attr.in_(entity_ids))
-        .order_by(Niche.position)
+        .order_by(Niche.display_order)
     )
     out: dict[str, list[str]] = defaultdict(list)
     for row in session.execute(stmt):
@@ -270,13 +272,13 @@ def get_profile(*, locale: str = 'es') -> dict[str, Any]:
                 session, 'profile', [profile.id]
             ).get(profile.id, {})
             # Niches del profile (singleton).
-            from .models import Niche
+            from shared.db.models.taxonomy.catalog import Niche
 
             niches_stmt = (
                 select(Niche.slug)
                 .join(ProfileNiche, ProfileNiche.niche_id == Niche.id)
                 .where(ProfileNiche.profile_id == profile.id)
-                .order_by(Niche.position)
+                .order_by(Niche.display_order)
             )
             niche_slugs = [row[0] for row in session.execute(niches_stmt)]
 
@@ -367,13 +369,13 @@ def list_experiences(
             )
             # Por (experience_id, kind) acumulamos las traducciones en
             # listas paralelas es[] / en[] ordenadas por position.
-            bullets_by_exp: dict[
-                str, dict[str, dict[str, list[str]]]
-            ] = defaultdict(
-                lambda: {
-                    'responsibility': {'es': [], 'en': []},
-                    'achievement': {'es': [], 'en': []},
-                }
+            bullets_by_exp: dict[str, dict[str, dict[str, list[str]]]] = (
+                defaultdict(
+                    lambda: {
+                        'responsibility': {'es': [], 'en': []},
+                        'achievement': {'es': [], 'en': []},
+                    }
+                )
             )
             for bullet in bullets_raw:
                 texts = bullet_translations.get(bullet.id, {}).get('text', {})
@@ -422,8 +424,11 @@ def list_experiences(
                 result.sort(
                     key=lambda e: priorities.get(
                         next(
-                            (exp.id for exp in experiences
-                             if exp.slug == e['slug']),
+                            (
+                                exp.id
+                                for exp in experiences
+                                if exp.slug == e['slug']
+                            ),
                             '',
                         ),
                         0,
@@ -455,9 +460,7 @@ def list_projects(
             ids = [p.id for p in projects]
             translations = _translations_map(session, 'project', ids)
             priorities = _priorities_map(session, 'project', ids, niche)
-            all_priorities = _all_priorities_by_entity(
-                session, 'project', ids
-            )
+            all_priorities = _all_priorities_by_entity(session, 'project', ids)
             niches_by_proj = _niches_by_entity(
                 session, ProjectNiche, 'project_id', ids
             )
@@ -562,9 +565,7 @@ def list_projects(
         raise RepositoryError(f'projects query failed: {exc}') from exc
 
 
-def list_certificates(
-    *, niche: str | None = None
-) -> list[dict[str, Any]]:
+def list_certificates(*, niche: str | None = None) -> list[dict[str, Any]]:
     """Devuelve los certificados filtrados por niche."""
     niche = _ensure_niche(niche)
     try:
@@ -678,9 +679,7 @@ def list_education(
                             else None
                         ),
                         'end': (
-                            e.ended_on.strftime('%Y')
-                            if e.ended_on
-                            else None
+                            e.ended_on.strftime('%Y') if e.ended_on else None
                         ),
                         'url': e.url,
                         'degree': translations.get(e.id, {}).get('degree')
@@ -688,9 +687,7 @@ def list_education(
                         'description': translations.get(e.id, {}).get(
                             'description', {}
                         ),
-                        'niches': _niches_or_omit(
-                            niches_by_edu.get(e.id, [])
-                        ),
+                        'niches': _niches_or_omit(niches_by_edu.get(e.id, [])),
                     },
                 )
                 for e in educations
@@ -780,9 +777,7 @@ def list_references(
                         'relation': translations.get(r.id, {}).get(
                             'relation', {}
                         ),
-                        'niches': _niches_or_omit(
-                            niches_by_ref.get(r.id, [])
-                        ),
+                        'niches': _niches_or_omit(niches_by_ref.get(r.id, [])),
                     },
                 )
                 for r in references
@@ -840,9 +835,7 @@ def list_skill_categories(
                 for c in categories
             ]
     except Exception as exc:  # pragma: no cover
-        raise RepositoryError(
-            f'skill_categories query failed: {exc}'
-        ) from exc
+        raise RepositoryError(f'skill_categories query failed: {exc}') from exc
 
 
 def get_full_cv(

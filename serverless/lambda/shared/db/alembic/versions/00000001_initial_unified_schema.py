@@ -32,10 +32,7 @@ Incluye:
 
 from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
-
 from shared.db.alembic._init_schema_extras import (
     create_citext_extension,
     create_partition_default,
@@ -44,6 +41,9 @@ from shared.db.alembic._init_schema_extras import (
     enum_type_names,
     event_types_seed,
 )
+from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '00000001'

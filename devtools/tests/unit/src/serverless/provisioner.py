@@ -104,7 +104,6 @@ def _default_responses():
         },
         'ssm.get-parameter': {'Parameter': {'Value': 'api-abc123'}},
         'apigateway.create-resource': {'id': 'res9'},
-        'lambda.create-event-source-mapping': {'UUID': 'uuid-1'},
     }
 
 
@@ -123,9 +122,42 @@ class TestRender:
             if any(a.startswith('dynamodb:') for a in s['Action'])
         ]
         assert len(dynamo) == 2
+        # El Statement scope a la tabla + a sus indices (index/*) para
+        # soportar Query sobre GSI (ej. jwt-blacklist#by_family_id).
         assert dynamo[0]['Resource'] == [
             'arn:aws:dynamodb:us-east-1:${account}:'
             'table/portfolio-rate-limit-buckets-dev',
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-rate-limit-buckets-dev/index/*',
+        ]
+
+    def test_render_email_config_table_path_and_arn(self):
+        """La tabla `email-config` (la usa send_email) se resuelve a su
+        nombre fisico + env var SSM_EMAIL_CONFIG_TABLE_PATH + IAM read.
+        """
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['name'] = 'send-email'
+        manifest['uses']['tables'] = {'email-config': 'read'}
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        assert (
+            rendered.env_vars['SSM_EMAIL_CONFIG_TABLE_PATH']
+            == '/portfolio/dev/dynamodb/email-config/name'
+        )
+        statements = rendered.iam_policy['Statement']
+        dynamo = [
+            s
+            for s in statements
+            if any(a.startswith('dynamodb:') for a in s['Action'])
+        ]
+        assert dynamo[0]['Resource'] == [
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-email-config-dev',
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-email-config-dev/index/*',
         ]
 
     def test_render_iam_policy_when_uses_secrets(self):
@@ -142,6 +174,66 @@ class TestRender:
             'arn:aws:ssm:us-east-1:${account}:'
             'parameter/portfolio/dev/turnstile-secret' in ssm[0]['Resource']
         )
+
+    def test_secret_out_of_stage_omitted_from_env_and_iam(self):
+        """Un secreto que el catalogo NO declara en el stage no se inyecta.
+
+        `turnstile-bypass-public-key` solo existe en dev/stage (stages:
+        [dev, stage]). Un deploy a prod NO debe inyectar su path SSM ni
+        conceder IAM sobre el ARN inexistente.
+        """
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['uses']['secrets'] = [
+            'turnstile-secret',  # dev,stage,prod
+            'turnstile-bypass-public-key',  # solo dev,stage
+        ]
+
+        # En dev: el bypass public key SI esta presente (env + IAM).
+        dev = provisioner.render(manifest, stage='dev')
+        assert 'SSM_TURNSTILE_BYPASS_PUBLIC_KEY_PATH' in dev.env_vars
+        dev_ssm = next(
+            s['Resource']
+            for s in dev.iam_policy['Statement']
+            if s['Action'] == ['ssm:GetParameter']
+        )
+        assert any('turnstile-bypass-public-key' in arn for arn in dev_ssm)
+
+        # En prod: el bypass public key NO esta (no declarado para prod);
+        # turnstile-secret (dev,stage,prod) SI sigue.
+        prod = provisioner.render(manifest, stage='prod')
+        assert 'SSM_TURNSTILE_BYPASS_PUBLIC_KEY_PATH' not in prod.env_vars
+        assert 'SSM_TURNSTILE_SECRET_PATH' in prod.env_vars
+        prod_ssm = next(
+            s['Resource']
+            for s in prod.iam_policy['Statement']
+            if s['Action'] == ['ssm:GetParameter']
+        )
+        assert not any('turnstile-bypass-public-key' in arn for arn in prod_ssm)
+
+    def test_render_iam_policy_when_uses_kms(self):
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['uses']['kms'] = [
+            {'alias': 'portfolio-lambdas', 'actions': ['Encrypt', 'Decrypt']},
+        ]
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        statements = rendered.iam_policy['Statement']
+        kms_direct = [
+            s
+            for s in statements
+            if s['Action'] == ['kms:Encrypt', 'kms:Decrypt']
+        ]
+        assert len(kms_direct) == 1
+        assert kms_direct[0]['Resource'] == (
+            'arn:aws:kms:us-east-1:${account}:key/*'
+        )
+        # No lleva Condition kms:ViaService (es CMK directa, no via SSM).
+        assert 'Condition' not in kms_direct[0]
 
     def test_render_iam_policy_when_sends_email(self):
         from serverless import provisioner
@@ -751,49 +843,6 @@ class TestDeprovision:
             'lambda.remove-permission',
             'ssm.get-parameter',
             'apigateway.delete-resource',
-            'lambda.delete-function',
-            'iam.delete-role-policy',
-            'iam.detach-role-policy',
-            'iam.delete-role',
-            'logs.delete-log-group',
-        ]
-
-    def test_deprovision_stream_deletes_event_source_mappings(
-        self, monkeypatch
-    ):
-        from serverless import provisioner
-        from serverless.aws_cli import AwsResult
-        from serverless.state import LambdaState
-
-        calls = []
-        monkeypatch.setattr(
-            provisioner,
-            'aws',
-            lambda args, **_k: (
-                calls.append(args)
-                or AwsResult(returncode=0, stdout='', stderr='', json=None)
-            ),
-        )
-
-        state = LambdaState(
-            scope='stream-processor',
-            stage='dev',
-            config_hash='sha256:c',
-            code_hash='',
-            resources={
-                'role_name': 'portfolio-stream-processor-dev',
-                'function_name': 'portfolio-stream-processor-dev',
-                'log_group': '/aws/lambda/portfolio-stream-processor-dev',
-                'event_source_uuids': 'uuid-1,uuid-2',
-            },
-            updated_at='2026-05-21T10:00:00Z',
-        )
-        provisioner.deprovision(state, profile=None, region='us-east-1')
-
-        verbs = ['.'.join(c[:2]) for c in calls]
-        assert verbs == [
-            'lambda.delete-event-source-mapping',
-            'lambda.delete-event-source-mapping',
             'lambda.delete-function',
             'iam.delete-role-policy',
             'iam.detach-role-policy',

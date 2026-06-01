@@ -7,7 +7,7 @@ Then el value se persiste y se recupera identico tras el roundtrip.
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 
 pytestmark = pytest.mark.integration
 

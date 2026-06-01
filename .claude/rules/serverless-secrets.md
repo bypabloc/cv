@@ -75,10 +75,9 @@ Aplica SIEMPRE que se trabaje con:
   `localhost`, `127.0.0.1`.
 - **Rotacion**: cuando el widget Turnstile se regenera en Cloudflare (o ante
   sospecha de leak), usar el script dedicado `rotate_secrets turnstile`
-  (rota los 3 widgets dev/stage/prod, escribe `TURNSTILE_SECRET_KEY` +
-  `TURNSTILE_BYPASS_SECRET` en `docker/env/server/.{env}` y
-  `PUBLIC_TURNSTILE_SITEKEY` + `TURNSTILE_SITE_KEY` en
-  `docker/env/client/.{env}`):
+  (rota los 3 widgets dev/stage/prod, escribe `TURNSTILE_SECRET_KEY` en
+  `docker/env/server/.{env}` y `PUBLIC_TURNSTILE_SITEKEY` +
+  `TURNSTILE_SITE_KEY` en `docker/env/client/.{env}`):
 
   ```bash
   # 1. Rotar widgets en Cloudflare + actualizar envs locales
@@ -100,6 +99,31 @@ Aplica SIEMPRE que se trabaje con:
   Detalle del script: skill `rotate-secrets` o
   `devtools/rotate_secrets/README.md`.
 
+### `/portfolio/{stage}/turnstile-bypass-public-key` (String, dev/stage)
+
+- **Que es**: clave PUBLICA Ed25519 que verifica el **token de bypass de
+  Turnstile** firmado para los tests E2E. NO es secreta (String plano, sin
+  KMS). Reemplaza al viejo `turnstile-bypass-secret` (secreto fijo
+  compartido, eliminado).
+- **Quien lo lee**: Lambdas `contact_form` y `auth` (via
+  `shared.crypto.captcha._load_public_key` ->
+  `get_parameter_by_name('turnstile-bypass-public-key')`). Solo se consulta
+  en el path de bypass (cf_response vacio + STAGE in {dev,local,stage}).
+- **La clave PRIVADA NUNCA vive en SSM**: la firma de tokens la hace el
+  runner E2E / dev local con `TURNSTILE_BYPASS_PRIVATE_KEY` de
+  `docker/env/dev-cli/.{env}` (categoria dev-cli, LOCAL-ONLY). Un leak del
+  entorno del Lambda (solo publica) NO permite forjar tokens.
+- **Stages**: solo `dev` y `stage`. NUNCA prod (prod no acepta bypass).
+- **Rotacion**: regenerar el par con `bypass_token keygen --envs=dev,stage`
+  (escribe privada a dev-cli + publica a server) y publicar la publica:
+
+  ```bash
+  python devtools/run.py bypass_token keygen --envs=dev,stage
+  python devtools/run.py serverless setup-ssm \
+    --name=/portfolio/dev/turnstile-bypass-public-key --env=dev \
+    --aws-profile=tfs-dev
+  ```
+
 ### `/portfolio/{stage}/neon-url` (SecureString + KMS)
 
 - **Que es**: connection string PostgreSQL del proyecto Neon (pooled,
@@ -108,7 +132,9 @@ Aplica SIEMPRE que se trabaje con:
   `manifest.yaml` de la Lambda `db` declara `SSM_NEON_URL_PATH` como
   `/portfolio/${stage}/neon-url` y devtools la inyecta como env var
   (SPEC-202, Fase 2). El `/portfolio/neon-url` plano queda como legacy/fallback.
-- **Quien lo lee**: Lambda `stream_processor`.
+- **Quien lo lee**: los Lambdas que tocan Neon — `contact_form` (escribe el
+  contacto inline), `tracking_writer` (persiste tracking events), `auth`, `cv`
+  y `users`. La Lambda `db` la usa para las migraciones Alembic.
 - **Rotacion**: cuando se rota el password de `neondb_owner` en Neon Console:
 
   ```bash
@@ -142,7 +168,9 @@ Aplica SIEMPRE que se trabaje con:
 
 - **Que es**: direccion remitente verificada en SES para emails transaccionales.
 - **Valor**: `no-reply@the-full-stack.com`.
-- **Quien lo lee**: Lambda `contact_form` para `SendEmail.FromEmailAddress`.
+- **Quien lo lee**: Lambda `send_email` para `SendEmail.FromEmailAddress`. Es
+  el unico Lambda que llama SES directo: `contact_form`, `auth` y `users` lo
+  invocan async (`InvocationType='Event'`) en vez de mandar SES ellos mismos.
 - **Rotacion**: solo si cambia el domain o alias; requiere re-verificar la
   nueva address en SES.
 
@@ -184,9 +212,11 @@ aws kms schedule-key-deletion --key-id <KEY_ID_ANTIGUO> \
 
 | Lambda | SSM parameters | KMS Decrypt |
 |--------|----------------|-------------|
-| `contact_form` | `turnstile-secret`, `owner-email`, `ses-from-address` + paths `dynamodb/{contacts,cache,rate-limit-*}` | Si (solo turnstile-secret) |
-| `tracking_pixel` | paths `dynamodb/{tracking,cache,rate-limit-*}` | No |
-| `stream_processor` | `neon-url` + paths `dynamodb/{contacts,tracking}` | Si |
+| `contact_form` | `turnstile-secret`, `turnstile-bypass-public-key`, `owner-email`, `neon-url` + paths `dynamodb/{contacts,cache,rate-limit-*}` + `uses.invokes send_email` | Si (turnstile-secret, neon-url) |
+| `tracking_pixel` | paths `dynamodb/{tracking,cache,rate-limit-*}` + `uses.invokes tracking_writer` | No |
+| `tracking_writer` | `neon-url` + paths `dynamodb/{tracking}` | Si (neon-url) |
+| `send_email` | `ses-from-address` + paths `dynamodb/email-config` + bucket S3 `portfolio-email-templates-${stage}` | No |
+| `auth` | `turnstile-secret`, `turnstile-bypass-public-key`, `neon-url`, `jwt-secret` + `uses.invokes send_email` | Si (turnstile-secret, neon-url, jwt-secret) |
 
 Los paths `/portfolio/{stage}/dynamodb/...` son `String` planos (nombre/ARN
 de recurso, no secreto); su lectura no requiere `kms:Decrypt`. Solo
@@ -209,8 +239,9 @@ recurso se puede recrear sin bloquear a quien lo consume.
 | `/portfolio/{stage}/dynamodb/cache/{name,arn}` | tabla DynamoDB de cache |
 | `/portfolio/{stage}/dynamodb/rate-limit-rules/{name,arn}` | tabla DynamoDB de reglas de rate-limit |
 | `/portfolio/{stage}/dynamodb/rate-limit-buckets/{name,arn}` | tabla DynamoDB de buckets de rate-limit |
+| `/portfolio/{stage}/dynamodb/email-config/{name,arn}` | tabla DynamoDB de config de email (la lee `send_email`) |
+| `/portfolio/{stage}/s3/email-templates/{name,arn}` | bucket S3 de templates Jinja2 (`portfolio-email-templates-${stage}`, lo lee `send_email`) |
 | `/portfolio/{stage}/api_gateway/portfolio-api/{id,root-resource-id,access-log-group-arn}` | API Gateway REST |
-| `/portfolio/{stage}/sqs/stream-processor-dlq/{arn,url}` | DLQ del `stream_processor` |
 
 Las Lambdas resuelven el **nombre de cada tabla DynamoDB en el cold start**
 leyendo el path SSM correspondiente: devtools les inyecta una env var

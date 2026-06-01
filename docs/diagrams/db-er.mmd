@@ -298,3 +298,142 @@ erDiagram
   vis_session_visits ||--o{ vis_tracking_events : produced_in
   tax_event_types    ||--o{ vis_tracking_events : classifies
   vis_sessions       ||--o{ vis_contacts        : submitted_in
+
+  auth_users {
+    uuid id PK "uuidv7"
+    citext email "partial UK WHERE deleted_at IS NULL, lowercased"
+    auth_user_status status "pending|active|disabled|locked|deleted"
+    uuid profile_id FK "nullable, SET NULL"
+    varchar display_name "nullable, plan 03"
+    varchar locale "en|es, plan 03"
+    varchar timezone "default UTC, plan 03"
+    boolean marketing_consent "default false, plan 03"
+    varchar privacy_policy_version "nullable, plan 03"
+    timestamptz deleted_at "nullable, soft-delete plan 03"
+    timestamptz email_verified_at "nullable"
+    timestamptz password_set_at "nullable"
+    timestamptz locked_until "nullable"
+    timestamptz last_login_at "nullable"
+    timestamptz sessions_revoked_at "nullable, AC-27 epoch revocacion MFA"
+    int failed_attempts
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  auth_credentials {
+    uuid user_id PK,FK "cascade"
+    text password_hash
+    varchar algo "argon2id"
+    timestamptz password_set_at
+    timestamptz last_change_at
+  }
+  auth_email_codes {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea code_hash "SHA-256"
+    auth_code_kind kind "register|login|password_reset"
+    int attempts
+    timestamptz expires_at
+    timestamptz consumed_at "nullable"
+    timestamptz created_at
+  }
+  auth_magic_links {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea token_hash UK "SHA-256"
+    auth_link_kind kind "register|login|password_reset|email-change"
+    timestamptz expires_at
+    timestamptz consumed_at "nullable"
+    timestamptz created_at
+    inet ip "nullable"
+    text user_agent "nullable"
+    jsonb metadata "nullable, plan 03 (email-change new_email)"
+  }
+  auth_audit_log {
+    uuid id PK "uuidv7"
+    uuid user_id FK "nullable, SET NULL"
+    varchar event
+    boolean success
+    varchar error_code "nullable"
+    inet ip "nullable"
+    text user_agent "nullable"
+    varchar niche "nullable"
+    jsonb metadata "nullable"
+    timestamptz created_at
+  }
+  auth_mfa_methods {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    auth_mfa_kind kind "totp|email_code, UK(user_id,kind)"
+    boolean preferred
+    timestamptz confirmed_at "nullable, NULL = pendiente"
+    timestamptz disabled_at "nullable"
+    timestamptz last_used_at "nullable"
+    bytea totp_secret_ciphertext "nullable, kms:Encrypt CMK directa"
+    varchar totp_algorithm "nullable, SHA1"
+    int totp_digits "nullable, 6"
+    int totp_period "nullable, 30"
+    timestamptz created_at
+  }
+  auth_mfa_recovery_codes {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea code_hash UK "SHA-256"
+    timestamptz consumed_at "nullable"
+    timestamptz created_at
+  }
+  auth_webauthn_credentials {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    bytea credential_id UK
+    bytea public_key "CBOR"
+    int sign_count "monotonico, clone detection"
+    jsonb transports "nullable"
+    varchar attestation_format "nullable"
+    uuid aaguid "nullable"
+    varchar nickname "nullable"
+    timestamptz created_at
+    timestamptz last_used_at "nullable"
+    timestamptz disabled_at "nullable"
+  }
+  auth_user_sessions {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    uuid family_id UK "1 por familia de refresh"
+    jsonb device_info "nullable, browser/os/device_type"
+    inet ip "nullable"
+    char country "nullable, 2"
+    text user_agent "nullable"
+    timestamptz created_at
+    timestamptz last_active_at
+  }
+  auth_user_admin_actions {
+    uuid id PK "uuidv7"
+    uuid admin_user_id FK "nullable, SET NULL"
+    uuid target_user_id FK "nullable, SET NULL"
+    varchar action "disable|enable|force-logout|delete|..."
+    jsonb metadata "nullable, reason/etc"
+    inet ip "nullable"
+    text user_agent "nullable"
+    timestamptz created_at
+  }
+  auth_user_consent_log {
+    uuid id PK "uuidv7"
+    uuid user_id FK "cascade"
+    varchar field "marketing_consent|privacy_policy"
+    text old_value "nullable"
+    text new_value "nullable"
+    inet ip "nullable"
+    text user_agent "nullable"
+    timestamptz created_at
+  }
+  cv_profiles ||--o| auth_users        : owns_account
+  auth_users  ||--o| auth_credentials  : authenticates_with
+  auth_users  ||--o{ auth_email_codes  : verified_by
+  auth_users  ||--o{ auth_magic_links  : verified_by
+  auth_users  ||--o{ auth_audit_log    : audited_in
+  auth_users  ||--o{ auth_mfa_methods         : protected_by
+  auth_users  ||--o{ auth_mfa_recovery_codes  : recovers_with
+  auth_users  ||--o{ auth_webauthn_credentials : passkey_of
+  auth_users  ||--o{ auth_user_sessions        : tracked_in
+  auth_users  ||--o{ auth_user_admin_actions   : administered_in
+  auth_users  ||--o{ auth_user_consent_log     : consented_in

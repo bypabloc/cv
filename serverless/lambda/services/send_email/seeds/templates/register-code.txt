@@ -1,0 +1,6 @@
+Tu código de verificación: The Full Stack
+
+Usa este código para confirmar tu cuenta:
+{{ code }}
+
+Expira en {{ expires_in_min }} minutos.

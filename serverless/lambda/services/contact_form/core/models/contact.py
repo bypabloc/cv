@@ -3,7 +3,7 @@
 Un modelo por action. `ContactCreateModel` valida el campo `data` del
 evento sintetico que el handler arma a partir del evento HTTP de API
 Gateway: los campos del form del visitante MAS un bloque `_meta` con la
-metadata de transporte (IP, country, user-agent, bypass-secret) que el
+metadata de transporte (IP, country, user-agent, bypass-token) que el
 controller necesita para el rate-limit y la validacion Turnstile.
 
 El campo `cf_token` (token de Cloudflare Turnstile) ya venia en el body
@@ -14,10 +14,15 @@ del form, asi que vive en el modelo del form, no en `_meta`.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Literal
 
-from shared.core import BaseModel, EmailStr, Field, field_validator
+from shared.core.pydantic_types import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+)
 from shared.http.validators import sanitize_text
 
 
@@ -32,7 +37,7 @@ class RequestMeta(BaseModel):
     ip: str = ''
     country: str | None = None
     user_agent: str | None = None
-    bypass_secret: str | None = None
+    bypass_token: str | None = None
     # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
     # API GW los expone). El service lo persiste en la columna
     # cloudfront_meta JSONB.
@@ -41,8 +46,12 @@ class RequestMeta(BaseModel):
     # controller lo usa para inferir niche cuando el form no lo envia
     # (spec sessions-normalize, decision 6).
     origin: str | None = None
+    # Header Authorization que http_handler inyecta SIEMPRE en `_meta` (lo
+    # usa el Lambda auth). contact_form no autentica, pero debe declararlo
+    # para no romper el `extra='forbid'` del sub-modelo.
+    authorization: str | None = None
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class ContactCreateModel(BaseModel):
@@ -62,7 +71,8 @@ class ContactCreateModel(BaseModel):
 
     # Captcha token (Cloudflare Turnstile).
     # Opcional intencionalmente: si viene vacio, el controller evalua el
-    # header X-Turnstile-Bypass-Secret (solo valido en stage in {dev,local}).
+    # header X-Turnstile-Bypass-Token (token Ed25519 firmado, solo valido en
+    # stage in {dev,local}).
     cf_token: str = Field(default='', max_length=2048)
 
     # Campos opcionales (form progresivo)
@@ -87,7 +97,7 @@ class ContactCreateModel(BaseModel):
     # No es parte del form: el controller la usa, el service la ignora.
     meta: RequestMeta = Field(default_factory=RequestMeta, alias='_meta')
 
-    model_config = {'extra': 'forbid', 'populate_by_name': True}
+    model_config = ConfigDict(extra='forbid', populate_by_name=True)
 
     @field_validator('name', 'message', 'company', 'role', 'budget', 'timeline')
     @classmethod
@@ -118,17 +128,3 @@ class ContactCreatedOutput(BaseModel):
 
     contact_id: str
     created_at: str  # ISO 8601 UTC
-
-
-class ContactAcceptedOutput(BaseModel):
-    """Respuesta 202 cuando el encoder publica el form a SQS (modo ASYNC).
-
-    El cliente recibe el contact_id pre-generado por el encoder (UUIDv7)
-    para correlar future status checks. `accepted=True` documenta que la
-    request fue aceptada para procesamiento asincrono — el worker la
-    persiste en Neon + dispara el email despues.
-    """
-
-    contact_id: str
-    created_at: datetime
-    accepted: bool = True

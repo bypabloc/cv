@@ -28,8 +28,13 @@ legolambda-stacks).
 - **SIEMPRE** el evento de entrada tiene la forma
   `{operation, action, data}` — `operation` el dominio, `action` el
   verbo, `data` el payload (objeto).
-- **SIEMPRE** el nombre de la clase controller es `action.capitalize()`
-  (`create` -> `Create`, `check` -> `Check`).
+- **SIEMPRE** el archivo del controller es la forma snake_case de
+  `action` (`create` -> `create.py`, `verify-magic-link` ->
+  `verify_magic_link.py`).
+- **SIEMPRE** el nombre de la clase controller es la forma PascalCase
+  de `action` — capitaliza la primera letra de cada segmento separado
+  por guion (`create` -> `Create`, `verify-magic-link` ->
+  `VerifyMagicLink`, `set-password` -> `SetPassword`).
 - **SIEMPRE** todo controller hereda de `BaseController` e implementa
   `execute()`.
 - **SIEMPRE** la logica de negocio vive en `core/services/`, NUNCA en
@@ -81,7 +86,7 @@ legolambda-stacks).
 ├── core/
 │   ├── handler.py                # ENTRYPOINT (router delgado)
 │   ├── controllers/<operation>/  # ORQUESTADORES por operation
-│   │   └── <action>.py           # clase <Action>(BaseController)
+│   │   └── <action_snake>.py     # clase <ActionPascal>(BaseController)
 │   ├── services/                 # LOGICA DE NEGOCIO
 │   │   └── <operation>_service.py
 │   ├── models/
@@ -137,9 +142,11 @@ uno con su propio `pyproject.toml` que declara sus deps externas en
 `__init__.py` (no re-exporta nada). Subpaquetes actuales:
 
 - `shared/core/` — config, exceptions, types, ulid.
-- `shared/aws/` — clientes AWS: dynamodb, ses, ssm.
-- `shared/observability/` — logger, tracer, metrics.
+- `shared/aws/` — clientes AWS: dynamodb, ses, ssm, s3, kms,
+  lambda_invoke (invoke async de otro Lambda).
+- `shared/observability/` — logger, metrics.
 - `shared/http/` — cors, responses, ip_extractor, turnstile, validators.
+- `shared/templating/` — render Jinja2 de templates de email.
 - `shared/db/`, `shared/dynamodb/`, `shared/cache/`, `shared/rate_limit/`.
 
 devtools **vendoriza** la libreria — la copia dentro de
@@ -193,7 +200,7 @@ Contrato uniforme del request:
 `http_handler` realiza el ciclo completo:
 1. `extract_request(event)` resuelve `(operation, action, data, method)`
    del evento crudo de API Gateway.
-2. Inyecta `data['_meta']` con `{ip, country, user_agent, bypass_secret}`
+2. Inyecta `data['_meta']` con `{ip, country, user_agent, bypass_token}`
    extraidos de headers/`requestContext`.
 3. Llama a `run_controller({operation, action, data}, event_model)`.
 4. Traduce el `DispatchResult` a respuesta API GW.
@@ -223,6 +230,28 @@ Reglas asociadas:
   GET, body JSON en POST). Ningun handler los hardcodea.
 - **NUNCA** duplicar el parsing del evento en cada handler — delegar
   SIEMPRE en `http_handler`.
+
+## Triggers y wiring del `manifest.yaml` (`trigger` + `uses`)
+
+- **SIEMPRE** el `trigger.type` del `manifest.yaml` es uno de **dos**:
+  `http` (detras de API Gateway, usa `http_handler`) o `direct`
+  (invocado por `aws lambda invoke`, ej. el Lambda `send_email`
+  invocado fire-and-forget por otros Lambdas). SQS fue eliminado: el
+  trigger `sqs` (y los workers `*_worker`) ya NO existen.
+- **SIEMPRE** las dependencias del Lambda hacia otros recursos AWS se
+  declaran en el bloque `uses` del `manifest.yaml`; devtools genera de
+  ahi el IAM least-privilege + las env vars:
+  - `uses.invokes: [<lambda>]` -> IAM `lambda:InvokeFunction` al ARN del
+    Lambda target + env var `LAMBDA_<TARGET>_FUNCTION_NAME` (el codigo la
+    lee y se la pasa a `invoke_async`). Reemplaza al viejo `uses.queues`
+    (SQS).
+  - `uses.buckets: [{name, access}]` -> IAM `s3:GetObject` (segun
+    `access`) al bucket + env var `S3_<NAME>_BUCKET` (para leer templates
+    via `shared.aws.s3.get_object_text`).
+  - `uses.tables` / `uses.secrets` siguen igual (DynamoDB / SSM).
+- **NUNCA** declarar `uses.queues` ni un trigger `sqs`: el email async
+  ya no pasa por una cola. El Lambda que necesita enviar un email invoca
+  `send_email` async con `invoke_async` (IAM via `uses.invokes`).
 
 ## Separacion de responsabilidades
 

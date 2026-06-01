@@ -1,0 +1,22 @@
+{
+  "httpMethod": "POST",
+  "path": "/auth",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://admin.portfolio.dev.the-full-stack.com",
+    "CF-Connecting-IP": "203.0.113.10",
+    "CF-IPCountry": "CL",
+    "Authorization": "Bearer FAKE-ACCESS-JWT-FOR-LOCAL-RUN-NOT-REAL-XXXXXXXXXXXXXXXXXXXX"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": "{\"operation\": \"mfa\", \"action\": \"list\", \"data\": {}}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "identity": {
+      "sourceIp": "203.0.113.10"
+    },
+    "requestId": "local-request-id",
+    "stage": "dev"
+  }
+}

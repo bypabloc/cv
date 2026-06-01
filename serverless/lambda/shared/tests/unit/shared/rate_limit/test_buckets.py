@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from shared.rate_limit.buckets import (
     _window_start,
     get_effective_count,

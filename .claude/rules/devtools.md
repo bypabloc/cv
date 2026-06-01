@@ -142,3 +142,25 @@ Reglas duras:
   `cloudflare_setup all --env=<X>` para cada env. Agregar un env nuevo:
   agregar entrada a `ENVS` (incluye widget Turnstile per env) + crear
   branch GitHub + correr `all --env=<env>`.
+
+## Backend serverless (serverless)
+
+El script `devtools/serverless/` opera el backend serverless (recursos
+compartidos + los Lambdas Python). Detalle: skill `lambda-controller` o
+`.claude/docs/serverless-backend/`. Comando posicional + flags
+(`--lambda`, `--stage`, `--aws-profile`).
+
+Comandos relevantes: `run`, `deploy`, `destroy`, `status`,
+`tests --type=<unit|integration|coverage>`, `lint-deps`,
+`provision-infra`, `list-resources`, `setup-ssm`, `sync-secrets`,
+`secrets-status`, `seed-email-config`.
+
+- `seed-email-config --stage=<X>` — sube los templates de email a S3 +
+  inserta las filas de configuracion en la tabla DynamoDB `email-config`
+  (datos del Lambda `send_email`). Reemplaza al flujo SQS eliminado.
+
+> SQS fue eliminado del backend: el subpaquete `shared.queue` ya no
+> existe, el trigger `sqs` ya no es valido (solo `direct` y `http`) y el
+> recurso `sqs`/`sqs-queue` ya no se provisiona. Recursos compartidos
+> provisionables: `dynamodb`, `api_gateway`, `s3`, `secrets`,
+> `cloudwatch`.

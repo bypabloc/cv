@@ -16,7 +16,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-from shared.db import repository
+import shared.db.repository as repository
 from shared.db.repository import list_tables
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import Select

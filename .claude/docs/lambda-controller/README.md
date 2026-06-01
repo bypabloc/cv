@@ -25,7 +25,9 @@ La rule operativa es [.claude/rules/lambda-controller.md](../../rules/lambda-con
 - SIEMPRE el entrypoint se llama `handler.py`, vive en `core/` y la
   funcion es `lambda_handler` (Handler AWS: `core.handler.lambda_handler`).
 - SIEMPRE el evento trae `operation`, `action` y `data` (objeto).
-- SIEMPRE el nombre de la clase controller es `action.capitalize()`.
+- SIEMPRE el archivo del controller es `<action_snake>.py` y la clase
+  es PascalCase de cada segmento del action kebab-case (`create` ->
+  `Create`, `verify-magic-link` -> `VerifyMagicLink`).
 - SIEMPRE el controller hereda de `BaseController` e implementa `execute()`.
 - SIEMPRE `execute()` y las fases devuelven `{is_valid, data, code}`.
 - SIEMPRE la logica de negocio vive en `core/services/`.

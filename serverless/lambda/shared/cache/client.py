@@ -26,7 +26,7 @@ from shared.cache.invalidation import invalidate_by_tag, invalidate_key
 from shared.cache.serializers import deserialize, serialize
 from shared.cache.swr import classify_status
 from shared.cache.types import CacheEntry, CacheStatus
-from shared.dynamodb import CacheItem
+from shared.dynamodb.models.cache import CacheItem
 
 
 class DynamoDBCache:
@@ -143,7 +143,9 @@ class DynamoDBCache:
         else:
             self._model_table().delete_item(Key={'cache_key': key})
 
-    def invalidate(self, *, tag: str | None = None, key: str | None = None) -> int:
+    def invalidate(
+        self, *, tag: str | None = None, key: str | None = None
+    ) -> int:
         """
         Invalida items via tag (soft delete) o key directo.
 

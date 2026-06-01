@@ -52,7 +52,7 @@ def api_gw_event(
     user_agent : str
         Header User-Agent.
     extra_headers : dict | None
-        Headers adicionales (ej. X-Turnstile-Bypass-Secret).
+        Headers adicionales (ej. X-Turnstile-Bypass-Token).
     """
     headers = {
         'Content-Type': 'application/json',

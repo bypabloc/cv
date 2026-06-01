@@ -163,7 +163,7 @@ def cors_headers(origin: str) -> dict[str, str]:
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
         'Access-Control-Allow-Headers': (
-            'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Secret'
+            'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Token'
         ),
         'Access-Control-Max-Age': '600',
     }

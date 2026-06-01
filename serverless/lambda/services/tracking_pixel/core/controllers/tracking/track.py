@@ -1,11 +1,12 @@
-"""Controller tracking/track — encoder async (SQS) o sync (Neon legacy).
+"""Controller tracking/track — encoder async (invoke) o sync (Neon legacy).
 
 Orquestador con feature flag `AppConfig.async_mode`:
 
 - `ASYNC_MODE=true` (default): encoder ligero. Aplica rate-limit, pre-
-  genera `page_id` (UUIDv7) + `created_at`, encola el mensaje a SQS via
-  `enqueue_tracking_message` y responde 202 con `TrackAcceptedOutput`.
-  NO toca Neon, NO parsea UA (el worker lo hace, cacheado).
+  genera `page_id` (UUIDv7) + `created_at`, invoca `tracking_writer`
+  async (`InvocationType='Event'`, sin SQS) via `invoke_tracking_writer`
+  y responde 202 con `TrackAcceptedOutput`. NO toca Neon, NO parsea UA
+  (el writer lo hace, cacheado).
 - `ASYNC_MODE=false`: comportamiento legacy. Rate-limit + UA parsing +
   escritura directa a Neon (`process_tracking_event`) + respuesta 204.
   Es el rollback de emergencia mientras dure el flag.
@@ -17,10 +18,10 @@ Errores de negocio:
   - rate-limit -> `code` 4001 (RATE_LIMITED), `is_valid=False`. La
     `ApplicationError` viaja en `data['application_error']` para que el
     handler la mapee al HTTP correspondiente.
-  - encola failure (`QueuePublishError` u otra excepcion) -> propaga al
+  - invoke failure (`LambdaInvokeError` u otra excepcion) -> propaga al
     handler como UNEXPECTED_ERROR, que la traduce a HTTP 502.
 
-NO contiene logica de negocio: enrichment, persistencia y publishing
+NO contiene logica de negocio: enrichment, persistencia e invoke
 viven en `services/tracking_service.py`.
 """
 
@@ -30,14 +31,14 @@ from datetime import UTC, datetime
 
 from models.tracking import TrackAcceptedOutput, TrackEventModel
 from services.tracking_service import (
-    enqueue_tracking_message,
+    invoke_tracking_writer,
     process_tracking_event,
 )
 from settings.config import AppConfig, ErrorCode
 from shared.core.exceptions import ApplicationError
 from shared.core.ulid import new_uuidv7
-from shared.lambda_kit import BaseController
-from shared.rate_limit import check_or_raise
+from shared.lambda_kit.base_controller import BaseController
+from shared.rate_limit.check import check_or_raise
 
 # Endpoint que el rate-limit usa para resolver las rules.
 _TRACK_ENDPOINT = '/track'
@@ -85,17 +86,18 @@ class Track(BaseController):
         return self._execute_sync(data=data, meta=meta)
 
     def _execute_async(self, *, data: TrackEventModel, meta: object) -> dict:
-        """Encola el evento a SQS y responde 202 (ASYNC_MODE=true).
+        """Invoca `tracking_writer` async y responde 202 (ASYNC_MODE=true).
 
         El encoder pre-genera `page_id` (UUIDv7) y `created_at`: ambos
-        viajan en el payload SQS y en la respuesta. Asi el cliente recibe
-        el id final sin esperar al worker, y el worker NO los regenera.
+        viajan en el payload del invoke y en la respuesta. Asi el cliente
+        recibe el id final sin esperar al writer, y el writer NO los
+        regenera. Sin SQS: invoke Lambda->Lambda (InvocationType='Event').
         """
         payload = data.tracking_payload()
         page_id = new_uuidv7()
         created_at = datetime.now(UTC)
 
-        enqueue_tracking_message(
+        invoke_tracking_writer(
             page_id=page_id,
             created_at=created_at,
             validated_input=payload,

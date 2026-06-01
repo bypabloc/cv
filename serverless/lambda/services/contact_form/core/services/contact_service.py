@@ -1,49 +1,39 @@
 """Service de la operacion `contact`: procesamiento del form de contacto.
 
 Concentra la logica de negocio del Lambda `contact_form`: persistir el
-contacto en DynamoDB y notificar al owner por email (SES v2 con render
-de un template HTML/txt).
+contacto en Neon (sessions + visit + contact, misma tx) y notificar al
+owner por email invocando el Lambda `send_email` de forma asincrona
+(`InvocationType='Event'`).
 
 El service es agnostico al transport (evento Lambda / API Gateway):
 recibe dicts ya validados y devuelve el resultado. La validacion
 Turnstile y el rate-limit NO viven aqui — necesitan la metadata de la
 request HTTP y los orquesta el controller.
 
+Tras el refactor cold-start (sin SQS, sin ASYNC_MODE): el contacto se
+escribe INLINE a Neon (un INSERT pooled caliente ~10-25ms) y el email se
+delega a `send_email` con un invoke async best-effort (el render Jinja2 +
+SES viven en ese Lambda; este ya no arma templates ni habla con SES).
+
 Regla de separacion:
   - controllers/contact/create.py : orquesta (rate-limit -> Turnstile ->
     service -> auto-blacklist -> normaliza).
   - services/contact_service.py   : logica de negocio (este archivo).
-  - utils/                        : infraestructura generica.
-
-Este archivo fusiona los antiguos modulos planos `service.py`,
-`persistence.py` y `notification.py`.
-
-`templates/` (los HTML/txt del email) vive dentro de `core/` para que el
-packaging del deploy lo incluya en el zip (`packaging.py` solo copia
-`core/` al artefacto). Este archivo esta en `core/services/`, asi que
-`templates/` es `../templates` (parents[1]).
 """
 
 from __future__ import annotations
 
-import re
+import os
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
-from shared.aws import send_email
-from shared.aws.ssm import get_secret_by_name
-from shared.observability import MetricUnit
+from shared.aws.lambda_invoke import LambdaInvokeError, invoke_async
+from shared.aws.ssm import get_parameter_by_name
 from shared.core.ulid import new_uuidv7
 from shared.db.repository import ensure_session_and_visit, insert_contact
 from shared.db.session import db_session
 from shared.observability.logger import logger
-from shared.observability.metrics import metrics
-from shared.queue import send_to_queue
-
-# templates/ vive dentro de core/ para que el deploy lo incluya en el zip.
-# Este archivo esta en core/services/, asi que parents[1] = core/.
-_TEMPLATES_DIR = Path(__file__).resolve().parents[1] / 'templates'
+from shared.observability.metrics import MetricUnit, metrics
 
 
 class ServiceError(Exception):
@@ -67,31 +57,21 @@ class ServiceError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# Persistencia Neon (spec direct-neon-writes)
+# Persistencia Neon (inline, sin SQS)
 # ---------------------------------------------------------------------------
 
 
 def save_contact(payload: dict[str, Any]) -> dict[str, str]:
     """Persiste un contact submission en Neon (sessions + visits + contact).
 
-    Spec sessions-normalize:
-    - `session_id` es OBLIGATORIO en el payload (el controller lo
-      genera si no viene del form: si el visitante no tiene tracking
-      previo, el cliente del form arma uno on-the-fly).
-    - El service UPSERTea `sessions` + `session_visits` via el helper
-      `ensure_session_and_visit` en la MISMA tx del INSERT del contact.
-    - `bump_event_count=True`: cada contact suma 1 al event_count del
-      visit (un contact tambien es un "evento" del visitante).
-    - ip/country/user_agent ya NO se persisten en `contacts` (viven en
+    - `session_id` es OBLIGATORIO en el payload (lo resuelve el controller).
+    - UPSERTea `sessions` + `session_visits` via `ensure_session_and_visit`
+      en la MISMA tx del INSERT del contact.
+    - `bump_event_count=True`: cada contact suma 1 al event_count del visit.
+    - ip/country/user_agent NO se persisten en `contacts` (viven en
       sessions/session_visits via FK).
     - El `niche` del visit se infiere del Origin si no hay visit previa
       (lo calcula el controller con `niche_from_origin`).
-
-    Parameters
-    ----------
-    payload : dict[str, Any]
-        Campos del form + metadata de session: name, email, message,
-        ..., niche, session_id, ip, country, user_agent, origin_niche.
 
     Returns
     -------
@@ -102,15 +82,9 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
     created_at = datetime.now(UTC)
     session_id = payload['session_id']
 
-    # niche del visit: el niche que viene del form (la pagina donde se
-    # mostro el form) o, si falta, el `origin_niche` calculado por el
-    # controller con niche_from_origin.
     visit_niche = payload.get('niche') or payload.get('origin_niche')
 
     with db_session() as session:
-        # Paso 1: UPSERT session + visit (en la misma tx). Si no hay
-        # tracking previo el visit se crea on-the-fly con ip/ua/country
-        # del request y niche del Origin (decision 2 + 6).
         ensure_session_and_visit(
             session,
             session_id=session_id,
@@ -132,8 +106,6 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
             bump_event_count=True,
         )
 
-        # Paso 2: INSERT del contact. El ORM de `contacts` ya NO tiene
-        # ip/country/user_agent (movidos a sessions).
         neon_payload: dict[str, Any] = {
             'id': contact_id,
             'created_at': created_at,
@@ -154,123 +126,62 @@ def save_contact(payload: dict[str, Any]) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# Notificacion SES (antes notification.py)
+# Notificacion: invoke async al Lambda send_email (kind=contact)
 # ---------------------------------------------------------------------------
-
-
-def _render_mustache_lite(template: str, context: dict[str, Any]) -> str:
-    """Render minimo mustache-style: {{var}} y {{#var}}block{{/var}}.
-
-    NO se usa Jinja2 (peso adicional al zip de la Lambda). Esto basta
-    para el template plano. Si el value es None/empty, el bloque se omite.
-    """
-
-    def conditional_replacer(match: re.Match[str]) -> str:
-        var = match.group(1)
-        block = match.group(2)
-        value = context.get(var)
-        if value:
-            return block.replace(f'{{{{{var}}}}}', str(value))
-        return ''
-
-    rendered = re.sub(
-        r'\{\{#(\w+)\}\}(.*?)\{\{/\1\}\}',
-        conditional_replacer,
-        template,
-        flags=re.DOTALL,
-    )
-
-    def simple_replacer(match: re.Match[str]) -> str:
-        var = match.group(1)
-        value = context.get(var, '')
-        return str(value) if value else ''
-
-    return re.sub(r'\{\{(\w+)\}\}', simple_replacer, rendered)
 
 
 def parse_recipients(raw: str) -> list[str]:
-    """Parsea el parametro SSM `owner-email` como lista CSV de destinatarios.
-
-    El parametro puede contener uno o varios correos separados por coma. Se
-    aplica trim a cada entrada y se descartan las vacias (tolera comas
-    sobrantes o espacios alrededor).
-
-    Parameters
-    ----------
-    raw : str
-        Valor crudo del parametro SSM (ej. ' a@x.com , b@y.com ').
-
-    Returns
-    -------
-    list[str]
-        Lista de direcciones limpias, sin entradas vacias.
-    """
+    """Parsea el parametro SSM `owner-email` como lista CSV de destinatarios."""
     return [item.strip() for item in raw.split(',') if item.strip()]
 
 
-def send_owner_email(contact: dict[str, Any]) -> str:
-    """Envia un email transaccional al owner del portfolio.
+def notify_owner(contact: dict[str, Any]) -> None:
+    """Invoca `send_email` async para notificar al owner del nuevo contacto.
 
-    Parameters
-    ----------
-    contact : dict[str, Any]
-        Dict con name, email, message, contact_id, created_at, etc.
-
-    Returns
-    -------
-    str
-        SES MessageId.
+    Best-effort: el invoke async (`InvocationType='Event'`) no espera el
+    resultado. Si falla (red/permisos), se loggea + metrica y NO se
+    propaga — el contacto YA quedo persistido en Neon, el lead no se pierde.
+    El render del template + SES viven en el Lambda `send_email` (kind=contact).
     """
-    # Catalogo: serverless/lambda/resources/secrets/{ses-from-address,owner-email}.yaml
-    # En cloud: devtools inyecta SSM_<UPPER>_PATH (path SSM); en local,
-    # devtools inyecta <source_env_var> (valor directo).
-    from_address = get_secret_by_name(
-        'ses-from-address',
-        local_env='EMAIL_FROM',
-    )
     recipients = parse_recipients(
-        get_secret_by_name('owner-email', local_env='OWNER_EMAIL'),
+        get_parameter_by_name('owner-email', local_env='OWNER_EMAIL'),
     )
-
-    html_template = (_TEMPLATES_DIR / 'owner_email.html').read_text(
-        encoding='utf-8'
-    )
-    text_template = (_TEMPLATES_DIR / 'owner_email.txt').read_text(
-        encoding='utf-8'
-    )
-
-    context = {**contact, 'niche': contact.get('niche', 'generic')}
-    html_body = _render_mustache_lite(html_template, context)
-    text_body = _render_mustache_lite(text_template, context)
-
-    subject = (
-        f'Portfolio · Nuevo contacto de {contact.get("name", "")} '
-        f'({contact.get("niche", "generic")})'
-    )
-
-    response = send_email(
-        from_address=f'The Full Stack <{from_address}>',
-        to_addresses=recipients,
-        subject=subject,
-        text_body=text_body,
-        html_body=html_body,
-        reply_to=[contact.get('email', from_address)],
-    )
-
-    message_id: str = response.get('MessageId', '')
-    logger.info(
-        'owner email sent',
-        extra={
-            'message_id': message_id,
-            'contact_id': contact.get('contact_id'),
-            'recipient_count': len(recipients),
+    function_name = os.environ['LAMBDA_SEND_EMAIL_FUNCTION_NAME']
+    reply_to = [contact['email']] if contact.get('email') else None
+    payload = {
+        'operation': 'email',
+        'action': 'send',
+        'data': {
+            'kind': 'contact',
+            'to': recipients,
+            'reply_to': reply_to,
+            'data': {
+                'name': contact.get('name', ''),
+                'email': contact.get('email', ''),
+                'message': contact.get('message', ''),
+                'company': contact.get('company'),
+                'role': contact.get('role'),
+                'service_type': contact.get('service_type'),
+                'budget': contact.get('budget'),
+                'timeline': contact.get('timeline'),
+                'niche': contact.get('niche') or contact.get('origin_niche'),
+            },
         },
-    )
-    return message_id
+    }
+    try:
+        invoke_async(function_name=function_name, payload=payload)
+    except LambdaInvokeError:
+        logger.exception(
+            'failed to invoke send_email (contact already persisted)',
+            extra={'contact_id': contact.get('contact_id')},
+        )
+        metrics.add_metric(
+            name='OwnerEmailFailed', unit=MetricUnit.Count, value=1
+        )
 
 
 # ---------------------------------------------------------------------------
-# Orquestacion del dominio (antes service.process_contact_form)
+# Orquestacion del dominio
 # ---------------------------------------------------------------------------
 
 
@@ -283,43 +194,16 @@ def process_contact_form(
     user_agent: str | None,
     origin_niche: str | None,
 ) -> dict[str, str]:
-    """Persiste el contacto (sessions + visit + contact) y notifica owner.
+    """Persiste el contacto (sessions + visit + contact) y notifica al owner.
 
-    Logica de negocio del Lambda: a esta altura la verificacion Turnstile
-    y el rate-limit YA pasaron (los orquesta el controller). El service
-    UPSERTea sessions + session_visits y INSERTea el contact en la misma
-    tx (spec sessions-normalize) y dispara el email.
-
-    Parameters
-    ----------
-    form_fields : dict[str, Any]
-        Campos del form ya validados (sin `cf_token` ni metadata de
-        transporte). Incluye `session_id` opcional del form.
-    session_id : str
-        Identidad del visitante. El controller lo resuelve: form ->
-        session_id si el visitante tiene tracking, sino genera uno
-        on-the-fly (decision 2).
-    ip, country, user_agent : str | None
-        Metadata HTTP del request. Se pasan al helper
-        `ensure_session_and_visit` (no se persisten en `contacts`).
-    origin_niche : str | None
-        Niche derivado del header Origin con `niche_from_origin`. Si el
-        form ya envia `niche`, este se ignora; sino, se usa como fallback
-        para `session_visits.niche` (decision 6).
+    A esta altura la verificacion Turnstile y el rate-limit YA pasaron (los
+    orquesta el controller). Escribe inline a Neon e invoca `send_email`
+    async. El fallo del email NO se propaga (el contacto ya quedo en Neon).
 
     Returns
     -------
     dict[str, str]
         Dict con `contact_id` y `created_at` (ISO 8601 UTC).
-
-    Notes
-    -----
-    contacts NO duplica datos de origen (ip/country/user_agent): viven
-    en sessions/session_visits via FK (spec sessions-normalize).
-
-    El fallo del email NO se propaga: el contacto ya quedo persistido en
-    Neon y el lead no se pierde. El fallo se hace visible con la
-    metrica CloudWatch `OwnerEmailFailed`, sin romper la respuesta 201.
     """
     payload = {
         **form_fields,
@@ -335,114 +219,5 @@ def process_contact_form(
         extra={'contact_id': result['contact_id'], 'session_id': session_id},
     )
 
-    try:
-        contact_with_meta = {**payload, **result}
-        send_owner_email(contact_with_meta)
-    except Exception:
-        logger.exception(
-            'failed to send owner email (contact already persisted)',
-            extra={'contact_id': result['contact_id']},
-        )
-        # NO re-raise: el form se guardo en Neon. El fallo se hace
-        # visible con una metrica para detectarlo sin romper el 201.
-        metrics.add_metric(
-            name='OwnerEmailFailed',
-            unit=MetricUnit.Count,
-            value=1,
-        )
-
+    notify_owner({**payload, **result})
     return result
-
-
-# ---------------------------------------------------------------------------
-# Modo async (encoder): publica el mensaje a SQS hacia `contact_worker`.
-# ---------------------------------------------------------------------------
-
-
-def enqueue_contact_message(
-    *,
-    contact_id: str,
-    created_at: datetime,
-    form_fields: dict[str, Any],
-    session_id: str,
-    ip: str,
-    country: str | None,
-    user_agent: str | None,
-    origin_niche: str | None,
-) -> str:
-    """Encola el mensaje SQS hacia el Lambda `contact_worker`.
-
-    Modo `ASYNC_MODE=true`: el encoder NO toca Neon ni SES — publica el
-    payload validado a la cola `portfolio-contact-form-${stage}` y el
-    worker hace la persistencia + email de forma asincrona.
-
-    El payload SIGUE el shape de `ContactQueueMessage` (definido en
-    `contact_worker/core/models/message.py`). NO importamos ese modelo
-    aca para mantener la independencia de deploy entre los dos Lambdas:
-    el shape se mantiene compatible via tests.
-
-    Parameters
-    ----------
-    contact_id : str
-        UUIDv7 pre-generado por el encoder. Clave de idempotencia: SQS
-        puede re-entregar el mensaje y el worker hace
-        `ON CONFLICT (id) DO NOTHING`.
-    created_at : datetime
-        Timestamp de cuando el encoder acepto el form.
-    form_fields : dict[str, Any]
-        Campos del form ya validados (sin `cf_token` ni `_meta`).
-        Incluye `session_id` resuelto.
-    session_id, ip, country, user_agent : str | None
-        Metadata HTTP del request (la usa el worker para
-        `ensure_session_and_visit`).
-    origin_niche : str | None
-        Niche derivado del header Origin con `niche_from_origin`. Si el
-        form ya envia `niche`, el worker prefiere ese.
-
-    Returns
-    -------
-    str
-        SQS MessageId. NO se devuelve al cliente — solo se logea para
-        correlar con CloudWatch.
-
-    Raises
-    ------
-    shared.queue.QueuePublishError
-        Si SQS falla. El controller la deja propagar para que el handler
-        traduzca a HTTP 5xx (NO se hace fallback automatico a sync —
-        comportamiento explicito, ver spec).
-    """
-    # extra: explicit drop de campos sensibles. El cf_token ya fue
-    # consumido por el encoder; jamas debe viajar en el mensaje SQS.
-    payload: dict[str, Any] = {
-        'schema_version': 1,
-        'contact_id': contact_id,
-        'created_at': created_at.isoformat(),
-        'session_id': session_id,
-        'name': form_fields['name'],
-        'email': form_fields['email'],
-        'message': form_fields['message'],
-        'company': form_fields.get('company'),
-        'role': form_fields.get('role'),
-        'service_type': form_fields.get('service_type'),
-        'budget': form_fields.get('budget'),
-        'timeline': form_fields.get('timeline'),
-        'niche': form_fields.get('niche'),
-        'ip': ip,
-        'country': country,
-        'user_agent': user_agent,
-        'origin_niche': origin_niche,
-    }
-    message_id = send_to_queue(
-        queue_short_name='contact-form',
-        payload=payload,
-    )
-    logger.info(
-        'contact form enqueued',
-        extra={
-            'contact_id': contact_id,
-            'session_id': session_id,
-            'message_id': message_id,
-        },
-    )
-    return message_id

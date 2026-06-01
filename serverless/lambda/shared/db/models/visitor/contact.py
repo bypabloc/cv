@@ -14,6 +14,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import CITEXT, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.visitor.session  # noqa: F401 -- FK target (session)
+
 from ...base import Base
 
 _SERVICE_TYPES = ('consulting', 'fulltime', 'contract', 'other')
@@ -55,13 +57,12 @@ class Contact(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "service_type IS NULL OR service_type IN "
-            f"({', '.join(repr(v) for v in _SERVICE_TYPES)})",
+            'service_type IS NULL OR service_type IN '
+            f'({", ".join(repr(v) for v in _SERVICE_TYPES)})',
             name='service_type_valid',
         ),
         CheckConstraint(
-            "status IN "
-            f"({', '.join(repr(v) for v in _STATUSES)})",
+            f'status IN ({", ".join(repr(v) for v in _STATUSES)})',
             name='status_valid',
         ),
         Index('idx_vis_contacts_email', 'email'),

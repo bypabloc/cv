@@ -14,6 +14,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.taxonomy.catalog  # noqa: F401 -- FK target (catalog)
+
 from ...base import Base, TimestampMixin, UUIDPKMixin
 from ...enums import skill_kind_enum
 

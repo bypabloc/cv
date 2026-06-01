@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from shared.http.ip_extractor import extract_country, extract_ip
 
 pytestmark = pytest.mark.unit

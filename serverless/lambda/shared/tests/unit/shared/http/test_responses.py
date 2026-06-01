@@ -5,13 +5,16 @@ from __future__ import annotations
 import json
 
 import pytest
-
 from shared.core.exceptions import (
     IPBlacklistedError,
     RateLimitExceededError,
     ValidationError,
 )
-from shared.http.responses import error_response, json_response, no_content_response
+from shared.http.responses import (
+    error_response,
+    json_response,
+    no_content_response,
+)
 
 pytestmark = pytest.mark.unit
 

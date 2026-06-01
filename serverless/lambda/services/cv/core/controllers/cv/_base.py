@@ -18,7 +18,7 @@ from typing import Any
 from models.cv import CvQueryModel
 from services import cv_service
 from services.cv_service import ServiceError
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
 class CvControllerBase(BaseController):

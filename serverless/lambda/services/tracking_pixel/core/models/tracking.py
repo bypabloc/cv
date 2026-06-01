@@ -23,7 +23,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from shared.core import BaseModel, Field, field_validator
+from shared.core.pydantic_types import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+)
 
 # Tamano maximo del event_props serializado a JSON. event_props es un dict
 # libre con datos especificos por tipo de evento (href del link, scroll %,
@@ -43,10 +48,11 @@ class TrackEventMeta(BaseModel):
     ip: str = Field(default='')
     country: str | None = Field(default=None)
     user_agent: str | None = Field(default=None)
-    # bypass_secret no se usa en tracking (no hay Turnstile estricto), pero
+    # bypass_token no se usa en tracking (no hay Turnstile estricto), pero
     # el http_handler generico siempre lo inyecta para uniformidad. Se
-    # acepta para no romper el extra:forbid del sub-modelo.
-    bypass_secret: str | None = Field(default=None)
+    # declara para no romper el extra:forbid del sub-modelo (passthrough
+    # ignorado).
+    bypass_token: str | None = Field(default=None)
     # Mapa raw de los headers cloudfront-* del request (Edge-Optimized
     # API GW los expone). El controller lo pasa al service para
     # persistirlo en la columna cloudfront_meta JSONB.
@@ -54,8 +60,12 @@ class TrackEventMeta(BaseModel):
     # Origin header raw del request. Inyectado por http_handler para
     # uniformidad entre Lambdas. tracking_pixel no lo usa hoy.
     origin: str | None = Field(default=None)
+    # Header Authorization que http_handler inyecta SIEMPRE para uniformidad
+    # (lo usa el Lambda auth). tracking_pixel no lo usa; se declara para no
+    # romper el extra:forbid del sub-modelo.
+    authorization: str | None = Field(default=None)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class TrackEventModel(BaseModel):
@@ -159,7 +169,7 @@ class TrackEventModel(BaseModel):
     # populate_by_name permite que `meta` se asigne tanto por el alias
     # `_meta` (inyectado por http_handler) como por el nombre del campo
     # (compatibilidad con codigo que ya pasaba `meta` directo).
-    model_config = {'extra': 'forbid', 'populate_by_name': True}
+    model_config = ConfigDict(extra='forbid', populate_by_name=True)
 
     def tracking_payload(self) -> dict[str, Any]:
         """Devuelve el payload de tracking validado, sin `cf_token` ni `meta`.

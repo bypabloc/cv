@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
-from shared.db.models import SessionVisit
+from shared.db.models.visitor.session_visit import SessionVisit
 from shared.db.repository import ensure_session_and_visit
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import Update
@@ -28,7 +28,9 @@ from sqlalchemy.sql import Update
 pytestmark = pytest.mark.unit
 
 
-def test_ensure_session_and_visit_updates_existing_visit_when_keys_match() -> None:
+def test_ensure_session_and_visit_updates_existing_visit_when_keys_match() -> (
+    None
+):
     # Arrange — visit previo con las mismas 6 claves
     visit_uuid = UUID('019e5fce-385d-7530-8f6e-8e17df16f08a')
     existing_visit = SimpleNamespace(

@@ -3,16 +3,15 @@
 Define `AppConfig` (variables de entorno), los enums de codigos de error
 y de metricas de logging, y reexporta el `logger` de la libreria comun.
 
-El Lambda `contact_form` usa el logger / tracer / metrics de Powertools
+El Lambda `contact_form` usa el logger / metrics de Powertools
 v3 que vive en `shared/` (vendorizado en `core/shared/` por devtools).
 `config.py` reexporta el `logger` para que el resto del codigo `core/`
 lo importe desde un solo lugar, como pide el estandar lambda-controller.
 """
 
-import os
 from enum import Enum
 
-from shared.lambda_kit import BaseSettings
+from shared.lambda_kit.base_settings import BaseSettings
 from shared.observability.logger import logger
 
 __all__ = ['AppConfig', 'ErrorCode', 'LogMetricType', 'app_config', 'logger']
@@ -119,7 +118,6 @@ class AppConfig(BaseSettings):
     # Paths SSM de los secretos / parametros (la Lambda los resuelve en
     # runtime via boto3; NUNCA se guarda el valor del secreto aqui).
     ssm_turnstile_secret_path: str = '/portfolio/turnstile-secret'  # noqa: S105 - path SSM, no es el valor del secreto
-    ssm_turnstile_bypass_path: str = ''
     ssm_owner_email_path: str = '/portfolio/owner-email'
     ssm_ses_from_path: str = '/portfolio/ses-from-address'
 
@@ -129,14 +127,6 @@ class AppConfig(BaseSettings):
     def is_testing(self) -> bool:
         """Devuelve True si el servicio corre en modo testing."""
         return self.testing == '1'
-
-    # Feature flag ASYNC_MODE: decide en cada cold start si el Lambda
-    # actua como ENCODER (publica a SQS, retorna 202) o SYNC LEGACY
-    # (Neon+SES, retorna 201, rollback path). String para que MATCHEE
-    # exactamente el contrato de env var del manifest ('true'/'false').
-    # Se lee a nivel de clase (no instancia) porque el modulo se importa
-    # en cold start y el valor de env var ya esta inyectado por AWS.
-    async_mode: bool = os.environ.get('ASYNC_MODE', 'true').lower() == 'true'
 
 
 # Singleton de configuracion: se evalua una vez en el cold start.

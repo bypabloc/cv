@@ -6,7 +6,7 @@ Un modelo por action. Cada modelo valida el campo `data` del evento
 
 from __future__ import annotations
 
-from shared.core import BaseModel
+from shared.core.pydantic_types import BaseModel, ConfigDict
 
 
 class MigrateModel(BaseModel):
@@ -17,19 +17,19 @@ class MigrateModel(BaseModel):
 
     target: str = 'head'
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class CurrentModel(BaseModel):
     """Valida el payload de db/current (sin campos)."""
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class ShowMigrationsModel(BaseModel):
     """Valida el payload de db/show_migrations (sin campos)."""
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class StampModel(BaseModel):
@@ -40,7 +40,7 @@ class StampModel(BaseModel):
 
     target: str = 'head'
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class DowngradeModel(BaseModel):
@@ -54,16 +54,16 @@ class DowngradeModel(BaseModel):
     target: str
     confirm: bool = False
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class TablesModel(BaseModel):
     """Valida el payload de db/tables (sin campos)."""
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class SeedModel(BaseModel):
     """Valida el payload de db/seed (sin campos)."""
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')

@@ -52,11 +52,6 @@ class Settings(BaseSettings):
     # ---- KMS --------------------------------------------------------------
     kms_key_alias: str = Field(default='alias/portfolio-lambdas')
 
-    # ---- Turnstile -------------------------------------------------------
-    turnstile_bypass_secret: str = Field(
-        default='', description='Secret para skip Turnstile en tests'
-    )
-
     # ---- SSM cache TTL ---------------------------------------------------
     # Cuanto cachear los valores de SSM en memoria Powertools (Lambda warm)
     ssm_cache_seconds: int = Field(default=300)

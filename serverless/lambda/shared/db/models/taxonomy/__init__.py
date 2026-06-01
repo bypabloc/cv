@@ -1,7 +1,7 @@
-"""Re-exports planos del dominio taxonomy."""
+"""Re-exports planos del dominio taxonomy.
 
-from .catalog import Niche, TechTag
-from .event_type import EventType
-from .priority import NichePriority
-
-__all__ = ['EventType', 'Niche', 'NichePriority', 'TechTag']
+Vaciado a proposito: sin re-exports (no-barrel). Los consumidores
+importan del modulo concreto (`from shared.db.models.<dom>.<mod>
+import <Clase>`). Lo enforza el conformance `serverless lint-deps`.
+Ver `.claude/rules/lambda-shared-imports.md`.
+"""

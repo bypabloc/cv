@@ -247,7 +247,7 @@ def format_report(result: DepValidationResult) -> str:
 
 
 def cmd_lint_deps(flags: dict) -> int:
-    """Comando `serverless lint-deps`: valida los 2 checks del contrato.
+    """Comando `serverless lint-deps`: valida los 4 checks del contrato.
 
     1) Dedup D-3 (`validate_lambda_deps`): el `pyproject.toml` del lambda
        no declara deps que ya aporta el cierre transitivo de `shared/`.
@@ -255,10 +255,19 @@ def cmd_lint_deps(flags: dict) -> int:
        `services/<X>/core/**/*.py` no importan directamente paquetes
        externos que tienen un portador shared (pydantic, sqlalchemy,
        boto3, aws_lambda_powertools, ...).
+    3) No-submodule (`scan_tree`): NINGUN .py de `serverless/lambda/`
+       (services + shared, incl. tests) importa un submodulo de `shared`
+       via su barrel (`from shared.auth import webauthn`). Se exige el
+       simbolo concreto (`from shared.auth.webauthn import ...`) o, para
+       acceso al modulo, `import shared.auth.webauthn as webauthn`.
+    4) Inits vacios (`scan_empty_inits`): NINGUN `__init__.py` bajo
+       `serverless/lambda/{shared,services}` (excepto tests/) re-exporta
+       simbolos (barrels prohibidos). Los consumidores importan del modulo
+       concreto. Incluye los `__init__.py` de los dominios de modelos.
 
     Con `--lambda=<x>` / `--path=<dir>` valida ese lambda; sin target
-    valida los 4 lambdas del backend. Exit 0 si ningun lambda viola
-    ninguno de los 2 checks; 1 si alguno los viola.
+    valida los lambdas del backend. Los checks 3 y 4 son globales (toda la
+    carpeta) y corren SIEMPRE. Exit 0 si ningun check falla; 1 si alguno.
     """
     from shared.console import GREEN
     from shared.console import RED
@@ -302,4 +311,26 @@ def cmd_lint_deps(flags: dict) -> int:
             print(
                 _c(GREEN, f'OK  {root.name}: cero imports prohibidos en core/.')
             )
+
+    # Check 3: no-submodule via barrel shared (global, toda la carpeta).
+    from serverless.resolve import _PORTFOLIO_SERVERLESS_DIR
+    from serverless.submodule_import_validator import format_report as fmt_sub
+    from serverless.submodule_import_validator import scan_tree
+
+    scan_root = _PORTFOLIO_SERVERLESS_DIR / 'lambda'
+    sub_violations = scan_tree(scan_root, scan_root / 'shared')
+    report = fmt_sub(sub_violations, scan_root)
+    print(_c(RED, report) if sub_violations else _c(GREEN, report))
+    if sub_violations:
+        rc = 1
+
+    # Check 4: __init__.py vacios (no barrels) en shared + services (global).
+    from serverless.init_validator import format_report as fmt_init
+    from serverless.init_validator import scan_empty_inits
+
+    init_violations = scan_empty_inits(scan_root)
+    init_report = fmt_init(init_violations, scan_root)
+    print(_c(RED, init_report) if init_violations else _c(GREEN, init_report))
+    if init_violations:
+        rc = 1
     return rc

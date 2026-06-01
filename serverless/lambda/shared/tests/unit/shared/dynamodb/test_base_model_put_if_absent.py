@@ -7,8 +7,7 @@ Then escribe y devuelve True solo si no existia (AC-4).
 from __future__ import annotations
 
 import pytest
-
-from shared.dynamodb import CacheItem
+from shared.dynamodb.models.cache import CacheItem
 
 
 def _lock_item(key: str = 'lock:resource') -> CacheItem:

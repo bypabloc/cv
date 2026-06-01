@@ -24,7 +24,7 @@ def test_contact_model_accepts_valid_form():
             'ip': '203.0.113.10',
             'country': 'CL',
             'user_agent': 'Mozilla/5.0',
-            'bypass_secret': None,
+            'bypass_token': None,
         },
     }
 

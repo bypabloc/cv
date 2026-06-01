@@ -96,7 +96,42 @@ _VALID_ACTIONS = [
     'clear-buckets',
 ]
 
-_VALID_ENDPOINTS = ['/contact', '/track', '*']
+# Endpoints validos para `rate-limit set`. El Lambda `auth` usa keys
+# compuestas `/auth#<operation>.<action>` (el controller las pasa a
+# shared.rate_limit.check_or_raise) para tener una regla por accion.
+_VALID_ENDPOINTS = [
+    '/contact',
+    '/track',
+    '*',
+    '/auth#register.start',
+    '/auth#register.verify-magic-link',
+    '/auth#register.verify-code',
+    '/auth#login.start',
+    '/auth#login.verify-magic-link',
+    '/auth#login.verify-code',
+    '/auth#verify.set-password',
+    '/auth#verify.resend-code',
+    '/auth#session.refresh',
+    '/auth#session.logout',
+    # Plan 02 (MFA + WebAuthn + login con password).
+    '/auth#mfa.setup-totp',
+    '/auth#mfa.confirm-totp',
+    '/auth#mfa.recovery-codes-consume',
+    '/auth#webauthn.register-options',
+    '/auth#webauthn.login-options',
+    '/auth#webauthn.login-verify',
+    '/auth#login.verify-password',
+    '/auth#login.verify-totp',
+    # Plan 03 (gestion de usuarios: profile / status / admin). JWT-authed
+    # (sin Turnstile). status y admin comparten una key por operation.
+    '/users#profile.get',
+    '/users#profile.update',
+    '/users#profile.change-email',
+    '/users#profile.confirm-email-change',
+    '/users#profile.delete-account',
+    '/users#status',
+    '/users#admin',
+]
 
 
 def _ensure_aws_cli() -> bool:

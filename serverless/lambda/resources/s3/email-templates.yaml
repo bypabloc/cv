@@ -1,0 +1,10 @@
+kind: s3-bucket
+name: portfolio-email-templates-${stage}
+block_public_access: true
+encryption: true
+publishes_ssm:
+  name: /portfolio/${stage}/s3/email-templates/name
+  arn: /portfolio/${stage}/s3/email-templates/arn
+tags:
+  Project: portfolio
+  ManagedBy: devtools

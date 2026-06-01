@@ -4,10 +4,9 @@
  *   Lambda contact_form + persistencia (localStorage + cookie compartida) via
  *   `contact-storage`. Muestra card "ya enviaste" tras exito.
  *
- *   Bypass Turnstile para tests: si `window.__playwrightTurnstileBypass`
- *   es string, se envia como header `X-Turnstile-Bypass-Secret` y se omite
- *   el widget Turnstile (el frontend Astro NUNCA setea esa variable; solo
- *   Playwright via page.addInitScript en stage dev).
+ *   El form SIEMPRE exige el widget Turnstile real: no hay bypass desde el
+ *   browser. El bypass de tests (token Ed25519 firmado) vive solo en el CLI
+ *   `api_e2e` (server-to-server), nunca en el frontend.
  *
  * @props {string} apiEndpoint - Full URL del POST /contact
  * @props {string} turnstileSitekey - Sitekey publica del widget Turnstile
@@ -67,11 +66,6 @@ interface TurnstileGlobal {
 declare global {
   interface Window {
     turnstile?: TurnstileGlobal
-    /**
-     * Bypass secret para tests E2E. SOLO seteado por Playwright via
-     * page.addInitScript. En produccion nunca llega al cliente.
-     */
-    __playwrightTurnstileBypass?: string
   }
 }
 
@@ -145,12 +139,10 @@ function readSessionId(): string | undefined {
   }
 }
 
-function buildHeaders(bypassSecret: string): Record<string, string> {
-  const headers: Record<string, string> = {
+function buildHeaders(): Record<string, string> {
+  return {
     'Content-Type': 'application/json',
   }
-  if (bypassSecret) headers['X-Turnstile-Bypass-Secret'] = bypassSecret
-  return headers
 }
 
 async function parseJsonSafe(
@@ -222,15 +214,6 @@ export default function ContactFormReact({
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<string | null>(null)
 
-  // Detecta bypass de Playwright. Lo leemos una sola vez: el test lo inyecta
-  // con addInitScript ANTES de que la pagina cargue.
-  const bypassTokenRef = useRef<string>('')
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__playwrightTurnstileBypass) {
-      bypassTokenRef.current = window.__playwrightTurnstileBypass
-    }
-  }, [])
-
   // Embudo de contacto (SPEC-200): el primer foco en cualquier campo emite
   // `contact_form_start` una sola vez. Este flag evita repeticiones en focos
   // posteriores [AC-5].
@@ -252,9 +235,8 @@ export default function ContactFormReact({
     if (record) setSentRecord(record)
   }, [])
 
-  // Cargar script Turnstile + render widget (solo si NO hay bypass)
+  // Cargar script Turnstile + render widget
   useEffect(() => {
-    if (bypassTokenRef.current) return
     if (sentRecord) return
     if (typeof window === 'undefined') return
 
@@ -417,7 +399,6 @@ export default function ContactFormReact({
     | {
         ok: true
         data: ContactFormValues
-        bypassSecret: string
         cfToken: string
       }
     | { ok: false } {
@@ -428,14 +409,12 @@ export default function ContactFormReact({
       setStatusMessage(strings.statusInvalidFields)
       return { ok: false }
     }
-    const bypassSecret = bypassTokenRef.current
-    const cfToken = bypassSecret ? '' : turnstileToken
-    if (!bypassSecret && !cfToken) {
+    if (!turnstileToken) {
       setStatus('error')
       setStatusMessage(strings.statusCaptchaMissing)
       return { ok: false }
     }
-    return { ok: true, data: parsed.data, bypassSecret, cfToken }
+    return { ok: true, data: parsed.data, cfToken: turnstileToken }
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
@@ -456,7 +435,7 @@ export default function ContactFormReact({
       cfToken: pre.cfToken,
       sessionId: readSessionId(),
     })
-    const headers = buildHeaders(pre.bypassSecret)
+    const headers = buildHeaders()
 
     try {
       const response = await fetch(apiEndpoint, {
@@ -664,18 +643,16 @@ export default function ContactFormReact({
           )}
         </div>
 
-        {/* Turnstile widget: solo se renderiza si NO hay bypass de tests.
+        {/* Turnstile widget (siempre presente: el form exige captcha real).
             La clase NO es `cf-turnstile`: esa clase dispara el render
             implicito de Turnstile (que necesita data-sitekey en el div y
             choca con el render explicito de mas abajo). El widget se monta
             con turnstile.render() explicito sobre este ref. */}
-        {!bypassTokenRef.current && (
-          <div
-            className="turnstile-widget"
-            ref={turnstileContainerRef}
-            data-testid="turnstile-container"
-          />
-        )}
+        <div
+          className="turnstile-widget"
+          ref={turnstileContainerRef}
+          data-testid="turnstile-container"
+        />
 
         <button
           type="submit"

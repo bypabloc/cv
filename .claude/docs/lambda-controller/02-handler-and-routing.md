@@ -79,18 +79,33 @@ nombre tal cual, y el `import_module` fallara con un error descriptivo
 
 `action` se usa de dos formas:
 
-- Como nombre de archivo: `controllers/<folder>/<action>.py`.
-- Como nombre de clase: `action.capitalize()`.
+- Como nombre de archivo: `controllers/<folder>/<action_snake>.py`
+  (kebab-case del wire se convierte a snake_case en el filesystem).
+- Como nombre de clase: PascalCase de `action` — capitaliza la primera
+  letra de cada segmento separado por guion.
 
-| action | archivo | clase |
-|--------|---------|-------|
+| action (wire) | archivo | clase |
+| --- | --- | --- |
 | `create` | `create.py` | `Create` |
 | `check` | `check.py` | `Check` |
 | `cancel` | `cancel.py` | `Cancel` |
+| `verify-code` | `verify_code.py` | `VerifyCode` |
+| `verify-magic-link` | `verify_magic_link.py` | `VerifyMagicLink` |
+| `set-password` | `set_password.py` | `SetPassword` |
 
-`action.capitalize()` capitaliza solo la primera letra. Para acciones de
-una sola palabra (lo recomendado) funciona directo. Evitar acciones
-con guion bajo o camelCase: romperian la convencion.
+Reglas:
+
+- El `action` del wire (en el evento `{operation, action, data}`) es
+  **kebab-case** o **una sola palabra**.
+- El archivo del controller convierte los `-` a `_`
+  (`verify-magic-link` -> `verify_magic_link.py`).
+- La clase capitaliza cada segmento: la formula es
+  `''.join(seg.capitalize() for seg in action.split('-'))`.
+- Acciones de una sola palabra (lo mas comun) funcionan directo
+  (`create` -> `Create`). Las multi-segmento son aceptables para
+  acciones compuestas semanticamente (`verify-code`, `set-password`).
+- Evitar `snake_case` o `camelCase` en el wire: romperian la
+  convencion (siempre kebab-case o palabra simple).
 
 ## Respuesta final del Lambda
 

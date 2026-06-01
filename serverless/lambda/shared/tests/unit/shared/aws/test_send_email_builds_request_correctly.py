@@ -12,7 +12,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from shared.aws import send_email
+from shared.aws.ses import send_email
 
 pytestmark = pytest.mark.unit
 

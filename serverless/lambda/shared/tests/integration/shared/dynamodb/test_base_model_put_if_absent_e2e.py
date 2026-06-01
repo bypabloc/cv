@@ -7,7 +7,7 @@ Then el primero escribe (True) y el segundo no sobreescribe (False).
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb import ContactItem
+from shared.dynamodb.models.contact import ContactItem
 
 pytestmark = pytest.mark.integration
 

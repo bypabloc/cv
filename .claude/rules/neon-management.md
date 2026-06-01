@@ -6,8 +6,11 @@ globs: "serverless/lambda/shared/db/**/*.py,serverless/lambda/services/db/**/*.p
 # Gestion de Neon PostgreSQL - Portfolio
 
 > Como se gestiona Neon en este proyecto. Neon es la unica DB SQL del
-> portfolio: vive en `us-east-1`, almacena los datos analiticos del backend
-> serverless (contacts + tracking events) que llegan via DynamoDB Streams.
+> portfolio: vive en `us-east-1`, almacena el CV + los datos del visitante
+> (contacts + tracking events). `contact_form` escribe a Neon inline en la
+> misma invocacion del form; `tracking_pixel` invoca `tracking_writer` async
+> (`invoke` Lambda->Lambda, `InvocationType='Event'`) que escribe a Neon.
+> DynamoDB se usa solo para cache/rate-limit, NO como store intermedio.
 >
 > Esta rule cubre la **operacion** (connection string, migrations, branches,
 > rollback, seguridad). Para arquitectura, pricing, comparativas y patrones
@@ -219,9 +222,11 @@ Patron obligatorio (detalle completo en
   (module scope), NO dentro del handler — se reutiliza entre invocaciones del
   mismo contenedor.
 - `psycopg` v3, `sslmode=require&channel_binding=require`.
-- El Lambda que escribe a Neon es el `stream_processor` (consume DynamoDB
-  Streams). El form de contacto y el tracking pixel escriben primero a
-  DynamoDB; Neon es la capa analitica downstream.
+- Los Lambdas que escriben a Neon son: `contact_form` (INSERT inline, en la
+  misma invocacion del form), `tracking_writer` (INSERT invocado async por
+  `tracking_pixel` via `invoke` Lambda->Lambda con `InvocationType='Event'`),
+  y `auth` / `users` / `cv` (auth-related + reads). Ya NO existe el
+  `stream_processor` ni el flujo DynamoDB Streams -> Neon.
 
 ## Seguridad
 

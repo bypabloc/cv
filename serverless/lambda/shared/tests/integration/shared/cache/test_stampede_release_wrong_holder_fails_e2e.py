@@ -8,7 +8,7 @@ Then la ConditionExpression falla y release_lock devuelve False
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 from shared.cache.stampede import acquire_lock, release_lock
 
 pytestmark = pytest.mark.integration

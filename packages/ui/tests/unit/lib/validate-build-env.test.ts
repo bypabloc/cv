@@ -49,11 +49,26 @@ describe('validateApiEndpoint', () => {
     expect(validateApiEndpoint(endpoint)).toBe(endpoint)
   })
 
-  it('Given BASE_DOMAIN=localhost When validate con AWS endpoint Then NO exige match (modo docker local)', () => {
+  it('Given BASE_DOMAIN=localhost y endpoint custom de dev When validate Then retorna el valor (modo docker local)', () => {
     vi.stubEnv('BASE_DOMAIN', 'localhost')
-    const endpoint =
-      'https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev'
+    // En local el endpoint apunta al API custom de dev (estable), no a
+    // api.localhost (no hay backend local) ni a un host crudo efimero.
+    const endpoint = 'https://api.portfolio.dev.the-full-stack.com'
     expect(validateApiEndpoint(endpoint)).toBe(endpoint)
+  })
+
+  it('Given un host crudo de API Gateway When validate Then throws (efimero, no resuelve) [guard anti-crudo]', () => {
+    vi.stubEnv('BASE_DOMAIN', 'localhost')
+    // Este era el bug real: un .execute-api crudo borrado ->
+    // ERR_NAME_NOT_RESOLVED. El guard lo rechaza en TODOS los builds.
+    const raw = 'https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev'
+    expect(() => validateApiEndpoint(raw)).toThrow(/host crudo de API/)
+  })
+
+  it('Given host crudo de API Gateway sin BASE_DOMAIN When validate Then throws igual', () => {
+    vi.stubEnv('BASE_DOMAIN', '')
+    const raw = 'https://332ivhahf2.execute-api.us-east-1.amazonaws.com/prod'
+    expect(() => validateApiEndpoint(raw)).toThrow(/execute-api/)
   })
 
   it('Given BASE_DOMAIN=hub.localhost When validate Then NO exige match (subdominio localhost)', () => {

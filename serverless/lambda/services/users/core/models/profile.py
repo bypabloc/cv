@@ -53,6 +53,20 @@ class ProfileChangeEmailIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
 
 
+class ProfileChangePasswordIn(BaseModel):
+    """POST /users operation=profile action=change-password.
+
+    Un user autenticado (access JWT) cambia su password: valida la actual
+    contra el hash argon2, hashea la nueva con argon2id y revoca las demas
+    sesiones (deja viva solo la sesion en curso).
+    """
+
+    current_password: str = Field(..., min_length=12, max_length=256)
+    new_password: str = Field(..., min_length=12, max_length=256)
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
 class ProfileConfirmEmailChangeIn(BaseModel):
     """POST /users operation=profile action=confirm-email-change.
 

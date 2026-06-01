@@ -45,16 +45,6 @@ def test_app_config_neon_url_resolves_lazy(monkeypatch):
     assert cfg.neon_url == 'postgresql://localhost/test'
 
 
-def test_app_config_ses_from_address_resolves_lazy(monkeypatch):
-    from settings.config import AppConfig
-
-    monkeypatch.setenv('SES_FROM_ADDRESS', 'no-reply@example.com')
-    monkeypatch.delenv('SSM_SES_FROM_ADDRESS_PATH', raising=False)
-
-    cfg = AppConfig()
-    assert cfg.ses_from_address == 'no-reply@example.com'
-
-
 def test_app_config_jwt_blacklist_table_uses_env_var(monkeypatch):
     """Si SSM_JWT_BLACKLIST_TABLE_PATH es un nombre plano (no `/`), se usa directo."""
     from settings.config import AppConfig
@@ -90,10 +80,10 @@ def test_app_config_resolve_from_ssm_returns_empty_when_unset(monkeypatch):
     """Sin env var ni SSM path -> empty string."""
     from settings.config import AppConfig
 
-    monkeypatch.delenv('SSM_AUTH_EMAIL_QUEUE_URL_PATH', raising=False)
+    monkeypatch.delenv('SSM_RATE_LIMIT_BUCKETS_TABLE_PATH', raising=False)
 
     cfg = AppConfig()
-    assert cfg.auth_email_queue_url == ''
+    assert cfg.rate_limit_buckets_table_name == ''
 
 
 def test_app_config_enums_present():

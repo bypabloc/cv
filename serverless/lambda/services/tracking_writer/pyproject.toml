@@ -1,0 +1,97 @@
+# @config: lambda/services/tracking_writer/pyproject.toml
+# @description: manifiesto de dependencias y tooling del Lambda
+#   tracking_writer (refactor cold-start, sin SQS). Writer async que el
+#   encoder tracking_pixel invoca con InvocationType='Event' (1 evento por
+#   invoke) y persiste en Neon con ON CONFLICT DO NOTHING. Lambda autonomo:
+#   tiene su propio uv.lock y .venv aislado (NO es workspace member).
+
+[project]
+name = "tracking-writer"
+version = "0.1.0"
+description = "Writer async de tracking — persiste 1 evento en Neon (idempotente)."
+requires-python = ">=3.13"
+
+# Deps propias del Lambda. El resto le llega por el vendoring del
+# cierre de shared/ (shared.lambda_kit aporta pydantic;
+# shared.observability aporta aws-lambda-powertools; shared.db aporta
+# sqlalchemy + psycopg; shared.cache aporta boto3) — regla D-3.
+dependencies = [
+  # uap-python: parser de User-Agent. Mismo paquete que usa el encoder
+  # (tracking_pixel) para que el resultado cacheado sea bit-identico
+  # entre encoder y worker (mismo namespace `ua` de @cached).
+  "ua-parser>=0.18.0,<2.0",
+]
+
+# Deps de DESARROLLO: pytest + coverage + mocks. NO van al artefacto.
+[dependency-groups]
+dev = [
+  "pytest>=8.0,<9.0",
+  "pytest-cov>=5.0,<6.0",
+  "pytest-mock>=3.12,<4.0",
+  "mypy>=1.10,<2.0",
+  "ruff>=0.6,<1.0",
+  "moto[dynamodb,sqs,ssm,kms]>=5.0,<6.0",
+  "freezegun>=1.4,<2.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 80
+target-version = "py313"
+extend-exclude = [".venv/", "build/", "events/*.json"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "C4", "PIE", "SIM", "UP", "ANN", "S", "RUF"]
+ignore = [
+  "E501",   # line-length manejado por formatter
+  "ANN401", # any explicit en argumentos kwargs
+  "S101",   # asserts ok en tests
+  "S311",   # random no-cryptographic ok
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests: el nombre del test es el contrato; las firmas no necesitan
+# anotaciones de tipo.
+"tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S105", "S106"]
+# El handler ajusta sys.path antes de importar: E402 no aplica.
+"core/handler.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+markers = [
+  "unit: tests unitarios (rapidos, sin AWS real)",
+  "integration: tests con AWS real (deployed)",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["core"]
+# core/shared/ es la libreria comun vendorizada (efimera): el coverage
+# del Lambda mide solo SU codigo, no la copia de shared.
+omit = ["**/__init__.py", "tests/*", "core/shared/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+disallow_untyped_defs = true
+files = ["core"]

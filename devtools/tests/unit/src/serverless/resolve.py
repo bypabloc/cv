@@ -111,17 +111,17 @@ class TestResolveByLambdaName:
 
         names = available_lambdas()
 
-        # 9 lambdas reales: backend de contacto/tracking + el sistema auth
-        # (auth/users + workers) agregado en los planes 01-03.
+        # 8 lambdas reales tras eliminar SQS y los workers: el async se
+        # hace por invoke Lambda->Lambda (contact_form -> send_email,
+        # tracking_pixel -> tracking_writer), sin colas ni workers SQS.
         assert names == [
             'auth',
-            'auth_email_worker',
             'contact_form',
-            'contact_worker',
             'cv',
             'db',
+            'send_email',
             'tracking_pixel',
-            'tracking_worker',
+            'tracking_writer',
             'users',
         ]
 

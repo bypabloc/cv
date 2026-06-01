@@ -11,8 +11,8 @@ Then `result.first()` devuelve None y la funcion retorna False.
 Por que: confiar en `result.rowcount` con `on_conflict_do_nothing` reporta
 0 incluso cuando la fila SI se inserto (verificado en runtime con Neon).
 La forma robusta es agregar `RETURNING id` al statement y contar las
-filas devueltas. Sin este fix, el contact_worker dice "already persisted,
-skipping email" SIEMPRE -> el owner nunca recibe notificaciones.
+filas devueltas. Sin este fix, el flujo de contacto reportaria "already
+persisted" SIEMPRE aunque la fila se haya insertado.
 """
 
 from __future__ import annotations

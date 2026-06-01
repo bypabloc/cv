@@ -2,8 +2,9 @@
 
 Concentra las queries SQLAlchemy que el Lambda `cv` necesita para servir
 el CV. El `core/` del Lambda NO importa `sqlalchemy`; consume estas
-funciones (`from shared.db.cv_repository import ...`), igual que `db` y
-`stream_processor` consumen `shared.db.repository` y `shared.db.migrations`.
+funciones (`from shared.db.cv_repository import ...`), igual que `db`,
+`contact_form` y `tracking_writer` consumen `shared.db.repository` y
+`shared.db.migrations`.
 
 Filtros comunes:
 - `niche` — opcional, `fintech|architect|leader|vibe|generic|None`. Cuando

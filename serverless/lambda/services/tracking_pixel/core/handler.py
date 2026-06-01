@@ -56,15 +56,16 @@ def _warm_init() -> None:
     """Precalienta el hot path de EXECUTE en la fase INIT (SnapStart).
 
     Por que: a 128 MB el EXECUTE recibe ~0.07 vCPU. boto3 construye el
-    service model + cada modelo de OPERACION (get_item, query, ...) de
-    forma LAZY en la PRIMERA llamada. Si eso cae en EXECUTE, el cold
-    tardaba >30s -> timeout 502/504. El INIT tiene CPU sin throttle y
-    queda en el SNAPSHOT de SnapStart: warmeando aqui, el EXECUTE solo
+    service model + cada modelo de OPERACION (get_item, query, invoke,
+    ...) de forma LAZY en la PRIMERA llamada. Si eso cae en EXECUTE, el
+    cold tardaba >30s -> timeout 502/504. El INIT tiene CPU sin throttle
+    y queda en el SNAPSHOT de SnapStart: warmeando aqui, el EXECUTE solo
     reusa estructuras ya construidas.
 
     Dos pasos, ambos best-effort (un fallo NUNCA rompe el INIT — ej. sin
     red en un test):
-      1. Construye los clientes boto3 (DynamoDB + SQS).
+      1. Construye los clientes boto3 (DynamoDB para rate-limit/cache +
+         Lambda para el invoke async a tracking_writer).
       2. Ejercita el camino de LECTURA del rate-limit con una IP
          sintetica. Son lecturas IDEMPOTENTES (get_ip_rule /
          get_endpoint_rule / get_effective_count): NO incrementan el
@@ -74,7 +75,7 @@ def _warm_init() -> None:
          EXECUTE; su modelo update_item es barato comparado con las
          lecturas. Ver .claude/rules/lambda-config.md.
     """
-    warm_aws_clients(dynamodb=True, sqs=True)
+    warm_aws_clients(dynamodb=True, lambda_=True)
     try:
         from shared.rate_limit.buckets import get_effective_count
         from shared.rate_limit.rules import get_endpoint_rule, get_ip_rule

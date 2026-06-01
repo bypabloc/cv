@@ -2,9 +2,9 @@
 
 Orquestador del primer paso del flujo de registro. Verifica Turnstile,
 rate-limit per-IP, idempotencia (email existente), crea/upserta el user
-en `pending`, genera code de 8 chars + magic-link opaco, publica 2
-mensajes SQS al `auth_email_worker` y devuelve un temp_token (rolling
-JWT, 5 min) para continuar al paso siguiente.
+en `pending`, genera code de 8 chars + magic-link opaco, invoca
+`send_email` async para entregar ambos emails y devuelve un temp_token
+(rolling JWT, 5 min) para continuar al paso siguiente.
 
 AC cubiertos: AC-1, AC-2, AC-12, AC-13, AC-19, AC-20.
 """

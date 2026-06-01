@@ -35,12 +35,13 @@ trigger:
 
 # --- Que recursos del backend usa ---
 uses:
-  # Cola SQS hacia el worker `auth_email_worker`: publica notificaciones
-  # (email-change-verify, email-changed, account-disabled,
-  # account-deleted). NUNCA invoca SES directo.
-  queues:
-    - name: portfolio-auth-email-${stage}
-      access: producer
+  # Lambdas que invoca async (InvocationType='Event', fire-and-forget).
+  # devtools concede lambda:InvokeFunction al rol IAM e inyecta
+  # LAMBDA_SEND_EMAIL_FUNCTION_NAME al runtime. Reemplaza la cola SQS: las
+  # notificaciones (email-change-verify, email-changed, account-disabled,
+  # account-deleted) se delegan a send_email. NUNCA invoca SES directo.
+  invokes:
+    - send_email
   # Tablas DynamoDB: cache (shared.rate_limit usa @cached para las rules)
   # + rate-limit per-IP + jwt-blacklist (revoke-session / force-logout /
   # delete-account blacklistean families).
@@ -54,8 +55,7 @@ uses:
     - neon-url            # connection string Neon (auth_* + gestion)
     - jwt-secret          # verifica el access JWT (HS256)
     - admin-emails        # whitelist del scope admin.*
-    - ses-from-address    # se publica en el payload SQS (lo usa el worker)
-  # El Lambda NO envia email directo: publica a SQS y el worker hace SES.
+  # El Lambda NO envia email directo: invoca send_email async (que hace SES).
   sends-email: false
 
 # --- Variables de entorno por stage ---

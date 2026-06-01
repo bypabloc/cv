@@ -1,0 +1,5 @@
+Tu email fue actualizado en The Full Stack
+
+El email de tu cuenta cambió a {{ new_email }}.
+
+Si no fuiste tú, contáctanos de inmediato.

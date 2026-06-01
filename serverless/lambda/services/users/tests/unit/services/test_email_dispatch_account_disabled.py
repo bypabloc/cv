@@ -1,22 +1,22 @@
-"""EmailDispatchService.publish_account_disabled — payload shape.
+"""EmailDispatchService.publish_account_disabled — invoca send_email.
 
 Given una cuenta deshabilitada por un admin,
 When se invoca publish_account_disabled,
-Then publica un payload con kind account-disabled, data {'reason': ...}
-y SIN schema_version ni locale.
+Then invoca send_email async con kind account-disabled, data {'reason': ...}
+y el contrato EmailSendRequest (to lista, sin user_id/niche/subject_id).
 """
 
 
-def test_email_dispatch_account_disabled_payload(monkeypatch):
+def test_email_dispatch_account_disabled_invokes_send_email(monkeypatch):
     from services import email_dispatch_service
 
     captured = {}
 
-    def fake_send(*, queue_short_name, payload):
+    def fake_invoke(*, function_name, payload):
+        captured['function_name'] = function_name
         captured['payload'] = payload
-        return 'msg-2'
 
-    monkeypatch.setattr(email_dispatch_service, 'send_to_queue', fake_send)
+    monkeypatch.setattr(email_dispatch_service, 'invoke_async', fake_invoke)
 
     svc = email_dispatch_service.EmailDispatchService(app_config=object())
     result = svc.publish_account_disabled(
@@ -27,12 +27,12 @@ def test_email_dispatch_account_disabled_payload(monkeypatch):
     )
 
     payload = captured['payload']
-    assert result == 'msg-2'
-    assert payload['kind'] == 'account-disabled'
-    assert payload['to'] == 'u@example.com'
-    assert payload['user_id'] == 'user-1'
-    assert payload['niche'] is None
-    assert payload['subject_id'] == 'auth.users.account-disabled.subject'
-    assert payload['data'] == {'reason': 'abuse'}
-    assert 'schema_version' not in payload
-    assert 'locale' not in payload
+    data = payload['data']
+    assert result is None
+    assert captured['function_name'] == 'portfolio-send-email-test'
+    assert payload['operation'] == 'email'
+    assert payload['action'] == 'send'
+    assert set(data.keys()) == {'kind', 'to', 'data'}
+    assert data['kind'] == 'account-disabled'
+    assert data['to'] == ['u@example.com']
+    assert data['data'] == {'reason': 'abuse'}

@@ -82,8 +82,8 @@ pesada (fido2 -> cryptography) cuesta segundos. Reglas:
   los modulos `cv/*` importan `taxonomy/catalog.py`,
   `visitor/tracking.py` importa `taxonomy/event_type.py`. Un SELECT no
   resuelve la FK (por eso `login.start` 404 no fallaba), pero un INSERT si:
-  el bug de PR #199/#200 fue esto (register/login/users 500, tracking_worker
-  a DLQ). Lo enforza el guard
+  el bug de PR #199/#200 fue esto (register/login/users 500; el entonces
+  `tracking_worker` —ya eliminado con SQS— terminaba a DLQ). Lo enforza el guard
   `shared/tests/unit/shared/db/test_model_module_load_resolves_foreign_keys.py`
   (importa cada modulo aislado y resuelve sus FK) + el Check 4 de
   `serverless lint-deps` (`__init__.py` vacios, sin barrels).
@@ -107,10 +107,10 @@ warm_db()  # engine (NullPool, sin conexion) + configure_mappers (best-effort)
 DATABASE_URL en un test). NullPool no abre conexion en el INIT (las
 conexiones no sobreviven al snapshot).
 
-Los lambdas que NO usan Neon pero SI DynamoDB/SQS (ej. `tracking_pixel`
+Los lambdas que NO usan Neon pero SI DynamoDB (ej. `tracking_pixel`
 async) tienen el mismo problema con **boto3**: el cliente low-level
 (`get_resource().meta.client`) y CADA modelo de operacion (`get_item`,
-`query`, `update_item`, `send_message`) se construyen LAZY en la PRIMERA
+`query`, `update_item`, `invoke`) se construyen LAZY en la PRIMERA
 llamada. A 128 MB (~0.07 vCPU) eso cae en EXECUTE y tarda segundos ->
 puede agotar el timeout (sintoma: el log llega a "Starting execute phase"
 y se cuelga 30s -> 502/504, con `Max Memory` al borde de 128). El fix
@@ -119,7 +119,10 @@ y se cuelga 30s -> 502/504, con `Max Memory` al borde de 128). El fix
 ```python
 from shared.aws.warmup import warm_aws_clients
 
-warm_aws_clients(dynamodb=True, sqs=True)  # materializa .meta.client
+# tracking_pixel ya no usa SQS: persiste el tracking invocando
+# tracking_writer async (InvocationType='Event'), por eso warmea el
+# cliente `lambda` ademas de dynamodb.
+warm_aws_clients(dynamodb=True, lambda_=True)  # materializa .meta.client
 # + ejercitar el read-path idempotente (NO writes) para construir los
 #   modelos get_item/query en el snapshot:
 get_ip_rule('0.0.0.0'); get_endpoint_rule('/track')
@@ -141,7 +144,9 @@ Medidos tras el refactor shared-no-barrels: lazy imports + X-Ray eliminado
 | `users` | 256 | 30 | misma familia que auth; argon2id (password) es memory-hard |
 | `cv` | 256 | 30 | read-only Neon usa 118-165 MB; a 128 quedan 10 MB headroom. Handler ~9s es Neon-I/O-bound (no escala con memoria) |
 | `contact_form` | 256 | 30 | footprint Neon 117/128 MB a 128 (11 MB headroom); 157 MB a 256 |
-| `tracking_pixel` | 128 | 30 | UNICO a 128: async (sin Neon -> sin sqlalchemy). Imports de Neon/ua_parser diferidos al path sync legacy (lazy) + warmup de los clientes boto3 y del read-path del rate-limit en INIT (`shared.aws.warmup.warm_aws_clients` + `get_ip/endpoint_rule`). Restore (SnapStart) ~1.16s, warm ~380ms, 111/128 MB (17 MB headroom). SIN warmup, boto3 construia los modelos de operacion (get_item/query) en EXECUTE a 0.07 vCPU -> >30s -> timeout 502/504 |
+| `tracking_pixel` | 128 | 30 | UNICO a 128: async (sin Neon -> sin sqlalchemy). Imports de Neon/ua_parser diferidos al path sync legacy (lazy) + warmup de los clientes boto3 (incluye el cliente `lambda` para invocar `tracking_writer` async) y del read-path del rate-limit en INIT (`shared.aws.warmup.warm_aws_clients` + `get_ip/endpoint_rule`). Restore (SnapStart) ~1.16s, warm ~380ms, 111/128 MB (17 MB headroom). SIN warmup, boto3 construia los modelos de operacion (get_item/query) en EXECUTE a 0.07 vCPU -> >30s -> timeout 502/504 |
+| `send_email` | 256 | 30 | estimado, MEDIR tras deploy. Target async (InvocationType='Event'): render Jinja2 + boto3 dynamodb/s3/ses. SIN Neon (no importa sqlalchemy) -> podria bajar a 128, pero jinja2 + 3 clientes boto3 (dynamodb/s3/ses) sugieren empezar en 256 hasta medir |
+| `tracking_writer` | 256 | 30 | estimado, MEDIR tras deploy. Target async invocado por `tracking_pixel`: INSERT a Neon (sqlalchemy + psycopg). Importa `shared.db` -> footprint base >= 256 MB (regla de abajo) |
 
 **El footprint base de un lambda Neon (sqlalchemy + pydantic + modelos +
 clientes) es ~117-127 MB** -> 128 MB NO deja headroom seguro: el minimo
@@ -149,9 +154,11 @@ real de cualquier lambda que importe `shared.db`/sqlalchemy es **256 MB**.
 Solo un lambda async sin Neon (como `tracking_pixel` en `ASYNC_MODE`) baja
 a 128. Verificar SIEMPRE con la medicion de abajo, NUNCA asumir 128.
 
-Los workers async (`*_worker`, `stream_processor`) y la Lambda `db` se
-dimensionan por su carga propia (batch SQS / migraciones), no por esta
-tabla.
+Los lambdas async-target (`send_email`, `tracking_writer`) se invocan via
+`invoke` Lambda->Lambda con `InvocationType='Event'` (NUNCA SQS) y se
+dimensionan por su carga propia: `send_email` por el render Jinja2 + SES,
+`tracking_writer` por el INSERT a Neon. La Lambda `db` se dimensiona por
+las migraciones, no por esta tabla.
 
 ## X-Ray: NO se usa en este backend
 

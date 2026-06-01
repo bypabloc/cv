@@ -1,0 +1,4 @@
+Tu cuenta fue deshabilitada en The Full Stack
+
+Tu cuenta fue deshabilitada.
+Motivo: {{ reason }}

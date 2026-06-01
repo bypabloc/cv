@@ -1,61 +1,44 @@
-"""Controller tracking/track — encoder async NO parsea UA.
+"""Encoder async NO parsea el User-Agent (lo hace el writer, cacheado).
 
 Given ASYNC_MODE=true,
-When el controller Track procesa un request valido,
-Then `parse_user_agent` NUNCA se invoca: la decision de diseno del plan
-     es que el worker `tracking_worker` haga el UA parsing (cacheado en
-     DynamoDB, namespace='ua'), no el encoder. Asi el encoder responde
-     con TTFB minimo y no paga el costo del parsing en el hot path.
-
-AC del plan lambdas-async-sqs: el encoder es minimo; enrichment pesado
-es responsabilidad del worker.
+When el handler procesa un evento,
+Then `parse_user_agent` NUNCA se invoca en el encoder (el writer lo
+     hace, con cache compartido).
 """
+
+from __future__ import annotations
 
 import pytest
 
-from tests.unit._helpers import CHROME_UA, valid_body
+from tests.unit._helpers import api_gw_event, lambda_context, valid_body
 
 pytestmark = pytest.mark.unit
 
 
 def test_encoder_does_not_parse_user_agent(
     async_mode: None,
-    captured_queue: list[dict],
-    neon_off: dict[str, int],
-    monkeypatch: pytest.MonkeyPatch,
+    captured_invoke: list[dict],
     tracking_aws: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from controllers.tracking.track import Track
+    import handler
+    import services.tracking_service as svc
 
-    # Arrange: instrumentamos parse_user_agent para detectar invocaciones.
-    invocations: list[str | None] = []
+    called = {'n': 0}
 
-    def _spy_parse(user_agent: str | None) -> dict[str, str]:
-        invocations.append(user_agent)
+    def _spy_parse(_ua):
+        called['n'] += 1
         return {
-            'browser': 'Chrome',
-            'browser_version': '118',
-            'os': 'Linux',
+            'browser': 'x',
+            'browser_version': '1',
+            'os': 'y',
             'device_type': 'desktop',
         }
 
-    monkeypatch.setattr(
-        'services.tracking_service.parse_user_agent', _spy_parse
-    )
-
-    event = {
-        **valid_body(),
-        'meta': {'ip': '1.2.3.4', 'country': 'CL', 'user_agent': CHROME_UA},
-    }
+    monkeypatch.setattr(svc, 'parse_user_agent', _spy_parse)
 
     # Act
-    result = Track(event=event).run()
+    handler.lambda_handler(api_gw_event(body=valid_body()), lambda_context())
 
-    # Assert: el encoder devolvio 202 + 1 mensaje a SQS.
-    assert result['is_valid'] is True
-    assert result['data']['status'] == 'accepted'
-    assert len(captured_queue) == 1
-    # CLAVE: parse_user_agent NUNCA se invoco — el worker lo hara.
-    assert invocations == []
-    # El UA crudo SI viaja en el payload SQS, sin parsear.
-    assert captured_queue[0]['payload']['user_agent'] == CHROME_UA
+    # Assert: el encoder NO parsea UA.
+    assert called['n'] == 0

@@ -1,35 +1,37 @@
-"""EmailDispatchService (auth) — publica payloads que el worker ACEPTA.
+"""EmailDispatchService (auth) — invoca send_email con el contrato correcto.
 
-Contrato del worker (`auth_email_worker/core/models/message.py`,
-`AuthEmailMessage` con `extra='forbid'`): el payload top-level debe ser
-EXACTAMENTE `{kind, to, user_id, niche, subject_id, data}`. Cualquier
-campo extra (`schema_version`, `locale`) o `subject_id` ausente hace
-fallar la validacion en el worker -> el mensaje termina en la DLQ sin
-enviarse. Estos tests son el guard de regresion de ese contrato.
+Contrato de `send_email` (`EmailSendRequest` con `extra='forbid'`): el `data`
+del evento `{operation:'email', action:'send', data}` debe ser EXACTAMENTE
+`{kind, to, data, reply_to?}`. `to` es una lista; `data` lleva SOLO los
+placeholders Jinja2 del template (NO user_id/niche/subject_id — el subject
+sale de `email-config`). Estos tests son el guard de regresion de ese
+contrato: el invoke se mockea y se assertea el payload.
 """
+
+from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-# Conjunto EXACTO de claves top-level que el worker (AuthEmailMessage)
-# acepta. Si el productor agrega/quita una, el worker rechaza el mensaje.
-_WORKER_TOP_LEVEL_KEYS = {'kind', 'to', 'user_id', 'niche', 'subject_id', 'data'}
+# Conjunto EXACTO de claves del `data` del evento que send_email acepta
+# (EmailSendRequest, extra='forbid'). reply_to es opcional y solo lo usa
+# contact_form; auth NO lo manda.
+_SEND_EMAIL_DATA_KEYS = {'kind', 'to', 'data'}
 
 
-def test_publish_magic_link_sends_worker_compatible_payload(monkeypatch):
+def test_publish_magic_link_invokes_send_email(monkeypatch):
     """
     Given un magic-link de register,
-    When publish_magic_link encola el mensaje,
-    Then el payload tiene el shape exacto de AuthEmailMessage (subject_id
-         presente, sin schema_version/locale) y data lleva verify_url +
-         expires_in_min.
+    When publish_magic_link se invoca,
+    Then invoca send_email async con el contrato EmailSendRequest (to lista,
+         data solo verify_url + expires_in_min, sin user_id/niche/subject_id).
     """
     from services import email_dispatch_service
 
-    fake_send = MagicMock(return_value='msg-id-1')
-    monkeypatch.setattr(email_dispatch_service, 'send_to_queue', fake_send)
+    fake_invoke = MagicMock()
+    monkeypatch.setattr(email_dispatch_service, 'invoke_async', fake_invoke)
 
     svc = email_dispatch_service.EmailDispatchService(app_config=object())
-    msg_id = svc.publish_magic_link(
+    result = svc.publish_magic_link(
         to='visitor@example.com',
         user_id='user-1',
         niche='fintech',
@@ -38,39 +40,37 @@ def test_publish_magic_link_sends_worker_compatible_payload(monkeypatch):
         expires_in_min=15,
     )
 
-    assert msg_id == 'msg-id-1'
-    payload = fake_send.call_args.kwargs['payload']
+    assert result is None
+    fname = fake_invoke.call_args.kwargs['function_name']
+    payload = fake_invoke.call_args.kwargs['payload']
 
-    # Shape exacto del worker: ni un campo de mas, ni uno de menos.
-    assert set(payload.keys()) == _WORKER_TOP_LEVEL_KEYS
-    assert 'schema_version' not in payload
-    assert 'locale' not in payload
+    assert fname == 'portfolio-send-email-test'
+    assert payload['operation'] == 'email'
+    assert payload['action'] == 'send'
 
-    assert payload['kind'] == 'register-magic-link'
-    assert payload['to'] == 'visitor@example.com'
-    assert payload['user_id'] == 'user-1'
-    assert payload['niche'] == 'fintech'
-    assert payload['subject_id'] == 'auth.register-magic-link.subject'
-    assert payload['data'] == {
+    data = payload['data']
+    assert set(data.keys()) == _SEND_EMAIL_DATA_KEYS
+    assert data['kind'] == 'register-magic-link'
+    assert data['to'] == ['visitor@example.com']
+    assert data['data'] == {
         'verify_url': 'https://api.example.com/auth?token=OPAQUE_PLAIN',
         'expires_in_min': 15,
     }
 
 
-def test_publish_code_sends_worker_compatible_payload(monkeypatch):
+def test_publish_code_invokes_send_email(monkeypatch):
     """
     Given un code de register,
-    When publish_code encola el mensaje,
-    Then el payload tiene el shape exacto de AuthEmailMessage y data lleva
-         code + expires_in_min.
+    When publish_code se invoca,
+    Then invoca send_email async con data = {code, expires_in_min} y to lista.
     """
     from services import email_dispatch_service
 
-    fake_send = MagicMock(return_value='msg-id-2')
-    monkeypatch.setattr(email_dispatch_service, 'send_to_queue', fake_send)
+    fake_invoke = MagicMock()
+    monkeypatch.setattr(email_dispatch_service, 'invoke_async', fake_invoke)
 
     svc = email_dispatch_service.EmailDispatchService(app_config=object())
-    msg_id = svc.publish_code(
+    result = svc.publish_code(
         to='visitor@example.com',
         user_id='user-1',
         niche=None,
@@ -79,15 +79,38 @@ def test_publish_code_sends_worker_compatible_payload(monkeypatch):
         expires_in_min=15,
     )
 
-    assert msg_id == 'msg-id-2'
-    payload = fake_send.call_args.kwargs['payload']
+    assert result is None
+    payload = fake_invoke.call_args.kwargs['payload']
+    data = payload['data']
 
-    assert set(payload.keys()) == _WORKER_TOP_LEVEL_KEYS
-    assert 'schema_version' not in payload
-    assert 'locale' not in payload
+    assert set(data.keys()) == _SEND_EMAIL_DATA_KEYS
+    assert data['kind'] == 'register-code'
+    assert data['to'] == ['visitor@example.com']
+    assert data['data'] == {'code': 'ABCDEFGH', 'expires_in_min': 15}
 
-    assert payload['kind'] == 'register-code'
-    assert payload['user_id'] == 'user-1'
-    assert payload['niche'] is None
-    assert payload['subject_id'] == 'auth.register-code.subject'
-    assert payload['data'] == {'code': 'ABCDEFGH', 'expires_in_min': 15}
+
+def test_publish_does_not_raise_when_invoke_fails(monkeypatch):
+    """
+    Given que el invoke a send_email lanza LambdaInvokeError,
+    When publish_code se invoca,
+    Then NO propaga la excepcion (best-effort: el code ya quedo persistido).
+    """
+    from services import email_dispatch_service
+    from shared.aws.lambda_invoke import LambdaInvokeError
+
+    def _raise(*, function_name: str, payload: dict) -> None:
+        raise LambdaInvokeError(f'invoke_async to {function_name} failed')
+
+    monkeypatch.setattr(email_dispatch_service, 'invoke_async', _raise)
+
+    svc = email_dispatch_service.EmailDispatchService(app_config=object())
+    result = svc.publish_code(
+        to='visitor@example.com',
+        user_id='user-1',
+        niche=None,
+        kind='login-code',
+        code='ABCDEFGH',
+        expires_in_min=15,
+    )
+
+    assert result is None

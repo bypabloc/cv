@@ -1,49 +1,33 @@
-"""Controller contact/create — encoder + sync legacy detras de ASYNC_MODE.
+"""Controller contact/create — escritura inline a Neon + invoke send_email.
 
 Orquestador del flujo del form de contacto. Ejecuta SIEMPRE las
-verificaciones de gating ANTES de branchear:
+verificaciones de gating ANTES de persistir:
 
   1. rate-limit per-IP (puede levantar 429 / 403).
   2. validacion Turnstile  (puede levantar 403).
 
-Despues, decide segun `AppConfig.async_mode`:
+Luego persiste el contacto INLINE a Neon (sessions + visit + contact en
+una tx) y notifica al owner invocando `send_email` async (best-effort).
+Responde HTTP 201. Sin SQS, sin ASYNC_MODE (refactor cold-start).
 
-  - `True`  (encoder, default): pre-genera contact_id + created_at,
-    publica el mensaje a SQS via `enqueue_contact_message` y devuelve
-    HTTP 202.
-  - `False` (sync legacy, rollback): delega al service viejo que
-    persiste en Neon + envia el email via SES, devuelve HTTP 201.
+Despues del exito incrementa el contador de auto-blacklist (bot
+detection): 3+ tokens Turnstile validos en 60s desde la misma IP ->
+blacklist 24h.
 
-En AMBOS modos, despues del branch, se incrementa el contador de
-auto-blacklist (bot detection). Asi el comportamiento de defensa
-contra bots es identico independientemente del modo.
+NO contiene logica de negocio: delega en
+`services.contact_service.process_contact_form`.
 
-NO contiene logica de negocio: el encoder delega a
-`services.contact_service.enqueue_contact_message`; el sync legacy
-delega a `services.contact_service.process_contact_form`.
-
-Sobre el manejo de errores: rate-limit + Turnstile levantan
-`ApplicationError` que el handler traduce al HTTP correcto (429 / 403).
-Si `enqueue_contact_message` falla, propaga `QueuePublishError`: NO se
-hace fallback automatico a sync (decision explicita, ver spec) — el
-handler la traduce a 5xx.
+Sobre errores: rate-limit + Turnstile levantan `ApplicationError` que el
+handler traduce al HTTP correcto (429 / 403).
 """
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any
 
-from models.contact import (
-    ContactAcceptedOutput,
-    ContactCreatedOutput,
-    ContactCreateModel,
-)
-from services.contact_service import (
-    enqueue_contact_message,
-    process_contact_form,
-)
-from settings.config import AppConfig, logger
+from models.contact import ContactCreatedOutput, ContactCreateModel
+from services.contact_service import process_contact_form
+from settings.config import logger
 from shared.core.niches import niche_from_origin
 from shared.core.ulid import new_uuidv7
 from shared.crypto.captcha import verify_captcha_or_bypass
@@ -62,14 +46,10 @@ _WINDOW_SECONDS = 60
 def _resolve_session_id(form_session_id: str | None) -> str:
     """Resuelve el session_id del visitante.
 
-    Spec sessions-normalize, decision 2: si el form envia `session_id`
-    (porque el TrackingPixel cargo correctamente), se usa. Sino se
-    genera uno on-the-fly: el form se acepta igual y crea una session
-    nueva con los datos del request. Caso edge: adblock, JS bloqueado,
-    primer click directo al form.
-
-    Formato: UUIDv7 server-side (mismo formato que el cliente genera
-    en localStorage, asi sessions con tracking previo no chocan).
+    Si el form envia `session_id` (TrackingPixel cargo bien), se usa. Sino
+    se genera uno on-the-fly: el form se acepta igual y crea una session
+    nueva con los datos del request (caso edge: adblock, JS bloqueado,
+    primer click directo al form). Formato UUIDv7 server-side.
     """
     if form_session_id:
         return form_session_id
@@ -79,10 +59,9 @@ def _resolve_session_id(form_session_id: str | None) -> str:
 def _auto_blacklist_step(ip: str) -> None:
     """Incrementa el contador de tokens validos + auto-blacklist si excede.
 
-    Corre en AMBOS modos (async + sync) DESPUES del exito del branch:
-    marca `turnstile_validated=True` para detectar bots con solver
-    (3+ tokens validos en 60s desde la misma IP -> blacklist 24h).
-    Spec: auto-blacklist runs independientemente del modo.
+    Corre DESPUES del exito: marca `turnstile_validated=True` para detectar
+    bots con solver (3+ tokens validos en 60s desde la misma IP -> blacklist
+    24h).
     """
     bucket = increment_bucket(
         ip=ip,
@@ -115,11 +94,10 @@ class Create(BaseController):
         Returns
         -------
         dict
-            `{is_valid: True, data, code: 0}` en exito. Los fallos de
-            rate-limit, Turnstile o publicacion SQS NO se normalizan
-            aqui: propagan como `ApplicationError`/`QueuePublishError`
-            para que el handler los traduzca al HTTP exacto (429 / 403
-            / 5xx).
+            `{is_valid: True, data, code: 0}` en exito (HTTP 201). Los
+            fallos de rate-limit / Turnstile NO se normalizan aqui:
+            propagan como `ApplicationError` para que el handler los
+            traduzca al HTTP exacto (429 / 403).
         """
         data: ContactCreateModel = self.validated_data  # type: ignore[assignment]
         meta = data.meta
@@ -140,40 +118,28 @@ class Create(BaseController):
             bypass_token=meta.bypass_token,
         )
 
-        # 3. Resolver session_id + niche fallback del Origin (decision 6).
+        # 3. Resolver session_id + niche fallback del Origin.
         form_fields = data.form_fields()
         session_id = _resolve_session_id(form_fields.get('session_id'))
         origin_niche = niche_from_origin(meta.origin)
-
-        # Asegurar que form_fields tiene el session_id resuelto (NO el
-        # None original — el service espera que session_id este).
         form_fields_with_session = {**form_fields, 'session_id': session_id}
 
-        # 4. Branch por feature flag ASYNC_MODE.
-        if AppConfig.async_mode:
-            result = self._execute_async(
-                form_fields=form_fields_with_session,
-                session_id=session_id,
-                meta=meta,
-                origin_niche=origin_niche,
-            )
-        else:
-            result = self._execute_sync(
-                form_fields=form_fields_with_session,
-                session_id=session_id,
-                meta=meta,
-                origin_niche=origin_niche,
-            )
+        # 4. Persistir INLINE a Neon + notificar owner (invoke send_email).
+        result = self._persist(
+            form_fields=form_fields_with_session,
+            session_id=session_id,
+            meta=meta,
+            origin_niche=origin_niche,
+        )
 
-        # 5. Contador de auto-blacklist (en AMBOS modos, despues del exito).
-        #    check_or_raise ya hizo un ADD con turnstile_validated=False;
-        #    este segundo INCREMENT marca el token como valido para la
-        #    deteccion de bots con solver.
+        # 5. Contador de auto-blacklist (despues del exito). check_or_raise
+        #    ya hizo un ADD con turnstile_validated=False; este INCREMENT
+        #    marca el token como valido para la deteccion de bots.
         _auto_blacklist_step(meta.ip)
 
         return result
 
-    def _execute_async(
+    def _persist(
         self,
         *,
         form_fields: dict[str, Any],
@@ -181,53 +147,7 @@ class Create(BaseController):
         meta: Any,
         origin_niche: str | None,
     ) -> dict:
-        """Modo encoder (ASYNC_MODE=true): publica a SQS y devuelve 202.
-
-        Pre-genera contact_id (UUIDv7) y created_at antes de encolar.
-        El worker los usa tal cual: si SQS re-entrega el mensaje, el
-        worker hace ON CONFLICT DO NOTHING — idempotencia garantizada.
-
-        Nunca toca Neon ni SES en este modo.
-        """
-        contact_id = new_uuidv7()
-        created_at = datetime.now(UTC)
-
-        enqueue_contact_message(
-            contact_id=contact_id,
-            created_at=created_at,
-            form_fields=form_fields,
-            session_id=session_id,
-            ip=meta.ip,
-            country=meta.country,
-            user_agent=meta.user_agent,
-            origin_niche=origin_niche,
-        )
-
-        output = ContactAcceptedOutput(
-            contact_id=contact_id,
-            created_at=created_at,
-            accepted=True,
-        )
-        return {
-            'is_valid': True,
-            'data': output.model_dump(mode='json'),
-            'code': 0,
-        }
-
-    def _execute_sync(
-        self,
-        *,
-        form_fields: dict[str, Any],
-        session_id: str,
-        meta: Any,
-        origin_niche: str | None,
-    ) -> dict:
-        """Modo legacy (ASYNC_MODE=false): persiste + email sincronamente.
-
-        Path de rollback: mantiene el comportamiento del Lambda viejo
-        para que un flipeo del flag a 'false' restaure el flujo
-        original sin redeploy del worker.
-        """
+        """Persiste el contacto a Neon (inline) + invoke send_email async."""
         result = process_contact_form(
             form_fields=form_fields,
             session_id=session_id,

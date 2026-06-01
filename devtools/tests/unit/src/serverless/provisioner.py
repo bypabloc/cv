@@ -104,7 +104,6 @@ def _default_responses():
         },
         'ssm.get-parameter': {'Parameter': {'Value': 'api-abc123'}},
         'apigateway.create-resource': {'id': 'res9'},
-        'lambda.create-event-source-mapping': {'UUID': 'uuid-1'},
     }
 
 
@@ -130,6 +129,35 @@ class TestRender:
             'table/portfolio-rate-limit-buckets-dev',
             'arn:aws:dynamodb:us-east-1:${account}:'
             'table/portfolio-rate-limit-buckets-dev/index/*',
+        ]
+
+    def test_render_email_config_table_path_and_arn(self):
+        """La tabla `email-config` (la usa send_email) se resuelve a su
+        nombre fisico + env var SSM_EMAIL_CONFIG_TABLE_PATH + IAM read.
+        """
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['name'] = 'send-email'
+        manifest['uses']['tables'] = {'email-config': 'read'}
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        assert (
+            rendered.env_vars['SSM_EMAIL_CONFIG_TABLE_PATH']
+            == '/portfolio/dev/dynamodb/email-config/name'
+        )
+        statements = rendered.iam_policy['Statement']
+        dynamo = [
+            s
+            for s in statements
+            if any(a.startswith('dynamodb:') for a in s['Action'])
+        ]
+        assert dynamo[0]['Resource'] == [
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-email-config-dev',
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-email-config-dev/index/*',
         ]
 
     def test_render_iam_policy_when_uses_secrets(self):
@@ -815,49 +843,6 @@ class TestDeprovision:
             'lambda.remove-permission',
             'ssm.get-parameter',
             'apigateway.delete-resource',
-            'lambda.delete-function',
-            'iam.delete-role-policy',
-            'iam.detach-role-policy',
-            'iam.delete-role',
-            'logs.delete-log-group',
-        ]
-
-    def test_deprovision_stream_deletes_event_source_mappings(
-        self, monkeypatch
-    ):
-        from serverless import provisioner
-        from serverless.aws_cli import AwsResult
-        from serverless.state import LambdaState
-
-        calls = []
-        monkeypatch.setattr(
-            provisioner,
-            'aws',
-            lambda args, **_k: (
-                calls.append(args)
-                or AwsResult(returncode=0, stdout='', stderr='', json=None)
-            ),
-        )
-
-        state = LambdaState(
-            scope='stream-processor',
-            stage='dev',
-            config_hash='sha256:c',
-            code_hash='',
-            resources={
-                'role_name': 'portfolio-stream-processor-dev',
-                'function_name': 'portfolio-stream-processor-dev',
-                'log_group': '/aws/lambda/portfolio-stream-processor-dev',
-                'event_source_uuids': 'uuid-1,uuid-2',
-            },
-            updated_at='2026-05-21T10:00:00Z',
-        )
-        provisioner.deprovision(state, profile=None, region='us-east-1')
-
-        verbs = ['.'.join(c[:2]) for c in calls]
-        assert verbs == [
-            'lambda.delete-event-source-mapping',
-            'lambda.delete-event-source-mapping',
             'lambda.delete-function',
             'iam.delete-role-policy',
             'iam.detach-role-policy',

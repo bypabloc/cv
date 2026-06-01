@@ -19,6 +19,7 @@ from typing import Any
 
 from serverless.change_detector import cmd_detect_changes
 from serverless.dep_validator import cmd_lint_deps
+from serverless.email_seed import cmd_seed_email_config
 from serverless.help import cmd_help
 from serverless.infra_provision import cmd_list_resources
 from serverless.infra_provision import cmd_provision_infra
@@ -69,6 +70,8 @@ COMMAND_REGISTRY: dict[str, Any] = {
     # Infra: recursos compartidos provisionados con AWS CLI directo.
     'provision-infra': cmd_provision_infra,
     'list-resources': cmd_list_resources,
+    # Email: seed de templates (S3) + filas de config (DynamoDB).
+    'seed-email-config': cmd_seed_email_config,
     # Secrets / DNS
     'setup-ssm': cmd_setup_ssm,
     'rotate-secret': cmd_rotate_secret,

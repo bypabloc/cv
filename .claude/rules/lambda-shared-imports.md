@@ -58,6 +58,7 @@ NO aplica al frontend Astro ni a otros repos.
   - `import boto3` / `from boto3`.
   - `import botocore` / `from botocore`.
   - `import aws_lambda_powertools` / `from aws_lambda_powertools`.
+  - `import jinja2` / `from jinja2` (va por `shared.templating.jinja`).
 - **NUNCA** un service declara en su `pyproject.toml` deps que el
   cierre de shared ya aporta (regla D-3, validada por `serverless
   lint-deps`).
@@ -97,6 +98,9 @@ NO aplica al frontend Astro ni a otros repos.
 | `pyotp` (TOTP RFC 6238) | `shared.auth.totp` | `from shared.auth.totp import generate_totp_secret_b32, verify_totp_code, build_otpauth_url` |
 | `fido2` (python-fido2, WebAuthn) | `shared.auth.webauthn` | `from shared.auth.webauthn import build_register_options, verify_authentication, build_login_options, WebauthnCloneError` |
 | KMS (`boto3.client('kms')`, Encrypt/Decrypt CMK directa) | `shared.aws.kms` | `from shared.aws.kms import kms_encrypt, kms_decrypt` |
+| S3 (`boto3.client('s3')`, leer templates) | `shared.aws.s3` | `from shared.aws.s3 import get_object_text` |
+| Lambda invoke async (`boto3.client('lambda')`, InvocationType='Event') | `shared.aws.lambda_invoke` | `from shared.aws.lambda_invoke import invoke_async` (invoca otro Lambda fire-and-forget, ej. `send_email`) |
+| `jinja2` (render de templates de email) | `shared.templating.jinja` | `from shared.templating.jinja import render_html, render_text` |
 | `cryptography` (Ed25519 sign/verify del bypass token de Turnstile) | `shared.crypto` | `from shared.crypto.captcha import verify_captcha_or_bypass`; `from shared.crypto.bypass_token import verify_bypass_token`. Import lazy de `cryptography` (solo lo vendorizan `contact_form` + `auth`) |
 
 ## Patron correcto

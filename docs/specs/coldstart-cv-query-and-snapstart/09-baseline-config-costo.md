@@ -123,10 +123,60 @@ empezaria a apretar; los minimos medidos (~$1.8 total) dan mas colchon.
 > restore, REVERTIR cada manifest a su minimo medido baja el Lambda de
 > ~$0.99 a ~$0.26/mes sin perder el cold real (que lo da SnapStart).
 
-## D. DESPUES (se completa tras el deploy en dev)
+## D. DESPUES (medido tras el deploy en dev) — 37/37 PASS
 
-Se re-corre `api_e2e --env=dev --aws-profile=tfs-dev` con los 8 lambdas
-ya en 1024 MB y se pega aqui la tabla comparativa cold/warm antes vs
-despues. Ver el reporte entregado en el chat.
+Los 8 lambdas confirmados en AWS a `1024 MB / 60s / SnapStart :live
+(OptimizationStatus On)`. Se corrio `api_e2e --env=dev` dos veces:
+
+- **1a corrida** (justo tras el deploy, SnapStart re-optimizando): cold
+  avg 5.62s.
+- **2a corrida** (SnapStart ya estable): cold avg **1.39s** — este es el
+  cold REAL representativo.
+
+### Comparativa cold por lambda (segundos)
+
+| Lambda | ANTES (256-512) | DESPUES 1a corrida | DESPUES 2a (estable) |
+|--------|-----------------|--------------------|-----------------------|
+| cv | 2.832 | 2.326 | **0.565** |
+| contact_form | 14.990 | 7.604 | **1.078** |
+| tracking_pixel | 3.884 | 1.644 | **0.340** |
+| auth | 12.484 | 9.688 | **3.250** |
+| users | 12.726 | 6.815 | **1.720** |
+| **COLD avg** | **9.383** | **5.615** | **1.391** |
+
+### Comparativa warm (segundos, casos clave)
+
+| Caso | ANTES | DESPUES |
+|------|-------|---------|
+| cv.get | 0.170 | 0.165 |
+| cv.* (cache HIT) | 0.139-0.172 | 0.131-0.139 |
+| contact.create | 1.398 | 1.078 |
+| tracking.track | 1.321 | 0.310 |
+| auth register.verify-code | 3.606 | 3.264 |
+| auth login.start | 4.260 | 3.555 |
+| auth verify.set-password | 5.441 | 3.212 |
+| users profile.get | 1.856 | 1.597 |
+| **warm avg global** | **1.018** | **0.791** |
+
+### Lecturas del experimento
+
+- **El cold cayo a ~1.4s avg** — pero NO por la memoria: lo da el
+  SnapStart restore (~1s), que ya existia. La 1a corrida (5.62s) era el
+  artefacto de re-optimizacion post-deploy; el cold sostenible es ~1.4s.
+- **El warm bajo modestamente** (~22%): mas CPU acelera algo el handler
+  (argon2id/Jinja2/configure_mappers), pero los casos Neon-I/O-bound (cv,
+  users, auth verify) siguen dominados por la red a Neon, no por la CPU.
+  cv.get warm quedo igual (0.165s, cache HIT — la memoria no lo toca).
+- **Confirma el diagnostico**: la memoria a 1024 dio una mejora marginal
+  de warm y CERO mejora estructural de cold (SnapStart ya lo cubria). El
+  4x de CPU no se traduce en 4x de velocidad. El fix real de cv sigue
+  siendo la query en 1 sesion (fase 02), independiente de la memoria.
+
+### Recomendacion
+
+El experimento cumplio su proposito (medir). Para sostener: REVERTIR cada
+manifest a su minimo medido (baja Lambda de ~$0.99 a ~$0.26/mes) salvo
+que se decida pagar el 4x por el ~22% de warm. La mejora de cold es
+atribuible a SnapStart, no a la memoria, asi que se conserva al revertir.
 
 [< Verificacion E2E](08-verificacion-e2e.md) | [README](README.md)

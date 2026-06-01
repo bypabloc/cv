@@ -111,13 +111,18 @@ class TestResolveByLambdaName:
 
         names = available_lambdas()
 
-        # 4 lambdas reales tras spec direct-neon-writes (stream_processor
-        # se elimino: contact_form/tracking_pixel escriben directo a Neon).
+        # 8 lambdas reales tras eliminar SQS y los workers: el async se
+        # hace por invoke Lambda->Lambda (contact_form -> send_email,
+        # tracking_pixel -> tracking_writer), sin colas ni workers SQS.
         assert names == [
+            'auth',
             'contact_form',
             'cv',
             'db',
+            'send_email',
             'tracking_pixel',
+            'tracking_writer',
+            'users',
         ]
 
     def test_resolve_lambda_finds_service_by_manifest_yaml(self):

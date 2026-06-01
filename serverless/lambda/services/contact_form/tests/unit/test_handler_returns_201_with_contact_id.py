@@ -1,13 +1,9 @@
-"""Handler — exito en modo sync legacy devuelve HTTP 201.
+"""Handler — exito devuelve HTTP 201 con el contact_id.
 
-Given ASYNC_MODE=false (rollback path) + un evento API Gateway con un
-     form valido y Turnstile mock success,
+Given un evento API Gateway con un form valido y Turnstile mock success,
 When lambda_handler procesa el evento,
-Then devuelve HTTP 201 con el contact_id en el body y el echo CORS.
-
-Spec lambdas-async-sqs (fase 07): mantiene la garantia del flujo viejo
-para el rollback path. El happy-path async (HTTP 202) se cubre en
-test_handler_returns_202_with_contact_id_in_async_mode.py.
+Then devuelve HTTP 201 con el contact_id en el body y el echo CORS (el
+     contacto se persiste inline a Neon e invoca send_email async).
 """
 
 import json
@@ -24,19 +20,13 @@ pytestmark = pytest.mark.unit
 
 @respx.mock
 def test_handler_returns_201_with_contact_id(
-    monkeypatch: pytest.MonkeyPatch,
     mock_neon_writes: list[dict],
+    mock_invoke: list[dict],
     contact_form_aws: None,
 ) -> None:
     import handler
-    from settings.config import AppConfig
 
-    # Arrange: forzar SYNC mode (legacy). AppConfig.async_mode es atributo
-    # de clase (evaluado en cold start); monkeypatch lo sobrescribe para
-    # el alcance del test. El handler lo lee en cada invocacion para
-    # decidir success_status, asi que no requiere reimport del modulo.
-    monkeypatch.setattr(AppConfig, 'async_mode', False)
-
+    # Arrange: Turnstile success.
     respx.post(TURNSTILE_SITEVERIFY_URL).mock(
         return_value=httpx.Response(
             200, json={'success': True, 'hostname': 'the-full-stack.com'}

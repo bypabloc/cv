@@ -97,8 +97,14 @@ def import_controller(
         }
 
     resolved_operation = resolve_operation(operation, operations)
-    class_name = action.capitalize()
-    module_path = f'controllers.{resolved_operation}.{action}'
+    # Normalizar el action a la convencion del estandar lambda-controller:
+    # `verify-magic-link` -> module `verify_magic_link.py` + clase
+    # `VerifyMagicLink`. El action puede llegar con guiones (URL/JSON),
+    # underscores o ya en PascalCase; se resuelve en ambas variantes.
+    action_snake = action.replace('-', '_')
+    action_segments = [s for s in action.replace('_', '-').split('-') if s]
+    class_name = ''.join(seg[:1].upper() + seg[1:] for seg in action_segments)
+    module_path = f'controllers.{resolved_operation}.{action_snake}'
 
     try:
         module = import_module(module_path)

@@ -42,13 +42,23 @@ _BUILD_DIRNAME = 'build'
 # Nombre del archivo zip del artefacto de deploy.
 _BUILD_ZIP_NAME = 'build.zip'
 
-# Patrones que NO se copian al artefacto (basura local).
+# Patrones que NO se copian al artefacto (basura local). CRITICO:
+# excluir `.venv` y `build` — cada subpaquete de `shared/` tiene su
+# propio `.venv` aislado (uv sync) que pesa >100MB; vendorizarlo
+# infla el artefacto muy por encima del hard limit de 250MB de Lambda.
+# El artefacto solo debe llevar el codigo fuente del subpaquete.
 _IGNORE = shutil.ignore_patterns(
     '__pycache__',
     '*.pyc',
     '*.pyo',
     '.pytest_cache',
     '.mypy_cache',
+    '.ruff_cache',
+    '.venv',
+    'build',
+    'build.zip',
+    '*.egg-info',
+    'dist',
 )
 
 
@@ -214,6 +224,41 @@ def _install_dependencies(
         )
 
 
+# Paquetes que el runtime de AWS Lambda Python YA incluye: NO se
+# bundlean (botocore solo pesa ~80MB descomprimido por los JSON de cada
+# servicio AWS). Excluirlos baja el artefacto bajo el hard limit de
+# 250MB sin perder funcionalidad — el `import boto3` en runtime resuelve
+# al boto3 del runtime. Solo boto3 + botocore: el resto de la cadena
+# (s3transfer, jmespath, urllib3, python-dateutil) la comparten otras
+# libs y pesan poco, asi que se mantienen para no romper imports.
+_RUNTIME_PROVIDED = ('boto3', 'botocore')
+
+
+def _prune_runtime_provided(target: Path) -> list[str]:
+    """Elimina del `target` los paquetes que el runtime de Lambda provee.
+
+    Borra el paquete (carpeta `<pkg>/`) y sus metadatos
+    (`<pkg>-*.dist-info/`, `<pkg>.libs/`). Devuelve la lista de entradas
+    borradas (para log/auditoria). Idempotente: ignora lo que no exista.
+    """
+    removed: list[str] = []
+    for pkg in _RUNTIME_PROVIDED:
+        pkg_dir = target / pkg
+        if pkg_dir.is_dir():
+            shutil.rmtree(pkg_dir)
+            removed.append(pkg)
+        # dist-info + .libs (wheels con binarios): `<pkg>-<ver>.dist-info`,
+        # `<pkg>.libs`.
+        for extra in (
+            *target.glob(f'{pkg}-*.dist-info'),
+            *target.glob(f'{pkg}.libs'),
+        ):
+            if extra.is_dir():
+                shutil.rmtree(extra)
+                removed.append(extra.name)
+    return removed
+
+
 def _check_dep_dedup(lambda_root: Path) -> None:
     """Aborta el build si el lambda duplica deps del cierre de `shared/`.
 
@@ -299,6 +344,12 @@ def package_lambda(
         target=target,
         python_version=_resolve_python_target(runtime),
     )
+
+    # Poda los paquetes que el runtime de Lambda ya provee (boto3 +
+    # botocore): evita ~100MB de artefacto innecesario.
+    pruned = _prune_runtime_provided(target)
+    if pruned:
+        print(f'  poda runtime-provided: {", ".join(pruned)}')
 
     # Copia el codigo del lambda: core/ -> build/core/.
     shutil.copytree(

@@ -6,7 +6,7 @@ Then el dict resultante NO contiene esas claves (AC-1).
 
 from __future__ import annotations
 
-from shared.dynamodb import ContactItem
+from shared.dynamodb.models.contact import ContactItem
 
 
 def test_to_item_omits_none_optional_fields() -> None:

@@ -59,7 +59,7 @@ python devtools/run.py serverless sync-secrets --stage=dev --aws-profile=tfs-dev
 | Archivo | Path SSM | Tipo | Stages | Required |
 |---------|----------|------|--------|----------|
 | `turnstile-secret.yaml` | `/portfolio/${stage}/turnstile-secret` | SecureString | dev,stage,prod | true |
-| `turnstile-bypass-secret.yaml` | `/portfolio/dev/turnstile-bypass-secret` | SecureString | dev | false |
+| `turnstile-bypass-public-key.yaml` | `/portfolio/${stage}/turnstile-bypass-public-key` | String | dev,stage | false |
 | `neon-url.yaml` | `/portfolio/${stage}/neon-url` | SecureString | dev,stage,prod | true |
 | `owner-email.yaml` | `/portfolio/owner-email` | String | dev,stage,prod | true |
 | `ses-from-address.yaml` | `/portfolio/ses-from-address` | String | dev,stage,prod | true |

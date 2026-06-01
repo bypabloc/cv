@@ -11,15 +11,17 @@
 
 # --- Identidad ---
 name: contact-form
-description: Encoder del form de contacto (valida + Turnstile + encola SQS).
+description: Form de contacto (valida + Turnstile + escribe Neon inline + invoke send_email).
 
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 384       # MB — 256 daba poca CPU al handler (INIT ~200MB).
-                  # 384 sostiene Turnstile siteverify + DDB rate-limit
-                  # + SQS publish con holgura.
-timeout: 15       # segundos — incluye Turnstile siteverify HTTP (1-2s)
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 para medir warm/cold con
+                  # CPU x4. Minimo medido previo: 256 (footprint Neon 157 MB;
+                  # 128 NO por headroom). REVERTIR al minimo tras medir si la
+                  # mejora no lo justifica. Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme (cold sin restore + Turnstile).
 
 # SnapStart: reduce cold start de 3.4s a ~830ms (Restore Duration).
 # Cuando true, cada deploy hace publish-version + update-alias `live`,
@@ -38,34 +40,33 @@ trigger:
 # --- Que recursos del backend usa ---
 # devtools traduce esto a los permisos IAM y los imports necesarios.
 uses:
-  # Cola SQS hacia donde el encoder publica el mensaje cuando
-  # ASYNC_MODE=true. devtools concede sqs:SendMessage al rol IAM y
-  # inyecta SSM_CONTACT_FORM_QUEUE_URL_PATH al runtime.
-  queues:
-    - name: portfolio-contact-form-${stage}
-      access: producer
+  # Lambdas que invoca async (InvocationType='Event', fire-and-forget).
+  # devtools concede lambda:InvokeFunction al rol IAM e inyecta
+  # LAMBDA_SEND_EMAIL_FUNCTION_NAME al runtime. Reemplaza la cola SQS:
+  # el contacto se escribe a Neon INLINE en el request y el email al
+  # owner se delega a send_email (best-effort, no bloquea el 201).
+  invokes:
+    - send_email
   # Tablas DynamoDB que el Lambda lee/escribe. Acceso: read | write | read-write
-  # Spec direct-neon-writes: la tabla `contacts` ya no se usa — el Lambda
-  # escribe directo a Neon (`contacts`). Solo quedan las tablas de
-  # infraestructura (cache + rate-limit).
+  # El Lambda escribe el contacto directo a Neon (`contacts`); en DynamoDB
+  # solo quedan las tablas de infraestructura (cache + rate-limit).
   tables:
     cache: read-write              # @cached
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
-  # Secretos que el Lambda lee (de SSM). Solo el nombre corto.
-  # NOTA: owner-email, ses-from-address y neon-url SOLO los necesita el
-  # flujo sync legacy (ASYNC_MODE=false). Mientras dure el feature flag
-  # se mantienen aqui para que el rollback siga funcionando; una vez que
-  # el flag se deprecque, se borraran de la lista (y los permisos IAM con
-  # ellos).
+  # Params SSM que el Lambda lee en runtime (String o SecureString; el
+  # catalogo resources/secrets/*.yaml define el tipo). El IAM concede
+  # ssm:GetParameter sobre cada path.
   secrets:
-    - turnstile-secret        # validacion del captcha Cloudflare Turnstile
-    - turnstile-bypass-secret # bypass de Turnstile para tests E2E (solo dev)
-    - owner-email             # destinatario (solo sync legacy)
-    - ses-from-address        # remitente verificado SES (solo sync legacy)
-    - neon-url                # connection string Neon (solo sync legacy)
-  # Envia email transaccional por SES al recibir un form (solo en sync).
-  sends-email: true
+    - turnstile-secret             # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-public-key  # clave PUBLICA Ed25519 (String) para
+                                   # verificar el token de bypass de tests
+                                   # E2E (solo dev/stage; la PRIVADA es local)
+    - owner-email                  # destinatario del email al owner (recipients)
+    - neon-url                     # connection string Neon (escritura inline)
+  # El email transaccional ya NO lo manda este Lambda: lo delega a
+  # send_email via invoke async. Por eso sends-email: false (sin permiso SES).
+  sends-email: false
 
 # --- Variables de entorno por stage ---
 # CORS_ALLOWED_ORIGINS define la whitelist de origins permitidos por
@@ -75,24 +76,20 @@ uses:
 # siteverify rechaza con CAPTCHA_HOSTNAME_MISMATCH (defensa contra
 # widget hijacking). Misma whitelist que tracking_pixel y cv.
 #
-# ASYNC_MODE ('true' / 'false') decide en runtime si el Lambda actua
-# como ENCODER (publica a SQS + 202, default) o SYNC LEGACY (Neon+SES+
-# 201, rollback). Se evalua una vez por cold start via AppConfig; los
-# rollouts/rollback se hacen flipeando este valor + redeploy.
+# El Lambda escribe el contacto a Neon INLINE en el request (HTTP 201) y
+# delega el email al owner a send_email via invoke async. Sin SQS, sin
+# ASYNC_MODE: el flujo es uno solo. AWS_SES_REGION ya no aplica (no manda
+# SES). El nombre de send_email lo inyecta devtools como
+# LAMBDA_SEND_EMAIL_FUNCTION_NAME (derivado de uses.invokes).
 env:
   default:
     LOG_LEVEL: INFO
-    AWS_SES_REGION: us-east-1
-    ASYNC_MODE: 'true'
   dev:
     LOG_LEVEL: INFO
-    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
   stage:
     LOG_LEVEL: INFO
-    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
-    ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

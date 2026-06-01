@@ -7,7 +7,7 @@ Then devuelve None (cache MISS).
 from __future__ import annotations
 
 import pytest
-from shared.cache import DynamoDBCache
+from shared.cache.client import DynamoDBCache
 
 pytestmark = pytest.mark.integration
 

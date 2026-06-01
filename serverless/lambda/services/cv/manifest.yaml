@@ -11,8 +11,18 @@ description: Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv.
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB
-timeout: 30       # segundos
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 para medir warm/cold con
+                  # CPU x4. OJO: el handler de cv es Neon-I/O-bound; la palanca
+                  # real es la query (1 sesion), NO la memoria. Minimo medido
+                  # previo: 256 (usa 165 MB). REVERTIR al minimo tras medir.
+                  # Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme (cold sin restore + query).
+
+# SnapStart: el handler precalienta engine + configure_mappers en el INIT
+# (warm_db); el snapshot los captura y el restore evita el costo CPU del
+# primer query. Habilitado para bajar la memoria sin penalizar el cold.
+snap_start: true
 
 # --- Trigger HTTP ---
 trigger:

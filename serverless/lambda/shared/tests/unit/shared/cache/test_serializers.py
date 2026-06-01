@@ -6,7 +6,6 @@ import json
 from decimal import Decimal
 
 import pytest
-
 from shared.cache.serializers import SerializationError, deserialize, serialize
 
 pytestmark = pytest.mark.unit

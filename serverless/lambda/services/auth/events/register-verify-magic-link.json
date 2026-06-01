@@ -1,0 +1,18 @@
+{
+  "httpMethod": "POST",
+  "path": "/auth",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://admin.portfolio.dev.the-full-stack.com",
+    "CF-Connecting-IP": "203.0.113.10"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": "{\"operation\":\"register\",\"action\":\"verify-magic-link\",\"data\":{\"token\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "identity": { "sourceIp": "203.0.113.10" },
+    "requestId": "local-request-id",
+    "stage": "dev"
+  }
+}

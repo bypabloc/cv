@@ -38,12 +38,21 @@ class DispatchResult:
     stage : str
         Fase donde termino: `validation` (fallo resolver/validar el
         evento) o `controller` (el controller se ejecuto).
+    status : int | None
+        HTTP status explicito que el controller pide para esta respuesta
+        (ej. 404, 409, 423, 429 en errores de negocio; 204 en exito sin
+        body). `None` -> el http_handler usa su default (`success_status`
+        en exito, 400 en error de negocio sin status). Permite que un
+        controller exprese el status HTTP exacto sin tener que levantar
+        una ApplicationError. Los handlers no-HTTP (SQS workers) lo
+        ignoran.
     """
 
     is_valid: bool
     data: dict[str, Any]
     code: int
     stage: str
+    status: int | None = None
 
 
 def run_controller(
@@ -88,4 +97,5 @@ def run_controller(
         data=result.get('data', {}),
         code=result.get('code', 0),
         stage='controller',
+        status=result.get('status'),
     )

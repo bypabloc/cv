@@ -17,7 +17,7 @@ pytestmark = pytest.mark.unit
 def test_track_controller_normalizes_rate_limit_error(tracking_aws: None):
     from controllers.tracking.track import Track
     from settings.config import ErrorCode
-    from shared.rate_limit import RateLimitExceededError
+    from shared.rate_limit.exceptions import RateLimitExceededError
 
     # Arrange
     event = {

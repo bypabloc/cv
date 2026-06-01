@@ -1,0 +1,6 @@
+Tu enlace de acceso a The Full Stack
+
+Usa este enlace para iniciar sesión:
+{{ verify_url }}
+
+Expira en {{ expires_in_min }} minutos.

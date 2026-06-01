@@ -55,6 +55,11 @@ os.environ.setdefault(
 )
 os.environ.setdefault('POWERTOOLS_SERVICE_NAME', 'tracking-pixel-test')
 os.environ.setdefault('POWERTOOLS_METRICS_NAMESPACE', 'PortfolioTest')
+# Nombre del Lambda tracking_writer que el encoder invoca async (lo
+# inyecta devtools en runtime desde uses.invokes; aqui un valor fijo).
+os.environ.setdefault(
+    'LAMBDA_TRACKING_WRITER_FUNCTION_NAME', 'portfolio-tracking-writer-test'
+)
 
 
 @pytest.fixture(autouse=True)
@@ -221,21 +226,21 @@ def async_mode(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def captured_queue(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
-    """Captura las llamadas a `send_to_queue` del encoder async.
+def captured_invoke(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura los invokes async a `tracking_writer` del encoder.
 
-    Reemplaza `shared.queue.send_to_queue` (importado en
-    `services.tracking_service` como `send_to_queue`) por un fake que
-    registra cada kwargs y retorna un MessageId predecible.
+    Reemplaza `shared.aws.lambda_invoke.invoke_async` (importado en
+    `services.tracking_service` como `invoke_async`) por un fake que
+    registra `{function_name, payload}` de cada invoke. El `payload`
+    lleva `{operation, action, data}` (data = el mensaje del evento).
     """
     captured: list[dict] = []
 
-    def _fake_send_to_queue(**kwargs: object) -> str:
-        captured.append(dict(kwargs))
-        return 'fake-message-id-0001'
+    def _fake_invoke(*, function_name: str, payload: dict) -> None:
+        captured.append({'function_name': function_name, 'payload': payload})
 
     monkeypatch.setattr(
-        'services.tracking_service.send_to_queue', _fake_send_to_queue
+        'services.tracking_service.invoke_async', _fake_invoke
     )
     return captured
 

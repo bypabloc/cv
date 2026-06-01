@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from shared.lambda_kit import extract_request
+from shared.lambda_kit.http_dispatch import extract_request
 
 pytestmark = pytest.mark.unit
 

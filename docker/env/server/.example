@@ -19,10 +19,11 @@
 # SSM: /portfolio/${stage}/turnstile-secret
 TURNSTILE_SECRET_KEY=
 
-# --- turnstile-bypass-secret.yaml (SecureString, solo dev) ---
-# Bypass token para Playwright E2E. Generar: openssl rand -hex 32
-# SSM: /portfolio/dev/turnstile-bypass-secret
-TURNSTILE_BYPASS_SECRET=
+# --- turnstile-bypass-public-key.yaml (String, dev/stage) ---
+# Clave PUBLICA Ed25519 que verifica el bypass token de los tests E2E.
+# NO es secreta. La genera `bypass_token keygen` (la PRIVADA va a dev-cli,
+# nunca aca). SSM: /portfolio/${stage}/turnstile-bypass-public-key
+TURNSTILE_BYPASS_PUBLIC_KEY=
 
 # --- neon-url.yaml (SecureString) ---
 # Neon PostgreSQL connection string completa (pooled, sslmode=require)
@@ -43,6 +44,12 @@ EMAIL_FROM=
 # Display name del remitente en emails SES.
 # SSM: /portfolio/ses-from-name
 EMAIL_FROM_NAME=
+
+# --- admin-emails.yaml (SecureString) ---
+# Lista coma-separada de emails admin (whitelist del scope admin.* del
+# Lambda users). Rotar admins = editar este valor + sync_secrets.
+# SSM: /portfolio/${stage}/admin-emails
+ADMIN_EMAILS=
 
 # === Variables NO catalogadas (inline en manifest.yaml de cada Lambda) =====
 
@@ -78,3 +85,9 @@ DB_CHANNEL_BINDING=require
 DB_HOST=
 # DB_PASSWORD esta embebida en DB_URL; declararla aparte es opcional.
 DB_PASSWORD=
+
+# --- jwt-secret.yaml (SecureString) ---
+# HS256 secret del dominio auth (firma/verifica temp/access/refresh).
+# Generar: python -c "import secrets; print(secrets.token_urlsafe(64))"
+# SSM: /portfolio/${stage}/jwt-secret
+JWT_SECRET=

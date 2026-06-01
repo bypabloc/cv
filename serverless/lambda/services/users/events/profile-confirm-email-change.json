@@ -1,0 +1,21 @@
+{
+  "httpMethod": "POST",
+  "path": "/users",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://admin.portfolio.dev.the-full-stack.com",
+    "CF-Connecting-IP": "203.0.113.10",
+    "CF-IPCountry": "CL"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": "{\"operation\": \"profile\", \"action\": \"confirm-email-change\", \"data\": {\"token\": \"REPLACE_WITH_REAL_MAGIC_LINK_TOKEN\"}}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "identity": {
+      "sourceIp": "203.0.113.10"
+    },
+    "requestId": "local-request-id",
+    "stage": "dev"
+  }
+}

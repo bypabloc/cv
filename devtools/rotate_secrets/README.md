@@ -46,12 +46,13 @@ Cada widget cubre los hostnames del estandar de subdominios
 
 Para cada env target:
 
-- `docker/env/server/.{env}` <- `TURNSTILE_SECRET_KEY`, `TURNSTILE_BYPASS_SECRET`
+- `docker/env/server/.{env}` <- `TURNSTILE_SECRET_KEY`
 - `docker/env/client/.{env}` <- `PUBLIC_TURNSTILE_SITEKEY`, `TURNSTILE_SITE_KEY`
 
-El `TURNSTILE_BYPASS_SECRET` se genera localmente con
-`secrets.token_hex(32)` (no es Cloudflare; es solo para Playwright E2E).
-Cada env recibe su propio bypass.
+El bypass de Turnstile para tests E2E ya NO se gestiona aca: es un token
+Ed25519 firmado cuyas claves genera `bypass_token keygen` (ver
+`devtools/bypass_token/README.md`). Este script solo rota el secret REAL
+del widget Cloudflare + el sitekey publico.
 
 ### Ejemplos
 

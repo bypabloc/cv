@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import time
 
-from shared.dynamodb import RateLimitRuleItem
+from shared.dynamodb.models.rate_limit_rule import RateLimitRuleItem
 
 # Threshold: 3+ tokens validos en 60s = sospechoso
 AUTO_BLACKLIST_THRESHOLD = 3
@@ -72,3 +72,17 @@ def create_blacklist_rule(
             'window_seconds': AUTO_BLACKLIST_WINDOW_SECONDS,
         },
     ).save()
+
+    # Invalida el cache de rules: get_ip_rule esta @cached(ttl=60,
+    # stale_for=300) y pudo cachear un None (IP sin rule) en las requests
+    # previas del bot. Sin esta invalidacion la blacklist recien creada no
+    # surte efecto hasta 60-360s despues y el bot sigue pasando.
+    # Best-effort: un fallo de invalidacion no debe abortar el bloqueo.
+    try:
+        from shared.cache.client import DynamoDBCache
+
+        DynamoDBCache().invalidate(tag='rate-limit-rules')
+    except Exception:
+        from shared.observability.logger import logger
+
+        logger.warning('rate-limit cache invalidation failed after blacklist')

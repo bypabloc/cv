@@ -10,9 +10,10 @@ Si no esta vendorizada (pytest invocado directo), este conftest agrega
 `serverless/` al path como fallback para que `import shared...` resuelva
 desde la fuente maestra `serverless/lambda/shared/`.
 
-Setea las env vars minimas que `AppConfig` (settings/config.py) y el
-codigo del Lambda necesitan, y expone el fixture `contact_form_aws` que
-monta el entorno AWS mockeado (DynamoDB + SSM + SES) con moto.
+Setea las env vars minimas que el codigo del Lambda necesita, y expone
+el fixture `contact_form_aws` que monta el entorno AWS mockeado (DynamoDB
++ SSM) con moto. El email al owner se delega a `send_email` via invoke
+async; los tests lo capturan con el fixture `mock_invoke`.
 """
 
 import os
@@ -41,9 +42,13 @@ os.environ.setdefault('ENVIRONMENT', 'dev')
 os.environ.setdefault('TESTING', '1')
 os.environ.setdefault('AWS_REGION', 'us-east-1')
 os.environ.setdefault('AWS_DEFAULT_REGION', 'us-east-1')
-os.environ.setdefault('AWS_SES_REGION', 'us-east-1')
 os.environ.setdefault('POWERTOOLS_SERVICE_NAME', 'contact-form-test')
 os.environ.setdefault('POWERTOOLS_METRICS_NAMESPACE', 'PortfolioTest')
+# Nombre del Lambda send_email que el service invoca async (lo inyecta
+# devtools en runtime desde uses.invokes; aqui un valor determinista).
+os.environ.setdefault(
+    'LAMBDA_SEND_EMAIL_FUNCTION_NAME', 'portfolio-send-email-test'
+)
 
 
 @pytest.fixture(autouse=True)
@@ -68,13 +73,12 @@ def contact_form_aws(
     """Monta el entorno AWS mockeado del Lambda contact_form.
 
     Crea con moto las tablas DynamoDB (cache, rate-limit-rules,
-    rate-limit-buckets), los parametros SSM (turnstile-secret,
-    owner-email, ses-from-address), la identidad SES y la cola SQS
-    `portfolio-contact-form-test` (encoder ASYNC_MODE).
+    rate-limit-buckets) y los parametros SSM (turnstile-secret,
+    owner-email).
 
-    Setea las env vars que apuntan a esos recursos. Spec
-    lambdas-async-sqs (fase 07): el encoder publica a SQS, asi que la
-    cola debe existir en los tests aunque el flujo sync no la use.
+    Setea las env vars que apuntan a esos recursos. El email al owner se
+    delega a `send_email` via invoke async (sin SQS, sin SES directo); los
+    tests lo capturan con el fixture `mock_invoke`.
     """
     # CONTACTS_TABLE_NAME se elimino (spec direct-neon-writes): el Lambda
     # ya no escribe a DynamoDB.contacts. La connection string de Neon va
@@ -93,9 +97,6 @@ def contact_form_aws(
     )
     monkeypatch.setenv('SSM_OWNER_EMAIL_PATH', '/portfolio-test/owner-email')
     monkeypatch.setenv(
-        'SSM_SES_FROM_ADDRESS_PATH', '/portfolio-test/ses-from-address'
-    )
-    monkeypatch.setenv(
         'CORS_ALLOWED_ORIGINS',
         'https://the-full-stack.com,'
         'https://www.the-full-stack.com,'
@@ -104,12 +105,6 @@ def contact_form_aws(
         'https://architect.portfolio.the-full-stack.com,'
         'https://leader.portfolio.the-full-stack.com,'
         'https://vibe.portfolio.the-full-stack.com',
-    )
-    # SSM path donde vive la URL de la cola SQS (resolver del
-    # shared.queue espera SSM_<UPPER_SNAKE>_QUEUE_URL_PATH).
-    monkeypatch.setenv(
-        'SSM_CONTACT_FORM_QUEUE_URL_PATH',
-        '/portfolio-test/sqs/contact-form/url',
     )
 
     with mock_aws():
@@ -165,34 +160,11 @@ def contact_form_aws(
             Value='owner@example.com',
             Type='String',
         )
-        ssm.put_parameter(
-            Name='/portfolio-test/ses-from-address',
-            Value='no-reply@the-full-stack.com',
-            Type='String',
-        )
 
-        ses = boto3.client('sesv2', region_name='us-east-1')
-        ses.create_email_identity(EmailIdentity='the-full-stack.com')
-        ses.create_email_identity(EmailIdentity='no-reply@the-full-stack.com')
+        # shared.aws.ssm cachea el SSM resolver. Limpiar la cache para que
+        # el fixture aisle el estado entre tests.
+        import shared.aws.ssm as _ssm_mod
 
-        # Cola SQS del encoder (ASYNC_MODE=true). Su URL se publica en
-        # SSM bajo el path declarado en SSM_CONTACT_FORM_QUEUE_URL_PATH.
-        sqs = boto3.client('sqs', region_name='us-east-1')
-        queue_url = sqs.create_queue(
-            QueueName='portfolio-contact-form-test',
-        )['QueueUrl']
-        ssm.put_parameter(
-            Name='/portfolio-test/sqs/contact-form/url',
-            Value=queue_url,
-            Type='String',
-        )
-
-        # shared.queue cachea el SQS client + el SSM resolver. Limpiar
-        # las caches para que el fixture aisle el estado entre tests.
-        from shared.aws import ssm as _ssm_mod
-        from shared.queue.client import get_sqs_client
-
-        get_sqs_client.cache_clear()
         if hasattr(_ssm_mod, 'get_secret') and hasattr(
             _ssm_mod.get_secret,
             'cache_clear',
@@ -202,38 +174,29 @@ def contact_form_aws(
         yield
 
 
-_SQS_QUEUE_URL = (
-    'https://sqs.us-east-1.amazonaws.com/123456789012/'
-    'portfolio-contact-form-test'
-)
-"""URL determinista de la cola SQS (la real la asigna moto)."""
-
-
 @pytest.fixture
-def mock_sqs(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
-    """Captura los payloads publicados via `shared.queue.send_to_queue`.
+def mock_invoke(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Captura los invokes async a `send_email` via `invoke_async`.
 
-    Mockea el helper en `services.contact_service` para evitar tocar
-    SQS en los tests unit del encoder. El test puede inspeccionar el
-    payload exacto que el encoder armaria para el worker.
+    Mockea `services.contact_service.invoke_async` para evitar tocar
+    Lambda en los tests unit. El test inspecciona el payload exacto que
+    el service arma para `send_email` (kind=contact).
 
     Returns
     -------
     list[dict]
-        Lista de payloads (dict) que el encoder envio. El test asserta
-        len(captured) y el shape del primero.
+        Lista de `{function_name, payload}` que el service invoco. El
+        test asserta len(captured) y el shape del primero.
     """
     captured: list[dict] = []
-    counter = {'n': 0}
 
-    def _fake_send(*, queue_short_name: str, payload: dict, **_kw) -> str:
-        captured.append({'queue': queue_short_name, 'payload': payload})
-        counter['n'] += 1
-        return f'fake-msg-id-{counter["n"]:08d}'
+    def _fake_invoke(*, function_name: str, payload: dict) -> str:
+        captured.append({'function_name': function_name, 'payload': payload})
+        return 'fake-invoke-request-id'
 
     monkeypatch.setattr(
-        'services.contact_service.send_to_queue',
-        _fake_send,
+        'services.contact_service.invoke_async',
+        _fake_invoke,
     )
     return captured
 

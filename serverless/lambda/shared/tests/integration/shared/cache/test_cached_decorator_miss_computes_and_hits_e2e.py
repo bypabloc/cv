@@ -8,7 +8,7 @@ Then la primera computa (MISS) y la segunda sirve del cache (HIT),
 from __future__ import annotations
 
 import pytest
-from shared.cache import cached
+from shared.cache.decorator import cached
 
 pytestmark = pytest.mark.integration
 

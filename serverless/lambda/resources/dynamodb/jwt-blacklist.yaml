@@ -1,0 +1,29 @@
+# Esquema devtools — NO CloudFormation: esquema plano, sin funciones
+# intrinsecas. devtools lo lee y emite las llamadas AWS CLI.
+#
+# DynamoDB jwt-blacklist: blacklist de JWTs (temp/access/refresh) con
+# TTL=exp para que AWS borre los items expirados sin WCU.
+#
+# El GSI by_family_id soporta el flujo de token-reuse detection del
+# Lambda auth: cuando llega un refresh con jti ya blacklisted, se
+# hace Query GSI con KeyConditionExpression='family_id = :fid' (returns
+# [jti, ...]) y se blacklisteam TODOS los jti de la familia con
+# BatchWriteItem. Projection=KEYS_ONLY: solo necesitamos jti para
+# revocar (no NonKeyAttributes).
+kind: dynamodb-table
+name: portfolio-jwt-blacklist-${stage}
+billing_mode: PAY_PER_REQUEST
+hash_key: { name: jti, type: S }
+range_key: null
+stream: null
+point_in_time_recovery: false
+encryption: true
+ttl_attribute: exp
+global_secondary_indexes:
+  - name: by_family_id
+    hash_key: { name: family_id, type: S }
+    projection: KEYS_ONLY
+publishes_ssm:
+  name: /portfolio/${stage}/dynamodb/jwt-blacklist/name
+  arn: /portfolio/${stage}/dynamodb/jwt-blacklist/arn
+tags: { Project: portfolio, Module: auth, ManagedBy: devtools }

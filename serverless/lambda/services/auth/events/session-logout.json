@@ -1,0 +1,19 @@
+{
+  "httpMethod": "POST",
+  "path": "/auth",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://admin.portfolio.dev.the-full-stack.com",
+    "CF-Connecting-IP": "203.0.113.10",
+    "Authorization": "Bearer FAKE-TOKEN-FOR-LOCAL-RUN-NOT-A-REAL-JWT-XXXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": "{\"operation\":\"session\",\"action\":\"logout\",\"data\":{\"access_token\":\"FAKE-TOKEN-FOR-LOCAL-RUN-NOT-A-REAL-JWT-XXXXXXXXXXXXXXXXXXXXXXXX\"}}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "identity": { "sourceIp": "203.0.113.10" },
+    "requestId": "local-request-id",
+    "stage": "dev"
+  }
+}

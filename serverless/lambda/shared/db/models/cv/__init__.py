@@ -6,52 +6,9 @@ Renames respecto al schema previo:
 - `Reference` -> `Endorsement` (tabla `cv_endorsements`, `references` es
   palabra reservada SQL)
 - `ReferenceNiche` -> `EndorsementNiche`
+
+Vaciado a proposito: sin re-exports (no-barrel). Los consumidores
+importan del modulo concreto (`from shared.db.models.<dom>.<mod>
+import <Clase>`). Lo enforza el conformance `serverless lint-deps`.
+Ver `.claude/rules/lambda-shared-imports.md`.
 """
-
-from .cv_entity import (
-    Award,
-    AwardNiche,
-    Certificate,
-    CertificateNiche,
-    Endorsement,
-    EndorsementNiche,
-    Language,
-    LanguageNiche,
-    Publication,
-    PublicationNiche,
-)
-from .education import EducationEntry, EducationEntryNiche
-from .experience import (
-    Experience,
-    ExperienceBullet,
-    ExperienceNiche,
-    ExperienceSkill,
-)
-from .profile import Profile, ProfileNiche, ProfileStats
-from .project import (
-    Project,
-    ProjectCaseStudy,
-    ProjectMetric,
-    ProjectNiche,
-    ProjectTechTag,
-)
-from .skill import (
-    Skill,
-    SkillCategory,
-    SkillCategoryNiche,
-    SkillCategorySkill,
-)
-
-__all__ = [
-    'Award', 'AwardNiche',
-    'Certificate', 'CertificateNiche',
-    'EducationEntry', 'EducationEntryNiche',
-    'Endorsement', 'EndorsementNiche',
-    'Experience', 'ExperienceBullet', 'ExperienceNiche', 'ExperienceSkill',
-    'Language', 'LanguageNiche',
-    'Profile', 'ProfileNiche', 'ProfileStats',
-    'Project', 'ProjectCaseStudy', 'ProjectMetric',
-    'ProjectNiche', 'ProjectTechTag',
-    'Publication', 'PublicationNiche',
-    'Skill', 'SkillCategory', 'SkillCategoryNiche', 'SkillCategorySkill',
-]

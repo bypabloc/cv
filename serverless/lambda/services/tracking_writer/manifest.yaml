@@ -1,0 +1,57 @@
+# Manifiesto del Lambda `tracking_writer` — fuente de verdad de su config.
+#
+# Writer async (refactor cold-start, sin SQS): lo invoca el encoder
+# `tracking_pixel` con `InvocationType='Event'` (1 evento por invoke) y
+# persiste el evento en Neon (`tracking_events`) con ON CONFLICT DO NOTHING
+# (idempotente bajo reintentos del invoke async).
+#
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=tracking_writer
+
+# --- Identidad ---
+name: tracking-writer
+description: Persiste 1 evento de tracking en Neon (invoke async, idempotente).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 para medir con CPU x4.
+                  # Escribe a Neon (sqlalchemy+psycopg). Minimo medido previo:
+                  # 256. REVERTIR tras medir. Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme (INSERT Neon + wake).
+
+# SnapStart: snapshotea el INIT (imports + engine NullPool + mappers del
+# dominio visitor) para bajar el cold del invoke async.
+snap_start: true
+
+# --- Como se invoca este Lambda ---
+# direct: lo invoca otro Lambda (tracking_pixel) con InvocationType='Event'.
+# No expone endpoint HTTP ni consume cola: el evento llega como payload del
+# invoke en el contrato {operation, action, data}.
+trigger:
+  type: direct
+
+# --- Que recursos del backend usa ---
+uses:
+  # Tabla DynamoDB usada por el `@cached` del parsing de User-Agent
+  # (mismo namespace `ua` que el tracking_pixel — cache compartido para
+  # warm hits inter-Lambda).
+  tables:
+    cache: read-write
+  # neon-url: connection string del Neon ${stage} (escritura directa
+  # idempotente con ON CONFLICT del INSERT en tracking_events).
+  secrets:
+    - neon-url
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+  dev:
+    LOG_LEVEL: INFO
+  stage:
+    LOG_LEVEL: INFO
+  prod:
+    LOG_LEVEL: WARNING

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from shared.cache.swr import classify_status
 from shared.cache.types import CacheEntry, CacheStatus
 

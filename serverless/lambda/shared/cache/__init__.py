@@ -1,28 +1,8 @@
+"""Subpaquete `cache`: Cache DynamoDB con TTL, SWR y lock distribuido.
+
+Subpaquete SIN barrel: este `__init__` NO re-exporta nada. Importar
+SIEMPRE del modulo concreto (contrato `.claude/rules/lambda-shared-imports.md`):
+
+    from shared.cache.decorator import cached
+    from shared.cache.client import DynamoDBCache
 """
-Cache module para Lambdas: DynamoDB TTL + SWR + lock distribuido.
-
-Patron consolidado en `.claude/docs/dynamodb-cache/`. Reusable por todas
-las Lambdas del backend.
-
-Uso ergonomico (decorator):
-
-    from shared.cache import cached
-
-    @cached(ttl=300, namespace='ssm', tags=['secrets'])
-    def get_turnstile_secret() -> str:
-        return ssm.get_parameter('/portfolio/turnstile-secret')['Value']
-
-Uso bajo nivel (cliente directo):
-
-    from shared.cache import DynamoDBCache
-
-    cache = DynamoDBCache(table_name='portfolio-cache-dev')
-    cache.set('key', 'value', ttl=60)
-    val = cache.get('key')
-"""
-
-from shared.cache.client import DynamoDBCache
-from shared.cache.decorator import cached
-from shared.cache.types import CacheEntry, CacheStatus
-
-__all__ = ['CacheEntry', 'CacheStatus', 'DynamoDBCache', 'cached']

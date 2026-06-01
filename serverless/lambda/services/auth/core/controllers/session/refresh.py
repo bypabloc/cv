@@ -1,0 +1,216 @@
+"""Controller `session.refresh` — rota el refresh JWT (access + refresh nuevos).
+
+Verifica el refresh JWT (typ='refresh'). Si el jti ya esta blacklisted
+es un REUSO: revoca toda la familia (token theft detection, AC-8). Si es
+valido, rota: blacklistea el refresh viejo y emite un par access+refresh
+nuevo con el MISMO family_id.
+
+AC cubiertos: AC-7 (rotation), AC-8 (reuse detection), AC-10 (invalid).
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from models.session import SessionRefreshIn
+from services.audit_service import AuditService
+from services.jwt_service import JwtService
+from services.rate_limit_service import RateLimitService
+from services.session_tracking_service import SessionTrackingService
+from services.user_service import UserService
+from settings.config import app_config
+from shared.auth.jwt import JwtExpiredError, JwtInvalidError
+from shared.lambda_kit.base_controller import BaseController
+
+_ENDPOINT = '/auth#session.refresh'
+
+
+class Refresh(BaseController):
+    """Rota el refresh JWT (action `refresh`)."""
+
+    event_model = SessionRefreshIn
+
+    def validate(self) -> dict[str, Any]:
+        """Pydantic + rate-limit. Sin Turnstile."""
+        base = super().validate()
+        if not base.get('is_valid'):
+            return base
+
+        data: SessionRefreshIn = (
+            self.validated_data  # type: ignore[assignment]
+        )
+        meta = data.meta
+        RateLimitService(app_config).check_or_raise(
+            ip=meta.ip or '',
+            endpoint=_ENDPOINT,
+            country=meta.country,
+            turnstile_validated=True,
+        )
+        return base
+
+    def execute(self) -> dict[str, Any]:
+        """Verifica refresh, detecta reuso o rota.
+
+        Returns:
+            En exito: `{is_valid: True, code: 0, data: {access_token,
+            refresh_token, expires_in}}`.
+            Reuso detectado: 401 TOKEN_REUSE_DETECTED + familia revocada
+            (AC-8).
+            Invalido / expirado: 401 (AC-10).
+        """
+        data: SessionRefreshIn = (
+            self.validated_data  # type: ignore[assignment]
+        )
+        meta = data.meta
+
+        jwt_svc = JwtService(app_config)
+        audit_svc = AuditService(app_config)
+
+        # Verifica signature + exp + typ SIN chequear blacklist: necesitamos
+        # el family_id del refresh aunque este revocado, para poder revocar
+        # toda la familia en el caso de reuso.
+        try:
+            claims = jwt_svc.verify_allow_revoked(
+                data.refresh_token,
+                expected_typ='refresh',
+            )
+        except JwtExpiredError:
+            audit_svc.log(
+                event='session.refresh',
+                success=False,
+                error_code='REFRESH_EXPIRED',
+                ip=meta.ip,
+            )
+            return {
+                'is_valid': False,
+                'code': 4003,
+                'status': 401,
+                'data': {'error': 'REFRESH_EXPIRED'},
+            }
+        except JwtInvalidError:
+            audit_svc.log(
+                event='session.refresh',
+                success=False,
+                error_code='TOKEN_INVALID',
+                ip=meta.ip,
+            )
+            return {
+                'is_valid': False,
+                'code': 4003,
+                'status': 401,
+                'data': {'error': 'TOKEN_INVALID'},
+            }
+
+        # Reuso detectado en 2 casos (AC-8 — "revocar TODA la familia"):
+        #  a) el jti de ESTE refresh ya esta blacklisted (fue rotado y se
+        #     re-presenta): reuso clasico de un token viejo.
+        #  b) la FAMILIA ya fue revocada por un reuso previo: el centinela
+        #     (jti == family_id, escrito por revoke_family con reason='reuse')
+        #     esta presente. Sin este chequeo, el refresh AUN VIGENTE de una
+        #     familia ya comprometida sobreviviria a la revocacion — el gap
+        #     que rompe la garantia de AC-8. El centinela usa jti==family_id,
+        #     asi que un GetItem por family_id lo detecta (no hay colision:
+        #     jti y family_id son uuidv7 independientes en cada emision).
+        family_revoked = (
+            claims.family_id is not None
+            and jwt_svc.is_blacklisted(jti=claims.family_id)
+        )
+        if jwt_svc.is_blacklisted(jti=claims.jti) or family_revoked:
+            if claims.family_id is not None:
+                jwt_svc.revoke_family(
+                    family_id=claims.family_id,
+                    user_id=claims.sub,
+                    exp=claims.exp,
+                )
+            audit_svc.log(
+                event='session.refresh.reuse_detected',
+                success=False,
+                user_id=claims.sub,
+                error_code='TOKEN_REUSE_DETECTED',
+                ip=meta.ip,
+                meta_data={
+                    'jti': str(claims.jti),
+                    'family_id': (
+                        str(claims.family_id)
+                        if claims.family_id is not None
+                        else None
+                    ),
+                },
+            )
+            return {
+                'is_valid': False,
+                'code': 4004,
+                'status': 401,
+                'data': {'error': 'TOKEN_REUSE_DETECTED'},
+            }
+
+        # AC-27: si el user revoco sus sesiones (confirmo su primer MFA)
+        # DESPUES de emitir este refresh, la familia entera queda invalida.
+        # Cierra la ventana donde un atacante con un refresh previo seguiria
+        # operando sin pasar MFA. Compara iat (emision) vs sessions_revoked_at.
+        user = UserService(app_config).get_by_id(str(claims.sub))
+        if (
+            user is not None
+            and user.sessions_revoked_at is not None
+            and claims.iat < user.sessions_revoked_at.timestamp()
+        ):
+            if claims.family_id is not None:
+                jwt_svc.revoke_family(
+                    family_id=claims.family_id,
+                    user_id=claims.sub,
+                    exp=claims.exp,
+                )
+            audit_svc.log(
+                event='session.refresh.family_revoked',
+                success=False,
+                user_id=claims.sub,
+                error_code='TOKEN_FAMILY_REVOKED',
+                ip=meta.ip,
+            )
+            return {
+                'is_valid': False,
+                'code': 4004,
+                'status': 401,
+                'data': {'error': 'TOKEN_FAMILY_REVOKED'},
+            }
+
+        # Rotation normal: blacklistea el refresh viejo + emite nuevos
+        # tokens con el MISMO family_id.
+        jwt_svc.blacklist(
+            jti=claims.jti,
+            exp=claims.exp,
+            user_id=claims.sub,
+            reason='rotation',
+            family_id=claims.family_id,
+        )
+        access_token, _ = jwt_svc.issue_access(
+            user_id=claims.sub, family_id=claims.family_id,
+        )
+        refresh_token, _ = jwt_svc.issue_refresh(
+            user_id=claims.sub,
+            family_id=claims.family_id,
+        )
+        # Rotation reusa el MISMO family_id -> bump last_active_at (AC-23).
+        SessionTrackingService(app_config).on_session_rotated(
+            old_family_id=claims.family_id,
+            new_family_id=claims.family_id,
+        )
+
+        audit_svc.log(
+            event='session.refresh',
+            success=True,
+            user_id=claims.sub,
+            ip=meta.ip,
+            user_agent=meta.user_agent,
+        )
+
+        return {
+            'is_valid': True,
+            'code': 0,
+            'data': {
+                'access_token': access_token,
+                'refresh_token': refresh_token,
+                'expires_in': 900,
+                'token_type': 'Bearer',
+            },
+        }

@@ -1,0 +1,6 @@
+Confirma tu nuevo email en The Full Stack
+
+Confirma este nuevo email visitando:
+{{ verify_url }}
+
+Expira en {{ expires_in_min }} minutos.

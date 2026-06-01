@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 from shared.core.exceptions import ValidationError
-from shared.lambda_kit import extract_request
+from shared.lambda_kit.http_dispatch import extract_request
 
 pytestmark = pytest.mark.unit
 

@@ -3,24 +3,21 @@
 Orquestador delgado: delega al service y normaliza el resultado. NO
 contiene logica de negocio.
 
-El command de invocacion es `show-migrations` (con guion); el handler lo
-mapea a la action `show_migrations` (con underscore) para que el nombre
-del modulo y de la clase sean identificadores Python validos.
+El command de invocacion es `show-migrations` (con guion). El kit
+`import_controller` normaliza la action a snake_case para el modulo
+(`show_migrations.py`) y a PascalCase para la clase (`ShowMigrations`),
+siguiendo el estandar lambda-controller.
 """
 
 from __future__ import annotations
 
 from models.db import ShowMigrationsModel
 from services.db_service import ServiceError, run_show_migrations
-from shared.lambda_kit import BaseController
+from shared.lambda_kit.base_controller import BaseController
 
 
-class Show_migrations(BaseController):  # noqa: N801 - action.capitalize()
-    """Controller para la accion 'show_migrations' de la operacion 'db'.
-
-    El estandar exige que la clase se llame action.capitalize(); para la
-    action 'show_migrations' eso es 'Show_migrations'.
-    """
+class ShowMigrations(BaseController):
+    """Controller para la accion 'show-migrations' de la operacion 'db'."""
 
     event_model = ShowMigrationsModel
 

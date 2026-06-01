@@ -1,8 +1,10 @@
 ---
 description: >
   Push de la rama actual, crea PR con gh, espera GitHub Actions, mergea
-  con merge commit a la base (default dev) y deja al usuario en dev con el
-  pull aplicado. Flujo end-to-end de cierre de feature.
+  con merge commit a la base (default dev), deja al usuario en dev con el
+  pull aplicado y corre la bateria completa de tests (unit, integration,
+  feature/E2E, api_e2e segun scope) para confirmar que la base quedo
+  estable. Flujo end-to-end de cierre de feature.
 argument-hint: "[base=dev] [--draft]"
 ---
 
@@ -192,7 +194,96 @@ el merge. Si quedo colgante:
 git branch -d "$BRANCH" 2>&1 || true
 ```
 
-### 8. Reporte final
+### 8. Verificacion post-merge: bateria completa de tests (OBLIGATORIA)
+
+Si el PR es draft NO se llego a mergear -> SALTAR este paso (no hay nada que
+verificar sobre la base). En cualquier otro caso, con la base ya checkouteada
+y el merge aplicado (paso 7), correr SIEMPRE la bateria completa para
+confirmar que el merge NO desestabilizo la base.
+
+> El codigo YA esta mergeado: estas verificaciones no pueden des-mergear. Por
+> eso una falla NO es un blocker silencioso — se reporta FUERTE como
+> **"BASE INESTABLE"** con la causa y el comando de reproduccion, y el
+> siguiente paso es un fix forward (commit/PR nuevo), nunca dejar la base
+> rota sin avisar.
+
+Detectar el scope del merge para decidir que suites aplican (ante la duda,
+correr TODO):
+
+```bash
+# Archivos que trajo el branch mergeado (HEAD = merge commit; ^1 = base previa).
+CHANGED=$(git diff --name-only "HEAD^1" HEAD 2>/dev/null)
+printf '%s\n' "$CHANGED" | rg -q '^serverless/'        && BACKEND=1 || BACKEND=0
+printf '%s\n' "$CHANGED" | rg -q '^(apps|packages)/'   && FRONTEND=1 || FRONTEND=0
+printf '%s\n' "$CHANGED" | rg -q '^devtools/'          && DEVTOOLS=1 || DEVTOOLS=0
+```
+
+Correr cada bloque que aplique, en orden, capturando PASS/FAIL por suite:
+
+**A. Frontend (host, sin Docker) — siempre que `FRONTEND=1` (o ante la duda):**
+
+```bash
+pnpm install                 # reconcilia deps tras el merge (el lockfile pudo cambiar)
+pnpm run lint                # Biome check
+pnpm run typecheck           # tsc --noEmit + astro check (recursivo)
+pnpm run test                # Vitest recursivo en packages (unit)
+pnpm run build               # build estatico de las 6 apps
+```
+
+**B. Backend serverless — solo si `BACKEND=1`:**
+
+```bash
+python devtools/run.py serverless lint-deps                  # shared-only + dedup D-3
+python devtools/run.py serverless tests --type=unit          # 4 lambdas + shared
+python devtools/run.py serverless tests --type=integration   # E2E con recursos reales
+```
+
+**C. Feature E2E (Playwright contra el stack local) — siempre que `FRONTEND=1`:**
+
+```bash
+python devtools/run.py docker up --env=local
+python devtools/run.py test_runner --module=feature --type=feature --env=local
+python devtools/run.py docker down --env=local   # opcional, si terminaste
+```
+
+Si Docker no esta disponible o un container queda `unhealthy`, marcar
+**[OMITIDO]** (igual que el pre-push hook) y anotarlo en el reporte — NO es
+PASS ni FAIL, es cobertura no ejecutada.
+
+**D. api_e2e (HTTP real contra el entorno desplegado) — solo si `BASE=dev` (o
+`stage`) y `BACKEND=1`:**
+
+El merge a `dev` dispara `deploy-backend.yml`, que redeploya los Lambdas. Hay
+que ESPERAR a que termine antes de pegarle a la API (si no, da 500s por
+deploy en vuelo):
+
+```bash
+# Esperar a que el deploy del backend termine (workflow file deploy-backend.yml)
+DEPLOY_RUN=$(gh run list --branch "$BASE" --workflow deploy-backend.yml \
+  --limit 1 --json databaseId --jq '.[0].databaseId')
+gh run watch "$DEPLOY_RUN" --exit-status 2>&1 | tail -20
+
+# Recien ahi, E2E real (token Ed25519 firmado localmente; ver skill api_e2e)
+python devtools/run.py api_e2e --env="$BASE" --aws-profile=tfs-dev 2>&1 | tail -40
+```
+
+**E. devtools — solo si `DEVTOOLS=1`:**
+
+```bash
+python devtools/run.py test_runner --module=devtools --type=unit
+```
+
+Bucle de diagnostico (no parar hasta entender CADA falla): si una suite
+falla, leer el output, identificar el archivo/test y la causa, y dejarlo
+documentado en el reporte con el comando de reproduccion. Distinguir SIEMPRE
+una regresion del merge de una falla pre-existente (infra caida, deuda de
+cobertura previa): si es pre-existente, decirlo explicitamente.
+
+Time-box: maximo ~15 minutos para esta bateria. Si el deploy de la API o el
+stack Docker tarda mas, reportar timeout en la suite correspondiente y seguir
+con el reporte (las demas suites ya corrieron).
+
+### 9. Reporte final
 
 ```markdown
 ## Push + PR + Merge completado
@@ -208,13 +299,23 @@ git branch -d "$BRANCH" 2>&1 || true
 - quality-gates: <status> (<duration>)
 - clean: <status> (<duration>)
 
+### Verificacion post-merge (paso 8)
+- Frontend lint/typecheck/unit/build: PASS / FAIL / [OMITIDO]
+- Backend serverless unit/integration/lint-deps: PASS / FAIL / [OMITIDO]
+- Feature E2E (Playwright): PASS / FAIL / [OMITIDO]
+- api_e2e (<base>): PASS / FAIL / [OMITIDO]
+- devtools unit: PASS / FAIL / [OMITIDO]
+- Veredicto base: ESTABLE / **INESTABLE** (con causa + comando de repro si FAIL)
+
 ### Local
 - Rama actual: <base>
 - Sincronizado con origin/<base>: si/no
 - Working tree: limpio/sucio
 
 ### Siguiente paso sugerido
-- Si todo OK: "Listo para nueva feature."
+- Si todo OK: "Base estable. Listo para nueva feature."
+- Si la base quedo INESTABLE: "Fix forward: <comando concreto> y abrir PR de
+  correccion (la base ya esta mergeada, no se des-mergea)."
 - Si CI fallo: "Inspecciona <comando concreto>"
 - Si draft: "Revisa el PR y mergea manualmente cuando este listo."
 ```
@@ -231,6 +332,13 @@ git branch -d "$BRANCH" 2>&1 || true
 - NUNCA atribucion de IA en titulo, body, ni comentarios del PR (politica
   global, hook `prepare-commit-msg` la elimina si se cuela).
 - NUNCA mergear si el PR es draft — solo reportar.
+- SIEMPRE correr la bateria completa de tests tras el merge (paso 8: unit,
+  integration, feature/E2E, api_e2e segun scope) para confirmar que la base
+  quedo estable. Una falla NO bloquea (ya esta mergeado) pero se reporta como
+  **BASE INESTABLE** + fix forward. NUNCA declarar el command exitoso si la
+  base quedo en rojo sin avisarlo en el reporte.
+- Distinguir SIEMPRE una regresion del merge de una falla pre-existente
+  (infra caida, deuda de cobertura previa) en el reporte post-merge.
 - Si gh CLI falla con MCP github disponible (`mcp__github__*`), usar
   fallback MCP. Si ambos fallan, detente y sugiere creacion manual.
 - Time-box: maximo 10 minutos para CI watch. Si CI tarda mas, reportar
@@ -246,6 +354,11 @@ git branch -d "$BRANCH" 2>&1 || true
 - ❌ Inventar contenido para el body del PR sin leer los commits reales.
 - ❌ Usar `gh pr merge --auto` (espera condiciones que pueden tardar
   horas; este command es sincrono).
+- ❌ Declarar el command completo SIN correr la bateria post-merge (paso 8):
+  el CI verde no cubre integration/feature/api_e2e, que viven en local.
+- ❌ Correr `api_e2e` contra `dev` ANTES de que `deploy-backend.yml` termine
+  (da 500s por deploy en vuelo) — esperar el run con `gh run watch`.
+- ❌ Dejar la base en rojo sin reportarlo como BASE INESTABLE.
 
 ## Cuando NO usar este command
 

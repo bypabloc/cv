@@ -1,0 +1,6 @@
+Tu código de acceso a The Full Stack
+
+Usa este código para iniciar sesión:
+{{ code }}
+
+Expira en {{ expires_in_min }} minutos.

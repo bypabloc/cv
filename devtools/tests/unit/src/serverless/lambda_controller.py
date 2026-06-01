@@ -146,7 +146,9 @@ class TestCmdDestroy:
         rc = lc.cmd_destroy({'stage': 'dev', 'yes': True})
 
         assert rc == 0
-        assert calls['deprovision'] == 4
+        # Un deprovision por cada scope de _ALL_LAMBDA_SCOPES (los 8 lambdas).
+        assert calls['deprovision'] == len(lc._ALL_LAMBDA_SCOPES)
+        assert calls['deprovision'] == 8
         assert calls['infra'] == 1
         assert calls['cleared'] == 1
 

@@ -1,9 +1,0 @@
-# Esquema devtools — NO CloudFormation. DLQ del worker tracking_worker.
-kind: sqs-queue
-name: portfolio-tracking-events-dlq-${stage}
-message_retention_seconds: 1209600       # 14 dias
-visibility_timeout_seconds: 30
-publishes_ssm:
-  arn: /portfolio/${stage}/sqs/tracking-events-dlq/arn
-  url: /portfolio/${stage}/sqs/tracking-events-dlq/url
-tags: { Project: portfolio, ManagedBy: devtools }

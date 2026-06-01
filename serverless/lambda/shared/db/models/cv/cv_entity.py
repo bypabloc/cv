@@ -21,10 +21,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+import shared.db.models.taxonomy.catalog  # noqa: F401 -- FK target (catalog)
+
 from ...base import Base, TimestampMixin, UUIDPKMixin
 
-
 # Awards -------------------------------------------------------------------
+
 
 class Award(UUIDPKMixin, TimestampMixin, Base):
     """Premio o reconocimiento. `awarded_on` DATE (antes VARCHAR(7))."""
@@ -53,6 +55,7 @@ class AwardNiche(Base):
 
 
 # Certificates -------------------------------------------------------------
+
 
 class Certificate(UUIDPKMixin, TimestampMixin, Base):
     """Certificacion tecnica."""
@@ -83,6 +86,7 @@ class CertificateNiche(Base):
 
 # Languages ----------------------------------------------------------------
 
+
 class Language(UUIDPKMixin, TimestampMixin, Base):
     """Idioma hablado + nivel."""
 
@@ -107,6 +111,7 @@ class LanguageNiche(Base):
 
 
 # Publications -------------------------------------------------------------
+
 
 class Publication(UUIDPKMixin, TimestampMixin, Base):
     """Articulo / publicacion."""
@@ -137,6 +142,7 @@ class PublicationNiche(Base):
 
 
 # Endorsements (ex References) --------------------------------------------
+
 
 class Endorsement(UUIDPKMixin, TimestampMixin, Base):
     """Recomendacion profesional. Renombrado de `Reference`.

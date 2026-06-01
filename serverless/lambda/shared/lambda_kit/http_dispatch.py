@@ -194,7 +194,7 @@ def http_handler(
     Reemplaza el cuerpo del `lambda_handler` de cada Lambda HTTP:
     1. resuelve el origin CORS y extrae metadata de transporte;
     2. `extract_request(event)` -> `(operation, action, data, method)`;
-    3. inyecta `data['_meta']` con `ip/country/user_agent/bypass_secret`;
+    3. inyecta `data['_meta']` con `ip/country/user_agent/bypass_token`;
     4. invoca `run_controller(synthetic_event, event_model)`;
     5. traduce el `DispatchResult` a una respuesta HTTP.
 
@@ -230,7 +230,11 @@ def http_handler(
     ip = extract_ip(event)
     country = extract_country(event)
     user_agent = _header(headers, 'user-agent')
-    bypass_secret = _header(headers, 'x-turnstile-bypass-secret')
+    bypass_token = _header(headers, 'x-turnstile-bypass-token')
+    # Authorization header (Bearer <access JWT>): lo consumen los
+    # endpoints autenticados (ej. mfa.*, webauthn.* del plan 02) via
+    # `require_active_user`. Los modelos `_Meta` lo ignoran si no aplica.
+    authorization = _header(headers, 'authorization')
     # cloudfront_meta: TODOS los headers cloudfront-* del request, en
     # lowercase canonico. Cuando el custom domain es Edge-Optimized
     # llegan ~22 headers (geo/device/tls/asn/ja3). Vacio si REGIONAL.
@@ -253,9 +257,10 @@ def http_handler(
                     'ip': ip,
                     'country': country,
                     'user_agent': user_agent,
-                    'bypass_secret': bypass_secret,
+                    'bypass_token': bypass_token,
                     'cloudfront_meta': cloudfront_meta,
                     'origin': raw_origin,
+                    'authorization': authorization,
                 },
             },
         }
@@ -273,12 +278,12 @@ def http_handler(
                     'detail': result.data,
                 },
             )
-            if 'error' in metric_names:
-                metrics.add_metric(
-                    name=metric_names['error'],
-                    unit=MetricUnit.Count,
-                    value=1,
-                )
+            # NO emitir la metrica 'error' aqui: ValidationError es una
+            # ApplicationError, asi que el `except ApplicationError` de abajo
+            # emite 'rejected' (el contador correcto para un 4xx de cliente).
+            # Emitir 'error' aqui ademas duplicaba la metrica por request.
+            # La metrica 'error' queda reservada para los 5xx reales (el
+            # `except Exception` final).
             raise ValidationError(
                 'Validation failed',
                 code='INVALID_REQUEST',
@@ -293,13 +298,42 @@ def http_handler(
             ) else None
             if isinstance(app_error, ApplicationError):
                 raise app_error
+            # Si el controller pidio un status HTTP explicito (404, 409,
+            # 423, 429, 401, ...), se respeta y se devuelve el `data` del
+            # controller tal cual (sin envolver en INVALID_REQUEST). Es
+            # la via para errores de negocio con status especifico sin
+            # construir una ApplicationError. Para 429 se agrega
+            # Retry-After si el data trae `retry_after`.
+            if result.status is not None:
+                if 'rejected' in metric_names:
+                    metrics.add_metric(
+                        name=metric_names['rejected'],
+                        unit=MetricUnit.Count,
+                        value=1,
+                    )
+                extra_headers: dict[str, str] = {}
+                retry_after = (
+                    result.data.get('retry_after')
+                    if isinstance(result.data, dict)
+                    else None
+                )
+                if result.status == 429 and retry_after is not None:
+                    extra_headers['Retry-After'] = str(retry_after)
+                return json_response(
+                    result.status,
+                    result.data,
+                    origin=origin,
+                    extra_headers=extra_headers or None,
+                )
             raise ValidationError(
                 'Validation failed',
                 code='INVALID_REQUEST',
                 extra={'detail': result.data},
             )
 
-        # 6. Exito.
+        # 6. Exito. El controller puede pedir un status explicito (ej.
+        #    204 en session.logout); si no, usa el `success_status` del
+        #    handler.
         if 'submitted' in metric_names:
             metrics.add_metric(
                 name=metric_names['submitted'],
@@ -307,9 +341,10 @@ def http_handler(
                 value=1,
             )
 
-        if success_status == 204:
+        effective_status = result.status or success_status
+        if effective_status == 204:
             return no_content_response(origin=origin)
-        return json_response(success_status, result.data, origin=origin)
+        return json_response(effective_status, result.data, origin=origin)
 
     except ApplicationError as exc:
         logger.warning(

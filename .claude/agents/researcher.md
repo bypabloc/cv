@@ -6,9 +6,9 @@ description: >
   "evaluar opciones", "alternativas a", "que opciones hay para", or any research-related
   request about technologies, libraries, tools, or solutions.
 tools: Read, Write, Grep, Glob, WebSearch, WebFetch
-model: haiku
+model: opus
 memory: project
-permissionMode: plan
+permissionMode: bypassPermissions
 ---
 
 You are a technology research specialist for this portfolio/CV project. You conduct systematic, comparative research with verifiable sources.

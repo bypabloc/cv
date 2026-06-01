@@ -7,8 +7,10 @@ domain identity (no email-by-email).
 
 API publica:
 
-- `ses` — cliente module-scope (boto3.client('sesv2')). Reusa la HTTPS
-  connection entre invocaciones warm de la misma Lambda.
+- `ses` — cliente sesv2 LAZY (PEP 562 `__getattr__` a nivel de modulo). NO
+  se instancia en el import: el primer acceso a `shared.aws.ses.ses` lo
+  crea. Asi un Lambda que importa `shared.aws` (por ssm/dynamodb) pero
+  NUNCA manda email no paga la creacion del cliente SES en el cold start.
 - `send_email(...)` — helper de alto nivel que arma el payload
   `{Content.Simple.{Subject, Body.{Text, Html}}, Destination, ReplyToAddresses}`
   y delega en un cliente lazy (compat con moto en tests). Es el patron
@@ -20,22 +22,27 @@ from __future__ import annotations
 import os
 from typing import Any
 
-import boto3
-
-# SES domain identity esta en us-east-1 (SPEC-000 + SPEC-011). Forzamos
-# el region para evitar default boto3 que podria leer AWS_REGION=us-east-1
-# del template pero terminar pegando a us-west-2 sandbox.
-ses = boto3.client(
-    'sesv2',
-    region_name=os.environ.get('AWS_SES_REGION', 'us-east-1'),
-)
-
 
 def _client() -> Any:
-    """Devuelve un cliente sesv2 nuevo (lazy, compat con moto)."""
+    """Devuelve un cliente sesv2 nuevo (lazy, compat con moto).
+
+    SES domain identity esta en us-east-1 (SPEC-000 + SPEC-011). Se fuerza
+    el region para evitar el default boto3 que podria leer
+    `AWS_REGION=us-east-1` pero terminar pegando a us-west-2 sandbox.
+    """
+    import boto3  # lazy: boto3 NO se importa al cargar el modulo
+
     return boto3.client(
         'sesv2', region_name=os.environ.get('AWS_SES_REGION', 'us-east-1')
     )
+
+
+def __getattr__(name: str) -> Any:
+    """PEP 562: `shared.aws.ses.ses` crea el cliente al primer acceso."""
+    if name == 'ses':
+        return _client()
+    msg = f"module 'shared.aws.ses' has no attribute '{name}'"
+    raise AttributeError(msg)
 
 
 def send_email(

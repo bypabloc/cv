@@ -2,7 +2,7 @@
 seed_test_contact.py - Inserta un contacto de prueba en DynamoDB.
 
 Util para:
-- Validar el pipeline contacts -> Stream -> stream_processor -> Neon
+- Validar el pipeline contacts -> Neon (escritura inline del contact_form)
 - Generar data para QA del dashboard sin tener que pasar por el form
 - Smoke tests post-deploy
 

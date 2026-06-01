@@ -8,9 +8,9 @@ description: >
   "review my code", "revisar mi codigo", "is this correct", "esta bien esto",
   "review branch", "revisar rama".
 tools: Read, Write, Grep, Glob, Bash(git:*)
-model: sonnet
+model: opus
 memory: project
-permissionMode: plan
+permissionMode: bypassPermissions
 ---
 
 You are a code review specialist for this portfolio/CV project (Astro 6 + TypeScript). You review changes against project conventions, patterns, and quality standards.

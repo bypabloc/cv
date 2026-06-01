@@ -1,0 +1,19 @@
+# Esquema devtools — NO CloudFormation: esquema plano, sin funciones
+# intrinsecas. devtools lo lee y emite las llamadas AWS CLI.
+# DynamoDB email-config: mapea cada `kind` de email (PK) -> bucket S3 +
+# paths del template html/txt + subject Jinja2. La Lambda `send_email`
+# la lee en runtime para renderizar y enviar via SES. Se seedea con
+# `serverless seed-email-config`.
+kind: dynamodb-table
+name: portfolio-email-config-${stage}
+billing_mode: PAY_PER_REQUEST
+hash_key: { name: kind, type: S }
+range_key: null
+stream: null
+point_in_time_recovery: false
+encryption: true
+ttl_attribute: null
+publishes_ssm:
+  name: /portfolio/${stage}/dynamodb/email-config/name
+  arn: /portfolio/${stage}/dynamodb/email-config/arn
+tags: { Project: portfolio, ManagedBy: devtools }

@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import pytest
 from shared.core.exceptions import RateLimitExceededError
-from shared.lambda_kit import BaseController, http_handler
+from shared.lambda_kit.base_controller import BaseController
+from shared.lambda_kit.http_dispatch import http_handler
 from tests.unit.shared.lambda_kit._http_handler_helpers import (
     _FakeModel,
     with_registered_controller,

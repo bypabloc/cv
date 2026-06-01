@@ -1,0 +1,13 @@
+Nuevo mensaje de contacto
+
+Nombre: {{ name }}
+Email: {{ email }}
+{% if company %}Empresa: {{ company }}
+{% endif %}{% if role %}Rol: {{ role }}
+{% endif %}{% if service_type %}Servicio: {{ service_type }}
+{% endif %}{% if budget %}Presupuesto: {{ budget }}
+{% endif %}{% if timeline %}Plazo: {{ timeline }}
+{% endif %}{% if niche %}Niche: {{ niche }}
+{% endif %}
+Mensaje:
+{{ message }}

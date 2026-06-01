@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from shared.dynamodb import RateLimitBucketItem, TrackingEventItem
+from shared.dynamodb.models.rate_limit_bucket import RateLimitBucketItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 
 def test_from_item_converts_integer_decimal_to_int() -> None:

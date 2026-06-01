@@ -1,0 +1,108 @@
+# Manifiesto del Lambda `auth` — fuente de verdad de su config.
+#
+# Encoder HTTP del dominio auth: register / login / verify / session.
+# Valida Pydantic + Turnstile + rate-limit, persiste estado a Neon + DDB
+# (blacklist JWT), invoca `send_email` async para el email transaccional
+# (NO envia email directo). Sigue el patron lambda-controller con
+# operation+action.
+#
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=auth
+
+# --- Identidad ---
+name: auth
+description: HTTP endpoint POST /auth (register/login/verify/session).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 en los 8 lambdas para
+                  # medir warm/cold con CPU x4. Minimo medido previo: 256
+                  # (login.start 174 MB, webauthn entra con headroom; 128 NO
+                  # por OOM/CPU-starved). REVERTIR al minimo tras medir si la
+                  # mejora no lo justifica. Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme (red de seguridad cold sin
+                  # restore + Turnstile siteverify HTTP). No afecta costo.
+
+# SnapStart: reduce cold start de ~3s a ~830ms (Restore Duration).
+# Critico en /auth: low traffic prod hace que cada request pague cold
+# start si no se mantiene warm.
+snap_start: true
+
+# --- Como se invoca este Lambda ---
+trigger:
+  type: http
+  method: POST
+  path: /auth
+
+# --- Que recursos del backend usa ---
+uses:
+  # Lambdas que invoca async (InvocationType='Event', fire-and-forget).
+  # devtools concede lambda:InvokeFunction al rol IAM e inyecta
+  # LAMBDA_SEND_EMAIL_FUNCTION_NAME al runtime. Reemplaza la cola SQS: el
+  # email transaccional (magic-link / code) se delega a send_email, que
+  # resuelve template + subject por kind y manda via SES. Best-effort.
+  invokes:
+    - send_email
+  # Tablas DynamoDB: cache (Powertools), rate-limit, jwt-blacklist y
+  # webauthn-challenges (plan 02: challenges efimeros del ceremony).
+  tables:
+    cache: read-write              # @cached SSM cache
+    rate-limit-rules: read-write   # rate-limit per-IP
+    rate-limit-buckets: read-write
+    jwt-blacklist: read-write      # blacklist con GSI by_family_id
+    webauthn-challenges: read-write  # challenges WebAuthn (TTL 5 min)
+  # KMS CMK directa (plan 02, decision 1): cifra/descifra el TOTP secret
+  # at-rest con kms:Encrypt/Decrypt + EncryptionContext. NO via SSM, NO
+  # GenerateDataKey (sin envelope encryption).
+  kms:
+    - alias: portfolio-lambdas
+      actions: [Encrypt, Decrypt]
+  # Params SSM que el Lambda lee (String o SecureString; el catalogo
+  # resources/secrets/*.yaml define el tipo). Solo el nombre corto.
+  secrets:
+    - turnstile-secret             # validacion del captcha Cloudflare Turnstile
+    - turnstile-bypass-public-key  # clave PUBLICA Ed25519 (String) para
+                                   # verificar el token de bypass de tests
+                                   # E2E (solo dev/stage; la PRIVADA es local)
+    - neon-url                     # connection string Neon (auth_*)
+    - jwt-secret                   # JWT HS256 secret (SecureString + KMS)
+  # El Lambda NO envia email directo: invoca send_email async (que hace SES).
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+env:
+  default:
+    LOG_LEVEL: INFO
+    POWERTOOLS_SERVICE_NAME: auth
+    POWERTOOLS_METRICS_NAMESPACE: Portfolio/Auth
+    JWT_ISSUER: portfolio-auth
+    JWT_AUDIENCE: portfolio
+    # KMS CMK directa para cifrar el TOTP secret (plan 02, decision 1).
+    KMS_TOTP_KEY_ID: alias/portfolio-lambdas
+    WEBAUTHN_RP_NAME: 'The Full Stack Portfolio'
+  dev:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com,http://localhost:9970'
+    MAGIC_LINK_BASE_URL: https://api.portfolio.dev.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.dev.the-full-stack.com/callback
+    # WebAuthn RP_ID = sufijo comun de los origins de dev (decision 5).
+    # Un passkey de dev NO funciona en prod (RP_ID distinto). Esperado.
+    WEBAUTHN_RP_ID: portfolio.dev.the-full-stack.com
+    WEBAUTHN_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com,http://localhost:9970'
+  stage:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com,https://admin.portfolio.stage.the-full-stack.com'
+    MAGIC_LINK_BASE_URL: https://api.portfolio.stage.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.stage.the-full-stack.com/callback
+    WEBAUTHN_RP_ID: portfolio.stage.the-full-stack.com
+    WEBAUTHN_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com,https://admin.portfolio.stage.the-full-stack.com'
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'
+    MAGIC_LINK_BASE_URL: https://api.portfolio.the-full-stack.com/auth
+    DASHBOARD_CALLBACK_URL: https://admin.portfolio.the-full-stack.com/callback
+    # En prod el apex the-full-stack.com cubre todos los subdomains.
+    WEBAUTHN_RP_ID: the-full-stack.com
+    WEBAUTHN_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://portfolio.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'

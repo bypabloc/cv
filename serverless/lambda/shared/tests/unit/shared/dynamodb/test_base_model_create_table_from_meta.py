@@ -7,8 +7,7 @@ Then la tabla queda creada con su KeySchema, TTL y GSI (AC-9).
 from __future__ import annotations
 
 import pytest
-
-from shared.dynamodb import TrackingEventItem
+from shared.dynamodb.models.tracking import TrackingEventItem
 
 
 @pytest.mark.usefixtures('mock_aws_no_tables')

@@ -15,7 +15,7 @@
 | El `BaseModel` | Antes de crear/usar un modelo |
 | Modelos por tabla | Para saber que tabla mapea a que modelo |
 | DML vs DDL | Para entender que puede y que NO puede el ORM |
-| Por que `infra.yaml` sigue siendo el dueno del DDL | Antes de proponer "que el ORM cree las tablas" |
+| Por que devtools sigue siendo el dueno del DDL | Antes de proponer "que el ORM cree las tablas" |
 | Uso | Ejemplos de CRUD, atomicas, query, verificacion |
 
 ## Reglas criticas (SIEMPRE / NUNCA)
@@ -24,12 +24,13 @@
   (`ContactItem`, `TrackingEventItem`, `CacheItem`,
   `RateLimitBucketItem`, `RateLimitRuleItem`). NUNCA `boto3.resource('dynamodb')`
   directo en codigo de dominio.
-- **SIEMPRE** las tablas reales de dev/stage/prod las crea
-  `serverless/infra/infra.yaml` (CloudFormation). `create_table` /
+- **SIEMPRE** las tablas reales de dev/stage/prod las provisiona devtools
+  con AWS CLI directo desde `resources/dynamodb/*.yaml`. `create_table` /
   `ensure_table` del ORM son SOLO para tests (moto) y entorno local.
 - **SIEMPRE** que se cambie el `KeySchema` / TTL / GSI de una tabla, el
-  cambio va en `infra.yaml` **y** en el `TableMeta` del modelo: ambos
-  deben coincidir. `check_schema()` lo verifica contra AWS real.
+  cambio va en el `resources/dynamodb/*.yaml` **y** en el `TableMeta` del
+  modelo: ambos deben coincidir. `check_schema()` lo verifica contra AWS
+  real.
 - **NUNCA** el ORM expone `scan` (anti-patron). El unico scan del backend
   vive en `shared/cache/invalidation.py` (tag invalidation, no hay otra
   forma en DynamoDB) y usa el `Table` crudo, no el ORM.
@@ -60,8 +61,8 @@ singleton de `shared.dynamodb_client` (`get_resource()`): el ORM NO crea
 resources propios.
 
 `TableMeta` declara el esquema MINIMO: claves (PK/SK), atributo TTL y
-GSIs. NO declara `BillingMode`/`SSE`/`PITR`/`Stream` — eso es exclusivo
-de `infra.yaml`.
+GSIs. NO declara `BillingMode`/`SSE`/`PITR` — eso lo gestiona el
+provisioner de devtools desde `resources/dynamodb/*.yaml`.
 
 ## Modelos por tabla
 
@@ -86,31 +87,22 @@ El ORM expone dos capas:
   contra AWS real). `create_table` / `ensure_table` SOLO para
   tests/local.
 
-## Por que `infra.yaml` sigue siendo el dueno del DDL
+## Por que devtools sigue siendo el dueno del DDL
 
 El ORM **no crea las tablas de dev/stage/prod**. La razon no es estetica:
 
-- `infra.yaml` exporta `ContactsStreamArn` / `TrackingStreamArn`. El
-  stack del `stream_processor` los consume via `Fn::ImportValue` para
-  conectar el DynamoDB Stream -> Lambda. Solo CloudFormation puede
-  conectar ese stream de forma declarativa e idempotente.
-- `infra.yaml` exporta los `*TableArn`, que los 4 Lambdas usan para su
-  IAM least-privilege.
-- `PITR`, `SSE`, `BillingMode`, `StreamSpecification` los gestiona
-  CloudFormation declarativamente.
+- devtools provisiona cada tabla con AWS CLI directo desde los
+  `resources/dynamodb/*.yaml` y publica sus identificadores (`*TableArn`)
+  a SSM, que los Lambdas usan para su IAM least-privilege.
+- `PITR`, `SSE`, `BillingMode` los gestiona el provisioner de devtools de
+  forma declarativa e idempotente, no el ORM.
 
-El ORM y los DynamoDB Streams son capas distintas:
-
-```text
-contact_form / tracking_pixel  --escribe-->  DynamoDB
-        (el ORM)                                |
-                              DynamoDB Stream (evento auto de AWS)
-                                                 |
-                                    stream_processor  --escribe-->  Neon
-```
-
-El ORM es la capa de escritura/lectura. El Stream replica a Neon. El ORM
-no puede sustituir al Stream.
+La escritura a Neon NO pasa por DynamoDB Streams: el `contact_form`
+escribe el contacto inline a Neon en la misma invocacion, y el
+`tracking_pixel` invoca async (`InvocationType='Event'`) al
+`tracking_writer`, que persiste el evento a Neon. El ORM DynamoDB es la
+capa de escritura/lectura del store rapido; la replica analitica a Neon
+la hacen esos dos paths directos (sin Stream, sin `stream_processor`).
 
 ## Uso
 
@@ -148,7 +140,7 @@ assert diff.in_sync
 ## Navegacion
 
 - Capa de bajo nivel: `shared/dynamodb_client.py` (resource singleton)
-- Stack de infra (dueno del DDL): `serverless/infra/infra.yaml`
+- Recursos de infra (dueno del DDL): `serverless/lambda/resources/dynamodb/*.yaml`
 - Skills relacionadas: `aws-dynamodb`, `dynamodb-cache`,
   `serverless-rate-limit`
 - Rule: `.claude/rules/lambda-controller.md`

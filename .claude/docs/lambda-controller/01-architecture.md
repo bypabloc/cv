@@ -52,11 +52,18 @@ El evento de entrada SIEMPRE tiene esta forma:
 - `operation` se resuelve via el dict `OPERATIONS` (en
   `settings/operations.py`) a una **carpeta de controller**. Varios
   codenames de `operation` pueden mapear al mismo controller (alias).
-- `action` se mapea a un **archivo** (`<action>.py`) y a una **clase**
-  (`<Action>` = `action.capitalize()`) dentro de esa carpeta.
+- `action` se mapea a un **archivo** (`<action_snake>.py`, kebab-case
+  del wire se convierte a snake_case con `-` -> `_`) y a una **clase**
+  (`<ActionPascal>`, PascalCase de cada segmento separado por guion)
+  dentro de esa carpeta.
 
-Ejemplo: `operation="payments"`, `action="create"` resuelve
-`controllers/payments/create.py` -> clase `Create`.
+Ejemplos:
+
+- `operation="payments"`, `action="create"` ->
+  `controllers/payments/create.py` -> clase `Create`.
+- `operation="register"`, `action="verify-magic-link"` ->
+  `controllers/register/verify_magic_link.py` -> clase
+  `VerifyMagicLink`.
 
 ## Ciclo de vida de un controller: preload -> validate -> execute
 

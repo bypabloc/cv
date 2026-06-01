@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from shared.dynamodb import ContactItem
+from shared.dynamodb.models.contact import ContactItem
 
 # Campos opcionales del contacto, EN EL ORDEN del codigo viejo
 # (contact_service.save_contact).

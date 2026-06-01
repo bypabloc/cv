@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from shared.cache.client import DynamoDBCache
 from shared.cache.stampede import acquire_lock, release_lock
 

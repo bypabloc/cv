@@ -31,8 +31,11 @@ from sqlalchemy import func as sa_func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session as OrmSession
 
-from .models import Contact, SessionVisit, TrackingEvent
-from .models import Session as SessionRow
+from shared.db.models.visitor.contact import Contact
+from shared.db.models.visitor.session import Session as SessionRow
+from shared.db.models.visitor.session_visit import SessionVisit
+from shared.db.models.visitor.tracking import TrackingEvent
+
 from .session import get_engine
 
 # `pg_stat_user_tables` es una system view del catalogo de Postgres
@@ -137,7 +140,8 @@ def insert_tracking(session: OrmSession, payload: dict[str, Any]) -> None:
 
 
 def insert_contact_idempotent(
-    session: OrmSession, payload: dict[str, Any],
+    session: OrmSession,
+    payload: dict[str, Any],
 ) -> bool:
     """INSERT en contacts con ON CONFLICT (id) DO NOTHING.
 
@@ -169,7 +173,8 @@ def insert_contact_idempotent(
 
 
 def insert_tracking_idempotent(
-    session: OrmSession, payload: dict[str, Any],
+    session: OrmSession,
+    payload: dict[str, Any],
 ) -> bool:
     """INSERT en tracking_events con ON CONFLICT (PK compuesta) DO NOTHING.
 
@@ -374,7 +379,4 @@ def _visit_keys_differ(
     con el payload del nuevo evento. La comparacion es case-sensitive y
     None == None (visitante sin utm sigue en el mismo visit).
     """
-    for key in _VISIT_KEYS:
-        if getattr(last_visit, key) != incoming[key]:
-            return True
-    return False
+    return any(getattr(last_visit, key) != incoming[key] for key in _VISIT_KEYS)

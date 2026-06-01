@@ -8,7 +8,7 @@ Then cada operacion se observa contra DynamoDB real y el ciclo cierra
 from __future__ import annotations
 
 import pytest
-from shared.dynamodb import ContactItem
+from shared.dynamodb.models.contact import ContactItem
 
 pytestmark = pytest.mark.integration
 

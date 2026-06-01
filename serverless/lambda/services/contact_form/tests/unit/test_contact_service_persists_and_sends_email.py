@@ -5,12 +5,14 @@ mockeado,
 When se invoca process_contact_form,
 Then el contacto queda persistido en Neon (con contact_id UUIDv7), el
      helper ensure_session_and_visit recibe los kwargs esperados, y se
-     envia el email al owner via SES (sin la metrica de fallo).
+     invoca send_email async con el payload kind=contact (sin metrica de
+     fallo).
 
 Spec sessions-normalize: el service UPSERTea session + visit antes del
 INSERT del contact. Los kwargs del helper se capturan via fixture
 `session_visit_calls`. El payload del contact YA NO incluye
-ip/country/user_agent (movidos a sessions/session_visits).
+ip/country/user_agent (movidos a sessions/session_visits). El email al
+owner se delega a send_email via invoke async (capturado con `mock_invoke`).
 """
 
 import pytest
@@ -23,6 +25,7 @@ _TEST_SESSION = 'sess-test-01234567890123456789'
 def test_contact_service_persists_and_sends_email(
     mock_neon_writes: list[dict],
     session_visit_calls: list[dict],
+    mock_invoke: list[dict],
     contact_form_aws: None,
 ) -> None:
     from services import contact_service
@@ -77,5 +80,19 @@ def test_contact_service_persists_and_sends_email(
     assert 'country' not in payload
     assert 'user_agent' not in payload
 
-    # Assert: el email se envio (no hay metrica de fallo)
+    # Assert: se invoco send_email async con el payload kind=contact.
+    assert len(mock_invoke) == 1
+    invoke = mock_invoke[0]
+    assert invoke['function_name'] == 'portfolio-send-email-test'
+    sent = invoke['payload']
+    assert sent['operation'] == 'email'
+    assert sent['action'] == 'send'
+    assert sent['data']['kind'] == 'contact'
+    assert sent['data']['to'] == ['owner@example.com']
+    assert sent['data']['reply_to'] == ['p@example.com']
+    assert sent['data']['data']['name'] == 'Pablo'
+    assert sent['data']['data']['email'] == 'p@example.com'
+    assert sent['data']['data']['message'] == 'Hola mundo largo de prueba'
+
+    # Assert: el email se invoco OK (no hay metrica de fallo)
     assert 'OwnerEmailFailed' not in dict(contact_service.metrics.metric_set)

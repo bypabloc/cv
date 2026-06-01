@@ -1,0 +1,25 @@
+# Esquema devtools — NO CloudFormation: esquema plano, sin funciones
+# intrinsecas. devtools lo lee y emite las llamadas AWS CLI.
+#
+# DynamoDB webauthn-challenges (plan 02-auth-mfa): challenges efimeros
+# del ceremony WebAuthn (register-options / login-options). Cada
+# challenge se guarda con TTL=expires_at (now + 5 min) para que AWS
+# borre los items expirados sin WCU; tras un verify exitoso el row se
+# borra explicitamente (single-use).
+#
+# Decision 5 del plan: los challenges NO viven en Neon — son efimeros,
+# 1 por intento, potencialmente muchos por usuario. TTL nativo + lookup
+# O(1) por challenge_id justifican DynamoDB. PK = challenge_id (UUIDv7).
+kind: dynamodb-table
+name: portfolio-webauthn-challenges-${stage}
+billing_mode: PAY_PER_REQUEST
+hash_key: { name: challenge_id, type: S }
+range_key: null
+stream: null
+point_in_time_recovery: false
+encryption: true
+ttl_attribute: expires_at
+publishes_ssm:
+  name: /portfolio/${stage}/dynamodb/webauthn-challenges/name
+  arn: /portfolio/${stage}/dynamodb/webauthn-challenges/arn
+tags: { Project: portfolio, Module: auth-mfa, ManagedBy: devtools }

@@ -1203,20 +1203,40 @@ def _provision_s3_bucket(
     return resources, published
 
 
+# Codigos de error de create-bucket que significan "el bucket ya es tuyo":
+# no son un fallo, son adopcion. `head-bucket` puede devolver 403 (rol sin
+# s3:ListBucket) y tratarse como "no existe" -> create-bucket -> uno de estos.
+_BUCKET_ALREADY_OWNED = (
+    'BucketAlreadyOwnedByYou',
+    'BucketAlreadyExists',
+)
+
+
 def _create_s3_bucket(
     bucket: str,
     *,
     profile: str | None,
     region: str,
 ) -> None:
-    """Crea el bucket. us-east-1 NO acepta LocationConstraint (es el default)."""
+    """Crea el bucket. us-east-1 NO acepta LocationConstraint (es el default).
+
+    Tolerante a `BucketAlreadyOwnedByYou` / `BucketAlreadyExists`: si el
+    bucket ya existe en la cuenta (head-bucket pudo dar 403 por falta de
+    s3:ListBucket en el rol OIDC del CI), se adopta en vez de fallar.
+    """
     args = ['s3api', 'create-bucket', '--bucket', bucket]
     if region != 'us-east-1':
         args += [
             '--create-bucket-configuration',
             f'LocationConstraint={region}',
         ]
-    aws_cli.aws(args, profile=profile, region=region)
+    try:
+        aws_cli.aws(args, profile=profile, region=region)
+    except AwsError as exc:
+        if any(code in exc.stderr for code in _BUCKET_ALREADY_OWNED):
+            print(_c(CYAN, f'  bucket {bucket} ya existe (adoptado)'))
+            return
+        raise
     aws_cli.aws(
         ['s3api', 'wait', 'bucket-exists', '--bucket', bucket],
         profile=profile,

@@ -54,4 +54,38 @@ describe('useMultiTabSync', () => {
     // Assert
     expect(useAuthStore.getState().accessToken).toBe('nuevo')
   })
+
+  it('Given TOKEN_REFRESH sin token When llega Then NO toca el access (rama && token)', () => {
+    // Arrange
+    const channel = stubChannel()
+    useAuthStore.setState({ accessToken: 'viejo' })
+    renderHook(() => useMultiTabSync())
+
+    // Act: token undefined -> la rama `&& event.data.token` corta
+    channel.emit({ type: 'TOKEN_REFRESH' })
+
+    // Assert
+    expect(useAuthStore.getState().accessToken).toBe('viejo')
+  })
+
+  it('Given un mensaje desconocido When llega Then no hace nada', () => {
+    // Arrange
+    const channel = stubChannel()
+    useAuthStore.setState({ accessToken: 'viejo' })
+    renderHook(() => useMultiTabSync())
+
+    // Act
+    channel.emit({ type: 'OTRO' })
+
+    // Assert
+    expect(useAuthStore.getState().accessToken).toBe('viejo')
+  })
+
+  it('Given BroadcastChannel undefined When monta Then retorna sin registrar (guard SSR)', () => {
+    // Arrange: simula entorno sin BroadcastChannel
+    vi.stubGlobal('BroadcastChannel', undefined)
+
+    // Act + Assert: no debe lanzar (la guard retorna temprano)
+    expect(() => renderHook(() => useMultiTabSync())).not.toThrow()
+  })
 })

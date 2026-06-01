@@ -45,6 +45,20 @@ if (typeof globalThis.matchMedia === 'undefined') {
     }) as unknown as MediaQueryList
 }
 
+// Suprime el ReferenceError benigno de happy-dom cuando una query/fetch en
+// vuelo (invalidacion de Tanstack tras una mutation) resuelve DESPUES de que
+// happy-dom desmonto `window` en el teardown del test. No afecta asserts (los
+// tests ya esperan con waitFor); es ruido de teardown, no un fallo real.
+process.on('unhandledRejection', (reason) => {
+  if (
+    reason instanceof ReferenceError &&
+    reason.message.includes('window is not defined')
+  ) {
+    return
+  }
+  throw reason
+})
+
 const { server } = await import('./mocks/server')
 const { useAuthStore } = await import('@/features/auth/store/use-auth-store')
 

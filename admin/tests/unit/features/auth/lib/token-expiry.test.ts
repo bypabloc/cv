@@ -50,4 +50,12 @@ describe('isJwtExpired', () => {
     // Assert
     expect(result).toBe(false)
   })
+
+  it('Given un token invalido When se evalua Then devuelve true (exp null)', () => {
+    // Act: cubre la rama `exp === null` -> true dentro de isJwtExpired
+    const result = isJwtExpired('not-a-jwt')
+
+    // Assert
+    expect(result).toBe(true)
+  })
 })

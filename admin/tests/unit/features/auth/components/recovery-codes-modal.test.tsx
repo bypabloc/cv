@@ -58,6 +58,25 @@ describe('RecoveryCodesModal', () => {
     })
   })
 
+  it('Given el modal abierto When se cierra con Escape Then onOpenChange(false) llama onClose', async () => {
+    // Arrange
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(
+      (
+        <RecoveryCodesModal open codes={CODES} onClose={onClose} />
+      ) as ReactElement,
+    )
+
+    // Act: Escape dispara onOpenChange(false) -> rama `!next && onClose()`
+    await user.keyboard('{Escape}')
+
+    // Assert
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('Given click Descargar Then genera un blob URL', async () => {
     const createObjectURL = vi.fn().mockReturnValue('blob:fake')
     const revokeObjectURL = vi.fn()

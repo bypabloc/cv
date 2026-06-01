@@ -109,6 +109,64 @@ describe('useAuthStore', () => {
     expect(useAuthStore.getState().user).toBe(null)
   })
 
+  it('Given setRefreshToken con null When se llama Then refreshExpiry queda null', () => {
+    // Arrange: primero un refresh valido para que refreshExpiry no sea null
+    useAuthStore
+      .getState()
+      .setRefreshToken(makeJwt({ sub: 'usr_01', exp: nowSec() + 900 }))
+
+    // Act: la rama false del ternario `token ? decodeExp(token) : null`
+    useAuthStore.getState().setRefreshToken(null)
+
+    // Assert
+    const state = useAuthStore.getState()
+    expect(state.refreshToken).toBe(null)
+    expect(state.refreshExpiry).toBe(null)
+  })
+
+  it('Given setRefreshToken con un JWT When se llama Then deriva el refreshExpiry', () => {
+    // Arrange
+    const exp = nowSec() + 1800
+    const refresh = makeJwt({ sub: 'usr_01', exp })
+
+    // Act: la rama true del ternario
+    useAuthStore.getState().setRefreshToken(refresh)
+
+    // Assert
+    expect(useAuthStore.getState().refreshExpiry).toBe(exp * 1000)
+  })
+
+  it('Given sin access When isAccessExpired Then retorna true (rama !accessToken)', () => {
+    // Act
+    const result = useAuthStore.getState().isAccessExpired()
+
+    // Assert
+    expect(result).toBe(true)
+  })
+
+  it('Given un access invalido When isAccessExpired Then retorna true (exp null)', () => {
+    // Arrange
+    useAuthStore.getState().setAccessToken('not-a-jwt')
+
+    // Act
+    const result = useAuthStore.getState().isAccessExpired()
+
+    // Assert
+    expect(result).toBe(true)
+  })
+
+  it('Given setTokens sin refreshExpiry explicito When se llama Then lo deriva del refresh', () => {
+    // Arrange: la rama `refreshExpiry ?? decodeExp(refresh)` cae a decodeExp
+    const exp = nowSec() + 2_592_000
+    const refresh = makeJwt({ sub: 'usr_01', exp })
+
+    // Act
+    useAuthStore.getState().setTokens('access', refresh, USER)
+
+    // Assert
+    expect(useAuthStore.getState().refreshExpiry).toBe(exp * 1000)
+  })
+
   it('Given setTokens + setTempToken When se persiste Then localStorage solo guarda refreshToken, refreshExpiry y user', () => {
     // Arrange
     const refresh = makeJwt({ sub: 'usr_01', exp: nowSec() + 2_592_000 })

@@ -1,0 +1,4 @@
+# SPA fallback para Cloudflare Pages: rutas client-side -> index.html.
+# /api/* devuelve 404 explicito (no cae al SPA).
+/api/* /404.html 404
+/* /index.html 200

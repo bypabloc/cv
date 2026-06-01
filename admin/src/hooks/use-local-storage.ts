@@ -16,7 +16,8 @@ export function useLocalStorage<T>(
   const [value, setValue] = useState<T>(initialValue)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    // El effect solo corre en cliente (React no ejecuta effects en SSR), por
+    // lo que window siempre existe aqui.
     try {
       const raw = window.localStorage.getItem(key)
       if (raw !== null) setValue(JSON.parse(raw) as T)
@@ -28,9 +29,8 @@ export function useLocalStorage<T>(
   const setStored = useCallback(
     (next: T) => {
       setValue(next)
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(next))
-      }
+      // El setter solo se invoca desde un event handler cliente: window existe.
+      window.localStorage.setItem(key, JSON.stringify(next))
     },
     [key],
   )

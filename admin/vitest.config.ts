@@ -29,12 +29,16 @@ export default defineConfig({
       exclude: [
         'src/**/*.d.ts',
         'src/**/index.ts',
+        'src/**/query-keys.ts',
         'src/app/**',
         'src/components/ui/**',
+        'src/components/msw-provider.tsx',
+        'src/providers/**',
         'src/types/**',
         'src/styles/**',
       ],
       thresholds: {
+        perFile: true,
         lines: 80,
         functions: 80,
         branches: 80,

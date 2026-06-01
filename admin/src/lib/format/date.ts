@@ -46,22 +46,23 @@ export function relativeTime(
   if (Number.isNaN(date.getTime())) return '-'
   const diffMs = date.getTime() - Date.now()
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
-  const divisions: [number, Intl.RelativeTimeFormatUnit][] = [
-    [60_000, 'minute'],
-    [3_600_000, 'hour'],
-    [86_400_000, 'day'],
-    [604_800_000, 'week'],
-    [2_629_800_000, 'month'],
-    [Number.POSITIVE_INFINITY, 'year'],
+  // [divisor en ms para esa unidad, limite superior (excl) en ms, unidad].
+  // Se elige la primera unidad cuyo `abs` cae por debajo de su limite y se
+  // divide por el divisor de ESA unidad.
+  const divisions: [number, number, Intl.RelativeTimeFormatUnit][] = [
+    [1_000, 60_000, 'second'],
+    [60_000, 3_600_000, 'minute'],
+    [3_600_000, 86_400_000, 'hour'],
+    [86_400_000, 604_800_000, 'day'],
+    [604_800_000, 2_629_800_000, 'week'],
+    [2_629_800_000, 31_557_600_000, 'month'],
+    [31_557_600_000, Number.POSITIVE_INFINITY, 'year'],
   ]
   const abs = Math.abs(diffMs)
-  if (abs < 60_000) return rtf.format(0, 'minute')
-  let prevLimit = 60_000
-  for (const [limit, unit] of divisions) {
+  for (const [divisor, limit, unit] of divisions) {
     if (abs < limit) {
-      return rtf.format(Math.round(diffMs / prevLimit), unit)
+      return rtf.format(Math.round(diffMs / divisor), unit)
     }
-    prevLimit = limit
   }
-  return rtf.format(Math.round(diffMs / 2_629_800_000), 'year')
+  return rtf.format(Math.round(diffMs / 31_557_600_000), 'year')
 }

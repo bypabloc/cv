@@ -60,9 +60,16 @@ Resumen del orden NO negociable:
 ```text
 verificar rama -> (si protegida) crear rama de trabajo
   -> implementar + commits con verificacion incremental
-  -> bateria E2E completa (seccion 11) en VERDE
-  -> recien ahi: git push + crear PR
+  -> bateria E2E completa (seccion 11 Partes A+B) en VERDE
+  -> recien ahi: git push + crear PR -> merge
+  -> [si el plan despliega/provisiona infra] Parte C: mirar el workflow
+     de deploy + curl real a cada URL canonica de cada env (200 + marcador)
+  -> recien ahi: declarar el plan "listo" al usuario (con los HTTP reales)
 ```
+
+Un plan que despliega NO esta terminado al mergear: esta terminado cuando
+su URL real responde 200. La Parte C (post-merge, post-deploy) es parte del
+plan, NO un favor opcional que el usuario tiene que pedir.
 
 ## Todo plan vive en una carpeta
 
@@ -316,7 +323,7 @@ modelos los gobierna [orchestration.md](orchestration.md).
 ### 11. Verificacion E2E iterativa (fase final) — OBLIGATORIA
 
 Fase de cierre del plan. Archivo dedicado `NN-verificacion-e2e.md`. SIEMPRE es
-la ultima fase y el ultimo commit. Dos partes:
+la ultima fase y el ultimo commit. Tres partes:
 
 - **Parte A — refactor de tests**: ningun test viejo referencia codigo
   eliminado; tests nuevos en ruta y convencion correctas; barrido global con
@@ -326,11 +333,25 @@ la ultima fase y el ultimo commit. Dos partes:
   ejecutar -> si falla, diagnosticar -> corregir -> re-ejecutar la suite ->
   repetir. NO se marca completa con un comando fallando, un test rojo o
   coverage < 80%.
+- **Parte C — verificacion de despliegue REAL** (OBLIGATORIA si el plan
+  despliega o provisiona infra: Cloudflare Pages, un Lambda, custom domain,
+  DNS, recurso AWS): tras el merge que dispara el deploy, MIRAR el resultado
+  del workflow (cada job) Y hacer `curl` a CADA URL canonica de CADA env
+  tocado hasta obtener 200 + el marcador esperado. Si hay custom domain
+  nuevo: confirmar Pages project (naming `<niche>-<env>`, sin prefijo
+  `portfolio-`) + custom domain en status `active` (no `pending`) + registro
+  DNS CNAME existente (si falta -> `cloudflare_setup dns --env=<X>`). Esta
+  parte NO se omite ni se difiere a "que el usuario lo pruebe": el plan no
+  esta listo hasta que su URL real responde. Bucle de correccion identico al
+  de la Parte B. Detalle del gate: ver "Verificacion de despliegue REAL" en
+  [verify-before-done.md](verify-before-done.md).
 
 Esta fase consolida — no sustituye — la verificacion incremental de cada fase.
 El "Como probar" del PR reutiliza esta bateria. Es el gate del PR: el `git
-push` y la creacion del PR ocurren SOLO cuando esta bateria pasa completa en
-verde (ver "Regla de ejecucion" arriba).
+push` y la creacion del PR ocurren SOLO cuando las Partes A y B pasan en
+verde (ver "Regla de ejecucion" arriba). La Parte C corre DESPUES del merge
+(es post-deploy) y es el gate para declarar el plan REALMENTE terminado al
+usuario: un plan con deploy no se reporta "listo" sin la Parte C verde.
 
 **Documento detallado**: `.claude/docs/plan-format-large/README.md` capitulo 4
 (plantilla, bucle de correccion, regla de cierre).

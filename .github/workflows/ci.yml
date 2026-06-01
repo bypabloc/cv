@@ -68,16 +68,25 @@ jobs:
         # Las env vars reales por env (dev/stage/prod) las inyecta
         # deploy-apps.yml desde GH Environment Variables (vars.*).
         # Aqui usamos defaults de prod para que el guard de
-        # TrackingPixel.astro (validateApiEndpoint) no rechace el build
-        # por env vars vacias. El artifact resultante NO se usa para
-        # deploy real — deploy-apps.yml siempre rebuildea.
+        # TrackingPixel.astro (validateApiEndpoint) y el validador de
+        # env del admin Next.js no rechacen el build por env vars vacias.
+        # El artifact resultante NO se usa para deploy real —
+        # deploy-apps.yml siempre rebuildea. 6 Astro + admin Next = 7.
         env:
           BASE_DOMAIN: portfolio.the-full-stack.com
           APEX_DOMAIN: the-full-stack.com
           BASE_SCHEME: https
           PUBLIC_API_ENDPOINT: https://api.portfolio.the-full-stack.com
           PUBLIC_TURNSTILE_SITEKEY: ci-validation-only-not-real
-        run: pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
+          # Admin Next.js (NEXT_PUBLIC_*): defaults solo para validar el
+          # build, no son valores reales.
+          NEXT_PUBLIC_API_ENDPOINT: https://api.portfolio.the-full-stack.com
+          NEXT_PUBLIC_TURNSTILE_SITEKEY: ci-validation-only-not-real
+          NEXT_PUBLIC_ADMIN_URL: https://admin.portfolio.the-full-stack.com
+          NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS: "30000"
+          NEXT_PUBLIC_WEBAUTHN_RP_ID: admin.portfolio.the-full-stack.com
+          NEXT_PUBLIC_FEATURE_MFA: "true"
+        run: pnpm -r --filter "./apps/*" --filter "@portfolio/admin" --workspace-concurrency=7 run build
 
       # El artifact dist-all-apps-<sha> lo descarga deploy-apps.yml para
       # evitar rebuild en el deploy. Solo se sube en push a env branches
@@ -87,6 +96,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist-all-apps-${{ github.sha }}
-          path: apps/*/dist
+          path: |
+            apps/*/dist
+            admin/out
           retention-days: 7
           if-no-files-found: warn

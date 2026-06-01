@@ -14,6 +14,20 @@ x-app-environment: &app-environment
   PUBLIC_API_ENDPOINT: ${PUBLIC_API_ENDPOINT:-}
   PUBLIC_TURNSTILE_SITEKEY: ${PUBLIC_TURNSTILE_SITEKEY:-}
 
+# Env vars del admin (Next.js). Next lee process.env.NEXT_PUBLIC_* en
+# build/dev y las inlinea en el bundle del browser. Vienen de
+# docker/env/client/.stage (categoria client, valores publicos).
+x-admin-environment: &admin-environment
+  BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+  BASE_SCHEME: ${BASE_SCHEME:-http}
+  BASE_PORT: ${BASE_PORT:-9974}
+  NEXT_PUBLIC_API_ENDPOINT: ${NEXT_PUBLIC_API_ENDPOINT:-}
+  NEXT_PUBLIC_TURNSTILE_SITEKEY: ${NEXT_PUBLIC_TURNSTILE_SITEKEY:-}
+  NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:-}
+  NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS: ${NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS:-30000}
+  NEXT_PUBLIC_WEBAUTHN_RP_ID: ${NEXT_PUBLIC_WEBAUTHN_RP_ID:-}
+  NEXT_PUBLIC_FEATURE_MFA: ${NEXT_PUBLIC_FEATURE_MFA:-true}
+
 services:
   nginx:
     image: nginx:alpine
@@ -36,6 +50,8 @@ services:
       leader:
         condition: service_started
       vibe:
+        condition: service_started
+      admin:
         condition: service_started
     restart: unless-stopped
 
@@ -118,6 +134,21 @@ services:
         GID: ${GID:-1000}
     container_name: portfolio-vibe-stage
     environment: *app-environment
+    volumes:
+      - ../..:/app
+      - portfolio_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  # Admin panel (Next.js SPA). Build estatico + serve out/ en el puerto 3000.
+  admin:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/stage/admin/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: portfolio-admin-stage
+    environment: *admin-environment
     volumes:
       - ../..:/app
       - portfolio_node_modules:/app/node_modules

@@ -81,11 +81,14 @@ con uno de estos nombres, elegir un nombre mas especifico.
 ### Portfolio nichos reservados
 
 ```text
-hub, fintech, architect, leader, vibe, generic
+hub, fintech, architect, leader, vibe, generic, admin
 ```
 
-Razon: son los 5 nichos del portfolio personal + el sitio generic. Ver
-[04-portfolio-exception.md](./04-portfolio-exception.md).
+Razon: son los 5 nichos del portfolio personal + el sitio generic + el
+panel admin (`admin.portfolio.{env}.the-full-stack.com`). `admin` ya esta
+reservado como component bien conocido (ver "Componentes reservados"
+arriba); aqui se confirma su uso como component del product `portfolio`.
+Ver [04-portfolio-exception.md](./04-portfolio-exception.md).
 
 ## Reservados — PERMITIDOS como `{component}`
 

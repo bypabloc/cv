@@ -10,6 +10,7 @@ valido -> 401.
 from __future__ import annotations
 
 from api_e2e.config import admin_origin
+from api_e2e.flow_auth import _STRONG_PASSWORD
 from api_e2e.runner import Runner
 from api_e2e.runner import make_body
 from api_e2e.support import HttpClient
@@ -17,6 +18,9 @@ from api_e2e.support import HttpClient
 
 _FAKE_JWT = 'FAKE-TOKEN-API-E2E-NOT-A-REAL-JWT-XXXXXXXXXXXXXXXXXXXXXXXX'
 _FAKE_UUID = '00000000-0000-7000-8000-000000000000'
+# Password nueva para el caso change-password (distinta de la que seteo el
+# flujo auth, que es `_STRONG_PASSWORD`).
+_NEW_PASSWORD = 'api-e2e-N3w-Passphrase!'  # noqa: S105
 
 
 def run_users(
@@ -82,6 +86,44 @@ def run_users(
                 bearer=access_token,
             ),
             expected='2xx',
+        )
+        runner.case(
+            lambda_name='users',
+            name='profile.change-password (error: current incorrecta -> 401)',
+            method='POST',
+            call=lambda: http.post(
+                '/users',
+                body=make_body(
+                    'profile',
+                    'change-password',
+                    current_password='this-is-the-wrong-pass',  # noqa: S106
+                    new_password=_NEW_PASSWORD,
+                ),
+                origin=origin,
+                bearer=access_token,
+            ),
+            expected=401,
+        )
+        # samples=1: el cambio NO es idempotente (tras el 1er 200, la current
+        # password ya cambio y un 2do intento daria 401). 1 invocacion real
+        # confirma la action end-to-end.
+        runner.case(
+            lambda_name='users',
+            name='profile.change-password (success)',
+            method='POST',
+            call=lambda: http.post(
+                '/users',
+                body=make_body(
+                    'profile',
+                    'change-password',
+                    current_password=_STRONG_PASSWORD,
+                    new_password=_NEW_PASSWORD,
+                ),
+                origin=origin,
+                bearer=access_token,
+            ),
+            expected='2xx',
+            samples=1,
         )
         runner.case(
             lambda_name='users',

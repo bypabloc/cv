@@ -90,6 +90,10 @@ _TABLES: dict[str, dict[str, str]] = {
         'physical': 'portfolio-webauthn-challenges-${stage}',
         'env': 'SSM_WEBAUTHN_CHALLENGES_TABLE_PATH',
     },
+    'email-config': {
+        'physical': 'portfolio-email-config-${stage}',
+        'env': 'SSM_EMAIL_CONFIG_TABLE_PATH',
+    },
 }
 
 # El inventario de secretos SSM vive en

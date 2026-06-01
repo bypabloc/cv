@@ -131,6 +131,35 @@ class TestRender:
             'table/portfolio-rate-limit-buckets-dev/index/*',
         ]
 
+    def test_render_email_config_table_path_and_arn(self):
+        """La tabla `email-config` (la usa send_email) se resuelve a su
+        nombre fisico + env var SSM_EMAIL_CONFIG_TABLE_PATH + IAM read.
+        """
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['name'] = 'send-email'
+        manifest['uses']['tables'] = {'email-config': 'read'}
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        assert (
+            rendered.env_vars['SSM_EMAIL_CONFIG_TABLE_PATH']
+            == '/portfolio/dev/dynamodb/email-config/name'
+        )
+        statements = rendered.iam_policy['Statement']
+        dynamo = [
+            s
+            for s in statements
+            if any(a.startswith('dynamodb:') for a in s['Action'])
+        ]
+        assert dynamo[0]['Resource'] == [
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-email-config-dev',
+            'arn:aws:dynamodb:us-east-1:${account}:'
+            'table/portfolio-email-config-dev/index/*',
+        ]
+
     def test_render_iam_policy_when_uses_secrets(self):
         from serverless import provisioner
 

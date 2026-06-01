@@ -6,7 +6,7 @@
 #   python devtools/run.py serverless deploy --lambda=send_email
 
 # --- Identidad ---
-name: send_email
+name: send-email
 description: Envia email transaccional (DynamoDB config + S3 template + Jinja2 + SES).
 
 # --- Runtime ---

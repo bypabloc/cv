@@ -227,10 +227,36 @@ mkdir -p ./tmp/iam
         "arn:aws:s3:::portfolio-devtools-state",
         "arn:aws:s3:::portfolio-devtools-state/*"
       ]
+    },
+    {
+      "Sid": "S3EmailTemplates",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutEncryptionConfiguration",
+        "s3:GetEncryptionConfiguration",
+        "s3:ListBucket",
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::portfolio-email-templates-dev",
+        "arn:aws:s3:::portfolio-email-templates-dev/*",
+        "arn:aws:s3:::portfolio-email-templates-stage",
+        "arn:aws:s3:::portfolio-email-templates-stage/*",
+        "arn:aws:s3:::portfolio-email-templates-prod",
+        "arn:aws:s3:::portfolio-email-templates-prod/*"
+      ]
     }
   ]
 }
 ```
+
+> El statement `S3EmailTemplates` lo necesita `provision-infra` + `seed-email-config`
+> para crear/configurar el bucket de templates de email y subir los archivos.
+> El statement `SQS` quedo OBSOLETO tras eliminar SQS del backend (invoke async
+> Lambda->Lambda): no hace dano (no hay colas que crear) pero se puede quitar.
 
 ### 2.3 — Crear los 3 roles
 

@@ -224,6 +224,11 @@ jobs:
     timeout-minutes: 10
     strategy:
       fail-fast: false
+      # max-parallel: 1 serializa los deploys. Cada lambda HTTP llama
+      # `apigateway create-deployment` sobre la MISMA REST API, y API Gateway
+      # limita create-deployment a ~1 cada pocos segundos por cuenta: en
+      # paralelo varios chocan con TooManyRequestsException (exit 254).
+      max-parallel: 1
       matrix:
         lambda: ${{ fromJSON(needs.detect-changes.outputs.affected) }}
     # Mismas 20 keys que migrate-db (el deploy de cada lambda invoca

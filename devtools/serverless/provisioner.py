@@ -1110,6 +1110,44 @@ def _cleanup_legacy_permissions(
         )
 
 
+# Backoff para `create-deployment`: API Gateway limita create-deployment a
+# ~1 cada pocos segundos por cuenta. Deploys (semi)concurrentes de varios
+# lambdas HTTP sobre la MISMA REST API chocan con TooManyRequestsException.
+_DEPLOYMENT_RETRY_DELAYS = (3, 8, 20)
+
+
+def _create_deployment(
+    api_id: str,
+    stage: str,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """`apigateway create-deployment` con retry ante TooManyRequests."""
+    delays: tuple[int | None, ...] = (*_DEPLOYMENT_RETRY_DELAYS, None)
+    args = [
+        'apigateway',
+        'create-deployment',
+        '--rest-api-id',
+        api_id,
+        '--stage-name',
+        stage,
+    ]
+    for attempt, delay in enumerate(delays):
+        try:
+            aws(args, profile=profile, region=region)
+        except AwsError as exc:
+            if 'TooManyRequests' not in exc.stderr or delay is None:
+                raise
+            print(
+                f'  create-deployment throttled (intento {attempt + 1}), '
+                f'reintento en {delay}s'
+            )
+            time.sleep(delay)
+        else:
+            return
+
+
 def _wire_http_trigger(
     rendered: RenderedLambda,
     stage: str,
@@ -1237,18 +1275,7 @@ def _wire_http_trigger(
         profile=profile,
         region=region,
     )
-    aws(
-        [
-            'apigateway',
-            'create-deployment',
-            '--rest-api-id',
-            api_id,
-            '--stage-name',
-            stage,
-        ],
-        profile=profile,
-        region=region,
-    )
+    _create_deployment(api_id, stage, profile=profile, region=region)
     source_arn = (
         f'arn:aws:execute-api:{region}:{account}:{api_id}/{stage}/'
         f'{trigger.method}{trigger.path}'

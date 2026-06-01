@@ -17,11 +17,12 @@ description: HTTP endpoint POST /users (profile/status/admin).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 256       # MB — minimo medido (dev, 2026-05). Misma familia que
-                  # auth (shared.auth + Neon). No usa webauthn pero argon2id
-                  # (password) es memory-hard -> 256 da headroom. 128 NO.
-                  # Bajo de 512 (sobre-dimensionado). Ver lambda-config.md.
-timeout: 30       # segundos — cubre el cold sin SnapStart restore con margen.
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 para medir con CPU x4.
+                  # Familia auth (shared.auth + Neon, argon2id memory-hard).
+                  # Minimo medido previo: 256. REVERTIR tras medir.
+                  # Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme.
 
 # SnapStart: reduce cold start (~830ms Restore). Mismo criterio que auth:
 # low traffic prod hace que cada request pague cold start.

@@ -16,15 +16,14 @@ description: HTTP endpoint POST /auth (register/login/verify/session).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 256       # MB — minimo medido (dev, 2026-05, cold $LATEST sin
-                  # SnapStart restore, con warmup en INIT). login.start:
-                  # 174 MB usados, handler 2.2s. webauthn (carga fido2/
-                  # cryptography): a 256 entra con headroom. 128 NO: webauthn
-                  # llega a 127/128 MB (OOM inminente) y tarda 21s (CPU
-                  # starved) ~ al borde del timeout. Bajo de 512 (sobre-
-                  # dimensionado) a 256. Ver .claude/rules/lambda-config.md.
-timeout: 30       # segundos — cubre el cold sin SnapStart restore (~6s a
-                  # 512 MB) + Turnstile siteverify HTTP, con margen.
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 en los 8 lambdas para
+                  # medir warm/cold con CPU x4. Minimo medido previo: 256
+                  # (login.start 174 MB, webauthn entra con headroom; 128 NO
+                  # por OOM/CPU-starved). REVERTIR al minimo tras medir si la
+                  # mejora no lo justifica. Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme (red de seguridad cold sin
+                  # restore + Turnstile siteverify HTTP). No afecta costo.
 
 # SnapStart: reduce cold start de ~3s a ~830ms (Restore Duration).
 # Critico en /auth: low traffic prod hace que cada request pague cold

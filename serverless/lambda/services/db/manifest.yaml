@@ -16,8 +16,16 @@ description: Gestiona el schema PostgreSQL del portfolio (migraciones Alembic).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB
-timeout: 120      # segundos
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 en los 8 lambdas. Previo:
+                  # 512 (migraciones Alembic). REVERTIR tras medir si no lo
+                  # justifica. Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme. NOTA: si una migracion grande
+                  # tardara >60s, subir SOLO este. Ver lambda-config.md.
+
+# SnapStart: snapshotea el INIT (imports + engine) para bajar el cold del
+# invoke directo de migraciones. Uniforme con el resto del backend.
+snap_start: true
 
 # --- Como se invoca este Lambda ---
 # direct  : se invoca directo (aws lambda invoke / deploy hook). Sin HTTP.

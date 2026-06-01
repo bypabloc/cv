@@ -6,9 +6,12 @@
 
 El portfolio (the-full-stack.com) tiene 6 sitios estaticos publicos
 (Astro 6 deployados a Cloudflare Pages) y un backend serverless en AWS
-(4 Lambdas Python: contact_form, tracking_pixel, stream_processor, db).
-La data generada por los visitantes — sessions, visits, tracking events,
-contacts — vive en Neon PostgreSQL (35 tablas, schema unificado).
+(8 Lambdas Python: auth, contact_form, cv, db, send_email,
+tracking_pixel, tracking_writer, users; el viejo stream_processor fue
+eliminado). El Lambda `auth` (6 operations / 26 actions) ya esta
+implementado y desplegado en dev/stage/prod. La data generada por los
+visitantes — sessions, visits, tracking events, contacts — vive en Neon
+PostgreSQL (35 tablas, schema unificado).
 
 Hoy no hay forma de **ver** esa data: las queries hay que correrlas
 manualmente con `psql` o desde la consola de Neon. No hay metricas
@@ -16,11 +19,13 @@ agregadas, no hay vista de funnel, no hay panel de contactos.
 
 Para resolverlo:
 
-- Los planes 01-auth-infra-basics + 02-auth-mfa
-  (`docs/specs/01-auth-infra-basics/`, `docs/specs/02-auth-mfa/`)
-  entregan el Lambda `auth` con registro/login/MFA. **Aun pending**.
-- El plan analytics-dashboard-api
-  (`docs/specs/analytics-dashboard-api/`) entrega el Lambda
+- El Lambda `auth` (registro/login/MFA/WebAuthn) ya esta implementado y
+  desplegado en `serverless/lambda/services/auth/` con 6 operations / 26
+  actions: register, login, verify, session, mfa, webauthn. Reglas en
+  `.claude/rules/auth-system.md`, docs en `.claude/docs/auth-system/`.
+  **NO esta pending**.
+- El plan a-analytics-dashboard-api
+  (`docs/specs/a-analytics-dashboard-api/`) entrega el Lambda
   `analytics` con 19 endpoints GET sobre la data. **Aun pending**.
 - **Este plan** entrega el **dashboard frontend SPA** que consume
   ambos APIs y los presenta como panel admin.
@@ -37,12 +42,16 @@ Para resolverlo:
   `admin` + product `portfolio`).
 - El sitekey de Turnstile (`0x4AAAAAADPSoiQA_-LcRafo`) ya cubre los 6
   subdomains. Agregar `admin.portfolio.*` al widget en Cloudflare.
-- Los planes auth + analytics aun NO estan implementados → el dashboard
-  no puede ser end-to-end-testeado contra backend real hasta que se
-  mergeen. Solucion: **MSW (Mock Service Worker)** con handlers que
-  reflejen exactamente el contrato del backend documentado en los
-  planes. Cuando el backend este vivo, el flag `NEXT_PUBLIC_USE_MSW`
-  se desactiva.
+- El Lambda `auth` ya esta desplegado, pero el Lambda `analytics` aun
+  NO esta implementado → el dashboard no puede ser end-to-end-testeado
+  contra el backend completo hasta que `analytics` se mergee. Solucion:
+  **MSW (Mock Service Worker)** con handlers que reflejen exactamente el
+  contrato del backend — el de auth replicado del codigo real en
+  `serverless/lambda/services/auth/core/{models,controllers}/` +
+  `.claude/docs/auth-system/`, el de analytics del plan
+  `docs/specs/a-analytics-dashboard-api/`. MSW se mantiene tambien para
+  desarrollo sin red. Cuando el backend este vivo, el flag
+  `NEXT_PUBLIC_USE_MSW` se desactiva.
 - 5 research files generados consolidan 7783 lineas de docs sobre
   Next.js 16.2.6 SPA, React 19.2.6 patterns, shadcn + Atomic Design hibrido,
   JWT auth security, Cloudflare Pages deploy
@@ -162,7 +171,7 @@ accessToken en memoria. Mitigaciones a XSS: (1) CSP estricta `default-src 'self'
 sin `unsafe-inline`/`unsafe-eval` en scripts, (2) Subresource Integrity
 (SRI) obligatorio en third-party scripts (Turnstile), (3) access JWT
 corto (15 min TTL), (4) refresh rotation + family_id detection en el
-backend (RFC 9700, ya implementado por planes 01-02).
+backend (RFC 9700, ya implementado en el Lambda `auth`).
 
 **Decision 5: Mutex de refresh client-side** — Sin mutex, 5 requests
 concurrent con 401 disparan 5 `/session/refresh` → backend revoca
@@ -176,13 +185,16 @@ correctness.
 decodea client-side y limpia el URL con `history.replaceState` para
 que ni siquiera quede en browser history.
 
-**Decision 7: MSW como mock layer** — Los planes auth + analytics aun
-no estan deployados. MSW handlers replican EXACTAMENTE el contrato
-(operations/actions/data shapes) documentado en
-`docs/specs/01-auth-infra-basics/` y
-`docs/specs/analytics-dashboard-api/`. Cuando el backend este vivo,
+**Decision 7: MSW como mock layer** — El Lambda `auth` ya esta
+desplegado, pero `analytics` aun no. Los MSW handlers replican
+EXACTAMENTE el contrato (operations/actions/data shapes): el de auth
+desde el codigo real en
+`serverless/lambda/services/auth/core/{models,controllers}/` +
+`.claude/docs/auth-system/`, el de analytics desde
+`docs/specs/a-analytics-dashboard-api/` (aun pending). MSW se mantiene
+para analytics y para desarrollo sin red; cuando el backend este vivo,
 basta apagar el flag `NEXT_PUBLIC_USE_MSW=true` y todo funciona contra
-el real. Esto permite mergear el dashboard ANTES que el backend este
+el real. Esto permite mergear el dashboard ANTES que `analytics` este
 listo.
 
 **Decision 8: Carpeta `dashboard/` en root (no `apps/dashboard/`)** —
@@ -343,12 +355,13 @@ tests (ver seccion 08-tests).
   mutation que actualiza el estado a `contacted`, el query de la
   lista invalida y refetch.
 
-### MFA (plan 02, opcional en este plan)
+### MFA + WebAuthn (scope base del dashboard)
 
 - **AC-26**: Given user en `/dashboard/settings/security`, When clickea
   "Setup TOTP", Then se llama `/auth?operation=mfa&action=setup-totp`,
-  el response trae `{secret, otpauth_url, qr_code_svg}`, y se renderiza
-  el QR + un InputOTP para confirmar el primer code.
+  el response trae `{secret_b32, otpauth_url}`, y el front renderiza el
+  QR desde el `otpauth_url` (genera el SVG client-side) + un InputOTP
+  para confirmar el primer code.
 
 ### Build y deploy
 
@@ -391,5 +404,76 @@ tests (ver seccion 08-tests).
   @portfolio/dashboard test:coverage`, Then coverage >= 80% per-file en
   todos los archivos modificados/creados (excluyendo `components/ui/*`
   + barrel `index.ts` + layouts).
+
+### MFA — TOTP (scope base)
+
+- **AC-34**: Given user en `/dashboard/settings/security` con el TOTP
+  recien seteado (AC-26), When ingresa el code de 6 digitos del
+  authenticator y submit, Then se llama
+  `/auth?operation=mfa&action=confirm-totp` con `{code}`, el metodo
+  queda confirmado, y como es el PRIMER metodo MFA del user la familia
+  de refresh se revoca en el backend (AC-27 de auth) → el cliente
+  dispara un `/session/refresh` para obtener un access nuevo.
+
+- **AC-35**: Given user con TOTP y email-code activos en
+  `/dashboard/settings/security`, When clickea "Marcar como preferido"
+  en TOTP, Then se llama `/auth?operation=mfa&action=set-preferred` con
+  `{kind: 'totp'}` y el `MfaListResponse` refetch muestra
+  `is_preferred: true` en el metodo TOTP.
+
+- **AC-36**: Given user con un solo metodo MFA activo, When clickea
+  "Desactivar" en ese metodo, Then se llama
+  `/auth?operation=mfa&action=disable` con `{kind}`, el backend responde
+  409 (guard `MUST_KEEP_ONE_MFA_METHOD`), y el dashboard muestra un
+  Alert "Debes conservar al menos un metodo MFA" sin desactivarlo.
+
+- **AC-37**: Given user en `/dashboard/settings/security`, When clickea
+  "Generar recovery codes", Then se llama
+  `/auth?operation=mfa&action=recovery-codes-generate`, el response trae
+  `{codes}` (10 codes de 10 chars Crockford), y se muestran UNA sola vez
+  con boton de copiar/descargar y aviso de que no se volveran a mostrar.
+
+### WebAuthn — passkeys (scope base)
+
+- **AC-38**: Given user en `/dashboard/settings/security`, When clickea
+  "Agregar passkey", Then se llama
+  `/auth?operation=webauthn&action=register-options`, el response trae
+  `{challenge_id, options}`, el dashboard invoca
+  `navigator.credentials.create({publicKey})` (con el RP_ID de
+  `NEXT_PUBLIC_WEBAUTHN_RP_ID`), y envia el resultado a
+  `/auth?operation=webauthn&action=register-verify` con
+  `{challenge_id, response, nickname?}`. Al ser el PRIMER metodo MFA, la
+  familia de refresh se revoca → el cliente dispara `/session/refresh`.
+
+- **AC-39**: Given user con passkeys registradas, When abre
+  `/dashboard/settings/security`, Then se llama
+  `/auth?operation=webauthn&action=list-credentials`, y se renderiza la
+  lista de `WebauthnCredential` (nickname + last_used_at). Al clickear
+  "Eliminar" se llama `/auth?operation=webauthn&action=delete-credential`
+  con `{credential_id}`; si dejara `total_mfa == 0` el backend responde
+  409 y el dashboard muestra el Alert del guard `MUST_KEEP_ONE`.
+
+### Login con MFA (scope base)
+
+- **AC-40**: Given user con password y MFA TOTP activo en
+  `/login`, When ingresa email + password y submit, Then
+  `/auth?operation=login&action=verify-password` responde un `temp_token`
+  step=2 + `methods` que incluye `'totp'`, y el dashboard navega al paso
+  de MFA pidiendo el code de 6 digitos.
+
+- **AC-41**: Given el paso de MFA del login con `temp_token` step=2 en
+  store, When el user ingresa el code de 6 digitos del authenticator y
+  submit, Then se llama `/auth?operation=login&action=verify-totp` con
+  `{temp_token, code}`, recibe `access_token` + `refresh_token` + `user`,
+  los guarda en store, y redirige a `/dashboard`.
+
+- **AC-42**: Given el paso de MFA del login (`temp_token` step=2,
+  factor previo fuerte: password o webauthn), When el user elige "Usar
+  recovery code" e ingresa un code de 10 chars, Then se llama
+  `/auth?operation=mfa&action=recovery-codes-consume` con
+  `{temp_token, code}`, recibe `access_token` + `refresh_token` + `user`,
+  y redirige a `/dashboard`. Si el `temp_token` viniera de magic-link o
+  email-code (factor debil), el backend responde 403
+  `RECOVERY_REQUIRES_STRONG_FACTOR` y el dashboard muestra el Alert.
 
 [Volver al README](README.md) | [Siguiente: 02-diagramas >](02-diagramas.md)

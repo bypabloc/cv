@@ -134,7 +134,7 @@ features/auth/
 │   ├── verify-code-input.tsx          # InputOTP 8 chars Crockford
 │   ├── magic-link-prompt.tsx          # "te enviamos un link..."
 │   ├── set-password-form.tsx
-│   ├── totp-setup.tsx                 # QR + InputOTP (plan 02)
+│   ├── totp-setup.tsx                 # QR (del otpauth_url) + InputOTP 6 digitos
 │   ├── recovery-codes-modal.tsx
 │   ├── webauthn-register-button.tsx   # @simplewebauthn/browser
 │   ├── auth-guard.tsx                 # HOC para proteger rutas

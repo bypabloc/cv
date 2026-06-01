@@ -280,7 +280,7 @@ git push origin dev   # CI auto-deploya admin.portfolio.dev.the-full-stack.com
 
 - `.claude/rules/dashboard.md` — reglas duras (este resumen extendido)
 - `.claude/docs/dashboard/` — knowledge tree (7 capitulos)
-- `docs/specs/dashboard/` — plan de implementacion (efimero, se elimina al mergear)
+- `docs/specs/b-dashboard/` — plan de implementacion (efimero, se elimina al mergear)
 - `.claude/rules/lambda-controller.md` — formato del Lambda `auth` backend (referencia)
 - `.claude/rules/secrets-strategy.md` + `client-env-sync.md` — env vars categoria client
 - `.claude/rules/ci-cd-pipeline.md` — `deploy-apps.yml` workflow

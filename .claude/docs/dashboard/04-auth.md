@@ -4,9 +4,12 @@
 
 ## Resumen del flujo
 
-El dashboard consume el Lambda `auth` de los planes 01-02 del repo. Tres
+El dashboard consume el Lambda `auth` desplegado
+(`serverless/lambda/services/auth/`): 6 operations / 26 actions. Tres
 tipos de JWT (temp 5min rolling, access 15min, refresh 30dias con
-family_id rotation).
+family_id rotation). MFA (TOTP, email-code, recovery codes) y WebAuthn
+(passkeys) son scope del dashboard desde el inicio. Contrato y reglas en
+`.claude/rules/auth-system.md` + `.claude/docs/auth-system/`.
 
 ### Decision: tokens en `localStorage` (NO HttpOnly cookies)
 
@@ -723,17 +726,27 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
 
 ## Endpoints typed (`auth-client.ts`)
 
-```typescript
-// src/features/auth/api/auth-client.ts
-import {apiFetch} from '@/lib/api-client'
-import type {User} from '../store/use-auth-store'
+Cubre las 26 actions invocables del Lambda `auth` (6 operations). Las
+actions de `mfa.*` y `webauthn.*` requieren access JWT (van CON el
+Bearer, sin `skipAuth`), salvo: `mfa.recovery-codes-consume` (usa un temp
+JWT step=2, `skipAuth: true`) y `webauthn.login-options` /
+`webauthn.login-verify` (parte del login sin sesion, `skipAuth: true`).
 
+### Tipos de respuesta
+
+```typescript
+// src/features/auth/api/auth-types.ts
+
+// access + refresh + user emitidos al cerrar register/login.
 export interface AuthResponse {
   access_token: string
+  refresh_token: string
   expires_in: number
   user: User
 }
 
+// Flujo multi-step (register/login). `methods` aparece cuando el user
+// tiene MFA: el cliente decide entre totp / webauthn / recovery-codes.
 export interface TempTokenResponse {
   temp_token: string
   user_id: string
@@ -741,14 +754,85 @@ export interface TempTokenResponse {
   methods?: ('magic-link' | 'email-code' | 'password' | 'totp' | 'webauthn')[]
 }
 
+export interface MfaMethod {
+  kind: 'totp' | 'email_code'
+  confirmed_at: string | null
+  is_preferred: boolean
+}
+
+export interface MfaListResponse {
+  methods: MfaMethod[]
+  webauthn_count: number
+  total_mfa: number
+}
+
+// El front renderiza el QR desde `otpauth_url`; no llega imagen.
+export interface TotpSetupResponse {
+  secret_b32: string
+  otpauth_url: string
+}
+
+// 10 codes Crockford de 10 chars, mostrados UNA sola vez.
+export interface RecoveryCodesResponse {
+  codes: string[]
+}
+
+export interface WebauthnRegisterOptionsResponse {
+  challenge_id: string
+  options: PublicKeyCredentialCreationOptionsJSON
+}
+
+export interface WebauthnLoginOptionsResponse {
+  challenge_id: string
+  options: PublicKeyCredentialRequestOptionsJSON
+}
+
+export interface WebauthnCredential {
+  id: string
+  nickname: string | null
+  last_used_at: string | null
+  created_at: string
+}
+```
+
+> `PublicKeyCredentialCreationOptionsJSON` y
+> `PublicKeyCredentialRequestOptionsJSON` son los tipos del DOM
+> (`lib.dom.d.ts`). El browser los consume directo con
+> `navigator.credentials.create()` / `.get()` tras pasar por
+> `PublicKeyCredential.parseCreationOptionsFromJSON()` /
+> `.parseRequestOptionsFromJSON()`.
+
+### Cliente
+
+```typescript
+// src/features/auth/api/auth-client.ts
+import {apiFetch} from '@/lib/api-client'
+import type {
+  AuthResponse,
+  MfaListResponse,
+  RecoveryCodesResponse,
+  TempTokenResponse,
+  TotpSetupResponse,
+  WebauthnCredential,
+  WebauthnLoginOptionsResponse,
+  WebauthnRegisterOptionsResponse,
+} from './auth-types'
+
 export const authClient = {
-  registerStart: (data: {email: string; cf_turnstile_response: string}) =>
+  // --- operation register (3 actions) ---
+  registerStart: (data: {
+    email: string
+    cf_turnstile_response: string
+    niche?: string
+  }) =>
     apiFetch<{data: TempTokenResponse}>('/auth', {
       method: 'POST',
       skipAuth: true,
       body: {operation: 'register', action: 'start', data},
     }),
 
+  // verify-magic-link es un GET callback del backend (302 -> /callback con
+  // tokens en fragment hash); el cliente no lo invoca via apiFetch.
   registerVerifyCode: (data: {code: string; temp_token: string}) =>
     apiFetch<{data: AuthResponse}>('/auth', {
       method: 'POST',
@@ -756,7 +840,13 @@ export const authClient = {
       body: {operation: 'register', action: 'verify-code', data},
     }),
 
-  loginStart: (data: {email: string; cf_turnstile_response: string; password?: string}) =>
+  // --- operation login (5 actions) ---
+  loginStart: (data: {
+    email: string
+    cf_turnstile_response: string
+    password?: string
+    niche?: string
+  }) =>
     apiFetch<{data: TempTokenResponse}>('/auth', {
       method: 'POST',
       skipAuth: true,
@@ -770,6 +860,16 @@ export const authClient = {
       body: {operation: 'login', action: 'verify-code', data},
     }),
 
+  // Variante 2-step: valida password (argon2). Si el user tiene MFA,
+  // devuelve un temp JWT step=2 + `methods` en vez del AuthResponse final.
+  loginVerifyPassword: (data: {temp_token: string; password: string}) =>
+    apiFetch<{data: AuthResponse | TempTokenResponse}>('/auth', {
+      method: 'POST',
+      skipAuth: true,
+      body: {operation: 'login', action: 'verify-password', data},
+    }),
+
+  // Paso final de login con MFA TOTP (temp step=2, prev=password|webauthn).
   loginVerifyTotp: (data: {code: string; temp_token: string}) =>
     apiFetch<{data: AuthResponse}>('/auth', {
       method: 'POST',
@@ -777,6 +877,7 @@ export const authClient = {
       body: {operation: 'login', action: 'verify-totp', data},
     }),
 
+  // --- operation verify (2 actions) ---
   setPassword: (data: {password: string; temp_token: string}) =>
     apiFetch<{data: AuthResponse}>('/auth', {
       method: 'POST',
@@ -791,12 +892,13 @@ export const authClient = {
       body: {operation: 'verify', action: 'resend-code', data},
     }),
 
-  sessionRefresh: () =>
-    apiFetch<{data: {access_token: string; expires_in: number}}>('/auth', {
+  // --- operation session (2 actions) ---
+  sessionRefresh: (data: {refresh_token: string}) =>
+    apiFetch<{data: {access_token: string; refresh_token: string; expires_in: number}}>('/auth', {
       method: 'POST',
       skipAuth: true,
       skipRefresh: true, // critico: este NUNCA debe entrar al mutex
-      body: {operation: 'session', action: 'refresh', data: {}},
+      body: {operation: 'session', action: 'refresh', data},
     }),
 
   sessionLogout: () =>
@@ -804,8 +906,123 @@ export const authClient = {
       method: 'POST',
       body: {operation: 'session', action: 'logout', data: {}},
     }),
+
+  // --- operation mfa (8 actions) ---
+  // Todas requieren access JWT (van con el Bearer) salvo
+  // recoveryCodesConsume, que usa un temp JWT step=2 (skipAuth).
+  mfaSetupTotp: () =>
+    apiFetch<{data: TotpSetupResponse}>('/auth', {
+      method: 'POST',
+      body: {operation: 'mfa', action: 'setup-totp', data: {}},
+    }),
+
+  // Confirma el TOTP recien seteado. El PRIMER metodo MFA revoca la
+  // familia de refresh (AC-27): tras esto, refrescar la sesion.
+  mfaConfirmTotp: (data: {code: string}) =>
+    apiFetch('/auth', {
+      method: 'POST',
+      body: {operation: 'mfa', action: 'confirm-totp', data},
+    }),
+
+  mfaSetupEmailCode: () =>
+    apiFetch('/auth', {
+      method: 'POST',
+      body: {operation: 'mfa', action: 'setup-email-code', data: {}},
+    }),
+
+  mfaSetPreferred: (data: {kind: 'totp' | 'email_code'}) =>
+    apiFetch('/auth', {
+      method: 'POST',
+      body: {operation: 'mfa', action: 'set-preferred', data},
+    }),
+
+  // Guard MUST_KEEP_ONE_MFA_METHOD: 409 si dejaria total_mfa == 0.
+  mfaDisable: (data: {kind: 'totp' | 'email_code'}) =>
+    apiFetch('/auth', {
+      method: 'POST',
+      body: {operation: 'mfa', action: 'disable', data},
+    }),
+
+  mfaList: () =>
+    apiFetch<{data: MfaListResponse}>('/auth', {
+      method: 'POST',
+      body: {operation: 'mfa', action: 'list', data: {}},
+    }),
+
+  // 10 recovery codes mostrados UNA sola vez.
+  mfaRecoveryCodesGenerate: () =>
+    apiFetch<{data: RecoveryCodesResponse}>('/auth', {
+      method: 'POST',
+      body: {operation: 'mfa', action: 'recovery-codes-generate', data: {}},
+    }),
+
+  // Consume un recovery code en el login con MFA. Exige un temp JWT
+  // step=2 con factor fuerte (password|webauthn): por eso skipAuth +
+  // temp_token. 403 RECOVERY_REQUIRES_STRONG_FACTOR si el temp viene de
+  // magic-link/email-code.
+  mfaRecoveryCodesConsume: (data: {code: string; temp_token: string}) =>
+    apiFetch<{data: AuthResponse}>('/auth', {
+      method: 'POST',
+      skipAuth: true,
+      body: {operation: 'mfa', action: 'recovery-codes-consume', data},
+    }),
+
+  // --- operation webauthn (6 actions) ---
+  // register-* y list/delete requieren access JWT; login-* van sin sesion.
+  webauthnRegisterOptions: () =>
+    apiFetch<{data: WebauthnRegisterOptionsResponse}>('/auth', {
+      method: 'POST',
+      body: {operation: 'webauthn', action: 'register-options', data: {}},
+    }),
+
+  // El PRIMER metodo MFA revoca la familia de refresh (AC-27).
+  webauthnRegisterVerify: (data: {
+    challenge_id: string
+    response: Record<string, unknown>
+    nickname?: string
+  }) =>
+    apiFetch('/auth', {
+      method: 'POST',
+      body: {operation: 'webauthn', action: 'register-verify', data},
+    }),
+
+  webauthnLoginOptions: (data: {email: string}) =>
+    apiFetch<{data: WebauthnLoginOptionsResponse}>('/auth', {
+      method: 'POST',
+      skipAuth: true,
+      body: {operation: 'webauthn', action: 'login-options', data},
+    }),
+
+  // sign_count monotonico: clone detection -> 401 + credential disabled.
+  webauthnLoginVerify: (data: {
+    challenge_id: string
+    response: Record<string, unknown>
+  }) =>
+    apiFetch<{data: AuthResponse}>('/auth', {
+      method: 'POST',
+      skipAuth: true,
+      body: {operation: 'webauthn', action: 'login-verify', data},
+    }),
+
+  webauthnListCredentials: () =>
+    apiFetch<{data: {credentials: WebauthnCredential[]}}>('/auth', {
+      method: 'POST',
+      body: {operation: 'webauthn', action: 'list-credentials', data: {}},
+    }),
+
+  // Guard MUST_KEEP_ONE_MFA_METHOD. Credential de otro user -> 404.
+  webauthnDeleteCredential: (data: {credential_id: string}) =>
+    apiFetch('/auth', {
+      method: 'POST',
+      body: {operation: 'webauthn', action: 'delete-credential', data},
+    }),
 }
 ```
+
+> El `User` interface (en `use-auth-store.ts`) ya expone
+> `mfa_methods: ('totp' | 'webauthn' | 'email_code')[]`: el dashboard lo
+> usa para decidir si pedir un segundo factor en el login y para pintar
+> el estado de MFA en `settings/security`.
 
 ## Hooks por accion
 
@@ -840,6 +1057,64 @@ export function useRegisterStart() {
 }
 ```
 
+## Flujo de login con MFA
+
+`login.start` (o `login.verify-password` en la variante 2-step) decide si
+hay segundo factor:
+
+1. `login.start` con `{email, cf_turnstile_response, password?}`. Si el
+   user no tiene MFA y mando `password`, el backend cierra con
+   `AuthResponse` (login directo).
+2. Si el user tiene MFA, la respuesta es un `TempTokenResponse` step=2 con
+   `methods` (subset de `totp` / `webauthn` / + recovery como fallback).
+   El dashboard guarda el `temp_token` y muestra el selector de factor.
+3. Segun el metodo elegido:
+   - **TOTP** -> `login.verify-totp` con `{code (6 digitos), temp_token}`.
+   - **WebAuthn** -> `webauthn.login-options` con `{email}` (devuelve
+     `challenge_id` + options) -> `navigator.credentials.get()` ->
+     `webauthn.login-verify` con `{challenge_id, response}`.
+   - **Recovery code** -> `mfa.recovery-codes-consume` con
+     `{code (10 chars), temp_token}`. El temp DEBE venir de un factor
+     fuerte (password / webauthn); si viene de magic-link/email-code el
+     backend responde `403 RECOVERY_REQUIRES_STRONG_FACTOR`.
+4. Cualquiera de los tres devuelve el `AuthResponse` final (access +
+   refresh + user). El dashboard hace `setTokens(...)` y navega a
+   `/dashboard`.
+
+```text
+login.start ──> { sin MFA + password } ──> AuthResponse (login directo)
+            └─> { con MFA } ──> temp step=2 + methods
+                                   ├─ totp     -> login.verify-totp
+                                   ├─ webauthn -> login-options -> get() -> login-verify
+                                   └─ recovery -> recovery-codes-consume
+                                                  (temp step=2 factor fuerte)
+                                   └────────────> AuthResponse final
+```
+
+## Setup de MFA en settings
+
+`settings/security` (`/dashboard/settings/security`) gestiona los metodos
+con access JWT activo. Patron por metodo:
+
+- **TOTP**: `mfa.setup-totp` -> el front renderiza el QR desde
+  `otpauth_url` -> el user ingresa el codigo -> `mfa.confirm-totp`.
+- **Email-code**: `mfa.setup-email-code` (activa MFA via email-code).
+- **WebAuthn / passkey**: `webauthn.register-options` ->
+  `navigator.credentials.create()` -> `webauthn.register-verify` con
+  `{challenge_id, response, nickname?}`.
+- **Recovery codes**: `mfa.recovery-codes-generate` muestra los 10 codes
+  UNA sola vez (el user debe guardarlos antes de cerrar el modal).
+- **Preferencia / baja**: `mfa.set-preferred`, `mfa.disable` y
+  `webauthn.delete-credential`. El guard `MUST_KEEP_ONE_MFA_METHOD`
+  responde `409` si la accion dejaria al user con `total_mfa == 0`.
+
+> AC-27: confirmar el PRIMER metodo MFA (`mfa.confirm-totp`,
+> `mfa.setup-email-code` o `webauthn.register-verify`) revoca la familia
+> de refresh en el backend. Tras esa accion, el dashboard fuerza un
+> `session.refresh` para obtener un access nuevo (el viejo `iat` queda
+> invalidado). `mfa.list` + `webauthn.list-credentials` pintan el estado
+> actual de la pantalla.
+
 ## Threat model resumido
 
 | Amenaza | Mitigacion implementada |
@@ -849,7 +1124,7 @@ export function useRegisterStart() {
 | Refresh token reuse (token stolen) | Family_id rotation backend. Reuse detection → revoke familia entera |
 | Concurrent refresh race | Mutex client-side: 1 sola call in-flight |
 | CSRF | NO se usan cookies (Bearer auth en Authorization header). Sin cookies cross-origin = sin vector CSRF. |
-| Phishing (evilginx MitM) | WebAuthn (plan 02) es origin-bound = inmune. JWT/TOTP NO resisten |
+| Phishing (evilginx MitM) | WebAuthn (passkeys) es origin-bound = inmune. JWT/TOTP NO resisten |
 | Magic link leak via Referer | Tokens en fragment hash (NO query). `Referrer-Policy: strict-origin-when-cross-origin` |
 | Multi-tab desync | BroadcastChannel `portfolio_auth` + `storage` event listener fallback |
 | Logout incompleto | Backend blacklist familia + `queryClient.clear()` + Zustand reset + broadcast |

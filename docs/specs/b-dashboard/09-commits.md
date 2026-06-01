@@ -8,7 +8,7 @@
 - Conventional Commits en **espanol** (subject + body imperativo).
 - Sin atribucion de IA. Sin emojis.
 - Primer commit: la carpeta del plan. Ultimo commit: verificacion E2E
-  + `git rm -r docs/specs/dashboard/`.
+  + `git rm -r docs/specs/b-dashboard/`.
 - PR unico `feature/dashboard-frontend -> dev` con merge commit.
 
 ## Secuencia de commits
@@ -19,12 +19,12 @@
 docs(specs): agrega plan dashboard SPA admin.portfolio
 
 - Plan Large (~21 fases) para construir el dashboard admin SPA en Next.js 16.2.6 + React 19.2.6 (compiler stable) + shadcn/ui + Tanstack Query v5 + Zustand 5 con persist en localStorage, deployado a Cloudflare Pages en admin.portfolio.{dev|stage|prod}.the-full-stack.com
-- Carpeta docs/specs/dashboard/ con README + 11 secciones (contexto, diagramas, estructura, setup-base, ui, auth, dashboard-features, descomposicion, commits, worktrees, verificacion-e2e)
-- Scope: SOLO frontend. APIs auth (planes 01-02) y analytics (analytics-dashboard-api) se asumen existentes; MSW provee mocks hasta deploy
+- Carpeta docs/specs/b-dashboard/ con README + 11 secciones (contexto, diagramas, estructura, setup-base, ui, auth, dashboard-features, descomposicion, commits, worktrees, verificacion-e2e)
+- Scope: SOLO frontend. El API auth YA esta desplegado (serverless/lambda/services/auth/, 26 actions invocables); el API analytics (a-analytics-dashboard-api) sigue pending, MSW provee sus mocks hasta deploy
 - 33 criterios de aceptacion numerados, todos referenciados por tests
 ```
 
-**Verify**: `ls docs/specs/dashboard/README.md` + revisar paths internos OK
+**Verify**: `ls docs/specs/b-dashboard/README.md` + revisar paths internos OK
 
 ### 2. Skill + rule + knowledge tree
 
@@ -162,7 +162,7 @@ feat(dashboard,auth): Zustand store + refresh mutex + broadcast + auth-client ty
 - src/features/auth/lib/refresh-mutex.ts singleton in-flight Promise
 - src/features/auth/lib/broadcast.ts BroadcastChannel helpers (LOGOUT, TOKEN_REFRESH) con guard SSR
 - src/features/auth/lib/token-expiry.ts (getJwtExpiry, isJwtExpired)
-- src/features/auth/api/auth-client.ts: 10 endpoints typed (register/login/verify/session)
+- src/features/auth/api/auth-client.ts: las 26 actions del Lambda auth desplegado typed (register 3 + login 5 + verify 2 + session 2 + mfa 8 + webauthn 6). Shapes exactos de serverless/lambda/services/auth/core/{models,controllers}/ (ver .claude/docs/auth-system/)
 - src/features/auth/api/query-keys.ts
 - src/features/auth/types.ts (User, AuthResponse, Method, MfaMethod)
 - Tests unit con coverage >= 90% (critico mutex test, store test, broadcast guard test)
@@ -197,7 +197,9 @@ feat(dashboard,auth): 10 componentes (LoginForm, RegisterForm, VerifyCodeInput, 
 - src/features/auth/components/set-password-form.tsx con Zod refine confirmPassword
 - src/features/auth/components/auth-guard.tsx con AuthGuard HOC (redirect /login?next=... si !isAuthenticated)
 - src/features/auth/components/turnstile-widget.tsx wrapper @marsidev/react-turnstile
-- src/features/auth/components/{totp-setup,recovery-codes-modal,webauthn-register-button}.tsx (plan 02, opcional)
+- src/features/auth/components/{totp-setup,confirm-totp-input,recovery-codes-modal}.tsx (setup-totp + confirm-totp + recovery-codes-generate)
+- src/features/auth/components/{webauthn-register-button,webauthn-credentials-list}.tsx (register-options/verify + list-credentials/delete-credential)
+- src/features/auth/components/{verify-totp-input,recovery-codes-consume-form}.tsx (login.verify-totp + mfa.recovery-codes-consume del flujo de login con MFA)
 - src/features/auth/index.ts barrel
 - Tests unit con BDD-style + coverage >= 80%
 - Cumple AC-8, AC-9, AC-10, AC-11, AC-19, AC-20, AC-26
@@ -307,8 +309,8 @@ feat(devtools,dashboard): extiende sync_secrets catalog con NEXT_PUBLIC_*
 - devtools/sync_secrets/catalog.py: agrega 6 SecretDefinition (NEXT_PUBLIC_API_ENDPOINT, NEXT_PUBLIC_TURNSTILE_SITEKEY, NEXT_PUBLIC_DASHBOARD_URL, NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS, NEXT_PUBLIC_FEATURE_MFA, NEXT_PUBLIC_WEBAUTHN_RP_ID)
 - docker/env/client/.example: agrega placeholders para los 6 nuevos
 - Valores por env:
-  - NEXT_PUBLIC_FEATURE_MFA: false en dev/stage/prod hasta que el plan 02-auth-mfa este mergeado; luego flip a true (rotacion puntual via --keys)
-  - NEXT_PUBLIC_WEBAUTHN_RP_ID: admin.portfolio.dev.the-full-stack.com (dev), admin.portfolio.stage.the-full-stack.com (stage), admin.portfolio.the-full-stack.com (prod). Requerido por `navigator.credentials.create({publicKey: {rp: {id}}})` en la Fase 16. Sin este valor el flujo de passkeys falla.
+  - NEXT_PUBLIC_FEATURE_MFA: el backend MFA ya esta desplegado (serverless/lambda/services/auth/, operations mfa + webauthn). Si se conserva el flag, es solo un toggle opcional de UI (default true en dev/stage/prod), NUNCA un gate de "backend pending". Eliminarlo es valido si la UI de MFA no necesita ocultarse.
+  - NEXT_PUBLIC_WEBAUTHN_RP_ID: config base (no detras de flag). admin.portfolio.dev.the-full-stack.com (dev), admin.portfolio.stage.the-full-stack.com (stage), admin.portfolio.the-full-stack.com (prod). Requerido por `navigator.credentials.create({publicKey: {rp: {id}}})` en la Fase 16. Sin este valor el flujo de passkeys falla.
 ```
 
 **Verify**: `python devtools/run.py sync_secrets --env=dev --category=client --dry-run`
@@ -347,10 +349,10 @@ test(dashboard,e2e): 7 specs Playwright para flujos golden path
 ### 26. Verificacion E2E iterativa + cleanup (fase 21) — ultimo commit
 
 ```text
-chore(dashboard): verificacion E2E completa + elimina docs/specs/dashboard/
+chore(dashboard): verificacion E2E completa + elimina docs/specs/b-dashboard/
 
 - Bateria completa pasa: lint + typecheck + unit + coverage (>= 80%) + build + E2E + smoke deploy a dev
-- Elimina docs/specs/dashboard/ (plan efimero). El conocimiento permanente vive en:
+- Elimina docs/specs/b-dashboard/ (plan efimero). El conocimiento permanente vive en:
   - .claude/rules/dashboard.md
   - .claude/skills/dashboard-stack/SKILL.md
   - .claude/docs/dashboard/ (7 archivos)

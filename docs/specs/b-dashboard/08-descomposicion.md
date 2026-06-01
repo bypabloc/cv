@@ -40,11 +40,11 @@ Estas tareas tocan archivos centrales (package.json, configs root) y
 deben completar ANTES de paralelizar.
 
 #### A.1 — Carpeta del plan
-- **Archivos**: `docs/specs/dashboard/*.md` (12 archivos del plan)
+- **Archivos**: `docs/specs/b-dashboard/*.md` (12 archivos del plan)
 - **AC**: — (meta-task)
 - **Depende de**: nada
 - **Paralelizable con**: ninguna
-- **Verify**: `ls docs/specs/dashboard/README.md`
+- **Verify**: `ls docs/specs/b-dashboard/README.md`
 - **Done**: PR feature/dashboard-frontend creado con la carpeta committed
 
 #### A.2 — Scaffold `dashboard/` (fase 1)
@@ -339,12 +339,12 @@ correr en paralelo (limite 5-7 worktrees).
 - **Done**: 7 specs E2E verdes
 
 #### F.2 — Verificacion E2E iterativa (fase 21) — la ultima
-- **Archivos**: ninguno nuevo. Es la fase de verify-before-done + limpieza de `docs/specs/dashboard/`.
+- **Archivos**: ninguno nuevo. Es la fase de verify-before-done + limpieza de `docs/specs/b-dashboard/`.
 - **AC**: AC-32, AC-33 + TODOS los AC del plan
 - **Depende de**: F.1 + TODAS
 - **Paralelizable con**: ninguna
 - **Verify**: bateria completa de la seccion 11
-- **Done**: bateria verde + `git rm -r docs/specs/dashboard/` committed
+- **Done**: bateria verde + `git rm -r docs/specs/b-dashboard/` committed
 
 ## Diagrama de paralelizacion
 

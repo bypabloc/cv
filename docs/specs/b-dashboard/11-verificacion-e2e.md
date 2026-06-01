@@ -193,8 +193,8 @@ python devtools/run.py sync_secrets --env=dev --category=client --dry-run
 #   - NEXT_PUBLIC_TURNSTILE_SITEKEY
 #   - NEXT_PUBLIC_DASHBOARD_URL
 #   - NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS
-#   - NEXT_PUBLIC_FEATURE_MFA               (flag para activar la Fase 16 cuando plan 02-auth-mfa este mergeado)
-#   - NEXT_PUBLIC_WEBAUTHN_RP_ID            (hostname admin.portfolio.{env}.the-full-stack.com, requerido por la API WebAuthn)
+#   - NEXT_PUBLIC_FEATURE_MFA               (toggle de UI opcional; el backend MFA ya esta desplegado, NO es un gate de "pending")
+#   - NEXT_PUBLIC_WEBAUTHN_RP_ID            (config base, hostname admin.portfolio.{env}.the-full-stack.com, requerido por la API WebAuthn)
 ```
 
 ### B.10 — GH Actions local (act + skill github-actions)
@@ -255,16 +255,17 @@ openssl s_client -connect admin.portfolio.dev.the-full-stack.com:443 -showcerts 
   | grep -E "subject|issuer" | head -4
 
 # Verificar el flow manual real: abrir admin.portfolio.dev en browser
-# Sin auth backend desplegado: las APIs fallaran (esto es esperado;
-# cuando se deploye el plan auth se podra hacer login real).
+# El Lambda `auth` ya esta desplegado: el login real (magic-link, code,
+# password, MFA, WebAuthn) funciona contra el backend. La data analitica
+# se sirve via MSW hasta que se mergee el Lambda `analytics`.
 ```
 
 ### B.13 — Limpieza del plan (ULTIMO PASO)
 
 ```bash
 # Solo si TODO lo anterior (B.1-B.12) paso en verde:
-git rm -r docs/specs/dashboard/
-git commit -m "chore(dashboard): elimina docs/specs/dashboard/ tras mergear el plan
+git rm -r docs/specs/b-dashboard/
+git commit -m "chore(dashboard): elimina docs/specs/b-dashboard/ tras mergear el plan
 
 - Plan dashboard SPA completado y mergeado a dev
 - El conocimiento permanente queda en:
@@ -324,7 +325,10 @@ Estructura Hybrid Atomic Design:
   dashboard-shell)
 - src/app/ — Next App Router con groups (auth) y (dashboard)
 
-Auth contra Lambda `auth` (planes 01-02): tokens en localStorage
+Auth contra el Lambda `auth` (desplegado en dev/stage/prod, 26 actions:
+register / login / verify / session / mfa / webauthn — ver
+serverless/lambda/services/auth/, .claude/rules/auth-system.md y
+.claude/docs/auth-system/): tokens en localStorage
 (accessToken en memoria Zustand, refreshToken + refreshExpiry + user
 persistidos). NO HttpOnly cookies cross-origin — el dashboard vive en
 admin.portfolio.{env}.the-full-stack.com y el API en api.portfolio.{env},
@@ -335,11 +339,13 @@ corto (15 min) + family_id refresh rotation backend (RFC 9700). Mutex
 client-side garantiza 1 sola /session/refresh in-flight. Magic link
 callback con fragment hash + BroadcastChannel multi-tab sync.
 
-Data fetching contra Lambda `analytics` (plan analytics-dashboard-api):
+Data fetching contra Lambda `analytics` (plan a-analytics-dashboard-api):
 Tanstack Query v5 con persister + 19 endpoints typed.
 
-Mientras los planes backend no esten mergeados, MSW provee mocks
-completos (NEXT_PUBLIC_USE_MSW=true).
+El Lambda `auth` ya esta desplegado, asi que el flujo de auth (login,
+register, MFA, WebAuthn, refresh) corre contra el backend real. Mientras
+el Lambda `analytics` no este mergeado, MSW provee mocks de la data
+analitica (NEXT_PUBLIC_USE_MSW=true).
 
 ## Como probar
 
@@ -366,16 +372,13 @@ python devtools/run.py test_runner --module=feature --type=feature --env=local
 
 Deploy preview en dev (tras merge):
 - admin.portfolio.dev.the-full-stack.com
-- (Auth real funcional cuando se mergeen los planes 01-02 + analytics)
+- (Auth real ya funcional contra el Lambda `auth` desplegado; data
+  analytics real cuando se mergee a-analytics-dashboard-api)
 
 ## TODO (out of scope)
 
-- Plan 01-auth-infra-basics no mergeado aun (bloqueante para
-  funcionalidad real de auth)
-- Plan analytics-dashboard-api no mergeado aun (bloqueante para data
-  real)
-- Plan 02-auth-mfa no mergeado aun (afecta features de MFA en settings;
-  componentes ya existen, mocks via MSW hasta entonces)
+- Plan a-analytics-dashboard-api no mergeado aun (bloqueante para data
+  real; MSW provee mocks de la data analitica)
 EOF
 )"
 ```
@@ -389,7 +392,7 @@ EOF
 | `--no-verify` para saltar pre-push hook | Saltea quality gates | Diagnosticar el error real |
 | Crear PR sin coverage 80% | Plan-format lo prohibe | Agregar tests faltantes |
 | Mergear sin que CI termine en verde | Romper main | Esperar |
-| Eliminar `docs/specs/dashboard/` antes del cierre real | Pierde el plan | Solo al final (B.13) |
+| Eliminar `docs/specs/b-dashboard/` antes del cierre real | Pierde el plan | Solo al final (B.13) |
 | Atribuir a IA en commit del cleanup | Politica empresa | Mensaje limpio |
 
 [< 10-paralelizacion-worktrees](10-paralelizacion-worktrees.md) | [Volver al README](README.md)

@@ -16,8 +16,7 @@ description: Form de contacto (valida + Turnstile + escribe Neon inline + invoke
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 para medir warm/cold con
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 para medir warm/cold con
                   # CPU x4. Minimo medido previo: 256 (footprint Neon 157 MB;
                   # 128 NO por headroom). REVERTIR al minimo tras medir si la
                   # mejora no lo justifica. Ver .claude/rules/lambda-config.md.

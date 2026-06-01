@@ -5,8 +5,9 @@
 > Biome v2 + Tailwind v4 + shadcn/ui + Tanstack Query v5 + Zustand 5,
 > deployado a Cloudflare Pages en
 > `admin.portfolio.{dev|stage|prod}.the-full-stack.com`. Consume el
-> Lambda `auth` (planes 01-02) + Lambda `analytics` (plan
-> analytics-dashboard-api) del backend serverless del repo.
+> Lambda `auth` (desplegado: 6 operations / 26 actions) + Lambda
+> `analytics` (plan a-analytics-dashboard-api) del backend serverless
+> del repo.
 
 ## Versiones canonicas (mayo 2026)
 
@@ -218,7 +219,7 @@ Reglas duras del layout:
 - **NUNCA** Server Components con `async`/`fetch` directo. Todo Client
   Component con Tanstack Query.
 
-### Auth (consume Lambda `auth` de planes 01-02)
+### Auth (consume el Lambda `auth` desplegado: 6 operations / 26 actions)
 
 > **Contexto: el dashboard es un SPA estatico (Next.js `output:
 > 'export'`) deployado en Cloudflare Pages**. NO hay backend bajo el
@@ -235,6 +236,30 @@ Reglas duras del layout:
 > `unsafe-inline`/`unsafe-eval` (Next 16 export lo soporta),
 > Subresource Integrity en todos los scripts third-party, access JWT
 > corto (15 min), refresh rotation + family detection en el backend.
+
+El dashboard consume las **26 actions** del Lambda `auth` desde el
+inicio (NO hay nada "pending"; MFA + WebAuthn son scope base). Todo
+request va por `POST /auth` con body JSON `{operation, action, data}`
+(salvo `verify-magic-link`, que es un GET callback). Distribucion:
+
+- `register` (3): `start`, `verify-magic-link`, `verify-code`.
+- `login` (5): `start`, `verify-magic-link`, `verify-code`,
+  `verify-password`, `verify-totp`.
+- `verify` (2): `set-password`, `resend-code`.
+- `session` (2): `refresh`, `logout`.
+- `mfa` (8): `setup-totp`, `confirm-totp`, `setup-email-code`,
+  `set-preferred`, `disable`, `list`, `recovery-codes-generate`,
+  `recovery-codes-consume`.
+- `webauthn` (6): `register-options`, `register-verify`,
+  `login-options`, `login-verify`, `list-credentials`,
+  `delete-credential`.
+
+`features/auth/api/auth-client.ts` expone las 26 actions tipadas (NO un
+subconjunto). `features/settings/` implementa la gestion completa de
+MFA + WebAuthn (setup/confirm TOTP, email-code, set-preferred, disable,
+recovery codes, register/list/delete de passkeys). El detalle de
+payloads y responses TS vive en `serverless/lambda/services/auth/` +
+`.claude/rules/auth-system.md` + `.claude/docs/auth-system/`.
 
 - **SIEMPRE** access JWT y refresh JWT en `localStorage`
   (`access_token`, `refresh_token`, `user` como JSON). El store
@@ -270,6 +295,36 @@ Reglas duras del layout:
   ANTES de limpiar el estado local (backend blacklistea la familia en
   DynamoDB). Si la llamada al backend falla, igual se limpia el estado
   local + redirect.
+- **SIEMPRE** el login con MFA usa el flujo step-up del backend:
+  `login.verify-password` (o `webauthn.login-verify`) emite un temp JWT
+  `step=2` con `methods`; `login.verify-totp` lo cierra con el code de
+  6 digitos. El recovery se hace con `mfa.recovery-codes-consume`.
+- **SIEMPRE** las actions `mfa.*` (salvo `recovery-codes-consume`) y
+  `webauthn.*` (salvo `login-options` / `login-verify`, que son parte
+  del login y NO requieren sesion) viajan con `Authorization: Bearer
+  <access JWT>`. El backend las valida con `require_active_user`.
+- **SIEMPRE** `mfa.recovery-codes-consume` se invoca con un temp JWT
+  `step=2` proveniente de un factor fuerte (`prev=password|webauthn`),
+  NUNCA con el access JWT. Un temp de magic-link / email-code da `403
+  RECOVERY_REQUIRES_STRONG_FACTOR`.
+- **SIEMPRE** `mfa.setup-totp` devuelve `{secret_b32, otpauth_url}`: el
+  dashboard renderiza el QR client-side desde `otpauth_url` (libreria
+  QR del bundle), NUNCA pide el QR al backend. `mfa.confirm-totp` cierra
+  el setup con el code de 6 digitos.
+- **SIEMPRE** `mfa.recovery-codes-generate` muestra los 10 codes UNA
+  sola vez (no se vuelven a leer): forzar al usuario a copiarlos /
+  descargarlos antes de cerrar el modal.
+- **SIEMPRE** `webauthn.register-options` / `register-verify` y
+  `webauthn.login-options` / `login-verify` usan el WebAuthn API del
+  browser (`navigator.credentials.create|get`) sobre las options
+  devueltas por el backend (con su `challenge_id`, TTL 5 min single-use).
+- **SIEMPRE** `NEXT_PUBLIC_WEBAUTHN_RP_ID` es config BASE por env (apex
+  `the-full-stack.com` en prod, `portfolio.dev.the-full-stack.com` en
+  dev, `portfolio.stage.the-full-stack.com` en stage). Un passkey NO
+  migra entre envs (esperado). NO esta detras de un flag de "pending".
+- **SIEMPRE** si se conserva `NEXT_PUBLIC_FEATURE_MFA`, es solo un toggle
+  de UI opcional (mostrar / ocultar la seccion de seguridad), NUNCA un
+  gate de "backend pending": el backend MFA + WebAuthn esta desplegado.
 - **SIEMPRE** CSP estricta en `public/_headers`: `default-src 'self';
   script-src 'self'; connect-src 'self' https://api.portfolio.*
   https://challenges.cloudflare.com; ...`. Sin `unsafe-inline` ni
@@ -293,6 +348,16 @@ Reglas duras del layout:
 - **NUNCA** cargar scripts third-party sin SRI (`integrity` attribute).
   Lista permitida hoy: `challenges.cloudflare.com/turnstile/v0/api.js`
   (Cloudflare publica los hashes oficiales por version).
+- **NUNCA** tratar MFA + WebAuthn como funcionalidad diferida: estan
+  desplegados en el Lambda `auth` (dev/stage/prod) y son scope del
+  dashboard desde el inicio. NO condicionarlos a "cuando se mergee X".
+- **NUNCA** invocar `mfa.recovery-codes-consume` con el access JWT (usar
+  el temp JWT `step=2` del factor fuerte) ni `webauthn.login-options` /
+  `login-verify` con `Authorization` (son del login, sin sesion).
+- **NUNCA** persistir el `secret_b32` del TOTP ni los recovery codes en
+  `localStorage` ni en el store: se muestran en pantalla y se descartan.
+- **NUNCA** logear el `secret_b32`, el code TOTP, los recovery codes ni
+  la `response` cruda del WebAuthn API.
 
 ### UI (shadcn + Tailwind v4 + theming)
 
@@ -549,10 +614,13 @@ python devtools/run.py test_runner --module=feature --type=feature --env=local
 
 - Skill: `/dashboard-stack` (resumen ejecutivo + decisiones)
 - Knowledge tree: `.claude/docs/dashboard/` (7 capitulos)
-- Plan: `docs/specs/dashboard/` (efimero, se elimina al mergear)
-- Backend auth: `docs/specs/01-auth-infra-basics/` + `02-auth-mfa/`
-  (pending de implementar)
-- Backend analytics: `docs/specs/analytics-dashboard-api/` (pending)
+- Plan: `docs/specs/b-dashboard/` (efimero, se elimina al mergear)
+- Backend auth: `serverless/lambda/services/auth/` (YA implementado y
+  desplegado: 6 operations / 26 actions invocables por el cliente —
+  register, login, verify, session, mfa, webauthn). Reglas:
+  `.claude/rules/auth-system.md`, docs: `.claude/docs/auth-system/`
+- Backend analytics: `docs/specs/a-analytics-dashboard-api/` (pending,
+  va ANTES que este plan)
 - Estandar de subdominios: `.claude/docs/subdomain-standard/`
 - Cloudflare Pages: `.claude/docs/cloudflare/` + skill
   `cloudflare-deploy`

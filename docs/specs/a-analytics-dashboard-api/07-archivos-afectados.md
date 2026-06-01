@@ -9,19 +9,19 @@
 
 ### Documentacion del plan (efimero — se elimina al mergear)
 
-- `docs/specs/analytics-dashboard-api/README.md`
-  - Verificar: `markdownlint docs/specs/analytics-dashboard-api/*.md` (warnings ok, errors no)
-- `docs/specs/analytics-dashboard-api/01-contexto-y-decision.md` — idem
-- `docs/specs/analytics-dashboard-api/02-arquitectura.md` — idem
-- `docs/specs/analytics-dashboard-api/03-infraestructura.md` — idem
-- `docs/specs/analytics-dashboard-api/04-queries-sql.md` — idem
-- `docs/specs/analytics-dashboard-api/05-cache-layer.md` — idem
-- `docs/specs/analytics-dashboard-api/06-testing.md` — idem
-- `docs/specs/analytics-dashboard-api/07-archivos-afectados.md` — este archivo
-- `docs/specs/analytics-dashboard-api/08-descomposicion-paralelizacion.md`
-- `docs/specs/analytics-dashboard-api/09-commits.md`
-- `docs/specs/analytics-dashboard-api/10-paralelizacion-worktrees.md`
-- `docs/specs/analytics-dashboard-api/11-verificacion-e2e.md`
+- `docs/specs/a-analytics-dashboard-api/README.md`
+  - Verificar: `markdownlint docs/specs/a-analytics-dashboard-api/*.md` (warnings ok, errors no)
+- `docs/specs/a-analytics-dashboard-api/01-contexto-y-decision.md` — idem
+- `docs/specs/a-analytics-dashboard-api/02-arquitectura.md` — idem
+- `docs/specs/a-analytics-dashboard-api/03-infraestructura.md` — idem
+- `docs/specs/a-analytics-dashboard-api/04-queries-sql.md` — idem
+- `docs/specs/a-analytics-dashboard-api/05-cache-layer.md` — idem
+- `docs/specs/a-analytics-dashboard-api/06-testing.md` — idem
+- `docs/specs/a-analytics-dashboard-api/07-archivos-afectados.md` — este archivo
+- `docs/specs/a-analytics-dashboard-api/08-descomposicion-paralelizacion.md`
+- `docs/specs/a-analytics-dashboard-api/09-commits.md`
+- `docs/specs/a-analytics-dashboard-api/10-paralelizacion-worktrees.md`
+- `docs/specs/a-analytics-dashboard-api/11-verificacion-e2e.md`
 
 ### Lambda nuevo — Infraestructura (Fase 1)
 
@@ -33,7 +33,7 @@
 - `serverless/lambda/services/analytics/.gitignore`
   - Excluye `build/`, `build.zip`, `.venv/`, `__pycache__/`, `*.pyc`
 - `serverless/lambda/services/analytics/README.md`
-  - Corto, linkea a `docs/specs/analytics-dashboard-api/`
+  - Corto, linkea a `docs/specs/a-analytics-dashboard-api/`
 
 ### Lambda nuevo — Settings (Fase 1)
 
@@ -261,10 +261,10 @@ Promocion de aprendizajes de la spec (al cerrar el plan):
 
 ## Eliminar
 
-- `docs/specs/analytics-dashboard-api/` — al cerrar el PR `feature/X ->
+- `docs/specs/a-analytics-dashboard-api/` — al cerrar el PR `feature/X ->
   dev`. Ultimo commit del plan: `git rm -r
-  docs/specs/analytics-dashboard-api/`.
-  - Verificar: `test ! -d docs/specs/analytics-dashboard-api`
+  docs/specs/a-analytics-dashboard-api/`.
+  - Verificar: `test ! -d docs/specs/a-analytics-dashboard-api`
 
 ## Resumen cuantitativo
 

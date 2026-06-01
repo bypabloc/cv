@@ -105,7 +105,7 @@ export default function DashboardLayout({children}: {children: ReactNode}) {
 
 ## Fases 11-15 — Nota de seguridad sobre el backend `/analytics`
 
-> **GAP CONOCIDO** — el plan `docs/specs/analytics-dashboard-api/`
+> **GAP CONOCIDO** — el plan `docs/specs/a-analytics-dashboard-api/`
 > (Decision 1) declara explicitamente que el Lambda `analytics` NO
 > valida el JWT en su primera entrega: solo aplica rate-limit por IP.
 > El dashboard manda `Authorization: Bearer <accessToken>` en todos
@@ -120,7 +120,7 @@ export default function DashboardLayout({children}: {children: ReactNode}) {
 > **Bloqueante para merge a `main`**: si los datos de la feature
 > `contacts/` (Fase 15) incluyen PII real (email del visitante,
 > mensaje), el cutover a prod del dashboard DEBE esperar a que la fase
-> de auth del plan analytics-dashboard-api este mergeada. Mientras
+> de auth del plan a-analytics-dashboard-api este mergeada. Mientras
 > tanto, prod queda capada al subset publico-safe (analytics
 > agregadas, no contacts).
 >
@@ -248,34 +248,108 @@ Page: `src/app/(dashboard)/contacts/page.tsx`.
 
 **Commit**: `feat(dashboard,contacts): list + by-status + detail dialog + mutation update-status`
 
-## Fase 16 — Feature `settings/` (profile + MFA setup)
+## Fase 16 — Feature `settings/` (profile + MFA + WebAuthn)
 
-Componentes:
-- `ProfileForm` (email read-only, display_name editable)
-- `ChangePasswordForm` (current + new + confirm con Zod refine)
-- `MfaMethodsList` (Card por metodo: TOTP, WebAuthn, Email-code. Cada uno con botones Enable/Disable/SetPreferred)
-- `WebAuthnCredentialsList` (lista de credentials registradas con nickname + last_used_at + boton Delete)
-- `RecoveryCodesSection` (boton "Generate" → modal con 10 codes + download/copy)
+El Lambda `auth` desplegado expone las operations `mfa` (8 actions) y
+`webauthn` (6 actions). La feature `settings/` implementa la gestion
+COMPLETA de MFA + WebAuthn desde el inicio — no es scope diferido.
 
-Pages:
-- `src/app/(dashboard)/settings/page.tsx`: Tabs con Profile + Security
-- `src/app/(dashboard)/settings/security/page.tsx`: MfaMethodsList + WebAuthnCredentialsList + RecoveryCodesSection
+> Fuente de verdad de payloads y responses: el codigo desplegado
+> `serverless/lambda/services/auth/`, mas las reglas en
+> [.claude/rules/auth-system.md](../../../.claude/rules/auth-system.md) y la
+> doc en [.claude/docs/auth-system/](../../../.claude/docs/auth-system/).
+
+### `src/features/settings/components/profile-form.tsx`
+
+`ProfileForm`: email read-only, `display_name` editable. Usa
+react-hook-form con Zod.
+
+### `src/features/settings/components/change-password-form.tsx`
+
+`ChangePasswordForm`: current + new + confirm con Zod refine
+(`new.length >= 12`, `new === confirm`).
+
+### `src/features/settings/components/mfa-methods-list.tsx`
+
+`MfaMethodsList`: render de `mfa.list` (`MfaListResponse`: `methods[]` +
+`webauthn_count` + `total_mfa`). Una `Card` por metodo MFA (TOTP,
+email-code) con badge `is_preferred` + acciones:
+
+- **TOTP setup** (`mfa.setup-totp`): el response (`TotpSetupResponse`:
+  `{secret_b32, otpauth_url}`) abre un `Dialog` que renderiza el QR en el
+  front desde `otpauth_url` (libreria de QR del bundle, p. ej. `qrcode`;
+  el backend NO genera la imagen). El usuario escanea y confirma con
+  `mfa.confirm-totp` (`{code}` de 6 digitos via shadcn `InputOTP`
+  `maxLength={6}`). Confirmar el PRIMER metodo MFA revoca la familia de
+  refresh (AC-27) — el `api-client` re-emite el access tras la respuesta.
+- **Email-code setup** (`mfa.setup-email-code`, payload `{}`): activa MFA
+  via email-code. Es el primer metodo MFA si no hay otros (misma
+  revocacion de familia AC-27).
+- **Set preferred** (`mfa.set-preferred`, `{kind: 'totp' | 'email_code'}`):
+  marca el metodo preferido.
+- **Disable** (`mfa.disable`, `{kind: 'totp' | 'email_code'}`): el backend
+  aplica el guard transversal `MUST_KEEP_ONE_MFA_METHOD`. Si la accion
+  dejaria `total_mfa === 0`, responde **409**; el front muestra el error
+  inline ("debes conservar al menos un metodo MFA") y NO desactiva. El
+  componente deshabilita el boton Disable cuando `total_mfa === 1`
+  (defensa en profundidad; el backend es la fuente de verdad).
+
+### `src/features/settings/components/recovery-codes-section.tsx`
+
+`RecoveryCodesSection`: boton "Generate" -> `mfa.recovery-codes-generate`
+(payload `{}`). El response (`RecoveryCodesResponse`: `{codes: string[]}`,
+10 codes de 10 chars Crockford) abre un `Dialog` que los muestra UNA sola
+vez, con copy + download (`.txt`). El componente advierte que regenerar
+invalida los anteriores. `mfa.recovery-codes-consume` NO se usa en
+settings (es del flujo de login con factor fuerte step=2).
+
+### `src/features/settings/components/webauthn-credentials-list.tsx`
+
+`WebAuthnCredentialsList`: render de `webauthn.list-credentials`
+(`WebauthnCredential[]`: `id`, `nickname`, `last_used_at`, `created_at`).
+Acciones:
+
+- **Register** (`webauthn.register-options` -> `webauthn.register-verify`):
+  el response de options (`WebauthnRegisterOptionsResponse`:
+  `{challenge_id, options}`) se pasa a `startRegistration` de
+  `@simplewebauthn/browser`. El `options.rp.id` viene del backend resuelto
+  por env (`WEBAUTHN_RP_ID`), consistente con `NEXT_PUBLIC_WEBAUTHN_RP_ID`
+  del dashboard. La respuesta del authenticator se manda a
+  `webauthn.register-verify` (`{challenge_id, response, nickname?}`).
+  Registrar el PRIMER metodo MFA revoca la familia (AC-27).
+- **Delete** (`webauthn.delete-credential`, `{credential_id}`): mismo guard
+  `MUST_KEEP_ONE_MFA_METHOD` -> 409 si dejaria `total_mfa === 0`. El front
+  muestra el error y deshabilita Delete cuando es el ultimo factor.
+
+`webauthn.login-options` / `webauthn.login-verify` (sin auth) son del
+flujo de login (feature `auth/`), no de settings.
+
+### Pages
+
+- `src/app/(dashboard)/settings/page.tsx`: Tabs con Profile + Security.
+- `src/app/(dashboard)/settings/security/page.tsx`: `MfaMethodsList` +
+  `WebAuthnCredentialsList` + `RecoveryCodesSection`.
 
 **Notas**:
 
-- Las acciones MFA (TOTP setup, WebAuthn registration) son del plan 02.
-  Mientras `02-auth-mfa` no este mergeado, MSW provee mocks O el flag
-  `NEXT_PUBLIC_FEATURE_MFA=false` esconde las pages de MFA. El flag esta
-  declarado en el catalogo de `sync_secrets` (commit 23) con valor `false`
-  por env en dev/stage/prod hasta el cutover.
-- WebAuthn requiere `NEXT_PUBLIC_WEBAUTHN_RP_ID` (hostname del dashboard
-  per env: `admin.portfolio.dev.the-full-stack.com`,
+- Toda la gestion MFA + WebAuthn consume el Lambda `auth` ya desplegado
+  (dev/stage/prod). No depende de ningun merge previo: las 14 actions
+  (`mfa` 8 + `webauthn` 6) estan disponibles. MSW se usa solo para tests
+  unit y desarrollo offline, no como sustituto de un backend "pendiente".
+- `NEXT_PUBLIC_WEBAUTHN_RP_ID` es **config base** (no detras de flag): el
+  hostname del dashboard per env (`admin.portfolio.dev.the-full-stack.com`,
   `admin.portfolio.stage.the-full-stack.com`,
-  `admin.portfolio.the-full-stack.com`). Se pasa a `navigator.credentials.create({publicKey: {rp: {id}}})`.
-  Sin esta var, el browser rechaza el flujo con `SecurityError`. Declarada
-  en el catalogo de `sync_secrets` junto con `NEXT_PUBLIC_FEATURE_MFA`.
+  `admin.portfolio.the-full-stack.com`). `@simplewebauthn/browser` lo
+  espera coincidiendo con el `rp.id` de las options del backend; un
+  mismatch hace que el browser rechace el flujo con `SecurityError`. Un
+  passkey NO migra entre envs (esperado). Declarada en el catalogo de
+  `sync_secrets`.
+- Si se conserva `NEXT_PUBLIC_FEATURE_MFA`, es un toggle OPCIONAL de UI
+  (p. ej. ocultar la pestana Security en una demo), NO un gate de
+  "backend pendiente". MFA + WebAuthn son scope del dashboard desde el
+  inicio; el toggle por defecto va en `true`.
 
-**Commit**: `feat(dashboard,settings): profile + change-password + MFA management + recovery codes`
+**Commit**: `feat(dashboard,settings): profile + change-password + MFA management + WebAuthn + recovery codes`
 
 ## Verificacion al final de fase 16 (gate intermedio)
 

@@ -7,7 +7,7 @@
 >
 > Esta es la **zona producto** (Knowledge Tree): cambia raramente,
 > audiencia = reviewers. La zona harness del plan es efimera
-> (`docs/specs/dashboard/`).
+> (`docs/specs/b-dashboard/`).
 
 ## Cuando leer
 
@@ -191,7 +191,7 @@ Browser (admin.portfolio.{env}.the-full-stack.com)
 │ Deploy           | Cloudflare Pages (REST API via devtools)           │
 │ CI               | GitHub Actions (deploy-apps.yml matrix +1 entry)   │
 │ Auth backend     | Lambda auth (planes 01-02, pending)                │
-│ Data backend     | Lambda analytics (plan analytics-dashboard-api)    │
+│ Data backend     | Lambda analytics (plan a-analytics-dashboard-api)    │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -207,31 +207,43 @@ Browser (admin.portfolio.{env}.the-full-stack.com)
 
 Backend en `https://api.portfolio.{env}.the-full-stack.com`:
 
-### POST /auth (Lambda `auth`, plan 01)
+### POST /auth (Lambda `auth` desplegado: 6 operations / 26 actions)
 
-| Operation | Action | Body | Response |
-|-----------|--------|------|----------|
-| `register` | `start` | `{email, cf_turnstile_response}` | `201 {temp_token, user_id, expires_in: 300}` |
-| `register` | `verify-magic-link` (GET) | query `?token=<X>` | `302 -> /auth/callback#access=...&refresh=...` |
-| `register` | `verify-code` | `{code, temp_token}` | `200 {access_token, refresh_token, expires_in, user}` |
-| `login` | `start` | `{email, cf_turnstile_response, password?}` | `200 {temp_token, methods: [...]}` o `404 {suggest_register: true}` |
-| `login` | `verify-magic-link` (GET) | idem | idem |
-| `login` | `verify-code` | `{code, temp_token}` | `200 {access_token, refresh_token, expires_in, user}` |
-| `login` | `verify-password` | `{password, temp_token}` | `200` (con MFA si configurado) |
-| `login` | `verify-totp` | `{code, temp_token}` (plan 02) | `200` |
-| `verify` | `set-password` | `{password, temp_token}` | `204` |
-| `verify` | `resend-code` | `{temp_token}` | `200` |
-| `session` | `refresh` | refresh JWT (HttpOnly cookie o body) | `200 {access_token, refresh_token, expires_in}` |
-| `session` | `logout` | access JWT | `204` |
-| `mfa` | `setup-totp` (plan 02) | access JWT | `200 {secret, otpauth_url, qr_code_svg}` |
-| `mfa` | `confirm-totp` (plan 02) | `{code}` | `204` |
-| `mfa` | `recovery-codes-generate` (plan 02) | access JWT | `200 {codes: [...]}` |
-| `webauthn` | `register-options` (plan 02) | access JWT | `200 {challenge, rp, user, pubKeyCredParams, ...}` |
-| `webauthn` | `register-verify` (plan 02) | attestation | `201 {credential_id}` |
-| `webauthn` | `login-options` (plan 02) | `{email}` | `200 {challenge, allowCredentials}` |
-| `webauthn` | `login-verify` (plan 02) | assertion | `200 {access_token, refresh_token, ...}` |
+> El Lambda `auth` ya esta implementado y desplegado (dev/stage/prod).
+> Reglas: `.claude/rules/auth-system.md`, docs: `.claude/docs/auth-system/`.
+> Todo va por `POST /auth` body `{operation, action, data}` salvo los
+> `verify-magic-link` (GET callback). `_meta` lo inyecta `http_handler`.
 
-### GET /analytics (Lambda `analytics`, plan analytics-dashboard-api)
+| Operation | Action | Body (data) | Auth | Response |
+|-----------|--------|-------------|------|----------|
+| `register` | `start` | `{email, cf_turnstile_response, niche?}` | — | `{temp_token, user_id, expires_in: 300}` |
+| `register` | `verify-magic-link` (GET) | `?token=<X>` | — | `302 -> /auth/callback#access=...&refresh=...` |
+| `register` | `verify-code` | `{code, temp_token}` | — | `{access_token, refresh_token, expires_in, user}` |
+| `login` | `start` | `{email, cf_turnstile_response, password?, niche?}` | — | `{temp_token, methods: [...]}` o `404 {suggest_register: true}` |
+| `login` | `verify-magic-link` (GET) | `?token=<X>` | — | idem register |
+| `login` | `verify-code` | `{code, temp_token}` | — | `{access_token, refresh_token, expires_in, user}` |
+| `login` | `verify-password` | `{password, temp_token}` | — | `{access_token,...}` o (con MFA) `{temp_token step2, methods}` |
+| `login` | `verify-totp` | `{code, temp_token step2}` | — | `{access_token, refresh_token, ...}` |
+| `verify` | `set-password` | `{password, temp_token}` | — | `{access_token, ...}` |
+| `verify` | `resend-code` | `{temp_token}` | — | `200` |
+| `session` | `refresh` | `{refresh_token}` | — | `{access_token, refresh_token, expires_in}` (rotacion) |
+| `session` | `logout` | `{access_token, refresh_token?}` | — | `204` |
+| `mfa` | `setup-totp` | `{}` | access JWT | `{secret_b32, otpauth_url}` (front renderiza el QR) |
+| `mfa` | `confirm-totp` | `{code}` (6 digitos) | access JWT | `204` (1er metodo revoca familia, AC-27) |
+| `mfa` | `setup-email-code` | `{}` | access JWT | `204` |
+| `mfa` | `set-preferred` | `{kind: 'totp'\|'email_code'}` | access JWT | `204` |
+| `mfa` | `disable` | `{kind}` | access JWT | `204` o `409` (guard MUST_KEEP_ONE) |
+| `mfa` | `list` | `{}` | access JWT | `{methods: [...], webauthn_count, total_mfa}` |
+| `mfa` | `recovery-codes-generate` | `{}` | access JWT | `{codes: [...]}` (10, una sola vez) |
+| `mfa` | `recovery-codes-consume` | `{temp_token step2, code}` (10 chars) | temp step2 | `{access_token, ...}` o `403 RECOVERY_REQUIRES_STRONG_FACTOR` |
+| `webauthn` | `register-options` | `{}` | access JWT | `{challenge_id, options}` |
+| `webauthn` | `register-verify` | `{challenge_id, response, nickname?}` | access JWT | `{credential_id}` (1er metodo revoca familia) |
+| `webauthn` | `login-options` | `{email}` | — | `{challenge_id, options}` |
+| `webauthn` | `login-verify` | `{challenge_id, response}` | — | `{access_token, refresh_token, ...}` |
+| `webauthn` | `list-credentials` | `{}` | access JWT | `{credentials: [...]}` |
+| `webauthn` | `delete-credential` | `{credential_id}` | access JWT | `204` o `409` (guard MUST_KEEP_ONE) |
+
+### GET /analytics (Lambda `analytics`, plan a-analytics-dashboard-api)
 
 | Operation | Action | Query | Response |
 |-----------|--------|-------|----------|
@@ -257,16 +269,18 @@ Backend en `https://api.portfolio.{env}.the-full-stack.com`:
 
 ## Estado del plan
 
-Ver [docs/specs/dashboard/README.md](../../../docs/specs/dashboard/README.md) — fases + estado por fase.
+Ver [docs/specs/b-dashboard/README.md](../../../docs/specs/b-dashboard/README.md) — fases + estado por fase.
 
 ## Bibliografia interna
 
 - `.claude/rules/dashboard.md` — reglas duras (enforced)
 - `.claude/skills/dashboard-stack/SKILL.md` — skill invocable
-- `docs/specs/dashboard/` — plan de implementacion (efimero)
-- `docs/specs/01-auth-infra-basics/` — backend auth (plan 01, pending)
-- `docs/specs/02-auth-mfa/` — backend auth MFA (plan 02, pending)
-- `docs/specs/analytics-dashboard-api/` — backend analytics (pending)
+- `docs/specs/b-dashboard/` — plan de implementacion (efimero)
+- `serverless/lambda/services/auth/` — backend auth (YA implementado y
+  desplegado: 6 operations / 28 actions). Reglas:
+  `.claude/rules/auth-system.md`, docs: `.claude/docs/auth-system/`
+- `docs/specs/a-analytics-dashboard-api/` — backend analytics (pending,
+  se ejecuta ANTES que el dashboard)
 - `.claude/rules/lambda-controller.md` — formato del backend
 - `.claude/rules/secrets-strategy.md` + `client-env-sync.md` — env vars
 - `.claude/rules/ci-cd-pipeline.md` — workflow deploy

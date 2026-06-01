@@ -7,15 +7,15 @@
 > deployado a Cloudflare Pages en
 > `admin.portfolio.{dev|stage|prod}.the-full-stack.com`. Consume el
 > Lambda `auth` (planes 01-02, aun pending) + Lambda `analytics` (plan
-> analytics-dashboard-api, aun pending). Mientras no esten deployadas,
+> a-analytics-dashboard-api, aun pending). Mientras no esten deployadas,
 > MSW v2 provee mocks completos.
 >
 > Carpeta `dashboard/` en root del repo (no `apps/dashboard/`). Entra
 > al pnpm workspace como `@portfolio/dashboard`.
 >
-> **Scope**: SOLO frontend. La implementacion del backend es problema
-> de los planes 01-auth-infra-basics, 02-auth-mfa y
-> analytics-dashboard-api.
+> **Scope**: SOLO frontend. El backend auth YA esta desplegado
+> (`serverless/lambda/services/auth/`, 6 operations / 26 actions). El
+> backend analytics es problema del plan `a-analytics-dashboard-api`.
 
 ## Cuando leer
 
@@ -37,7 +37,7 @@
 
 | Fase | Descripcion | Estado |
 |------|-------------|--------|
-| 0 | Plan + carpeta `docs/specs/dashboard/` commiteada en `feature/dashboard-frontend` | pending |
+| 0 | Plan + carpeta `docs/specs/b-dashboard/` commiteada en `feature/dashboard-frontend` | pending |
 | 1 | Scaffold `dashboard/` (package.json, configs, pnpm workspace, biome.json override) | pending |
 | 2 | Setup CSS/theming (`globals.css` + tokens compartidos con DS, `next-themes` provider) | pending |
 | 3 | shadcn init + agregar componentes base (button, card, form, table, etc.) | pending |
@@ -58,7 +58,7 @@
 | 18 | Extension `devtools/sync_secrets/catalog.py` con nuevas NEXT_PUBLIC_* + actualizar `docker/env/client/.example` | pending |
 | 19 | Extension `.github/workflows/deploy-apps.yml` matrix con `dashboard` (dist-dir: dashboard/out) | pending |
 | 20 | Tests E2E Playwright en `tests/feature/dashboard/*.spec.ts` | pending |
-| 21 | Verificacion E2E iterativa + limpieza `docs/specs/dashboard/` | pending |
+| 21 | Verificacion E2E iterativa + limpieza `docs/specs/b-dashboard/` | pending |
 
 ## Decisiones no-reabribles
 
@@ -166,8 +166,8 @@ en fases independientes (ver seccion 10).
 
 ## Ciclo de vida de la carpeta
 
-Esta carpeta `docs/specs/dashboard/` es **efimera**. Se elimina con
-`git rm -r docs/specs/dashboard/` en el ultimo commit del PR (fase 21,
+Esta carpeta `docs/specs/b-dashboard/` es **efimera**. Se elimina con
+`git rm -r docs/specs/b-dashboard/` en el ultimo commit del PR (fase 21,
 seccion 11). La trazabilidad queda en `git log` y en el PR mergeado.
 
 El conocimiento permanente vive en:
@@ -180,7 +180,6 @@ El conocimiento permanente vive en:
 - Skill: [`/dashboard-stack`](../../../.claude/skills/dashboard-stack/SKILL.md)
 - Rule: [`.claude/rules/dashboard.md`](../../../.claude/rules/dashboard.md)
 - Knowledge tree: [`.claude/docs/dashboard/`](../../../.claude/docs/dashboard/)
-- Plan auth: [`docs/specs/01-auth-infra-basics/`](../01-auth-infra-basics/) (pending)
-- Plan MFA: [`docs/specs/02-auth-mfa/`](../02-auth-mfa/) (pending)
-- Plan analytics: [`docs/specs/analytics-dashboard-api/`](../analytics-dashboard-api/) (pending)
+- Backend auth: [`serverless/lambda/services/auth/`](../../../serverless/lambda/services/auth/) (YA desplegado: 6 operations / 26 actions) — reglas `.claude/rules/auth-system.md`, docs `.claude/docs/auth-system/`
+- Plan analytics: [`docs/specs/a-analytics-dashboard-api/`](../a-analytics-dashboard-api/) (pending, se ejecuta ANTES que este plan)
 - Research raw (efimero): `tmp/research/dashboard/` (7783 lineas)

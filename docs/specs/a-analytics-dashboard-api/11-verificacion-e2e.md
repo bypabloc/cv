@@ -92,7 +92,7 @@ python devtools/run.py serverless tests --type=coverage --lambda=analytics
 # Esperado: coverage per-file >= 80% en core/ (AC-21)
 
 # 6. Markdownlint del plan (NO debe fallar antes del rm)
-markdownlint docs/specs/analytics-dashboard-api/*.md
+markdownlint docs/specs/a-analytics-dashboard-api/*.md
 # Esperado: warnings ok, errors NO
 ```
 
@@ -346,7 +346,7 @@ Cuando TODA la bateria pasa en verde:
 
 ```bash
 # 1. Limpiar la carpeta de la spec (decision documentada en README)
-git rm -r docs/specs/analytics-dashboard-api/
+git rm -r docs/specs/a-analytics-dashboard-api/
 
 # 2. Actualizar knowledge tree con el Lambda nuevo
 # (editar .claude/docs/serverless-backend/03-lambdas.md y agregar entrada)
@@ -357,7 +357,7 @@ git commit -m "$(cat <<'EOF'
 docs(serverless): agrega lambda analytics al knowledge tree y elimina spec efimera
 
 - .claude/docs/serverless-backend/03-lambdas.md: agrega entrada de analytics
-- docs/specs/analytics-dashboard-api/: eliminada (efimera, plan implementado)
+- docs/specs/a-analytics-dashboard-api/: eliminada (efimera, plan implementado)
 - Bateria de verificacion E2E (seccion 11) pasa completa en dev:
   19 endpoints OK + 6 cases de error + cache hit + SnapStart < 1500ms
   + coverage >= 80%
@@ -378,7 +378,7 @@ gh pr create --base dev --title "feat(analytics): nuevo Lambda analytics con das
 
 ## Como probar
 - `python devtools/run.py serverless tests --type=coverage --lambda=analytics` (>= 80%)
-- Smoke contra dev: ver `docs/specs/analytics-dashboard-api/11-verificacion-e2e.md` seccion B.3 (eliminado al mergear, pero esta en este PR todavia).
+- Smoke contra dev: ver `docs/specs/a-analytics-dashboard-api/11-verificacion-e2e.md` seccion B.3 (eliminado al mergear, pero esta en este PR todavia).
 - `curl "https://api.portfolio.dev.the-full-stack.com/analytics?operation=analytics&action=overview&from=2026-04-27&to=2026-05-27"` -> 200 con shape esperada.
 
 ## TODO

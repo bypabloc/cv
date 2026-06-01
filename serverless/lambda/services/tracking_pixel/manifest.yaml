@@ -16,8 +16,7 @@ description: Encoder de tracking (valida + rate-limit + invoke tracking_writer).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 para medir con CPU x4.
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 para medir con CPU x4.
                   # OJO: es fire-and-forget (sendBeacon), latencia oculta —
                   # subir memoria aqui es el menos justificado. Minimo medido
                   # previo: 128 (footprint 63 MB). REVERTIR tras medir.

@@ -34,16 +34,16 @@ docs(specs): agrega plan analytics-dashboard-api
 
 Archivos:
 
-- `docs/specs/analytics-dashboard-api/README.md`
-- `docs/specs/analytics-dashboard-api/01-contexto-y-decision.md`
-- `docs/specs/analytics-dashboard-api/02-arquitectura.md`
+- `docs/specs/a-analytics-dashboard-api/README.md`
+- `docs/specs/a-analytics-dashboard-api/01-contexto-y-decision.md`
+- `docs/specs/a-analytics-dashboard-api/02-arquitectura.md`
 - ... (12 archivos de la spec)
 
 Verify:
 
 ```bash
-ls docs/specs/analytics-dashboard-api/ | wc -l   # == 12
-markdownlint docs/specs/analytics-dashboard-api/*.md
+ls docs/specs/a-analytics-dashboard-api/ | wc -l   # == 12
+markdownlint docs/specs/a-analytics-dashboard-api/*.md
 ```
 
 ---
@@ -379,13 +379,13 @@ python devtools/run.py serverless deploy --lambda=analytics --stage=dev --aws-pr
 docs(serverless): agrega lambda analytics al knowledge tree y elimina spec efimera
 
 - .claude/docs/serverless-backend/03-lambdas.md: agrega entrada de analytics
-- docs/specs/analytics-dashboard-api/: eliminada (efimera, plan implementado)
+- docs/specs/a-analytics-dashboard-api/: eliminada (efimera, plan implementado)
 ```
 
 Archivos:
 
 - `.claude/docs/serverless-backend/03-lambdas.md` (modificar)
-- `git rm -r docs/specs/analytics-dashboard-api/`
+- `git rm -r docs/specs/a-analytics-dashboard-api/`
 
 Este commit incluye la **verificacion E2E completa** (seccion 11):
 

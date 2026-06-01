@@ -17,8 +17,7 @@ description: HTTP endpoint POST /users (profile/status/admin).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 para medir con CPU x4.
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 para medir con CPU x4.
                   # Familia auth (shared.auth + Neon, argon2id memory-hard).
                   # Minimo medido previo: 256. REVERTIR tras medir.
                   # Ver .claude/rules/lambda-config.md.

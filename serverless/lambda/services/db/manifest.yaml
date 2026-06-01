@@ -16,8 +16,7 @@ description: Gestiona el schema PostgreSQL del portfolio (migraciones Alembic).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 en los 8 lambdas. Previo:
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 en los 8 lambdas. Previo:
                   # 512 (migraciones Alembic). REVERTIR tras medir si no lo
                   # justifica. Ver .claude/rules/lambda-config.md.
 timeout: 60       # segundos — colchon uniforme. NOTA: si una migracion grande

@@ -41,7 +41,7 @@ Admin browser (1-5 users)
                       -> lib/api-client.ts
                            -> https://api.portfolio.{env}.the-full-stack.com
                                 -> Lambda auth (planes 01-02)
-                                -> Lambda analytics (plan analytics-dashboard-api)
+                                -> Lambda analytics (plan a-analytics-dashboard-api)
                                 -> Lambdas existentes (contact_form, tracking_pixel)
 
 Las 6 apps Astro: SIN CAMBIOS (continuan en sus subdominios)
@@ -103,7 +103,7 @@ Las 6 apps Astro: SIN CAMBIOS (continuan en sus subdominios)
 ## Flujo de auth: login con magic link / code
 
 ```text
-1. /login - email + Turnstile (+ password opcional plan 02)
+1. /login - email + Turnstile (+ password opcional, login directo)
    POST /auth?operation=login&action=start
         |
         v
@@ -339,7 +339,7 @@ portfolio/  (repo root)
 │   └── deploy-apps.yml       # +dashboard al matrix
 ├── tests/feature/
 │   └── dashboard/            # NUEVO — Playwright specs
-└── docs/specs/dashboard/     # ESTE PLAN (efimero)
+└── docs/specs/b-dashboard/     # ESTE PLAN (efimero)
 ```
 
 (Ver detalle completo en [03-estructura.md](03-estructura.md).)

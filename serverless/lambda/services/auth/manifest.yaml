@@ -16,8 +16,7 @@ description: HTTP endpoint POST /auth (register/login/verify/session).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 en los 8 lambdas para
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 en los 8 lambdas para
                   # medir warm/cold con CPU x4. Minimo medido previo: 256
                   # (login.start 174 MB, webauthn entra con headroom; 128 NO
                   # por OOM/CPU-starved). REVERTIR al minimo tras medir si la

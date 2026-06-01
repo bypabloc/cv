@@ -26,7 +26,7 @@
 
 | Fase | Descripcion | Estado |
 |------|-------------|--------|
-| 0 | Plan escrito + carpeta `docs/specs/analytics-dashboard-api/` commiteada | pending |
+| 0 | Plan escrito + carpeta `docs/specs/a-analytics-dashboard-api/` commiteada | pending |
 | 1 | Scaffold + manifest + AppConfig + handler vacio | pending |
 | 2 | EventModel + OPERATIONS + modelos Pydantic por dominio | pending |
 | 3 | Service `analytics` (overview, timeseries, top-pages, top-referrers, top-niches, active-now, retention) | pending |
@@ -37,7 +37,7 @@
 | 8 | Capa de cache (`@cached`) en queries agregadas | pending |
 | 9 | Rate-limit rule + integracion `check_or_raise` | pending |
 | 10 | SnapStart + warmup hook + ajustes manifest | pending |
-| 11 | Verificacion E2E + limpieza de `docs/specs/analytics-dashboard-api/` | pending |
+| 11 | Verificacion E2E + limpieza de `docs/specs/a-analytics-dashboard-api/` | pending |
 
 ## Decisiones no-reabribles
 

@@ -20,7 +20,7 @@ listado, una sola persona/agente, en la rama principal de trabajo.
 
 | # | Tarea | Archivos | Verify | Done |
 |---|-------|----------|--------|------|
-| B-1 | Crear carpeta del plan + docs | `docs/specs/analytics-dashboard-api/**` (12 archivos .md) | `markdownlint docs/specs/analytics-dashboard-api/*.md` | Plan completo escrito |
+| B-1 | Crear carpeta del plan + docs | `docs/specs/a-analytics-dashboard-api/**` (12 archivos .md) | `markdownlint docs/specs/a-analytics-dashboard-api/*.md` | Plan completo escrito |
 | B-2 | Verificar indices Neon + agregar migration si faltan | `serverless/lambda/shared/db/alembic/versions/<rev>_analytics_indexes.py` (condicional) | `psql -c "\\di vis_*"`; si falta indice, migration y `serverless run --lambda=db --event=events/migrate.json --stage=dev` | Indices presentes en dev |
 | B-3 | Scaffold del Lambda + manifest + pyproject + .gitignore + README | `serverless/lambda/services/analytics/{manifest.yaml,pyproject.toml,.gitignore,README.md,core/__init__.py}` | `uv sync` en la carpeta; `serverless lint-deps --lambda=analytics` exit 0 | Lambda visible para devtools |
 | B-4 | Settings: `config.py` + `operations.py` con TODOS los entries declarados (controllers vacios despues los rellenamos) | `core/settings/{config.py,operations.py,__init__.py}` | `python -c "from core.settings.operations import OPERATIONS; assert len(OPERATIONS) == 8"` | OPERATIONS registrado |
@@ -178,7 +178,7 @@ Despues de mergear P-1..P-7 al branch principal:
 | F-3 | Seed rate-limit rule (manual via CLI) | (sin codigo: comando) | `serverless run --stage=dev --lambda=db --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev` (idem stage/prod) | Rule en DDB en los 3 envs |
 | F-4 | Coverage gate | (revision) | `serverless tests --type=coverage --lambda=analytics` >= 80% per-file | AC-21 |
 | F-5 | Smoke E2E + docs permanente | `.claude/docs/serverless-backend/03-lambdas.md` mod | `curl https://api.portfolio.dev.../analytics?...` para cada action; bateria pasa | AC-22 |
-| F-6 | Eliminar carpeta del plan + ultimo commit | `git rm -r docs/specs/analytics-dashboard-api/` | `test ! -d docs/specs/analytics-dashboard-api` | Spec archivada |
+| F-6 | Eliminar carpeta del plan + ultimo commit | `git rm -r docs/specs/a-analytics-dashboard-api/` | `test ! -d docs/specs/a-analytics-dashboard-api` | Spec archivada |
 
 ## Diagrama de dependencias
 

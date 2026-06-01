@@ -467,31 +467,27 @@ con `auth` ni con la feature de tracking `sessions`):
 - **NUNCA** llamar `users.*` sin `Authorization: Bearer <access JWT>`
   (todas requieren sesion activa).
 
-#### GAP: cambio de contrasena (UI presente, backend pendiente)
+#### Cambio de contrasena (action `users.profile.change-password`)
 
-El backend NO tiene HOY una action para que un user AUTENTICADO cambie
-su password con su access JWT:
+El Lambda `users` SI tiene la action `profile.change-password`
+(implementada y desplegada): un user AUTENTICADO cambia su password con
+su access JWT enviando `{current_password, new_password}`.
 
-- `auth.verify.set-password` usa el `temp_token` del flujo
-  register/login, NO el access JWT — no sirve para un user ya logueado.
-- `users.profile` NO tiene `change-password`.
-
-Reglas para el plan `a-admin`:
-
-- **SIEMPRE** incluir la UI de "cambiar contrasena" en
-  `settings/security`, con su Zod schema (`{current_password,
-  new_password}`) y su form react-hook-form.
-- **SIEMPRE** DOCUMENTAR esta UI como BLOQUEADA por una dependencia de
-  backend: una action NUEVA sugerida `users.profile.change-password`
-  (`{current_password, new_password}`) validada con el access JWT. El
-  plan la lista como pre-requisito de backend.
-- **SIEMPRE** mientras la action no exista, MSW mockea la respuesta y la
-  UI muestra un aviso de "pendiente de backend". NO se puede testear
-  E2E real contra un endpoint inexistente.
+- **SIEMPRE** la feature `settings` cablea el cambio de password a
+  `users.profile.change-password` (REAL, sin flag de bloqueo): UI con su
+  Zod schema (`{current_password, new_password, confirm}` con refine
+  longitud >= 12 + match) + form react-hook-form. Exito -> toast; la
+  sesion actual sigue viva (el backend la preserva).
+- **SIEMPRE** el backend verifica `current_password` (argon2id) y, si es
+  incorrecta, responde **401 `INVALID_PASSWORD`** -> la UI muestra el
+  error inline/toast sin romper el form.
+- **SIEMPRE** un cambio de password exitoso REVOCA las demas sesiones del
+  user (blacklist de familias de refresh) y preserva SOLO la actual
+  (best practice de seguridad post-cambio de credencial).
 - **NUNCA** cablear la UI de cambio de password a
-  `auth.verify.set-password` (es del flujo de onboarding con
-  `temp_token`, no del cambio autenticado) ni inventar un endpoint que
-  no este declarado en el backend.
+  `auth.verify.set-password` (esa usa el `temp_token` del flujo
+  register/login, NO el access JWT del user logueado). El cambio
+  autenticado va por `users.profile.change-password`.
 
 #### App shell (feature `admin-shell`)
 
@@ -766,7 +762,7 @@ python devtools/run.py test_runner --module=feature --type=feature --env=local
 | Google Fonts CDN | GDPR, CSP estricta | `@fontsource/*` |
 | Nombrar la vista de metricas `/dashboard` o el route group `(dashboard)` | El producto se llama `admin`; la vista de metricas no es "dashboard" | Ruta `/metrics` (o por feature) + route group `(admin)` |
 | Feature del marco llamado `dashboard-shell` | El app shell es la feature `admin-shell` | `admin-shell` (header + sidebar + nav) |
-| UI de cambio de password cableada a `auth.verify.set-password` | Usa `temp_token`, no el access JWT del user logueado | UI bloqueada por dependencia `users.profile.change-password` (MSW mientras) |
+| UI de cambio de password cableada a `auth.verify.set-password` | Usa `temp_token`, no el access JWT del user logueado | Cablear a `users.profile.change-password` (action REAL, desplegada) |
 | Mostrar `/users` (users-admin) a un user no-admin | El backend responde `404` y filtrar la lista seria enumeracion | Ocultar el item del sidebar; tratar `404` como no autorizado |
 | Mezclar la feature `sessions` (tracking) con `sessions-mgmt` (mis sesiones auth) | Dominios distintos, backends distintos (`analytics` vs `users`) | Features separados; `sessions` es del plan `b-analytics-api` |
 | `find` / `grep -E` / `grep -rn` en Bash | Aliases rotos en WSL2 | Glob/Grep/Read tools |

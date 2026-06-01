@@ -24,12 +24,20 @@ from shared.test_executors import check_no_js_files
 _PORTFOLIO_APPS = ('hub', 'generic', 'fintech', 'architect', 'leader', 'vibe')
 _PORTFOLIO_PACKAGES = ('app-shared', 'content', 'cv-pdf', 'seo', 'ui')
 
+# Admin panel (Next.js SPA). NO es una app Astro: vive en /app/admin (no
+# bajo apps/) y su container expone el puerto 3000. Corre el mismo Biome.
+_ADMIN_APP = 'admin'
+
 # Portfolio frontend modules:
 #   - 6 Astro apps (each runs Biome via `pnpm exec biome check`)
+#   - 1 admin Next.js SPA (idem)
 #   - 5 shared packages (idem)
-# Module names: app name directo ('hub', 'generic', ...) y 'pkg-<name>' para packages.
-FRONTEND_MODULES = tuple(_PORTFOLIO_APPS) + tuple(
-    f'pkg-{p}' for p in _PORTFOLIO_PACKAGES
+# Module names: app name directo ('hub', 'generic', 'admin', ...) y
+# 'pkg-<name>' para packages.
+FRONTEND_MODULES = (
+    tuple(_PORTFOLIO_APPS)
+    + (_ADMIN_APP,)
+    + tuple(f'pkg-{p}' for p in _PORTFOLIO_PACKAGES)
 )
 PYTHON_MODULES = ('server', 'devtools')
 
@@ -95,8 +103,9 @@ def _run_frontend_conformance(
     """Run Biome dentro del container de la app o package del portfolio.
 
     Resuelve workdir desde docker._helpers para apps Astro (`/app/apps/<X>`)
-    y packages (`/app/packages/<X>`). Si el module no tiene container
-    dedicado, cae al `generic` para tener acceso a node_modules.
+    y packages (`/app/packages/<X>`). El admin (Next.js) vive en
+    `/app/admin` (no bajo apps/). Si el module no tiene container dedicado,
+    cae al `generic` para tener acceso a node_modules.
     """
     js_files = check_no_js_files(module)
     if js_files:
@@ -118,6 +127,9 @@ def _run_frontend_conformance(
         pkg = module.removeprefix('pkg-')
         target_service = 'generic'  # container generico para tener node_modules
         target_workdir = f'/app/packages/{pkg}'
+    elif module == _ADMIN_APP:
+        # admin (Next.js) vive en /app/admin, no en /app/apps/admin.
+        target_workdir = '/app/admin'
 
     result = compose_exec(
         env,

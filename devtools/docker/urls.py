@@ -18,6 +18,12 @@ from shared.paths import DOCKER_DIR
 
 _PORTFOLIO_APPS = ('hub', 'generic', 'fintech', 'architect', 'leader', 'vibe')
 
+# El admin (Next.js SPA) NO es una app Astro: escucha en el puerto 3000
+# (Next dev / preview), no en 4321. Se maneja como caso especial en el
+# port map.
+_ADMIN_APP = 'admin'
+_ADMIN_CONTAINER_PORT = 3000
+
 
 _PORT_RE = re.compile(
     r'["\']?'
@@ -34,6 +40,10 @@ def _build_container_port_map() -> dict[str, dict[int, str]]:
     }
     for _app in _PORTFOLIO_APPS:
         container_port_map[_app] = {4321: f'{_app}_port'}
+    # admin (Next.js) escucha en 3000, no 4321.
+    container_port_map[_ADMIN_APP] = {
+        _ADMIN_CONTAINER_PORT: f'{_ADMIN_APP}_port',
+    }
     return container_port_map
 
 
@@ -74,6 +84,7 @@ def parse_compose_ports(env: str) -> dict[str, int | None]:
     result: dict[str, int | None] = {'proxy_port': None}
     for _app in _PORTFOLIO_APPS:
         result[f'{_app}_port'] = None
+    result[f'{_ADMIN_APP}_port'] = None
 
     current_service: str | None = None
     in_ports = False
@@ -120,6 +131,7 @@ def parse_nginx_subdomains(env: str) -> list[tuple[str, str]]:
         architect.localhost  -> apps/architect
         leader.localhost     -> apps/leader
         vibe.localhost       -> apps/vibe
+        admin.localhost      -> admin (Next.js SPA, puerto 3000)
         services.localhost   -> indice de servicios estático
     """
     nginx_file = DOCKER_DIR / 'nginx' / f'{env}.conf'
@@ -133,6 +145,7 @@ def parse_nginx_subdomains(env: str) -> list[tuple[str, str]]:
         'architect.localhost': 'Frontend Architect',
         'leader.localhost': 'Tech Lead / EM',
         'vibe.localhost': 'Vibe Coding',
+        'admin.localhost': 'Admin Panel',
         'services.localhost': 'Indice de servicios',
     }
 
@@ -144,6 +157,7 @@ def parse_nginx_subdomains(env: str) -> list[tuple[str, str]]:
         'architect.localhost',
         'leader.localhost',
         'vibe.localhost',
+        'admin.localhost',
     )
     order_index = {name: i for i, name in enumerate(preferred_order)}
 

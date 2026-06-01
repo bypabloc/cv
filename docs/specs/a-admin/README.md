@@ -76,6 +76,21 @@
 | 21 | Tests E2E Playwright en `tests/feature/admin/*.spec.ts` | pending |
 | 22 | Verificacion E2E iterativa + limpieza `docs/specs/a-admin/` | pending |
 
+### Fases ampliadas (decisiones del usuario durante la ejecucion)
+
+| Fase | Descripcion | Estado |
+|------|-------------|--------|
+| D-1 | **devtools**: integrar `admin` como modulo del script `docker` existente (`docker lint/build/typecheck/format/test --module=admin` + `docker up` lo incluye). Listas en `devtools/docker/{urls,flags,quality,_helpers}.py` + `devtools/shared/compose.py` | done |
+| D-2 | **Docker**: `admin` como 7mo servicio en los 5 compose `{local,dev,test,prod,stage}.yml` + dockerfiles por env (`docker/dockerfiles/<env>/admin/`) + 2 entrypoints + nginx `admin.localhost:9970` (HMR dev server local/dev, build+preview test/prod) + services-page | done |
+| D-3 | **Env**: `NEXT_PUBLIC_*` en `docker/env/client/{.example,.local,.dev,.stage,.prod,.test}` derivadas de `PUBLIC_*` + RP_ID por env | done |
+| D-4 | **Backend**: action NUEVA `users.profile.change-password` (Lambda `users`): verifica current con argon2, hashea new, REVOCA otras sesiones, audit + deploy dev. La UI de cambio de password conecta contra la action REAL (desbloquea el gap; sin flag, con E2E real) | pending |
+
+> **NODE_ENV fix (bug de build resuelto)**: `next build` fallaba con
+> `Cannot read properties of null (useState/useContext)` en `/_not-found`
+> y `/_global-error` porque el entorno exporta `NODE_ENV=development`, que
+> envenena el build de Next (requiere `production`). Fix: el script `build`
+> fuerza `NODE_ENV=production`. NO es Turbopack ni React Compiler.
+
 ## Decisiones no-reabribles
 
 Las 25 decisiones cerradas en el Q&A inicial (ver

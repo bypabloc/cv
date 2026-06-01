@@ -1,5 +1,6 @@
 packages:
   - 'apps/*'
+  - 'admin'
   - 'packages/*'
 
 # pnpm 11+ requiere aprobar build scripts explicitamente.
@@ -7,4 +8,10 @@ packages:
 # esbuild (Astro/Vite) y sharp (image optimization) son builds legitimos.
 allowBuilds:
   esbuild: true
+  msw: true
   sharp: true
+
+# Recharts (admin) importa react-is internamente; forzar el alias a la
+# version de React 19 para evitar el mismatch que rompe el render.
+overrides:
+  react-is: 19.2.6

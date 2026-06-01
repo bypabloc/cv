@@ -32,6 +32,8 @@ SERVICES = [
     'architect',
     'leader',
     'vibe',
+    # Admin panel (Next.js SPA, puerto 3000)
+    'admin',
     # Feature tests shared (Playwright)
     'feature',
 ]

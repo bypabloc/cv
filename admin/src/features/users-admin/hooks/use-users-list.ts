@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
-import { adminKeys } from '../api/query-keys'
-import { usersAdminClient } from '../api/users-admin-client'
-import type { ListUsersPayload } from '../types'
+import { useQuery } from "@tanstack/react-query";
+import { adminKeys } from "../api/query-keys";
+import { usersAdminClient } from "../api/users-admin-client";
+import type { ListUsersPayload } from "../types";
 
 /**
  * @function useUsersList
@@ -14,12 +14,12 @@ import type { ListUsersPayload } from '../types'
  * @param {ListUsersPayload} [params] - paginacion opcional
  */
 export function useUsersList(params: ListUsersPayload = {}) {
-  return useQuery({
-    queryKey: adminKeys.users(params),
-    queryFn: async () => {
-      const { data } = await usersAdminClient.listUsers(params)
-      return data
-    },
-    staleTime: 30_000,
-  })
+	return useQuery({
+		queryKey: adminKeys.users(params),
+		queryFn: async () => {
+			const { data } = await usersAdminClient.listUsers(params);
+			return data;
+		},
+		staleTime: 30_000,
+	});
 }

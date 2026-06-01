@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { useEffect, useRef } from 'react'
-import { env } from '@/lib/env'
-import { authClient } from '../api/auth-client'
-import { broadcastAuth } from '../lib/broadcast'
-import { withRefreshMutex } from '../lib/refresh-mutex'
-import { getJwtExpiry } from '../lib/token-expiry'
-import { useAuthStore } from '../store/use-auth-store'
+import { useEffect, useRef } from "react";
+import { env } from "@/lib/env";
+import { authClient } from "../api/auth-client";
+import { broadcastAuth } from "../lib/broadcast";
+import { withRefreshMutex } from "../lib/refresh-mutex";
+import { getJwtExpiry } from "../lib/token-expiry";
+import { useAuthStore } from "../store/use-auth-store";
 
-const REFRESH_LEAD = env.NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS
+const REFRESH_LEAD = env.NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS;
 
 /**
  * @function doRefresh
@@ -17,21 +17,21 @@ const REFRESH_LEAD = env.NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS
  *   resetea el store. Devuelve si tuvo exito.
  */
 async function doRefresh(): Promise<boolean> {
-  return withRefreshMutex(async () => {
-    const refreshToken = useAuthStore.getState().refreshToken
-    if (!refreshToken) return false
-    try {
-      const { data } = await authClient.sessionRefresh({
-        refresh_token: refreshToken,
-      })
-      useAuthStore.getState().setAccessToken(data.access_token)
-      useAuthStore.getState().setRefreshToken(data.refresh_token)
-      broadcastAuth({ type: 'TOKEN_REFRESH', token: data.access_token })
-      return true
-    } catch {
-      return false
-    }
-  })
+	return withRefreshMutex(async () => {
+		const refreshToken = useAuthStore.getState().refreshToken;
+		if (!refreshToken) return false;
+		try {
+			const { data } = await authClient.sessionRefresh({
+				refresh_token: refreshToken,
+			});
+			useAuthStore.getState().setAccessToken(data.access_token);
+			useAuthStore.getState().setRefreshToken(data.refresh_token);
+			broadcastAuth({ type: "TOKEN_REFRESH", token: data.access_token });
+			return true;
+		} catch {
+			return false;
+		}
+	});
 }
 
 /**
@@ -45,67 +45,67 @@ async function doRefresh(): Promise<boolean> {
  *   expirar.
  */
 export function useAuthTimer(): void {
-  const accessToken = useAuthStore((s) => s.accessToken)
-  const reset = useAuthStore((s) => s.reset)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	const accessToken = useAuthStore((s) => s.accessToken);
+	const reset = useAuthStore((s) => s.reset);
+	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
+	useEffect(() => {
+		if (timerRef.current) clearTimeout(timerRef.current);
 
-    // Bootstrap: hidratar el access desde el refresh tras un reload.
-    if (!accessToken) {
-      const { refreshToken, refreshExpiry } = useAuthStore.getState()
-      if (refreshToken && refreshExpiry && refreshExpiry > Date.now()) {
-        void doRefresh().then((ok) => {
-          if (!ok) reset()
-        })
-      }
-      return
-    }
+		// Bootstrap: hidratar el access desde el refresh tras un reload.
+		if (!accessToken) {
+			const { refreshToken, refreshExpiry } = useAuthStore.getState();
+			if (refreshToken && refreshExpiry && refreshExpiry > Date.now()) {
+				void doRefresh().then((ok) => {
+					if (!ok) reset();
+				});
+			}
+			return;
+		}
 
-    const exp = getJwtExpiry(accessToken)
-    if (exp === null) {
-      reset()
-      return
-    }
+		const exp = getJwtExpiry(accessToken);
+		if (exp === null) {
+			reset();
+			return;
+		}
 
-    const msUntilRefresh = exp - Date.now() - REFRESH_LEAD
-    if (msUntilRefresh <= 0) {
-      void doRefresh().then((ok) => {
-        if (!ok) reset()
-      })
-      return
-    }
+		const msUntilRefresh = exp - Date.now() - REFRESH_LEAD;
+		if (msUntilRefresh <= 0) {
+			void doRefresh().then((ok) => {
+				if (!ok) reset();
+			});
+			return;
+		}
 
-    timerRef.current = setTimeout(() => {
-      void doRefresh().then((ok) => {
-        if (!ok) reset()
-      })
-    }, msUntilRefresh)
+		timerRef.current = setTimeout(() => {
+			void doRefresh().then((ok) => {
+				if (!ok) reset();
+			});
+		}, msUntilRefresh);
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [accessToken, reset])
+		return () => {
+			if (timerRef.current) clearTimeout(timerRef.current);
+		};
+	}, [accessToken, reset]);
 
-  // Page Visibility: re-check al volver a la tab.
-  useEffect(() => {
-    function onVisibility(): void {
-      if (document.visibilityState !== 'visible') return
-      const token = useAuthStore.getState().accessToken
-      if (!token) return
-      const exp = getJwtExpiry(token)
-      if (exp === null) {
-        useAuthStore.getState().reset()
-        return
-      }
-      if (Date.now() >= exp - REFRESH_LEAD) {
-        void doRefresh().then((ok) => {
-          if (!ok) useAuthStore.getState().reset()
-        })
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [])
+	// Page Visibility: re-check al volver a la tab.
+	useEffect(() => {
+		function onVisibility(): void {
+			if (document.visibilityState !== "visible") return;
+			const token = useAuthStore.getState().accessToken;
+			if (!token) return;
+			const exp = getJwtExpiry(token);
+			if (exp === null) {
+				useAuthStore.getState().reset();
+				return;
+			}
+			if (Date.now() >= exp - REFRESH_LEAD) {
+				void doRefresh().then((ok) => {
+					if (!ok) useAuthStore.getState().reset();
+				});
+			}
+		}
+		document.addEventListener("visibilitychange", onVisibility);
+		return () => document.removeEventListener("visibilitychange", onVisibility);
+	}, []);
 }

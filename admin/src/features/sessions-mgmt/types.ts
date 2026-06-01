@@ -1,4 +1,4 @@
-import type { AccountSession, AccountStatus } from '@/types/models'
+import type { AccountSession, AccountStatus } from "@/types/models";
 
 /**
  * @module features/sessions-mgmt/types
@@ -8,9 +8,9 @@ import type { AccountSession, AccountStatus } from '@/types/models'
  *   se define el payload de revocacion.
  */
 
-export type { AccountSession, AccountStatus }
+export type { AccountSession, AccountStatus };
 
 /** users.status.revoke-session */
 export interface RevokeSessionPayload {
-  session_id: string
+	session_id: string;
 }

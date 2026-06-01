@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { ApiError } from '@/lib/api-client'
-import { useRevokeSession } from '../hooks/use-revoke-session'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ApiError } from "@/lib/api-client";
+import { useRevokeSession } from "../hooks/use-revoke-session";
 
 /**
  * @component RevokeSessionButton
@@ -17,50 +17,50 @@ import { useRevokeSession } from '../hooks/use-revoke-session'
  * @props {boolean} isCurrent - true si es la sesion en curso (boton inhabilitado)
  */
 export function RevokeSessionButton({
-  sessionId,
-  isCurrent,
+	sessionId,
+	isCurrent,
 }: {
-  sessionId: string
-  isCurrent: boolean
+	sessionId: string;
+	isCurrent: boolean;
 }) {
-  const { mutate, isPending } = useRevokeSession()
-  const [inlineError, setInlineError] = useState<string | null>(null)
+	const { mutate, isPending } = useRevokeSession();
+	const [inlineError, setInlineError] = useState<string | null>(null);
 
-  const handleRevoke = () => {
-    setInlineError(null)
-    mutate(
-      { session_id: sessionId },
-      {
-        onError: (error) => {
-          if (error instanceof ApiError && error.status === 400) {
-            setInlineError('No puedes revocar la sesion actual')
-            return
-          }
-          setInlineError(
-            error instanceof Error ? error.message : 'Error al revocar',
-          )
-        },
-      },
-    )
-  }
+	const handleRevoke = () => {
+		setInlineError(null);
+		mutate(
+			{ session_id: sessionId },
+			{
+				onError: (error) => {
+					if (error instanceof ApiError && error.status === 400) {
+						setInlineError("No puedes revocar la sesion actual");
+						return;
+					}
+					setInlineError(
+						error instanceof Error ? error.message : "Error al revocar",
+					);
+				},
+			},
+		);
+	};
 
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <Button
-        type="button"
-        variant="destructive"
-        size="sm"
-        disabled={isCurrent || isPending}
-        onClick={handleRevoke}
-      >
-        {isPending ? <LoadingSpinner /> : null}
-        Revocar
-      </Button>
-      {inlineError ? (
-        <p className="text-xs text-destructive" role="alert">
-          {inlineError}
-        </p>
-      ) : null}
-    </div>
-  )
+	return (
+		<div className="flex flex-col items-end gap-1">
+			<Button
+				type="button"
+				variant="destructive"
+				size="sm"
+				disabled={isCurrent || isPending}
+				onClick={handleRevoke}
+			>
+				{isPending ? <LoadingSpinner /> : null}
+				Revocar
+			</Button>
+			{inlineError ? (
+				<p className="text-xs text-destructive" role="alert">
+					{inlineError}
+				</p>
+			) : null}
+		</div>
+	);
 }

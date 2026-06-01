@@ -8,11 +8,11 @@
 
 /** users.admin.list-users — paginacion opcional. */
 export interface ListUsersPayload {
-  page?: number
-  page_size?: number
+	page?: number;
+	page_size?: number;
 }
 
 /** Payload comun de get-user / disable / enable / delete / force-logout. */
 export interface UserIdPayload {
-  user_id: string
+	user_id: string;
 }

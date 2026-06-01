@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useMutation } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { ApiError } from '@/lib/api-client'
-import { settingsClient } from '../api/settings-client'
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ApiError } from "@/lib/api-client";
+import { settingsClient } from "../api/settings-client";
 
 /**
  * @function useChangePassword
@@ -14,17 +14,17 @@ import { settingsClient } from '../api/settings-client'
  *   (code 4005) se muestra como toast inline y NO rompe la app.
  */
 export function useChangePassword() {
-  return useMutation({
-    mutationFn: settingsClient.changePassword,
-    onSuccess: () => {
-      toast.success('Contrasena actualizada')
-    },
-    onError: (error) => {
-      if (error instanceof ApiError && error.status === 401) {
-        toast.error('La contrasena actual es incorrecta')
-        return
-      }
-      toast.error(error.message)
-    },
-  })
+	return useMutation({
+		mutationFn: settingsClient.changePassword,
+		onSuccess: () => {
+			toast.success("Contrasena actualizada");
+		},
+		onError: (error) => {
+			if (error instanceof ApiError && error.status === 401) {
+				toast.error("La contrasena actual es incorrecta");
+				return;
+			}
+			toast.error(error.message);
+		},
+	});
 }

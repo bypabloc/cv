@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { settingsKeys } from '../api/query-keys'
-import { settingsClient } from '../api/settings-client'
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { settingsKeys } from "../api/query-keys";
+import { settingsClient } from "../api/settings-client";
 
 /**
  * @function useChangeEmailInitiate
@@ -12,15 +12,15 @@ import { settingsClient } from '../api/settings-client'
  *   email cambia solo al confirmar).
  */
 export function useChangeEmailInitiate() {
-  return useMutation({
-    mutationFn: settingsClient.changeEmail,
-    onSuccess: () => {
-      toast.success('Te enviamos un correo de confirmacion al nuevo email')
-    },
-    onError: (error) => {
-      toast.error(error.message)
-    },
-  })
+	return useMutation({
+		mutationFn: settingsClient.changeEmail,
+		onSuccess: () => {
+			toast.success("Te enviamos un correo de confirmacion al nuevo email");
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
 }
 
 /**
@@ -29,16 +29,16 @@ export function useChangeEmailInitiate() {
  *   confirm-email-change). En exito invalida `settingsKeys.profile()`.
  */
 export function useConfirmEmailChange() {
-  const queryClient = useQueryClient()
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: settingsClient.confirmEmailChange,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: settingsKeys.profile() })
-      toast.success('Email actualizado')
-    },
-    onError: (error) => {
-      toast.error(error.message)
-    },
-  })
+	return useMutation({
+		mutationFn: settingsClient.confirmEmailChange,
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: settingsKeys.profile() });
+			toast.success("Email actualizado");
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
 }

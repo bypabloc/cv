@@ -1,12 +1,12 @@
 import {
-  BarChart3,
-  FileText,
-  type LucideIcon,
-  Monitor,
-  Settings,
-  Users,
-} from 'lucide-react'
-import { ROUTES } from '@/lib/routes'
+	BarChart3,
+	FileText,
+	type LucideIcon,
+	Monitor,
+	Settings,
+	Users,
+} from "lucide-react";
+import { ROUTES } from "@/lib/routes";
 
 /**
  * @module nav-items
@@ -15,16 +15,16 @@ import { ROUTES } from '@/lib/routes'
  *   aqui solo el link). `adminOnly` oculta el item a usuarios no-admin.
  */
 export interface NavItem {
-  href: string
-  label: string
-  icon: LucideIcon
-  adminOnly?: boolean
+	href: string;
+	label: string;
+	icon: LucideIcon;
+	adminOnly?: boolean;
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { href: ROUTES.admin.metrics, label: 'Metricas', icon: BarChart3 },
-  { href: ROUTES.admin.settings, label: 'Configuracion', icon: Settings },
-  { href: ROUTES.admin.sessions, label: 'Mis sesiones', icon: Monitor },
-  { href: ROUTES.admin.users, label: 'Usuarios', icon: Users, adminOnly: true },
-  { href: ROUTES.admin.cv, label: 'Gestion CV', icon: FileText },
-]
+	{ href: ROUTES.admin.metrics, label: "Metricas", icon: BarChart3 },
+	{ href: ROUTES.admin.settings, label: "Configuracion", icon: Settings },
+	{ href: ROUTES.admin.sessions, label: "Mis sesiones", icon: Monitor },
+	{ href: ROUTES.admin.users, label: "Usuarios", icon: Users, adminOnly: true },
+	{ href: ROUTES.admin.cv, label: "Gestion CV", icon: FileText },
+];

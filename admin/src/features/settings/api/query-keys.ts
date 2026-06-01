@@ -5,6 +5,6 @@
  *   queries las consumen. MFA/WebAuthn usan las keys del feature auth.
  */
 export const settingsKeys = {
-  all: ['settings'] as const,
-  profile: () => [...settingsKeys.all, 'profile'] as const,
-}
+	all: ["settings"] as const,
+	profile: () => [...settingsKeys.all, "profile"] as const,
+};

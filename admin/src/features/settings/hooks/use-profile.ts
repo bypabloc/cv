@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
-import { settingsKeys } from '../api/query-keys'
-import { settingsClient } from '../api/settings-client'
+import { useQuery } from "@tanstack/react-query";
+import { settingsKeys } from "../api/query-keys";
+import { settingsClient } from "../api/settings-client";
 
 /**
  * @function useProfile
@@ -10,11 +10,11 @@ import { settingsClient } from '../api/settings-client'
  *   `settingsKeys.profile()`. Devuelve el `UserProfile` desempaquetado.
  */
 export function useProfile() {
-  return useQuery({
-    queryKey: settingsKeys.profile(),
-    queryFn: async () => {
-      const { data } = await settingsClient.getProfile()
-      return data.profile
-    },
-  })
+	return useQuery({
+		queryKey: settingsKeys.profile(),
+		queryFn: async () => {
+			const { data } = await settingsClient.getProfile();
+			return data.profile;
+		},
+	});
 }

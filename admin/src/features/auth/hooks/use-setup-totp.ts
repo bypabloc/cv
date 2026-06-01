@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useMutation } from '@tanstack/react-query'
-import { authClient } from '../api/auth-client'
+import { useMutation } from "@tanstack/react-query";
+import { authClient } from "../api/auth-client";
 
 /**
  * @function useSetupTotp
@@ -9,7 +9,7 @@ import { authClient } from '../api/auth-client'
  *   el front renderiza el QR client-side desde `otpauth_url`.
  */
 export function useSetupTotp() {
-  return useMutation({
-    mutationFn: authClient.mfaSetupTotp,
-  })
+	return useMutation({
+		mutationFn: authClient.mfaSetupTotp,
+	});
 }

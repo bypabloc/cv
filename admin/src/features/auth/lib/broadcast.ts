@@ -4,11 +4,11 @@
  *   Guard SSR/build: `typeof BroadcastChannel === 'undefined'`.
  */
 
-export const AUTH_CHANNEL = 'portfolio_auth'
+export const AUTH_CHANNEL = "portfolio_auth";
 
 export interface AuthBroadcastMessage {
-  type: 'LOGOUT' | 'TOKEN_REFRESH'
-  token?: string
+	type: "LOGOUT" | "TOKEN_REFRESH";
+	token?: string;
 }
 
 /**
@@ -17,8 +17,8 @@ export interface AuthBroadcastMessage {
  * @param {AuthBroadcastMessage} message - Mensaje a emitir
  */
 export function broadcastAuth(message: AuthBroadcastMessage): void {
-  if (typeof BroadcastChannel === 'undefined') return
-  const channel = new BroadcastChannel(AUTH_CHANNEL)
-  channel.postMessage(message)
-  channel.close()
+	if (typeof BroadcastChannel === "undefined") return;
+	const channel = new BroadcastChannel(AUTH_CHANNEL);
+	channel.postMessage(message);
+	channel.close();
 }

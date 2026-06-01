@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import type { ReactNode } from 'react'
-import { useAuthTimer } from '../hooks/use-auth-timer'
-import { useMultiTabSync } from '../hooks/use-multi-tab-sync'
-import { useProtectedRoute } from '../hooks/use-protected-route'
+import type { ReactNode } from "react";
+import { useAuthTimer } from "../hooks/use-auth-timer";
+import { useMultiTabSync } from "../hooks/use-multi-tab-sync";
+import { useProtectedRoute } from "../hooks/use-protected-route";
 
 /**
  * @component AuthGuard
@@ -14,17 +14,17 @@ import { useProtectedRoute } from '../hooks/use-protected-route'
  * @props {ReactNode} children - Arbol protegido
  */
 export function AuthGuard({ children }: { children: ReactNode }) {
-  useAuthTimer()
-  useMultiTabSync()
-  const authed = useProtectedRoute()
+	useAuthTimer();
+	useMultiTabSync();
+	const authed = useProtectedRoute();
 
-  if (!authed) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">Verificando sesion...</p>
-      </div>
-    )
-  }
+	if (!authed) {
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<p className="text-muted-foreground">Verificando sesion...</p>
+			</div>
+		);
+	}
 
-  return <>{children}</>
+	return <>{children}</>;
 }

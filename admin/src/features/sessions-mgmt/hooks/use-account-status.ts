@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
-import { sessionsKeys } from '../api/query-keys'
-import { sessionsMgmtClient } from '../api/sessions-mgmt-client'
+import { useQuery } from "@tanstack/react-query";
+import { sessionsKeys } from "../api/query-keys";
+import { sessionsMgmtClient } from "../api/sessions-mgmt-client";
 
 /**
  * @function useAccountStatus
@@ -11,12 +11,12 @@ import { sessionsMgmtClient } from '../api/sessions-mgmt-client'
  *   desempaquetado (`{user_id, status, current_session_id}`).
  */
 export function useAccountStatus() {
-  return useQuery({
-    queryKey: sessionsKeys.status(),
-    queryFn: async () => {
-      const { data } = await sessionsMgmtClient.getStatus()
-      return data
-    },
-    staleTime: 30_000,
-  })
+	return useQuery({
+		queryKey: sessionsKeys.status(),
+		queryFn: async () => {
+			const { data } = await sessionsMgmtClient.getStatus();
+			return data;
+		},
+		staleTime: 30_000,
+	});
 }

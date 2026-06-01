@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { settingsKeys } from '../api/query-keys'
-import { settingsClient } from '../api/settings-client'
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { settingsKeys } from "../api/query-keys";
+import { settingsClient } from "../api/settings-client";
 
 /**
  * @function useUpdateProfile
@@ -11,16 +11,16 @@ import { settingsClient } from '../api/settings-client'
  *   `settingsKeys.profile()` y muestra un toast.
  */
 export function useUpdateProfile() {
-  const queryClient = useQueryClient()
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: settingsClient.updateProfile,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: settingsKeys.profile() })
-      toast.success('Perfil actualizado')
-    },
-    onError: (error) => {
-      toast.error(error.message)
-    },
-  })
+	return useMutation({
+		mutationFn: settingsClient.updateProfile,
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: settingsKeys.profile() });
+			toast.success("Perfil actualizado");
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
 }

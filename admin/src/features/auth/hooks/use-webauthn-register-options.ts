@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useMutation } from '@tanstack/react-query'
-import { authClient } from '../api/auth-client'
+import { useMutation } from "@tanstack/react-query";
+import { authClient } from "../api/auth-client";
 
 /**
  * @function useWebauthnRegisterOptions
@@ -9,7 +9,7 @@ import { authClient } from '../api/auth-client'
  *   TTL 5 min). El caller las pasa a `startRegistration`.
  */
 export function useWebauthnRegisterOptions() {
-  return useMutation({
-    mutationFn: authClient.webauthnRegisterOptions,
-  })
+	return useMutation({
+		mutationFn: authClient.webauthnRegisterOptions,
+	});
 }

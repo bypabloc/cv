@@ -1,73 +1,74 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
-  "extends": ["../biome.json"],
-  "files": {
-    "includes": [
-      "!**/node_modules",
-      "!**/.next",
-      "!**/out",
-      "!**/coverage",
-      "!**/next-env.d.ts",
-      "!src/styles/globals.css"
-    ]
-  },
-  "overrides": [
-    {
-      "includes": ["src/components/ui/**/*.tsx"],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noExplicitAny": "off",
-            "noArrayIndexKey": "off"
-          },
-          "complexity": {
-            "noUselessFragments": "off"
-          },
-          "style": {
-            "useImportType": "off"
-          },
-          "a11y": {
-            "useSemanticElements": "off",
-            "useFocusableInteractive": "off",
-            "useAriaPropsForRole": "off",
-            "noStaticElementInteractions": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": [
-        "src/app/**/page.tsx",
-        "src/app/**/layout.tsx",
-        "src/app/**/error.tsx",
-        "src/app/**/global-error.tsx",
-        "src/app/**/not-found.tsx"
-      ],
-      "linter": {
-        "rules": {
-          "style": {
-            "noDefaultExport": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["tests/**"],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noExcessiveCognitiveComplexity": "off"
-          },
-          "suspicious": {
-            "noConsole": "off",
-            "noEmptyBlockStatements": "off",
-            "noExplicitAny": "off"
-          },
-          "style": {
-            "noNonNullAssertion": "off"
-          }
-        }
-      }
-    }
-  ]
+	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+	"root": false,
+	"files": {
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/.next",
+			"!**/out",
+			"!**/coverage",
+			"!**/next-env.d.ts",
+			"!src/styles/globals.css"
+		]
+	},
+	"overrides": [
+		{
+			"includes": ["src/components/ui/**/*.tsx"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noExplicitAny": "off",
+						"noArrayIndexKey": "off"
+					},
+					"complexity": {
+						"noUselessFragments": "off"
+					},
+					"style": {
+						"useImportType": "off"
+					},
+					"a11y": {
+						"useSemanticElements": "off",
+						"useFocusableInteractive": "off",
+						"useAriaPropsForRole": "off",
+						"noStaticElementInteractions": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"src/app/**/page.tsx",
+				"src/app/**/layout.tsx",
+				"src/app/**/error.tsx",
+				"src/app/**/global-error.tsx",
+				"src/app/**/not-found.tsx"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["tests/**"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveCognitiveComplexity": "off"
+					},
+					"suspicious": {
+						"noConsole": "off",
+						"noEmptyBlockStatements": "off",
+						"noExplicitAny": "off"
+					},
+					"style": {
+						"noNonNullAssertion": "off"
+					}
+				}
+			}
+		}
+	]
 }

@@ -128,8 +128,16 @@ def _run_frontend_conformance(
         target_service = 'generic'  # container generico para tener node_modules
         target_workdir = f'/app/packages/{pkg}'
     elif module == _ADMIN_APP:
-        # admin (Next.js) vive en /app/admin, no en /app/apps/admin.
-        target_workdir = '/app/admin'
+        # admin (Next.js) vive en /app/admin con su propio biome.json
+        # (root: false) que aporta overrides sobre el config raiz. Biome v2
+        # exige correr desde el root del workspace (/app) para resolver el
+        # config raiz + el nested; por eso scopeamos al subdir admin/ en vez
+        # de cd a /app/admin (que romperia con "nested root configuration").
+        target_service = (
+            'generic'  # container con node_modules + el root config
+        )
+        target_workdir = '/app'
+        cmd = [*cmd[:-1], 'admin/']
 
     result = compose_exec(
         env,

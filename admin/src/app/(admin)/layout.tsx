@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import type { ReactNode } from 'react'
-import { Header } from '@/features/admin-shell/components/header'
-import { Sidebar } from '@/features/admin-shell/components/sidebar'
-import { AuthGuard } from '@/features/auth/components/auth-guard'
+import type { ReactNode } from "react";
+import { Header } from "@/features/admin-shell/components/header";
+import { Sidebar } from "@/features/admin-shell/components/sidebar";
+import { AuthGuard } from "@/features/auth/components/auth-guard";
 
 /**
  * @page AdminLayout
@@ -12,15 +12,15 @@ import { AuthGuard } from '@/features/auth/components/auth-guard'
  *   persiste entre navegaciones del grupo (no se remonta).
  */
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return (
-    <AuthGuard>
-      <div className="flex min-h-screen">
-        <Sidebar />
-        <div className="flex flex-1 flex-col">
-          <Header />
-          <main className="flex-1 overflow-auto p-6">{children}</main>
-        </div>
-      </div>
-    </AuthGuard>
-  )
+	return (
+		<AuthGuard>
+			<div className="flex min-h-screen">
+				<Sidebar />
+				<div className="flex flex-1 flex-col">
+					<Header />
+					<main className="flex-1 overflow-auto p-6">{children}</main>
+				</div>
+			</div>
+		</AuthGuard>
+	);
 }

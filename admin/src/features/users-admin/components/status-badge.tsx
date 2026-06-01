@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { Badge } from '@/components/ui/badge'
-import type { UserStatus } from '@/types/models'
+import { Badge } from "@/components/ui/badge";
+import type { UserStatus } from "@/types/models";
 
 /**
  * @component StatusBadge
@@ -10,20 +10,20 @@ import type { UserStatus } from '@/types/models'
  */
 
 const STATUS_META: Record<
-  UserStatus,
-  {
-    label: string
-    variant: 'default' | 'secondary' | 'destructive' | 'outline'
-  }
+	UserStatus,
+	{
+		label: string;
+		variant: "default" | "secondary" | "destructive" | "outline";
+	}
 > = {
-  active: { label: 'Activo', variant: 'default' },
-  pending: { label: 'Pendiente', variant: 'secondary' },
-  disabled: { label: 'Deshabilitado', variant: 'destructive' },
-  locked: { label: 'Bloqueado', variant: 'destructive' },
-  deleted: { label: 'Eliminado', variant: 'outline' },
-}
+	active: { label: "Activo", variant: "default" },
+	pending: { label: "Pendiente", variant: "secondary" },
+	disabled: { label: "Deshabilitado", variant: "destructive" },
+	locked: { label: "Bloqueado", variant: "destructive" },
+	deleted: { label: "Eliminado", variant: "outline" },
+};
 
 export function StatusBadge({ status }: { status: UserStatus }) {
-  const meta = STATUS_META[status]
-  return <Badge variant={meta.variant}>{meta.label}</Badge>
+	const meta = STATUS_META[status];
+	return <Badge variant={meta.variant}>{meta.label}</Badge>;
 }

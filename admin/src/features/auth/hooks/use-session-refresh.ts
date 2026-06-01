@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useMutation } from '@tanstack/react-query'
-import { authClient } from '../api/auth-client'
-import { useAuthStore } from '../store/use-auth-store'
+import { useMutation } from "@tanstack/react-query";
+import { authClient } from "../api/auth-client";
+import { useAuthStore } from "../store/use-auth-store";
 
 /**
  * @function useSessionRefresh
@@ -11,17 +11,17 @@ import { useAuthStore } from '../store/use-auth-store'
  *   `refresh_token` se resuelve del store si el caller no lo pasa.
  */
 export function useSessionRefresh() {
-  const setAccessToken = useAuthStore((s) => s.setAccessToken)
-  const setRefreshToken = useAuthStore((s) => s.setRefreshToken)
+	const setAccessToken = useAuthStore((s) => s.setAccessToken);
+	const setRefreshToken = useAuthStore((s) => s.setRefreshToken);
 
-  return useMutation({
-    mutationFn: () => {
-      const refreshToken = useAuthStore.getState().refreshToken
-      return authClient.sessionRefresh({ refresh_token: refreshToken ?? '' })
-    },
-    onSuccess: ({ data }) => {
-      setAccessToken(data.access_token)
-      setRefreshToken(data.refresh_token)
-    },
-  })
+	return useMutation({
+		mutationFn: () => {
+			const refreshToken = useAuthStore.getState().refreshToken;
+			return authClient.sessionRefresh({ refresh_token: refreshToken ?? "" });
+		},
+		onSuccess: ({ data }) => {
+			setAccessToken(data.access_token);
+			setRefreshToken(data.refresh_token);
+		},
+	});
 }

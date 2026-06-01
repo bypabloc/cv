@@ -6,11 +6,11 @@
  */
 
 export function nowSec(): number {
-  return Math.floor(Date.now() / 1000)
+	return Math.floor(Date.now() / 1000);
 }
 
 function base64UrlEncode(s: string): string {
-  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+	return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /**
@@ -19,9 +19,9 @@ function base64UrlEncode(s: string): string {
  * @returns {string} JWT fake `header.payload.fakesignature`
  */
 export function makeJwt(payload: Record<string, unknown>): string {
-  const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const body = base64UrlEncode(
-    JSON.stringify({ exp: nowSec() + 900, ...payload }),
-  )
-  return `${header}.${body}.fakesignature`
+	const header = base64UrlEncode(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+	const body = base64UrlEncode(
+		JSON.stringify({ exp: nowSec() + 900, ...payload }),
+	);
+	return `${header}.${body}.fakesignature`;
 }

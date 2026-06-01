@@ -5,7 +5,7 @@
  *   consumen.
  */
 export const sessionsKeys = {
-  all: ['status'] as const,
-  status: () => [...sessionsKeys.all, 'get'] as const,
-  sessions: () => [...sessionsKeys.all, 'list-sessions'] as const,
-}
+	all: ["status"] as const,
+	status: () => [...sessionsKeys.all, "get"] as const,
+	sessions: () => [...sessionsKeys.all, "list-sessions"] as const,
+};

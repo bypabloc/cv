@@ -1,4 +1,4 @@
-import type { NextConfig } from 'next'
+import type { NextConfig } from "next";
 
 /**
  * @config next.config.ts
@@ -10,17 +10,17 @@ import type { NextConfig } from 'next'
  * reactCompiler: auto-memoization stable en Next 16.2 (sin useMemo/useCallback).
  */
 const nextConfig: NextConfig = {
-  output: 'export',
-  images: {
-    unoptimized: true,
-  },
-  trailingSlash: true,
-  poweredByHeader: false,
-  productionBrowserSourceMaps: false,
-  typescript: {
-    tsconfigPath: './tsconfig.json',
-  },
-  reactCompiler: true,
-}
+	output: "export",
+	images: {
+		unoptimized: true,
+	},
+	trailingSlash: true,
+	poweredByHeader: false,
+	productionBrowserSourceMaps: false,
+	typescript: {
+		tsconfigPath: "./tsconfig.json",
+	},
+	reactCompiler: true,
+};
 
-export default nextConfig
+export default nextConfig;

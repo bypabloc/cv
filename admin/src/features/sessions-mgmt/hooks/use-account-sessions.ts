@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
-import { sessionsKeys } from '../api/query-keys'
-import { sessionsMgmtClient } from '../api/sessions-mgmt-client'
+import { useQuery } from "@tanstack/react-query";
+import { sessionsKeys } from "../api/query-keys";
+import { sessionsMgmtClient } from "../api/sessions-mgmt-client";
 
 /**
  * @function useAccountSessions
@@ -11,12 +11,12 @@ import { sessionsMgmtClient } from '../api/sessions-mgmt-client'
  *   `AccountSession[]` desempaquetado.
  */
 export function useAccountSessions() {
-  return useQuery({
-    queryKey: sessionsKeys.sessions(),
-    queryFn: async () => {
-      const { data } = await sessionsMgmtClient.listSessions()
-      return data.sessions
-    },
-    staleTime: 30_000,
-  })
+	return useQuery({
+		queryKey: sessionsKeys.sessions(),
+		queryFn: async () => {
+			const { data } = await sessionsMgmtClient.listSessions();
+			return data.sessions;
+		},
+		staleTime: 30_000,
+	});
 }

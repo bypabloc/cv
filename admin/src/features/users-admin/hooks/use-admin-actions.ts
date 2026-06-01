@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
-import { adminKeys } from '../api/query-keys'
-import { usersAdminClient } from '../api/users-admin-client'
+import { useQuery } from "@tanstack/react-query";
+import { adminKeys } from "../api/query-keys";
+import { usersAdminClient } from "../api/users-admin-client";
 
 /**
  * @function useAdminActions
@@ -11,12 +11,12 @@ import { usersAdminClient } from '../api/users-admin-client'
  *   desempaquetado.
  */
 export function useAdminActions() {
-  return useQuery({
-    queryKey: adminKeys.actions(),
-    queryFn: async () => {
-      const { data } = await usersAdminClient.listAdminActions()
-      return data.actions
-    },
-    staleTime: 30_000,
-  })
+	return useQuery({
+		queryKey: adminKeys.actions(),
+		queryFn: async () => {
+			const { data } = await usersAdminClient.listAdminActions();
+			return data.actions;
+		},
+		staleTime: 30_000,
+	});
 }

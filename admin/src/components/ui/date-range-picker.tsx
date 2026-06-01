@@ -1,15 +1,15 @@
-'use client'
+"use client";
 
-import { CalendarIcon } from 'lucide-react'
-import type { DateRange } from 'react-day-picker'
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
+import { CalendarIcon } from "lucide-react";
+import type { DateRange } from "react-day-picker";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 /**
  * @component DateRangePicker
@@ -21,39 +21,39 @@ import { cn } from '@/lib/utils'
  * @props {string} [className] - clases extra del trigger
  */
 export function DateRangePicker({
-  value,
-  onChange,
-  className,
+	value,
+	onChange,
+	className,
 }: {
-  value: DateRange | undefined
-  onChange: (range: DateRange | undefined) => void
-  className?: string
+	value: DateRange | undefined;
+	onChange: (range: DateRange | undefined) => void;
+	className?: string;
 }) {
-  const label =
-    value?.from && value?.to
-      ? `${value.from.toLocaleDateString('es')} - ${value.to.toLocaleDateString('es')}`
-      : 'Elegir rango'
+	const label =
+		value?.from && value?.to
+			? `${value.from.toLocaleDateString("es")} - ${value.to.toLocaleDateString("es")}`
+			: "Elegir rango";
 
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn('justify-start text-left font-normal', className)}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {label}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="range"
-          selected={value}
-          onSelect={onChange}
-          numberOfMonths={2}
-          autoFocus
-        />
-      </PopoverContent>
-    </Popover>
-  )
+	return (
+		<Popover>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					className={cn("justify-start text-left font-normal", className)}
+				>
+					<CalendarIcon className="mr-2 h-4 w-4" />
+					{label}
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent className="w-auto p-0" align="start">
+				<Calendar
+					mode="range"
+					selected={value}
+					onSelect={onChange}
+					numberOfMonths={2}
+					autoFocus
+				/>
+			</PopoverContent>
+		</Popover>
+	);
 }

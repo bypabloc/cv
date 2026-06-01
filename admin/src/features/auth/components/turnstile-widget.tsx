@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { Turnstile } from '@marsidev/react-turnstile'
-import { env } from '@/lib/env'
+import { Turnstile } from "@marsidev/react-turnstile";
+import { env } from "@/lib/env";
 
 /**
  * @component TurnstileWidget
@@ -12,17 +12,17 @@ import { env } from '@/lib/env'
  * @props {(token: string | null) => void} onToken - Recibe el token (o null)
  */
 export function TurnstileWidget({
-  onToken,
+	onToken,
 }: {
-  onToken: (token: string | null) => void
+	onToken: (token: string | null) => void;
 }) {
-  return (
-    <Turnstile
-      siteKey={env.NEXT_PUBLIC_TURNSTILE_SITEKEY}
-      onSuccess={(token) => onToken(token)}
-      onExpire={() => onToken(null)}
-      onError={() => onToken(null)}
-      options={{ theme: 'auto' }}
-    />
-  )
+	return (
+		<Turnstile
+			siteKey={env.NEXT_PUBLIC_TURNSTILE_SITEKEY}
+			onSuccess={(token) => onToken(token)}
+			onExpire={() => onToken(null)}
+			onError={() => onToken(null)}
+			options={{ theme: "auto" }}
+		/>
+	);
 }

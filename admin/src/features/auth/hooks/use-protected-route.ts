@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { loginWithNext } from '@/lib/routes'
-import { useAuthStore } from '../store/use-auth-store'
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { loginWithNext } from "@/lib/routes";
+import { useAuthStore } from "../store/use-auth-store";
 
 /**
  * @function useProtectedRoute
@@ -13,16 +13,16 @@ import { useAuthStore } from '../store/use-auth-store'
  * @returns {boolean} true si el usuario esta autenticado
  */
 export function useProtectedRoute(): boolean {
-  const router = useRouter()
-  const pathname = usePathname()
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const authed = isAuthenticated()
+	const router = useRouter();
+	const pathname = usePathname();
+	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+	const authed = isAuthenticated();
 
-  useEffect(() => {
-    if (!authed) {
-      router.replace(loginWithNext(pathname))
-    }
-  }, [authed, router, pathname])
+	useEffect(() => {
+		if (!authed) {
+			router.replace(loginWithNext(pathname));
+		}
+	}, [authed, router, pathname]);
 
-  return authed
+	return authed;
 }

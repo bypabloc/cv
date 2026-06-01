@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
-import { authClient } from '../api/auth-client'
-import { authKeys } from '../api/query-keys'
+import { useQuery } from "@tanstack/react-query";
+import { authClient } from "../api/auth-client";
+import { authKeys } from "../api/query-keys";
 
 /**
  * @function useMfaList
@@ -10,11 +10,11 @@ import { authKeys } from '../api/query-keys'
  *   `authKeys.mfa()`. Devuelve el `MfaListResponse` desempaquetado.
  */
 export function useMfaList() {
-  return useQuery({
-    queryKey: authKeys.mfa(),
-    queryFn: async () => {
-      const { data } = await authClient.mfaList()
-      return data
-    },
-  })
+	return useQuery({
+		queryKey: authKeys.mfa(),
+		queryFn: async () => {
+			const { data } = await authClient.mfaList();
+			return data;
+		},
+	});
 }

@@ -1,4 +1,4 @@
-import { jwtDecode } from 'jwt-decode'
+import { jwtDecode } from "jwt-decode";
 
 /**
  * @module token-expiry
@@ -12,12 +12,12 @@ import { jwtDecode } from 'jwt-decode'
  * @returns {number | null} epoch ms del exp, o null si no decodea
  */
 export function getJwtExpiry(token: string): number | null {
-  try {
-    const { exp } = jwtDecode<{ exp: number }>(token)
-    return exp * 1000
-  } catch {
-    return null
-  }
+	try {
+		const { exp } = jwtDecode<{ exp: number }>(token);
+		return exp * 1000;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -26,7 +26,7 @@ export function getJwtExpiry(token: string): number | null {
  * @returns {boolean} true si expiro o no decodea
  */
 export function isJwtExpired(token: string): boolean {
-  const exp = getJwtExpiry(token)
-  if (exp === null) return true
-  return Date.now() >= exp
+	const exp = getJwtExpiry(token);
+	if (exp === null) return true;
+	return Date.now() >= exp;
 }

@@ -6,15 +6,15 @@
  *   @/types.
  */
 
-export { sessionsKeys } from './api/query-keys'
-export { sessionsMgmtClient } from './api/sessions-mgmt-client'
-export { AccountSessionsTable } from './components/account-sessions-table'
-export { RevokeSessionButton } from './components/revoke-session-button'
-export { useAccountSessions } from './hooks/use-account-sessions'
-export { useAccountStatus } from './hooks/use-account-status'
-export { useRevokeSession } from './hooks/use-revoke-session'
+export { sessionsKeys } from "./api/query-keys";
+export { sessionsMgmtClient } from "./api/sessions-mgmt-client";
+export { AccountSessionsTable } from "./components/account-sessions-table";
+export { RevokeSessionButton } from "./components/revoke-session-button";
+export { useAccountSessions } from "./hooks/use-account-sessions";
+export { useAccountStatus } from "./hooks/use-account-status";
+export { useRevokeSession } from "./hooks/use-revoke-session";
 export type {
-  AccountSession,
-  AccountStatus,
-  RevokeSessionPayload,
-} from './types'
+	AccountSession,
+	AccountStatus,
+	RevokeSessionPayload,
+} from "./types";

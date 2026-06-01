@@ -1,4 +1,4 @@
-import type { ListUsersPayload } from '../types'
+import type { ListUsersPayload } from "../types";
 
 /**
  * @module features/users-admin/api/query-keys
@@ -10,12 +10,12 @@ import type { ListUsersPayload } from '../types'
  *   `['admin', 'actions']`.
  */
 export const adminKeys = {
-  all: ['admin'] as const,
-  /** Prefix de todas las queries de listado (sin params): invalidacion masiva. */
-  usersAll: () => [...adminKeys.all, 'users'] as const,
-  /** Key completa de una pagina del listado. */
-  users: (params?: ListUsersPayload) =>
-    [...adminKeys.usersAll(), params ?? {}] as const,
-  user: (userId: string) => [...adminKeys.all, 'user', userId] as const,
-  actions: () => [...adminKeys.all, 'actions'] as const,
-}
+	all: ["admin"] as const,
+	/** Prefix de todas las queries de listado (sin params): invalidacion masiva. */
+	usersAll: () => [...adminKeys.all, "users"] as const,
+	/** Key completa de una pagina del listado. */
+	users: (params?: ListUsersPayload) =>
+		[...adminKeys.usersAll(), params ?? {}] as const,
+	user: (userId: string) => [...adminKeys.all, "user", userId] as const,
+	actions: () => [...adminKeys.all, "actions"] as const,
+};

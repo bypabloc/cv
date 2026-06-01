@@ -7,29 +7,29 @@
  */
 
 // Componentes
-export { ChangeEmailForm } from './components/change-email-form'
-export { ChangePasswordForm } from './components/change-password-form'
-export { ConfirmEmailChange } from './components/confirm-email-change'
-export { DeleteAccountSection } from './components/delete-account-section'
-export { EmailCodeSection } from './components/email-code-section'
-export { MfaMethodsList } from './components/mfa-methods-list'
-export { ProfileForm } from './components/profile-form'
-export { RecoveryCodesSection } from './components/recovery-codes-section'
-export { WebAuthnCredentialsList } from './components/webauthn-credentials-list'
+export { ChangeEmailForm } from "./components/change-email-form";
+export { ChangePasswordForm } from "./components/change-password-form";
+export { ConfirmEmailChange } from "./components/confirm-email-change";
+export { DeleteAccountSection } from "./components/delete-account-section";
+export { EmailCodeSection } from "./components/email-code-section";
+export { MfaMethodsList } from "./components/mfa-methods-list";
+export { ProfileForm } from "./components/profile-form";
+export { RecoveryCodesSection } from "./components/recovery-codes-section";
+export { WebAuthnCredentialsList } from "./components/webauthn-credentials-list";
 // Hooks
 export {
-  useChangeEmailInitiate,
-  useConfirmEmailChange,
-} from './hooks/use-change-email'
-export { useChangePassword } from './hooks/use-change-password'
-export { useDeleteAccount } from './hooks/use-delete-account'
-export { useProfile } from './hooks/use-profile'
-export { useUpdateProfile } from './hooks/use-update-profile'
+	useChangeEmailInitiate,
+	useConfirmEmailChange,
+} from "./hooks/use-change-email";
+export { useChangePassword } from "./hooks/use-change-password";
+export { useDeleteAccount } from "./hooks/use-delete-account";
+export { useProfile } from "./hooks/use-profile";
+export { useUpdateProfile } from "./hooks/use-update-profile";
 // Tipos publicos
 export type {
-  ChangeEmailPayload,
-  ChangePasswordPayload,
-  ConfirmEmailChangePayload,
-  DeleteAccountPayload,
-  UpdateProfilePayload,
-} from './types'
+	ChangeEmailPayload,
+	ChangePasswordPayload,
+	ConfirmEmailChangePayload,
+	DeleteAccountPayload,
+	UpdateProfilePayload,
+} from "./types";

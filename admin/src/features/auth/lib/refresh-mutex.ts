@@ -5,7 +5,7 @@
  *   demas esperan ese resultado. Sin esto, refresh concurrentes hacen que el
  *   backend revoque la familia entera (RFC 9700 reuse detection).
  */
-let inFlight: Promise<boolean> | null = null
+let inFlight: Promise<boolean> | null = null;
 
 /**
  * @function withRefreshMutex
@@ -13,15 +13,15 @@ let inFlight: Promise<boolean> | null = null
  * @returns {Promise<boolean>} El resultado del unico refresh in-flight
  */
 export async function withRefreshMutex(
-  refreshFn: () => Promise<boolean>,
+	refreshFn: () => Promise<boolean>,
 ): Promise<boolean> {
-  if (inFlight) return inFlight
-  inFlight = (async () => {
-    try {
-      return await refreshFn()
-    } finally {
-      inFlight = null
-    }
-  })()
-  return inFlight
+	if (inFlight) return inFlight;
+	inFlight = (async () => {
+		try {
+			return await refreshFn();
+		} finally {
+			inFlight = null;
+		}
+	})();
+	return inFlight;
 }

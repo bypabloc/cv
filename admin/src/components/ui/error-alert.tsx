@@ -1,6 +1,6 @@
-import { AlertCircle } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 /**
  * @component ErrorAlert
@@ -10,33 +10,33 @@ import { Button } from '@/components/ui/button'
  * @props {string} [title] - titulo (default 'Error')
  */
 export function ErrorAlert({
-  error,
-  onRetry,
-  title = 'Error',
+	error,
+	onRetry,
+	title = "Error",
 }: {
-  error: unknown
-  onRetry?: () => void
-  title?: string
+	error: unknown;
+	onRetry?: () => void;
+	title?: string;
 }) {
-  const message =
-    error instanceof Error ? error.message : 'Ocurrio un error inesperado'
-  return (
-    <Alert variant="destructive">
-      <AlertCircle className="h-4 w-4" />
-      <AlertTitle>{title}</AlertTitle>
-      <AlertDescription className="flex flex-col gap-2">
-        <span>{message}</span>
-        {onRetry ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRetry}
-            className="w-fit"
-          >
-            Reintentar
-          </Button>
-        ) : null}
-      </AlertDescription>
-    </Alert>
-  )
+	const message =
+		error instanceof Error ? error.message : "Ocurrio un error inesperado";
+	return (
+		<Alert variant="destructive">
+			<AlertCircle className="h-4 w-4" />
+			<AlertTitle>{title}</AlertTitle>
+			<AlertDescription className="flex flex-col gap-2">
+				<span>{message}</span>
+				{onRetry ? (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onRetry}
+						className="w-fit"
+					>
+						Reintentar
+					</Button>
+				) : null}
+			</AlertDescription>
+		</Alert>
+	);
 }

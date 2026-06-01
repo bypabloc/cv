@@ -13,13 +13,13 @@
  *   formatNumber(12345)  // "12.345" (es) / "12,345" (en)
  */
 export function formatNumber(
-  value: number | null | undefined,
-  locale = 'es',
+	value: number | null | undefined,
+	locale = "es",
 ): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return '0'
-  }
-  return new Intl.NumberFormat(locale).format(value)
+	if (value === null || value === undefined || Number.isNaN(value)) {
+		return "0";
+	}
+	return new Intl.NumberFormat(locale).format(value);
 }
 
 /**
@@ -33,16 +33,16 @@ export function formatNumber(
  *   formatPercent(0.4235, 1)  // "42,4 %"
  */
 export function formatPercent(
-  value: number | null | undefined,
-  fractionDigits = 0,
-  locale = 'es',
+	value: number | null | undefined,
+	fractionDigits = 0,
+	locale = "es",
 ): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return '0%'
-  }
-  return new Intl.NumberFormat(locale, {
-    style: 'percent',
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  }).format(value)
+	if (value === null || value === undefined || Number.isNaN(value)) {
+		return "0%";
+	}
+	return new Intl.NumberFormat(locale, {
+		style: "percent",
+		minimumFractionDigits: fractionDigits,
+		maximumFractionDigits: fractionDigits,
+	}).format(value);
 }

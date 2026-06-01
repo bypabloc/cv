@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useMutation } from '@tanstack/react-query'
-import { authClient } from '../api/auth-client'
+import { useMutation } from "@tanstack/react-query";
+import { authClient } from "../api/auth-client";
 
 /**
  * @function useWebauthnLoginOptions
@@ -9,7 +9,7 @@ import { authClient } from '../api/auth-client'
  *   sesion previa). El caller las pasa a `startAuthentication`.
  */
 export function useWebauthnLoginOptions() {
-  return useMutation({
-    mutationFn: authClient.webauthnLoginOptions,
-  })
+	return useMutation({
+		mutationFn: authClient.webauthnLoginOptions,
+	});
 }

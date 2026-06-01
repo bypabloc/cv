@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useMutation } from '@tanstack/react-query'
-import { authClient } from '../api/auth-client'
-import { useAuthStore } from '../store/use-auth-store'
+import { useMutation } from "@tanstack/react-query";
+import { authClient } from "../api/auth-client";
+import { useAuthStore } from "../store/use-auth-store";
 
 /**
  * @function useLoginStart
@@ -11,12 +11,12 @@ import { useAuthStore } from '../store/use-auth-store'
  *   `suggest_register` lo maneja el componente (`error.data`).
  */
 export function useLoginStart() {
-  const setTempToken = useAuthStore((s) => s.setTempToken)
+	const setTempToken = useAuthStore((s) => s.setTempToken);
 
-  return useMutation({
-    mutationFn: authClient.loginStart,
-    onSuccess: ({ data }) => {
-      setTempToken(data.temp_token)
-    },
-  })
+	return useMutation({
+		mutationFn: authClient.loginStart,
+		onSuccess: ({ data }) => {
+			setTempToken(data.temp_token);
+		},
+	});
 }

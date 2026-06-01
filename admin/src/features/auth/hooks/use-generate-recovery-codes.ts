@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useMutation } from '@tanstack/react-query'
-import { authClient } from '../api/auth-client'
+import { useMutation } from "@tanstack/react-query";
+import { authClient } from "../api/auth-client";
 
 /**
  * @function useGenerateRecoveryCodes
@@ -9,7 +9,7 @@ import { authClient } from '../api/auth-client'
  *   debe forzar al usuario a guardarlos antes de cerrar el modal.
  */
 export function useGenerateRecoveryCodes() {
-  return useMutation({
-    mutationFn: authClient.mfaRecoveryCodesGenerate,
-  })
+	return useMutation({
+		mutationFn: authClient.mfaRecoveryCodesGenerate,
+	});
 }

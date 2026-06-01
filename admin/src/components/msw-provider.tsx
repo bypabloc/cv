@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from "react";
 
 /**
  * @component MswProvider
@@ -12,22 +12,22 @@ import { type ReactNode, useEffect, useState } from 'react'
  * @props {ReactNode} children - Arbol de la app
  */
 export function MswProvider({ children }: { children: ReactNode }) {
-  const useMsw = process.env.NEXT_PUBLIC_USE_MSW === 'true'
-  const [ready, setReady] = useState(!useMsw)
+	const useMsw = process.env.NEXT_PUBLIC_USE_MSW === "true";
+	const [ready, setReady] = useState(!useMsw);
 
-  useEffect(() => {
-    if (!useMsw || typeof window === 'undefined') return
-    let active = true
-    void (async () => {
-      const { worker } = await import('@tests/mocks/browser')
-      await worker.start({ onUnhandledRequest: 'bypass' })
-      if (active) setReady(true)
-    })()
-    return () => {
-      active = false
-    }
-  }, [useMsw])
+	useEffect(() => {
+		if (!useMsw || typeof window === "undefined") return;
+		let active = true;
+		void (async () => {
+			const { worker } = await import("@tests/mocks/browser");
+			await worker.start({ onUnhandledRequest: "bypass" });
+			if (active) setReady(true);
+		})();
+		return () => {
+			active = false;
+		};
+	}, [useMsw]);
 
-  if (!ready) return null
-  return <>{children}</>
+	if (!ready) return null;
+	return <>{children}</>;
 }

@@ -2,7 +2,7 @@
 
 > Reglas duras de TypeScript 6 (GA marzo 23, 2026) para el portfolio: strict
 > mode obligatorio, `module: ESNext` + `moduleResolution: bundler` para los
-> 6 apps Astro y el dashboard Next.js, `verbatimModuleSyntax`, `types` array
+> 6 apps Astro y el admin Next.js, `verbatimModuleSyntax`, `types` array
 > explicito, sin `baseUrl`. Pensado para el monorepo pnpm con 6 apps + 5
 > packages compartidos.
 >
@@ -41,7 +41,7 @@ NO aplica al codigo Python de `devtools/` ni al codigo TypeScript de Lambdas
   `typeof`/`instanceof`), o `satisfies` para preservar inference, o un
   schema runtime (Zod) que produce el tipo via `z.infer`.
 - **NUNCA** `.js` / `.jsx` / `.mjs` / `.cjs` en `src/`, `apps/<X>/src/`,
-  `packages/<X>/src/`, `dashboard/src/`, `tests/` ni en cualquier carpeta
+  `packages/<X>/src/`, `admin/src/`, `tests/` ni en cualquier carpeta
   de codigo de aplicacion.
 - **NUNCA** `@ts-ignore` permanente — usar `@ts-expect-error` con un
   comentario explicando el motivo Y ticket/issue para resolverlo, o
@@ -75,7 +75,7 @@ acepta "tengo prisa, lo subo como .js y luego lo paso".
 - **SIEMPRE** `"verbatimModuleSyntax": true` (obliga `import type` para
   imports type-only). Biome enforza con `useImportType`.
 - **SIEMPRE** `"module": "ESNext"` + `"moduleResolution": "bundler"` para
-  apps Astro y el dashboard Next.js (los bundlers Vite/Turbopack lo esperan).
+  apps Astro y el admin Next.js (los bundlers Vite/Turbopack lo esperan).
 - **SIEMPRE** listar `@types/*` en `"types": [...]`. En TS 6 NO hay
   auto-discovery — sin `types` no se cargan tipos globales.
 - **SIEMPRE** `"target": "ES2023"` minimo (ES5 esta deprecado en TS 6).
@@ -143,7 +143,7 @@ Resumen:
 |----------|---------|--------------|
 | Root (`tsconfig.base.json`) | — | strict + verbatimModuleSyntax + bundler |
 | App Astro (`apps/<X>/tsconfig.json`) | `astro/tsconfigs/strict` + base | `paths`, `types: ['astro/astro-jsx', 'vitest/globals']` |
-| Dashboard Next.js (`dashboard/tsconfig.json`) | `@tsconfig/next` + base | `jsx: 'preserve'`, `incremental`, types React |
+| Admin Next.js (`admin/tsconfig.json`) | `@tsconfig/next` + base | `jsx: 'preserve'`, `incremental`, types React |
 | Package (`packages/<X>/tsconfig.json`) | base | `composite`, `declaration`, `outDir: './dist'` |
 
 ## Migracion 5.x -> 6.0 (cuando aplique)
@@ -207,7 +207,7 @@ pnpm exec vitest run --coverage
 
 Cualquier cambio a:
 
-1. Archivos `*.ts` / `*.tsx` en `apps/`, `packages/`, `dashboard/`, `tests/`.
+1. Archivos `*.ts` / `*.tsx` en `apps/`, `packages/`, `admin/`, `tests/`.
 2. Bloques `<script lang="ts">` o frontmatter TS en `*.astro`.
 3. Configuraciones: `tsconfig.json`, `tsconfig.base.json`, `tsconfig.*.json`.
 4. Dependency upgrade de `typescript` o `@tsconfig/*`.
@@ -224,6 +224,6 @@ Cualquier cambio a:
 
 - Skill: [`typescript-6`](../skills/typescript-6/SKILL.md)
 - Docs (knowledge tree): [.claude/docs/typescript-6/](../docs/typescript-6/)
-- Rule del dashboard (consume TS 6): [.claude/rules/dashboard.md](dashboard.md)
+- Rule del admin (consume TS 6): [.claude/rules/admin.md](admin.md)
 - Rule de Astro (consume TS 6): [.claude/rules/astro-landing.md](astro-landing.md)
 - Research raw (efimero): `tmp/research/typescript-6.md`

@@ -177,8 +177,8 @@ Detalle en
 
 ## Cuando NO usar esta skill
 
-- Preguntas sobre el dashboard Next.js (`admin.portfolio.*`) que NO
-  toquen el contrato del Lambda `auth`. Usar skill `dashboard-stack`.
+- Preguntas sobre el admin Next.js (`admin.portfolio.*`) que NO
+  toquen el contrato del Lambda `auth`. Usar skill `admin-stack`.
 - Preguntas sobre el form de contacto (`contact_form` + `contact_worker`).
 - Preguntas generales sobre Lambda Python (manifest, deploy, testing)
   que NO involucren auth. Usar skill `lambda-controller`.

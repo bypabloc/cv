@@ -78,8 +78,13 @@ services:
     user: root
     volumes:
       - portfolio_dynamodb_local:/home/dynamodblocal/data
+    # DynamoDB Local responde 400 a GET / (solo acepta POST firmados): un
+    # 400 = servidor VIVO. `curl -sf` salia 22 ante el 400 -> unhealthy
+    # perpetuo (FailingStreak miles) aunque el servicio estuviera OK. Sin
+    # `-f`: solo falla si NO hay respuesta HTTP (conexion rechazada).
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000 || exit 1"]
+      test:
+        ["CMD-SHELL", "curl -s -o /dev/null http://localhost:8000 || exit 1"]
       interval: 2s
       timeout: 5s
       retries: 15

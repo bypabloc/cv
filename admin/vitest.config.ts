@@ -1,16 +1,21 @@
 import path from 'node:path'
-import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 /**
  * @config vitest.config.ts
  * @description Unit tests del admin: happy-dom + coverage v8 (>= 80% per-file).
  *
+ * JSX via esbuild (runtime automatic). NO se usa `@vitejs/plugin-react`: en
+ * este workspace `plugin-react@6` quedo resuelto contra vite 7 (su peer es
+ * vite ^8) e importa `vite/internal`, que vite 7 no exporta -> rompe la carga
+ * de la config. Los unit tests no necesitan Fast Refresh ni el React Compiler,
+ * asi que basta la transformacion JSX de esbuild.
+ *
  * Aliases @ -> src y @tests -> tests espejando tsconfig#paths.
  * Excluye de coverage: shadcn primitives, barrels, layouts, pages, types.
  */
 export default defineConfig({
-  plugins: [react()],
+  esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
   test: {
     globals: true,
     environment: 'happy-dom',

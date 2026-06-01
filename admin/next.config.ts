@@ -17,9 +17,6 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     tsconfigPath: './tsconfig.json',
   },

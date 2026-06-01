@@ -16,12 +16,12 @@ description: Form de contacto (valida + Turnstile + escribe Neon inline + invoke
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 256       # MB — minimo medido (dev, 2026-05, cold $LATEST tras
-                  # lazy+warmup). Footprint base Neon (sqlalchemy+httpx+DDB):
-                  # 117/128 a 128 MB (solo 11 MB headroom -> riesgo OOM en el
-                  # submit completo) vs 157 MB a 256 (comodo). 128 NO.
-                  # Bajo de 384 a 256. Ver .claude/rules/lambda-config.md.
-timeout: 30       # segundos — cubre el cold sin SnapStart restore + Turnstile.
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 para medir warm/cold con
+                  # CPU x4. Minimo medido previo: 256 (footprint Neon 157 MB;
+                  # 128 NO por headroom). REVERTIR al minimo tras medir si la
+                  # mejora no lo justifica. Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme (cold sin restore + Turnstile).
 
 # SnapStart: reduce cold start de 3.4s a ~830ms (Restore Duration).
 # Cuando true, cada deploy hace publish-version + update-alias `live`,

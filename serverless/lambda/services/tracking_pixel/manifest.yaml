@@ -16,12 +16,13 @@ description: Encoder de tracking (valida + rate-limit + invoke tracking_writer).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 128       # MB — minimo medido (dev, 2026-05, cold $LATEST). UNICO
-                  # lambda HTTP a 128: en ASYNC_MODE no toca Neon (sin
-                  # sqlalchemy) -> footprint 63/128 MB (65 MB headroom).
-                  # Init 680ms, handler 17ms. Fire-and-forget (sendBeacon),
-                  # latencia oculta. Ver .claude/rules/lambda-config.md.
-timeout: 30       # segundos — cubre el cold sin SnapStart restore con margen.
+memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
+                  # snapstart). Config uniforme 1024 para medir con CPU x4.
+                  # OJO: es fire-and-forget (sendBeacon), latencia oculta —
+                  # subir memoria aqui es el menos justificado. Minimo medido
+                  # previo: 128 (footprint 63 MB). REVERTIR tras medir.
+                  # Ver .claude/rules/lambda-config.md.
+timeout: 60       # segundos — colchon uniforme.
 
 # SnapStart: snapshotea el INIT (imports + clientes) para bajar el cold y
 # permitir reducir memoria. Aunque la latencia esta oculta (async), el

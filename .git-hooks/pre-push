@@ -30,16 +30,27 @@ HOOK_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(HOOK_DIR))
 
 
-# Catalogo de env vars que el build de las apps Astro consume via
-# import.meta.env.* o process.env. Si no estan presentes en os.environ,
-# se inyectan desde docker/env/client/.local antes de correr `pnpm build`.
-# Espejo del SYNCED_KEYS de devtools/github_sync/catalog.py.
+# Catalogo de env vars que el build consume via import.meta.env.* (apps
+# Astro) o process.env.NEXT_PUBLIC_* (admin Next.js). Si no estan en
+# os.environ, se inyectan desde docker/env/client/.local antes de correr
+# `pnpm run build`. Espejo de CLIENT_SYNCED_KEYS de
+# devtools/sync_secrets/catalog.py. El admin (Next.js) valida sus
+# NEXT_PUBLIC_* con Zod en build (admin/src/lib/env.ts) y FALLA el build
+# si falta alguna -> deben estar aqui o el paso 5/7 (build) rompe.
 _BUILD_CATALOG_KEYS = (
+    # Apps Astro
     'BASE_DOMAIN',
     'BASE_SCHEME',
     'APEX_DOMAIN',
     'PUBLIC_API_ENDPOINT',
     'PUBLIC_TURNSTILE_SITEKEY',
+    # Admin Next.js (NEXT_PUBLIC_*)
+    'NEXT_PUBLIC_API_ENDPOINT',
+    'NEXT_PUBLIC_TURNSTILE_SITEKEY',
+    'NEXT_PUBLIC_ADMIN_URL',
+    'NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS',
+    'NEXT_PUBLIC_WEBAUTHN_RP_ID',
+    'NEXT_PUBLIC_FEATURE_MFA',
 )
 
 

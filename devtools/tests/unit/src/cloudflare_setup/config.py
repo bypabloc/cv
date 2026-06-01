@@ -174,15 +174,68 @@ class TestSiteUrlFor:
 # ---- APPS ---------------------------------------------------------------
 
 
-def test_apps_has_six_entries_one_per_niche():
+def test_apps_has_seven_entries_six_niches_plus_admin():
     names = {a.project_name for a in APPS}
-    assert names == {'generic', 'hub', 'fintech', 'architect', 'leader', 'vibe'}
+    assert names == {
+        'generic',
+        'hub',
+        'fintech',
+        'architect',
+        'leader',
+        'vibe',
+        'admin',
+    }
 
 
-def test_apps_no_longer_carries_custom_domain_field():
-    """AppConfig ahora es env-agnostic: solo niche-level."""
+def test_apps_carries_app_type_and_build_output_dir_fields():
+    """AppConfig es env-agnostic + lleva app_type/build_output_dir."""
     fields = set(AppConfig.__dataclass_fields__)
-    assert fields == {'project_name', 'package_name', 'root_dir'}
+    assert fields == {
+        'project_name',
+        'package_name',
+        'root_dir',
+        'app_type',
+        'build_output_dir',
+    }
+
+
+def test_six_astro_apps_default_to_astro_dist():
+    """Las 6 apps Astro preservan los defaults app_type/build_output_dir."""
+    astro = [a for a in APPS if a.project_name != 'admin']
+    assert [a.app_type for a in astro] == ['astro'] * 6
+    assert [a.build_output_dir for a in astro] == ['dist'] * 6
+
+
+def test_admin_app_is_nextjs_with_out_output_dir():
+    admin = next(a for a in APPS if a.project_name == 'admin')
+    assert admin.package_name == '@portfolio/admin'
+    assert admin.root_dir == 'admin'
+    assert admin.app_type == 'nextjs'
+    assert admin.build_output_dir == 'out'
+
+
+def test_admin_project_name_gets_env_suffix():
+    admin = next(a for a in APPS if a.project_name == 'admin')
+    assert project_name_for(admin, 'prod') == 'admin'
+    assert project_name_for(admin, 'dev') == 'admin-dev'
+    assert project_name_for(admin, 'stage') == 'admin-stage'
+
+
+def test_admin_custom_domain_is_not_apex_in_prod():
+    """admin NO es apex (a diferencia de generic): admin.portfolio.<base>."""
+    admin = next(a for a in APPS if a.project_name == 'admin')
+    assert (
+        custom_domain_for(admin, ENVS['prod'])
+        == 'admin.portfolio.the-full-stack.com'
+    )
+    assert (
+        custom_domain_for(admin, ENVS['dev'])
+        == 'admin.portfolio.dev.the-full-stack.com'
+    )
+    assert (
+        custom_domain_for(admin, ENVS['stage'])
+        == 'admin.portfolio.stage.the-full-stack.com'
+    )
 
 
 def test_env_config_carries_branch_and_domains():

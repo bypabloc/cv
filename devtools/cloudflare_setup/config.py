@@ -25,13 +25,20 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class AppConfig:
-    """One Astro app inside the monorepo (niche-level, env-agnostic)."""
+    """One app inside the monorepo (niche-level, env-agnostic).
+
+    Cubre las 6 apps Astro y el panel admin Next.js. ``app_type`` +
+    ``build_output_dir`` distinguen el toolchain: Astro emite a ``dist``,
+    Next.js (export) a ``out``. Los defaults preservan las apps Astro.
+    """
 
     project_name: (
         str  # niche slug (also Pages project name in prod, e.g. 'generic')
     )
     package_name: str  # pnpm package name for --filter
-    root_dir: str  # path relative to repo root (where the Astro app lives)
+    root_dir: str  # path relative to repo root (where the app lives)
+    app_type: str = 'astro'  # 'astro' | 'nextjs'
+    build_output_dir: str = 'dist'  # 'dist' para Astro, 'out' para Next
 
 
 @dataclass(frozen=True)
@@ -85,6 +92,15 @@ APPS: tuple[AppConfig, ...] = (
         package_name='@portfolio/vibe',
         root_dir='apps/vibe',
     ),
+    # Admin panel Next.js (NO en apps/, vive en root como admin/).
+    # 7mo project por env -> 21 projects totales (7 apps x 3 envs).
+    AppConfig(
+        project_name='admin',
+        package_name='@portfolio/admin',
+        root_dir='admin',
+        app_type='nextjs',
+        build_output_dir='out',
+    ),
 )
 
 
@@ -137,12 +153,17 @@ def custom_domain_for(app: AppConfig, env_cfg: EnvConfig) -> str:
 
     - prod   generic -> the-full-stack.com (apex)
     - prod   <niche> -> <niche>.portfolio.the-full-stack.com
+    - prod   admin   -> admin.portfolio.the-full-stack.com (NO apex)
     - dev    generic -> portfolio.dev.the-full-stack.com (no apex in dev/stage)
     - dev    <niche> -> <niche>.portfolio.dev.the-full-stack.com
+    - dev    admin   -> admin.portfolio.dev.the-full-stack.com
     - stage  analog.
     """
     if app.project_name == 'generic':
         return env_cfg.apex_domain or env_cfg.base_domain
+    # admin NO es apex en prod (a diferencia de generic): siempre cuelga
+    # de portfolio.{base_domain}. base_domain en prod es
+    # 'portfolio.the-full-stack.com' -> 'admin.portfolio.the-full-stack.com'.
     return f'{app.project_name}.{env_cfg.base_domain}'
 
 

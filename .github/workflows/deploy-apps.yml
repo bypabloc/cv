@@ -109,14 +109,21 @@ jobs:
       - name: Build all apps with env vars del stage
         # Las vars vienen de GH Environment (dev/stage/prod) pobladas por
         # `python devtools/run.py sync_secrets --env=<X> --category=client`.
-        # Son publicas (PUBLIC_*) — no se mascarean en logs porque son
-        # Variables, no Secrets.
+        # Son publicas (PUBLIC_* / NEXT_PUBLIC_*) — no se mascarean en logs
+        # porque son Variables, no Secrets.
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
           BASE_SCHEME: ${{ vars.BASE_SCHEME }}
           APEX_DOMAIN: ${{ vars.APEX_DOMAIN }}
           PUBLIC_API_ENDPOINT: ${{ vars.PUBLIC_API_ENDPOINT }}
           PUBLIC_TURNSTILE_SITEKEY: ${{ vars.PUBLIC_TURNSTILE_SITEKEY }}
+          # Admin Next.js (NEXT_PUBLIC_*): Next las inlinea en build time.
+          NEXT_PUBLIC_API_ENDPOINT: ${{ vars.NEXT_PUBLIC_API_ENDPOINT }}
+          NEXT_PUBLIC_TURNSTILE_SITEKEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITEKEY }}
+          NEXT_PUBLIC_ADMIN_URL: ${{ vars.NEXT_PUBLIC_ADMIN_URL }}
+          NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS: ${{ vars.NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS }}
+          NEXT_PUBLIC_WEBAUTHN_RP_ID: ${{ vars.NEXT_PUBLIC_WEBAUTHN_RP_ID }}
+          NEXT_PUBLIC_FEATURE_MFA: ${{ vars.NEXT_PUBLIC_FEATURE_MFA }}
         run: |
           # Verificacion explicita: las vars requeridas deben estar
           # presentes. Si falta alguna, fallar temprano con mensaje claro
@@ -125,25 +132,31 @@ jobs:
           : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py sync_secrets --env=${{ needs.resolve-env.outputs.stage }} --category=client' para poblarlo.}"
           : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre sync_secrets --category=client.}"
           : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre sync_secrets --category=client.}"
-          pnpm -r --filter "./apps/*" --workspace-concurrency=6 run build
+          # 6 apps Astro + el admin Next.js (@portfolio/admin) = 7 packages.
+          pnpm -r --filter "./apps/*" --filter "@portfolio/admin" --workspace-concurrency=7 run build
 
       # Subir el artifact con un nombre estable para los jobs del matrix.
+      # Incluye los 6 dist Astro + el out del admin Next.js.
       - name: Re-upload artifact for matrix
         uses: actions/upload-artifact@v4
         with:
           name: deploy-dist-${{ github.run_id }}
-          path: apps/*/dist
+          path: |
+            apps/*/dist
+            admin/out
           retention-days: 1
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # Deploy de las 6 apps en paralelo. Mapeo:
-  #   dev   -> {niche}-dev
-  #   stage -> {niche}-stage
-  #   main  -> {niche}    (sin sufijo)
+  # Deploy de las 7 apps en paralelo (6 Astro + admin Next.js). Mapeo:
+  #   dev   -> {app}-dev
+  #   stage -> {app}-stage
+  #   main  -> {app}    (sin sufijo)
+  # El admin tiene dist-dir distinto (admin/out vs apps/<niche>/dist), por
+  # eso el matrix usa `include` con name/dist-dir/project explicitos.
   # ---------------------------------------------------------------------------
   deploy-pages:
-    name: Deploy ${{ matrix.niche }}
+    name: Deploy ${{ matrix.name }}
     needs: [resolve-env, build-apps]
     runs-on: ubuntu-24.04
     # SIN `environment:` a proposito: los secrets CLOUDFLARE_* son
@@ -156,13 +169,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        niche: [generic, hub, fintech, architect, leader, vibe]
+        include:
+          - {name: generic, dist-dir: apps/generic/dist, project: generic}
+          - {name: hub, dist-dir: apps/hub/dist, project: hub}
+          - {name: fintech, dist-dir: apps/fintech/dist, project: fintech}
+          - {name: architect, dist-dir: apps/architect/dist, project: architect}
+          - {name: leader, dist-dir: apps/leader/dist, project: leader}
+          - {name: vibe, dist-dir: apps/vibe/dist, project: vibe}
+          - {name: admin, dist-dir: admin/out, project: admin}
     steps:
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
           name: deploy-dist-${{ github.run_id }}
-          path: apps/
+          # Restaura el arbol completo (apps/*/dist + admin/out) en la raiz.
+          path: .
 
       - name: Setup Node (wrangler-action lo necesita)
         uses: actions/setup-node@v4
@@ -175,8 +196,8 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >-
-            pages deploy apps/${{ matrix.niche }}/dist
-            --project-name=${{ matrix.niche }}${{ needs.resolve-env.outputs.project-suffix }}
+            pages deploy ${{ matrix.dist-dir }}
+            --project-name=${{ matrix.project }}${{ needs.resolve-env.outputs.project-suffix }}
             --branch=${{ github.ref_name }}
 
   # ---------------------------------------------------------------------------
@@ -188,7 +209,7 @@ jobs:
   # (cache stale, deploy parcial, etc.).
   # ---------------------------------------------------------------------------
   verify-deploy:
-    name: Verify ${{ matrix.niche }} dist matches env
+    name: Verify ${{ matrix.name }} dist matches env
     needs: [resolve-env, deploy-pages]
     if: needs.deploy-pages.result == 'success'
     runs-on: ubuntu-24.04
@@ -196,18 +217,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        niche: [generic, hub, fintech, architect, leader, vibe]
+        name: [generic, hub, fintech, architect, leader, vibe, admin]
     steps:
       - name: Resolve expected URL + API endpoint
         id: url
         run: |
           stage="${{ needs.resolve-env.outputs.stage }}"
-          niche="${{ matrix.niche }}"
+          niche="${{ matrix.name }}"
 
+          # admin NO es apex (a diferencia de generic): siempre cuelga de
+          # admin.portfolio.{base}. Tampoco emite los markers Astro
+          # (data-api-endpoint / dropdown), por eso solo se le hace el
+          # smoke HTTP 200 (ver el paso `is_admin` mas abajo).
           if [[ "$stage" == "prod" ]]; then
             base="portfolio.the-full-stack.com"
             api="https://api.portfolio.the-full-stack.com"
-            if [[ "$niche" == "generic" ]]; then
+            if [[ "$niche" == "admin" ]]; then
+              url="https://admin.${base}"
+            elif [[ "$niche" == "generic" ]]; then
               url="https://the-full-stack.com"
             else
               url="https://${niche}.${base}"
@@ -215,19 +242,34 @@ jobs:
           else
             base="portfolio.${stage}.the-full-stack.com"
             api="https://api.${base}"
-            if [[ "$niche" == "generic" ]]; then
+            if [[ "$niche" == "admin" ]]; then
+              url="https://admin.${base}"
+            elif [[ "$niche" == "generic" ]]; then
               url="https://${base}"
             else
               url="https://${niche}.${base}"
             fi
           fi
 
+          [[ "$niche" == "admin" ]] && is_admin=true || is_admin=false
+
           echo "url=$url"   >> "$GITHUB_OUTPUT"
           echo "api=$api"   >> "$GITHUB_OUTPUT"
           echo "stage=$stage" >> "$GITHUB_OUTPUT"
+          echo "is_admin=$is_admin" >> "$GITHUB_OUTPUT"
           echo "Verificando: $url (api esperado: $api)"
 
+      - name: Curl y assert HTTP 200 (admin, sin markers Astro)
+        if: steps.url.outputs.is_admin == 'true'
+        run: |
+          # El admin Next.js no emite data-api-endpoint ni el dropdown de
+          # nichos; solo se valida que responda 200.
+          sleep 5
+          curl -fsSL --max-time 30 -o /dev/null "${{ steps.url.outputs.url }}/"
+          echo "OK: ${{ steps.url.outputs.url }}/ responde 200"
+
       - name: Curl y assert data-api-endpoint
+        if: steps.url.outputs.is_admin != 'true'
         run: |
           # Esperar un poco a que Cloudflare propague el deploy
           sleep 5
@@ -246,7 +288,7 @@ jobs:
           fi
 
       - name: Curl y assert dropdown hrefs no apunten a prod en dev/stage
-        if: steps.url.outputs.stage != 'prod'
+        if: steps.url.outputs.is_admin != 'true' && steps.url.outputs.stage != 'prod'
         run: |
           html=$(curl -fsSL --max-time 30 "${{ steps.url.outputs.url }}/")
           bad=$(grep -oE 'href="https://[a-z]+\.portfolio\.the-full-stack\.com[^"]*"' <<<"$html" | head -5 || true)
@@ -290,11 +332,15 @@ jobs:
           {
             echo "## Apps deploy report — \`${stage}\`"
             echo
-            echo "| Niche | Project | URL |"
-            echo "|-------|---------|-----|"
-            for niche in generic hub fintech architect leader vibe; do
+            echo "| App | Project | URL |"
+            echo "|-----|---------|-----|"
+            for niche in generic hub fintech architect leader vibe admin; do
               project="${niche}${suffix}"
-              if [[ "$niche" == "generic" ]]; then
+              if [[ "$niche" == "admin" ]]; then
+                # admin NO es apex (a diferencia de generic): cuelga de
+                # admin.portfolio.{base}.
+                url="https://admin.${base_url}"
+              elif [[ "$niche" == "generic" ]]; then
                 if [[ "$stage" == "prod" ]]; then
                   url="https://the-full-stack.com"
                 else

@@ -16,6 +16,7 @@ from devtools.cloudflare_setup.config import GITHUB_REPO
 from devtools.cloudflare_setup.config import GLOBAL_ENV_VARS
 from devtools.cloudflare_setup.config import AppConfig
 from devtools.cloudflare_setup.config import EnvConfig
+from devtools.cloudflare_setup.config import custom_domain_for
 from devtools.cloudflare_setup.config import project_name_for
 from devtools.cloudflare_setup.config import site_url_for
 
@@ -28,6 +29,11 @@ def _env_vars(app: AppConfig, env_cfg: EnvConfig) -> dict[str, dict[str, str]]:
     ``plain_text`` is the right type for non-secret build-time variables.
     Use ``secret_text`` for tokens (none here today — Turnstile secret
     lives in SSM, not in Pages env vars).
+
+    Las apps Astro consumen ``PUBLIC_*``; el admin Next.js consume
+    ``NEXT_PUBLIC_*`` (Next inlinea ese prefijo en el bundle del browser).
+    Las globales (BASE_*, APEX_DOMAIN, NODE/PNPM_VERSION) se mantienen
+    para ambos toolchains.
     """
     merged: dict[str, str] = dict(GLOBAL_ENV_VARS)
     merged.update(
@@ -40,6 +46,19 @@ def _env_vars(app: AppConfig, env_cfg: EnvConfig) -> dict[str, dict[str, str]]:
     )
     if env_cfg.apex_domain is not None:
         merged['APEX_DOMAIN'] = env_cfg.apex_domain
+    if app.app_type == 'nextjs':
+        # NEXT_PUBLIC_WEBAUTHN_RP_ID = el hostname (sin esquema), por env.
+        # NEXT_PUBLIC_ADMIN_URL = https://<hostname> (self URL del admin).
+        merged.update(
+            {
+                'NEXT_PUBLIC_API_ENDPOINT': env_cfg.api_endpoint,
+                'NEXT_PUBLIC_TURNSTILE_SITEKEY': env_cfg.turnstile_sitekey,
+                'NEXT_PUBLIC_ADMIN_URL': site_url_for(app, env_cfg),
+                'NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS': '30000',
+                'NEXT_PUBLIC_WEBAUTHN_RP_ID': custom_domain_for(app, env_cfg),
+                'NEXT_PUBLIC_FEATURE_MFA': 'true',
+            }
+        )
     return {k: {'type': 'plain_text', 'value': v} for k, v in merged.items()}
 
 
@@ -52,8 +71,10 @@ def build_create_project_payload(
     Key fields explained:
       - ``build_config.root_dir``: where Cloudflare runs the build command.
         Empty string ('') means repo root, which is what pnpm workspaces need.
-      - ``build_config.destination_dir``: where Astro emits the static site,
-        relative to root_dir. For ``apps/generic/dist`` with root_dir=''.
+      - ``build_config.destination_dir``: where the toolchain emits the
+        static site, relative to root_dir. Astro -> ``<root>/dist``
+        (ej. ``apps/generic/dist``), Next.js export -> ``<root>/out``
+        (ej. ``admin/out``). Derivado de ``app.build_output_dir``.
       - ``deployment_configs.production.env_vars``: derived per env from
         env_cfg + app (see ``_env_vars``).
       - ``source.config.preview_deployment_setting=none`` +
@@ -62,7 +83,7 @@ def build_create_project_payload(
         lands in the repo. Each Pages project builds ONLY its own branch.
     """
     build_command = BUILD_COMMAND_TEMPLATE.format(package_name=app.package_name)
-    destination_dir = f'{app.root_dir}/dist'
+    destination_dir = f'{app.root_dir}/{app.build_output_dir}'
     env_vars = _env_vars(app, env_cfg)
 
     return {
@@ -108,7 +129,7 @@ def build_patch_project_payload(
     script reverts manual changes done in the Cloudflare dashboard).
     """
     build_command = BUILD_COMMAND_TEMPLATE.format(package_name=app.package_name)
-    destination_dir = f'{app.root_dir}/dist'
+    destination_dir = f'{app.root_dir}/{app.build_output_dir}'
     env_vars = _env_vars(app, env_cfg)
 
     return {

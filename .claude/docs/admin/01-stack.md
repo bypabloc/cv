@@ -549,10 +549,19 @@ declare namespace NodeJS {
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.portfolio.dev.the-full-stack.com https://api.portfolio.stage.the-full-stack.com https://api.portfolio.the-full-stack.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; require-trusted-types-for 'script'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.portfolio.dev.the-full-stack.com https://api.portfolio.stage.the-full-stack.com https://api.portfolio.the-full-stack.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
 ```
 
-> `'wasm-unsafe-eval'` se requiere para Turbopack runtime en client.
+> `'wasm-unsafe-eval'` se requiere para el runtime de Next/Turbopack en
+> client. `'unsafe-inline'` en `script-src` es OBLIGATORIO con
+> `output:'export'`: Next inyecta los inline `<script>` que hidratan el
+> arbol RSC (`self.__next_f.push([...])`) + el anti-FOUC de next-themes.
+> Sin server runtime NO hay nonce y los hashes cambian por build; sin
+> `'unsafe-inline'` el browser bloquea esos scripts -> el RSC stream se
+> corta con "Connection closed" -> la app se cuelga. `'unsafe-eval'` (eval
+> de strings arbitrarios) sigue prohibido. NO usar
+> `require-trusted-types-for 'script'`: Next/Turbopack inyecta scripts sin
+> Trusted Types policy y romperia la hidratacion.
 > `connect-src` lista los 3 endpoints API + `challenges.cloudflare.com`
 > (Turnstile). CSP estricta sin `'unsafe-inline'` ni `'unsafe-eval'` en
 > scripts — defense in depth para auth en `localStorage`.

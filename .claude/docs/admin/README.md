@@ -77,9 +77,11 @@ vuelven a discutir en la fase de implementacion:
     SPA cross-origin (subdomain admin vs api), una HttpOnly cookie
     requeriria `SameSite=None` cross-site + `Domain=.the-full-stack.com`
     abriendo CSRF en los 6 niches publicos y rompiendo portabilidad.
-    Defensa: CSP estricta sin `unsafe-inline`/`unsafe-eval` + SRI en
-    third-party + access JWT corto (15 min) + family_id refresh rotation.
-    NUNCA tokens en URL query.
+    Defensa: CSP (`script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'`;
+    `'unsafe-inline'` es inevitable en Next `output:'export'` por los
+    inline scripts del RSC, pero NO `'unsafe-eval'`; connect-src acotado +
+    object-src/frame-ancestors none) + SRI en third-party + access JWT
+    corto (15 min) + family_id refresh rotation. NUNCA tokens en URL query.
 23. **Magic link UX**: backend redirect 302 a `/auth/callback#access=...`
     (fragment hash, NO query). Frontend decodea + guarda en
     `localStorage` via Zustand + limpia con `history.replaceState`.

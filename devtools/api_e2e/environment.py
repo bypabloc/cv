@@ -15,6 +15,7 @@ UPDATEamos el `code_hash` de la fila vigente, luego enviamos el plaintext.
 from __future__ import annotations
 
 import hashlib
+import secrets
 import time
 from typing import Any
 
@@ -37,8 +38,11 @@ class Environment:
         self._env = env
         session = boto3.Session(profile_name=aws_profile)
         self._ssm = session.client('ssm', region_name=AWS_REGION)
+        self._lambda = session.client('lambda', region_name=AWS_REGION)
+        self._dynamodb = session.client('dynamodb', region_name=AWS_REGION)
         self._neon_url: str | None = None
         self._private_key: str | None = None
+        self._rate_limit_table: str | None = None
 
     # --- Bypass firmado (nunca a stdout) ---
 
@@ -62,8 +66,11 @@ class Environment:
     def bypass_token(self) -> str | None:
         """Firma un token de bypass efimero (None si no hay clave privada).
 
-        El token lo verifica el backend con la clave PUBLICA (SSM). TTL 300s
-        cubre la duracion de los flujos encadenados del harness.
+        El token lo verifica el backend con la clave PUBLICA (SSM). TTL 1800s
+        (30 min): el harness completo (auth + users + admin con cold restart)
+        encadena decenas de invocaciones que superan el default de 300s; el
+        backend solo valida `now >= exp` (sin tope de TTL). Aplica solo a
+        dev/stage.
         """
         private_key = self._bypass_private_key()
         if not private_key:
@@ -72,6 +79,7 @@ class Environment:
             stage=self._env,
             private_key_b64=private_key,
             now=int(time.time()),
+            ttl=1800,
         )
 
     def _neon(self) -> str:
@@ -99,6 +107,30 @@ class Environment:
         )
         return self._exec(sql, (digest, user_id, kind)) > 0
 
+    def seed_magic_link(
+        self,
+        *,
+        user_id: str,
+        kind: str,
+        plaintext: str,
+    ) -> bool:
+        """Fija el token_hash del magic-link vigente a sha256(plaintext).
+
+        Tras un register.start / login.start existe una fila en
+        auth_magic_links (kind=register|login, consumed_at IS NULL). El
+        plain del token NO vuelve en la respuesta (solo viaja por email);
+        para probar verify-magic-link sin leer el email, reescribimos su
+        hash a uno conocido. Refresca expires_at. True si actualizo >=1.
+        """
+        digest = hashlib.sha256(plaintext.encode('utf-8')).digest()
+        sql = (
+            'UPDATE auth_magic_links '
+            'SET token_hash = %s, '
+            "expires_at = now() + interval '15 minutes' "
+            'WHERE user_id = %s AND kind = %s AND consumed_at IS NULL'
+        )
+        return self._exec(sql, (digest, user_id, kind)) > 0
+
     def find_user_id(self, email: str) -> str | None:
         """user_id (uuid str) del email, o None si no existe."""
         rows = self._query(
@@ -106,6 +138,156 @@ class Environment:
             (email.lower(),),
         )
         return str(rows[0][0]) if rows else None
+
+    def user_email(self, user_id: str) -> str | None:
+        """Email actual del user (para verificar change-email)."""
+        rows = self._query(
+            'SELECT email FROM auth_users WHERE id = %s',
+            (user_id,),
+        )
+        return str(rows[0][0]) if rows else None
+
+    def user_status(self, user_id: str) -> str | None:
+        """Status actual del user (active/disabled/...), o None si borrado."""
+        rows = self._query(
+            'SELECT status, deleted_at FROM auth_users WHERE id = %s',
+            (user_id,),
+        )
+        if not rows:
+            return None
+        status, deleted_at = rows[0]
+        return 'deleted' if deleted_at is not None else str(status)
+
+    def session_ids(self, user_id: str) -> list[str]:
+        """IDs de las sesiones activas del user (auth_user_sessions).
+
+        Una sesion activa = fila existente: revoke_session/force-logout
+        BORRAN la fila (no hay columna revoked_at). Orden por created_at
+        para que el [0] sea la mas vieja.
+        """
+        rows = self._query(
+            'SELECT id FROM auth_user_sessions '
+            'WHERE user_id = %s ORDER BY created_at',
+            (user_id,),
+        )
+        return [str(r[0]) for r in rows]
+
+    # --- Admin whitelist (SSM) + cold restart del Lambda users ---
+
+    def _admin_emails_path(self) -> str:
+        """SSM path de la whitelist de admins por stage."""
+        return f'/portfolio/{self._env}/admin-emails'
+
+    def read_admin_emails(self) -> str:
+        """Valor crudo (CSV) de la whitelist SSM. NUNCA se imprime."""
+        return self._ssm.get_parameter(
+            Name=self._admin_emails_path(),
+            WithDecryption=True,
+        )['Parameter']['Value']
+
+    def write_admin_emails(self, value: str) -> None:
+        """Sobrescribe la whitelist SSM (SecureString). value NO se imprime."""
+        self._ssm.put_parameter(
+            Name=self._admin_emails_path(),
+            Value=value,
+            Type='SecureString',
+            Overwrite=True,
+        )
+
+    def bust_users_cache(self) -> None:
+        """Fuerza un cold start del Lambda users (recicla el contenedor).
+
+        La whitelist de admins se cachea module-level por contenedor (TTL
+        300s). Tras promover un email en SSM, el contenedor caliente sigue
+        con el cache viejo -> 404. Cambiar una env var EFIMERA recicla el
+        contenedor (cold start -> cache fresco). La env var se BORRA en
+        restore (`clear_users_cache_buster`) para no dejar drift de config.
+        """
+        fn = f'portfolio-users-{self._env}'
+        current = self._lambda.get_function_configuration(FunctionName=fn)
+        env_vars = dict(current.get('Environment', {}).get('Variables', {}))
+        # Marca unica por corrida (token_hex en vez de timestamp: el harness
+        # corre con secrets, no con reloj).
+        env_vars['E2E_CACHE_BUSTER'] = secrets.token_hex(4)
+        self._lambda.update_function_configuration(
+            FunctionName=fn,
+            Environment={'Variables': env_vars},
+        )
+        self._lambda.get_waiter('function_updated').wait(FunctionName=fn)
+
+    def clear_users_cache_buster(self) -> None:
+        """Quita la env var efimera para dejar la config como estaba."""
+        fn = f'portfolio-users-{self._env}'
+        current = self._lambda.get_function_configuration(FunctionName=fn)
+        env_vars = dict(current.get('Environment', {}).get('Variables', {}))
+        if env_vars.pop('E2E_CACHE_BUSTER', None) is None:
+            return
+        self._lambda.update_function_configuration(
+            FunctionName=fn,
+            Environment={'Variables': env_vars},
+        )
+        self._lambda.get_waiter('function_updated').wait(FunctionName=fn)
+
+    # --- Rate-limit blacklist de IPs TEST-NET (DynamoDB) ---
+
+    def _rate_limit_table_name(self) -> str:
+        """Nombre de la tabla rate-limit-rules (resuelto via SSM, cacheado)."""
+        if self._rate_limit_table is None:
+            self._rate_limit_table = self._ssm.get_parameter(
+                Name=f'/portfolio/{self._env}/dynamodb/rate-limit-rules/name',
+            )['Parameter']['Value']
+        return self._rate_limit_table
+
+    def cleanup_rate_limit_blacklist(self) -> int:
+        """Borra las ip_blacklist auto-creadas para las IPs TEST-NET del pool.
+
+        El bot-detection auto-blacklistea (24h) una IP con 3+ tokens validos
+        en 60s. El harness rota IPs de TEST-NET (RFC 5737); corridas con
+        samples>=3 al mismo endpoint pueden auto-blacklistear alguna, y la
+        rule persiste 24h -> 403 intermitente en corridas siguientes cuando
+        el round-robin la reusa. Esto borra esas rules (solo las del pool
+        TEST-NET del harness; NO toca blacklists reales). Devuelve cuantas
+        borro. Best-effort: un fallo no aborta el run.
+        """
+        table = self._rate_limit_table_name()
+        prefixes = ('ip#198.51.100.', 'ip#203.0.113.', 'ip#192.0.2.')
+        deleted = 0
+        try:
+            for prefix in prefixes:
+                deleted += self._delete_rules_by_prefix(table, prefix)
+        except Exception as exc:  # noqa: BLE001 -- best-effort
+            print(
+                f'  [WARN] cleanup blacklist parcial: '
+                f'{type(exc).__name__}: {exc}'
+            )
+        return deleted
+
+    def _delete_rules_by_prefix(self, table: str, prefix: str) -> int:
+        """Scan begins_with(rule_key, prefix) + BatchDelete. Devuelve count."""
+        deleted = 0
+        start_key: dict[str, Any] | None = None
+        while True:
+            kwargs: dict[str, Any] = {
+                'TableName': table,
+                'FilterExpression': 'begins_with(rule_key, :p)',
+                'ExpressionAttributeValues': {':p': {'S': prefix}},
+                'ProjectionExpression': 'rule_key, kind',
+            }
+            if start_key:
+                kwargs['ExclusiveStartKey'] = start_key
+            resp = self._dynamodb.scan(**kwargs)
+            for item in resp.get('Items', []):
+                self._dynamodb.delete_item(
+                    TableName=table,
+                    Key={
+                        'rule_key': item['rule_key'],
+                        'kind': item['kind'],
+                    },
+                )
+                deleted += 1
+            start_key = resp.get('LastEvaluatedKey')
+            if not start_key:
+                return deleted
 
     # --- Cleanup ---
 

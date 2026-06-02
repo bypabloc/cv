@@ -384,3 +384,10 @@ y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
   (ya configurado en `pnpm-workspace.yaml`).
 - `compose_exec` siempre invoca con `--user 1000:1000` en apps Astro para
   no crear archivos root-owned en `.vite/` y `.astro/` del bind mount.
+- GitGuardian: `.gitguardian.yaml` (raiz, `secret.ignored_paths`) lo respeta
+  SOLO `ggshield`; el check del PR (GitHub App) corre server-side y NO lee
+  ese archivo — usa la config del dashboard. Ante un falso positivo
+  confirmado en un fixture de test: excluir el path en el dashboard o
+  mergear con `gh pr merge --admin`. Detalle:
+  [.claude/rules/secrets-strategy.md](.claude/rules/secrets-strategy.md)
+  (seccion GitGuardian).

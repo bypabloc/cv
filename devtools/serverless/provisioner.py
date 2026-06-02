@@ -60,6 +60,10 @@ _VALID_ENV_STAGES = ('default', 'dev', 'stage', 'prod')
 # al migrar el trabajo async a invoke Lambda->Lambda (sin SQS).
 _VALID_TRIGGERS = ('direct', 'http')
 
+# Metodos HTTP soportados en un trigger `http`. OPTIONS lo gestiona el
+# wiring CORS (MOCK), no se declara aqui.
+_VALID_HTTP_METHODS = ('GET', 'POST', 'PUT', 'PATCH', 'DELETE')
+
 # Espera de propagacion del rol IAM recien creado antes de
 # `create-function`: un rol nuevo puede no estar disponible aun.
 _IAM_PROPAGATION_SECONDS = 10
@@ -155,14 +159,16 @@ class TriggerSpec:
     ----------
     type : str
         `direct` | `http`.
-    method : str | None
-        Metodo HTTP (solo `http`). Ej. `POST`.
+    methods : tuple[str, ...]
+        Metodos HTTP del endpoint (solo `http`). Ej. `('POST',)` o
+        `('GET', 'POST')`. Tupla (no list) porque el dataclass es frozen y
+        `asdict()` entra al config-hash de drift (debe ser determinista).
     path : str | None
         Path del endpoint (solo `http`). Ej. `/contact`.
     """
 
     type: str
-    method: str | None = None
+    methods: tuple[str, ...] = ()
     path: str | None = None
 
 
@@ -574,14 +580,64 @@ def _build_statements(
     return statements
 
 
-def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
-    """Construye el `TriggerSpec` desde el bloque `trigger` del manifiesto.
+def _normalize_http_methods(
+    *,
+    method: Any,
+    methods: Any,
+) -> tuple[str, ...]:
+    """Normaliza `trigger.method` (str) o `trigger.methods` (lista) a tupla.
+
+    Acepta UNA de las dos llaves (no ambas). Cada metodo se upper-casea,
+    se valida contra `_VALID_HTTP_METHODS` y se deduplica preservando el
+    orden de aparicion.
 
     Raises
     ------
     ManifestError
-        Si el tipo de trigger no es valido o falta `method`/`path` en un
-        trigger `http`.
+        Si estan ambas llaves, si falta el metodo, o si un metodo es
+        invalido.
+    """
+    if method and methods:
+        raise ManifestError(
+            "trigger http: usar 'method' (string) O 'methods' (lista), "
+            'no ambos.',
+        )
+    if method:
+        raw = [method]
+    elif methods:
+        if not isinstance(methods, (list, tuple)):
+            raise ManifestError("trigger http: 'methods' debe ser una lista.")
+        raw = list(methods)
+    else:
+        raise ManifestError(
+            "trigger http requiere 'method' o 'methods' y 'path'.",
+        )
+
+    normalized: list[str] = []
+    for item in raw:
+        verb = str(item).strip().upper()
+        if verb not in _VALID_HTTP_METHODS:
+            raise ManifestError(
+                f'trigger http: metodo invalido {item!r}. '
+                f'Validos: {", ".join(_VALID_HTTP_METHODS)}',
+            )
+        if verb not in normalized:
+            normalized.append(verb)
+    return tuple(normalized)
+
+
+def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
+    """Construye el `TriggerSpec` desde el bloque `trigger` del manifiesto.
+
+    Soporta `trigger.method` (string, ej. `POST`) y `trigger.methods`
+    (lista, ej. `[GET, POST]`) — exclusivos. Internamente siempre guarda
+    una tupla de metodos.
+
+    Raises
+    ------
+    ManifestError
+        Si el tipo de trigger no es valido, si falta `method`/`methods` o
+        `path` en un trigger `http`, o si un metodo es invalido.
     """
     trigger = manifest.get('trigger') or {}
     ttype = trigger.get('type')
@@ -593,11 +649,14 @@ def _build_trigger(manifest: dict[str, Any]) -> TriggerSpec:
         )
 
     if ttype == 'http':
-        method = trigger.get('method')
         path = trigger.get('path')
-        if not method or not path:
-            raise ManifestError("trigger http requiere 'method' y 'path'.")
-        return TriggerSpec(type='http', method=method, path=path)
+        if not path:
+            raise ManifestError("trigger http requiere 'path'.")
+        methods = _normalize_http_methods(
+            method=trigger.get('method'),
+            methods=trigger.get('methods'),
+        )
+        return TriggerSpec(type='http', methods=methods, path=path)
 
     return TriggerSpec(type='direct')
 
@@ -914,7 +973,7 @@ def _wire_cors_options(
     *,
     api_id: str,
     resource_id: str,
-    method: str,
+    methods: tuple[str, ...],
     profile: str | None,
     region: str,
 ) -> None:
@@ -938,7 +997,7 @@ def _wire_cors_options(
     los errores "ConflictException: Method already exists" se ignoran.
     """
     allowed_headers = 'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Token'
-    allowed_methods = f'{method},OPTIONS'
+    allowed_methods = ','.join((*methods, 'OPTIONS'))
 
     # 1. put-method OPTIONS — puede fallar con ConflictException si ya
     # existe. Lo tratamos como noop.
@@ -1038,24 +1097,49 @@ def _wire_cors_options(
     )
 
 
+def _source_arn_matches_path(*, cond_arn: str, stage: str, path: str) -> bool:
+    """True si `cond_arn` apunta al mismo `{stage}` + `{path}` del API GW.
+
+    Compara ignorando el segmento de METODO del ARN execute-api
+    (`.../{stage}/{method}{path}`): matchea tanto el formato viejo de
+    metodo especifico (`{stage}/POST/contact`) como el wildcard nuevo
+    (`{stage}/*/contact`). Asi el cleanup sigue cubriendo statements
+    legacy de cualquier metodo sobre el mismo path tras migrar al wildcard.
+    """
+    marker = f'/{stage}/'
+    idx = cond_arn.find(marker)
+    if idx == -1:
+        return False
+    tail = cond_arn[idx + len(marker) :]  # ej. 'POST/contact' o '*/contact'
+    slash = tail.find('/')
+    if slash == -1:
+        return False
+    arn_path = tail[slash:]  # ej. '/contact'
+    return arn_path == path
+
+
 def _cleanup_legacy_permissions(
     *,
     function_name: str,
     keep_sid: str,
-    source_arn: str,
+    stage: str,
+    path: str,
     profile: str | None,
     region: str,
 ) -> None:
     """Borra statements obsoletos del resource-policy del Lambda.
 
-    Scoped al mismo `source_arn`: solo elimina statements cuyo SourceArn
-    apunta al mismo path API GW (`POST /contact` para contact-form) y
-    cuyo Sid no es `keep_sid`. Asi NO toca permisos legitimos de otros
-    origenes (EventBridge, otra API GW, otro path).
+    Scoped al mismo `{stage}` + `{path}` del API GW (ignorando el metodo
+    del SourceArn): solo elimina statements cuyo SourceArn apunta al mismo
+    path (`/contact` para contact-form, cualquier metodo) y cuyo Sid no es
+    `keep_sid`. Asi NO toca permisos legitimos de otros origenes
+    (EventBridge, otra API GW, otro path).
 
     Cubre 2 casos reales:
     - Statement legacy de SAM (`portfolio-backend-<stage>-...Permission...`),
       que devtools nunca limpio tras la migracion de SAM a AWS CLI directo.
+      Su SourceArn lleva el metodo especifico (`{stage}/POST/contact`); el
+      match por path lo cubre aunque el wiring nuevo use wildcard.
     - Statement viejo de devtools cuando cambio el qualifier (`apigw-dev`
       sin live -> `apigw-dev-live` tras activar snap_start).
 
@@ -1093,7 +1177,9 @@ def _cleanup_legacy_permissions(
             .get('ArnLike', {})
             .get('AWS:SourceArn', '')
         )
-        if cond_arn != source_arn:
+        if not _source_arn_matches_path(
+            cond_arn=cond_arn, stage=stage, path=path
+        ):
             continue
         aws(
             [
@@ -1211,29 +1297,8 @@ def _wire_http_trigger(
         )
         resource_id = str(resource_result.json['id'])
     resources['api_resource_id'] = resource_id
-    resources['api_method'] = f'{trigger.method} {trigger.path}'
+    resources['api_method'] = f'{",".join(trigger.methods)} {trigger.path}'
 
-    # Idempotente: si el method ya existe (caso CREATE tras deploy
-    # parcial previo o re-corrida del provisioner), put-method falla con
-    # ConflictException. Lo tratamos como noop — la config del method
-    # (authorization-type NONE) es invariante entre deploys.
-    aws(
-        [
-            'apigateway',
-            'put-method',
-            '--rest-api-id',
-            api_id,
-            '--resource-id',
-            resource_id,
-            '--http-method',
-            str(trigger.method),
-            '--authorization-type',
-            'NONE',
-        ],
-        profile=profile,
-        region=region,
-        check=False,
-    )
     # Qualifier: si SnapStart=true, apunta al alias `:live` (necesario
     # para que SnapStart aplique). Sino, $LATEST (sin qualifier).
     qualifier = _snap_start_qualifier(rendered)
@@ -1242,43 +1307,70 @@ def _wire_http_trigger(
         f'arn:aws:lambda:{region}:{account}:function:'
         f'{rendered.function_name}{qualifier}/invocations'
     )
-    aws(
-        [
-            'apigateway',
-            'put-integration',
-            '--rest-api-id',
-            api_id,
-            '--resource-id',
-            resource_id,
-            '--http-method',
-            str(trigger.method),
-            '--type',
-            'AWS_PROXY',
-            '--integration-http-method',
-            'POST',
-            '--uri',
-            invoke_arn,
-        ],
-        profile=profile,
-        region=region,
-    )
+    # Un par put-method + put-integration por cada metodo HTTP del trigger
+    # (ej. GET y POST para /auth: el magic-link entra por GET, el resto del
+    # flujo por POST). Idempotente: si el metodo ya existe (re-deploy /
+    # UPDATE_CONFIG), put-method falla con ConflictException y se trata como
+    # noop; put-integration sobrescribe.
+    for http_method in trigger.methods:
+        aws(
+            [
+                'apigateway',
+                'put-method',
+                '--rest-api-id',
+                api_id,
+                '--resource-id',
+                resource_id,
+                '--http-method',
+                http_method,
+                '--authorization-type',
+                'NONE',
+            ],
+            profile=profile,
+            region=region,
+            check=False,
+        )
+        aws(
+            [
+                'apigateway',
+                'put-integration',
+                '--rest-api-id',
+                api_id,
+                '--resource-id',
+                resource_id,
+                '--http-method',
+                http_method,
+                '--type',
+                'AWS_PROXY',
+                '--integration-http-method',
+                'POST',
+                '--uri',
+                invoke_arn,
+            ],
+            profile=profile,
+            region=region,
+        )
     # CORS preflight: agrega OPTIONS al resource para que los browsers que
     # disparan preflight (Content-Type application/json o headers custom)
     # reciban un 200 con los headers Access-Control-* correctos. Sin esto,
     # API Gateway responde MissingAuthenticationTokenException (HTTP 403) y
     # el browser bloquea la request real. Idempotente — los `put-*` aceptan
-    # re-aplicacion sobre un metodo existente.
+    # re-aplicacion sobre un metodo existente. Access-Control-Allow-Methods
+    # lista todos los metodos reales + OPTIONS.
     _wire_cors_options(
         api_id=api_id,
         resource_id=resource_id,
-        method=str(trigger.method),
+        methods=trigger.methods,
         profile=profile,
         region=region,
     )
     _create_deployment(api_id, stage, profile=profile, region=region)
+    # source_arn con wildcard de metodo `*`: un solo statement de permiso
+    # cubre todos los metodos del path (GET+POST). OPTIONS es MOCK (no
+    # invoca el Lambda), asi que el wildcard no causa invocaciones extra.
     source_arn = (
         f'arn:aws:execute-api:{region}:{account}:{api_id}/{stage}/'
-        f'{trigger.method}{trigger.path}'
+        f'*{trigger.path}'
     )
     target_sid = (
         f'apigw-{stage}-live' if rendered.snap_start else f'apigw-{stage}'
@@ -1289,9 +1381,29 @@ def _wire_http_trigger(
     _cleanup_legacy_permissions(
         function_name=rendered.function_name,
         keep_sid=target_sid,
-        source_arn=source_arn,
+        stage=stage,
+        path=str(trigger.path),
         profile=profile,
         region=region,
+    )
+    # Borra el statement con el `target_sid` ANTES de re-crearlo: si ya
+    # existe con un SourceArn distinto (ej. el viejo `{method}{path}` antes
+    # de migrar al wildcard `*{path}`), `add-permission` con check=False NO
+    # lo actualizaria (el Sid ya existe -> noop), dejando el GET sin permiso.
+    # `_cleanup_legacy_permissions` NO lo cubre (preserva el `keep_sid`).
+    # remove-permission es idempotente (noop si no existe).
+    aws(
+        [
+            'lambda',
+            'remove-permission',
+            '--function-name',
+            rendered.function_name,
+            '--statement-id',
+            target_sid,
+        ],
+        profile=profile,
+        region=region,
+        check=False,
     )
     permission_args = [
         'lambda',
@@ -1349,7 +1461,7 @@ def _rewire_trigger_on_update(
     """Re-aplica el wiring del trigger en `provision()` con UPDATE_*.
 
     Antes de este fix, `_wire_trigger` solo corria en `_provision_create`.
-    Si un manifest cambiaba `trigger.method`, `trigger.path` o
+    Si un manifest cambiaba `trigger.methods`, `trigger.path` o
     `snap_start` (que afecta el qualifier `:live` de la URI de API GW y
     el statement-id del `add-permission`), el cambio NO se aplicaba al
     redeployar (solo al borrar+recrear). Tambien dejaba colgando el

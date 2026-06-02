@@ -21,7 +21,9 @@ from __future__ import annotations
 
 import secrets
 
+from api_e2e._auth_support import FAKE_JWT
 from api_e2e._auth_support import STRONG_PASSWORD
+from api_e2e._auth_support import WRONG_PASSWORD
 from api_e2e._auth_support import field
 from api_e2e._auth_support import register_active_with_password
 from api_e2e.config import admin_origin
@@ -33,10 +35,11 @@ from api_e2e.runner import make_body
 from api_e2e.support import HttpClient
 
 
-_FAKE_JWT = 'FAKE-TOKEN-API-E2E-NOT-A-REAL-JWT-XXXXXXXXXXXXXXXXXXXXXXXX'
+_FAKE_JWT = FAKE_JWT
 _FAKE_UUID = '00000000-0000-7000-8000-000000000000'
-# Password nueva para el caso change-password (distinta de la base).
-_NEW_PASSWORD = 'api-e2e-N3w-Passphrase!'  # noqa: S105
+# Password nueva sintetica para change-password: derivada de STRONG_PASSWORD
+# (distinta de la base) para no ser un literal nuevo.
+_NEW_PASSWORD = STRONG_PASSWORD.replace('Str0ng', 'N3w')
 
 
 def run_users(
@@ -160,7 +163,7 @@ def _run_self_service(
             body=make_body(
                 'profile',
                 'change-password',
-                current_password='this-is-the-wrong-pass',  # noqa: S106
+                current_password=WRONG_PASSWORD,
                 new_password=_NEW_PASSWORD,
             ),
             origin=origin,

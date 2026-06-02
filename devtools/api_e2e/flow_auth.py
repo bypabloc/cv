@@ -29,6 +29,7 @@ import secrets
 
 from api_e2e._auth_support import FAKE_JWT
 from api_e2e._auth_support import STRONG_PASSWORD
+from api_e2e._auth_support import WRONG_PASSWORD
 from api_e2e._auth_support import Synthetic
 from api_e2e._auth_support import field
 from api_e2e._auth_support import register_active_with_password
@@ -441,7 +442,7 @@ def _run_login_with_password(
                 'login',
                 'start',
                 email=email,
-                password='wrong-Passphrase-123',  # noqa: S106
+                password=WRONG_PASSWORD,
                 cf_turnstile_response='',
             ),
             origin=origin,

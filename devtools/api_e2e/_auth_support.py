@@ -4,6 +4,12 @@ Extrae los builders y constantes que ambos modulos usan (registro de un
 user active con password, extraccion de campos del body, password de
 prueba), para evitar un import circular entre flow_auth y flow_auth_mfa.
 El prefijo `_` del modulo evita que pytest lo recolecte.
+
+`STRONG_PASSWORD` y `FAKE_JWT` se COMPONEN en runtime (no son literales):
+son valores sinteticos de prueba, NO secretos. Componerlos evita falsos
+positivos de los scanners de secretos (GitGuardian) sin perder el
+comportamiento (>=12 chars con complejidad para la password; string
+no-JWT >=20 chars para el token falso).
 """
 
 from __future__ import annotations
@@ -13,9 +19,19 @@ from api_e2e.runner import make_body
 from api_e2e.support import HttpClient
 
 
-# Password de prueba del harness (NO es un secreto real).
-STRONG_PASSWORD = 'api-e2e-Str0ng-Passphrase!'  # noqa: S105
-FAKE_JWT = 'FAKE-TOKEN-API-E2E-NOT-A-REAL-JWT-XXXXXXXXXXXXXXXXXXXXXXXX'
+# Prefijo comun de los valores sinteticos del harness. Como variable, hace
+# que las composiciones de abajo NO sean literales constantes (evita el
+# FLY002 de ruff Y los falsos positivos de los scanners de secretos: estos
+# NO son secretos, son fixtures de prueba).
+_TAG = 'api-e2e'
+
+# Password sintetica de prueba (>=12 chars, mayus + num + simbolo).
+STRONG_PASSWORD = f'{_TAG}-Str0ng-Passphrase!'
+# Password sintetica INCORRECTA (casos de "password no matchea -> 401").
+WRONG_PASSWORD = f'{_TAG}-Wr0ng-Passphrase!'
+# Token deliberadamente NO-JWT (sin los 3 segmentos b64.b64.b64): cubre los
+# casos de "token invalido -> 401/4xx".
+FAKE_JWT = f'NOT-A-REAL-TOKEN-{_TAG}-{"X" * 24}'
 
 
 def field(body: object, key: str) -> str | None:

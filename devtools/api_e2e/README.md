@@ -6,18 +6,36 @@
 
 ## Que prueba
 
-Los 5 Lambdas HTTP (`trigger.type=http`):
+Los 5 Lambdas HTTP (`trigger.type=http`). El harness ejercita TODO el
+dominio auth + el dashboard de cuenta (no solo login), incluyendo MFA,
+magic-link GET, cambio de password/email, sesiones y admin:
 
 | Lambda | Exito | Errores |
 |--------|-------|---------|
 | `cv` | las 10 actions read (GET, 2xx) | action invalida, sin operation |
 | `contact_form` | `contact.create` 202 (via bypass Turnstile) | sin message, email invalido |
 | `tracking_pixel` | `tracking.track` 202 | sin event_type_id, viewport invalido |
-| `auth` | register.start -> verify-code -> refresh -> login.start -> logout | set-password ya seteada (400), email inexistente (404), tokens falsos (4xx/401) |
-| `users` | profile.get/update, status.get/list-sessions | admin no-admin (404), sin JWT (401), JWT falso (401) |
+| `auth` | register (start -> verify-code -> refresh -> login.start -> set-password -> logout); **magic-link GET 302** al admin/callback + POST JSON; **login con password** directo + 2-step (verify-password); **MFA TOTP** (setup -> confirm -> login 2FA con verify-totp); **MFA email-code** (setup + list + set-preferred + disable); **recovery codes** (generate -> consume) | set-password ya seteada (400), email inexistente (404), magic-link token falso (JSON 400), password incorrecta (401), confirm/verify-totp code malo (400/401), recovery code reusado (400), tokens falsos (4xx/401), mfa/webauthn sin JWT (401) |
+| `users` | profile.get/update, status.get/list-sessions; **change-password**; **status.revoke-session** (revoca otra sesion); **change-email** completo (change-email -> confirm-email-change -> verifica email en Neon); **admin.*** completo (list/get/disable/enable/force-logout/list-actions/delete con un admin promovido temporalmente en SSM); **delete-account** (verifica soft-delete en Neon) | change-password current incorrecta (401), admin no-admin (404), sin JWT (401), JWT falso (401) |
 
-Los 3 workers (`*_worker`, SQS) y `db` (direct) NO son invocables por
-HTTP — quedan fuera (los cubren sus unit tests).
+Los Lambdas direct (`send_email`, `tracking_writer`, `db`) NO son
+invocables por HTTP — quedan fuera (los cubren sus unit tests).
+
+### Como prueba MFA + magic-link sin email ni authenticator
+
+- **TOTP**: `setup-totp` devuelve el `secret_b32` en claro; el harness
+  genera el code de 6 digitos localmente con `api_e2e.totp` (RFC 6238
+  stdlib, verificado contra `pyotp`) — sin necesidad de un authenticator.
+- **magic-link / email-change**: el token plano NUNCA vuelve (solo viaja
+  por email; en Neon va el hash SHA-256). El harness genera un plaintext
+  conocido y reescribe el `token_hash` de la fila vigente
+  (`auth_magic_links`), igual que el seed del code de verify.
+- **admin**: el scope `admin.*` exige el email del caller en la whitelist
+  SSM `/portfolio/{stage}/admin-emails`, cacheada por contenedor (TTL
+  300s). El harness APPENDea un email sintetico al CSV, fuerza un cold
+  start del Lambda `users` (env var efimera -> recicla el contenedor ->
+  cache fresco) y al final RESTAURA el CSV exacto + borra la env var.
+  NUNCA toca el admin real de la whitelist.
 
 ## Por que NO es parte de `test_runner`
 
@@ -92,14 +110,18 @@ httpx/psycopg. Cumple `.claude/rules/env-files.md`.
 
 ```text
 api_e2e/
-├── main.py          # orquesta los flujos + cleanup + reporte
-├── flags.py         # validacion de flags + describe()
-├── config.py        # URLs/origins por env + IpRotator + emails sinteticos
-├── support.py       # HttpClient (httpx + timing) + Response
-├── runner.py        # Runner: corre N samples, clasifica PASS/FAIL
-├── reporter.py      # CaseResult + tabla de tiempos + veredicto
-├── environment.py   # SSM secrets + seed/cleanup en Neon (boto3 + psycopg)
-├── flow_readonly.py # cv + contact_form + tracking_pixel
-├── flow_auth.py     # flujo auth completo + errores
-└── flow_users.py    # profile + status + admin
+├── main.py            # orquesta los flujos + cleanup + reporte
+├── flags.py           # validacion de flags + describe()
+├── config.py          # URLs/origins por env + IpRotator + emails sinteticos
+├── support.py         # HttpClient (httpx + timing, GET no-redirect) + Response
+├── runner.py          # Runner: corre N samples, clasifica PASS/FAIL
+├── reporter.py        # CaseResult + tabla de tiempos + veredicto
+├── environment.py     # SSM secrets + seed/cleanup Neon + admin promote + blacklist cleanup
+├── totp.py            # generador TOTP RFC 6238 (stdlib, == pyotp)
+├── _auth_support.py   # helpers compartidos auth (register active, field)
+├── flow_readonly.py   # cv + contact_form + tracking_pixel
+├── flow_auth.py       # register + login (passwordless/magic-link/password)
+├── flow_auth_mfa.py   # MFA: TOTP, email-code, recovery codes
+├── flow_users.py      # profile + status + change-email + delete-account
+└── flow_admin.py      # admin.* con promote/restore de la whitelist SSM
 ```

@@ -59,6 +59,16 @@ def main(flags: dict[str, Any]) -> int:
     created_emails: list[str] = []
     created_sessions: list[str] = []
 
+    # Limpia blacklists de IPs TEST-NET de corridas previas (auto-blacklist
+    # 24h): evita 403 intermitente cuando el round-robin reusa una IP ya
+    # bloqueada. Best-effort.
+    try:
+        purged = env.cleanup_rate_limit_blacklist()
+        if purged:
+            print(f'[INFO] blacklists TEST-NET previas purgadas: {purged}')
+    except Exception as exc:  # noqa: BLE001 -- best-effort
+        print(f'[WARN] purga inicial de blacklist fallo: {exc}')
+
     try:
         _run_flows(
             runner=runner,
@@ -138,7 +148,16 @@ def _run_flows(
         )
     if want('users'):
         print('\n--- users ---')
-        run_users(runner, http, env_name, access_token)
+        run_users(
+            runner,
+            http,
+            env,
+            env_name,
+            run_id,
+            bypass,
+            access_token,
+            created_emails,
+        )
 
 
 def _cleanup(
@@ -152,8 +171,10 @@ def _cleanup(
         users = env.cleanup_users(emails)
         contacts = env.cleanup_contacts(emails)
         tracking = env.cleanup_tracking(sessions)
+        blacklist = env.cleanup_rate_limit_blacklist()
         print(
-            f'  borrados: users={users} contacts={contacts} tracking={tracking}'
+            f'  borrados: users={users} contacts={contacts} '
+            f'tracking={tracking} ip_blacklist={blacklist}'
         )
     except Exception as exc:  # noqa: BLE001 -- best-effort
         print(f'  [WARN] cleanup parcial: {type(exc).__name__}: {exc}')

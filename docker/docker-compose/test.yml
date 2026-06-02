@@ -23,6 +23,9 @@ x-admin-environment: &admin-environment
   NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS: ${NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS:-30000}
   NEXT_PUBLIC_WEBAUTHN_RP_ID: ${NEXT_PUBLIC_WEBAUTHN_RP_ID:-}
   NEXT_PUBLIC_FEATURE_MFA: ${NEXT_PUBLIC_FEATURE_MFA:-true}
+  # E2E bypass on en test (donde corre la suite Playwright contra el backend
+  # dev). El spec inyecta el bypass token Ed25519 en window. Ver local.yml.
+  NEXT_PUBLIC_E2E_BYPASS: ${NEXT_PUBLIC_E2E_BYPASS:-true}
 
 services:
   # --- Backend del lambda local: Postgres + DynamoDB Local --------------

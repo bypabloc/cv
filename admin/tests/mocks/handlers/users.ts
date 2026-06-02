@@ -5,7 +5,7 @@ const API = "https://api.test.the-full-stack.com";
 interface UsersBody {
 	operation: string;
 	action: string;
-	data: Record<string, unknown>;
+	[key: string]: unknown;
 }
 
 const PROFILE = {
@@ -68,7 +68,9 @@ const ADMIN_USERS = [
 export const usersHandlers = [
 	http.post(`${API}/users`, async ({ request }) => {
 		const body = (await request.json()) as UsersBody;
-		const { operation, action, data } = body;
+		// Contrato FLAT del backend: campos al nivel raiz, no anidados en
+		// `data`. `data` = todo menos operation/action.
+		const { operation, action, ...data } = body;
 
 		// --- profile ---
 		if (operation === "profile" && action === "get") {

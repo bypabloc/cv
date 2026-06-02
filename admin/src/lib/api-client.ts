@@ -17,6 +17,53 @@ interface FetchOptions extends Omit<RequestInit, "body"> {
 	skipRefresh?: boolean;
 }
 
+/**
+ * @function flattenBody
+ * @description El handler HTTP generico del backend (shared.lambda_kit.
+ *   http_dispatch) espera el contrato FLAT: `{operation, action, ...campos}`
+ *   con los campos del payload al NIVEL RAIZ del body, NO anidados en `data`.
+ *   El cliente arma `{operation, action, data}` por ergonomia; aqui se
+ *   aplana a `{operation, action, ...data}` antes de serializar. Enviar el
+ *   `data` anidado hace que el backend lo trate como un campo llamado "data"
+ *   -> el modelo Pydantic no encuentra `email`/`code`/etc -> INVALID_EVENT_DATA.
+ */
+function flattenBody(body: unknown): unknown {
+	if (
+		body !== null &&
+		typeof body === "object" &&
+		"operation" in body &&
+		"action" in body &&
+		"data" in body
+	) {
+		const { operation, action, data } = body as {
+			operation: unknown;
+			action: unknown;
+			data: unknown;
+		};
+		const flatData = data !== null && typeof data === "object" ? data : {};
+		return { operation, action, ...flatData };
+	}
+	return body;
+}
+
+/**
+ * @function e2eBypassToken
+ * @description SOLO E2E: cuando `NEXT_PUBLIC_E2E_BYPASS === 'true'`, devuelve el
+ *   bypass token Ed25519 firmado que el spec Playwright inyecta en
+ *   `window.__E2E_BYPASS_TOKEN__`. apiFetch lo manda en el header
+ *   `X-Turnstile-Bypass-Token`; el backend dev/stage acepta el bypass cuando
+ *   `cf_turnstile_response` viaja vacio. En cualquier build que no sea E2E
+ *   devuelve null (el bypass nunca se activa). Prod rechaza el bypass aunque
+ *   llegue el header.
+ */
+function e2eBypassToken(): string | null {
+	if (env.NEXT_PUBLIC_E2E_BYPASS !== "true") return null;
+	if (typeof window === "undefined") return null;
+	const token = (window as { __E2E_BYPASS_TOKEN__?: unknown })
+		.__E2E_BYPASS_TOKEN__;
+	return typeof token === "string" && token.length > 0 ? token : null;
+}
+
 export class ApiError extends Error {
 	constructor(
 		public readonly status: number,
@@ -59,10 +106,12 @@ export async function apiFetch<T = unknown>(
 			const token = useAuthStore.getState().accessToken;
 			if (token) headers.set("Authorization", `Bearer ${token}`);
 		}
+		const bypass = e2eBypassToken();
+		if (bypass) headers.set("X-Turnstile-Bypass-Token", bypass);
 		return {
 			...rest,
 			headers,
-			body: body !== undefined ? JSON.stringify(body) : undefined,
+			body: body !== undefined ? JSON.stringify(flattenBody(body)) : undefined,
 		};
 	};
 
@@ -94,7 +143,22 @@ export async function apiFetch<T = unknown>(
 		);
 	}
 
-	return data as T;
+	// El backend responde FLAT: el body ES el payload del controller (NO un
+	// wrapper {is_valid, code, data} — ver shared.lambda_kit.http_dispatch,
+	// json_response(status, result.data)). El resto del admin tipa las
+	// respuestas como Envelope<T> = {is_valid, code, data} por ergonomia;
+	// aqui se re-envuelve la respuesta flat en ese shape para no tocar las
+	// 26 actions ni los hooks. Si el backend YA devolviera el wrapper (futuro
+	// o un endpoint legacy), se respeta tal cual.
+	if (
+		data !== null &&
+		typeof data === "object" &&
+		"is_valid" in data &&
+		"data" in data
+	) {
+		return data as T;
+	}
+	return { is_valid: true, code: 0, data } as T;
 }
 
 /**
@@ -111,22 +175,23 @@ async function performRefresh(): Promise<boolean> {
 		const response = await fetch(`${env.NEXT_PUBLIC_API_ENDPOINT}/auth`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
+			// Contrato FLAT del backend: refresh_token al nivel raiz.
 			body: JSON.stringify({
 				operation: "session",
 				action: "refresh",
-				data: { refresh_token: refreshToken },
+				refresh_token: refreshToken,
 			}),
 		});
 		if (!response.ok) return false;
+		// Respuesta FLAT del backend: {access_token, refresh_token, ...} al
+		// nivel raiz (NO envuelto en .data).
 		const json = (await response.json()) as {
-			data?: {
-				access_token?: string;
-				refresh_token?: string;
-				expires_in?: number;
-			};
+			access_token?: string;
+			refresh_token?: string;
+			expires_in?: number;
 		};
-		const access = json.data?.access_token;
-		const refresh = json.data?.refresh_token;
+		const access = json.access_token;
+		const refresh = json.refresh_token;
 		if (!access || !refresh) return false;
 		useAuthStore.getState().setAccessToken(access);
 		useAuthStore.getState().setRefreshToken(refresh);

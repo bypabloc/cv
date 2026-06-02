@@ -6,7 +6,7 @@ const API = "https://api.test.the-full-stack.com";
 interface AuthBody {
 	operation: string;
 	action: string;
-	data: Record<string, unknown>;
+	[key: string]: unknown;
 }
 
 const MOCK_USER = {
@@ -38,7 +38,12 @@ function authPair() {
 export const authHandlers = [
 	http.post(`${API}/auth`, async ({ request }) => {
 		const body = (await request.json()) as AuthBody;
-		const { operation, action, data } = body;
+		// Contrato FLAT del backend (shared.lambda_kit.http_dispatch): los
+		// campos del payload viajan al NIVEL RAIZ del body, no anidados en
+		// `data`. `data` = todo menos operation/action (refleja el backend
+		// real; antes los mocks asumian {operation,action,data} anidado, que
+		// el backend NUNCA acepto -> los tests pasaban pero el real fallaba).
+		const { operation, action, ...data } = body;
 
 		// --- register ---
 		if (operation === "register" && action === "start") {
@@ -74,12 +79,14 @@ export const authHandlers = [
 		// --- login ---
 		if (operation === "login" && action === "start") {
 			if (data.email === "unknown@test.com") {
+				// Error FLAT como el backend real: suggest_register al nivel raiz.
 				return HttpResponse.json(
 					{
 						error: "EMAIL_NOT_FOUND",
 						code: 4040,
 						message: "Email no existe",
-						data: { suggest_register: true },
+						suggest_register: true,
+						methods: [],
 					},
 					{ status: 404 },
 				);

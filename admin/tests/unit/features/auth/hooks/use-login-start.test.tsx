@@ -41,10 +41,11 @@ describe("useLoginStart", () => {
 		// Assert
 		expect(error).toBeInstanceOf(ApiError);
 		expect((error as ApiError).status).toBe(404);
+		// Error FLAT del backend: suggest_register al nivel raiz de error.data.
 		const data = (error as ApiError).data as {
-			data?: { suggest_register?: boolean };
+			suggest_register?: boolean;
 		};
-		expect(data.data?.suggest_register).toBe(true);
+		expect(data.suggest_register).toBe(true);
 		expect(useAuthStore.getState().tempToken).toBe(null);
 	});
 

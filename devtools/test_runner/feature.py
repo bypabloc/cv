@@ -34,6 +34,46 @@ _FEATURE_READY_TIMEOUT_DEFAULT = 600
 _FEATURE_READY_POLL_INTERVAL = 2
 _FEATURE_READY_PROGRESS_INTERVAL = 30
 
+# TTL del bypass token para E2E: cubre toda la corrida Playwright (5 browsers
+# x N specs puede pasar de 5 min). El token sigue siendo efimero y dev-only.
+_E2E_BYPASS_TTL_SECONDS = 1800
+_BYPASS_PRIVATE_KEY_VAR = 'TURNSTILE_BYPASS_PRIVATE_KEY'
+
+
+def _mint_e2e_bypass_token(env: str) -> str | None:
+    """Firma un bypass token Ed25519 efimero para los E2E del admin.
+
+    El admin local consume el backend dev real (`api.portfolio.dev`), cuyo
+    Lambda valida `payload.stage == 'dev'`; por eso el token se firma con
+    `stage='dev'` y la clave privada de `docker/env/dev-cli/.dev` (NO la del
+    env del stack). Devuelve None si no hay clave privada (el spec hace skip
+    del flujo autenticado). El valor NUNCA se imprime.
+    """
+    import time
+
+    from shared.bypass_token import sign_bypass_token
+    from shared.paths import PROJECT_ROOT
+
+    # El bypass del backend dev exige stage='dev' (el Lambda dev). Local
+    # apunta a api.portfolio.dev, asi que SIEMPRE se firma para 'dev'.
+    key_path = PROJECT_ROOT / 'docker' / 'env' / 'dev-cli' / '.dev'
+    if not key_path.exists():
+        return None
+    private_key = ''
+    prefix = f'{_BYPASS_PRIVATE_KEY_VAR}='
+    for line in key_path.read_text(encoding='utf-8').splitlines():
+        if line.startswith(prefix):
+            private_key = line[len(prefix) :].strip()
+            break
+    if not private_key:
+        return None
+    return sign_bypass_token(
+        stage='dev',
+        private_key_b64=private_key,
+        now=int(time.time()),
+        ttl=_E2E_BYPASS_TTL_SECONDS,
+    )
+
 
 def _feature_service_for(module: str) -> str:
     """Map module to its compose service name.
@@ -199,6 +239,14 @@ def run_feature(
     spawn_env: dict[str, str] = {'CI': 'true'}
     if screenshots:
         spawn_env['TAKE_SCREENSHOTS'] = '1'
+
+    # Bypass token Ed25519 para los specs del admin (login/register reales
+    # contra el backend dev). El fixture Playwright lo inyecta en
+    # window.__E2E_BYPASS_TOKEN__; si no hay clave privada, el spec hace skip
+    # del flujo autenticado. NUNCA se imprime el token.
+    bypass = _mint_e2e_bypass_token(env)
+    if bypass:
+        spawn_env['E2E_BYPASS_TOKEN'] = bypass
 
     result = compose_exec(
         env,

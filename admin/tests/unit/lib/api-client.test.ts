@@ -42,17 +42,15 @@ describe("apiFetch + mutex refresh", () => {
 				if (body.operation === "session" && body.action === "refresh") {
 					refreshCount += 1;
 					await new Promise((resolve) => setTimeout(resolve, 50));
+					// Respuesta FLAT del backend (performRefresh lee json.access_token
+					// directo, no .data.access_token).
 					return HttpResponse.json({
-						is_valid: true,
-						code: 0,
-						data: {
-							access_token: "fresh-token",
-							refresh_token: makeJwt({
-								sub: "usr_01",
-								exp: nowSec() + 2_592_000,
-							}),
-							expires_in: 900,
-						},
+						access_token: "fresh-token",
+						refresh_token: makeJwt({
+							sub: "usr_01",
+							exp: nowSec() + 2_592_000,
+						}),
+						expires_in: 900,
 					});
 				}
 				return new HttpResponse(null, { status: 501 });

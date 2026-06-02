@@ -25,6 +25,11 @@ x-admin-environment: &admin-environment
   NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS: ${NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS:-30000}
   NEXT_PUBLIC_WEBAUTHN_RP_ID: ${NEXT_PUBLIC_WEBAUTHN_RP_ID:-}
   NEXT_PUBLIC_FEATURE_MFA: ${NEXT_PUBLIC_FEATURE_MFA:-true}
+  # E2E bypass: en local SIEMPRE on. El form NO renderiza el Turnstile real
+  # (auto-emite token vacio) y apiFetch manda el bypass token Ed25519 que el
+  # spec inyecta en window.__E2E_BYPASS_TOKEN__. Sin token valido + backend
+  # dev/stage el bypass NO surte efecto, asi que es seguro en local.
+  NEXT_PUBLIC_E2E_BYPASS: ${NEXT_PUBLIC_E2E_BYPASS:-true}
 
 services:
   # --- Backend del lambda local: Postgres + DynamoDB Local --------------

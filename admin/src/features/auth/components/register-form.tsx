@@ -52,6 +52,7 @@ export function RegisterForm() {
 									type="email"
 									autoComplete="email"
 									placeholder="tu@email.com"
+									data-testid="register-email"
 									{...field}
 								/>
 							</FormControl>
@@ -65,7 +66,8 @@ export function RegisterForm() {
 				<Button
 					type="submit"
 					className="w-full"
-					disabled={registerStart.isPending || !turnstileToken}
+					data-testid="register-submit"
+					disabled={registerStart.isPending || turnstileToken === null}
 				>
 					{registerStart.isPending ? "Enviando..." : "Crear cuenta"}
 				</Button>

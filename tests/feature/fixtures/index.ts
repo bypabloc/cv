@@ -40,5 +40,32 @@ export function subdomainUrl(subdomain?: string): string {
   return `http://${subdomain}.localhost:${port}`
 }
 
+/**
+ * Bypass token Ed25519 firmado, inyectado por `test_runner` (feature.py)
+ * en la env del container Playwright como `E2E_BYPASS_TOKEN`. El admin lo
+ * lee de `window.__E2E_BYPASS_TOKEN__` y lo manda en el header
+ * `X-Turnstile-Bypass-Token`. Vacio si no hay clave privada local.
+ */
+export const BYPASS_TOKEN = process.env.E2E_BYPASS_TOKEN ?? ''
+
+/** true si hay un bypass token disponible para el flujo auth real. */
+export const hasBypass = BYPASS_TOKEN.length > 0
+
+/**
+ * Inyecta el bypass token en `window.__E2E_BYPASS_TOKEN__` ANTES de que
+ * cargue cualquier script de la pagina (addInitScript corre en cada
+ * navegacion). Llamar al inicio del test, antes del primer `page.goto`.
+ *
+ * @example
+ *   test.skip(!hasBypass, 'sin clave privada de bypass')
+ *   await installBypass(page)
+ *   await page.goto(`${ADMIN}/login/`)
+ */
+export async function installBypass(page: Page): Promise<void> {
+  await page.addInitScript((token) => {
+    ;(window as { __E2E_BYPASS_TOKEN__?: string }).__E2E_BYPASS_TOKEN__ = token
+  }, BYPASS_TOKEN)
+}
+
 export type { Page }
 export { expect }

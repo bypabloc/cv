@@ -33,6 +33,17 @@ const envSchema = z.object({
 		.enum(["true", "false"])
 		.default("true")
 		.describe("Toggle opcional de UI para la seccion MFA"),
+	NEXT_PUBLIC_E2E_BYPASS: z
+		.enum(["true", "false"])
+		.default("false")
+		.describe(
+			"SOLO E2E: cuando 'true', el form NO renderiza el Turnstile real " +
+				"(auto-emite un token dummy) y apiFetch manda el bypass token " +
+				"Ed25519 firmado (window.__E2E_BYPASS_TOKEN__) en el header " +
+				"X-Turnstile-Bypass-Token. El backend dev/stage acepta el bypass " +
+				"con cf_turnstile_response vacio; prod lo rechaza SIEMPRE. NUNCA " +
+				"setear 'true' en builds de produccion.",
+		),
 });
 
 export const env = envSchema.parse({
@@ -43,6 +54,7 @@ export const env = envSchema.parse({
 		process.env.NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS,
 	NEXT_PUBLIC_WEBAUTHN_RP_ID: process.env.NEXT_PUBLIC_WEBAUTHN_RP_ID,
 	NEXT_PUBLIC_FEATURE_MFA: process.env.NEXT_PUBLIC_FEATURE_MFA,
+	NEXT_PUBLIC_E2E_BYPASS: process.env.NEXT_PUBLIC_E2E_BYPASS,
 });
 
 export type Env = z.infer<typeof envSchema>;

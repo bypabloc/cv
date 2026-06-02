@@ -78,7 +78,7 @@ describe("LoginForm boton Registrate", () => {
 						error: "EMAIL_NOT_FOUND",
 						code: 4040,
 						message: "No existe",
-						data: { suggest_register: false },
+						suggest_register: false,
 					},
 					{ status: 404 },
 				),
@@ -205,14 +205,15 @@ describe("WebAuthnRegisterButton catch + nickname", () => {
 	});
 
 	it("Given un nickname When click Then register-verify recibe el nickname", async () => {
-		// Arrange: cubre `nickname || undefined` (rama truthy)
-		let capturedBody: { data?: { nickname?: string } } | null = null;
+		// Arrange: cubre `nickname || undefined` (rama truthy). El backend
+		// usa contrato FLAT: nickname va al nivel raiz del body, no en `data`.
+		let capturedBody: { nickname?: string } | null = null;
 		server.use(
 			http.post(`${API}/auth`, async ({ request }) => {
 				const body = (await request.json()) as {
 					operation: string;
 					action: string;
-					data: { nickname?: string };
+					nickname?: string;
 				};
 				if (body.action === "register-options") {
 					return HttpResponse.json({
@@ -242,7 +243,7 @@ describe("WebAuthnRegisterButton catch + nickname", () => {
 
 		// Assert
 		await waitFor(() => {
-			expect(capturedBody?.data?.nickname).toBe("Mi Llave");
+			expect(capturedBody?.nickname).toBe("Mi Llave");
 		});
 	});
 });

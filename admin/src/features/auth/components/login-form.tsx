@@ -52,10 +52,10 @@ export function LoginForm() {
 				},
 				onError: (error) => {
 					if (error instanceof ApiError && error.status === 404) {
-						const data = error.data as {
-							data?: { suggest_register?: boolean };
-						};
-						if (data?.data?.suggest_register) setSuggestRegister(true);
+						// El backend responde FLAT: {error, suggest_register, methods}
+						// al nivel raiz del body (error.data), NO anidado en .data.
+						const body = error.data as { suggest_register?: boolean };
+						if (body?.suggest_register) setSuggestRegister(true);
 					}
 				},
 			},
@@ -92,6 +92,7 @@ export function LoginForm() {
 										type="email"
 										autoComplete="email"
 										placeholder="tu@email.com"
+										data-testid="login-email"
 										{...field}
 									/>
 								</FormControl>
@@ -105,7 +106,8 @@ export function LoginForm() {
 					<Button
 						type="submit"
 						className="w-full"
-						disabled={loginStart.isPending || !turnstileToken}
+						data-testid="login-submit"
+						disabled={loginStart.isPending || turnstileToken === null}
 					>
 						{loginStart.isPending ? "Enviando..." : "Iniciar sesion"}
 					</Button>

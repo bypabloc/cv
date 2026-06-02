@@ -4,9 +4,12 @@ El visitante clickea el link recibido por email. El controller resuelve
 el token opaco (SHA-256 del plain) contra `auth_magic_links`, consume
 single-use, activa al user y emite access + refresh JWTs.
 
-http_handler NO soporta HTTP 302 nativamente: la respuesta es un JSON
-200 con `redirect_url` en el body. El frontend (dashboard) hace el
-redirect del lado cliente al `dashboard_callback_url#access=...&...`.
+La respuesta lleva `redirect_url` (= `dashboard_callback_url#access=...`)
+en data. http_handler decide el formato por metodo HTTP:
+- GET (click en el magic-link del email): responde 302 Location =
+  redirect_url; el browser navega al admin/callback que lee el fragment.
+- POST (el admin lo llama por fetch): responde JSON 200 con
+  redirect_url + tokens. El controller es agnostico del transporte.
 
 AC cubiertos: AC-3, AC-16, AC-17.
 """

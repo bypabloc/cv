@@ -1392,15 +1392,24 @@ def _wire_http_trigger(
     # lo actualizaria (el Sid ya existe -> noop), dejando el GET sin permiso.
     # `_cleanup_legacy_permissions` NO lo cubre (preserva el `keep_sid`).
     # remove-permission es idempotente (noop si no existe).
+    #
+    # CRITICO con SnapStart: el statement vive en el alias `:live` (el
+    # `add-permission` lleva `--qualifier live`). El `remove-permission`
+    # DEBE usar el MISMO qualifier o borraria el statement del $LATEST
+    # (vacio) y dejaria el del alias intacto -> add-permission no lo
+    # sobrescribe (Sid ya existe) -> queda el SourceArn viejo.
+    remove_args = [
+        'lambda',
+        'remove-permission',
+        '--function-name',
+        rendered.function_name,
+        '--statement-id',
+        target_sid,
+    ]
+    if rendered.snap_start:
+        remove_args += ['--qualifier', _SNAP_START_ALIAS]
     aws(
-        [
-            'lambda',
-            'remove-permission',
-            '--function-name',
-            rendered.function_name,
-            '--statement-id',
-            target_sid,
-        ],
+        remove_args,
         profile=profile,
         region=region,
         check=False,

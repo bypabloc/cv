@@ -15,11 +15,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from shared.paths import PROJECT_ROOT
-
 from rotate_secrets.cloudflare_api import CloudflareError
 from rotate_secrets.cloudflare_api import TurnstileClient
 from rotate_secrets.env_writer import update_env_file
+from shared.paths import PROJECT_ROOT
 
 
 ENV_SERVER_DIR = PROJECT_ROOT / 'docker' / 'env' / 'server'
@@ -44,6 +43,7 @@ _WIDGETS = {
             'leader.portfolio.dev.the-full-stack.com',
             'vibe.portfolio.dev.the-full-stack.com',
             'generic.portfolio.dev.the-full-stack.com',
+            'admin.portfolio.dev.the-full-stack.com',
         ],
     },
     'stage': {
@@ -56,6 +56,7 @@ _WIDGETS = {
             'leader.portfolio.stage.the-full-stack.com',
             'vibe.portfolio.stage.the-full-stack.com',
             'generic.portfolio.stage.the-full-stack.com',
+            'admin.portfolio.stage.the-full-stack.com',
         ],
     },
     'prod': {
@@ -69,6 +70,7 @@ _WIDGETS = {
             'leader.portfolio.the-full-stack.com',
             'vibe.portfolio.the-full-stack.com',
             'generic.portfolio.the-full-stack.com',
+            'admin.portfolio.the-full-stack.com',
         ],
     },
 }

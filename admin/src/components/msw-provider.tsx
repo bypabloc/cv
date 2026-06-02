@@ -16,7 +16,23 @@ export function MswProvider({ children }: { children: ReactNode }) {
 	const [ready, setReady] = useState(!useMsw);
 
 	useEffect(() => {
-		if (!useMsw || typeof window === "undefined") return;
+		if (typeof window === "undefined") return;
+
+		// MSW INACTIVO (dev/stage/prod): des-registrar cualquier
+		// mockServiceWorker.js que haya quedado registrado en una visita
+		// previa. Si no, el SW huerfano intercepta requests y cierra el
+		// canal postMessage -> "Connection closed" + la app se cuelga.
+		if (!useMsw) {
+			void navigator.serviceWorker?.getRegistrations?.().then((regs) => {
+				for (const reg of regs) {
+					if (reg.active?.scriptURL.includes("mockServiceWorker")) {
+						void reg.unregister();
+					}
+				}
+			});
+			return;
+		}
+
 		let active = true;
 		void (async () => {
 			const { worker } = await import("@tests/mocks/browser");

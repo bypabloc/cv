@@ -224,7 +224,16 @@ def filter_lintable_files(files: list[str]) -> list[str]:
     for f in files:
         if not (f.startswith('apps/') or f.startswith('packages/')):
             continue
-        if 'node_modules/' in f or '/dist/' in f or '/.astro/' in f:
+        # public/ y .next/ contienen artefactos generados (openapi.json,
+        # mockServiceWorker.js, etc.) que biome ignora -> pasarlos a
+        # 'biome check' da 'no files processed' y rompe el pre-commit.
+        if (
+            'node_modules/' in f
+            or '/dist/' in f
+            or '/.astro/' in f
+            or '/.next/' in f
+            or '/public/' in f
+        ):
             continue
         if any(f.endswith(ext) for ext in relevant_exts):
             result.append(f)
@@ -259,7 +268,16 @@ def find_forbidden_js_files(files: list[str]) -> list[str]:
     for f in files:
         if not (f.startswith('apps/') or f.startswith('packages/')):
             continue
-        if 'node_modules/' in f or '/dist/' in f or '/.astro/' in f:
+        # public/ y .next/ contienen artefactos generados (openapi.json,
+        # mockServiceWorker.js, etc.) que biome ignora -> pasarlos a
+        # 'biome check' da 'no files processed' y rompe el pre-commit.
+        if (
+            'node_modules/' in f
+            or '/dist/' in f
+            or '/.astro/' in f
+            or '/.next/' in f
+            or '/public/' in f
+        ):
             continue
         if not any(f.endswith(ext) for ext in _FORBIDDEN_JS_EXTS):
             continue

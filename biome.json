@@ -60,7 +60,9 @@
       "complexity": {
         "noExcessiveCognitiveComplexity": {
           "level": "error",
-          "options": { "maxAllowedComplexity": 15 }
+          "options": {
+            "maxAllowedComplexity": 15
+          }
         },
         "noUselessFragments": "error",
         "noUselessTernary": "error",
@@ -96,14 +98,18 @@
         "useCollapsedElseIf": "error",
         "useConsistentArrayType": {
           "level": "error",
-          "options": { "syntax": "shorthand" }
+          "options": {
+            "syntax": "shorthand"
+          }
         }
       },
       "suspicious": {
         "noExplicitAny": "error",
         "noConsole": {
           "level": "error",
-          "options": { "allow": ["warn", "error", "info"] }
+          "options": {
+            "allow": ["warn", "error", "info"]
+          }
         },
         "noDoubleEquals": "error",
         "noEmptyBlockStatements": "error",
@@ -132,7 +138,9 @@
       "includes": ["**/tests/e2e/**"],
       "linter": {
         "rules": {
-          "complexity": { "noExcessiveCognitiveComplexity": "off" },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          },
           "suspicious": {
             "noConsole": "off",
             "noEmptyBlockStatements": "off"
@@ -141,8 +149,12 @@
             "noUnusedVariables": "off",
             "noUnusedFunctionParameters": "off"
           },
-          "style": { "noNonNullAssertion": "off" },
-          "nursery": { "noFloatingPromises": "off" }
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "nursery": {
+            "noFloatingPromises": "off"
+          }
         }
       }
     },
@@ -150,12 +162,19 @@
       "includes": ["**/tests/unit/**", "**/*.test.ts", "**/*.spec.ts"],
       "linter": {
         "rules": {
-          "complexity": { "noExcessiveCognitiveComplexity": "off" },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          },
+          "correctness": {
+            "noEmptyPattern": "off"
+          },
           "suspicious": {
             "noConsole": "off",
             "noEmptyBlockStatements": "off"
           },
-          "style": { "noNonNullAssertion": "off" }
+          "style": {
+            "noNonNullAssertion": "off"
+          }
         }
       }
     },
@@ -177,7 +196,9 @@
       "includes": ["**/*.config.{ts,js,mjs,cjs}", "**/astro.config.*"],
       "linter": {
         "rules": {
-          "suspicious": { "noConsole": "off" }
+          "suspicious": {
+            "noConsole": "off"
+          }
         }
       }
     },
@@ -185,8 +206,12 @@
       "includes": ["**/styles/animations.css"],
       "linter": {
         "rules": {
-          "complexity": { "noImportantStyles": "off" },
-          "style": { "noDescendingSpecificity": "off" }
+          "complexity": {
+            "noImportantStyles": "off"
+          },
+          "style": {
+            "noDescendingSpecificity": "off"
+          }
         }
       }
     },

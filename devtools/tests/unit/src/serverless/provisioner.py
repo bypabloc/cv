@@ -488,6 +488,70 @@ class TestProvisionCreate:
         params = intgr_resp[intgr_resp.index('--response-parameters') + 1]
         assert "'GET,POST,OPTIONS'" in params
 
+    def test_provision_create_snap_start_remove_add_use_qualifier(
+        self, monkeypatch
+    ):
+        """Con snap_start, remove-permission Y add-permission van al alias.
+
+        Regresion real (dev): el remove-permission SIN --qualifier borraba
+        el statement del $LATEST (vacio) y dejaba el del alias `live`
+        intacto; add-permission --qualifier live no lo sobrescribia (Sid
+        ya existe) -> quedaba el SourceArn viejo y el GET sin permiso.
+        """
+        from serverless import provisioner
+        from serverless.aws_cli import AwsResult
+        from serverless.state import Action
+
+        calls = []
+        responses = _default_responses()
+
+        def fake(args, **_kwargs):
+            calls.append(args)
+            key = '.'.join(args[:2])
+            # SnapStart: publish-version retorna Version; get-alias falla
+            # (ResourceNotFound) para forzar create-alias.
+            if key == 'lambda.publish-version':
+                return AwsResult(
+                    returncode=0, stdout='', stderr='', json={'Version': '7'}
+                )
+            if key == 'lambda.get-alias':
+                return AwsResult(
+                    returncode=1, stdout='', stderr='not found', json=None
+                )
+            return AwsResult(
+                returncode=0, stdout='', stderr='', json=responses.get(key)
+            )
+
+        monkeypatch.setattr(provisioner, 'aws', fake)
+        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
+
+        manifest = _manifest_http()
+        manifest['snap_start'] = True
+        rendered = provisioner.render(manifest, stage='dev')
+        provisioner.provision(
+            rendered,
+            action=Action.CREATE,
+            zip_path=_ZIP_PATH,
+            previous=None,
+            profile=None,
+            region='us-east-1',
+        )
+
+        remove_call = next(
+            c for c in calls if c[:2] == ['lambda', 'remove-permission']
+        )
+        add_call = next(
+            c for c in calls if c[:2] == ['lambda', 'add-permission']
+        )
+        # Ambos llevan --qualifier live y el mismo statement-id -live.
+        assert '--qualifier' in remove_call
+        assert remove_call[remove_call.index('--qualifier') + 1] == 'live'
+        assert remove_call[remove_call.index('--statement-id') + 1] == (
+            'apigw-dev-live'
+        )
+        assert '--qualifier' in add_call
+        assert add_call[add_call.index('--qualifier') + 1] == 'live'
+
     def test_provision_create_records_resources(self, monkeypatch):
         from serverless import provisioner
         from serverless.state import Action

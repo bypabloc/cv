@@ -269,14 +269,13 @@ def cmd_lint_deps(flags: dict) -> int:
     valida los lambdas del backend. Los checks 3 y 4 son globales (toda la
     carpeta) y corren SIEMPRE. Exit 0 si ningun check falla; 1 si alguno.
     """
-    from shared.console import GREEN
-    from shared.console import RED
-    from shared.console import _c
-
     from serverless.import_validator import format_import_report
     from serverless.import_validator import scan_lambda_core
     from serverless.resolve import available_lambdas
     from serverless.resolve import resolve_lambda
+    from shared.console import GREEN
+    from shared.console import RED
+    from shared.console import _c
 
     has_target = bool(
         flags.get('lambda') or flags.get('path') or flags.get('module')

@@ -8,6 +8,14 @@
 /*.html
   Cache-Control: no-cache, must-revalidate
 
+# Service Worker: no-cache para que el browser siempre revalide y reciba el
+# kill-switch (scripts/sw-kill-switch.js, publicado en esta URL). Un usuario
+# con el mockServiceWorker.js de MSW registrado en una visita previa lo
+# re-descarga, ejecuta el unregister + reload y deja de interceptar las
+# requests RSC `.txt` que rompian la navegacion ("Connection closed").
+/mockServiceWorker.js
+  Cache-Control: no-cache, must-revalidate
+
 # Security headers + CSP estricta (defensa primaria de los tokens en
 # localStorage: sin unsafe-inline/unsafe-eval en scripts + SRI en third-party).
 # 'wasm-unsafe-eval' lo requiere el runtime de Next/Turbopack en el cliente.

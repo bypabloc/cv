@@ -20,15 +20,29 @@ export function MswProvider({ children }: { children: ReactNode }) {
 
 		// MSW INACTIVO (dev/stage/prod): des-registrar cualquier
 		// mockServiceWorker.js que haya quedado registrado en una visita
-		// previa. Si no, el SW huerfano intercepta requests y cierra el
-		// canal postMessage -> "Connection closed" + la app se cuelga.
+		// previa. Si no, el SW huerfano intercepta las requests RSC `.txt`
+		// del client navigation de Next y corta el stream -> "Connection
+		// closed" + la app se cuelga en "Verificando sesion". Tras
+		// desregistrar hay que RECARGAR: el SW sigue controlando esta carga
+		// hasta el proximo navigate, asi que sin reload el usuario queda
+		// colgado en la pagina rota. El kill-switch SW del deploy
+		// (scripts/sw-kill-switch.js) cubre el mismo caso desde el server;
+		// este es el cinturon de seguridad del lado cliente.
 		if (!useMsw) {
 			void navigator.serviceWorker?.getRegistrations?.().then((regs) => {
+				let killed = false;
 				for (const reg of regs) {
-					if (reg.active?.scriptURL.includes("mockServiceWorker")) {
+					const url =
+						reg.active?.scriptURL ??
+						reg.waiting?.scriptURL ??
+						reg.installing?.scriptURL ??
+						"";
+					if (url.includes("mockServiceWorker")) {
+						killed = true;
 						void reg.unregister();
 					}
 				}
+				if (killed) window.location.reload();
 			});
 			return;
 		}

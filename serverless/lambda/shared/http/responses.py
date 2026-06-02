@@ -131,3 +131,48 @@ def no_content_response(
     if extra_headers:
         headers.update(extra_headers)
     return {'statusCode': 204, 'headers': headers, 'body': ''}
+
+
+def redirect_response(
+    location: str,
+    *,
+    origin: str,
+    extra_headers: dict[str, str] | None = None,
+) -> JsonResponse:
+    """
+    Build una respuesta 302 que redirige al `location` (header Location).
+
+    La usan los endpoints GET que devuelven un `redirect_url` (ej. el
+    callback del magic-link de auth: el browser navega al link del email,
+    el Lambda responde 302 Location -> el admin/callback). El body va vacio.
+
+    Incluye los headers CORS por consistencia (inofensivos: una navegacion
+    top-level del browser NO valida CORS), pero NO los `_DEFAULT_HEADERS`
+    JSON (no hay body JSON). El `Location` puede llevar un fragment hash
+    (`#access=...`) que el browser retiene local y NO reenvia al destino.
+
+    Args:
+        location: URL destino del redirect (header Location).
+        origin: origin a echo en Access-Control-Allow-Origin.
+        extra_headers: headers adicionales.
+
+    Returns:
+        JsonResponse shape `{statusCode: 302, headers: {...cors, Location},
+        body: ''}` para API GW REST proxy.
+
+    Examples:
+        >>> r = redirect_response(
+        ...     'https://admin.the-full-stack.com/callback#access=x',
+        ...     origin='https://admin.the-full-stack.com',
+        ... )
+        >>> r['statusCode']
+        302
+        >>> r['headers']['Location']
+        'https://admin.the-full-stack.com/callback#access=x'
+        >>> r['body']
+        ''
+    """
+    headers = {**cors_headers(origin), 'Location': location}
+    if extra_headers:
+        headers.update(extra_headers)
+    return {'statusCode': 302, 'headers': headers, 'body': ''}

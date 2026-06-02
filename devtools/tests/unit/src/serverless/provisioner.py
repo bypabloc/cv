@@ -281,7 +281,7 @@ class TestRender:
         rendered = provisioner.render(_manifest_http(), stage='dev')
 
         assert rendered.trigger.type == 'http'
-        assert rendered.trigger.method == 'POST'
+        assert rendered.trigger.methods == ('POST',)
         assert rendered.trigger.path == '/contact'
 
     def test_render_when_invalid_trigger_raises_manifest_error(self):
@@ -292,6 +292,74 @@ class TestRender:
         manifest['trigger'] = {'type': 'cron'}
 
         with pytest.raises(ManifestError, match=r'trigger\.type invalido'):
+            provisioner.render(manifest, stage='dev')
+
+    def test_render_trigger_http_methods_list_normalized(self):
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['get', 'post'],
+            'path': '/auth',
+        }
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        assert rendered.trigger.methods == ('GET', 'POST')
+        assert rendered.trigger.path == '/auth'
+
+    def test_render_trigger_http_methods_dedup_preserves_order(self):
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['POST', 'GET', 'POST'],
+            'path': '/auth',
+        }
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        assert rendered.trigger.methods == ('POST', 'GET')
+
+    def test_render_trigger_http_method_and_methods_both_raises(self):
+        from serverless import provisioner
+        from serverless.resolve import ManifestError
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'method': 'POST',
+            'methods': ['GET'],
+            'path': '/auth',
+        }
+
+        with pytest.raises(ManifestError, match=r"'method'.*O.*'methods'"):
+            provisioner.render(manifest, stage='dev')
+
+    def test_render_trigger_http_no_method_raises(self):
+        from serverless import provisioner
+        from serverless.resolve import ManifestError
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {'type': 'http', 'path': '/auth'}
+
+        with pytest.raises(ManifestError, match=r"'method'.*'methods'"):
+            provisioner.render(manifest, stage='dev')
+
+    def test_render_trigger_http_invalid_method_raises(self):
+        from serverless import provisioner
+        from serverless.resolve import ManifestError
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['GET', 'TRACE'],
+            'path': '/auth',
+        }
+
+        with pytest.raises(ManifestError, match=r'metodo invalido'):
             provisioner.render(manifest, stage='dev')
 
 
@@ -350,11 +418,75 @@ class TestProvisionCreate:
             # get-policy: inspecciona statements obsoletos
             # (legacy SAM o devtools previo con qualifier distinto)
             # antes de add-permission. En CREATE el policy esta vacio
-            # asi que no se llama remove-permission.
+            # asi que el cleanup no llama remove-permission, pero el
+            # wiring SI hace un remove-permission del target_sid (noop si
+            # no existe) antes del add-permission, para garantizar que el
+            # statement se recree con el source_arn wildcard correcto.
             'lambda.get-policy',
+            'lambda.remove-permission',
             'lambda.add-permission',
         ]
         assert state.resources['function_name'] == 'portfolio-contact-form-dev'
+
+    def test_provision_create_multi_method_wires_each_method(self, monkeypatch):
+        from serverless import provisioner
+        from serverless.state import Action
+
+        calls = []
+        monkeypatch.setattr(
+            provisioner,
+            'aws',
+            _fake_aws(calls, _default_responses()),
+        )
+        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['GET', 'POST'],
+            'path': '/auth',
+        }
+        rendered = provisioner.render(manifest, stage='dev')
+        provisioner.provision(
+            rendered,
+            action=Action.CREATE,
+            zip_path=_ZIP_PATH,
+            previous=None,
+            profile=None,
+            region='us-east-1',
+        )
+
+        verbs = ['.'.join(c[:2]) for c in calls]
+        # GET y POST: cada uno con put-method + put-integration (2 pares),
+        # luego OPTIONS (put-method + put-integration + sus 2 responses).
+        api_seq = [v for v in verbs if v.startswith('apigateway.')]
+        assert api_seq == [
+            'apigateway.get-resources',
+            'apigateway.create-resource',
+            'apigateway.put-method',  # GET
+            'apigateway.put-integration',  # GET
+            'apigateway.put-method',  # POST
+            'apigateway.put-integration',  # POST
+            'apigateway.put-method',  # OPTIONS
+            'apigateway.put-integration',  # OPTIONS
+            'apigateway.put-method-response',
+            'apigateway.put-integration-response',
+            'apigateway.create-deployment',
+        ]
+        # source_arn del add-permission usa wildcard de metodo `*`.
+        add_call = next(
+            c for c in calls if c[:2] == ['lambda', 'add-permission']
+        )
+        arn = add_call[add_call.index('--source-arn') + 1]
+        assert arn.endswith('/dev/*/auth')
+        # Access-Control-Allow-Methods lista GET,POST,OPTIONS.
+        intgr_resp = next(
+            c
+            for c in calls
+            if c[:2] == ['apigateway', 'put-integration-response']
+        )
+        params = intgr_resp[intgr_resp.index('--response-parameters') + 1]
+        assert "'GET,POST,OPTIONS'" in params
 
     def test_provision_create_records_resources(self, monkeypatch):
         from serverless import provisioner
@@ -529,6 +661,7 @@ class TestProvisionUpdate:
             'apigateway.put-integration-response',
             'apigateway.create-deployment',
             'lambda.get-policy',
+            'lambda.remove-permission',
             'lambda.add-permission',
         ]
         assert 'lambda.create-function' not in verbs
@@ -598,6 +731,7 @@ class TestProvisionUpdate:
             'apigateway.put-integration-response',
             'apigateway.create-deployment',
             'lambda.get-policy',
+            'lambda.remove-permission',
             'lambda.add-permission',
         ]
 

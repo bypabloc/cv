@@ -14,6 +14,7 @@ from shared.http.responses import (
     error_response,
     json_response,
     no_content_response,
+    redirect_response,
 )
 
 pytestmark = pytest.mark.unit
@@ -171,3 +172,72 @@ class TestNoContentResponse:
             result['headers']['Access-Control-Allow-Origin']
             == 'https://the-full-stack.com'
         )
+
+
+class TestRedirectResponse:
+    """redirect_response - 302 con header Location (magic-link GET)."""
+
+    def test_when_called_then_302_with_location_and_empty_body(self) -> None:
+        """
+        Given un location con fragment hash y un origin,
+        When redirect_response,
+        Then statusCode=302, header Location exacto y body vacio.
+        """
+        location = (
+            'https://admin.portfolio.dev.the-full-stack.com/callback'
+            '#access=tok&refresh=ref'
+        )
+        result = redirect_response(
+            location, origin='https://admin.portfolio.dev.the-full-stack.com'
+        )
+
+        assert result['statusCode'] == 302
+        assert result['headers']['Location'] == location
+        assert result['body'] == ''
+
+    def test_when_called_then_includes_cors_origin(self) -> None:
+        """
+        Given un origin,
+        When redirect_response,
+        Then echo del origin en Access-Control-Allow-Origin.
+        """
+        result = redirect_response(
+            'https://admin.portfolio.dev.the-full-stack.com/callback#a=b',
+            origin='https://admin.portfolio.dev.the-full-stack.com',
+        )
+
+        assert (
+            result['headers']['Access-Control-Allow-Origin']
+            == 'https://admin.portfolio.dev.the-full-stack.com'
+        )
+
+    def test_when_extra_headers_then_merged(self) -> None:
+        """
+        Given extra_headers,
+        When redirect_response,
+        Then los headers extra se incluyen sin pisar Location.
+        """
+        result = redirect_response(
+            'https://admin.portfolio.dev.the-full-stack.com/callback#a=b',
+            origin='https://admin.portfolio.dev.the-full-stack.com',
+            extra_headers={'Cache-Control': 'no-store'},
+        )
+
+        assert result['headers']['Cache-Control'] == 'no-store'
+        assert (
+            result['headers']['Location']
+            == 'https://admin.portfolio.dev.the-full-stack.com/callback#a=b'
+        )
+
+    def test_when_called_then_no_json_content_type(self) -> None:
+        """
+        Given un redirect sin body,
+        When redirect_response,
+        Then NO incluye Content-Type JSON (no hay body JSON).
+        """
+        result = redirect_response(
+            'https://admin.portfolio.dev.the-full-stack.com/callback#a=b',
+            origin='https://admin.portfolio.dev.the-full-stack.com',
+        )
+
+        assert 'Content-Type' not in result['headers']

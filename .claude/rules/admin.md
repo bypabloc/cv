@@ -263,8 +263,15 @@ Reglas duras del layout:
 > portabilidad si el admin se aloja en otro origin (mobile app,
 > embebido en widgets, etc.). **Decision**: tokens viajan en el body de
 > la respuesta del backend, el admin los persiste en
-> `localStorage`. Mitigaciones: CSP estricta `default-src 'self'` sin
-> `unsafe-inline`/`unsafe-eval` (Next 16 export lo soporta),
+> `localStorage`. Mitigaciones: CSP `default-src 'self'`, `object-src
+> 'none'`, `frame-ancestors 'none'`, `connect-src` acotado a los 3
+> endpoints API + Turnstile; `script-src` permite `'unsafe-inline'`
+> (OBLIGATORIO con Next `output:'export'`: el framework inyecta los inline
+> `<script>` que hidratan el arbol RSC `self.__next_f.push([...])` + el
+> anti-FOUC de next-themes; sin server runtime NO hay nonce y los hashes
+> cambian por build -> sin `'unsafe-inline'` el browser bloquea esos
+> scripts y la app se cuelga con "Connection closed"). `'unsafe-eval'`
+> sigue prohibido (solo `'wasm-unsafe-eval'` para el runtime de Next).
 > Subresource Integrity en todos los scripts third-party, access JWT
 > corto (15 min), refresh rotation + family detection en el backend.
 
@@ -362,10 +369,15 @@ para la gestion total de la cuenta y de otros usuarios — ver la seccion
   de UI opcional (mostrar / ocultar la seccion de seguridad de
   `settings`), NUNCA un gate de "backend pending": el backend MFA +
   WebAuthn esta desplegado.
-- **SIEMPRE** CSP estricta en `public/_headers`: `default-src 'self';
-  script-src 'self'; connect-src 'self' https://api.portfolio.*
-  https://challenges.cloudflare.com; ...`. Sin `unsafe-inline` ni
-  `unsafe-eval`. Bloquea robo de tokens via XSS de inline scripts.
+- **SIEMPRE** CSP en `public/_headers`: `default-src 'self'; script-src
+  'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com;
+  connect-src 'self' https://api.portfolio.* https://challenges.cloudflare.com;
+  object-src 'none'; frame-ancestors 'none'; ...`. `script-src` lleva
+  `'unsafe-inline'` por OBLIGACION de Next `output:'export'` (inline
+  scripts del RSC + next-themes; sin server no hay nonce y los hashes
+  cambian por build). NUNCA `'unsafe-eval'` (solo `'wasm-unsafe-eval'`).
+  El resto de la defensa contra robo de tokens se mantiene estricto
+  (connect-src acotado, object-src/frame-ancestors none, SRI third-party).
 - **SIEMPRE** el flujo de registro/login completo: ver
   `.claude/docs/admin/04-auth.md` (10+ pages).
 - **NUNCA** tokens en URL query params (`?access=...`). Solo fragment
@@ -753,7 +765,8 @@ python devtools/run.py test_runner --module=feature --type=feature --env=local
 | Tokens en query (`?access=...`) | Leak via Referer + browser history | Fragment hash en callback |
 | Cargar script third-party sin `integrity` (SRI) | Script comprometido roba el token de localStorage | SRI obligatorio + CSP `script-src 'self' + allowlist con hash` |
 | HttpOnly cookie cross-origin del API al admin (`SameSite=None; Domain=.the-full-stack.com`) | Vector CSRF en los 6 niches publicos + rompe portabilidad | Tokens en `localStorage` + CSP estricta (decision documentada arriba) |
-| CSP con `unsafe-inline` o `unsafe-eval` | XSS de inline scripts = robo de tokens | CSP `script-src 'self'` con SRI para third-party |
+| `script-src 'self'` SIN `'unsafe-inline'` en Next `output:'export'` | Bloquea los inline scripts del RSC -> "Connection closed" -> app colgada en "Verificando sesion" | `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'` (inevitable sin server/nonce) |
+| `'unsafe-eval'` en `script-src` | XSS arbitrario (eval de strings) | Solo `'wasm-unsafe-eval'` (runtime de Next), NUNCA `'unsafe-eval'` |
 | Promote a `components/ui/` con 1 uso | Premature abstraction | Vive en `features/<X>/components/` |
 | Server Component async fetch | Build fail en export | `'use client'` + Tanstack Query |
 | Importar `@radix-ui/react-*` directo | Pierde theming shadcn | Pasar por `components/ui/<comp>` |

@@ -1122,7 +1122,7 @@ metodos con access JWT activo. Patron por metodo:
 
 | Amenaza | Mitigacion implementada |
 |---------|--------------------------|
-| XSS roba accessToken | Access TTL 15 min. CSP estricta sin `unsafe-inline`/`unsafe-eval`. SRI en third-party scripts. Trusted Types (cuando disponible). |
+| XSS roba accessToken | Access TTL 15 min. CSP: `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'` — `'unsafe-inline'` es inevitable en Next `output:'export'` (inline scripts del RSC, sin nonce posible), pero NUNCA `'unsafe-eval'`; connect-src acotado + object-src 'none'. SRI en third-party scripts. NO `require-trusted-types-for` (rompe la hidratacion de Next). |
 | XSS roba refreshToken | Misma defensa: CSP + SRI + audit deps. Backup: family_id rotation + reuse detection invalidan el refresh apenas un atacante intenta usarlo en paralelo a la sesion legitima. |
 | Refresh token reuse (token stolen) | Family_id rotation backend. Reuse detection → revoke familia entera |
 | Concurrent refresh race | Mutex client-side: 1 sola call in-flight |

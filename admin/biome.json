@@ -9,7 +9,9 @@
 			"!**/out",
 			"!**/coverage",
 			"!**/next-env.d.ts",
-			"!src/styles/globals.css"
+			"!src/styles/globals.css",
+			"!**/public",
+			"!public"
 		]
 	},
 	"overrides": [

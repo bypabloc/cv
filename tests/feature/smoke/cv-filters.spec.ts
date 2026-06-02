@@ -23,7 +23,7 @@ const APPS_WITH_FILTERS = [
 ] as const
 
 test.describe('Feature: CV filters via query params', () => {
-  test.beforeEach(async (_, testInfo) => {
+  test.beforeEach(async ({}, testInfo) => {
     test.skip(
       testInfo.project.name !== 'desktop-chromium',
       'Spec corre solo en desktop-chromium',

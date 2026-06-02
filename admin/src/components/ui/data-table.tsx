@@ -75,10 +75,8 @@ export function DataTable<TData, TValue>({
 				<TableBody>
 					{isLoading ? (
 						Array.from({ length: 5 }).map((_, i) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
 							<TableRow key={`skeleton-${i}`}>
 								{columns.map((_col, ci) => (
-									// biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
 									<TableCell key={`skeleton-cell-${ci}`}>
 										<Skeleton className="h-5 w-full" />
 									</TableCell>

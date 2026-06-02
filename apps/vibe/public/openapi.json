@@ -14,7 +14,7 @@
   },
   "servers": [
     {
-      "url": "https://ssnj6odx7l.execute-api.us-east-1.amazonaws.com/dev",
+      "url": "https://api.portfolio.dev.the-full-stack.com",
       "description": "API Gateway"
     }
   ],

@@ -1,14 +1,13 @@
 """Unified test runner entry point.
 
-Orchestrates test execution across server (pytest), dashboard + landing (Vitest)
-and e2e (Playwright). With ``--git-mode``: uses path mirroring + per-file
-coverage. Without it: full suites. Optional ``--ui-review`` runs a Gemini
-CLI pass over E2E screenshots after the suite finishes.
+Orchestrates test execution across server (pytest), apps Astro + packages
+(Vitest) and devtools (pytest). With ``--git-mode``: uses path mirroring +
+per-file coverage. Without it: full suites.
 
 Heavy lifting lives in submodules so this file stays thin and the test
 runner reads top-down:
 
-    parse modules -> run (git or full) -> summarize -> evaluate -> ui_review
+    parse modules -> run (git or full) -> summarize -> evaluate
 """
 
 from __future__ import annotations
@@ -22,12 +21,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from shared.compose import ensure_running
 from shared.console import _header
+
 from test_runner.full_suites import execute_full_suites
 from test_runner.git_mode import execute_git_mode
 from test_runner.modules import resolve_modules
 from test_runner.summary import evaluate_results
 from test_runner.summary import print_summary
-from test_runner.ui_review import run_ui_review
 
 
 def main(flags: dict[str, Any]) -> int:
@@ -38,12 +37,6 @@ def main(flags: dict[str, Any]) -> int:
     verbose = flags.get('verbose', False)
     quiet = flags.get('quiet', False)
     skip_empty = flags.get('skip_empty', True)
-    screenshots = flags.get('screenshots', False)
-    ui_review = flags.get('ui_review', False)
-    project = flags.get('project', '') or ''
-    shard = flags.get('shard')
-    shard_total = flags.get('shard_total')
-    fail_on_flaky = flags.get('fail_on_flaky', False)
 
     modules = resolve_modules(flags)
 
@@ -59,7 +52,7 @@ def main(flags: dict[str, Any]) -> int:
     if verbose:
         print(f'  Módulos: {", ".join(modules)}')
 
-    # Docker es necesario para server, dashboard, landing. Devtools corre en
+    # Docker es necesario para server y las apps Astro. Devtools corre en
     # el host (Python 3.14 via uv) y NO depende de Docker — saltar el
     # health check si solo testeamos devtools.
     needs_docker = bool(set(modules) - {'devtools'})
@@ -83,19 +76,7 @@ def main(flags: dict[str, Any]) -> int:
             test_type=test_type,
             verbose=verbose,
             quiet=quiet,
-            screenshots=screenshots,
-            project=project,
-            shard=shard,
-            shard_total=shard_total,
-            fail_on_flaky=fail_on_flaky,
         )
 
     print_summary(results)
-    rc = evaluate_results(results, skip_empty=skip_empty)
-
-    if ui_review and rc == 0:
-        review_rc = run_ui_review(verbose=verbose)
-        if review_rc != 0:
-            return review_rc
-
-    return rc
+    return evaluate_results(results, skip_empty=skip_empty)

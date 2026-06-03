@@ -85,7 +85,7 @@ def sign_bypass_token(
     now: int,
     ttl: int = DEFAULT_TTL_SECONDS,
 ) -> str:
-    """Emite un token de bypass firmado (lo usa devtools/api_e2e).
+    """Emite un token de bypass firmado (lo usa tests/shared via el comando e2e).
 
     Args:
         stage: ambiente del token.

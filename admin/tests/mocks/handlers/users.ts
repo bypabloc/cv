@@ -73,20 +73,20 @@ export const usersHandlers = [
 		const { operation, action, ...data } = body;
 
 		// --- profile ---
+		// El backend responde el perfil FLAT: los campos de UserProfile al
+		// nivel raiz de `data`, NO anidados en `profile` (ver get.py/update.py).
 		if (operation === "profile" && action === "get") {
 			return HttpResponse.json({
 				is_valid: true,
 				code: 0,
-				data: { profile: PROFILE },
+				data: PROFILE,
 			});
 		}
 		if (operation === "profile" && action === "update") {
 			return HttpResponse.json({
 				is_valid: true,
 				code: 0,
-				data: {
-					profile: { ...PROFILE, display_name: data.display_name as string },
-				},
+				data: { ...PROFILE, display_name: data.display_name as string },
 			});
 		}
 		if (operation === "profile" && action === "change-email") {

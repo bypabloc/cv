@@ -20,8 +20,17 @@ import { useAuthStore } from "../store/use-auth-store";
 export function useProtectedRoute(): boolean {
 	const router = useRouter();
 	const pathname = usePathname();
+	// Suscribirse a accessToken (NO solo a la fn isAuthenticated): asi el
+	// componente re-renderiza cuando el bootstrap hidrata el access desde el
+	// refresh, y `authed` se recomputa con el token fresco. Sin esto, el
+	// re-render lo disparaba solo `bootstrapping` y `authed` podia quedar
+	// stale (false) -> redirect erroneo a /login pese a tener access valido.
+	const accessToken = useAuthStore((s) => s.accessToken);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 	const bootstrapping = useAuthStore((s) => s.bootstrapping);
+	// accessToken se referencia para que el linter no lo marque sin uso; el
+	// valor real lo lee isAuthenticated() del store.
+	void accessToken;
 	const authed = isAuthenticated();
 
 	useEffect(() => {

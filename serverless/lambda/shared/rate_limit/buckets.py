@@ -88,7 +88,7 @@ def increment_bucket(
     ip: str,
     endpoint: str,
     window_seconds: int,
-    turnstile_validated: bool = False,
+    brought_turnstile_token: bool = False,
     now: int | None = None,
 ) -> dict[str, int]:
     """
@@ -98,7 +98,13 @@ def increment_bucket(
         ip: IP del cliente.
         endpoint: path del endpoint.
         window_seconds: longitud de la ventana.
-        turnstile_validated: si True, tambien incrementa turnstile_tokens.
+        brought_turnstile_token: si True, el request trajo un token Turnstile
+            REAL del usuario (solo login.start/register.start) -> incrementa
+            el counter `turnstile_tokens` que alimenta la auto-blacklist. NO
+            confundir con `turnstile_validated` del rate-limit (que solo elige
+            el limite): los verify-*/mfa/session pasan turnstile_validated=True
+            sin traer un token y NO deben inflar este counter (si no, un humano
+            que reintenta un login/magic-link se auto-blacklistea).
         now: timestamp (default: time.time()).
 
     Returns:
@@ -111,10 +117,11 @@ def increment_bucket(
     # tenga "previous" correcto disponible)
     expires_at = current_start + window_seconds * 2
 
-    # ADD atomico de count (+ turnstile_tokens si aplica) y SET expires_at,
-    # todo en el mismo UpdateExpression (lo arma RateLimitBucketItem).
+    # ADD atomico de count (+ turnstile_tokens si trajo token real) y SET
+    # expires_at, todo en el mismo UpdateExpression (lo arma
+    # RateLimitBucketItem).
     deltas: dict[str, int] = {'count': 1}
-    if turnstile_validated:
+    if brought_turnstile_token:
         deltas['turnstile_tokens'] = 1
 
     result = RateLimitBucketItem.increment(

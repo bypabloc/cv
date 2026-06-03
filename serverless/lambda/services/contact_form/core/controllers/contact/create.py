@@ -56,18 +56,19 @@ def _resolve_session_id(form_session_id: str | None) -> str:
     return f'cf-{new_uuidv7()}'
 
 
-def _auto_blacklist_step(ip: str) -> None:
-    """Incrementa el contador de tokens validos + auto-blacklist si excede.
+def _auto_blacklist_step(ip: str, *, brought_captcha: bool) -> None:
+    """Incrementa el contador de CAPTCHAs validos + auto-blacklist si excede.
 
-    Corre DESPUES del exito: marca `turnstile_validated=True` para detectar
-    bots con solver (3+ tokens validos en 60s desde la misma IP -> blacklist
-    24h).
+    Corre DESPUES del exito. Solo cuenta para la auto-blacklist si el request
+    ADJUNTO un CAPTCHA real (no el bypass dev/E2E): detecta bots con solver
+    (AUTO_BLACKLIST_THRESHOLD CAPTCHAs validos en 60s desde la misma IP ->
+    blacklist).
     """
     bucket = increment_bucket(
         ip=ip,
         endpoint=_ENDPOINT,
         window_seconds=_WINDOW_SECONDS,
-        turnstile_validated=True,
+        brought_turnstile_token=brought_captcha,
     )
     if should_auto_blacklist(bucket['turnstile_tokens']):
         create_blacklist_rule(ip)
@@ -133,9 +134,10 @@ class Create(BaseController):
         )
 
         # 5. Contador de auto-blacklist (despues del exito). check_or_raise
-        #    ya hizo un ADD con turnstile_validated=False; este INCREMENT
-        #    marca el token como valido para la deteccion de bots.
-        _auto_blacklist_step(meta.ip)
+        #    ya hizo un ADD sin contar el CAPTCHA; este INCREMENT marca el
+        #    CAPTCHA como valido para la deteccion de bots, solo si fue real
+        #    (no el bypass dev/E2E vacio).
+        _auto_blacklist_step(meta.ip, brought_captcha=bool(data.cf_token))
 
         return result
 

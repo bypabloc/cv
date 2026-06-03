@@ -1,19 +1,22 @@
 """Controller — auto-blacklist corre tras un submit exitoso.
 
-Given una IP que ya supero el threshold (3+ tokens validos en 60s) — el
-     mock de increment_bucket retorna `turnstile_tokens=3`,
+Given una IP que ya supero el threshold (AUTO_BLACKLIST_THRESHOLD CAPTCHAs
+     validos en 60s) — el mock de increment_bucket retorna
+     `turnstile_tokens=AUTO_BLACKLIST_THRESHOLD`,
 When el controller Create ejecuta run() con exito,
 Then `create_blacklist_rule` se invoca (la defensa anti-solver corre
      despues de persistir + notificar).
 
-El auto-blacklist es la defensa anti-solver: si una IP presenta 3+ tokens
-Turnstile validos en 60s, se asume bot con solver y se blacklistea 24h.
+El auto-blacklist es la defensa anti-solver: si una IP adjunta
+AUTO_BLACKLIST_THRESHOLD CAPTCHAs Turnstile validos en 60s, se asume bot con
+solver y se blacklistea.
 """
 
 import httpx
 import pytest
 import respx
 from shared.http.turnstile import TURNSTILE_SITEVERIFY_URL
+from shared.rate_limit.auto_blacklist import AUTO_BLACKLIST_THRESHOLD
 
 pytestmark = pytest.mark.unit
 
@@ -52,7 +55,7 @@ def test_auto_blacklist_runs_after_success(
     monkeypatch.setattr(
         create_mod,
         'increment_bucket',
-        lambda **_kw: {'turnstile_tokens': 3},
+        lambda **_kw: {'turnstile_tokens': AUTO_BLACKLIST_THRESHOLD},
     )
     monkeypatch.setattr(create_mod, 'create_blacklist_rule', _spy_blacklist)
 

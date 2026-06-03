@@ -17,7 +17,13 @@ from shared.reporter import Reporter
 SAMPLES_DEFAULT = 5
 
 
-def _matches(code: int, expected: object) -> bool:
+def matches_status(code: int, expected: object) -> bool:
+    """True si `code` matchea `expected` (int, lista de ints, o '2xx'/...).
+
+    Publico para que los flows puedan reintentar una llamada hasta el status
+    esperado (ej. casos sujetos a consistencia eventual) con el MISMO criterio
+    que usa el Runner para clasificar PASS/FAIL.
+    """
     if isinstance(expected, bool):  # bool es subclase de int: descartar
         return False
     if isinstance(expected, int):
@@ -31,6 +37,10 @@ def _matches(code: int, expected: object) -> bool:
     if expected == '5xx':
         return 500 <= code < 600
     return False
+
+
+# Alias interno (compat con el resto del modulo, que lo usa como `_matches`).
+_matches = matches_status
 
 
 def _describe(expected: object) -> str:

@@ -1,0 +1,21 @@
+# Config pytest del arbol E2E (tests/). NO declara dependencias: las deps
+# (playwright, pytest, httpx, psycopg, boto3, cryptography) viven en
+# devtools/pyproject.toml y se instalan en devtools/.venv (Python 3.14).
+# Los E2E corren bajo ese interprete, NUNCA bajo el python3 del shell.
+
+[tool.pytest.ini_options]
+# Los 3 modulos first-class del harness. `shared/` NO es testpath: es el
+# portador de herramientas, no contiene tests propios (esos viven en
+# devtools/tests/unit/src/e2e_shared/).
+testpaths = ['api', 'admin', 'app']
+# tests/ al frente del path -> `import shared.X` resuelve a tests/shared/.
+pythonpath = ['.']
+python_files = ['test_*.py']
+python_classes = ['Test*']
+python_functions = ['test_*']
+addopts = '--import-mode=importlib --tb=short -q'
+markers = [
+    'api: Lambdas HTTP del backend (httpx puro, sin browser)',
+    'admin: flujos completos del panel admin (browser)',
+    'app: las 6 apps Astro desplegadas (browser)',
+]

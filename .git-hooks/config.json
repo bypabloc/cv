@@ -1,6 +1,6 @@
 {
   "_descripcion": "Configuración de hooks Git compartidos para portfolio (Astro 6 monorepo).",
-  "_documentacion": "Pre-commit liviano (Biome lint sobre staged, <10s). Pre-push estricto (lint + typecheck + tests + coverage + build + feature E2E).",
+  "_documentacion": "Pre-commit liviano (Biome lint sobre staged, <10s). Pre-push estricto (lint + typecheck + tests + coverage + build + E2E app (python)).",
   "_nota": "Archivo compartido en el repositorio. Cambios afectan a todo el equipo y CI/CD.",
   "pre-commit": {
     "_descripcion": "Pre-commit LIVIANO. Solo conformance (Biome) + frontend_purity. Objetivo: <10s.",
@@ -18,7 +18,7 @@
     }
   },
   "pre-push": {
-    "_descripcion": "Pre-push ESTRICTO. Conformance + typecheck + unit tests + coverage per-file >=80% + build + feature tests (Playwright E2E via Docker).",
+    "_descripcion": "Pre-push ESTRICTO. Conformance + typecheck + unit tests + coverage per-file >=80% + build + E2E app (playwright-python vs dev desplegado).",
     "steps": {
       "conformance": {
         "name": "Conformance (Biome lint + format check)",
@@ -60,10 +60,10 @@
         "enabled": true,
         "description": "Capa B del plan build-env-vars-per-env: verifica que el dist tenga data-api-endpoint correcto y que el build sin env vars falla con el guard. Opt-in via RUN_BUILD_TESTS=1 (sin el flag se omite, ~15s)."
       },
-      "feature_tests": {
-        "name": "Feature tests (Playwright E2E via Docker)",
+      "e2e_tests": {
+        "name": "E2E app (playwright-python vs dev)",
         "enabled": true,
-        "description": "Levanta stack Docker local (docker up --env=local) y ejecuta Playwright contra los 6 subdominios + services.localhost. Si Docker no esta disponible, se omite con [OMITIDO]. Skipear: SKIP_STEPS=\"feature_tests\" git push."
+        "description": "Corre los E2E del modulo `app` (Python, playwright-python) contra dev desplegado: navega los 6 subdominios y valida smoke/navbar/contact/tracking. Los modulos api/admin mutan dev y exigen SSO -> se corren manualmente antes del PR. Skipear: SKIP_STEPS=\"e2e_tests\" git push."
       }
     }
   }

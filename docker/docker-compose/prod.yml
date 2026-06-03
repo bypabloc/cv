@@ -151,23 +151,5 @@ services:
       - portfolio_node_modules:/app/node_modules
     restart: unless-stopped
 
-  # Feature tests shared (Playwright). On-demand via `profile: [feature]`.
-  feature:
-    build:
-      context: ../..
-      dockerfile: docker/dockerfiles/prod/feature/Dockerfile
-    container_name: portfolio-feature-prod
-    network_mode: host
-    volumes:
-      - ../..:/app
-      - feature_node_modules:/app/tests/feature/node_modules
-    depends_on:
-      nginx:
-        condition: service_started
-    profiles:
-      - feature
-    restart: "no"
-
 volumes:
   portfolio_node_modules:
-  feature_node_modules:

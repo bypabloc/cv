@@ -46,6 +46,11 @@ __pycache__/
 .pytest_cache/
 
 # Tests E2E (artifacts)
+tests/results/
+tests/**/__pycache__/
+tests/.pytest_cache/
+# legacy Playwright-TS (se elimina en el refactor e2e; se mantienen los
+# ignores mientras la carpeta exista en otras ramas)
 tests/feature/report/
 tests/feature/results/
 tests/feature/blob-report/

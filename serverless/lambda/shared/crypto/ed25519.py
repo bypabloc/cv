@@ -6,7 +6,7 @@ que el bypass de Turnstile necesita:
 
 - `generate_keypair()`   -> (private_b64, public_b64) — lo usa devtools
   en el keygen (NO el Lambda).
-- `sign_message(...)`    -> firma de un mensaje — lo usa devtools/api_e2e
+- `sign_message(...)`    -> firma de un mensaje — lo usa tests/shared
   para emitir el token (NO el Lambda).
 - `verify_signature(...)` -> bool — lo usa el Lambda al verificar el
   token de bypass.

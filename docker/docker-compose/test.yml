@@ -242,25 +242,31 @@ services:
       - portfolio_node_modules:/app/node_modules
     restart: unless-stopped
 
-  # Feature tests shared (Playwright). On-demand via `profile: [feature]`.
-  feature:
+  # E2E unificado (Python 3.14 + playwright-python). On-demand via
+  # `profile: [e2e]`. Corre contra el backend DESPLEGADO (dev|stage), NO
+  # contra el stack local: `network_mode: host` (salida a internet) +
+  # ~/.aws montado read-only para resolver SSM/Neon. El sentinel
+  # /tmp/.e2e-ready lo crea e2e-entrypoint.sh.
+  e2e:
     build:
       context: ../..
-      dockerfile: docker/dockerfiles/test/feature/Dockerfile
-    container_name: portfolio-feature-test
+      dockerfile: docker/dockerfiles/test/e2e/Dockerfile
+    container_name: portfolio-e2e-test
     network_mode: host
+    environment:
+      AWS_PROFILE: ${AWS_PROFILE:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
     volumes:
       - ../..:/app
-      - feature_node_modules:/app/tests/feature/node_modules
-    depends_on:
-      nginx:
-        condition: service_started
+      - ${HOME}/.aws:/root/.aws:ro
+      - e2e_venv:/app/devtools/.venv
     profiles:
-      - feature
+      - e2e
     restart: "no"
 
 volumes:
   portfolio_node_modules:
-  feature_node_modules:
+  e2e_venv:
   portfolio_postgres_test:
   portfolio_dynamodb_test:

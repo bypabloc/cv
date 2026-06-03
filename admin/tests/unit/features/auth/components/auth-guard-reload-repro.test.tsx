@@ -1,10 +1,14 @@
 import { makeJwt, nowSec } from "@tests/mocks/jwt";
+import { server } from "@tests/mocks/server";
 import { render, screen, waitFor } from "@tests/utils/render";
+import { delay, HttpResponse, http } from "msw";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthGuard } from "@/features/auth/components/auth-guard";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import type { User } from "@/types/models";
+
+const API = "https://api.test.the-full-stack.com";
 
 /**
  * @module tests/unit/features/auth/components/auth-guard-reload-repro
@@ -99,6 +103,51 @@ describe("AuthGuard tras reload (rehidratacion real de localStorage)", () => {
 		// Assert: con un access JWT valido tras el refresh, la sesion vive aunque
 		// user sea null. ANTES del fix esto redirigia a /login (isAuthenticated
 		// exigia user) -> ESTE es el bug reportado.
+		await waitFor(() => {
+			expect(screen.getByText("protegido")).toBeInTheDocument();
+		});
+		expect(replaceMock).not.toHaveBeenCalled();
+	});
+
+	it("Given un reload con refresh LENTO (async real ~50ms) When monta Then NO redirige durante la ventana del refresh y termina en children", async () => {
+		// Arrange: refresh con latencia real (el bug en dev: el redirect fire
+		// DESPUES de que el refresh 200 resuelve, por una race de orden de los
+		// set() entre setAccessToken y setBootstrapping). Un MSW instantaneo NO
+		// reproducia esto; con delay se acerca al timing de produccion.
+		const refreshToken = makeJwt({ sub: USER.id, exp: nowSec() + 2_592_000 });
+		seedPersisted({
+			refreshToken,
+			refreshExpiry: (nowSec() + 2_592_000) * 1000,
+			user: USER,
+		});
+		await useAuthStore.persist.rehydrate();
+		server.use(
+			http.post(`${API}/auth`, async () => {
+				await delay(50);
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: {
+						access_token: makeJwt({ sub: USER.id, exp: nowSec() + 900 }),
+						refresh_token: makeJwt({ sub: USER.id, exp: nowSec() + 2_592_000 }),
+						expires_in: 900,
+					},
+				});
+			}),
+		);
+
+		// Act
+		render(
+			(
+				<AuthGuard>
+					<p>protegido</p>
+				</AuthGuard>
+			) as ReactElement,
+		);
+		// Durante la ventana del refresh: placeholder, NUNCA redirect.
+		expect(screen.getByText(/verificando sesion/i)).toBeInTheDocument();
+
+		// Assert: termina en children, sin haber redirigido en ningun momento.
 		await waitFor(() => {
 			expect(screen.getByText("protegido")).toBeInTheDocument();
 		});

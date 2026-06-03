@@ -28,16 +28,31 @@ export function useProtectedRoute(): boolean {
 	const accessToken = useAuthStore((s) => s.accessToken);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 	const bootstrapping = useAuthStore((s) => s.bootstrapping);
+	// Suscribirse tambien a refreshToken/refreshExpiry: si hay un refresh
+	// vigente, la sesion es RECUPERABLE (el bootstrap puede hidratar el access)
+	// y NO se debe redirigir todavia, aunque `authed` sea false en este render.
+	// Esto cierra la race de orden de los set() del bootstrap: en el browser
+	// real `setAccessToken` y `setBootstrapping(false)` caen en commits
+	// distintos, y el redirect podia dispararse leyendo un `authed` stale=false
+	// con el flag ya en false, PESE a un /session/refresh 200 reciente.
+	const refreshToken = useAuthStore((s) => s.refreshToken);
+	const refreshExpiry = useAuthStore((s) => s.refreshExpiry);
 	// accessToken se referencia para que el linter no lo marque sin uso; el
 	// valor real lo lee isAuthenticated() del store.
 	void accessToken;
 	const authed = isAuthenticated();
+	const recoverable =
+		!!refreshToken && !!refreshExpiry && refreshExpiry > Date.now();
 
 	useEffect(() => {
-		if (!bootstrapping && !authed) {
+		// Redirigir SOLO cuando: el bootstrap termino, NO hay sesion activa y la
+		// sesion NO es recuperable por un refresh vigente. Mientras haya refresh
+		// vivo, esperar al bootstrap (exito -> children; fallo -> el store hace
+		// reset, `recoverable` pasa a false -> recien ahi redirige).
+		if (!bootstrapping && !authed && !recoverable) {
 			router.replace(loginWithNext(pathname));
 		}
-	}, [authed, bootstrapping, router, pathname]);
+	}, [authed, bootstrapping, recoverable, router, pathname]);
 
 	return authed;
 }

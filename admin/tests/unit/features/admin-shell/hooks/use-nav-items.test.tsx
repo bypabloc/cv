@@ -27,7 +27,13 @@ describe("useVisibleNavItems", () => {
 
 		// Assert
 		const hrefs = result.current.map((i) => i.href);
-		expect(hrefs).toEqual(["/settings", "/sessions", "/users", "/cv"]);
+		expect(hrefs).toEqual([
+			"/metrics",
+			"/settings",
+			"/sessions",
+			"/users",
+			"/cv",
+		]);
 	});
 
 	it("Given un NO-admin When resuelve Then excluye los items adminOnly", () => {
@@ -39,7 +45,7 @@ describe("useVisibleNavItems", () => {
 
 		// Assert
 		const hrefs = result.current.map((i) => i.href);
-		expect(hrefs).toEqual(["/settings", "/sessions", "/cv"]);
+		expect(hrefs).toEqual(["/metrics", "/settings", "/sessions", "/cv"]);
 		expect(hrefs).not.toContain("/users");
 	});
 

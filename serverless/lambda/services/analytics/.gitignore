@@ -1,0 +1,9 @@
+# Artefactos efimeros del build/deploy (se regeneran en cada deploy).
+build/
+build.zip
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/

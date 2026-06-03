@@ -10,9 +10,9 @@ habilitado (`snap_start: true` + `warm_db()` en el INIT).
 
 Patron: `lambda-controller` (operation + action -> controller + service).
 
-## Operations (8) / actions (19)
+## Operations (8) / actions (20)
 
-- `analytics`: overview, timeseries, top-pages, top-referrers, top-niches, active-now, retention
+- `analytics`: overview, timeseries, top-pages, top-referrers, top-niches, active-now, retention, dashboard
 - `events`: distribution, list, heatmap
 - `sessions`: list, detail
 - `visits`: list, landing-pages

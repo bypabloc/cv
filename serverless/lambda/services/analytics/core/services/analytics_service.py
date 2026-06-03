@@ -1,10 +1,11 @@
 """Service de la operacion `analytics`: KPIs y agregaciones del visitante.
 
-7 funciones publicas (una por action). Todas las agregadas van cacheadas
-60s (active-now solo 10s con tag 'analytics-live'). Cada funcion envuelve
-su query en try/except -> ServiceError. La convencion de rango es half-open:
-el caller pasa `date_to` ya EXCLUSIVO (date_to_exclusive del DateRange), el
-SQL usa `< date_to` directo (NUNCA suma 1 dia aca).
+8 funciones publicas (una por action). Las 7 agregadas van cacheadas 60s
+(active-now solo 10s con tag 'analytics-live'); `dashboard` NO se cachea —
+es un orquestador delgado sobre las otras 7 (que ya cachean cada una). Cada
+funcion envuelve su query en try/except -> ServiceError. La convencion de
+rango es half-open: el caller pasa `date_to` ya EXCLUSIVO (date_to_exclusive
+del DateRange), el SQL usa `< date_to` directo (NUNCA suma 1 dia aca).
 """
 
 from __future__ import annotations
@@ -436,4 +437,41 @@ def retention(*, date_from: date, date_to: date) -> dict[str, Any]:
         'returning_visitors': returning_visitors,
         'total': total,
         'returning_rate': _rate(returning_visitors, total),
+    }
+
+
+def dashboard(
+    *,
+    date_from: date,
+    date_to: date,
+    bucket: str = 'day',
+    limit: int = 10,
+) -> dict[str, Any]:
+    """Agrega las 7 vistas del overview de /metrics en UN solo resultado.
+
+    Reemplaza las 7 requests del admin por una sola: orquesta las funciones
+    ya cacheadas (overview/timeseries/top_pages/top_referrers/top_niches/
+    active_now/retention) y devuelve cada `data` bajo su clave. NO se cachea
+    aca: cada sub-funcion mantiene su propio cache (60s las agregadas, 10s
+    active-now), asi una sub-vista expira sin invalidar las demas.
+
+    `date_to` es EXCLUSIVO (el caller pasa date_to_exclusive). Cualquier
+    ServiceError de una sub-funcion se propaga (la maneja el controller).
+    """
+    return {
+        'overview': overview(date_from=date_from, date_to=date_to),
+        'timeseries': timeseries(
+            date_from=date_from, date_to=date_to, bucket=bucket
+        ),
+        'top_pages': top_pages(
+            date_from=date_from, date_to=date_to, limit=limit
+        ),
+        'top_referrers': top_referrers(
+            date_from=date_from, date_to=date_to, limit=limit
+        ),
+        'top_niches': top_niches(
+            date_from=date_from, date_to=date_to, limit=limit
+        ),
+        'active_now': active_now(),
+        'retention': retention(date_from=date_from, date_to=date_to),
     }

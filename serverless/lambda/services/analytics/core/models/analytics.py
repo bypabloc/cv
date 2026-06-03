@@ -1,10 +1,12 @@
-"""Modelos Pydantic de la operacion `analytics` (7 actions).
+"""Modelos Pydantic de la operacion `analytics` (8 actions).
 
 - overview / retention: solo rango (heredan DateRange).
 - timeseries: rango + bucket (day|hour|week) + niche/event_type opcionales.
 - top-pages / top-niches: rango + limit (+ niche en top-pages).
 - top-referrers: rango + limit.
 - active-now: SIN rango (solo _meta) — modelo aparte que NO hereda DateRange.
+- dashboard: union de los params de las 7 actions del overview de /metrics
+  (rango + bucket + limit). Una sola request que agrega las 7 vistas.
 """
 
 from __future__ import annotations
@@ -74,6 +76,22 @@ class ActiveNowInput(BaseModel):
 class RetentionInput(DateRange):
     """GET ?operation=analytics&action=retention&from=&to="""
 
+    meta: RequestMeta = Field(default_factory=RequestMeta, alias='_meta')
+
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
+class DashboardInput(DateRange):
+    """GET ?operation=analytics&action=dashboard&from=&to=&bucket=&limit=
+
+    Union de los params de las 7 vistas del overview de /metrics:
+    rango (from/to), bucket de la serie temporal (day|hour|week) y limit
+    de los rankings (top-pages/referrers/niches). Una sola request que
+    devuelve las 7 vistas agregadas + el contador live (active-now).
+    """
+
+    bucket: str = Field(default='day', pattern='^(day|hour|week)$')
+    limit: int = Field(default=_LIMIT_DEFAULT, ge=1, le=_LIMIT_MAX)
     meta: RequestMeta = Field(default_factory=RequestMeta, alias='_meta')
 
     model_config = ConfigDict(populate_by_name=True, extra='ignore')

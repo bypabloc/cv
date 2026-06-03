@@ -12,16 +12,18 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "../lib/nav-items";
+import { useVisibleNavItems } from "../hooks/use-nav-items";
 
 /**
  * @component MobileSidebar
- * @description Navegacion en mobile via Sheet (mismos items que Sidebar).
- *   El trigger (hamburguesa) solo se muestra por debajo de lg.
+ * @description Navegacion en mobile via Sheet (mismos items que Sidebar,
+ *   con el mismo filtro `adminOnly`). El trigger (hamburguesa) solo se
+ *   muestra por debajo de lg.
  */
 export function MobileSidebar() {
 	const pathname = usePathname();
 	const [open, setOpen] = useState(false);
+	const navItems = useVisibleNavItems();
 
 	return (
 		<Sheet open={open} onOpenChange={setOpen}>
@@ -40,7 +42,7 @@ export function MobileSidebar() {
 					Admin
 				</SheetTitle>
 				<nav className="space-y-1 px-3">
-					{NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+					{navItems.map(({ href, label, icon: Icon }) => {
 						const active = pathname === href || pathname.startsWith(`${href}/`);
 						return (
 							<Link

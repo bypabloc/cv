@@ -274,8 +274,37 @@ services:
       - feature
     restart: "no"
 
+  # E2E unificado (Python 3.14 + playwright-python). On-demand via
+  # `profile: [e2e]`. Corre contra el backend DESPLEGADO (dev|stage), NO
+  # contra el stack local: `network_mode: host` (salida a internet) +
+  # ~/.aws montado read-only para resolver SSM/Neon. NO depende de nginx ni
+  # de las apps. El sentinel /tmp/.e2e-ready lo crea e2e-entrypoint.sh.
+  e2e:
+    build:
+      context: ../..
+      dockerfile: docker/dockerfiles/local/e2e/Dockerfile
+    container_name: portfolio-e2e-local
+    network_mode: host
+    environment:
+      # Perfil/region AWS para SSM/Neon. AWS_PROFILE viene del shell del
+      # host (lo pasa devtools al invocar compose); el SSO cache vive en el
+      # ~/.aws montado read-only abajo.
+      AWS_PROFILE: ${AWS_PROFILE:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+    volumes:
+      - ../..:/app
+      # Credenciales + SSO cache del host (read-only): el container resuelve
+      # SSM/Neon con el mismo perfil que el dev humano.
+      - ${HOME}/.aws:/root/.aws:ro
+      - e2e_venv:/app/devtools/.venv
+    profiles:
+      - e2e
+    restart: "no"
+
 volumes:
   portfolio_node_modules:
   feature_node_modules:
+  e2e_venv:
   portfolio_postgres_local:
   portfolio_dynamodb_local:

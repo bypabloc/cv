@@ -1,6 +1,8 @@
 import { fetchMetric } from "@/lib/metrics-client";
 import type {
 	ActiveNowResponse,
+	DashboardParams,
+	DashboardResponse,
 	DateRangeParams,
 	OverviewResponse,
 	RetentionResponse,
@@ -40,4 +42,7 @@ export const analyticsClient = {
 
 	retention: (params: DateRangeParams) =>
 		fetchMetric<RetentionResponse>("analytics", "retention", { ...params }),
+
+	dashboard: (params: DashboardParams) =>
+		fetchMetric<DashboardResponse>("analytics", "dashboard", { ...params }),
 };

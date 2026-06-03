@@ -1,6 +1,6 @@
 """Mapeo de operaciones del Lambda `analytics`.
 
-8 operations (un dominio de metricas cada una), 19 actions en total. Cada
+8 operations (un dominio de metricas cada una), 20 actions en total. Cada
 operation declara su carpeta de controllers (`controller`); el
 `import_controller` resuelve la action del query string del GET por
 convencion en `controllers/<controller>/<action>.py` (clase en PascalCase:

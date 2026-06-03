@@ -4,8 +4,9 @@ import { HttpResponse, http } from "msw";
  * @module tests/mocks/handlers/metrics
  * @description MSW handler del Lambda `analytics` (`GET /analytics?operation=
  *   ...&action=...`). Responde un payload FLAT por (operation, action) — el
- *   api-client lo re-envuelve en `{is_valid, code, data}`. Cubre las 19 actions
- *   de las 8 features de metricas con data sintetica determinista.
+ *   api-client lo re-envuelve en `{is_valid, code, data}`. Cubre las 20 actions
+ *   de las 8 features de metricas con data sintetica determinista (incluye
+ *   `analytics:dashboard`, que combina las 7 vistas del overview).
  */
 
 const API = "https://api.test.the-full-stack.com";
@@ -208,6 +209,19 @@ const FIXTURES: Record<string, Record<string, unknown>> = {
 			{ status: "converted", count: 2, pct: 20.0 },
 		],
 	},
+};
+
+// La action `dashboard` combina las 7 vistas del overview en un solo payload
+// (cada clave reusa el fixture homonimo, para que dashboard y las granulares
+// no diverjan).
+FIXTURES["analytics:dashboard"] = {
+	overview: FIXTURES["analytics:overview"],
+	timeseries: FIXTURES["analytics:timeseries"],
+	top_pages: FIXTURES["analytics:top-pages"],
+	top_referrers: FIXTURES["analytics:top-referrers"],
+	top_niches: FIXTURES["analytics:top-niches"],
+	active_now: FIXTURES["analytics:active-now"],
+	retention: FIXTURES["analytics:retention"],
 };
 
 export const metricsHandlers = [

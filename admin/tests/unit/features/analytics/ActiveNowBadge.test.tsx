@@ -94,4 +94,41 @@ describe("ActiveNowBadge", () => {
 			);
 		});
 	});
+
+	it("Given standalone=false + count por prop (del dashboard) When render Then lo usa directo", () => {
+		// Arrange: el backend devolveria 3, pero standalone=false NO consulta y
+		// la prop manda (la page /metrics ya trae active-now en el dashboard).
+		// Act
+		const { container } = render(
+			<ActiveNowBadge count={7} standalone={false} />,
+			{ wrapper: Wrapper },
+		);
+
+		// Assert
+		expect(container.textContent?.replace(/\s+/g, " ")).toContain("7 activos");
+	});
+
+	it("Given standalone=false + count=1 When render Then usa el singular", () => {
+		// Arrange + Act
+		const { container } = render(
+			<ActiveNowBadge count={1} standalone={false} />,
+			{ wrapper: Wrapper },
+		);
+
+		// Assert
+		expect(container.textContent?.replace(/\s+/g, " ")).toContain("1 activo");
+		expect(container.textContent?.replace(/\s+/g, " ")).not.toContain(
+			"1 activos",
+		);
+	});
+
+	it("Given standalone=false sin count When render Then muestra el guion (sin consultar)", () => {
+		// Arrange + Act: estado mientras el dashboard aun no resolvio.
+		const { container } = render(<ActiveNowBadge standalone={false} />, {
+			wrapper: Wrapper,
+		});
+
+		// Assert
+		expect(container.textContent?.replace(/\s+/g, " ")).toContain("– activos");
+	});
 });

@@ -6,13 +6,31 @@ import { useActiveNow } from "../hooks/use-active-now";
 
 /**
  * @component ActiveNowBadge
- * @description Contador live de sesiones activas (analytics/active-now), con
- *   refetch cada 15s. Punto verde pulsante + conteo. Si falla o carga, muestra
- *   un guion sin romper el layout.
+ * @description Contador live de sesiones activas (analytics/active-now). Punto
+ *   verde pulsante + conteo. Mientras carga o si falla, muestra un guion sin
+ *   romper el layout.
+ *
+ *   Dos modos:
+ *   - `standalone` (default): dispara su propia query `useActiveNow` (refetch
+ *     15s). Uso suelto del badge fuera de /metrics.
+ *   - `standalone={false}`: NO consulta — la page /metrics ya recibe active-now
+ *     en el payload de `analytics/dashboard` y lo pasa via `count`. Asi el
+ *     badge no agrega una request extra al fan-out unificado.
+ *
+ * @props {number} [count] - sesiones activas (del dashboard). Si es undefined
+ *   muestra el guion.
+ * @props {boolean} [standalone] - si dispara su propia query (default true).
  */
-export function ActiveNowBadge() {
-	const { data, isLoading, isError } = useActiveNow();
-	const count = isLoading || isError || !data ? "–" : data.active_sessions;
+export function ActiveNowBadge({
+	count: countProp,
+	standalone = true,
+}: {
+	count?: number;
+	standalone?: boolean;
+} = {}) {
+	const { data, isLoading, isError } = useActiveNow({ enabled: standalone });
+	const liveCount = isLoading || isError || !data ? "–" : data.active_sessions;
+	const count = standalone ? liveCount : (countProp ?? "–");
 
 	return (
 		<Badge variant="secondary" className="gap-2">

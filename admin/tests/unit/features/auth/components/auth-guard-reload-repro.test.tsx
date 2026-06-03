@@ -153,4 +153,47 @@ describe("AuthGuard tras reload (rehidratacion real de localStorage)", () => {
 		});
 		expect(replaceMock).not.toHaveBeenCalled();
 	});
+
+	it("Given un reload y el backend responde el refresh FLAT (sin envelope, como prod) When monta Then hidrata el access y muestra children", async () => {
+		// Arrange: el backend REAL responde FLAT — {access_token, refresh_token,
+		// expires_in, token_type} al nivel raiz, SIN el wrapper {is_valid,code,
+		// data}. apiFetch lo re-envuelve. El bug en dev (guard atascado en
+		// "Verificando sesion") aparece si doRefresh no extrae bien el access de
+		// esa respuesta. Los otros tests devolvian el shape YA enveloped (MSW),
+		// enmascarando el path real.
+		const refreshToken = makeJwt({ sub: USER.id, exp: nowSec() + 2_592_000 });
+		seedPersisted({
+			refreshToken,
+			refreshExpiry: (nowSec() + 2_592_000) * 1000,
+			user: USER,
+		});
+		await useAuthStore.persist.rehydrate();
+		server.use(
+			http.post(`${API}/auth`, () =>
+				// FLAT, sin {is_valid, code, data}.
+				HttpResponse.json({
+					access_token: makeJwt({ sub: USER.id, exp: nowSec() + 900 }),
+					refresh_token: makeJwt({ sub: USER.id, exp: nowSec() + 2_592_000 }),
+					expires_in: 900,
+					token_type: "Bearer",
+				}),
+			),
+		);
+
+		// Act
+		render(
+			(
+				<AuthGuard>
+					<p>protegido</p>
+				</AuthGuard>
+			) as ReactElement,
+		);
+
+		// Assert: hidrata el access y muestra children (NO se queda en el
+		// placeholder ni redirige).
+		await waitFor(() => {
+			expect(screen.getByText("protegido")).toBeInTheDocument();
+		});
+		expect(replaceMock).not.toHaveBeenCalled();
+	});
 });

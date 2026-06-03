@@ -72,14 +72,22 @@ serverless rate-limit set --endpoint=/track --limit=30 --window=300 --action=thr
 
 ## Auto-blacklist por bot detection
 
-Si una IP genera 3+ tokens Turnstile validos en 60s, asumimos Turnstile
-solver (bot). Crear rule ip_blacklist con TTL 24h.
+Si una IP ADJUNTA 10+ CAPTCHAs Turnstile validos en 60s, asumimos Turnstile
+solver (bot). Crear rule ip_blacklist con TTL 1h.
+
+El counter `turnstile_tokens` solo sube con `brought_turnstile_token=True`,
+que SOLO marcan `login.start`/`register.start`/`contact.create` (los unicos
+endpoints donde el usuario adjunta un CAPTCHA real). Los `verify-*`/`mfa`/
+`session` pasan `turnstile_validated=True` por bypass de limite pero NO
+adjuntan CAPTCHA -> NO inflan el counter (si no, un humano que reintenta un
+login 3 veces se auto-blacklisteaba). El bypass dev/E2E (CAPTCHA vacio)
+tampoco cuenta.
 
 ```python
-# Dentro del flow:
-bucket = increment_bucket(..., turnstile_validated=True)
+# Dentro del flow (solo en start/contact.create con CAPTCHA real):
+bucket = increment_bucket(..., brought_turnstile_token=True)
 if should_auto_blacklist(bucket['turnstile_tokens']):
-    create_blacklist_rule(ip)  # TTL 24h
+    create_blacklist_rule(ip)  # TTL 1h
 ```
 
 ## Cache de rules
@@ -107,6 +115,6 @@ requests del limite real (race condition logica). Solo `get_item` directo.
 | Latencia agregada | `<5ms` (edge) | `~10-20ms` (warm, 2 GetItem + 1 UpdateItem) |
 | Defense edge (rechaza antes de Lambda) | Si | No (siempre invoca, mitigado por reserved concurrency) |
 | Algoritmo | fixed window | sliding window weighted |
-| Auto-blacklist | No | Si (3+ tokens en 60s) |
+| Auto-blacklist | No | Si (10+ CAPTCHAs reales en 60s) |
 | Country rules dinamicas | manual | YAML/CLI |
 | OWASP managed rules | bundle gratis | No (mitigado por Turnstile + JSON Schema) |

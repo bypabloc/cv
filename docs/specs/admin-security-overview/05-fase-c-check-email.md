@@ -1,52 +1,71 @@
-# 05 — Fase C: login.check-email (existencia + metodos disponibles)
+# 05 — Fase C: login.check-email (gated por password)
 
 [<- fase D](04-fase-d-fusion-login.md) | [Siguiente: fase A ->](06-fase-a-overview.md)
 
 > Action liviana nueva `login.check-email`: dado un email (con Turnstile +
-> rate-limit), devuelve si existe y que TIPOS de metodo de login tiene
-> disponibles, SIN ningun dato sensible. Es lo que la UI consulta en el primer
-> paso del login para mostrar "puedes usar estos metodos" o "crear cuenta".
-> Cubre AC-C1..AC-C7. Rompe deliberadamente el anti-enumeration (decision 8).
+> rate-limit), devuelve si existe y si tiene PASSWORD configurado — pero NO la
+> lista de metodos MFA. La lista completa de metodos requeridos se revela solo
+> DESPUES de verificar un factor (la password, o el magic-link/code passwordless).
+> Asi la existencia (ya enumerable hoy) se expone, pero el reconnaissance de
+> "que 2FA usa cada cuenta" queda detras de autenticacion. Cubre AC-C1..AC-C8.
 
-## Por que va DESPUES de D
+## Decision de diseño: gated por password (el dato sensible detras de un factor)
 
-`check-email` reporta los metodos de un user; D ya consolido el flujo y eliminó
-register. Hacer C sobre el login ya fusionado evita reportar metodos de un
-concepto (register) que dejaria de existir.
+La existencia de un email YA es enumerable hoy (`register.start` 409 vs
+`login.start` 404). Exponerla en `check-email` no agrega riesgo real. Lo
+NUEVO y sensible seria exponer la LISTA de metodos MFA (reconnaissance: revela
+que 2FA usa cada cuenta). Solucion elegida:
+
+- `check-email` expone: `exists`, `has_password`, `pending`/`unavailable`.
+- `check-email` NO expone: la lista de metodos MFA ni nada sensible.
+- **Si `has_password`**: la UI pide la password; tras `verify-password` OK, el
+  backend revela `required_methods`/`methods` para el step-up (multi-factor de
+  la fase B). El reconnaissance queda detras de la password.
+- **Si NO `has_password`**: flujo passwordless directo (magic-link + code); los
+  metodos extra (si hubiera) aparecen en el step-up tras el primer factor.
 
 ## Contrato de la API
 
 `POST /auth` body `{operation:'login', action:'check-email', email, cf_turnstile_response}`
 
-Respuesta (200 en todos los casos no-error, para no filtrar por status code):
+Respuesta (200 en casos no-error, para no filtrar por status code):
 
 ```jsonc
-// existe, active, con metodos:
+// existe, active, CON password -> la UI pedira la password:
 { "is_valid": true, "code": 0, "data": {
-  "exists": true,
-  "pending": false,
-  "methods": ["magic-link", "email-code", "password", "totp", "webauthn"]
+  "exists": true, "has_password": true
 }}
-// no existe:
+// existe, active, SIN password -> flujo passwordless:
 { "is_valid": true, "code": 0, "data": {
-  "exists": false, "methods": []
+  "exists": true, "has_password": false
 }}
-// pending (debe terminar de verificar):
+// no existe -> la UI ofrece crear cuenta:
 { "is_valid": true, "code": 0, "data": {
-  "exists": true, "pending": true,
-  "methods": ["magic-link", "email-code"]
+  "exists": false
 }}
-// disabled/locked (existe, sin metodos):
+// pending (debe terminar de verificar) -> passwordless:
 { "is_valid": true, "code": 0, "data": {
-  "exists": true, "methods": [], "unavailable": true
+  "exists": true, "pending": true, "has_password": false
+}}
+// disabled/locked/deleted -> existe pero no disponible:
+{ "is_valid": true, "code": 0, "data": {
+  "exists": true, "unavailable": true
 }}
 ```
 
-`methods` lista solo los TIPOS. NUNCA: el password hash, el TOTP secret, los
-recovery codes, el `credential_id` de las passkeys, ni nada de otro user
-(AC-C6). `magic-link` y `email-code` siempre estan disponibles para un user
-verificado (son passwordless base); `password` solo si tiene credencial;
-`totp`/`webauthn` solo si tiene esos metodos activos.
+NUNCA devuelve: la lista de metodos MFA, el password hash, el TOTP secret, los
+recovery codes, el `credential_id` de las passkeys, ni datos de otro user
+(AC-C6). Solo `exists` + `has_password` + flags de estado.
+
+## Donde se revelan los metodos (NO en check-email)
+
+- **`login.verify-password`** (fase B, ya devuelve `methods` en el step=2):
+  tras verificar la password, el backend devuelve los metodos requeridos
+  pendientes (`required_methods`) para el multi-factor. AQUI se conoce la lista.
+- **`login.start` passwordless / `verify-magic-link` / `verify-code`**: tras el
+  primer factor, el step-up (si hay metodos requeridos) los revela.
+- En ambos casos el cliente ya paso UN factor antes de ver la lista -> sin
+  reconnaissance pre-auth.
 
 ## 7.C Archivos afectados
 
@@ -56,53 +75,51 @@ verificado (son passwordless base); `password` solo si tiene credencial;
   `event_model=LoginCheckEmailIn`. `validate()` agrega Turnstile + rate-limit
   per-IP ANTES de tocar Neon (AC-C5). `execute()`:
   - Resuelve el user por email (lowercased).
-  - None -> `{exists:false, methods:[]}`.
-  - `pending` -> `{exists:true, pending:true, methods:['magic-link',
-    'email-code']}`.
-  - `disabled`/`locked`/`deleted` -> `{exists:true, methods:[], unavailable:true}`.
-  - `active` -> arma `methods` consultando: siempre `magic-link`+`email-code`;
-    `password` si `has_password`; `totp`/`webauthn` si tiene esos activos.
+  - None -> `{exists:false}`.
+  - `pending` -> `{exists:true, pending:true, has_password:false}`.
+  - `disabled`/`locked`/`deleted` -> `{exists:true, unavailable:true}`.
+  - `active` -> `{exists:true, has_password:<bool>}` (consulta `has_password`
+    via la fila `auth_credentials`; NO arma la lista de metodos).
 - `core/models/login.py` — `LoginCheckEmailIn {email: EmailStr,
   cf_turnstile_response: str|None, meta}`.
-- `core/services/login_methods_service.py` (o reusar mfa/webauthn services) —
-  `available_methods(*, user) -> list[str]` (consolida la consulta).
-  - Verificar: tests de controller (exists/active, not-found, pending,
-    disabled, sin-turnstile) [AC-C1..C7].
+  - Verificar: tests de controller (active+password, active sin password,
+    not-found, pending, disabled, sin-turnstile, sin-datos-sensibles).
+
+### Modificar — `login.verify-password` revela los metodos (ya en fase B)
+
+- La fase B ya hace que `verify-password` devuelva `required_methods`/`methods`
+  en el step=2. Aca solo se confirma que ESE es el punto donde se revela la
+  lista (no `check-email`).
 
 ### Modificar — operations (sin cambio estructural)
 
 - `core/settings/operations.py` — `login` ya registrada; el discovery toma
   `check_email.py` -> action `check-email`. Sin cambios.
 
-### Anti-enumeration: actualizar la rule (se hace en fase E)
-
-- `.claude/rules/auth-system.md` — la seccion "Login UX (anti enumeration)"
-  cambia: `login.start`/`check-email` con email inexistente ya NO devuelve un
-  404 indistinguible; ahora `check-email` reporta `exists:false` y `login.start`
-  ofrece crear. Se documenta el trade-off y la mitigacion (rate-limit +
-  Turnstile). disabled/locked SIGUEN sin revelar el estado real (solo
-  `unavailable`).
-
 ## Mitigacion del riesgo de enumeracion
 
 - **Turnstile obligatorio** en `check-email` (AC-C7): frena bots de enumeracion
-  masiva.
-- **Rate-limit per-IP estricto** (AC-C5): reusar la regla de `login.start` o una
-  dedicada mas agresiva (ej. 10/min/IP). Se seedea en las reglas de rate-limit.
-- **Auditoria**: `check-email` se audita (`event='login.check-email'`) para
-  detectar patrones de enumeracion.
-- El trade-off (exponer existencia) es una **decision consciente del dueño del
-  producto**, documentada en la rule.
+  masiva. (El repo ya tiene auto-blacklist contra solvers de Turnstile.)
+- **Rate-limit per-IP estricto** (AC-C5): regla dedicada agresiva (ej.
+  10/min/IP) seedeada en las reglas de rate-limit.
+- **Auditoria**: `check-email` se audita (`event='login.check-email'`).
+- **El dato sensible (lista de metodos) NO se expone aca**: queda detras de la
+  password (o del primer factor passwordless). Esto es la mitigacion principal,
+  no Turnstile/rate-limit (que solo frenan el scraping de existencia).
+- La existencia del email se expone deliberadamente (ya era enumerable):
+  trade-off aceptado y documentado en `auth-system.md` (fase E).
 
 ## Tests requeridos (Bloque C)
 
-- `tests/unit/controllers/login/test_check_email_active_returns_methods.py`
-  [AC-C1].
-- `test_check_email_not_found.py` [AC-C2].
+- `tests/unit/controllers/login/test_check_email_active_with_password.py` ->
+  `{exists:true, has_password:true}` [AC-C1].
+- `test_check_email_active_no_password.py` -> `{exists:true,
+  has_password:false}` [AC-C1].
+- `test_check_email_not_found.py` -> `{exists:false}` [AC-C2].
 - `test_check_email_pending.py` [AC-C3].
 - `test_check_email_disabled_unavailable.py` [AC-C4].
 - `test_check_email_no_turnstile.py` [AC-C7].
-- `test_check_email_no_sensitive_data.py` — asserta que la respuesta NO contiene
-  hash/secret/credential_id [AC-C6].
+- `test_check_email_no_methods_no_sensitive_data.py` — asserta que la respuesta
+  NO contiene la lista de metodos MFA NI hash/secret/credential_id [AC-C6, AC-C8].
 
 [<- fase D](04-fase-d-fusion-login.md) | [Siguiente: fase A ->](06-fase-a-overview.md)

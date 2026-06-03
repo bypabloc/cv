@@ -63,28 +63,29 @@
   `register-form.tsx`, ni `use-register-*.ts`, ni `authClient.registerStart`.
   El api-client y la UI usan solo `login`.
 
-## Bloque C — login.check-email (existencia + metodos)
+## Bloque C — login.check-email (gated por password)
 
 - **AC-C1**: Given `login.check-email {email}` con Turnstile valido y un email
-  que existe `active`, Then 200 `{exists: true, methods: [...]}` donde methods
-  lista los TIPOS disponibles (ej. `['magic-link','email-code','password',
-  'totp','webauthn']`) sin ningun dato sensible (sin secretos, sin
-  credential_id, sin hashes).
+  que existe `active`, Then 200 `{exists:true, has_password:<bool>}` — expone si
+  tiene password configurado, pero NO la lista de metodos MFA.
 - **AC-C2**: Given `login.check-email` con un email que NO existe, Then 200
-  `{exists: false, methods: []}` (la UI ofrece crear cuenta).
+  `{exists:false}` (la UI ofrece crear cuenta).
 - **AC-C3**: Given `login.check-email` con un email `pending`, Then
-  `{exists: true, pending: true, methods: ['magic-link','email-code']}` (debe
-  terminar de verificar).
-- **AC-C4**: Given `login.check-email` con un email `disabled`/`locked`, Then
-  `{exists: true, methods: []}` con un marcador de estado (no se ofrecen
-  metodos). (Se expone que existe — trade-off aceptado.)
+  `{exists:true, pending:true, has_password:false}` (debe terminar de
+  verificar; passwordless).
+- **AC-C4**: Given `login.check-email` con un email `disabled`/`locked`/
+  `deleted`, Then `{exists:true, unavailable:true}` (se expone que existe —
+  trade-off aceptado — pero no se ofrecen metodos ni se revela el estado real).
 - **AC-C5**: Given `login.check-email`, Then aplica Turnstile + rate-limit
   per-IP estricto ANTES de tocar Neon (mitigacion de enumeracion).
-- **AC-C6**: Given `login.check-email`, Then NUNCA devuelve: el password hash,
-  el TOTP secret, los recovery codes, el credential_id de las passkeys, ni el
-  email de otro user. Solo los TIPOS de metodo.
+- **AC-C6**: Given `login.check-email`, Then NUNCA devuelve: la LISTA de metodos
+  MFA, el password hash, el TOTP secret, los recovery codes, el credential_id de
+  las passkeys, ni datos de otro user. Solo `exists` + `has_password` + flags.
 - **AC-C7**: Given `login.check-email` sin Turnstile, Then 400/403 (igual que
   `login.start`).
+- **AC-C8**: Given un user con password, When `verify-password` OK (NO
+  `check-email`), Then el backend revela `required_methods`/`methods` para el
+  step-up — la lista de metodos queda detras de un factor de autenticacion.
 
 ## Bloque A — security.overview + enable + set-required
 
@@ -138,8 +139,10 @@
 - **AC-E9**: Given el sidebar (desktop + mobile), Then existe nav-item
   "Seguridad" -> `/settings/security`.
 - **AC-E10**: Given la pantalla de entrada `/login`, When el user ingresa su
-  email, Then se llama `check-email`; si existe muestra los metodos disponibles
-  ("puedes usar: ..."); si no existe ofrece "crear cuenta".
+  email, Then se llama `check-email`; si existe + `has_password` pide la
+  password (y los metodos se revelan tras verificarla); si existe sin password
+  va passwordless (magic-link + code); si no existe ofrece "crear cuenta". La
+  lista de metodos MFA NUNCA se muestra antes de un factor de autenticacion.
 - **AC-E11**: Given el admin tras la fusion, Then NO existe `/register` ni su UI;
   el unico punto de entrada es `/login`.
 - **AC-E12**: Given la rule `auth-system.md`, Then se actualizo: el anti-
@@ -149,7 +152,8 @@
 ## E2E (post-deploy, Bloque Z)
 
 - **AC-Z1**: En dev real, `check-email` de un email nuevo -> `{exists:false}`; de
-  uno existente -> `{exists:true, methods:[...]}`.
+  uno existente con password -> `{exists:true, has_password:true}` (sin la lista
+  de metodos); la lista se revela solo tras `verify-password`.
 - **AC-Z2**: `login.start` de un email nuevo crea el user y manda UN email con
   magic-link + code; el click al link -> 302 a callback; el code -> login OK.
 - **AC-Z3**: Un user con TOTP `required` en dev: el login exige el TOTP; un

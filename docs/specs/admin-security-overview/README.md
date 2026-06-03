@@ -77,15 +77,20 @@
    `set-preferred` (preferred queda como "default sugerido"; required es el
    nuevo concepto fuerte).
 
-### Bloque C — login expone metodos
-7. **`login.check-email`** devuelve `{exists, methods}` (sin info sensible: solo
-   los tipos de metodo, nunca secretos). Action separada, liviana, con Turnstile
-   + rate-limit. NO crea user ni envia email.
-8. **Anti-enumeration: trade-off aceptado.** El usuario (dueño del producto)
-   acepta exponer la existencia del email + sus metodos. Esto CONTRADICE la
-   regla `auth-system.md` actual -> la rule se actualiza en el bloque E.
-   Mitigacion: rate-limit estricto en `check-email` (ya existe la infra) para
-   frenar enumeracion masiva. Se documenta el riesgo.
+### Bloque C — login.check-email (gated por password)
+7. **`login.check-email`** devuelve `{exists, has_password}` (+ flags
+   pending/unavailable). Expone la EXISTENCIA del email (ya enumerable hoy via
+   register 409 / login 404 -> sin perdida real) y si tiene password, pero NO
+   la lista de metodos MFA. Action separada, liviana, con Turnstile +
+   rate-limit. NO crea user ni envia email.
+8. **El dato sensible (lista de metodos MFA) queda detras de un factor.** Si el
+   user tiene password, la lista se revela tras `verify-password`; si no, va
+   passwordless (los metodos extra aparecen en el step-up tras el primer
+   factor). Asi se evita el reconnaissance pre-auth de "que 2FA usa cada
+   cuenta". La existencia se expone deliberadamente (trade-off aceptado) -> la
+   rule `auth-system.md` se actualiza en el bloque E. Mitigacion del scraping de
+   existencia: Turnstile + rate-limit estricto (la lista NO es la defensa
+   principal — el gating por factor lo es).
 
 ### Bloque D — fusion register -> login
 9. **Eliminar la operation `register` completa** (3 actions + controllers +

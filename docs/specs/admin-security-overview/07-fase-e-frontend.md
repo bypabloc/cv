@@ -64,15 +64,20 @@
 ### Modificar — login (paso email -> check-email -> metodos / crear)
 
 - `admin/src/app/(auth)/login/page.tsx` + `features/auth/components/
-  login-form.tsx`:
+  login-form.tsx` (flujo gated por password):
   - Paso 1: input email + Turnstile -> `loginCheckEmail` [AC-E10].
-  - Si `exists:true` + metodos -> mostrar "Puedes usar estos metodos:" con
-    botones por metodo (magic-link, email-code, password si aplica, passkey si
-    aplica). El user elige -> dispara el `login.start`/`verify-password`/
-    `webauthn.login-options` correspondiente.
+  - Si `exists:true` + `has_password:true` -> pedir la **password**; al
+    verificar (`login.start` con password / `verify-password`), el backend
+    revela los metodos requeridos -> step-up multi-factor (TOTP/passkey/...).
+    La lista de metodos NO se muestra antes de la password.
+  - Si `exists:true` + `has_password:false` -> flujo **passwordless** directo:
+    `login.start` manda magic-link + code; los metodos extra (si hay) aparecen
+    en el step-up tras el primer factor.
   - Si `exists:false` -> "No existe una cuenta con ese email. Crear cuenta?"
     -> al confirmar, `login.start` (que crea el pending + manda el email).
-  - Si `pending` -> "Termina de verificar tu email" -> reenviar.
+  - Si `pending` -> "Termina de verificar tu email" -> reenviar (passwordless).
+  - Si `unavailable` -> mensaje generico "no se puede iniciar sesion" (sin
+    revelar disabled/locked).
 - `admin/src/features/auth/hooks/use-login-start.ts` (existente) — adaptar al
   `created`/`pending` que ahora devuelve `login.start`.
 - `admin/src/features/auth/hooks/use-check-email.ts` (NUEVO) — `useMutation`

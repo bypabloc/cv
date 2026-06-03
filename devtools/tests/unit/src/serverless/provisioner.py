@@ -487,6 +487,10 @@ class TestProvisionCreate:
         )
         params = intgr_resp[intgr_resp.index('--response-parameters') + 1]
         assert "'GET,POST,OPTIONS'" in params
+        # Access-Control-Allow-Headers del preflight incluye Authorization
+        # (los endpoints autenticados mandan el Bearer JWT). Sin el, el
+        # browser bloquea el request con CORS.
+        assert 'Authorization' in params
 
     def test_provision_create_snap_start_remove_add_use_qualifier(
         self, monkeypatch

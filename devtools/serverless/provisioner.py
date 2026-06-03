@@ -987,16 +987,23 @@ def _wire_cors_options(
     - method-response + integration-response con los 4 headers
       Access-Control-* (Origin=*, Methods, Headers, Max-Age=600).
 
-    Headers permitidos: Content-Type + los headers Turnstile del form de
-    contacto. Si en el futuro el frontend manda headers custom, ampliar
-    aqui (anyway el preflight los lista en Access-Control-Request-Headers
-    y el navegador valida contra Access-Control-Allow-Headers).
+    Headers permitidos: Content-Type + Authorization + los headers Turnstile
+    del form de contacto. `Authorization` es obligatorio: los endpoints
+    autenticados (/users completo, /auth mfa/webauthn con sesion) reciben
+    `Authorization: Bearer <JWT>` del admin; sin el header en el preflight el
+    browser bloquea el request con CORS. El OPTIONS es un MOCK (NO ejecuta el
+    Lambda), por eso este string debe coincidir con el de
+    shared/http/cors.py::cors_headers. Si en el futuro el frontend manda
+    headers custom, ampliar aqui (el navegador valida los de
+    Access-Control-Request-Headers contra Access-Control-Allow-Headers).
 
     Idempotente: cada `aws apigateway put-*` acepta re-aplicacion sobre
     una entidad existente (sobrescribe). Para flexibilidad ante re-deploys,
     los errores "ConflictException: Method already exists" se ignoran.
     """
-    allowed_headers = 'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Token'
+    allowed_headers = (
+        'Content-Type,Authorization,X-Turnstile-Token,X-Turnstile-Bypass-Token'
+    )
     allowed_methods = ','.join((*methods, 'OPTIONS'))
 
     # 1. put-method OPTIONS — puede fallar con ConflictException si ya

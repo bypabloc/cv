@@ -21,6 +21,8 @@ def test_webauthn_login_verify_ok(monkeypatch):
     jwt_svc.issue_refresh.return_value = ('REFRESH-JWT', MagicMock())
     webauthn_svc = MagicMock()
     webauthn_svc.verify_login.return_value = b'\x10' * 16
+    mfa_svc = MagicMock()
+    mfa_svc.required_methods.return_value = []
     challenge_svc = MagicMock()
     challenge_svc.get_and_consume.return_value = {
         'user_id': str(uid),
@@ -36,6 +38,11 @@ def test_webauthn_login_verify_ok(monkeypatch):
     )
     monkeypatch.setattr(
         login_verify,
+        'MfaMethodService',
+        lambda _c: mfa_svc,
+    )
+    monkeypatch.setattr(
+        login_verify,
         'ChallengeService',
         lambda _c: challenge_svc,
     )
@@ -43,6 +50,15 @@ def test_webauthn_login_verify_ok(monkeypatch):
     monkeypatch.setattr(
         login_verify,
         'RateLimitService',
+        lambda _c: MagicMock(),
+    )
+    # issue_terminal_tokens (via decide_mfa_step) usa SessionTrackingService
+    # dentro de _mfa_login -> mockearlo ahi (no en login_verify).
+    from controllers.login import _mfa_login
+
+    monkeypatch.setattr(
+        _mfa_login,
+        'SessionTrackingService',
         lambda _c: MagicMock(),
     )
 

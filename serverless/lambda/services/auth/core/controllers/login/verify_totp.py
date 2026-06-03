@@ -22,7 +22,7 @@ from shared.auth.jwt import JwtError
 from shared.db.models.auth.enums import AuthMfaKind
 from shared.lambda_kit.base_controller import BaseController
 
-from ._mfa_login import issue_terminal_tokens
+from ._mfa_login import decide_mfa_step, parse_satisfied
 
 _ENDPOINT = '/auth#login.verify-totp'
 _MFA_FLOW = 'login-mfa'
@@ -83,7 +83,10 @@ class VerifyTotp(BaseController):
                 'data': {'error': 'TOKEN_INVALID'},
             }
 
-        if claims.flow != _MFA_FLOW or claims.step != _MFA_STEP:
+        # El flow del temp step=2 puede llevar el progreso multi-factor
+        # (`login-mfa` o `login-mfa:totp,...`); aceptamos cualquier variante.
+        flow_ok = claims.flow is not None and claims.flow.split(':', 1)[0] == _MFA_FLOW
+        if not flow_ok or claims.step != _MFA_STEP:
             return {
                 'is_valid': False,
                 'code': 4003,
@@ -130,10 +133,17 @@ class VerifyTotp(BaseController):
             reason='rotation',
         )
         mfa_svc.mark_used(user_id=claims.sub, kind=AuthMfaKind.TOTP)
-        tokens = issue_terminal_tokens(
+
+        # Multi-factor: agrega 'totp' a los satisfechos. Si quedan metodos
+        # requeridos pendientes (ej. tambien webauthn), devuelve un nuevo
+        # temp step=2; si estan todos cubiertos, emite access+refresh.
+        satisfied = [*parse_satisfied(claims.flow), 'totp']
+        data = decide_mfa_step(
             jwt_svc=jwt_svc,
-            user_id=claims.sub,
             app_config=app_config,
+            user_id=claims.sub,
+            satisfied=satisfied,
+            required=mfa_svc.required_methods(user_id=claims.sub),
             ip=meta.ip,
             country=meta.country,
             user_agent=meta.user_agent,
@@ -147,4 +157,4 @@ class VerifyTotp(BaseController):
             user_agent=meta.user_agent,
         )
 
-        return {'is_valid': True, 'code': 0, 'data': tokens}
+        return {'is_valid': True, 'code': 0, 'data': data}

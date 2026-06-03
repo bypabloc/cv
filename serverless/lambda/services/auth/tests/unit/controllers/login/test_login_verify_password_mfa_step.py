@@ -26,6 +26,7 @@ def test_login_verify_password_mfa_step(monkeypatch):
     user_svc.get_by_id.return_value = user
     mfa_svc = MagicMock()
     mfa_svc.count_active.return_value = 1
+    mfa_svc.required_methods.return_value = []
 
     monkeypatch.setattr(verify_password, 'JwtService', lambda _c: jwt_svc)
     monkeypatch.setattr(verify_password, 'UserService', lambda _c: user_svc)

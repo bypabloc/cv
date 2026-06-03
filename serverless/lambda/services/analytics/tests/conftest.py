@@ -57,14 +57,17 @@ def mock_db_session(mocker):
 
 @pytest.fixture
 def mock_check_or_raise(mocker):
-    """Mockea `shared.rate_limit.check.check_or_raise` (no-op por default)."""
-    return mocker.patch(
-        'shared.rate_limit.check.check_or_raise', return_value=None
-    )
+    """Mockea el rate-limit guard en el namespace del controller base.
+
+    `controllers._base` importa `guard as rate_limit_guard` desde
+    `utils.rate_limit_guard`, asi que se patchea ahi (donde se usa)."""
+    return mocker.patch('controllers._base.rate_limit_guard', return_value=None)
 
 
 @pytest.fixture
 def mock_require_auth(mocker):
-    """Mockea el auth_guard (no-op): el JWT no se valida en tests de unidad
-    del service/controller que no prueban auth."""
-    return mocker.patch('utils.auth_guard.require_auth', return_value=None)
+    """Mockea el auth_guard (no-op) en el namespace del controller base.
+
+    `controllers._base` importa `require_auth` desde `utils.auth_guard`,
+    asi que se patchea ahi (donde se usa)."""
+    return mocker.patch('controllers._base.require_auth', return_value=None)

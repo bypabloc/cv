@@ -6,6 +6,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { compress, decompress } from "lz-string";
 import { type ReactNode, useState } from "react";
 import { ApiError } from "@/lib/api-client";
+import { METRICS_PII_FEATURES } from "@/lib/metrics-query-keys";
 
 /**
  * @component QueryProvider
@@ -59,6 +60,14 @@ export function QueryProvider({ children }: { children: ReactNode }) {
 						const key = query.queryKey[0];
 						// No persistir datos sensibles (usuarios admin, sesiones)
 						if (key === "admin") return false;
+						// Metricas con PII (contacts, sessions de tracking): no
+						// persistir. Las agregadas si (UX rapida al recargar).
+						if (
+							key === "metrics" &&
+							METRICS_PII_FEATURES.includes(query.queryKey[1] as string)
+						) {
+							return false;
+						}
 						return true;
 					},
 				},

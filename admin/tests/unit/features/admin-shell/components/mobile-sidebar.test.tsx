@@ -28,7 +28,7 @@ describe("MobileSidebar", () => {
 		useVisibleNavItemsMock.mockReturnValue(ADMIN_ITEMS);
 	});
 
-	it("Given un admin When abre el Sheet Then muestra los 4 items", async () => {
+	it("Given un admin When abre el Sheet Then muestra los 5 items", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render(<MobileSidebar />);
@@ -38,10 +38,10 @@ describe("MobileSidebar", () => {
 
 		// Assert
 		const links = await screen.findAllByRole("link");
-		expect(links).toHaveLength(4);
+		expect(links).toHaveLength(5);
 	});
 
-	it("Given un NO-admin When abre el Sheet Then oculta el item Usuarios (3 items)", async () => {
+	it("Given un NO-admin When abre el Sheet Then oculta el item Usuarios (4 items)", async () => {
 		// Arrange
 		useVisibleNavItemsMock.mockReturnValue(NON_ADMIN_ITEMS);
 		const user = userEvent.setup();
@@ -52,7 +52,7 @@ describe("MobileSidebar", () => {
 
 		// Assert
 		const links = await screen.findAllByRole("link");
-		expect(links).toHaveLength(3);
+		expect(links).toHaveLength(4);
 		expect(screen.queryByRole("link", { name: /usuarios/i })).toBe(null);
 	});
 
@@ -82,17 +82,18 @@ describe("MobileSidebar", () => {
 		expect(link.className).toContain("text-muted-foreground");
 	});
 
-	it("Given el Sheet abierto Then NO muestra el item Metricas", async () => {
+	it("Given el Sheet abierto Then muestra el item Metricas", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render(<MobileSidebar />);
 
 		// Act
 		await user.click(screen.getByRole("button", { name: /abrir menu/i }));
-		await screen.findByRole("link", { name: /configuracion/i });
 
 		// Assert
-		expect(screen.queryByRole("link", { name: /metricas/i })).toBe(null);
+		expect(
+			await screen.findByRole("link", { name: /metricas/i }),
+		).toBeInTheDocument();
 	});
 
 	it("Given el Sheet abierto When click en un item Then cierra el Sheet", async () => {

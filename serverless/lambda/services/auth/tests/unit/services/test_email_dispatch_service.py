@@ -89,6 +89,44 @@ def test_publish_code_invokes_send_email(monkeypatch):
     assert data['data'] == {'code': 'ABCDEFGH', 'expires_in_min': 15}
 
 
+def test_publish_unified_invokes_send_email(monkeypatch):
+    """
+    Given un email unificado (magic-link + code juntos),
+    When publish_unified se invoca,
+    Then hace UN solo invoke a send_email con data = {verify_url, code,
+         expires_in_min} y to lista (1 email en vez de 2).
+    """
+    from services import email_dispatch_service
+
+    fake_invoke = MagicMock()
+    monkeypatch.setattr(email_dispatch_service, 'invoke_async', fake_invoke)
+
+    svc = email_dispatch_service.EmailDispatchService(app_config=object())
+    result = svc.publish_unified(
+        to='visitor@example.com',
+        user_id='user-1',
+        niche='fintech',
+        kind='register-unified',
+        verify_url='https://api.example.com/auth?token=OPAQUE_PLAIN',
+        code='ABCDEFGH',
+        expires_in_min=15,
+    )
+
+    assert result is None
+    assert fake_invoke.call_count == 1
+    payload = fake_invoke.call_args.kwargs['payload']
+    data = payload['data']
+
+    assert set(data.keys()) == _SEND_EMAIL_DATA_KEYS
+    assert data['kind'] == 'register-unified'
+    assert data['to'] == ['visitor@example.com']
+    assert data['data'] == {
+        'verify_url': 'https://api.example.com/auth?token=OPAQUE_PLAIN',
+        'code': 'ABCDEFGH',
+        'expires_in_min': 15,
+    }
+
+
 def test_publish_does_not_raise_when_invoke_fails(monkeypatch):
     """
     Given que el invoke a send_email lanza LambdaInvokeError,

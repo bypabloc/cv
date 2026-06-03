@@ -15,6 +15,12 @@ import type { User } from "@/types/models";
  *
  * Bootstrap: al reload `accessToken === null`; `useAuthTimer` detecta
  * `refreshToken` con `refreshExpiry > now` y dispara `/session/refresh`.
+ *
+ * `bootstrapping` (transient, NO persistido): true hasta que el bootstrap
+ * tras un reload resuelve (refresh OK -> access hidratado, o sin refresh /
+ * refresh fallido -> reset). `useProtectedRoute` NO redirige a /login
+ * mientras `bootstrapping === true`: asi el redirect sincrono no le gana al
+ * `doRefresh()` async (fix del bug "la sesion no persiste tras reload").
  */
 
 interface AuthState {
@@ -23,6 +29,7 @@ interface AuthState {
 	refreshExpiry: number | null;
 	tempToken: string | null;
 	user: User | null;
+	bootstrapping: boolean;
 
 	setTokens: (
 		access: string,
@@ -34,6 +41,7 @@ interface AuthState {
 	setRefreshToken: (token: string | null) => void;
 	setTempToken: (token: string | null) => void;
 	setUser: (user: User | null) => void;
+	setBootstrapping: (value: boolean) => void;
 	clearTokens: () => void;
 	reset: () => void;
 
@@ -50,6 +58,10 @@ function decodeExp(token: string): number | null {
 	}
 }
 
+// EMPTY limpia los tokens/user (logout, clear, reset). NO toca
+// `bootstrapping`: ese flag lo gobiernan useAuthBootstrap/useAuthTimer, no el
+// logout — resetearlo aqui reabriria el placeholder "Verificando sesion..."
+// tras un logout explicito.
 const EMPTY = {
 	accessToken: null,
 	refreshToken: null,
@@ -62,6 +74,10 @@ export const useAuthStore = create<AuthState>()(
 	persist(
 		(set, get) => ({
 			...EMPTY,
+			// true hasta que el bootstrap post-reload resuelve. Default true
+			// para que el primer render (access null) NO redirija antes del
+			// refresh async.
+			bootstrapping: true,
 
 			setTokens: (access, refresh, user, refreshExpiry) =>
 				set({
@@ -78,6 +94,7 @@ export const useAuthStore = create<AuthState>()(
 				}),
 			setTempToken: (token) => set({ tempToken: token }),
 			setUser: (user) => set({ user }),
+			setBootstrapping: (value) => set({ bootstrapping: value }),
 			clearTokens: () => set({ ...EMPTY }),
 			reset: () => set({ ...EMPTY }),
 

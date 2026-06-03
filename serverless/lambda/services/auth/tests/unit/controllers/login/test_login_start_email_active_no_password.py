@@ -48,5 +48,8 @@ def test_login_start_email_active_no_password(monkeypatch):
     assert result['data']['temp_token'] == 'TEMP-LOGIN-JWT'
     assert result['data']['methods'] == ['magic-link', 'email-code']
     assert result['data']['expires_in'] == 300
-    email_svc.publish_magic_link.assert_called_once()
-    email_svc.publish_code.assert_called_once()
+    # UN solo email unificado (magic-link + code), no dos.
+    email_svc.publish_unified.assert_called_once()
+    email_svc.publish_magic_link.assert_not_called()
+    email_svc.publish_code.assert_not_called()
+    assert email_svc.publish_unified.call_args.kwargs['kind'] == 'login-unified'

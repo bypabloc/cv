@@ -1,13 +1,14 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { makeJwt, nowSec } from "@tests/mocks/jwt";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useProtectedRoute } from "@/features/auth/hooks/use-protected-route";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 /**
  * @module tests/unit/features/auth/hooks/use-protected-route
- * @description Verifica el redirect a /login?next= sin sesion y el true con
- *   sesion vigente.
+ * @description Verifica que NO redirige mientras `bootstrapping` (gate del fix
+ *   de persistencia de sesion), el redirect a /login?next= sin sesion una vez
+ *   resuelto el bootstrap, y el true con sesion vigente.
  */
 
 const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
@@ -16,8 +17,28 @@ vi.mock("next/navigation", () => ({
 	usePathname: () => "/users",
 }));
 
+beforeEach(() => {
+	replaceMock.mockClear();
+	useAuthStore.getState().reset();
+	useAuthStore.getState().setBootstrapping(false);
+});
+
 describe("useProtectedRoute", () => {
-	it("Given sin sesion When se monta Then redirige a /login?next y devuelve false", async () => {
+	it("Given bootstrapping=true sin sesion When se monta Then NO redirige (espera el refresh)", async () => {
+		// Arrange: simula el primer render post-reload (access aun no hidratado).
+		useAuthStore.getState().setBootstrapping(true);
+
+		// Act
+		const { result } = renderHook(() => useProtectedRoute());
+
+		// Assert: retiene el redirect mientras el bootstrap esta en curso.
+		expect(result.current).toBe(false);
+		await waitFor(() => {
+			expect(replaceMock).not.toHaveBeenCalled();
+		});
+	});
+
+	it("Given bootstrap resuelto sin sesion When se monta Then redirige a /login?next y devuelve false", async () => {
 		// Act
 		const { result } = renderHook(() => useProtectedRoute());
 

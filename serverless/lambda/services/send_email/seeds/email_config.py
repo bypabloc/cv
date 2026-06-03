@@ -39,6 +39,16 @@ EMAIL_CONFIG: list[dict[str, str]] = [
         'subject': 'Tu código de acceso a The Full Stack',
     },
     {
+        # Email unificado de register: magic-link + code en un solo correo.
+        'kind': 'register-unified',
+        'subject': 'Confirma tu cuenta en The Full Stack',
+    },
+    {
+        # Email unificado de login: magic-link + code en un solo correo.
+        'kind': 'login-unified',
+        'subject': 'Tu acceso a The Full Stack',
+    },
+    {
         'kind': 'email-changed',
         'subject': 'Tu email fue actualizado en The Full Stack',
     },

@@ -14,7 +14,7 @@ from typing import Any
 
 from models.verify import VerifyResendCodeIn
 from services.audit_service import AuditService
-from services.code_service import CODE_TTL_MINUTES, CodeService
+from services.code_service import CodeService
 from services.email_dispatch_service import EmailDispatchService
 from services.flow_service import FlowService
 from services.jwt_service import JwtService
@@ -168,21 +168,17 @@ class ResendCode(BaseController):
             f'{app_config.magic_link_base_url}'
             f'?operation={claims.flow}&action=verify-magic-link&token={token}'
         )
-        email_svc.publish_magic_link(
+        # UN solo email con el magic-link Y el code (alternativas). El kind
+        # `<flow>-unified` resuelve a register-unified/login-unified. LINK y
+        # CODE comparten TTL (15 min), por eso un solo expires_in_min.
+        email_svc.publish_unified(
             to=user.email,
             user_id=user.id,
             niche=None,
-            kind=f'{claims.flow}-magic-link',
+            kind=f'{claims.flow}-unified',
             verify_url=verify_url,
-            expires_in_min=LINK_TTL_MINUTES,
-        )
-        email_svc.publish_code(
-            to=user.email,
-            user_id=user.id,
-            niche=None,
-            kind=f'{claims.flow}-code',
             code=code,
-            expires_in_min=CODE_TTL_MINUTES,
+            expires_in_min=LINK_TTL_MINUTES,
         )
 
         # Rota el temp (blacklistea el viejo + step+1).

@@ -22,8 +22,8 @@ handler: core.handler.lambda_handler
 memory: 512
 timeout: 30
 
-# SnapStart Python (publica Snap por version)
-snap_start: PublishedVersions
+# SnapStart Python (true = devtools publica version + alias :live)
+snap_start: true
 
 uses:
   tables:
@@ -61,9 +61,10 @@ env:
 
 Notas:
 
-- `snap_start: PublishedVersions` activa SnapStart Python. devtools
-  publica una version nueva en cada deploy y enlaza el alias `live`
-  a esa version (mismo patron que `contact_form`).
+- `snap_start: true` habilita SnapStart Python. devtools publica una
+  version nueva en cada deploy y enlaza el alias `:live` a esa version
+  (mismo patron que `contact_form`). El valor es un booleano; el
+  provisioner internamente configura `PublishedVersions` en la API de AWS.
 - `architecture: arm64` -> Graviton2 (-20% costo, +19% perf vs x86_64).
 - `memory: 512` MB: la query agregada mas pesada (`heatmap`) toca <100
   filas en Neon; el bottleneck es CPU JSON-serialize. 512MB da
@@ -162,63 +163,53 @@ con credenciales y con la lista restringida de origenes del admin).
 
 ## 5. Rate-limit rule
 
-La regla `/analytics` se inserta en la tabla `rate-limit-rules` via la
-Lambda `db` con un command nuevo `seed-rate-limit-rules`. Esto evita
-hacer `aws dynamodb put-item` a mano.
+La regla `/analytics` se inserta en la tabla `rate-limit-rules` usando
+el CLI existente de devtools (`devtools/serverless/rate_limit_cmds.py`).
+No se crea ningun command nuevo en la Lambda `db`.
 
 ### 5.1 Schema de la rule
 
-Item DynamoDB en `portfolio-rate-limit-rules-<stage>`:
+Item DynamoDB en `portfolio-rate-limit-rules-<stage>` (schema real de
+`shared/rate_limit/rules.py`):
 
 ```json
 {
-  "rule_key": "/analytics",
-  "kind": "ip",
-  "algorithm": "sliding-window-weighted",
+  "rule_key": "endpoint#/analytics",
+  "kind": "endpoint",
   "limit": 10,
   "window_seconds": 60,
-  "weight_unverified": 1.0,
-  "weight_verified": 0.1,
-  "enabled": true,
-  "description": "Analytics API: 10 req/min/IP (segunda capa tras el JWT)",
-  "created_at": "2026-05-27T00:00:00Z",
-  "updated_at": "2026-05-27T00:00:00Z"
+  "action": "throttle",
+  "expires_at": null,
+  "reason": "Analytics API: 10 req/min por endpoint (segunda capa tras el JWT)",
+  "metadata": {}
 }
 ```
 
-### 5.2 Seed via Lambda `db`
+Notas:
+- `rule_key` lleva el prefijo `endpoint#` (formato real de `rules.py`).
+- `kind` es `'endpoint'`, no `'ip'` (el algoritmo sliding-window-weighted
+  es interno de `check.py`; no se expone en la rule).
+- No existen los campos `algorithm`, `weight_unverified`, `weight_verified`
+  en el schema real.
 
-Nuevo event: `serverless/lambda/services/db/events/seed_rate_limit_analytics.json`:
-
-```json
-{
-  "command": "seed-rate-limit-rule",
-  "args": {
-    "rule_key": "/analytics",
-    "kind": "ip",
-    "limit": 10,
-    "window_seconds": 60,
-    "algorithm": "sliding-window-weighted",
-    "description": "Analytics API: 10 req/min/IP"
-  }
-}
-```
-
-Si la Lambda `db` aun no tiene el command `seed-rate-limit-rule`,
-agregarlo en el commit de infraestructura (es ~30 LOC: parsear args,
-`PutItem` con `ConditionExpression='attribute_not_exists(rule_key) OR
-enabled = :true'`, devolver `{created|updated, rule_key}`).
-
-Aplicar a cada stage:
+### 5.2 Seed via CLI de devtools
 
 ```bash
-python devtools/run.py serverless run --stage=dev --lambda=db \
-  --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev
-python devtools/run.py serverless run --stage=stage --lambda=db \
-  --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev
-python devtools/run.py serverless run --stage=prod --lambda=db \
-  --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev
+python devtools/run.py serverless rate-limit set \
+  --endpoint=/analytics --limit=10 --window=60 --stage=dev \
+  --aws-profile=tfs-dev
+
+python devtools/run.py serverless rate-limit set \
+  --endpoint=/analytics --limit=10 --window=60 --stage=stage \
+  --aws-profile=tfs-dev
+
+python devtools/run.py serverless rate-limit set \
+  --endpoint=/analytics --limit=10 --window=60 --stage=prod \
+  --aws-profile=tfs-dev
 ```
+
+El comando es idempotente (upsert). En runtime el Lambda llama
+`get_endpoint_rule('/analytics')` para leer la regla.
 
 ## 6. IAM scope del rol
 
@@ -234,45 +225,38 @@ manifest. Resultado esperado para `analytics`:
 | `ssm:GetParameter` | `arn:.../portfolio/<stage>/jwt-secret` | `secrets: [jwt-secret]` (validar HS256) |
 | `kms:Decrypt` | `arn:.../alias/portfolio-lambdas` | implicito (ambos SSM SecureString: neon-url + jwt-secret) |
 | `logs:CreateLogGroup`, `CreateLogStream`, `PutLogEvents` | log group del Lambda | base |
-| `xray:PutTraceSegments`, `PutTelemetryRecords` | * | tracer |
 | `cloudwatch:PutMetricData` | * | metrics |
 
 Verificacion post-deploy: `aws iam get-role-policy --role-name
 portfolio-analytics-<stage>-role --policy-name inline`.
 
-## 7. SnapStart — runtime hook
+## 7. SnapStart — precalentamiento en el INIT
 
-`core/runtime_hooks.py` (opcional; si devtools soporta hooks vendoriza
-automaticamente, ver patron `contact_form`):
+El patron del backend (cv, contact_form) NO usa `runtime_hooks.py` con
+`before_checkpoint`/`after_restore`. El precalentamiento se hace en el
+module-scope del `core/handler.py`, de modo que quede capturado en el
+snapshot de SnapStart.
+
+En `core/handler.py`, inmediatamente tras los imports de modulos de modelos:
 
 ```python
-"""Hooks SnapStart: precalentar el grafo de imports y la validacion del
-EventModel, sin tocar conexiones externas (Neon scale-to-zero las cerraria)."""
+# Precalentamiento INIT para SnapStart — patron identico a cv y contact_form.
+# warm_db() es best-effort (try/except interno): precalienta el engine
+# NullPool + configure_mappers sin abrir conexion a Neon (NullPool no
+# conecta en el INIT; las conexiones no sobreviven al snapshot).
+import shared.db.models.visitor.session          # noqa: F401
+import shared.db.models.visitor.session_visit    # noqa: F401
+import shared.db.models.visitor.tracking         # noqa: F401
+import shared.db.models.visitor.contact          # noqa: F401
+import shared.db.models.taxonomy.event_type      # noqa: F401
 
-from typing import Any
-
-from shared.lambda_kit import build_event_model
-from shared.observability import logger
-
-from core.settings.operations import OPERATIONS
-
-
-def before_checkpoint(*_args: Any, **_kwargs: Any) -> None:
-    """Se ejecuta una sola vez antes del snapshot SnapStart."""
-    logger.info('SnapStart before_checkpoint: preloading event model')
-    build_event_model(OPERATIONS, allowed_methods=('GET',))
-    # NO abrir engine SQLAlchemy aqui — el restore tendria conexion DB stale.
-
-
-def after_restore(*_args: Any, **_kwargs: Any) -> None:
-    """Se ejecuta tras cada restore (nueva ejecucion)."""
-    logger.info('SnapStart after_restore: container ready')
+from shared.db.warmup import warm_db
+warm_db()
 ```
 
-Registro de hooks: devtools lo hace via env var
-`AWS_LAMBDA_EXEC_WRAPPER` o (mas comun en Python) via
-`runtime_hooks.py` discovery convencional. Ver
-`contact_form/core/runtime_hooks.py` como referencia.
+Esto registra el mapper SQLAlchemy completo del dominio visitor en el
+snapshot. El restore de SnapStart no paga el costo de `configure_mappers`
+en la primera invocacion post-restore.
 
 ## 8. CloudWatch — logs y metricas
 
@@ -284,7 +268,6 @@ Registro de hooks: devtools lo hace via env var
   - `AnalyticsQueryError` (Count) — request 5xx
   - `AnalyticsCacheHit` / `AnalyticsCacheMiss` (Count, por action)
   - `AnalyticsColdStart` (Count, capture_cold_start_metric=True)
-  - `AnalyticsRestoreDurationMs` (Milliseconds, SnapStart)
 - Dimensions sugeridas: `Operation`, `Action`, `Stage`. Asi la UI de
   metricas puede filtrar por endpoint.
 
@@ -304,7 +287,7 @@ editar el workflow.
    (no se modifica Neon).
 3. `detect-changes` lista `analytics` (carpeta nueva).
 4. `deploy-lambdas` matrix: aplica el deploy del nuevo Lambda a `dev`.
-5. Manual: `serverless run --stage=dev --lambda=db --event=events/seed_rate_limit_analytics.json`
+5. Manual: `python devtools/run.py serverless rate-limit set --endpoint=/analytics --limit=10 --window=60 --stage=dev`
    para insertar la rule (la rule NO se versiona en codigo, vive en
    DynamoDB).
 6. Smoke E2E (curl) contra `api.portfolio.dev.the-full-stack.com/analytics`.
@@ -322,7 +305,7 @@ Promocion a `stage` y `prod` con el flujo normal (PR `dev -> stage` y
 | DynamoDB writes (cache + rate-limit buckets) | ~600 writes/mes | $0 (free) |
 | DynamoDB reads (cache hits + rules) | ~600 reads/mes | $0 (free) |
 | CloudWatch Logs | ~5 MB/mes | $0 (free 5GB) |
-| **Neon (queries)** | ~10 horas compute/mes (compartido con stream_processor) | $0 (free 191.9h) |
+| **Neon (queries)** | ~10 horas compute/mes (compartido con cv, auth, contact_form) | $0 (free 191.9h) |
 | **Total** | | **<$0.01/mes** |
 
 El Lambda nuevo NO mueve la aguja sobre el free tier actual.

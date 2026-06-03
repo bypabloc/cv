@@ -18,10 +18,10 @@
 
 ## 2. Como aplicar `@cached`
 
-`shared.cache.cached` es un decorator. Patron exacto del repo:
+`shared.cache.decorator.cached` es un decorator. Patron exacto del repo:
 
 ```python
-from shared.cache import cached
+from shared.cache.decorator import cached
 
 @cached(ttl=60, namespace='analytics:overview', tags=['analytics-aggregate'])
 def overview(*, date_from: date, date_to: date) -> dict[str, Any]:
@@ -103,14 +103,20 @@ TTL 10s. Razon:
 
 ```python
 from datetime import datetime, timezone
+from typing import Any
+
+from shared.cache.decorator import cached
+from shared.db.models.visitor.session import Session as VisitorSession
+from shared.db.sa import func, select
+from shared.db.session import db_session
 
 @cached(ttl=10, namespace='analytics:active-now', tags=['analytics-live'])
 def active_now() -> dict[str, Any]:
     with db_session() as s:
         active = s.scalar(
             select(func.count())
-            .select_from(Session)
-            .where(Session.last_seen_at >= func.now() - func.make_interval(mins=5))
+            .select_from(VisitorSession)
+            .where(VisitorSession.last_seen_at >= func.now() - func.make_interval(mins=5))
         )
     return {
         'active_sessions': int(active or 0),
@@ -295,11 +301,17 @@ TTL nativo borra items vencidos sin costo.
 
 ## 12. Helpers de testing
 
-Para tests unit, mockear el decorator es complejo (queremos testear el
-service real, no su shell cacheada). Patron:
+Para tests unit, mockear el decorator requiere cuidado: `@cached` se aplica
+en **import-time** del modulo del service, por lo que hacer
+`monkeypatch.setattr('shared.cache.decorator.cached', ...)` DESPUES de que
+el service ya fue importado no tiene efecto sobre las funciones ya decoradas.
 
-- En `tests/unit/services/`: pass `_force_compute=True` kwarg o
-  decoradores via `monkeypatch` que vuelven el decorator un no-op.
+El patron correcto (consistente con `06-testing`):
+
+- **Parchear ANTES de importar el service** dentro del test. Usar
+  `monkeypatch.setattr` en un fixture de `autouse=False` y realizar el
+  `import` del modulo del service DENTRO del cuerpo del test (o del fixture),
+  no en el nivel de modulo del archivo de test.
 - En `tests/integration/`: usar la tabla real (test stage) con un
   namespace de prefijo unico (`analytics-test:overview`) para no
   colisionar con prod.
@@ -307,15 +319,41 @@ service real, no su shell cacheada). Patron:
 Implementacion del bypass:
 
 ```python
-# tests/conftest.py
+# tests/conftest.py  (o en el archivo de test que lo necesite)
+import pytest
+
 @pytest.fixture
 def no_cache(monkeypatch):
-    """Reemplaza @cached por un passthrough para tests unit."""
+    """
+    Reemplaza @cached por un passthrough para tests unit.
+
+    IMPORTANTE: el modulo del service que usa @cached debe importarse
+    DESPUES de que este fixture haya parcheado shared.cache.decorator.cached,
+    es decir, dentro del cuerpo del test (o de un fixture posterior), no en el
+    nivel de modulo del archivo de test. Si ya se importo, el patch no tiene
+    efecto sobre las funciones ya decoradas.
+    """
     def _passthrough(*decorator_args, **decorator_kwargs):
         def _wrap(fn):
-            return fn  # sin cache
+            return fn  # sin cache, pasa directo
         return _wrap
-    monkeypatch.setattr('shared.cache.cached', _passthrough)
+
+    monkeypatch.setattr('shared.cache.decorator.cached', _passthrough, raising=True)
 ```
+
+Ejemplo de uso correcto en un test:
+
+```python
+def test_overview_returns_expected_shape(no_cache):
+    # El service se importa AQUI, despues de que no_cache haya parcheado cached.
+    from core.services.analytics_service import overview  # noqa: PLC0415
+
+    result = overview(date_from=date(2026, 1, 1), date_to=date(2026, 1, 31))
+    assert result['sessions'] >= 0
+```
+
+Si el import del service ocurre en el nivel de modulo del archivo de test,
+usar `importlib.reload` dentro del fixture para que el modulo re-aplique el
+decorator ya parcheado.
 
 [< 04-queries-sql](04-queries-sql.md) | [Siguiente: 06-testing >](06-testing.md)

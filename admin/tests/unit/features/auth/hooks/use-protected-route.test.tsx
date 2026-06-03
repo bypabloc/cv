@@ -49,6 +49,43 @@ describe("useProtectedRoute", () => {
 		});
 	});
 
+	it("Given bootstrap resuelto, sin access pero CON refresh vigente When se monta Then NO redirige (sesion recuperable)", async () => {
+		// Arrange: la ventana de la race -> bootstrapping ya en false (commit
+		// distinto al de setAccessToken) pero hay un refresh vivo: el bootstrap
+		// aun puede hidratar el access. NO se debe redirigir.
+		useAuthStore.setState({
+			accessToken: null,
+			refreshToken: makeJwt({ sub: "usr_01", exp: nowSec() + 2_592_000 }),
+			refreshExpiry: (nowSec() + 2_592_000) * 1000,
+		});
+
+		// Act
+		const { result } = renderHook(() => useProtectedRoute());
+
+		// Assert
+		expect(result.current).toBe(false);
+		await waitFor(() => {
+			expect(replaceMock).not.toHaveBeenCalled();
+		});
+	});
+
+	it("Given bootstrap resuelto, sin access y con refresh EXPIRADO When se monta Then redirige (no recuperable)", async () => {
+		// Arrange: refresh vencido -> no recuperable -> redirige.
+		useAuthStore.setState({
+			accessToken: null,
+			refreshToken: "expirado",
+			refreshExpiry: Date.now() - 1000,
+		});
+
+		// Act
+		renderHook(() => useProtectedRoute());
+
+		// Assert
+		await waitFor(() => {
+			expect(replaceMock).toHaveBeenCalledWith("/login?next=%2Fusers");
+		});
+	});
+
 	it("Given sesion vigente When se monta Then devuelve true", () => {
 		// Arrange
 		useAuthStore.setState({

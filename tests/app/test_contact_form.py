@@ -24,18 +24,33 @@ from shared import browser as browser_tools
 
 
 def _goto_contact_ready(page: Page, origin: str) -> None:
-    """Navega a /contact y espera a que el island React hidrate.
+    """Navega a /contact y espera a que el island React HIDRATE.
 
-    NO usar `wait_for_load_state('networkidle')`: el TrackingPixel del sitio
-    emite requests de forma continua, asi que la red NUNCA queda idle contra
-    dev y el wait agota el timeout. Esperar el form + el input rendereados por
-    el SSR de Astro alcanza para los flujos de submit/reload; el flujo on-blur
-    (evento unico que se puede perder si el handler aun no monto) reintenta el
-    blur en su propio test.
+    El form lo monta un `<astro-island client:load>`. El SSR de Astro pinta el
+    markup inmediatamente (form + inputs en el DOM), pero los handlers de React
+    (onChange/onBlur/onSubmit) solo existen cuando el island HIDRATA. Esperar
+    solo a que el form este en el DOM NO basta: contra dev la hidratacion tarda
+    y los tests interactuarian con handlers aun no montados (flaky).
+
+    Astro elimina la propiedad interna del custom element al hidratar; la senal
+    fiable y barata es que el `<astro-island>` que envuelve el form ya no este
+    marcado como pendiente (`ssr`)/sin hidratar. NO usar `networkidle`: el
+    TrackingPixel emite requests continuos y la red nunca queda idle.
     """
     browser_tools.goto(page, f'{origin}/contact')
     browser_tools.wait_selector(page, '[data-testid="contact-form"]')
     browser_tools.wait_selector(page, 'input[name="name"]')
+    # El island esta hidratado cuando su <astro-island> contenedor ya no tiene
+    # el atributo `ssr` (Astro lo quita al hidratar el componente client:load).
+    page.wait_for_function(
+        """() => {
+            const form = document.querySelector('[data-testid="contact-form"]');
+            if (!form) return false;
+            const island = form.closest('astro-island');
+            // Sin <astro-island> (otro montaje) o ya hidratado (sin attr ssr).
+            return !island || !island.hasAttribute('ssr');
+        }""",
+    )
 
 
 def _seed_contact_sent(page: Page, contact_id: str) -> None:
@@ -84,44 +99,43 @@ def test_contact_form_empty_submit_shows_zod_errors(
 
 
 @pytest.mark.app
-def test_contact_form_invalid_email_blur_shows_format_error(
+def test_contact_form_invalid_email_submit_shows_format_error(
     page: Page,
     subdomain: Callable[[str], str],
 ) -> None:
-    """Email invalido en blur muestra error de formato; al corregir desaparece.
+    """Email invalido al enviar muestra error de formato; al corregir desaparece.
 
-    Given el form de contacto hidratado,
-    When se escribe un email invalido y se hace blur, y luego se corrige,
-    Then primero aparece el error de formato exacto y al corregir el error se
-    oculta.
+    Given el form de contacto,
+    When se escribe un email invalido y se envia, y luego se corrige,
+    Then primero aparece el error de formato exacto y al corregir desaparece.
+
+    Nota: la validacion on-BLUR (handleBlur) se prueba en el unit test
+    `packages/ui/tests/unit/contact-form-schema.test.ts` (hidratacion
+    instantanea en jsdom). Aqui se dispara via SUBMIT (click), que espera la
+    accionabilidad del boton -> garantiza que el island ya hidrato; el blur es
+    un evento efimero que contra dev se pierde si el island aun no monto los
+    handlers (flaky). El submit cubre el mismo comportamiento observable de
+    forma determinista.
     """
     # Arrange
     _goto_contact_ready(page, subdomain('generic'))
     email_input = page.locator('input[name="email"]')
     error_email = page.locator('[data-testid="error-email"]')
 
-    # Act: llenar un email invalido y disparar blur (valida on-blur). Contra
-    # dev el handleBlur de React puede no estar montado en el primer blur si
-    # la hidratacion del island aun no concluyo; reintentar el blur hasta que
-    # el error aparezca (o agotar) tolera esa ventana sin sleeps fijos.
+    # Act: email invalido + submit (el click espera hidratacion del island).
     email_input.fill('no-es-email')
-    for _ in range(10):
-        email_input.blur()
-        try:
-            error_email.wait_for(state='visible', timeout=3000)
-            break
-        except PlaywrightTimeoutError:
-            email_input.focus()  # re-tocar el campo y reintentar el blur
+    page.locator('[data-testid="contact-submit"]').click()
+    error_email.wait_for(state='visible')
 
     # Assert: error de formato exacto
     assert error_email.inner_text() == 'Email invalido. Revisa el formato.'
 
-    # Act - corregir el email
+    # Act - corregir el email (re-validacion al tipear)
     email_input.fill('pacg1991@gmail.com')
 
-    # Assert: el error desaparece (re-validacion al tipear)
-    page.locator('[data-testid="error-email"]').wait_for(state='hidden')
-    assert page.locator('[data-testid="error-email"]').is_hidden() is True
+    # Assert: el error de formato desaparece
+    error_email.wait_for(state='hidden')
+    assert error_email.is_hidden() is True
 
 
 @pytest.mark.app

@@ -204,27 +204,35 @@ def _run_browser_module(
 ) -> int:
     """Corre un modulo browser (admin/app).
 
-    Con `--headed` corre local (sin container) si hay browsers en el host.
-    Por defecto levanta el container `e2e` y corre pytest dentro.
+    Por defecto corre en el HOST con el `devtools/.venv` (que ya trae
+    playwright + los browsers instalados via `playwright install`): es el
+    camino verificado y el que usa el pre-push. `--headed` solo controla que
+    el browser sea visible (debug); headless es el default.
+
+    El container `e2e` (E2E_USE_CONTAINER=1) queda como opcion de aislamiento
+    para entornos sin browsers en el host; requiere que su `.venv` este
+    sincronizado (uv sync dentro del container).
     """
-    if headed:
-        python = str(_VENV_PYTHON) if _VENV_PYTHON.exists() else sys.executable
-        spawn_env = {**os.environ, 'E2E_HEADED': '1'}
-        result = subprocess.run(  # noqa: S603
-            [python, '-m', 'pytest', *pytest_args],
-            cwd=str(_TESTS_DIR),
-            check=False,
-            env=spawn_env,
+    if os.environ.get('E2E_USE_CONTAINER') == '1':
+        from e2e.container import ensure_e2e_container
+        from e2e.container import run_pytest_in_container
+
+        if not ensure_e2e_container(env):
+            return 2
+        return run_pytest_in_container(
+            env=env,
+            pytest_args=pytest_args,
+            quiet=quiet,
         )
-        return result.returncode
 
-    from e2e.container import ensure_e2e_container
-    from e2e.container import run_pytest_in_container
-
-    if not ensure_e2e_container(env):
-        return 2
-    return run_pytest_in_container(
-        env=env,
-        pytest_args=pytest_args,
-        quiet=quiet,
+    python = str(_VENV_PYTHON) if _VENV_PYTHON.exists() else sys.executable
+    spawn_env = {**os.environ}
+    if headed:
+        spawn_env['E2E_HEADED'] = '1'
+    result = subprocess.run(  # noqa: S603
+        [python, '-m', 'pytest', *pytest_args],
+        cwd=str(_TESTS_DIR),
+        check=False,
+        env=spawn_env,
     )
+    return result.returncode

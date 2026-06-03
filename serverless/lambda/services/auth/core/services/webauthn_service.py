@@ -24,8 +24,12 @@ from shared.db.repositories.auth_mfa import (
     count_active_mfa,
     delete_webauthn_credential,
     disable_webauthn_credential,
+    enable_webauthn,
+    get_all_webauthn_credentials,
     get_webauthn_credentials,
     insert_webauthn_credential,
+    set_webauthn_required,
+    soft_disable_webauthn,
     update_sign_count,
 )
 from shared.db.session import db_session
@@ -56,22 +60,39 @@ class WebauthnService:
                 )
             ]
 
+    @staticmethod
+    def _cred_to_dict(cred: object) -> dict:
+        return {
+            'credential_id': str(cred.id),
+            'nickname': cred.nickname,
+            'transports': cred.transports,
+            'enabled': cred.disabled_at is None,
+            'required': cred.required,
+            'created_at': cred.created_at.isoformat(),
+            'last_used_at': (
+                cred.last_used_at.isoformat()
+                if cred.last_used_at is not None
+                else None
+            ),
+        }
+
     def list_credentials(self, *, user_id: UUID | str) -> list[dict]:
         """Credentials activos del user como dicts (ordenados last_used DESC)."""
         with db_session() as session:
             return [
-                {
-                    'credential_id': str(cred.id),
-                    'nickname': cred.nickname,
-                    'transports': cred.transports,
-                    'created_at': cred.created_at.isoformat(),
-                    'last_used_at': (
-                        cred.last_used_at.isoformat()
-                        if cred.last_used_at is not None
-                        else None
-                    ),
-                }
+                self._cred_to_dict(cred)
                 for cred in get_webauthn_credentials(
+                    session,
+                    user_id=str(user_id),
+                )
+            ]
+
+    def list_all(self, *, user_id: UUID | str) -> list[dict]:
+        """TODAS las passkeys del user (incl. desactivadas) para el overview."""
+        with db_session() as session:
+            return [
+                self._cred_to_dict(cred)
+                for cred in get_all_webauthn_credentials(
                     session,
                     user_id=str(user_id),
                 )
@@ -192,6 +213,38 @@ class WebauthnService:
                 session,
                 user_id=str(user_id),
                 record_id=str(record_id),
+            )
+
+    def soft_disable(
+        self, *, user_id: UUID | str, record_id: UUID | str,
+    ) -> bool:
+        """Toggle-off reversible: marca disabled_at (no borra). False si no es del user."""
+        with db_session() as session:
+            return soft_disable_webauthn(
+                session,
+                user_id=str(user_id),
+                record_id=str(record_id),
+            )
+
+    def enable(self, *, user_id: UUID | str, record_id: UUID | str) -> bool:
+        """Toggle-on: revierte disabled_at. Idempotente. False si no es del user."""
+        with db_session() as session:
+            return enable_webauthn(
+                session,
+                user_id=str(user_id),
+                record_id=str(record_id),
+            )
+
+    def set_required(
+        self, *, user_id: UUID | str, record_id: UUID | str, required: bool,
+    ) -> bool:
+        """Marca/desmarca la passkey como requerida al loguear. False si no existe/desactivada."""
+        with db_session() as session:
+            return set_webauthn_required(
+                session,
+                user_id=str(user_id),
+                record_id=str(record_id),
+                required=required,
             )
 
     def count_active(self, *, user_id: UUID | str) -> int:

@@ -17,10 +17,14 @@ from shared.db.repositories.auth_mfa import (
     confirm_mfa,
     count_active_mfa,
     disable_mfa,
+    enable_mfa,
+    get_all_mfa_methods,
     get_mfa_method,
     list_mfa_methods,
+    list_required_methods,
     mark_method_used,
     set_preferred,
+    set_required,
     upsert_totp_method,
 )
 from shared.db.session import db_session
@@ -42,10 +46,50 @@ class MfaMethodService:
                 {
                     'kind': method.kind.value,
                     'preferred': method.preferred,
+                    'required': method.required,
                     'confirmed': method.confirmed_at is not None,
                 }
                 for method in methods
             ]
+
+    def list_all(self, *, user_id: UUID | str) -> list[dict]:
+        """TODOS los metodos del user (incl. desactivados) para el overview."""
+        with db_session() as session:
+            return [
+                {
+                    'kind': method.kind.value,
+                    'preferred': method.preferred,
+                    'required': method.required,
+                    'confirmed': method.confirmed_at is not None,
+                    'enabled': method.disabled_at is None,
+                    'created_at': method.created_at.isoformat(),
+                    'last_used_at': (
+                        method.last_used_at.isoformat()
+                        if method.last_used_at is not None
+                        else None
+                    ),
+                }
+                for method in get_all_mfa_methods(session, user_id=str(user_id))
+            ]
+
+    def enable(self, *, user_id: UUID | str, kind: AuthMfaKind) -> bool:
+        """Re-activa el metodo (toggle-on). False si no existe (404)."""
+        with db_session() as session:
+            return enable_mfa(session, user_id=str(user_id), kind=kind)
+
+    def set_required(
+        self, *, user_id: UUID | str, kind: AuthMfaKind, required: bool,
+    ) -> bool:
+        """Marca/desmarca el metodo como requerido al loguear. False si no existe/desactivado."""
+        with db_session() as session:
+            return set_required(
+                session, user_id=str(user_id), kind=kind, required=required,
+            )
+
+    def required_methods(self, *, user_id: UUID | str) -> list[str]:
+        """Tipos de metodo MFA requeridos + activos del user (lo exige el login)."""
+        with db_session() as session:
+            return list_required_methods(session, user_id=str(user_id))
 
     def confirmed_kinds(self, *, user_id: UUID | str) -> list[str]:
         """Kinds de los metodos confirmados y activos del user."""

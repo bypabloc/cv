@@ -5,10 +5,12 @@ import type {
 import { apiFetch } from "@/lib/api-client";
 import type {
 	AuthResponse,
+	CheckEmailResponse,
 	Envelope,
 	MfaListResponse,
 	RecoveryCodesResponse,
 	RefreshResponse,
+	SecurityOverviewResponse,
 	TempTokenResponse,
 	TotpSetupResponse,
 	WebauthnCredentialsResponse,
@@ -34,38 +36,32 @@ import type { MfaKind } from "@/types/models";
  * `(auth)/callback`; NO se exponen como funciones aqui.
  */
 export const authClient = {
-	// --- operation register (3 actions; verify-magic-link es callback GET) ---
-
-	/** register.start: dispara el envio de magic-link + code al email. */
-	registerStart: (data: {
-		email: string;
-		cf_turnstile_response: string;
-		niche?: string;
-	}) =>
-		apiFetch<Envelope<TempTokenResponse>>("/auth", {
-			method: "POST",
-			skipAuth: true,
-			body: { operation: "register", action: "start", data },
-		}),
-
-	/** register.verify-code: cierra el register con el code de 8 chars. */
-	registerVerifyCode: (data: { code: string; temp_token: string }) =>
-		apiFetch<Envelope<AuthResponse>>("/auth", {
-			method: "POST",
-			skipAuth: true,
-			body: { operation: "register", action: "verify-code", data },
-		}),
-
 	// --- operation login (5 actions; verify-magic-link es callback GET) ---
 
-	/** login.start: 200 TempTokenResponse (con methods) / 404 EMAIL_NOT_FOUND. */
+	/**
+	 * login.check-email: pre-chequeo del email antes de iniciar el flujo.
+	 * Devuelve banderas (exists, has_password, pending, unavailable), NO la lista
+	 * de metodos. Sin sesion (skipAuth) + exige Turnstile.
+	 */
+	loginCheckEmail: (data: { email: string; cf_turnstile_response: string }) =>
+		apiFetch<Envelope<CheckEmailResponse>>("/auth", {
+			method: "POST",
+			skipAuth: true,
+			body: { operation: "login", action: "check-email", data },
+		}),
+
+	/**
+	 * login.start: 200 TempTokenResponse (con methods). Ahora `data.created`
+	 * indica si el email no existia y fue CREADO (registro fusionado); el 404
+	 * EMAIL_NOT_FOUND ya NO ocurre.
+	 */
 	loginStart: (data: {
 		email: string;
 		cf_turnstile_response: string;
 		password?: string;
 		niche?: string;
 	}) =>
-		apiFetch<Envelope<TempTokenResponse>>("/auth", {
+		apiFetch<Envelope<TempTokenResponse & { created?: boolean }>>("/auth", {
 			method: "POST",
 			skipAuth: true,
 			body: { operation: "login", action: "start", data },
@@ -248,5 +244,49 @@ export const authClient = {
 		apiFetch<Envelope<WebauthnCredentialsResponse>>("/auth", {
 			method: "POST",
 			body: { operation: "webauthn", action: "delete-credential", data },
+		}),
+
+	// --- operation security (overview consolidado) ---
+
+	/** security.overview: estado de los 5 metodos (authed, sin payload). */
+	securityOverview: () =>
+		apiFetch<Envelope<SecurityOverviewResponse>>("/auth", {
+			method: "POST",
+			body: { operation: "security", action: "overview", data: {} },
+		}),
+
+	/** mfa.enable: activa (soft-enable) un metodo MFA por kind. 204. */
+	mfaEnable: (data: { kind: MfaKind }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: { operation: "mfa", action: "enable", data },
+		}),
+
+	/** mfa.set-required: marca/desmarca un metodo MFA como requerido. 204. */
+	mfaSetRequired: (data: { kind: MfaKind; required: boolean }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: { operation: "mfa", action: "set-required", data },
+		}),
+
+	/** webauthn.enable: re-activa (soft-enable) un passkey por credential_id. 204. */
+	webauthnEnable: (data: { credential_id: string }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: { operation: "webauthn", action: "enable", data },
+		}),
+
+	/** webauthn.disable: soft-disable reversible. 409 MUST_KEEP_ONE_MFA_METHOD. */
+	webauthnDisable: (data: { credential_id: string }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: { operation: "webauthn", action: "disable", data },
+		}),
+
+	/** webauthn.set-required: marca/desmarca un passkey como requerido. 204. */
+	webauthnSetRequired: (data: { credential_id: string; required: boolean }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: { operation: "webauthn", action: "set-required", data },
 		}),
 };

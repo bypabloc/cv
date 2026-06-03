@@ -119,6 +119,60 @@ Aplica SIEMPRE que se trabaje con:
   "existe + disabled/locked". La diferencia visible al cliente es solo
   `suggest_register`.
 
+#### `login.check-email` (precheck del login)
+
+- **SIEMPRE** `login.check-email` expone, de un email **existente y
+  habilitado**: que existe + `has_password` (bool). Trade-off ACEPTADO:
+  la existencia del email ya era enumerable via `register.start` 409 vs
+  `login.start` 404 — `check-email` no agrega informacion nueva sobre la
+  existencia.
+- **NUNCA** `login.check-email` revela la lista de metodos MFA del user.
+  Esa lista se revela SOLO tras un factor fuerte (`login.verify-password`
+  emite el temp `step=2` con `methods`).
+- **SIEMPRE** para un email `disabled`/`locked` (o inexistente),
+  `check-email` NO revela el estado real: devuelve `unavailable`
+  (mismo body para no-existe y disabled/locked). El audit log registra el
+  estado real (`ACCOUNT_DISABLED`/`ACCOUNT_LOCKED`).
+- **NUNCA** devolver `has_password` ni la existencia para un user
+  disabled/locked: ahi solo `unavailable`.
+
+#### Flujo de entrada unico: `register` fusionado en `login`
+
+- **SIEMPRE** el flujo de entrada es `login` unico: `login.start` crea el
+  user `pending` si el email no existe (en vez de un `register.start`
+  separado). `login.verify-code` / `login.verify-magic-link` cierran la
+  transicion `pending -> active` segun el STATUS del user (no hay un flow
+  `register` paralelo: el mismo `login` cubre alta y entrada).
+- **NUNCA** asumir dos flows distintos (`register` vs `login`) en el
+  cliente: el frontend entra siempre por `login`. El codigo de la
+  operation `register` puede seguir presente como **deuda** (legacy), pero
+  el flujo de entrada vigente es el `login` unico — lo relevante es el
+  STATUS del user, no la operation que lo creo.
+
+### Metodos `required` (multi-factor exigido al loguear)
+
+- **SIEMPRE** un user puede marcar 1+ metodos como `required`. El login
+  los EXIGE TODOS (no es "cualquiera de N": es "todos los marcados"),
+  encadenando un step-up por cada metodo requerido.
+- **SIEMPRE** el fallback anti-lockout es el **recovery code**: consumir
+  un recovery code SALTEA todos los metodos `required` (es el escape si el
+  user pierde un factor). NUNCA hay otra via para saltear los `required`.
+- **SIEMPRE** las nuevas actions del modelo `required`/precheck son:
+
+  | Action | Que hace |
+  |---|---|
+  | `login.check-email` | precheck: existencia + `has_password` (NO la lista MFA) |
+  | `mfa.enable` | activa un metodo MFA (TOTP/email-code) ya configurado |
+  | `mfa.set-required` | marca/desmarca un metodo MFA como `required` |
+  | `webauthn.enable` | activa un credential WebAuthn registrado |
+  | `webauthn.disable` | desactiva un credential WebAuthn |
+  | `webauthn.set-required` | marca/desmarca un passkey como `required` |
+  | `security.overview` | resumen de metodos del user (estado + `required`) que consume `/settings/security` |
+
+- **NUNCA** un user puede quedar con metodos `required` que lo dejen sin
+  via de entrada: sigue rigiendo el guard transversal
+  `MUST_KEEP_ONE_MFA_METHOD` + el escape de recovery codes.
+
 ### Turnstile y rate-limit
 
 - **SIEMPRE** Turnstile obligatorio en `register.start` y `login.start`

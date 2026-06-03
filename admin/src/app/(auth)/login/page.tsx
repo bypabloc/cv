@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { LoginForm } from "@/features/auth/components/login-form";
-import { ROUTES } from "@/lib/routes";
 
 /**
  * @page LoginPage
@@ -14,15 +12,6 @@ export default function LoginPage() {
 			<div className="w-full max-w-sm space-y-6">
 				<h1 className="text-2xl font-bold">Iniciar sesion</h1>
 				<LoginForm />
-				<p className="text-center text-sm text-muted-foreground">
-					No tenes cuenta?{" "}
-					<Link
-						href={ROUTES.auth.register}
-						className="text-primary hover:underline"
-					>
-						Registrate
-					</Link>
-				</p>
 			</div>
 		</div>
 	);

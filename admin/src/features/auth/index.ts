@@ -7,8 +7,10 @@
 // Tipos publicos
 export type {
 	AuthResponse,
+	CheckEmailResponse,
 	MfaListResponse,
 	RecoveryCodesResponse,
+	SecurityOverviewResponse,
 	TempTokenResponse,
 	TotpSetupResponse,
 	WebauthnCredentialsResponse,
@@ -21,7 +23,6 @@ export { LoginTotpInput } from "./components/login-totp-input";
 export { MagicLinkPrompt } from "./components/magic-link-prompt";
 export { RecoveryCodeInput } from "./components/recovery-code-input";
 export { RecoveryCodesModal } from "./components/recovery-codes-modal";
-export { RegisterForm } from "./components/register-form";
 export { SetPasswordForm } from "./components/set-password-form";
 export { TotpSetup } from "./components/totp-setup";
 export { TurnstileWidget } from "./components/turnstile-widget";
@@ -29,6 +30,7 @@ export { VerifyCodeInput } from "./components/verify-code-input";
 export { WebAuthnLoginButton } from "./components/webauthn-login-button";
 export { WebAuthnRegisterButton } from "./components/webauthn-register-button";
 // Hooks de gestion (consumidos por el feature settings)
+export { useCheckEmail } from "./hooks/use-check-email";
 export { useConfirmTotp } from "./hooks/use-confirm-totp";
 export { useDeleteCredential } from "./hooks/use-delete-credential";
 export { useDisableMfa } from "./hooks/use-disable-mfa";

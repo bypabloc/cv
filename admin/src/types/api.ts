@@ -4,6 +4,7 @@ import type {
 	AdminAction,
 	AdminUser,
 	MfaMethod,
+	SecurityMethod,
 	User,
 	UserProfile,
 	WebauthnCredential,
@@ -99,4 +100,18 @@ export interface ListUsersResponse {
 /** users.admin.list-admin-actions */
 export interface AdminActionsResponse {
 	actions: AdminAction[];
+}
+
+/** security.overview — 5 entradas (totp, email_code, webauthn, recovery_codes,
+ *  password) con su estado de configuracion / enabled / required / preferred. */
+export interface SecurityOverviewResponse {
+	methods: SecurityMethod[];
+}
+
+/** login.check-email — NO devuelve la lista de metodos, solo banderas. */
+export interface CheckEmailResponse {
+	exists: boolean;
+	has_password?: boolean;
+	pending?: boolean;
+	unavailable?: boolean;
 }

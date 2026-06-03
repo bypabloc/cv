@@ -95,14 +95,14 @@ describe("MagicLinkPrompt sin tempToken", () => {
 });
 
 describe("VerifyCodeInput sin tempToken", () => {
-	it("Given flow login sin tempToken When render Then el boton esta disabled", () => {
-		render((<VerifyCodeInput flow="login" />) as ReactElement);
+	it("Given sin tempToken When render Then el boton esta disabled", () => {
+		render((<VerifyCodeInput />) as ReactElement);
 		expect(screen.getByRole("button", { name: /verificar/i })).toBeDisabled();
 	});
 
-	it("Given flow register sin tempToken When submit forzado Then no verifica (guard)", async () => {
-		// Arrange: flow register cubre el ternario `flow === 'register'`
-		render((<VerifyCodeInput flow="register" />) as ReactElement);
+	it("Given sin tempToken When submit forzado Then no verifica (guard)", async () => {
+		// Arrange: el guard `if (... || !tempToken) return` corta el submit
+		render((<VerifyCodeInput />) as ReactElement);
 
 		// Act
 		const form = document.querySelector("form") as HTMLFormElement;

@@ -5,14 +5,13 @@ import { LoginPasswordInput } from "@/features/auth/components/login-password-in
 import { LoginTotpInput } from "@/features/auth/components/login-totp-input";
 import { MagicLinkPrompt } from "@/features/auth/components/magic-link-prompt";
 import { RecoveryCodeInput } from "@/features/auth/components/recovery-code-input";
-import { RegisterForm } from "@/features/auth/components/register-form";
 import { SetPasswordForm } from "@/features/auth/components/set-password-form";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 /**
  * @module tests/unit/features/auth/components/forms
- * @description Tests de los forms de auth (register, set-password, magic-link,
- *   login password/totp/recovery).
+ * @description Tests de los forms de auth (set-password, magic-link, login
+ *   password/totp/recovery).
  */
 
 vi.mock("next/navigation", () => ({
@@ -26,35 +25,6 @@ vi.mock("@marsidev/react-turnstile", () => ({
 		</button>
 	),
 }));
-
-describe("RegisterForm", () => {
-	it("Given email valido + Turnstile When submit Then setea tempToken", async () => {
-		const user = userEvent.setup();
-		render((<RegisterForm />) as ReactElement);
-
-		await user.type(screen.getByLabelText(/email/i), "new@test.com");
-		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
-		await user.click(screen.getByRole("button", { name: /crear cuenta/i }));
-
-		await waitFor(() => {
-			expect(useAuthStore.getState().tempToken).toBe("mock-temp");
-		});
-	});
-
-	it("Given email invalido When submit Then bloquea (Zod) y no setea tempToken", async () => {
-		const user = userEvent.setup();
-		render((<RegisterForm />) as ReactElement);
-
-		await user.type(screen.getByLabelText(/email/i), "mal");
-		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
-		await user.click(screen.getByRole("button", { name: /crear cuenta/i }));
-
-		await waitFor(() => {
-			expect(screen.getByText(/email invalido/i)).toBeInTheDocument();
-		});
-		expect(useAuthStore.getState().tempToken).toBe(null);
-	});
-});
 
 describe("SetPasswordForm", () => {
 	it("Given passwords que no coinciden When submit Then muestra error de Zod", async () => {

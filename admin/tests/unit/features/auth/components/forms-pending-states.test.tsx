@@ -6,7 +6,6 @@ import { describe, expect, it, vi } from "vitest";
 import { LoginPasswordInput } from "@/features/auth/components/login-password-input";
 import { MagicLinkPrompt } from "@/features/auth/components/magic-link-prompt";
 import { RecoveryCodeInput } from "@/features/auth/components/recovery-code-input";
-import { RegisterForm } from "@/features/auth/components/register-form";
 import { SetPasswordForm } from "@/features/auth/components/set-password-form";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
@@ -128,25 +127,6 @@ describe("MagicLinkPrompt pending", () => {
 			expect(
 				screen.getByRole("button", { name: /reenviando/i }),
 			).toBeDisabled();
-		});
-	});
-});
-
-describe("RegisterForm pending", () => {
-	it("Given submit en vuelo When responde lento Then muestra Enviando...", async () => {
-		// Arrange
-		delayAuth();
-		const user = userEvent.setup();
-		render((<RegisterForm />) as ReactElement);
-
-		// Act
-		await user.type(screen.getByLabelText(/email/i), "new@test.com");
-		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
-		await user.click(screen.getByRole("button", { name: /crear cuenta/i }));
-
-		// Assert
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: /enviando/i })).toBeDisabled();
 		});
 	});
 });

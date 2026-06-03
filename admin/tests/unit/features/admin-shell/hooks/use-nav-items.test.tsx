@@ -30,6 +30,7 @@ describe("useVisibleNavItems", () => {
 		expect(hrefs).toEqual([
 			"/metrics",
 			"/settings",
+			"/settings/security",
 			"/sessions",
 			"/users",
 			"/cv",
@@ -45,7 +46,13 @@ describe("useVisibleNavItems", () => {
 
 		// Assert
 		const hrefs = result.current.map((i) => i.href);
-		expect(hrefs).toEqual(["/metrics", "/settings", "/sessions", "/cv"]);
+		expect(hrefs).toEqual([
+			"/metrics",
+			"/settings",
+			"/settings/security",
+			"/sessions",
+			"/cv",
+		]);
 		expect(hrefs).not.toContain("/users");
 	});
 

@@ -39,17 +39,17 @@ describe("Sidebar", () => {
 		expect(link.className).toContain("text-muted-foreground");
 	});
 
-	it("Given un admin When render Then muestra los 5 items (incluye Usuarios)", () => {
-		// Arrange: useVisibleNavItems devuelve los 5 (default del beforeEach)
+	it("Given un admin When render Then muestra los 6 items (incluye Usuarios)", () => {
+		// Arrange: useVisibleNavItems devuelve los 6 (default del beforeEach)
 		// Act
 		render(<Sidebar />);
 
 		// Assert
-		expect(screen.getAllByRole("link")).toHaveLength(5);
+		expect(screen.getAllByRole("link")).toHaveLength(6);
 		expect(screen.getByRole("link", { name: /usuarios/i })).toBeInTheDocument();
 	});
 
-	it("Given un NO-admin When render Then oculta el item Usuarios (4 items)", () => {
+	it("Given un NO-admin When render Then oculta el item Usuarios (5 items)", () => {
 		// Arrange
 		useVisibleNavItemsMock.mockReturnValue(NON_ADMIN_ITEMS);
 
@@ -57,7 +57,7 @@ describe("Sidebar", () => {
 		render(<Sidebar />);
 
 		// Assert
-		expect(screen.getAllByRole("link")).toHaveLength(4);
+		expect(screen.getAllByRole("link")).toHaveLength(5);
 		expect(screen.queryByRole("link", { name: /usuarios/i })).toBe(null);
 	});
 

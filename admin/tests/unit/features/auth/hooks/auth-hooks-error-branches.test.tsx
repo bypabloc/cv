@@ -9,8 +9,6 @@ import { useDeleteCredential } from "@/features/auth/hooks/use-delete-credential
 import { useDisableMfa } from "@/features/auth/hooks/use-disable-mfa";
 import { useLoginVerifyCode } from "@/features/auth/hooks/use-login-verify-code";
 import { useLoginVerifyPassword } from "@/features/auth/hooks/use-login-verify-password";
-import { useRegisterStart } from "@/features/auth/hooks/use-register-start";
-import { useRegisterVerifyCode } from "@/features/auth/hooks/use-register-verify-code";
 import { useSetPassword } from "@/features/auth/hooks/use-set-password";
 import { useWebauthnLoginVerify } from "@/features/auth/hooks/use-webauthn-login-verify";
 import { ApiError } from "@/lib/api-client";
@@ -169,51 +167,11 @@ describe("useWebauthnLoginVerify onError fallback", () => {
 	});
 });
 
-describe("useRegisterStart onError fallback", () => {
-	it("Given un 500 generico (no 409) When mutate Then propaga ApiError", async () => {
-		// Arrange
-		force500();
-		const { result } = renderHook(() => useRegisterStart(), { wrapper });
-
-		// Act
-		const error = await act(async () =>
-			result.current
-				.mutateAsync({
-					email: "new@test.com",
-					niche: "fintech",
-					cf_turnstile_response: "tok",
-				})
-				.catch((e: unknown) => e),
-		);
-
-		// Assert
-		expect((error as ApiError).status).toBe(500);
-	});
-});
-
 describe("useLoginVerifyCode onError", () => {
 	it("Given un 500 generico When mutate Then propaga ApiError (toca onError)", async () => {
 		// Arrange
 		force500();
 		const { result } = renderHook(() => useLoginVerifyCode(), { wrapper });
-
-		// Act
-		const error = await act(async () =>
-			result.current
-				.mutateAsync({ code: "12345678", temp_token: "temp" })
-				.catch((e: unknown) => e),
-		);
-
-		// Assert
-		expect((error as ApiError).status).toBe(500);
-	});
-});
-
-describe("useRegisterVerifyCode onError", () => {
-	it("Given un 500 generico When mutate Then propaga ApiError (toca onError)", async () => {
-		// Arrange
-		force500();
-		const { result } = renderHook(() => useRegisterVerifyCode(), { wrapper });
 
 		// Act
 		const error = await act(async () =>

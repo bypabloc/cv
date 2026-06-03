@@ -4,6 +4,7 @@ import {
 	type LucideIcon,
 	Monitor,
 	Settings,
+	ShieldCheck,
 	Users,
 } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
@@ -29,6 +30,11 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
 	{ href: ROUTES.admin.metrics, label: "Metricas", icon: BarChart3 },
 	{ href: ROUTES.admin.settings, label: "Configuracion", icon: Settings },
+	{
+		href: ROUTES.admin.settingsSecurity,
+		label: "Seguridad",
+		icon: ShieldCheck,
+	},
 	{ href: ROUTES.admin.sessions, label: "Mis sesiones", icon: Monitor },
 	{ href: ROUTES.admin.users, label: "Usuarios", icon: Users, adminOnly: true },
 	{ href: ROUTES.admin.cv, label: "Gestion CV", icon: FileText },

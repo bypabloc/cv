@@ -8,7 +8,6 @@ export const ROUTES = {
 	home: "/",
 	auth: {
 		login: "/login",
-		register: "/register",
 		verify: "/verify",
 		callback: "/auth/callback",
 		setPassword: "/set-password",

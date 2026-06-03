@@ -16,6 +16,18 @@ export const ROUTES = {
 	admin: {
 		root: "/",
 		metrics: "/metrics",
+		// Area de metricas del visitante (Lambda analytics). Todo bajo
+		// /metrics/* para NO colisionar con /sessions (Mis sesiones de auth).
+		metricsTimeseries: "/metrics/timeseries",
+		metricsSessions: "/metrics/sessions",
+		metricsSessionDetail: (id: string) =>
+			`/metrics/sessions/detail?id=${encodeURIComponent(id)}`,
+		metricsEvents: "/metrics/events",
+		metricsVisits: "/metrics/visits",
+		metricsGeo: "/metrics/geo",
+		metricsDevices: "/metrics/devices",
+		metricsFunnel: "/metrics/funnel",
+		metricsContacts: "/metrics/contacts",
 		settings: "/settings",
 		settingsSecurity: "/settings/security",
 		sessions: "/sessions",

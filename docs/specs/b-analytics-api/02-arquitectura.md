@@ -25,8 +25,10 @@ Browser/curl
               -> run_controller({operation, action, data}, event_model)
                    -> import_controller -> OPERATIONS[op][act]
                    -> Controller(BaseController).execute()
-                        -> auth_guard.require_active_user(_meta.authorization)
-                             -> shared.auth.verify_jwt (HS256, jwt-secret SSM)
+                        -> auth_guard.require_auth(_meta)
+                             -> jwt_service.require_active_user(authorization_header)
+                                  -> shared.auth.jwt.verify_jwt (HS256, jwt-secret SSM)
+                                  -> carga AuthUser desde Neon, valida status
                              -> sin Bearer / JWT invalido -> 401 (code 4010)
                         -> rate_limit_guard.guard(ip, country)
                              -> shared.rate_limit.check_or_raise
@@ -41,7 +43,7 @@ Browser/curl
 
 ## 2. Inventario de operations y actions
 
-15 actions distribuidos en 8 operations:
+19 actions distribuidos en 8 operations:
 
 | Operation | Action | Tipo | Cache | Endpoint shape |
 |-----------|--------|------|-------|----------------|
@@ -65,8 +67,8 @@ Browser/curl
 | `contacts` | `list` | listado | NO | contacts paginados |
 | `contacts` | `by-status` | agregada | si | distribucion por status |
 
-**Total**: 8 operations, 19 actions, 12 con cache (TTL 60s), 1 con TTL
-corto (10s, active-now), 6 sin cache (listados crudos y detail).
+**Total**: 8 operations, 19 actions, 13 con cache (TTL 60s), 1 con TTL
+corto (10s, active-now), 5 sin cache (events/list, sessions/list, sessions/detail, visits/list, contacts/list).
 
 ## 3. Layout del Lambda
 
@@ -159,9 +161,11 @@ serverless/lambda/services/analytics/
 │   │   ├── geo_service.py
 │   │   ├── devices_service.py
 │   │   ├── funnel_service.py
-│   │   └── contacts_service.py
+│   │   ├── contacts_service.py
+│   │   └── jwt_service.py               # portado de services/users/core/services/jwt_service.py
 │   └── utils/
 │       ├── __init__.py
+│       ├── auth_guard.py                # llama jwt_service.require_active_user
 │       └── rate_limit_guard.py
 └── tests/
     ├── conftest.py
@@ -224,17 +228,27 @@ OPERATIONS: dict[str, dict[str, dict[str, str]]] = {
 `core/handler.py`:
 
 ```python
-from shared.http import http_handler
-from shared.lambda_kit import build_event_model
-from shared.observability import logger, metrics, tracer
+from shared.lambda_kit.event_model import build_event_model
+from shared.lambda_kit.http_dispatch import http_handler
+from shared.observability.logger import logger
+from shared.observability.metrics import metrics
+from shared.db.warmup import warm_db
+
+# importar modulos concretos de modelos para el snapshot de SnapStart
+from shared.db.models.visitor import session as _m_session          # noqa: F401
+from shared.db.models.visitor import session_visit as _m_visit      # noqa: F401
+from shared.db.models.visitor import tracking as _m_tracking        # noqa: F401
+from shared.db.models.visitor import contact as _m_contact          # noqa: F401
 
 from core.settings.operations import OPERATIONS
+
+# precalentar engine + mappers en el INIT (queda en el snapshot de SnapStart)
+warm_db()
 
 _EVENT_MODEL = build_event_model(OPERATIONS, allowed_methods=('GET',))
 
 
 @logger.inject_lambda_context(log_event=False, correlation_id_path='requestContext.requestId')
-@tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event: dict, context: object) -> dict:
     return http_handler(
@@ -269,6 +283,7 @@ class _Meta(BaseModel):
     ip: str | None = Field(default=None, alias='ip')
     country: str | None = Field(default=None, alias='country')
     user_agent: str | None = Field(default=None, alias='user_agent')
+    authorization: str | None = Field(default=None, alias='authorization')
 
 
 class DateRange(BaseModel):
@@ -347,10 +362,11 @@ y tienen este shape:
 from typing import Any
 
 from shared.lambda_kit import BaseController
-from shared.observability import logger
+from shared.observability.logger import logger
 
 from core.models.analytics import OverviewInput
 from core.services.analytics_service import overview as _overview
+from core.utils.auth_guard import require_auth
 from core.utils.rate_limit_guard import guard
 
 
@@ -359,6 +375,8 @@ class Overview(BaseController):
 
     def execute(self) -> dict[str, Any]:
         data: OverviewInput = self.validated_data
+        # auth PRIMERO: un 401 no debe consumir slot de rate-limit (AC-23)
+        require_auth(data.meta)
         guard(meta=data.meta, endpoint='/analytics')
         result = _overview(date_from=data.date_from, date_to=data.date_to)
         return {
@@ -374,8 +392,8 @@ Reglas:
 - Nombre de clase = `action.capitalize().replace('-', '_')` (`top-pages`
   -> `TopPages`).
 - `event_model` apunta al input Pydantic correspondiente.
-- `execute()` SIEMPRE: (1) rate-limit guard, (2) service call,
-  (3) return shape.
+- `execute()` SIEMPRE: (1) auth guard, (2) rate-limit guard, (3) service call,
+  (4) return shape.
 - NO mete logica de negocio. Si una operacion necesita mas de 1 service
   call, el orchestrador vive en el service (no en el controller).
 
@@ -394,10 +412,14 @@ Los services concentran:
 from datetime import date
 from typing import Any, Final
 
-from shared.cache import cached
-from shared.db import db_session, func, select
-from shared.observability import logger
-from shared.db.models.visitor import Contact, Session, SessionVisit, TrackingEvent
+from shared.cache.decorator import cached
+from shared.db.sa import func, select
+from shared.db.session import db_session
+from shared.observability.logger import logger
+from shared.db.models.visitor.session import Session
+from shared.db.models.visitor.session_visit import SessionVisit
+from shared.db.models.visitor.tracking import TrackingEvent
+from shared.db.models.visitor.contact import Contact
 
 
 _CACHE_TAGS: Final[list[str]] = ['analytics-aggregate']
@@ -471,8 +493,8 @@ def overview(*, date_from: date, date_to: date) -> dict[str, Any]:
 ```python
 from typing import Final
 
-from shared.rate_limit import check_or_raise
-from shared.observability import logger
+from shared.rate_limit.check import check_or_raise
+from shared.observability.logger import logger
 
 from core.models._common import _Meta
 
@@ -513,6 +535,7 @@ class ErrorCode(IntEnum):
     DATE_RANGE         = 1001
     PAGE_SIZE          = 1002
     INVALID_PARAM      = 1003
+    UNAUTHORIZED       = 4010
     NOT_FOUND          = 4040
     BLACKLISTED        = 4030
     COUNTRY_BLOCKED    = 4031
@@ -535,6 +558,7 @@ Mapeo errores -> HTTP status (lo hace `http_handler` desde el code):
 |------|--------|----------------------|
 | 0 | 200 | OK |
 | 1000-1099 | 400 | Pydantic ValidationError / param invalido |
+| 4010 | 401 | JWT ausente / invalido / expirado (require_active_user) |
 | 4030 | 403 | IPBlacklistedError |
 | 4031 | 403 | CountryBlockedError |
 | 4040 | 404 | sessions/detail con session_id inexistente |
@@ -544,16 +568,23 @@ Mapeo errores -> HTTP status (lo hace `http_handler` desde el code):
 
 ## 10. Cold start path
 
-- Modulo-scope: `import shared.lambda_kit`, `import shared.http`,
-  `OPERATIONS`, `build_event_model(OPERATIONS)` se ejecutan una sola
-  vez por container.
-- `db_session` -> `get_engine()` se inicializa LAZY en la primera query
-  (no en cold start) para que el Restore de SnapStart no necesite una
-  conexion Neon activa. La conexion se establece en el primer handler
-  invoke.
-- SnapStart hook (`runtime_hooks.py`): NO precalentar la conexion a DB
-  — Neon scale-to-zero la cerraria; en cambio precalentar
-  `OPERATIONS`, `build_event_model`, importar todos los controllers.
+- Modulo-scope: `import shared.lambda_kit`, `OPERATIONS`,
+  `build_event_model(OPERATIONS)` se ejecutan una sola vez por container.
+- Los modulos concretos de modelos (`shared.db.models.visitor.*`) se
+  importan en el module-scope del handler para que queden en el snapshot
+  de SnapStart (a la vez que registran sus tablas en el mapeo SQLAlchemy).
+- `warm_db()` (`from shared.db.warmup import warm_db`) se llama en el
+  module-scope del handler: precalienta el engine NullPool +
+  `configure_mappers` en el INIT, sin abrir conexion (NullPool no abre
+  conexiones en el INIT — las conexiones no sobreviven al snapshot).
+  Es best-effort (try/except): nunca rompe el INIT.
+- `db_session` -> `get_engine()` establece la conexion real en el primer
+  handler invoke (EXECUTE), no en el INIT. Neon scale-to-zero no afecta
+  el snapshot porque no hay conexion viva en el.
+- NO existe `runtime_hooks.py` con `before_checkpoint`/`after_restore`
+  en este backend. El patron es exclusivamente warm_db() en module-scope.
+- `snap_start: true` en `manifest.yaml` (booleano). El alias `:live` lo
+  gestiona el provisioner internamente.
 
 ## 11. Capa de frontend — UI de metricas (Next.js)
 

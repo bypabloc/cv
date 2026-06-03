@@ -24,6 +24,7 @@ class RateLimitService:
         endpoint: str,
         country: str | None = None,
         turnstile_validated: bool = False,
+        brought_turnstile_token: bool = False,
     ) -> None:
         """Aplica el rate-limit; raises si IP/country/window-rule lo violan.
 
@@ -32,15 +33,22 @@ class RateLimitService:
             endpoint: path identificador (ej.
                 `/auth#register.start`, `/auth#login.verify-code`).
             country: ISO 3166-1 alpha-2 (de CF-IPCountry, opcional).
-            turnstile_validated: si la request paso Turnstile.
+            turnstile_validated: si la request usa el limite alto del
+                rate-limit (verify-*/mfa/session lo pasan True). NO alimenta
+                la auto-blacklist.
+            brought_turnstile_token: True solo en login.start/register.start,
+                donde el usuario ADJUNTA un CAPTCHA real. Unico flag que
+                alimenta la auto-blacklist (bot detection).
 
         Raises:
             shared.rate_limit.exceptions.IPBlacklistedError,
             CountryBlockedError, RateLimitExceededError.
         """
+        brought_captcha = brought_turnstile_token
         check_or_raise(
             ip=ip,
             endpoint=endpoint,
             country=country,
             turnstile_validated=turnstile_validated,
+            brought_turnstile_token=brought_captcha,
         )

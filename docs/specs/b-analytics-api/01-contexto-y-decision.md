@@ -33,11 +33,15 @@ features (`analytics`, `sessions` de tracking, `events`, `visits`, `geo`,
   service). El Lambda nuevo SIGUE el mismo patron — no se introduce un
   framework distinto.
 - **Auth obligatoria**: el Lambda valida el access JWT en cada request
-  (`require_active_user` via `shared.auth`, mismo patron que `mfa.*`).
-  Sin JWT valido -> 401. SIN scope admin: cualquier user autenticado lee
-  las metricas (NO whitelist). El rate-limit es la segunda capa de
-  defensa. (Invierte el supuesto previo de "sin auth real, solo
-  rate-limit".)
+  mediante `require_active_user`, portado desde `services/users/core/services/jwt_service.py`
+  (NO existe en `shared.auth`). El Lambda `analytics` crea su propio
+  `core/services/jwt_service.py` (copia del de `users`) y un
+  `core/utils/auth_guard.py` que lo envuelve. Internamente llama
+  `verify_jwt` de `shared.auth.jwt` + carga `AuthUser` de Neon + valida
+  status/blacklist. Sin JWT valido -> 401. SIN scope admin: cualquier
+  user autenticado lee las metricas (NO whitelist). El rate-limit es la
+  segunda capa de defensa. (Invierte el supuesto previo de "sin auth real,
+  solo rate-limit".)
 - **Lectura unicamente**: el Lambda NO escribe a Neon ni a DynamoDB
   (mas alla del cache + rate-limit buckets). No hay endpoints `POST/PUT`.
 
@@ -51,14 +55,16 @@ features (`analytics`, `sessions` de tracking, `events`, `visits`, `geo`,
 - `shared.rate_limit.check_or_raise` se llama explicito desde el
   controller (NO esta dentro de `http_handler`).
 - `shared.cache.cached` es un decorator (TTL + namespace + tags).
-- `shared.db` re-exporta SQLAlchemy + `db_session` context manager.
+- `shared.db.sa` exporta `select, func, delete, Session, pg_insert` (NO `from shared.db import select/func`). El engine/session: `from shared.db.session import db_session, get_engine`.
 - `shared.db.url.resolve_database_url` lee `DATABASE_URL` o `DB_URL` o
   el path SSM `SSM_NEON_URL_PATH`.
 - `serverless/lambda/resources/dynamodb/rate-limit-rules.yaml` declara
   la TABLA — las **reglas** se cargan en runtime desde esa tabla. No
   hay YAML centralizado de reglas; cada Lambda inserta su propia
-  regla al provisionarse, o la insertamos via `serverless run --lambda=db`
-  con un seed.
+  regla usando el CLI ya existente:
+  `python devtools/run.py serverless rate-limit set --endpoint=/analytics --limit=10 --window=60 --stage=dev`
+  (implementado en `devtools/serverless/rate_limit_cmds.py`). NO se crea
+  ningun command nuevo en el Lambda `db` para esto.
 - CI/CD `deploy-backend.yml` auto-detecta Lambdas nuevas por path; con
   agregar la carpeta + manifest, el matrix lo recoge.
 
@@ -100,6 +106,7 @@ analytics/
     │   ├── funnel/conversion.py
     │   └── contacts/{list,by_status}.py
     ├── services/              # logica de negocio + queries SQL
+    │   ├── jwt_service.py       # portado de users/core/services/jwt_service.py; require_active_user
     │   ├── analytics_service.py
     │   ├── events_service.py
     │   ├── sessions_service.py
@@ -109,16 +116,17 @@ analytics/
     │   ├── funnel_service.py
     │   └── contacts_service.py
     └── utils/
-        ├── auth_guard.py        # require_active_user(_meta.authorization) via shared.auth
+        ├── auth_guard.py        # envuelve jwt_service.require_active_user(_meta.authorization)
         └── rate_limit_guard.py  # helper para llamar check_or_raise con el endpoint fijo
 ```
 
 Cada action es un controller delgado que:
 
 1. Valida el access JWT: lee `_meta.authorization` (`Authorization: Bearer
-   <access JWT>`) y llama `require_active_user` (`verify_jwt` de
-   `shared.auth`). Sin JWT valido/expirado -> 401. NO valida scope admin
-   (cualquier user autenticado lee).
+   <access JWT>`) y llama `require_active_user` de `core/services/jwt_service.py`
+   (portado del Lambda `users`; internamente usa `verify_jwt` de
+   `shared.auth.jwt` + carga `AuthUser` de Neon). Sin JWT valido/expirado
+   -> 401. NO valida scope admin (cualquier user autenticado lee).
 2. Llama a `check_or_raise(ip, endpoint='/analytics', country)` (rate
    limit + blacklist + country rules) como segunda capa.
 3. Llama al service correspondiente con `self.validated_data`.
@@ -132,12 +140,15 @@ tags=['analytics-aggregate'])`. Los listados crudos NO se cachean.
 ### Decisiones clave
 
 - **Decision 1: Auth con access JWT, sin scope admin** — el Lambda valida
-  el access JWT en CADA request (`require_active_user` via `shared.auth`,
-  mismo patron que `mfa.*`/`webauthn.*` del Lambda `auth`): lee
-  `_meta.authorization`, valida la firma HS256 contra `jwt-secret` (SSM),
-  verifica que el user este activo. Sin JWT valido/expirado -> 401.
-  NO hay whitelist admin: cualquier user autenticado lee las metricas.
-  Trade-off PII CONSCIENTE — el registro auth es abierto, asi que
+  el access JWT en CADA request mediante `require_active_user` portado desde
+  `services/users/core/services/jwt_service.py` (NO via `shared.auth`
+  directamente — `require_active_user` no existe en `shared.auth`). El Lambda
+  `analytics` crea `core/services/jwt_service.py` (copia del de `users`) y
+  `core/utils/auth_guard.py` que lo envuelve. Internamente: lee
+  `_meta.authorization`, llama `verify_jwt` de `shared.auth.jwt`, carga
+  `AuthUser` de Neon, valida status/blacklist. Sin JWT valido/expirado -> 401
+  con `code=4010`. NO hay whitelist admin: cualquier user autenticado lee las
+  metricas. Trade-off PII CONSCIENTE — el registro auth es abierto, asi que
   cualquiera registrado ve metricas con PII de visitantes (IP, country,
   user_agent). Aceptado explicitamente; el scope admin / la anonimizacion
   quedan fuera de este plan. El rate-limit sigue como segunda capa.
@@ -161,7 +172,12 @@ tags=['analytics-aggregate'])`. Los listados crudos NO se cachean.
 - **Decision 5: SnapStart habilitado** — el admin se usa
   esporadicamente (no hay invocaciones constantes que mantengan el
   container warm). El cold start sin SnapStart es ~3-5s; con
-  SnapStart cae a ~800ms. Patron ya probado en `contact_form`.
+  SnapStart cae a ~800ms. Patron ya probado en `contact_form`. En el
+  `manifest.yaml` se declara `snap_start: true` (booleano). El handler
+  llama `warm_db()` (`from shared.db.warmup import warm_db`) en el
+  module-scope para precalentar engine NullPool + `configure_mappers` en
+  el INIT, de modo que quede en el snapshot. No se usa ningun archivo
+  `runtime_hooks.py` ni patron `before_checkpoint`/`after_restore`.
 - **Decision 6: Default 30d / max 90d** — la tabla
   `vis_tracking_events` esta particionada por mes; queries sobre
   ventanas de 30d tocan 1-2 particiones (rapido). 90d toca hasta 4

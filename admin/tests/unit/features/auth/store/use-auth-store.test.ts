@@ -83,6 +83,28 @@ describe("useAuthStore", () => {
 		expect(result).toBe(true);
 	});
 
+	it("Given un access vigente SIN user When isAuthenticated Then retorna true (auth = access JWT, no perfil)", () => {
+		// Arrange: regresion del bug "F5 -> /login". El /session/refresh NO
+		// devuelve user; tras un reload el user puede faltar en localStorage.
+		// La sesion debe vivir igual mientras el access JWT sea valido.
+		useAuthStore
+			.getState()
+			.setAccessToken(makeJwt({ sub: "usr_01", exp: nowSec() + 900 }));
+
+		// Act + Assert
+		expect(useAuthStore.getState().user).toBe(null);
+		expect(useAuthStore.getState().isAuthenticated()).toBe(true);
+	});
+
+	it("Given user presente pero SIN access When isAuthenticated Then retorna false", () => {
+		// Arrange: sin access JWT no hay sesion, aunque haya perfil.
+		useAuthStore.getState().setUser(USER);
+
+		// Act + Assert
+		expect(useAuthStore.getState().accessToken).toBe(null);
+		expect(useAuthStore.getState().isAuthenticated()).toBe(false);
+	});
+
 	it("Given estado seteado When clearTokens Then limpia todo", () => {
 		// Arrange
 		useAuthStore.getState().setTokens("a", "r", USER, nowSec() * 1000 + 1000);

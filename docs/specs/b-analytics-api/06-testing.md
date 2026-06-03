@@ -76,26 +76,26 @@ sys.path.insert(0, str(_LAMBDA_ROOT.parent.parent / 'shared'))  # dev sin vendor
 os.environ.setdefault('LOG_LEVEL', 'DEBUG')
 os.environ.setdefault('POWERTOOLS_SERVICE_NAME', 'analytics-test')
 os.environ.setdefault('POWERTOOLS_METRICS_NAMESPACE', 'Portfolio/AnalyticsTest')
-os.environ.setdefault('CORS_ALLOWED_ORIGINS', '*')
+os.environ.setdefault('CORS_ALLOWED_ORIGINS', '*')  # solo fixture de test; el runtime real usa lista restringida de origenes
 os.environ.setdefault('RATE_LIMIT_ENDPOINT', '/analytics')
 
 
 # 3. Mocks compartidos
 @pytest.fixture
 def mock_db_session(mocker):
-    """Mockea shared.db.db_session como context manager que devuelve un MagicMock."""
+    """Mockea shared.db.session.db_session como context manager que devuelve un MagicMock."""
     session = MagicMock(name='SQLAlchemySession')
     cm = MagicMock()
     cm.__enter__.return_value = session
     cm.__exit__.return_value = None
-    mocker.patch('shared.db.db_session', return_value=cm)
+    mocker.patch('shared.db.session.db_session', return_value=cm)
     return session
 
 
 @pytest.fixture
 def mock_check_or_raise(mocker):
-    """Mockea shared.rate_limit.check_or_raise (no-op por default)."""
-    return mocker.patch('shared.rate_limit.check_or_raise', return_value=None)
+    """Mockea shared.rate_limit.check.check_or_raise (no-op por default)."""
+    return mocker.patch('shared.rate_limit.check.check_or_raise', return_value=None)
 
 
 @pytest.fixture
@@ -225,13 +225,77 @@ def test_overview_when_data_then_returns_shape(mock_db_session, no_cache):
 
 ### 5.3 Controllers — minimo
 
-Para cada controller, 3 tests:
+Para cada controller, 5 tests:
 
 | Archivo | Escenario |
 |---------|-----------|
 | `test_<action>_controller_when_valid_then_calls_service_and_returns_ok.py` | Happy path |
 | `test_<action>_controller_when_rate_limited_then_raises.py` | AC-5 / guard delega |
 | `test_<action>_controller_when_blacklisted_then_raises.py` | AC-6 |
+| `test_<action>_controller_when_no_authorization_then_401.py` | AC-23: Bearer ausente |
+| `test_<action>_controller_when_invalid_jwt_then_401.py` | AC-24: token invalido/expirado |
+
+Los tests de auth mockean `require_active_user` (definido en `core/services/jwt_service.py`):
+
+```python
+# tests/unit/controllers/test_overview_controller_when_no_authorization_then_401.py
+"""
+Given una request sin header Authorization,
+When se ejecuta el controller overview,
+Then require_active_user lanza ApplicationError con status_code=401 y code=4010.
+"""
+from unittest.mock import MagicMock
+from core.utils.base_controller import ApplicationError
+
+
+def test_overview_controller_when_no_authorization_then_401(mocker, mock_check_or_raise):
+    # Arrange
+    mock_require = mocker.patch(
+        'core.controllers.analytics.overview.require_active_user',
+        side_effect=ApplicationError(status_code=401, code=4010, message='Unauthorized'),
+    )
+    event = _build_event('analytics', 'overview', authorization=None)
+    from core.controllers.analytics.overview import Overview
+    controller = Overview(event_data={'from': '2026-04-27', 'to': '2026-05-27', '_meta': {}})
+
+    # Act
+    result = controller.run()
+
+    # Assert
+    assert result['is_valid'] is False
+    assert result['code'] == 4010
+    mock_require.assert_called_once()
+
+
+# tests/unit/controllers/test_overview_controller_when_invalid_jwt_then_401.py
+"""
+Given un header Authorization con JWT invalido (firma incorrecta o expirado),
+When se ejecuta el controller overview,
+Then require_active_user lanza ApplicationError con status_code=401 y code=4010.
+"""
+from unittest.mock import MagicMock
+from core.utils.base_controller import ApplicationError
+
+
+def test_overview_controller_when_invalid_jwt_then_401(mocker, mock_check_or_raise):
+    # Arrange
+    mocker.patch(
+        'core.controllers.analytics.overview.require_active_user',
+        side_effect=ApplicationError(status_code=401, code=4010, message='Invalid token'),
+    )
+    from core.controllers.analytics.overview import Overview
+    controller = Overview(event_data={
+        'from': '2026-04-27', 'to': '2026-05-27',
+        '_meta': {'authorization': 'Bearer invalid.token.here'},
+    })
+
+    # Act
+    result = controller.run()
+
+    # Assert
+    assert result['is_valid'] is False
+    assert result['code'] == 4010
+```
 
 ### 5.4 Handler — minimo
 
@@ -240,7 +304,8 @@ Para cada controller, 3 tests:
 | `test_handler_when_known_operation_then_dispatches.py` | Routing |
 | `test_handler_when_unknown_operation_then_returns_400.py` | AC-4 |
 | `test_handler_when_get_with_query_params_then_extracts_data.py` | GET parsing |
-| `test_handler_when_options_then_returns_cors_headers.py` | preflight (si aplica) |
+| `test_handler_when_options_then_returns_cors_headers.py` | preflight OPTIONS (gestionado por API Gateway / provisioner, no por un controller propio) |
+| `test_handler_when_no_bearer_token_then_returns_401.py` | AC-23: ausencia de Authorization -> HTTP 401, code 4010 |
 
 ### 5.5 Integration — flujos seleccionados
 
@@ -266,8 +331,8 @@ Archivos que deben llegar al 80%:
 - `core/settings/config.py`
 - `core/settings/operations.py`
 - `core/models/_common.py`
-- `core/models/<dominio>.py` (8 archivos)
-- `core/controllers/<dominio>/<action>.py` (19 archivos)
+- `core/models/<dominio>.py` (8 archivos — analytics, events, sessions, visits, geo, devices, funnel, contacts)
+- `core/controllers/<dominio>/<action>.py` (19 archivos — distribucion: analytics=7, events=3, sessions=2, visits=2, geo=1, devices=1, funnel=1, contacts=2)
 - `core/services/<dominio>_service.py` (8 archivos)
 - `core/utils/rate_limit_guard.py`
 
@@ -300,8 +365,12 @@ Si el valor es no-determinista (un timestamp, un UUID), usar mocking
 para fijarlo:
 
 ```python
-mocker.patch('core.services.analytics_service.datetime')\
-      .utcnow.return_value = datetime(2026, 5, 27, 14, 0, 0)
+from datetime import datetime, timezone
+
+fixed_now = datetime(2026, 5, 27, 14, 0, 0, tzinfo=timezone.utc)
+mocker.patch(
+    'core.services.analytics_service.datetime',
+).now.return_value = fixed_now
 ```
 
 ## 8. Property-based testing (Hypothesis)

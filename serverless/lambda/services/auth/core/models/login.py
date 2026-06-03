@@ -33,6 +33,21 @@ class LoginStartIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
 
 
+class LoginCheckEmailIn(BaseModel):
+    """POST /auth operation=login action=check-email.
+
+    Paso 1 del login unificado: dado un email (con Turnstile), reporta si
+    existe y si tiene password configurado, SIN exponer la lista de metodos
+    MFA (esa se revela tras verify-password). Bloque C.
+    """
+
+    email: EmailStr
+    cf_turnstile_response: str = Field(default='', max_length=2048)
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
 class LoginVerifyMagicLinkIn(BaseModel):
     """GET callback del magic-link de login (mismo shape que register)."""
 

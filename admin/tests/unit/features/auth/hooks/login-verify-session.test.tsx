@@ -7,8 +7,6 @@ import { describe, expect, it, vi } from "vitest";
 import { useLoginVerifyCode } from "@/features/auth/hooks/use-login-verify-code";
 import { useLoginVerifyPassword } from "@/features/auth/hooks/use-login-verify-password";
 import { useLoginVerifyTotp } from "@/features/auth/hooks/use-login-verify-totp";
-import { useRegisterStart } from "@/features/auth/hooks/use-register-start";
-import { useRegisterVerifyCode } from "@/features/auth/hooks/use-register-verify-code";
 import { useResendCode } from "@/features/auth/hooks/use-resend-code";
 import { useSessionRefresh } from "@/features/auth/hooks/use-session-refresh";
 import { useSetPassword } from "@/features/auth/hooks/use-set-password";
@@ -16,10 +14,11 @@ import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 /**
  * @module tests/unit/features/auth/hooks/register-login-verify
- * @description Happy paths de los hooks de register/login/verify/session.
+ * @description Happy paths de los hooks de login/verify/session.
  */
 
-const SECRET = "x".repeat(12);
+// Fixture de password de prueba (NO un secreto real): 12 chars sinteticos.
+const FAKE_PW = "x".repeat(12);
 
 const { pushMock, replaceMock } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
@@ -30,50 +29,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 const API = "https://api.test.the-full-stack.com";
-
-describe("useRegisterStart", () => {
-	it("Given email nuevo When mutate Then setea tempToken y navega a /verify", async () => {
-		const { wrapper } = makeHookWrapper();
-		const { result } = renderHook(() => useRegisterStart(), { wrapper });
-
-		await act(async () => {
-			await result.current.mutateAsync({
-				email: "new@test.com",
-				cf_turnstile_response: "tok",
-			});
-		});
-
-		expect(useAuthStore.getState().tempToken).toBe("mock-temp");
-		expect(pushMock).toHaveBeenCalledWith("/verify?flow=register");
-	});
-
-	it("Given email duplicado When mutate Then NO setea tempToken (409)", async () => {
-		const { wrapper } = makeHookWrapper();
-		const { result } = renderHook(() => useRegisterStart(), { wrapper });
-
-		await act(async () => {
-			await result.current
-				.mutateAsync({ email: "exists@test.com", cf_turnstile_response: "t" })
-				.catch(() => undefined);
-		});
-
-		expect(useAuthStore.getState().tempToken).toBe(null);
-	});
-});
-
-describe("useRegisterVerifyCode", () => {
-	it("Given code valido When mutate Then setTokens + redirect", async () => {
-		const { wrapper } = makeHookWrapper();
-		const { result } = renderHook(() => useRegisterVerifyCode(), { wrapper });
-
-		await act(async () => {
-			await result.current.mutateAsync({ code: "12345678", temp_token: "t" });
-		});
-
-		expect(useAuthStore.getState().accessToken).not.toBe(null);
-		expect(replaceMock).toHaveBeenCalledWith("/");
-	});
-});
 
 describe("useLoginVerifyCode", () => {
 	it("Given submit When mutate Then setTokens + redirect", async () => {
@@ -94,7 +49,7 @@ describe("useLoginVerifyPassword", () => {
 		const { result } = renderHook(() => useLoginVerifyPassword(), { wrapper });
 
 		await act(async () => {
-			await result.current.mutateAsync({ temp_token: "t", password: SECRET });
+			await result.current.mutateAsync({ temp_token: "t", password: FAKE_PW });
 		});
 
 		expect(useAuthStore.getState().accessToken).not.toBe(null);
@@ -123,7 +78,7 @@ describe("useLoginVerifyPassword", () => {
 		);
 
 		await act(async () => {
-			await result.current.mutateAsync({ temp_token: "t", password: SECRET });
+			await result.current.mutateAsync({ temp_token: "t", password: FAKE_PW });
 		});
 
 		expect(useAuthStore.getState().tempToken).toBe("step2");
@@ -163,7 +118,7 @@ describe("useSetPassword", () => {
 		const { result } = renderHook(() => useSetPassword(), { wrapper });
 
 		await act(async () => {
-			await result.current.mutateAsync({ password: SECRET, temp_token: "t" });
+			await result.current.mutateAsync({ password: FAKE_PW, temp_token: "t" });
 		});
 
 		expect(useAuthStore.getState().accessToken).not.toBe(null);

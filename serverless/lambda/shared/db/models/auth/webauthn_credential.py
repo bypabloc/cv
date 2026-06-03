@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
@@ -73,6 +74,12 @@ class AuthWebauthnCredential(Base):
         nullable=True,
     )
     nickname: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    required: Mapped[bool] = mapped_column(
+        Boolean(),
+        nullable=False,
+        server_default=text('false'),
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

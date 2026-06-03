@@ -100,41 +100,30 @@ class Start(BaseController):
 
         existing = user_svc.get_by_email(email)
 
-        if existing is None:
-            audit_svc.log(
-                event='login.start',
-                success=False,
-                error_code='EMAIL_NOT_FOUND',
-                ip=meta.ip,
-                user_agent=meta.user_agent,
-                niche=niche,
+        # Fusion register -> login (plan admin-security-overview, bloque D):
+        # si el email NO existe, se CREA el user pending (lo que antes hacia
+        # register.start) y se envia el magic-link + code. Si esta pending,
+        # se re-emiten los artefactos (sin 409). El flujo es passwordless aqui:
+        # el password directo solo aplica a un user ya `active`.
+        if existing is None or existing.status == AuthUserStatus.PENDING:
+            created = existing is None
+            user = (
+                user_svc.create_pending(email=email)
+                if created
+                else existing
             )
-            return {
-                'is_valid': False,
-                'code': 4001,
-                'status': 404,
-                'data': {
-                    'error': 'EMAIL_NOT_FOUND',
-                    'suggest_register': True,
-                    'methods': [],
-                },
-            }
-
-        if existing.status == AuthUserStatus.PENDING:
-            audit_svc.log(
-                event='login.start',
-                success=False,
-                user_id=existing.id,
-                error_code='PENDING_VERIFICATION',
-                ip=meta.ip,
+            return self._issue_entry_email(
+                user=user,
                 niche=niche,
+                meta=meta,
+                created=created,
+                code_svc=code_svc,
+                link_svc=link_svc,
+                jwt_svc=jwt_svc,
+                email_svc=email_svc,
+                audit_svc=audit_svc,
+                user_svc=user_svc,
             )
-            return {
-                'is_valid': False,
-                'code': 4011,
-                'status': 409,
-                'data': {'error': 'PENDING_VERIFICATION'},
-            }
 
         if existing.status in (
             AuthUserStatus.DISABLED,
@@ -172,19 +161,55 @@ class Start(BaseController):
                 audit_svc=audit_svc,
             )
 
-        # status active: invalidar codes + links previos + generar nuevos.
-        user_svc.invalidate_active_codes_and_links(
-            user_id=str(existing.id),
-            kind_code=AuthCodeKind.LOGIN,
-            kind_link=AuthLinkKind.LOGIN,
+        # status active passwordless: re-emite code + magic-link.
+        return self._issue_entry_email(
+            user=existing,
+            niche=niche,
+            meta=meta,
+            created=False,
+            code_svc=code_svc,
+            link_svc=link_svc,
+            jwt_svc=jwt_svc,
+            email_svc=email_svc,
+            audit_svc=audit_svc,
+            user_svc=user_svc,
         )
 
+    def _issue_entry_email(
+        self,
+        *,
+        user: Any,
+        niche: str | None,
+        meta: Any,
+        created: bool,
+        code_svc: Any,
+        link_svc: Any,
+        jwt_svc: Any,
+        email_svc: Any,
+        audit_svc: Any,
+        user_svc: Any,
+    ) -> dict[str, Any]:
+        """Genera code + magic-link, envia el email unificado, emite el temp.
+
+        Es el flujo passwordless de entrada UNIFICADO (login + registro): un
+        user nuevo (created=True) o pending recibe el magic-link + code para
+        verificar; un user active los recibe para loguear. El `verify-*` cierra
+        el flujo (pending -> active si created/pending).
+        """
+        # Para un user nuevo no hay codes/links previos que invalidar.
+        if not created:
+            user_svc.invalidate_active_codes_and_links(
+                user_id=str(user.id),
+                kind_code=AuthCodeKind.LOGIN,
+                kind_link=AuthLinkKind.LOGIN,
+            )
+
         code, _ = code_svc.generate_and_persist(
-            user_id=existing.id,
+            user_id=user.id,
             kind=AuthCodeKind.LOGIN,
         )
         token, _ = link_svc.generate_and_persist(
-            user_id=existing.id,
+            user_id=user.id,
             kind=AuthLinkKind.LOGIN,
             ip=meta.ip,
             user_agent=meta.user_agent,
@@ -197,8 +222,8 @@ class Start(BaseController):
         # UN solo email con el magic-link Y el code (alternativas). LINK y CODE
         # comparten TTL (15 min), por eso un solo expires_in_min.
         email_svc.publish_unified(
-            to=existing.email,
-            user_id=existing.id,
+            to=user.email,
+            user_id=user.id,
             niche=niche,
             kind='login-unified',
             verify_url=verify_url,
@@ -207,7 +232,7 @@ class Start(BaseController):
         )
 
         temp_token, _ = jwt_svc.issue_temp(
-            user_id=existing.id,
+            user_id=user.id,
             flow='login',
             step=1,
         )
@@ -215,7 +240,7 @@ class Start(BaseController):
         audit_svc.log(
             event='login.start',
             success=True,
-            user_id=existing.id,
+            user_id=user.id,
             ip=meta.ip,
             user_agent=meta.user_agent,
             niche=niche,
@@ -228,6 +253,7 @@ class Start(BaseController):
                 'temp_token': temp_token,
                 'methods': ['magic-link', 'email-code'],
                 'expires_in': _TEMP_TTL_SECONDS,
+                'created': created,
             },
         }
 

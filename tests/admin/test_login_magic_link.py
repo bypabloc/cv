@@ -1,16 +1,12 @@
-"""Login del admin: form, link a registro, email no registrado, magic-link.
+"""Login del admin: form, fusion register, check-email, magic-link.
 
-Porta `tests/feature/admin/01-login-magic-link.spec.ts` y AMPLIA al flujo
-REAL end-to-end del magic-link (login.start -> seed -> verify-magic-link 302
--> shell autenticado). [AC-2]
-
-El submit del form de login esta gateado por Turnstile, que en el build
-DESPLEGADO de dev NO esta en modo E2E: el submit nunca se habilita en
-headless sin resolver un challenge. Por eso el "email no registrado -> 404"
-se valida en la capa que el admin sirve real (login.start del backend, que
-es lo que el form invocaria), no forzando el submit. El render del form +
-el link a registro SI se validan en el browser. El login REAL del usuario se
-ejercita por el camino del magic-link (que el admin desplegado honra).
+Login UNIFICADO (plan admin-security-overview, bloque D): la operation
+`register` se fusiono en `login`. El primer paso del login es
+`login.check-email` (existencia + has_password, sin exponer los metodos
+MFA); un email no registrado YA NO da 404 ni hay un link "Registrate" a
+`/register` — el registro ocurre dentro del propio login (login.start crea
+el user si el email no existe). El login REAL del usuario se ejercita por el
+camino del magic-link (que el admin desplegado honra). [AC-2]
 """
 
 from __future__ import annotations
@@ -36,36 +32,36 @@ def test_login_page_renders_form(page: Page, admin_url: str) -> None:
     assert page.get_by_test_id('login-email').count() == 1
 
 
-def test_login_page_links_to_register(page: Page, admin_url: str) -> None:
+def test_login_page_has_no_register_link(page: Page, admin_url: str) -> None:
     """
-    Given /login,
-    When inspecciono el link "Registrate",
-    Then su href apunta a /register.
+    Given /login (login unificado, fusion register->login),
+    When inspecciono la page,
+    Then NO existe un link "Registrate" a /register (el registro ocurre
+        dentro del propio login).
     """
     # Arrange
     page.goto(f'{admin_url}/login/', wait_until='load')
 
-    # Act
-    href = page.get_by_role('link', name='Registrate').get_attribute('href')
-
-    # Assert
-    assert href == '/register/'
+    # Act / Assert
+    assert page.get_by_role('link', name='Registrate').count() == 0
 
 
-def test_login_start_unregistered_email_returns_404(auth: AdminAuth) -> None:
+def test_check_email_unregistered_returns_not_exists(auth: AdminAuth) -> None:
     """
     Given un email NO registrado,
-    When el admin dispara login.start (lo que hace el submit del form),
-    Then el backend dev responde 404 (EMAIL_NOT_FOUND, suggest_register).
+    When el admin dispara login.check-email (paso 1 del login),
+    Then el backend dev responde {exists: false} (la UI ofrece crear cuenta);
+        ya NO devuelve 404 (la fusion register->login crea la cuenta en
+        login.start, no rechaza el email).
     """
     # Arrange
     ghost = auth.new_email('ghost')
 
     # Act
-    status = auth.login_start_status(ghost)
+    body = auth.login_check_email(ghost)
 
     # Assert
-    assert status == 404
+    assert body['exists'] is False
 
 
 def test_login_via_magic_link_lands_in_shell(

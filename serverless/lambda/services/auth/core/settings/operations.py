@@ -39,4 +39,8 @@ OPERATIONS = {
         'controller': 'webauthn',
         'arn_key': '',
     },
+    'security': {
+        'controller': 'security',
+        'arn_key': '',
+    },
 }

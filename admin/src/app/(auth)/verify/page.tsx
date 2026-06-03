@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MagicLinkPrompt } from "@/features/auth/components/magic-link-prompt";
@@ -8,13 +7,11 @@ import { VerifyCodeInput } from "@/features/auth/components/verify-code-input";
 
 /**
  * @component VerifyContent
- * @description Contenido de la pagina verify. Lee `?flow=` para decidir si la
- *   verificacion es de register o login.
+ * @description Contenido de la pagina verify. La verificacion siempre es del
+ *   flujo de login (el registro independiente se elimino: login.start fusiona
+ *   el alta del usuario).
  */
 function VerifyContent() {
-	const params = useSearchParams();
-	const flow = params.get("flow") === "login" ? "login" : "register";
-
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center p-6">
 			<div className="w-full max-w-sm space-y-6">
@@ -25,7 +22,7 @@ function VerifyContent() {
 						<TabsTrigger value="magic-link">Magic link</TabsTrigger>
 					</TabsList>
 					<TabsContent value="code">
-						<VerifyCodeInput flow={flow} />
+						<VerifyCodeInput />
 					</TabsContent>
 					<TabsContent value="magic-link">
 						<MagicLinkPrompt />

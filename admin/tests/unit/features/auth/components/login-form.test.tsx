@@ -6,8 +6,9 @@ import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 /**
  * @module tests/unit/features/auth/components/login-form
- * @description Verifica validacion Zod (email invalido no llama API), el
- *   camino feliz (setea tempToken) y el 404 (Alert + boton Registrate).
+ * @description Verifica el flujo de 2 pasos: validacion Zod (email invalido no
+ *   llama API), check-email -> input de password (cuenta con password) y
+ *   check-email -> "Crear cuenta" (email inexistente, login.start crea el user).
  */
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
@@ -45,16 +46,16 @@ describe("LoginForm", () => {
 		// Act
 		await user.type(screen.getByLabelText(/email/i), "no-es-email");
 		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /iniciar sesion/i }));
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
 
-		// Assert: el store nunca recibio un tempToken (la API no se invoco)
+		// Assert: el form sigue en el paso email (no avanza)
 		await waitFor(() => {
 			expect(screen.getByText(/email invalido/i)).toBeInTheDocument();
 		});
-		expect(useAuthStore.getState().tempToken).toBe(null);
+		expect(screen.queryByTestId("login-password")).not.toBeInTheDocument();
 	});
 
-	it("Given email valido + Turnstile When submit Then setea tempToken", async () => {
+	it("Given cuenta con password When check-email Then muestra el input de password", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
@@ -62,15 +63,13 @@ describe("LoginForm", () => {
 		// Act
 		await user.type(screen.getByLabelText(/email/i), "user@test.com");
 		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /iniciar sesion/i }));
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
 
-		// Assert
-		await waitFor(() => {
-			expect(useAuthStore.getState().tempToken).toBe("mock-temp-login");
-		});
+		// Assert: avanza al paso 2 (input password)
+		expect(await screen.findByTestId("login-password")).toBeInTheDocument();
 	});
 
-	it("Given email no registrado When submit Then muestra Alert + boton Registrate", async () => {
+	it("Given email no registrado When check-email Then ofrece Crear cuenta", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
@@ -78,14 +77,35 @@ describe("LoginForm", () => {
 		// Act
 		await user.type(screen.getByLabelText(/email/i), "unknown@test.com");
 		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /iniciar sesion/i }));
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+
+		// Assert: muestra el alert de cuenta inexistente + boton Crear cuenta
+		await waitFor(() => {
+			expect(
+				screen.getByText(/no existe una cuenta con ese email/i),
+			).toBeInTheDocument();
+		});
+		expect(
+			screen.getByRole("button", { name: /crear cuenta/i }),
+		).toBeInTheDocument();
+	});
+
+	it("Given Crear cuenta When click Then login.start crea el user y navega a /verify", async () => {
+		// Arrange
+		const user = userEvent.setup();
+		render((<LoginForm />) as ReactElement);
+		await user.type(screen.getByLabelText(/email/i), "unknown@test.com");
+		await solveTurnstile();
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		const crear = await screen.findByRole("button", { name: /crear cuenta/i });
+
+		// Act
+		await user.click(crear);
 
 		// Assert
 		await waitFor(() => {
-			expect(screen.getByText(/no esta registrado/i)).toBeInTheDocument();
+			expect(pushMock).toHaveBeenCalledWith("/verify?flow=login");
 		});
-		expect(
-			screen.getByRole("button", { name: /registrate/i }),
-		).toBeInTheDocument();
+		expect(useAuthStore.getState().tempToken).toBe("mock-temp-created");
 	});
 });

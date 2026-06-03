@@ -24,7 +24,7 @@ from services.user_service import UserService
 from settings.config import app_config
 from shared.auth.jwt import JwtExpiredError, JwtInvalidError, JwtRevokedError
 from shared.core.ulid import new_uuidv7
-from shared.db.models.auth.enums import AuthCodeKind
+from shared.db.models.auth.enums import AuthCodeKind, AuthUserStatus
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#login.verify-code'
@@ -166,6 +166,12 @@ class VerifyCode(BaseController):
                     'attempts': attempts,
                 },
             }
+
+        # Fusion register -> login (bloque D): si el user es nuevo (pending),
+        # el code valido cierra el registro -> lo marca active. Si ya esta
+        # active, solo loguea. El backend decide por el STATUS, no por el flow.
+        if user.status == AuthUserStatus.PENDING:
+            user_svc.mark_active(user)
 
         # Code OK: actualiza last_login + blacklistea el temp + tokens.
         user_svc.update_last_login(user)

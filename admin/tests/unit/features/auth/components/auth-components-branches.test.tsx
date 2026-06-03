@@ -16,7 +16,8 @@ import { WebAuthnRegisterButton } from "@/features/auth/components/webauthn-regi
 
 /**
  * @module tests/unit/features/auth/components/auth-components-branches
- * @description Cubre ramas faltantes: login-form boton Registrate (push),
+ * @description Cubre ramas faltantes: login-form de 2 pasos (check-email ->
+ *   crear cuenta / passwordless / password / no disponible),
  *   webauthn login sin email + catch, webauthn register catch + nickname,
  *   totp-setup loading + guard de longitud + DIGITS false + isPending.
  */
@@ -45,9 +46,9 @@ vi.mock("@simplewebauthn/browser", () => ({
 
 const API = "https://api.test.the-full-stack.com";
 
-describe("LoginForm boton Registrate", () => {
-	it("Given Alert visible When click Registrate Then navega a /register", async () => {
-		// Arrange
+describe("LoginForm flujo de 2 pasos", () => {
+	it("Given email inexistente When check-email Then ofrece crear cuenta y navega a /verify", async () => {
+		// Arrange: check-email -> exists:false -> stage 'create'.
 		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
 		// LoginForm + WebAuthnLoginButton tienen un input email cada uno; el de
@@ -57,78 +58,78 @@ describe("LoginForm boton Registrate", () => {
 			"unknown@test.com",
 		);
 		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
-		await user.click(screen.getByRole("button", { name: /iniciar sesion/i }));
-		const registrate = await screen.findByRole("button", {
-			name: /registrate/i,
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		const crear = await screen.findByRole("button", {
+			name: /crear cuenta/i,
 		});
 
-		// Act: cubre el onClick `router.push(ROUTES.auth.register)`
-		await user.click(registrate);
-
-		// Assert
-		expect(pushMock).toHaveBeenCalledWith("/register");
-	});
-
-	it("Given 404 sin suggest_register When submit Then NO muestra el Alert (rama false)", async () => {
-		// Arrange: 404 con suggest_register false -> rama `if (suggest_register)` falsa
-		server.use(
-			http.post(`${API}/auth`, () =>
-				HttpResponse.json(
-					{
-						error: "EMAIL_NOT_FOUND",
-						code: 4040,
-						message: "No existe",
-						suggest_register: false,
-					},
-					{ status: 404 },
-				),
-			),
-		);
-		const user = userEvent.setup();
-		render((<LoginForm />) as ReactElement);
-		await user.type(screen.getByPlaceholderText("tu@email.com"), "x@test.com");
-		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
-
-		// Act
-		await user.click(screen.getByRole("button", { name: /iniciar sesion/i }));
-
-		// Assert: el alert "no esta registrado" NO aparece
-		await waitFor(() => {
-			expect(
-				screen.getByRole("button", { name: /iniciar sesion/i }),
-			).not.toBeDisabled();
-		});
-		expect(screen.queryByText(/no esta registrado/i)).not.toBeInTheDocument();
-	});
-
-	it("Given un error 500 (no 404) When submit Then NO muestra el Alert (rama false)", async () => {
-		// Arrange: cubre `error.status === 404` falso
-		server.use(
-			http.post(`${API}/auth`, () =>
-				HttpResponse.json(
-					{ error: "SERVER_ERROR", code: 5000, message: "Boom" },
-					{ status: 500 },
-				),
-			),
-		);
-		const user = userEvent.setup();
-		render((<LoginForm />) as ReactElement);
-		await user.type(screen.getByPlaceholderText("tu@email.com"), "y@test.com");
-		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
-
-		// Act
-		await user.click(screen.getByRole("button", { name: /iniciar sesion/i }));
+		// Act: login.start crea el user (registro fusionado) -> /verify?flow=login
+		await user.click(crear);
 
 		// Assert
 		await waitFor(() => {
-			expect(
-				screen.getByRole("button", { name: /iniciar sesion/i }),
-			).not.toBeDisabled();
+			expect(pushMock).toHaveBeenCalledWith("/verify?flow=login");
 		});
-		expect(screen.queryByText(/no esta registrado/i)).not.toBeInTheDocument();
 	});
 
-	it("Given submit en vuelo When responde lento Then muestra Enviando... (isPending)", async () => {
+	it("Given email sin password When check-email Then ofrece login passwordless y navega a /verify", async () => {
+		// Arrange: check-email -> exists:true, has_password:false -> stage 'passwordless'.
+		const user = userEvent.setup();
+		render((<LoginForm />) as ReactElement);
+		await user.type(
+			screen.getByPlaceholderText("tu@email.com"),
+			"passwordless@test.com",
+		);
+		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		const continuar = await screen.findByTestId("login-passwordless");
+
+		// Act
+		await user.click(continuar);
+
+		// Assert
+		await waitFor(() => {
+			expect(pushMock).toHaveBeenCalledWith("/verify?flow=login");
+		});
+	});
+
+	it("Given email con password When check-email Then muestra el input de password", async () => {
+		// Arrange: check-email default -> exists:true, has_password:true -> stage 'password'.
+		const user = userEvent.setup();
+		render((<LoginForm />) as ReactElement);
+		await user.type(
+			screen.getByPlaceholderText("tu@email.com"),
+			"user@test.com",
+		);
+		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
+
+		// Act
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+
+		// Assert: aparece el input de password (paso 2)
+		expect(await screen.findByTestId("login-password")).toBeInTheDocument();
+	});
+
+	it("Given cuenta no disponible When check-email Then muestra el Alert generico", async () => {
+		// Arrange: check-email -> unavailable:true -> stage 'unavailable'.
+		const user = userEvent.setup();
+		render((<LoginForm />) as ReactElement);
+		await user.type(
+			screen.getByPlaceholderText("tu@email.com"),
+			"blocked@test.com",
+		);
+		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
+
+		// Act
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+
+		// Assert
+		expect(
+			await screen.findByText(/no se puede iniciar sesion con esta cuenta/i),
+		).toBeInTheDocument();
+	});
+
+	it("Given check-email en vuelo When responde lento Then muestra Verificando... (isPending)", async () => {
 		// Arrange
 		server.use(
 			http.post(`${API}/auth`, async () => {
@@ -136,7 +137,7 @@ describe("LoginForm boton Registrate", () => {
 				return HttpResponse.json({
 					is_valid: true,
 					code: 0,
-					data: { temp_token: "t", user_id: "usr_01", expires_in: 300 },
+					data: { exists: true, has_password: true },
 				});
 			}),
 		);
@@ -146,10 +147,10 @@ describe("LoginForm boton Registrate", () => {
 		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
 
 		// Act
-		await user.click(screen.getByRole("button", { name: /iniciar sesion/i }));
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
 
 		// Assert: rama isPending true del boton
-		const pending = await screen.findByRole("button", { name: /enviando/i });
+		const pending = await screen.findByRole("button", { name: /verificando/i });
 		expect(pending).toBeDisabled();
 	});
 });

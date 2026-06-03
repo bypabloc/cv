@@ -8,7 +8,6 @@ import {
 	InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useLoginVerifyCode } from "../hooks/use-login-verify-code";
-import { useRegisterVerifyCode } from "../hooks/use-register-verify-code";
 import { useAuthStore } from "../store/use-auth-store";
 
 const CODE_LENGTH = 8;
@@ -16,18 +15,14 @@ const CROCKFORD = /^[0-9A-HJ-NP-Z]*$/;
 
 /**
  * @component VerifyCodeInput
- * @description InputOTP de 8 chars (alfabeto Crockford). Segun `flow` dispara
- *   register.verify-code o login.verify-code con el temp_token del store.
- *
- * @props {'register' | 'login'} flow - De que operacion es la verificacion
+ * @description InputOTP de 8 chars (alfabeto Crockford). Dispara
+ *   login.verify-code con el temp_token del store. El registro independiente
+ *   se elimino: login.start fusiona el alta del usuario.
  */
-export function VerifyCodeInput({ flow }: { flow: "register" | "login" }) {
+export function VerifyCodeInput() {
 	const [code, setCode] = useState("");
 	const tempToken = useAuthStore((s) => s.tempToken);
-	const registerVerify = useRegisterVerifyCode();
-	const loginVerify = useLoginVerifyCode();
-
-	const verify = flow === "register" ? registerVerify : loginVerify;
+	const verify = useLoginVerifyCode();
 	const isPending = verify.isPending;
 
 	const onSubmit = (event: React.FormEvent) => {
@@ -50,7 +45,7 @@ export function VerifyCodeInput({ flow }: { flow: "register" | "login" }) {
 				<InputOTPGroup>
 					{Array.from({ length: CODE_LENGTH }, (_, i) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: el slot OTP es posicional y de longitud fija; el index es su identificador canonico
-						<InputOTPSlot key={`otp-${flow}-${i}`} index={i} />
+						<InputOTPSlot key={`otp-login-${i}`} index={i} />
 					))}
 				</InputOTPGroup>
 			</InputOTP>

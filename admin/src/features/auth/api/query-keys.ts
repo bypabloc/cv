@@ -9,4 +9,5 @@ export const authKeys = {
 	methods: (email: string) => [...authKeys.all, "methods", email] as const,
 	mfa: () => [...authKeys.all, "mfa"] as const,
 	webauthn: () => [...authKeys.all, "webauthn"] as const,
+	securityOverview: () => [...authKeys.all, "security", "overview"] as const,
 };

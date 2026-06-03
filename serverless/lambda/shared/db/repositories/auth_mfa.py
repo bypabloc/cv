@@ -29,15 +29,23 @@ __all__ = [
     'delete_webauthn_credential',
     'disable_mfa',
     'disable_webauthn_credential',
+    'enable_mfa',
+    'enable_webauthn',
+    'get_all_mfa_methods',
+    'get_all_webauthn_credentials',
     'get_mfa_method',
     'get_webauthn_credential_by_id',
     'get_webauthn_credentials',
     'insert_recovery_codes',
     'insert_webauthn_credential',
     'list_mfa_methods',
+    'list_required_methods',
     'mark_method_used',
     'regenerate_recovery_codes',
     'set_preferred',
+    'set_required',
+    'set_webauthn_required',
+    'soft_disable_webauthn',
     'update_sign_count',
     'upsert_totp_method',
 ]
@@ -60,6 +68,16 @@ def list_mfa_methods(
         AuthMfaMethod.user_id == user_id,
         AuthMfaMethod.disabled_at.is_(None),
     )
+    return list(session.execute(stmt).scalars())
+
+
+def get_all_mfa_methods(
+    session: Session,
+    *,
+    user_id: str,
+) -> list[AuthMfaMethod]:
+    """TODOS los metodos MFA del user, incluso desactivados (para el overview)."""
+    stmt = select(AuthMfaMethod).where(AuthMfaMethod.user_id == user_id)
     return list(session.execute(stmt).scalars())
 
 
@@ -153,6 +171,80 @@ def set_preferred(
     for method in list_mfa_methods(session, user_id=user_id):
         method.preferred = method.kind == kind
     session.flush()
+
+
+def enable_mfa(
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
+) -> bool:
+    """Re-activa el metodo: `disabled_at=NULL` SIN tocar `confirmed_at`.
+
+    Inverso de `disable_mfa`. Idempotente: si el metodo ya esta activo, no
+    hace nada y devuelve True. False solo si el row `(user_id, kind)` no
+    existe (el controller devuelve 404, anti-enumeration).
+    """
+    method = get_mfa_method(session, user_id=user_id, kind=kind)
+    if method is None:
+        return False
+    if method.disabled_at is not None:
+        method.disabled_at = None
+        session.flush()
+    return True
+
+
+def set_required(
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
+    required: bool,
+) -> bool:
+    """Setea `required` en el row `(user_id, kind)` activo. False si no existe.
+
+    Un metodo desactivado (`disabled_at IS NOT NULL`) NO se puede marcar
+    requerido (el login lo ignoraria) -> se trata como inexistente (False
+    -> 404 en el controller).
+    """
+    method = get_mfa_method(session, user_id=user_id, kind=kind)
+    if method is None or method.disabled_at is not None:
+        return False
+    method.required = required
+    session.flush()
+    return True
+
+
+def list_required_methods(session: Session, *, user_id: str) -> list[str]:
+    """Tipos de metodo MFA con `required=true` y activos del user.
+
+    Devuelve los kinds de `auth_mfa_methods` confirmados + activos +
+    requeridos (ej. `'totp'`) mas `'webauthn'` si el user tiene >=1 passkey
+    activa + requerida. Es lo que el login EXIGE (multi-factor).
+    """
+    method_kinds = list(
+        session.scalars(
+            select(AuthMfaMethod.kind).where(
+                AuthMfaMethod.user_id == user_id,
+                AuthMfaMethod.confirmed_at.is_not(None),
+                AuthMfaMethod.disabled_at.is_(None),
+                AuthMfaMethod.required.is_(True),
+            )
+        )
+    )
+    required = [kind.value for kind in method_kinds]
+    passkeys = session.scalar(
+        select(func.count())
+        .select_from(AuthWebauthnCredential)
+        .where(
+            AuthWebauthnCredential.user_id == user_id,
+            AuthWebauthnCredential.disabled_at.is_(None),
+            AuthWebauthnCredential.required.is_(True),
+        )
+    )
+    if int(passkeys or 0) > 0:
+        required.append('webauthn')
+    return required
 
 
 def mark_method_used(
@@ -301,6 +393,20 @@ def get_webauthn_credentials(
     return list(session.execute(stmt).scalars())
 
 
+def get_all_webauthn_credentials(
+    session: Session,
+    *,
+    user_id: str,
+) -> list[AuthWebauthnCredential]:
+    """TODAS las passkeys del user, incluso desactivadas (para el overview)."""
+    stmt = (
+        select(AuthWebauthnCredential)
+        .where(AuthWebauthnCredential.user_id == user_id)
+        .order_by(AuthWebauthnCredential.created_at.desc())
+    )
+    return list(session.execute(stmt).scalars())
+
+
 def get_webauthn_credential_by_id(
     session: Session,
     *,
@@ -372,5 +478,80 @@ def delete_webauthn_credential(
     if cred is None:
         return False
     session.delete(cred)
+    session.flush()
+    return True
+
+
+def _get_webauthn_by_record_id(
+    session: Session,
+    *,
+    user_id: str,
+    record_id: str,
+) -> AuthWebauthnCredential | None:
+    """El passkey del user por su `id` (UUID PK). None si no es del user."""
+    stmt = select(AuthWebauthnCredential).where(
+        AuthWebauthnCredential.user_id == user_id,
+        AuthWebauthnCredential.id == record_id,
+    )
+    return session.execute(stmt).scalar_one_or_none()
+
+
+def soft_disable_webauthn(
+    session: Session,
+    *,
+    user_id: str,
+    record_id: str,
+    when: datetime | None = None,
+) -> bool:
+    """Marca `disabled_at=now()` en el passkey del user (toggle-off reversible).
+
+    A diferencia de `delete_webauthn_credential` (hard-delete), conserva el
+    row para poder re-activarlo con `enable_webauthn`. False si el passkey no
+    es del user (404, anti-enumeration).
+    """
+    cred = _get_webauthn_by_record_id(
+        session, user_id=user_id, record_id=record_id,
+    )
+    if cred is None:
+        return False
+    if cred.disabled_at is None:
+        cred.disabled_at = _now(when)
+        cred.required = False
+        session.flush()
+    return True
+
+
+def enable_webauthn(
+    session: Session,
+    *,
+    user_id: str,
+    record_id: str,
+) -> bool:
+    """Re-activa el passkey: `disabled_at=NULL`. Idempotente. False si no es del user."""
+    cred = _get_webauthn_by_record_id(
+        session, user_id=user_id, record_id=record_id,
+    )
+    if cred is None:
+        return False
+    if cred.disabled_at is not None:
+        cred.disabled_at = None
+        session.flush()
+    return True
+
+
+def set_webauthn_required(
+    session: Session,
+    *,
+    user_id: str,
+    record_id: str,
+    required: bool,
+) -> bool:
+    """Setea `required` en el passkey activo del user. False si no existe/desactivado."""
+    cred = _get_webauthn_by_record_id(
+        session, user_id=user_id, record_id=record_id,
+    )
+    if cred is None or cred.disabled_at is not None:
+        return False
+    cred.required = required
     session.flush()
     return True

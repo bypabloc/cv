@@ -77,19 +77,51 @@ export const authHandlers = [
 		}
 
 		// --- login ---
+		if (operation === "login" && action === "check-email") {
+			// Banderas FLAT (sin lista de metodos). El caller decide el paso 2.
+			if (data.email === "unknown@test.com") {
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { exists: false },
+				});
+			}
+			if (data.email === "blocked@test.com") {
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { exists: true, unavailable: true },
+				});
+			}
+			if (data.email === "passwordless@test.com") {
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { exists: true, has_password: false },
+				});
+			}
+			// Default: cuenta existente con password.
+			return HttpResponse.json({
+				is_valid: true,
+				code: 0,
+				data: { exists: true, has_password: true },
+			});
+		}
 		if (operation === "login" && action === "start") {
 			if (data.email === "unknown@test.com") {
-				// Error FLAT como el backend real: suggest_register al nivel raiz.
-				return HttpResponse.json(
-					{
-						error: "EMAIL_NOT_FOUND",
-						code: 4040,
-						message: "Email no existe",
-						suggest_register: true,
-						methods: [],
+				// login.start ahora CREA el user (registro fusionado): devuelve
+				// temp_token + created. El 404 EMAIL_NOT_FOUND ya NO ocurre.
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: {
+						temp_token: "mock-temp-created",
+						user_id: "usr_new",
+						expires_in: 300,
+						created: true,
+						methods: ["magic-link", "email-code"],
 					},
-					{ status: 404 },
-				);
+				});
 			}
 			if (data.email === "mfa@test.com") {
 				return HttpResponse.json({

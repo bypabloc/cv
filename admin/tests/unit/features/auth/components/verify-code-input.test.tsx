@@ -6,8 +6,8 @@ import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 /**
  * @module tests/unit/features/auth/components/verify-code-input
- * @description Verifica el InputOTP de 8 chars y que el submit con el code
- *   correcto (register.verify-code = 12345678) cierre la sesion.
+ * @description Verifica el InputOTP de 8 chars y que el submit con un code de 8
+ *   chars (login.verify-code) cierre la sesion.
  */
 
 vi.mock("next/navigation", () => ({
@@ -20,17 +20,17 @@ describe("VerifyCodeInput", () => {
 		useAuthStore.setState({ tempToken: "mock-temp" });
 
 		// Act
-		render((<VerifyCodeInput flow="register" />) as ReactElement);
+		render((<VerifyCodeInput />) as ReactElement);
 
 		// Assert
 		expect(screen.getByRole("button", { name: /verificar/i })).toBeDisabled();
 	});
 
-	it("Given code valido When submit Then setea la sesion (register.verify-code)", async () => {
+	it("Given code valido When submit Then setea la sesion (login.verify-code)", async () => {
 		// Arrange
 		useAuthStore.setState({ tempToken: "mock-temp" });
 		const user = userEvent.setup();
-		render((<VerifyCodeInput flow="register" />) as ReactElement);
+		render((<VerifyCodeInput />) as ReactElement);
 
 		// Act
 		await user.type(

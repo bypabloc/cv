@@ -26,7 +26,7 @@ from settings.config import app_config
 from shared.auth.jwt import JwtError
 from shared.lambda_kit.base_controller import BaseController
 
-from ._mfa_login import issue_terminal_tokens
+from ._mfa_login import build_mfa_flow, issue_terminal_tokens
 from ._password_check import check_password
 
 _ENDPOINT = '/auth#login.verify-password'
@@ -143,9 +143,15 @@ class VerifyPassword(BaseController):
             )
             return {'is_valid': True, 'code': 0, 'data': tokens}
 
+        # El user tiene MFA: decide que metodos pedir. Si tiene metodos
+        # `required` (multi-factor), se exigen todos (el step-up los lleva
+        # en `methods`); si no, se proponen los disponibles y con uno basta
+        # (comportamiento legacy, AC-B9). El `flow` arranca sin satisfechos.
+        required = mfa_svc.required_methods(user_id=user.id)
+        methods = required if required else list(_MFA_METHODS)
         temp_token, _ = jwt_svc.issue_temp(
             user_id=user.id,
-            flow=_MFA_FLOW,
+            flow=build_mfa_flow([]),
             step=2,
         )
         audit_svc.log(
@@ -160,7 +166,7 @@ class VerifyPassword(BaseController):
             'code': 0,
             'data': {
                 'temp_token': temp_token,
-                'methods': list(_MFA_METHODS),
+                'methods': methods,
                 'step': 2,
             },
         }

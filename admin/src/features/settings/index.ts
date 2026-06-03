@@ -15,6 +15,7 @@ export { EmailCodeSection } from "./components/email-code-section";
 export { MfaMethodsList } from "./components/mfa-methods-list";
 export { ProfileForm } from "./components/profile-form";
 export { RecoveryCodesSection } from "./components/recovery-codes-section";
+export { SecurityOverviewPanel } from "./components/security-overview-panel";
 export { WebAuthnCredentialsList } from "./components/webauthn-credentials-list";
 // Hooks
 export {
@@ -24,6 +25,12 @@ export {
 export { useChangePassword } from "./hooks/use-change-password";
 export { useDeleteAccount } from "./hooks/use-delete-account";
 export { useProfile } from "./hooks/use-profile";
+export { useSecurityOverview } from "./hooks/use-security-overview";
+export { type SetRequiredVars, useSetRequired } from "./hooks/use-set-required";
+export {
+	type ToggleMethodVars,
+	useToggleMethod,
+} from "./hooks/use-toggle-method";
 export { useUpdateProfile } from "./hooks/use-update-profile";
 // Tipos publicos
 export type {

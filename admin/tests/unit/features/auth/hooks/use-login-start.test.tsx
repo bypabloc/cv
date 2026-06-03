@@ -4,12 +4,12 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { useLoginStart } from "@/features/auth/hooks/use-login-start";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
-import { ApiError } from "@/lib/api-client";
 
 /**
  * @module tests/unit/features/auth/hooks/use-login-start
- * @description Verifica login.start: 404 EMAIL_NOT_FOUND (suggest_register) y
- *   200 con methods (setea tempToken).
+ * @description Verifica login.start: email inexistente -> 200 con `created`
+ *   (registro fusionado, ya NO 404) y email con MFA -> 200 con methods. Ambos
+ *   setean el tempToken.
  */
 
 vi.mock("next/navigation", () => ({
@@ -24,29 +24,21 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe("useLoginStart", () => {
-	it("Given email inexistente When mutate Then lanza ApiError 404 con suggest_register", async () => {
+	it("Given email inexistente When mutate Then crea el user (created) y setea tempToken", async () => {
 		// Arrange
 		const { result } = renderHook(() => useLoginStart(), { wrapper });
 
 		// Act
-		const error = await act(async () =>
-			result.current
-				.mutateAsync({
-					email: "unknown@test.com",
-					cf_turnstile_response: "tok",
-				})
-				.catch((e: unknown) => e),
+		const response = await act(async () =>
+			result.current.mutateAsync({
+				email: "unknown@test.com",
+				cf_turnstile_response: "tok",
+			}),
 		);
 
-		// Assert
-		expect(error).toBeInstanceOf(ApiError);
-		expect((error as ApiError).status).toBe(404);
-		// Error FLAT del backend: suggest_register al nivel raiz de error.data.
-		const data = (error as ApiError).data as {
-			suggest_register?: boolean;
-		};
-		expect(data.suggest_register).toBe(true);
-		expect(useAuthStore.getState().tempToken).toBe(null);
+		// Assert: el 404 EMAIL_NOT_FOUND ya NO ocurre; login.start crea el user.
+		expect(response.data.created).toBe(true);
+		expect(useAuthStore.getState().tempToken).toBe("mock-temp-created");
 	});
 
 	it("Given email con MFA When mutate Then setea tempToken y devuelve methods", async () => {

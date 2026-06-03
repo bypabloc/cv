@@ -17,12 +17,12 @@ describe("NAV_ITEMS", () => {
 		expect(hrefs).toContain("/metrics");
 	});
 
-	it("Given los items When se cuentan Then hay 5 (con Metricas)", () => {
+	it("Given los items When se cuentan Then hay 6 (con Metricas y Seguridad)", () => {
 		// Arrange + Act + Assert
-		expect(NAV_ITEMS).toHaveLength(5);
+		expect(NAV_ITEMS).toHaveLength(6);
 	});
 
-	it("Given los items When se listan Then son metrics, settings, sessions, users, cv", () => {
+	it("Given los items When se listan Then son metrics, settings, security, sessions, users, cv", () => {
 		// Arrange + Act
 		const hrefs = NAV_ITEMS.map((item) => item.href);
 
@@ -30,9 +30,20 @@ describe("NAV_ITEMS", () => {
 		expect(hrefs).toEqual([
 			"/metrics",
 			"/settings",
+			"/settings/security",
 			"/sessions",
 			"/users",
 			"/cv",
 		]);
+	});
+
+	it("Given los items When se busca Seguridad Then existe con href /settings/security y label Seguridad", () => {
+		// Arrange + Act
+		const security = NAV_ITEMS.find(
+			(item) => item.href === "/settings/security",
+		);
+
+		// Assert
+		expect(security?.label).toBe("Seguridad");
 	});
 });

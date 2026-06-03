@@ -81,3 +81,37 @@ export interface AdminAction {
 	action: string;
 	created_at: string;
 }
+
+/** Tipos de metodo de seguridad que devuelve security.overview. */
+export type SecurityMethodType =
+	| "totp"
+	| "email_code"
+	| "webauthn"
+	| "recovery_codes"
+	| "password";
+
+/** Entrada del overview de seguridad (security.overview -> data.methods[]). El
+ *  `detail` es polimorfico por tipo: webauthn = {credentials: SecurityPasskey[]};
+ *  recovery_codes = {total, remaining}; password = {last_change_at}. */
+export interface SecurityMethod {
+	type: SecurityMethodType;
+	label: string;
+	configured: boolean;
+	enabled: boolean;
+	required: boolean;
+	preferred: boolean;
+	created_at: string | null;
+	last_used_at: string | null;
+	detail: Record<string, unknown>;
+}
+
+/** Passkey dentro del detail de un SecurityMethod type 'webauthn'. */
+export interface SecurityPasskey {
+	credential_id: string;
+	nickname: string | null;
+	transports: string[] | null;
+	enabled: boolean;
+	required: boolean;
+	created_at: string;
+	last_used_at: string | null;
+}

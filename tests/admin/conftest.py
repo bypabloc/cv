@@ -224,7 +224,11 @@ class AdminAuth:
         return resp.status
 
     def login_start_status(self, email: str) -> int:
-        """Status de `login.start` para `email` (404 si no registrado)."""
+        """Status de `login.start` para `email`.
+
+        Login unificado (fusion register->login): un email no registrado YA NO
+        devuelve 404 — `login.start` crea el user pending y responde 200.
+        """
         resp = self._http.post(
             '/auth',
             body=make_body(
@@ -234,6 +238,21 @@ class AdminAuth:
             bypass_token=self._bypass,
         )
         return resp.status
+
+    def login_check_email(self, email: str) -> dict:
+        """Body de `login.check-email` (existencia + has_password, sin metodos).
+
+        Paso 1 del login unificado: NO crea nada. Devuelve `{exists, ...}`.
+        """
+        resp = self._http.post(
+            '/auth',
+            body=make_body(
+                'login', 'check-email', email=email, cf_turnstile_response='',
+            ),
+            origin=self._origin,
+            bypass_token=self._bypass,
+        )
+        return resp.json()
 
     def magic_link_callback_url(self, email: str, user_id: str) -> str:
         """Reconstruye la URL del callback REAL del magic-link de login.

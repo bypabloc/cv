@@ -28,7 +28,7 @@ describe("MobileSidebar", () => {
 		useVisibleNavItemsMock.mockReturnValue(ADMIN_ITEMS);
 	});
 
-	it("Given un admin When abre el Sheet Then muestra los 5 items", async () => {
+	it("Given un admin When abre el Sheet Then muestra los 6 items", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render(<MobileSidebar />);
@@ -38,10 +38,10 @@ describe("MobileSidebar", () => {
 
 		// Assert
 		const links = await screen.findAllByRole("link");
-		expect(links).toHaveLength(5);
+		expect(links).toHaveLength(6);
 	});
 
-	it("Given un NO-admin When abre el Sheet Then oculta el item Usuarios (4 items)", async () => {
+	it("Given un NO-admin When abre el Sheet Then oculta el item Usuarios (5 items)", async () => {
 		// Arrange
 		useVisibleNavItemsMock.mockReturnValue(NON_ADMIN_ITEMS);
 		const user = userEvent.setup();
@@ -52,7 +52,7 @@ describe("MobileSidebar", () => {
 
 		// Assert
 		const links = await screen.findAllByRole("link");
-		expect(links).toHaveLength(4);
+		expect(links).toHaveLength(5);
 		expect(screen.queryByRole("link", { name: /usuarios/i })).toBe(null);
 	});
 

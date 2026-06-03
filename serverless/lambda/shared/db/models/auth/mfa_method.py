@@ -71,6 +71,12 @@ class AuthMfaMethod(Base):
         server_default=text('false'),
     )
 
+    required: Mapped[bool] = mapped_column(
+        Boolean(),
+        nullable=False,
+        server_default=text('false'),
+    )
+
     confirmed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

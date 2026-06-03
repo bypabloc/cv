@@ -24,17 +24,21 @@ dependencies = [
     # AWS SDK (used by serverless/state.py S3StateBackend when
     # DEVTOOLS_STATE_BACKEND=s3 — the CI path)
     "boto3>=1.35.0",
-    # Headless browser automation (used by ai_audit/ to scrape AI readiness
-    # tools). Chromium binary downloaded on first run via
-    # `playwright install chromium` (~280MB, idempotent).
+    # Headless browser automation. Used by ai_audit/ to scrape AI readiness
+    # tools AND by the e2e/ command (tests/shared/browser.py) to drive the
+    # deployed admin + Astro apps with playwright-python. Chromium/WebKit
+    # downloaded on first run via `playwright install`; in the `e2e` Docker
+    # container the official playwright image preinstalls them.
     "playwright>=1.49.0",
     # HTML parser (used by ai_audit/tools/ to parse scraped DOM)
     "beautifulsoup4>=4.13.0",
-    # PostgreSQL driver (used by api_e2e/ to seed code hashes in the deployed
-    # Neon dev/stage DB for the auth verify flow + cleanup of synthetic data)
+    # PostgreSQL driver. Used by the e2e/ command (tests/shared/db.py) to seed
+    # code/token hashes in the deployed Neon dev/stage DB for the auth verify
+    # flow + cleanup of synthetic data.
     "psycopg[binary]>=3.2.0",
-    # Ed25519 sign/verify (used by bypass_token/ keygen + api_e2e/ to mint the
-    # signed Turnstile bypass token; mirrors shared.crypto on the backend)
+    # Ed25519 sign/verify. Used by bypass_token/ keygen + the e2e/ command
+    # (tests/shared/secrets.py) to mint the signed Turnstile bypass token;
+    # mirrors shared.crypto on the backend.
     "cryptography>=44,<46",
 ]
 

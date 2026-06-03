@@ -4,7 +4,7 @@ Keygen + mint del **token de bypass de Turnstile** firmado con Ed25519.
 Lado FIRMANTE (devtools) del bypass; el backend
 (`shared.crypto.bypass_token`) es el VERIFICADOR.
 
-El bypass permite que los tests E2E (`api_e2e`) y dev local ejerciten los
+El bypass permite que los tests E2E (`tests/`, comando `e2e`) y dev local ejerciten los
 endpoints protegidos por Turnstile (`contact.create`, `auth.register.start`,
 `auth.login.start`) sin un widget real. El firmante tiene la clave PRIVADA
 (local-only); el Lambda solo tiene la PUBLICA (SSM) -> un leak del entorno

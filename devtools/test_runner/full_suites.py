@@ -1,15 +1,14 @@
 """Full-suite execution path: run every test type for the requested modules.
 
 This is the default mode (no ``--git-mode``) and the fallback for git-mode
-when a module's classification yields no work to do. Each module
-delegates to ``shared.test_executors`` (server, dashboard, landing) or the local
-``feature`` helper (Playwright) — y para ``devtools`` se invoca pytest en
-el host Python 3.14, fuera de Docker.
+when a module's classification yields no work to do. Each module delegates
+to ``shared.test_executors`` (server) o al path genérico de frontend
+(Vitest para apps Astro y packages) — y para ``devtools`` se invoca pytest
+en el host Python 3.14, fuera de Docker.
 
-Mayo 2026: el módulo top-level ``e2e`` fue eliminado. Ahora cada producto
-(dashboard, landing) tiene su ``--type=feature`` mapeado a Playwright via
-``test_runner.feature.run_feature``. Server tiene ``--type=feature``
-mapeado a pytest -m feature dentro de ``shared.test_executors``.
+Junio 2026: los E2E del portfolio (Playwright) ya no se corren aqui. Los
+módulos/tipos ``feature``, ``e2e`` y ``tests`` fueron eliminados y se
+corren con el comando dedicado ``python devtools/run.py e2e``.
 """
 
 from __future__ import annotations
@@ -25,7 +24,7 @@ from shared.paths import PROJECT_ROOT
 from shared.test_executors import run_dashboard_tests
 from shared.test_executors import run_landing_tests
 from shared.test_executors import run_server_tests
-from test_runner.feature import run_feature
+
 from test_runner.modules import resolve_types_for_module
 
 
@@ -78,17 +77,17 @@ def execute_full_suites(
     test_type: str,
     verbose: bool,
     quiet: bool,
-    screenshots: bool = False,
-    project: str = '',
-    shard: int | None = None,
-    shard_total: int | None = None,
-    fail_on_flaky: bool = False,
 ) -> dict[str, int]:
     """Execute full test suites for each module x type combination."""
     results: dict[str, int] = {}
 
     _portfolio_apps = (
-        'hub', 'generic', 'fintech', 'architect', 'leader', 'vibe',
+        'hub',
+        'generic',
+        'fintech',
+        'architect',
+        'leader',
+        'vibe',
     )
     _portfolio_pkgs = ('app-shared', 'content', 'cv-pdf', 'seo', 'ui')
     _all_frontend = set(_portfolio_apps) | {f'pkg-{p}' for p in _portfolio_pkgs}
@@ -98,20 +97,8 @@ def execute_full_suites(
         for t in types:
             print()
             key = f'{module}:{t}'
-            # Playwright para feature tests globales (portfolio).
-            if module == 'feature' and t == 'feature':
-                results[key] = run_feature(
-                    env=env,
-                    module='feature',
-                    verbose=verbose,
-                    quiet=quiet,
-                    screenshots=screenshots,
-                    project=project,
-                    shard=shard,
-                    shard_total=shard_total,
-                    fail_on_flaky=fail_on_flaky,
-                )
-                continue
+            # Los E2E del portfolio (api/admin/app) NO se corren aqui: son
+            # Python y viven en el comando dedicado `e2e`.
             if module == 'server':
                 results[key] = run_server_tests(env, t, verbose, quiet=quiet)
             elif module in _all_frontend:
@@ -171,8 +158,11 @@ def _run_portfolio_frontend_tests(
         cmd = ['pnpm', 'exec', 'vitest', 'run']
 
     result = compose_exec(
-        env, target_service, cmd,
-        workdir=target_workdir, timeout=300,
+        env,
+        target_service,
+        cmd,
+        workdir=target_workdir,
+        timeout=300,
         capture=quiet,
     )
     if result.returncode != 0:

@@ -1,188 +1,19 @@
-"""Unit tests for test_runner.flags - sharding/project flags for CI.
+"""Unit tests for test_runner.flags - module/type/env validation.
 
 Path mirroring: devtools/test_runner/flags.py -> this file.
 
-Cubre las flags de Playwright (--project, --shard, --shard-total,
---fail-on-flaky) que requieren --module=feature y --type=feature
-(mayo 2026: el módulo top-level `e2e` fue eliminado y cada producto
-tiene su `--type=feature`). La validación existente de module/type/env
-ya esta probada implicitamente al usarse en cada invocacion.
+Junio 2026: los flags playwright-only (--project, --shard, --shard-total,
+--fail-on-flaky, --screenshots, --ui-review) fueron eliminados junto con el
+módulo `feature`. Los E2E del portfolio se corren con el comando dedicado
+`python devtools/run.py e2e --module=<api|admin|app>`. Estos tests cubren la
+validación vigente de module/type/env y el rechazo con mensaje de migración
+de los módulos/tipos eliminados (feature/e2e/tests).
 """
 
 import pytest
 
 
 pytestmark = pytest.mark.unit
-
-
-# ---------------------------------------------------------------------------
-# --project flag
-# ---------------------------------------------------------------------------
-
-
-class TestProjectFlag:
-    """--project filtra el playwright project a ejecutar."""
-
-    def test_accepts_project_flag(self):
-        from test_runner.flags import flag
-
-        result = flag(
-            {
-                'module': 'feature',
-                'type': 'feature',
-                'project': 'desktop-chromium',
-            },
-        )
-
-        assert result['project'] == 'desktop-chromium'
-
-    def test_project_defaults_to_empty(self):
-        from test_runner.flags import flag
-
-        result = flag({'module': 'feature', 'type': 'feature'})
-
-        assert result.get('project', '') == ''
-
-    def test_project_requires_feature_context(self):
-        from test_runner.flags import flag
-
-        with pytest.raises(
-            ValueError,
-            match=r'--project requiere --module=feature y --type=feature',
-        ):
-            flag(
-                {
-                    'module': 'server',
-                    'type': 'unit',
-                    'project': 'desktop-chromium',
-                },
-            )
-
-
-# ---------------------------------------------------------------------------
-# --shard / --shard-total flags
-# ---------------------------------------------------------------------------
-
-
-class TestShardFlags:
-    """--shard y --shard-total particionan los tests para paralelismo en CI."""
-
-    def test_accepts_shard_and_shard_total(self):
-        from test_runner.flags import flag
-
-        result = flag(
-            {
-                'module': 'feature',
-                'type': 'feature',
-                'shard': '1',
-                'shard_total': '4',
-            },
-        )
-
-        # Convertidos a int
-        assert result['shard'] == 1
-        assert result['shard_total'] == 4
-
-    def test_shard_requires_shard_total(self):
-        from test_runner.flags import flag
-
-        with pytest.raises(ValueError, match='--shard requiere --shard-total'):
-            flag({'module': 'feature', 'type': 'feature', 'shard': '1'})
-
-    def test_shard_total_requires_shard(self):
-        from test_runner.flags import flag
-
-        with pytest.raises(ValueError, match='--shard-total requiere --shard'):
-            flag({'module': 'feature', 'type': 'feature', 'shard_total': '4'})
-
-    def test_shard_must_be_positive(self):
-        from test_runner.flags import flag
-
-        with pytest.raises(ValueError, match='--shard debe ser >= 1'):
-            flag(
-                {
-                    'module': 'feature',
-                    'type': 'feature',
-                    'shard': '0',
-                    'shard_total': '4',
-                },
-            )
-
-    def test_shard_must_not_exceed_shard_total(self):
-        from test_runner.flags import flag
-
-        with pytest.raises(
-            ValueError,
-            match=r'--shard .* no puede exceder --shard-total',
-        ):
-            flag(
-                {
-                    'module': 'feature',
-                    'type': 'feature',
-                    'shard': '5',
-                    'shard_total': '4',
-                },
-            )
-
-    def test_shard_requires_feature_context(self):
-        from test_runner.flags import flag
-
-        with pytest.raises(
-            ValueError,
-            match=r'--shard requiere --module=feature y --type=feature',
-        ):
-            flag(
-                {
-                    'module': 'server',
-                    'type': 'unit',
-                    'shard': '1',
-                    'shard_total': '4',
-                },
-            )
-
-
-# ---------------------------------------------------------------------------
-# --fail-on-flaky flag
-# ---------------------------------------------------------------------------
-
-
-class TestFailOnFlakyFlag:
-    """--fail-on-flaky hace que un test flaky cuente como failure (modo CI)."""
-
-    def test_accepts_fail_on_flaky(self):
-        from test_runner.flags import flag
-
-        result = flag(
-            {
-                'module': 'feature',
-                'type': 'feature',
-                'fail_on_flaky': True,
-            },
-        )
-
-        assert result['fail_on_flaky'] is True
-
-    def test_defaults_to_false(self):
-        from test_runner.flags import flag
-
-        result = flag({'module': 'feature', 'type': 'feature'})
-
-        assert result.get('fail_on_flaky', False) is False
-
-    def test_requires_feature_context(self):
-        from test_runner.flags import flag
-
-        with pytest.raises(
-            ValueError,
-            match=r'--fail-on-flaky requiere --module=feature y --type=feature',
-        ):
-            flag(
-                {
-                    'module': 'server',
-                    'type': 'unit',
-                    'fail_on_flaky': True,
-                },
-            )
 
 
 # ---------------------------------------------------------------------------
@@ -201,7 +32,7 @@ class TestDockerEnvDefault:
         import test_runner.flags as flags_mod
 
         importlib.reload(flags_mod)
-        result = flags_mod.flag({'module': 'feature', 'type': 'feature'})
+        result = flags_mod.flag({'module': 'server', 'type': 'unit'})
 
         assert result['env'] == 'test'
 
@@ -218,8 +49,8 @@ class TestDockerEnvDefault:
         importlib.reload(flags_mod)
         result = flags_mod.flag(
             {
-                'module': 'feature',
-                'type': 'feature',
+                'module': 'server',
+                'type': 'unit',
                 'env': 'local',
             },
         )
@@ -236,76 +67,106 @@ class TestDockerEnvDefault:
         import test_runner.flags as flags_mod
 
         importlib.reload(flags_mod)
-        result = flags_mod.flag({'module': 'feature', 'type': 'feature'})
+        result = flags_mod.flag({'module': 'server', 'type': 'unit'})
 
         assert result['env'] == 'local'
 
 
 # ---------------------------------------------------------------------------
-# Composability: mismo set de flags usadas por el CI
-# ---------------------------------------------------------------------------
-
-
-class TestCIFlagCombination:
-    """El workflow CI invoca con las 4 flags juntas."""
-
-    def test_full_ci_invocation_passes(self):
-        from test_runner.flags import flag
-
-        result = flag(
-            {
-                'module': 'feature',
-                'type': 'feature',
-                'project': 'desktop-chromium',
-                'shard': '2',
-                'shard_total': '4',
-                'fail_on_flaky': True,
-            },
-        )
-
-        assert result['module'] == 'feature'
-        assert result['type'] == 'feature'
-        assert result['project'] == 'desktop-chromium'
-        assert result['shard'] == 2
-        assert result['shard_total'] == 4
-        assert result['fail_on_flaky'] is True
-
-
-# ---------------------------------------------------------------------------
-# Migration from --module=e2e (old API)
+# Migration: --module=feature/e2e/tests y --type=feature/e2e eliminados
 # ---------------------------------------------------------------------------
 
 
 class TestE2EMigrationErrors:
-    """Mayo 2026: --module=e2e y --type=e2e fueron eliminados.
+    """Junio 2026: los módulos/tipos feature, e2e y tests fueron eliminados.
 
     Estos tests garantizan que la API vieja produce mensajes de error claros
-    sugiriendo --type=feature en lugar de fallar con stacktraces opacos.
+    que apuntan al comando dedicado `e2e` en lugar de fallar con stacktraces
+    opacos.
     """
+
+    def test_module_feature_rejected_with_migration_hint(self):
+        from test_runner.flags import flag
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                r'(?s)--module=feature ya no existe en test_runner.*'
+                r'devtools/run\.py e2e'
+            ),
+        ):
+            flag({'module': 'feature', 'type': 'unit'})
 
     def test_module_e2e_rejected_with_migration_hint(self):
         from test_runner.flags import flag
 
         with pytest.raises(
             ValueError,
-            match='--module=e2e fue eliminado',
+            match=(
+                r'(?s)--module=e2e ya no existe en test_runner.*'
+                r'devtools/run\.py e2e'
+            ),
         ):
-            flag({'module': 'e2e', 'type': 'feature'})
+            flag({'module': 'e2e', 'type': 'unit'})
 
     def test_module_tests_rejected_with_migration_hint(self):
         from test_runner.flags import flag
 
         with pytest.raises(
             ValueError,
-            match='--module=tests fue eliminado',
+            match=(
+                r'(?s)--module=tests ya no existe en test_runner.*'
+                r'devtools/run\.py e2e'
+            ),
         ):
-            flag({'module': 'tests', 'type': 'feature'})
+            flag({'module': 'tests', 'type': 'unit'})
+
+    def test_type_feature_rejected_with_migration_hint(self):
+        from test_runner.flags import flag
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                r'(?s)--type=feature ya no existe en test_runner.*'
+                r'devtools/run\.py e2e'
+            ),
+        ):
+            flag({'module': 'server', 'type': 'feature'})
 
     def test_type_e2e_rejected_with_migration_hint(self):
         from test_runner.flags import flag
 
         with pytest.raises(
             ValueError,
-            match='--type=e2e fue eliminado',
+            match=(
+                r'(?s)--type=e2e ya no existe en test_runner.*'
+                r'devtools/run\.py e2e'
+            ),
         ):
-            flag({'module': 'feature', 'type': 'e2e'})
+            flag({'module': 'server', 'type': 'e2e'})
+
+
+# ---------------------------------------------------------------------------
+# Playwright-only flags eliminados: ya no son válidos
+# ---------------------------------------------------------------------------
+
+
+class TestPlaywrightFlagsRemoved:
+    """Los flags playwright-only fueron eliminados de ALLOWED_FLAGS."""
+
+    @pytest.mark.parametrize(
+        'key',
+        [
+            'screenshots',
+            'ui_review',
+            'project',
+            'shard',
+            'shard_total',
+            'fail_on_flaky',
+        ],
+    )
+    def test_playwright_flag_is_rejected(self, key):
+        from test_runner.flags import flag
+
+        with pytest.raises(ValueError):
+            flag({'module': 'server', 'type': 'unit', key: 'x'})

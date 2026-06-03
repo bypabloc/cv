@@ -17,7 +17,8 @@ import { useAuthStore } from "@/features/auth/store/use-auth-store";
  * @description Happy paths de los hooks de login/verify/session.
  */
 
-const SECRET = "x".repeat(12);
+// Fixture de password de prueba (NO un secreto real): 12 chars sinteticos.
+const FAKE_PW = "x".repeat(12);
 
 const { pushMock, replaceMock } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
@@ -48,7 +49,7 @@ describe("useLoginVerifyPassword", () => {
 		const { result } = renderHook(() => useLoginVerifyPassword(), { wrapper });
 
 		await act(async () => {
-			await result.current.mutateAsync({ temp_token: "t", password: SECRET });
+			await result.current.mutateAsync({ temp_token: "t", password: FAKE_PW });
 		});
 
 		expect(useAuthStore.getState().accessToken).not.toBe(null);
@@ -77,7 +78,7 @@ describe("useLoginVerifyPassword", () => {
 		);
 
 		await act(async () => {
-			await result.current.mutateAsync({ temp_token: "t", password: SECRET });
+			await result.current.mutateAsync({ temp_token: "t", password: FAKE_PW });
 		});
 
 		expect(useAuthStore.getState().tempToken).toBe("step2");
@@ -117,7 +118,7 @@ describe("useSetPassword", () => {
 		const { result } = renderHook(() => useSetPassword(), { wrapper });
 
 		await act(async () => {
-			await result.current.mutateAsync({ password: SECRET, temp_token: "t" });
+			await result.current.mutateAsync({ password: FAKE_PW, temp_token: "t" });
 		});
 
 		expect(useAuthStore.getState().accessToken).not.toBe(null);

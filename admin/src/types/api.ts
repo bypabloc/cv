@@ -74,10 +74,11 @@ export interface WebauthnCredentialsResponse {
 	credentials: WebauthnCredential[];
 }
 
-/** users.profile.get / update */
-export interface ProfileResponse {
-	profile: UserProfile;
-}
+/** users.profile.get / update — el backend responde el perfil FLAT (los
+ *  campos de UserProfile al nivel raiz del `data`, NO anidados en `profile`),
+ *  igual que el resto de las 26 actions (ver shared.lambda_kit.http_dispatch,
+ *  json_response(status, result.data)). */
+export type ProfileResponse = UserProfile;
 
 /** users.status.get */
 export type StatusResponse = AccountStatus;

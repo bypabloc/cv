@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "../lib/nav-items";
+import { useVisibleNavItems } from "../hooks/use-nav-items";
 
 /**
  * @component Sidebar
  * @description Navegacion lateral del app shell (desktop). Resalta el item
- *   activo segun el pathname. El item `Usuarios` (adminOnly) se muestra
- *   siempre; la page /users maneja el 404 del backend para no-admin
- *   (anti-enumeration).
+ *   activo segun el pathname. Los items `adminOnly` (ej. `Usuarios`) se
+ *   ocultan a quien no es admin (sondeo `useIsAdmin`); el backend igual
+ *   responde 404 a un no-admin (anti-enumeration), esto solo mejora la UX.
  */
 export function Sidebar() {
 	const pathname = usePathname();
+	const navItems = useVisibleNavItems();
 	return (
 		<aside className="hidden h-screen w-60 shrink-0 border-r bg-card lg:flex lg:flex-col">
 			<div className="p-6">
@@ -22,7 +23,7 @@ export function Sidebar() {
 				</h2>
 			</div>
 			<nav className="flex-1 space-y-1 px-3">
-				{NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+				{navItems.map(({ href, label, icon: Icon }) => {
 					const active = pathname === href || pathname.startsWith(`${href}/`);
 					return (
 						<Link

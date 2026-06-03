@@ -77,17 +77,17 @@ describe("ProfileForm estados", () => {
 				HttpResponse.json({
 					is_valid: true,
 					code: 0,
+					// El backend responde el perfil FLAT (campos al nivel raiz
+					// de `data`, NO anidados en `profile`).
 					data: {
-						profile: {
-							id: "usr_01",
-							email: "sinnombre@test.com",
-							display_name: null,
-							status: "active",
-							locale: "es",
-							timezone: "UTC",
-							marketing_consent: false,
-							created_at: "2026-01-01T00:00:00Z",
-						},
+						id: "usr_01",
+						email: "sinnombre@test.com",
+						display_name: null,
+						status: "active",
+						locale: "es",
+						timezone: "UTC",
+						marketing_consent: false,
+						created_at: "2026-01-01T00:00:00Z",
 					},
 				}),
 			),

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { loginWithNext } from "@/lib/routes";
+import { isJwtExpired } from "../lib/token-expiry";
 import { useAuthStore } from "../store/use-auth-store";
 
 /**
@@ -25,22 +26,21 @@ export function useProtectedRoute(): boolean {
 	// refresh, y `authed` se recomputa con el token fresco. Sin esto, el
 	// re-render lo disparaba solo `bootstrapping` y `authed` podia quedar
 	// stale (false) -> redirect erroneo a /login pese a tener access valido.
+	// `authed` se DERIVA del accessToken reactivo (NO de la fn estable
+	// isAuthenticated()). Esto es clave con el React Compiler: si solo se
+	// llamara isAuthenticated() (referencia estable) y se subscribiera
+	// accessToken con un `void` descartable, el Compiler trataba accessToken
+	// como dead-code y NO re-renderizaba al hidratarse el access -> el store
+	// quedaba authed=true pero la UI atascada en "Verificando sesion". Derivar
+	// authed de accessToken lo vuelve un input reactivo real del render.
 	const accessToken = useAuthStore((s) => s.accessToken);
-	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 	const bootstrapping = useAuthStore((s) => s.bootstrapping);
 	// Suscribirse tambien a refreshToken/refreshExpiry: si hay un refresh
 	// vigente, la sesion es RECUPERABLE (el bootstrap puede hidratar el access)
 	// y NO se debe redirigir todavia, aunque `authed` sea false en este render.
-	// Esto cierra la race de orden de los set() del bootstrap: en el browser
-	// real `setAccessToken` y `setBootstrapping(false)` caen en commits
-	// distintos, y el redirect podia dispararse leyendo un `authed` stale=false
-	// con el flag ya en false, PESE a un /session/refresh 200 reciente.
 	const refreshToken = useAuthStore((s) => s.refreshToken);
 	const refreshExpiry = useAuthStore((s) => s.refreshExpiry);
-	// accessToken se referencia para que el linter no lo marque sin uso; el
-	// valor real lo lee isAuthenticated() del store.
-	void accessToken;
-	const authed = isAuthenticated();
+	const authed = !!accessToken && !isJwtExpired(accessToken);
 	const recoverable =
 		!!refreshToken && !!refreshExpiry && refreshExpiry > Date.now();
 

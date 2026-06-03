@@ -98,9 +98,15 @@ export const useAuthStore = create<AuthState>()(
 			clearTokens: () => set({ ...EMPTY }),
 			reset: () => set({ ...EMPTY }),
 
+			// La sesion vive si hay un access JWT valido y no expirado. NO se
+			// exige `user`: es solo data de perfil para la UI, y el
+			// `/session/refresh` NO lo devuelve (solo access+refresh). Exigir
+			// `user` rompia la persistencia tras reload cuando el storage no lo
+			// tenia (entrada vieja/parcial) aunque el refresh hubiera hidratado
+			// un access valido -> redirect erroneo a /login.
 			isAuthenticated: () => {
-				const { accessToken, user } = get();
-				if (!accessToken || !user) return false;
+				const { accessToken } = get();
+				if (!accessToken) return false;
 				return !get().isAccessExpired();
 			},
 

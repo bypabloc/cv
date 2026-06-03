@@ -10,15 +10,15 @@
 ## Punto de partida (la base secuencial)
 
 NO se lanza ningun worktree hasta tener mergeados los commits 1-7 en
-`feature/analytics-dashboard-api`. Esos commits dejan listos:
+`feature/b-analytics-api`. Esos commits dejan listos:
 
 - Carpeta del plan
 - Indices Neon (si aplica)
 - Scaffold completo del Lambda
 - `OPERATIONS` con TODAS las entradas (controllers aun vacios)
 - Handler + utils + `_common.py` + rate_limit_guard
+- `jwt_service.py` + `auth_guard.py` (auth del Lambda analytics)
 - Test infrastructure (conftests + helpers)
-- Command `seed-rate-limit-rule` en Lambda `db`
 
 Con esa base, cualquier worktree puede importar:
 
@@ -45,13 +45,13 @@ operation/dominio. La matriz de file exclusivity esta en
 
 ## Como lanzar cada worktree
 
-Desde el repo raiz (asumiendo que `feature/analytics-dashboard-api` ya
+Desde el repo raiz (asumiendo que `feature/b-analytics-api` ya
 tiene commits 1-7):
 
 ```bash
 # Worktree raiz (ya estas ahi):
 cd /home/bypabloc/projects/bypabloc/portfolio
-git checkout feature/analytics-dashboard-api
+git checkout feature/b-analytics-api
 
 # Lanzar worktree P-1 (analytics op)
 git worktree add ../portfolio-wt-p1-analytics \
@@ -81,7 +81,7 @@ git push -u origin feature/analytics-op-analytics
 
 # Volver al worktree principal y mergear
 cd /home/bypabloc/projects/bypabloc/portfolio
-git checkout feature/analytics-dashboard-api
+git checkout feature/b-analytics-api
 git merge --no-ff feature/analytics-op-analytics
 
 # Cleanup del worktree
@@ -97,16 +97,16 @@ Estas tareas son secuenciales por dependencia o por riesgo:
 |---|-------|------------------------|
 | Commits 1-7 (base) | Plan + indices + scaffold + settings + handler + test infra + db seeder | Establecen contratos que todas las fases consumen. Paralelizar generaria conflictos en `OPERATIONS`, `_common`, `handler`. |
 | Commit 15 (integration tests) | Tests E2E contra dev DB | Necesita TODAS las operations mergeadas + Lambda deployado. Tocar `tests/integration/` desde un worktree paralelo genera conflictos en `conftest.py`. |
-| Commit 16 (SnapStart) | `runtime_hooks.py` | Es 1 archivo + deploy + observacion CloudWatch. Tarea atomica, no se beneficia de paralelismo. |
+| Commit 16 (SnapStart) | Handler warm_db() en module-scope + deploy + observacion CloudWatch | Es 1 cambio puntual + deploy + observacion CloudWatch. Tarea atomica, no se beneficia de paralelismo. |
 | Commit 17 (cleanup) | Eliminar spec efimera + actualizar knowledge tree + bateria E2E | Ultima fase, secuencial obligatorio. |
-| Seed de rate-limit rule en DDB | `serverless run --lambda=db --event=seed_rate_limit_analytics.json` | Comando manual + idempotente. Se corre 3 veces (dev/stage/prod) cuando cada env esta listo. NO se paraleliza con CI. |
+| Seed de rate-limit rule en DDB | CLI: `python devtools/run.py serverless rate-limit set --endpoint=/analytics --limit=10 --window=60 --stage=dev` (idem stage/prod) | Comando manual + idempotente. Se corre por env cuando el Lambda esta deployado. NO requiere cambios en el Lambda db. |
 | Promocion `dev -> stage -> main` | PRs encadenados | Politica del repo, ver `git-workflow.md`. |
 
 ## Reglas de oro para worktrees
 
 - **NUNCA** desde un worktree paralelo editar archivos de la base
   (`OPERATIONS`, `handler.py`, `_common.py`, `rate_limit_guard.py`,
-  `config.py`, `shared/**`).
+  `config.py`, `jwt_service.py`, `auth_guard.py`, `shared/**`).
 - **SIEMPRE** correr `serverless lint-deps --lambda=analytics` antes del
   commit (cada worktree tiene la misma copia de `shared/`).
 - **NUNCA** intentar arreglar un bug detectado en la base desde un
@@ -125,7 +125,7 @@ Cuando los 7 worktrees terminan:
 
 ```bash
 cd /home/bypabloc/projects/bypabloc/portfolio
-git checkout feature/analytics-dashboard-api
+git checkout feature/b-analytics-api
 
 # Mergear en orden alfabetico (no importa el orden por file exclusivity,
 # pero consistencia ayuda al review):
@@ -169,7 +169,7 @@ Por la matriz de file exclusivity, los merges deberian aplicarse
 
 Esta seccion describe el camino paralelizable. **Si lo haces secuencial**
 (1 dev, sin worktrees), simplemente corres los commits 8-14 uno tras
-otro en `feature/analytics-dashboard-api` directamente. Misma cantidad
+otro en `feature/b-analytics-api` directamente. Misma cantidad
 de codigo, mismo PR final. El plan funciona en ambas modalidades.
 
 Tiempo estimado:

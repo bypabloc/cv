@@ -31,9 +31,9 @@ listado, una sola persona/agente, en la rama principal de trabajo.
 | B-2 | Verificar indices Neon + agregar migration si faltan | `serverless/lambda/shared/db/alembic/versions/<rev>_analytics_indexes.py` (condicional) | `psql -c "\\di vis_*"`; si falta indice, migration y `serverless run --lambda=db --event=events/migrate.json --stage=dev` | Indices presentes en dev |
 | B-3 | Scaffold del Lambda + manifest + pyproject + .gitignore + README | `serverless/lambda/services/analytics/{manifest.yaml,pyproject.toml,.gitignore,README.md,core/__init__.py}` | `uv sync` en la carpeta; `serverless lint-deps --lambda=analytics` exit 0 | Lambda visible para devtools |
 | B-4 | Settings: `config.py` + `operations.py` con TODOS los entries declarados (controllers vacios despues los rellenamos) | `core/settings/{config.py,operations.py,__init__.py}` | `python -c "from core.settings.operations import OPERATIONS; assert len(OPERATIONS) == 8"` | OPERATIONS registrado |
-| B-5 | Modelos comunes + handler skeleton + rate_limit_guard | `core/models/_common.py`, `core/handler.py`, `core/utils/rate_limit_guard.py` | `pytest tests/unit/models/test__common*.py tests/unit/utils/ -v` | Handler boots con OPERATIONS vacio (404 unknown op) |
+| B-5 | Modelos comunes + handler skeleton + rate_limit_guard + warm_db en INIT | `core/models/_common.py`, `core/handler.py`, `core/utils/rate_limit_guard.py` | `pytest tests/unit/models/test__common*.py tests/unit/utils/ -v` | Handler boots con OPERATIONS vacio (404 unknown op); warm_db() llamado en module-scope del handler para SnapStart |
 | B-6 | conftest.py raiz + estructura de tests | `tests/conftest.py`, `tests/unit/__init__.py`, `tests/unit/_helpers.py`, `tests/integration/conftest.py`, `tests/integration/_fixtures/**` | `pytest tests/ -v` (todos pasan; ninguno aun) | Test infra lista |
-| B-7 | Lambda `db`: command `seed-rate-limit-rule` + event JSON | `serverless/lambda/services/db/core/commands/seed_rate_limit_rule.py`, handler.py mod, `events/seed_rate_limit_analytics.json`, tests del command | `pytest serverless/lambda/services/db/tests/unit/commands/test_seed_rate_limit_rule.py`; `serverless run --stage=local --lambda=db --event=events/seed_rate_limit_analytics.json` | Rule seeder funciona en local |
+| B-7 | Auth guard: portar `jwt_service.py` de users + crear `auth_guard.py` + tests | `core/services/jwt_service.py` (portado de `services/users/core/services/jwt_service.py`), `core/utils/auth_guard.py`, `tests/unit/services/test_jwt_service_*.py`, `tests/unit/utils/test_auth_guard_*.py` | `pytest tests/unit/services/test_jwt_service_*.py tests/unit/utils/test_auth_guard_*.py -v` | require_active_user disponible para los 19 controllers; 401 con code 4010 en acceso no autenticado |
 
 **Total base secuencial**: 7 tareas. Estimado: 1-2 dias de trabajo.
 
@@ -63,7 +63,7 @@ del otro, comparten solo `_common.py` (ya commiteado) y `OPERATIONS`
 | `core/controllers/analytics/retention.py` | `test_retention_*.py` |
 | `events/overview.json`, `events/timeseries.json`, ... (7) | — |
 
-**AC referenciados**: AC-1, AC-2, AC-3, AC-4, AC-7, AC-8, AC-17, AC-18.
+**AC referenciados**: AC-1, AC-2, AC-3, AC-4, AC-7, AC-8, AC-17, AC-18, AC-23, AC-24 (auth 401 cubierto por auth_guard de B-7; todos los controllers lo invocan).
 
 **Depende de**: B-1 a B-7. **Paralelizable con**: P-2..P-7.
 
@@ -181,8 +181,8 @@ Despues de mergear P-1..P-7 al branch principal:
 | # | Tarea | Archivos | Verify | Done |
 |---|-------|----------|--------|------|
 | F-1 | Tests integration (6 flujos) | `tests/integration/test_*_e2e.py` (6) | `serverless tests --type=integration --lambda=analytics` | 6 integration tests verdes |
-| F-2 | Runtime hooks SnapStart | `core/runtime_hooks.py` | `serverless deploy --lambda=analytics --stage=dev`; CloudWatch verifica Restore Duration | Restore Duration < 1500ms |
-| F-3 | Seed rate-limit rule (manual via CLI) | (sin codigo: comando) | `serverless run --stage=dev --lambda=db --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev` (idem stage/prod) | Rule en DDB en los 3 envs |
+| F-2 | Verificar warm_db en INIT + deploy + medir Restore Duration | (sin archivos nuevos: warm_db ya esta en handler desde B-5) | `serverless deploy --lambda=analytics --stage=dev`; CloudWatch verifica que `Restore Duration` aparece en logs del Lambda y es < 1500ms | Restore Duration < 1500ms |
+| F-3 | Seed rate-limit rule via CLI devtools | (sin codigo nuevo: usa CLI existente) | `python devtools/run.py serverless rate-limit set --endpoint=/analytics --limit=10 --window=60 --stage=dev --aws-profile=tfs-dev` (idem stage, prod) | Rule en DDB en los 3 envs |
 | F-4 | Coverage gate | (revision) | `serverless tests --type=coverage --lambda=analytics` >= 80% per-file | AC-21 |
 | F-5 | Smoke E2E + docs permanente | `.claude/docs/serverless-backend/03-lambdas.md` mod | `curl https://api.portfolio.dev.../analytics?...` para cada action; bateria pasa | AC-22 |
 | F-6 | Eliminar carpeta del plan + ultimo commit | `git rm -r docs/specs/b-analytics-api/` | `test ! -d docs/specs/b-analytics-api` | Spec archivada |
@@ -273,6 +273,8 @@ P-1..P-7:
 | `core/settings/config.py` | X | | | | | | | | |
 | `core/models/_common.py` | X | | | | | | | | |
 | `core/utils/rate_limit_guard.py` | X | | | | | | | | |
+| `core/services/jwt_service.py` | X | | | | | | | | |
+| `core/utils/auth_guard.py` | X | | | | | | | | |
 | `core/models/analytics.py` | | X | | | | | | | |
 | `core/models/events.py` | | | X | | | | | | |
 | `core/models/sessions.py` | | | | X | | | | | |
@@ -299,10 +301,9 @@ P-1..P-7:
 | `core/controllers/contacts/**` | | | | | | | | X | |
 | `events/*.json` | X (event template) | X (7) | X (3) | X (2) | X (2) | X (2) | X (1) | X (2) | |
 | `tests/integration/` | X (conftest) | | | | | | | | X |
-| `core/runtime_hooks.py` | | | | | | | | | X |
 
 **Validacion**: ninguna fila tiene 2+ "X" entre P-1..P-7. Las celdas con
-"X" en `B` son intocables tras B-7. **OK** para paralelizar.
+"X" en `B` son intocables tras B-7 (incluye jwt_service y auth_guard, que son base para los 19 controllers). **OK** para paralelizar.
 
 El track frontend (`U-*`) toca SOLO `admin/**` + `tests/feature/admin/**`;
 el track backend toca SOLO `serverless/lambda/**`. Cero solape entre
@@ -315,9 +316,9 @@ frontend, U-1..U-7 tocan `admin/src/features/<feature>/**` +
 
 Backend:
 
-- 7 tareas base secuenciales (B-*).
-- 7 fases paralelizables (P-1..P-7), cada una entrega 1 operation.
-- 6 tareas finales (F-*).
+- 7 tareas base secuenciales (B-*). B-7 crea el auth guard (jwt_service + auth_guard), prerequisito de los 19 controllers. warm_db() ya se incluye en B-5 (module-scope del handler). No hay runtime_hooks.py; el warmup va en el INIT del handler siguiendo el patron de cv/contact_form.
+- 7 fases paralelizables (P-1..P-7), cada una entrega 1 operation (8 operations, 19 actions en total).
+- 6 tareas finales (F-*). F-3 usa el CLI existente `serverless rate-limit set`; no requiere codigo nuevo en el Lambda db.
 
 Frontend:
 
@@ -341,7 +342,9 @@ de `P-*` (backend) y luego las de `U-*` (frontend).
 | Editar `core/settings/operations.py` desde una fase P-X | Es base; rompe el commit anchor | Si una action nueva sale en una fase, mergear secuencialmente al main del feature |
 | Tocar `core/models/_common.py` desde P-X | Es base | Idem |
 | Crear un controller que pisa otra fase (ej. P-1 toca `events/`) | Rompe file exclusivity | Mover al worktree correcto |
-| Lanzar P-X antes de commitear B-7 | Conflictos garantizados | Esperar a tener B-7 mergeado al feature branch local |
+| Lanzar P-X antes de commitear B-7 | Conflictos garantizados: los controllers necesitan auth_guard de B-7 | Esperar a tener B-7 mergeado al feature branch local |
+| Crear un command `seed-rate-limit-rule` en el Lambda db | El Lambda db NO tiene commands en ese formato; el seed es CLI devtools existente | `python devtools/run.py serverless rate-limit set --endpoint=/analytics ...` (ver F-3) |
+| Agregar `core/runtime_hooks.py` para SnapStart | El patron real es warm_db() en el module-scope del handler.py (ya en B-5), no un archivo runtime_hooks | Importar modelos concretos + llamar warm_db() en el INIT del handler |
 | Olvidar registrar la action en `OPERATIONS` | El handler tira 404 | Revisar el archivo `operations.py` ya tiene la entrada (lo dejamos completo en B-4) |
 | Arrancar una fase `U-*` antes de que `a-admin` mergee el shell/api-client | No existe donde montar la feature ni como autenticar | Esperar a `a-admin` mergeado + U-0 |
 | Nombrar la ruta `/dashboard` o el feature `dashboard` | El producto es `admin`; las metricas van a `/metrics` + por feature | Usar `/metrics`, `/sessions`, ... y el feature `admin-shell` para el shell |

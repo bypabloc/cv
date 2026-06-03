@@ -85,25 +85,19 @@ python devtools/run.py serverless tests --type=unit --lambda=analytics -- --coll
 ```bash
 # 1. Sintaxis Python (compileall) — debe pasar 100%
 python -m compileall -q serverless/lambda/services/analytics
-python -m compileall -q serverless/lambda/services/db   # por el seed command nuevo
 
 # 2. Lint-deps (shared-only imports + dedup)
 python devtools/run.py serverless lint-deps --lambda=analytics    # exit 0
-python devtools/run.py serverless lint-deps --lambda=db           # exit 0
 
 # 3. Unit tests del nuevo Lambda
 python devtools/run.py serverless tests --type=unit --lambda=analytics
 # Esperado: 100+ tests verdes, 0 fails, 0 errors
 
-# 4. Unit tests del Lambda `db` (seed command nuevo)
-python devtools/run.py serverless tests --type=unit --lambda=db -- -k seed_rate_limit_rule
-# Esperado: 4 tests verdes
-
-# 5. Coverage gate
+# 4. Coverage gate
 python devtools/run.py serverless tests --type=coverage --lambda=analytics
 # Esperado: coverage per-file >= 80% en core/ (AC-21)
 
-# 6. Markdownlint del plan (NO debe fallar antes del rm)
+# 5. Markdownlint del plan (NO debe fallar antes del rm)
 markdownlint docs/specs/b-analytics-api/*.md
 # Esperado: warnings ok, errors NO
 ```
@@ -141,15 +135,15 @@ python devtools/run.py serverless status --lambda=analytics --stage=dev \
   --aws-profile=tfs-dev
 # Esperado: estado SYNCED
 
-# 3. Seed de la rate-limit rule
-python devtools/run.py serverless run --stage=dev --lambda=db \
-  --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev
-# Esperado: {action: created|updated, rule_key: "/analytics"}
+# 3. Seed de la rate-limit rule via CLI de devtools
+python devtools/run.py serverless rate-limit set \
+  --endpoint=/analytics --limit=10 --window=60 --stage=dev
+# Esperado: rule creada o actualizada
 
 # 4. Confirmar la rule en DynamoDB
 aws dynamodb get-item \
   --table-name portfolio-rate-limit-rules-dev \
-  --key '{"rule_key":{"S":"/analytics"},"kind":{"S":"ip"}}' \
+  --key '{"rule_key":{"S":"endpoint#/analytics"},"kind":{"S":"endpoint"}}' \
   --region us-east-1 --profile tfs-dev
 # Esperado: Item con limit=10, window_seconds=60
 ```
@@ -175,59 +169,59 @@ CURL_AUTH=(-sS -H "Authorization: Bearer $JWT")
 curl "${CURL_AUTH[@]}" "$BASE?operation=analytics&action=overview&from=$FROM&to=$TO" | jq .
 
 # 2. analytics/timeseries (bucket=day)   AC-7
-curl -sS "$BASE?operation=analytics&action=timeseries&from=$FROM&to=$TO&bucket=day" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=analytics&action=timeseries&from=$FROM&to=$TO&bucket=day" | jq .
 
 # 3. analytics/top-pages
-curl -sS "$BASE?operation=analytics&action=top-pages&from=$FROM&to=$TO&limit=10" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=analytics&action=top-pages&from=$FROM&to=$TO&limit=10" | jq .
 
 # 4. analytics/top-referrers
-curl -sS "$BASE?operation=analytics&action=top-referrers&from=$FROM&to=$TO" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=analytics&action=top-referrers&from=$FROM&to=$TO" | jq .
 
 # 5. analytics/top-niches
-curl -sS "$BASE?operation=analytics&action=top-niches&from=$FROM&to=$TO" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=analytics&action=top-niches&from=$FROM&to=$TO" | jq .
 
 # 6. analytics/active-now                AC-17
-curl -sS "$BASE?operation=analytics&action=active-now" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=analytics&action=active-now" | jq .
 
 # 7. analytics/retention                 AC-18
-curl -sS "$BASE?operation=analytics&action=retention&from=$FROM&to=$TO" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=analytics&action=retention&from=$FROM&to=$TO" | jq .
 
 # 8. events/distribution
-curl -sS "$BASE?operation=events&action=distribution&from=$FROM&to=$TO" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=events&action=distribution&from=$FROM&to=$TO" | jq .
 
 # 9. events/list                         AC-9
-curl -sS "$BASE?operation=events&action=list&from=$FROM&to=$TO&page=1&page_size=50" | jq '.data | {page, page_size, total, has_more, items_count: (.items|length)}'
+curl "${CURL_AUTH[@]}" "$BASE?operation=events&action=list&from=$FROM&to=$TO&page=1&page_size=50" | jq '.data | {page, page_size, total, has_more, items_count: (.items|length)}'
 
 # 10. events/heatmap
-curl -sS "$BASE?operation=events&action=heatmap&from=$FROM&to=$TO" | jq '.data.cells | length'
+curl "${CURL_AUTH[@]}" "$BASE?operation=events&action=heatmap&from=$FROM&to=$TO" | jq '.data.cells | length'
 
 # 11. sessions/list
-curl -sS "$BASE?operation=sessions&action=list&from=$FROM&to=$TO&page=1&page_size=20" | jq '.data | {page, total}'
+curl "${CURL_AUTH[@]}" "$BASE?operation=sessions&action=list&from=$FROM&to=$TO&page=1&page_size=20" | jq '.data | {page, total}'
 
 # 12. sessions/detail (con un session_id real)         AC-12
-SID=$(curl -sS "$BASE?operation=sessions&action=list&from=$FROM&to=$TO&page=1&page_size=1" | jq -r '.data.items[0].session_id')
-curl -sS "$BASE?operation=sessions&action=detail&session_id=$SID" | jq '.data | keys'
+SID=$(curl "${CURL_AUTH[@]}" "$BASE?operation=sessions&action=list&from=$FROM&to=$TO&page=1&page_size=1" | jq -r '.data.items[0].session_id')
+curl "${CURL_AUTH[@]}" "$BASE?operation=sessions&action=detail&session_id=$SID" | jq '.data | keys'
 
 # 13. visits/list
-curl -sS "$BASE?operation=visits&action=list&from=$FROM&to=$TO&page=1&page_size=20" | jq '.data | {page, total}'
+curl "${CURL_AUTH[@]}" "$BASE?operation=visits&action=list&from=$FROM&to=$TO&page=1&page_size=20" | jq '.data | {page, total}'
 
 # 14. visits/landing-pages
-curl -sS "$BASE?operation=visits&action=landing-pages&from=$FROM&to=$TO" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=visits&action=landing-pages&from=$FROM&to=$TO" | jq .
 
 # 15. geo/by-country                     AC-13
-curl -sS "$BASE?operation=geo&action=by-country&from=$FROM&to=$TO" | jq '.data.items | length'
+curl "${CURL_AUTH[@]}" "$BASE?operation=geo&action=by-country&from=$FROM&to=$TO" | jq '.data.items | length'
 
 # 16. devices/breakdown                  AC-14
-curl -sS "$BASE?operation=devices&action=breakdown&from=$FROM&to=$TO" | jq '.data | keys'
+curl "${CURL_AUTH[@]}" "$BASE?operation=devices&action=breakdown&from=$FROM&to=$TO" | jq '.data | keys'
 
 # 17. funnel/conversion                  AC-15
-curl -sS "$BASE?operation=funnel&action=conversion&from=$FROM&to=$TO" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=funnel&action=conversion&from=$FROM&to=$TO" | jq .
 
 # 18. contacts/list                      AC-16
-curl -sS "$BASE?operation=contacts&action=list&from=$FROM&to=$TO&page=1" | jq '.data | {page, total}'
+curl "${CURL_AUTH[@]}" "$BASE?operation=contacts&action=list&from=$FROM&to=$TO&page=1" | jq '.data | {page, total}'
 
 # 19. contacts/by-status
-curl -sS "$BASE?operation=contacts&action=by-status&from=$FROM&to=$TO" | jq .
+curl "${CURL_AUTH[@]}" "$BASE?operation=contacts&action=by-status&from=$FROM&to=$TO" | jq .
 ```
 
 Cada response debe tener:
@@ -235,10 +229,6 @@ Cada response debe tener:
 - HTTP 200
 - Header `Content-Type: application/json`
 - Body con `is_valid: true, code: 0, data: {...}`
-
-> Los 18 curls restantes (2-19) siguen el mismo patron: reusar
-> `curl "${CURL_AUTH[@]}" "$BASE?operation=...&action=..."`. El access JWT
-> viaja SIEMPRE en el header `Authorization`, NUNCA en query params.
 
 ### B.4 Smoke de errores (incluye auth)
 
@@ -367,8 +357,8 @@ Solo si dev pasa todo y se quiere validar antes del PR:
 # Crear PR feature/X -> dev primero. Luego, tras merge a dev, el flujo
 # normal dev -> stage -> main se ejecuta via los workflows.
 # Cuando llega a stage:
-python devtools/run.py serverless run --stage=stage --lambda=db \
-  --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev
+python devtools/run.py serverless rate-limit set \
+  --endpoint=/analytics --limit=10 --window=60 --stage=stage
 
 # Repetir B.3 y B.4 con BASE=https://api.portfolio.stage.the-full-stack.com/analytics
 ```
@@ -474,7 +464,7 @@ gh pr create --base dev --title "feat(analytics): Lambda analytics con auth + UI
 2. El panel admin del portfolio necesita una API HTTP autenticada que exponga KPIs, timeseries, rankings y listados, mas la UI que la consuma.
 
 ## Solucion
-1. Nuevo Lambda `analytics` (GET `/analytics?operation=...&action=...`) con 19 actions en 8 operations, auth con access JWT (`require_active_user`), rate-limit 10 req/min/IP, cache 60s en agregadas, SnapStart.
+1. Nuevo Lambda `analytics` (GET `/analytics?operation=...&action=...`) con 19 actions en 8 operations, auth con access JWT (`require_active_user` portado en `core/services/jwt_service.py`), rate-limit 10 req/min/IP via CLI `serverless rate-limit set`, cache 60s en agregadas, SnapStart (`snap_start: true`).
 2. UI de metricas (features Next.js en `admin/`) montada en el app shell del admin (de `a-admin`) bajo `/metrics` + rutas por feature, consumiendo el Lambda con Authorization Bearer.
 
 ## Como probar
@@ -503,7 +493,7 @@ Procedimiento:
    - ¿Test unitario? -> reproducir local, fix, re-correr.
    - ¿Deploy? -> revisar logs `serverless deploy` + Cloudformation.
    - ¿Smoke 4xx inesperado? -> CloudWatch logs del Lambda.
-   - ¿Smoke 5xx? -> CloudWatch + tracer X-Ray.
+   - ¿Smoke 5xx? -> CloudWatch logs del Lambda.
 4. Hacer commit de FIX (NO usar `--amend` salvo en local antes de
    push).
 5. Re-correr la bateria COMPLETA desde el inicio (no spot-fix).
@@ -517,6 +507,6 @@ Procedimiento:
 | Abrir PR con "fix later" en TODO | Va contra el gate | Fixear antes |
 | Cachear el `tmp/r1.json` y `tmp/r2.json` en disco luego de la bateria | Se mezclan resultados de runs | `rm -f /tmp/r*.json` al final |
 | Saltarse B.4 (errores) porque B.3 (happy path) pasa | Los errores pueden estar mal mapeados | Bateria completa o nada |
-| Asumir que stage/prod tienen la rule porque dev la tiene | Cada env es independiente | Correr `db seed_rate_limit_analytics` en cada env |
+| Asumir que stage/prod tienen la rule porque dev la tiene | Cada env es independiente | Correr `serverless rate-limit set --endpoint=/analytics ... --stage=<env>` en cada env |
 
 [< 10-paralelizacion-worktrees](10-paralelizacion-worktrees.md) | [< README](README.md)

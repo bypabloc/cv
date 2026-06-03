@@ -137,22 +137,28 @@ python -c "from core.settings.operations import OPERATIONS; \
 
 ---
 
-### Commit 5 — Handler + utils + modelos comunes
+### Commit 5 — Handler + utils + auth + modelos comunes
 
 ```text
-feat(analytics): handler skeleton + rate_limit_guard + DateRange/Pagination
+feat(analytics): handler skeleton + jwt_service + auth_guard + rate_limit_guard + DateRange/Pagination
 
-- Handler GET via shared.http.http_handler con event_model construido
+- Handler GET via shared.lambda_kit.http_dispatch.http_handler con event_model construido
+- core/services/jwt_service.py portado de services/users (require_active_user recibe Authorization header completo)
+- core/utils/auth_guard.py llama require_active_user(data._meta.authorization); 401 code 4010 si falla
 - rate_limit_guard delega a shared.rate_limit con endpoint='/analytics'
 - DateRange con defaults 30d, max 90d, error 1001 si span > 90d
 - Pagination con page>=1, page_size 1-200, default 50
-- _Meta (alias _meta) recibe ip/country/user_agent inyectados por http_handler
+- _Meta (alias _meta) declara authorization: str | None = Field(default=None, alias='authorization')
+  con populate_by_name=True; recibe ip/country/user_agent/authorization inyectados por http_dispatch
 ```
 
 Archivos:
 
 - `core/handler.py`
+- `core/services/__init__.py`
+- `core/services/jwt_service.py`
 - `core/utils/__init__.py`
+- `core/utils/auth_guard.py`
 - `core/utils/rate_limit_guard.py`
 - `core/models/__init__.py`
 - `core/models/_common.py`
@@ -206,32 +212,35 @@ python devtools/run.py serverless tests --type=unit --lambda=analytics -- -k "_c
 
 ---
 
-### Commit 7 — Lambda `db`: seed-rate-limit-rule command
+### Commit 7 — Tests unit del auth_guard + jwt_service
 
 ```text
-feat(db): agrega command seed-rate-limit-rule para insertar reglas
+test(analytics): tests unit de jwt_service + auth_guard
 
-- Command parsea {rule_key, kind, limit, window_seconds, algorithm, description}
-- PutItem con ConditionExpression: crea si no existe, sino actualiza
-- Devuelve {action: created|updated, rule_key}
-- Event JSON para insertar la rule /analytics 10 req/min/IP
-- Tests unit: create + update + valor invalido + missing args
+- test_auth_guard_when_no_authorization_then_401
+- test_auth_guard_when_invalid_jwt_then_401
+- test_auth_guard_when_valid_jwt_then_returns_user
+- test_auth_guard_when_disabled_user_then_403
+- test_jwt_service_require_active_user_reads_authorization_header
 ```
+
+> El seed de la rate-limit rule NO es un commit: se hace con el CLI
+> ya existente al desplegar:
+> `python devtools/run.py serverless rate-limit set --endpoint=/analytics --limit=10 --window=60 --stage=dev`
+> (idem stage/prod). No se crea ningun command en el Lambda `db`.
 
 Archivos:
 
-- `serverless/lambda/services/db/core/commands/seed_rate_limit_rule.py`
-- `serverless/lambda/services/db/core/handler.py` (registrar command)
-- `serverless/lambda/services/db/events/seed_rate_limit_analytics.json`
-- `serverless/lambda/services/db/tests/unit/commands/test_seed_rate_limit_rule_when_new_then_creates.py`
-- `serverless/lambda/services/db/tests/unit/commands/test_seed_rate_limit_rule_when_existing_then_updates.py`
-- `serverless/lambda/services/db/tests/unit/commands/test_seed_rate_limit_rule_when_missing_args_then_raises.py`
-- `serverless/lambda/services/db/tests/unit/commands/test_seed_rate_limit_rule_when_invalid_kind_then_raises.py`
+- `tests/unit/utils/test_auth_guard_when_no_authorization_then_401.py`
+- `tests/unit/utils/test_auth_guard_when_invalid_jwt_then_401.py`
+- `tests/unit/utils/test_auth_guard_when_valid_jwt_then_returns_user.py`
+- `tests/unit/utils/test_auth_guard_when_disabled_user_then_403.py`
+- `tests/unit/services/test_jwt_service_require_active_user_reads_authorization_header.py`
 
 Verify:
 
 ```bash
-python devtools/run.py serverless tests --type=unit --lambda=db -- -k seed_rate_limit_rule
+python devtools/run.py serverless tests --type=unit --lambda=analytics -- -k "auth_guard or jwt_service"
 ```
 
 ---
@@ -355,19 +364,21 @@ python devtools/run.py serverless tests --type=integration --lambda=analytics --
 
 ---
 
-### Commit 16 — SnapStart runtime hooks (F-2)
+### Commit 16 — SnapStart con warm_db en el INIT (F-2)
 
 ```text
-feat(analytics): runtime hooks SnapStart para acelerar cold start
+feat(analytics): SnapStart con warm_db en el INIT del handler
 
-- before_checkpoint: precalienta build_event_model y carga OPERATIONS
-- after_restore: registra log marker (sin abrir conexion DB)
-- Patron espejo de contact_form
+- snap_start: true en manifest.yaml (booleano; el alias :live lo gestiona el provisioner)
+- handler.py importa modulos de modelos visitor concretos en el module-scope
+- warm_db() en el INIT precalienta engine NullPool + configure_mappers (best-effort)
+- Patron identico a contact_form y cv
 ```
 
 Archivos:
 
-- `core/runtime_hooks.py`
+- `serverless/lambda/services/analytics/manifest.yaml` (actualizar snap_start)
+- `core/handler.py` (agregar imports de modelos + warm_db() en module-scope)
 
 Verify:
 
@@ -555,7 +566,7 @@ python devtools/run.py test_runner --module=feature --type=feature --env=local
 | 4 | feature/X | + settings | `python -c "..."` |
 | 5 | feature/X | + handler skel | `compileall` |
 | 6 | feature/X | + test infra | unit `_common` + `rate_limit_guard` |
-| 7 | feature/X | + db seeder | unit `db` seeder |
+| 7 | feature/X | + auth guard | unit `auth_guard` + `jwt_service` |
 | 8 (P-1) | feature/X (o worktree) | + analytics op | unit analytics |
 | 9 (P-2) | + worktree | + events op | unit events |
 | 10 (P-3) | + worktree | + sessions op | unit sessions |
@@ -586,7 +597,7 @@ Body del PR (ver `git-workflow.md`, 4 secciones):
 2. El panel admin del portfolio necesita una API HTTP autenticada que exponga KPIs, timeseries, rankings y listados, mas la UI que la consuma.
 
 ## Solucion
-1. Nuevo Lambda `analytics` (GET `/analytics?operation=...&action=...`) con 19 actions en 8 operations, auth con access JWT (`require_active_user`), rate-limit 10 req/min/IP, cache 60s en agregadas, SnapStart.
+1. Nuevo Lambda `analytics` (GET `/analytics?operation=...&action=...`) con 19 actions en 8 operations, auth con access JWT via `jwt_service.py` + `auth_guard.py` portados al Lambda (no via shared.auth), rate-limit 10 req/min/IP, cache 60s en agregadas, SnapStart.
 2. UI de metricas (features Next.js en `admin/`) montada en el app shell del admin (de `a-admin`) bajo `/metrics` + rutas por feature, consumiendo el Lambda con Authorization Bearer.
 
 ## Como probar
@@ -594,8 +605,7 @@ Body del PR (ver `git-workflow.md`, 4 secciones):
 # Backend
 python devtools/run.py serverless tests --type=coverage --lambda=analytics  # >= 80%
 python devtools/run.py serverless deploy --lambda=analytics --stage=dev --aws-profile=tfs-dev
-python devtools/run.py serverless run --stage=dev --lambda=db \
-  --event=events/seed_rate_limit_analytics.json --aws-profile=tfs-dev
+python devtools/run.py serverless rate-limit set --endpoint=/analytics --limit=10 --window=60 --stage=dev --aws-profile=tfs-dev
 # Smoke con auth (401 sin Bearer, 200 con JWT valido)
 curl -sS -o /dev/null -w '%{http_code}\n' "https://api.portfolio.dev.the-full-stack.com/analytics?operation=analytics&action=overview"  # 401
 curl -H "Authorization: Bearer $JWT" "https://api.portfolio.dev.the-full-stack.com/analytics?operation=analytics&action=overview&from=2026-04-27&to=2026-05-27"  # 200

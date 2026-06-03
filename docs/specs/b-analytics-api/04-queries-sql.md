@@ -13,8 +13,12 @@
 - Particion: `vis_tracking_events` esta particionada por `created_at`
   (mensual). Toda query DEBE incluir `created_at >= :date_from AND
   created_at < :date_to` para podarPartitions.
-- `WHERE` por rango fechas usa `>= from AND < to + INTERVAL '1 day'`
-  (half-open) para alinear con la convencion ISO.
+- `WHERE` por rango fechas usa `>= :date_from AND < :date_to` donde
+  `:date_to` es el limite superior **exclusivo** (el dia siguiente al
+  `to` elegido por el usuario, calculado en Python al construir el
+  `DateRange`: `date_to_exclusive = date_to + timedelta(days=1)`).
+  Todas las queries ya usan `< :date_to` directamente; el binding
+  del parametro es quien aplica el +1 dia.
 - `LIMIT` siempre explicito.
 
 ## 1. `analytics/overview`
@@ -384,8 +388,8 @@ country_events AS (
   FROM session_data sd
   JOIN vis_tracking_events e
     ON e.session_id = sd.session_id
-   AND e.occurred_at >= :date_from
-   AND e.occurred_at < :date_to
+   AND e.created_at >= :date_from
+   AND e.created_at < :date_to
   GROUP BY sd.country
 )
 SELECT
@@ -493,44 +497,65 @@ ORDER BY count DESC;
 
 ## 20. Resumen de indices necesarios
 
-Antes de mergear, verificar que existan estos indices en Neon. Si
-alguno falta, agregar una migration Alembic separada (no parte de este
-plan, pero **prerequisito**):
+La **mayoria de estos indices ya estan declarados en los modelos
+SQLAlchemy** y existen en Neon. Verificar antes de deployar; solo los
+marcados como "FALTA" requieren una migration Alembic nueva (fase 0.5,
+antes del deploy del Lambda).
+
+### Indices YA existentes (declarados en los modelos)
 
 ```sql
 -- vis_sessions
-CREATE INDEX IF NOT EXISTS idx_vis_sessions_first_seen_at ON vis_sessions (first_seen_at);
-CREATE INDEX IF NOT EXISTS idx_vis_sessions_last_seen_at  ON vis_sessions (last_seen_at);
-CREATE INDEX IF NOT EXISTS idx_vis_sessions_device_type   ON vis_sessions (device_type);
-CREATE INDEX IF NOT EXISTS idx_vis_sessions_browser       ON vis_sessions (browser);
+--   BRIN en first_seen_at, B-tree en last_seen_at
+idx_vis_sessions_first_seen_at  (first_seen_at)   -- ya existe
+idx_vis_sessions_last_seen_at   (last_seen_at)    -- ya existe
 
 -- vis_session_visits
-CREATE INDEX IF NOT EXISTS idx_vsv_started_at ON vis_session_visits (started_at);
-CREATE INDEX IF NOT EXISTS idx_vsv_session_id ON vis_session_visits (session_id);
-CREATE INDEX IF NOT EXISTS idx_vsv_country    ON vis_session_visits (country);
-CREATE INDEX IF NOT EXISTS idx_vsv_niche      ON vis_session_visits (niche);
-CREATE INDEX IF NOT EXISTS idx_vsv_referrer   ON vis_session_visits (referrer);
+idx_vsv_session_id_started_at   (session_id, started_at)  -- ya existe
+idx_vsv_started_at              (started_at)              -- ya existe
+idx_vsv_country                 (country)                 -- ya existe
+idx_vsv_niche                   (niche)                   -- ya existe
+idx_vsv_utm_source              (utm_source)              -- ya existe
 
--- vis_tracking_events (la tabla esta particionada por created_at; los indices son local a particion)
-CREATE INDEX IF NOT EXISTS idx_vte_session_id  ON vis_tracking_events (session_id);
-CREATE INDEX IF NOT EXISTS idx_vte_event_type  ON vis_tracking_events (event_type_id);
-CREATE INDEX IF NOT EXISTS idx_vte_page_path   ON vis_tracking_events (page_path);
-CREATE INDEX IF NOT EXISTS idx_vte_niche       ON vis_tracking_events (niche);
+-- vis_tracking_events (particionada por created_at; indices son locales a cada particion)
+idx_vte_session_id_created_at   (session_id, created_at)  -- ya existe
+idx_vte_page_path               (page_path)               -- ya existe
+idx_vte_niche_created_at        (niche, created_at)       -- ya existe
+idx_vte_event_type_id           (event_type_id)           -- ya existe
+idx_vte_visit_id                (visit_id)                -- ya existe
 
 -- vis_contacts
-CREATE INDEX IF NOT EXISTS idx_vc_created_at  ON vis_contacts (created_at);
-CREATE INDEX IF NOT EXISTS idx_vc_status      ON vis_contacts (status);
-CREATE INDEX IF NOT EXISTS idx_vc_niche       ON vis_contacts (niche);
+idx_vc_email                    (email)                   -- ya existe
+idx_vc_created_at               (created_at)              -- ya existe
+idx_vc_niche_created_at         (niche, created_at)       -- ya existe
+idx_vc_status                   (status)                  -- ya existe
 ```
 
-Comando para verificar en dev:
+### Indices FALTANTES (migration condicional — fase 0.5)
+
+Solo estos tres no estan en los modelos actuales. Si las queries de
+`devices/breakdown` o `sessions/list` con filtro por `referrer` resultan
+lentas en produccion, agregar la migration:
+
+```sql
+-- vis_sessions
+CREATE INDEX IF NOT EXISTS idx_vis_sessions_device_type ON vis_sessions (device_type);
+CREATE INDEX IF NOT EXISTS idx_vis_sessions_browser     ON vis_sessions (browser);
+
+-- vis_session_visits
+CREATE INDEX IF NOT EXISTS idx_vsv_referrer ON vis_session_visits (referrer);
+```
+
+Comandos para verificar en dev:
 
 ```bash
 DB_URL="$(grep -m1 '^DB_URL=' docker/env/server/.dev | cut -d= -f2-)" \
-  psql "$DB_URL" -c "\\d+ vis_sessions" | grep Indexes -A 20
+  psql "$DB_URL" -c "\\d+ vis_sessions" | grep -A 30 Indexes
+DB_URL="$(grep -m1 '^DB_URL=' docker/env/server/.dev | cut -d= -f2-)" \
+  psql "$DB_URL" -c "\\d+ vis_session_visits" | grep -A 30 Indexes
 ```
 
-Si falta alguno, agregar como **fase 0.5** (Alembic migration nueva
-ANTES de empezar a deployar el Lambda).
+Si algun indice de la lista "YA existentes" no aparece en el resultado,
+agregar su DDL a la misma migration de fase 0.5.
 
 [< 03-infraestructura](03-infraestructura.md) | [Siguiente: 05-cache-layer >](05-cache-layer.md)

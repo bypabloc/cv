@@ -69,12 +69,25 @@
 ### Lambda nuevo — Handler + Utils (Fase 1-2)
 
 - `serverless/lambda/services/analytics/core/handler.py`
+  - En el module-scope llama `warm_db()` (`from shared.db.warmup import warm_db`)
+    para precargar engine NullPool + configure_mappers en el INIT del snapshot SnapStart.
+    No se crea ningun archivo `runtime_hooks.py` — el warmup vive directamente aqui.
   - Verificar: `python -m compileall -q core/handler.py`
   - Verificar: `pytest tests/unit/handler/ -v`
 - `serverless/lambda/services/analytics/core/utils/__init__.py` (vacio)
 - `serverless/lambda/services/analytics/core/utils/rate_limit_guard.py`
   - Verificar: `pytest tests/unit/utils/test_rate_limit_guard*.py -v`
-- `serverless/lambda/services/analytics/core/runtime_hooks.py` (Fase 10, SnapStart)
+- `serverless/lambda/services/analytics/core/utils/auth_guard.py` (Fase 1-2, auth)
+  - Envuelve `require_active_user` leyendo `data._meta.authorization`; levanta
+    `ApplicationError(status_code=401, code=4010)` si el JWT es invalido o el
+    user no esta activo. Importa `require_active_user` de `core/services/jwt_service.py`.
+  - Verificar: `pytest tests/unit/utils/test_auth_guard*.py -v`
+- `serverless/lambda/services/analytics/core/services/jwt_service.py` (Fase 1-2, auth)
+  - Portado de `services/users/core/services/jwt_service.py`. Expone
+    `require_active_user(authorization: str | None, ...)` que llama `verify_jwt`
+    (`from shared.auth.jwt import verify_jwt`), carga `AuthUser` de Neon
+    (`from shared.db.models.auth.user import AuthUser`) y valida status/blacklist.
+  - Verificar: `pytest tests/unit/services/test_jwt_service*.py -v`
 
 ### Lambda nuevo — Controllers (Fases 3-7)
 
@@ -188,13 +201,16 @@ por escenario):
 - `test_analytics/test_timeseries_input_when_invalid_bucket_then_raises.py`
 - ... 1 archivo por escenario significativo (~30 archivos)
 
-#### Unit — services (~30 archivos)
+#### Unit — services (~33 archivos)
 
 `tests/unit/services/test_<service>_<action>_<escenario>.py`:
 
 - `test_analytics_overview_when_data_then_returns_shape.py`
 - `test_analytics_overview_when_empty_db_then_zeros.py`
 - `test_analytics_overview_when_visits_zero_then_bounce_rate_zero.py`
+- `test_jwt_service_when_valid_token_then_returns_user.py`
+- `test_jwt_service_when_expired_then_raises_401.py`
+- `test_jwt_service_when_blacklisted_then_raises_401.py`
 - ... etc
 
 #### Unit — controllers (~25 archivos)
@@ -211,11 +227,14 @@ por escenario):
 - `test_handler_when_unknown_action_then_400.py`
 - `test_handler_when_get_then_extracts_query_params.py`
 
-#### Unit — utils (~3 archivos)
+#### Unit — utils (~6 archivos)
 
 - `test_rate_limit_guard_when_meta_none_then_uses_unknown.py`
 - `test_rate_limit_guard_when_blacklisted_then_raises.py`
 - `test_rate_limit_guard_when_rate_limited_then_raises.py`
+- `test_auth_guard_when_no_authorization_then_401.py`
+- `test_auth_guard_when_invalid_jwt_then_401.py`
+- `test_auth_guard_when_user_disabled_then_401.py`
 
 #### Integration (~6 archivos)
 
@@ -381,16 +400,11 @@ exactos, coverage >= 80% per-file.
 
 ## Modificar
 
-### Lambda `db` — agregar command `seed-rate-limit-rule`
-
-- `serverless/lambda/services/db/core/commands/seed_rate_limit_rule.py` (NUEVO)
-  - Verificar: `pytest serverless/lambda/services/db/tests/unit/commands/test_seed_rate_limit_rule.py -v`
-- `serverless/lambda/services/db/core/handler.py` (registrar el command)
-  - Verificar: `pytest serverless/lambda/services/db/tests/unit/handler/ -v`
-- `serverless/lambda/services/db/events/seed_rate_limit_analytics.json` (NUEVO event)
-  - Verificar: `python -m json.tool < events/seed_rate_limit_analytics.json`
-- `serverless/lambda/services/db/manifest.yaml`
-  - Solo si el command necesita un table nuevo en `uses`; en este caso `rate-limit-rules: read-write` ya esta (o se agrega).
+> Nota: el seed de la regla de rate-limit para `/analytics` NO requiere
+> modificar el Lambda `db`. Se hace con el CLI ya existente:
+> `python devtools/run.py serverless rate-limit set --endpoint=/analytics
+> --limit=10 --window=60 --stage=dev` (repetir para stage/prod).
+> `devtools/serverless/rate_limit_cmds.py` ya implementa este subcomando.
 
 ### CI/CD
 
@@ -426,16 +440,14 @@ Promocion de aprendizajes de la spec (al cerrar el plan):
 | Lambda settings (config, operations) | 2 |
 | Lambda models (_common + 8 dominios) | 9 |
 | Lambda controllers (19 actions) | 19 |
-| Lambda services (8 dominios) | 8 |
-| Lambda handler + utils | 3 |
-| Lambda runtime_hooks (SnapStart) | 1 |
+| Lambda services (8 dominios + jwt_service) | 9 |
+| Lambda handler + utils (handler + rate_limit_guard + auth_guard) | 4 |
 | Lambda events de ejemplo | 19 |
-| Unit tests (models + services + controllers + handler + utils) | ~100 |
+| Unit tests (models + services + controllers + handler + utils) | ~106 |
 | Integration tests | 6 |
 | Tests fixtures + conftest | 6 |
-| Lambda `db` mods (command + event) | 3 |
 | Docs permanente (knowledge tree) | 1-2 |
-| **Subtotal backend** | **~190 archivos** |
+| **Subtotal backend** | **~197 archivos** |
 | Frontend UI: query-keys raiz | 1 |
 | Frontend UI: features de metricas (api + hooks + components + types) — 8 features | ~60 |
 | Frontend UI: pages bajo `(admin)/` | 10 |
@@ -443,7 +455,7 @@ Promocion de aprendizajes de la spec (al cerrar el plan):
 | Frontend UI: tests unit (mirror) | ~50 |
 | Frontend UI: spec E2E Playwright | 1 |
 | **Subtotal frontend** | **~123 archivos** |
-| **Total approx** | **~313 archivos** |
+| **Total approx** | **~320 archivos** |
 
 > El backend (Lambda) y el frontend (UI) se pueden implementar en
 > paralelo una vez que la base secuencial este lista y `a-admin` haya

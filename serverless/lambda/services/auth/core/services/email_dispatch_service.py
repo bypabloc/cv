@@ -127,3 +127,35 @@ class EmailDispatchService:
                 'expires_in_min': expires_in_min,
             },
         )
+
+    def publish_unified(
+        self,
+        *,
+        to: str,
+        user_id: UUID | str,
+        niche: str | None,
+        kind: str,
+        verify_url: str,
+        code: str,
+        expires_in_min: int,
+    ) -> None:
+        """Invoca `send_email` para UN email con magic-link Y code juntos.
+
+        Reemplaza el par `publish_magic_link` + `publish_code` (2 emails) por
+        UN solo invoke: el template del `kind` (register-unified/login-unified)
+        muestra el boton del magic-link Y el code como alternativa. `verify_url`
+        es el link completo; `code` viaja en claro (el backend persiste solo el
+        SHA-256); `expires_in_min` aplica a ambos (el code y el link comparten
+        TTL). Best-effort, igual que los demas.
+        """
+        self._publish(
+            kind=kind,
+            to=to,
+            user_id=user_id,
+            niche=niche,
+            data={
+                'verify_url': verify_url,
+                'code': code,
+                'expires_in_min': expires_in_min,
+            },
+        )

@@ -43,4 +43,5 @@ def test_login_start_email_locked_404(monkeypatch):
     assert result['status'] == 404
     assert result['data']['error'] == 'EMAIL_NOT_FOUND'
     assert result['data']['suggest_register'] is False
+    email_svc.publish_unified.assert_not_called()
     email_svc.publish_magic_link.assert_not_called()

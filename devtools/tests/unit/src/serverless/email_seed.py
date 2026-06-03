@@ -63,17 +63,17 @@ class TestBuildSeedPlan:
         assert plan.bucket == 'portfolio-email-templates-dev'
         assert plan.table == 'portfolio-email-config-dev'
 
-    def test_build_seed_plan_uploads_twenty_templates(self):
+    def test_build_seed_plan_uploads_twenty_four_templates(self):
         """
-        Given los 10 kinds de email (cada uno html + txt),
+        Given los 12 kinds de email (cada uno html + txt),
         When se construye el plan,
-        Then hay exactamente 20 uploads de template.
+        Then hay exactamente 24 uploads de template.
         """
         from serverless.email_seed import build_seed_plan
 
         plan = build_seed_plan(stage='dev')
 
-        assert len(plan.uploads) == 20
+        assert len(plan.uploads) == 24
 
     def test_build_seed_plan_uploads_have_local_path_and_s3_key(self):
         """
@@ -89,17 +89,17 @@ class TestBuildSeedPlan:
         assert html.local_path.name == 'contact.html'
         assert html.local_path.is_file()
 
-    def test_build_seed_plan_builds_ten_config_rows(self):
+    def test_build_seed_plan_builds_twelve_config_rows(self):
         """
-        Given los 10 kinds,
+        Given los 12 kinds,
         When se construye el plan,
-        Then hay 10 filas de email-config.
+        Then hay 12 filas de email-config.
         """
         from serverless.email_seed import build_seed_plan
 
         plan = build_seed_plan(stage='dev')
 
-        assert len(plan.rows) == 10
+        assert len(plan.rows) == 12
 
     def test_build_seed_plan_row_has_bucket_and_paths(self):
         """
@@ -135,10 +135,11 @@ class TestCmdSeedEmailConfig:
         """
         Given el bucket y la tabla existen,
         When se corre seed-email-config para stage dev,
-        Then hace 20 `s3 cp` + 10 `dynamodb put-item` (exit 0).
+        Then hace 24 `s3 cp` + 12 `dynamodb put-item` (exit 0).
         """
-        from serverless import aws_cli
         from serverless.email_seed import cmd_seed_email_config
+
+        from serverless import aws_cli
 
         calls: list[_AwsCall] = []
         monkeypatch.setattr(aws_cli, 'aws', _make_fake_aws(calls))
@@ -147,12 +148,10 @@ class TestCmdSeedEmailConfig:
         rc = cmd_seed_email_config({'stage': 'dev'})
 
         s3_cps = [c for c in calls if c.args[:2] == ['s3', 'cp']]
-        put_items = [
-            c for c in calls if c.args[:2] == ['dynamodb', 'put-item']
-        ]
+        put_items = [c for c in calls if c.args[:2] == ['dynamodb', 'put-item']]
         assert rc == 0
-        assert len(s3_cps) == 20
-        assert len(put_items) == 10
+        assert len(s3_cps) == 24
+        assert len(put_items) == 12
 
     def test_seed_aborts_when_bucket_missing(self, monkeypatch):
         """
@@ -160,8 +159,9 @@ class TestCmdSeedEmailConfig:
         When se corre seed-email-config,
         Then aborta con exit 1 sin subir nada.
         """
-        from serverless import aws_cli
         from serverless.email_seed import cmd_seed_email_config
+
+        from serverless import aws_cli
 
         calls: list[_AwsCall] = []
         monkeypatch.setattr(aws_cli, 'aws', _make_fake_aws(calls))
@@ -178,8 +178,9 @@ class TestCmdSeedEmailConfig:
         When se corre seed-email-config,
         Then aborta con exit 1.
         """
-        from serverless import aws_cli
         from serverless.email_seed import cmd_seed_email_config
+
+        from serverless import aws_cli
 
         calls: list[_AwsCall] = []
         monkeypatch.setattr(aws_cli, 'aws', _make_fake_aws(calls))

@@ -60,5 +60,10 @@ def test_register_start_new_email_ok(monkeypatch):
     assert result['data']['user_id'] == str(new_user.id)
     assert result['data']['expires_in'] == 300
     user_svc.create_pending.assert_called_once()
-    email_svc.publish_magic_link.assert_called_once()
-    email_svc.publish_code.assert_called_once()
+    # UN solo email unificado (magic-link + code), no dos.
+    email_svc.publish_unified.assert_called_once()
+    email_svc.publish_magic_link.assert_not_called()
+    email_svc.publish_code.assert_not_called()
+    assert email_svc.publish_unified.call_args.kwargs['kind'] == (
+        'register-unified'
+    )

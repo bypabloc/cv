@@ -15,7 +15,7 @@ from typing import Any
 
 from models.register import RegisterStartIn
 from services.audit_service import AuditService
-from services.code_service import CODE_TTL_MINUTES, CodeService
+from services.code_service import CodeService
 from services.email_dispatch_service import EmailDispatchService
 from services.jwt_service import JwtService
 from services.magic_link_service import LINK_TTL_MINUTES, MagicLinkService
@@ -165,21 +165,16 @@ class Start(BaseController):
             f'{app_config.magic_link_base_url}'
             f'?operation=register&action=verify-magic-link&token={token}'
         )
-        email_svc.publish_magic_link(
+        # UN solo email con el magic-link Y el code (alternativas). LINK y CODE
+        # comparten TTL (15 min), por eso un solo expires_in_min.
+        email_svc.publish_unified(
             to=user.email,
             user_id=user.id,
             niche=niche,
-            kind='register-magic-link',
+            kind='register-unified',
             verify_url=verify_url,
-            expires_in_min=LINK_TTL_MINUTES,
-        )
-        email_svc.publish_code(
-            to=user.email,
-            user_id=user.id,
-            niche=niche,
-            kind='register-code',
             code=code,
-            expires_in_min=CODE_TTL_MINUTES,
+            expires_in_min=LINK_TTL_MINUTES,
         )
 
         temp_token, _ = jwt_svc.issue_temp(

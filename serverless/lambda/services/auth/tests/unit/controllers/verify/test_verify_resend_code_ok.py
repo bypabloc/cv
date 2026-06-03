@@ -60,5 +60,10 @@ def test_verify_resend_code_ok(monkeypatch):
     assert result['data']['temp_token'] == 'NEW-TEMP-JWT'
     assert result['data']['expires_in'] == 300
     user_svc.invalidate_active_codes_and_links.assert_called_once()
-    assert email_svc.publish_magic_link.call_count == 1
-    assert email_svc.publish_code.call_count == 1
+    # UN solo email unificado (magic-link + code); el kind sale del flow.
+    assert email_svc.publish_unified.call_count == 1
+    email_svc.publish_magic_link.assert_not_called()
+    email_svc.publish_code.assert_not_called()
+    assert email_svc.publish_unified.call_args.kwargs['kind'] == (
+        'register-unified'
+    )

@@ -44,5 +44,6 @@ def test_register_start_email_active_409(monkeypatch):
     assert result['code'] == 4002
     assert result['status'] == 409
     assert result['data']['error'] == 'EMAIL_ALREADY_REGISTERED'
+    email_svc.publish_unified.assert_not_called()
     email_svc.publish_magic_link.assert_not_called()
     email_svc.publish_code.assert_not_called()

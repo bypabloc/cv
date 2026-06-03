@@ -31,6 +31,7 @@ def test_sessions_detail_controller_when_not_found_then_maps_4040(
     # Assert
     assert result == {
         'is_valid': False,
+        'status': 404,
         'data': {
             'error_code': 'NOT_FOUND',
             'message': 'session nope not found',

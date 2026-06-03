@@ -27,17 +27,19 @@ _TAGS = ['analytics-aggregate']
 
 @cached(ttl=_TTL, namespace=_NS, tags=_TAGS)
 def distribution(*, date_from: date, date_to: date) -> dict[str, Any]:
-    """Distribucion de eventos por tipo en el rango (count + pct)."""
+    """Distribucion de eventos por tipo en el rango (count + pct).
+
+    El `pct` se calcula en Python (no en SQL): Postgres no tiene
+    `round(double precision, integer)` y castear a numeric complica la
+    expresion del window. El conjunto es chico (1 fila por event_type).
+    """
     event_type = func.coalesce(EventType.code_name, '(unknown)')
-    total = func.sum(func.count()).over()
-    pct = func.round(100.0 * func.count() / total, 2)
     try:
         with db_session() as s:
             rows = s.execute(
                 select(
                     event_type.label('event_type'),
                     func.count().label('count'),
-                    pct.label('pct'),
                 )
                 .select_from(TrackingEvent)
                 .outerjoin(
@@ -53,13 +55,15 @@ def distribution(*, date_from: date, date_to: date) -> dict[str, Any]:
     except Exception as exc:
         raise ServiceError(f'events distribution query failed: {exc}') from exc
 
+    counts = [(row.event_type, int(row.count or 0)) for row in rows]
+    total = sum(c for _, c in counts)
     items = [
         {
-            'event_type': row.event_type,
-            'count': int(row.count or 0),
-            'pct': float(row.pct or 0.0),
+            'event_type': name,
+            'count': count,
+            'pct': round(100.0 * count / total, 2) if total else 0.0,
         }
-        for row in rows
+        for name, count in counts
     ]
     return {'items': items}
 

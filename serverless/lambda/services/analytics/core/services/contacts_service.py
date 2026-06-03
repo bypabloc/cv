@@ -111,16 +111,17 @@ def list(
 
 @cached(ttl=_TTL, namespace=_NS, tags=_TAGS)
 def by_status(*, date_from: date, date_to: date) -> dict[str, Any]:
-    """Distribucion de contactos por status en el rango (count + pct)."""
-    total = func.sum(func.count()).over()
-    pct = func.round(100.0 * func.count() / total, 2)
+    """Distribucion de contactos por status en el rango (count + pct).
+
+    El `pct` se calcula en Python (Postgres no tiene `round(double
+    precision, integer)`). El conjunto es chico (1 fila por status).
+    """
     try:
         with db_session() as s:
             rows = s.execute(
                 select(
                     Contact.status.label('status'),
                     func.count().label('count'),
-                    pct.label('pct'),
                 )
                 .select_from(Contact)
                 .where(
@@ -133,12 +134,14 @@ def by_status(*, date_from: date, date_to: date) -> dict[str, Any]:
     except Exception as exc:
         raise ServiceError(f'contacts by-status query failed: {exc}') from exc
 
+    counts = [(row.status, int(row.count or 0)) for row in rows]
+    total = sum(c for _, c in counts)
     items = [
         {
-            'status': row.status,
-            'count': int(row.count or 0),
-            'pct': float(row.pct or 0.0),
+            'status': status,
+            'count': count,
+            'pct': round(100.0 * count / total, 2) if total else 0.0,
         }
-        for row in rows
+        for status, count in counts
     ]
     return {'items': items}

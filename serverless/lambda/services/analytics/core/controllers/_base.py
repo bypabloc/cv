@@ -31,6 +31,14 @@ from shared.lambda_kit.base_controller import BaseController
 from utils.auth_guard import require_auth
 from utils.rate_limit_guard import guard as rate_limit_guard
 
+# Mapeo del code interno del ServiceError al HTTP status que el controller
+# le pide a http_handler (via el campo `status` del resultado).
+_CODE_TO_STATUS: dict[int, int] = {
+    4040: 404,  # NotFoundError
+    5100: 503,  # error transitorio de DB
+    6000: 500,  # error interno
+}
+
 
 class AnalyticsControllerBase(BaseController):
     """Base de todos los controllers del Lambda `analytics`."""
@@ -64,8 +72,13 @@ class AnalyticsControllerBase(BaseController):
         try:
             result = service_fn(**self.service_kwargs(data))
         except ServiceError as exc:
+            # `status` HTTP explicito para que http_handler NO colapse el
+            # error a INVALID_REQUEST/400: NotFoundError -> 404, error
+            # transitorio de DB -> 503. Sin `status`, http_dispatch
+            # envuelve cualquier is_valid=False en un 400 generico.
             return {
                 'is_valid': False,
+                'status': _CODE_TO_STATUS.get(exc.code, 400),
                 'data': {
                     'error_code': exc.error_code,
                     'message': exc.message,

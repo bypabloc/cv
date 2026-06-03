@@ -13,8 +13,11 @@ export function useProfile() {
 	return useQuery({
 		queryKey: settingsKeys.profile(),
 		queryFn: async () => {
+			// El backend responde el perfil FLAT: `data` ES el UserProfile (no
+			// hay anidado `data.profile`). apiFetch re-envuelve el body plano en
+			// `{is_valid, code, data}`, asi que aqui `data` ya es el perfil.
 			const { data } = await settingsClient.getProfile();
-			return data.profile;
+			return data;
 		},
 	});
 }

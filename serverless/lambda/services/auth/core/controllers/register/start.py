@@ -59,11 +59,16 @@ class Start(BaseController):
         data: RegisterStartIn = self.validated_data  # type: ignore[assignment]
         meta = data.meta
 
+        # brought_turnstile_token: True solo si el usuario adjunto un CAPTCHA
+        # real (no el bypass dev/E2E vacio). register.start y login.start son
+        # los unicos endpoints donde el usuario resuelve un Turnstile -> los
+        # unicos que alimentan la auto-blacklist (bot con solver).
         RateLimitService(app_config).check_or_raise(
             ip=meta.ip or '',
             endpoint=_ENDPOINT,
             country=meta.country,
             turnstile_validated=False,
+            brought_turnstile_token=bool(data.cf_turnstile_response),
         )
 
         verify_captcha_or_bypass(

@@ -21,6 +21,7 @@ from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
 from shared.core.ulid import new_uuidv7
+from shared.db.models.auth.enums import AuthUserStatus
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#login.verify-magic-link'
@@ -98,6 +99,12 @@ class VerifyMagicLink(BaseController):
                 'status': 404,
                 'data': {'error': 'EMAIL_NOT_FOUND'},
             }
+
+        # Fusion register -> login (bloque D): un user nuevo (pending) cierra
+        # su registro al consumir el magic-link -> se marca active. Si ya esta
+        # active, solo loguea.
+        if user.status == AuthUserStatus.PENDING:
+            user_svc.mark_active(user)
 
         # AC-22: actualiza last_login_at + resetea failed_attempts.
         user_svc.update_last_login(user)

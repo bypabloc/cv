@@ -95,7 +95,15 @@ class RecoveryCodesConsume(BaseController):
                 'data': {'error': 'TOKEN_INVALID'},
             }
 
-        if claims.flow != _STRONG_FLOW or claims.step != _STRONG_STEP:
+        # El flow del temp step=2 puede llevar el progreso multi-factor
+        # (`login-mfa` o `login-mfa:totp,...`); el prefijo identifica el
+        # factor fuerte. El recovery code es el fallback anti-lockout: se
+        # acepta en cualquier punto del step-up (saltea los requeridos).
+        flow_ok = (
+            claims.flow is not None
+            and claims.flow.split(':', 1)[0] == _STRONG_FLOW
+        )
+        if not flow_ok or claims.step != _STRONG_STEP:
             audit_svc.log(
                 event='mfa.recovery-codes-consume',
                 success=False,

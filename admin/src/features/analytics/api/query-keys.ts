@@ -1,5 +1,6 @@
 import { metricsKey } from "@/lib/metrics-query-keys";
 import type {
+	DashboardParams,
 	DateRangeParams,
 	TimeseriesParams,
 	TopPagesParams,
@@ -24,4 +25,6 @@ export const analyticsKeys = {
 	activeNow: () => metricsKey("analytics", "active-now"),
 	retention: (params: DateRangeParams) =>
 		metricsKey("analytics", "retention", params),
+	dashboard: (params: DashboardParams) =>
+		metricsKey("analytics", "dashboard", params),
 };

@@ -104,3 +104,23 @@ export interface RetentionResponse {
 	total: number;
 	returning_rate: number;
 }
+
+/** Params del dashboard: rango + bucket de la serie + limit de los rankings. */
+export interface DashboardParams extends DateRangeParams {
+	bucket?: "day" | "hour" | "week";
+	limit?: number;
+}
+
+/**
+ * analytics/dashboard — las 7 vistas del overview de /metrics en una sola
+ * respuesta. Cada clave espeja el `data` de la action homonima.
+ */
+export interface DashboardResponse {
+	overview: OverviewResponse;
+	timeseries: TimeseriesResponse;
+	top_pages: TopPagesResponse;
+	top_referrers: TopReferrersResponse;
+	top_niches: TopNichesResponse;
+	active_now: ActiveNowResponse;
+	retention: RetentionResponse;
+}

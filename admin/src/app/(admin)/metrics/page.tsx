@@ -11,28 +11,20 @@ import { TimeseriesChart } from "@/features/analytics/components/TimeseriesChart
 import { TopNichesChart } from "@/features/analytics/components/TopNichesChart";
 import { TopPagesTable } from "@/features/analytics/components/TopPagesTable";
 import { TopReferrersTable } from "@/features/analytics/components/TopReferrersTable";
+import { useDashboard } from "@/features/analytics/hooks/use-dashboard";
 import { useMetricsRange } from "@/features/analytics/hooks/use-metrics-range";
-import { useOverview } from "@/features/analytics/hooks/use-overview";
-import { useRetention } from "@/features/analytics/hooks/use-retention";
-import { useTimeseries } from "@/features/analytics/hooks/use-timeseries";
-import { useTopNiches } from "@/features/analytics/hooks/use-top-niches";
-import { useTopPages } from "@/features/analytics/hooks/use-top-pages";
-import { useTopReferrers } from "@/features/analytics/hooks/use-top-referrers";
 
 /**
  * @page MetricsOverviewPage
  * @description Raiz del area de metricas (`/metrics`): KPIs (overview),
- *   contador live (active-now), serie temporal (timeseries) y ranking de
- *   paginas (top-pages). El rango from/to es compartido por la page.
+ *   contador live (active-now), serie temporal (timeseries), rankings y
+ *   retencion. Una SOLA request (`analytics/dashboard`) trae las 7 vistas en
+ *   vez de 7 requests separadas; el rango from/to es compartido por la page.
  */
 export default function MetricsOverviewPage() {
 	const { range, setRange } = useMetricsRange();
-	const overview = useOverview(range);
-	const timeseries = useTimeseries({ ...range, bucket: "day" });
-	const topPages = useTopPages(range);
-	const topReferrers = useTopReferrers(range);
-	const topNiches = useTopNiches(range);
-	const retention = useRetention(range);
+	const dashboard = useDashboard({ ...range, bucket: "day" });
+	const data = dashboard.data;
 
 	return (
 		<section className="space-y-6">
@@ -40,14 +32,17 @@ export default function MetricsOverviewPage() {
 				<div className="flex items-center gap-3">
 					<BarChart3 className="h-5 w-5 text-muted-foreground" />
 					<h1 className="text-2xl font-semibold">Metricas</h1>
-					<ActiveNowBadge />
+					<ActiveNowBadge
+						count={data?.active_now.active_sessions}
+						standalone={false}
+					/>
 				</div>
 				<MetricsDateRange range={range} onChange={setRange} />
 			</header>
 
-			{overview.error ? <ErrorAlert error={overview.error} /> : null}
+			{dashboard.error ? <ErrorAlert error={dashboard.error} /> : null}
 
-			<OverviewKpis data={overview.data} isLoading={overview.isLoading} />
+			<OverviewKpis data={data?.overview} isLoading={dashboard.isLoading} />
 
 			<Card>
 				<CardHeader>
@@ -55,8 +50,8 @@ export default function MetricsOverviewPage() {
 				</CardHeader>
 				<CardContent>
 					<TimeseriesChart
-						data={timeseries.data}
-						isLoading={timeseries.isLoading}
+						data={data?.timeseries}
+						isLoading={dashboard.isLoading}
 					/>
 				</CardContent>
 			</Card>
@@ -67,11 +62,7 @@ export default function MetricsOverviewPage() {
 						<CardTitle>Paginas mas vistas</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{topPages.error ? (
-							<ErrorAlert error={topPages.error} />
-						) : (
-							<TopPagesTable items={topPages.data?.items ?? []} />
-						)}
+						<TopPagesTable items={data?.top_pages.items ?? []} />
 					</CardContent>
 				</Card>
 
@@ -80,14 +71,10 @@ export default function MetricsOverviewPage() {
 						<CardTitle>Top referrers</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{topReferrers.error ? (
-							<ErrorAlert error={topReferrers.error} />
-						) : (
-							<TopReferrersTable
-								label="Referrer"
-								items={topReferrers.data?.referrers ?? []}
-							/>
-						)}
+						<TopReferrersTable
+							label="Referrer"
+							items={data?.top_referrers.referrers ?? []}
+						/>
 					</CardContent>
 				</Card>
 
@@ -96,14 +83,10 @@ export default function MetricsOverviewPage() {
 						<CardTitle>Top niches</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{topNiches.error ? (
-							<ErrorAlert error={topNiches.error} />
-						) : (
-							<TopNichesChart
-								data={topNiches.data}
-								isLoading={topNiches.isLoading}
-							/>
-						)}
+						<TopNichesChart
+							data={data?.top_niches}
+							isLoading={dashboard.isLoading}
+						/>
 					</CardContent>
 				</Card>
 
@@ -112,14 +95,10 @@ export default function MetricsOverviewPage() {
 						<CardTitle>Retencion</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{retention.error ? (
-							<ErrorAlert error={retention.error} />
-						) : (
-							<RetentionChart
-								data={retention.data}
-								isLoading={retention.isLoading}
-							/>
-						)}
+						<RetentionChart
+							data={data?.retention}
+							isLoading={dashboard.isLoading}
+						/>
 					</CardContent>
 				</Card>
 			</div>

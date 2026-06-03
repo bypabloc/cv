@@ -53,12 +53,20 @@ export function useAuthTimer(): void {
 		if (timerRef.current) clearTimeout(timerRef.current);
 
 		// Bootstrap: hidratar el access desde el refresh tras un reload.
+		// `useAuthTimer` es el dueno del cierre de `bootstrapping`: lo apaga en
+		// TODAS las salidas del branch (sin-refresh, refresh-ok, refresh-fail)
+		// para que `useProtectedRoute` pueda volver a evaluar el redirect.
 		if (!accessToken) {
-			const { refreshToken, refreshExpiry } = useAuthStore.getState();
+			const { refreshToken, refreshExpiry, setBootstrapping } =
+				useAuthStore.getState();
 			if (refreshToken && refreshExpiry && refreshExpiry > Date.now()) {
 				void doRefresh().then((ok) => {
+					setBootstrapping(false);
 					if (!ok) reset();
 				});
+			} else {
+				// Sin refresh vigente: nada que hidratar -> permitir el redirect.
+				setBootstrapping(false);
 			}
 			return;
 		}
@@ -68,6 +76,10 @@ export function useAuthTimer(): void {
 			reset();
 			return;
 		}
+
+		// Hay un access valido (sesion en curso, ej. login o multi-tab): el
+		// bootstrap ya no aplica.
+		useAuthStore.getState().setBootstrapping(false);
 
 		const msUntilRefresh = exp - Date.now() - REFRESH_LEAD;
 		if (msUntilRefresh <= 0) {

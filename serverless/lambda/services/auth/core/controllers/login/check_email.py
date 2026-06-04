@@ -20,6 +20,7 @@ from typing import Any
 
 from models.login import LoginCheckEmailIn
 from services.audit_service import AuditService
+from services.jwt_service import JwtService
 from services.password_service import PasswordService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
@@ -29,6 +30,10 @@ from shared.db.models.auth.enums import AuthUserStatus
 from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#login.check-email'
+# El temp JWT precheck (paso 0 del login) autoriza `login.start`: este
+# es el UNICO punto del flujo de login con Turnstile (decision D-1/D-2).
+_PRECHECK_FLOW = 'login'
+_PRECHECK_STEP = 0
 
 
 class CheckEmail(BaseController):
@@ -61,13 +66,21 @@ class CheckEmail(BaseController):
     def execute(self) -> dict[str, Any]:
         """Reporta existencia + has_password (sin la lista de metodos MFA).
 
+        Tras validar Turnstile (en `validate`), emite un temp JWT precheck
+        (`flow='login'` step=0) en los casos que pueden continuar a
+        `login.start` (active o pending). `login.start` lo exige en
+        `Authorization` y ya NO valida Turnstile (decision D-1/D-2). Para
+        un email inexistente o unavailable NO se emite temp (no hay flujo
+        que continuar).
+
         Returns:
-            200 `{exists:false}` si el email no existe (AC-C2).
-            200 `{exists:true, pending:true, has_password:false}` si pending
-            (AC-C3).
+            200 `{exists:false}` si el email no existe (AC-C2/AC-3).
+            200 `{exists:true, pending:true, has_password:false, temp_token}`
+            si pending (AC-C3/AC-2).
             200 `{exists:true, unavailable:true}` si disabled/locked/deleted
-            (AC-C4).
-            200 `{exists:true, has_password:<bool>}` si active (AC-C1).
+            (AC-C4/AC-3, sin temp_token).
+            200 `{exists:true, has_password:<bool>, temp_token}` si active
+            (AC-C1/AC-1).
         """
         data: LoginCheckEmailIn = self.validated_data  # type: ignore[assignment]
         meta = data.meta
@@ -99,6 +112,7 @@ class CheckEmail(BaseController):
                     'exists': True,
                     'pending': True,
                     'has_password': False,
+                    'temp_token': self._issue_precheck(user_id=user.id),
                 },
             }
 
@@ -113,7 +127,8 @@ class CheckEmail(BaseController):
                 'data': {'exists': True, 'unavailable': True},
             }
 
-        # active: expone has_password (NO la lista de metodos MFA).
+        # active: expone has_password (NO la lista de metodos MFA) + el temp
+        # precheck que autoriza login.start.
         status = PasswordService(app_config).status(user_id=user.id)
         return {
             'is_valid': True,
@@ -121,5 +136,19 @@ class CheckEmail(BaseController):
             'data': {
                 'exists': True,
                 'has_password': bool(status['has_password']),
+                'temp_token': self._issue_precheck(user_id=user.id),
             },
         }
+
+    def _issue_precheck(self, *, user_id: Any) -> str:
+        """Emite el temp JWT precheck (`flow='login'` step=0) para el user.
+
+        Solo se llama tras pasar Turnstile (en `validate`). `login.start`
+        lo verifica (flow + sub) y lo blacklistea rolling.
+        """
+        token, _ = JwtService(app_config).issue_temp(
+            user_id=user_id,
+            flow=_PRECHECK_FLOW,
+            step=_PRECHECK_STEP,
+        )
+        return token

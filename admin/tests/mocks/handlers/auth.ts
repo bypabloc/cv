@@ -157,6 +157,13 @@ export const authHandlers = [
 					},
 				});
 			}
+			// Login con password directo: password incorrecta -> 401.
+			if (data.password === "wrong-password-99") {
+				return HttpResponse.json(
+					{ is_valid: false, code: 4000, data: { error: "INVALID_PASSWORD" } },
+					{ status: 401 },
+				);
+			}
 			return HttpResponse.json({
 				is_valid: true,
 				code: 0,
@@ -382,6 +389,20 @@ export const authHandlers = [
 				code: 0,
 				data: { credentials: [] },
 			});
+		}
+
+		// Soft-enable / set-required: el backend responde 204 (sin payload). El
+		// cliente re-envuelve el body vacio en {is_valid:true, code:0, data:null}.
+		const enableRequiredActions = new Set([
+			"enable",
+			"set-required",
+			"disable",
+		]);
+		if (
+			(operation === "mfa" || operation === "webauthn") &&
+			enableRequiredActions.has(action)
+		) {
+			return new HttpResponse(null, { status: 204 });
 		}
 
 		return HttpResponse.json(

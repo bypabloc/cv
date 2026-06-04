@@ -114,4 +114,10 @@ export interface CheckEmailResponse {
 	has_password?: boolean;
 	pending?: boolean;
 	unavailable?: boolean;
+	/**
+	 * Temp JWT precheck (flow='login' step=0) que autoriza login.start.
+	 * Presente salvo en el caso `unavailable` (no hay flujo que continuar).
+	 * login.start lo manda en `Authorization: Bearer` en vez de Turnstile.
+	 */
+	temp_token?: string;
 }

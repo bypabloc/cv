@@ -5,6 +5,7 @@ When se invoca login.start con {email, password},
 Then emite access+refresh directo (skip step 2).
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from .._helpers import _make_user
@@ -22,6 +23,7 @@ def _event_with_password(password: str) -> dict:
             'user_agent': 'pytest',
             'bypass_token': None,
             'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+            'authorization': 'Bearer PRECHECK-TEMP',
             'cloudfront_meta': {},
         },
     }
@@ -38,6 +40,10 @@ def test_login_start_with_password_no_mfa(monkeypatch):
     jwt_svc = MagicMock()
     jwt_svc.issue_access.return_value = ('ACCESS-JWT', MagicMock())
     jwt_svc.issue_refresh.return_value = ('REFRESH-JWT', MagicMock())
+    jwt_svc.verify.return_value = SimpleNamespace(
+        sub=user.id, jti='precheck-jti', exp=9999999999, flow='login',
+        typ='temp',
+    )
     mfa_svc = MagicMock()
     mfa_svc.count_active.return_value = 0
 
@@ -49,11 +55,6 @@ def test_login_start_with_password_no_mfa(monkeypatch):
     monkeypatch.setattr(start, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'MfaMethodService', lambda _c: mfa_svc)
-    monkeypatch.setattr(
-        start,
-        'verify_captcha_or_bypass',
-        lambda *_a, **_k: {'success': True},
-    )
     monkeypatch.setattr(start, 'check_password', lambda **_k: True)
 
     event = _event_with_password('a-strong-passphrase-12')

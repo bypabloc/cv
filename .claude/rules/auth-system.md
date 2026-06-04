@@ -107,17 +107,22 @@ Aplica SIEMPRE que se trabaje con:
 
 ### Login UX (anti enumeration)
 
-- **SIEMPRE** `login.start` con email inexistente devuelve `404
-  {error: 'EMAIL_NOT_FOUND', suggest_register: true}`.
+- **SIEMPRE** `login.start` exige el temp JWT precheck (`flow='login'`
+  step=0) en `Authorization`. Sin el -> `401 MISSING_PRECHECK` (forzar a
+  pasar por `login.check-email` con Turnstile primero). El `sub` del
+  precheck debe matchear el user del email si ya existe (anti-cross-
+  account); si no matchea -> `401 MISSING_PRECHECK`.
+- **SIEMPRE** con un precheck valido, `login.start` con email inexistente
+  CREA el user `pending` (fusion register->login) y envia el email
+  unificado (`created: true`). Ya NO devuelve `404 EMAIL_NOT_FOUND`.
 - **SIEMPRE** `login.start` con email cuyo status es `disabled` o
-  `locked` devuelve EL MISMO `404 {error: 'EMAIL_NOT_FOUND',
+  `locked` devuelve `404 {error: 'EMAIL_NOT_FOUND',
   suggest_register: false}` (anti-enumeration). Audit log registra el
   intento con `error_code='ACCOUNT_DISABLED'` o `'ACCOUNT_LOCKED'`.
-- **SIEMPRE** `login.start` con email cuyo status es `pending` devuelve
-  `409 PENDING_VERIFICATION` para forzar que termine el flujo de register.
-- **NUNCA** devolver 404 con body distinto entre "no existe" y
-  "existe + disabled/locked". La diferencia visible al cliente es solo
-  `suggest_register`.
+- **SIEMPRE** `login.start` con email `pending` re-emite el email unificado
+  (`created: false`); ya NO devuelve `409 PENDING_VERIFICATION`.
+- **NUNCA** revelar la existencia del email en `login.start` mas alla de lo
+  que ya expone `login.check-email` (existencia + `has_password`).
 
 #### `login.check-email` (precheck del login)
 
@@ -135,6 +140,15 @@ Aplica SIEMPRE que se trabaje con:
   estado real (`ACCOUNT_DISABLED`/`ACCOUNT_LOCKED`).
 - **NUNCA** devolver `has_password` ni la existencia para un user
   disabled/locked: ahi solo `unavailable`.
+- **SIEMPRE** `login.check-email` es el UNICO punto del flujo de login con
+  Turnstile, y emite un **temp JWT precheck** (`flow='login'` step=0) en la
+  respuesta (`temp_token`) para los casos que pueden continuar a
+  `login.start` (active, pending, y email nuevo/`exists:false` con un `sub`
+  placeholder, para el alta fusionada). `login.start` lo EXIGE en
+  `Authorization`. Es el reemplazo del Turnstile de `login.start`.
+- **NUNCA** emitir el `temp_token` precheck en el caso `unavailable`
+  (disabled/locked/deleted): ese user no puede entrar, no hay flujo que
+  continuar.
 
 #### Flujo de entrada unico: `register` fusionado en `login`
 
@@ -175,9 +189,21 @@ Aplica SIEMPRE que se trabaje con:
 
 ### Turnstile y rate-limit
 
-- **SIEMPRE** Turnstile obligatorio en `register.start` y `login.start`
-  (AC-12). El resto del flujo NO valida Turnstile — confia en el JWT
-  temp + rate-limit.
+- **SIEMPRE** Turnstile SOLO en los DOS endpoints **iniciales** (step 0)
+  del flujo de auth: `login.check-email` y `register.start` (AC-12). El
+  token de Turnstile es single-use: validarlo dos veces en el mismo flujo
+  da `timeout-or-duplicate`. Ningun otro endpoint lo valida.
+- **NUNCA** un endpoint **no-inicial** (step != 0) valida Turnstile. La
+  autorizacion de esos endpoints es un JWT (access) o un JWT temporal
+  (rolling temp del flujo). En particular `login.start` ya NO valida
+  Turnstile: EXIGE el temp JWT precheck (`flow='login'` step=0) emitido por
+  `login.check-email` en el header `Authorization`; sin el -> `401
+  MISSING_PRECHECK`. El `sub` del precheck debe matchear el user del email
+  (anti-cross-account); para un email nuevo (alta fusionada) el precheck
+  lleva un `sub` placeholder y `login.start` crea el pending sin comparar.
+- **SIEMPRE** la auto-blacklist anti-solver se alimenta solo por los
+  endpoints con Turnstile (`login.check-email` + `register.start`): el
+  `brought_turnstile_token=True` se cuenta por `(ip, endpoint, window)`.
 - **SIEMPRE** rate-limit per-IP via `shared.rate_limit.check_or_raise`
   con las reglas seedeadas (ver
   [.claude/docs/auth-system/03-rate-limit-rules.md](../docs/auth-system/03-rate-limit-rules.md)).

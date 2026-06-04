@@ -53,6 +53,11 @@ type Stage =
 export function LoginForm() {
 	const router = useRouter();
 	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+	// Temp JWT precheck (flow='login' step=0) que devuelve login.check-email
+	// tras validar Turnstile. login.start lo manda en Authorization en vez del
+	// captcha (el token de Turnstile es single-use: reusarlo daba
+	// `timeout-or-duplicate`).
+	const [precheckToken, setPrecheckToken] = useState<string | null>(null);
 	const [stage, setStage] = useState<Stage>({ kind: "email" });
 	const checkEmail = useCheckEmail();
 	const loginStart = useLoginStart();
@@ -80,6 +85,9 @@ export function LoginForm() {
 			},
 			{
 				onSuccess: ({ data }) => {
+					// El precheck autoriza login.start. unavailable no trae temp
+					// (no hay flujo que continuar) y ese stage no llama login.start.
+					setPrecheckToken(data.temp_token ?? null);
 					if (data.unavailable) {
 						setStage({ kind: "unavailable" });
 						return;
@@ -99,19 +107,20 @@ export function LoginForm() {
 	});
 
 	const startPasswordless = (email: string) => {
+		if (precheckToken === null) return;
 		loginStart.mutate(
-			{ email, cf_turnstile_response: turnstileToken ?? "" },
+			{ data: { email }, precheckToken },
 			{ onSuccess: goToVerify },
 		);
 	};
 
 	const onPasswordSubmit = (email: string) =>
 		passwordForm.handleSubmit((values) => {
+			if (precheckToken === null) return;
 			loginStart.mutate(
 				{
-					email,
-					password: values.password,
-					cf_turnstile_response: turnstileToken ?? "",
+					data: { email, password: values.password },
+					precheckToken,
 				},
 				{
 					onSuccess: ({ data }) => {

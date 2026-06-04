@@ -1,6 +1,6 @@
 import { render, screen, userEvent, waitFor } from "@tests/utils/render";
 import type { ReactElement } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
@@ -38,6 +38,11 @@ async function solveTurnstile(): Promise<void> {
 }
 
 describe("LoginForm", () => {
+	beforeEach(() => {
+		pushMock.mockClear();
+		useAuthStore.getState().reset();
+	});
+
 	it("Given email invalido When submit Then NO llama a la API (Zod bloquea)", async () => {
 		// Arrange
 		const user = userEvent.setup();
@@ -107,5 +112,49 @@ describe("LoginForm", () => {
 			expect(pushMock).toHaveBeenCalledWith("/verify?flow=login");
 		});
 		expect(useAuthStore.getState().tempToken).toBe("mock-temp-created");
+	});
+
+	it("Given password correcta When submit Then login.start con el precheck navega a /verify", async () => {
+		// Arrange: cuenta con password (default) -> input de password.
+		const user = userEvent.setup();
+		render((<LoginForm />) as ReactElement);
+		await user.type(screen.getByLabelText(/email/i), "user@test.com");
+		await solveTurnstile();
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		await screen.findByTestId("login-password");
+
+		// Act: el precheck (mock-precheck-token) viaja en Authorization, NO el
+		// captcha. login.start con password OK -> temp + navega.
+		await user.type(
+			screen.getByTestId("login-password"),
+			"a-strong-passphrase-12",
+		);
+		await user.click(screen.getByTestId("login-password-submit"));
+
+		// Assert
+		await waitFor(() => {
+			expect(pushMock).toHaveBeenCalledWith("/verify?flow=login");
+		});
+		expect(useAuthStore.getState().tempToken).toBe("mock-temp-login");
+	});
+
+	it("Given password incorrecta When submit Then muestra el error inline (401)", async () => {
+		// Arrange
+		const user = userEvent.setup();
+		render((<LoginForm />) as ReactElement);
+		await user.type(screen.getByLabelText(/email/i), "user@test.com");
+		await solveTurnstile();
+		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		await screen.findByTestId("login-password");
+
+		// Act: password que el mock rechaza con 401 INVALID_PASSWORD.
+		await user.type(screen.getByTestId("login-password"), "wrong-password-99");
+		await user.click(screen.getByTestId("login-password-submit"));
+
+		// Assert: error inline, NO navega.
+		await waitFor(() => {
+			expect(screen.getByText(/contrasena incorrecta/i)).toBeInTheDocument();
+		});
+		expect(pushMock).not.toHaveBeenCalled();
 	});
 });

@@ -74,10 +74,14 @@ class ConfirmTotp(BaseController):
                 'data': {'error': 'NO_PENDING_TOTP'},
             }
 
+        # valid_window=2 (±60s): el confirm acaba de mostrar el QR; absorbe
+        # el lag humano de escanear + tipear el primer code. El login
+        # (verify-totp) mantiene el default 1 (mas estricto).
         ok = totp_svc.verify(
             user_id=user.id,
             ciphertext=ciphertext,
             code=data.code,
+            valid_window=2,
         )
         if not ok:
             audit_svc.log(

@@ -25,6 +25,7 @@ def test_profile_get_ok(monkeypatch):
 
     profile_svc = MagicMock()
     profile_svc.mfa_summary.return_value = {'mfa_configured': True}
+    profile_svc.has_password.return_value = True
 
     monkeypatch.setattr(ctl, 'require_active_user', lambda *_a, **_k: user)
     monkeypatch.setattr(ctl, 'ProfileService', lambda _c: profile_svc)
@@ -43,4 +44,6 @@ def test_profile_get_ok(monkeypatch):
     assert result['data']['marketing_consent'] is False
     assert result['data']['status'] == 'active'
     assert result['data']['mfa_configured'] is True
+    assert result['data']['has_password'] is True
     profile_svc.mfa_summary.assert_called_once_with(user_id=user.id)
+    profile_svc.has_password.assert_called_once_with(user_id=user.id)

@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from models.status import StatusGetIn
-from services.jwt_service import require_active_user
+from services.jwt_service import authenticate
 from services.profile_service import ProfileService
 from services.rate_limit_service import RateLimitService
 from settings.config import app_config
@@ -37,12 +37,21 @@ class Get(BaseController):
     def execute(self) -> dict[str, Any]:
         """Retorna 200 con el estado + detalle MFA."""
         data: StatusGetIn = self.validated_data  # type: ignore[assignment]
-        user = require_active_user(data.meta.authorization, app_config=app_config)
+        user, claims = authenticate(
+            data.meta.authorization, app_config=app_config,
+        )
+        # current_session_id = family_id de la sesion en curso (el access
+        # JWT siempre lo lleva). None solo en tokens legacy sin family_id.
+        current_session_id = (
+            str(claims.family_id) if claims.family_id is not None else None
+        )
         mfa = ProfileService(app_config).mfa_summary(user_id=user.id)
         return {
             'is_valid': True,
             'code': 0,
             'data': {
+                'user_id': str(user.id),
+                'current_session_id': current_session_id,
                 'status': user.status.value,
                 'mfa_configured': mfa['mfa_configured'],
                 'mfa_methods': mfa['mfa_methods'],

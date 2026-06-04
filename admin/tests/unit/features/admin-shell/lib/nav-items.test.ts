@@ -3,9 +3,9 @@ import { NAV_ITEMS } from "@/features/admin-shell/lib/nav-items";
 
 /**
  * @module tests/unit/features/admin-shell/lib/nav-items
- * @description Verifica los items del sidebar. Tras el plan b-analytics-api la
- *   raiz del area de metricas (`/metrics`) ES un item del sidebar (la page ya
- *   existe); las sub-secciones de /metrics/* se navegan desde esa page.
+ * @description Verifica los items del sidebar. Configuracion agrupa
+ *   Perfil/Seguridad/Sesiones en tabs dentro de /settings, por eso el sidebar
+ *   NO tiene items separados para Seguridad ni Mis sesiones.
  */
 
 describe("NAV_ITEMS", () => {
@@ -17,33 +17,26 @@ describe("NAV_ITEMS", () => {
 		expect(hrefs).toContain("/metrics");
 	});
 
-	it("Given los items When se cuentan Then hay 6 (con Metricas y Seguridad)", () => {
+	it("Given los items When se cuentan Then hay 4 (metrics, settings, users, cv)", () => {
 		// Arrange + Act + Assert
-		expect(NAV_ITEMS).toHaveLength(6);
+		expect(NAV_ITEMS).toHaveLength(4);
 	});
 
-	it("Given los items When se listan Then son metrics, settings, security, sessions, users, cv", () => {
+	it("Given los items When se listan Then son metrics, settings, users, cv", () => {
 		// Arrange + Act
 		const hrefs = NAV_ITEMS.map((item) => item.href);
 
 		// Assert
-		expect(hrefs).toEqual([
-			"/metrics",
-			"/settings",
-			"/settings/security",
-			"/sessions",
-			"/users",
-			"/cv",
-		]);
+		expect(hrefs).toEqual(["/metrics", "/settings", "/users", "/cv"]);
 	});
 
-	it("Given los items When se busca Seguridad Then existe con href /settings/security y label Seguridad", () => {
+	it("Given los items When se busca Then NO hay item separado de Seguridad ni Sesiones", () => {
 		// Arrange + Act
-		const security = NAV_ITEMS.find(
-			(item) => item.href === "/settings/security",
-		);
+		const hrefs = NAV_ITEMS.map((item) => item.href);
 
-		// Assert
-		expect(security?.label).toBe("Seguridad");
+		// Assert: ambos viven como tabs dentro de /settings.
+		expect(hrefs).not.toContain("/settings/security");
+		expect(hrefs).not.toContain("/settings/sessions");
+		expect(hrefs).not.toContain("/sessions");
 	});
 });

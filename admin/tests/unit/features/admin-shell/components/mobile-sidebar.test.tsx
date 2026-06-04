@@ -28,7 +28,7 @@ describe("MobileSidebar", () => {
 		useVisibleNavItemsMock.mockReturnValue(ADMIN_ITEMS);
 	});
 
-	it("Given un admin When abre el Sheet Then muestra los 6 items", async () => {
+	it("Given un admin When abre el Sheet Then muestra los 4 items", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render(<MobileSidebar />);
@@ -38,10 +38,10 @@ describe("MobileSidebar", () => {
 
 		// Assert
 		const links = await screen.findAllByRole("link");
-		expect(links).toHaveLength(6);
+		expect(links).toHaveLength(4);
 	});
 
-	it("Given un NO-admin When abre el Sheet Then oculta el item Usuarios (5 items)", async () => {
+	it("Given un NO-admin When abre el Sheet Then oculta el item Usuarios (3 items)", async () => {
 		// Arrange
 		useVisibleNavItemsMock.mockReturnValue(NON_ADMIN_ITEMS);
 		const user = userEvent.setup();
@@ -52,7 +52,7 @@ describe("MobileSidebar", () => {
 
 		// Assert
 		const links = await screen.findAllByRole("link");
-		expect(links).toHaveLength(5);
+		expect(links).toHaveLength(3);
 		expect(screen.queryByRole("link", { name: /usuarios/i })).toBe(null);
 	});
 
@@ -69,17 +69,16 @@ describe("MobileSidebar", () => {
 		expect(link.className).toContain("bg-accent");
 	});
 
-	it("Given pathname /settings When abierto Then el item Mis sesiones NO esta activo", async () => {
+	it("Given el Sheet abierto Then NO hay un item separado de Mis sesiones", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render(<MobileSidebar />);
 
-		// Act
+		// Act: Seguridad y Sesiones viven como tabs dentro de /settings.
 		await user.click(screen.getByRole("button", { name: /abrir menu/i }));
 
 		// Assert
-		const link = await screen.findByRole("link", { name: /mis sesiones/i });
-		expect(link.className).toContain("text-muted-foreground");
+		expect(screen.queryByRole("link", { name: /mis sesiones/i })).toBe(null);
 	});
 
 	it("Given el Sheet abierto Then muestra el item Metricas", async () => {

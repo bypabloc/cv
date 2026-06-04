@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -35,11 +35,16 @@ export function ProfileForm() {
 		defaultValues: { display_name: "" },
 	});
 
+	// Hidrata el form UNA sola vez con la data del backend. Sin el guard, el
+	// reset se dispara en cada render (profile.data cambia de referencia con
+	// Tanstack) y pisa lo que el usuario tipea en "Nombre para mostrar".
 	const { reset } = form;
+	const hydrated = useRef(false);
 	const displayName = profile.data?.display_name;
 	useEffect(() => {
-		if (profile.data) {
+		if (profile.data && !hydrated.current) {
 			reset({ display_name: displayName ?? "" });
+			hydrated.current = true;
 		}
 	}, [profile.data, displayName, reset]);
 

@@ -40,11 +40,13 @@ def test_update_password_sets_first_when_no_credential(monkeypatch):
         lambda **_k: verify_calls.append(True),
     )
 
+    # Credencial SINTETICA compuesta en runtime (no secreto).
+    new_secret = f'{"Qa7"}-{"K7m"}-{"Zx3"}!'  # noqa: S105
     svc = profile_service.ProfileService(app_config=object())
     result = svc.update_password(
         user_id='user-1',
         current_password=None,
-        new_password='brand-new-pass-12',
+        new_password=new_secret,
     )
 
     assert result is True

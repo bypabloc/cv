@@ -88,16 +88,24 @@ def register_active_with_password(
         ),
         origin=origin,
     )
-    rl = http.post(
+    # login.check-email (precheck con Turnstile/bypass) -> temp; login.start
+    # con ese temp en Authorization (ya NO valida Turnstile).
+    rc = http.post(
         '/auth',
         body=make_body(
             'login',
-            'start',
+            'check-email',
             email=email,
             cf_turnstile_response='',
         ),
         origin=origin,
         bypass_token=bypass,
+    )
+    rl = http.post(
+        '/auth',
+        body=make_body('login', 'start', email=email),
+        origin=origin,
+        bearer=field(rc.body, 'temp_token'),
     )
     login_temp = field(rl.body, 'temp_token')
     if login_temp:

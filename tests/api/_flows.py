@@ -65,6 +65,32 @@ def assert_cases_passed(reporter: Reporter, *, since: int) -> None:
     assert not fails, f'{len(fails)}/{len(added)} casos FAIL\n{detail}'
 
 
+def login_precheck(
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str | None,
+) -> str | None:
+    """login.check-email (con Turnstile/bypass) -> devuelve el temp precheck.
+
+    El captcha del flujo de login se resuelve SOLO aqui (login.check-email);
+    `login.start` ya NO valida Turnstile, exige este temp precheck
+    (`flow='login'` step=0) en `Authorization`. Devuelve el temp_token o None.
+    """
+    r = http.post(
+        '/auth',
+        body=make_body(
+            'login',
+            'check-email',
+            email=email,
+            cf_turnstile_response='',
+        ),
+        origin=origin,
+        bypass_token=bypass,
+    )
+    return field(r.body, 'temp_token')
+
+
 # =========================================================================
 # Port de flow_readonly -> cv (read) + contact_form + tracking_pixel
 # =========================================================================
@@ -410,23 +436,21 @@ def _run_auth_success(
         )
         access2 = field(r.body, 'access_token') or access1
 
-    # 4. login.start (success) -> temp del login
+    # 4. login.check-email (precheck con Turnstile) -> temp; login.start con
+    #    ese temp en Authorization (ya NO valida Turnstile) -> temp del login
+    precheck = login_precheck(http, origin, email, bypass)
     r = runner.step(
         lambda_name='auth',
         name='login.start (success)',
         method='POST',
         call=lambda: http.post(
             '/auth',
-            body=make_body(
-                'login',
-                'start',
-                email=email,
-                cf_turnstile_response='',
-            ),
+            body=make_body('login', 'start', email=email),
             origin=origin,
-            bypass_token=bypass,
+            bearer=precheck,
         ),
         expected=200,
+        note='precheck de check-email en Authorization',
     )
     login_temp = field(r.body, 'temp_token')
 
@@ -607,7 +631,9 @@ def _run_login_with_password(
         print('  [SKIP] login con password: registro fallo')
         return
 
-    # login.start con password -> tokens directos (sin MFA).
+    # login.start con password -> tokens directos (sin MFA). El precheck
+    # (de check-email) va en Authorization; login.start ya no usa Turnstile.
+    precheck_pwd = login_precheck(http, origin, email, bypass)
     runner.step(
         lambda_name='auth',
         name='login.start con password (success: tokens directos)',
@@ -619,31 +645,28 @@ def _run_login_with_password(
                 'start',
                 email=email,
                 password=STRONG_PASSWORD,
-                cf_turnstile_response='',
             ),
             origin=origin,
-            bypass_token=bypass,
+            bearer=precheck_pwd,
         ),
         expected=200,
+        note='precheck de check-email en Authorization',
     )
 
     # 2-step: login.start sin password -> temp; verify-password -> tokens.
+    precheck_2step = login_precheck(http, origin, email, bypass)
     r = runner.step(
         lambda_name='auth',
         name='login.start (2-step setup)',
         method='POST',
         call=lambda: http.post(
             '/auth',
-            body=make_body(
-                'login',
-                'start',
-                email=email,
-                cf_turnstile_response='',
-            ),
+            body=make_body('login', 'start', email=email),
             origin=origin,
-            bypass_token=bypass,
+            bearer=precheck_2step,
         ),
         expected=200,
+        note='precheck de check-email en Authorization',
     )
     temp = field(r.body, 'temp_token')
     if temp:
@@ -664,7 +687,10 @@ def _run_login_with_password(
             expected=200,
         )
 
-    # login con password incorrecta -> 401 INVALID_PASSWORD.
+    # login con password incorrecta -> 401 INVALID_PASSWORD. Manda el precheck
+    # (de check-email) para que el 401 sea por la password, NO por
+    # MISSING_PRECHECK. samples=1: cada precheck es single-use (rolling).
+    precheck_wrong = login_precheck(http, origin, email, bypass)
     runner.case(
         lambda_name='auth',
         name='login.start con password (error: incorrecta -> 401)',
@@ -676,13 +702,12 @@ def _run_login_with_password(
                 'start',
                 email=email,
                 password=WRONG_PASSWORD,
-                cf_turnstile_response='',
             ),
             origin=origin,
-            bypass_token=bypass,
+            bearer=precheck_wrong,
         ),
         expected=401,
-        samples=2,
+        samples=1,
     )
 
 
@@ -695,27 +720,41 @@ def _run_auth_errors(
     """Casos de error de auth (no mutan / no requieren estado valido)."""
     if bypass:
         # Email aleatorio garantizado-inexistente. Tras la fusion
-        # register->login (plan admin-security-overview), login.start con un
-        # email NUEVO ya NO da 404: CREA el user pending y envia el entry
-        # email -> 200 (created:true). El 404 EMAIL_NOT_FOUND queda solo para
-        # disabled/locked (anti-enumeration).
+        # register->login, login.start con un email NUEVO ya NO da 404: con el
+        # precheck (de check-email) CREA el user pending -> 200 (created:true).
+        # Cada sample saca un precheck FRESCO (es single-use: login.start lo
+        # blacklistea rolling), por eso check-email + start van DENTRO del call.
         ghost = f'success+ghost-{secrets.token_hex(4)}@simulator.amazonses.com'
+
+        def _ghost_login_start() -> Response:
+            precheck = login_precheck(http, origin, ghost, bypass)
+            return http.post(
+                '/auth',
+                body=make_body('login', 'start', email=ghost),
+                origin=origin,
+                bearer=precheck,
+            )
+
         runner.case(
             lambda_name='auth',
             name='login.start (email nuevo -> crea user)',
             method='POST',
+            call=_ghost_login_start,
+            expected=200,
+        )
+        # login.start SIN el precheck -> 401 MISSING_PRECHECK: el Turnstile del
+        # flujo de login se exige (via check-email) ANTES de start.
+        ghost2 = f'success+nopre-{secrets.token_hex(4)}@simulator.amazonses.com'
+        runner.case(
+            lambda_name='auth',
+            name='login.start (error: sin precheck -> 401)',
+            method='POST',
             call=lambda: http.post(
                 '/auth',
-                body=make_body(
-                    'login',
-                    'start',
-                    email=ghost,
-                    cf_turnstile_response='',
-                ),
+                body=make_body('login', 'start', email=ghost2),
                 origin=origin,
-                bypass_token=bypass,
             ),
-            expected=200,
+            expected=401,
         )
     runner.case(
         lambda_name='auth',

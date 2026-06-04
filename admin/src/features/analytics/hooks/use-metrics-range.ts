@@ -13,9 +13,10 @@ function isoDate(d: Date): string {
 
 /**
  * @function useMetricsRange
- * @description Estado del rango de fechas compartido por las pages de metricas.
- *   Default: ultimos 30 dias (matchea el default del backend). El backend
- *   rechaza rangos > 90 dias (400); el DateRangePicker debe acotar a 90d.
+ * @description Estado del rango de fechas (YYYY-MM-DD) que comparten las
+ *   SUB-pages de metricas (devices, funnel, events, ...). Default: ultimos 30
+ *   dias. La page raiz /metrics usa su propio selector CloudWatch
+ *   (useMetricsCloudwatchRange) con granularidad sub-dia + bucket.
  *
  * @returns `{ range, setRange }` donde range es `{from, to}` (YYYY-MM-DD).
  */

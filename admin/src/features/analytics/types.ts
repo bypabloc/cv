@@ -39,8 +39,11 @@ export interface TimeseriesResponse {
 	filters: { niche: string | null; event_type: string | null };
 }
 
+/** Bucket de agrupacion temporal soportado por el backend (analytics). */
+export type TimeseriesBucket = "minute" | "hour" | "day" | "week";
+
 export interface TimeseriesParams extends DateRangeParams {
-	bucket?: "day" | "hour" | "week";
+	bucket?: TimeseriesBucket;
 	niche?: string;
 	event_type?: string;
 }
@@ -107,7 +110,7 @@ export interface RetentionResponse {
 
 /** Params del dashboard: rango + bucket de la serie + limit de los rankings. */
 export interface DashboardParams extends DateRangeParams {
-	bucket?: "day" | "hour" | "week";
+	bucket?: TimeseriesBucket;
 	limit?: number;
 }
 

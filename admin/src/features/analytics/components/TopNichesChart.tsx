@@ -49,13 +49,17 @@ export function TopNichesChart({
 				<YAxis tick={{ fontSize: 12 }} allowDecimals={false} width={40} />
 				<Tooltip
 					contentStyle={{
-						background: "var(--popover)",
-						border: "1px solid var(--border)",
+						background: "var(--color-popover)",
+						border: "1px solid var(--color-border)",
 						borderRadius: 8,
 						fontSize: 12,
 					}}
 				/>
-				<Bar dataKey="visits" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+				<Bar
+					dataKey="visits"
+					fill="var(--color-primary)"
+					radius={[4, 4, 0, 0]}
+				/>
 			</BarChart>
 		</ResponsiveContainer>
 	);

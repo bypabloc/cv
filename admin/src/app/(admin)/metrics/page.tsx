@@ -1,10 +1,13 @@
 "use client";
 
-import { BarChart3 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { BarChart3, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { analyticsKeys } from "@/features/analytics/api/query-keys";
 import { ActiveNowBadge } from "@/features/analytics/components/ActiveNowBadge";
-import { MetricsDateRange } from "@/features/analytics/components/MetricsDateRange";
+import { MetricsRangePicker } from "@/features/analytics/components/MetricsRangePicker";
 import { OverviewKpis } from "@/features/analytics/components/OverviewKpis";
 import { RetentionChart } from "@/features/analytics/components/RetentionChart";
 import { TimeseriesChart } from "@/features/analytics/components/TimeseriesChart";
@@ -12,19 +15,29 @@ import { TopNichesChart } from "@/features/analytics/components/TopNichesChart";
 import { TopPagesTable } from "@/features/analytics/components/TopPagesTable";
 import { TopReferrersTable } from "@/features/analytics/components/TopReferrersTable";
 import { useDashboard } from "@/features/analytics/hooks/use-dashboard";
-import { useMetricsRange } from "@/features/analytics/hooks/use-metrics-range";
+import { useMetricsCloudwatchRange } from "@/features/analytics/hooks/use-metrics-cloudwatch-range";
 
 /**
  * @page MetricsOverviewPage
  * @description Raiz del area de metricas (`/metrics`): KPIs (overview),
- *   contador live (active-now), serie temporal (timeseries), rankings y
- *   retencion. Una SOLA request (`analytics/dashboard`) trae las 7 vistas en
- *   vez de 7 requests separadas; el rango from/to es compartido por la page.
+ *   contador (active-now), serie temporal (timeseries), rankings y retencion.
+ *   Una SOLA request (`analytics/dashboard`) trae las 7 vistas. El rango
+ *   from/to + bucket lo controla el selector estilo CloudWatch. SIN polling:
+ *   el boton "Actualizar" invalida y recarga todas las queries de analytics.
  */
 export default function MetricsOverviewPage() {
-	const { range, setRange } = useMetricsRange();
-	const dashboard = useDashboard({ ...range, bucket: "day" });
+	const { range, setRange } = useMetricsCloudwatchRange();
+	const dashboard = useDashboard({
+		from: range.from,
+		to: range.to,
+		bucket: range.bucket,
+	});
 	const data = dashboard.data;
+	const queryClient = useQueryClient();
+
+	const refresh = () => {
+		queryClient.invalidateQueries({ queryKey: analyticsKeys.all() });
+	};
 
 	return (
 		<section className="space-y-6">
@@ -37,7 +50,22 @@ export default function MetricsOverviewPage() {
 						standalone={false}
 					/>
 				</div>
-				<MetricsDateRange range={range} onChange={setRange} />
+				<div className="flex items-center gap-2">
+					<MetricsRangePicker range={range} onChange={setRange} />
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="gap-2"
+						onClick={refresh}
+						disabled={dashboard.isFetching}
+					>
+						<RefreshCw
+							className={`h-4 w-4 ${dashboard.isFetching ? "animate-spin" : ""}`}
+						/>
+						Actualizar
+					</Button>
+				</div>
 			</header>
 
 			{dashboard.error ? <ErrorAlert error={dashboard.error} /> : null}

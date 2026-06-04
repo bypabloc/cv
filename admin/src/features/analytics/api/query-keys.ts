@@ -1,4 +1,4 @@
-import { metricsKey } from "@/lib/metrics-query-keys";
+import { METRICS_KEY, metricsKey } from "@/lib/metrics-query-keys";
 import type {
 	DashboardParams,
 	DateRangeParams,
@@ -12,6 +12,8 @@ import type {
  *   `['metrics', 'analytics', <action>, params]`.
  */
 export const analyticsKeys = {
+	/** Prefijo de TODO el dominio analytics (para invalidar con un boton). */
+	all: () => [METRICS_KEY, "analytics"] as const,
 	overview: (params: DateRangeParams) =>
 		metricsKey("analytics", "overview", params),
 	timeseries: (params: TimeseriesParams) =>

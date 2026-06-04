@@ -694,12 +694,15 @@ def _run_auth_errors(
 ) -> None:
     """Casos de error de auth (no mutan / no requieren estado valido)."""
     if bypass:
-        # Email aleatorio garantizado-inexistente (un email fijo podria
-        # quedar pending de una corrida previa -> 409 en vez de 404).
+        # Email aleatorio garantizado-inexistente. Tras la fusion
+        # register->login (plan admin-security-overview), login.start con un
+        # email NUEVO ya NO da 404: CREA el user pending y envia el entry
+        # email -> 200 (created:true). El 404 EMAIL_NOT_FOUND queda solo para
+        # disabled/locked (anti-enumeration).
         ghost = f'success+ghost-{secrets.token_hex(4)}@simulator.amazonses.com'
         runner.case(
             lambda_name='auth',
-            name='login.start (error: email inexistente)',
+            name='login.start (email nuevo -> crea user)',
             method='POST',
             call=lambda: http.post(
                 '/auth',
@@ -712,7 +715,7 @@ def _run_auth_errors(
                 origin=origin,
                 bypass_token=bypass,
             ),
-            expected=404,
+            expected=200,
         )
     runner.case(
         lambda_name='auth',

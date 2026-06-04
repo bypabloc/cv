@@ -31,7 +31,7 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { TotpSetup } from "@/features/auth";
+import { TotpSetup, WebAuthnRegisterButton } from "@/features/auth";
 import type {
 	MfaKind,
 	SecurityMethod,
@@ -264,6 +264,9 @@ function WebauthnRow({
 					))}
 				</ul>
 			)}
+			{/* Registrar un passkey nuevo (navigator.credentials.create via
+			    webauthn.register-options -> register-verify). */}
+			<WebAuthnRegisterButton />
 		</div>
 	);
 }
@@ -369,6 +372,9 @@ function RecoveryCodesRow({ method }: { method: SecurityMethod }) {
 function PasswordRow({ method }: { method: SecurityMethod }) {
 	const [open, setOpen] = useState(false);
 	const lastChange = asString(method.detail, "last_change_at");
+	// configured=true => el user ya tiene contrasena seteada.
+	const hasPassword = method.configured;
+	const cta = hasPassword ? "Cambiar contrasena" : "Establecer contrasena";
 
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
@@ -389,17 +395,19 @@ function PasswordRow({ method }: { method: SecurityMethod }) {
 				size="sm"
 				onClick={() => setOpen(true)}
 			>
-				Cambiar contrasena
+				{cta}
 			</Button>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Cambiar contrasena</DialogTitle>
+						<DialogTitle>{cta}</DialogTitle>
 						<DialogDescription>
-							Ingresa tu contrasena actual y la nueva.
+							{hasPassword
+								? "Ingresa tu contrasena actual y la nueva."
+								: "Aun no tienes contrasena. Crea una para iniciar sesion con ella."}
 						</DialogDescription>
 					</DialogHeader>
-					<ChangePasswordForm />
+					<ChangePasswordForm hasPassword={hasPassword} />
 				</DialogContent>
 			</Dialog>
 		</div>
@@ -442,7 +450,11 @@ export function SecurityOverviewPanel() {
 		);
 	}
 
-	const methods = overview.data.methods;
+	// email_code NO se lista: es el canal de entrada del login (siempre
+	// disponible), no un metodo configurable desde el panel de seguridad.
+	const methods = overview.data.methods.filter(
+		(method) => method.type !== "email_code",
+	);
 
 	return (
 		<Card>

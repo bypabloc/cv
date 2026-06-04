@@ -114,7 +114,7 @@ function mockOverview(methods: SecurityMethod[]): { count: () => number } {
 
 /**
  * @module tests/unit/features/settings/components/security-overview-panel
- * @description Verifica que el panel unificado renderiza las 5 filas del
+ * @description Verifica que el panel unificado renderiza las filas del
  *   overview con UNA sola query (security.overview), muestra el badge de
  *   estado por metodo y expande los passkeys de webauthn.
  */
@@ -124,21 +124,22 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("SecurityOverviewPanel", () => {
-	it("Given las 5 entradas When render Then muestra una fila por metodo", async () => {
+	it("Given las entradas When render Then muestra una fila por metodo (sin email_code)", async () => {
 		// Arrange
 		mockOverview(fiveMethods());
 
 		// Act
 		render((<SecurityOverviewPanel />) as ReactElement);
 
-		// Assert: las 5 labels estan presentes
+		// Assert: TOTP, WebAuthn, recovery y password presentes; email_code NO
+		// (es el canal de entrada del login, no un metodo configurable aqui).
 		expect(
 			await screen.findByText("Aplicacion de autenticacion (TOTP)"),
 		).toBeInTheDocument();
-		expect(screen.getByText("Codigo por email")).toBeInTheDocument();
 		expect(screen.getByText("Passkeys (WebAuthn)")).toBeInTheDocument();
 		expect(screen.getByText("Codigos de recuperacion")).toBeInTheDocument();
 		expect(screen.getByText("Contrasena")).toBeInTheDocument();
+		expect(screen.queryByText("Codigo por email")).toBe(null);
 	});
 
 	it("Given el panel montado When render Then dispara security.overview UNA sola vez", async () => {
@@ -155,13 +156,17 @@ describe("SecurityOverviewPanel", () => {
 		});
 	});
 
-	it("Given un metodo configured=false When render Then muestra No configurado", async () => {
-		// Arrange: email_code esta configured=false
-		mockOverview(fiveMethods());
+	it("Given un metodo visible configured=false When render Then muestra No configurado", async () => {
+		// Arrange: el TOTP pasa a configured=false (email_code se filtra, asi
+		// que se usa un metodo que SI se renderiza).
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp" ? { ...m, configured: false, enabled: false } : m,
+		);
+		mockOverview(methods);
 
 		// Act
 		render((<SecurityOverviewPanel />) as ReactElement);
-		await screen.findByText("Codigo por email");
+		await screen.findByText("Aplicacion de autenticacion (TOTP)");
 
 		// Assert
 		expect(screen.getByText("No configurado")).toBeInTheDocument();

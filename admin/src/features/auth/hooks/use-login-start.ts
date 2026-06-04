@@ -6,15 +6,23 @@ import { useAuthStore } from "../store/use-auth-store";
 
 /**
  * @function useLoginStart
- * @description Dispara login.start. En exito guarda el temp_token (el caller
- *   decide el siguiente paso segun `methods`). El 404 EMAIL_NOT_FOUND con
- *   `suggest_register` lo maneja el componente (`error.data`).
+ * @description Dispara login.start. Recibe `{data, precheckToken}`: el
+ *   `precheckToken` es el temp JWT que devolvio login.check-email; se manda
+ *   en `Authorization: Bearer` (login.start ya NO usa Turnstile). En exito
+ *   guarda el temp_token de la respuesta (el caller decide el siguiente paso
+ *   segun `methods`).
  */
 export function useLoginStart() {
 	const setTempToken = useAuthStore((s) => s.setTempToken);
 
 	return useMutation({
-		mutationFn: authClient.loginStart,
+		mutationFn: ({
+			data,
+			precheckToken,
+		}: {
+			data: { email: string; password?: string; niche?: string };
+			precheckToken: string;
+		}) => authClient.loginStart(data, precheckToken),
 		onSuccess: ({ data }) => {
 			setTempToken(data.temp_token);
 		},

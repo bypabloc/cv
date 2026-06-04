@@ -24,15 +24,15 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe("useLoginStart", () => {
-	it("Given email inexistente When mutate Then crea el user (created) y setea tempToken", async () => {
+	it("Given email inexistente + precheck When mutate Then crea el user (created) y setea tempToken", async () => {
 		// Arrange
 		const { result } = renderHook(() => useLoginStart(), { wrapper });
 
-		// Act
+		// Act: el precheckToken viaja en Authorization (no Turnstile).
 		const response = await act(async () =>
 			result.current.mutateAsync({
-				email: "unknown@test.com",
-				cf_turnstile_response: "tok",
+				data: { email: "unknown@test.com" },
+				precheckToken: "mock-precheck-token",
 			}),
 		);
 
@@ -41,20 +41,35 @@ describe("useLoginStart", () => {
 		expect(useAuthStore.getState().tempToken).toBe("mock-temp-created");
 	});
 
-	it("Given email con MFA When mutate Then setea tempToken y devuelve methods", async () => {
+	it("Given email con MFA + precheck When mutate Then setea tempToken y devuelve methods", async () => {
 		// Arrange
 		const { result } = renderHook(() => useLoginStart(), { wrapper });
 
 		// Act
 		const response = await act(async () =>
 			result.current.mutateAsync({
-				email: "mfa@test.com",
-				cf_turnstile_response: "tok",
+				data: { email: "mfa@test.com" },
+				precheckToken: "mock-precheck-token",
 			}),
 		);
 
 		// Assert
 		expect(response.data.methods).toEqual(["totp"]);
 		expect(useAuthStore.getState().tempToken).toBe("mock-temp-mfa");
+	});
+
+	it("Given login.start SIN precheck When el header falta Then 401 MISSING_PRECHECK", async () => {
+		// Arrange
+		const { result } = renderHook(() => useLoginStart(), { wrapper });
+
+		// Act / Assert: un precheck vacio -> Authorization sin Bearer -> 401.
+		await expect(
+			act(async () =>
+				result.current.mutateAsync({
+					data: { email: "mfa@test.com" },
+					precheckToken: "",
+				}),
+			),
+		).rejects.toMatchObject({ status: 401 });
 	});
 });

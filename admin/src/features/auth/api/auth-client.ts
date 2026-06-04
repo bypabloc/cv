@@ -40,8 +40,9 @@ export const authClient = {
 
 	/**
 	 * login.check-email: pre-chequeo del email antes de iniciar el flujo.
-	 * Devuelve banderas (exists, has_password, pending, unavailable), NO la lista
-	 * de metodos. Sin sesion (skipAuth) + exige Turnstile.
+	 * Devuelve banderas (exists, has_password, pending, unavailable) + el
+	 * `temp_token` precheck, NO la lista de metodos. Sin sesion (skipAuth) +
+	 * exige Turnstile (UNICO punto del flujo de login con captcha).
 	 */
 	loginCheckEmail: (data: { email: string; cf_turnstile_response: string }) =>
 		apiFetch<Envelope<CheckEmailResponse>>("/auth", {
@@ -51,19 +52,23 @@ export const authClient = {
 		}),
 
 	/**
-	 * login.start: 200 TempTokenResponse (con methods). Ahora `data.created`
-	 * indica si el email no existia y fue CREADO (registro fusionado); el 404
-	 * EMAIL_NOT_FOUND ya NO ocurre.
+	 * login.start: 200 TempTokenResponse (con methods). `data.created` indica
+	 * si el email no existia y fue CREADO (registro fusionado).
+	 *
+	 * Ya NO valida Turnstile: el captcha se resuelve una sola vez en
+	 * login.check-email, que emite el `precheckToken` (temp JWT flow='login'
+	 * step=0). login.start lo EXIGE en `Authorization: Bearer`; sin el -> 401
+	 * MISSING_PRECHECK. `skipAuth: true` evita que apiFetch inyecte el access
+	 * token del store; el header lo seteamos a mano con el precheck.
 	 */
-	loginStart: (data: {
-		email: string;
-		cf_turnstile_response: string;
-		password?: string;
-		niche?: string;
-	}) =>
+	loginStart: (
+		data: { email: string; password?: string; niche?: string },
+		precheckToken: string,
+	) =>
 		apiFetch<Envelope<TempTokenResponse & { created?: boolean }>>("/auth", {
 			method: "POST",
 			skipAuth: true,
+			headers: { Authorization: `Bearer ${precheckToken}` },
 			body: { operation: "login", action: "start", data },
 		}),
 

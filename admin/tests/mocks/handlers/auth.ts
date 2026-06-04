@@ -78,15 +78,17 @@ export const authHandlers = [
 
 		// --- login ---
 		if (operation === "login" && action === "check-email") {
-			// Banderas FLAT (sin lista de metodos). El caller decide el paso 2.
+			// Banderas FLAT (sin lista de metodos) + temp_token precheck. El
+			// caller decide el paso 2 y manda el temp en Authorization a start.
 			if (data.email === "unknown@test.com") {
 				return HttpResponse.json({
 					is_valid: true,
 					code: 0,
-					data: { exists: false },
+					data: { exists: false, temp_token: "mock-precheck-token" },
 				});
 			}
 			if (data.email === "blocked@test.com") {
+				// unavailable: SIN temp (no hay flujo que continuar).
 				return HttpResponse.json({
 					is_valid: true,
 					code: 0,
@@ -97,19 +99,39 @@ export const authHandlers = [
 				return HttpResponse.json({
 					is_valid: true,
 					code: 0,
-					data: { exists: true, has_password: false },
+					data: {
+						exists: true,
+						has_password: false,
+						temp_token: "mock-precheck-token",
+					},
 				});
 			}
 			// Default: cuenta existente con password.
 			return HttpResponse.json({
 				is_valid: true,
 				code: 0,
-				data: { exists: true, has_password: true },
+				data: {
+					exists: true,
+					has_password: true,
+					temp_token: "mock-precheck-token",
+				},
 			});
 		}
 		if (operation === "login" && action === "start") {
+			// login.start ya NO usa Turnstile: exige el temp precheck en
+			// Authorization (lo emitio check-email). Sin el -> 401.
+			const auth = request.headers.get("Authorization") ?? "";
+			const precheck = auth.startsWith("Bearer ")
+				? auth.slice("Bearer ".length).trim()
+				: "";
+			if (precheck === "") {
+				return HttpResponse.json(
+					{ is_valid: false, code: 4003, data: { error: "MISSING_PRECHECK" } },
+					{ status: 401 },
+				);
+			}
 			if (data.email === "unknown@test.com") {
-				// login.start ahora CREA el user (registro fusionado): devuelve
+				// login.start CREA el user (registro fusionado): devuelve
 				// temp_token + created. El 404 EMAIL_NOT_FOUND ya NO ocurre.
 				return HttpResponse.json({
 					is_valid: true,

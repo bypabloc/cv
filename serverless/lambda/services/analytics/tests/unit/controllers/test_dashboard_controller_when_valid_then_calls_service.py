@@ -5,7 +5,7 @@ Then llama al service con date_from/date_to_exclusive/bucket/limit y
 normaliza el shape.
 """
 
-from datetime import date
+from datetime import UTC, datetime
 
 import services.analytics_service as analytics_service
 from controllers.analytics.dashboard import Dashboard
@@ -43,8 +43,8 @@ def test_dashboard_controller_when_valid_then_calls_service(
     # Assert
     assert result == {'is_valid': True, 'data': expected, 'code': 0}
     spy.assert_called_once_with(
-        date_from=date(2026, 4, 27),
-        date_to=date(2026, 5, 28),
+        date_from=datetime(2026, 4, 27, tzinfo=UTC),
+        date_to=datetime(2026, 5, 28, tzinfo=UTC),
         bucket='day',
         limit=10,
     )

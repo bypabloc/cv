@@ -59,8 +59,8 @@ export function TimeseriesChart({
 				<YAxis tick={{ fontSize: 12 }} allowDecimals={false} width={40} />
 				<Tooltip
 					contentStyle={{
-						background: "var(--popover)",
-						border: "1px solid var(--border)",
+						background: "var(--color-popover)",
+						border: "1px solid var(--color-border)",
 						borderRadius: 8,
 						fontSize: 12,
 					}}
@@ -68,7 +68,7 @@ export function TimeseriesChart({
 				<Line
 					type="monotone"
 					dataKey="count"
-					stroke="var(--primary)"
+					stroke="var(--color-primary)"
 					strokeWidth={2}
 					dot={false}
 				/>

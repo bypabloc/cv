@@ -48,6 +48,23 @@ describe("ProfileForm", () => {
 		});
 	});
 
+	it("Given el perfil cargado When el usuario tipea Then el input NO se pisa (reset una sola vez)", async () => {
+		// Arrange: el bug era que el reset corria en cada render (profile.data
+		// cambia de referencia con Tanstack) y borraba lo tipeado.
+		const user = userEvent.setup();
+		render((<ProfileForm />) as ReactElement);
+		const input = await screen.findByLabelText(/nombre para mostrar/i);
+		await waitFor(() => expect(input).toHaveValue("Pablo"));
+
+		// Act: editar el campo.
+		await user.clear(input);
+		await user.type(input, "Nuevo Nombre");
+
+		// Assert: el valor tipeado persiste (no lo pisa un reset posterior).
+		expect(input).toHaveValue("Nuevo Nombre");
+		await waitFor(() => expect(input).toHaveValue("Nuevo Nombre"));
+	});
+
 	it("Given display_name valido When submit Then muestra toast de actualizacion", async () => {
 		// Arrange
 		const user = userEvent.setup();

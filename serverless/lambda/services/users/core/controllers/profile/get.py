@@ -38,7 +38,8 @@ class Get(BaseController):
         """Retorna 200 con el perfil + mfa_configured."""
         data: ProfileGetIn = self.validated_data  # type: ignore[assignment]
         user = require_active_user(data.meta.authorization, app_config=app_config)
-        mfa = ProfileService(app_config).mfa_summary(user_id=user.id)
+        profile_svc = ProfileService(app_config)
+        mfa = profile_svc.mfa_summary(user_id=user.id)
         return {
             'is_valid': True,
             'code': 0,
@@ -57,5 +58,8 @@ class Get(BaseController):
                     else None
                 ),
                 'mfa_configured': mfa['mfa_configured'],
+                # has_password permite a la UI decidir entre "establecer" y
+                # "cambiar" contrasena (un user passwordless no tiene credential).
+                'has_password': profile_svc.has_password(user_id=user.id),
             },
         }

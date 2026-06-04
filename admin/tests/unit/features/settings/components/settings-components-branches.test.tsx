@@ -6,16 +6,14 @@ import { describe, expect, it, vi } from "vitest";
 import { ChangeEmailForm } from "@/features/settings/components/change-email-form";
 import { ChangePasswordForm } from "@/features/settings/components/change-password-form";
 import { ConfirmEmailChange } from "@/features/settings/components/confirm-email-change";
-import { EmailCodeSection } from "@/features/settings/components/email-code-section";
 import { ProfileForm } from "@/features/settings/components/profile-form";
 import { RecoveryCodesSection } from "@/features/settings/components/recovery-codes-section";
-import { WebAuthnCredentialsList } from "@/features/settings/components/webauthn-credentials-list";
 
 /**
  * @module tests/unit/features/settings/components/settings-components-branches
  * @description Cubre ramas faltantes de los componentes de settings: estados
- *   isLoading/isError/empty/pending, fallbacks `?? ''`/`?? 'Passkey'`, el
- *   Reintentar del ErrorAlert y el onClose del RecoveryCodesModal.
+ *   isLoading/isError/empty/pending, fallbacks `?? ''`, el Reintentar del
+ *   ErrorAlert y el onClose del RecoveryCodesModal.
  */
 
 const { searchParamsMock } = vi.hoisted(() => ({
@@ -24,11 +22,6 @@ const { searchParamsMock } = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 	useSearchParams: () => searchParamsMock,
-}));
-
-vi.mock("@simplewebauthn/browser", () => ({
-	startRegistration: vi.fn(),
-	startAuthentication: vi.fn(),
 }));
 
 const API = "https://api.test.the-full-stack.com";
@@ -175,34 +168,6 @@ describe("ChangeEmailForm pending", () => {
 	});
 });
 
-describe("EmailCodeSection pending", () => {
-	it("Given setup en vuelo When responde lento Then muestra Activando...", async () => {
-		// Arrange
-		server.use(
-			http.post(`${API}/auth`, async () => {
-				await delay(300);
-				return HttpResponse.json({
-					is_valid: true,
-					code: 0,
-					data: { methods: [], webauthn_count: 0, total_mfa: 1 },
-				});
-			}),
-		);
-		const user = userEvent.setup();
-		render((<EmailCodeSection />) as ReactElement);
-
-		// Act
-		await user.click(
-			screen.getByRole("button", { name: /activar codigo por email/i }),
-		);
-
-		// Assert
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: /activando/i })).toBeDisabled();
-		});
-	});
-});
-
 describe("RecoveryCodesSection pending + cierre", () => {
 	it("Given generar en vuelo When responde lento Then muestra Generando...", async () => {
 		// Arrange
@@ -242,100 +207,6 @@ describe("RecoveryCodesSection pending + cierre", () => {
 		await waitFor(() => {
 			expect(screen.queryByText("RECOV00000")).not.toBeInTheDocument();
 		});
-	});
-});
-
-describe("WebAuthnCredentialsList estados", () => {
-	it("Given list-credentials lento When monta Then muestra el LoadingSpinner", () => {
-		// Arrange
-		server.use(
-			http.post(`${API}/auth`, async () => {
-				await delay(300);
-				return HttpResponse.json({
-					is_valid: true,
-					code: 0,
-					data: { credentials: [] },
-				});
-			}),
-		);
-
-		// Act
-		render((<WebAuthnCredentialsList />) as ReactElement);
-
-		// Assert: rama isLoading
-		expect(screen.getByRole("status")).toBeInTheDocument();
-	});
-
-	it("Given list-credentials 500 When monta Then ErrorAlert + Reintentar", async () => {
-		// Arrange
-		server.use(
-			http.post(`${API}/auth`, () =>
-				HttpResponse.json(
-					{ error: "SERVER_ERROR", code: 5000, message: "Falla creds" },
-					{ status: 500 },
-				),
-			),
-		);
-		const user = userEvent.setup();
-		render((<WebAuthnCredentialsList />) as ReactElement);
-		await screen.findByText("Falla creds");
-
-		// Act: cubre el `onRetry={() => credentials.refetch()}`
-		await user.click(screen.getByRole("button", { name: /reintentar/i }));
-
-		// Assert: tras el retry el ErrorAlert sigue (mismo handler 500)
-		await waitFor(() => {
-			expect(screen.getByText("Falla creds")).toBeInTheDocument();
-		});
-	});
-
-	it("Given sin passkeys When monta Then muestra el estado vacio", async () => {
-		// Arrange
-		server.use(
-			http.post(`${API}/auth`, () =>
-				HttpResponse.json({
-					is_valid: true,
-					code: 0,
-					data: { credentials: [] },
-				}),
-			),
-		);
-
-		// Act
-		render((<WebAuthnCredentialsList />) as ReactElement);
-
-		// Assert: rama length === 0
-		expect(
-			await screen.findByText(/no tienes passkeys registrados/i),
-		).toBeInTheDocument();
-	});
-
-	it('Given un passkey sin nickname When monta Then usa "Passkey" (rama ??)', async () => {
-		// Arrange: nickname null -> fallback `?? 'Passkey'`
-		server.use(
-			http.post(`${API}/auth`, () =>
-				HttpResponse.json({
-					is_valid: true,
-					code: 0,
-					data: {
-						credentials: [
-							{
-								id: "cred_no_nick",
-								nickname: null,
-								last_used_at: null,
-								created_at: "2026-01-01T00:00:00Z",
-							},
-						],
-					},
-				}),
-			),
-		);
-
-		// Act
-		render((<WebAuthnCredentialsList />) as ReactElement);
-
-		// Assert
-		expect(await screen.findByText("Passkey")).toBeInTheDocument();
 	});
 });
 

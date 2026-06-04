@@ -36,3 +36,15 @@ export const changePasswordSchema = z
 		path: ["confirm"],
 	});
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+/** Establecer la PRIMERA contrasena (user passwordless): sin current. */
+export const setPasswordSchema = z
+	.object({
+		new_password: passwordSchema,
+		confirm: z.string(),
+	})
+	.refine((d) => d.new_password === d.confirm, {
+		message: "Las contrasenas no coinciden",
+		path: ["confirm"],
+	});
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>;

@@ -120,23 +120,35 @@ class ProfileService:
         self,
         *,
         user_id: str,
-        current_password: str,
+        current_password: str | None,
         new_password: str,
     ) -> bool:
-        """Cambia la password del user: verifica la actual, hashea la nueva.
+        """Cambia o ESTABLECE la password del user, hashea la nueva.
 
-        Verifica `current_password` contra el hash argon2 y, si matchea,
-        persiste el hash argon2id de `new_password`. Todo en una sola
+        Si el user YA tiene credencial: verifica `current_password` contra
+        el hash argon2; si matchea, persiste el hash de `new_password`. Si
+        el user es passwordless (sin credencial): establece el PRIMER
+        password sin verificar nada (no hay current). Todo en una sola
         `db_session()` (transaccion atomica).
 
         Returns:
-            True si la password se actualizo.
-            False si el user no tiene credencial o la password actual no
-            matchea (el controller mapea esto a 401 INVALID_PASSWORD).
+            True si la password se establecio/actualizo.
+            False solo si el user TIENE credencial y `current_password` no
+            matchea (el controller lo mapea a 401 INVALID_PASSWORD). Un user
+            passwordless siempre puede setear su primer password.
         """
         with db_session() as session:
             cred = session.get(AuthCredentials, user_id)
             if cred is None:
+                # Passwordless: primer set, sin current que verificar.
+                set_password_hash(
+                    session,
+                    user_id=user_id,
+                    password_hash=hash_password(new_password),
+                )
+                return True
+            if current_password is None:
+                # Tiene credencial pero no mando la actual: rechazar.
                 return False
             try:
                 ok = verify_password(

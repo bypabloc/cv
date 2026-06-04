@@ -20,9 +20,11 @@ export interface ConfirmEmailChangePayload {
 	token: string;
 }
 
-/** users.profile.change-password — action REAL, validada con el access JWT. */
+/** users.profile.change-password — action REAL, validada con el access JWT.
+ *  current_password es opcional: un user passwordless establece su PRIMER
+ *  password sin enviarla. */
 export interface ChangePasswordPayload {
-	current_password: string;
+	current_password?: string;
 	new_password: string;
 }
 

@@ -11,12 +11,9 @@ export { ChangeEmailForm } from "./components/change-email-form";
 export { ChangePasswordForm } from "./components/change-password-form";
 export { ConfirmEmailChange } from "./components/confirm-email-change";
 export { DeleteAccountSection } from "./components/delete-account-section";
-export { EmailCodeSection } from "./components/email-code-section";
-export { MfaMethodsList } from "./components/mfa-methods-list";
 export { ProfileForm } from "./components/profile-form";
 export { RecoveryCodesSection } from "./components/recovery-codes-section";
 export { SecurityOverviewPanel } from "./components/security-overview-panel";
-export { WebAuthnCredentialsList } from "./components/webauthn-credentials-list";
 // Hooks
 export {
 	useChangeEmailInitiate,

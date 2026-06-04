@@ -2,7 +2,6 @@
 
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	ChangeEmailForm,
 	ConfirmEmailChange,
@@ -11,41 +10,27 @@ import {
 } from "@/features/settings";
 
 /**
- * @page SettingsPage
- * @description Configuracion de la cuenta. Tab Perfil (ProfileForm +
- *   ChangeEmailForm + confirmacion deep-link) + Tab Cuenta (DeleteAccountSection).
- *   ConfirmEmailChange lee `?token` via useSearchParams -> Suspense boundary.
+ * @page SettingsProfilePage
+ * @description Tab "Perfil y cuenta" de /settings (los tabs viven en el
+ *   layout). Perfil (ProfileForm) + cambio de email + confirmacion deep-link +
+ *   eliminar cuenta. ConfirmEmailChange lee `?token` -> Suspense boundary.
  */
-export default function SettingsPage() {
+export default function SettingsProfilePage() {
 	return (
-		<section className="mx-auto max-w-2xl space-y-6">
-			<h1 className="text-2xl font-semibold">Configuracion</h1>
-
-			<Tabs defaultValue="profile">
-				<TabsList>
-					<TabsTrigger value="profile">Perfil</TabsTrigger>
-					<TabsTrigger value="account">Cuenta</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value="profile" className="space-y-6">
-					<Suspense fallback={null}>
-						<ConfirmEmailChange />
-					</Suspense>
-					<Card>
-						<CardHeader>
-							<CardTitle>Perfil</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<ProfileForm />
-						</CardContent>
-					</Card>
-					<ChangeEmailForm />
-				</TabsContent>
-
-				<TabsContent value="account" className="space-y-6">
-					<DeleteAccountSection />
-				</TabsContent>
-			</Tabs>
-		</section>
+		<div className="space-y-6">
+			<Suspense fallback={null}>
+				<ConfirmEmailChange />
+			</Suspense>
+			<Card>
+				<CardHeader>
+					<CardTitle>Perfil</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<ProfileForm />
+				</CardContent>
+			</Card>
+			<ChangeEmailForm />
+			<DeleteAccountSection />
+		</div>
 	);
 }

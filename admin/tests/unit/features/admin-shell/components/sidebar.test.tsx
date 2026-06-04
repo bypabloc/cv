@@ -30,26 +30,26 @@ describe("Sidebar", () => {
 		expect(link.className).toContain("bg-accent");
 	});
 
-	it("Given pathname /settings When render Then el item Mis sesiones NO esta activo", () => {
-		// Arrange + Act
+	it("Given el sidebar When render Then NO hay un item separado de Mis sesiones", () => {
+		// Arrange + Act: Seguridad y Sesiones viven como tabs dentro de /settings.
 		render(<Sidebar />);
 
 		// Assert
-		const link = screen.getByRole("link", { name: /mis sesiones/i });
-		expect(link.className).toContain("text-muted-foreground");
+		expect(screen.queryByRole("link", { name: /mis sesiones/i })).toBe(null);
+		expect(screen.queryByRole("link", { name: /^seguridad$/i })).toBe(null);
 	});
 
-	it("Given un admin When render Then muestra los 6 items (incluye Usuarios)", () => {
-		// Arrange: useVisibleNavItems devuelve los 6 (default del beforeEach)
+	it("Given un admin When render Then muestra los 4 items (incluye Usuarios)", () => {
+		// Arrange: useVisibleNavItems devuelve los 4 (default del beforeEach)
 		// Act
 		render(<Sidebar />);
 
 		// Assert
-		expect(screen.getAllByRole("link")).toHaveLength(6);
+		expect(screen.getAllByRole("link")).toHaveLength(4);
 		expect(screen.getByRole("link", { name: /usuarios/i })).toBeInTheDocument();
 	});
 
-	it("Given un NO-admin When render Then oculta el item Usuarios (5 items)", () => {
+	it("Given un NO-admin When render Then oculta el item Usuarios (3 items)", () => {
 		// Arrange
 		useVisibleNavItemsMock.mockReturnValue(NON_ADMIN_ITEMS);
 
@@ -57,7 +57,7 @@ describe("Sidebar", () => {
 		render(<Sidebar />);
 
 		// Assert
-		expect(screen.getAllByRole("link")).toHaveLength(5);
+		expect(screen.getAllByRole("link")).toHaveLength(3);
 		expect(screen.queryByRole("link", { name: /usuarios/i })).toBe(null);
 	});
 

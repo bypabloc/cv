@@ -56,12 +56,16 @@ class ProfileChangeEmailIn(BaseModel):
 class ProfileChangePasswordIn(BaseModel):
     """POST /users operation=profile action=change-password.
 
-    Un user autenticado (access JWT) cambia su password: valida la actual
-    contra el hash argon2, hashea la nueva con argon2id y revoca las demas
-    sesiones (deja viva solo la sesion en curso).
+    Un user autenticado (access JWT) cambia o ESTABLECE su password. Si ya
+    tiene credencial: valida `current_password` contra el hash argon2. Si es
+    passwordless (primer set): `current_password` se omite (None) porque no
+    hay nada que verificar. En ambos casos hashea la nueva con argon2id y
+    revoca las demas sesiones (deja viva solo la sesion en curso).
     """
 
-    current_password: str = Field(..., min_length=12, max_length=256)
+    current_password: str | None = Field(
+        default=None, min_length=12, max_length=256,
+    )
     new_password: str = Field(..., min_length=12, max_length=256)
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
     model_config = ConfigDict(populate_by_name=True, extra='ignore')

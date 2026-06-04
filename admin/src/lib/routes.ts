@@ -29,7 +29,8 @@ export const ROUTES = {
 		metricsContacts: "/metrics/contacts",
 		settings: "/settings",
 		settingsSecurity: "/settings/security",
-		sessions: "/sessions",
+		// Sesiones de auth: tab dentro de /settings (no una ruta aparte).
+		settingsSessions: "/settings/sessions",
 		users: "/users",
 		cv: "/cv",
 	},

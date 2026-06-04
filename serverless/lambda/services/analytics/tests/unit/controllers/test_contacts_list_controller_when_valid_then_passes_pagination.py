@@ -4,7 +4,7 @@ When el controller ejecuta (auth no-op + rate-limit no-op),
 Then llama al service con el rango, paginacion (page/page_size/offset) y filtros.
 """
 
-from datetime import date
+from datetime import UTC, datetime
 
 import services.contacts_service as contacts_service
 from controllers.contacts.list import List
@@ -40,8 +40,8 @@ def test_contacts_list_controller_when_valid_then_passes_pagination(
     # Assert
     assert result == {'is_valid': True, 'data': expected, 'code': 0}
     spy.assert_called_once_with(
-        date_from=date(2026, 4, 27),
-        date_to=date(2026, 5, 28),
+        date_from=datetime(2026, 4, 27, tzinfo=UTC),
+        date_to=datetime(2026, 5, 28, tzinfo=UTC),
         page=2,
         page_size=20,
         offset=20,

@@ -24,11 +24,11 @@ export function RetentionChart({
 	}
 
 	const slices = [
-		{ name: "Nuevos", value: data.new_visitors, fill: "var(--primary)" },
+		{ name: "Nuevos", value: data.new_visitors, fill: "var(--color-primary)" },
 		{
 			name: "Recurrentes",
 			value: data.returning_visitors,
-			fill: "var(--muted-foreground)",
+			fill: "var(--color-muted-foreground)",
 		},
 	];
 
@@ -50,8 +50,8 @@ export function RetentionChart({
 					</Pie>
 					<Tooltip
 						contentStyle={{
-							background: "var(--popover)",
-							border: "1px solid var(--border)",
+							background: "var(--color-popover)",
+							border: "1px solid var(--color-border)",
 							borderRadius: 8,
 							fontSize: 12,
 						}}
@@ -63,6 +63,12 @@ export function RetentionChart({
 				<span className="font-semibold text-foreground">
 					{(data.returning_rate * 100).toFixed(1)}%
 				</span>
+			</p>
+			<p className="max-w-prose text-center text-xs text-muted-foreground">
+				<span className="font-medium">Nuevos</span>: primera visita dentro del
+				rango. <span className="font-medium">Recurrentes</span>: ya habian
+				visitado antes del rango y volvieron. 0% significa que ningun visitante
+				previo regreso en este periodo.
 			</p>
 		</div>
 	);

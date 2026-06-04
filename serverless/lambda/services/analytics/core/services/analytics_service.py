@@ -141,16 +141,17 @@ def overview(*, date_from: date, date_to: date) -> dict[str, Any]:
 @cached(ttl=_TTL, namespace=_NS, tags=_TAGS)
 def timeseries(
     *,
-    date_from: date,
-    date_to: date,
+    date_from: datetime,
+    date_to: datetime,
     bucket: str = 'day',
     niche: str | None = None,
     event_type: str | None = None,
 ) -> dict[str, Any]:
-    """Serie temporal de eventos agrupada por bucket (day|hour|week).
+    """Serie temporal de eventos agrupada por bucket (minute|hour|day|week).
 
     Filtra opcionalmente por niche y por event_type (code_name del catalogo
-    tax_event_types). `date_to` es EXCLUSIVO.
+    tax_event_types). `date_to` es EXCLUSIVO. `date_from`/`date_to` son
+    datetime aware (el rango puede tener granularidad sub-dia).
     """
     try:
         with db_session() as s:

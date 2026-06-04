@@ -32,6 +32,8 @@ export interface UserProfile {
 	timezone?: string | null;
 	marketing_consent?: boolean | null;
 	created_at?: string;
+	/** True si el user tiene credencial password (decide establecer/cambiar). */
+	has_password?: boolean;
 }
 
 export interface MfaMethod {
@@ -61,7 +63,8 @@ export interface AccountSession {
 export interface AccountStatus {
 	user_id: string;
 	status: UserStatus;
-	current_session_id: string;
+	/** family_id de la sesion en curso; null si el token es legacy. */
+	current_session_id: string | null;
 }
 
 /** Usuario en el listado admin (users.admin.list-users / get-user). */

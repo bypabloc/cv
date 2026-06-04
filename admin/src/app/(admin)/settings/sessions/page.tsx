@@ -16,24 +16,22 @@ import { useAccountSessions } from "@/features/sessions-mgmt/hooks/use-account-s
 import { useAccountStatus } from "@/features/sessions-mgmt/hooks/use-account-status";
 
 /**
- * @page SessionsPage
- * @description /sessions — sesiones activas de MI cuenta auth (logins en otros
- *   dispositivos). Muestra el estado de la cuenta + la tabla de sesiones con la
- *   opcion de revocar (salvo la actual). NO es el tracking de visitantes.
+ * @page SettingsSessionsPage
+ * @description Tab "Sesiones" de /settings (los tabs viven en el layout).
+ *   Sesiones activas de MI cuenta auth (logins en otros dispositivos) +
+ *   estado de la cuenta. Puedes revocar cualquiera salvo la actual. NO es el
+ *   tracking de visitantes (eso vive en /metrics).
  */
-export default function SessionsPage() {
+export default function SettingsSessionsPage() {
 	const status = useAccountStatus();
 	const sessions = useAccountSessions();
 
 	return (
-		<section className="mx-auto max-w-4xl space-y-6">
-			<header className="space-y-1">
-				<h1 className="text-2xl font-semibold">Mis sesiones</h1>
-				<p className="text-sm text-muted-foreground">
-					Dispositivos donde tu cuenta tiene una sesion activa. Puedes revocar
-					cualquiera salvo la actual.
-				</p>
-			</header>
+		<div className="space-y-6">
+			<p className="text-sm text-muted-foreground">
+				Dispositivos donde tu cuenta tiene una sesion activa. Puedes revocar
+				cualquiera salvo la actual.
+			</p>
 
 			<Card>
 				<CardHeader>
@@ -51,7 +49,7 @@ export default function SessionsPage() {
 						<dl className="grid gap-2 text-sm sm:grid-cols-3">
 							<div>
 								<dt className="text-muted-foreground">Usuario</dt>
-								<dd className="font-mono">{status.data.user_id}</dd>
+								<dd className="font-mono break-all">{status.data.user_id}</dd>
 							</div>
 							<div>
 								<dt className="text-muted-foreground">Estado</dt>
@@ -59,7 +57,9 @@ export default function SessionsPage() {
 							</div>
 							<div>
 								<dt className="text-muted-foreground">Sesion actual</dt>
-								<dd className="font-mono">{status.data.current_session_id}</dd>
+								<dd className="font-mono break-all">
+									{status.data.current_session_id ?? "-"}
+								</dd>
 							</div>
 						</dl>
 					)}
@@ -80,6 +80,6 @@ export default function SessionsPage() {
 					isLoading={sessions.isPending}
 				/>
 			)}
-		</section>
+		</div>
 	);
 }

@@ -5,6 +5,7 @@ When se invoca login.start,
 Then publica code + magic-link + devuelve temp_token con methods.
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from .._helpers import _make_event_register_start, _make_user
@@ -24,6 +25,10 @@ def test_login_start_email_active_no_password(monkeypatch):
     link_svc.generate_and_persist.return_value = ('T' + 'X' * 31, b'\x01' * 32)
     jwt_svc = MagicMock()
     jwt_svc.issue_temp.return_value = ('TEMP-LOGIN-JWT', MagicMock())
+    jwt_svc.verify.return_value = SimpleNamespace(
+        sub=user.id, jti='precheck-jti', exp=9999999999, flow='login',
+        typ='temp',
+    )
     email_svc = MagicMock()
 
     monkeypatch.setattr(start, 'UserService', lambda _c: user_svc)
@@ -33,13 +38,9 @@ def test_login_start_email_active_no_password(monkeypatch):
     monkeypatch.setattr(start, 'EmailDispatchService', lambda _c: email_svc)
     monkeypatch.setattr(start, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: MagicMock())
-    monkeypatch.setattr(
-        start,
-        'verify_captcha_or_bypass',
-        lambda *_a, **_k: {'success': True},
-    )
 
     event = _make_event_register_start(email='visitor@example.com')
+    event['_meta']['authorization'] = 'Bearer PRECHECK-TEMP'
     controller = start.Start(event=event)
     result = controller.run()
 

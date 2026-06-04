@@ -25,6 +25,7 @@ from services.password_service import PasswordService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
+from shared.core.ulid import new_uuidv7
 from shared.crypto.captcha import verify_captcha_or_bypass
 from shared.db.models.auth.enums import AuthUserStatus
 from shared.lambda_kit.base_controller import BaseController
@@ -98,10 +99,19 @@ class CheckEmail(BaseController):
 
         user = user_svc.get_by_email(email)
         if user is None:
+            # Email nuevo: emite el precheck igual (la fusion register->login
+            # permite que login.start CREE el pending). El temp lleva un sub
+            # placeholder (aun no hay user); login.start no compara el sub
+            # cuando el email no existe (solo cuando ya existe, anti-cross-
+            # account). El abuso queda acotado: crear un pending ya costo un
+            # Turnstile, igual que register.start (decision usuario).
             return {
                 'is_valid': True,
                 'code': 0,
-                'data': {'exists': False},
+                'data': {
+                    'exists': False,
+                    'temp_token': self._issue_precheck(user_id=new_uuidv7()),
+                },
             }
 
         if user.status == AuthUserStatus.PENDING:

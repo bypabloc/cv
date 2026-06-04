@@ -5,6 +5,7 @@ When se invoca login.start con {email, password},
 Then incrementa failed_attempts y devuelve 401 INVALID_PASSWORD.
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from .._helpers import _make_user
@@ -22,6 +23,7 @@ def _event_with_password(password: str) -> dict:
             'user_agent': 'pytest',
             'bypass_token': None,
             'origin': 'https://admin.portfolio.dev.the-full-stack.com',
+            'authorization': 'Bearer PRECHECK-TEMP',
             'cloudfront_meta': {},
         },
     }
@@ -36,6 +38,10 @@ def test_login_start_with_password_wrong(monkeypatch):
     user_svc = MagicMock()
     user_svc.get_by_email.return_value = user
     jwt_svc = MagicMock()
+    jwt_svc.verify.return_value = SimpleNamespace(
+        sub=user.id, jti='precheck-jti', exp=9999999999, flow='login',
+        typ='temp',
+    )
     mfa_svc = MagicMock()
 
     monkeypatch.setattr(start, 'UserService', lambda _c: user_svc)
@@ -46,11 +52,6 @@ def test_login_start_with_password_wrong(monkeypatch):
     monkeypatch.setattr(start, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'MfaMethodService', lambda _c: mfa_svc)
-    monkeypatch.setattr(
-        start,
-        'verify_captcha_or_bypass',
-        lambda *_a, **_k: {'success': True},
-    )
     monkeypatch.setattr(start, 'check_password', lambda **_k: False)
 
     event = _event_with_password('wrong-passphrase-1234')

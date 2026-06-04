@@ -6,6 +6,7 @@ Then crea el user pending, publica UN email unificado y devuelve un
   temp_token (flow login, step 1) + created=True. (Ya NO devuelve 404.)
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from .._helpers import _make_event_register_start
@@ -28,6 +29,11 @@ def test_login_start_email_not_found_creates_pending(monkeypatch):
     link_svc.generate_and_persist.return_value = ('TOKEN-XYZ', MagicMock())
     jwt_svc = MagicMock()
     jwt_svc.issue_temp.return_value = ('TEMP-JWT', MagicMock())
+    # Email nuevo: existing is None -> el sub del precheck no se compara.
+    jwt_svc.verify.return_value = SimpleNamespace(
+        sub='placeholder-uuid', jti='precheck-jti', exp=9999999999,
+        flow='login', typ='temp',
+    )
     email_svc = MagicMock()
 
     monkeypatch.setattr(start, 'UserService', lambda _c: user_svc)
@@ -37,13 +43,9 @@ def test_login_start_email_not_found_creates_pending(monkeypatch):
     monkeypatch.setattr(start, 'EmailDispatchService', lambda _c: email_svc)
     monkeypatch.setattr(start, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: MagicMock())
-    monkeypatch.setattr(
-        start,
-        'verify_captcha_or_bypass',
-        lambda *_a, **_k: {'success': True},
-    )
 
     event = _make_event_register_start(email='unknown@example.com')
+    event['_meta']['authorization'] = 'Bearer PRECHECK-TEMP'
     result = start.Start(event=event).run()
 
     assert result['is_valid'] is True

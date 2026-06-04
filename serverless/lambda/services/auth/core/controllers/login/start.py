@@ -1,12 +1,17 @@
 """Controller `login.start` — inicia el flujo de login passwordless.
 
 Espejo de `register.start`. El visitante existente pide login: el
-controller verifica Turnstile + rate-limit, valida que el email exista
-y este activo, genera code + magic-link nuevos, publica los 2 mensajes
-SQS al worker, y devuelve un temp_token (rolling JWT, 5 min) con
+controller EXIGE el temp JWT precheck (`flow='login'` step=0, emitido por
+`login.check-email` tras validar Turnstile), valida que su `sub` matchee el
+email del body, lo blacklistea (rolling), genera code + magic-link nuevos,
+envia el email unificado, y devuelve un temp_token (rolling JWT, 5 min) con
 flow='login'.
 
-AC cubiertos: AC-5, AC-6, AC-20.
+`login.start` ya NO valida Turnstile: el captcha se resuelve UNA sola vez en
+`login.check-email` (decision D-1/D-2). Sin un temp precheck valido ->
+401 MISSING_PRECHECK.
+
+AC cubiertos: AC-4, AC-5, AC-6, AC-7, AC-20.
 """
 
 from __future__ import annotations
@@ -23,7 +28,7 @@ from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
 from settings.config import app_config
-from shared.crypto.captcha import verify_captcha_or_bypass
+from shared.auth.jwt import JwtError
 from shared.db.models.auth.enums import (
     AuthCodeKind,
     AuthLinkKind,
@@ -40,6 +45,8 @@ _TEMP_TTL_SECONDS = 300
 # flow (decision 10). Solo metodos fuertes post-password.
 _MFA_FLOW = 'login-mfa'
 _MFA_METHODS = ['totp', 'webauthn']
+# El precheck (flow='login' step=0) lo emite login.check-email tras Turnstile.
+_PRECHECK_FLOW = 'login'
 
 
 class Start(BaseController):
@@ -48,7 +55,11 @@ class Start(BaseController):
     event_model = LoginStartIn
 
     def validate(self) -> dict[str, Any]:
-        """Pydantic + rate-limit + Turnstile."""
+        """Pydantic + rate-limit per-IP. SIN Turnstile (decision D-2).
+
+        El captcha se resuelve en `login.check-email`; aqui la autorizacion
+        es el temp JWT precheck (verificado en `execute`).
+        """
         base = super().validate()
         if not base.get('is_valid'):
             return base
@@ -56,23 +67,62 @@ class Start(BaseController):
         data: LoginStartIn = self.validated_data  # type: ignore[assignment]
         meta = data.meta
 
-        # brought_turnstile_token: True solo si el usuario adjunto un CAPTCHA
-        # real (no el bypass dev/E2E vacio). Es el unico endpoint del flujo
-        # auth donde el usuario resuelve un Turnstile -> el unico que alimenta
-        # la auto-blacklist (un solver hace muchos start con CAPTCHA en 60s).
         RateLimitService(app_config).check_or_raise(
             ip=meta.ip or '',
             endpoint=_ENDPOINT,
             country=meta.country,
-            turnstile_validated=False,
-            brought_turnstile_token=bool(data.cf_turnstile_response),
-        )
-        verify_captcha_or_bypass(
-            data.cf_turnstile_response,
-            remote_ip=meta.ip,
-            bypass_token=meta.bypass_token,
+            turnstile_validated=True,
         )
         return base
+
+    @staticmethod
+    def _extract_bearer(authorization: str | None) -> str | None:
+        """Extrae el JWT de un header `Authorization: Bearer <token>`."""
+        if not authorization:
+            return None
+        parts = authorization.split(' ', 1)
+        if len(parts) != 2 or parts[0].lower() != 'bearer':
+            return None
+        token = parts[1].strip()
+        return token or None
+
+    def _verify_precheck(
+        self, *, jwt_svc: Any, meta: Any,
+    ) -> Any | None:
+        """Verifica el temp precheck del header `Authorization`.
+
+        Returns:
+            Los claims del temp (`flow='login'`) si es valido, o None si
+            falta / no verifica / no es del flow correcto. NO compara el
+            `sub` con el email (eso lo hace `execute` con el user resuelto).
+        """
+        token = self._extract_bearer(meta.authorization)
+        if token is None:
+            return None
+        try:
+            return jwt_svc.verify(
+                token,
+                expected_typ='temp',
+                expected_flow=_PRECHECK_FLOW,
+            )
+        except JwtError:
+            return None
+
+    @staticmethod
+    def _missing_precheck(*, audit_svc: Any, meta: Any) -> dict[str, Any]:
+        """Respuesta 401 MISSING_PRECHECK (sin precheck valido)."""
+        audit_svc.log(
+            event='login.start',
+            success=False,
+            error_code='MISSING_PRECHECK',
+            ip=meta.ip,
+        )
+        return {
+            'is_valid': False,
+            'code': 4003,
+            'status': 401,
+            'data': {'error': 'MISSING_PRECHECK'},
+        }
 
     def execute(self) -> dict[str, Any]:
         """Verifica que el email exista/active, publica code + magic-link.
@@ -98,7 +148,30 @@ class Start(BaseController):
         email_svc = EmailDispatchService(app_config)
         audit_svc = AuditService(app_config)
 
+        # Precheck obligatorio: el temp JWT flow='login' step=0 emitido por
+        # login.check-email (tras Turnstile). Sin el -> 401 MISSING_PRECHECK
+        # (decision D-2). Reemplaza al Turnstile de este endpoint (AC-4/7).
+        claims = self._verify_precheck(jwt_svc=jwt_svc, meta=meta)
+        if claims is None:
+            return self._missing_precheck(audit_svc=audit_svc, meta=meta)
+
         existing = user_svc.get_by_email(email)
+
+        # Anti-cross-account (AC-5): si el email YA existe, el `sub` del
+        # precheck DEBE matchear su id (el precheck se emitio para ESE user).
+        # Si el email NO existe, es un alta (fusion register->login): el
+        # precheck se emitio con un sub placeholder, login.start crea el
+        # pending; no hay sub que comparar.
+        if existing is not None and str(claims.sub) != str(existing.id):
+            return self._missing_precheck(audit_svc=audit_svc, meta=meta)
+
+        # Precheck OK: lo blacklistea (rolling, single-use).
+        jwt_svc.blacklist(
+            jti=claims.jti,
+            exp=claims.exp,
+            user_id=existing.id if existing is not None else claims.sub,
+            reason='rotation',
+        )
 
         # Fusion register -> login (plan admin-security-overview, bloque D):
         # si el email NO existe, se CREA el user pending (lo que antes hacia

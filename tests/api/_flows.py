@@ -707,6 +707,7 @@ def _run_login_with_password(
             bearer=precheck_wrong,
         ),
         expected=401,
+        samples=1,
     )
 
 
@@ -721,18 +722,24 @@ def _run_auth_errors(
         # Email aleatorio garantizado-inexistente. Tras la fusion
         # register->login, login.start con un email NUEVO ya NO da 404: con el
         # precheck (de check-email) CREA el user pending -> 200 (created:true).
+        # Cada sample saca un precheck FRESCO (es single-use: login.start lo
+        # blacklistea rolling), por eso check-email + start van DENTRO del call.
         ghost = f'success+ghost-{secrets.token_hex(4)}@simulator.amazonses.com'
-        ghost_precheck = login_precheck(http, origin, ghost, bypass)
+
+        def _ghost_login_start() -> Response:
+            precheck = login_precheck(http, origin, ghost, bypass)
+            return http.post(
+                '/auth',
+                body=make_body('login', 'start', email=ghost),
+                origin=origin,
+                bearer=precheck,
+            )
+
         runner.case(
             lambda_name='auth',
             name='login.start (email nuevo -> crea user)',
             method='POST',
-            call=lambda: http.post(
-                '/auth',
-                body=make_body('login', 'start', email=ghost),
-                origin=origin,
-                bearer=ghost_precheck,
-            ),
+            call=_ghost_login_start,
             expected=200,
         )
         # login.start SIN el precheck -> 401 MISSING_PRECHECK: el Turnstile del

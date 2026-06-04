@@ -4,7 +4,7 @@ When el controller ejecuta (auth no-op + rate-limit no-op),
 Then llama al service con date_from/date_to_exclusive/bucket/niche/event_type.
 """
 
-from datetime import date
+from datetime import UTC, datetime
 
 import services.analytics_service as analytics_service
 from controllers.analytics.timeseries import Timeseries
@@ -35,8 +35,8 @@ def test_timeseries_controller_when_valid_then_calls_service(
     # Assert
     assert result == {'is_valid': True, 'data': expected, 'code': 0}
     spy.assert_called_once_with(
-        date_from=date(2026, 4, 27),
-        date_to=date(2026, 5, 28),
+        date_from=datetime(2026, 4, 27, tzinfo=UTC),
+        date_to=datetime(2026, 5, 28, tzinfo=UTC),
         bucket='week',
         niche='fintech',
         event_type='page_view',

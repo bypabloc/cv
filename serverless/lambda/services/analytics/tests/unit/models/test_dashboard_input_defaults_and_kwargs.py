@@ -1,10 +1,11 @@
 """
 Given una request de dashboard sin bucket/limit explicitos,
 When se valida DashboardInput,
-Then bucket='day', limit=10 y date_to_exclusive = date_to + 1 dia.
+Then bucket='day', limit=10 y date_to_exclusive = date_to + 1 dia
+(datetime aware UTC).
 """
 
-from datetime import date
+from datetime import UTC, datetime
 
 from models.analytics import DashboardInput
 
@@ -23,7 +24,7 @@ def test_dashboard_input_defaults_and_date_to_exclusive():
     # Assert: defaults de bucket/limit
     assert parsed.bucket == 'day'
     assert parsed.limit == 10
-    # Assert: rango half-open (date_to EXCLUSIVO = to + 1)
-    assert parsed.date_from == date(2026, 4, 27)
-    assert parsed.date_to == date(2026, 5, 27)
-    assert parsed.date_to_exclusive() == date(2026, 5, 28)
+    # Assert: rango half-open (date_to EXCLUSIVO = to + 1), datetime aware UTC
+    assert parsed.date_from == datetime(2026, 4, 27, tzinfo=UTC)
+    assert parsed.date_to == datetime(2026, 5, 27, tzinfo=UTC)
+    assert parsed.date_to_exclusive() == datetime(2026, 5, 28, tzinfo=UTC)

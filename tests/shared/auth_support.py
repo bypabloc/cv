@@ -50,49 +50,23 @@ def field(body: object, key: str) -> str | None:
     return None
 
 
-def register_active_with_password(
+def create_active_user_with_password(
     http: HttpClient,
     env: Environment,
     origin: str,
     email: str,
     bypass: str,
 ) -> str | None:
-    """register.start -> verify-code (active) -> login.start -> set-password.
+    """Crea un user active CON password usando SOLO el flujo `login` unico.
 
-    Deja un user active CON password seteada. Devuelve su user_id. Hace
-    las llamadas directas (sin runner): es setup de un sub-flujo, no un
-    caso reportable.
+    Flujo (la operation `register` fue eliminada): `login.check-email`
+    (precheck con Turnstile/bypass) -> `login.start` (con el email del body:
+    es un alta, el sub del precheck es placeholder -> crea el user pending) ->
+    seed del code login en Neon -> `login.verify-code` (activa el pending) ->
+    `verify.set-password`. Devuelve su user_id. Llamadas directas (sin runner):
+    es setup de un sub-flujo, no un caso reportable.
     """
-    r = http.post(
-        '/auth',
-        body=make_body(
-            'register',
-            'start',
-            email=email,
-            cf_turnstile_response='',
-        ),
-        origin=origin,
-        bypass_token=bypass,
-    )
-    user_id = field(r.body, 'user_id') or env.find_user_id(email)
-    if not user_id:
-        return None
-    env.seed_code(user_id=user_id, kind='register', plaintext='ABCDEFGH')
-    http.post(
-        '/auth',
-        body=make_body(
-            'register',
-            'verify-code',
-            code='ABCDEFGH',
-            temp_token=field(r.body, 'temp_token'),
-        ),
-        origin=origin,
-    )
-    # login.check-email (precheck con Turnstile/bypass) -> temp; login.start
-    # (precheck en Authorization, SIN email) -> temp del flujo. `set-password`
-    # acepta cualquier temp (typ='temp', sin exigir flow/step), asi que el
-    # temp que devuelve login.start (step=2 del checklist para un user active,
-    # o step=1 passwordless) sirve para setear la password.
+    # check-email (precheck) de un email NUEVO -> {exists:false, temp_token}.
     rc = http.post(
         '/auth',
         body=make_body(
@@ -104,25 +78,79 @@ def register_active_with_password(
         origin=origin,
         bypass_token=bypass,
     )
+    precheck = field(rc.body, 'temp_token')
+    # login.start con el email del body (alta): crea el user pending + emite
+    # el temp step=1 passwordless del flujo de entrada.
     rl = http.post(
         '/auth',
-        body=make_body('login', 'start'),
+        body=make_body('login', 'start', email=email),
         origin=origin,
-        bearer=field(rc.body, 'temp_token'),
+        bearer=precheck,
     )
-    login_temp = field(rl.body, 'temp_token')
-    if login_temp:
+    user_id = field(rl.body, 'user_id') or env.find_user_id(email)
+    start_temp = field(rl.body, 'temp_token')
+    if not (user_id and start_temp):
+        return None
+    # seed del code login + verify-code (activa el pending; emite el temp/tokens
+    # del que sale el temp para set-password).
+    env.seed_code(user_id=user_id, kind='login', plaintext='ABCDEFGH')
+    rv = http.post(
+        '/auth',
+        body=make_body(
+            'login',
+            'verify-code',
+            code='ABCDEFGH',
+            temp_token=start_temp,
+        ),
+        origin=origin,
+    )
+    # set-password: el temp del checklist (si el user quedo con required) o, si
+    # verify-code emitio tokens directo (passwordless puro), reabrimos el flujo
+    # con un login.start nuevo para obtener un temp. `set-password` acepta
+    # cualquier temp (typ='temp').
+    set_temp = field(rv.body, 'temp_token')
+    if not set_temp:
+        precheck2 = login_precheck(http, origin, email, bypass)
+        rl2 = http.post(
+            '/auth',
+            body=make_body('login', 'start'),
+            origin=origin,
+            bearer=precheck2,
+        )
+        set_temp = field(rl2.body, 'temp_token')
+    if set_temp:
         http.post(
             '/auth',
             body=make_body(
                 'verify',
                 'set-password',
                 password=STRONG_PASSWORD,
-                temp_token=login_temp,
+                temp_token=set_temp,
             ),
             origin=origin,
         )
     return user_id
+
+
+def login_precheck(
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str | None,
+) -> str | None:
+    """login.check-email (con Turnstile/bypass) -> el temp precheck (o None)."""
+    r = http.post(
+        '/auth',
+        body=make_body(
+            'login',
+            'check-email',
+            email=email,
+            cf_turnstile_response='',
+        ),
+        origin=origin,
+        bypass_token=bypass,
+    )
+    return field(r.body, 'temp_token')
 
 
 class Synthetic:

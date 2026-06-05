@@ -9,7 +9,7 @@ el generador TOTP del harness empareja con el del backend. [AC-2]
 DIFERIDO (anotado): el flujo de login con 2FA enteramente por la UI del
 browser. Dos razones concretas, ambas del entorno desplegado:
 
-  1. El submit de los forms login/register esta gateado por Turnstile, que
+  1. El submit del form de login esta gateado por Turnstile, que
      en el build DESPLEGADO de dev NO esta en modo E2E (el submit nunca se
      habilita en headless). El login real del browser se bootstrapea por el
      callback del magic-link (ver test_login_magic_link), que NO ejercita el

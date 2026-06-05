@@ -6,15 +6,15 @@ Provee el harness para ejercitar los flujos COMPLETOS del panel admin
 viven en `shared.browser`; los helpers de FLUJO que conocen el DOM y la
 auth del admin viven AQUI, como pide el plan (fase D.2).
 
-Auth REAL end-to-end. El submit de los forms de login/register esta gateado
-por el widget Turnstile, que en el build DESPLEGADO de dev NO esta en modo
-E2E (`NEXT_PUBLIC_E2E_BYPASS=false`): el submit nunca se habilita sin
-resolver un challenge humano. Por eso la autenticacion del browser se
-bootstrapea por el camino del MAGIC-LINK, que el admin desplegado SI honra
-sin Turnstile:
+Auth REAL end-to-end. El submit del form de login esta gateado por el widget
+Turnstile, que en el build DESPLEGADO de dev NO esta en modo E2E
+(`NEXT_PUBLIC_E2E_BYPASS=false`): el submit nunca se habilita sin resolver un
+challenge humano. Por eso la autenticacion del browser se bootstrapea por el
+camino del MAGIC-LINK, que el admin desplegado SI honra sin Turnstile:
 
-1. Se obtienen tokens REALES del backend (`register.start` -> seed del code
-   en Neon -> `register.verify-code` -> access + refresh).
+1. Se obtienen tokens REALES del backend por el `login` unico
+   (`login.check-email` -> `login.start` (alta) -> seed del code en Neon ->
+   `login.verify-code` -> access + refresh).
 2. Se navega el browser a `/callback#access=...&refresh=...&user_id=...&
    email=...&refresh_exp=...`. El admin decodifica el fragment, persiste los
    tokens y aterriza en el shell autenticado (igual que tras un magic-link).
@@ -111,28 +111,29 @@ class AdminAuth:
     def create_active_user(self, slot: str) -> tuple[str, str, str, str]:
         """Crea un user active y devuelve `(email, user_id, access, refresh)`.
 
-        Flujo backend REAL: `register.start` (con bypass de Turnstile) ->
-        seed del code en Neon -> `register.verify-code`. El user queda active
-        con tokens reales emitidos por el Lambda `auth`.
+        Flujo backend REAL por el `login` unico (register eliminado):
+        `login.check-email` (precheck con bypass de Turnstile) -> `login.start`
+        (con el email del body: alta, crea el user pending) -> seed del code
+        `login` en Neon -> `login.verify-code` (activa el pending). El user
+        queda active con tokens reales emitidos por el Lambda `auth`.
         """
         email = self.new_email(slot)
+        precheck = self._login_precheck(email)
         start = self._http.post(
             '/auth',
-            body=make_body(
-                'register', 'start', email=email, cf_turnstile_response='',
-            ),
+            body=make_body('login', 'start', email=email),
             origin=self._origin,
-            bypass_token=self._bypass,
+            bearer=precheck,
         )
         user_id = field(start.body, 'user_id') or self._env.find_user_id(email)
         temp = field(start.body, 'temp_token')
         self._env.seed_code(
-            user_id=user_id, kind='register', plaintext=_SEED_CODE,
+            user_id=user_id, kind='login', plaintext=_SEED_CODE,
         )
         verify = self._http.post(
             '/auth',
             body=make_body(
-                'register', 'verify-code', code=_SEED_CODE, temp_token=temp,
+                'login', 'verify-code', code=_SEED_CODE, temp_token=temp,
             ),
             origin=self._origin,
         )

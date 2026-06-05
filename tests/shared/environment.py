@@ -123,7 +123,7 @@ class Environment:
     ) -> bool:
         """Fija el token_hash del magic-link vigente a sha256(plaintext).
 
-        Tras un register.start / login.start existe una fila en
+        Tras un login.start existe una fila en
         auth_magic_links (kind=register|login, consumed_at IS NULL). El
         plain del token NO vuelve en la respuesta (solo viaja por email);
         para probar verify-magic-link sin leer el email, reescribimos su

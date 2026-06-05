@@ -53,6 +53,11 @@ EMAIL_CONFIG: list[dict[str, str]] = [
         'subject': 'Tu email fue actualizado en The Full Stack',
     },
     {
+        # Notificacion tras un cambio de password (users.profile.change-password).
+        'kind': 'password-changed',
+        'subject': 'Tu contraseña fue actualizada en The Full Stack',
+    },
+    {
         'kind': 'account-disabled',
         'subject': 'Tu cuenta fue deshabilitada en The Full Stack',
     },

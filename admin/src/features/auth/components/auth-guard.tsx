@@ -1,38 +1,32 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useAuthBootstrap } from "../hooks/use-auth-bootstrap";
-import { useAuthTimer } from "../hooks/use-auth-timer";
 import { useMultiTabSync } from "../hooks/use-multi-tab-sync";
 import { useProtectedRoute } from "../hooks/use-protected-route";
-import { useAuthStore } from "../store/use-auth-store";
+import { useSessionRehydrate } from "../hooks/use-session-rehydrate";
 
 /**
  * @component AuthGuard
- * @description Protege el area autenticada. Si no hay sesion, redirige a
- *   `/login?next=<path>` y muestra un placeholder. Monta `useAuthBootstrap`
- *   (gate de hidratacion), `useAuthTimer` (auto-refresh + bootstrap) y
- *   `useMultiTabSync` (logout multi-tab).
+ * @description Protege el area autenticada (lazy auth). NO verifica
+ *   proactivamente el JWT: cada peticion HTTP descubre su propio 401 en el
+ *   `api-client` centralizado. Al montar, `useSessionRehydrate` hace UN refresh
+ *   silencioso (post-reload) usando el `refresh_token`; `useProtectedRoute`
+ *   redirige a `/login?next=<path>` si no hay sesion una vez resuelto ese
+ *   refresh. `useMultiTabSync` sincroniza el logout entre tabs.
  *
- *   Muestra "Verificando sesion..." mientras `bootstrapping` (tras un reload,
- *   el access se hidrata desde el refresh antes de decidir el redirect) o
- *   mientras no haya sesion (la redireccion la dispara `useProtectedRoute`).
+ *   Sin "Verificando sesion": mientras el refresh-en-reload esta en vuelo
+ *   (`rehydrating`) o no hay sesion, no se renderizan los children (el redirect
+ *   lo dispara `useProtectedRoute`).
  *
  * @props {ReactNode} children - Arbol protegido
  */
 export function AuthGuard({ children }: { children: ReactNode }) {
-	useAuthBootstrap();
-	useAuthTimer();
+	const rehydrating = useSessionRehydrate();
 	useMultiTabSync();
-	const authed = useProtectedRoute();
-	const bootstrapping = useAuthStore((s) => s.bootstrapping);
+	const authed = useProtectedRoute(rehydrating);
 
-	if (bootstrapping || !authed) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				<p className="text-muted-foreground">Verificando sesion...</p>
-			</div>
-		);
+	if (rehydrating || !authed) {
+		return null;
 	}
 
 	return <>{children}</>;

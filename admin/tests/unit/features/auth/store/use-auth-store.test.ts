@@ -21,9 +21,6 @@ const STORAGE_KEY = "portfolio-admin-auth";
 
 beforeEach(() => {
 	useAuthStore.getState().reset();
-	// `reset()` no toca `bootstrapping` (lo gobierna el bootstrap, no el logout);
-	// lo restablecemos aqui para aislar los tests.
-	useAuthStore.getState().setBootstrapping(true);
 	localStorage.clear();
 });
 
@@ -190,34 +187,6 @@ describe("useAuthStore", () => {
 
 		// Assert
 		expect(useAuthStore.getState().refreshExpiry).toBe(exp * 1000);
-	});
-
-	it("Given el store recien creado When se lee Then bootstrapping es true", () => {
-		// Act + Assert: default true (retiene el redirect hasta resolver el reload)
-		expect(useAuthStore.getState().bootstrapping).toBe(true);
-	});
-
-	it("Given setBootstrapping(false) When se llama Then apaga el flag", () => {
-		// Act
-		useAuthStore.getState().setBootstrapping(false);
-
-		// Assert
-		expect(useAuthStore.getState().bootstrapping).toBe(false);
-	});
-
-	it("Given bootstrapping seteado When se persiste Then NO va a localStorage", () => {
-		// Arrange
-		const refresh = makeJwt({ sub: "usr_01", exp: nowSec() + 2_592_000 });
-
-		// Act
-		useAuthStore.getState().setBootstrapping(false);
-		useAuthStore.getState().setTokens("access-jwt", refresh, USER, 999);
-
-		// Assert: el flag transient no se persiste (no esta en partialize)
-		const persisted = JSON.parse(
-			localStorage.getItem(STORAGE_KEY) as string,
-		).state;
-		expect("bootstrapping" in persisted).toBe(false);
 	});
 
 	it("Given setTokens + setTempToken When se persiste Then localStorage solo guarda refreshToken, refreshExpiry y user", () => {

@@ -6,9 +6,9 @@ import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 /**
  * @module tests/unit/features/auth/hooks/use-protected-route
- * @description Verifica que NO redirige mientras `bootstrapping` (gate del fix
- *   de persistencia de sesion), el redirect a /login?next= sin sesion una vez
- *   resuelto el bootstrap, y el true con sesion vigente.
+ * @description Lazy auth: el hook recibe `rehydrating` por parametro. NO redirige
+ *   mientras `rehydrating` (el refresh-en-reload aun puede hidratar el access);
+ *   redirige a /login?next= sin sesion una vez resuelto; true con sesion vigente.
  */
 
 const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
@@ -20,27 +20,26 @@ vi.mock("next/navigation", () => ({
 beforeEach(() => {
 	replaceMock.mockClear();
 	useAuthStore.getState().reset();
-	useAuthStore.getState().setBootstrapping(false);
 });
 
 describe("useProtectedRoute", () => {
-	it("Given bootstrapping=true sin sesion When se monta Then NO redirige (espera el refresh)", async () => {
-		// Arrange: simula el primer render post-reload (access aun no hidratado).
-		useAuthStore.getState().setBootstrapping(true);
+	it("Given rehydrating=true sin sesion When se monta Then NO redirige (espera el refresh)", async () => {
+		// Arrange: primer render post-reload (access aun no hidratado), el
+		// refresh-en-reload todavia esta in-flight.
 
 		// Act
-		const { result } = renderHook(() => useProtectedRoute());
+		const { result } = renderHook(() => useProtectedRoute(true));
 
-		// Assert: retiene el redirect mientras el bootstrap esta en curso.
+		// Assert: retiene el redirect mientras el rehydrate esta en curso.
 		expect(result.current).toBe(false);
 		await waitFor(() => {
 			expect(replaceMock).not.toHaveBeenCalled();
 		});
 	});
 
-	it("Given bootstrap resuelto sin sesion When se monta Then redirige a /login?next y devuelve false", async () => {
+	it("Given rehydrating=false sin sesion When se monta Then redirige a /login?next y devuelve false", async () => {
 		// Act
-		const { result } = renderHook(() => useProtectedRoute());
+		const { result } = renderHook(() => useProtectedRoute(false));
 
 		// Assert
 		expect(result.current).toBe(false);
@@ -49,44 +48,7 @@ describe("useProtectedRoute", () => {
 		});
 	});
 
-	it("Given bootstrap resuelto, sin access pero CON refresh vigente When se monta Then NO redirige (sesion recuperable)", async () => {
-		// Arrange: la ventana de la race -> bootstrapping ya en false (commit
-		// distinto al de setAccessToken) pero hay un refresh vivo: el bootstrap
-		// aun puede hidratar el access. NO se debe redirigir.
-		useAuthStore.setState({
-			accessToken: null,
-			refreshToken: makeJwt({ sub: "usr_01", exp: nowSec() + 2_592_000 }),
-			refreshExpiry: (nowSec() + 2_592_000) * 1000,
-		});
-
-		// Act
-		const { result } = renderHook(() => useProtectedRoute());
-
-		// Assert
-		expect(result.current).toBe(false);
-		await waitFor(() => {
-			expect(replaceMock).not.toHaveBeenCalled();
-		});
-	});
-
-	it("Given bootstrap resuelto, sin access y con refresh EXPIRADO When se monta Then redirige (no recuperable)", async () => {
-		// Arrange: refresh vencido -> no recuperable -> redirige.
-		useAuthStore.setState({
-			accessToken: null,
-			refreshToken: "expirado",
-			refreshExpiry: Date.now() - 1000,
-		});
-
-		// Act
-		renderHook(() => useProtectedRoute());
-
-		// Assert
-		await waitFor(() => {
-			expect(replaceMock).toHaveBeenCalledWith("/login?next=%2Fusers");
-		});
-	});
-
-	it("Given sesion vigente When se monta Then devuelve true", () => {
+	it("Given sesion vigente When se monta Then devuelve true y NO redirige", () => {
 		// Arrange
 		useAuthStore.setState({
 			accessToken: makeJwt({ sub: "usr_01", exp: nowSec() + 900 }),
@@ -100,32 +62,50 @@ describe("useProtectedRoute", () => {
 		});
 
 		// Act
-		const { result } = renderHook(() => useProtectedRoute());
+		const { result } = renderHook(() => useProtectedRoute(false));
 
 		// Assert
 		expect(result.current).toBe(true);
+		expect(replaceMock).not.toHaveBeenCalled();
 	});
 
-	it("Given monta sin access y luego se hidrata el access When cambia el store Then authed pasa a true reactivamente (sin user)", async () => {
-		// Arrange: estado post-reload (bootstrap aun true, sin access). authed se
-		// DERIVA del accessToken reactivo, no de la fn estable isAuthenticated:
-		// asi el hook re-renderiza cuando el bootstrap hidrata el access. (En
-		// prod, con React Compiler, leer la fn estable + `void accessToken`
-		// dejaba authed congelado en false aunque el store tuviera access.)
+	it("Given un access EXPIRADO When se monta Then authed=false y redirige", async () => {
+		// Arrange: access presente pero vencido -> no autenticado.
+		useAuthStore.setState({
+			accessToken: makeJwt({ sub: "usr_01", exp: nowSec() - 10 }),
+		});
+
+		// Act
+		const { result } = renderHook(() => useProtectedRoute(false));
+
+		// Assert
+		expect(result.current).toBe(false);
+		await waitFor(() => {
+			expect(replaceMock).toHaveBeenCalledWith("/login?next=%2Fusers");
+		});
+	});
+
+	it("Given monta con rehydrating=true y luego se hidrata el access When cambia el store Then authed pasa a true reactivamente (sin user)", async () => {
+		// Arrange: estado post-reload (rehydrating, sin access). authed se DERIVA
+		// del accessToken reactivo, no de la fn estable: asi el hook re-renderiza
+		// cuando el refresh-en-reload hidrata el access.
 		useAuthStore.setState({
 			accessToken: null,
 			refreshToken: makeJwt({ sub: "usr_01", exp: nowSec() + 2_592_000 }),
 			refreshExpiry: (nowSec() + 2_592_000) * 1000,
 		});
-		useAuthStore.getState().setBootstrapping(true);
-		const { result } = renderHook(() => useProtectedRoute());
+		const { result, rerender } = renderHook(
+			({ rehydrating }: { rehydrating: boolean }) =>
+				useProtectedRoute(rehydrating),
+			{ initialProps: { rehydrating: true } },
+		);
 		expect(result.current).toBe(false);
 
-		// Act: el bootstrap hidrata el access (refresh OK).
+		// Act: el refresh-en-reload hidrata el access y baja rehydrating.
 		useAuthStore
 			.getState()
 			.setAccessToken(makeJwt({ sub: "usr_01", exp: nowSec() + 900 }));
-		useAuthStore.getState().setBootstrapping(false);
+		rerender({ rehydrating: false });
 
 		// Assert: authed reactivo pasa a true; no redirige.
 		await waitFor(() => {

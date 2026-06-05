@@ -2,23 +2,24 @@
 name: auth-system
 description: >
   Auth domain reference for the portfolio backend serverless: the Lambda
-  `auth` (HTTP POST `/auth` with operations register / login / verify /
-  session for refresh+logout), the Lambda `auth_email_worker` (SQS
-  consumer + SES sender for magic-link and 8-char email codes), the
+  `auth` (HTTP POST `/auth` with operations login / verify / session /
+  mfa / webauthn / security; the `register` operation was REMOVED — sign-up
+  happens inside the unified `login` flow: `login.start` creates the pending
+  user), email sent async by the `send_email` Lambda (invoke, no SQS) for
+  magic-link and 8-char email codes, the
   shared subpackage `shared.auth` (pyjwt + argon2-cffi + Crockford-like
   code generator), the Neon schema with 5 tables auth_users /
   auth_credentials / auth_email_codes / auth_magic_links /
   auth_audit_log, the DynamoDB table portfolio-jwt-blacklist-${stage}
   with GSI by_family_id for token reuse detection, the SSM
-  /portfolio/${stage}/jwt-secret SecureString with KMS encryption, the
-  SQS portfolio-auth-email-${stage} + DLQ for email async, the JWT
+  /portfolio/${stage}/jwt-secret SecureString with KMS encryption, the JWT
   HS256 lifecycle (temp 5min rolling, access 15min stateless, refresh
-  30days with family rotation), the rate-limit seeds for the 10
-  endpoints (register.start, login.start, register.verify-magic-link,
-  register.verify-code, login.verify-magic-link, login.verify-code,
-  verify.set-password, verify.resend-code, session.refresh,
-  session.logout), Turnstile mandatory in register.start and
-  login.start, anti-enumeration UX (404 EMAIL_NOT_FOUND with
+  30days with family rotation), the rate-limit seeds for the
+  endpoints (login.check-email, login.start, login.verify-magic-link,
+  login.verify-code, verify.set-password, verify.resend-code,
+  session.refresh, session.logout), Turnstile mandatory in
+  login.check-email (the single entry point; the sign-up also goes through
+  it), anti-enumeration UX (404 EMAIL_NOT_FOUND with
   suggest_register flag), magic-link as opaque 32-byte b64url token
   (NOT JWT) with SHA-256 hash in Neon and single-use semantics,
   argon2id default parameters from argon2-cffi PasswordHasher, the
@@ -54,7 +55,7 @@ description: >
   "auth_magic_links", "auth_audit_log", "shared.auth", "auth_email_worker",
   "lambda auth", "auth lambda", "POST /auth", "/auth endpoint",
   "Turnstile auth", "anti enumeration", "user lockout", "account
-  locked", "EMAIL_NOT_FOUND", "EMAIL_ALREADY_REGISTERED",
+  locked", "EMAIL_NOT_FOUND",
   "TOKEN_BLACKLISTED", "TOKEN_REUSE_DETECTED", "rate limit register",
   "rate limit login", "family_id", "by_family_id GSI", "rolling temp
   jwt", "jwt-secret SSM", "secret JWT", "HS256", "RS256",
@@ -117,10 +118,13 @@ allowed-tools: Read, Glob, Grep
 
 | operation | actions |
 |---|---|
-| `register` | `start`, `verify-magic-link`, `verify-code` |
-| `login` | `start`, `verify-magic-link`, `verify-code` |
+| `login` | `check-email`, `start`, `verify-code`, `verify-magic-link`, `verify-password`, `verify-totp`, `send-email-code` |
 | `verify` | `set-password`, `resend-code` |
 | `session` | `refresh`, `logout` |
+| `mfa` / `webauthn` / `security` | ver `.claude/rules/auth-system.md` |
+
+> La operation `register` fue ELIMINADA: el alta ocurre dentro del flujo
+> `login` (`login.start` crea el pending si el email no existe).
 
 ## Decisiones cerradas (NO reabrir)
 
@@ -134,10 +138,10 @@ allowed-tools: Read, Glob, Grep
    min. Max 5 attempts.
 5. **Magic link opaco** (NO JWT): 32 bytes b64url, hash SHA-256 en
    Neon. Single-use, TTL 15 min.
-6. **Email async** via SQS dedicada + worker dedicado (NO reusa
-   `contact_worker`).
-7. **Turnstile solo en `register.start` y `login.start`**. El resto
-   confia en JWT temp + rate-limit.
+6. **Email async** via invoke al Lambda `send_email` (`InvocationType=
+   'Event'`, sin SQS).
+7. **Turnstile solo en `login.check-email`** (el unico punto de entrada;
+   el alta tambien pasa por aqui). El resto confia en JWT temp + rate-limit.
 8. **Login UX anti-enumeration**: 404 EMAIL_NOT_FOUND con
    `suggest_register` que diferencia "no existe" (true) vs
    "disabled/locked" (false).
@@ -168,9 +172,9 @@ Detalle en
 
 | Endpoint | Limit | Window |
 |---|---|---|
-| `register.start` | 3 | 3600s |
+| `login.check-email` | 3 | 3600s |
 | `login.start` | 5 | 60s |
-| `register.verify-*` / `login.verify-*` | 10 | 60s |
+| `login.verify-*` | 10 | 60s |
 | `verify.set-password` | 5 | 60s |
 | `verify.resend-code` | 3 | 300s |
 | `session.refresh` / `session.logout` | 30 | 60s |

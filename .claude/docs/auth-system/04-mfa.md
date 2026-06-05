@@ -44,8 +44,9 @@ el primer metodo confirmado lo marca `preferred=true`. Devuelve 204.
 ## Email-code como 2do factor
 
 `mfa.setup-email-code` activa `email_code` como metodo MFA. Como el user
-ya probo recibir email en register, el metodo se inserta **confirmado de
-inmediato** (`confirmed_at=now()`). Reusa el code de 8 chars del plan 01
+ya probo recibir email durante el alta (flujo `login`), el metodo se
+inserta **confirmado de inmediato** (`confirmed_at=now()`). Reusa el code
+de 8 chars del plan 01
 (`shared.auth.codes`), promovido a 2do factor cuando el user ya se
 autentico con un factor fuerte.
 

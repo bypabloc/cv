@@ -2,9 +2,11 @@
 
 > Reglas duras para trabajar con el Lambda `auth`, el subpackage
 > `shared.auth`, el schema `auth_*` en Neon, la tabla DDB `jwt-blacklist`
-> y los flujos register/login/verify/session. El email transaccional lo
-> envia el Lambda `send_email` (invocado async, sin SQS). Aplica al
-> backend serverless. NO aplica al frontend Astro ni al dashboard Next.
+> y los flujos login/verify/session. El alta ocurre dentro del flujo `login`
+> unico (`login.start` crea el pending); la operation `register` fue
+> ELIMINADA. El email transaccional lo envia el Lambda `send_email` (invocado
+> async, sin SQS). Aplica al backend serverless. NO aplica al frontend Astro
+> ni al dashboard Next.
 
 ## Activacion
 
@@ -189,18 +191,21 @@ Aplica SIEMPRE que se trabaje con:
   required (anti-lockout). Decision: cualquier factor habilita el recovery
   (sin distincion fuerte/debil).
 
-#### Flujo de entrada unico: `register` fusionado en `login`
+#### Flujo de entrada unico: el alta ocurre dentro de `login`
 
 - **SIEMPRE** el flujo de entrada es `login` unico: `login.start` crea el
-  user `pending` si el email no existe (en vez de un `register.start`
-  separado). `login.verify-code` / `login.verify-magic-link` cierran la
-  transicion `pending -> active` segun el STATUS del user (no hay un flow
-  `register` paralelo: el mismo `login` cubre alta y entrada).
-- **NUNCA** asumir dos flows distintos (`register` vs `login`) en el
-  cliente: el frontend entra siempre por `login`. El codigo de la
-  operation `register` puede seguir presente como **deuda** (legacy), pero
-  el flujo de entrada vigente es el `login` unico — lo relevante es el
-  STATUS del user, no la operation que lo creo.
+  user `pending` si el email no existe. `login.verify-code` /
+  `login.verify-magic-link` cierran la transicion `pending -> active` segun el
+  STATUS del user. El mismo `login` cubre alta y entrada.
+- **SIEMPRE** la operation `register` fue ELIMINADA (plan remove-register):
+  no hay controllers, models ni el kind `register` en los enums DB
+  (`auth_code_kind`/`auth_link_kind` quedan en `login`/`password_reset`,
+  migration 00000007). Un request `{operation:'register'}` da error de
+  operation desconocida (4xx).
+- **NUNCA** asumir una operation `register`: el frontend entra siempre por
+  `login`; lo relevante es el STATUS del user, no la operation. (No confundir
+  con `webauthn.register-options`/`register-verify`, que son el enroll de
+  passkeys/MFA y SIGUEN existiendo.)
 
 ### Metodos `required` (factores exigidos al loguear)
 
@@ -247,10 +252,10 @@ Aplica SIEMPRE que se trabaje con:
 
 ### Turnstile y rate-limit
 
-- **SIEMPRE** Turnstile SOLO en los DOS endpoints **iniciales** (step 0)
-  del flujo de auth: `login.check-email` y `register.start` (AC-12). El
-  token de Turnstile es single-use: validarlo dos veces en el mismo flujo
-  da `timeout-or-duplicate`. Ningun otro endpoint lo valida.
+- **SIEMPRE** Turnstile SOLO en el endpoint **inicial** (step 0) del flujo de
+  auth: `login.check-email` (es el unico punto de entrada; el alta tambien
+  pasa por aqui). El token de Turnstile es single-use: validarlo dos veces en
+  el mismo flujo da `timeout-or-duplicate`. Ningun otro endpoint lo valida.
 - **NUNCA** un endpoint **no-inicial** (step != 0) valida Turnstile. La
   autorizacion de esos endpoints es un JWT (access) o un JWT temporal
   (rolling temp del flujo). En particular `login.start` ya NO valida
@@ -261,9 +266,9 @@ Aplica SIEMPRE que se trabaje con:
   anti-cross-account inherente). Para un email nuevo (alta fusionada) el
   precheck lleva un `sub` placeholder que no resuelve user y `login.start`
   crea el pending con el `email` del body.
-- **SIEMPRE** la auto-blacklist anti-solver se alimenta solo por los
-  endpoints con Turnstile (`login.check-email` + `register.start`): el
-  `brought_turnstile_token=True` se cuenta por `(ip, endpoint, window)`.
+- **SIEMPRE** la auto-blacklist anti-solver se alimenta solo por el endpoint
+  con Turnstile (`login.check-email`): el `brought_turnstile_token=True` se
+  cuenta por `(ip, endpoint, window)`.
 - **SIEMPRE** rate-limit per-IP via `shared.rate_limit.check_or_raise`
   con las reglas seedeadas (ver
   [.claude/docs/auth-system/03-rate-limit-rules.md](../docs/auth-system/03-rate-limit-rules.md)).
@@ -281,7 +286,7 @@ Aplica SIEMPRE que se trabaje con:
   remitente de la tabla DynamoDB `email-config`, baja el template del
   bucket S3, lo renderiza con Jinja2 y envia por SES.
 - **SIEMPRE** el invoke es best-effort: un fallo al invocar `send_email`
-  NO rompe el request del flujo (register/login/verify/...) — degrada a un
+  NO rompe el request del flujo (login/verify/...) — degrada a un
   log de warning. El audit log de auth (`auth_audit_log`) lo escribe el
   Lambda `auth`, NO `send_email`.
 - **NUNCA** publicar a una cola SQS para emails de auth ni mantener un

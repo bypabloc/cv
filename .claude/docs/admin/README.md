@@ -132,7 +132,7 @@ fuente de verdad enforced. Resumen aqui:
 - **SIEMPRE** mutex para concurrent refresh (1 sola call in-flight).
 - **SIEMPRE** Hybrid Atomic: `components/ui/` (genericos, 2+ features)
   vs `features/<X>/components/` (especificos).
-- **SIEMPRE** Turnstile en register.start y login.start.
+- **SIEMPRE** Turnstile en login.check-email (unico punto de entrada).
 - **SIEMPRE** `ref` como prop normal (NO `forwardRef`) en componentes
   nuevos. shadcn 2.x ya migrado.
 - **SIEMPRE** React Compiler habilitado (`reactCompiler: true`).

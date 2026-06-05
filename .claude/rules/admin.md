@@ -126,8 +126,7 @@ admin/src/
 │   ├── layout.tsx                      # Root: ThemeProvider, QueryProvider, Toaster
 │   ├── page.tsx                        # / -> redirect a /login o /metrics
 │   ├── (auth)/                         # Route group (no layout compartido)
-│   │   ├── login/page.tsx              # /login
-│   │   ├── register/page.tsx           # /register
+│   │   ├── login/page.tsx              # /login (alta + entrada: checklist)
 │   │   ├── verify/page.tsx             # /verify (input de code)
 │   │   ├── callback/page.tsx           # /callback (decodea fragment del magic link)
 │   │   └── set-password/page.tsx       # /set-password
@@ -296,9 +295,9 @@ inicio (NO hay nada "pending"; MFA + WebAuthn son scope base). Todo
 request va por `POST /auth` con body JSON `{operation, action, data}`
 (salvo `verify-magic-link`, que es un GET callback). Distribucion:
 
-- `register` (3): `start`, `verify-magic-link`, `verify-code`.
-- `login` (5): `start`, `verify-magic-link`, `verify-code`,
-  `verify-password`, `verify-totp`.
+- `login` (7): `check-email`, `start`, `verify-magic-link`, `verify-code`,
+  `verify-password`, `verify-totp`, `send-email-code`. El alta ocurre aqui
+  (`login.start` crea el pending); la operation `register` fue eliminada.
 - `verify` (2): `set-password`, `resend-code`.
 - `session` (2): `refresh`, `logout`.
 - `mfa` (8): `setup-totp`, `confirm-totp`, `setup-email-code`,
@@ -406,8 +405,9 @@ para la gestion total de la cuenta y de otros usuarios — ver la seccion
 - **NUNCA** logear el JWT, refresh token, magic link token, email
   completo, ni el contenido del codigo 8 chars.
 - **NUNCA** mostrar mensajes que filtren si un email existe o no fuera
-  de los endpoints permitidos (`register.start` 409 vs `login.start`
-  404 con `suggest_register: true` ya lo hace explicito el backend).
+  de lo que el backend ya expone (`login.check-email` revela existencia +
+  `has_password` + `methods_required`; ese es el unico punto de
+  enumeracion aceptado).
 - **NUNCA** llamar al refresh sin pasar por el mutex (race condition
   garantizada con concurrent requests).
 - **NUNCA** cargar scripts third-party sin SRI (`integrity` attribute).

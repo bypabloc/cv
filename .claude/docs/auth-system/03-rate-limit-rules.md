@@ -14,11 +14,9 @@ Matching exacto (NO prefix). Cada operation.action tiene su key propia.
 
 | Endpoint | Limit | Window | Hard cap | Hard-cap action | Justificacion |
 |---|---|---|---|---|---|
-| `register.start` | 3 | 3600s | 10/h | blacklist-24h | Anti spam masivo de registros |
+| `login.check-email` | 3 | 3600s | 10/h | blacklist-24h | Unico punto con Turnstile; anti spam masivo de altas |
 | `login.start` | 5 | 60s | 20/min | blacklist-1h | Anti brute force email enumeration |
-| `register.verify-magic-link` | 10 | 60s | — | — | Generoso (un user normal hace 1) |
-| `register.verify-code` | 10 | 60s | — | — | Idem |
-| `login.verify-magic-link` | 10 | 60s | — | — | Idem |
+| `login.verify-magic-link` | 10 | 60s | — | — | Generoso (un user normal hace 1) |
 | `login.verify-code` | 10 | 60s | — | — | Idem |
 | `verify.set-password` | 5 | 60s | — | — | Operacion sensible |
 | `verify.resend-code` | 3 | 300s | — | — | Anti-spam de emails (5 min ventana) |
@@ -37,15 +35,11 @@ Independiente del rate-limit por IP:
 ```bash
 # dev
 python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='register.start' --limit=3 --window=3600 \
+  --endpoint='login.check-email' --limit=3 --window=3600 \
   --hard-cap=10 --hard-cap-action=blacklist-24h --aws-profile=tfs-dev
 python devtools/run.py serverless rate-limit set --stage=dev \
   --endpoint='login.start' --limit=5 --window=60 \
   --hard-cap=20 --hard-cap-action=blacklist-1h --aws-profile=tfs-dev
-python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='register.verify-magic-link' --limit=10 --window=60 --aws-profile=tfs-dev
-python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='register.verify-code' --limit=10 --window=60 --aws-profile=tfs-dev
 python devtools/run.py serverless rate-limit set --stage=dev \
   --endpoint='login.verify-magic-link' --limit=10 --window=60 --aws-profile=tfs-dev
 python devtools/run.py serverless rate-limit set --stage=dev \
@@ -68,7 +62,7 @@ Verificar:
 
 ```bash
 python devtools/run.py serverless rate-limit list --stage=dev
-# debe mostrar las 10 reglas
+# debe mostrar las 8 reglas
 ```
 
 ## Response al exceder

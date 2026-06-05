@@ -68,7 +68,7 @@ al backend serverless (esos tienen sus propios runners).
 | Modulo | Que prueba | Runtime | Auth |
 |--------|-----------|---------|------|
 | `api` | Los 5 Lambdas HTTP (cv, contact_form, tracking_pixel, auth, users): exito + errores + tiempos | httpx puro | SSO + bypass (duro) |
-| `admin` | Flujos completos del panel admin (login/register/verify/callback/auth-guard/logout/settings/sessions/MFA), 100% reales | browser | SSO + bypass (duro) |
+| `admin` | Flujos completos del panel admin (login/verify/callback/auth-guard/logout/settings/sessions/MFA), 100% reales | browser | SSO + bypass (duro) |
 | `app` | Las 6 apps Astro desplegadas: smoke, navbar, contact, tracking, screenshots | browser | no requiere |
 
 ## Estructura de `tests/`
@@ -84,7 +84,7 @@ tests/
 │   ├── http.py              # HttpClient (httpx + timing) + Response
 │   ├── runner.py + reporter.py   # Runner (N samples) + reporte de tiempos
 │   ├── totp.py              # TOTP RFC 6238 (stdlib)
-│   ├── auth_support.py      # helpers auth (register active, field, passwords)
+│   ├── auth_support.py      # helpers auth (create active user, field, passwords)
 │   ├── environment.py       # Neon seed/cleanup + bypass firmado + SSM +
 │   │                        #   admin whitelist promote/restore (hermetico)
 │   ├── bypass_signer.py     # firma Ed25519 del bypass (vendor, evita la

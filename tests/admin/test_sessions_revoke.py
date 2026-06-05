@@ -26,15 +26,18 @@ def test_sessions_without_session_redirects_to_login(
 ) -> None:
     """
     Given sin sesion,
-    When abro /sessions,
-    Then AuthGuard redirige a /login con next=/sessions.
+    When abro /settings/sessions (la tab "Sesiones" de Configuracion),
+    Then AuthGuard redirige a /login con next=/settings/sessions.
+
+    La gestion de sesiones se movio de /sessions a /settings/sessions (tab
+    dentro de Configuracion) con el redisno del bloque admin-security.
     """
     # Arrange / Act
-    page.goto(f'{admin_url}/sessions/', wait_until='load')
+    page.goto(f'{admin_url}/settings/sessions/', wait_until='load')
     page.wait_for_url('**/login/?next=*', timeout=15_000)
 
     # Assert
-    assert '/sessions' in urllib.parse.unquote(page.url)
+    assert '/settings/sessions' in urllib.parse.unquote(page.url)
 
 
 def test_cv_placeholder_route_serves_via_spa_fallback(
@@ -62,8 +65,13 @@ def test_sessions_revoke_removes_one_session(
 ) -> None:
     """
     Given una sesion activa en el browser + una 2da sesion abierta via API,
-    When abro /sessions y revoco una sesion,
+    When abro la tab "Sesiones" de Configuracion y revoco la sesion NO-actual,
     Then la fila desaparece de la tabla (queda 1) y Neon registra 1 sesion.
+
+    La gestion de sesiones se movio de /sessions a la tab "Sesiones" dentro de
+    /settings (Configuracion). Una de las 2 sesiones es la del browser
+    (is_current -> su boton Revocar esta deshabilitado); se revoca la OTRA (la
+    de open_second_session), cuyo boton SI esta habilitado.
     """
     # Arrange: 2da sesion del MISMO user via API (login.verify-code).
     page, email, user_id = (
@@ -74,17 +82,24 @@ def test_sessions_revoke_removes_one_session(
     time.sleep(2)
     assert len(environment.session_ids(user_id)) == 2
 
-    # Act: ir a /sessions, esperar 2 botones Revocar, revocar el primero.
-    flows.nav_via_sidebar(page, 'Mis sesiones', '**/sessions/**')
-    page.wait_for_selector('text=Mis sesiones', timeout=15_000)
+    # Act: navego a Configuracion via sidebar (preserva la sesion en memoria),
+    # entro a la tab Sesiones, espero 2 botones Revocar (1 disabled = la actual,
+    # 1 habilitado = la otra) y revoco el habilitado.
+    flows.nav_via_sidebar(page, 'Configuracion', '**/settings/**')
+    page.get_by_role('link', name='Sesiones').click()
+    page.wait_for_url('**/settings/sessions/**', timeout=15_000)
     page.wait_for_function(
         "() => [...document.querySelectorAll('button')]"
         ".filter(b => b.textContent.includes('Revocar')).length === 2",
         timeout=15_000,
     )
-    page.get_by_role('button', name='Revocar').first.click()
+    enabled_revoke = page.get_by_role('button', name='Revocar').and_(
+        page.locator('button:not([disabled])'),
+    )
+    enabled_revoke.first.click()
 
-    # Assert: la tabla baja a 1 fila revocable y Neon deja 1 sesion.
+    # Assert: Neon deja 1 sesion (la del browser, no revocable). La tabla baja a
+    # 1 fila tras la invalidacion de la lista.
     page.wait_for_function(
         "() => [...document.querySelectorAll('button')]"
         ".filter(b => b.textContent.includes('Revocar')).length === 1",

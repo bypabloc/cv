@@ -618,11 +618,13 @@ def _run_login_with_password(
     bypass: str,
     created_emails: list[str],
 ) -> None:
-    """Registra + setea password + login.start con password -> tokens directos.
+    """login con password como factor del checklist (modelo de lista).
 
-    Cubre el login con password (sin MFA): login.start con `password` en el
-    body devuelve access+refresh de inmediato (AC-20). Tambien prueba la
-    variante 2-step login.verify-password + el error de password incorrecta.
+    Tras setear password, la password queda `required` (default true). El
+    login: check-email (methods_required incluye 'password') -> login.start
+    (precheck, sin email/password) -> temp step=2 -> login.verify-password
+    (temp step=2 + password) -> tokens (password es el unico factor required).
+    Tambien el error de password incorrecta.
     """
     email = synthetic_email(run_id, 'pwd')
     created_emails.append(email)
@@ -631,39 +633,17 @@ def _run_login_with_password(
         print('  [SKIP] login con password: registro fallo')
         return
 
-    # login.start con password -> tokens directos (sin MFA). El precheck
-    # (de check-email) va en Authorization; login.start ya no usa Turnstile.
+    # login.start (precheck, sin email/password) -> temp step=2 + methods.
     precheck_pwd = login_precheck(http, origin, email, bypass)
-    runner.step(
-        lambda_name='auth',
-        name='login.start con password (success: tokens directos)',
-        method='POST',
-        call=lambda: http.post(
-            '/auth',
-            body=make_body(
-                'login',
-                'start',
-                email=email,
-                password=STRONG_PASSWORD,
-            ),
-            origin=origin,
-            bearer=precheck_pwd,
-        ),
-        expected=200,
-        note='precheck de check-email en Authorization',
-    )
-
-    # 2-step: login.start sin password -> temp; verify-password -> tokens.
-    precheck_2step = login_precheck(http, origin, email, bypass)
     r = runner.step(
         lambda_name='auth',
-        name='login.start (2-step setup)',
+        name='login.start (checklist: temp step=2 + methods)',
         method='POST',
         call=lambda: http.post(
             '/auth',
-            body=make_body('login', 'start', email=email),
+            body=make_body('login', 'start'),
             origin=origin,
-            bearer=precheck_2step,
+            bearer=precheck_pwd,
         ),
         expected=200,
         note='precheck de check-email en Authorization',
@@ -672,7 +652,7 @@ def _run_login_with_password(
     if temp:
         runner.step(
             lambda_name='auth',
-            name='login.verify-password (success: 2-step tokens)',
+            name='login.verify-password (success: password -> tokens)',
             method='POST',
             call=lambda: http.post(
                 '/auth',
@@ -687,25 +667,34 @@ def _run_login_with_password(
             expected=200,
         )
 
-    # login con password incorrecta -> 401 INVALID_PASSWORD. Manda el precheck
-    # (de check-email) para que el 401 sea por la password, NO por
-    # MISSING_PRECHECK. samples=1: cada precheck es single-use (rolling).
-    precheck_wrong = login_precheck(http, origin, email, bypass)
-    runner.case(
-        lambda_name='auth',
-        name='login.start con password (error: incorrecta -> 401)',
-        method='POST',
-        call=lambda: http.post(
+    # password incorrecta -> 401 INVALID_PASSWORD. Saca un temp step=2 fresco
+    # (login.start) por sample: el verify-password con password mala NO
+    # blacklistea el temp, pero el precheck del login.start SI es single-use.
+    def _verify_wrong_password() -> Response:
+        pre = login_precheck(http, origin, email, bypass)
+        rs = http.post(
+            '/auth',
+            body=make_body('login', 'start'),
+            origin=origin,
+            bearer=pre,
+        )
+        step2 = field(rs.body, 'temp_token')
+        return http.post(
             '/auth',
             body=make_body(
                 'login',
-                'start',
-                email=email,
+                'verify-password',
+                temp_token=step2,
                 password=WRONG_PASSWORD,
             ),
             origin=origin,
-            bearer=precheck_wrong,
-        ),
+        )
+
+    runner.case(
+        lambda_name='auth',
+        name='login.verify-password (error: incorrecta -> 401)',
+        method='POST',
+        call=_verify_wrong_password,
         expected=401,
         samples=1,
     )
@@ -1165,24 +1154,49 @@ def _login_password_direct(
     email: str,
     bypass: str,
 ) -> str | None:
-    """login.start con password de un user SIN MFA -> access token directo.
+    """login con password de un user SIN MFA -> access token directo.
 
-    Setup silencioso (sin runner): obtiene un access JWT para configurar
-    MFA. Se llama ANTES de activar MFA, asi devuelve tokens directos.
+    Setup silencioso (sin runner): check-email -> login.start (precheck) ->
+    verify-password. La password es el unico factor required -> verify-password
+    cierra el login con access+refresh. Se llama ANTES de activar otro MFA.
     """
+    temp = login_start_step2(http, origin, email, bypass)
+    if not temp:
+        return None
     r = http.post(
         '/auth',
         body=make_body(
             'login',
-            'start',
-            email=email,
+            'verify-password',
+            temp_token=temp,
             password=STRONG_PASSWORD,
-            cf_turnstile_response='',
         ),
         origin=origin,
-        bypass_token=bypass,
     )
     return field(r.body, 'access_token')
+
+
+def login_start_step2(
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str | None,
+) -> str | None:
+    """check-email (precheck) -> login.start (precheck) -> temp step=2.
+
+    Devuelve el temp_token step=2 del checklist (un user active) para que el
+    caller verifique un factor. Setup silencioso (sin runner).
+    """
+    precheck = login_precheck(http, origin, email, bypass)
+    if not precheck:
+        return None
+    r = http.post(
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
+        bearer=precheck,
+    )
+    return field(r.body, 'temp_token')
 
 
 def _login_start_mfa(
@@ -1192,26 +1206,28 @@ def _login_start_mfa(
     email: str,
     bypass: str,
 ) -> str | None:
-    """login.start con password de un user CON MFA -> temp step=2.
+    """login con password de un user CON MFA -> temp step=2 (password hecho).
 
-    Registra el caso (el login con password de un user con MFA devuelve un
-    temp_token step=2, no tokens directos — AC-18).
+    check-email -> login.start -> verify-password: como hay otro factor MFA
+    required ademas de la password, verify-password devuelve un temp step=2
+    nuevo (rolling) con los factores faltantes (no tokens). Registra el caso.
     """
+    temp = login_start_step2(http, origin, email, bypass)
+    if not temp:
+        return None
     r = runner.step(
         lambda_name='auth',
-        name='login.start con password+MFA (success: temp step=2)',
+        name='login.verify-password+MFA (success: temp step=2 faltantes)',
         method='POST',
         call=lambda: http.post(
             '/auth',
             body=make_body(
                 'login',
-                'start',
-                email=email,
+                'verify-password',
+                temp_token=temp,
                 password=STRONG_PASSWORD,
-                cf_turnstile_response='',
             ),
             origin=origin,
-            bypass_token=bypass,
         ),
         expected=200,
     )
@@ -1923,17 +1939,9 @@ def _login_admin(
     email: str,
     bypass: str,
 ) -> str | None:
-    """login.start con password -> access token directo (sin MFA)."""
-    r = http.post(
-        '/auth',
-        body=make_body(
-            'login',
-            'start',
-            email=email,
-            password=STRONG_PASSWORD,
-            cf_turnstile_response='',
-        ),
-        origin=origin,
-        bypass_token=bypass,
-    )
-    return field(r.body, 'access_token')
+    """login con password -> access token directo (sin MFA).
+
+    check-email -> login.start (precheck) -> verify-password: la password es
+    el unico factor required -> cierra con access+refresh.
+    """
+    return _login_password_direct(http, origin, email, bypass)

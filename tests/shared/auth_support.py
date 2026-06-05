@@ -89,7 +89,10 @@ def register_active_with_password(
         origin=origin,
     )
     # login.check-email (precheck con Turnstile/bypass) -> temp; login.start
-    # con ese temp en Authorization (ya NO valida Turnstile).
+    # (precheck en Authorization, SIN email) -> temp del flujo. `set-password`
+    # acepta cualquier temp (typ='temp', sin exigir flow/step), asi que el
+    # temp que devuelve login.start (step=2 del checklist para un user active,
+    # o step=1 passwordless) sirve para setear la password.
     rc = http.post(
         '/auth',
         body=make_body(
@@ -103,7 +106,7 @@ def register_active_with_password(
     )
     rl = http.post(
         '/auth',
-        body=make_body('login', 'start', email=email),
+        body=make_body('login', 'start'),
         origin=origin,
         bearer=field(rc.body, 'temp_token'),
     )

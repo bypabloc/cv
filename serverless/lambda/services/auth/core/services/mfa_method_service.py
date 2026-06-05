@@ -64,6 +64,29 @@ _METHOD_CONFIG: dict[str, dict[str, object | None]] = {
 # conjuntos, el orden no afecta la igualdad de los `satisfied`).
 _METHOD_ORDER = ('password', 'passwordless', 'totp', 'email_code', 'webauthn')
 
+
+def compose_required(
+    *, password_required: bool, mfa_required: list[str],
+) -> list[str]:
+    """Compone la lista de factores que el login EXIGE, en orden fijo.
+
+    Funcion pura (sin DB) para poder testear el invariante:
+    - `password` al frente si esta required.
+    - los MFA required (`totp`/`email_code`/`webauthn`) a continuacion.
+    - `passwordless` como FALLBACK SOLO si no hay ningun otro factor: es el
+      metodo por defecto (un user recien registrado entra passwordless) y
+      garantiza "siempre >=1 required".
+
+    Returns la lista deduplicada y ordenada por `_METHOD_ORDER`.
+    """
+    required: list[str] = []
+    if password_required:
+        required.append('password')
+    required.extend(mfa_required)
+    if not required:
+        required = ['passwordless']
+    return [m for m in _METHOD_ORDER if m in required]
+
 from .session_service import SessionService
 
 
@@ -142,17 +165,16 @@ class MfaMethodService:
         (`decide_mfa_step`) usa conjuntos, no le afecta.
         """
         with db_session() as session:
-            required: list[str] = []
-            if get_password_required(session, user_id=str(user_id)):
-                required.append('password')
-            required.extend(
-                list_required_methods(session, user_id=str(user_id)),
+            password_required = get_password_required(
+                session, user_id=str(user_id),
             )
-        if not required:
-            # Sin ningun factor explicito -> passwordless es el required por
-            # defecto (entrada por code/magic-link al email).
-            required = ['passwordless']
-        return [m for m in _METHOD_ORDER if m in required]
+            mfa_required = list_required_methods(
+                session, user_id=str(user_id),
+            )
+        return compose_required(
+            password_required=password_required,
+            mfa_required=mfa_required,
+        )
 
     def required_methods_config(
         self, *, user_id: UUID | str,

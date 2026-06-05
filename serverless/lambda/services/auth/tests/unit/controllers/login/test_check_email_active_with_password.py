@@ -1,10 +1,11 @@
-"""AC-C1/AC-1: check-email de un user active con password.
+"""AC-1: check-email de un user active con password + metodos required.
 
-Given un email que existe active y tiene password,
+Given un email que existe active, tiene password y marco password + totp
+como required,
 When se invoca login.check-email,
-Then devuelve {exists:true, has_password:true, temp_token} SIN la lista de
-metodos MFA. El temp_token es el precheck (flow='login' step=0) que autoriza
-login.start.
+Then devuelve {exists:true, has_password:true, temp_token, methods_required}
+con la lista de factores a completar (con su config de render). El temp_token
+es el precheck (flow='login' step=0) que autoriza login.start.
 """
 
 from unittest.mock import MagicMock
@@ -13,7 +14,7 @@ from .._helpers import _make_event_register_start
 
 
 def test_check_email_active_with_password(monkeypatch):
-    """AC-C1/AC-1: active con password -> exists+has_password+temp_token."""
+    """AC-1: active -> exists+has_password+temp_token+methods_required."""
     from controllers.login import check_email
     from shared.db.models.auth.enums import AuthUserStatus
 
@@ -29,12 +30,30 @@ def test_check_email_active_with_password(monkeypatch):
     }
     jwt_svc = MagicMock()
     jwt_svc.issue_temp.return_value = ('PRECHECK-TEMP-JWT', MagicMock())
+    mfa_svc = MagicMock()
+    mfa_svc.required_methods_config.return_value = [
+        {
+            'type': 'password',
+            'input': 'password',
+            'sent': None,
+            'dispatch_action': 'login.verify-password',
+        },
+        {
+            'type': 'totp',
+            'input': 'code6',
+            'sent': None,
+            'dispatch_action': 'login.verify-totp',
+        },
+    ]
 
     monkeypatch.setattr(check_email, 'UserService', lambda _c: user_svc)
     monkeypatch.setattr(
         check_email, 'PasswordService', lambda _c: password_svc,
     )
     monkeypatch.setattr(check_email, 'JwtService', lambda _c: jwt_svc)
+    monkeypatch.setattr(
+        check_email, 'MfaMethodService', lambda _c: mfa_svc,
+    )
     monkeypatch.setattr(check_email, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(check_email, 'RateLimitService', lambda _c: MagicMock())
     monkeypatch.setattr(
@@ -50,8 +69,21 @@ def test_check_email_active_with_password(monkeypatch):
         'exists': True,
         'has_password': True,
         'temp_token': 'PRECHECK-TEMP-JWT',
+        'methods_required': [
+            {
+                'type': 'password',
+                'input': 'password',
+                'sent': None,
+                'dispatch_action': 'login.verify-password',
+            },
+            {
+                'type': 'totp',
+                'input': 'code6',
+                'sent': None,
+                'dispatch_action': 'login.verify-totp',
+            },
+        ],
     }
-    assert 'methods' not in result['data']
     # El precheck se emite con flow='login' step=0.
     assert jwt_svc.issue_temp.call_args.kwargs['flow'] == 'login'
     assert jwt_svc.issue_temp.call_args.kwargs['step'] == 0

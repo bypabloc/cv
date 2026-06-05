@@ -25,7 +25,7 @@ def test_generate_and_persist_returns_plain_and_hash(monkeypatch):
     svc = magic_link_service.MagicLinkService(app_config=object())
     plain, h = svc.generate_and_persist(
         user_id='user-1',
-        kind=AuthLinkKind.REGISTER,
+        kind=AuthLinkKind.LOGIN,
     )
 
     assert plain == 'PLAIN_TOKEN'

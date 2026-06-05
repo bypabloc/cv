@@ -19,7 +19,7 @@ class VerifySetPasswordIn(BaseModel):
     `password`: min 12 chars (politica MVP). Hashing con argon2id en
     el service.
     `temp_token`: rolling temp JWT del flujo activo (typ=temp,
-    flow='register'|'login', step >=2 tras la verify del code/link).
+    flow='login', step >=2 tras la verify del code/link).
     """
 
     password: str = Field(..., min_length=12, max_length=128)

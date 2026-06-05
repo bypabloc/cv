@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     String,
@@ -59,4 +60,14 @@ class AuthCredentials(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    # La password, si existe, se exige por defecto al loguear (factor de la
+    # lista de metodos required). El user puede desmarcarla con
+    # `security.password.set-required` mientras le quede otro factor required
+    # (guard "siempre >=1 required"). Migration 00000006.
+    required: Mapped[bool] = mapped_column(
+        Boolean(),
+        nullable=False,
+        server_default=text('true'),
     )

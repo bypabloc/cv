@@ -19,7 +19,7 @@ def test_login_start_email_locked_404(monkeypatch):
     user = _make_user(email='visitor@example.com', status='locked')
 
     user_svc = MagicMock()
-    user_svc.get_by_email.return_value = user
+    user_svc.get_by_id.return_value = user
     jwt_svc = MagicMock()
     jwt_svc.verify.return_value = SimpleNamespace(
         sub=user.id, jti='precheck-jti', exp=9999999999, flow='login',

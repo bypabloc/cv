@@ -1,9 +1,9 @@
-"""AC-D2: email pending -> re-emite el email unificado (ya NO 409).
+"""AC-10: email pending -> re-emite el email unificado (alta en curso).
 
-Given un email que existe con status pending,
-When se invoca login.start (fusion register->login, bloque D),
+Given un precheck cuyo `sub` resuelve un user con status pending,
+When se invoca login.start,
 Then re-emite code + magic-link, publica el email y devuelve un temp_token
-  (flow login, step 1) + created=False. (Ya NO devuelve 409.)
+  (flow login, step 1) + created=False.
 """
 
 from types import SimpleNamespace
@@ -22,7 +22,7 @@ def test_login_start_email_pending_reemits(monkeypatch):
     pending_user.email = 'pending@example.com'
     pending_user.status = AuthUserStatus.PENDING
     user_svc = MagicMock()
-    user_svc.get_by_email.return_value = pending_user
+    user_svc.get_by_id.return_value = pending_user
 
     code_svc = MagicMock()
     code_svc.generate_and_persist.return_value = ('CODE5678', MagicMock())

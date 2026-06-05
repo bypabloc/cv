@@ -1,17 +1,27 @@
-"""Controller `login.start` — inicia el flujo de login passwordless.
+"""Controller `login.start` — inicia el flujo de login (modelo de lista).
 
-Espejo de `register.start`. El visitante existente pide login: el
-controller EXIGE el temp JWT precheck (`flow='login'` step=0, emitido por
-`login.check-email` tras validar Turnstile), valida que su `sub` matchee el
-email del body, lo blacklistea (rolling), genera code + magic-link nuevos,
-envia el email unificado, y devuelve un temp_token (rolling JWT, 5 min) con
-flow='login'.
+El visitante existente pide login: el controller EXIGE el temp JWT precheck
+(`flow='login'` step=0, emitido por `login.check-email` tras validar
+Turnstile), resuelve el user por el `sub` del precheck (NO por el email del
+body), lo blacklistea (rolling), y abre el checklist de factores.
 
-`login.start` ya NO valida Turnstile: el captcha se resuelve UNA sola vez en
-`login.check-email` (decision D-1/D-2). Sin un temp precheck valido ->
-401 MISSING_PRECHECK.
+Plan login-mfa-list-redesign:
+- `login.start` ya NO recibe ni valida la password (es un metodo mas de la
+  lista, se verifica con `login.verify-password`).
+- `login.start` ya NO recibe el email para un user existente (se resuelve por
+  el `sub`). El email solo va en el body en el UNICO caso de ALTA (email
+  nuevo, sub placeholder que no resuelve user).
+- Para un user `active`: emite un temp `login-mfa` step=2 con
+  `methods = required_methods()` (los factores a completar) y `satisfied=[]`.
+  El front los completa en cualquier orden; cada `verify-*` delega en
+  `decide_mfa_step`, que emite access+refresh cuando no quedan pendientes.
+- Para alta (email nuevo) / pending: flujo passwordless de entrada (envia el
+  email unificado con code + magic-link), temp `flow='login'` step=1.
 
-AC cubiertos: AC-4, AC-5, AC-6, AC-7, AC-20.
+`login.start` NO valida Turnstile: el captcha se resuelve UNA sola vez en
+`login.check-email`. Sin un temp precheck valido -> 401 MISSING_PRECHECK.
+
+AC cubiertos: AC-9, AC-10, AC-16.
 """
 
 from __future__ import annotations
@@ -36,15 +46,12 @@ from shared.db.models.auth.enums import (
 )
 from shared.lambda_kit.base_controller import BaseController
 
-from ._mfa_login import issue_terminal_tokens
-from ._password_check import check_password
+from ._mfa_login import build_mfa_flow
 
 _ENDPOINT = '/auth#login.start'
 _TEMP_TTL_SECONDS = 300
-# Factor fuerte: el temp JWT step=2 producido tras password lleva este
-# flow (decision 10). Solo metodos fuertes post-password.
+# El temp JWT step=2 del checklist lleva este flow (CSV de satisfechos).
 _MFA_FLOW = 'login-mfa'
-_MFA_METHODS = ['totp', 'webauthn']
 # El precheck (flow='login' step=0) lo emite login.check-email tras Turnstile.
 _PRECHECK_FLOW = 'login'
 
@@ -55,7 +62,7 @@ class Start(BaseController):
     event_model = LoginStartIn
 
     def validate(self) -> dict[str, Any]:
-        """Pydantic + rate-limit per-IP. SIN Turnstile (decision D-2).
+        """Pydantic + rate-limit per-IP. SIN Turnstile.
 
         El captcha se resuelve en `login.check-email`; aqui la autorizacion
         es el temp JWT precheck (verificado en `execute`).
@@ -93,8 +100,7 @@ class Start(BaseController):
 
         Returns:
             Los claims del temp (`flow='login'`) si es valido, o None si
-            falta / no verifica / no es del flow correcto. NO compara el
-            `sub` con el email (eso lo hace `execute` con el user resuelto).
+            falta / no verifica / no es del flow correcto.
         """
         token = self._extract_bearer(meta.authorization)
         if token is None:
@@ -125,47 +131,34 @@ class Start(BaseController):
         }
 
     def execute(self) -> dict[str, Any]:
-        """Verifica que el email exista/active, publica code + magic-link.
+        """Resuelve el user por el `sub` del precheck y abre el checklist.
 
         Returns:
-            Exito: `{is_valid: True, code: 0, data: {temp_token,
-            methods, expires_in}}` (HTTP 200).
-            Email no existe: 404 EMAIL_NOT_FOUND con suggest_register=True
-            (AC-5).
-            Email pending: 409 PENDING_VERIFICATION.
+            Exito (user active): 200 `{temp_token(step=2), methods, step:2}`
+            (AC-9).
+            Alta (email nuevo): 200 `{temp_token(step=1), methods:[...],
+            created:true}` (AC-10).
             Email disabled/locked: 404 EMAIL_NOT_FOUND, suggest_register
-            =False (AC-20, anti-enumeration).
+            =False (anti-enumeration).
         """
         data: LoginStartIn = self.validated_data  # type: ignore[assignment]
         meta = data.meta
-        email = data.email.lower()
         niche = data.niche
 
         user_svc = UserService(app_config)
-        code_svc = CodeService(app_config)
-        link_svc = MagicLinkService(app_config)
         jwt_svc = JwtService(app_config)
-        email_svc = EmailDispatchService(app_config)
         audit_svc = AuditService(app_config)
 
         # Precheck obligatorio: el temp JWT flow='login' step=0 emitido por
-        # login.check-email (tras Turnstile). Sin el -> 401 MISSING_PRECHECK
-        # (decision D-2). Reemplaza al Turnstile de este endpoint (AC-4/7).
+        # login.check-email (tras Turnstile). Sin el -> 401 MISSING_PRECHECK.
         claims = self._verify_precheck(jwt_svc=jwt_svc, meta=meta)
         if claims is None:
             return self._missing_precheck(audit_svc=audit_svc, meta=meta)
 
-        existing = user_svc.get_by_email(email)
+        # Resuelve el user por el sub del precheck (NO por el email del body).
+        existing = user_svc.get_by_id(str(claims.sub))
 
-        # Anti-cross-account (AC-5): si el email YA existe, el `sub` del
-        # precheck DEBE matchear su id (el precheck se emitio para ESE user).
-        # Si el email NO existe, es un alta (fusion register->login): el
-        # precheck se emitio con un sub placeholder, login.start crea el
-        # pending; no hay sub que comparar.
-        if existing is not None and str(claims.sub) != str(existing.id):
-            return self._missing_precheck(audit_svc=audit_svc, meta=meta)
-
-        # Precheck OK: lo blacklistea (rolling, single-use).
+        # El precheck es single-use: lo blacklistea (rolling).
         jwt_svc.blacklist(
             jti=claims.jti,
             exp=claims.exp,
@@ -173,27 +166,30 @@ class Start(BaseController):
             reason='rotation',
         )
 
-        # Fusion register -> login (plan admin-security-overview, bloque D):
-        # si el email NO existe, se CREA el user pending (lo que antes hacia
-        # register.start) y se envia el magic-link + code. Si esta pending,
-        # se re-emiten los artefactos (sin 409). El flujo es passwordless aqui:
-        # el password directo solo aplica a un user ya `active`.
-        if existing is None or existing.status == AuthUserStatus.PENDING:
-            created = existing is None
-            user = (
-                user_svc.create_pending(email=email)
-                if created
-                else existing
-            )
+        # Alta (fusion register -> login): el sub del precheck es un
+        # placeholder que no resuelve user. Se exige el email en el body para
+        # crear el pending (el unico caso donde el email viaja en el body).
+        if existing is None:
+            if data.email is None:
+                return self._missing_precheck(audit_svc=audit_svc, meta=meta)
             return self._issue_entry_email(
-                user=user,
+                user=user_svc.create_pending(email=data.email.lower()),
                 niche=niche,
                 meta=meta,
-                created=created,
-                code_svc=code_svc,
-                link_svc=link_svc,
+                created=True,
                 jwt_svc=jwt_svc,
-                email_svc=email_svc,
+                audit_svc=audit_svc,
+                user_svc=user_svc,
+            )
+
+        if existing.status == AuthUserStatus.PENDING:
+            # Pending: re-emite los artefactos passwordless (alta en curso).
+            return self._issue_entry_email(
+                user=existing,
+                niche=niche,
+                meta=meta,
+                created=False,
+                jwt_svc=jwt_svc,
                 audit_svc=audit_svc,
                 user_svc=user_svc,
             )
@@ -221,32 +217,55 @@ class Start(BaseController):
                 },
             }
 
-        # status active + password en el body (plan 02, decision 9): valida
-        # con argon2 ANTES de la rama passwordless. NO toca el passwordless.
-        if data.password is not None:
-            return self._login_with_password(
-                user=existing,
-                password=data.password,
-                niche=niche,
-                meta=meta,
-                user_svc=user_svc,
-                jwt_svc=jwt_svc,
-                audit_svc=audit_svc,
-            )
-
-        # status active passwordless: re-emite code + magic-link.
-        return self._issue_entry_email(
+        # status active: abre el checklist de factores required (step=2).
+        return self._open_checklist(
             user=existing,
-            niche=niche,
             meta=meta,
-            created=False,
-            code_svc=code_svc,
-            link_svc=link_svc,
+            niche=niche,
             jwt_svc=jwt_svc,
-            email_svc=email_svc,
             audit_svc=audit_svc,
-            user_svc=user_svc,
         )
+
+    def _open_checklist(
+        self,
+        *,
+        user: Any,
+        meta: Any,
+        niche: str | None,
+        jwt_svc: Any,
+        audit_svc: Any,
+    ) -> dict[str, Any]:
+        """Emite el temp step=2 con los factores required a completar (AC-9).
+
+        El front recibe `methods` (los pendientes, aun sin nada satisfecho) y
+        completa cada uno con su `verify-*`, que delega en `decide_mfa_step`.
+        """
+        methods = MfaMethodService(app_config).required_methods(
+            user_id=user.id,
+        )
+        temp_token, _ = jwt_svc.issue_temp(
+            user_id=user.id,
+            flow=build_mfa_flow([]),
+            step=2,
+        )
+        audit_svc.log(
+            event='login.start',
+            success=True,
+            user_id=user.id,
+            ip=meta.ip,
+            user_agent=meta.user_agent,
+            niche=niche,
+        )
+        return {
+            'is_valid': True,
+            'code': 0,
+            'data': {
+                'temp_token': temp_token,
+                'methods': methods,
+                'step': 2,
+                'mfa_complete': False,
+            },
+        }
 
     def _issue_entry_email(
         self,
@@ -255,21 +274,20 @@ class Start(BaseController):
         niche: str | None,
         meta: Any,
         created: bool,
-        code_svc: Any,
-        link_svc: Any,
         jwt_svc: Any,
-        email_svc: Any,
         audit_svc: Any,
         user_svc: Any,
     ) -> dict[str, Any]:
         """Genera code + magic-link, envia el email unificado, emite el temp.
 
-        Es el flujo passwordless de entrada UNIFICADO (login + registro): un
+        Es el flujo passwordless de entrada UNIFICADO (alta + pending): un
         user nuevo (created=True) o pending recibe el magic-link + code para
-        verificar; un user active los recibe para loguear. El `verify-*` cierra
-        el flujo (pending -> active si created/pending).
+        verificar. El `verify-*` cierra el flujo (pending -> active).
         """
-        # Para un user nuevo no hay codes/links previos que invalidar.
+        code_svc = CodeService(app_config)
+        link_svc = MagicLinkService(app_config)
+        email_svc = EmailDispatchService(app_config)
+
         if not created:
             user_svc.invalidate_active_codes_and_links(
                 user_id=str(user.id),
@@ -292,8 +310,6 @@ class Start(BaseController):
             f'{app_config.magic_link_base_url}'
             f'?operation=login&action=verify-magic-link&token={token}'
         )
-        # UN solo email con el magic-link Y el code (alternativas). LINK y CODE
-        # comparten TTL (15 min), por eso un solo expires_in_min.
         email_svc.publish_unified(
             to=user.email,
             user_id=user.id,
@@ -324,88 +340,8 @@ class Start(BaseController):
             'code': 0,
             'data': {
                 'temp_token': temp_token,
-                'methods': ['magic-link', 'email-code'],
+                'methods': ['passwordless'],
                 'expires_in': _TEMP_TTL_SECONDS,
                 'created': created,
-            },
-        }
-
-    def _login_with_password(
-        self,
-        *,
-        user: Any,
-        password: str,
-        niche: str | None,
-        meta: Any,
-        user_svc: Any,
-        jwt_svc: Any,
-        audit_svc: Any,
-    ) -> dict[str, Any]:
-        """Login con password directo (plan 02).
-
-        Returns:
-            401 INVALID_PASSWORD + failed_attempts++ si no matchea (AC-21).
-            200 access+refresh si el user no tiene MFA (AC-20).
-            200 temp step=2 + methods=['totp','webauthn'] si tiene MFA
-            (AC-18).
-        """
-        if not check_password(user_id=user.id, password=password):
-            user_svc.increment_failed_attempts(user)
-            audit_svc.log(
-                event='login.start',
-                success=False,
-                user_id=user.id,
-                error_code='INVALID_PASSWORD',
-                ip=meta.ip,
-                niche=niche,
-            )
-            return {
-                'is_valid': False,
-                'code': 4000,
-                'status': 401,
-                'data': {'error': 'INVALID_PASSWORD'},
-            }
-
-        mfa_svc = MfaMethodService(app_config)
-        if mfa_svc.count_active(user_id=user.id) == 0:
-            tokens = issue_terminal_tokens(
-                jwt_svc=jwt_svc,
-                user_id=user.id,
-                app_config=app_config,
-                ip=meta.ip,
-                country=meta.country,
-                user_agent=meta.user_agent,
-            )
-            user_svc.update_last_login(user)
-            audit_svc.log(
-                event='login.start',
-                success=True,
-                user_id=user.id,
-                ip=meta.ip,
-                user_agent=meta.user_agent,
-                niche=niche,
-            )
-            return {'is_valid': True, 'code': 0, 'data': tokens}
-
-        temp_token, _ = jwt_svc.issue_temp(
-            user_id=user.id,
-            flow=_MFA_FLOW,
-            step=2,
-        )
-        audit_svc.log(
-            event='login.start',
-            success=True,
-            user_id=user.id,
-            ip=meta.ip,
-            user_agent=meta.user_agent,
-            niche=niche,
-        )
-        return {
-            'is_valid': True,
-            'code': 0,
-            'data': {
-                'temp_token': temp_token,
-                'methods': list(_MFA_METHODS),
-                'step': 2,
             },
         }

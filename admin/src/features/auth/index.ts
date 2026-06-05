@@ -22,6 +22,7 @@ export type {
 export { AuthGuard } from "./components/auth-guard";
 export { LoginChecklist } from "./components/login-checklist";
 export { LoginForm } from "./components/login-form";
+export { LoginMethodPicker } from "./components/login-method-picker";
 export { LoginPasswordInput } from "./components/login-password-input";
 export { LoginTotpInput } from "./components/login-totp-input";
 export { MagicLinkPrompt } from "./components/magic-link-prompt";

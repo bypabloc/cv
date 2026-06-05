@@ -90,6 +90,21 @@ class LoginVerifyPasswordIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
 
 
+class LoginSendEmailCodeIn(BaseModel):
+    """POST /auth operation=login action=send-email-code.
+
+    Dentro del checklist (temp step=2): genera+envia el code de 8 chars al
+    email del user del temp, para que pueda satisfacer el factor `passwordless`
+    / `email_code`. Reemplaza el envio que antes hacia `login.start` para el
+    caso passwordless.
+    """
+
+    temp_token: str = Field(..., min_length=20)
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
 class LoginVerifyTotpIn(BaseModel):
     """POST /auth operation=login action=verify-totp (plan 02).
 

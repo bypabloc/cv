@@ -126,12 +126,13 @@ class UserService:
         self,
         *,
         user_id: str,
-        kind_code: AuthCodeKind = AuthCodeKind.REGISTER,
-        kind_link: AuthLinkKind = AuthLinkKind.REGISTER,
+        kind_code: AuthCodeKind = AuthCodeKind.LOGIN,
+        kind_link: AuthLinkKind = AuthLinkKind.LOGIN,
     ) -> None:
         """Invalida codes + magic_links activos del user (AC-19).
 
-        Usado por `register.start` cuando el visitante reinicia el flow.
+        Usado por `login.start` cuando el visitante reinicia el flow de
+        entrada (alta/pending passwordless).
         """
         with db_session() as session:
             invalidate_active_codes_and_links(

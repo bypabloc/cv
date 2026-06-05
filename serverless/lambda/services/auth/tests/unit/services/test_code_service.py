@@ -21,7 +21,7 @@ def test_generate_and_persist_returns_code_and_hash(monkeypatch):
     svc = code_service.CodeService(app_config=object())
     code, code_h = svc.generate_and_persist(
         user_id='user-1',
-        kind=AuthCodeKind.REGISTER,
+        kind=AuthCodeKind.LOGIN,
     )
 
     assert code == 'ABCDEFGH'
@@ -45,7 +45,7 @@ def test_verify_returns_false_when_wrong_code(monkeypatch):
     user = MagicMock(id='user-x')
 
     assert (
-        svc.verify(user=user, kind=AuthCodeKind.REGISTER, code='WRONGSEQ')
+        svc.verify(user=user, kind=AuthCodeKind.LOGIN, code='WRONGSEQ')
         is False
     )
 
@@ -66,6 +66,6 @@ def test_verify_returns_true_when_match(monkeypatch):
     user = MagicMock(id='user-x')
 
     assert (
-        svc.verify(user=user, kind=AuthCodeKind.REGISTER, code='ABCDEFGH')
+        svc.verify(user=user, kind=AuthCodeKind.LOGIN, code='ABCDEFGH')
         is True
     )

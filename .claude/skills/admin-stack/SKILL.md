@@ -184,7 +184,7 @@ portfolio. Stack 100% 2026 (React 19.2.6 + Next.js 16.2.6).
 - **SIEMPRE** access + refresh + user persisten en `localStorage` via Zustand `persist`. El admin es SPA cross-origin (admin → api): HttpOnly cookies cross-site requieren `SameSite=None` + `Domain=.the-full-stack.com`, abriendo vectores CSRF en los 6 niches y rompiendo portabilidad. Defensa primaria: CSP estricta `script-src 'self'` sin `unsafe-inline`/`unsafe-eval` + SRI en third-party + access TTL 15min + refresh rotation con family_id reuse detection.
 - **SIEMPRE** el fetch wrapper usa el mutex de refresh: un solo `/session/refresh` in-flight, los demas requests esperan el resultado.
 - **SIEMPRE** rate-limit del client: si 429 → mostrar toast con `retry_after`, no reintentar automaticamente.
-- **SIEMPRE** Turnstile en register.start y login.start (mismo sitekey que las 6 apps, hostname `admin.portfolio.*` se agrega a la lista en Cloudflare).
+- **SIEMPRE** Turnstile en login.check-email (mismo sitekey que las 6 apps, hostname `admin.portfolio.*` se agrega a la lista en Cloudflare).
 - **SIEMPRE** un componente vive en `src/features/<X>/components/` SI tiene logica de dominio. Solo se promueve a `src/components/ui/` cuando 2+ features lo usan y no depende de un API especifico.
 - **SIEMPRE** componentes nuevos reciben `ref` como prop normal — **NUNCA** `forwardRef`. shadcn ya migrado.
 - **SIEMPRE** Biome `components/ui/*.tsx` esta exento de reglas strict (los patterns de shadcn chocan).
@@ -193,7 +193,7 @@ portfolio. Stack 100% 2026 (React 19.2.6 + Next.js 16.2.6).
 - **SIEMPRE** React Compiler habilitado (`reactCompiler: true` en `next.config.ts`). Opt-out per file con `'use no memo'` solo si rompe algo medido.
 - **SIEMPRE** asegurar Rules of React (pure components, no mutar props/state, side effects en useEffect, hooks unconditional) — el Compiler las enforces.
 - **SIEMPRE** elegir UNO entre `useOptimistic` o Tanstack `onMutate` por mutation — NO mezclar.
-- **SIEMPRE** forms de auth (login/register/verify) usan **react-hook-form + Zod + shadcn `<Form>` + Tanstack `useMutation`**. NO `useActionState` solo (forms complejos con multi-step).
+- **SIEMPRE** forms de auth (login/verify) usan **react-hook-form + Zod + shadcn `<Form>` + Tanstack `useMutation`**. NO `useActionState` solo (forms complejos con multi-step).
 - **SIEMPRE** `useSuspenseQuery` cuando la data es required para renderizar la page (Error Boundary cubre fails). `useQuery` cuando la data es opcional o inline.
 - **SIEMPRE** `useSearchParams()` dentro de `<Suspense>` boundary (limitacion del export mode).
 - **NUNCA** API routes (`app/api/*/route.ts`) — `output: 'export'` no las soporta. Todo backend = Lambdas externas.

@@ -128,22 +128,24 @@ import {http, HttpResponse} from 'msw'
 const API = 'https://api.test.the-full-stack.com'
 
 export const authHandlers = [
-  // register.start
+  // login.check-email (unico punto de entrada; el alta tambien pasa por aqui)
   http.post(`${API}/auth`, async ({request}) => {
     const body = await request.json() as {operation: string; action: string; data: Record<string, unknown>}
-    if (body.operation === 'register' && body.action === 'start') {
+    if (body.operation === 'login' && body.action === 'check-email') {
       const email = body.data.email as string
       if (email === 'exists@test.com') {
-        return HttpResponse.json(
-          {error: 'EMAIL_ALREADY_REGISTERED', code: 4090, message: 'Email ya registrado'},
-          {status: 409},
-        )
+        return HttpResponse.json({
+          is_valid: true,
+          code: 0,
+          data: {exists: true, has_password: true, temp_token: 'mock-precheck', methods_required: []},
+        }, {status: 200})
       }
+      // email nuevo -> {exists:false, temp_token} (el alta la cierra login.start)
       return HttpResponse.json({
         is_valid: true,
         code: 0,
-        data: {temp_token: 'mock-temp', user_id: 'usr_01', expires_in: 300},
-      }, {status: 201})
+        data: {exists: false, temp_token: 'mock-precheck'},
+      }, {status: 200})
     }
 
     // login.start con email inexistente

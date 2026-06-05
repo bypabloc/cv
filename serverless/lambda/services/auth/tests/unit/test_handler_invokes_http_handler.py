@@ -67,7 +67,7 @@ def test_handler_returns_error_for_missing_action():
             'CF-Connecting-IP': '203.0.113.10',
         },
         'queryStringParameters': None,
-        'body': ('{"operation":"register","data":{}}'),
+        'body': ('{"operation":"login","data":{}}'),
         'requestContext': {
             'identity': {'sourceIp': '203.0.113.10'},
             'requestId': 'r2',

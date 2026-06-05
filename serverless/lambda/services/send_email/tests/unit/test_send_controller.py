@@ -20,7 +20,7 @@ def test_send_controller_normalizes_success():
 
     # El controller recibe el `data` (no {operation,action,data}).
     data = {
-        'kind': 'register-code',
+        'kind': 'login-code',
         'to': ['user@example.com'],
         'data': {'code': 'X', 'expires_in_min': 15},
     }
@@ -33,11 +33,11 @@ def test_send_controller_normalizes_success():
 
     assert result == {
         'is_valid': True,
-        'data': {'message_id': 'msg-42', 'kind': 'register-code'},
+        'data': {'message_id': 'msg-42', 'kind': 'login-code'},
         'code': 0,
     }
     mock_send.assert_called_once_with(
-        kind='register-code',
+        kind='login-code',
         to=['user@example.com'],
         data={'code': 'X', 'expires_in_min': 15},
         reply_to=None,

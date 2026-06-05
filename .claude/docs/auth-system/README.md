@@ -9,7 +9,7 @@
 
 | Componente | Que es | Donde vive |
 |---|---|---|
-| Lambda `auth` | HTTP POST `/auth` — register, login, verify, session (refresh/logout) | `serverless/lambda/services/auth/` |
+| Lambda `auth` | HTTP POST `/auth` — login, verify, session (refresh/logout), mfa, webauthn, security. La operation `register` fue ELIMINADA: el alta ocurre dentro de `login` (`login.start` crea el user `pending`) | `serverless/lambda/services/auth/` |
 | Lambda `auth_email_worker` | SQS consumer — renderiza y envia magic-link + code por SES | `serverless/lambda/services/auth_email_worker/` |
 | `shared.auth` | Portador unico de `pyjwt` + `argon2-cffi` + generador de codes/tokens | `serverless/lambda/shared/auth/` |
 | Schema Neon `auth_*` | 5 tablas: users, credentials, email_codes, magic_links, audit_log | `serverless/lambda/shared/db/models/auth/` |
@@ -60,7 +60,9 @@
 6. **Email async**: cola SQS `portfolio-auth-email-${stage}` + worker
    `auth_email_worker` (NO se reusa `contact_worker` — aislamiento de
    dominios).
-7. **Turnstile**: obligatorio en `register.start` y `login.start`. El
+7. **Turnstile**: obligatorio SOLO en `login.check-email` (unico punto de
+   entrada con Turnstile; cubre tambien el alta fusionada). `login.start`
+   exige el temp JWT precheck que emite `check-email`, NO Turnstile. El
    resto del flujo confia en el JWT temp + rate-limit.
 8. **Login UX (email no existe)**: 404 +
    `{suggest_register: true, methods: []}`. Si existe + active sin
@@ -142,7 +144,7 @@ python devtools/run.py serverless deploy --lambda=auth \
 
 # Seed de rate-limit (1 vez por stage)
 python devtools/run.py serverless rate-limit set --stage=dev \
-  --endpoint='register.start' --limit=3 --window=3600 \
+  --endpoint='login.check-email' --limit=3 --window=3600 \
   --aws-profile=tfs-dev
 # ... otras reglas en 03-rate-limit-rules.md
 ```

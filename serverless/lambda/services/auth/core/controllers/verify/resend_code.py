@@ -28,9 +28,9 @@ from shared.lambda_kit.base_controller import BaseController
 
 _ENDPOINT = '/auth#verify.resend-code'
 
-# Map flow del temp JWT -> kinds del code / magic-link.
+# Map flow del temp JWT -> kinds del code / magic-link. El flujo de entrada
+# es `login` unico (register eliminado): el unico flow que re-emite es login.
 _FLOW_TO_KINDS = {
-    'register': (AuthCodeKind.REGISTER, AuthLinkKind.REGISTER),
     'login': (AuthCodeKind.LOGIN, AuthLinkKind.LOGIN),
 }
 
@@ -120,8 +120,8 @@ class ResendCode(BaseController):
             }
 
         kind_code, kind_link = _FLOW_TO_KINDS.get(
-            claims.flow or 'register',
-            (AuthCodeKind.REGISTER, AuthLinkKind.REGISTER),
+            claims.flow or 'login',
+            (AuthCodeKind.LOGIN, AuthLinkKind.LOGIN),
         )
 
         # Throttle: minimo 60s desde el ultimo code (AC-21).

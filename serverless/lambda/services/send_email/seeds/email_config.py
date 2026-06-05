@@ -15,10 +15,6 @@ from __future__ import annotations
 # emails transaccionales; `contact` se arma con el nombre del visitante.
 EMAIL_CONFIG: list[dict[str, str]] = [
     {
-        'kind': 'register-magic-link',
-        'subject': 'Confirma tu cuenta en The Full Stack',
-    },
-    {
         'kind': 'login-magic-link',
         'subject': 'Tu enlace de acceso a The Full Stack',
     },
@@ -31,20 +27,12 @@ EMAIL_CONFIG: list[dict[str, str]] = [
         'subject': 'Confirma tu nuevo email en The Full Stack',
     },
     {
-        'kind': 'register-code',
-        'subject': 'Tu código de verificación: The Full Stack',
-    },
-    {
         'kind': 'login-code',
         'subject': 'Tu código de acceso a The Full Stack',
     },
     {
-        # Email unificado de register: magic-link + code en un solo correo.
-        'kind': 'register-unified',
-        'subject': 'Confirma tu cuenta en The Full Stack',
-    },
-    {
-        # Email unificado de login: magic-link + code en un solo correo.
+        # Email unificado de login (alta + entrada): magic-link + code en un
+        # solo correo. El alta ocurre dentro del login (register eliminado).
         'kind': 'login-unified',
         'subject': 'Tu acceso a The Full Stack',
     },

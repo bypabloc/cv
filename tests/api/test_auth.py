@@ -1,7 +1,7 @@
 """E2E del Lambda auth (POST/GET /auth) — register/login/verify/session.
 
 Porta `devtools/api_e2e/flow_auth.run_auth`: el flujo de registro->sesion
-completo (register.start -> verify-code -> refresh -> login.start ->
+completo (login.start (alta) -> verify-code -> refresh -> login.start ->
 set-password -> logout), el magic-link GET (302) + POST (JSON), el login
 con password (directo + 2-step) y los casos de error (email inexistente,
 tokens falsos, mfa/webauthn sin JWT). Los flujos MFA viven en

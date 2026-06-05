@@ -22,8 +22,8 @@ from shared.auth_support import FAKE_JWT
 from shared.auth_support import STRONG_PASSWORD
 from shared.auth_support import WRONG_PASSWORD
 from shared.auth_support import Synthetic
+from shared.auth_support import create_active_user_with_password
 from shared.auth_support import field
-from shared.auth_support import register_active_with_password
 from shared.config import NICHE
 from shared.config import TRACKING_EVENT_TYPE_ID
 from shared.config import admin_origin
@@ -302,7 +302,7 @@ def run_tracking(
 
 
 # =========================================================================
-# Port de flow_auth -> register + login (passwordless/magic-link/password)
+# Port de flow_auth -> login unico (passwordless/magic-link/password + alta)
 # =========================================================================
 
 
@@ -367,47 +367,45 @@ def _run_auth_success(
     bypass: str,
     created_emails: list[str],
 ) -> str | None:
-    """Flujo registro->sesion completo. Devuelve access2 (vivo) para users."""
+    """Flujo alta->sesion completo (login unico). Devuelve access2 para users."""
     email = synthetic_email(run_id, 'auth')
     created_emails.append(email)
 
-    # 1. register.start -> temp_token, user_id
+    # 1. login.check-email (precheck) + login.start (con email, alta) -> crea el
+    #    user pending + emite el temp del flujo de entrada.
+    precheck0 = login_precheck(http, origin, email, bypass)
     r = runner.step(
         lambda_name='auth',
-        name='register.start (success)',
+        name='login.check-email + start (success: alta)',
         method='POST',
         call=lambda: http.post(
             '/auth',
-            body=make_body(
-                'register',
-                'start',
-                email=email,
-                cf_turnstile_response='',
-            ),
+            body=make_body('login', 'start', email=email),
             origin=origin,
-            bypass_token=bypass,
+            bearer=precheck0,
         ),
         expected=200,
+        note='precheck de check-email en Authorization',
     )
     temp_token = field(r.body, 'temp_token')
     user_id = field(r.body, 'user_id') or env.find_user_id(email)
     if not (temp_token and user_id):
         return None
 
-    # 2. seed code + register.verify-code -> access1 + refresh1
+    # 2. seed code + login.verify-code (activa el pending) -> access1 + refresh1
     seeded = env.seed_code(
         user_id=user_id,
-        kind='register',
+        kind='login',
         plaintext='ABCDEFGH',
     )
     r = runner.step(
         lambda_name='auth',
-        name='register.verify-code (success)',
+        name='login.verify-code (success: activa el pending)',
         method='POST',
         call=lambda: http.post(
             '/auth',
             body=make_body(
-                'register',
+                'login',
                 'verify-code',
                 code='ABCDEFGH',
                 temp_token=temp_token,
@@ -501,30 +499,27 @@ def _run_magic_link_get(
     bypass: str,
     created_emails: list[str],
 ) -> None:
-    """register.start -> seed magic-link -> verify-magic-link GET (302) + POST.
+    """login.start (alta) -> seed magic-link -> verify-magic-link GET (302) + POST.
 
-    Prueba el fix del magic-link: el GET (click en el email) responde 302
-    Location al admin/callback con los tokens en el fragment; el POST (el
-    admin por fetch) responde 200 JSON. Usa 2 magic-links sembrados (uno
-    por metodo: el link es single-use).
+    Prueba el magic-link de entrada (login unico): el GET (click en el email)
+    responde 302 Location al admin/callback con los tokens en el fragment; el
+    POST (el admin por fetch) responde 200 JSON. Usa 2 magic-links sembrados
+    (uno por metodo: el link es single-use). El alta crea el user via
+    login.start (el alta ocurre dentro del login; register eliminado).
     """
     email = synthetic_email(run_id, 'mlink')
     created_emails.append(email)
 
+    precheck = login_precheck(http, origin, email, bypass)
     r = runner.step(
         lambda_name='auth',
-        name='register.start (magic-link GET setup)',
+        name='login.start (magic-link GET setup: alta)',
         method='POST',
         call=lambda: http.post(
             '/auth',
-            body=make_body(
-                'register',
-                'start',
-                email=email,
-                cf_turnstile_response='',
-            ),
+            body=make_body('login', 'start', email=email),
             origin=origin,
-            bypass_token=bypass,
+            bearer=precheck,
         ),
         expected=200,
     )
@@ -537,17 +532,17 @@ def _run_magic_link_get(
     token_get = secrets.token_urlsafe(32)
     seeded = env.seed_magic_link(
         user_id=user_id,
-        kind='register',
+        kind='login',
         plaintext=token_get,
     )
     rg = runner.step(
         lambda_name='auth',
-        name='register.verify-magic-link (success: GET 302)',
+        name='login.verify-magic-link (success: GET 302)',
         method='GET',
         call=lambda: http.get(
             '/auth',
             params={
-                'operation': 'register',
+                'operation': 'login',
                 'action': 'verify-magic-link',
                 'token': token_get,
             },
@@ -560,7 +555,7 @@ def _run_magic_link_get(
     ok_location = bool(location and '/callback#access=' in location)
     runner.step(
         lambda_name='auth',
-        name='register.verify-magic-link (GET Location -> admin/callback)',
+        name='login.verify-magic-link (GET Location -> admin/callback)',
         method='GET',
         call=lambda: Synthetic(200 if ok_location else 0),
         expected=200,
@@ -573,36 +568,32 @@ def _run_magic_link_get(
 
     # POST: JSON 200 con los tokens (el admin lo llama por fetch). Necesita
     # un magic-link VIGENTE (sin consumir). El del user anterior ya se
-    # consumio en el GET, asi que usamos un user nuevo (su register.start
-    # deja una fila fresca register/consumed_at IS NULL para sembrar).
+    # consumio en el GET, asi que usamos un user nuevo (su login.start deja
+    # una fila fresca login/consumed_at IS NULL para sembrar).
     email_post = synthetic_email(run_id, 'mlinkp')
     created_emails.append(email_post)
+    precheck_post = login_precheck(http, origin, email_post, bypass)
     rp = http.post(
         '/auth',
-        body=make_body(
-            'register',
-            'start',
-            email=email_post,
-            cf_turnstile_response='',
-        ),
+        body=make_body('login', 'start', email=email_post),
         origin=origin,
-        bypass_token=bypass,
+        bearer=precheck_post,
     )
     user_post = field(rp.body, 'user_id') or env.find_user_id(email_post)
     token_post = secrets.token_urlsafe(32)
     if user_post:
         env.seed_magic_link(
             user_id=user_post,
-            kind='register',
+            kind='login',
             plaintext=token_post,
         )
     runner.step(
         lambda_name='auth',
-        name='register.verify-magic-link (success: POST JSON)',
+        name='login.verify-magic-link (success: POST JSON)',
         method='POST',
         call=lambda: http.post(
             '/auth',
-            body=make_body('register', 'verify-magic-link', token=token_post),
+            body=make_body('login', 'verify-magic-link', token=token_post),
             origin=origin,
         ),
         expected=200,
@@ -628,7 +619,7 @@ def _run_login_with_password(
     """
     email = synthetic_email(run_id, 'pwd')
     created_emails.append(email)
-    user_id = register_active_with_password(http, env, origin, email, bypass)
+    user_id = create_active_user_with_password(http, env, origin, email, bypass)
     if not user_id:
         print('  [SKIP] login con password: registro fallo')
         return
@@ -747,12 +738,12 @@ def _run_auth_errors(
         )
     runner.case(
         lambda_name='auth',
-        name='register.verify-code (error: token falso)',
+        name='login.verify-code (error: token falso)',
         method='POST',
         call=lambda: http.post(
             '/auth',
             body=make_body(
-                'register',
+                'login',
                 'verify-code',
                 code='ABCDEFGH',
                 temp_token=FAKE_JWT,
@@ -763,12 +754,12 @@ def _run_auth_errors(
     )
     runner.case(
         lambda_name='auth',
-        name='register.verify-magic-link (error: token falso -> JSON 400)',
+        name='login.verify-magic-link (error: token falso -> JSON 400)',
         method='GET',
         call=lambda: http.get(
             '/auth',
             params={
-                'operation': 'register',
+                'operation': 'login',
                 'action': 'verify-magic-link',
                 'token': secrets.token_urlsafe(32),
             },
@@ -919,7 +910,7 @@ def _run_totp(
     """TOTP completo: setup -> confirm -> login con 2FA + errores."""
     email = synthetic_email(run_id, 'totp')
     created_emails.append(email)
-    user_id = register_active_with_password(http, env, origin, email, bypass)
+    user_id = create_active_user_with_password(http, env, origin, email, bypass)
     access = _login_password_direct(http, origin, email, bypass)
     if not (user_id and access):
         print('  [SKIP] mfa TOTP: setup del user fallo')
@@ -1004,7 +995,7 @@ def _run_email_code(
     """email-code como 2do metodo + list + set-preferred + disable."""
     email = synthetic_email(run_id, 'emfa')
     created_emails.append(email)
-    user_id = register_active_with_password(http, env, origin, email, bypass)
+    user_id = create_active_user_with_password(http, env, origin, email, bypass)
     access = _login_password_direct(http, origin, email, bypass)
     if not (user_id and access):
         print('  [SKIP] mfa email-code: setup del user fallo')
@@ -1080,7 +1071,7 @@ def _run_recovery_codes(
     """recovery-codes-generate -> login con MFA -> recovery-codes-consume."""
     email = synthetic_email(run_id, 'rcov')
     created_emails.append(email)
-    user_id = register_active_with_password(http, env, origin, email, bypass)
+    user_id = create_active_user_with_password(http, env, origin, email, bypass)
     access = _login_password_direct(http, origin, email, bypass)
     if not (user_id and access):
         print('  [SKIP] mfa recovery: setup del user fallo')
@@ -1422,7 +1413,7 @@ def _run_revoke_session(
     """Crea un user con 2 sesiones, revoca la NO-actual (success)."""
     email = synthetic_email(run_id, 'sess')
     created_emails.append(email)
-    user_id = register_active_with_password(http, env, origin, email, bypass)
+    user_id = create_active_user_with_password(http, env, origin, email, bypass)
     if not user_id:
         print('  [SKIP] revoke-session: registro fallo')
         return
@@ -1466,7 +1457,7 @@ def _run_change_email(
     """change-email -> seed token -> confirm-email-change -> verifica en DB."""
     email = synthetic_email(run_id, 'chmail')
     created_emails.append(email)
-    user_id = register_active_with_password(http, env, origin, email, bypass)
+    user_id = create_active_user_with_password(http, env, origin, email, bypass)
     access = _login_password_direct(http, origin, email, bypass)
     if not (user_id and access):
         print('  [SKIP] change-email: setup del user fallo')
@@ -1537,7 +1528,7 @@ def _run_delete_account(
     """delete-account con el sentinel -> verifica soft-delete en Neon."""
     email = synthetic_email(run_id, 'del')
     created_emails.append(email)
-    user_id = register_active_with_password(http, env, origin, email, bypass)
+    user_id = create_active_user_with_password(http, env, origin, email, bypass)
     access = _login_password_direct(http, origin, email, bypass)
     if not (user_id and access):
         print('  [SKIP] delete-account: setup del user fallo')
@@ -1627,7 +1618,7 @@ def run_admin(
     """Promueve un admin sintetico, corre admin.*, restaura la whitelist."""
     admin_email = synthetic_email(run_id, 'admin')
     created_emails.append(admin_email)
-    admin_id = register_active_with_password(
+    admin_id = create_active_user_with_password(
         http,
         env,
         origin,
@@ -1638,7 +1629,7 @@ def run_admin(
 
     target_email = synthetic_email(run_id, 'target')
     created_emails.append(target_email)
-    target_id = register_active_with_password(
+    target_id = create_active_user_with_password(
         http,
         env,
         origin,

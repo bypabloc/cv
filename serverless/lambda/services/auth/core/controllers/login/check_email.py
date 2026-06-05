@@ -1,17 +1,19 @@
-"""Controller `login.check-email` — existencia + has_password (gated).
+"""Controller `login.check-email` — existencia + has_password + metodos.
 
-Paso 1 del login unificado (bloque C). Dado un email (con Turnstile +
-rate-limit), reporta si existe y si tiene password configurado, pero NO la
-lista de metodos MFA: ese dato sensible se revela solo tras verificar la
-password (o el primer factor passwordless), para no exponer el
-reconnaissance de "que 2FA usa cada cuenta" antes de autenticar.
+Paso 0 del login (unico endpoint con Turnstile). Dado un email (con
+Turnstile + rate-limit), reporta si existe, si tiene password, y para un user
+`active` la LISTA de factores `required` con su config de render
+(`methods_required`), para que el front monte el checklist de metodos a
+completar en cualquier orden (plan login-mfa-list-redesign).
 
-La EXISTENCIA del email se expone deliberadamente (ya era enumerable hoy):
-trade-off aceptado por el dueno del producto. Los estados disabled/locked/
-deleted se reportan como `unavailable` (existe, sin metodos) sin revelar el
-estado real.
+Trade-off anti-enumeration ACEPTADO por el dueno del producto: la lista de
+factores se revela ANTES de autenticar (reconnaissance de "que exige cada
+cuenta"). La existencia del email + has_password ya eran enumerables; la
+lista de required agrega ese dato deliberadamente. Los estados disabled/
+locked/deleted se reportan como `unavailable` (existe, sin metodos ni temp)
+sin revelar el estado real.
 
-AC cubiertos: AC-C1..AC-C7.
+AC cubiertos: AC-1..AC-4.
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ from typing import Any
 from models.login import LoginCheckEmailIn
 from services.audit_service import AuditService
 from services.jwt_service import JwtService
+from services.mfa_method_service import MfaMethodService
 from services.password_service import PasswordService
 from services.rate_limit_service import RateLimitService
 from services.user_service import UserService
@@ -65,23 +68,22 @@ class CheckEmail(BaseController):
         return base
 
     def execute(self) -> dict[str, Any]:
-        """Reporta existencia + has_password (sin la lista de metodos MFA).
+        """Reporta existencia + has_password + methods_required (si active).
 
         Tras validar Turnstile (en `validate`), emite un temp JWT precheck
         (`flow='login'` step=0) en los casos que pueden continuar a
-        `login.start` (active o pending). `login.start` lo exige en
-        `Authorization` y ya NO valida Turnstile (decision D-1/D-2). Para
-        un email inexistente o unavailable NO se emite temp (no hay flujo
-        que continuar).
+        `login.start` (active, pending, o email nuevo para el alta). Para un
+        email unavailable NO se emite temp (no hay flujo que continuar).
 
         Returns:
-            200 `{exists:false}` si el email no existe (AC-C2/AC-3).
+            200 `{exists:false, temp_token}` si el email no existe (alta;
+            AC-3).
             200 `{exists:true, pending:true, has_password:false, temp_token}`
-            si pending (AC-C3/AC-2).
+            si pending (sin methods_required: aun no hay MFA; AC-3).
             200 `{exists:true, unavailable:true}` si disabled/locked/deleted
-            (AC-C4/AC-3, sin temp_token).
-            200 `{exists:true, has_password:<bool>, temp_token}` si active
-            (AC-C1/AC-1).
+            (AC-4, sin temp_token ni methods_required).
+            200 `{exists:true, has_password, temp_token, methods_required}`
+            si active (AC-1/AC-2).
         """
         data: LoginCheckEmailIn = self.validated_data  # type: ignore[assignment]
         meta = data.meta
@@ -137,9 +139,19 @@ class CheckEmail(BaseController):
                 'data': {'exists': True, 'unavailable': True},
             }
 
-        # active: expone has_password (NO la lista de metodos MFA) + el temp
-        # precheck que autoriza login.start.
+        # active: expone has_password + la lista de metodos REQUIRED (con su
+        # config de render) + el temp precheck que autoriza login.start.
+        #
+        # Trade-off anti-enumeration ACEPTADO por el dueno del producto (plan
+        # login-mfa-list-redesign): revelar que factores exige cada cuenta
+        # ANTES de autenticar. El front necesita la lista para montar el
+        # checklist de metodos a completar en cualquier orden. La existencia
+        # del email + has_password ya eran enumerables; la lista de required
+        # agrega ese dato deliberadamente.
         status = PasswordService(app_config).status(user_id=user.id)
+        methods_required = MfaMethodService(app_config).required_methods_config(
+            user_id=user.id,
+        )
         return {
             'is_valid': True,
             'code': 0,
@@ -147,6 +159,7 @@ class CheckEmail(BaseController):
                 'exists': True,
                 'has_password': bool(status['has_password']),
                 'temp_token': self._issue_precheck(user_id=user.id),
+                'methods_required': methods_required,
             },
         }
 

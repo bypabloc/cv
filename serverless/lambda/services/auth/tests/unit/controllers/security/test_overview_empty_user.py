@@ -26,6 +26,7 @@ def test_overview_empty_user(monkeypatch):
     password_svc = MagicMock()
     password_svc.status.return_value = {
         'has_password': False,
+        'required': False,
         'last_change_at': None,
     }
 

@@ -37,9 +37,15 @@ class FlowService:
         self._jwt = JwtService(app_config)
 
     def verify_temp_token(
-        self, token_str: str, *, expected_flow: str,
+        self, token_str: str, *, expected_flow: str | None,
     ) -> JwtClaims:
-        """Verifica typ='temp' + flow esperado + blacklist."""
+        """Verifica typ='temp' (+ flow esperado si se pasa) + blacklist.
+
+        `expected_flow=None` no fuerza el flow (el caller distingue luego por
+        `claims.step`/`claims.flow`); util cuando un mismo controller acepta
+        el temp de entrada (`login` step=1) y el del checklist
+        (`login-mfa` step=2).
+        """
         return self._jwt.verify(
             token_str,
             expected_typ='temp',

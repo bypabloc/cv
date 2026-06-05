@@ -6,9 +6,10 @@ import { useAuthStore } from "../store/use-auth-store";
 
 /**
  * @function useSessionRefresh
- * @description Refresca la sesion manualmente (la mayoria del tiempo lo hace
- *   `useAuthTimer`). Setea access + refresh nuevos en el store. El parametro
- *   `refresh_token` se resuelve del store si el caller no lo pasa.
+ * @description Refresca la sesion manualmente. Setea access + refresh nuevos
+ *   en el store. El parametro `refresh_token` se resuelve del store si el
+ *   caller no lo pasa. (El refresh reactivo del 401 lo hace el `api-client`
+ *   centralizado; el refresh-en-reload lo hace `useSessionRehydrate`.)
  */
 export function useSessionRefresh() {
 	const setAccessToken = useAuthStore((s) => s.setAccessToken);

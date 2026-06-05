@@ -46,17 +46,26 @@ if (typeof globalThis.matchMedia === "undefined") {
 }
 
 // Suprime el ReferenceError benigno de happy-dom cuando una query/fetch en
-// vuelo (invalidacion de Tanstack tras una mutation) resuelve DESPUES de que
-// happy-dom desmonto `window` en el teardown del test. No afecta asserts (los
-// tests ya esperan con waitFor); es ruido de teardown, no un fallo real.
+// vuelo (invalidacion de Tanstack tras una mutation) o un timer de un toast
+// (sonner) resuelve DESPUES de que happy-dom desmonto `window` en el teardown
+// del test. No afecta asserts (los tests ya esperan con waitFor); es ruido de
+// teardown, no un fallo real. Llega por dos vias segun el origen async:
+// `unhandledRejection` (promesas) o `uncaughtException` (timers/callbacks).
+function isTeardownWindowError(value: unknown): boolean {
+	return (
+		value instanceof ReferenceError &&
+		value.message.includes("window is not defined")
+	);
+}
+
 process.on("unhandledRejection", (reason) => {
-	if (
-		reason instanceof ReferenceError &&
-		reason.message.includes("window is not defined")
-	) {
-		return;
-	}
+	if (isTeardownWindowError(reason)) return;
 	throw reason;
+});
+
+process.on("uncaughtException", (error) => {
+	if (isTeardownWindowError(error)) return;
+	throw error;
 });
 
 const { server } = await import("./mocks/server");

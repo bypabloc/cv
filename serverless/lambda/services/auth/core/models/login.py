@@ -14,19 +14,20 @@ from ._common import Niche, _Meta
 class LoginStartIn(BaseModel):
     """POST /auth operation=login action=start.
 
-    `password` es OPCIONAL (plan 02, decision 9): si viene, el controller
-    lo valida con argon2 ANTES de devolver los methods (login con
-    password directo). Si falta, comportamiento passwordless del plan 01
-    (magic-link + code).
+    Plan login-mfa-list-redesign: el user se resuelve por el `sub` del temp
+    precheck (Authorization), NO por el email del body. La password ya NO va
+    en `start` (es un metodo mas de la lista, se verifica con
+    `login.verify-password`).
+
+    `email` es OPCIONAL y solo se usa en el UNICO caso de ALTA: un email
+    nuevo cuyo precheck lleva un sub placeholder que no resuelve user — ahi
+    el controller crea el pending con `email`. El email NUNCA viaja en el JWT
+    (solo el sub=uuid). Si el sub resuelve un user, el email del body se
+    ignora (anti-cross-account).
     """
 
-    email: EmailStr
-    # default='' (no min_length): habilita el bypass de Turnstile para
-    # tests E2E (cf_response vacio + token Ed25519 firmado, solo dev/local).
-    # En prod, vacio + sin bypass valido -> TurnstileError 403 en el
-    # controller (AC-12). Igual que register.start y contact_form.
+    email: EmailStr | None = None
     cf_turnstile_response: str = Field(default='', max_length=2048)
-    password: str | None = Field(default=None, max_length=256)
     niche: Niche | None = None
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
 
@@ -73,16 +74,32 @@ class LoginVerifyCodeIn(BaseModel):
 
 
 class LoginVerifyPasswordIn(BaseModel):
-    """POST /auth operation=login action=verify-password (plan 02).
+    """POST /auth operation=login action=verify-password.
 
-    Variante 2-step del login con password: `temp_token` step=1 (de un
-    login.start sin password) + `password`. El controller valida con
-    argon2 y, si match, emite access+refresh (sin MFA) o temp step=2 +
-    methods (con MFA).
+    Plan login-mfa-list-redesign: `password` es UN metodo mas del checklist.
+    Recibe el `temp_token` step=2 (`flow='login-mfa[:...]'` emitido por
+    `login.start`) + `password`. El controller valida con argon2, suma
+    `'password'` a los satisfechos y delega en `decide_mfa_step` (emite los
+    factores faltantes o access+refresh si ya estan todos).
     """
 
     temp_token: str = Field(..., min_length=20)
     password: str = Field(..., min_length=12, max_length=256)
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
+class LoginSendEmailCodeIn(BaseModel):
+    """POST /auth operation=login action=send-email-code.
+
+    Dentro del checklist (temp step=2): genera+envia el code de 8 chars al
+    email del user del temp, para que pueda satisfacer el factor `passwordless`
+    / `email_code`. Reemplaza el envio que antes hacia `login.start` para el
+    caso passwordless.
+    """
+
+    temp_token: str = Field(..., min_length=20)
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
 
     model_config = ConfigDict(populate_by_name=True, extra='ignore')

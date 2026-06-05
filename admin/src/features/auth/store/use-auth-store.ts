@@ -7,20 +7,16 @@ import type { User } from "@/types/models";
  * @module use-auth-store
  * @description Store de auth (Zustand + persist).
  *
- * Persistencia (decision 4 del plan):
+ * Persistencia:
  * - `refreshToken`, `refreshExpiry`, `user` -> localStorage (sobreviven reload).
  * - `accessToken` -> SOLO memoria (rota en cada refresh; persistirlo deja
  *   stale token tras reload).
  * - `tempToken` -> SOLO memoria (efimero, 5 min, flujo register/login).
  *
- * Bootstrap: al reload `accessToken === null`; `useAuthTimer` detecta
- * `refreshToken` con `refreshExpiry > now` y dispara `/session/refresh`.
- *
- * `bootstrapping` (transient, NO persistido): true hasta que el bootstrap
- * tras un reload resuelve (refresh OK -> access hidratado, o sin refresh /
- * refresh fallido -> reset). `useProtectedRoute` NO redirige a /login
- * mientras `bootstrapping === true`: asi el redirect sincrono no le gana al
- * `doRefresh()` async (fix del bug "la sesion no persiste tras reload").
+ * Lazy auth: al reload `accessToken === null`; `useSessionRehydrate` hace UN
+ * refresh silencioso desde el `refresh_token` para hidratar el access. NO hay
+ * timer proactivo ni validacion del access: cada peticion HTTP descubre su
+ * 401 en el `api-client` centralizado.
  */
 
 interface AuthState {
@@ -29,19 +25,17 @@ interface AuthState {
 	refreshExpiry: number | null;
 	tempToken: string | null;
 	user: User | null;
-	bootstrapping: boolean;
 
 	setTokens: (
 		access: string,
 		refresh: string,
-		user: User,
+		user?: User | null,
 		refreshExpiry?: number | null,
 	) => void;
 	setAccessToken: (token: string | null) => void;
 	setRefreshToken: (token: string | null) => void;
 	setTempToken: (token: string | null) => void;
 	setUser: (user: User | null) => void;
-	setBootstrapping: (value: boolean) => void;
 	clearTokens: () => void;
 	reset: () => void;
 
@@ -58,10 +52,7 @@ function decodeExp(token: string): number | null {
 	}
 }
 
-// EMPTY limpia los tokens/user (logout, clear, reset). NO toca
-// `bootstrapping`: ese flag lo gobiernan useAuthBootstrap/useAuthTimer, no el
-// logout — resetearlo aqui reabriria el placeholder "Verificando sesion..."
-// tras un logout explicito.
+// EMPTY limpia los tokens/user (logout, clear, reset).
 const EMPTY = {
 	accessToken: null,
 	refreshToken: null,
@@ -74,18 +65,17 @@ export const useAuthStore = create<AuthState>()(
 	persist(
 		(set, get) => ({
 			...EMPTY,
-			// true hasta que el bootstrap post-reload resuelve. Default true
-			// para que el primer render (access null) NO redirija antes del
-			// refresh async.
-			bootstrapping: true,
 
+			// `user` es opcional: algunos cierres del login (checklist) NO
+			// re-envian el perfil. Cuando llega `undefined`, se conserva el user
+			// actual (el bootstrap/refresh lo hidrata); `null` lo limpia.
 			setTokens: (access, refresh, user, refreshExpiry) =>
-				set({
+				set((state) => ({
 					accessToken: access,
 					refreshToken: refresh,
-					user,
+					user: user === undefined ? state.user : user,
 					refreshExpiry: refreshExpiry ?? decodeExp(refresh),
-				}),
+				})),
 			setAccessToken: (token) => set({ accessToken: token }),
 			setRefreshToken: (token) =>
 				set({
@@ -94,7 +84,6 @@ export const useAuthStore = create<AuthState>()(
 				}),
 			setTempToken: (token) => set({ tempToken: token }),
 			setUser: (user) => set({ user }),
-			setBootstrapping: (value) => set({ bootstrapping: value }),
 			clearTokens: () => set({ ...EMPTY }),
 			reset: () => set({ ...EMPTY }),
 

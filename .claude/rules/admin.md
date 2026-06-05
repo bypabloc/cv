@@ -275,7 +275,23 @@ Reglas duras del layout:
 > Subresource Integrity en todos los scripts third-party, access JWT
 > corto (15 min), refresh rotation + family detection en el backend.
 
-El admin consume las **26 actions** del Lambda `auth` desde el
+> **ACTUALIZACION (plan login-mfa-list-redesign):** el flujo de login del
+> admin pasa de una maquina lineal a un **CHECKLIST de factores `required`**
+> que el user completa en cualquier orden (la `password` es un factor mas,
+> NO un gate). `login.check-email` ahora devuelve `methods_required` (la lista
+> con su config de render); `login.start` (precheck, SIN email/password) abre
+> el checklist (temp step=2 + `methods`). Cada verify rota el `temp_token`
+> (rolling) y delega en `decide_mfa_step`; los tokens salen al completar todos
+> los required. Actions nuevas: `login.send-email-code`,
+> `security.password-set-required`. La feature vive en `login-checklist.tsx`
+> + `login-form.tsx`; el detalle del contrato esta en
+> [.claude/rules/auth-system.md](auth-system.md) (seccion "Login UX (modelo
+> de lista de metodos)"). Ademas, el admin adopta **lazy auth**: NO verifica
+> proactivamente el JWT (sin "Verificando sesion", sin timer ni bootstrapping;
+> `use-session-rehydrate` hace UN refresh al reload, y el 401 reactivo del
+> `api-client` es el unico validador).
+
+El admin consume las actions del Lambda `auth` desde el
 inicio (NO hay nada "pending"; MFA + WebAuthn son scope base). Todo
 request va por `POST /auth` con body JSON `{operation, action, data}`
 (salvo `verify-magic-link`, que es un GET callback). Distribucion:

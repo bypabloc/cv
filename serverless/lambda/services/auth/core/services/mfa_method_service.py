@@ -13,6 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from shared.db.models.auth.enums import AuthMfaKind
+from shared.db.repositories.auth import get_password_required
 from shared.db.repositories.auth_mfa import (
     confirm_mfa,
     count_active_mfa,
@@ -28,6 +29,63 @@ from shared.db.repositories.auth_mfa import (
     upsert_totp_method,
 )
 from shared.db.session import db_session
+
+# Config minima de render por metodo (lo que el front necesita para montar el
+# input del checklist). Sin secretos: solo el hint de widget + la action a la
+# que el front debe pegar para verificar / pre-disparar el metodo.
+_METHOD_CONFIG: dict[str, dict[str, object | None]] = {
+    'password': {
+        'input': 'password',
+        'sent': None,
+        'dispatch_action': 'login.verify-password',
+    },
+    'passwordless': {
+        'input': 'email',
+        'sent': None,
+        'dispatch_action': 'login.send-email-code',
+    },
+    'totp': {
+        'input': 'code6',
+        'sent': None,
+        'dispatch_action': 'login.verify-totp',
+    },
+    'email_code': {
+        'input': 'code8',
+        'sent': False,
+        'dispatch_action': 'login.send-email-code',
+    },
+    'webauthn': {
+        'input': 'webauthn',
+        'sent': None,
+        'dispatch_action': 'webauthn.login-options',
+    },
+}
+# Orden fijo de presentacion en el checklist (solo UX; el backend usa
+# conjuntos, el orden no afecta la igualdad de los `satisfied`).
+_METHOD_ORDER = ('password', 'passwordless', 'totp', 'email_code', 'webauthn')
+
+
+def compose_required(
+    *, password_required: bool, mfa_required: list[str],
+) -> list[str]:
+    """Compone la lista de factores que el login EXIGE, en orden fijo.
+
+    Funcion pura (sin DB) para poder testear el invariante:
+    - `password` al frente si esta required.
+    - los MFA required (`totp`/`email_code`/`webauthn`) a continuacion.
+    - `passwordless` como FALLBACK SOLO si no hay ningun otro factor: es el
+      metodo por defecto (un user recien registrado entra passwordless) y
+      garantiza "siempre >=1 required".
+
+    Returns la lista deduplicada y ordenada por `_METHOD_ORDER`.
+    """
+    required: list[str] = []
+    if password_required:
+        required.append('password')
+    required.extend(mfa_required)
+    if not required:
+        required = ['passwordless']
+    return [m for m in _METHOD_ORDER if m in required]
 
 from .session_service import SessionService
 
@@ -87,9 +145,50 @@ class MfaMethodService:
             )
 
     def required_methods(self, *, user_id: UUID | str) -> list[str]:
-        """Tipos de metodo MFA requeridos + activos del user (lo exige el login)."""
+        """Factores que el login EXIGE para este user (orden fijo).
+
+        Modelo de lista (plan login-mfa-list-redesign): todo factor es un
+        item de la lista. Composicion:
+
+        - `password` si existe + `auth_credentials.required` (factor base
+          de la lista, ya no un gate previo).
+        - `totp` / `email_code` / `webauthn` con `required=true` y activos
+          (lo que ya devolvia `list_required_methods`).
+        - `passwordless` (email: code O magic-link) como FALLBACK: se exige
+          SOLO cuando el user no tiene ningun otro factor required. Es el
+          metodo por defecto (un user recien registrado entra passwordless);
+          garantiza el invariante "siempre >=1 required". El guard de
+          settings impide desmarcar el ultimo required, asi que un user
+          nunca queda con la lista vacia.
+
+        El orden es estable (`_METHOD_ORDER`) por UX; el motor multi-factor
+        (`decide_mfa_step`) usa conjuntos, no le afecta.
+        """
         with db_session() as session:
-            return list_required_methods(session, user_id=str(user_id))
+            password_required = get_password_required(
+                session, user_id=str(user_id),
+            )
+            mfa_required = list_required_methods(
+                session, user_id=str(user_id),
+            )
+        return compose_required(
+            password_required=password_required,
+            mfa_required=mfa_required,
+        )
+
+    def required_methods_config(
+        self, *, user_id: UUID | str,
+    ) -> list[dict[str, object | None]]:
+        """`required_methods` enriquecido con la config de render por metodo.
+
+        Lo consume `login.check-email` para devolver `methods_required`: el
+        front monta un input por cada entrada (en cualquier orden) con el
+        `input` (hint de widget) + `dispatch_action`. Sin secretos.
+        """
+        return [
+            {'type': m, **_METHOD_CONFIG[m]}
+            for m in self.required_methods(user_id=user_id)
+        ]
 
     def confirmed_kinds(self, *, user_id: UUID | str) -> list[str]:
         """Kinds de los metodos confirmados y activos del user."""

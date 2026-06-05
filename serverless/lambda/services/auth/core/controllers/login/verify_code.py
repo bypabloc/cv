@@ -1,35 +1,61 @@
-"""Controller `login.verify-code` — login passwordless via code 8 chars.
+"""Controller `login.verify-code` — code 8 chars (factor de la lista).
 
-Espejo de `register.verify-code` pero con `expected_flow='login'` y
-sin marcar al user como `active` (ya lo esta). Actualiza
-`last_login_at` (AC-22) y emite access + refresh.
+Verifica el code de 8 chars que llego al email. Tiene DOS modos segun el
+`step` del temp (plan login-mfa-list-redesign):
 
-AC cubiertos: AC-22.
+- **step=1** (`flow='login'`): code de ENTRADA passwordless (alta / pending /
+  active sin otros required). Es el factor `passwordless`. Si el user no tiene
+  mas factores required -> emite tokens directo (AC-15). Si SI los tiene
+  (active con required que incluye el factor email) -> satisface el factor y
+  delega en `decide_mfa_step` (los otros required siguen pendientes, AC-14).
+- **step=2** (`flow='login-mfa[:...]'`): el code es UN factor mas del checklist
+  (`passwordless` si es el unico, o `email_code` si el user lo marco MFA).
+  Suma ese factor a los satisfechos y delega en `decide_mfa_step` (AC-13).
+
+Marca `active` al user pending (cierra el alta) y `last_login_at`.
+
+AC cubiertos: AC-13, AC-14, AC-15.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import UUID
 
 from models.login import LoginVerifyCodeIn
 from services.audit_service import AuditService
 from services.code_service import CodeService
 from services.flow_service import FlowService
 from services.jwt_service import JwtService
+from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
-from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
 from shared.auth.jwt import JwtExpiredError, JwtInvalidError, JwtRevokedError
-from shared.core.ulid import new_uuidv7
 from shared.db.models.auth.enums import AuthCodeKind, AuthUserStatus
 from shared.lambda_kit.base_controller import BaseController
+
+from ._mfa_login import decide_mfa_step, parse_satisfied
 
 _ENDPOINT = '/auth#login.verify-code'
 _LOCK_DURATION = timedelta(hours=1)
 _MAX_FAILED_ATTEMPTS = 5
+# Los dos factores "code al email" del modelo de lista. En un checklist dado
+# solo UNO esta presente (compose_required nunca pone ambos): `passwordless`
+# (fallback unico) o `email_code` (metodo MFA explicito).
+_EMAIL_FACTORS = ('passwordless', 'email_code')
+
+
+def _email_factor(required: list[str]) -> str:
+    """Devuelve el factor 'code al email' presente en `required`.
+
+    Default `'passwordless'` (el caso de entrada / alta). Si el user marco
+    `email_code` como MFA required, ese es el factor.
+    """
+    for factor in _EMAIL_FACTORS:
+        if factor in required:
+            return factor
+    return 'passwordless'
 
 
 class VerifyCode(BaseController):
@@ -56,7 +82,7 @@ class VerifyCode(BaseController):
         return base
 
     def execute(self) -> dict[str, Any]:
-        """Verifica temp_token (flow='login') + code, emite access+refresh."""
+        """Verifica temp + code; emite tokens o delega en decide_mfa_step."""
         data: LoginVerifyCodeIn = (
             self.validated_data  # type: ignore[assignment]
         )
@@ -66,12 +92,16 @@ class VerifyCode(BaseController):
         user_svc = UserService(app_config)
         code_svc = CodeService(app_config)
         jwt_svc = JwtService(app_config)
+        mfa_svc = MfaMethodService(app_config)
         audit_svc = AuditService(app_config)
 
+        # Acepta el temp de entrada (flow='login' step=1) O el del checklist
+        # (flow='login-mfa[:...]' step=2). El `expected_flow=None` no fuerza el
+        # flow aqui; abajo se distingue por `claims.step`.
         try:
             claims = flow_svc.verify_temp_token(
                 data.temp_token,
-                expected_flow='login',
+                expected_flow=None,
             )
         except JwtExpiredError:
             audit_svc.log(
@@ -173,8 +203,7 @@ class VerifyCode(BaseController):
         if user.status == AuthUserStatus.PENDING:
             user_svc.mark_active(user)
 
-        # Code OK: actualiza last_login + blacklistea el temp + tokens.
-        user_svc.update_last_login(user)
+        # Code OK: blacklistea el temp recibido (rolling).
         jwt_svc.blacklist(
             jti=claims.jti,
             exp=claims.exp,
@@ -182,22 +211,33 @@ class VerifyCode(BaseController):
             reason='rotation',
         )
 
-        family_id = UUID(new_uuidv7())
-        access_token, _ = jwt_svc.issue_access(
+        # El factor "code al email" satisfecho: `passwordless` (entrada /
+        # fallback) o `email_code` (metodo MFA explicito). Se suma a los
+        # satisfechos del flow y se delega en decide_mfa_step, que decide si
+        # quedan factores required pendientes (temp nuevo) o emite tokens.
+        required = mfa_svc.required_methods(user_id=user.id)
+        factor = _email_factor(required)
+        satisfied = [*parse_satisfied(claims.flow), factor]
+        result = decide_mfa_step(
+            jwt_svc=jwt_svc,
+            app_config=app_config,
             user_id=user.id,
-            family_id=family_id,
-        )
-        refresh_token, _ = jwt_svc.issue_refresh(
-            user_id=user.id,
-            family_id=family_id,
-        )
-        SessionTrackingService(app_config).on_session_created(
-            user_id=user.id,
-            family_id=family_id,
+            satisfied=satisfied,
+            required=required,
             ip=meta.ip,
             country=meta.country,
             user_agent=meta.user_agent,
         )
+        if result.get('mfa_complete'):
+            user_svc.update_last_login(user)
+            result = {
+                **result,
+                'user': {
+                    'id': str(user.id),
+                    'email': user.email,
+                    'status': user.status.value,
+                },
+            }
 
         audit_svc.log(
             event='login.verify-code',
@@ -207,18 +247,4 @@ class VerifyCode(BaseController):
             user_agent=meta.user_agent,
         )
 
-        return {
-            'is_valid': True,
-            'code': 0,
-            'data': {
-                'access_token': access_token,
-                'refresh_token': refresh_token,
-                'expires_in': 900,
-                'token_type': 'Bearer',
-                'user': {
-                    'id': str(user.id),
-                    'email': user.email,
-                    'status': user.status.value,
-                },
-            },
-        }
+        return {'is_valid': True, 'code': 0, 'data': result}

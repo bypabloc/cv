@@ -1,9 +1,9 @@
-"""AC-D2: email no existe -> crea el user pending + envia el email unificado.
+"""AC-10: email nuevo -> crea el user pending + envia el email unificado.
 
-Given un email que no esta en auth_users,
-When se invoca login.start (fusion register->login, bloque D),
+Given un precheck cuyo `sub` (placeholder) NO resuelve user + email en el body,
+When se invoca login.start (alta fusion register->login),
 Then crea el user pending, publica UN email unificado y devuelve un
-  temp_token (flow login, step 1) + created=True. (Ya NO devuelve 404.)
+  temp_token (flow login, step 1) + methods=['passwordless'] + created=True.
 """
 
 from types import SimpleNamespace
@@ -20,7 +20,7 @@ def test_login_start_email_not_found_creates_pending(monkeypatch):
     new_user.id = 'usr-new'
     new_user.email = 'unknown@example.com'
     user_svc = MagicMock()
-    user_svc.get_by_email.return_value = None
+    user_svc.get_by_id.return_value = None
     user_svc.create_pending.return_value = new_user
 
     code_svc = MagicMock()
@@ -52,7 +52,7 @@ def test_login_start_email_not_found_creates_pending(monkeypatch):
     assert result['code'] == 0
     assert result['data']['temp_token'] == 'TEMP-JWT'
     assert result['data']['created'] is True
-    assert result['data']['methods'] == ['magic-link', 'email-code']
+    assert result['data']['methods'] == ['passwordless']
     user_svc.create_pending.assert_called_once_with(
         email='unknown@example.com',
     )

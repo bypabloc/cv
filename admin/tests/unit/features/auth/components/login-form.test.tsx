@@ -6,9 +6,12 @@ import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 /**
  * @module tests/unit/features/auth/components/login-form
- * @description Verifica el flujo de 2 pasos: validacion Zod (email invalido no
- *   llama API), check-email -> input de password (cuenta con password) y
- *   check-email -> "Crear cuenta" (email inexistente, login.start crea el user).
+ * @description Verifica la maquina de stages del login de 2 pasos:
+ *   - Zod bloquea email invalido (no llama API).
+ *   - check-email con `methods_required` no vacio -> CHECKLIST.
+ *   - check-email exists:false -> stage 'create'.
+ *   - check-email unavailable -> Alert generico.
+ *   - check-email con password pero SIN methods_required -> passwordless.
  */
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
@@ -37,6 +40,13 @@ async function solveTurnstile(): Promise<void> {
 	);
 }
 
+async function checkEmailWith(email: string): Promise<void> {
+	const user = userEvent.setup();
+	await user.type(screen.getByTestId("login-email"), email);
+	await solveTurnstile();
+	await user.click(screen.getByTestId("login-submit"));
+}
+
 describe("LoginForm", () => {
 	beforeEach(() => {
 		pushMock.mockClear();
@@ -45,44 +55,38 @@ describe("LoginForm", () => {
 
 	it("Given email invalido When submit Then NO llama a la API (Zod bloquea)", async () => {
 		// Arrange
-		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
 
 		// Act
-		await user.type(screen.getByLabelText(/email/i), "no-es-email");
-		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		await checkEmailWith("no-es-email");
 
 		// Assert: el form sigue en el paso email (no avanza)
 		await waitFor(() => {
 			expect(screen.getByText(/email invalido/i)).toBeInTheDocument();
 		});
-		expect(screen.queryByTestId("login-password")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("login-checklist")).not.toBeInTheDocument();
 	});
 
-	it("Given cuenta con password When check-email Then muestra el input de password", async () => {
+	it("Given cuenta con metodos required When check-email Then muestra el checklist", async () => {
 		// Arrange
-		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
 
-		// Act
-		await user.type(screen.getByLabelText(/email/i), "user@test.com");
-		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		// Act: check-email -> methods_required no vacio -> login.start -> checklist
+		await checkEmailWith("checklist@test.com");
 
-		// Assert: avanza al paso 2 (input password)
-		expect(await screen.findByTestId("login-password")).toBeInTheDocument();
+		// Assert: aparece el checklist (login.start abrio el step=2)
+		expect(await screen.findByTestId("login-checklist")).toBeInTheDocument();
+		expect(screen.getByTestId("checklist-progress")).toHaveTextContent(
+			"0 de 2 completados",
+		);
 	});
 
 	it("Given email no registrado When check-email Then ofrece Crear cuenta", async () => {
 		// Arrange
-		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
 
 		// Act
-		await user.type(screen.getByLabelText(/email/i), "unknown@test.com");
-		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
+		await checkEmailWith("unknown@test.com");
 
 		// Assert: muestra el alert de cuenta inexistente + boton Crear cuenta
 		await waitFor(() => {
@@ -90,19 +94,15 @@ describe("LoginForm", () => {
 				screen.getByText(/no existe una cuenta con ese email/i),
 			).toBeInTheDocument();
 		});
-		expect(
-			screen.getByRole("button", { name: /crear cuenta/i }),
-		).toBeInTheDocument();
+		expect(screen.getByTestId("login-create-account")).toBeInTheDocument();
 	});
 
 	it("Given Crear cuenta When click Then login.start crea el user y navega a /verify", async () => {
 		// Arrange
 		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
-		await user.type(screen.getByLabelText(/email/i), "unknown@test.com");
-		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
-		const crear = await screen.findByRole("button", { name: /crear cuenta/i });
+		await checkEmailWith("unknown@test.com");
+		const crear = await screen.findByTestId("login-create-account");
 
 		// Act
 		await user.click(crear);
@@ -111,50 +111,46 @@ describe("LoginForm", () => {
 		await waitFor(() => {
 			expect(pushMock).toHaveBeenCalledWith("/verify?flow=login");
 		});
-		expect(useAuthStore.getState().tempToken).toBe("mock-temp-created");
 	});
 
-	it("Given password correcta When submit Then login.start con el precheck navega a /verify", async () => {
-		// Arrange: cuenta con password (default) -> input de password.
+	it("Given cuenta sin metodos required When check-email Then ofrece passwordless", async () => {
+		// Arrange: has_password true pero sin methods_required -> passwordless.
+		render((<LoginForm />) as ReactElement);
+
+		// Act
+		await checkEmailWith("user@test.com");
+
+		// Assert: stage passwordless (NO checklist, NO input de password directo)
+		expect(await screen.findByTestId("login-passwordless")).toBeInTheDocument();
+		expect(screen.queryByTestId("login-checklist")).not.toBeInTheDocument();
+	});
+
+	it("Given passwordless When click Continuar Then login.start navega a /verify", async () => {
+		// Arrange
 		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
-		await user.type(screen.getByLabelText(/email/i), "user@test.com");
-		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
-		await screen.findByTestId("login-password");
+		await checkEmailWith("user@test.com");
+		const continuar = await screen.findByTestId("login-passwordless");
 
-		// Act: el precheck (mock-precheck-token) viaja en Authorization, NO el
-		// captcha. login.start con password OK -> temp + navega.
-		await user.type(
-			screen.getByTestId("login-password"),
-			"a-strong-passphrase-12",
-		);
-		await user.click(screen.getByTestId("login-password-submit"));
+		// Act
+		await user.click(continuar);
 
 		// Assert
 		await waitFor(() => {
 			expect(pushMock).toHaveBeenCalledWith("/verify?flow=login");
 		});
-		expect(useAuthStore.getState().tempToken).toBe("mock-temp-login");
 	});
 
-	it("Given password incorrecta When submit Then muestra el error inline (401)", async () => {
-		// Arrange
-		const user = userEvent.setup();
+	it("Given cuenta no disponible When check-email Then muestra el Alert generico", async () => {
+		// Arrange: check-email -> unavailable:true -> stage 'unavailable'.
 		render((<LoginForm />) as ReactElement);
-		await user.type(screen.getByLabelText(/email/i), "user@test.com");
-		await solveTurnstile();
-		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
-		await screen.findByTestId("login-password");
 
-		// Act: password que el mock rechaza con 401 INVALID_PASSWORD.
-		await user.type(screen.getByTestId("login-password"), "wrong-password-99");
-		await user.click(screen.getByTestId("login-password-submit"));
+		// Act
+		await checkEmailWith("blocked@test.com");
 
-		// Assert: error inline, NO navega.
-		await waitFor(() => {
-			expect(screen.getByText(/contrasena incorrecta/i)).toBeInTheDocument();
-		});
-		expect(pushMock).not.toHaveBeenCalled();
+		// Assert
+		expect(
+			await screen.findByText(/no se puede iniciar sesion con esta cuenta/i),
+		).toBeInTheDocument();
 	});
 });

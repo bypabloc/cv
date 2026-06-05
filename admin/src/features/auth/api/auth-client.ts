@@ -13,6 +13,7 @@ import type {
 	SecurityOverviewResponse,
 	TempTokenResponse,
 	TotpSetupResponse,
+	VerifyResult,
 	WebauthnCredentialsResponse,
 	WebauthnLoginOptionsResponse,
 	WebauthnRegisterOptionsResponse,
@@ -52,8 +53,12 @@ export const authClient = {
 		}),
 
 	/**
-	 * login.start: 200 TempTokenResponse (con methods). `data.created` indica
-	 * si el email no existia y fue CREADO (registro fusionado).
+	 * login.start: resuelve el user por el `sub` del precheck. Para un user
+	 * EXISTENTE NO manda email (el body solo lleva `{operation, action}`);
+	 * para un email NUEVO (alta fusionada) SI manda `{email}`. Devuelve un
+	 * temp_token (step=2 con `methods` para un user ACTIVE; step=1 con
+	 * methods:['passwordless'] para alta/pending). `created` indica si el
+	 * email fue CREADO.
 	 *
 	 * Ya NO valida Turnstile: el captcha se resuelve una sola vez en
 	 * login.check-email, que emite el `precheckToken` (temp JWT flow='login'
@@ -61,39 +66,60 @@ export const authClient = {
 	 * MISSING_PRECHECK. `skipAuth: true` evita que apiFetch inyecte el access
 	 * token del store; el header lo seteamos a mano con el precheck.
 	 */
-	loginStart: (
-		data: { email: string; password?: string; niche?: string },
-		precheckToken: string,
-	) =>
-		apiFetch<Envelope<TempTokenResponse & { created?: boolean }>>("/auth", {
+	loginStart: (precheckToken: string, email?: string) =>
+		apiFetch<Envelope<TempTokenResponse>>("/auth", {
 			method: "POST",
 			skipAuth: true,
 			headers: { Authorization: `Bearer ${precheckToken}` },
-			body: { operation: "login", action: "start", data },
+			body: {
+				operation: "login",
+				action: "start",
+				data: email === undefined ? {} : { email },
+			},
 		}),
 
-	/** login.verify-code: cierra el login con el code de 8 chars. */
+	/**
+	 * login.send-email-code: dispara el envio del code de 8 chars al email del
+	 * user (paso previo del metodo email_code / passwordless del checklist).
+	 */
+	loginSendEmailCode: (data: { temp_token: string }) =>
+		apiFetch<Envelope<{ ok: true }>>("/auth", {
+			method: "POST",
+			skipAuth: true,
+			body: { operation: "login", action: "send-email-code", data },
+		}),
+
+	/**
+	 * login.verify-code: valida el code de 8 chars. Devuelve VerifyResult:
+	 * AuthResponse si cierra el login, o un temp_token nuevo (rolling) con los
+	 * metodos pendientes si quedan factores por completar.
+	 */
 	loginVerifyCode: (data: { code: string; temp_token: string }) =>
-		apiFetch<Envelope<AuthResponse>>("/auth", {
+		apiFetch<Envelope<VerifyResult>>("/auth", {
 			method: "POST",
 			skipAuth: true,
 			body: { operation: "login", action: "verify-code", data },
 		}),
 
 	/**
-	 * login.verify-password: valida password (argon2). Sin MFA cierra con
-	 * AuthResponse; con MFA devuelve un temp JWT step=2 + `methods`.
+	 * login.verify-password: valida password (argon2). Devuelve VerifyResult:
+	 * AuthResponse si cierra el login, o un temp_token nuevo (rolling) +
+	 * `methods` pendientes si quedan factores por completar.
 	 */
 	loginVerifyPassword: (data: { temp_token: string; password: string }) =>
-		apiFetch<Envelope<AuthResponse | TempTokenResponse>>("/auth", {
+		apiFetch<Envelope<VerifyResult>>("/auth", {
 			method: "POST",
 			skipAuth: true,
 			body: { operation: "login", action: "verify-password", data },
 		}),
 
-	/** login.verify-totp: paso final del login con MFA TOTP (temp step=2). */
+	/**
+	 * login.verify-totp: valida el code TOTP (6 digitos). Devuelve VerifyResult:
+	 * AuthResponse si cierra el login, o un temp_token nuevo (rolling) +
+	 * `methods` pendientes si quedan factores por completar.
+	 */
 	loginVerifyTotp: (data: { code: string; temp_token: string }) =>
-		apiFetch<Envelope<AuthResponse>>("/auth", {
+		apiFetch<Envelope<VerifyResult>>("/auth", {
 			method: "POST",
 			skipAuth: true,
 			body: { operation: "login", action: "verify-totp", data },
@@ -226,12 +252,17 @@ export const authClient = {
 			body: { operation: "webauthn", action: "login-options", data },
 		}),
 
-	/** webauthn.login-verify: cierra el login passwordless. 401 si clone. */
+	/**
+	 * webauthn.login-verify: valida la assertion del passkey. Devuelve
+	 * VerifyResult: AuthResponse si cierra el login (passwordless), o un
+	 * temp_token nuevo (rolling) + `methods` pendientes cuando el passkey es un
+	 * factor del checklist. 401 si clone (sign_count regresivo).
+	 */
 	webauthnLoginVerify: (data: {
 		challenge_id: string;
 		response: AuthenticationResponseJSON;
 	}) =>
-		apiFetch<Envelope<AuthResponse>>("/auth", {
+		apiFetch<Envelope<VerifyResult>>("/auth", {
 			method: "POST",
 			skipAuth: true,
 			body: { operation: "webauthn", action: "login-verify", data },

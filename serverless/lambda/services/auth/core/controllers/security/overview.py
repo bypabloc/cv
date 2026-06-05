@@ -155,7 +155,7 @@ class Overview(BaseController):
             'label': _LABELS['password'],
             'configured': has_password,
             'enabled': has_password,
-            'required': False,
+            'required': bool(password_status['required']),
             'preferred': False,
             'created_at': None,
             'last_used_at': None,

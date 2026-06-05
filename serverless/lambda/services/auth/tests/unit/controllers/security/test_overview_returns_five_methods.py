@@ -36,6 +36,7 @@ def test_overview_returns_five_methods(monkeypatch):
     password_svc = MagicMock()
     password_svc.status.return_value = {
         'has_password': True,
+        'required': True,
         'last_change_at': '2026-01-01T00:00:00+00:00',
     }
 
@@ -89,6 +90,8 @@ def test_overview_returns_five_methods(monkeypatch):
 
     password = methods[4]
     assert password['configured'] is True
+    # AC-8: el entry password refleja el `required` real (no hardcoded false).
+    assert password['required'] is True
 
     mfa_svc.list_all.assert_called_once_with(user_id=user.id)
     webauthn_svc.list_all.assert_called_once_with(user_id=user.id)

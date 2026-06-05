@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from shared.db.repositories.auth import set_password_required
 from shared.db.repositories.auth_users import get_password_status
 from shared.db.session import db_session
 
@@ -23,3 +24,10 @@ class PasswordService:
         """`{has_password, last_change_at}` (ISO 8601 o None)."""
         with db_session() as session:
             return get_password_status(session, user_id=str(user_id))
+
+    def set_required(self, *, user_id: UUID | str, required: bool) -> bool:
+        """Marca/desmarca la password como required. False si no hay password."""
+        with db_session() as session:
+            return set_password_required(
+                session, user_id=str(user_id), required=required,
+            )

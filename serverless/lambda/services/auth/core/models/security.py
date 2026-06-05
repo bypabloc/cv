@@ -17,3 +17,16 @@ class SecurityOverviewIn(BaseModel):
 
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
+class SecurityPasswordSetRequiredIn(BaseModel):
+    """POST /auth operation=security action=password-set-required.
+
+    Marca/desmarca la password como factor `required` al loguear. Requiere
+    access JWT. Sujeto al guard "siempre >=1 required" (no puede quedar el
+    user sin ningun factor exigido).
+    """
+
+    required: bool = Field(...)
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')

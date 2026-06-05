@@ -589,13 +589,20 @@ def get_password_status(
 
     `auth_credentials` es 1-to-0..1 con `auth_users`: solo existe si el
     user llamo `verify.set-password`. Devuelve siempre el mismo shape:
-    `{has_password: bool, last_change_at: str | None}` (ISO 8601).
+    `{has_password: bool, required: bool, last_change_at: str | None}`
+    (ISO 8601). `required` refleja si la password se exige al loguear
+    (factor de la lista; default true si existe).
     """
     cred = session.get(AuthCredentials, str(user_id))
     if cred is None:
-        return {'has_password': False, 'last_change_at': None}
+        return {
+            'has_password': False,
+            'required': False,
+            'last_change_at': None,
+        }
     return {
         'has_password': True,
+        'required': bool(cred.required),
         'last_change_at': cred.last_change_at.isoformat(),
     }
 

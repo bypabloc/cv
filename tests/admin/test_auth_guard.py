@@ -36,16 +36,19 @@ def test_sessions_without_session_redirects_to_login_with_next(
 ) -> None:
     """
     Given sin sesion,
-    When accedo a /sessions,
-    Then AuthGuard redirige a /login con next=/sessions.
+    When accedo a /settings/sessions (la tab "Sesiones" de Configuracion),
+    Then AuthGuard redirige a /login con next=/settings/sessions.
+
+    La gestion de sesiones se movio de /sessions a /settings/sessions (tab
+    dentro de Configuracion) con el redisno del bloque admin-security.
     """
     # Arrange / Act
-    page.goto(f'{admin_url}/sessions/', wait_until='load')
+    page.goto(f'{admin_url}/settings/sessions/', wait_until='load')
     page.wait_for_url('**/login/?next=*', timeout=15_000)
 
     # Assert
     assert 'next=' in page.url
-    assert '/sessions' in urllib.parse.unquote(page.url)
+    assert '/settings/sessions' in urllib.parse.unquote(page.url)
 
 
 def test_users_without_session_redirects_to_login_with_next(

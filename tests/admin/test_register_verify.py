@@ -1,14 +1,18 @@
-"""Register del admin: render del form, /verify, register+verify-code real.
+"""Register del admin: /verify + register+verify-code real (backend).
 
 Porta `tests/feature/admin/02-register-verify-code.spec.ts` y AMPLIA al
 flujo REAL end-to-end: register.start -> seed del code en Neon ->
 register.verify-code -> tokens reales -> el browser aterriza en el shell por
 el callback. [AC-2]
 
-El submit del form de register esta gateado por Turnstile (build desplegado
-NO en modo E2E). El render del form + el /verify se validan en el browser; el
-register+verify REAL se ejercita por backend (lo que el submit invocaria) y
-la sesion resultante se aterriza en el shell via callback.
+Login UNIFICADO (redisno del bloque admin-security): la operation `register`
+ya NO tiene una page `/register` propia — el registro ocurre dentro del propio
+login (login.start crea el user si el email no existe). Por eso ya NO se
+testea el render del form de `/register` (esa ruta esta retirada del build).
+Lo que persiste y se valida aqui: la page `/verify` (input del code) + el
+flujo register+verify REAL por backend (la operation `register` sigue
+desplegada como camino legacy de alta), aterrizando la sesion en el shell via
+callback.
 """
 
 from __future__ import annotations
@@ -16,21 +20,6 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from .conftest import AdminAuth
-
-
-def test_register_page_renders_form(page: Page, admin_url: str) -> None:
-    """
-    Given el admin desplegado,
-    When abro /register,
-    Then responde y muestra el input de email (testid register-email).
-    """
-    # Arrange / Act
-    response = page.goto(f'{admin_url}/register/', wait_until='load')
-
-    # Assert
-    assert response is not None
-    assert response.status == 200
-    assert page.get_by_test_id('register-email').count() == 1
 
 
 def test_verify_page_renders_heading(page: Page, admin_url: str) -> None:

@@ -140,30 +140,65 @@ class AdminAuth:
         refresh = field(verify.body, 'refresh_token')
         return email, user_id, access, refresh
 
-    def fresh_login(self, email: str, user_id: str) -> str:
-        """Abre una sesion NUEVA del user via API y devuelve su access token.
+    def _login_precheck(self, email: str) -> str | None:
+        """`login.check-email` (con bypass) -> temp_token precheck (o None).
 
-        Flujo: `login.start` (con bypass) -> seed del code login en Neon ->
-        `login.verify-code`. Cada login crea una fila en `auth_user_sessions`
-        y emite un access token de una FAMILIA PROPIA, independiente de la del
-        browser: el bootstrap-refresh del admin (que rota su propia familia y
-        blacklistea su access viejo) NO afecta a este token. Se usa para las
-        verificaciones server-side y para seedear estado (display_name).
+        El captcha del flujo de login se resuelve SOLO aqui (check-email);
+        `login.start` ya NO valida Turnstile, EXIGE este temp precheck
+        (`flow='login'` step=0) en `Authorization`. Mismo patron que el
+        harness api (`shared` / `tests/api/_flows.login_precheck`).
         """
-        start = self._http.post(
+        resp = self._http.post(
             '/auth',
             body=make_body(
-                'login', 'start', email=email, cf_turnstile_response='',
+                'login', 'check-email', email=email, cf_turnstile_response='',
             ),
             origin=self._origin,
             bypass_token=self._bypass,
         )
+        return field(resp.body, 'temp_token')
+
+    def fresh_login(self, email: str, user_id: str) -> str:
+        """Abre una sesion NUEVA del user via API y devuelve su access token.
+
+        Flujo (modelo de lista de metodos required): `login.check-email`
+        (precheck con bypass) -> `login.start` (precheck en Authorization, SIN
+        email) -> temp step=2 del checklist -> `login.send-email-code` (con ese
+        temp, dispara/regenera la fila `auth_email_codes` de kind login) ->
+        seed del code login en Neon -> `login.verify-code`. El user de
+        `create_active_user` es passwordless ACTIVE (sin password ni MFA): su
+        unico metodo required es 'passwordless' (el email_code), asi que el
+        `verify-code` suma ese factor (unico required) y emite tokens directo.
+
+        El `send-email-code` es OBLIGATORIO con el temp step=2: regenera la
+        fila del code, por eso el seed debe ir DESPUES. Cada login crea una
+        fila en `auth_user_sessions` y emite un access token de una FAMILIA
+        PROPIA, independiente de la del browser: el bootstrap-refresh del admin
+        (que rota su propia familia y blacklistea su access viejo) NO afecta a
+        este token. Se usa para las verificaciones server-side y para seedear
+        estado (display_name).
+        """
+        precheck = self._login_precheck(email)
+        start = self._http.post(
+            '/auth',
+            body=make_body('login', 'start'),
+            origin=self._origin,
+            bearer=precheck,
+        )
+        temp = field(start.body, 'temp_token')
+        send = self._http.post(
+            '/auth',
+            body=make_body('login', 'send-email-code', temp_token=temp),
+            origin=self._origin,
+        )
+        # send-email-code puede rotar el temp (rolling); si no lo rota,
+        # reutiliza el de login.start.
+        temp = field(send.body, 'temp_token') or temp
         self._env.seed_code(user_id=user_id, kind='login', plaintext=_SEED_CODE)
         verify = self._http.post(
             '/auth',
             body=make_body(
-                'login', 'verify-code', code=_SEED_CODE,
-                temp_token=field(start.body, 'temp_token'),
+                'login', 'verify-code', code=_SEED_CODE, temp_token=temp,
             ),
             origin=self._origin,
         )
@@ -224,25 +259,29 @@ class AdminAuth:
         return resp.status
 
     def login_start_status(self, email: str) -> int:
-        """Status de `login.start` para `email`.
+        """Status de `login.start` para `email` (con su precheck).
 
-        Login unificado (fusion register->login): un email no registrado YA NO
-        devuelve 404 — `login.start` crea el user pending y responde 200.
+        Login unificado (fusion register->login) + modelo de lista required:
+        `login.check-email` (precheck con bypass) -> `login.start` con el
+        precheck en `Authorization`. Para un email NUEVO el `start` necesita el
+        email en el body (alta fusionada: crea el user pending) -> responde 200,
+        ya NO 404.
         """
+        precheck = self._login_precheck(email)
         resp = self._http.post(
             '/auth',
-            body=make_body(
-                'login', 'start', email=email, cf_turnstile_response='',
-            ),
+            body=make_body('login', 'start', email=email),
             origin=self._origin,
-            bypass_token=self._bypass,
+            bearer=precheck,
         )
         return resp.status
 
     def login_check_email(self, email: str) -> dict:
         """Body de `login.check-email` (existencia + has_password, sin metodos).
 
-        Paso 1 del login unificado: NO crea nada. Devuelve `{exists, ...}`.
+        Paso 1 del login unificado: NO crea nada. Devuelve `{exists, ...}` (el
+        body ya parseado de la `Response`). Para un email no registrado el shape
+        es `{exists: false, temp_token}`.
         """
         resp = self._http.post(
             '/auth',
@@ -252,23 +291,35 @@ class AdminAuth:
             origin=self._origin,
             bypass_token=self._bypass,
         )
-        return resp.json()
+        return resp.body if isinstance(resp.body, dict) else {}
 
     def magic_link_callback_url(self, email: str, user_id: str) -> str:
         """Reconstruye la URL del callback REAL del magic-link de login.
 
-        `login.start` (form real con bypass) -> seed del token del magic-link
-        en Neon -> GET `verify-magic-link` al backend, que responde 302 con el
-        `Location` del callback (`/callback#access=...`). Devuelve ese
+        `login.check-email` (precheck con bypass) -> `login.start` (precheck en
+        Authorization, SIN email) -> temp step=2 -> `login.send-email-code`
+        (CREA la fila del magic-link de kind login en Neon: `login.start` por si
+        solo NO la crea) -> seed de su token -> GET `verify-magic-link`. Para
+        este user (passwordless ACTIVE, sin factores required adicionales) el
+        backend responde 302 con el `Location` del callback con los tokens en el
+        fragment (`/callback#access=...`); si tuviera factores pendientes seria
+        `#temp=...&methods=...` (no es el caso de este helper). Devuelve ese
         Location (la URL que el browser navegaria al hacer click en el email).
         """
+        precheck = self._login_precheck(email)
+        start = self._http.post(
+            '/auth',
+            body=make_body('login', 'start'),
+            origin=self._origin,
+            bearer=precheck,
+        )
         self._http.post(
             '/auth',
             body=make_body(
-                'login', 'start', email=email, cf_turnstile_response='',
+                'login', 'send-email-code',
+                temp_token=field(start.body, 'temp_token'),
             ),
             origin=self._origin,
-            bypass_token=self._bypass,
         )
         token = secrets.token_urlsafe(24)
         self._env.seed_magic_link(user_id=user_id, kind='login', plaintext=token)

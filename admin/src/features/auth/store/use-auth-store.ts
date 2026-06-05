@@ -34,7 +34,7 @@ interface AuthState {
 	setTokens: (
 		access: string,
 		refresh: string,
-		user: User,
+		user?: User | null,
 		refreshExpiry?: number | null,
 	) => void;
 	setAccessToken: (token: string | null) => void;
@@ -79,13 +79,16 @@ export const useAuthStore = create<AuthState>()(
 			// refresh async.
 			bootstrapping: true,
 
+			// `user` es opcional: algunos cierres del login (checklist) NO
+			// re-envian el perfil. Cuando llega `undefined`, se conserva el user
+			// actual (el bootstrap/refresh lo hidrata); `null` lo limpia.
 			setTokens: (access, refresh, user, refreshExpiry) =>
-				set({
+				set((state) => ({
 					accessToken: access,
 					refreshToken: refresh,
-					user,
+					user: user === undefined ? state.user : user,
 					refreshExpiry: refreshExpiry ?? decodeExp(refresh),
-				}),
+				})),
 			setAccessToken: (token) => set({ accessToken: token }),
 			setRefreshToken: (token) =>
 				set({

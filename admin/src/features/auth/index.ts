@@ -8,15 +8,19 @@
 export type {
 	AuthResponse,
 	CheckEmailResponse,
+	MethodKind,
+	MethodRequired,
 	MfaListResponse,
 	RecoveryCodesResponse,
 	SecurityOverviewResponse,
 	TempTokenResponse,
 	TotpSetupResponse,
+	VerifyResult,
 	WebauthnCredentialsResponse,
 } from "@/types/api";
 // Componentes
 export { AuthGuard } from "./components/auth-guard";
+export { LoginChecklist } from "./components/login-checklist";
 export { LoginForm } from "./components/login-form";
 export { LoginPasswordInput } from "./components/login-password-input";
 export { LoginTotpInput } from "./components/login-totp-input";

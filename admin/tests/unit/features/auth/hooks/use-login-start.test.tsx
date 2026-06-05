@@ -28,10 +28,11 @@ describe("useLoginStart", () => {
 		// Arrange
 		const { result } = renderHook(() => useLoginStart(), { wrapper });
 
-		// Act: el precheckToken viaja en Authorization (no Turnstile).
+		// Act: el precheckToken viaja en Authorization (no Turnstile). El alta
+		// fusionada manda el email; el user existente NO (lo resuelve el precheck).
 		const response = await act(async () =>
 			result.current.mutateAsync({
-				data: { email: "unknown@test.com" },
+				email: "unknown@test.com",
 				precheckToken: "mock-precheck-token",
 			}),
 		);
@@ -48,7 +49,7 @@ describe("useLoginStart", () => {
 		// Act
 		const response = await act(async () =>
 			result.current.mutateAsync({
-				data: { email: "mfa@test.com" },
+				email: "mfa@test.com",
 				precheckToken: "mock-precheck-token",
 			}),
 		);
@@ -66,7 +67,7 @@ describe("useLoginStart", () => {
 		await expect(
 			act(async () =>
 				result.current.mutateAsync({
-					data: { email: "mfa@test.com" },
+					email: "mfa@test.com",
 					precheckToken: "",
 				}),
 			),

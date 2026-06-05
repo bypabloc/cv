@@ -6,7 +6,9 @@ import { LoginTotpInput } from "@/features/auth/components/login-totp-input";
 import { MagicLinkPrompt } from "@/features/auth/components/magic-link-prompt";
 import { RecoveryCodeInput } from "@/features/auth/components/recovery-code-input";
 import { SetPasswordForm } from "@/features/auth/components/set-password-form";
+import { VerifyCodeInput } from "@/features/auth/components/verify-code-input";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
+import type { VerifyResult } from "@/types/api";
 
 /**
  * @module tests/unit/features/auth/components/forms
@@ -154,5 +156,105 @@ describe("RecoveryCodeInput", () => {
 		await waitFor(() => {
 			expect(useAuthStore.getState().accessToken).not.toBe(null);
 		});
+	});
+});
+
+/**
+ * Modo CHECKLIST de los inputs parametrizados: con props `tempToken` +
+ * `onResult`, el input corre el verify con el tempToken RECIBIDO y entrega el
+ * VerifyResult al `onResult` SIN setear tokens ni redirigir (eso lo decide el
+ * checklist). El store queda intacto (accessToken null).
+ */
+describe("LoginPasswordInput (modo checklist)", () => {
+	it("Given tempToken+onResult When submit Then verify usa el tempToken y entrega el result (sin tokens)", async () => {
+		// Arrange: el handler con temp cl-step2-0 devuelve un TempTokenResponse
+		// rolling (cl-step2-1 + [totp]); NO cierra el login.
+		const onResult = vi.fn();
+		const user = userEvent.setup();
+		render(
+			(
+				<LoginPasswordInput
+					tempToken="cl-step2-0"
+					onResult={onResult}
+					testid="cl-pw"
+				/>
+			) as ReactElement,
+		);
+
+		// Act
+		await user.type(screen.getByTestId("cl-pw"), "a-strong-pass-12");
+		await user.click(screen.getByRole("button", { name: /continuar/i }));
+
+		// Assert: onResult recibe el temp rotado; el store NO se toca.
+		await waitFor(() => {
+			expect(onResult).toHaveBeenCalledTimes(1);
+		});
+		const result = onResult.mock.calls[0]?.[0] as VerifyResult;
+		expect(result).toEqual({
+			temp_token: "cl-step2-1",
+			step: 2,
+			mfa_complete: false,
+			methods: ["totp"],
+		});
+		expect(useAuthStore.getState().accessToken).toBe(null);
+	});
+});
+
+describe("LoginTotpInput (modo checklist)", () => {
+	it("Given tempToken+onResult When submit Then verify usa el tempToken y entrega el result (sin tokens)", async () => {
+		// Arrange: temp cl-step2-1 -> el handler cierra con AuthResponse.
+		const onResult = vi.fn();
+		const user = userEvent.setup();
+		render(
+			(
+				<LoginTotpInput
+					tempToken="cl-step2-1"
+					onResult={onResult}
+					withRecovery={false}
+					testid="cl-totp"
+				/>
+			) as ReactElement,
+		);
+
+		// Act
+		await user.type(screen.getByTestId("cl-totp"), "123456");
+		await user.click(screen.getByRole("button", { name: /^verificar$/i }));
+
+		// Assert: onResult recibe el AuthResponse; el store NO se toca.
+		await waitFor(() => {
+			expect(onResult).toHaveBeenCalledTimes(1);
+		});
+		const result = onResult.mock.calls[0]?.[0] as VerifyResult;
+		expect("access_token" in result).toBe(true);
+		expect(useAuthStore.getState().accessToken).toBe(null);
+	});
+});
+
+describe("VerifyCodeInput (modo checklist)", () => {
+	it("Given tempToken+onResult When submit Then verify-code entrega el result (sin tokens)", async () => {
+		// Arrange: temp cl-email-0 -> verify-code cierra con AuthResponse.
+		const onResult = vi.fn();
+		const user = userEvent.setup();
+		render(
+			(
+				<VerifyCodeInput
+					tempToken="cl-email-0"
+					onResult={onResult}
+					testid="cl-code"
+				/>
+			) as ReactElement,
+		);
+
+		// Act
+		await user.type(screen.getByTestId("cl-code"), "ABCDEFGH");
+		await user.click(screen.getByRole("button", { name: /^verificar$/i }));
+
+		// Assert
+		await waitFor(() => {
+			expect(onResult).toHaveBeenCalledTimes(1);
+		});
+		const result = onResult.mock.calls[0]?.[0] as VerifyResult;
+		expect("access_token" in result).toBe(true);
+		expect(useAuthStore.getState().accessToken).toBe(null);
 	});
 });

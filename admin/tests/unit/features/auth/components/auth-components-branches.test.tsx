@@ -93,21 +93,22 @@ describe("LoginForm flujo de 2 pasos", () => {
 		});
 	});
 
-	it("Given email con password When check-email Then muestra el input de password", async () => {
-		// Arrange: check-email default -> exists:true, has_password:true -> stage 'password'.
+	it("Given email con metodos required When check-email Then muestra el checklist", async () => {
+		// Arrange: check-email -> methods_required no vacio -> login.start ->
+		// stage 'checklist'.
 		const user = userEvent.setup();
 		render((<LoginForm />) as ReactElement);
 		await user.type(
 			screen.getByPlaceholderText("tu@email.com"),
-			"user@test.com",
+			"checklist@test.com",
 		);
 		await user.click(screen.getByRole("button", { name: /pasar-turnstile/i }));
 
 		// Act
 		await user.click(screen.getByRole("button", { name: /^continuar$/i }));
 
-		// Assert: aparece el input de password (paso 2)
-		expect(await screen.findByTestId("login-password")).toBeInTheDocument();
+		// Assert: aparece el checklist (paso 2)
+		expect(await screen.findByTestId("login-checklist")).toBeInTheDocument();
 	});
 
 	it("Given cuenta no disponible When check-email Then muestra el Alert generico", async () => {

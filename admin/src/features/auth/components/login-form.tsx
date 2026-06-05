@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,39 +15,39 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ApiError } from "@/lib/api-client";
 import { ROUTES } from "@/lib/routes";
-import {
-	type LoginInput,
-	loginSchema,
-	passwordSchema,
-} from "@/lib/validation/auth";
+import { type LoginInput, loginSchema } from "@/lib/validation/auth";
+import type { MethodRequired } from "@/types/api";
 import { useCheckEmail } from "../hooks/use-check-email";
 import { useLoginStart } from "../hooks/use-login-start";
-import { useAuthStore } from "../store/use-auth-store";
+import { LoginChecklist } from "./login-checklist";
 import { TurnstileWidget } from "./turnstile-widget";
 import { WebAuthnLoginButton } from "./webauthn-login-button";
-
-const passwordStepSchema = z.object({ password: passwordSchema });
-type PasswordStepValues = z.infer<typeof passwordStepSchema>;
 
 /** Estado de la maquina del flujo de login (paso 2 segun check-email). */
 type Stage =
 	| { kind: "email" }
-	| { kind: "password"; email: string }
 	| { kind: "passwordless"; email: string }
 	| { kind: "create"; email: string }
+	| {
+			kind: "checklist";
+			email: string;
+			methodsRequired: MethodRequired[];
+			tempToken: string;
+			pending?: string[];
+	  }
 	| { kind: "unavailable" };
 
 /**
  * @component LoginForm
  * @description Login de 2 pasos. Paso 1: email + Turnstile -> login.check-email.
  *   Paso 2 segun el resultado:
- *   - existe + tiene password -> input de password -> login.start con password.
- *   - existe sin password (o pending) -> login.start passwordless -> /verify.
- *   - no existe -> propone crear la cuenta (login.start crea el user) -> /verify.
+ *   - existe con metodos `required` -> login.start (precheck, sin email) ->
+ *     CHECKLIST: el user completa los factores en cualquier orden.
+ *   - existe sin metodos (o pending) -> login.start passwordless -> /verify.
+ *   - no existe -> propone crear la cuenta (login.start con email) -> /verify.
  *   - no disponible -> mensaje generico.
- *   Conserva el login con passkey (WebAuthnLoginButton).
+ *   Conserva el login con passkey passwordless (WebAuthnLoginButton).
  */
 export function LoginForm() {
 	const router = useRouter();
@@ -61,20 +60,46 @@ export function LoginForm() {
 	const [stage, setStage] = useState<Stage>({ kind: "email" });
 	const checkEmail = useCheckEmail();
 	const loginStart = useLoginStart();
-	const setTempToken = useAuthStore((s) => s.setTempToken);
 
 	const emailForm = useForm<LoginInput>({
 		resolver: zodResolver(loginSchema),
 		defaultValues: { email: "" },
 	});
 
-	const passwordForm = useForm<PasswordStepValues>({
-		resolver: zodResolver(passwordStepSchema),
-		defaultValues: { password: "" },
-	});
-
 	const goToVerify = () => {
 		router.push(`${ROUTES.auth.verify}?flow=login`);
+	};
+
+	/** login.start (precheck, sin email): emite el temp step=2 del checklist. */
+	const startChecklist = (
+		email: string,
+		methodsRequired: MethodRequired[],
+		precheck: string | null,
+	) => {
+		if (precheck === null) return;
+		loginStart.mutate(
+			{ precheckToken: precheck },
+			{
+				onSuccess: ({ data }) => {
+					setStage({
+						kind: "checklist",
+						email,
+						methodsRequired,
+						tempToken: data.temp_token,
+						pending: data.methods,
+					});
+				},
+			},
+		);
+	};
+
+	/** Alta fusionada / passwordless: login.start con (alta) o sin email. */
+	const startPasswordless = (email: string, withEmail: boolean) => {
+		if (precheckToken === null) return;
+		loginStart.mutate(
+			{ precheckToken, email: withEmail ? email : undefined },
+			{ onSuccess: goToVerify },
+		);
 	};
 
 	const onCheckEmail = emailForm.handleSubmit((values) => {
@@ -96,47 +121,16 @@ export function LoginForm() {
 						setStage({ kind: "create", email: values.email });
 						return;
 					}
-					if (data.has_password && !data.pending) {
-						setStage({ kind: "password", email: values.email });
+					const required = data.methods_required ?? [];
+					if (data.pending || required.length === 0) {
+						setStage({ kind: "passwordless", email: values.email });
 						return;
 					}
-					setStage({ kind: "passwordless", email: values.email });
+					startChecklist(values.email, required, data.temp_token ?? null);
 				},
 			},
 		);
 	});
-
-	const startPasswordless = (email: string) => {
-		if (precheckToken === null) return;
-		loginStart.mutate(
-			{ data: { email }, precheckToken },
-			{ onSuccess: goToVerify },
-		);
-	};
-
-	const onPasswordSubmit = (email: string) =>
-		passwordForm.handleSubmit((values) => {
-			if (precheckToken === null) return;
-			loginStart.mutate(
-				{
-					data: { email, password: values.password },
-					precheckToken,
-				},
-				{
-					onSuccess: ({ data }) => {
-						setTempToken(data.temp_token);
-						goToVerify();
-					},
-					onError: (error) => {
-						if (error instanceof ApiError && error.status === 401) {
-							passwordForm.setError("password", {
-								message: "Contrasena incorrecta",
-							});
-						}
-					},
-				},
-			);
-		});
 
 	const checkingPending = checkEmail.isPending;
 	const startPending = loginStart.isPending;
@@ -162,7 +156,7 @@ export function LoginForm() {
 							className="w-full"
 							data-testid="login-create-account"
 							disabled={startPending}
-							onClick={() => startPasswordless(stage.email)}
+							onClick={() => startPasswordless(stage.email, true)}
 						>
 							{startPending ? "Creando..." : "Crear cuenta"}
 						</Button>
@@ -180,7 +174,7 @@ export function LoginForm() {
 							className="w-full"
 							data-testid="login-passwordless"
 							disabled={startPending}
-							onClick={() => startPasswordless(stage.email)}
+							onClick={() => startPasswordless(stage.email, false)}
 						>
 							{startPending ? "Enviando..." : "Continuar"}
 						</Button>
@@ -188,42 +182,13 @@ export function LoginForm() {
 				</Alert>
 			)}
 
-			{stage.kind === "password" && (
-				<Form {...passwordForm}>
-					<form
-						onSubmit={onPasswordSubmit(stage.email)}
-						className="space-y-4"
-						noValidate
-					>
-						<FormField
-							control={passwordForm.control}
-							name="password"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Contrasena</FormLabel>
-									<FormControl>
-										<Input
-											type="password"
-											autoComplete="current-password"
-											data-testid="login-password"
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<Button
-							type="submit"
-							className="w-full"
-							data-testid="login-password-submit"
-							disabled={startPending}
-						>
-							{startPending ? "Iniciando..." : "Iniciar sesion"}
-						</Button>
-					</form>
-				</Form>
+			{stage.kind === "checklist" && (
+				<LoginChecklist
+					methodsRequired={stage.methodsRequired}
+					initialTempToken={stage.tempToken}
+					email={stage.email}
+					initialPending={stage.pending}
+				/>
 			)}
 
 			{stage.kind === "email" && (
@@ -263,7 +228,7 @@ export function LoginForm() {
 				</Form>
 			)}
 
-			<WebAuthnLoginButton />
+			{stage.kind === "email" && <WebAuthnLoginButton />}
 		</div>
 	);
 }

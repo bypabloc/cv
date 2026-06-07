@@ -78,6 +78,26 @@ SOLO NO aisla nada a nivel git.
   (no lee su contenido) a cada worktree nuevo. Esto es compatible con
   [env-files.md](env-files.md) (es una copia file-a-file, NO una lectura del
   `.env` al contexto). Ver "Setup del repo" abajo.
+- **SIEMPRE** que el worktree se cree con `git worktree add` MANUAL (no con
+  `claude --worktree`), **copiar a mano** los archivos gitignored declarados
+  en `.worktreeinclude` ANTES de correr cualquier build/test/push. Solo
+  `claude --worktree` (e `isolation:'worktree'`) aplica `.worktreeinclude`
+  automaticamente; `git worktree add` crea un checkout que SOLO tiene los
+  archivos tracked (los `.example`, NO los `.local`/`.dev`/`.stage`/`.prod`).
+  Comando (copia file-a-file, no lee contenido -> cumple
+  [env-files.md](env-files.md)):
+
+  ```bash
+  cp -rn docker/env/. .claude/worktrees/<nombre>/docker/env/
+  ```
+
+- **NUNCA** correr el pre-push hook (o `pnpm build` del admin) en un worktree
+  SIN los env files copiados: el hook inyecta las `NEXT_PUBLIC_*` /`PUBLIC_*`
+  leyendo `docker/env/client/.local`; si falta, el build del admin
+  **falla con `ZodError`** (env validator de `admin/src/lib/env.ts`) y el push
+  queda bloqueado en el paso `build`. NO es un bug del codigo ni se arregla
+  con `SKIP_STEPS=build`: la causa es el worktree sin sus `.env`. Copialos
+  (regla de arriba) y re-push.
 - **SIEMPRE** recordar que los caches de build (`.astro/`, `.vite/`,
   `dist/`, `coverage/`) viven DENTRO del worktree -> ya estan aislados, no
   colisionan entre worktrees.
@@ -127,8 +147,11 @@ docker/env/
 ```bash
 # 1. Crear el worktree + arrancar Claude ahi (una ventana por feature)
 claude --worktree feature-a        # -> .claude/worktrees/feature-a, rama worktree-feature-a
+#   `claude --worktree` aplica .worktreeinclude solo: los .env ya estan copiados.
 #   o, para una rama de trabajo con nombre del proyecto:
 git worktree add .claude/worktrees/feature-a -b feature/<nombre>
+#   git worktree add NO copia los gitignored -> copiarlos a mano (file-a-file):
+cp -rn docker/env/. .claude/worktrees/feature-a/docker/env/
 code .claude/worktrees/feature-a   # abrir VS Code en el worktree, abrir Claude ahi
 
 # 2. Dentro del worktree: aislar recursos
@@ -185,8 +208,10 @@ forma de NO perder de vista las 2-3 sesiones en paralelo.
 | Confiar en multi-tab VS Code para aislar archivos | Las tabs comparten el working tree | Solo los worktrees aislan a nivel git |
 | Dos `pnpm install` sobre el mismo `node_modules` | Race en el node_modules hoisted | `pnpm install` propio por worktree (store compartido) |
 | Dos `docker:up --env=local` a la vez | Choque de `portfolio-<svc>-local` + puerto 9970 | Env distinto por worktree, o `COMPOSE_PROJECT_NAME` distinto |
-| Worktree fresco sin sus `.env` | Es un checkout limpio sin archivos gitignored | `.worktreeinclude` (copia, no lectura) |
-| Esperar que Claude prepare el entorno del worktree | Claude crea el checkout, no instala deps | `pnpm install` + setup manual en cada worktree |
+| `git worktree add` manual sin copiar los `.env` despues | `git worktree add` NO aplica `.worktreeinclude` (solo `claude --worktree` lo hace): el checkout solo trae los `.example` tracked | `cp -rn docker/env/. <worktree>/docker/env/` antes de build/test/push |
+| Build del admin falla con `ZodError` en el pre-push del worktree | Faltan los `NEXT_PUBLIC_*`: el hook los inyecta de `docker/env/client/.local`, ausente en el worktree | Copiar los `.env` al worktree (regla de arriba), NO `SKIP_STEPS=build` |
+| `SKIP_STEPS=build` para "saltar" el build roto del worktree | Tapa el sintoma (env files faltantes), no la causa; deja pasar un build real roto | Copiar los `.env` y dejar correr el build completo del hook |
+| Esperar que Claude prepare el entorno del worktree | Claude crea el checkout, no instala deps | `pnpm install` + copia de `.env` + setup manual en cada worktree |
 | Abrir 5+ ventanas activas para ir mas rapido | La cuota es de cuenta + throttle de rafaga -> 429 | 2-3 sesiones activas a la vez; combinar capas, no multiplicarlas |
 | Correr un workflow Y abrir varias ventanas activas | El throttle se suma -> pega el techo | Una cosa a la vez: o el workflow, o las ventanas |
 | Dejar worktrees de `--worktree` sin borrar | NO se barren solos (solo los de subagentes/background) | `git worktree remove` + `prune` al terminar |

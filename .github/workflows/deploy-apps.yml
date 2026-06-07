@@ -124,6 +124,12 @@ jobs:
           NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS: ${{ vars.NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS }}
           NEXT_PUBLIC_WEBAUTHN_RP_ID: ${{ vars.NEXT_PUBLIC_WEBAUTHN_RP_ID }}
           NEXT_PUBLIC_FEATURE_MFA: ${{ vars.NEXT_PUBLIC_FEATURE_MFA }}
+          # E2E bypass del Turnstile: solo el environment `dev` la tiene en
+          # 'true' (para automatizar el form de login en los E2E browser).
+          # En stage/prod la var no existe -> vars.* resuelve a '' -> el
+          # env.ts del admin aplica su default 'false'. El backend prod
+          # rechaza el bypass SIEMPRE (defensa server-side independiente).
+          NEXT_PUBLIC_E2E_BYPASS: ${{ vars.NEXT_PUBLIC_E2E_BYPASS }}
         run: |
           # Verificacion explicita: las vars requeridas deben estar
           # presentes. Si falta alguna, fallar temprano con mensaje claro

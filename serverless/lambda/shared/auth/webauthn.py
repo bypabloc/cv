@@ -38,6 +38,7 @@ from typing import Any
 
 from fido2 import cbor
 from fido2.cose import CoseKey
+from fido2.features import webauthn_json_mapping
 from fido2.server import Fido2Server
 from fido2.utils import websafe_encode
 from fido2.webauthn import (
@@ -54,6 +55,18 @@ from fido2.webauthn import (
 )
 
 from shared.core.exceptions import ApplicationError
+
+# fido2 1.x trae el "JSON mapping" del WebAuthn-2 DESACTIVADO por defecto:
+# sin el, `RegistrationResponse.from_dict` / `AuthenticationResponse.from_dict`
+# esperan los campos binarios (`id`, `rawId`, `attestationObject`,
+# `clientDataJSON`) como `bytes`. PERO el browser (cualquiera: nativo o via
+# @simplewebauthn) los serializa como strings base64url
+# (`RegistrationResponseJSON` del spec) -> fido2 hace `bytes('<b64url>')` y
+# revienta con `TypeError: string argument without an encoding`, que el
+# controller traduce a `400 WEBAUTHN_REGISTRATION_FAILED`. Activar el mapping
+# (idempotente, flag de proceso) hace que `from_dict` decodifique base64url.
+# Sin esto NINGUN register/login de passkey real funciona.
+webauthn_json_mapping.enabled = True
 
 
 class WebauthnError(ApplicationError):

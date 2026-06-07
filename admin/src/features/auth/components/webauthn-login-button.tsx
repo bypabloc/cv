@@ -13,7 +13,9 @@ import { useWebauthnLoginVerify } from "../hooks/use-webauthn-login-verify";
 /**
  * @component WebAuthnLoginButton
  * @description Login con passkey: pide email -> login-options ->
- *   `startAuthentication(options)` -> login-verify (`{challenge_id, response}`).
+ *   `startAuthentication(options.publicKey)` -> login-verify
+ *   (`{challenge_id, response}`). El backend devuelve las options ENVUELTAS
+ *   en `publicKey`; @simplewebauthn espera el contenido plano en `optionsJSON`.
  *
  *   Dos modos:
  *   - Checklist (props `email` + `onResult`): el email ya es conocido (no se
@@ -43,7 +45,9 @@ export function WebAuthnLoginButton({
 
 	const runPasskey = async (targetEmail: string) => {
 		const { data } = await loginOptions.mutateAsync({ email: targetEmail });
-		const response = await startAuthentication({ optionsJSON: data.options });
+		const response = await startAuthentication({
+			optionsJSON: data.options.publicKey,
+		});
 		if (checklistMode) {
 			const result = await loginVerify.mutateAsync({
 				challenge_id: data.challenge_id,

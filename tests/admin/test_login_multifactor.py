@@ -154,8 +154,10 @@ def test_login_with_password_and_webauthn_required_lands_in_shell(
         + passkey via Virtual Authenticator, en ese orden),
     Then el login converge (mfa_complete) y aterriza en el shell autenticado.
 
-    Hoy FALLA: webauthn.login-verify no acumula los factores previos del
-    checklist -> mfa_complete nunca true -> no hay redirect al shell.
+    Regresion guard: antes del fix, webauthn.login-verify hardcodeaba
+    satisfied=['webauthn'] y no recibia el temp_token del checklist, asi que
+    mfa_complete nunca era true y no habia redirect. El fix (backend acumula
+    los factores del temp + front pasa el tempToken) lo cierra.
     """
     page, email, admin = mf_setup
 
@@ -171,10 +173,17 @@ def test_login_with_password_and_webauthn_required_lands_in_shell(
     page.get_by_role('button', name='Continuar').click()
     page.wait_for_selector('text=1 de 2 completados', timeout=15_000)
 
-    # Factor 2: webauthn (el Virtual Authenticator responde el ceremony).
+    # Factor 2: webauthn. El picker monta el boton de forma async tras
+    # setView('webauthn'); esperar a que sea visible ANTES de clickear (sin
+    # esto el click puede caer antes de que el handler este montado y el
+    # ceremony no arranca).
     page.get_by_test_id('picker-method-webauthn').click()
-    page.get_by_test_id('checklist-webauthn').click()
+    webauthn_btn = page.get_by_test_id('checklist-webauthn')
+    webauthn_btn.wait_for(state='visible', timeout=10_000)
+    webauthn_btn.click()
+    # El ceremony del Virtual Authenticator tarda ~1-2s ("Validando..."); el
+    # wait del shell le da margen amplio.
 
-    # Assert: el login converge y aterriza en el shell.
+    # Assert: el login converge (mfa_complete) y aterriza en el shell.
     page.wait_for_selector(_SHELL_MARKER, timeout=30_000)
     assert page.url.rstrip('/') == admin

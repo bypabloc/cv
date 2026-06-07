@@ -27,15 +27,20 @@ import { useWebauthnLoginVerify } from "../hooks/use-webauthn-login-verify";
  * @props {string} [email] - email conocido (modo checklist)
  * @props {(data: VerifyResult) => void} [onResult] - resultado del verify
  * @props {string} [testid] - data-testid del boton (modo checklist)
+ * @props {string} [tempToken] - temp_token rolling del checklist multi-factor;
+ *   se manda al login-verify para que el backend acumule los factores ya
+ *   satisfechos (ej. password). Sin el, el login multi-factor no converge.
  */
 export function WebAuthnLoginButton({
 	email: emailProp,
 	onResult,
 	testid,
+	tempToken,
 }: {
 	email?: string;
 	onResult?: (data: VerifyResult) => void;
 	testid?: string;
+	tempToken?: string;
 } = {}) {
 	const checklistMode = emailProp !== undefined && onResult !== undefined;
 	const [email, setEmail] = useState("");
@@ -49,9 +54,13 @@ export function WebAuthnLoginButton({
 			optionsJSON: data.options.publicKey,
 		});
 		if (checklistMode) {
+			// tempToken: en el checklist multi-factor el backend lo necesita para
+			// acumular los factores ya satisfechos (ej. password). Sin el, el
+			// passkey se verifica aislado y el login nunca converge.
 			const result = await loginVerify.mutateAsync({
 				challenge_id: data.challenge_id,
 				response,
+				temp_token: tempToken,
 			});
 			onResult?.(result.data);
 			return;

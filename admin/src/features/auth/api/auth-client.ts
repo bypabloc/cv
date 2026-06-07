@@ -261,6 +261,7 @@ export const authClient = {
 	webauthnLoginVerify: (data: {
 		challenge_id: string;
 		response: AuthenticationResponseJSON;
+		temp_token?: string;
 	}) =>
 		apiFetch<Envelope<VerifyResult>>("/auth", {
 			method: "POST",

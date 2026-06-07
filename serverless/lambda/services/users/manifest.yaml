@@ -23,9 +23,12 @@ memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-
                   # Ver .claude/rules/lambda-config.md.
 timeout: 60       # segundos — colchon uniforme.
 
-# SnapStart: reduce cold start (~830ms Restore). Mismo criterio que auth:
-# low traffic prod hace que cada request pague cold start.
-snap_start: true
+# SnapStart DESACTIVADO (2026-06): el storage del snapshot
+# (Lambda-SnapStart-Cached-GB-S) se factura por hora por cada version
+# publicada y NO entra en el free tier (~$50/mes con 25 funciones). El
+# cold start lo mitiga la carga lazy de shared.auth. Re-evaluar solo si
+# lo exige. Ver .claude/rules/lambda-config.md.
+snap_start: false
 
 # --- Como se invoca este Lambda ---
 trigger:

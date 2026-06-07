@@ -196,6 +196,7 @@ export function LoginChecklist({
 						email={email}
 						onResult={onResult("webauthn")}
 						testid="checklist-webauthn"
+						tempToken={tempToken}
 					/>
 				);
 			default:

@@ -179,6 +179,21 @@ class Environment:
         )
         return [str(r[0]) for r in rows]
 
+    def count_webauthn_credentials(self, user_id: str) -> int:
+        """Passkeys WebAuthn ACTIVOS del user (auth_webauthn_credentials).
+
+        Cuenta las filas no deshabilitadas: el register-verify del ceremony
+        inserta la fila con `disabled_at IS NULL`. Sirve para confirmar
+        server-side que el ceremony se completo (el credential quedo
+        persistido en Neon), no solo que el toast del front aparecio.
+        """
+        rows = self._query(
+            'SELECT count(*) FROM auth_webauthn_credentials '
+            'WHERE user_id = %s AND disabled_at IS NULL',
+            (user_id,),
+        )
+        return int(rows[0][0]) if rows else 0
+
     # --- Admin whitelist (SSM) + cold restart del Lambda users ---
 
     def _admin_emails_path(self) -> str:

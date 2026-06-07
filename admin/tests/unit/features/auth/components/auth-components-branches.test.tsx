@@ -35,13 +35,38 @@ vi.mock("@marsidev/react-turnstile", () => ({
 	),
 }));
 
-const { startRegistrationMock, startAuthenticationMock } = vi.hoisted(() => ({
-	startRegistrationMock: vi.fn(),
-	startAuthenticationMock: vi.fn(),
-}));
+const { startRegistrationMock, startAuthenticationMock, MockWebAuthnError } =
+	vi.hoisted(() => {
+		// Replica minima de @simplewebauthn/browser.WebAuthnError: el componente
+		// WebAuthnRegisterButton hace `instanceof WebAuthnError` en su manejo de
+		// error, asi que el mock DEBE exportarla (si falta -> `instanceof undefined`
+		// lanza TypeError no capturado -> crashea el worker pool de vitest).
+		class MockWebAuthnError extends Error {
+			code: string;
+			constructor({
+				message,
+				code,
+				cause,
+			}: {
+				message: string;
+				code: string;
+				cause: Error;
+			}) {
+				super(message, { cause });
+				this.name = cause.name;
+				this.code = code;
+			}
+		}
+		return {
+			startRegistrationMock: vi.fn(),
+			startAuthenticationMock: vi.fn(),
+			MockWebAuthnError,
+		};
+	});
 vi.mock("@simplewebauthn/browser", () => ({
 	startRegistration: startRegistrationMock,
 	startAuthentication: startAuthenticationMock,
+	WebAuthnError: MockWebAuthnError,
 }));
 
 const API = "https://api.test.the-full-stack.com";

@@ -38,8 +38,10 @@ function describeRegisterError(error: unknown): string {
 /**
  * @component WebAuthnRegisterButton
  * @description Registra un passkey: register-options ->
- *   `startRegistration(options)` -> register-verify
- *   (`{challenge_id, response, nickname}`). Requiere sesion activa.
+ *   `startRegistration(options.publicKey)` -> register-verify
+ *   (`{challenge_id, response, nickname}`). Requiere sesion activa. El
+ *   backend devuelve las options ENVUELTAS en `publicKey`; @simplewebauthn
+ *   espera el contenido plano de ese `publicKey` en `optionsJSON`.
  *   El verify se espera con `mutateAsync` DENTRO del try para que un fallo
  *   del backend tambien se capture (no fire-and-forget silencioso).
  */
@@ -52,7 +54,9 @@ export function WebAuthnRegisterButton() {
 	const onRegister = async () => {
 		try {
 			const { data } = await registerOptions.mutateAsync();
-			const response = await startRegistration({ optionsJSON: data.options });
+			const response = await startRegistration({
+				optionsJSON: data.options.publicKey,
+			});
 			await registerVerify.mutateAsync({
 				challenge_id: data.challenge_id,
 				response,

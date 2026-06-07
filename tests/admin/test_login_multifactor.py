@@ -126,7 +126,7 @@ def mf_setup(
             origin=origin,
             bearer=access,
         )
-        cred_id = creds.body['data']['credentials'][0]['credential_id']
+        cred_id = creds.body['credentials'][0]['credential_id']
         wa_req = http.post(
             '/auth',
             body=make_body(

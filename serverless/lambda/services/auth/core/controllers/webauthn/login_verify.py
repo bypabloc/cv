@@ -21,12 +21,14 @@ from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
 from services.webauthn_service import WebauthnService
 from settings.config import app_config
+from shared.auth.jwt import JwtError
 from shared.auth.webauthn import WebauthnCloneError, WebauthnVerifyError
 from shared.lambda_kit.base_controller import BaseController
 
-from ..login._mfa_login import decide_mfa_step
+from ..login._mfa_login import decide_mfa_step, parse_satisfied
 
 _ENDPOINT = '/auth#webauthn.login-verify'
+_MFA_FLOW = 'login-mfa'
 
 
 class LoginVerify(BaseController):
@@ -118,15 +120,28 @@ class LoginVerify(BaseController):
                 'data': {'error': 'WEBAUTHN_VERIFY_FAILED'},
             }
 
-        # Multi-factor: la passkey cuenta como factor 'webauthn' satisfecho.
-        # Si el user tiene OTROS metodos requeridos (ej. tambien TOTP),
-        # `decide_mfa_step` devuelve un temp step=2 pidiendo el faltante; si
-        # webauthn cubre los requeridos (o no hay), emite access+refresh.
+        # Multi-factor: la passkey cuenta como factor 'webauthn' satisfecho,
+        # ACUMULANDO los factores previos del checklist. Cuando webauthn es un
+        # factor del checklist, el front manda el temp step=2 rolling (flow
+        # 'login-mfa[:...]'); de su `flow` se extraen los factores ya hechos
+        # (ej. password) y se le suma 'webauthn'. Sin temp (login passwordless
+        # directo) el unico satisfecho es 'webauthn'. El temp se valida (typ +
+        # flow + step + que su `sub` sea el user del challenge: anti
+        # cross-account) y se blacklistea (rolling); un temp invalido degrada a
+        # solo 'webauthn' (el challenge ya autentica al user, no se rompe el
+        # passwordless).
+        satisfied = ['webauthn']
+        if data.temp_token:
+            satisfied = self._satisfied_from_temp(
+                jwt_svc=jwt_svc,
+                temp_token=data.temp_token,
+                user_id=user_id,
+            )
         data_out = decide_mfa_step(
             jwt_svc=jwt_svc,
             app_config=app_config,
             user_id=user_id,
-            satisfied=['webauthn'],
+            satisfied=satisfied,
             required=MfaMethodService(app_config).required_methods(
                 user_id=user_id,
             ),
@@ -144,3 +159,37 @@ class LoginVerify(BaseController):
         )
 
         return {'is_valid': True, 'code': 0, 'data': data_out}
+
+    def _satisfied_from_temp(
+        self,
+        *,
+        jwt_svc: JwtService,
+        temp_token: str,
+        user_id: str,
+    ) -> list[str]:
+        """`[*factores previos del temp, 'webauthn']` validando + rotando el temp.
+
+        El temp debe ser un step=2 del checklist (`typ='temp'`, flow
+        `login-mfa[:...]`) cuyo `sub` sea el user del challenge (anti
+        cross-account). Si valida, blacklistea su `jti` (rolling) y devuelve los
+        factores previos + 'webauthn'. Si NO valida (token invalido, flow/step
+        equivocado, o sub de otro user), degrada a `['webauthn']`: el challenge
+        ya autentico al user, no se rompe el passwordless directo.
+        """
+        try:
+            claims = jwt_svc.verify(temp_token, expected_typ='temp')
+        except JwtError:
+            return ['webauthn']
+        flow_ok = (
+            claims.flow is not None
+            and claims.flow.split(':', 1)[0] == _MFA_FLOW
+        )
+        if not flow_ok or claims.step != 2 or str(claims.sub) != str(user_id):
+            return ['webauthn']
+        jwt_svc.blacklist(
+            jti=claims.jti,
+            exp=claims.exp,
+            user_id=user_id,
+            reason='rotation',
+        )
+        return [*parse_satisfied(claims.flow), 'webauthn']

@@ -201,14 +201,27 @@ def set_required(
     kind: AuthMfaKind,
     required: bool,
 ) -> bool:
-    """Setea `required` en el row `(user_id, kind)` activo. False si no existe.
+    """Setea `required` en el row `(user_id, kind)` activo y confirmado. False si no.
 
-    Un metodo desactivado (`disabled_at IS NOT NULL`) NO se puede marcar
-    requerido (el login lo ignoraria) -> se trata como inexistente (False
-    -> 404 en el controller).
+    Un metodo no usable en el login NO puede quedar `required` (seria un
+    estado inconsistente: settings lo muestra requerido pero `login.start`
+    lo ignora -> el user nunca cumple ese factor). Se rechaza (False -> 404
+    en el controller) si el metodo:
+
+    - no existe,
+    - esta desactivado (`disabled_at IS NOT NULL`), o
+    - NO esta confirmado (`confirmed_at IS NULL`): un TOTP pendiente no tiene
+      secret confirmado para validar el code; exigirlo bloquearia el login.
+
+    Invariante: solo un metodo confirmado + activo puede ser `required`, que
+    es exactamente lo que `list_required_methods` exige para `login.start`.
     """
     method = get_mfa_method(session, user_id=user_id, kind=kind)
-    if method is None or method.disabled_at is not None:
+    if (
+        method is None
+        or method.disabled_at is not None
+        or method.confirmed_at is None
+    ):
         return False
     method.required = required
     session.flush()

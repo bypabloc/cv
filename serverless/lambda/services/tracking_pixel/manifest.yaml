@@ -23,10 +23,12 @@ memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-
                   # Ver .claude/rules/lambda-config.md.
 timeout: 60       # segundos — colchon uniforme.
 
-# SnapStart: snapshotea el INIT (imports + clientes) para bajar el cold y
-# permitir reducir memoria. Aunque la latencia esta oculta (async), el
-# snapshot evita pagar el import completo en cada cold.
-snap_start: true
+# SnapStart DESACTIVADO (2026-06): el storage del snapshot
+# (Lambda-SnapStart-Cached-GB-S) se factura por hora por cada version
+# publicada y NO entra en el free tier (~$50/mes con 25 funciones). Es
+# fire-and-forget (latencia oculta), el cold extra no afecta UX. Ver
+# .claude/rules/lambda-config.md.
+snap_start: false
 
 # --- Como se invoca este Lambda ---
 # http: expone un endpoint en la API del backend. devtools conecta la

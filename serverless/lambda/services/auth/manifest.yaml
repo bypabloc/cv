@@ -24,10 +24,12 @@ memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-
 timeout: 60       # segundos — colchon uniforme (red de seguridad cold sin
                   # restore + Turnstile siteverify HTTP). No afecta costo.
 
-# SnapStart: reduce cold start de ~3s a ~830ms (Restore Duration).
-# Critico en /auth: low traffic prod hace que cada request pague cold
-# start si no se mantiene warm.
-snap_start: true
+# SnapStart DESACTIVADO (2026-06): el storage del snapshot
+# (Lambda-SnapStart-Cached-GB-S) se factura por hora por cada version
+# publicada y NO entra en el free tier (~$50/mes con 25 funciones). El
+# cold start lo mitiga la carga lazy de shared.auth. Re-evaluar solo si
+# la latencia de /auth lo exige. Ver .claude/rules/lambda-config.md.
+snap_start: false
 
 # --- Como se invoca este Lambda ---
 # GET + POST: el resto del flujo (register/login/verify/session) usa POST

@@ -69,3 +69,40 @@ class WebauthnDeleteCredentialIn(BaseModel):
     credential_id: UUID
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
+class WebauthnEnableIn(BaseModel):
+    """POST /auth operation=webauthn action=enable.
+
+    `credential_id` es el `id` (UUID PK) del row, NO el credential_id
+    BYTEA del authenticator.
+    """
+
+    credential_id: UUID
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
+class WebauthnDisableIn(BaseModel):
+    """POST /auth operation=webauthn action=disable.
+
+    `credential_id` es el `id` (UUID PK) del row, NO el credential_id
+    BYTEA del authenticator.
+    """
+
+    credential_id: UUID
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
+class WebauthnSetRequiredIn(BaseModel):
+    """POST /auth operation=webauthn action=set-required.
+
+    `credential_id` es el `id` (UUID PK) del row, NO el credential_id
+    BYTEA del authenticator.
+    """
+
+    credential_id: UUID
+    required: bool
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')

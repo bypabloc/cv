@@ -141,6 +141,9 @@ def _default_workdir_for(service: str) -> str | None:
         return '/app/server'
     if service == 'feature':
         return '/app/tests/feature'
+    if service == 'admin':
+        # admin (Next.js SPA) vive en /app/admin, no bajo apps/.
+        return '/app/admin'
     if service in _PORTFOLIO_APPS:
         return f'/app/apps/{service}'
     if service.startswith('pkg-'):
@@ -157,6 +160,9 @@ _PORTFOLIO_APP_SERVICES = (
     'architect',
     'leader',
     'vibe',
+    # admin (Next.js): el dev server corre como user app (uid 1000) sobre
+    # el bind mount, igual que las apps Astro.
+    'admin',
 )
 
 
@@ -186,6 +192,7 @@ def compose_exec(
     Default workdir per-service:
         server                  -> /app/server
         feature                 -> /app/tests/feature
+        admin                   -> /app/admin
         hub|generic|fintech|... -> /app/apps/<X>
         pkg-<NAME>              -> /app/packages/<NAME>
     """

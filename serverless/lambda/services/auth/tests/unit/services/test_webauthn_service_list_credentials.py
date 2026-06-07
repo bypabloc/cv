@@ -2,8 +2,8 @@
 
 Given el repo get_webauthn_credentials devuelve credentials,
 When se invoca list_credentials,
-Then devuelve dicts {credential_id, nickname, transports, created_at,
-  last_used_at} (sin objetos ORM).
+Then devuelve dicts {credential_id, nickname, transports, enabled, required,
+  created_at, last_used_at} (sin objetos ORM).
 """
 
 from contextlib import contextmanager
@@ -24,6 +24,8 @@ def test_webauthn_service_list_credentials(monkeypatch):
     cred.id = 'rec-1'
     cred.nickname = 'MacBook'
     cred.transports = ['usb']
+    cred.disabled_at = None
+    cred.required = False
     cred.created_at = created
     cred.last_used_at = None
 
@@ -42,6 +44,8 @@ def test_webauthn_service_list_credentials(monkeypatch):
             'credential_id': 'rec-1',
             'nickname': 'MacBook',
             'transports': ['usb'],
+            'enabled': True,
+            'required': False,
             'created_at': created.isoformat(),
             'last_used_at': None,
         },

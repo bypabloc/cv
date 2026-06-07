@@ -6,35 +6,37 @@ Then anti-enumeration: 404 EMAIL_NOT_FOUND con suggest_register=False
 (NO revela que el user existe).
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from .._helpers import _make_event_register_start, _make_user
 
 
 def test_login_start_email_locked_404(monkeypatch):
-    """AC-20: locked -> 404 anti-enumeration."""
+    """AC-20: locked -> 404 anti-enumeration (tras precheck OK)."""
     from controllers.login import start
 
     user = _make_user(email='visitor@example.com', status='locked')
 
     user_svc = MagicMock()
-    user_svc.get_by_email.return_value = user
+    user_svc.get_by_id.return_value = user
+    jwt_svc = MagicMock()
+    jwt_svc.verify.return_value = SimpleNamespace(
+        sub=user.id, jti='precheck-jti', exp=9999999999, flow='login',
+        typ='temp',
+    )
 
     email_svc = MagicMock()
     monkeypatch.setattr(start, 'UserService', lambda _c: user_svc)
     monkeypatch.setattr(start, 'CodeService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'MagicLinkService', lambda _c: MagicMock())
-    monkeypatch.setattr(start, 'JwtService', lambda _c: MagicMock())
+    monkeypatch.setattr(start, 'JwtService', lambda _c: jwt_svc)
     monkeypatch.setattr(start, 'EmailDispatchService', lambda _c: email_svc)
     monkeypatch.setattr(start, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(start, 'RateLimitService', lambda _c: MagicMock())
-    monkeypatch.setattr(
-        start,
-        'verify_captcha_or_bypass',
-        lambda *_a, **_k: {'success': True},
-    )
 
     event = _make_event_register_start(email='visitor@example.com')
+    event['_meta']['authorization'] = 'Bearer PRECHECK-TEMP'
     controller = start.Start(event=event)
     result = controller.run()
 
@@ -43,4 +45,5 @@ def test_login_start_email_locked_404(monkeypatch):
     assert result['status'] == 404
     assert result['data']['error'] == 'EMAIL_NOT_FOUND'
     assert result['data']['suggest_register'] is False
+    email_svc.publish_unified.assert_not_called()
     email_svc.publish_magic_link.assert_not_called()

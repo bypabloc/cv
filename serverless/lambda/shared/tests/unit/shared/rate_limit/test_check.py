@@ -184,24 +184,24 @@ class TestCountryBlock:
 
 
 class TestAutoBlacklist:
-    """Auto-blacklist por 3+ turnstile tokens en 60s."""
+    """Auto-blacklist por 10+ CAPTCHAs reales adjuntados en 60s."""
 
-    def test_when_3_turnstile_tokens_then_blacklist_rule_created(
+    def test_when_10_real_captchas_then_blacklist_rule_created(
         self, rate_limit_tables: dict[str, str]
     ) -> None:
         """
-        Given limit alto + turnstile_validated=True en 3 calls,
-        When 3 calls,
-        Then se crea ip_blacklist rule.
+        Given limit alto + brought_turnstile_token=True en 10 calls,
+        When 10 calls,
+        Then se crea ip_blacklist rule (umbral nuevo = 10).
         """
         _add_endpoint_rule(endpoint='/contact', limit=100, window_seconds=60)
         now = int(time.time())
 
-        for _ in range(3):
+        for _ in range(10):
             check_or_raise(
                 ip='2.3.4.5',
                 endpoint='/contact',
-                turnstile_validated=True,
+                brought_turnstile_token=True,
                 now=now,
             )
 
@@ -215,3 +215,65 @@ class TestAutoBlacklist:
         item = result.get('Item')
         assert item is not None
         assert item.get('action') == 'block'
+
+    def test_when_turnstile_validated_but_no_captcha_then_no_blacklist(
+        self, rate_limit_tables: dict[str, str]
+    ) -> None:
+        """
+        Regresion del fix: turnstile_validated=True (verify-*/mfa/session: usa
+        el limite alto pero NO adjunta CAPTCHA) NO alimenta la auto-blacklist.
+
+        Given limit alto + turnstile_validated=True (sin brought_turnstile_token)
+        en 15 calls (> umbral 10),
+        When 15 calls,
+        Then NO se crea ip_blacklist rule (un humano que reintenta no se banea).
+        """
+        _add_endpoint_rule(
+            endpoint='/auth#login.verify-magic-link',
+            limit=100,
+            window_seconds=60,
+        )
+        now = int(time.time())
+
+        for _ in range(15):
+            check_or_raise(
+                ip='3.4.5.6',
+                endpoint='/auth#login.verify-magic-link',
+                turnstile_validated=True,
+                now=now,
+            )
+
+        table = boto3.resource('dynamodb', region_name='us-east-1').Table(
+            'portfolio-rate-limit-rules-test'
+        )
+        result = table.get_item(
+            Key={'rule_key': 'ip#3.4.5.6', 'kind': 'ip_blacklist'}
+        )
+        assert result.get('Item') is None
+
+    def test_when_below_threshold_real_captchas_then_no_blacklist(
+        self, rate_limit_tables: dict[str, str]
+    ) -> None:
+        """
+        Given 9 CAPTCHAs reales (< umbral 10),
+        When 9 calls,
+        Then NO se crea ip_blacklist rule (humano reintentando login OK).
+        """
+        _add_endpoint_rule(endpoint='/contact', limit=100, window_seconds=60)
+        now = int(time.time())
+
+        for _ in range(9):
+            check_or_raise(
+                ip='4.5.6.7',
+                endpoint='/contact',
+                brought_turnstile_token=True,
+                now=now,
+            )
+
+        table = boto3.resource('dynamodb', region_name='us-east-1').Table(
+            'portfolio-rate-limit-rules-test'
+        )
+        result = table.get_item(
+            Key={'rule_key': 'ip#4.5.6.7', 'kind': 'ip_blacklist'}
+        )
+        assert result.get('Item') is None

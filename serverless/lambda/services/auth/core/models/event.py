@@ -5,10 +5,10 @@ Construye `EVENT_MODEL` con `build_event_model(OPERATIONS)` del kit
 `{operation, action, data}` del evento sintetico y resolver el
 controller correspondiente.
 
-Los modelos Pydantic concretos por action (`RegisterStartIn`,
-`LoginStartIn`, ...) se importan aqui para garantizar que sus
-modulos se cargan al cold start; los controllers los reutilizan para
-validar el payload concreto dentro de `validate()`.
+Los modelos Pydantic concretos por action (`LoginStartIn`, ...) se
+importan aqui para garantizar que sus modulos se cargan al cold start;
+los controllers los reutilizan para validar el payload concreto dentro
+de `validate()`.
 """
 
 from __future__ import annotations
@@ -36,11 +36,6 @@ from .mfa import (
     MfaSetupEmailCodeIn,
     MfaSetupTotpIn,
 )
-from .register import (
-    RegisterStartIn,
-    RegisterVerifyCodeIn,
-    RegisterVerifyMagicLinkIn,
-)
 from .session import SessionLogoutIn, SessionRefreshIn
 from .verify import VerifyResendCodeIn, VerifySetPasswordIn
 from .webauthn import (
@@ -54,9 +49,6 @@ from .webauthn import (
 
 # Eviten F401 (los imports estan para forzar la carga del modulo).
 _ = (
-    RegisterStartIn,
-    RegisterVerifyMagicLinkIn,
-    RegisterVerifyCodeIn,
     LoginStartIn,
     LoginVerifyMagicLinkIn,
     LoginVerifyCodeIn,

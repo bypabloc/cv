@@ -16,11 +16,11 @@ def test_email_model_accepts_valid_payload():
     from models.email import EmailSendRequest
 
     model = EmailSendRequest(
-        kind='register-code',
+        kind='login-code',
         to=['user@example.com'],
         data={'code': 'ABC123', 'expires_in_min': 15},
     )
-    assert model.kind == 'register-code'
+    assert model.kind == 'login-code'
     assert model.to == ['user@example.com']
     assert model.data == {'code': 'ABC123', 'expires_in_min': 15}
     assert model.reply_to is None

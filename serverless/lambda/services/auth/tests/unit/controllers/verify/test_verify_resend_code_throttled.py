@@ -53,4 +53,5 @@ def test_verify_resend_code_throttled(monkeypatch):
     assert result['status'] == 429
     assert result['data']['error'] == 'RESEND_THROTTLED'
     assert result['data']['retry_after'] == 35
+    email_svc.publish_unified.assert_not_called()
     email_svc.publish_code.assert_not_called()

@@ -1,0 +1,40 @@
+# Cache: assets de Next con hash en el nombre -> inmutable 1 ano.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML: no-cache para que los redeploys propaguen rapido.
+/
+  Cache-Control: no-cache, must-revalidate
+/*.html
+  Cache-Control: no-cache, must-revalidate
+
+# Service Worker: no-cache para que el browser siempre revalide y reciba el
+# kill-switch (scripts/sw-kill-switch.js, publicado en esta URL). Un usuario
+# con el mockServiceWorker.js de MSW registrado en una visita previa lo
+# re-descarga, ejecuta el unregister + reload y deja de interceptar las
+# requests RSC `.txt` que rompian la navegacion ("Connection closed").
+/mockServiceWorker.js
+  Cache-Control: no-cache, must-revalidate
+
+# Security headers + CSP.
+#
+# script-src lleva 'unsafe-inline': Next.js con output:'export' inyecta los
+# inline <script> que hidratan el arbol RSC (self.__next_f.push([...])) + el
+# script de next-themes (anti-FOUC). Sin server runtime NO hay nonce posible,
+# y los hashes SHA-256 cambian en cada build (el payload RSC va inline). Sin
+# 'unsafe-inline' el browser bloquea esos scripts -> el RSC stream nunca se
+# completa -> "Connection closed" -> la app se cuelga en "Verificando sesion"
+# y nunca redirige a /login. Es el trade-off inevitable del export estatico:
+# los inline scripts los genera el framework (no son inyeccion de usuario).
+# El resto de la defensa contra robo de tokens se mantiene: 'unsafe-eval'
+# sigue prohibido (solo 'wasm-unsafe-eval' para el runtime de Next),
+# connect-src acotado a los 3 endpoints API + Turnstile, object-src 'none',
+# frame-ancestors 'none'.
+# style-src 'unsafe-inline' es necesario por los portales de Radix.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.portfolio.dev.the-full-stack.com https://api.portfolio.stage.the-full-stack.com https://api.portfolio.the-full-stack.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'

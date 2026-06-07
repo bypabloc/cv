@@ -17,13 +17,14 @@ from models.webauthn import WebauthnLoginVerifyIn
 from services.audit_service import AuditService
 from services.challenge_service import ChallengeService
 from services.jwt_service import JwtService
+from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
-from services.session_tracking_service import SessionTrackingService
 from services.webauthn_service import WebauthnService
 from settings.config import app_config
 from shared.auth.webauthn import WebauthnCloneError, WebauthnVerifyError
-from shared.core.ulid import new_uuidv7
 from shared.lambda_kit.base_controller import BaseController
+
+from ..login._mfa_login import decide_mfa_step
 
 _ENDPOINT = '/auth#webauthn.login-verify'
 
@@ -117,17 +118,18 @@ class LoginVerify(BaseController):
                 'data': {'error': 'WEBAUTHN_VERIFY_FAILED'},
             }
 
-        family_id = UUID(new_uuidv7())
-        access_token, _ = jwt_svc.issue_access(
-            user_id=user_id, family_id=family_id,
-        )
-        refresh_token, _ = jwt_svc.issue_refresh(
+        # Multi-factor: la passkey cuenta como factor 'webauthn' satisfecho.
+        # Si el user tiene OTROS metodos requeridos (ej. tambien TOTP),
+        # `decide_mfa_step` devuelve un temp step=2 pidiendo el faltante; si
+        # webauthn cubre los requeridos (o no hay), emite access+refresh.
+        data_out = decide_mfa_step(
+            jwt_svc=jwt_svc,
+            app_config=app_config,
             user_id=user_id,
-            family_id=family_id,
-        )
-        SessionTrackingService(app_config).on_session_created(
-            user_id=user_id,
-            family_id=family_id,
+            satisfied=['webauthn'],
+            required=MfaMethodService(app_config).required_methods(
+                user_id=user_id,
+            ),
             ip=meta.ip,
             country=meta.country,
             user_agent=meta.user_agent,
@@ -141,13 +143,4 @@ class LoginVerify(BaseController):
             user_agent=meta.user_agent,
         )
 
-        return {
-            'is_valid': True,
-            'code': 0,
-            'data': {
-                'access_token': access_token,
-                'refresh_token': refresh_token,
-                'token_type': 'Bearer',
-                'expires_in': 900,
-            },
-        }
+        return {'is_valid': True, 'code': 0, 'data': data_out}

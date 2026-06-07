@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="es">
+<body style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2>Tu acceso a The Full Stack</h2>
+  <p>Toca el botón para iniciar sesión:</p>
+  <p><a href="{{ verify_url }}" style="background:#2563eb;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-size:16px;">Iniciar sesión</a></p>
+  <p style="font-size:13px;color:#555;">Si el botón no funciona, copia este enlace:<br>{{ verify_url }}</p>
+  <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+  <p>O ingresa este código:</p>
+  <p style="font-size:32px;font-weight:bold;letter-spacing:8px;background:#f3f4f6;padding:16px;text-align:center;border-radius:6px;">{{ code }}</p>
+  <p style="font-size:13px;color:#555;">El enlace y el código expiran en {{ expires_in_min }} minutos.</p>
+</body>
+</html>

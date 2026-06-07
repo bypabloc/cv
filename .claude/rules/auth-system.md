@@ -2,9 +2,11 @@
 
 > Reglas duras para trabajar con el Lambda `auth`, el subpackage
 > `shared.auth`, el schema `auth_*` en Neon, la tabla DDB `jwt-blacklist`
-> y los flujos register/login/verify/session. El email transaccional lo
-> envia el Lambda `send_email` (invocado async, sin SQS). Aplica al
-> backend serverless. NO aplica al frontend Astro ni al dashboard Next.
+> y los flujos login/verify/session. El alta ocurre dentro del flujo `login`
+> unico (`login.start` crea el pending); la operation `register` fue
+> ELIMINADA. El email transaccional lo envia el Lambda `send_email` (invocado
+> async, sin SQS). Aplica al backend serverless. NO aplica al frontend Astro
+> ni al dashboard Next.
 
 ## Activacion
 
@@ -105,25 +107,168 @@ Aplica SIEMPRE que se trabaje con:
 - **NUNCA** borrar las tablas `auth_*` en `prod` con `downgrade`.
   Cualquier rollback se hace con migration forward que revierta.
 
-### Login UX (anti enumeration)
+### Login UX (modelo de lista de metodos)
 
-- **SIEMPRE** `login.start` con email inexistente devuelve `404
-  {error: 'EMAIL_NOT_FOUND', suggest_register: true}`.
-- **SIEMPRE** `login.start` con email cuyo status es `disabled` o
-  `locked` devuelve EL MISMO `404 {error: 'EMAIL_NOT_FOUND',
-  suggest_register: false}` (anti-enumeration). Audit log registra el
-  intento con `error_code='ACCOUNT_DISABLED'` o `'ACCOUNT_LOCKED'`.
-- **SIEMPRE** `login.start` con email cuyo status es `pending` devuelve
-  `409 PENDING_VERIFICATION` para forzar que termine el flujo de register.
-- **NUNCA** devolver 404 con body distinto entre "no existe" y
-  "existe + disabled/locked". La diferencia visible al cliente es solo
-  `suggest_register`.
+> Plan login-mfa-list-redesign: el login muestra la **lista de factores
+> `required`** del user y se completan **en cualquier orden**; los tokens
+> salen SOLO cuando no quedan pendientes. La `password` es **un factor mas de
+> la lista** (no un gate previo); el `passwordless` (code/magic-link al email)
+> es el factor **por defecto** (`required` cuando es el unico). El motor es
+> `_mfa_login.decide_mfa_step(satisfied, required)`.
+
+- **SIEMPRE** `login.start` resuelve el user por el **`sub` del temp precheck**
+  (`flow='login'` step=0 en `Authorization`), NO por el email del body. Sin
+  un precheck valido -> `401 MISSING_PRECHECK`. El email solo va en el body
+  en el UNICO caso de ALTA (email nuevo, `sub` placeholder que no resuelve
+  user); el email NUNCA viaja en el JWT.
+- **SIEMPRE** `login.start` de un user **active** abre el checklist: emite un
+  temp `login-mfa` step=2 + `methods = required_methods()` (los factores a
+  completar) + `mfa_complete:false`. Ya NO valida password (es un factor de
+  la lista, se verifica con `login.verify-password`).
+- **SIEMPRE** un email inexistente (alta fusion register->login) CREA el user
+  `pending` con el `email` del body + envia el email unificado
+  (`created:true`, `methods:['passwordless']`). Un `pending` re-emite el email
+  (`created:false`).
+- **SIEMPRE** `login.start` de un user `disabled`/`locked` devuelve
+  `404 {error:'EMAIL_NOT_FOUND', suggest_register:false}` (anti-enumeration).
+- **NUNCA** `login.start` recibe la password ni el email para un user
+  existente: la password es un factor del checklist; el email se resuelve por
+  el `sub`.
+
+#### `login.check-email` (precheck + lista de metodos)
+
+- **SIEMPRE** `login.check-email` expone, de un email **active**: que existe +
+  `has_password` (bool) + **`methods_required`** (la lista de factores que el
+  user marco `required`, con su config minima de render por metodo
+  `{type, input, dispatch_action, sent}`) + el `temp_token` precheck.
+- **TRADE-OFF ACEPTADO por el dueno del producto** (decision del plan
+  login-mfa-list-redesign): `check-email` **revela** `methods_required` ANTES
+  de autenticar (el front necesita la lista para montar el checklist). Esto
+  INVIERTE la regla previa "NUNCA revela la lista de metodos MFA". La
+  existencia del email + `has_password` ya eran enumerables; la lista de
+  factores se agrega deliberadamente. **NO reabrir** sin el dueno del producto.
+- **SIEMPRE** `methods_required` viene en orden fijo (`password`,
+  `passwordless`, `totp`, `email_code`, `webauthn`) y trae **minimo 1**
+  factor (el invariante ">=1 required" garantizado por el fallback
+  `passwordless`).
+- **NUNCA** `check-email` devuelve `methods_required` para un user `pending`
+  (aun no tiene MFA), inexistente (alta) o `unavailable`.
+- **SIEMPRE** un email `disabled`/`locked`/`deleted` (o inexistente)
+  devuelve `unavailable` (mismo body), SIN `temp_token` ni `methods_required`.
+  El audit log registra el estado real.
+- **SIEMPRE** `login.check-email` es el UNICO punto del flujo de login con
+  Turnstile + emite el `temp_token` precheck (`flow='login'` step=0) para los
+  casos que continuan a `login.start` (active, pending, email nuevo con `sub`
+  placeholder). NUNCA lo emite para `unavailable`.
+
+#### Factores de la lista + actions de verificacion
+
+- **SIEMPRE** los 5 factores del modelo de lista son: `password`,
+  `passwordless` (code O magic-link al email), `totp`, `email_code`,
+  `webauthn`. Cada uno se verifica con su action y suma el factor a los
+  `satisfied`; `decide_mfa_step` emite los faltantes o access+refresh:
+
+  | Factor | Action(s) de verificacion | Satisfied |
+  |---|---|---|
+  | `password` | `login.verify-password` (temp step=2 + password) | `'password'` |
+  | `totp` | `login.verify-totp` (temp step=2 + code 6 dig) | `'totp'` |
+  | `passwordless` / `email_code` | `login.send-email-code` (envia) -> `login.verify-code` (temp step=2 + code 8) | `'passwordless'`/`'email_code'` |
+  | `webauthn` | `webauthn.login-options` -> `webauthn.login-verify` | `'webauthn'` |
+  | recovery (escape) | `mfa.recovery-codes-consume` (temp step=2 + code 10) | saltea TODO |
+
+- **SIEMPRE** el `temp_token` del checklist es **rolling**: cada verify emite
+  uno nuevo (con el factor satisfecho codificado en el `flow` CSV) y
+  blacklistea el anterior. El cliente DEBE usar el nuevo o da
+  `TOKEN_BLACKLISTED`.
+- **SIEMPRE** `login.verify-code`/`verify-magic-link` ramifican por
+  `claims.step`: step=1 (entrada passwordless: tokens directo si el user no
+  tiene mas required) vs step=2 (factor del checklist: delega en
+  `decide_mfa_step`). Un user active con required NO se saltea los required
+  via code/magic-link.
+- **SIEMPRE** `login.send-email-code` (temp step=2) genera+envia el code
+  on-demand y NO blacklistea el temp (el checklist sigue abierto).
+- **SIEMPRE** el recovery code (cualquier step=2 `login-mfa`) saltea todos los
+  required (anti-lockout). Decision: cualquier factor habilita el recovery
+  (sin distincion fuerte/debil).
+
+#### Flujo de entrada unico: el alta ocurre dentro de `login`
+
+- **SIEMPRE** el flujo de entrada es `login` unico: `login.start` crea el
+  user `pending` si el email no existe. `login.verify-code` /
+  `login.verify-magic-link` cierran la transicion `pending -> active` segun el
+  STATUS del user. El mismo `login` cubre alta y entrada.
+- **SIEMPRE** la operation `register` fue ELIMINADA (plan remove-register):
+  no hay controllers, models ni el kind `register` en los enums DB
+  (`auth_code_kind`/`auth_link_kind` quedan en `login`/`password_reset`,
+  migration 00000007). Un request `{operation:'register'}` da error de
+  operation desconocida (4xx).
+- **NUNCA** asumir una operation `register`: el frontend entra siempre por
+  `login`; lo relevante es el STATUS del user, no la operation. (No confundir
+  con `webauthn.register-options`/`register-verify`, que son el enroll de
+  passkeys/MFA y SIGUEN existiendo.)
+
+### Metodos `required` (factores exigidos al loguear)
+
+- **SIEMPRE** un user puede marcar 1+ factores como `required`. El login los
+  EXIGE TODOS (no es "cualquiera de N": es "todos los marcados"),
+  completandolos en cualquier orden (`decide_mfa_step`).
+- **SIEMPRE** la `password` es un factor mas: su flag `required` vive en la
+  columna `auth_credentials.required` (bool, default `true` — migration
+  `00000006`). Si el user tiene password, se exige por defecto.
+  `MfaMethodService.required_methods()` antepone `'password'` si esta
+  required.
+- **SIEMPRE** el `passwordless` (code/magic-link al email) es el factor por
+  DEFECTO: `required_methods()` lo agrega como fallback cuando el user no
+  tiene ningun otro factor required. Garantiza el invariante "siempre >=1
+  required" (un user recien registrado entra passwordless; si vuelve, vuelve
+  a pedir passwordless porque es lo unico disponible).
+- **SIEMPRE** el invariante ">=1 required" lo garantiza el sistema (el
+  fallback `passwordless`), NO un 409: desmarcar la password
+  (`security.password-set-required {required:false}`) SIEMPRE es seguro — el
+  user queda con sus otros factores required o con passwordless. No hay forma
+  de quedar sin via de entrada.
+- **SIEMPRE** el fallback anti-lockout adicional es el **recovery code**:
+  consumir un recovery code (cualquier temp step=2 `login-mfa`) SALTEA todos
+  los required. Decision: cualquier factor habilita el recovery (sin
+  distincion fuerte/debil).
+- **SIEMPRE** las actions del modelo de lista son:
+
+  | Action | Que hace |
+  |---|---|
+  | `login.check-email` | precheck: existencia + `has_password` + `methods_required` |
+  | `login.start` | abre el checklist (user active) o el alta (email nuevo) |
+  | `login.send-email-code` | envia el code del factor `passwordless`/`email_code` (temp step=2) |
+  | `login.verify-password` | verifica la password como factor de la lista |
+  | `mfa.set-required` | marca/desmarca un metodo MFA (totp/email_code) como `required` |
+  | `webauthn.set-required` | marca/desmarca un passkey como `required` |
+  | `security.password-set-required` | marca/desmarca la PASSWORD como `required` (auth_credentials.required) |
+  | `security.overview` | resumen de metodos (estado + `required` REAL, incl. password) |
+
+- **SIEMPRE** `security.overview` refleja el `required` REAL de la password
+  (lee `auth_credentials.required`), ya NO hardcoded `false`.
+- **NUNCA** un user queda sin via de entrada: el fallback `passwordless` +
+  el guard transversal `MUST_KEEP_ONE_MFA_METHOD` (para el disable de un
+  metodo) + el escape de recovery codes lo garantizan.
 
 ### Turnstile y rate-limit
 
-- **SIEMPRE** Turnstile obligatorio en `register.start` y `login.start`
-  (AC-12). El resto del flujo NO valida Turnstile — confia en el JWT
-  temp + rate-limit.
+- **SIEMPRE** Turnstile SOLO en el endpoint **inicial** (step 0) del flujo de
+  auth: `login.check-email` (es el unico punto de entrada; el alta tambien
+  pasa por aqui). El token de Turnstile es single-use: validarlo dos veces en
+  el mismo flujo da `timeout-or-duplicate`. Ningun otro endpoint lo valida.
+- **NUNCA** un endpoint **no-inicial** (step != 0) valida Turnstile. La
+  autorizacion de esos endpoints es un JWT (access) o un JWT temporal
+  (rolling temp del flujo). En particular `login.start` ya NO valida
+  Turnstile: EXIGE el temp JWT precheck (`flow='login'` step=0) emitido por
+  `login.check-email` en el header `Authorization`; sin el -> `401
+  MISSING_PRECHECK`. `login.start` resuelve el user por el `sub` del precheck
+  (NO compara contra un email del body; el user resuelto ES el del sub ->
+  anti-cross-account inherente). Para un email nuevo (alta fusionada) el
+  precheck lleva un `sub` placeholder que no resuelve user y `login.start`
+  crea el pending con el `email` del body.
+- **SIEMPRE** la auto-blacklist anti-solver se alimenta solo por el endpoint
+  con Turnstile (`login.check-email`): el `brought_turnstile_token=True` se
+  cuenta por `(ip, endpoint, window)`.
 - **SIEMPRE** rate-limit per-IP via `shared.rate_limit.check_or_raise`
   con las reglas seedeadas (ver
   [.claude/docs/auth-system/03-rate-limit-rules.md](../docs/auth-system/03-rate-limit-rules.md)).
@@ -141,7 +286,7 @@ Aplica SIEMPRE que se trabaje con:
   remitente de la tabla DynamoDB `email-config`, baja el template del
   bucket S3, lo renderiza con Jinja2 y envia por SES.
 - **SIEMPRE** el invoke es best-effort: un fallo al invocar `send_email`
-  NO rompe el request del flujo (register/login/verify/...) — degrada a un
+  NO rompe el request del flujo (login/verify/...) — degrada a un
   log de warning. El audit log de auth (`auth_audit_log`) lo escribe el
   Lambda `auth`, NO `send_email`.
 - **NUNCA** publicar a una cola SQS para emails de auth ni mantener un

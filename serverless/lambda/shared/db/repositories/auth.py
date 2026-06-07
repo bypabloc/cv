@@ -193,6 +193,36 @@ def set_password_hash(
     return existing
 
 
+def get_password_required(session: Session, *, user_id: str) -> bool:
+    """True si el user tiene password Y esta marcada `required` al loguear.
+
+    False si no tiene password (no hay row `auth_credentials`) o si la
+    desmarco. Lo usa `required_methods` para anteponer `'password'` a la
+    lista de factores que el login exige.
+    """
+    cred = session.get(AuthCredentials, user_id)
+    return cred is not None and bool(cred.required)
+
+
+def set_password_required(
+    session: Session,
+    *,
+    user_id: str,
+    required: bool,
+) -> bool:
+    """Setea `auth_credentials.required`. False si el user no tiene password.
+
+    El guard "siempre >=1 required" (no quedar sin ningun factor exigido)
+    lo aplica el controller `security.password.set-required`, no este repo.
+    """
+    cred = session.get(AuthCredentials, user_id)
+    if cred is None:
+        return False
+    cred.required = required
+    session.flush()
+    return True
+
+
 # ----- Email codes -----
 
 

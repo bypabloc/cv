@@ -168,6 +168,18 @@ class TestCorsHeaders:
         assert headers['Access-Control-Max-Age'] == '600'
         assert headers['Vary'] == 'Origin'
 
+    def test_allow_headers_includes_authorization(self) -> None:
+        """
+        Given un origin,
+        When cors_headers,
+        Then Access-Control-Allow-Headers incluye Authorization — los endpoints
+        autenticados (/users, /auth mfa/webauthn) reciben el Bearer JWT; sin el
+        header el browser bloquea el request con CORS.
+        """
+        headers = cors_headers('https://admin.portfolio.the-full-stack.com')
+
+        assert 'Authorization' in headers['Access-Control-Allow-Headers']
+
     def test_concrete_origin_includes_vary_origin(self) -> None:
         """
         Given un origin concreto (echo),

@@ -11,18 +11,19 @@ description: Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv.
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 para medir warm/cold con
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 para medir warm/cold con
                   # CPU x4. OJO: el handler de cv es Neon-I/O-bound; la palanca
                   # real es la query (1 sesion), NO la memoria. Minimo medido
                   # previo: 256 (usa 165 MB). REVERTIR al minimo tras medir.
                   # Ver .claude/rules/lambda-config.md.
 timeout: 60       # segundos — colchon uniforme (cold sin restore + query).
 
-# SnapStart: el handler precalienta engine + configure_mappers en el INIT
-# (warm_db); el snapshot los captura y el restore evita el costo CPU del
-# primer query. Habilitado para bajar la memoria sin penalizar el cold.
-snap_start: true
+# SnapStart DESACTIVADO (2026-06): el storage del snapshot
+# (Lambda-SnapStart-Cached-GB-S) se factura por hora por cada version
+# publicada y NO entra en el free tier (~$50/mes con 25 funciones). El
+# handler de cv es Neon-I/O-bound; la palanca real es la query, no el
+# restore. Re-evaluar solo si lo exige. Ver .claude/rules/lambda-config.md.
+snap_start: false
 
 # --- Trigger HTTP ---
 trigger:

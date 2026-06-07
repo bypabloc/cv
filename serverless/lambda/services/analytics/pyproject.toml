@@ -1,0 +1,77 @@
+# @config: lambda/services/analytics/pyproject.toml
+# @description: manifiesto de dependencias y tooling del Lambda `analytics`
+#   (API de metricas read-only del admin: GET /analytics). Lambda autonomo:
+#   tiene su propio uv.lock y .venv aislado (NO es workspace member).
+
+[project]
+name = "analytics"
+version = "0.1.0"
+description = "Lambda HTTP read-only de metricas del admin (GET /analytics, JWT-authed)."
+requires-python = ">=3.13"
+
+# El core/ del Lambda no declara deps de runtime propias: pydantic,
+# pydantic-settings, boto3, aws-lambda-powertools, sqlalchemy y pyjwt le
+# llegan por el vendoring del cierre de shared/ que el Lambda usa
+# (shared.lambda_kit, shared.http, shared.observability, shared.aws,
+# shared.rate_limit, shared.cache, shared.core, shared.auth, shared.db) —
+# regla de dedup D-3.
+dependencies = []
+
+# Deps de DESARROLLO: pytest + coverage + mocks. NO van al artefacto de
+# deploy (solo [project.dependencies] llega al zip).
+[dependency-groups]
+dev = [
+  "pytest>=8.0,<9.0",
+  "pytest-cov>=5.0,<6.0",
+  "pytest-mock>=3.12,<4.0",
+  "freezegun>=1.4,<2.0",
+  "ruff>=0.6,<1.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 80
+target-version = "py313"
+extend-exclude = [".venv/", "build/", "events/*.json"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "C4", "PIE", "SIM", "UP", "ANN", "S", "RUF"]
+ignore = [
+  "E501",   # line-length manejado por formatter
+  "ANN401", # any explicit en argumentos kwargs
+  "S101",   # asserts ok en tests
+  "S311",   # random no-cryptographic ok
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "ANN204", "RUF059", "S105", "S106", "S107"]
+"core/handler.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+markers = [
+  "unit: tests unitarios (rapidos, sin AWS real)",
+  "integration: tests con AWS real (deployed)",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["core"]
+omit = ["**/__init__.py", "tests/*", "core/shared/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

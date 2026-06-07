@@ -1,27 +1,38 @@
-"""Controller `login.verify-magic-link` — login passwordless via link.
+"""Controller `login.verify-magic-link` — link como factor de la lista.
 
-Espejo de `register.verify-magic-link` pero para usuarios ya activos.
-Tras consumir el link emite access + refresh JWTs y ACTUALIZA
-`last_login_at` (AC-22). No marca el user como active (ya lo esta).
+El magic-link (GET del email) satisface el factor "code al email"
+(`passwordless` o `email_code`) y delega en `decide_mfa_step`
+(plan login-mfa-list-redesign):
 
-AC cubiertos: AC-22.
+- Si NO quedan factores required pendientes (alta / active sin otros
+  required) -> emite access+refresh y redirige al callback con los tokens en
+  el fragment (comportamiento actual, AC-15).
+- Si quedan factores pendientes (active con required adicional) -> NO emite
+  tokens: redirige al callback con un `temp_token` step=2 + los `methods`
+  pendientes en el fragment, y el front continua el checklist (AC-14).
+
+Marca `active` al user pending (cierra el alta) y `last_login_at`.
+
+AC cubiertos: AC-14, AC-15.
 """
 
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
 
 from models.login import LoginVerifyMagicLinkIn
 from services.audit_service import AuditService
 from services.jwt_service import JwtService
 from services.magic_link_service import MagicLinkService
+from services.mfa_method_service import MfaMethodService
 from services.rate_limit_service import RateLimitService
-from services.session_tracking_service import SessionTrackingService
 from services.user_service import UserService
 from settings.config import app_config
-from shared.core.ulid import new_uuidv7
+from shared.db.models.auth.enums import AuthUserStatus
 from shared.lambda_kit.base_controller import BaseController
+
+from ._mfa_login import decide_mfa_step
+from .verify_code import _email_factor
 
 _ENDPOINT = '/auth#login.verify-magic-link'
 
@@ -59,6 +70,7 @@ class VerifyMagicLink(BaseController):
         link_svc = MagicLinkService(app_config)
         user_svc = UserService(app_config)
         jwt_svc = JwtService(app_config)
+        mfa_svc = MfaMethodService(app_config)
         audit_svc = AuditService(app_config)
 
         consumed = link_svc.verify(plain=data.token)
@@ -99,20 +111,24 @@ class VerifyMagicLink(BaseController):
                 'data': {'error': 'EMAIL_NOT_FOUND'},
             }
 
-        # AC-22: actualiza last_login_at + resetea failed_attempts.
-        user_svc.update_last_login(user)
+        # Fusion register -> login (bloque D): un user nuevo (pending) cierra
+        # su registro al consumir el magic-link -> se marca active. Si ya esta
+        # active, solo loguea.
+        if user.status == AuthUserStatus.PENDING:
+            user_svc.mark_active(user)
 
-        family_id = UUID(new_uuidv7())
-        access_token, _ = jwt_svc.issue_access(
-            user_id=user.id, family_id=family_id,
-        )
-        refresh_token, _ = jwt_svc.issue_refresh(
+        # El link satisface el factor "code al email"; decide_mfa_step ve si
+        # quedan factores required pendientes (satisfied arranca solo con el
+        # factor email, sin estado previo: el GET del link no porta el temp del
+        # checklist).
+        required = mfa_svc.required_methods(user_id=user.id)
+        factor = _email_factor(required)
+        result = decide_mfa_step(
+            jwt_svc=jwt_svc,
+            app_config=app_config,
             user_id=user.id,
-            family_id=family_id,
-        )
-        SessionTrackingService(app_config).on_session_created(
-            user_id=user.id,
-            family_id=family_id,
+            satisfied=[factor],
+            required=required,
             ip=meta.ip,
             country=meta.country,
             user_agent=meta.user_agent,
@@ -126,26 +142,46 @@ class VerifyMagicLink(BaseController):
             user_agent=meta.user_agent,
         )
 
+        if result.get('mfa_complete'):
+            # Login completo: redirige al callback con los tokens en el
+            # fragment (comportamiento actual).
+            user_svc.update_last_login(user)
+            redirect_url = (
+                f'{app_config.dashboard_callback_url}'
+                f'#access={result["access_token"]}'
+                f'&refresh={result["refresh_token"]}'
+                f'&user_id={user.id}'
+                f'&email={user.email}'
+            )
+            return {
+                'is_valid': True,
+                'code': 0,
+                'data': {
+                    'redirect_url': redirect_url,
+                    **result,
+                    'expires_in': 900,
+                    'token_type': 'Bearer',
+                    'user': {
+                        'id': str(user.id),
+                        'email': user.email,
+                        'status': user.status.value,
+                    },
+                },
+            }
+
+        # Faltan factores: redirige al callback con el temp step=2 + los
+        # methods pendientes; el front continua el checklist (sin tokens aun).
         redirect_url = (
             f'{app_config.dashboard_callback_url}'
-            f'#access={access_token}'
-            f'&refresh={refresh_token}'
-            f'&user_id={user.id}'
-            f'&email={user.email}'
+            f'#temp={result["temp_token"]}'
+            f'&methods={",".join(result["methods"])}'
+            f'&step=2'
         )
         return {
             'is_valid': True,
             'code': 0,
             'data': {
                 'redirect_url': redirect_url,
-                'access_token': access_token,
-                'refresh_token': refresh_token,
-                'expires_in': 900,
-                'token_type': 'Bearer',
-                'user': {
-                    'id': str(user.id),
-                    'email': user.email,
-                    'status': user.status.value,
-                },
+                **result,
             },
         }

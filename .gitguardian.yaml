@@ -1,0 +1,33 @@
+# Configuracion de GitGuardian (ggshield) — secret scanning.
+#
+# Schema v2: https://docs.gitguardian.com/ggshield-docs/configuration
+#
+# Proposito: silenciar los FALSOS POSITIVOS de los harness de testing, que
+# usan credenciales SINTETICAS (passwords de prueba, tokens fake) — NO son
+# secretos reales. Los valores se componen en runtime y se documentan como
+# fixtures en el codigo.
+#
+# AVISO CRITICO (ver .claude/rules/secrets-strategy.md, seccion GitGuardian):
+# este archivo SOLO lo respeta `ggshield` (CLI / pre-commit / GitHub Action
+# propia). El check de la **GitGuardian GitHub App** que corre en los PRs
+# es server-side y NO lee este archivo: usa la config del workspace en
+# dashboard.gitguardian.com. Para silenciar el check del PR hay que excluir
+# el path en el dashboard (Secrets detection -> excluded filepaths, scopeado
+# al repo) o, ante un FP confirmado, mergear con `gh pr merge --admin`.
+#
+# NUNCA agregar aqui un path de codigo de PRODUCCION para "saltarse" un
+# hallazgo: este archivo es solo para FIXTURES DE TEST con valores
+# sinteticos verificados. Un secreto real se rota, no se ignora.
+
+version: 2
+
+secret:
+  ignored_paths:
+    # Harness E2E unificado (comando `e2e`): usa credenciales sinteticas
+    # (passwords de prueba compuestas en runtime + tokens fake
+    # `NOT-A-REAL-...`) para ejercitar los flujos de auth/users contra
+    # dev/stage. Ningun valor es un secreto real. Se componen de fragmentos
+    # neutros en runtime; detalle: tests/shared/auth_support.py.
+    - 'tests/shared/**'
+    - 'tests/api/**'
+    - 'tests/admin/**'

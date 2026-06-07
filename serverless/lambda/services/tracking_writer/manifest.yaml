@@ -15,15 +15,17 @@ description: Persiste 1 evento de tracking en Neon (invoke async, idempotente).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 para medir con CPU x4.
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 para medir con CPU x4.
                   # Escribe a Neon (sqlalchemy+psycopg). Minimo medido previo:
                   # 256. REVERTIR tras medir. Ver .claude/rules/lambda-config.md.
 timeout: 60       # segundos — colchon uniforme (INSERT Neon + wake).
 
-# SnapStart: snapshotea el INIT (imports + engine NullPool + mappers del
-# dominio visitor) para bajar el cold del invoke async.
-snap_start: true
+# SnapStart DESACTIVADO (2026-06): el storage del snapshot
+# (Lambda-SnapStart-Cached-GB-S) se factura por hora por cada version
+# publicada y NO entra en el free tier (~$50/mes con 25 funciones). Es
+# async (latencia oculta), el cold extra no afecta UX. Ver
+# .claude/rules/lambda-config.md.
+snap_start: false
 
 # --- Como se invoca este Lambda ---
 # direct: lo invoca otro Lambda (tracking_pixel) con InvocationType='Event'.

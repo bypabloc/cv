@@ -55,10 +55,21 @@ class TotpService:
         user_id: UUID | str,
         ciphertext: bytes,
         code: str,
+        valid_window: int = 1,
     ) -> bool:
-        """Descifra el secret del user y verifica el code de 6 digitos."""
+        """Descifra el secret del user y verifica el code de 6 digitos.
+
+        `valid_window` controla la tolerancia de clock-drift: 1 (default,
+        login) acepta el periodo actual +-1 (±30s). El `confirm-totp` usa
+        2 (±60s) para absorber el lag humano de escanear el QR + tipear el
+        primer code recien mostrado.
+        """
         secret_b32 = kms_decrypt(
             ciphertext=ciphertext,
             encryption_context=self._context(user_id),
         ).decode('utf-8')
-        return verify_totp_code(secret_b32=secret_b32, code=code)
+        return verify_totp_code(
+            secret_b32=secret_b32,
+            code=code,
+            valid_window=valid_window,
+        )

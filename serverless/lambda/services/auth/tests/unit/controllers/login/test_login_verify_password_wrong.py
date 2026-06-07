@@ -1,6 +1,6 @@
-"""AC-21: verify-password con password incorrecta -> 401 + failed_attempts++.
+"""AC-11: verify-password con password incorrecta -> 401 + failed_attempts++.
 
-Given un temp step=1 valido + password INCORRECTA,
+Given un temp step=2 (`flow='login-mfa'`) valido + password INCORRECTA,
 When se invoca login.verify-password,
 Then incrementa failed_attempts y devuelve 401 INVALID_PASSWORD.
 """
@@ -17,7 +17,7 @@ def test_login_verify_password_wrong(monkeypatch):
 
     uid = uuid4()
     user = _make_user(user_id=uid, status='active')
-    claims = _make_jwt_claims(user_id=uid, flow='login', step=1)
+    claims = _make_jwt_claims(user_id=uid, flow='login-mfa', step=2)
 
     jwt_svc = MagicMock()
     jwt_svc.verify.return_value = claims

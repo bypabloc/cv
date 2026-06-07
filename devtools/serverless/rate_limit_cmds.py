@@ -102,6 +102,9 @@ _VALID_ACTIONS = [
 _VALID_ENDPOINTS = [
     '/contact',
     '/track',
+    # Plan b-analytics-api: API de metricas del admin (GET /analytics),
+    # JWT-authed. Rate-limit per-IP segunda capa (10 req/min/IP).
+    '/analytics',
     '*',
     '/auth#register.start',
     '/auth#register.verify-magic-link',

@@ -63,8 +63,9 @@ Filtrar por workspace: `pnpm --filter @portfolio/<app> run <script>`.
 
 ## Comandos Docker (proyecto: `portfolio`)
 
-Stack: 6 apps Astro + nginx reverse proxy + container `feature` (Playwright,
-on-demand). Container names: `portfolio-<servicio>-<env>`.
+Stack: 6 apps Astro + nginx reverse proxy + container `e2e` (E2E unificado
+Python 3.14 + playwright-python, on-demand contra dev/stage desplegado).
+Container names: `portfolio-<servicio>-<env>`.
 
 ### Quick start
 
@@ -74,8 +75,8 @@ pnpm run docker:ps         # listar containers
 pnpm run docker:logs       # tail -f de todos los servicios
 pnpm run docker:down       # bajar stack (preserva volúmenes)
 
-pnpm run feature:up        # container Playwright (profile feature)
-pnpm run feature:run       # ejecutar specs E2E
+python devtools/run.py e2e --module=app --env=dev   # E2E app (sin auth)
+python devtools/run.py e2e --env=dev --aws-profile=tfs-dev  # los 3 modulos
 ```
 
 ### Acceso al stack local
@@ -146,8 +147,8 @@ python devtools/run.py test_runner --module=<app> --type=typecheck
 # Para packages: prefijo pkg-
 python devtools/run.py test_runner --module=pkg-content --type=unit
 
-# E2E (Playwright contra el stack local):
-python devtools/run.py test_runner --module=feature --type=feature --env=local
+# E2E unificado (Python, contra dev/stage desplegado):
+python devtools/run.py e2e --module=<api|admin|app> --env=dev --aws-profile=tfs-dev
 
 # Devtools unit tests (host, pytest):
 python devtools/run.py test_runner --module=devtools --type=unit
@@ -216,7 +217,7 @@ de IA en PRs via [.github/workflows/clean-pr-attribution.yml](.github/workflows/
 │   └── {generic,hub,fintech,architect,leader,vibe}/  # 6 sitios Astro
 ├── packages/
 │   └── {app-shared,content,cv-pdf,seo,ui}/            # 5 workspaces compartidos
-├── tests/feature/        # Playwright E2E (config + fixtures + helpers + specs)
+├── tests/                # E2E Python (shared + api + admin + app) — comando `e2e`
 ├── docker/
 │   ├── docker-compose/   # {local,dev,test,prod}.yml
 │   ├── dockerfiles/      # por ambiente x app
@@ -261,11 +262,12 @@ Antes de trabajar, identifica que contexto necesitas:
 | Plan format | [.claude/rules/plan-format.md](.claude/rules/plan-format.md) + [.claude/docs/plan-format-large/README.md](.claude/docs/plan-format-large/README.md) | En plan mode o al planificar features. Todo plan vive en `docs/specs/<nombre>/` y trae 4 secciones de ejecucion obligatorias: descomposicion, commits, paralelizacion con worktrees y verificacion E2E iterativa |
 | Harness protocol | [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md) | Subagentes, feature_list, current/history |
 | Orquestacion (workflow/subagents/agents/worktree) | [.claude/rules/orchestration.md](.claude/rules/orchestration.md) o skill `orchestration` | Antes de ejecutar un workflow, diseñar un fan-out, o decidir inline vs subagente vs workflow vs worktree (incl. al crear un plan). CAPS de concurrencia para NO pegar el rate-limit "Server is temporarily limiting requests": **1 workflow a la vez**, **<=4 agentes concurrentes** por workflow en Opus 4.8 (14 -> 429 medido), batching en olas. Politica de modelos: **Opus 4.8 por defecto**, Sonnet 4.6 solo para fan-outs mecanicos de alta concurrencia. Regla de oro: NO 1 agente LLM por tarea deterministica (pytest/lint/build -> Bash) |
+| Sesiones en paralelo (multi-ventana + worktrees) | [.claude/rules/parallel-sessions.md](.claude/rules/parallel-sessions.md) | Antes de abrir MAS de una sesion de Claude Code a la vez sobre el mismo repo, o de usar `--worktree`/`EnterWorktree`/`.worktreeinclude`. Modelo de las 3 capas (ventanas VS Code / worktrees / subagentes): multi-tab NO aisla archivos, solo los **worktrees** lo hacen (`claude --worktree <x>` -> `.claude/worktrees/<x>/`). Aislamiento de recursos del monorepo: cada worktree corre su `pnpm install` (store compartido), un `docker:up` por worktree (`COMPOSE_PROJECT_NAME` o env distinto — los puertos/containers `portfolio-<svc>-local`+9970 son fijos), `.worktreeinclude` copia los `.env` gitignored. La cuota es **de cuenta** (rolling 5h + cap semanal): abrir N ventanas NO la multiplica -> max **2-3 sesiones activas a la vez**. Gestion: `claude agents` (Agent View, NO "FleetView") |
 | Markdown docs | [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md) | Editar archivos de `docs/` |
 | Skills (frontmatter) | [.claude/rules/skills.md](.claude/rules/skills.md) | Crear / modificar skills |
 | Testing config Claude | [.claude/rules/claude-config-testing.md](.claude/rules/claude-config-testing.md) | Antes de commitear cambios en `.claude/*` |
 | Docker stack | [docker/README.md](docker/README.md) | Levantar local, mapping subdominios, env files |
-| Tests E2E | [tests/feature/README.md](tests/feature/README.md) | Escribir specs Playwright |
+| Tests E2E | [.claude/rules/e2e-testing.md](.claude/rules/e2e-testing.md) o skill `e2e-testing` | Comando `e2e` (Python unico) contra dev/stage; escribir tests en `tests/{api,admin,app}` |
 | CV (contenido) | [.claude/docs/cv/README.md](.claude/docs/cv/README.md) | Datos del CV (perfil, experiencia, proyectos) |
 | Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseño |
 | Deploy Cloudflare Pages | [.claude/docs/cloudflare/README.md](.claude/docs/cloudflare/README.md) o skill `cloudflare-deploy` | Deploy, custom domains, DNS, gotchas, troubleshoot del setup actual |
@@ -384,3 +386,10 @@ y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
   (ya configurado en `pnpm-workspace.yaml`).
 - `compose_exec` siempre invoca con `--user 1000:1000` en apps Astro para
   no crear archivos root-owned en `.vite/` y `.astro/` del bind mount.
+- GitGuardian: `.gitguardian.yaml` (raiz, `secret.ignored_paths`) lo respeta
+  SOLO `ggshield`; el check del PR (GitHub App) corre server-side y NO lee
+  ese archivo — usa la config del dashboard. Ante un falso positivo
+  confirmado en un fixture de test: excluir el path en el dashboard o
+  mergear con `gh pr merge --admin`. Detalle:
+  [.claude/rules/secrets-strategy.md](.claude/rules/secrets-strategy.md)
+  (seccion GitGuardian).

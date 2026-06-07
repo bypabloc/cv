@@ -36,7 +36,7 @@ def test_handler_routes_email_send():
         'operation': 'email',
         'action': 'send',
         'data': {
-            'kind': 'register-code',
+            'kind': 'login-code',
             'to': ['user@example.com'],
             'data': {'code': 'X', 'expires_in_min': 15},
         },
@@ -48,7 +48,7 @@ def test_handler_routes_email_send():
         result = handler.lambda_handler(event, _context())
 
     assert result['status'] == 'ok'
-    assert result['data'] == {'message_id': 'msg-9', 'kind': 'register-code'}
+    assert result['data'] == {'message_id': 'msg-9', 'kind': 'login-code'}
 
 
 def test_handler_rejects_invalid_operation():

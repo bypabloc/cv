@@ -12,12 +12,12 @@ from pathlib import Path
 import textwrap
 
 import pytest
+
+from serverless import dep_validator
 from serverless.dep_validator import DepValidatorError
 from serverless.dep_validator import canonical_name
 from serverless.dep_validator import spec_extras
 from serverless.dep_validator import validate_lambda_deps
-
-from serverless import dep_validator
 
 
 pytestmark = pytest.mark.unit

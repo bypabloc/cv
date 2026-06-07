@@ -38,11 +38,29 @@ export function validateApiEndpoint(apiEndpoint: string | undefined): string {
         'o en docker/env/client/.{env} para builds locales.',
     )
   }
+  // El endpoint NUNCA debe ser el host crudo de API Gateway
+  // (`*.execute-api.<region>.amazonaws.com`): esos endpoints son efimeros
+  // (se recrean/borran al re-provisionar) y un dia dejan de resolver
+  // -> ERR_NAME_NOT_RESOLVED en el browser. SIEMPRE el dominio custom
+  // estable `api.portfolio.<env>.the-full-stack.com`. Este guard aplica
+  // en TODOS los builds, incluido local (un crudo borrado fue justo el
+  // bug que rompio el admin/tracking en local).
+  if (apiEndpoint.includes('.execute-api.')) {
+    throw new Error(
+      `PUBLIC_API_ENDPOINT (${apiEndpoint}) usa el host crudo de API ` +
+        'Gateway (*.execute-api.*.amazonaws.com), que es efimero y puede ' +
+        'dejar de resolver. Usa el dominio custom ' +
+        'api.portfolio.<env>.the-full-stack.com. En docker/env/client/.local ' +
+        'apunta al de dev: https://api.portfolio.dev.the-full-stack.com',
+    )
+  }
   const baseDomain = readBaseDomain()
   // El match estricto solo aplica en builds remotos (dev/stage/prod).
-  // En local docker BASE_DOMAIN=localhost pero PUBLIC_API_ENDPOINT
-  // tipicamente apunta al AWS API Gateway real (no hay api.localhost),
-  // asi que se omite el match para localhost.
+  // En local docker BASE_DOMAIN=localhost pero PUBLIC_API_ENDPOINT apunta
+  // al API custom de dev (api.portfolio.dev.the-full-stack.com), no a
+  // api.localhost (no existe un backend local). Por eso el match estricto
+  // contra BASE_DOMAIN se omite para localhost, pero el guard anti-crudo
+  // de arriba SI corre en local.
   if (baseDomain && !isLocalBuild(baseDomain)) {
     const expected = `https://api.${baseDomain}`
     if (apiEndpoint !== expected) {

@@ -42,6 +42,7 @@ from shared.db.models.auth.webauthn_credential import AuthWebauthnCredential
 
 __all__ = [
     'consume_email_change_link',
+    'count_recovery_codes',
     'count_remaining_recovery_codes',
     'count_user_sessions',
     'count_users',
@@ -49,6 +50,7 @@ __all__ = [
     'disable_user',
     'enable_user',
     'get_email_change_link',
+    'get_password_status',
     'get_session_by_id',
     'get_user_by_id',
     'hard_delete_user',
@@ -566,6 +568,43 @@ def count_remaining_recovery_codes(session: Session, *, user_id: str) -> int:
         )
     )
     return int(session.scalar(stmt) or 0)
+
+
+def count_recovery_codes(session: Session, *, user_id: str) -> int:
+    """Cuenta TODOS los recovery codes del user (consumidos + activos)."""
+    stmt = (
+        select(func.count())
+        .select_from(AuthMfaRecoveryCode)
+        .where(AuthMfaRecoveryCode.user_id == user_id)
+    )
+    return int(session.scalar(stmt) or 0)
+
+
+def get_password_status(
+    session: Session,
+    *,
+    user_id: str,
+) -> dict[str, object | None]:
+    """Estado de la password del user para el overview de seguridad.
+
+    `auth_credentials` es 1-to-0..1 con `auth_users`: solo existe si el
+    user llamo `verify.set-password`. Devuelve siempre el mismo shape:
+    `{has_password: bool, required: bool, last_change_at: str | None}`
+    (ISO 8601). `required` refleja si la password se exige al loguear
+    (factor de la lista; default true si existe).
+    """
+    cred = session.get(AuthCredentials, str(user_id))
+    if cred is None:
+        return {
+            'has_password': False,
+            'required': False,
+            'last_change_at': None,
+        }
+    return {
+        'has_password': True,
+        'required': bool(cred.required),
+        'last_change_at': cred.last_change_at.isoformat(),
+    }
 
 
 def count_user_sessions(session: Session, *, user_id: str) -> int:

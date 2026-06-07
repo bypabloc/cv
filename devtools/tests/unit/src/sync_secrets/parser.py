@@ -111,13 +111,23 @@ def test_filter_catalog_keeps_only_known_keys() -> None:
 def test_client_catalog_matches_example_keys_expectation() -> None:
     """
     Invariante: CLIENT_SYNCED_KEYS contiene exactamente las 5 keys
-    documentadas en docker/env/client/.example que afectan el build.
+    PUBLIC_* de las apps Astro + las 6 NEXT_PUBLIC_* del admin Next.js,
+    todas documentadas en docker/env/client/.example y que afectan el
+    build.
     """
     expected = {
+        # apps Astro (PUBLIC_*)
         'BASE_DOMAIN',
         'BASE_SCHEME',
         'APEX_DOMAIN',
         'PUBLIC_API_ENDPOINT',
         'PUBLIC_TURNSTILE_SITEKEY',
+        # admin Next.js (NEXT_PUBLIC_*)
+        'NEXT_PUBLIC_API_ENDPOINT',
+        'NEXT_PUBLIC_TURNSTILE_SITEKEY',
+        'NEXT_PUBLIC_ADMIN_URL',
+        'NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS',
+        'NEXT_PUBLIC_WEBAUTHN_RP_ID',
+        'NEXT_PUBLIC_FEATURE_MFA',
     }
     assert frozenset(expected) == CLIENT_SYNCED_KEYS

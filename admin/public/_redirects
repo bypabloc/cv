@@ -1,0 +1,15 @@
+# Next.js output:'export' genera un index.html POR RUTA (/login/index.html,
+# /register/index.html, ...) + los RSC payloads (__next.*.txt) que el
+# client-side navigation necesita. Cloudflare Pages sirve esos archivos
+# reales automaticamente; NO se usa un catch-all '/* /index.html 200'.
+#
+# Aquel catch-all era un BUG: forzaba el index.html del HOME para TODAS las
+# rutas (incluso /login que tiene su propio HTML) y, peor, para las requests
+# RSC (.txt) del router -> el client recibia HTML en vez del stream RSC y
+# fallaba con "Connection closed", colgando la navegacion en
+# "Verificando sesion".
+#
+# Cloudflare Pages ya hace SPA-style fallback al 404.html cuando no encuentra
+# el archivo, lo cual basta: el admin no tiene rutas dinamicas con params en
+# el path (los deep-links usan query string ?user=, que NO crean segmentos).
+/api/* /404.html 404

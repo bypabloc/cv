@@ -109,6 +109,28 @@ class EmailDispatchService:
             data={'new_email': new_email},
         )
 
+    def publish_password_changed(
+        self,
+        *,
+        to: str,
+        user_id: UUID | str,
+        niche: str | None = None,
+    ) -> None:
+        """Notificacion al user de que su password cambio (kind password-changed).
+
+        TODO(send_email): el Lambda `send_email` aun NO tiene el `kind`
+        `password-changed` en su tabla `email-config` ni el template Jinja2
+        en S3. Hasta que se agreguen (seed-email-config), el invoke async
+        es best-effort y degrada a un log de warning sin romper el flujo.
+        """
+        self._publish(
+            kind='password-changed',
+            to=to,
+            user_id=user_id,
+            niche=niche,
+            data={},
+        )
+
     def publish_account_disabled(
         self,
         *,

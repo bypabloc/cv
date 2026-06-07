@@ -1,13 +1,13 @@
 """Los modelos aceptan `_meta` como input y lo exponen como `.meta`.
 
 Given un payload con clave `_meta` (alias),
-When se valida con RegisterStartIn,
+When se valida con LoginCheckEmailIn,
 Then la instancia expone el campo como `.meta` y conserva la metadata.
 """
 
 
-def test_register_start_in_accepts_meta_alias():
-    from models.register import RegisterStartIn
+def test_login_check_email_in_accepts_meta_alias():
+    from models.login import LoginCheckEmailIn
 
     payload = {
         'email': 'visitor@example.com',
@@ -20,7 +20,7 @@ def test_register_start_in_accepts_meta_alias():
         },
     }
 
-    parsed = RegisterStartIn.model_validate(payload)
+    parsed = LoginCheckEmailIn.model_validate(payload)
 
     assert parsed.email == 'visitor@example.com'
     assert parsed.meta.ip == '203.0.113.10'

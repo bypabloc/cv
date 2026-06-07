@@ -40,6 +40,7 @@ from shared.http.responses import (
     error_response,
     json_response,
     no_content_response,
+    redirect_response,
 )
 from shared.lambda_kit.dispatch import run_controller
 from shared.lambda_kit.validation.event import EventModelClass
@@ -342,6 +343,21 @@ def http_handler(
             )
 
         effective_status = result.status or success_status
+
+        # GET con `redirect_url` en data -> 302 Location (magic-link
+        # callback). El browser navega al link del email (GET top-level),
+        # el Lambda responde 302 -> el admin/callback lee el fragment hash.
+        # Solo aplica a GET: el mismo controller por POST (admin fetch)
+        # devuelve el JSON con los tokens (sin redirect). Ver
+        # controllers/{register,login}/verify_magic_link.py.
+        redirect_url = (
+            result.data.get('redirect_url')
+            if isinstance(result.data, dict)
+            else None
+        )
+        if extracted.method == 'GET' and redirect_url:
+            return redirect_response(str(redirect_url), origin=origin)
+
         if effective_status == 204:
             return no_content_response(origin=origin)
         return json_response(effective_status, result.data, origin=origin)

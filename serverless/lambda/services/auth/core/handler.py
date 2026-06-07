@@ -6,7 +6,7 @@ Entrypoint del Lambda. Router delgado que delega TODO el ciclo al
 
     POST /auth
     {
-      "operation": "register" | "login" | "verify" | "session",
+      "operation": "login" | "verify" | "session" | "mfa" | "webauthn" | "security",
       "action": "start" | "verify-magic-link" | ...,
       "data": { ... }
     }

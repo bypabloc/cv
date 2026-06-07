@@ -12,7 +12,7 @@ Ejecuta validaciones estrictas vs base branch (origin/main por default):
 
 Skip por env:
     SKIP_STEPS="build" git push ...
-    SKIP_STEPS="feature_tests" git push ...
+    SKIP_STEPS="e2e_tests" git push ...
     SKIP_STEPS="typecheck,build" git push ...
 
 Opt-in:
@@ -30,16 +30,27 @@ HOOK_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(HOOK_DIR))
 
 
-# Catalogo de env vars que el build de las apps Astro consume via
-# import.meta.env.* o process.env. Si no estan presentes en os.environ,
-# se inyectan desde docker/env/client/.local antes de correr `pnpm build`.
-# Espejo del SYNCED_KEYS de devtools/github_sync/catalog.py.
+# Catalogo de env vars que el build consume via import.meta.env.* (apps
+# Astro) o process.env.NEXT_PUBLIC_* (admin Next.js). Si no estan en
+# os.environ, se inyectan desde docker/env/client/.local antes de correr
+# `pnpm run build`. Espejo de CLIENT_SYNCED_KEYS de
+# devtools/sync_secrets/catalog.py. El admin (Next.js) valida sus
+# NEXT_PUBLIC_* con Zod en build (admin/src/lib/env.ts) y FALLA el build
+# si falta alguna -> deben estar aqui o el paso 5/7 (build) rompe.
 _BUILD_CATALOG_KEYS = (
+    # Apps Astro
     'BASE_DOMAIN',
     'BASE_SCHEME',
     'APEX_DOMAIN',
     'PUBLIC_API_ENDPOINT',
     'PUBLIC_TURNSTILE_SITEKEY',
+    # Admin Next.js (NEXT_PUBLIC_*)
+    'NEXT_PUBLIC_API_ENDPOINT',
+    'NEXT_PUBLIC_TURNSTILE_SITEKEY',
+    'NEXT_PUBLIC_ADMIN_URL',
+    'NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS',
+    'NEXT_PUBLIC_WEBAUTHN_RP_ID',
+    'NEXT_PUBLIC_FEATURE_MFA',
 )
 
 
@@ -262,21 +273,6 @@ def step_build_tests(step_label: str) -> int:
     return 0
 
 
-def _docker_available() -> bool:
-    """True si docker CLI esta instalado y daemon corriendo."""
-    import shutil
-    import subprocess
-    if not shutil.which('docker'):
-        return False
-    try:
-        result = subprocess.run(
-            ['docker', 'info'],
-            capture_output=True, check=False, timeout=5,
-        )
-        return result.returncode == 0
-    except (subprocess.TimeoutExpired, OSError):
-        return False
-
 
 def _run_devtools(args: list[str], *, timeout: int = 600) -> int:
     """Invoca python devtools/run.py <args>."""
@@ -296,37 +292,29 @@ def _run_devtools(args: list[str], *, timeout: int = 600) -> int:
         return 127
 
 
-def step_feature_tests(step_label: str) -> int:
-    """Levanta stack Docker (local) + corre Playwright via test_runner."""
-    section(f'[PASO {step_label}] Feature tests (Playwright E2E via Docker)')
+def step_e2e(step_label: str) -> int:
+    """Corre los E2E del modulo `app` (Python) contra dev desplegado.
 
-    if not _docker_available():
-        skip(f'Paso {step_label}: Docker no disponible, omitido')
-        tip('Para correr E2E: instalar Docker y reintentar push, o SKIP_STEPS="feature_tests"')
-        return 0
+    Solo el modulo `app` (no requiere SSO ni clave bypass): navega los 6
+    subdominios desplegados y valida smoke/navbar/contact/tracking. Los
+    modulos `api`/`admin` mutan dev y exigen SSO -> se corren manualmente
+    antes del PR, no en el pre-push.
+    """
+    section(f'[PASO {step_label}] E2E app (playwright-python vs dev)')
 
-    info('Levantando stack Docker local (devtools docker up)...')
-    rc = _run_devtools(['docker', 'up', '--env=local'], timeout=300)
-    if rc != 0:
-        return fail(
-            f'Paso {step_label}: docker up fallo',
-            'PUSH BLOQUEADO',
-            HOOK_NAME,
-        )
-
-    info('Ejecutando feature tests (Playwright)...')
+    info('Ejecutando E2E del modulo app contra dev...')
     rc = _run_devtools(
-        ['test_runner', '--module=feature', '--type=feature', '--env=local'],
+        ['e2e', '--module=app', '--env=dev'],
         timeout=900,
     )
     if rc != 0:
         return fail(
-            f'Paso {step_label}: Feature tests fallaron',
+            f'Paso {step_label}: E2E app fallaron',
             'PUSH BLOQUEADO',
             HOOK_NAME,
         )
 
-    ok(f'Paso {step_label}: Feature tests')
+    ok(f'Paso {step_label}: E2E app')
     return 0
 
 
@@ -358,7 +346,7 @@ def main() -> int:
         ('unit_tests', lambda lbl: step_unit_tests(modified_packages, lbl)),
         ('build', lambda lbl: step_build(lbl)),
         ('build_tests', lambda lbl: step_build_tests(lbl)),
-        ('feature_tests', lambda lbl: step_feature_tests(lbl)),
+        ('e2e_tests', lambda lbl: step_e2e(lbl)),
     ]
 
     active = [(name, fn) for name, fn in steps if should_run_step(name, HOOK_NAME)]

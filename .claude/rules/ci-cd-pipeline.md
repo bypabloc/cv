@@ -37,6 +37,22 @@ Aplica SIEMPRE al editar:
   migracion nueva que revierta (forward fix).
 - **NUNCA** usar `cancel-in-progress: true` en workflows que tocan AWS
   (cancelar mid-deploy deja AWS en estado parcial).
+- **SIEMPRE** tras un merge que dispara un workflow de deploy, ESPERAR y
+  REVISAR su resultado real antes de declarar el deploy hecho: el
+  `conclusion` global Y el de CADA job (`gh run view <id> --json jobs`).
+  Un job en `failure` (ej. `Verify <app> dist matches env`) significa que
+  el deploy NO esta sano, aunque "se haya disparado". Diagnosticar ESE job.
+- **SIEMPRE** despues de un deploy de apps, hacer `curl` a la URL canonica
+  real de cada env tocado (no al `.pages.dev`): debe dar 200 + el marcador
+  esperado. "El workflow corrio" / "CI verde" NO es evidencia de que el
+  site sirve — la evidencia es el HTTP de la URL final (ver
+  [verify-before-done.md](verify-before-done.md), "Verificacion de
+  despliegue REAL").
+- **SIEMPRE** que se provisione un app/subdominio NUEVO, correr
+  `cloudflare_setup all --env=<X>` (NO solo `projects`): `domains` attacha
+  el custom domain y `dns` crea el registro CNAME. Sin el CNAME el custom
+  domain queda en `pending`, el cert ACM no se emite y la URL canonica da
+  `Could not resolve host` aunque el `.pages.dev` sirva.
 - **NUNCA** atribuir a IA en codigo, commits ni mensajes del workflow.
 
 ## Workflows
@@ -167,6 +183,9 @@ datos ni cambiar el endpoint:
 | Path-detection para apps | Apps son baratas, consistencia importa | Apps SIEMPRE rebuild + deploy |
 | Usar el rol `portfolio-deploy-prod` desde una rama que no sea `main` | El sub del OIDC no matchea, falla con AccessDenied | Lanzar el workflow desde la rama correcta |
 | Repetir las credenciales AWS en cada job | Multiplica el tiempo de assumeRole | Reutilizar el step `configure-aws-credentials` por job |
+| Declarar el deploy "listo" tras `gh pr merge` sin mirar el workflow | El workflow puede fallar (un job `Verify * dist` rojo) y el site no servir | Revisar `conclusion` global + de cada job; curl a la URL real |
+| Provisionar un app nuevo con `cloudflare_setup projects` solamente | Sin `domains`+`dns` el custom domain queda `pending` y no resuelve | `cloudflare_setup all --env=<X>` (projects -> domains -> dns -> status) |
+| Asumir el `.pages.dev` con prefijo `portfolio-` | El naming real del project/subdomain es `<niche>-<env>` (ej. `admin-dev`, subdomain `admin-dev-exl.pages.dev`) | Consultar el project real en la API antes de curl |
 
 ## Referencias cruzadas
 

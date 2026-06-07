@@ -35,10 +35,10 @@ def _seed():
     )
     boto3.resource('dynamodb', region_name='us-east-1').Table(_TABLE).put_item(
         Item={
-            'kind': 'register-code',
+            'kind': 'login-code',
             'bucket': _BUCKET,
-            'html_path': 'register-code.html',
-            'txt_path': 'register-code.txt',
+            'html_path': 'login-code.html',
+            'txt_path': 'login-code.txt',
             'subject': 'Tu codigo: {{ code }}',
         }
     )
@@ -46,10 +46,10 @@ def _seed():
     s3.create_bucket(Bucket=_BUCKET)
     s3.put_object(
         Bucket=_BUCKET,
-        Key='register-code.html',
+        Key='login-code.html',
         Body=b'<p>Codigo: {{ code }} ({{ expires_in_min }} min)</p>',
     )
-    s3.put_object(Bucket=_BUCKET, Key='register-code.txt', Body=b'Codigo: {{ code }}')
+    s3.put_object(Bucket=_BUCKET, Key='login-code.txt', Body=b'Codigo: {{ code }}')
 
 
 def test_send_renders_and_calls_ses():
@@ -78,7 +78,7 @@ def test_send_renders_and_calls_ses():
             ) as mock_ses,
         ):
             message_id = email_service.send(
-                kind='register-code',
+                kind='login-code',
                 to=['user@example.com'],
                 data={'code': 'XYZ789', 'expires_in_min': 15},
             )
@@ -99,7 +99,7 @@ def test_send_unknown_kind_raises_without_ses():
 
     with mock_aws():
         reset_resource_cache()
-        _seed()  # solo tiene register-code
+        _seed()  # solo tiene login-code
 
         from services import email_service
 

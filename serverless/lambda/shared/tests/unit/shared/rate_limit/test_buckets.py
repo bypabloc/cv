@@ -63,11 +63,11 @@ class TestIncrementBucket:
         # Bucket previous esta vacio, current=3, elapsed=0 -> effective=3
         assert effective == 3.0
 
-    def test_when_turnstile_validated_then_turnstile_tokens_incremented(
+    def test_when_brought_captcha_then_turnstile_tokens_incremented(
         self, rate_limit_tables: dict[str, str]
     ) -> None:
         """
-        Given turnstile_validated=True,
+        Given brought_turnstile_token=True (el request adjunto un CAPTCHA real),
         When increment,
         Then turnstile_tokens incrementado.
         """
@@ -75,12 +75,35 @@ class TestIncrementBucket:
             ip='1.2.3.4',
             endpoint='/contact',
             window_seconds=60,
-            turnstile_validated=True,
+            brought_turnstile_token=True,
             now=1500,
         )
 
         assert result['count'] == 1
         assert result['turnstile_tokens'] == 1
+
+    def test_when_no_captcha_then_turnstile_tokens_stays_zero(
+        self, rate_limit_tables: dict[str, str]
+    ) -> None:
+        """
+        Given brought_turnstile_token=False (verify-*/mfa/session: sin CAPTCHA),
+        When increment,
+        Then count sube pero turnstile_tokens queda en 0.
+
+        Regresion del fix: estos endpoints ya NO inflan el counter de
+        auto-blacklist (antes pasaban turnstile_validated=True y blacklisteaban
+        a un humano que reintentaba).
+        """
+        result = increment_bucket(
+            ip='1.2.3.4',
+            endpoint='/auth#login.verify-magic-link',
+            window_seconds=60,
+            brought_turnstile_token=False,
+            now=1500,
+        )
+
+        assert result['count'] == 1
+        assert result['turnstile_tokens'] == 0
 
 
 class TestGetEffectiveCount:

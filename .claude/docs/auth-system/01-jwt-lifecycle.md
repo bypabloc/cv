@@ -4,7 +4,7 @@
 
 | Tipo | TTL | Estado | Uso |
 |------|-----|--------|-----|
-| `temp` | 5 min | Stateless + rolling | Vive entre pasos de un flujo (register/login/verify) |
+| `temp` | 5 min | Stateless + rolling | Vive entre pasos de un flujo (login/verify) |
 | `access` | 15 min | Stateless con blacklist | Auth de cada request normal del dashboard |
 | `refresh` | 30 dias | Stateful (`family_id` + rotation) | Renueva el access cuando expira |
 

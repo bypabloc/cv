@@ -265,6 +265,7 @@ def describe() -> ScriptDescribe:
                     'architect',
                     'leader',
                     'vibe',
+                    'admin',
                     'pkg-app-shared',
                     'pkg-content',
                     'pkg-cv-pdf',
@@ -380,9 +381,13 @@ _PORTFOLIO_APPS = (
     'leader',
     'vibe',
 )
+# admin (Next.js SPA) es un modulo frontend mas, pero NO una app Astro:
+# vive en /app/admin (no bajo apps/) y corre en el puerto 3000.
+_ADMIN_APP = 'admin'
 _PORTFOLIO_PACKAGES = ('app-shared', 'content', 'cv-pdf', 'seo', 'ui')
 _FRONTEND_MODULES = (
     *_PORTFOLIO_APPS,
+    _ADMIN_APP,
     *(f'pkg-{p}' for p in _PORTFOLIO_PACKAGES),
 )
 

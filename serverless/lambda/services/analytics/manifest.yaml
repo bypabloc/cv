@@ -1,0 +1,66 @@
+# Manifiesto del Lambda `analytics` — fuente de verdad de su config.
+#
+# API de metricas read-only del admin: GET /analytics?operation=<X>&action=<Y>.
+# Lee de Neon (vis_* + tax_*), valida el access JWT en cada request, aplica
+# rate-limit per-IP (segunda capa) y cachea las queries agregadas (TTL 60s).
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
+#   python devtools/run.py serverless deploy --lambda=analytics
+
+# --- Identidad ---
+name: analytics
+description: API read-only de metricas del admin (GET /analytics, JWT-authed).
+
+# --- Runtime ---
+runtime: python3.13
+handler: core.handler.lambda_handler
+memory: 512       # MB — footprint Neon (sqlalchemy + pydantic + clientes)
+                  # ~117-127 MB a 128 sin headroom seguro; cualquier lambda
+                  # que importe shared.db tiene minimo real >= 256. 512 da
+                  # CPU comoda para el fan-out de queries agregadas (overview
+                  # son 7 round-trips). MEDIR tras deploy y ajustar.
+                  # Ver .claude/rules/lambda-config.md.
+timeout: 30       # segundos — el listado con filtros raros < 5s; 30s cubre
+                  # el cold sin restore + la query mas pesada.
+
+# SnapStart DESACTIVADO (2026-06): el storage del snapshot
+# (Lambda-SnapStart-Cached-GB-S) se factura por hora por cada version
+# publicada y NO entra en el free tier (~$50/mes con 25 funciones). El
+# admin se usa esporadicamente; el cold extra es aceptable. Re-evaluar
+# solo si lo exige. Ver .claude/rules/lambda-config.md.
+snap_start: false
+
+# --- Trigger HTTP ---
+trigger:
+  type: http
+  method: GET
+  path: /analytics
+
+# --- Que recursos del backend usa ---
+uses:
+  tables:
+    cache: read-write              # @cached de las queries agregadas
+    rate-limit-rules: read         # solo lee la regla /analytics
+    rate-limit-buckets: read-write # sliding window per-IP
+  secrets:
+    - neon-url                     # connection string Neon (vis_* + tax_*)
+    - jwt-secret                   # verifica el access JWT (HS256)
+  sends-email: false
+
+# --- Variables de entorno por stage ---
+# CORS: refleja el Origin del admin (echo) — NUNCA '*'. http_handler resuelve
+# el origen permitido contra CORS_ALLOWED_ORIGINS. En dev se agrega
+# localhost:3000 para el dev server del admin.
+env:
+  default:
+    LOG_LEVEL: INFO
+    JWT_ISSUER: portfolio-auth
+    JWT_AUDIENCE: portfolio
+  dev:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://admin.portfolio.dev.the-full-stack.com,http://localhost:3000'
+  stage:
+    LOG_LEVEL: INFO
+    CORS_ALLOWED_ORIGINS: 'https://admin.portfolio.stage.the-full-stack.com'
+  prod:
+    LOG_LEVEL: WARNING
+    CORS_ALLOWED_ORIGINS: 'https://admin.portfolio.the-full-stack.com'

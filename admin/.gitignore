@@ -1,0 +1,17 @@
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+
+# Dependencies
+/node_modules
+
+# Build info
+*.tsbuildinfo
+
+# Testing
+/coverage
+
+# Env (gitignored; valores reales viven en docker/env/client)
+.env*.local
+/tmp/

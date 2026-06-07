@@ -281,7 +281,7 @@ class TestRender:
         rendered = provisioner.render(_manifest_http(), stage='dev')
 
         assert rendered.trigger.type == 'http'
-        assert rendered.trigger.method == 'POST'
+        assert rendered.trigger.methods == ('POST',)
         assert rendered.trigger.path == '/contact'
 
     def test_render_when_invalid_trigger_raises_manifest_error(self):
@@ -292,6 +292,74 @@ class TestRender:
         manifest['trigger'] = {'type': 'cron'}
 
         with pytest.raises(ManifestError, match=r'trigger\.type invalido'):
+            provisioner.render(manifest, stage='dev')
+
+    def test_render_trigger_http_methods_list_normalized(self):
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['get', 'post'],
+            'path': '/auth',
+        }
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        assert rendered.trigger.methods == ('GET', 'POST')
+        assert rendered.trigger.path == '/auth'
+
+    def test_render_trigger_http_methods_dedup_preserves_order(self):
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['POST', 'GET', 'POST'],
+            'path': '/auth',
+        }
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        assert rendered.trigger.methods == ('POST', 'GET')
+
+    def test_render_trigger_http_method_and_methods_both_raises(self):
+        from serverless import provisioner
+        from serverless.resolve import ManifestError
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'method': 'POST',
+            'methods': ['GET'],
+            'path': '/auth',
+        }
+
+        with pytest.raises(ManifestError, match=r"'method'.*O.*'methods'"):
+            provisioner.render(manifest, stage='dev')
+
+    def test_render_trigger_http_no_method_raises(self):
+        from serverless import provisioner
+        from serverless.resolve import ManifestError
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {'type': 'http', 'path': '/auth'}
+
+        with pytest.raises(ManifestError, match=r"'method'.*'methods'"):
+            provisioner.render(manifest, stage='dev')
+
+    def test_render_trigger_http_invalid_method_raises(self):
+        from serverless import provisioner
+        from serverless.resolve import ManifestError
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['GET', 'TRACE'],
+            'path': '/auth',
+        }
+
+        with pytest.raises(ManifestError, match=r'metodo invalido'):
             provisioner.render(manifest, stage='dev')
 
 
@@ -350,11 +418,244 @@ class TestProvisionCreate:
             # get-policy: inspecciona statements obsoletos
             # (legacy SAM o devtools previo con qualifier distinto)
             # antes de add-permission. En CREATE el policy esta vacio
-            # asi que no se llama remove-permission.
+            # asi que el cleanup no llama remove-permission, pero el
+            # wiring SI hace un remove-permission del target_sid (noop si
+            # no existe) antes del add-permission, para garantizar que el
+            # statement se recree con el source_arn wildcard correcto.
             'lambda.get-policy',
+            'lambda.remove-permission',
             'lambda.add-permission',
+            # Tras el wiring, `_disable_snap_start` corre tambien en CREATE
+            # (el manifest test tiene snap_start=False): cubre el caso de
+            # una funcion preexistente con SnapStart re-creada por state
+            # perdido. Aqui es no-op (get-function-configuration None +
+            # delete-alias + list-aliases + list-versions sin borrados).
+            'lambda.get-function-configuration',
+            'lambda.delete-alias',
+            'lambda.list-aliases',
+            'lambda.list-versions-by-function',
         ]
         assert state.resources['function_name'] == 'portfolio-contact-form-dev'
+
+    def test_provision_create_multi_method_wires_each_method(self, monkeypatch):
+        from serverless import provisioner
+        from serverless.state import Action
+
+        calls = []
+        monkeypatch.setattr(
+            provisioner,
+            'aws',
+            _fake_aws(calls, _default_responses()),
+        )
+        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
+
+        manifest = _manifest_http()
+        manifest['trigger'] = {
+            'type': 'http',
+            'methods': ['GET', 'POST'],
+            'path': '/auth',
+        }
+        rendered = provisioner.render(manifest, stage='dev')
+        provisioner.provision(
+            rendered,
+            action=Action.CREATE,
+            zip_path=_ZIP_PATH,
+            previous=None,
+            profile=None,
+            region='us-east-1',
+        )
+
+        verbs = ['.'.join(c[:2]) for c in calls]
+        # GET y POST: cada uno con put-method + put-integration (2 pares),
+        # luego OPTIONS (put-method + put-integration + sus 2 responses).
+        api_seq = [v for v in verbs if v.startswith('apigateway.')]
+        assert api_seq == [
+            'apigateway.get-resources',
+            'apigateway.create-resource',
+            'apigateway.put-method',  # GET
+            'apigateway.put-integration',  # GET
+            'apigateway.put-method',  # POST
+            'apigateway.put-integration',  # POST
+            'apigateway.put-method',  # OPTIONS
+            'apigateway.put-integration',  # OPTIONS
+            'apigateway.put-method-response',
+            'apigateway.put-integration-response',
+            'apigateway.create-deployment',
+        ]
+        # source_arn del add-permission usa wildcard de metodo `*`.
+        add_call = next(
+            c for c in calls if c[:2] == ['lambda', 'add-permission']
+        )
+        arn = add_call[add_call.index('--source-arn') + 1]
+        assert arn.endswith('/dev/*/auth')
+        # Access-Control-Allow-Methods lista GET,POST,OPTIONS.
+        intgr_resp = next(
+            c
+            for c in calls
+            if c[:2] == ['apigateway', 'put-integration-response']
+        )
+        params = intgr_resp[intgr_resp.index('--response-parameters') + 1]
+        assert "'GET,POST,OPTIONS'" in params
+        # Access-Control-Allow-Headers del preflight incluye Authorization
+        # (los endpoints autenticados mandan el Bearer JWT). Sin el, el
+        # browser bloquea el request con CORS.
+        assert 'Authorization' in params
+
+    def test_provision_create_snap_start_remove_add_use_qualifier(
+        self, monkeypatch
+    ):
+        """Con snap_start, remove-permission Y add-permission van al alias.
+
+        Regresion real (dev): el remove-permission SIN --qualifier borraba
+        el statement del $LATEST (vacio) y dejaba el del alias `live`
+        intacto; add-permission --qualifier live no lo sobrescribia (Sid
+        ya existe) -> quedaba el SourceArn viejo y el GET sin permiso.
+        """
+        from serverless import provisioner
+        from serverless.aws_cli import AwsResult
+        from serverless.state import Action
+
+        calls = []
+        responses = _default_responses()
+
+        def fake(args, **_kwargs):
+            calls.append(args)
+            key = '.'.join(args[:2])
+            # SnapStart: publish-version retorna Version; get-alias falla
+            # (ResourceNotFound) para forzar create-alias.
+            if key == 'lambda.publish-version':
+                return AwsResult(
+                    returncode=0, stdout='', stderr='', json={'Version': '7'}
+                )
+            if key == 'lambda.get-alias':
+                return AwsResult(
+                    returncode=1, stdout='', stderr='not found', json=None
+                )
+            return AwsResult(
+                returncode=0, stdout='', stderr='', json=responses.get(key)
+            )
+
+        monkeypatch.setattr(provisioner, 'aws', fake)
+        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
+
+        manifest = _manifest_http()
+        manifest['snap_start'] = True
+        rendered = provisioner.render(manifest, stage='dev')
+        provisioner.provision(
+            rendered,
+            action=Action.CREATE,
+            zip_path=_ZIP_PATH,
+            previous=None,
+            profile=None,
+            region='us-east-1',
+        )
+
+        remove_call = next(
+            c for c in calls if c[:2] == ['lambda', 'remove-permission']
+        )
+        add_call = next(
+            c for c in calls if c[:2] == ['lambda', 'add-permission']
+        )
+        # Ambos llevan --qualifier live y el mismo statement-id -live.
+        assert '--qualifier' in remove_call
+        assert remove_call[remove_call.index('--qualifier') + 1] == 'live'
+        assert remove_call[remove_call.index('--statement-id') + 1] == (
+            'apigw-dev-live'
+        )
+        assert '--qualifier' in add_call
+        assert add_call[add_call.index('--qualifier') + 1] == 'live'
+
+    def test_provision_update_config_disables_snap_start_and_purges(
+        self, monkeypatch
+    ):
+        """snap_start=False en UPDATE_CONFIG apaga SnapStart y libera snapshots.
+
+        Tras re-apuntar el trigger a $LATEST, `_disable_snap_start`:
+        1. update-function-configuration --snap-start ApplyOn=None (porque
+           la funcion AUN tiene PublishedVersions activo).
+        2. delete-alias del alias `live`.
+        3. delete-function --qualifier de cada version publicada que NINGUN
+           alias referencie (aqui: 1, 2 y 3; ninguna aliased tras el
+           delete-alias).
+        """
+        from serverless import provisioner
+        from serverless.aws_cli import AwsResult
+        from serverless.state import Action
+        from serverless.state import LambdaState
+
+        calls = []
+        responses = _default_responses()
+
+        def fake(args, **_kwargs):
+            calls.append(args)
+            key = '.'.join(args[:2])
+            if key == 'lambda.get-function-configuration':
+                # SnapStart sigue activo -> el update a None NO es no-op.
+                return AwsResult(
+                    returncode=0,
+                    stdout='',
+                    stderr='',
+                    json={'SnapStart': {'ApplyOn': 'PublishedVersions'}},
+                )
+            if key == 'lambda.list-aliases':
+                # Ningun alias queda (el live ya se borro).
+                return AwsResult(returncode=0, stdout='', stderr='', json=[])
+            if key == 'lambda.list-versions-by-function':
+                # $LATEST + 3 versiones publicadas con snapshot.
+                return AwsResult(
+                    returncode=0,
+                    stdout='',
+                    stderr='',
+                    json=['$LATEST', '1', '2', '3'],
+                )
+            return AwsResult(
+                returncode=0, stdout='', stderr='', json=responses.get(key)
+            )
+
+        monkeypatch.setattr(provisioner, 'aws', fake)
+        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
+
+        # _manifest_http NO define snap_start -> render lo deja en False.
+        rendered = provisioner.render(_manifest_http(), stage='dev')
+        previous = LambdaState(
+            scope='contact-form',
+            stage='dev',
+            config_hash='sha256:OLD',
+            code_hash='sha256:k',
+            resources={'function_name': 'portfolio-contact-form-dev'},
+            updated_at='2026-05-21T10:00:00Z',
+        )
+        provisioner.provision(
+            rendered,
+            action=Action.UPDATE_CONFIG,
+            zip_path=_ZIP_PATH,
+            previous=previous,
+            profile=None,
+            region='us-east-1',
+        )
+
+        # 1. SnapStart apagado: update-function-configuration con ApplyOn=None.
+        snap_update = next(
+            c
+            for c in calls
+            if c[:2] == ['lambda', 'update-function-configuration']
+            and '--snap-start' in c
+        )
+        assert snap_update[snap_update.index('--snap-start') + 1] == (
+            'ApplyOn=None'
+        )
+        # 2. Alias `live` borrado.
+        delete_alias = next(
+            c for c in calls if c[:2] == ['lambda', 'delete-alias']
+        )
+        assert delete_alias[delete_alias.index('--name') + 1] == 'live'
+        # 3. Las 3 versiones publicadas se borran ($LATEST NO).
+        deleted_versions = sorted(
+            c[c.index('--qualifier') + 1]
+            for c in calls
+            if c[:2] == ['lambda', 'delete-function'] and '--qualifier' in c
+        )
+        assert deleted_versions == ['1', '2', '3']
 
     def test_provision_create_records_resources(self, monkeypatch):
         from serverless import provisioner
@@ -509,6 +810,12 @@ class TestProvisionUpdate:
         # para que cambios de `trigger.*` o `snap_start` en el manifest
         # se materialicen en API GW (URI :live, statement-id correcto).
         # La secuencia del wiring es la misma que en CREATE (post `_create_function`).
+        # Como el manifest test NO tiene snap_start (=False), tras el
+        # rewire `provision()` llama `_disable_snap_start`: verifica la
+        # config SnapStart (get-function-configuration; no-op porque ya
+        # esta en None), borra el alias `live` (delete-alias) y purga las
+        # versiones publicadas (list-aliases + list-versions-by-function;
+        # 0 a borrar en el fake).
         assert verbs == [
             'sts.get-caller-identity',
             'iam.create-role',
@@ -529,7 +836,12 @@ class TestProvisionUpdate:
             'apigateway.put-integration-response',
             'apigateway.create-deployment',
             'lambda.get-policy',
+            'lambda.remove-permission',
             'lambda.add-permission',
+            'lambda.get-function-configuration',
+            'lambda.delete-alias',
+            'lambda.list-aliases',
+            'lambda.list-versions-by-function',
         ]
         assert 'lambda.create-function' not in verbs
 
@@ -575,7 +887,10 @@ class TestProvisionUpdate:
 
         verbs = ['.'.join(c[:2]) for c in calls]
         # Post-fix: el wiring del trigger se re-aplica tambien en
-        # UPDATE_BOTH para alinear API GW con el manifest actual.
+        # UPDATE_BOTH para alinear API GW con el manifest actual. Como el
+        # manifest test NO tiene snap_start (=False), tras el rewire se
+        # llama `_disable_snap_start` (get-function-configuration no-op +
+        # delete-alias + list-aliases + list-versions-by-function).
         assert verbs == [
             'lambda.wait',
             'lambda.update-function-code',
@@ -598,7 +913,12 @@ class TestProvisionUpdate:
             'apigateway.put-integration-response',
             'apigateway.create-deployment',
             'lambda.get-policy',
+            'lambda.remove-permission',
             'lambda.add-permission',
+            'lambda.get-function-configuration',
+            'lambda.delete-alias',
+            'lambda.list-aliases',
+            'lambda.list-versions-by-function',
         ]
 
     def test_provision_update_config_cleans_sam_legacy_permission(

@@ -49,3 +49,23 @@ TURNSTILE_SITE_KEY=
 
 # Toggle de validacion Turnstile: `true` (validar) | `false` (skip, solo dev/test).
 TURNSTILE_ENABLED=
+
+# --- Admin panel (Next.js SPA) ----------------------------------------
+# Next lee process.env.NEXT_PUBLIC_* en build/dev y las inlinea en el
+# bundle del browser. Son publicas (no secretos), categoria client.
+#
+# Equivalencia con las apps Astro:
+#   NEXT_PUBLIC_API_ENDPOINT      = mismo valor que PUBLIC_API_ENDPOINT
+#   NEXT_PUBLIC_TURNSTILE_SITEKEY = mismo valor que PUBLIC_TURNSTILE_SITEKEY
+# URL del admin por entorno (admin.portfolio.{dev,stage}.the-full-stack.com,
+# admin.portfolio.the-full-stack.com en prod, admin.localhost:9970 en local).
+NEXT_PUBLIC_API_ENDPOINT=
+NEXT_PUBLIC_TURNSTILE_SITEKEY=
+NEXT_PUBLIC_ADMIN_URL=
+# Lead time (ms) para refrescar el access JWT antes de su exp. Default 30000.
+NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS=30000
+# Relying Party ID de WebAuthn (hostname del admin por entorno). Un passkey
+# NO migra entre entornos (esperado).
+NEXT_PUBLIC_WEBAUTHN_RP_ID=
+# Toggle de UI de la seccion de seguridad / MFA del admin.
+NEXT_PUBLIC_FEATURE_MFA=true

@@ -68,6 +68,7 @@ def check_or_raise(
     endpoint: str,
     country: str | None = None,
     turnstile_validated: bool = False,
+    brought_turnstile_token: bool = False,
     now: int | None = None,
 ) -> Decision:
     """
@@ -78,6 +79,14 @@ def check_or_raise(
         endpoint: path del endpoint (ej: '/contact').
         country: country code (ISO 3166-1 alpha-2) o None.
         turnstile_validated: si la request paso Turnstile siteverify ya.
+            Controla SOLO el limite del rate-limit; NO alimenta la
+            auto-blacklist (los verify-*/mfa/session lo pasan True sin traer
+            un token real del usuario).
+        brought_turnstile_token: True solo si el request trajo un token
+            Turnstile REAL del usuario (login.start/register.start). Es el
+            unico que alimenta el counter de auto-blacklist (bot detection).
+            Sin esta separacion, un humano que reintenta un login/magic-link
+            3 veces en 60s se auto-blacklistea 24h.
         now: timestamp override (tests).
 
     Returns:
@@ -185,17 +194,21 @@ def check_or_raise(
             },
         )
 
-    # 5. Atomic INCREMENT (con el window_seconds REAL del rule)
+    # 5. Atomic INCREMENT (con el window_seconds REAL del rule). El counter
+    #    turnstile_tokens (auto-blacklist) solo sube si el request adjunto un
+    #    CAPTCHA real del usuario (login.start/register.start), NO si
+    #    turnstile_validated=True por bypass de limite (verify-*/mfa/session).
+    real_captcha = brought_turnstile_token
     bucket = increment_bucket(
         ip=ip,
         endpoint=endpoint,
         window_seconds=window_seconds,
-        turnstile_validated=turnstile_validated,
+        brought_turnstile_token=real_captcha,
         now=current_time,
     )
 
-    # 6. Auto-blacklist check
-    if turnstile_validated and should_auto_blacklist(bucket['turnstile_tokens']):
+    # 6. Auto-blacklist check: solo cuando el request adjunto un CAPTCHA real.
+    if real_captcha and should_auto_blacklist(bucket['turnstile_tokens']):
         create_blacklist_rule(ip)
 
     return Decision(allowed=True, reason='allowed', status_code=200)

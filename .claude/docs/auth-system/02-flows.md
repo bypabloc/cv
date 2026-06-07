@@ -2,40 +2,64 @@
 
 > Diagrama ASCII por flujo. Mas detalle en los controllers correspondientes.
 
-## Register
+## Login (flujo de entrada unico — cubre alta y entrada)
+
+> La operation `register` fue ELIMINADA. El alta de usuarios ocurre dentro
+> del flujo `login`: `login.check-email` es el unico punto con Turnstile y
+> emite el temp JWT precheck; `login.start` exige ese precheck y CREA el
+> user `pending` si el email no existe (alta fusionada). El STATUS del user
+> (no la operation que lo creo) determina la transicion `pending -> active`.
 
 ```text
-POST /auth {operation: register, action: start, data: {email, cf_turnstile_response}}
+--- Precheck (unico punto con Turnstile) ---
+
+POST /auth {operation: login, action: check-email, data: {email, cf_turnstile_response}}
   | turnstile + rate-limit
   v
-[user no existe?] -- si -- crear auth_users (status=pending)
-  |                          generar code + magic_link_token
-  | si existe + status=active -> 409 EMAIL_ALREADY_REGISTERED
-  | si existe + status=pending -> re-emite (idempotente, AC-19)
-  | si existe + status=disabled/locked -> 404 EMAIL_NOT_FOUND (AC-20)
+buscar auth_users por email
+  | active/pending   -> 200 {exists, has_password, temp_token (precheck, flow=login step=0)}
+  | exists:false     -> 200 {exists:false, temp_token (precheck con sub placeholder)}
+  | disabled/locked  -> 200 {status: 'unavailable'} (sin temp_token — anti-enumeration)
   v
-persistir Neon: auth_email_codes(code_hash, kind=register, attempts=0, expires_at)
-                auth_magic_links(token_hash, kind=register, expires_at)
-                auth_audit_log(event=register.start, success=true)
-  |
-publicar SQS: {kind: register-magic-link, ...} + {kind: register-code, ...}
-  |
-emitir temp JWT (flow=register, step=1, ttl=300)
+el temp_token precheck habilita continuar a login.start
+
+
+--- Inicio (alta fusionada) ---
+
+POST /auth {operation: login, action: start, data: {email, password?}}
+  | Authorization: Bearer <temp precheck (flow=login step=0)>  -- sin Authorization -> 401 MISSING_PRECHECK
+  | rate-limit (NO turnstile: ya se valido en check-email)
   v
-200 {temp_token, user_id, expires_in: 300}
+buscar auth_users por email
+  | si NO existe -> crear auth_users (status=pending), created: true (alta fusionada)
+  | si pending   -> re-emite el email unificado, created: false (idempotente, AC-19)
+  | si disabled/locked -> 404 EMAIL_NOT_FOUND + suggest_register: false (AC-20)
+  | si active + password ausente -> flujo passwordless (magic-link + code)
+  | si active + password presente -> step-up (ver 04-mfa.md)
+  v
+persistir Neon: auth_email_codes(code_hash, kind=login, attempts=0, expires_at)
+                auth_magic_links(token_hash, kind=login, expires_at)
+                auth_audit_log(event=login.start, success=true)
+  |
+invocar send_email async (InvocationType='Event'):
+  {operation: email, action: send, data: {kind: login-unified, ...}}
+  |
+emitir temp JWT (flow=login, step=1, ttl=300)
+  v
+200 {temp_token, methods: ['magic-link', 'email-code'], created, expires_in: 300}
 
 
 --- Verificacion magic-link (GET, browser) ---
 
-GET /auth?operation=register&action=verify-magic-link&token=<X>
-  | turnstile NO (ya validamos en start)
+GET /auth?operation=login&action=verify-magic-link&token=<X>
+  | turnstile NO (ya validamos en check-email)
   | rate-limit
   v
 verificar token_hash en auth_magic_links (consumed_at IS NULL, exp > now)
   | si consumed -> 400 LINK_CONSUMED (AC-16)
   | si expired  -> 400 LINK_EXPIRED  (AC-17)
   v
-marcar consumed + auth_users.status='active'
+marcar consumed + auth_users.status='active' (cierra la transicion pending -> active)
   |
 emitir access + refresh (family_id nuevo)
   |
@@ -48,11 +72,11 @@ audit log
 
 --- Verificacion code (POST, dashboard) ---
 
-POST /auth {operation: register, action: verify-code, data: {code, temp_token}}
-  | verify temp JWT (typ=temp, flow=register, NOT blacklisted)
+POST /auth {operation: login, action: verify-code, data: {code, temp_token}}
+  | verify temp JWT (typ=temp, flow=login, NOT blacklisted)
   | rate-limit
   v
-buscar auth_email_codes (user_id del JWT, kind=register, consumed_at IS NULL)
+buscar auth_email_codes (user_id del JWT, kind=login, consumed_at IS NULL)
   | si wrong -> increment attempts, 400 INVALID_CODE
   | si >=5 attempts -> auth_users.status='locked', 423 ACCOUNT_LOCKED (AC-11)
   | si expired -> 400 EXPIRED_CODE
@@ -60,31 +84,11 @@ buscar auth_email_codes (user_id del JWT, kind=register, consumed_at IS NULL)
 marcar consumed + status='active' + blacklist temp_token jti
   |
 emitir access + refresh (family_id nuevo)
+  |
+si el user ya estaba active: actualizar last_login_at + reset failed_attempts (AC-22)
   v
 200 {access_token, refresh_token, expires_in: 900, token_type: 'Bearer',
      user: {id, email, status}}
-```
-
-## Login
-
-```text
-POST /auth {operation: login, action: start, data: {email, cf_turnstile_response}}
-  | turnstile + rate-limit
-  v
-buscar auth_users por email
-  | si NO existe -> 404 EMAIL_NOT_FOUND + suggest_register: true (AC-5)
-  | si disabled/locked -> 404 EMAIL_NOT_FOUND + suggest_register: false (AC-20)
-  | si pending -> 409 PENDING_VERIFICATION
-  v
-generar code + magic_link + emitir temp JWT (flow=login)
-publicar SQS
-  v
-200 {temp_token, methods: ['magic-link', 'email-code'], expires_in: 300}
-
-
---- verify-magic-link / verify-code: identicos a register pero con
-flow='login'. Al exito: actualizar auth_users.last_login_at + reset
-failed_attempts (AC-22). ---
 ```
 
 ## Verify (set-password / resend-code)
@@ -146,8 +150,8 @@ audit log
 ```text
 Lambda auth publica a SQS portfolio-auth-email-${stage}:
 {
-  kind: 'register-magic-link' | 'register-code' | 'login-magic-link' |
-        'login-code' | 'password-reset',
+  kind: 'login-unified' | 'login-magic-link' | 'login-code' |
+        'password-reset',
   to: 'user@example.com',
   user_id, niche?, subject_id, data: {token | code, expires_in_min,
   verify_url?}, audit_event_id

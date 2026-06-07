@@ -55,6 +55,23 @@ class MfaDisableIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
 
 
+class MfaEnableIn(BaseModel):
+    """POST /auth operation=mfa action=enable (re-activa un metodo soft-disabled)."""
+
+    kind: Literal['totp', 'email_code']
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
+class MfaSetRequiredIn(BaseModel):
+    """POST /auth operation=mfa action=set-required (metodo requerido al loguear)."""
+
+    kind: Literal['totp', 'email_code']
+    required: bool
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
 class MfaListIn(BaseModel):
     """GET /auth operation=mfa action=list (sin payload)."""
 

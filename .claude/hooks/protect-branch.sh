@@ -20,7 +20,15 @@ case "$CMD" in
   *) exit 0 ;;
 esac
 
-BRANCH="$(current_branch)"
+# Worktree-aware: si el comando hace `cd <path>` (patron tipico al operar en
+# un git worktree), evaluamos la rama de ESE checkout — es donde el commit/push
+# realmente ocurre. Si no hay cd, usamos CLAUDE_PROJECT_DIR (checkout principal).
+CD_DIR="$(cd_target_from_command "$CMD")"
+if [ -n "$CD_DIR" ] && [ -d "$CD_DIR" ]; then
+  BRANCH="$(current_branch "$CD_DIR")"
+else
+  BRANCH="$(current_branch)"
+fi
 
 # Si no estamos en repo git o no podemos detectar rama, no bloquear (el comando fallara solo).
 [ -z "$BRANCH" ] && exit 0

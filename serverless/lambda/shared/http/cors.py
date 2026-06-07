@@ -162,8 +162,13 @@ def cors_headers(origin: str) -> dict[str, str]:
     headers = {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+        # Authorization: el admin manda `Authorization: Bearer <JWT>` en los
+        # endpoints autenticados (/users completo, /auth mfa/webauthn con
+        # sesion). Sin este header en el allow-list, el browser bloquea el
+        # request con error CORS. Debe coincidir con el allowed_headers del
+        # MOCK del OPTIONS en devtools/serverless/provisioner.py.
         'Access-Control-Allow-Headers': (
-            'Content-Type,X-Turnstile-Token,X-Turnstile-Bypass-Token'
+            'Content-Type,Authorization,X-Turnstile-Token,X-Turnstile-Bypass-Token'
         ),
         'Access-Control-Max-Age': '600',
     }

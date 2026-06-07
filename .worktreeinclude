@@ -1,0 +1,17 @@
+# .worktreeinclude — sintaxis .gitignore.
+#
+# Archivos GITIGNORED que un worktree fresco de Claude Code necesita para
+# arrancar (env files locales, secrets). Claude los COPIA file-a-file a
+# cada worktree nuevo (creado con --worktree, isolation:worktree o en el
+# desktop app). NO lee su contenido al contexto -> compatible con
+# .claude/rules/env-files.md. Solo se copia lo que matchea Y es gitignored;
+# los archivos tracked (incluidos los .example) nunca se duplican.
+#
+# Ver .claude/rules/parallel-sessions.md ("Setup del repo").
+
+# Env files de las 3 categorias (client/server/dev-cli), gitignored.
+docker/env/
+
+# Env files en la raiz (si existen).
+.env
+.env.local

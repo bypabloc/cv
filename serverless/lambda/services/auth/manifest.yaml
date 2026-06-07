@@ -11,13 +11,12 @@
 
 # --- Identidad ---
 name: auth
-description: HTTP endpoint POST /auth (register/login/verify/session).
+description: HTTP endpoint GET+POST /auth (register/login/verify/session).
 
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
-                  # snapstart). Config uniforme 1024 en los 8 lambdas para
+memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 en los 8 lambdas para
                   # medir warm/cold con CPU x4. Minimo medido previo: 256
                   # (login.start 174 MB, webauthn entra con headroom; 128 NO
                   # por OOM/CPU-starved). REVERTIR al minimo tras medir si la
@@ -25,15 +24,23 @@ memory: 1024      # MB — EXPERIMENTO (docs/specs/coldstart-cv-query-and-
 timeout: 60       # segundos — colchon uniforme (red de seguridad cold sin
                   # restore + Turnstile siteverify HTTP). No afecta costo.
 
-# SnapStart: reduce cold start de ~3s a ~830ms (Restore Duration).
-# Critico en /auth: low traffic prod hace que cada request pague cold
-# start si no se mantiene warm.
-snap_start: true
+# SnapStart DESACTIVADO (2026-06): el storage del snapshot
+# (Lambda-SnapStart-Cached-GB-S) se factura por hora por cada version
+# publicada y NO entra en el free tier (~$50/mes con 25 funciones). El
+# cold start lo mitiga la carga lazy de shared.auth. Re-evaluar solo si
+# la latencia de /auth lo exige. Ver .claude/rules/lambda-config.md.
+snap_start: false
 
 # --- Como se invoca este Lambda ---
+# GET + POST: el resto del flujo (register/login/verify/session) usa POST
+# con body JSON. El callback del magic-link es un GET (el browser navega al
+# link del email: /auth?operation=...&action=verify-magic-link&token=...);
+# verify-magic-link devuelve un redirect_url -> http_dispatch responde 302
+# Location al admin/callback (con los tokens en el fragment hash). POST del
+# mismo action sigue devolviendo JSON (el admin lo llama por fetch).
 trigger:
   type: http
-  method: POST
+  methods: [GET, POST]
   path: /auth
 
 # --- Que recursos del backend usa ---

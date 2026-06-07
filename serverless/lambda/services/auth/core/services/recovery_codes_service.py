@@ -18,6 +18,10 @@ from shared.db.repositories.auth_mfa import (
     consume_recovery_code,
     regenerate_recovery_codes,
 )
+from shared.db.repositories.auth_users import (
+    count_recovery_codes,
+    count_remaining_recovery_codes,
+)
 from shared.db.session import db_session
 
 
@@ -48,3 +52,14 @@ class RecoveryCodesService:
                 user_id=str(user_id),
                 code_hash=code_hash,
             )
+
+    def counts(self, *, user_id: UUID | str) -> dict[str, int]:
+        """`{total, remaining}` de recovery codes del user (overview)."""
+        with db_session() as session:
+            return {
+                'total': count_recovery_codes(session, user_id=str(user_id)),
+                'remaining': count_remaining_recovery_codes(
+                    session,
+                    user_id=str(user_id),
+                ),
+            }

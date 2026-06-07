@@ -21,6 +21,14 @@ CLIENT_SYNCED_KEYS: frozenset[str] = frozenset(
         # API + Turnstile (consumido por TrackingPixel + /contact)
         'PUBLIC_API_ENDPOINT',
         'PUBLIC_TURNSTILE_SITEKEY',
+        # Admin Next.js (NEXT_PUBLIC_*): Next inlinea ese prefijo en el
+        # bundle del browser. Publicas (no secretos), categoria client.
+        'NEXT_PUBLIC_API_ENDPOINT',
+        'NEXT_PUBLIC_TURNSTILE_SITEKEY',
+        'NEXT_PUBLIC_ADMIN_URL',
+        'NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS',
+        'NEXT_PUBLIC_WEBAUTHN_RP_ID',
+        'NEXT_PUBLIC_FEATURE_MFA',
     },
 )
 

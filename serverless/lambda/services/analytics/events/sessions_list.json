@@ -1,0 +1,26 @@
+{
+  "httpMethod": "GET",
+  "path": "/analytics",
+  "queryStringParameters": {
+    "operation": "sessions",
+    "action": "list",
+    "from": "2026-04-27",
+    "to": "2026-05-27",
+    "page": "1",
+    "page_size": "50",
+    "device_type": "desktop",
+    "browser": "Chrome"
+  },
+  "headers": {
+    "x-forwarded-for": "203.0.113.42",
+    "cloudfront-viewer-country": "AR",
+    "user-agent": "curl/8.0",
+    "authorization": "Bearer REPLACE_WITH_VALID_ACCESS_JWT"
+  },
+  "requestContext": {
+    "requestId": "test-sessions-list-001",
+    "identity": { "sourceIp": "203.0.113.42" }
+  },
+  "body": null,
+  "isBase64Encoded": false
+}

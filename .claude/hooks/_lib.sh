@@ -32,9 +32,26 @@ except Exception:
     pass" 2>/dev/null
 }
 
-# Retorna el nombre de la rama actual de git.
+# Retorna el nombre de la rama git de un directorio dado (default:
+# CLAUDE_PROJECT_DIR). Worktree-aware: si se pasa un dir, evalua la rama de
+# ESE checkout (el del worktree donde realmente ocurre el commit), no la del
+# checkout principal. Con git worktrees, CLAUDE_PROJECT_DIR apunta al checkout
+# principal (que puede estar en una rama protegida como dev) mientras el
+# comando corre en un worktree de feature/*; sin el dir explicito el hook
+# daria un falso positivo.
 current_branch() {
-  cd "$CLAUDE_PROJECT_DIR" && git symbolic-ref --short HEAD 2>/dev/null
+  local dir="${1:-$CLAUDE_PROJECT_DIR}"
+  git -C "$dir" symbolic-ref --short HEAD 2>/dev/null
+}
+
+# Extrae el directorio destino de un `cd <path>` al inicio de un comando shell
+# (el primer `cd` antes de `&&`/`;`). Vacio si no hay cd. Sirve para que el
+# hook evalue la rama del worktree donde el comando va a operar.
+cd_target_from_command() {
+  local cmd="$1"
+  printf '%s\n' "$cmd" | sed -n \
+    's/^[[:space:]]*cd[[:space:]]\{1,\}\([^&;|]*\).*/\1/p' \
+    | head -n1 | sed 's/[[:space:]]*$//'
 }
 
 # True si la rama actual es protegida (master/main/dev/release).

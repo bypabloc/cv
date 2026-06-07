@@ -14,12 +14,16 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from shared.auth.password import verify_password
+from shared.auth.password import (
+    NeedsRehashError,
+    hash_password,
+    verify_password,
+)
 from shared.auth.tokens import generate_opaque_token, hash_token
 from shared.db.models.auth.credentials import AuthCredentials
 from shared.db.models.auth.magic_link import AuthMagicLink
 from shared.db.models.auth.user import AuthUser
-from shared.db.repositories.auth import get_user_by_email
+from shared.db.repositories.auth import get_user_by_email, set_password_hash
 from shared.db.repositories.auth_mfa import (
     count_active_mfa,
     get_webauthn_credentials,
@@ -111,6 +115,58 @@ class ProfileService:
                 password=password,
                 hashed=cred.password_hash,
             )
+
+    def update_password(
+        self,
+        *,
+        user_id: str,
+        current_password: str | None,
+        new_password: str,
+    ) -> bool:
+        """Cambia o ESTABLECE la password del user, hashea la nueva.
+
+        Si el user YA tiene credencial: verifica `current_password` contra
+        el hash argon2; si matchea, persiste el hash de `new_password`. Si
+        el user es passwordless (sin credencial): establece el PRIMER
+        password sin verificar nada (no hay current). Todo en una sola
+        `db_session()` (transaccion atomica).
+
+        Returns:
+            True si la password se establecio/actualizo.
+            False solo si el user TIENE credencial y `current_password` no
+            matchea (el controller lo mapea a 401 INVALID_PASSWORD). Un user
+            passwordless siempre puede setear su primer password.
+        """
+        with db_session() as session:
+            cred = session.get(AuthCredentials, user_id)
+            if cred is None:
+                # Passwordless: primer set, sin current que verificar.
+                set_password_hash(
+                    session,
+                    user_id=user_id,
+                    password_hash=hash_password(new_password),
+                )
+                return True
+            if current_password is None:
+                # Tiene credencial pero no mando la actual: rechazar.
+                return False
+            try:
+                ok = verify_password(
+                    password=current_password,
+                    hashed=cred.password_hash,
+                )
+            except NeedsRehashError:
+                # La actual coincide pero el hash es viejo: igual procede el
+                # cambio (la nueva se hashea con los parametros actuales).
+                ok = True
+            if not ok:
+                return False
+            set_password_hash(
+                session,
+                user_id=user_id,
+                password_hash=hash_password(new_password),
+            )
+            return True
 
     def update(self, *, user_id: str, **fields: object) -> AuthUser | None:
         """Actualiza un subset de campos del perfil (parcial)."""

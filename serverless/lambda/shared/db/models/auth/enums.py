@@ -31,10 +31,11 @@ class AuthCodeKind(StrEnum):
     """Kind del `auth_email_codes.kind` (tipo de flujo del code).
 
     Identico a `AuthLinkKind` por convencion; viven separados porque sus
-    semánticas pueden divergir (ej. plan 02 agrega `mfa_setup`).
+    semánticas pueden divergir (ej. plan 02 agrega `mfa_setup`). El valor
+    `register` fue ELIMINADO (migration 00000007): el alta ocurre dentro del
+    flujo `login` unico (login.start crea el pending).
     """
 
-    REGISTER = 'register'
     LOGIN = 'login'
     PASSWORD_RESET = 'password_reset'  # noqa: S105 (enum value, no secreto)
 
@@ -45,10 +46,11 @@ class AuthLinkKind(StrEnum):
     `email-change` (plan 03) reusa la tabla `auth_magic_links` para el
     flujo de cambio de email: el user pide el cambio, recibe un magic-link
     al email NUEVO y al confirmarlo se actualiza `auth_users.email`. El
-    nuevo email viaja en `auth_magic_links.meta_data` (`{new_email}`).
+    nuevo email viaja en `auth_magic_links.meta_data` (`{new_email}`). El
+    valor `register` fue ELIMINADO (migration 00000007): el alta ocurre
+    dentro del flujo `login` unico.
     """
 
-    REGISTER = 'register'
     LOGIN = 'login'
     PASSWORD_RESET = 'password_reset'  # noqa: S105 (enum value, no secreto)
     EMAIL_CHANGE = 'email-change'

@@ -1,17 +1,16 @@
 """Flag validation for test_runner script.
 
 Validates and normalizes flags for the unified test runner that
-orchestrates tests across all project modules (apps Astro, packages,
-devtools, feature E2E global).
-
-Mayo 2026: el módulo `e2e` y el tipo `--type=e2e` fueron eliminados.
-Ahora los E2E del portfolio viven en `feature` (Playwright global contra
-los 6 sitios del stack local), separado de los unit tests por app:
-  - feature: Playwright contra tests/feature/ (los 6 niches via nginx)
+orchestrates unit + coverage + typecheck tests across the project
+modules (apps Astro, packages, devtools, server):
   - hub / generic / fintech / architect / leader / vibe: unit + coverage
   - pkg-*: unit + coverage para los packages del workspace
   - devtools: unit (Python 3.14)
   - server: unit (Python serverless backend)
+
+Junio 2026: los E2E del portfolio (Playwright) ya no viven en test_runner.
+Los módulos/tipos `feature`, `e2e` y `tests` fueron eliminados y se corren
+con el comando dedicado `python devtools/run.py e2e --module=<api|admin|app>`.
 """
 
 import os
@@ -51,15 +50,14 @@ MODULE_TEST_TYPES: dict[str, list[str]] = {
     'server': ['unit'],
     'devtools': ['unit'],
 }
-# Apps Astro: unit + coverage + typecheck (sin feature individual; los E2E
-# son globales en tests/feature/).
+# Apps Astro: unit + coverage + typecheck. Los E2E del portfolio NO viven
+# aqui: son Python (playwright-python + httpx) y se corren con el comando
+# dedicado `python devtools/run.py e2e --module=<api|admin|app>`.
 for _app in _PORTFOLIO_APPS:
     MODULE_TEST_TYPES[_app] = ['unit', 'coverage', 'typecheck']
 # Packages: unit + coverage (sin typecheck dedicado, lo hace tsc del root).
 for _pkg in _PORTFOLIO_PACKAGES:
     MODULE_TEST_TYPES[f'pkg-{_pkg}'] = ['unit', 'coverage']
-# E2E global del portfolio (Playwright):
-MODULE_TEST_TYPES['feature'] = ['feature']
 
 ALLOWED_FLAGS = [
     'module',
@@ -69,12 +67,6 @@ ALLOWED_FLAGS = [
     'verbose',
     'quiet',
     'skip_empty',
-    'screenshots',
-    'ui_review',
-    'project',
-    'shard',
-    'shard_total',
-    'fail_on_flaky',
     'help',
 ]
 
@@ -86,12 +78,6 @@ DEFAULTS: dict[str, Any] = {
     'verbose': False,
     'quiet': False,
     'skip_empty': True,
-    'screenshots': False,
-    'ui_review': False,
-    'project': '',
-    'shard': None,
-    'shard_total': None,
-    'fail_on_flaky': False,
     '_invoked_from': 'cli',
 }
 
@@ -110,11 +96,12 @@ def _validate_module(flags_dict: dict[str, Any]) -> None:
         return
 
     # Atajos históricos eliminados: dar mensaje claro de migración.
-    if module in {'e2e', 'tests'}:
+    if module in {'e2e', 'tests', 'feature'}:
         raise ValueError(
-            f'--module={module} fue eliminado en mayo 2026.\n'
-            'Usa el módulo `feature` (global Playwright) y --type=feature:\n'
-            '  python devtools/run.py test_runner --module=feature --type=feature',
+            f'--module={module} ya no existe en test_runner.\n'
+            'Los E2E del portfolio son Python (playwright-python + httpx) y '
+            'se corren con el comando dedicado:\n'
+            '  python devtools/run.py e2e --module=<api|admin|app> --env=dev',
         )
 
     valid_modules = [m for m, types in MODULE_TEST_TYPES.items() if types]
@@ -140,11 +127,11 @@ def _validate_type(flags_dict: dict[str, Any]) -> None:
     if test_type == 'all':
         return
 
-    if test_type == 'e2e':
+    if test_type in {'e2e', 'feature'}:
         raise ValueError(
-            '--type=e2e fue eliminado en mayo 2026. '
-            'Usa --module=feature --type=feature:\n'
-            '  python devtools/run.py test_runner --module=feature --type=feature',
+            f'--type={test_type} ya no existe en test_runner. '
+            'Los E2E del portfolio se corren con el comando dedicado:\n'
+            '  python devtools/run.py e2e --module=<api|admin|app> --env=dev',
         )
 
     module = flags_dict.get('module')
@@ -197,116 +184,6 @@ def _validate_env(flags_dict: dict[str, Any]) -> None:
         )
 
 
-def _validate_feature_flags(flags_dict: dict[str, Any]) -> None:
-    """Validate --screenshots and --ui-review require feature context.
-
-    Estos flags solo aplican a Playwright (feature tests E2E del portfolio).
-    Si ``--module=server --type=feature`` los usa, error: pytest no genera
-    screenshots ni alimenta el UI review.
-    """
-    screenshots = flags_dict.get('screenshots', False)
-    ui_review = flags_dict.get('ui_review', False)
-
-    if not screenshots and not ui_review:
-        return
-
-    module = flags_dict.get('module')
-    test_type = flags_dict.get('type', 'all')
-
-    is_playwright_feature = module == 'feature' and test_type == 'feature'
-    if not is_playwright_feature:
-        flag_name = '--screenshots' if screenshots else '--ui-review'
-        raise ValueError(
-            f'{flag_name} requiere --module=feature y --type=feature '
-            '(solo Playwright soporta screenshots).',
-        )
-
-    if ui_review and not screenshots:
-        flags_dict['screenshots'] = True
-
-
-def _coerce_int(flags_dict: dict[str, Any], key: str) -> None:
-    """Convierte el flag de str a int si es no-None y string."""
-    value = flags_dict.get(key)
-    if value is None or isinstance(value, int):
-        return
-    try:
-        flags_dict[key] = int(value)
-    except (ValueError, TypeError) as exc:
-        raise ValueError(
-            f'--{key.replace("_", "-")} debe ser un entero. Recibido: {value!r}',
-        ) from exc
-
-
-def _validate_playwright_only_flag(
-    flags_dict: dict[str, Any],
-    key: str,
-    present: bool,
-) -> None:
-    """Válida que un flag de Playwright (sharding/projects) no se use con
-    server o con --type distinto de feature.
-
-    Sharding y projects son features de Playwright, así que requieren
-    --module=feature y --type=feature.
-    """
-    if not present:
-        return
-    module = flags_dict.get('module')
-    test_type = flags_dict.get('type', 'all')
-    is_playwright_feature = module == 'feature' and test_type == 'feature'
-    if not is_playwright_feature:
-        raise ValueError(
-            f'--{key.replace("_", "-")} requiere '
-            '--module=feature y --type=feature',
-        )
-
-
-def _validate_sharding_flags(flags_dict: dict[str, Any]) -> None:
-    """Válida --project, --shard, --shard-total, --fail-on-flaky.
-
-    Reglas:
-    - Las 4 flags requieren --module=feature y --type=feature
-    - --shard y --shard-total deben usarse juntos
-    - shard y shard_total son enteros >= 1
-    - shard <= shard_total
-    """
-    _coerce_int(flags_dict, 'shard')
-    _coerce_int(flags_dict, 'shard_total')
-
-    project = flags_dict.get('project') or ''
-    shard = flags_dict.get('shard')
-    shard_total = flags_dict.get('shard_total')
-    fail_on_flaky = flags_dict.get('fail_on_flaky', False)
-
-    _validate_playwright_only_flag(flags_dict, 'project', bool(project))
-    _validate_playwright_only_flag(flags_dict, 'shard', shard is not None)
-    _validate_playwright_only_flag(
-        flags_dict,
-        'shard_total',
-        shard_total is not None,
-    )
-    _validate_playwright_only_flag(
-        flags_dict,
-        'fail_on_flaky',
-        bool(fail_on_flaky),
-    )
-
-    if shard is not None and shard_total is None:
-        raise ValueError('--shard requiere --shard-total')
-    if shard_total is not None and shard is None:
-        raise ValueError('--shard-total requiere --shard')
-
-    if shard is not None and shard < 1:
-        raise ValueError('--shard debe ser >= 1')
-    if shard_total is not None and shard_total < 1:
-        raise ValueError('--shard-total debe ser >= 1')
-
-    if shard is not None and shard_total is not None and shard > shard_total:
-        raise ValueError(
-            f'--shard ({shard}) no puede exceder --shard-total ({shard_total})',
-        )
-
-
 def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     """Validate and normalize flags for test_runner.
 
@@ -332,8 +209,6 @@ def flag(flags_dict: dict[str, Any]) -> dict[str, Any]:
     _validate_type(flags_dict)
     _validate_git_mode(flags_dict)
     _validate_env(flags_dict)
-    _validate_feature_flags(flags_dict)
-    _validate_sharding_flags(flags_dict)
 
     if flags_dict.get('verbose'):
         print('Flags procesadas:')
@@ -351,7 +226,7 @@ def describe() -> ScriptDescribe:
         'kind': 'monocommand',
         'summary': (
             'Orquestador de tests (apps Astro Vitest + packages Vitest + '
-            'devtools pytest + feature Playwright global)'
+            'devtools pytest + server pytest)'
         ),
         'commands': [],
         'flags': {
@@ -397,48 +272,6 @@ def describe() -> ScriptDescribe:
                 'type': 'bool',
                 'default': True,
                 'summary': 'No fallar si no hay archivos cambiados',
-            },
-            'screenshots': {
-                'type': 'bool',
-                'default': False,
-                'summary': (
-                    'Generar screenshots durante --type=feature '
-                    '(solo --module=feature)'
-                ),
-            },
-            'ui_review': {
-                'type': 'bool',
-                'default': False,
-                'summary': (
-                    'Revisar screenshots con Gemini CLI tras feature tests '
-                    '(solo --module=feature)'
-                ),
-            },
-            'project': {
-                'type': 'string',
-                'summary': (
-                    'Project Playwright (feature tests: desktop-chromium, '
-                    'desktop-webkit, mobile-chromium, mobile-webkit, etc.)'
-                ),
-            },
-            'shard': {
-                'type': 'int',
-                'summary': (
-                    'Shard index 1-based (requiere shard_total). '
-                    'Solo aplica a --module=feature --type=feature.'
-                ),
-            },
-            'shard_total': {
-                'type': 'int',
-                'summary': 'Total de shards (solo --type=feature)',
-            },
-            'fail_on_flaky': {
-                'type': 'bool',
-                'default': False,
-                'summary': (
-                    'Pasa --fail-on-flaky-tests a Playwright '
-                    '(solo --type=feature)'
-                ),
             },
         },
     }

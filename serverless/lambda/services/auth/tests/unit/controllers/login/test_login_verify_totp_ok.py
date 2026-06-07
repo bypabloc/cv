@@ -25,6 +25,7 @@ def test_login_verify_totp_ok(monkeypatch):
     jwt_svc.issue_refresh.return_value = ('REFRESH-JWT', MagicMock())
     mfa_svc = MagicMock()
     mfa_svc.get_totp_ciphertext.return_value = b'\x02' * 32
+    mfa_svc.required_methods.return_value = []
     totp_svc = MagicMock()
     totp_svc.verify.return_value = True
 

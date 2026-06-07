@@ -102,6 +102,57 @@ operar solo el server. `sync_secrets` lo invoca internamente.
 | server | `aws sso login --profile <X>` ok + KMS key existente |
 | dev-cli | el `.env` local existe (validacion no-op) |
 
+## GitGuardian (secret scanning)
+
+El repo tiene activado el secret scanning de GitGuardian. Hay DOS motores
+con DOS configs distintas — es la confusion #1:
+
+| Motor | Cuando corre | Que config lee |
+|---|---|---|
+| `ggshield` (CLI / pre-commit / GitHub Action propia) | local / hooks | `.gitguardian.yaml` del repo (raiz) |
+| **GitGuardian GitHub App** (el check `GitGuardian Security Checks` del PR) | server-side en cada PR | SOLO el dashboard (`dashboard.gitguardian.com` -> workspace -> Secrets detection -> excluded filepaths, scopeado al repo). **NO lee `.gitguardian.yaml`.** |
+
+### `.gitguardian.yaml` (raiz del repo)
+
+- **SIEMPRE** se usa `version: 2` + `secret.ignored_paths` (con guion BAJO,
+  NO `ignored-paths`). Glob Unix (`**`, `*`).
+- **SIEMPRE** `ignored_paths` es SOLO para **fixtures de test** con valores
+  SINTETICOS (passwords de prueba, tokens fake). Hoy: `devtools/api_e2e/**`
+  (el harness E2E usa credenciales sinteticas compuestas en runtime, NO
+  secretos reales).
+- **NUNCA** agregar a `ignored_paths` un path de codigo de PRODUCCION para
+  "saltarse" un hallazgo. Un secreto real se ROTA, no se ignora (ver
+  [serverless-secrets.md](serverless-secrets.md)).
+
+### Falso positivo en el check del PR (GitHub App)
+
+El detector "Generic Password" de la GitHub App es heuristico y marca
+tanto literales credential-like como el patron `password=<identificador>`
+aunque el valor sea una variable de fixture. Cuando un PR lo dispara y se
+CONFIRMA que es un fixture sintetico (no un secreto real):
+
+1. **SIEMPRE** primero verificar que de verdad NO hay secreto real: el
+   valor es sintetico/compuesto en runtime y el test funcional pasa.
+2. La GitHub App NO lee `.gitguardian.yaml`, asi que el archivo no silencia
+   el check del PR. Para eso: excluir el path en el **dashboard**
+   (Secrets detection -> excluded filepaths, scopeado al repo) o, ante un FP
+   ya confirmado, mergear con `gh pr merge <N> --admin --merge` (saltando
+   SOLO el check de GitGuardian; los demas checks deben estar verdes).
+3. **NUNCA** reescribir historia con `git push --force` para "limpiar" un FP:
+   esta en la DENY-list de [.claude/settings.json](../settings.json)
+   (guardarrail duro, no bypasseable). Si hay que quitar un literal real de
+   un commit viejo de una rama de trabajo: `git push origin --delete <branch>`
+   (permitido) + re-push de la rama amended (cierra el PR -> crear uno nuevo).
+
+### Evitar el FP de raiz al escribir fixtures
+
+- **SIEMPRE** componer las credenciales de prueba en runtime de fragmentos
+  NEUTROS (sin keyword `pass`/`phrase`/`secret`/`token`), no como literales:
+  `f'{_TAG}-Qa-K7m-Zx3!'`. Reduce los hallazgos a (en el peor caso) el
+  patron irreducible `password=<variable>`.
+- **SIEMPRE** documentar en el codigo que el valor es un fixture, NO un
+  secreto.
+
 ## Referencias hijas
 
 Para detalle por categoria:
@@ -127,3 +178,7 @@ Para detalle por categoria:
 | Commitear el `.env` | Categoria personal | Esta en `.gitignore` |
 | Editar GH/SSM sin actualizar `.env` | Drift entre local y CI | Editar `.env` local primero, despues sync |
 | Leer el `.env` completo con Read/cat/source | Vuelca secretos al contexto | `grep -m1 ^KEY=` puntual |
+| Esperar que `.gitguardian.yaml` silencie el check del PR | La GitHub App NO lee ese archivo (solo `ggshield`) | Excluir el path en el dashboard, o `--admin` ante un FP confirmado |
+| Agregar un path de produccion a `ignored_paths` para tapar un hallazgo | Oculta un secreto real | Rotar el secreto; `ignored_paths` solo para fixtures sinteticos |
+| Credenciales de fixture como literal con keyword (`Passphrase`) | Dispara "Generic Password" de GitGuardian | Componer en runtime de fragmentos neutros (`f'{_TAG}-Qa-K7m-Zx3!'`) |
+| `git push --force` para limpiar un FP de un commit viejo | Esta en la deny-list dura de settings.json | `git push origin --delete` + re-push amended (cierra el PR -> crear nuevo) |

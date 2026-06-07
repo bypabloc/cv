@@ -17,6 +17,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+
 from serverless.import_validator import ForbiddenImport
 from serverless.import_validator import scan_file
 from serverless.import_validator import scan_lambda_core

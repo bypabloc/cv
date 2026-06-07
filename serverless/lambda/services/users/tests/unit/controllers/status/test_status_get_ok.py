@@ -28,7 +28,10 @@ def test_status_get_ok(monkeypatch):
         'recovery_codes_remaining': 8,
     }
 
-    monkeypatch.setattr(ctl, 'require_active_user', lambda *_a, **_k: user)
+    claims = MagicMock(family_id='0193b8a0-0000-7000-8000-0000000000fa')
+    monkeypatch.setattr(
+        ctl, 'authenticate', lambda *_a, **_k: (user, claims),
+    )
     monkeypatch.setattr(ctl, 'ProfileService', lambda _c: profile_svc)
     monkeypatch.setattr(ctl, 'RateLimitService', lambda _c: MagicMock())
 
@@ -37,6 +40,11 @@ def test_status_get_ok(monkeypatch):
 
     assert result['is_valid'] is True
     assert result['code'] == 0
+    assert result['data']['user_id'] == str(user.id)
+    assert (
+        result['data']['current_session_id']
+        == '0193b8a0-0000-7000-8000-0000000000fa'
+    )
     assert result['data']['status'] == 'active'
     assert result['data']['mfa_configured'] is True
     assert result['data']['mfa_methods'] == ['totp']

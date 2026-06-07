@@ -41,7 +41,6 @@ camino critico.
 
 | Controller | Hook |
 |------------|------|
-| register/verify_code, register/verify_magic_link | on_session_created |
 | login/verify_code, login/verify_magic_link | on_session_created |
 | login/_mfa_login.issue_terminal_tokens (cubre login/start, login/verify_password no-MFA, login/verify_totp) | on_session_created |
 | webauthn/login_verify | on_session_created |

@@ -1,0 +1,22 @@
+{
+  "httpMethod": "GET",
+  "path": "/analytics",
+  "queryStringParameters": {
+    "operation": "funnel",
+    "action": "conversion",
+    "from": "2026-04-27",
+    "to": "2026-05-27"
+  },
+  "headers": {
+    "x-forwarded-for": "203.0.113.42",
+    "cloudfront-viewer-country": "AR",
+    "user-agent": "curl/8.0",
+    "authorization": "Bearer REPLACE_WITH_VALID_ACCESS_JWT"
+  },
+  "requestContext": {
+    "requestId": "test-funnel-conversion-001",
+    "identity": { "sourceIp": "203.0.113.42" }
+  },
+  "body": null,
+  "isBase64Encoded": false
+}

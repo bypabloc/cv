@@ -1565,6 +1565,12 @@ def _provision_create(
         region=region,
         resources=resources,
     )
+    # Si el manifest tiene snap_start=False pero la funcion YA existia en
+    # AWS con SnapStart activo (CREATE por state local perdido), hay que
+    # apagarlo + liberar sus snapshots. No-op barato en una funcion
+    # genuinamente nueva (sin SnapStart ni versiones). Corre tras el
+    # wiring (que ya apunto a $LATEST con qualifier vacio).
+    _disable_snap_start(rendered, profile=profile, region=region)
 
 
 def _wait_function_active(
@@ -1731,7 +1737,150 @@ def _publish_and_update_alias(
         )
         alias_arn = (created.json or {}).get('AliasArn', '')
     print(f'  OK  alias {_SNAP_START_ALIAS} -> version {version}')
+    _prune_old_versions(
+        rendered.function_name,
+        keep_version=version,
+        profile=profile,
+        region=region,
+    )
     return alias_arn
+
+
+def _prune_old_versions(
+    function_name: str,
+    *,
+    keep_version: str | None,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Borra snapshots SnapStart facturables (versiones publicadas).
+
+    Cada version publicada con SnapStart retiene un snapshot que AWS
+    factura por hora (`Lambda-SnapStart-Cached-GB-S`) mientras exista.
+    Sin purga, cada `deploy` acumula una version mas y el costo crece de
+    forma ilimitada.
+
+    Si `keep_version` no es None (deploy con SnapStart activo): deja SOLO
+    esa version (la que apunta el alias `live`) + cualquier version
+    referenciada por OTRO alias, y borra el resto. Si `keep_version` es
+    None (desactivacion de SnapStart): borra TODAS las versiones
+    publicadas que NINGUN alias referencie. `$LATEST` nunca se toca (no
+    es una version publicada y no tiene snapshot).
+
+    Es best-effort: un fallo al borrar una version NO rompe el deploy
+    (se loguea un WARN y se continua).
+    """
+    aliased = aws(
+        [
+            'lambda',
+            'list-aliases',
+            '--function-name',
+            function_name,
+            '--query',
+            'Aliases[].FunctionVersion',
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    keep = {*(aliased.json or [])}
+    if keep_version is not None:
+        keep.add(keep_version)
+    listed = aws(
+        [
+            'lambda',
+            'list-versions-by-function',
+            '--function-name',
+            function_name,
+            '--query',
+            'Versions[].Version',
+        ],
+        profile=profile,
+        region=region,
+        parse_json=True,
+        check=False,
+    )
+    versions = [
+        v for v in (listed.json or []) if v != '$LATEST' and v not in keep
+    ]
+    if not versions:
+        return
+    deleted = 0
+    for version in versions:
+        result = aws(
+            [
+                'lambda',
+                'delete-function',
+                '--function-name',
+                function_name,
+                '--qualifier',
+                version,
+            ],
+            profile=profile,
+            region=region,
+            check=False,
+        )
+        if result.ok:
+            deleted += 1
+        else:
+            print(
+                f'  WARN  no se pudo borrar {function_name}:{version} '
+                '(snapshot SnapStart)',
+            )
+    if deleted:
+        print(
+            f'  OK  purgados {deleted} snapshots SnapStart de {function_name}',
+        )
+
+
+def _disable_snap_start(
+    rendered: RenderedLambda,
+    *,
+    profile: str | None,
+    region: str,
+) -> None:
+    """Desactiva SnapStart en una funcion y libera sus snapshots.
+
+    Solo se invoca cuando `rendered.snap_start=False`. Tres pasos:
+    1. `update-function-configuration --snap-start ApplyOn=None` (apaga
+       SnapStart; idempotente via `_ensure_snap_start_config`).
+    2. Borra el alias `live` (la integracion del trigger ya se re-apunto
+       a `$LATEST` en `_wire_http_trigger` porque el qualifier es vacio
+       con snap_start=False).
+    3. Purga TODAS las versiones publicadas restantes (sus snapshots
+       facturables `Lambda-SnapStart-Cached-GB-S`).
+
+    Best-effort en el borrado del alias y las versiones: un fallo NO
+    rompe el deploy.
+    """
+    if rendered.snap_start:
+        return
+    # 1. Apagar SnapStart (target 'None').
+    _ensure_snap_start_config(rendered, profile=profile, region=region)
+    # 2. Borrar el alias `live` (ya nadie lo referencia tras el rewire).
+    deleted_alias = aws(
+        [
+            'lambda',
+            'delete-alias',
+            '--function-name',
+            rendered.function_name,
+            '--name',
+            _SNAP_START_ALIAS,
+        ],
+        profile=profile,
+        region=region,
+        check=False,
+    )
+    if deleted_alias.ok:
+        print(f'  OK  alias {_SNAP_START_ALIAS} eliminado')
+    # 3. Purgar todas las versiones publicadas (snapshots facturables).
+    _prune_old_versions(
+        rendered.function_name,
+        keep_version=None,
+        profile=profile,
+        region=region,
+    )
 
 
 def _snap_start_qualifier(rendered: RenderedLambda) -> str:
@@ -1900,6 +2049,10 @@ def provision(
                 region=region,
                 resources=resources,
             )
+            # Tras re-apuntar el trigger a $LATEST, apaga SnapStart y
+            # libera los snapshots (orden critico: el rewire debe correr
+            # ANTES de borrar el alias `live`).
+            _disable_snap_start(rendered, profile=profile, region=region)
         elif action == _Action.UPDATE_BOTH:
             _provision_update_code(
                 rendered, zip_path, profile=profile, region=region
@@ -1912,6 +2065,7 @@ def provision(
                 region=region,
                 resources=resources,
             )
+            _disable_snap_start(rendered, profile=profile, region=region)
     except Exception as exc:
         # El estado parcial (con role_arn / log_group ya creados) se
         # adjunta a la excepcion para que el llamador lo persista y la

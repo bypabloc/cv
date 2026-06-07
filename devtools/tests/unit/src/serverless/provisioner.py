@@ -425,6 +425,15 @@ class TestProvisionCreate:
             'lambda.get-policy',
             'lambda.remove-permission',
             'lambda.add-permission',
+            # Tras el wiring, `_disable_snap_start` corre tambien en CREATE
+            # (el manifest test tiene snap_start=False): cubre el caso de
+            # una funcion preexistente con SnapStart re-creada por state
+            # perdido. Aqui es no-op (get-function-configuration None +
+            # delete-alias + list-aliases + list-versions sin borrados).
+            'lambda.get-function-configuration',
+            'lambda.delete-alias',
+            'lambda.list-aliases',
+            'lambda.list-versions-by-function',
         ]
         assert state.resources['function_name'] == 'portfolio-contact-form-dev'
 
@@ -555,6 +564,98 @@ class TestProvisionCreate:
         )
         assert '--qualifier' in add_call
         assert add_call[add_call.index('--qualifier') + 1] == 'live'
+
+    def test_provision_update_config_disables_snap_start_and_purges(
+        self, monkeypatch
+    ):
+        """snap_start=False en UPDATE_CONFIG apaga SnapStart y libera snapshots.
+
+        Tras re-apuntar el trigger a $LATEST, `_disable_snap_start`:
+        1. update-function-configuration --snap-start ApplyOn=None (porque
+           la funcion AUN tiene PublishedVersions activo).
+        2. delete-alias del alias `live`.
+        3. delete-function --qualifier de cada version publicada que NINGUN
+           alias referencie (aqui: 1, 2 y 3; ninguna aliased tras el
+           delete-alias).
+        """
+        from serverless import provisioner
+        from serverless.aws_cli import AwsResult
+        from serverless.state import Action
+        from serverless.state import LambdaState
+
+        calls = []
+        responses = _default_responses()
+
+        def fake(args, **_kwargs):
+            calls.append(args)
+            key = '.'.join(args[:2])
+            if key == 'lambda.get-function-configuration':
+                # SnapStart sigue activo -> el update a None NO es no-op.
+                return AwsResult(
+                    returncode=0,
+                    stdout='',
+                    stderr='',
+                    json={'SnapStart': {'ApplyOn': 'PublishedVersions'}},
+                )
+            if key == 'lambda.list-aliases':
+                # Ningun alias queda (el live ya se borro).
+                return AwsResult(returncode=0, stdout='', stderr='', json=[])
+            if key == 'lambda.list-versions-by-function':
+                # $LATEST + 3 versiones publicadas con snapshot.
+                return AwsResult(
+                    returncode=0,
+                    stdout='',
+                    stderr='',
+                    json=['$LATEST', '1', '2', '3'],
+                )
+            return AwsResult(
+                returncode=0, stdout='', stderr='', json=responses.get(key)
+            )
+
+        monkeypatch.setattr(provisioner, 'aws', fake)
+        monkeypatch.setattr(provisioner.time, 'sleep', lambda _s: None)
+
+        # _manifest_http NO define snap_start -> render lo deja en False.
+        rendered = provisioner.render(_manifest_http(), stage='dev')
+        previous = LambdaState(
+            scope='contact-form',
+            stage='dev',
+            config_hash='sha256:OLD',
+            code_hash='sha256:k',
+            resources={'function_name': 'portfolio-contact-form-dev'},
+            updated_at='2026-05-21T10:00:00Z',
+        )
+        provisioner.provision(
+            rendered,
+            action=Action.UPDATE_CONFIG,
+            zip_path=_ZIP_PATH,
+            previous=previous,
+            profile=None,
+            region='us-east-1',
+        )
+
+        # 1. SnapStart apagado: update-function-configuration con ApplyOn=None.
+        snap_update = next(
+            c
+            for c in calls
+            if c[:2] == ['lambda', 'update-function-configuration']
+            and '--snap-start' in c
+        )
+        assert snap_update[snap_update.index('--snap-start') + 1] == (
+            'ApplyOn=None'
+        )
+        # 2. Alias `live` borrado.
+        delete_alias = next(
+            c for c in calls if c[:2] == ['lambda', 'delete-alias']
+        )
+        assert delete_alias[delete_alias.index('--name') + 1] == 'live'
+        # 3. Las 3 versiones publicadas se borran ($LATEST NO).
+        deleted_versions = sorted(
+            c[c.index('--qualifier') + 1]
+            for c in calls
+            if c[:2] == ['lambda', 'delete-function'] and '--qualifier' in c
+        )
+        assert deleted_versions == ['1', '2', '3']
 
     def test_provision_create_records_resources(self, monkeypatch):
         from serverless import provisioner
@@ -709,6 +810,12 @@ class TestProvisionUpdate:
         # para que cambios de `trigger.*` o `snap_start` en el manifest
         # se materialicen en API GW (URI :live, statement-id correcto).
         # La secuencia del wiring es la misma que en CREATE (post `_create_function`).
+        # Como el manifest test NO tiene snap_start (=False), tras el
+        # rewire `provision()` llama `_disable_snap_start`: verifica la
+        # config SnapStart (get-function-configuration; no-op porque ya
+        # esta en None), borra el alias `live` (delete-alias) y purga las
+        # versiones publicadas (list-aliases + list-versions-by-function;
+        # 0 a borrar en el fake).
         assert verbs == [
             'sts.get-caller-identity',
             'iam.create-role',
@@ -731,6 +838,10 @@ class TestProvisionUpdate:
             'lambda.get-policy',
             'lambda.remove-permission',
             'lambda.add-permission',
+            'lambda.get-function-configuration',
+            'lambda.delete-alias',
+            'lambda.list-aliases',
+            'lambda.list-versions-by-function',
         ]
         assert 'lambda.create-function' not in verbs
 
@@ -776,7 +887,10 @@ class TestProvisionUpdate:
 
         verbs = ['.'.join(c[:2]) for c in calls]
         # Post-fix: el wiring del trigger se re-aplica tambien en
-        # UPDATE_BOTH para alinear API GW con el manifest actual.
+        # UPDATE_BOTH para alinear API GW con el manifest actual. Como el
+        # manifest test NO tiene snap_start (=False), tras el rewire se
+        # llama `_disable_snap_start` (get-function-configuration no-op +
+        # delete-alias + list-aliases + list-versions-by-function).
         assert verbs == [
             'lambda.wait',
             'lambda.update-function-code',
@@ -801,6 +915,10 @@ class TestProvisionUpdate:
             'lambda.get-policy',
             'lambda.remove-permission',
             'lambda.add-permission',
+            'lambda.get-function-configuration',
+            'lambda.delete-alias',
+            'lambda.list-aliases',
+            'lambda.list-versions-by-function',
         ]
 
     def test_provision_update_config_cleans_sam_legacy_permission(

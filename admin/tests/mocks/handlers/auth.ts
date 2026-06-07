@@ -555,6 +555,12 @@ export const authHandlers = [
 			return new HttpResponse(null, { status: 204 });
 		}
 
+		// security.password-set-required: marca/desmarca la password como
+		// requerida al loguear -> 204 (sin payload).
+		if (operation === "security" && action === "password-set-required") {
+			return new HttpResponse(null, { status: 204 });
+		}
+
 		return HttpResponse.json(
 			{ error: "NOT_IMPLEMENTED", code: 5010 },
 			{ status: 501 },

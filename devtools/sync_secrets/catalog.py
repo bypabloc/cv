@@ -29,6 +29,10 @@ CLIENT_SYNCED_KEYS: frozenset[str] = frozenset(
         'NEXT_PUBLIC_AUTH_REFRESH_LEAD_MS',
         'NEXT_PUBLIC_WEBAUTHN_RP_ID',
         'NEXT_PUBLIC_FEATURE_MFA',
+        # E2E bypass del Turnstile: 'true' SOLO en dev (automatiza el form
+        # de login en los E2E browser). 'false' en stage/prod. El backend
+        # prod rechaza el bypass SIEMPRE (defensa server-side aparte).
+        'NEXT_PUBLIC_E2E_BYPASS',
     },
 )
 

@@ -292,6 +292,22 @@ export const authClient = {
 			body: { operation: "security", action: "overview", data: {} },
 		}),
 
+	/**
+	 * security.password-set-required: marca/desmarca la password como requerida
+	 * al loguear (factor de la lista). 204; 404 si el user no tiene password.
+	 * Desmarcarla siempre es seguro: el fallback passwordless garantiza >=1
+	 * required (no hay 409).
+	 */
+	passwordSetRequired: (data: { required: boolean }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: {
+				operation: "security",
+				action: "password-set-required",
+				data,
+			},
+		}),
+
 	/** mfa.enable: activa (soft-enable) un metodo MFA por kind. 204. */
 	mfaEnable: (data: { kind: MfaKind }) =>
 		apiFetch<Envelope<unknown>>("/auth", {

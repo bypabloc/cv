@@ -366,10 +366,20 @@ function RecoveryCodesRow({ method }: { method: SecurityMethod }) {
 
 /**
  * @function PasswordRow
- * @description Fila de password: SIN switches. Muestra ultimo cambio + boton
- *   'Cambiar contrasena' que abre el ChangePasswordForm en un Dialog.
+ * @description Fila de password: muestra ultimo cambio + Switch 'Requerido al
+ *   loguear' (security.password-set-required) + boton 'Cambiar contrasena' que
+ *   abre el ChangePasswordForm en un Dialog. El Switch solo aparece si el user
+ *   ya tiene contrasena configurada (no hay flag required sin password).
  */
-function PasswordRow({ method }: { method: SecurityMethod }) {
+function PasswordRow({
+	method,
+	onRequired,
+	settingRequired,
+}: {
+	method: SecurityMethod;
+	onRequired: (vars: { type: SecurityMethodType; required: boolean }) => void;
+	settingRequired: boolean;
+}) {
 	const [open, setOpen] = useState(false);
 	const lastChange = asString(method.detail, "last_change_at");
 	// configured=true => el user ya tiene contrasena seteada.
@@ -377,7 +387,10 @@ function PasswordRow({ method }: { method: SecurityMethod }) {
 	const cta = hasPassword ? "Cambiar contrasena" : "Establecer contrasena";
 
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
+		<div
+			data-testid="security-row-password"
+			className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4"
+		>
 			<div className="space-y-0.5">
 				<div className="flex items-center gap-2">
 					<span className="text-sm font-medium">{method.label}</span>
@@ -389,14 +402,25 @@ function PasswordRow({ method }: { method: SecurityMethod }) {
 					</p>
 				) : null}
 			</div>
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				onClick={() => setOpen(true)}
-			>
-				{cta}
-			</Button>
+			<div className="flex flex-wrap items-center gap-3">
+				{hasPassword ? (
+					<RequiredSwitch
+						required={method.required}
+						disabled={settingRequired}
+						onConfirm={(required) =>
+							onRequired({ type: method.type, required })
+						}
+					/>
+				) : null}
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => setOpen(true)}
+				>
+					{cta}
+				</Button>
+			</div>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent>
 					<DialogHeader>
@@ -480,7 +504,11 @@ export function SecurityOverviewPanel() {
 						) : method.type === "recovery_codes" ? (
 							<RecoveryCodesRow method={method} />
 						) : method.type === "password" ? (
-							<PasswordRow method={method} />
+							<PasswordRow
+								method={method}
+								settingRequired={setRequired.isPending}
+								onRequired={(vars) => setRequired.mutate(vars)}
+							/>
 						) : (
 							<MfaRow
 								method={method}

@@ -23,7 +23,8 @@ export interface SetRequiredVars {
 /**
  * @function dispatchSetRequired
  * @description Enruta la mutation segun `type`: webauthn via credential_id,
- *   MFA via kind. No aplica a recovery_codes ni password.
+ *   MFA via kind, password via security.password-set-required. No aplica a
+ *   recovery_codes (es el escape anti-lockout, nunca requerido).
  */
 async function dispatchSetRequired(vars: SetRequiredVars): Promise<unknown> {
 	const { type, kind, recordId, required } = vars;
@@ -41,6 +42,10 @@ async function dispatchSetRequired(vars: SetRequiredVars): Promise<unknown> {
 	if (type === "totp" || type === "email_code") {
 		const resolvedKind: MfaKind = kind ?? type;
 		return authClient.mfaSetRequired({ kind: resolvedKind, required });
+	}
+
+	if (type === "password") {
+		return authClient.passwordSetRequired({ required });
 	}
 
 	throw new Error(`No se puede marcar como requerido el metodo: ${type}`);

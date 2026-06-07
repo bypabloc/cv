@@ -1,5 +1,11 @@
 import { server } from "@tests/mocks/server";
-import { render, screen, waitFor } from "@tests/utils/render";
+import {
+	render,
+	screen,
+	userEvent,
+	waitFor,
+	within,
+} from "@tests/utils/render";
 import { HttpResponse, http } from "msw";
 import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -197,17 +203,68 @@ describe("SecurityOverviewPanel", () => {
 		).toBeInTheDocument();
 	});
 
-	it("Given password When render Then muestra el boton Cambiar contrasena sin switches", async () => {
+	it("Given password configured When render Then muestra Cambiar contrasena Y el switch Requerido al loguear", async () => {
 		// Arrange
 		mockOverview(fiveMethods());
 
 		// Act
 		render((<SecurityOverviewPanel />) as ReactElement);
 
-		// Assert
+		// Assert: la password ahora ofrece el control de required (igual que
+		// TOTP/webauthn), no solo el boton de cambio.
+		const passwordRow = await screen.findByTestId("security-row-password");
 		expect(
-			await screen.findByRole("button", { name: /cambiar contrasena/i }),
+			within(passwordRow).getByRole("button", { name: /cambiar contrasena/i }),
 		).toBeInTheDocument();
+		expect(
+			within(passwordRow).getByText(/requerido al loguear/i),
+		).toBeInTheDocument();
+	});
+
+	it("Given password required=false When activo el switch Then dispara security.password-set-required {required:true}", async () => {
+		// Arrange: overview con SOLO la password (aisla el switch bajo prueba;
+		// otras filas tienen sus propios RequiredSwitch que ensucian el assert).
+		// UN solo handler sirve el overview y captura el password-set-required.
+		// apiFetch APLANA el body ({operation, action, ...data}), asi que
+		// `required` viaja al nivel raiz del request, NO en `data`.
+		const onlyPassword = fiveMethods().filter((m) => m.type === "password");
+		let capturedRequired: boolean | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					required?: boolean;
+				};
+				if (
+					body.operation === "security" &&
+					body.action === "password-set-required"
+				) {
+					capturedRequired = body.required ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods: onlyPassword },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: activar el switch de la password -> AlertDialog -> Confirmar.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const passwordRow = await screen.findByTestId("security-row-password");
+		await user.click(within(passwordRow).getByRole("switch"));
+		// El AlertDialog de advertencia se monta en un portal; esperar su
+		// titulo antes de confirmar.
+		await screen.findByText(/hacer obligatorio este metodo/i);
+		await user.click(screen.getByRole("button", { name: /confirmar/i }));
+
+		// Assert: el backend recibe password-set-required con required=true.
+		await waitFor(() => {
+			expect(capturedRequired).toBe(true);
+		});
 	});
 
 	it("Given security.overview falla When render Then muestra el ErrorAlert", async () => {

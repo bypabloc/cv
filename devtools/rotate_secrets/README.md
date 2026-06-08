@@ -21,7 +21,7 @@ Servicios actualmente soportados:
 | Flag | Default | Que hace |
 | --- | --- | --- |
 | `--dry-run` | `false` | No escribe en disco ni en el servicio externo |
-| `--envs=a,b,c` | `local,test,dev,stage,prod` | Subset de envs a actualizar |
+| `--envs=a,b,c` | `local,test,dev,prod` | Subset de envs a actualizar |
 | `--force` | `false` | (turnstile) Crear widget nuevo aunque exista uno con el mismo nombre |
 | `--rotate` | `false` | (turnstile) Rotar el secret de widgets existentes |
 
@@ -38,7 +38,6 @@ Configura los 3 widgets Cloudflare Turnstile que cubren los entornos del
 portfolio:
 
 - `Portfolio Backend (dev)`  -> usado por `.local`, `.test`, `.dev`
-- `Portfolio Backend (stage)` -> usado por `.stage`
 - `Portfolio Backend (prod)`  -> usado por `.prod`
 
 Cada widget cubre los hostnames del estandar de subdominios
@@ -84,13 +83,13 @@ python devtools/run.py rotate_secrets turnstile \
   --dry-run
 ```
 
-Solo actualizar el env de stage:
+Solo actualizar el env de dev:
 
 ```bash
 python devtools/run.py rotate_secrets turnstile \
   --cloudflare-api-token="$(...)" \
   --cloudflare-account-id="$(...)" \
-  --envs=stage \
+  --envs=dev \
   --rotate
 ```
 

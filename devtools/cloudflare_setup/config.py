@@ -1,15 +1,13 @@
 """
 Configuration for the portfolio Cloudflare Pages setup.
 
-Six apps and three environments (dev | stage | prod) -> 18 Pages projects.
+Seven apps and two environments (dev | prod) -> 14 Pages projects.
 Project name and custom domain are derived from (app, env):
 
   prod   generic -> name `generic`,        domain `the-full-stack.com` (apex)
   prod   <niche> -> name `<niche>`,        domain `<niche>.portfolio.the-full-stack.com`
   dev    generic -> name `generic-dev`,    domain `portfolio.dev.the-full-stack.com`
   dev    <niche> -> name `<niche>-dev`,    domain `<niche>.portfolio.dev.the-full-stack.com`
-  stage  generic -> name `generic-stage`,  domain `portfolio.stage.the-full-stack.com`
-  stage  <niche> -> name `<niche>-stage`,  domain `<niche>.portfolio.stage.the-full-stack.com`
 
 Reading order:
   1. APPS  — niche-level config (package_name, root_dir) common to all envs.
@@ -43,10 +41,10 @@ class AppConfig:
 
 @dataclass(frozen=True)
 class EnvConfig:
-    """One deployment environment (dev | stage | prod)."""
+    """One deployment environment (dev | prod)."""
 
-    env: str  # 'dev' | 'stage' | 'prod'
-    branch: str  # GitHub branch that Pages builds: 'main' | 'dev' | 'stage'
+    env: str  # 'dev' | 'prod'
+    branch: str  # GitHub branch that Pages builds: 'main' | 'dev'
     base_domain: (
         str  # FQDN the niches attach to (e.g. 'portfolio.the-full-stack.com')
     )
@@ -93,7 +91,7 @@ APPS: tuple[AppConfig, ...] = (
         root_dir='apps/vibe',
     ),
     # Admin panel Next.js (NO en apps/, vive en root como admin/).
-    # 7mo project por env -> 21 projects totales (7 apps x 3 envs).
+    # 7mo project por env -> 14 projects totales (7 apps x 2 envs).
     AppConfig(
         project_name='admin',
         package_name='@portfolio/admin',
@@ -124,14 +122,6 @@ ENVS: dict[str, EnvConfig] = {
         api_endpoint=f'https://api.portfolio.dev.{APEX_DOMAIN}',
         turnstile_sitekey='0x4AAAAAADQjTYp6s1o66YDV',
     ),
-    'stage': EnvConfig(
-        env='stage',
-        branch='stage',
-        base_domain=f'portfolio.stage.{APEX_DOMAIN}',
-        apex_domain=None,
-        api_endpoint=f'https://api.portfolio.stage.{APEX_DOMAIN}',
-        turnstile_sitekey='0x4AAAAAADQjTq8AtQXbm3Oq',
-    ),
 }
 
 VALID_ENVS: tuple[str, ...] = tuple(ENVS.keys())
@@ -141,7 +131,7 @@ VALID_ENVS: tuple[str, ...] = tuple(ENVS.keys())
 
 
 def project_name_for(app: AppConfig, env: str) -> str:
-    """Pages project name. prod: 'generic'; dev/stage: 'generic-dev'/'generic-stage'."""
+    """Pages project name. prod: 'generic'; dev: 'generic-dev'."""
     if env == 'prod':
         return app.project_name
     return f'{app.project_name}-{env}'
@@ -154,10 +144,9 @@ def custom_domain_for(app: AppConfig, env_cfg: EnvConfig) -> str:
     - prod   generic -> the-full-stack.com (apex)
     - prod   <niche> -> <niche>.portfolio.the-full-stack.com
     - prod   admin   -> admin.portfolio.the-full-stack.com (NO apex)
-    - dev    generic -> portfolio.dev.the-full-stack.com (no apex in dev/stage)
+    - dev    generic -> portfolio.dev.the-full-stack.com (no apex in dev)
     - dev    <niche> -> <niche>.portfolio.dev.the-full-stack.com
     - dev    admin   -> admin.portfolio.dev.the-full-stack.com
-    - stage  analog.
     """
     if app.project_name == 'generic':
         return env_cfg.apex_domain or env_cfg.base_domain

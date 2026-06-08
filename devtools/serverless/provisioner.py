@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 
 
 # Stages validos del bloque `env` del manifiesto.
-_VALID_ENV_STAGES = ('default', 'dev', 'stage', 'prod')
+_VALID_ENV_STAGES = ('default', 'dev', 'prod')
 
 # Tipos de trigger soportados. `on-table-changes` se elimino con el
 # stream_processor (spec direct-neon-writes): los Lambdas HTTP escriben

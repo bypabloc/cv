@@ -8,7 +8,7 @@
 ```
 1   docs(specs): plan eliminar-env-stage                          (sin codigo)
 2   ci(workflows): flujo de promocion dev -> main directo (quitar stage)   BASE
-3   refactor(devtools/serverless): quitar stage de stages validos          BASE
+3   refactor(serverless): quitar stage de stages validos + api gateway + secrets  BASE
 4   refactor(devtools): quitar stage de ai_audit + e2e + sync_secrets      [paralelo]
 5   refactor(devtools): quitar stage de docker + bypass_token + package.json [paralelo]
 6   refactor(devtools): quitar stage de cloudflare_setup + rotate_secrets   [paralelo]

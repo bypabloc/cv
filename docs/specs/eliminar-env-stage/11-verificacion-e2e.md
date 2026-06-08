@@ -33,7 +33,9 @@
 3. GAP2: `aws ssm delete-parameters` de `/portfolio/stage/*`.
 4. GAP3: delete LogGroups huérfanos `portfolio-{aggregator,dashboard-api}-stage`.
 5. GAP4: `aws iam delete-role-policy`+`delete-role` `portfolio-deploy-stage`.
-6. GAP5: `aws acm delete-certificate` `50c750aa-...` (DESPUÉS del destroy).
+6. GAP5: cert ACM `50c750aa-...` es el WILDCARD `*.the-full-stack.com`
+   COMPARTIDO por dev y prod → **NO borrar** (rompería dev/prod). Solo borrar
+   un cert exclusivo de `api.portfolio.stage` si existe uno distinto.
 7. GAP6: `aws sqs list-queues` → borrar colas stage reales si existen.
 8. GAP7: `rm` `serverless/lambda/.state/*-stage.json` (gitignored).
 

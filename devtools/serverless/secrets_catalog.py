@@ -58,7 +58,7 @@ _CATALOG_DIR = (
 
 # Stages permitidos en el campo `stages` del YAML. `local` queda
 # explicitamente fuera (modo offline-dev sin AWS).
-_VALID_STAGES: frozenset[str] = frozenset({'dev', 'stage', 'prod'})
+_VALID_STAGES: frozenset[str] = frozenset({'dev', 'prod'})
 
 # Tipos SSM permitidos.
 _VALID_SSM_TYPES: frozenset[str] = frozenset({'SecureString', 'String'})

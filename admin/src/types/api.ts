@@ -104,14 +104,26 @@ export interface RecoveryCodesResponse {
 	codes: string[];
 }
 
+/** El backend (fido2 `register_begin` -> `_to_json`) devuelve las options
+ *  ENVUELTAS en `publicKey` (la forma del dict que consume
+ *  `navigator.credentials.create({publicKey})`). `@simplewebauthn/browser`
+ *  `startRegistration` espera el contenido PLANO de ese `publicKey` en
+ *  `optionsJSON`, por eso el componente pasa `data.options.publicKey`. */
 export interface WebauthnRegisterOptionsResponse {
 	challenge_id: string;
-	options: import("@simplewebauthn/browser").PublicKeyCredentialCreationOptionsJSON;
+	options: {
+		publicKey: import("@simplewebauthn/browser").PublicKeyCredentialCreationOptionsJSON;
+	};
 }
 
+/** Idem register: el backend (fido2 `authenticate_begin` -> `_to_json`)
+ *  envuelve las options en `publicKey`; el componente pasa
+ *  `data.options.publicKey` a `startAuthentication`. */
 export interface WebauthnLoginOptionsResponse {
 	challenge_id: string;
-	options: import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON;
+	options: {
+		publicKey: import("@simplewebauthn/browser").PublicKeyCredentialRequestOptionsJSON;
+	};
 }
 
 export interface WebauthnCredentialsResponse {

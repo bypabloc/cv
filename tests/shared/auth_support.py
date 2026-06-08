@@ -132,6 +132,41 @@ def create_active_user_with_password(
     return user_id
 
 
+def login_with_password(
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str | None,
+) -> tuple[str | None, str | None]:
+    """Login de un user cuyo UNICO factor required es `password`.
+
+    `login.check-email` (precheck con bypass) -> `login.start` (precheck en
+    Authorization, SIN email) -> temp step=2 -> `login.verify-password`. Como
+    la password es el unico required, `verify-password` emite tokens directo.
+    Devuelve `(access, refresh)` (o `(None, None)` si algo falla). Sirve para
+    bootstrapear el browser via callback cuando el user ya tiene password pero
+    AUN no tiene otros factores required (ej. antes de registrar un passkey).
+    """
+    precheck = login_precheck(http, origin, email, bypass)
+    start = http.post(
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
+        bearer=precheck,
+    )
+    temp = field(start.body, 'temp_token')
+    if not temp:
+        return None, None
+    verify = http.post(
+        '/auth',
+        body=make_body(
+            'login', 'verify-password', password=STRONG_PASSWORD, temp_token=temp,
+        ),
+        origin=origin,
+    )
+    return field(verify.body, 'access_token'), field(verify.body, 'refresh_token')
+
+
 def login_precheck(
     http: HttpClient,
     origin: str,

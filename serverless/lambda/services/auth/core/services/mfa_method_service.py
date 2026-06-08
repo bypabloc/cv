@@ -17,6 +17,8 @@ from shared.db.repositories.auth import get_password_required
 from shared.db.repositories.auth_mfa import (
     confirm_mfa,
     count_active_mfa,
+    count_active_strong_mfa,
+    delete_mfa,
     disable_mfa,
     enable_mfa,
     get_all_mfa_methods,
@@ -239,10 +241,17 @@ class MfaMethodService:
             return bytes(method.totp_secret_ciphertext)
 
     def confirm(self, *, user_id: UUID | str, kind: AuthMfaKind) -> bool:
-        """Confirma el metodo. Si es el primer MFA del user, revoca sesiones."""
+        """Confirma el metodo. Si es el primer MFA FUERTE, revoca sesiones.
+
+        El revoke se mide con `count_active_strong_mfa` (excluye email_code):
+        el email_code del alta NO cuenta como "primer MFA", asi que confirmar
+        el primer TOTP SI dispara la re-autenticacion (transicion 0->1 fuerte).
+        El `preferred` del primer metodo confirmado (UX) sigue contando TODOS
+        los confirmados, incluido email_code.
+        """
         revoke = False
         with db_session() as session:
-            before = count_active_mfa(session, user_id=str(user_id))
+            before = count_active_strong_mfa(session, user_id=str(user_id))
             method = confirm_mfa(session, user_id=str(user_id), kind=kind)
             if method is None:
                 return False
@@ -254,7 +263,7 @@ class MfaMethodService:
             if len(confirmed) == 1:
                 method.preferred = True
                 session.flush()
-            after = count_active_mfa(session, user_id=str(user_id))
+            after = count_active_strong_mfa(session, user_id=str(user_id))
             revoke = before == 0 and after == 1
         if revoke:
             SessionService(self.app_config).revoke_all_for_user(
@@ -262,44 +271,57 @@ class MfaMethodService:
             )
         return True
 
-    def setup_email_code(self, *, user_id: UUID | str) -> bool:
-        """Activa email_code como metodo MFA (confirmado de inmediato).
+    def ensure_email_code(self, *, user_id: UUID | str) -> bool:
+        """Crea el email_code CONFIRMADO si NO existe, idempotente y SIN revoke.
 
-        El user ya puede recibir email (lo probo en register), asi que el
-        metodo se inserta confirmado. Si es el primer MFA, revoca sesiones.
+        El email se verifica en el alta, asi que el code-por-email nace como
+        factor disponible. Este metodo SOLO inserta el row `email_code`
+        confirmado (required=false) cuando el user no tiene ninguno:
+
+        - no existe -> INSERT confirmado (True).
+        - ya existe (en CUALQUIER estado, incl. deshabilitado) -> no-op (False).
+
+        NUNCA reactiva un email_code deshabilitado: si el user lo apago a
+        proposito (`mfa.disable`), el backfill on-read del overview NO debe
+        resucitarlo (re-habilitar es la accion explicita `mfa.enable`).
+        NUNCA dispara `SessionService.revoke_all_for_user`: el email_code no es
+        el "primer MFA fuerte" (esa transicion la mide `count_active_strong_mfa`
+        en `confirm`/webauthn). Idempotente: se invoca en el alta
+        (verify-code/magic-link) y como backfill on-read del overview.
+
+        Returns:
+            True si creo el metodo; False si ya existia (cualquier estado).
         """
-        revoke = False
         with db_session() as session:
-            before = count_active_mfa(session, user_id=str(user_id))
             existing = get_mfa_method(
                 session,
                 user_id=str(user_id),
                 kind=AuthMfaKind.EMAIL_CODE,
             )
-            if existing is None:
-                from datetime import UTC, datetime
+            if existing is not None:
+                return False
+            from datetime import UTC, datetime
 
-                from shared.db.models.auth.mfa_method import AuthMfaMethod
+            from shared.db.models.auth.mfa_method import AuthMfaMethod
 
-                method = AuthMfaMethod(
+            session.add(
+                AuthMfaMethod(
                     user_id=str(user_id),
                     kind=AuthMfaKind.EMAIL_CODE,
                     confirmed_at=datetime.now(tz=UTC),
-                )
-                session.add(method)
-            else:
-                confirm_mfa(
-                    session,
-                    user_id=str(user_id),
-                    kind=AuthMfaKind.EMAIL_CODE,
-                )
-            session.flush()
-            after = count_active_mfa(session, user_id=str(user_id))
-            revoke = before == 0 and after == 1
-        if revoke:
-            SessionService(self.app_config).revoke_all_for_user(
-                user_id=user_id,
+                ),
             )
+            session.flush()
+            return True
+
+    def setup_email_code(self, *, user_id: UUID | str) -> bool:
+        """Activa email_code como metodo MFA (confirmado de inmediato).
+
+        Delega en `ensure_email_code` (idempotente, sin revoke): con email_code
+        ya creado en el alta, `mfa.setup-email-code` es un no-op seguro. El
+        controller responde 204 incondicional.
+        """
+        self.ensure_email_code(user_id=user_id)
         return True
 
     def set_preferred(self, *, user_id: UUID | str, kind: AuthMfaKind) -> bool:
@@ -320,6 +342,16 @@ class MfaMethodService:
         with db_session() as session:
             return disable_mfa(session, user_id=str(user_id), kind=kind)
 
+    def delete(self, *, user_id: UUID | str, kind: AuthMfaKind) -> bool:
+        """Borra (hard-delete) el metodo. False si no existe.
+
+        El metodo desaparece de la tabla -> vuelve a `configured:false` en el
+        overview y un `setup-totp` posterior empieza de cero. El controller
+        valida el guard MUST_KEEP_ONE (solo para metodos confirmados).
+        """
+        with db_session() as session:
+            return delete_mfa(session, user_id=str(user_id), kind=kind)
+
     def count_active(self, *, user_id: UUID | str) -> int:
         """Cuenta transversal de metodos MFA activos (MUST_KEEP_ONE)."""
         with db_session() as session:
@@ -339,6 +371,30 @@ class MfaMethodService:
                 kind=kind,
             )
             return method is not None and method.disabled_at is None
+
+    def is_confirmed(
+        self,
+        *,
+        user_id: UUID | str,
+        kind: AuthMfaKind,
+    ) -> bool:
+        """True si el metodo `kind` del user esta confirmado y activo.
+
+        Un metodo no confirmado (`confirmed_at IS NULL`, ej. un setup-totp
+        abandonado) NO es una via de entrada real: no cuenta para el guard
+        MUST_KEEP_ONE y por eso siempre se puede deshabilitar (anti-lockout).
+        """
+        with db_session() as session:
+            method = get_mfa_method(
+                session,
+                user_id=str(user_id),
+                kind=kind,
+            )
+            return (
+                method is not None
+                and method.disabled_at is None
+                and method.confirmed_at is not None
+            )
 
     def mark_used(self, *, user_id: UUID | str, kind: AuthMfaKind) -> None:
         """Setea last_used_at del metodo (login con TOTP exitoso)."""

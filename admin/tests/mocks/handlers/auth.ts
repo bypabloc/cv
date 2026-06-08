@@ -432,6 +432,11 @@ export const authHandlers = [
 				{ status: 409 },
 			);
 		}
+		if (operation === "mfa" && action === "delete") {
+			// hard-delete de un metodo pendiente: el backend responde 204. El
+			// cliente re-envuelve el body vacio en {is_valid:true, code:0}.
+			return new HttpResponse(null, { status: 204 });
+		}
 		if (operation === "mfa" && action === "list") {
 			return HttpResponse.json({
 				is_valid: true,
@@ -467,20 +472,24 @@ export const authHandlers = [
 
 		// --- webauthn ---
 		if (operation === "webauthn" && action === "register-options") {
+			// El backend (fido2 register_begin -> _to_json) envuelve las options
+			// en `publicKey`, igual que el dict de navigator.credentials.create.
 			return HttpResponse.json({
 				is_valid: true,
 				code: 0,
 				data: {
 					challenge_id: "chal_01",
 					options: {
-						challenge: "fake",
-						rp: { id: "admin.test.the-full-stack.com", name: "admin" },
-						user: {
-							id: "dXNy",
-							name: "user@test.com",
-							displayName: "user@test.com",
+						publicKey: {
+							challenge: "fake",
+							rp: { id: "admin.test.the-full-stack.com", name: "admin" },
+							user: {
+								id: "dXNy",
+								name: "user@test.com",
+								displayName: "user@test.com",
+							},
+							pubKeyCredParams: [],
 						},
-						pubKeyCredParams: [],
 					},
 				},
 			});
@@ -493,15 +502,19 @@ export const authHandlers = [
 			});
 		}
 		if (operation === "webauthn" && action === "login-options") {
+			// El backend (fido2 authenticate_begin -> _to_json) envuelve las
+			// options en `publicKey`, igual que register-options.
 			return HttpResponse.json({
 				is_valid: true,
 				code: 0,
 				data: {
 					challenge_id: "chal_02",
 					options: {
-						challenge: "fake",
-						rpId: "admin.test.the-full-stack.com",
-						allowCredentials: [],
+						publicKey: {
+							challenge: "fake",
+							rpId: "admin.test.the-full-stack.com",
+							allowCredentials: [],
+						},
 					},
 				},
 			});
@@ -544,6 +557,12 @@ export const authHandlers = [
 			(operation === "mfa" || operation === "webauthn") &&
 			enableRequiredActions.has(action)
 		) {
+			return new HttpResponse(null, { status: 204 });
+		}
+
+		// security.password-set-required: marca/desmarca la password como
+		// requerida al loguear -> 204 (sin payload).
+		if (operation === "security" && action === "password-set-required") {
 			return new HttpResponse(null, { status: 204 });
 		}
 

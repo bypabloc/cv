@@ -54,16 +54,22 @@ def _mfa_entry(method_type: str, method: dict[str, Any] | None) -> dict[str, Any
             'last_used_at': None,
             'detail': {},
         }
+    confirmed = bool(method['confirmed'])
     return {
         'type': method_type,
         'label': _LABELS[method_type],
         'configured': True,
         'enabled': bool(method['enabled']),
-        'required': bool(method['required']),
+        # Un metodo NO confirmado nunca se reporta `required`: aunque la
+        # columna tenga el flag (estado heredado), el login lo ignora
+        # (list_required_methods exige confirmado). Cruzar required AND
+        # confirmed evita que settings muestre un required que el login no
+        # respeta. `set_required` ya impide crear este estado a futuro.
+        'required': bool(method['required']) and confirmed,
         'preferred': bool(method['preferred']),
         'created_at': method['created_at'],
         'last_used_at': method['last_used_at'],
-        'detail': {'confirmed': bool(method['confirmed'])},
+        'detail': {'confirmed': confirmed},
     }
 
 
@@ -104,6 +110,11 @@ class Overview(BaseController):
         webauthn_svc = WebauthnService(app_config)
         recovery_svc = RecoveryCodesService(app_config)
         password_svc = PasswordService(app_config)
+
+        # Backfill perezoso: el email se verifico en el alta, asi que el
+        # email_code debe estar configurado. Los users creados antes de que el
+        # alta lo creara obtienen su row aqui (idempotente, sin revoke).
+        mfa_svc.ensure_email_code(user_id=user.id)
 
         # --- MFA methods (totp + email_code) ---
         mfa_by_kind = {

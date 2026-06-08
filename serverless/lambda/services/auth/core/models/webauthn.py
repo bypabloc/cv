@@ -44,10 +44,17 @@ class WebauthnLoginOptionsIn(BaseModel):
 
 
 class WebauthnLoginVerifyIn(BaseModel):
-    """POST /auth operation=webauthn action=login-verify."""
+    """POST /auth operation=webauthn action=login-verify.
+
+    `temp_token` es OPCIONAL: cuando webauthn es un factor del checklist
+    multi-factor del login, el front manda el temp step=2 rolling para que el
+    backend acumule los factores ya satisfechos (ej. password). Ausente en el
+    login passwordless directo (solo passkey).
+    """
 
     challenge_id: UUID
     response: dict[str, Any]
+    temp_token: str | None = None
     meta: _Meta = Field(default_factory=_Meta, alias='_meta')
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
 

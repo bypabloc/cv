@@ -198,6 +198,18 @@ export const authClient = {
 			body: { operation: "mfa", action: "disable", data },
 		}),
 
+	/**
+	 * mfa.delete: hard-delete del metodo (vuelve a configured:false en el
+	 * overview). 204; 404 si no existe; 409 MUST_KEEP_ONE solo si el metodo es
+	 * el ultimo CONFIRMADO. Un metodo pendiente (no confirmado) siempre se
+	 * puede borrar -> deja la pantalla limpia para reconfigurar de cero.
+	 */
+	mfaDelete: (data: { kind: MfaKind }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: { operation: "mfa", action: "delete", data },
+		}),
+
 	/** mfa.list: estado actual de los metodos MFA. */
 	mfaList: () =>
 		apiFetch<Envelope<MfaListResponse>>("/auth", {
@@ -261,6 +273,7 @@ export const authClient = {
 	webauthnLoginVerify: (data: {
 		challenge_id: string;
 		response: AuthenticationResponseJSON;
+		temp_token?: string;
 	}) =>
 		apiFetch<Envelope<VerifyResult>>("/auth", {
 			method: "POST",
@@ -289,6 +302,22 @@ export const authClient = {
 		apiFetch<Envelope<SecurityOverviewResponse>>("/auth", {
 			method: "POST",
 			body: { operation: "security", action: "overview", data: {} },
+		}),
+
+	/**
+	 * security.password-set-required: marca/desmarca la password como requerida
+	 * al loguear (factor de la lista). 204; 404 si el user no tiene password.
+	 * Desmarcarla siempre es seguro: el fallback passwordless garantiza >=1
+	 * required (no hay 409).
+	 */
+	passwordSetRequired: (data: { required: boolean }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: {
+				operation: "security",
+				action: "password-set-required",
+				data,
+			},
 		}),
 
 	/** mfa.enable: activa (soft-enable) un metodo MFA por kind. 204. */

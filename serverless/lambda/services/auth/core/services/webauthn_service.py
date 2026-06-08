@@ -22,6 +22,7 @@ from shared.auth.webauthn import (
 )
 from shared.db.repositories.auth_mfa import (
     count_active_mfa,
+    count_active_strong_mfa,
     delete_webauthn_credential,
     disable_webauthn_credential,
     enable_webauthn,
@@ -128,12 +129,15 @@ class WebauthnService:
         cred_data: dict,
         nickname: str | None,
     ) -> None:
-        """INSERT del credential. Si es el primer MFA del user, revoca sesiones."""
+        """INSERT del credential. Si es el primer MFA FUERTE, revoca sesiones."""
         aaguid_bytes = cred_data.get('aaguid')
         aaguid = str(UUID(bytes=aaguid_bytes)) if aaguid_bytes else None
         revoke = False
         with db_session() as session:
-            before = count_active_mfa(session, user_id=str(user_id))
+            # Cuenta FUERTE (excluye email_code): una passkey es factor fuerte,
+            # asi que su 0->1 fuerte revoca sesiones (re-auth al subir nivel),
+            # aunque el user ya tenga el email_code del alta.
+            before = count_active_strong_mfa(session, user_id=str(user_id))
             insert_webauthn_credential(
                 session,
                 user_id=str(user_id),
@@ -145,7 +149,7 @@ class WebauthnService:
                 aaguid=aaguid,
                 nickname=nickname,
             )
-            after = count_active_mfa(session, user_id=str(user_id))
+            after = count_active_strong_mfa(session, user_id=str(user_id))
             revoke = before == 0 and after == 1
         if revoke:
             SessionService(self.app_config).revoke_all_for_user(

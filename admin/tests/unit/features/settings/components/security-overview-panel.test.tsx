@@ -1,5 +1,11 @@
 import { server } from "@tests/mocks/server";
-import { render, screen, waitFor } from "@tests/utils/render";
+import {
+	render,
+	screen,
+	userEvent,
+	waitFor,
+	within,
+} from "@tests/utils/render";
 import { HttpResponse, http } from "msw";
 import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -124,22 +130,22 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("SecurityOverviewPanel", () => {
-	it("Given las entradas When render Then muestra una fila por metodo (sin email_code)", async () => {
+	it("Given las entradas When render Then muestra una fila por metodo (incluido email_code)", async () => {
 		// Arrange
 		mockOverview(fiveMethods());
 
 		// Act
 		render((<SecurityOverviewPanel />) as ReactElement);
 
-		// Assert: TOTP, WebAuthn, recovery y password presentes; email_code NO
-		// (es el canal de entrada del login, no un metodo configurable aqui).
+		// Assert: los 5 metodos presentes, INCLUIDO email_code (ahora se lista
+		// como un metodo configurable mas, no se filtra).
 		expect(
 			await screen.findByText("Aplicacion de autenticacion (TOTP)"),
 		).toBeInTheDocument();
+		expect(screen.getByText("Codigo por email")).toBeInTheDocument();
 		expect(screen.getByText("Passkeys (WebAuthn)")).toBeInTheDocument();
 		expect(screen.getByText("Codigos de recuperacion")).toBeInTheDocument();
 		expect(screen.getByText("Contrasena")).toBeInTheDocument();
-		expect(screen.queryByText("Codigo por email")).toBe(null);
 	});
 
 	it("Given el panel montado When render Then dispara security.overview UNA sola vez", async () => {
@@ -157,8 +163,8 @@ describe("SecurityOverviewPanel", () => {
 	});
 
 	it("Given un metodo visible configured=false When render Then muestra No configurado", async () => {
-		// Arrange: el TOTP pasa a configured=false (email_code se filtra, asi
-		// que se usa un metodo que SI se renderiza).
+		// Arrange: el TOTP pasa a configured=false. email_code ya viene
+		// configured=false en el fixture, asi que hay >=1 badge 'No configurado'.
 		const methods = fiveMethods().map((m) =>
 			m.type === "totp" ? { ...m, configured: false, enabled: false } : m,
 		);
@@ -168,8 +174,8 @@ describe("SecurityOverviewPanel", () => {
 		render((<SecurityOverviewPanel />) as ReactElement);
 		await screen.findByText("Aplicacion de autenticacion (TOTP)");
 
-		// Assert
-		expect(screen.getByText("No configurado")).toBeInTheDocument();
+		// Assert: TOTP (forzado) + email_code (fixture) -> 2 badges 'No configurado'.
+		expect(screen.getAllByText("No configurado")).toHaveLength(2);
 	});
 
 	it("Given webauthn con un passkey When render Then expande el nickname del passkey", async () => {
@@ -181,6 +187,78 @@ describe("SecurityOverviewPanel", () => {
 
 		// Assert: el passkey YubiKey aparece como sub-fila
 		expect(await screen.findByText("YubiKey")).toBeInTheDocument();
+	});
+
+	it("Given un passkey When clic Eliminar Then dispara webauthn.delete-credential", async () => {
+		// Arrange: capturar el request de delete-credential (apiFetch aplana body).
+		mockOverview(fiveMethods());
+		let deletedCredId: string | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					credential_id?: string;
+				};
+				if (
+					body.operation === "webauthn" &&
+					body.action === "delete-credential"
+				) {
+					deletedCredId = body.credential_id ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods: fiveMethods() },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const passkeyRow = (await screen.findByText("YubiKey")).closest("li");
+		expect(passkeyRow).not.toBeNull();
+		await user.click(
+			within(passkeyRow as HTMLElement).getByRole("button", {
+				name: /eliminar/i,
+			}),
+		);
+
+		// Assert: el backend recibe webauthn.delete-credential con el credential_id.
+		await waitFor(() => {
+			expect(deletedCredId).toBe("cred_01");
+		});
+	});
+
+	it("Given email_code no configurado When clic Configurar Then abre el dialog de setup", async () => {
+		// Arrange
+		mockOverview(fiveMethods());
+		const user = userEvent.setup();
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const emailRow = await screen.findByTestId("security-row-email_code");
+		await user.click(
+			within(emailRow).getByRole("button", { name: /configurar/i }),
+		);
+
+		// Assert: el dialog de setup de email_code aparece con su CTA.
+		const activar = await screen.findByRole("button", {
+			name: /activar codigo por email/i,
+		});
+		expect(activar).toBeInTheDocument();
+
+		// Act: activar -> el setup (204) dispara onDone -> cierra el dialog.
+		await user.click(activar);
+
+		// Assert: el dialog se cierra (el CTA ya no esta en el DOM).
+		await waitFor(() => {
+			expect(
+				screen.queryByRole("button", { name: /activar codigo por email/i }),
+			).toBeNull();
+		});
 	});
 
 	it("Given recovery_codes con total/remaining When render Then muestra el conteo", async () => {
@@ -197,17 +275,529 @@ describe("SecurityOverviewPanel", () => {
 		).toBeInTheDocument();
 	});
 
-	it("Given password When render Then muestra el boton Cambiar contrasena sin switches", async () => {
+	it("Given password NO configurada When render Then ofrece 'Establecer contrasena' sin switch requerido", async () => {
+		// Arrange: password sin configurar -> sin switch requerido + CTA distinto.
+		const methods = fiveMethods().map((m) =>
+			m.type === "password"
+				? { ...m, configured: false, enabled: false, detail: {} }
+				: m,
+		);
+		mockOverview(methods);
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const passwordRow = await screen.findByTestId("security-row-password");
+
+		// Assert: CTA 'Establecer contrasena' y NO hay switch 'Requerido' (sin
+		// password no hay flag required).
+		expect(
+			within(passwordRow).getByRole("button", {
+				name: /establecer contrasena/i,
+			}),
+		).toBeInTheDocument();
+		expect(within(passwordRow).queryByText(/requerido al loguear/i)).toBeNull();
+	});
+
+	it("Given recovery_codes ya generados When render Then ofrece Regenerar", async () => {
+		// Arrange: total>0 -> la seccion muestra el flujo 'ya generados'.
+		mockOverview(fiveMethods());
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		await screen.findByText("Codigos de recuperacion");
+
+		// Assert: con codigos previos, el boton es 'Regenerar' (no 'Generar').
+		expect(
+			screen.getByRole("button", { name: /regenerar codigos/i }),
+		).toBeInTheDocument();
+	});
+
+	it("Given un passkey activo When toggle Activo off Then dispara webauthn.disable", async () => {
+		// Arrange: capturar el request de disable del passkey.
+		mockOverview(fiveMethods());
+		let disabledCred: string | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					credential_id?: string;
+				};
+				if (body.operation === "webauthn" && body.action === "disable") {
+					disabledCred = body.credential_id ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods: fiveMethods() },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: la sub-fila del passkey tiene 2 switches (Activo, Requerido); el
+		// 1ro es 'Activo' -> apagarlo dispara webauthn.disable.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const passkeyRow = (await screen.findByText("YubiKey")).closest("li");
+		const switches = within(passkeyRow as HTMLElement).getAllByRole("switch");
+		await user.click(switches[0] as HTMLElement);
+
+		// Assert
+		await waitFor(() => {
+			expect(disabledCred).toBe("cred_01");
+		});
+	});
+
+	it("Given un TOTP confirmado When toggle Requerido y confirmo Then dispara mfa.set-required {required:true}", async () => {
+		// Arrange: TOTP confirmado (configured+enabled+confirmed) con required=false.
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp"
+				? { ...m, configured: true, enabled: true, detail: { confirmed: true } }
+				: m,
+		);
+		let requiredKind: string | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					kind?: string;
+				};
+				if (body.operation === "mfa" && body.action === "set-required") {
+					requiredKind = body.kind ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: la fila TOTP confirmada tiene 2 switches (Activo, Requerido); el
+		// 2do es 'Requerido' -> activarlo abre el AlertDialog -> Confirmar.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const totpRow = await screen.findByTestId("security-row-totp");
+		const switches = within(totpRow).getAllByRole("switch");
+		await user.click(switches[1] as HTMLElement);
+		await user.click(
+			await screen.findByRole("button", { name: /^confirmar$/i }),
+		);
+
+		// Assert
+		await waitFor(() => {
+			expect(requiredKind).toBe("totp");
+		});
+	});
+
+	it("Given password configured When render Then muestra Cambiar contrasena Y el switch Requerido al loguear", async () => {
 		// Arrange
 		mockOverview(fiveMethods());
 
 		// Act
 		render((<SecurityOverviewPanel />) as ReactElement);
 
-		// Assert
+		// Assert: la password ahora ofrece el control de required (igual que
+		// TOTP/webauthn), no solo el boton de cambio.
+		const passwordRow = await screen.findByTestId("security-row-password");
 		expect(
-			await screen.findByRole("button", { name: /cambiar contrasena/i }),
+			within(passwordRow).getByRole("button", { name: /cambiar contrasena/i }),
 		).toBeInTheDocument();
+		expect(
+			within(passwordRow).getByText(/requerido al loguear/i),
+		).toBeInTheDocument();
+	});
+
+	it("Given password required=false When activo el switch Then dispara security.password-set-required {required:true}", async () => {
+		// Arrange: overview con SOLO la password (aisla el switch bajo prueba;
+		// otras filas tienen sus propios RequiredSwitch que ensucian el assert).
+		// UN solo handler sirve el overview y captura el password-set-required.
+		// apiFetch APLANA el body ({operation, action, ...data}), asi que
+		// `required` viaja al nivel raiz del request, NO en `data`.
+		const onlyPassword = fiveMethods().filter((m) => m.type === "password");
+		let capturedRequired: boolean | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					required?: boolean;
+				};
+				if (
+					body.operation === "security" &&
+					body.action === "password-set-required"
+				) {
+					capturedRequired = body.required ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods: onlyPassword },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: activar el switch de la password -> AlertDialog -> Confirmar.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const passwordRow = await screen.findByTestId("security-row-password");
+		await user.click(within(passwordRow).getByRole("switch"));
+		// El AlertDialog de advertencia se monta en un portal; esperar su
+		// titulo antes de confirmar.
+		await screen.findByText(/hacer obligatorio este metodo/i);
+		await user.click(screen.getByRole("button", { name: /confirmar/i }));
+
+		// Assert: el backend recibe password-set-required con required=true.
+		await waitFor(() => {
+			expect(capturedRequired).toBe(true);
+		});
+	});
+
+	it("Given un TOTP confirmado When toggle Activo off Then dispara mfa.disable {kind:totp}", async () => {
+		// Arrange: TOTP confirmado -> tiene switch 'Activo' (1er switch).
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp"
+				? { ...m, configured: true, enabled: true, detail: { confirmed: true } }
+				: m,
+		);
+		let disabledKind: string | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					kind?: string;
+				};
+				if (body.operation === "mfa" && body.action === "disable") {
+					disabledKind = body.kind ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: el 1er switch de la fila TOTP es 'Activo'.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const totpRow = await screen.findByTestId("security-row-totp");
+		const switches = within(totpRow).getAllByRole("switch");
+		await user.click(switches[0] as HTMLElement);
+
+		// Assert
+		await waitFor(() => {
+			expect(disabledKind).toBe("totp");
+		});
+	});
+
+	it("Given un passkey When activo el switch Requerido y confirmo Then dispara webauthn.set-required", async () => {
+		// Arrange
+		mockOverview(fiveMethods());
+		let requiredCred: string | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					credential_id?: string;
+				};
+				if (body.operation === "webauthn" && body.action === "set-required") {
+					requiredCred = body.credential_id ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods: fiveMethods() },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: el 2do switch del passkey es 'Requerido' -> AlertDialog -> Confirmar.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const passkeyRow = (await screen.findByText("YubiKey")).closest("li");
+		const switches = within(passkeyRow as HTMLElement).getAllByRole("switch");
+		await user.click(switches[1] as HTMLElement);
+		await user.click(
+			await screen.findByRole("button", { name: /^confirmar$/i }),
+		);
+
+		// Assert
+		await waitFor(() => {
+			expect(requiredCred).toBe("cred_01");
+		});
+	});
+
+	it("Given TOTP no configurado When clic Configurar Then abre el dialog de setup TOTP", async () => {
+		// Arrange: TOTP no configurado -> boton 'Configurar'.
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp" ? { ...m, configured: false, enabled: false } : m,
+		);
+		mockOverview(methods);
+		const user = userEvent.setup();
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const totpRow = await screen.findByTestId("security-row-totp");
+		await user.click(
+			within(totpRow).getByRole("button", { name: /configurar/i }),
+		);
+
+		// Assert: el dialog de setup TOTP aparece (titulo Configurar TOTP).
+		expect(
+			await screen.findByText(/escanea el qr con tu app/i),
+		).toBeInTheDocument();
+	});
+
+	it("Given password configured When clic Cambiar contrasena Then abre el dialog", async () => {
+		// Arrange
+		mockOverview(fiveMethods());
+		const user = userEvent.setup();
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const passwordRow = await screen.findByTestId("security-row-password");
+		await user.click(
+			within(passwordRow).getByRole("button", { name: /cambiar contrasena/i }),
+		);
+
+		// Assert: el dialog de cambio de contrasena aparece (heading unico).
+		const dialog = await screen.findByRole("dialog");
+		expect(
+			within(dialog).getByRole("heading", { name: /cambiar contrasena/i }),
+		).toBeInTheDocument();
+	});
+
+	it("Given un TOTP pendiente (confirmed=false) When render Then muestra 'Pendiente' + Confirmar + Eliminar, sin switch requerido", async () => {
+		// Arrange: el TOTP esta configurado pero NO confirmado (setup-totp
+		// abandonado): detail.confirmed === false.
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp"
+				? {
+						...m,
+						configured: true,
+						enabled: true,
+						detail: { confirmed: false },
+					}
+				: m,
+		);
+		mockOverview(methods);
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		await screen.findByText("Aplicacion de autenticacion (TOTP)");
+
+		// Assert: badge pendiente + botones Confirmar/Eliminar; sin el switch
+		// 'Requerido al loguear' (un pendiente no es marcable).
+		const totpRow = screen.getByTestId("security-row-totp");
+		expect(
+			within(totpRow).getByText(/pendiente de confirmacion/i),
+		).toBeInTheDocument();
+		expect(
+			within(totpRow).getByRole("button", { name: /confirmar/i }),
+		).toBeInTheDocument();
+		expect(
+			within(totpRow).getByRole("button", { name: /eliminar/i }),
+		).toBeInTheDocument();
+		expect(within(totpRow).queryByText(/requerido al loguear/i)).toBeNull();
+	});
+
+	it("Given un TOTP pendiente When clic Eliminar Then dispara mfa.delete {kind:totp}", async () => {
+		// Arrange: capturar el request de mfa.delete (hard-delete, NO disable).
+		// apiFetch APLANA el body -> kind queda en la raiz.
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp"
+				? {
+						...m,
+						configured: true,
+						enabled: true,
+						detail: { confirmed: false },
+					}
+				: m,
+		);
+		let deletedKind: string | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					kind?: string;
+				};
+				if (body.operation === "mfa" && body.action === "delete") {
+					deletedKind = body.kind ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		await screen.findByText("Aplicacion de autenticacion (TOTP)");
+		const totpRow = screen.getByTestId("security-row-totp");
+		await user.click(
+			within(totpRow).getByRole("button", { name: /eliminar/i }),
+		);
+
+		// Assert: el backend recibe mfa.delete con kind=totp (NO disable).
+		await waitFor(() => {
+			expect(deletedKind).toBe("totp");
+		});
+	});
+
+	it("Given passkeys grupo no-requerido When activo el toggle MAESTRO y confirmo Then exige una passkey via webauthn.set-required {required:true}", async () => {
+		// Arrange: el grupo webauthn tiene required=false (ninguna passkey marcada)
+		// y una passkey activa cred_01. El toggle MAESTRO del header marca la
+		// primera passkey activa como requerida (basta una al loguear).
+		mockOverview(fiveMethods());
+		let requiredCred: string | null = null;
+		let requiredValue: boolean | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					credential_id?: string;
+					required?: boolean;
+				};
+				if (body.operation === "webauthn" && body.action === "set-required") {
+					requiredCred = body.credential_id ?? null;
+					requiredValue = body.required ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods: fiveMethods() },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: el header del grupo webauthn tiene el toggle MAESTRO 'Requerido'
+		// (unico switch del header) -> activarlo abre el AlertDialog -> Confirmar.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const header = await screen.findByTestId("security-webauthn-header");
+		await user.click(within(header).getByRole("switch"));
+		await user.click(
+			await screen.findByRole("button", { name: /^confirmar$/i }),
+		);
+
+		// Assert: marca la primera passkey activa (cred_01) como requerida.
+		await waitFor(() => {
+			expect(requiredCred).toBe("cred_01");
+			expect(requiredValue).toBe(true);
+		});
+	});
+
+	it("Given passkeys grupo requerido When desactivo el toggle MAESTRO Then desmarca todas via webauthn.set-required {required:false}", async () => {
+		// Arrange: el grupo webauthn tiene required=true (cred_01 marcada). El
+		// toggle MAESTRO desactivado quita el required de TODAS (desactivar es
+		// directo, sin AlertDialog).
+		const methods = fiveMethods().map((m) =>
+			m.type === "webauthn"
+				? {
+						...m,
+						required: true,
+						detail: {
+							credentials: [
+								{
+									credential_id: "cred_01",
+									nickname: "YubiKey",
+									transports: ["usb"],
+									enabled: true,
+									required: true,
+									created_at: "2026-05-02T00:00:00Z",
+									last_used_at: null,
+								},
+							],
+						},
+					}
+				: m,
+		);
+		mockOverview(methods);
+		let requiredCred: string | null = null;
+		let requiredValue: boolean | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					credential_id?: string;
+					required?: boolean;
+				};
+				if (body.operation === "webauthn" && body.action === "set-required") {
+					requiredCred = body.credential_id ?? null;
+					requiredValue = body.required ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: el toggle MAESTRO del header esta ON -> apagarlo es directo.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const header = await screen.findByTestId("security-webauthn-header");
+		await user.click(within(header).getByRole("switch"));
+
+		// Assert: desmarca cred_01 (la unica requerida) con required=false.
+		await waitFor(() => {
+			expect(requiredCred).toBe("cred_01");
+			expect(requiredValue).toBe(false);
+		});
+	});
+
+	it("Given webauthn sin passkeys activas When render Then NO muestra el toggle MAESTRO", async () => {
+		// Arrange: la unica passkey esta desactivada -> el toggle maestro no tiene
+		// sentido (no hay nada que exigir) y se oculta.
+		const methods = fiveMethods().map((m) =>
+			m.type === "webauthn"
+				? {
+						...m,
+						enabled: false,
+						required: false,
+						detail: {
+							credentials: [
+								{
+									credential_id: "cred_01",
+									nickname: "YubiKey",
+									transports: ["usb"],
+									enabled: false,
+									required: false,
+									created_at: "2026-05-02T00:00:00Z",
+									last_used_at: null,
+								},
+							],
+						},
+					}
+				: m,
+		);
+		mockOverview(methods);
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const header = await screen.findByTestId("security-webauthn-header");
+
+		// Assert: el header NO tiene switch maestro (sin passkeys activas).
+		expect(within(header).queryByRole("switch")).toBeNull();
 	});
 
 	it("Given security.overview falla When render Then muestra el ErrorAlert", async () => {

@@ -182,7 +182,7 @@ describe("RecoveryCodesSection pending + cierre", () => {
 			}),
 		);
 		const user = userEvent.setup();
-		render((<RecoveryCodesSection />) as ReactElement);
+		render((<RecoveryCodesSection total={0} remaining={0} />) as ReactElement);
 
 		// Act
 		await user.click(screen.getByRole("button", { name: /generar codigos/i }));
@@ -196,7 +196,7 @@ describe("RecoveryCodesSection pending + cierre", () => {
 	it('Given el modal abierto When click "Ya los guarde" Then cierra (onClose)', async () => {
 		// Arrange
 		const user = userEvent.setup();
-		render((<RecoveryCodesSection />) as ReactElement);
+		render((<RecoveryCodesSection total={0} remaining={0} />) as ReactElement);
 		await user.click(screen.getByRole("button", { name: /generar codigos/i }));
 		await screen.findByText("RECOV00000");
 

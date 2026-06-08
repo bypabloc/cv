@@ -20,6 +20,7 @@ export type {
 } from "@/types/api";
 // Componentes
 export { AuthGuard } from "./components/auth-guard";
+export { EmailCodeSetup } from "./components/email-code-setup";
 export { LoginChecklist } from "./components/login-checklist";
 export { LoginForm } from "./components/login-form";
 export { LoginMethodPicker } from "./components/login-method-picker";

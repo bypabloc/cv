@@ -63,6 +63,14 @@ class MfaEnableIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra='ignore')
 
 
+class MfaDeleteIn(BaseModel):
+    """POST /auth operation=mfa action=delete (hard-delete del metodo)."""
+
+    kind: Literal['totp', 'email_code']
+    meta: _Meta = Field(default_factory=_Meta, alias='_meta')
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+
 class MfaSetRequiredIn(BaseModel):
     """POST /auth operation=mfa action=set-required (metodo requerido al loguear)."""
 

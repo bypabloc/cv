@@ -5,10 +5,10 @@ import { SecurityOverviewPanel } from "@/features/settings/components/security-o
 import type { SecurityMethod } from "@/types/models";
 
 /**
- * @module tests/unit/features/settings/components/security-overview-no-emailcode
- * @description Verifica que el panel unificado NO renderiza una fila para el
- *   metodo `email_code` (es el canal de entrada del login, no un metodo
- *   configurable), pero SI renderiza el resto (ej. totp).
+ * @module tests/unit/features/settings/components/security-overview-emailcode-listed
+ * @description Verifica que el panel unificado SI renderiza la fila del metodo
+ *   `email_code` (estado activo/inactivo + requerido + configurar), igual que
+ *   el resto de los metodos. (Antes se filtraba; el usuario pidio listarlo.)
  */
 
 function method(overrides: Partial<SecurityMethod>): SecurityMethod {
@@ -31,6 +31,8 @@ vi.mock("@/features/auth", () => ({
 		<button type="button">Registrar passkey</button>
 	),
 	TotpSetup: () => <div>totp-setup-stub</div>,
+	EmailCodeSetup: () => <div>email-code-setup-stub</div>,
+	useDeleteCredential: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/features/settings/hooks/use-security-overview", () => ({
@@ -44,6 +46,7 @@ vi.mock("@/features/settings/hooks/use-security-overview", () => ({
 					label: "Codigo por email",
 					configured: true,
 					enabled: true,
+					detail: { confirmed: true },
 				}),
 				method({ type: "totp", label: "TOTP", configured: false }),
 			],
@@ -59,14 +62,19 @@ vi.mock("@/features/settings/hooks/use-set-required", () => ({
 	useSetRequired: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-describe("SecurityOverviewPanel email_code filtering", () => {
-	it("Given un method email_code en el overview When render Then NO renderiza su fila pero SI la de TOTP", () => {
+vi.mock("@/features/settings/hooks/use-delete-method", () => ({
+	useDeleteMethod: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+describe("SecurityOverviewPanel email_code listado", () => {
+	it("Given un method email_code en el overview When render Then SI renderiza su fila (label + switch requerido)", () => {
 		// Arrange + Act
 		render((<SecurityOverviewPanel />) as ReactElement);
 
-		// Assert: el panel filtra email_code (no aparece su label)
-		expect(screen.queryByText(/codigo por email/i)).toBeNull();
-		// pero TOTP si se lista
+		// Assert: email_code aparece como una fila mas, con su control requerido.
+		expect(screen.getByText(/codigo por email/i)).toBeInTheDocument();
+		expect(screen.getByTestId("security-row-email_code")).toBeInTheDocument();
+		// y TOTP sigue listado.
 		expect(screen.getByText("TOTP")).toBeInTheDocument();
 	});
 });

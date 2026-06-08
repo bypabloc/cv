@@ -29,6 +29,14 @@ describe("authClient enable / set-required actions", () => {
 		expect(res.is_valid).toBe(true);
 	});
 
+	it("Given mfaDelete When llamado Then resuelve el envelope (204 hard-delete)", async () => {
+		// Act
+		const res = await authClient.mfaDelete({ kind: "totp" });
+
+		// Assert
+		expect(res.is_valid).toBe(true);
+	});
+
 	it("Given webauthnEnable When llamado Then resuelve el envelope", async () => {
 		// Act
 		const res = await authClient.webauthnEnable({ credential_id: "cred-1" });

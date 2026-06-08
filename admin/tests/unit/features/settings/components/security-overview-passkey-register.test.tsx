@@ -30,6 +30,8 @@ vi.mock("@/features/auth", () => ({
 		<button type="button">Registrar passkey</button>
 	),
 	TotpSetup: () => <div>totp-setup-stub</div>,
+	EmailCodeSetup: () => <div>email-code-setup-stub</div>,
+	useDeleteCredential: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/features/settings/hooks/use-security-overview", () => ({
@@ -46,6 +48,10 @@ vi.mock("@/features/settings/hooks/use-toggle-method", () => ({
 
 vi.mock("@/features/settings/hooks/use-set-required", () => ({
 	useSetRequired: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@/features/settings/hooks/use-delete-method", () => ({
+	useDeleteMethod: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 describe("SecurityOverviewPanel webauthn register", () => {

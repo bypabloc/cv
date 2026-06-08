@@ -272,24 +272,25 @@ class MfaMethodService:
         return True
 
     def ensure_email_code(self, *, user_id: UUID | str) -> bool:
-        """Garantiza un email_code CONFIRMADO y activo, idempotente y SIN revoke.
+        """Crea el email_code CONFIRMADO si NO existe, idempotente y SIN revoke.
 
-        El email se verifica en el alta, asi que el code-por-email es un
-        factor disponible desde el registro. Este metodo crea/reactiva el row
-        `email_code` confirmado (required=false) si falta:
+        El email se verifica en el alta, asi que el code-por-email nace como
+        factor disponible. Este metodo SOLO inserta el row `email_code`
+        confirmado (required=false) cuando el user no tiene ninguno:
 
-        - no existe -> INSERT confirmado.
-        - existe pero no confirmado o deshabilitado -> `confirm_mfa` (re-confirma,
-          limpia disabled_at).
-        - existe confirmado y activo -> no-op.
+        - no existe -> INSERT confirmado (True).
+        - ya existe (en CUALQUIER estado, incl. deshabilitado) -> no-op (False).
 
-        NUNCA dispara `SessionService.revoke_all_for_user`: el email_code del
-        alta NO es el "primer MFA fuerte" (esa transicion la mide
-        `count_active_strong_mfa` en `confirm`/webauthn). Idempotente: se invoca
-        en el alta (verify-code/magic-link) y como backfill on-read del overview.
+        NUNCA reactiva un email_code deshabilitado: si el user lo apago a
+        proposito (`mfa.disable`), el backfill on-read del overview NO debe
+        resucitarlo (re-habilitar es la accion explicita `mfa.enable`).
+        NUNCA dispara `SessionService.revoke_all_for_user`: el email_code no es
+        el "primer MFA fuerte" (esa transicion la mide `count_active_strong_mfa`
+        en `confirm`/webauthn). Idempotente: se invoca en el alta
+        (verify-code/magic-link) y como backfill on-read del overview.
 
         Returns:
-            True si creo o reactivo el metodo; False si ya estaba confirmado.
+            True si creo el metodo; False si ya existia (cualquier estado).
         """
         with db_session() as session:
             existing = get_mfa_method(
@@ -297,30 +298,19 @@ class MfaMethodService:
                 user_id=str(user_id),
                 kind=AuthMfaKind.EMAIL_CODE,
             )
-            if (
-                existing is not None
-                and existing.confirmed_at is not None
-                and existing.disabled_at is None
-            ):
+            if existing is not None:
                 return False
-            if existing is None:
-                from datetime import UTC, datetime
+            from datetime import UTC, datetime
 
-                from shared.db.models.auth.mfa_method import AuthMfaMethod
+            from shared.db.models.auth.mfa_method import AuthMfaMethod
 
-                session.add(
-                    AuthMfaMethod(
-                        user_id=str(user_id),
-                        kind=AuthMfaKind.EMAIL_CODE,
-                        confirmed_at=datetime.now(tz=UTC),
-                    ),
-                )
-            else:
-                confirm_mfa(
-                    session,
+            session.add(
+                AuthMfaMethod(
                     user_id=str(user_id),
                     kind=AuthMfaKind.EMAIL_CODE,
-                )
+                    confirmed_at=datetime.now(tz=UTC),
+                ),
+            )
             session.flush()
             return True
 

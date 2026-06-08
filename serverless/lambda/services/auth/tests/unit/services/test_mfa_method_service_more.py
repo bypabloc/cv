@@ -198,6 +198,57 @@ def test_has_active_method_disabled_false(monkeypatch):
     )
 
 
+def test_is_confirmed_active_and_confirmed_true(monkeypatch):
+    from services import mfa_method_service
+    from shared.db.models.auth.enums import AuthMfaKind
+
+    method = MagicMock()
+    method.disabled_at = None
+    method.confirmed_at = datetime.now(tz=UTC)
+    monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
+    monkeypatch.setattr(
+        mfa_method_service,
+        'get_mfa_method',
+        lambda _s, *, user_id, kind: method,
+    )
+
+    svc = mfa_method_service.MfaMethodService(app_config=object())
+    assert svc.is_confirmed(user_id='u-1', kind=AuthMfaKind.TOTP) is True
+
+
+def test_is_confirmed_pending_false(monkeypatch):
+    from services import mfa_method_service
+    from shared.db.models.auth.enums import AuthMfaKind
+
+    method = MagicMock()
+    method.disabled_at = None
+    method.confirmed_at = None
+    monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
+    monkeypatch.setattr(
+        mfa_method_service,
+        'get_mfa_method',
+        lambda _s, *, user_id, kind: method,
+    )
+
+    svc = mfa_method_service.MfaMethodService(app_config=object())
+    assert svc.is_confirmed(user_id='u-1', kind=AuthMfaKind.TOTP) is False
+
+
+def test_is_confirmed_missing_false(monkeypatch):
+    from services import mfa_method_service
+    from shared.db.models.auth.enums import AuthMfaKind
+
+    monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
+    monkeypatch.setattr(
+        mfa_method_service,
+        'get_mfa_method',
+        lambda _s, *, user_id, kind: None,
+    )
+
+    svc = mfa_method_service.MfaMethodService(app_config=object())
+    assert svc.is_confirmed(user_id='u-1', kind=AuthMfaKind.TOTP) is False
+
+
 def test_mark_used_delegates(monkeypatch):
     from services import mfa_method_service
     from shared.db.models.auth.enums import AuthMfaKind

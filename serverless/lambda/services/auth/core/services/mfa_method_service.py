@@ -340,6 +340,30 @@ class MfaMethodService:
             )
             return method is not None and method.disabled_at is None
 
+    def is_confirmed(
+        self,
+        *,
+        user_id: UUID | str,
+        kind: AuthMfaKind,
+    ) -> bool:
+        """True si el metodo `kind` del user esta confirmado y activo.
+
+        Un metodo no confirmado (`confirmed_at IS NULL`, ej. un setup-totp
+        abandonado) NO es una via de entrada real: no cuenta para el guard
+        MUST_KEEP_ONE y por eso siempre se puede deshabilitar (anti-lockout).
+        """
+        with db_session() as session:
+            method = get_mfa_method(
+                session,
+                user_id=str(user_id),
+                kind=kind,
+            )
+            return (
+                method is not None
+                and method.disabled_at is None
+                and method.confirmed_at is not None
+            )
+
     def mark_used(self, *, user_id: UUID | str, kind: AuthMfaKind) -> None:
         """Setea last_used_at del metodo (login con TOTP exitoso)."""
         with db_session() as session:

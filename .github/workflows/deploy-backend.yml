@@ -4,7 +4,7 @@ name: Deploy Backend
 # disparar manual desde la UI de GitHub Actions.
 on:
   push:
-    branches: [dev, stage, main]
+    branches: [dev, main]
   workflow_dispatch:
 
 # Queue por env: si entran 2 pushes a dev seguidos, el segundo workflow
@@ -42,16 +42,12 @@ jobs:
               echo "stage=dev"     >> "$GITHUB_OUTPUT"
               echo "role-arn=arn:aws:iam::637423614564:role/portfolio-deploy-dev" >> "$GITHUB_OUTPUT"
               ;;
-            stage)
-              echo "stage=stage"   >> "$GITHUB_OUTPUT"
-              echo "role-arn=arn:aws:iam::637423614564:role/portfolio-deploy-stage" >> "$GITHUB_OUTPUT"
-              ;;
             main)
               echo "stage=prod"    >> "$GITHUB_OUTPUT"
               echo "role-arn=arn:aws:iam::637423614564:role/portfolio-deploy-prod" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "ERROR: branch ${{ github.ref_name }} no es dev/stage/main"
+              echo "ERROR: branch ${{ github.ref_name }} no es dev/main"
               exit 1
               ;;
           esac

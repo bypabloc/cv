@@ -1,28 +1,26 @@
 # @config branch-flow-guard.yml
-# @description Enforce del flujo de promocion dev -> stage -> main.
-#   Falla si un PR tiene como base una rama de entorno (main/stage) pero su
-#   head NO es la rama de origen permitida. Evita el salto dev -> main
-#   directo.
-# @triggers pull_request (opened, reopened, synchronize, edited) a main o stage
+# @description Enforce del flujo de promocion dev -> main.
+#   Falla si un PR tiene como base la rama de entorno main pero su head NO
+#   es la rama de origen permitida (dev). Evita promover a produccion desde
+#   una rama de feature sin pasar por dev.
+# @triggers pull_request (opened, reopened, synchronize, edited) a main
 #
 # Reglas:
-#   - PR a `main`  -> head debe ser `stage` (o `release/*` solo en emergencias)
-#   - PR a `stage` -> head debe ser `dev`   (o `release/*` solo en emergencias)
+#   - PR a `main` -> head debe ser `dev` (o `release/*` solo en emergencias)
 #
-# Flujo normal: PR directo dev -> stage y stage -> main, mergeados con
-# merge commit (NO rebase). El merge commit preserva los SHAs, asi que las
-# ramas no divergen y no hace falta una rama puente. Las `release/*` quedan
-# permitidas solo como escape hatch para hotfixes / cherry-picks puntuales.
-# Ver .claude/rules/git-workflow.md.
+# Flujo normal: PR directo dev -> main, mergeado con merge commit (NO
+# rebase). El merge commit preserva los SHAs, asi que las ramas no
+# divergen. Las `release/*` quedan permitidas solo como escape hatch para
+# hotfixes / cherry-picks puntuales. Ver .claude/rules/git-workflow.md.
 #
-# Marcar este job como required status check en el ruleset de main y stage
-# para que el enforce sea real (no se puede mergear sin el check verde).
+# Marcar este job como required status check en el ruleset de main para que
+# el enforce sea real (no se puede mergear sin el check verde).
 name: Branch Flow Guard
 
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
-    branches: [main, master, stage]
+    branches: [main, master]
 
 jobs:
   guard:
@@ -37,28 +35,14 @@ jobs:
           echo "PR: $HEAD -> $BASE"
           case "$BASE" in
             main|master)
-              # A produccion se promueve desde stage (release/* solo en emergencias).
+              # A produccion se promueve desde dev (release/* solo en emergencias).
               case "$HEAD" in
-                stage|release/*)
+                dev|release/*)
                   echo "OK: '$HEAD' es un origen valido para '$BASE'."
                   ;;
                 *)
-                  echo "::error::PR a '$BASE' debe venir de 'stage' o 'release/*', no de '$HEAD'."
-                  echo "Flujo correcto: dev -> stage -> main. NUNCA dev -> main directo."
-                  echo "Ver .claude/rules/git-workflow.md (Branching strategy)."
-                  exit 1
-                  ;;
-              esac
-              ;;
-            stage)
-              # A stage se promueve desde dev (release/* solo en emergencias).
-              case "$HEAD" in
-                dev|release/*)
-                  echo "OK: '$HEAD' es un origen valido para 'stage'."
-                  ;;
-                *)
-                  echo "::error::PR a 'stage' debe venir de 'dev' o 'release/*', no de '$HEAD'."
-                  echo "Flujo correcto: feature -> dev -> stage -> main."
+                  echo "::error::PR a '$BASE' debe venir de 'dev' o 'release/*', no de '$HEAD'."
+                  echo "Flujo correcto: feature -> dev -> main."
                   echo "Ver .claude/rules/git-workflow.md (Branching strategy)."
                   exit 1
                   ;;

@@ -76,13 +76,27 @@ function asString(detail: Record<string, unknown>, key: string): string | null {
 }
 
 /**
+ * @function isMfaPending
+ * @description True si el metodo MFA esta configurado pero NO confirmado (ej.
+ *   un setup-totp abandonado: detail.confirmed === false). Un pendiente no es
+ *   una via de entrada real: no se puede marcar requerido y se ofrece
+ *   confirmar o eliminar.
+ */
+function isMfaPending(method: SecurityMethod): boolean {
+	return method.configured && method.detail.confirmed === false;
+}
+
+/**
  * @function StatusBadge
- * @description Badge de estado de un metodo: 'No configurado' / 'Activo' /
- *   'Desactivado' segun configured + enabled.
+ * @description Badge de estado de un metodo: 'No configurado' / 'Pendiente' /
+ *   'Activo' / 'Desactivado' segun configured + confirmed + enabled.
  */
 function StatusBadge({ method }: { method: SecurityMethod }) {
 	if (!method.configured) {
 		return <Badge variant="outline">No configurado</Badge>;
+	}
+	if (isMfaPending(method)) {
+		return <Badge variant="outline">Pendiente de confirmacion</Badge>;
 	}
 	return method.enabled ? (
 		<Badge variant="secondary">Activo</Badge>
@@ -273,14 +287,19 @@ function WebauthnRow({
 
 /**
  * @function MfaRow
- * @description Fila de un metodo MFA (totp / email_code): estado + Switch on/off
- *   + Switch requerido. Si no esta configurado, muestra un boton 'Configurar'.
+ * @description Fila de un metodo MFA (totp / email_code) con 3 estados:
+ *   - no configurado: boton 'Configurar'.
+ *   - pendiente (configured && !confirmed, ej. setup-totp abandonado): SIN
+ *     switch requerido (no es marcable); botones 'Confirmar' (reabre el setup)
+ *     y 'Eliminar' (disable, anti-lockout).
+ *   - confirmado: Switch on/off + Switch 'Requerido al loguear'.
  */
 function MfaRow({
 	method,
 	onToggle,
 	onRequired,
 	onConfigure,
+	onDelete,
 	toggling,
 	settingRequired,
 }: {
@@ -296,19 +315,53 @@ function MfaRow({
 		required: boolean;
 	}) => void;
 	onConfigure: (type: SecurityMethodType) => void;
+	onDelete: (vars: { type: SecurityMethodType; kind: MfaKind }) => void;
 	toggling: boolean;
 	settingRequired: boolean;
 }) {
 	const kind = method.type as MfaKind;
+	const pending = isMfaPending(method);
 
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
+		<div
+			data-testid={`security-row-${method.type}`}
+			className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4"
+		>
 			<div className="flex items-center gap-2">
 				<span className="text-sm font-medium">{method.label}</span>
 				{method.preferred ? <Badge variant="secondary">Preferido</Badge> : null}
 				<StatusBadge method={method} />
 			</div>
-			{method.configured ? (
+			{!method.configured ? (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => onConfigure(method.type)}
+				>
+					Configurar
+				</Button>
+			) : pending ? (
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => onConfigure(method.type)}
+					>
+						Confirmar
+					</Button>
+					<Button
+						type="button"
+						variant="destructive"
+						size="sm"
+						disabled={toggling}
+						onClick={() => onDelete({ type: method.type, kind })}
+					>
+						Eliminar
+					</Button>
+				</div>
+			) : (
 				<div className="flex flex-wrap items-center gap-3">
 					<span className="flex items-center gap-2 text-xs text-muted-foreground">
 						<span>Activo</span>
@@ -329,15 +382,6 @@ function MfaRow({
 						}
 					/>
 				</div>
-			) : (
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={() => onConfigure(method.type)}
-				>
-					Configurar
-				</Button>
 			)}
 		</div>
 	);
@@ -517,6 +561,7 @@ export function SecurityOverviewPanel() {
 								onToggle={(vars) => toggle.mutate(vars)}
 								onRequired={(vars) => setRequired.mutate(vars)}
 								onConfigure={(type) => setSetupKind(type as MfaKind)}
+								onDelete={(vars) => toggle.mutate({ ...vars, enable: false })}
 							/>
 						)}
 					</div>

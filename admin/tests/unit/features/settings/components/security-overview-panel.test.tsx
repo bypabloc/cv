@@ -267,6 +267,87 @@ describe("SecurityOverviewPanel", () => {
 		});
 	});
 
+	it("Given un TOTP pendiente (confirmed=false) When render Then muestra 'Pendiente' + Confirmar + Eliminar, sin switch requerido", async () => {
+		// Arrange: el TOTP esta configurado pero NO confirmado (setup-totp
+		// abandonado): detail.confirmed === false.
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp"
+				? {
+						...m,
+						configured: true,
+						enabled: true,
+						detail: { confirmed: false },
+					}
+				: m,
+		);
+		mockOverview(methods);
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		await screen.findByText("Aplicacion de autenticacion (TOTP)");
+
+		// Assert: badge pendiente + botones Confirmar/Eliminar; sin el switch
+		// 'Requerido al loguear' (un pendiente no es marcable).
+		const totpRow = screen.getByTestId("security-row-totp");
+		expect(
+			within(totpRow).getByText(/pendiente de confirmacion/i),
+		).toBeInTheDocument();
+		expect(
+			within(totpRow).getByRole("button", { name: /confirmar/i }),
+		).toBeInTheDocument();
+		expect(
+			within(totpRow).getByRole("button", { name: /eliminar/i }),
+		).toBeInTheDocument();
+		expect(within(totpRow).queryByText(/requerido al loguear/i)).toBeNull();
+	});
+
+	it("Given un TOTP pendiente When clic Eliminar Then dispara mfa.disable {kind:totp}", async () => {
+		// Arrange: capturar el request de mfa.disable. apiFetch APLANA el body.
+		const methods = fiveMethods().map((m) =>
+			m.type === "totp"
+				? {
+						...m,
+						configured: true,
+						enabled: true,
+						detail: { confirmed: false },
+					}
+				: m,
+		);
+		let disabledKind: string | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					kind?: string;
+				};
+				if (body.operation === "mfa" && body.action === "disable") {
+					disabledKind = body.kind ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		await screen.findByText("Aplicacion de autenticacion (TOTP)");
+		const totpRow = screen.getByTestId("security-row-totp");
+		await user.click(
+			within(totpRow).getByRole("button", { name: /eliminar/i }),
+		);
+
+		// Assert: el backend recibe mfa.disable con kind=totp.
+		await waitFor(() => {
+			expect(disabledKind).toBe("totp");
+		});
+	});
+
 	it("Given security.overview falla When render Then muestra el ErrorAlert", async () => {
 		// Arrange
 		server.use(

@@ -198,6 +198,18 @@ export const authClient = {
 			body: { operation: "mfa", action: "disable", data },
 		}),
 
+	/**
+	 * mfa.delete: hard-delete del metodo (vuelve a configured:false en el
+	 * overview). 204; 404 si no existe; 409 MUST_KEEP_ONE solo si el metodo es
+	 * el ultimo CONFIRMADO. Un metodo pendiente (no confirmado) siempre se
+	 * puede borrar -> deja la pantalla limpia para reconfigurar de cero.
+	 */
+	mfaDelete: (data: { kind: MfaKind }) =>
+		apiFetch<Envelope<unknown>>("/auth", {
+			method: "POST",
+			body: { operation: "mfa", action: "delete", data },
+		}),
+
 	/** mfa.list: estado actual de los metodos MFA. */
 	mfaList: () =>
 		apiFetch<Envelope<MfaListResponse>>("/auth", {

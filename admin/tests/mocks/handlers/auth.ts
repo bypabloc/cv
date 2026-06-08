@@ -432,6 +432,11 @@ export const authHandlers = [
 				{ status: 409 },
 			);
 		}
+		if (operation === "mfa" && action === "delete") {
+			// hard-delete de un metodo pendiente: el backend responde 204. El
+			// cliente re-envuelve el body vacio en {is_valid:true, code:0}.
+			return new HttpResponse(null, { status: 204 });
+		}
 		if (operation === "mfa" && action === "list") {
 			return HttpResponse.json({
 				is_valid: true,

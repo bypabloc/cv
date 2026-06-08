@@ -31,13 +31,19 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { TotpSetup, WebAuthnRegisterButton } from "@/features/auth";
+import {
+	EmailCodeSetup,
+	TotpSetup,
+	useDeleteCredential,
+	WebAuthnRegisterButton,
+} from "@/features/auth";
 import type {
 	MfaKind,
 	SecurityMethod,
 	SecurityMethodType,
 	SecurityPasskey,
 } from "@/types/models";
+import { useDeleteMethod } from "../hooks/use-delete-method";
 import { useSecurityOverview } from "../hooks/use-security-overview";
 import { useSetRequired } from "../hooks/use-set-required";
 import { useToggleMethod } from "../hooks/use-toggle-method";
@@ -229,8 +235,10 @@ function WebauthnRow({
 	method,
 	onToggle,
 	onRequired,
+	onDeleteCredential,
 	toggling,
 	settingRequired,
+	deleting,
 }: {
 	method: SecurityMethod;
 	onToggle: (vars: {
@@ -243,8 +251,10 @@ function WebauthnRow({
 		recordId: string;
 		required: boolean;
 	}) => void;
+	onDeleteCredential: (recordId: string) => void;
 	toggling: boolean;
 	settingRequired: boolean;
+	deleting: boolean;
 }) {
 	const passkeys = asPasskeys(method.detail);
 
@@ -259,24 +269,33 @@ function WebauthnRow({
 					No tienes passkeys registrados.
 				</p>
 			) : (
-				<ul className="space-y-2">
-					{passkeys.map((passkey) => (
-						<PasskeyRow
-							key={passkey.credential_id}
-							passkey={passkey}
-							toggling={toggling}
-							settingRequired={settingRequired}
-							deleting={false}
-							onToggle={(recordId, enable) =>
-								onToggle({ type: "webauthn", recordId, enable })
-							}
-							onRequired={(recordId, required) =>
-								onRequired({ type: "webauthn", recordId, required })
-							}
-							onDelete={() => undefined}
-						/>
-					))}
-				</ul>
+				<>
+					<ul className="space-y-2">
+						{passkeys.map((passkey) => (
+							<PasskeyRow
+								key={passkey.credential_id}
+								passkey={passkey}
+								toggling={toggling}
+								settingRequired={settingRequired}
+								deleting={deleting}
+								onToggle={(recordId, enable) =>
+									onToggle({ type: "webauthn", recordId, enable })
+								}
+								onRequired={(recordId, required) =>
+									onRequired({ type: "webauthn", recordId, required })
+								}
+								onDelete={onDeleteCredential}
+							/>
+						))}
+					</ul>
+					{/* El factor 'webauthn' del login se satisface con CUALQUIER passkey
+					    marcada como requerida: marcar varias NO obliga a usar todas, basta
+					    una al iniciar sesion. */}
+					<p className="text-xs text-muted-foreground">
+						Si marcas varias passkeys como requeridas, al iniciar sesion basta
+						con usar una de ellas.
+					</p>
+				</>
 			)}
 			{/* Registrar un passkey nuevo (navigator.credentials.create via
 			    webauthn.register-options -> register-verify). */}
@@ -302,6 +321,7 @@ function MfaRow({
 	onDelete,
 	toggling,
 	settingRequired,
+	deleting,
 }: {
 	method: SecurityMethod;
 	onToggle: (vars: {
@@ -318,6 +338,7 @@ function MfaRow({
 	onDelete: (vars: { type: SecurityMethodType; kind: MfaKind }) => void;
 	toggling: boolean;
 	settingRequired: boolean;
+	deleting: boolean;
 }) {
 	const kind = method.type as MfaKind;
 	const pending = isMfaPending(method);
@@ -355,7 +376,7 @@ function MfaRow({
 						type="button"
 						variant="destructive"
 						size="sm"
-						disabled={toggling}
+						disabled={deleting}
 						onClick={() => onDelete({ type: method.type, kind })}
 					>
 						Eliminar
@@ -399,11 +420,13 @@ function RecoveryCodesRow({ method }: { method: SecurityMethod }) {
 		<div className="space-y-3 rounded-md border p-4">
 			<div className="flex items-center justify-end gap-3">
 				<p className="mr-auto text-sm text-muted-foreground">
-					Codigos disponibles: {remaining} de {total}.
+					{total > 0
+						? `Codigos disponibles: ${remaining} de ${total}.`
+						: "Aun no generaste codigos de recuperacion."}
 				</p>
 				<StatusBadge method={method} />
 			</div>
-			<RecoveryCodesSection />
+			<RecoveryCodesSection total={total} remaining={remaining} />
 		</div>
 	);
 }
@@ -495,6 +518,8 @@ export function SecurityOverviewPanel() {
 	const overview = useSecurityOverview();
 	const toggle = useToggleMethod();
 	const setRequired = useSetRequired();
+	const deleteMethod = useDeleteMethod();
+	const deleteCredential = useDeleteCredential();
 	const [setupKind, setSetupKind] = useState<MfaKind | null>(null);
 
 	if (overview.isLoading) {
@@ -518,11 +543,9 @@ export function SecurityOverviewPanel() {
 		);
 	}
 
-	// email_code NO se lista: es el canal de entrada del login (siempre
-	// disponible), no un metodo configurable desde el panel de seguridad.
-	const methods = overview.data.methods.filter(
-		(method) => method.type !== "email_code",
-	);
+	// Todos los metodos se listan, incluido email_code (activo/inactivo +
+	// requerido al loguear + configurar), igual que el resto.
+	const methods = overview.data.methods;
 
 	return (
 		<Card>
@@ -542,8 +565,12 @@ export function SecurityOverviewPanel() {
 								method={method}
 								toggling={toggle.isPending}
 								settingRequired={setRequired.isPending}
+								deleting={deleteCredential.isPending}
 								onToggle={(vars) => toggle.mutate(vars)}
 								onRequired={(vars) => setRequired.mutate(vars)}
+								onDeleteCredential={(recordId) =>
+									deleteCredential.mutate({ credential_id: recordId })
+								}
 							/>
 						) : method.type === "recovery_codes" ? (
 							<RecoveryCodesRow method={method} />
@@ -558,10 +585,11 @@ export function SecurityOverviewPanel() {
 								method={method}
 								toggling={toggle.isPending}
 								settingRequired={setRequired.isPending}
+								deleting={deleteMethod.isPending}
 								onToggle={(vars) => toggle.mutate(vars)}
 								onRequired={(vars) => setRequired.mutate(vars)}
 								onConfigure={(type) => setSetupKind(type as MfaKind)}
-								onDelete={(vars) => toggle.mutate({ ...vars, enable: false })}
+								onDelete={(vars) => deleteMethod.mutate({ kind: vars.kind })}
 							/>
 						)}
 					</div>
@@ -582,6 +610,24 @@ export function SecurityOverviewPanel() {
 						</DialogDescription>
 					</DialogHeader>
 					<TotpSetup />
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={setupKind === "email_code"}
+				onOpenChange={(open) => {
+					if (!open) setSetupKind(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Configurar codigo por email</DialogTitle>
+						<DialogDescription>
+							Activa el envio de un codigo de 8 caracteres a tu email al iniciar
+							sesion.
+						</DialogDescription>
+					</DialogHeader>
+					<EmailCodeSetup onDone={() => setSetupKind(null)} />
 				</DialogContent>
 			</Dialog>
 		</Card>

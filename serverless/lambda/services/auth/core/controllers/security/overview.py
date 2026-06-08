@@ -111,6 +111,11 @@ class Overview(BaseController):
         recovery_svc = RecoveryCodesService(app_config)
         password_svc = PasswordService(app_config)
 
+        # Backfill perezoso: el email se verifico en el alta, asi que el
+        # email_code debe estar configurado. Los users creados antes de que el
+        # alta lo creara obtienen su row aqui (idempotente, sin revoke).
+        mfa_svc.ensure_email_code(user_id=user.id)
+
         # --- MFA methods (totp + email_code) ---
         mfa_by_kind = {
             method['kind']: method

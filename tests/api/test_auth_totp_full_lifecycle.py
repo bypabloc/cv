@@ -26,6 +26,7 @@ en el teardown del conftest.
 from __future__ import annotations
 
 import secrets
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from shared.auth_support import (
@@ -45,6 +46,19 @@ from shared.totp import totp_now
 # secretos del repo. 32 chars base32 validos (A-Z2-7), pero NO el secret de la
 # DB -> el code que produce no matchea (caso 'app con entrada vieja').
 _OTHER_SECRET = ('JBSWY3DP' 'EHPK3PXP') * 2
+
+
+def _secret_from_otpauth(otpauth_url: str) -> str | None:
+    """Extrae el `secret` del `otpauth://` (lo que un autenticador escanea).
+
+    1Password / Google Authenticator / Authy leen el QR, que codifica el
+    `otpauth_url`, y derivan el code SOLO del query param `secret` — NO del
+    `secret_b32` del body. Replicar esa extraccion prueba que el QR lleva el
+    secret correcto (si difiriera del persistido, el code no matchearia y el
+    user veria INVALID_TOTP_CODE aunque copie bien de la app).
+    """
+    raw = parse_qs(urlparse(otpauth_url).query).get('secret')
+    return raw[0] if raw else None
 
 
 def _access_via_password(
@@ -116,18 +130,30 @@ def test_totp_full_lifecycle_setup_confirm_required_login(
     assert setup.status == 200, f'setup-totp fallo: {setup.body}'
     secret = field(setup.body, 'secret_b32')
     assert secret is not None, f'setup-totp no dio secret_b32: {setup.body}'
-    assert field(setup.body, 'otpauth_url') is not None, (
+    otpauth_url = field(setup.body, 'otpauth_url')
+    assert otpauth_url is not None, (
         f'setup-totp no dio otpauth_url: {setup.body}'
     )
+    # El valor embebido en el QR (lo que 1Password escanea) DEBE coincidir con
+    # el `secret_b32` y con el persistido en la DB. Si difiriera, la app
+    # generaria codes que el backend rechaza con INVALID_TOTP_CODE aunque el
+    # user copie bien -> el sintoma reportado. Confirmamos con el code derivado
+    # del valor del QR (no del body) para probar el camino real del user.
+    qr_value = _secret_from_otpauth(otpauth_url)
+    assert qr_value == secret, (
+        'el valor del otpauth_url (QR) debe coincidir con secret_b32: '
+        f'qr_len={len(qr_value or "")} body_len={len(secret)} equal=False'
+    )
 
-    # 2. confirm-totp con el code generado DEL secret recien creado -> 204.
+    # 2. confirm-totp con el code derivado del valor DEL QR -> 204 (camino que
+    #    recorre un autenticador real: lee el QR, deriva el code de su valor).
     confirm = http.post(
         '/auth',
-        body=make_body('mfa', 'confirm-totp', code=totp_now(secret)),
+        body=make_body('mfa', 'confirm-totp', code=totp_now(qr_value)),
         origin=origin, bearer=access,
     )
     assert confirm.status == 204, (
-        f'confirm-totp con el code correcto deberia ser 204, '
+        f'confirm-totp con el code del QR deberia ser 204, '
         f'fue {confirm.status}: {confirm.body}'
     )
 

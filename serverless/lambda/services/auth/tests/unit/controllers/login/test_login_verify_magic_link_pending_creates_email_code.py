@@ -1,9 +1,9 @@
-"""AC-15: login.verify-magic-link de entrada (solo passwordless) -> tokens.
+"""AC-2: login.verify-magic-link del alta (pending) crea el email_code.
 
-Given un magic-link de login valido + el user no tiene mas factores required,
-When se invoca login.verify-magic-link,
-Then consume el link, satisface 'passwordless', no quedan pendientes ->
-emite access+refresh + redirect al callback con tokens + update_last_login.
+Given un user PENDING que abre su magic-link de alta,
+When login.verify-magic-link lo marca active,
+Then ademas llama mfa_svc.ensure_email_code (el email queda verificado en el
+  alta -> email_code configurado) y emite los tokens normalmente.
 """
 
 from unittest.mock import MagicMock
@@ -11,12 +11,12 @@ from unittest.mock import MagicMock
 from .._helpers import _make_event_with_token, _make_magic_link, _make_user
 
 
-def test_login_verify_magic_link_ok_updates_last_login(monkeypatch):
-    """AC-15: magic-link de entrada (solo passwordless) -> tokens."""
+def test_login_verify_magic_link_pending_creates_email_code(monkeypatch):
+    """El alta por magic-link (pending->active) crea el email_code confirmado."""
     from controllers.login import _mfa_login, verify_magic_link
 
     link = _make_magic_link()
-    user = _make_user(user_id=link.user_id, status='active')
+    user = _make_user(user_id=link.user_id, status='pending')
 
     link_svc = MagicMock()
     link_svc.verify.return_value = link
@@ -25,8 +25,8 @@ def test_login_verify_magic_link_ok_updates_last_login(monkeypatch):
     user_svc.get_by_id.return_value = user
 
     jwt_svc = MagicMock()
-    jwt_svc.issue_access.return_value = ('LOGIN-ACCESS-JWT', MagicMock())
-    jwt_svc.issue_refresh.return_value = ('LOGIN-REFRESH-JWT', MagicMock())
+    jwt_svc.issue_access.return_value = ('ACC', MagicMock())
+    jwt_svc.issue_refresh.return_value = ('REF', MagicMock())
 
     mfa_svc = MagicMock()
     mfa_svc.required_methods.return_value = ['passwordless']
@@ -54,11 +54,5 @@ def test_login_verify_magic_link_ok_updates_last_login(monkeypatch):
 
     assert result['is_valid'] is True
     assert result['code'] == 0
-    assert result['data']['access_token'] == 'LOGIN-ACCESS-JWT'
-    assert result['data']['refresh_token'] == 'LOGIN-REFRESH-JWT'
-    assert result['data']['mfa_complete'] is True
-    assert '#access=LOGIN-ACCESS-JWT' in result['data']['redirect_url']
-    user_svc.update_last_login.assert_called_once_with(user)
-    user_svc.mark_active.assert_not_called()
-    # user ya active -> NO se crea email_code (solo en el alta pending->active).
-    mfa_svc.ensure_email_code.assert_not_called()
+    user_svc.mark_active.assert_called_once_with(user)
+    mfa_svc.ensure_email_code.assert_called_once_with(user_id=user.id)

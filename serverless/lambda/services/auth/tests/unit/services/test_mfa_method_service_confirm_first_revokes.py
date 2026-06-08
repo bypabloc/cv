@@ -24,11 +24,11 @@ def test_mfa_method_service_confirm_first_revokes(monkeypatch):
     confirmed_method.confirmed_at = object()
 
     monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
-    # count_active: 0 antes, 1 despues.
+    # cuenta FUERTE: 0 antes, 1 despues (el revoke usa count_active_strong_mfa).
     counts = iter([0, 1])
     monkeypatch.setattr(
         mfa_method_service,
-        'count_active_mfa',
+        'count_active_strong_mfa',
         lambda _s, *, user_id: next(counts),
     )
     monkeypatch.setattr(

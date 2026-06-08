@@ -1,6 +1,6 @@
 """security.overview devuelve SIEMPRE las 5 entradas -> 200.
 
-Given un user con totp configurado, sin email_code/webauthn, con
+Given un user con totp + email_code (backfill) configurados, sin webauthn, con
   recovery codes (10/8) y con password,
 When se invoca security.overview,
 Then devuelve las 5 entradas con shape uniforme y los flags correctos.
@@ -18,11 +18,22 @@ def test_overview_returns_five_methods(monkeypatch):
     user = _make_user(status='active')
 
     mfa_svc = MagicMock()
+    # El backfill garantiza el email_code confirmado (required=false); ademas
+    # el user tiene un TOTP configurado.
     mfa_svc.list_all.return_value = [
         {
             'kind': 'totp',
             'preferred': True,
             'required': True,
+            'confirmed': True,
+            'enabled': True,
+            'created_at': '2026-01-01T00:00:00+00:00',
+            'last_used_at': None,
+        },
+        {
+            'kind': 'email_code',
+            'preferred': False,
+            'required': False,
             'confirmed': True,
             'enabled': True,
             'created_at': '2026-01-01T00:00:00+00:00',
@@ -83,7 +94,10 @@ def test_overview_returns_five_methods(monkeypatch):
     assert totp['required'] is True
 
     email_code = methods[1]
-    assert email_code['configured'] is False
+    # email_code SIEMPRE configurado (email verificado en el alta + backfill).
+    assert email_code['configured'] is True
+    assert email_code['enabled'] is True
+    assert email_code['required'] is False
 
     recovery = methods[3]
     assert recovery['detail'] == {'total': 10, 'remaining': 8}

@@ -26,6 +26,7 @@ __all__ = [
     'confirm_mfa',
     'consume_recovery_code',
     'count_active_mfa',
+    'count_active_strong_mfa',
     'delete_mfa',
     'delete_webauthn_credential',
     'disable_mfa',
@@ -310,6 +311,38 @@ def count_active_mfa(session: Session, *, user_id: str) -> int:
         .select_from(AuthMfaMethod)
         .where(
             AuthMfaMethod.user_id == user_id,
+            AuthMfaMethod.confirmed_at.is_not(None),
+            AuthMfaMethod.disabled_at.is_(None),
+        )
+    )
+    passkeys = session.scalar(
+        select(func.count())
+        .select_from(AuthWebauthnCredential)
+        .where(
+            AuthWebauthnCredential.user_id == user_id,
+            AuthWebauthnCredential.disabled_at.is_(None),
+        )
+    )
+    return int(methods or 0) + int(passkeys or 0)
+
+
+def count_active_strong_mfa(session: Session, *, user_id: str) -> int:
+    """Cuenta solo factores FUERTES del user (TOTP confirmado + passkeys).
+
+    Igual que `count_active_mfa` PERO EXCLUYE `email_code`: el email ya se
+    verifica en el alta, asi que el metodo email_code no es un factor "fuerte"
+    que justifique re-autenticar. Alimenta SOLO la condicion del revoke 0->1
+    (re-auth al subir el nivel de seguridad con el primer TOTP/passkey).
+
+    NUNCA usar para el guard MUST_KEEP_ONE_MFA_METHOD — para eso es
+    `count_active_mfa` (que SI cuenta email_code como via de entrada).
+    """
+    methods = session.scalar(
+        select(func.count())
+        .select_from(AuthMfaMethod)
+        .where(
+            AuthMfaMethod.user_id == user_id,
+            AuthMfaMethod.kind != AuthMfaKind.EMAIL_CODE,
             AuthMfaMethod.confirmed_at.is_not(None),
             AuthMfaMethod.disabled_at.is_(None),
         )

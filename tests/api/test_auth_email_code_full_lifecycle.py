@@ -4,8 +4,9 @@ Centraliza la cobertura del factor email_code de punta a punta (antes solo
 tenia un setup + list + disable suelto en _flows.py, sin login 2FA ni
 set-required):
 
-1. setup-email-code -> 204 (se confirma de inmediato; el user ya probo email).
-2. security.overview refleja email_code configured + enabled.
+1. setup-email-code -> 204 (IDEMPOTENTE: el email_code ya lo creo el alta, el
+   email se verifico al registrarse; este setup explicito es un no-op seguro).
+2. security.overview refleja email_code configured + enabled (ya desde el alta).
 3. set-required email_code -> 204 (ahora es un factor exigido al loguear).
 4. login completo por el checklist: login.start lista [password, email_code] ->
    verify-password (intermedio) -> send-email-code (envia el code) -> el harness

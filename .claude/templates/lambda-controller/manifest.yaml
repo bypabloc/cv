@@ -34,8 +34,6 @@ environment:
     ENVIRONMENT: dev
   dev:
     ENVIRONMENT: dev
-  stage:
-    ENVIRONMENT: stage
   prod:
     LOG_LEVEL: WARNING
     ENVIRONMENT: prod

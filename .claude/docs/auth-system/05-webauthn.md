@@ -59,7 +59,6 @@ WebAuthn exige que el RP_ID sea sufijo del origin. El `WEBAUTHN_RP_ID` es
 |---|---|---|
 | prod | `the-full-stack.com` | apex + www + los 6 niches (`*.portfolio.the-full-stack.com`) |
 | dev | `portfolio.dev.the-full-stack.com` | los niches `*.portfolio.dev.the-full-stack.com` + localhost:9970 |
-| stage | `portfolio.stage.the-full-stack.com` | los niches `*.portfolio.stage.the-full-stack.com` |
 
 **Implicancia**: un passkey registrado en `dev` NO migra a `prod` (y
 viceversa). En prod su `allowCredentials` queda vacio y

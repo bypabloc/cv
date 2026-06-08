@@ -504,7 +504,7 @@ class BaseModel(PydanticBaseModel):
     def create_table(cls) -> None:
         """Crea la tabla desde el `TableMeta`. SOLO para tests/local.
 
-        Las tablas de dev/stage/prod las crea CloudFormation
+        Las tablas de dev/prod las crea CloudFormation
         (`infra.yaml`). Este metodo existe para los tests con `moto` y el
         entorno local. Activa el TTL si el `TableMeta` declara `ttl_attr`.
         """

@@ -109,7 +109,7 @@ python devtools/run.py serverless run --stage=dev --lambda=db \
 `serverless/lambda/resources/` con AWS CLI directo y publica sus
 identificadores a SSM. `list-resources` lista los recursos declarados.
 
-Para `stage` y `prod`: mismos comandos cambiando `--stage`. `deploy` arma
+Para `prod`: mismos comandos cambiando `--stage`. `deploy` arma
 el artefacto `build.zip` del Lambda con uv (`uv pip install --target
 build/`) + vendoring selectivo de `shared/`, lee el `manifest.yaml`,
 carga el estado previo y aplica la accion que el diff de hashes indica
@@ -150,7 +150,7 @@ python devtools/run.py serverless run \
 python devtools/run.py serverless run \
   --stage=local --lambda=db --event=events/current.json --runtime-mode=direct
 
-# Invocar un Lambda ya deployado (--stage=dev|stage|prod -> aws lambda invoke)
+# Invocar un Lambda ya deployado (--stage=dev|prod -> aws lambda invoke)
 python devtools/run.py serverless run \
   --stage=dev --lambda=db --event=events/current.json --aws-profile=tfs-dev
 
@@ -177,7 +177,7 @@ la carpeta cumpla la estructura lambda-controller. Como alternativa,
 
 | Comando | Que hace |
 |---------|----------|
-| `run --stage=<env>` | `--stage=local` -> RIE via Docker (o `--runtime-mode=direct`); `--stage=dev\|stage\|prod` -> `aws lambda invoke` contra el deployado |
+| `run --stage=<env>` | `--stage=local` -> RIE via Docker (o `--runtime-mode=direct`); `--stage=dev\|prod` -> `aws lambda invoke` contra el deployado |
 | `deploy` | Arma `build.zip` con uv + vendoring selectivo de `shared/`, lo provisiona con AWS CLI y actualiza el estado local |
 | `destroy --yes` | Borra los recursos del lambda (o de todo el stage) en orden inverso al de creacion y limpia el estado |
 | `status` | Compara el estado local vs los `describe-*` de AWS (deteccion de drift) |

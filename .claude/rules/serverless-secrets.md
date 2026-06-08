@@ -75,7 +75,7 @@ Aplica SIEMPRE que se trabaje con:
   `localhost`, `127.0.0.1`.
 - **Rotacion**: cuando el widget Turnstile se regenera en Cloudflare (o ante
   sospecha de leak), usar el script dedicado `rotate_secrets turnstile`
-  (rota los 3 widgets dev/stage/prod, escribe `TURNSTILE_SECRET_KEY` en
+  (rota los 2 widgets dev/prod, escribe `TURNSTILE_SECRET_KEY` en
   `docker/env/server/.{env}` y `PUBLIC_TURNSTILE_SITEKEY` +
   `TURNSTILE_SITE_KEY` en `docker/env/client/.{env}`):
 
@@ -99,7 +99,7 @@ Aplica SIEMPRE que se trabaje con:
   Detalle del script: skill `rotate-secrets` o
   `devtools/rotate_secrets/README.md`.
 
-### `/portfolio/{stage}/turnstile-bypass-public-key` (String, dev/stage)
+### `/portfolio/{stage}/turnstile-bypass-public-key` (String, dev)
 
 - **Que es**: clave PUBLICA Ed25519 que verifica el **token de bypass de
   Turnstile** firmado para los tests E2E. NO es secreta (String plano, sin
@@ -108,17 +108,17 @@ Aplica SIEMPRE que se trabaje con:
 - **Quien lo lee**: Lambdas `contact_form` y `auth` (via
   `shared.crypto.captcha._load_public_key` ->
   `get_parameter_by_name('turnstile-bypass-public-key')`). Solo se consulta
-  en el path de bypass (cf_response vacio + STAGE in {dev,local,stage}).
+  en el path de bypass (cf_response vacio + STAGE in {dev,local}).
 - **La clave PRIVADA NUNCA vive en SSM**: la firma de tokens la hace el
   runner E2E / dev local con `TURNSTILE_BYPASS_PRIVATE_KEY` de
   `docker/env/dev-cli/.{env}` (categoria dev-cli, LOCAL-ONLY). Un leak del
   entorno del Lambda (solo publica) NO permite forjar tokens.
-- **Stages**: solo `dev` y `stage`. NUNCA prod (prod no acepta bypass).
-- **Rotacion**: regenerar el par con `bypass_token keygen --envs=dev,stage`
+- **Stages**: solo `dev`. NUNCA prod (prod no acepta bypass).
+- **Rotacion**: regenerar el par con `bypass_token keygen --envs=dev`
   (escribe privada a dev-cli + publica a server) y publicar la publica:
 
   ```bash
-  python devtools/run.py bypass_token keygen --envs=dev,stage
+  python devtools/run.py bypass_token keygen --envs=dev
   python devtools/run.py serverless setup-ssm \
     --name=/portfolio/dev/turnstile-bypass-public-key --env=dev \
     --aws-profile=tfs-dev

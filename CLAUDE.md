@@ -17,7 +17,7 @@
 | — | — | `services.localhost` | Indice estático de servicios locales |
 
 > Prod: el apex `the-full-stack.com` (+ `www`) es generic; los 5 niches
-> cuelgan del product `portfolio`. dev/stage usan
+> cuelgan del product `portfolio`. dev usa
 > `{niche}.portfolio.{env}.the-full-stack.com`. Ver
 > [.claude/docs/subdomain-standard/](.claude/docs/subdomain-standard/).
 
@@ -64,7 +64,7 @@ Filtrar por workspace: `pnpm --filter @portfolio/<app> run <script>`.
 ## Comandos Docker (proyecto: `portfolio`)
 
 Stack: 6 apps Astro + nginx reverse proxy + container `e2e` (E2E unificado
-Python 3.14 + playwright-python, on-demand contra dev/stage desplegado).
+Python 3.14 + playwright-python, on-demand contra dev desplegado).
 Container names: `portfolio-<servicio>-<env>`.
 
 ### Quick start
@@ -147,7 +147,7 @@ python devtools/run.py test_runner --module=<app> --type=typecheck
 # Para packages: prefijo pkg-
 python devtools/run.py test_runner --module=pkg-content --type=unit
 
-# E2E unificado (Python, contra dev/stage desplegado):
+# E2E unificado (Python, contra dev desplegado):
 python devtools/run.py e2e --module=<api|admin|app> --env=dev --aws-profile=tfs-dev
 
 # Devtools unit tests (host, pytest):
@@ -267,11 +267,11 @@ Antes de trabajar, identifica que contexto necesitas:
 | Skills (frontmatter) | [.claude/rules/skills.md](.claude/rules/skills.md) | Crear / modificar skills |
 | Testing config Claude | [.claude/rules/claude-config-testing.md](.claude/rules/claude-config-testing.md) | Antes de commitear cambios en `.claude/*` |
 | Docker stack | [docker/README.md](docker/README.md) | Levantar local, mapping subdominios, env files |
-| Tests E2E | [.claude/rules/e2e-testing.md](.claude/rules/e2e-testing.md) o skill `e2e-testing` | Comando `e2e` (Python unico) contra dev/stage; escribir tests en `tests/{api,admin,app}` |
+| Tests E2E | [.claude/rules/e2e-testing.md](.claude/rules/e2e-testing.md) o skill `e2e-testing` | Comando `e2e` (Python unico) contra dev; escribir tests en `tests/{api,admin,app}` |
 | CV (contenido) | [.claude/docs/cv/README.md](.claude/docs/cv/README.md) | Datos del CV (perfil, experiencia, proyectos) |
 | Estrategia portfolio 2026 | invocar skill `astro-portfolio` | Decisiones de SEO/GEO/ATS/AI literacy/diseño |
 | Deploy Cloudflare Pages | [.claude/docs/cloudflare/README.md](.claude/docs/cloudflare/README.md) o skill `cloudflare-deploy` | Deploy, custom domains, DNS, gotchas, troubleshoot del setup actual |
-| Estandar subdominios | [.claude/docs/subdomain-standard/README.md](.claude/docs/subdomain-standard/README.md) o skill `subdomain-standard` | Patron `[{component}.]{product}.{env}.{domain}` para products, components y envs (dev/stage/prod) bajo the-full-stack.com. Reservados, wildcards SSL, plan de migracion del backend |
+| Estandar subdominios | [.claude/docs/subdomain-standard/README.md](.claude/docs/subdomain-standard/README.md) o skill `subdomain-standard` | Patron `[{component}.]{product}.{env}.{domain}` para products, components y envs (dev/prod) bajo the-full-stack.com. Reservados, wildcards SSL, plan de migracion del backend |
 | AWS Lambda Python 3.13 | [.claude/docs/aws-lambda/README.md](.claude/docs/aws-lambda/README.md) o skill `aws-lambda-python` | Backend serverless: runtime, Powertools v3, cold start, SAM deploy, IAM, costs |
 | AWS API Gateway | [.claude/docs/aws-api-gateway/README.md](.claude/docs/aws-api-gateway/README.md) o skill `aws-api-gateway` | REST vs HTTP, throttling per-IP via WAF, CORS, request validation, deploy |
 | AWS DynamoDB | [.claude/docs/aws-dynamodb/README.md](.claude/docs/aws-dynamodb/README.md) o skill `aws-dynamodb` | On-demand, TTL, boto3, single-table, GSI, pricing 2026 |
@@ -376,7 +376,7 @@ y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
 - `attribution.commit` y `attribution.pr` están vacíos en
   [.claude/settings.json](.claude/settings.json) — defensa en profundidad
   contra atribución de IA.
-- Branches `main`, `master`, `dev`, `stage` están protegidas: el hook
+- Branches `main`, `master`, `dev` están protegidas: el hook
   `protect-branch.sh` bloquea `git push` directo.
 - Subdominios `*.localhost` resuelven a 127.0.0.1 por RFC 6761 (no requiere
   editar `/etc/hosts` en el host). Dentro de containers Docker con

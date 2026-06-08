@@ -24,7 +24,7 @@
   (`ContactItem`, `TrackingEventItem`, `CacheItem`,
   `RateLimitBucketItem`, `RateLimitRuleItem`). NUNCA `boto3.resource('dynamodb')`
   directo en codigo de dominio.
-- **SIEMPRE** las tablas reales de dev/stage/prod las provisiona devtools
+- **SIEMPRE** las tablas reales de dev/prod las provisiona devtools
   con AWS CLI directo desde `resources/dynamodb/*.yaml`. `create_table` /
   `ensure_table` del ORM son SOLO para tests (moto) y entorno local.
 - **SIEMPRE** que se cambie el `KeySchema` / TTL / GSI de una tabla, el
@@ -89,7 +89,7 @@ El ORM expone dos capas:
 
 ## Por que devtools sigue siendo el dueno del DDL
 
-El ORM **no crea las tablas de dev/stage/prod**. La razon no es estetica:
+El ORM **no crea las tablas de dev/prod**. La razon no es estetica:
 
 - devtools provisiona cada tabla con AWS CLI directo desde los
   `resources/dynamodb/*.yaml` y publica sus identificadores (`*TableArn`)

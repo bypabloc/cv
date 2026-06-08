@@ -3,9 +3,9 @@ name: e2e-testing
 description: >
   E2E testing reference for the portfolio. ALL E2E tests are Python 3.14
   (devtools/.venv) — playwright (python, sync API) for browser, httpx for the
-  HTTP Lambdas, psycopg for Neon — run against the DEPLOYED dev/stage env
+  HTTP Lambdas, psycopg for Neon — run against the DEPLOYED dev env
   (NEVER prod, NEVER the local Docker stack), via ONE command:
-  `python devtools/run.py e2e --module=<api|admin|app> --env=<dev|stage>`.
+  `python devtools/run.py e2e --module=<api|admin|app> --env=dev`.
   Shared tooling lives in tests/shared/ (config, http, runner, reporter, totp,
   auth_support, environment with Neon seed+cleanup + signed bypass + SSM admin
   whitelist, browser harness). 3 modules: api (5 HTTP Lambdas via httpx),
@@ -23,7 +23,7 @@ description: >
   "playwright-python", "test del admin", "test de las apps", "probar las apis",
   "test api desplegada", "tests/shared", "comando e2e", "browser test python",
   "como escribo un test e2e", "smoke test", "navbar test", "contact form test",
-  "tracking test", "e2e contra dev", "e2e contra stage", "fallar sin sso",
+  "tracking test", "e2e contra dev", "fallar sin sso",
   "api_e2e", "tests/feature", "module feature".
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash
@@ -65,7 +65,7 @@ Sin `--module` corre los 3 en orden.
 
 1. **Runtime unico Python 3.14**. NO TypeScript en E2E. El browser usa
    `playwright` (python, sync). Reemplaza la suite Playwright-TS vieja.
-2. **Solo desplegado dev/stage** (NUNCA prod, NUNCA stack Docker local de
+2. **Solo desplegado dev** (NUNCA prod, NUNCA stack Docker local de
    apps). Los E2E prueban el sistema real que sirven los usuarios.
 3. **`tests/shared/` es el portador unico** de db (Neon seed+cleanup),
    secrets (bypass Ed25519 + SSM + admin whitelist), http+reporter, browser.

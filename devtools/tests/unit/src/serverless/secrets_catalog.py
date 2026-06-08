@@ -26,7 +26,7 @@ _VALID_YAML = textwrap.dedent(
     kms_key_alias: alias/portfolio-lambdas
     source_env_var: TURNSTILE_SECRET_KEY
     target_env_var: SSM_TURNSTILE_SECRET_PATH
-    stages: [dev, stage, prod]
+    stages: [dev, prod]
     required: true
     consumed_by: [contact_form]
     tags: { Project: portfolio, ManagedBy: devtools }
@@ -43,7 +43,7 @@ _VALID_GLOBAL_YAML = textwrap.dedent(
     ssm_type: String
     source_env_var: OWNER_EMAIL
     target_env_var: SSM_OWNER_EMAIL_PATH
-    stages: [dev, stage, prod]
+    stages: [dev, prod]
     required: true
     """,
 ).strip()
@@ -79,7 +79,7 @@ class TestCatalogLoadSuccess:
         assert spec.kms_key_alias == 'alias/portfolio-lambdas'
         assert spec.source_env_var == 'TURNSTILE_SECRET_KEY'
         assert spec.target_env_var == 'SSM_TURNSTILE_SECRET_PATH'
-        assert spec.stages == frozenset({'dev', 'stage', 'prod'})
+        assert spec.stages == frozenset({'dev', 'prod'})
         assert spec.required is True
         assert spec.consumed_by == ('contact_form',)
 
@@ -131,7 +131,7 @@ class TestCatalogLoadSuccess:
         from serverless.secrets_catalog import CatalogError
 
         yaml_dev_only = _VALID_YAML.replace(
-            'stages: [dev, stage, prod]',
+            'stages: [dev, prod]',
             'stages: [dev]',
         )
         _write_yaml(tmp_path, 'turnstile-secret', yaml_dev_only)
@@ -144,7 +144,7 @@ class TestCatalogLoadSuccess:
         from serverless.secrets_catalog import Catalog
 
         yaml_dev_only = _VALID_YAML.replace(
-            'stages: [dev, stage, prod]',
+            'stages: [dev, prod]',
             'stages: [dev]',
         ).replace('turnstile-secret', 'dev-only-secret')
         _write_yaml(tmp_path, 'dev-only-secret', yaml_dev_only)
@@ -209,7 +209,7 @@ class TestCatalogLoadFailure:
         from serverless.secrets_catalog import CatalogError
 
         bad = _VALID_YAML.replace(
-            'stages: [dev, stage, prod]',
+            'stages: [dev, prod]',
             'stages: [local, dev]',
         )
         _write_yaml(tmp_path, 'turnstile-secret', bad)
@@ -221,7 +221,7 @@ class TestCatalogLoadFailure:
         from serverless.secrets_catalog import Catalog
         from serverless.secrets_catalog import CatalogError
 
-        bad = _VALID_YAML.replace('stages: [dev, stage, prod]', 'stages: []')
+        bad = _VALID_YAML.replace('stages: [dev, prod]', 'stages: []')
         _write_yaml(tmp_path, 'turnstile-secret', bad)
 
         with pytest.raises(CatalogError, match='lista no vacia'):

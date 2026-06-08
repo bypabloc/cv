@@ -16,7 +16,7 @@ Ed25519 (`Ed25519PrivateKey` / `Ed25519PublicKey`).
 
 `cryptography` se importa de forma LAZY dentro de cada funcion: el modulo
 se puede importar sin pagar el costo de import de la lib nativa. En los
-Lambdas, solo el path de bypass (dev/stage, cf_response vacio) ejercita
+Lambdas, solo el path de bypass (dev, cf_response vacio) ejercita
 estas funciones, asi que prod nunca carga `cryptography` por este modulo.
 """
 

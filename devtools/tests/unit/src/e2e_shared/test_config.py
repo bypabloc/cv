@@ -30,17 +30,6 @@ def test_niche_origin_fintech_dev_returns_subdomain_url() -> None:
     assert result == 'https://fintech.portfolio.dev.the-full-stack.com'
 
 
-def test_niche_origin_fintech_stage_returns_subdomain_url() -> None:
-    """
-    Given el niche 'fintech' y el entorno 'stage',
-    When se resuelve niche_origin,
-    Then devuelve el subdominio desplegado exacto del niche en stage.
-    """
-    result = niche_origin('fintech', 'stage')
-
-    assert result == 'https://fintech.portfolio.stage.the-full-stack.com'
-
-
 def test_niche_origin_generic_dev_resolves_to_apex_base_domain() -> None:
     """
     Given el niche 'generic' (apex) y el entorno 'dev',
@@ -51,17 +40,6 @@ def test_niche_origin_generic_dev_resolves_to_apex_base_domain() -> None:
     result = niche_origin('generic', 'dev')
 
     assert result == 'https://portfolio.dev.the-full-stack.com'
-
-
-def test_niche_origin_generic_stage_resolves_to_apex_base_domain() -> None:
-    """
-    Given el niche 'generic' (apex) y el entorno 'stage',
-    When se resuelve niche_origin,
-    Then devuelve el base_domain del env: portfolio.stage.the-full-stack.com.
-    """
-    result = niche_origin('generic', 'stage')
-
-    assert result == 'https://portfolio.stage.the-full-stack.com'
 
 
 def test_niche_origin_hub_dev_returns_subdomain_url() -> None:
@@ -118,15 +96,6 @@ def test_turnstile_bypass_supported_dev_is_true() -> None:
     Then devuelve True (dev evalua el header X-Turnstile-Bypass-Token).
     """
     assert turnstile_bypass_supported('dev') is True
-
-
-def test_turnstile_bypass_supported_stage_is_true() -> None:
-    """
-    Given el entorno 'stage',
-    When se consulta el soporte de bypass de Turnstile,
-    Then devuelve True (stage tambien lo evalua).
-    """
-    assert turnstile_bypass_supported('stage') is True
 
 
 def test_turnstile_bypass_supported_prod_is_false() -> None:

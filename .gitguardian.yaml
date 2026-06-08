@@ -26,7 +26,7 @@ secret:
     # Harness E2E unificado (comando `e2e`): usa credenciales sinteticas
     # (passwords de prueba compuestas en runtime + tokens fake
     # `NOT-A-REAL-...`) para ejercitar los flujos de auth/users contra
-    # dev/stage. Ningun valor es un secreto real. Se componen de fragmentos
+    # dev. Ningun valor es un secreto real. Se componen de fragmentos
     # neutros en runtime; detalle: tests/shared/auth_support.py.
     - 'tests/shared/**'
     - 'tests/api/**'

@@ -13,7 +13,6 @@ capitulo documenta ese archivo de estado.
 serverless/lambda/.state/
 ├── .gitignore           # ignora *.json
 ├── infra-dev.json
-├── infra-stage.json
 ├── infra-prod.json
 ├── contact-form-dev.json
 ├── tracking-pixel-dev.json
@@ -27,7 +26,7 @@ El nombre del archivo es `<scope>-<stage>.json`:
 - `scope` — `infra` (el conjunto de recursos compartidos) o el nombre
   de un Lambda (`contact-form`, `tracking-pixel`, `stream-processor`,
   `db`).
-- `stage` — `dev`, `stage` o `prod`.
+- `stage` — `dev` o `prod`.
 
 `devtools/serverless/state.py` lee, escribe y compara estos archivos.
 
@@ -51,7 +50,7 @@ versiona ni se comparte:
 ```jsonc
 {
   "scope": "contact-form",        // "infra" | nombre del lambda
-  "stage": "dev",                 // dev | stage | prod
+  "stage": "dev",                 // dev | prod
   "config_hash": "sha256:...",    // hash de la config renderizada (IAM, env, memory, ...)
   "code_hash": "sha256:...",      // hash del contenido de core/ (solo lambdas)
   "resources": {                  // identificadores de lo creado

@@ -33,9 +33,8 @@ description: >
   "workers static assets", "migrar a workers", "cloudflare workers",
   "cloudflare_setup", "cloudflare setup", "rebuild apps", "reconstruir
   apps", "redeploy apps", "trigger deploy", "trigger build", "cloudflare
-  dev", "cloudflare stage", "cloudflare prod", "deploy dev", "deploy
-  stage", "deploy prod", "rebuild dev", "rebuild stage", "preview branch",
-  "preview_branch_includes", "preview branch includes".
+  dev", "cloudflare prod", "deploy dev", "deploy prod", "rebuild dev",
+  "preview branch", "preview_branch_includes", "preview branch includes".
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash(curl:*), Bash(dig:*), Bash(nslookup:*), Bash(pnpm:*), Bash(git:*)
 argument-hint: "tema: setup | dns | api-token | gotchas | comparacion | workers | troubleshoot"
@@ -125,8 +124,8 @@ Resumen:
 4. `python devtools/run.py cloudflare_setup all --env=prod`
 5. Verificar con `python devtools/run.py cloudflare_setup status --env=prod`
 
-Para dev o stage, cambiar el flag: `--env=dev` o `--env=stage`. El
-script cubre los 18 Pages projects del portfolio (6 niches x 3 envs).
+Para dev, cambiar el flag: `--env=dev`. El
+script cubre los 12 Pages projects del portfolio (6 niches x 2 envs).
 
 ### "Como reconstruyo (rebuild) las apps en dev?"
 
@@ -136,8 +135,7 @@ python devtools/run.py cloudflare_setup trigger --env=dev
 ```
 
 `trigger` dispara un build fresco en cada uno de los 6 projects `*-dev`
-sin hacer push a GitHub. Para stage: `--env=stage`. Para prod:
-`--env=prod`.
+sin hacer push a GitHub. Para prod: `--env=prod`.
 
 ### "Cuanto cuesta?"
 
@@ -183,11 +181,10 @@ Causa: `root_dir` mal configurado o CF cacheo un commit viejo. Fix en
 ## Comandos utiles (smoke test rapido)
 
 ```bash
-# Status de los 6 proyectos (prod por defecto; --env=dev|stage para otros)
+# Status de los 6 proyectos (prod por defecto; --env=dev para otros)
 set -a; . tmp/cloudflare-creds.env; set +a
 python devtools/run.py cloudflare_setup status --env=prod
 python devtools/run.py cloudflare_setup status --env=dev
-python devtools/run.py cloudflare_setup status --env=stage
 
 # Rebuild forzado (no requiere push a GitHub)
 python devtools/run.py cloudflare_setup trigger --env=dev

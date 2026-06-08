@@ -111,7 +111,7 @@ class Create(BaseController):
             turnstile_validated=False,
         )
 
-        # 2. Verificacion Turnstile (o bypass firmado en dev/stage). Puede
+        # 2. Verificacion Turnstile (o bypass firmado en dev). Puede
         #    levantar 403 (CAPTCHA_*).
         verify_captcha_or_bypass(
             data.cf_token,

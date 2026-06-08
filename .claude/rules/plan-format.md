@@ -30,7 +30,7 @@ Para features grandes o requisitos ambiguos, considerar fase de **Interview** pr
 
 Al pasar a la fase **Implement**, antes de tocar codigo:
 
-1. **Verificar la rama actual.** Si es una rama protegida (`dev`, `stage`,
+1. **Verificar la rama actual.** Si es una rama protegida (`dev`,
    `main`, `master`), NUNCA trabajar ahi: crear una rama de trabajo nueva
    (`feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/` con `/`)
    partiendo de `dev`. Si ya se esta en una rama de trabajo, continuar en
@@ -39,7 +39,7 @@ Al pasar a la fase **Implement**, antes de tocar codigo:
    ```bash
    branch=$(git branch --show-current)
    case "$branch" in
-     dev|stage|main|master)
+     dev|main|master)
        git checkout -b feature/<nombre-del-plan>  # parte de dev
        ;;
    esac
@@ -399,7 +399,7 @@ Dos checklists:
 - El ultimo commit del plan es SIEMPRE la seccion 11 (verificacion E2E)
 - La carpeta del plan es efimera: se elimina al mergear (ver abajo)
 - Implementar SIEMPRE en una rama de trabajo: si la rama actual es protegida
-  (`dev`/`stage`/`main`/`master`), crear una rama nueva ANTES del primer
+  (`dev`/`main`/`master`), crear una rama nueva ANTES del primer
   commit (ver "Regla de ejecucion" arriba)
 - `git push` + PR SOLO con la bateria de la seccion 11 completa en verde —
   nunca con tests rojos o coverage < 80%
@@ -442,7 +442,7 @@ planes obsoletos ya implementados.
 - Declarar el plan "listo" sin que la bateria de la seccion 11 pase completa
 - Dejar la carpeta `docs/specs/<nombre>/` viva tras mergear el plan (es
   efimera: el ultimo commit la elimina con `git rm -r`)
-- Implementar el plan directo sobre `dev`/`stage`/`main` sin crear una rama
+- Implementar el plan directo sobre `dev`/`main` sin crear una rama
   de trabajo
 - `git push` o crear el PR con tests rojos, build roto o coverage < 80%
   (el push/PR es el gate de cierre, no un paso intermedio)

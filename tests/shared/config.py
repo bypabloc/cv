@@ -11,32 +11,27 @@ import secrets as _secrets
 
 
 # Entornos de DEPLOY soportados (NUNCA prod: el harness muta el entorno).
-VALID_ENVS = ('dev', 'stage')
+VALID_ENVS = ('dev',)
 
 # Region de los recursos AWS (SSM, Lambda) del backend.
 AWS_REGION = 'us-east-1'
 
 _API_BASE = {
     'dev': 'https://api.portfolio.dev.the-full-stack.com',
-    'stage': 'https://api.portfolio.stage.the-full-stack.com',
 }
 
 _ADMIN_ORIGIN = {
     'dev': 'https://admin.portfolio.dev.the-full-stack.com',
-    'stage': 'https://admin.portfolio.stage.the-full-stack.com',
 }
 _CV_ORIGIN = {
     'dev': 'https://fintech.portfolio.dev.the-full-stack.com',
-    'stage': 'https://fintech.portfolio.stage.the-full-stack.com',
 }
 _APEX_ORIGIN = {
     'dev': 'https://the-full-stack.com',
-    'stage': 'https://the-full-stack.com',
 }
 
 _NEON_SSM = {
     'dev': '/portfolio/dev/neon-url',
-    'stage': '/portfolio/stage/neon-url',
 }
 
 # UUID de un event_type valido (catalogo taxonomy) para tracking.
@@ -51,10 +46,10 @@ NICHES = ('hub', 'fintech', 'architect', 'leader', 'vibe')
 
 # Origins de los 6 niches DESPLEGADOS por env, para el modulo `app`.
 # Patron de los niches:  {niche}.portfolio.{env}.the-full-stack.com
-# `generic` = apex: en dev/stage NO tiene apex propio (apex_domain=None en
+# `generic` = apex: en dev NO tiene apex propio (apex_domain=None en
 #   cloudflare_setup/config.py), asi que usa el base_domain del env
 #   (portfolio.{env}.the-full-stack.com). En prod seria the-full-stack.com,
-#   pero el harness NUNCA corre contra prod (VALID_ENVS = dev, stage).
+#   pero el harness NUNCA corre contra prod (VALID_ENVS = dev).
 _NICHE_ORIGIN = {
     'dev': {
         **{
@@ -62,13 +57,6 @@ _NICHE_ORIGIN = {
             for n in NICHES
         },
         'generic': 'https://portfolio.dev.the-full-stack.com',
-    },
-    'stage': {
-        **{
-            n: f'https://{n}.portfolio.stage.the-full-stack.com'
-            for n in NICHES
-        },
-        'generic': 'https://portfolio.stage.the-full-stack.com',
     },
 }
 
@@ -96,7 +84,7 @@ def apex_origin(env: str) -> str:
 def niche_origin(niche: str, env: str) -> str:
     """Origin desplegado de un niche (o `generic`/apex) para el entorno.
 
-    `generic` resuelve al apex del env (en dev/stage: el base_domain
+    `generic` resuelve al apex del env (en dev: el base_domain
     `portfolio.{env}.the-full-stack.com`, porque esos envs no tienen apex
     propio). El resto de niches sigue
     `{niche}.portfolio.{env}.the-full-stack.com`.
@@ -116,7 +104,7 @@ def turnstile_bypass_supported(env: str) -> bool:
     = {dev, local, stage}); prod NUNCA. El harness solo corre contra dev y
     stage, asi que el bypass aplica a ambos.
     """
-    return env in ('dev', 'stage')
+    return env in ('dev',)
 
 
 # Pool de IPs de documentacion (TEST-NET RFC 5737): 1 IP unica por request

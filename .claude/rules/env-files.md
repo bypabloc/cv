@@ -13,7 +13,7 @@
 
 Aplica SIEMPRE a Claude y a cualquier subagente cuando se trabaje con:
 
-- Cualquier `docker/env/{client,server,dev-cli}/.{local,dev,test,stage,prod}`
+- Cualquier `docker/env/{client,server,dev-cli}/.{local,dev,test,prod}`
 - Cualquier `.env`, `.env.local`, `.env.*` en cualquier ubicacion del repo
 - Cualquier archivo cuyo proposito sea almacenar variables de entorno o
   secretos en formato `KEY=value`

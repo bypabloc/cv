@@ -29,7 +29,7 @@ Convencion fija para que el CLI sea predecible:
   `rotate_secrets`, `cloudflare_setup`) toman comando posicional:
   `docker up`, `serverless deploy`, `rotate_secrets turnstile`,
   `cloudflare_setup trigger`. El comando NO se pasa como `--command=...`.
-  `cloudflare_setup` ademas usa `--env=dev|stage|prod` para seleccionar
+  `cloudflare_setup` ademas usa `--env=dev|prod` para seleccionar
   el entorno objetivo (default `prod`). Ej: `cloudflare_setup trigger --env=dev`.
 - **Scripts mono-comando con parametrizacion** (`scan`, `test_runner`,
   `verify`, `upgrade_deps`, `init`, `hooks`, `e2e`) usan SOLO flags. No
@@ -117,16 +117,16 @@ README del script y en la skill `rotate-secrets`.
 
 ## Cloudflare Pages multi-env (cloudflare_setup)
 
-El script `devtools/cloudflare_setup/` opera los 18 Pages projects del
-portfolio (6 niches x 3 envs). Detalle: skill `cloudflare-deploy` o
+El script `devtools/cloudflare_setup/` opera los 12 Pages projects del
+portfolio (6 niches x 2 envs). Detalle: skill `cloudflare-deploy` o
 `devtools/cloudflare_setup/README.md`.
 
 Reglas duras:
 
-- Fase posicional + `--env=dev|stage|prod` (default `prod`). Ej:
+- Fase posicional + `--env=dev|prod` (default `prod`). Ej:
   `cloudflare_setup trigger --env=dev`. El env determina el sufijo del
-  `project_name` (`-dev`/`-stage` o sin sufijo en prod), la branch
-  GitHub que Pages construye (`dev`/`stage`/`main`), el `custom_domain`
+  `project_name` (`-dev` o sin sufijo en prod), la branch
+  GitHub que Pages construye (`dev`/`main`), el `custom_domain`
   y las env vars per env (`BASE_DOMAIN`, `APEX_DOMAIN` solo en prod,
   `PUBLIC_API_ENDPOINT`, `PUBLIC_TURNSTILE_SITEKEY`, `SITE_URL`).
 - Config-as-truth: la fase `projects` reescribe `build_config` +
@@ -135,8 +135,8 @@ Reglas duras:
 - `run.py` NO auto-carga `tmp/cloudflare-creds.env`. Exportar
   `CLOUDFLARE_API_TOKEN` + `ACCOUNT_ID` antes (`set -a; .
   tmp/cloudflare-creds.env; set +a`) o pasar inline con `grep -m1 '^KEY='`.
-- NUNCA llamar a la API REST de Cloudflare con `curl` para operar dev/stage
-  pensando que "el script solo conoce prod" — el script ya cubre los 18
+- NUNCA llamar a la API REST de Cloudflare con `curl` para operar dev
+  pensando que "el script solo conoce prod" — el script ya cubre los 12
   projects. Usar siempre `cloudflare_setup <phase> --env=<X>`.
 - Agregar una app nueva: editar `APPS` en `config.py` y correr
   `cloudflare_setup all --env=<X>` para cada env. Agregar un env nuevo:

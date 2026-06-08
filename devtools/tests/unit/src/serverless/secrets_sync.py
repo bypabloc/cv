@@ -46,7 +46,7 @@ def _write_catalog_dir(tmp_path):
             ssm_type: SecureString
             source_env_var: TURNSTILE_SECRET_KEY
             target_env_var: SSM_TURNSTILE_SECRET_PATH
-            stages: [dev, stage, prod]
+            stages: [dev, prod]
             required: true
             """,
         ).strip(),
@@ -63,7 +63,7 @@ def _write_catalog_dir(tmp_path):
             ssm_type: String
             source_env_var: OWNER_EMAIL
             target_env_var: SSM_OWNER_EMAIL_PATH
-            stages: [dev, stage, prod]
+            stages: [dev, prod]
             required: true
             """,
         ).strip(),

@@ -55,6 +55,13 @@ Decisiones tomadas:
 | docs/rules/skills | 11-12 | pendiente |
 | verificación + destrucción infra | 13 + Parte C | pendiente |
 
+## Specs ajenos NO tocados
+
+Las specs en `docs/specs/{b-analytics-api, ai-readiness-2026}/` aún mencionan
+`stage`. Son artefactos efímeros de OTROS planes en vuelo (zona harness): se
+eliminan al mergear esos planes y sus autores los rebasarán sobre dev. NO se
+tocan en este plan (no son producto ni infra activa).
+
 ## Ciclo de vida
 
 Esta carpeta es efímera: el commit 13 la elimina con `git rm -r`.

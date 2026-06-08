@@ -19,7 +19,7 @@ argument-hint: "opcional: tema (oidc, deploy, troubleshoot, state)"
 # CI/CD pipeline — guia rapida
 
 Workflows GitHub Actions del portfolio. Al mergear a una rama de
-entorno (`dev`/`stage`/`main`), el CI aplica migraciones de DB,
+entorno (`dev`/`main`), el CI aplica migraciones de DB,
 redeploya los lambdas afectados y rebuildea las apps a Cloudflare
 Pages.
 
@@ -28,9 +28,9 @@ Pages.
 | Workflow | Trigger | Que hace |
 |----------|---------|----------|
 | `ci.yml` | PRs + push env branches | Biome check + build (~45s) |
-| `deploy-backend.yml` | Push dev/stage/main | migrate-db -> detect-changes -> deploy-lambdas matrix |
-| `deploy-apps.yml` | Push dev/stage/main + manual | build-apps -> deploy-pages matrix 6 niches |
-| `branch-flow-guard.yml` | PRs main/stage | Enforce `dev -> stage -> main` |
+| `deploy-backend.yml` | Push dev/main | migrate-db -> detect-changes -> deploy-lambdas matrix |
+| `deploy-apps.yml` | Push dev/main + manual | build-apps -> deploy-pages matrix 6 niches |
+| `branch-flow-guard.yml` | PRs main | Enforce `dev -> main` |
 | `clean-pr-attribution.yml` | PRs | Limpia atribucion IA |
 
 ## Mapeo branch -> env -> recursos
@@ -38,12 +38,11 @@ Pages.
 | Branch | Stage | IAM role | Pages projects | URL |
 |--------|-------|----------|----------------|-----|
 | dev | dev | `portfolio-deploy-dev` | `portfolio-{niche}-dev` | `{niche}.portfolio.dev.the-full-stack.com` |
-| stage | stage | `portfolio-deploy-stage` | `portfolio-{niche}-stage` | `{niche}.portfolio.stage.the-full-stack.com` |
 | main | prod | `portfolio-deploy-prod` | `portfolio-{niche}` | `{niche}.portfolio.the-full-stack.com` (apex para `generic`) |
 
 ## AWS auth via OIDC
 
-- Cero secrets de larga vida. 1 OIDC provider + 3 IAM roles, trust
+- Cero secrets de larga vida. 1 OIDC provider + 2 IAM roles, trust
   policy scoped a `repo:bypabloc/cv:ref:refs/heads/<branch>`.
 - Setup paso a paso: `.claude/docs/ci-cd-pipeline/aws-oidc-setup.md`.
 

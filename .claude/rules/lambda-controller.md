@@ -338,7 +338,7 @@ un directorio explicito en cualquier ubicacion.
 ```bash
 # Ejecutar el lambda en local: --runtime-mode=rie -> contenedor con el
 #   AWS Lambda Runtime Interface Emulator; --runtime-mode=direct -> el
-#   handler corre en proceso. --stage=dev|stage|prod -> aws lambda invoke
+#   handler corre en proceso. --stage=dev|prod -> aws lambda invoke
 #   contra el ya provisionado.
 python devtools/run.py serverless run \
   --stage=local --lambda=<nombre> --event=events/create.json
@@ -349,7 +349,6 @@ python devtools/run.py serverless run \
 #   AWS CLI (rol IAM, LogGroup, funcion, wiring del trigger) y actualiza
 #   el archivo de estado. El diff de hashes decide create/update/noop.
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev --aws-profile=<perfil>
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-profile=<perfil>
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=<perfil>
 
 # Estado: compara el estado local contra los describe-* de AWS

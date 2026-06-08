@@ -7,7 +7,7 @@
 ## Diagrama
 
 ```text
-                       Merge PR -> dev/stage/main
+                       Merge PR -> dev/main
                                   │
                                   ▼
                   ┌──────────────────────────────┐
@@ -48,21 +48,21 @@
 
 | Documento | Cuando leer |
 |-----------|-------------|
-| [aws-oidc-setup.md](aws-oidc-setup.md) | Setup inicial AWS (OIDC + 3 IAM roles + S3 bucket). Una sola vez |
+| [aws-oidc-setup.md](aws-oidc-setup.md) | Setup inicial AWS (OIDC + 2 IAM roles + S3 bucket). Una sola vez |
 | [troubleshooting.md](troubleshooting.md) | Errores comunes y como diagnosticarlos |
 
 ## Pre-requisitos para el primer deploy
 
 1. Infra AWS creada (ver `aws-oidc-setup.md`):
    - OIDC provider para `token.actions.githubusercontent.com`.
-   - 3 IAM roles `portfolio-deploy-{dev,stage,prod}` con trust policy
+   - 2 IAM roles `portfolio-deploy-{dev,prod}` con trust policy
      scoped al repo + branch.
    - Bucket S3 `portfolio-devtools-state` (encryption KMS + versioning
      + lifecycle).
 2. Secrets de GitHub: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
    (ya existian para `deploy.yml`).
-3. 18 proyectos Cloudflare Pages creados:
-   `portfolio-{niche}{-dev|-stage|}` por cada uno de los 6 niches
+3. 12 proyectos Cloudflare Pages creados:
+   `portfolio-{niche}{-dev|}` por cada uno de los 6 niches
    (generic, hub, fintech, architect, leader, vibe).
 4. Custom domains apuntando a los proyectos correctos (ya configurado
    en el setup actual de Cloudflare DNS).

@@ -14,7 +14,6 @@
 docker/env/dev-cli/
 ├── .local      <- PSI_API_KEY=<tu_key>
 ├── .dev
-├── .stage
 └── .prod
 ```
 
@@ -63,10 +62,10 @@ docker/env/dev-cli/
 
 ## ¿Una key por env?
 
-No es obligatorio. La misma key sirve para auditar prod/stage/dev (la
+No es obligatorio. La misma key sirve para auditar prod/dev (la
 restriccion es por API, no por origen de la request). Sugerido:
 
-- Pegar la key en `.local`, `.dev`, `.stage`, `.prod` (4 copias). El
+- Pegar la key en `.local`, `.dev`, `.prod` (3 copias). El
   `PSI_ENV` que setea `main.py` solo determina cual archivo leer.
 - Alternativa minimalista: pegar solo en `.prod` y siempre correr con
   `--env=prod` (que es lo recomendado de todos modos por la rule).

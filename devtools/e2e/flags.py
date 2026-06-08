@@ -2,7 +2,7 @@
 
 Flags:
   --module=api|admin|app   modulo a correr (ausente -> los 3 en orden)
-  --env=dev|stage          entorno de DEPLOY (NUNCA prod; default dev)
+  --env=dev                entorno de DEPLOY (NUNCA prod; default dev)
   --samples=N              muestras por endpoint read-safe (modulo api; >=1)
   --aws-profile=<X>        perfil AWS CLI para SSM/Neon (default: shell)
   --keep-data              NO limpiar los datos sinteticos creados en Neon
@@ -29,7 +29,7 @@ from utils.flags_to_dict import validate_allowed_flags
 # Entornos de DEPLOY soportados (NUNCA prod: el harness muta el entorno y
 # lee Neon). Duplicado intencional de tests.shared.config.VALID_ENVS para
 # no acoplar la validacion de flags (devtools) al portador E2E (tests/).
-VALID_ENVS = ('dev', 'stage')
+VALID_ENVS = ('dev',)
 
 # Modulos first-class del harness E2E.
 VALID_MODULES = ('api', 'admin', 'app')
@@ -109,7 +109,7 @@ def describe() -> ScriptDescribe:
         'kind': 'monocommand',
         'summary': (
             'E2E unificado (Python 3.14) contra el backend desplegado '
-            '(dev|stage): modulos api (HTTP), admin (browser) y app '
+            '(dev): modulos api (HTTP), admin (browser) y app '
             '(las 6 apps Astro). NUNCA prod'
         ),
         'commands': [],

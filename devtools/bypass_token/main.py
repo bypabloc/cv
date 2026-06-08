@@ -1,6 +1,6 @@
 """Keygen + mint del token de bypass de Turnstile (Ed25519).
 
-  python devtools/run.py bypass_token keygen [--envs=dev,stage] [--dry-run]
+  python devtools/run.py bypass_token keygen [--envs=dev] [--dry-run]
   python devtools/run.py bypass_token mint --env=dev [--private-key=...]
 
 keygen: genera un par Ed25519 por env. La PRIVADA va a

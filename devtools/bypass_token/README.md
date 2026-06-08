@@ -10,18 +10,18 @@ endpoints protegidos por Turnstile (`contact.create`, `auth.register.start`,
 (local-only); el Lambda solo tiene la PUBLICA (SSM) -> un leak del entorno
 del Lambda NO permite forjar tokens.
 
-**NUNCA prod**: el bypass solo se acepta en `dev` y `stage`.
+**NUNCA prod**: el bypass solo se acepta en `dev`.
 
 ## Comandos
 
 ```bash
 # Generar un par Ed25519 por env (privada -> dev-cli, publica -> server)
-python devtools/run.py bypass_token keygen --envs=dev,stage
+python devtools/run.py bypass_token keygen --envs=dev
 python devtools/run.py bypass_token keygen --envs=dev --dry-run
 
 # Firmar un token efimero (TTL 300s) e imprimirlo (para curl)
 python devtools/run.py bypass_token mint --env=dev
-python devtools/run.py bypass_token mint --env=stage --ttl=120
+python devtools/run.py bypass_token mint --env=dev --ttl=120
 ```
 
 ## keygen

@@ -71,7 +71,13 @@ class Disable(BaseController):
                 'data': {'error': 'NOT_FOUND'},
             }
 
-        if mfa_svc.count_active(user_id=user.id) <= 1:
+        # El guard MUST_KEEP_ONE solo protege metodos CONFIRMADOS: un metodo
+        # no confirmado (ej. un setup-totp abandonado) no es una via de
+        # entrada real, asi que siempre se puede deshabilitar (anti-lockout:
+        # sin esto, un pendiente que no se puede confirmar ni marcar required
+        # deja al user atrapado).
+        confirmed = mfa_svc.is_confirmed(user_id=user.id, kind=kind)
+        if confirmed and mfa_svc.count_active(user_id=user.id) <= 1:
             return {
                 'is_valid': False,
                 'code': 4000,

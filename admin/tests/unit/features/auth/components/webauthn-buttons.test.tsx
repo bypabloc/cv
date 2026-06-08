@@ -74,7 +74,7 @@ const REG_RESPONSE = { id: "reg" } as unknown as RegistrationResponseJSON;
 const AUTH_RESPONSE = { id: "auth" } as unknown as AuthenticationResponseJSON;
 
 describe("WebAuthnRegisterButton", () => {
-	it("Given options del backend When click Then startRegistration recibe optionsJSON", async () => {
+	it("Given options envueltas en publicKey When click Then startRegistration recibe el contenido PLANO (sin re-envolver)", async () => {
 		startRegistrationMock.mockReset();
 		startRegistrationMock.mockResolvedValue(REG_RESPONSE);
 		const user = userEvent.setup();
@@ -86,9 +86,13 @@ describe("WebAuthnRegisterButton", () => {
 			expect(startRegistrationMock).toHaveBeenCalledTimes(1);
 		});
 		const arg = startRegistrationMock.mock.calls[0]?.[0] as {
-			optionsJSON: { challenge: string };
+			optionsJSON: { challenge: string; publicKey?: unknown };
 		};
+		// El backend envuelve en `options.publicKey`; el componente debe pasar
+		// ESE contenido (plano) a optionsJSON, NO el wrapper. Si re-envolviera,
+		// `optionsJSON.challenge` seria undefined (la causa del bug ".replace").
 		expect(arg.optionsJSON.challenge).toBe("fake");
+		expect(arg.optionsJSON.publicKey).toBeUndefined();
 	});
 
 	it("Given el ceremony completo When click Then dispara toast.success y NO toast.error", async () => {
@@ -167,7 +171,9 @@ describe("WebAuthnRegisterButton", () => {
 						code: 0,
 						data: {
 							challenge_id: "chal_01",
-							options: { challenge: "fake", pubKeyCredParams: [] },
+							options: {
+								publicKey: { challenge: "fake", pubKeyCredParams: [] },
+							},
 						},
 					});
 				}

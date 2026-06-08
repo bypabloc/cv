@@ -161,6 +161,41 @@ def install_bypass(page: Page, token: str) -> None:
     install_bypass_token(page, token)
 
 
+def add_virtual_authenticator(page: Page) -> Any:
+    """Instala un Virtual Authenticator (CDP) para los ceremonies WebAuthn.
+
+    Given una pagina que va a disparar `navigator.credentials.create()` /
+    `get()` (registro/login de passkey),
+    When se instala el authenticator virtual ANTES del ceremony,
+    Then Chrome responde el ceremony con un authenticator simulado (sin
+    hardware ni dialogo del SO): `create()` resuelve con una credential
+    valida que el backend puede verificar. Sin esto, en headless el ceremony
+    se cuelga esperando un authenticator real.
+
+    Usa el CDP de Playwright (sync API): `WebAuthn.enable` +
+    `WebAuthn.addVirtualAuthenticator` con un authenticator interno
+    (platform) que auto-aprueba la user verification y es resident-key
+    capable (passkey). Devuelve la `CDPSession` (el caller la conserva viva
+    mientras dura la pagina; se cierra con el contexto).
+    """
+    cdp = page.context.new_cdp_session(page)
+    cdp.send('WebAuthn.enable')
+    cdp.send(
+        'WebAuthn.addVirtualAuthenticator',
+        {
+            'options': {
+                'protocol': 'ctap2',
+                'transport': 'internal',
+                'hasResidentKey': True,
+                'hasUserVerification': True,
+                'isUserVerified': True,
+                'automaticPresenceSimulation': True,
+            },
+        },
+    )
+    return cdp
+
+
 def disable_send_beacon(page: Page) -> None:
     """Fuerza el fallback `fetch` del tracking sobreescribiendo sendBeacon.
 

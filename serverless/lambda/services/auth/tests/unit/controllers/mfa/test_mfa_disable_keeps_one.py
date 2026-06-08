@@ -18,6 +18,8 @@ def test_mfa_disable_keeps_one(monkeypatch):
 
     mfa_svc = MagicMock()
     mfa_svc.has_active_method.return_value = True
+    # Metodo CONFIRMADO: el guard MUST_KEEP_ONE aplica.
+    mfa_svc.is_confirmed.return_value = True
     mfa_svc.count_active.return_value = 1
 
     monkeypatch.setattr(

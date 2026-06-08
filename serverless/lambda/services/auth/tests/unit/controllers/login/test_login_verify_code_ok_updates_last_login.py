@@ -64,4 +64,6 @@ def test_login_verify_code_ok_updates_last_login(monkeypatch):
     assert result['data']['mfa_complete'] is True
     user_svc.update_last_login.assert_called_once_with(user)
     user_svc.mark_active.assert_not_called()
+    # user ya active -> NO se crea email_code (solo en el alta pending->active).
+    mfa_svc.ensure_email_code.assert_not_called()
     jwt_svc.blacklist.assert_called_once()

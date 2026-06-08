@@ -40,6 +40,11 @@ dependencies = [
     # (tests/shared/secrets.py) to mint the signed Turnstile bypass token;
     # mirrors shared.crypto on the backend.
     "cryptography>=44,<46",
+    # WebAuthn software authenticator: firma ceremonies (register/login) en los
+    # E2E de API del checklist multi-factor (tests/), para verificar el flujo
+    # passkey de forma DETERMINISTA sin el Virtual Authenticator del browser
+    # (CDP es flaky). Solo en tests, mismo authenticator que usa el backend.
+    "soft-webauthn>=0.1.4,<0.2.0",
 ]
 
 [tool.uv]

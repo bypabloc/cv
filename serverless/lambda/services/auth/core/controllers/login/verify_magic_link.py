@@ -116,6 +116,10 @@ class VerifyMagicLink(BaseController):
         # active, solo loguea.
         if user.status == AuthUserStatus.PENDING:
             user_svc.mark_active(user)
+            # El email queda verificado en el alta: crea el metodo email_code
+            # confirmado (idempotente, sin revoke). Asi el panel lo muestra
+            # configurado desde el registro.
+            mfa_svc.ensure_email_code(user_id=user.id)
 
         # El link satisface el factor "code al email"; decide_mfa_step ve si
         # quedan factores required pendientes (satisfied arranca solo con el

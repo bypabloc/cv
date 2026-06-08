@@ -93,9 +93,10 @@ def test_persist_credential_first_mfa_revokes(monkeypatch):
 
     counts = iter([0, 1])
     monkeypatch.setattr(webauthn_service, 'db_session', _fake_session)
+    # El revoke de persist_credential usa la cuenta FUERTE (excluye email_code).
     monkeypatch.setattr(
         webauthn_service,
-        'count_active_mfa',
+        'count_active_strong_mfa',
         lambda _s, *, user_id: next(counts),
     )
     monkeypatch.setattr(
@@ -138,7 +139,7 @@ def test_persist_credential_not_first_no_revoke(monkeypatch):
     monkeypatch.setattr(webauthn_service, 'db_session', _fake_session)
     monkeypatch.setattr(
         webauthn_service,
-        'count_active_mfa',
+        'count_active_strong_mfa',
         lambda _s, *, user_id: next(counts),
     )
     monkeypatch.setattr(

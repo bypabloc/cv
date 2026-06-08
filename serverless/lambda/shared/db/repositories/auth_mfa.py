@@ -26,6 +26,8 @@ __all__ = [
     'confirm_mfa',
     'consume_recovery_code',
     'count_active_mfa',
+    'count_active_strong_mfa',
+    'delete_mfa',
     'delete_webauthn_credential',
     'disable_mfa',
     'disable_webauthn_credential',
@@ -161,6 +163,29 @@ def disable_mfa(
     return True
 
 
+def delete_mfa(
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
+) -> bool:
+    """Borra (hard-delete) el row `(user_id, kind)`. False si no existe.
+
+    A diferencia de `disable_mfa` (soft-disable reversible que conserva el
+    row con `disabled_at`), esto ELIMINA el row de `auth_mfa_methods`. Lo usa
+    `mfa.delete` para que un metodo borrado vuelva a `configured:false` en el
+    overview (no queda como fantasma `configured:true, enabled:false`) y para
+    que un `setup-totp` posterior empiece de cero (created_at nuevo) en vez de
+    reusar el row viejo. Filtra por `user_id` (anti-enumeration).
+    """
+    method = get_mfa_method(session, user_id=user_id, kind=kind)
+    if method is None:
+        return False
+    session.delete(method)
+    session.flush()
+    return True
+
+
 def set_preferred(
     session: Session,
     *,
@@ -201,14 +226,27 @@ def set_required(
     kind: AuthMfaKind,
     required: bool,
 ) -> bool:
-    """Setea `required` en el row `(user_id, kind)` activo. False si no existe.
+    """Setea `required` en el row `(user_id, kind)` activo y confirmado. False si no.
 
-    Un metodo desactivado (`disabled_at IS NOT NULL`) NO se puede marcar
-    requerido (el login lo ignoraria) -> se trata como inexistente (False
-    -> 404 en el controller).
+    Un metodo no usable en el login NO puede quedar `required` (seria un
+    estado inconsistente: settings lo muestra requerido pero `login.start`
+    lo ignora -> el user nunca cumple ese factor). Se rechaza (False -> 404
+    en el controller) si el metodo:
+
+    - no existe,
+    - esta desactivado (`disabled_at IS NOT NULL`), o
+    - NO esta confirmado (`confirmed_at IS NULL`): un TOTP pendiente no tiene
+      secret confirmado para validar el code; exigirlo bloquearia el login.
+
+    Invariante: solo un metodo confirmado + activo puede ser `required`, que
+    es exactamente lo que `list_required_methods` exige para `login.start`.
     """
     method = get_mfa_method(session, user_id=user_id, kind=kind)
-    if method is None or method.disabled_at is not None:
+    if (
+        method is None
+        or method.disabled_at is not None
+        or method.confirmed_at is None
+    ):
         return False
     method.required = required
     session.flush()
@@ -273,6 +311,38 @@ def count_active_mfa(session: Session, *, user_id: str) -> int:
         .select_from(AuthMfaMethod)
         .where(
             AuthMfaMethod.user_id == user_id,
+            AuthMfaMethod.confirmed_at.is_not(None),
+            AuthMfaMethod.disabled_at.is_(None),
+        )
+    )
+    passkeys = session.scalar(
+        select(func.count())
+        .select_from(AuthWebauthnCredential)
+        .where(
+            AuthWebauthnCredential.user_id == user_id,
+            AuthWebauthnCredential.disabled_at.is_(None),
+        )
+    )
+    return int(methods or 0) + int(passkeys or 0)
+
+
+def count_active_strong_mfa(session: Session, *, user_id: str) -> int:
+    """Cuenta solo factores FUERTES del user (TOTP confirmado + passkeys).
+
+    Igual que `count_active_mfa` PERO EXCLUYE `email_code`: el email ya se
+    verifica en el alta, asi que el metodo email_code no es un factor "fuerte"
+    que justifique re-autenticar. Alimenta SOLO la condicion del revoke 0->1
+    (re-auth al subir el nivel de seguridad con el primer TOTP/passkey).
+
+    NUNCA usar para el guard MUST_KEEP_ONE_MFA_METHOD — para eso es
+    `count_active_mfa` (que SI cuenta email_code como via de entrada).
+    """
+    methods = session.scalar(
+        select(func.count())
+        .select_from(AuthMfaMethod)
+        .where(
+            AuthMfaMethod.user_id == user_id,
+            AuthMfaMethod.kind != AuthMfaKind.EMAIL_CODE,
             AuthMfaMethod.confirmed_at.is_not(None),
             AuthMfaMethod.disabled_at.is_(None),
         )

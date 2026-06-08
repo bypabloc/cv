@@ -248,7 +248,9 @@ describe("WebAuthnRegisterButton catch + nickname", () => {
 						code: 0,
 						data: {
 							challenge_id: "chal_01",
-							options: { challenge: "fake", pubKeyCredParams: [] },
+							options: {
+								publicKey: { challenge: "fake", pubKeyCredParams: [] },
+							},
 						},
 					});
 				}

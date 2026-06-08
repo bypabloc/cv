@@ -31,14 +31,21 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { TotpSetup, WebAuthnRegisterButton } from "@/features/auth";
+import {
+	EmailCodeSetup,
+	TotpSetup,
+	useDeleteCredential,
+	WebAuthnRegisterButton,
+} from "@/features/auth";
 import type {
 	MfaKind,
 	SecurityMethod,
 	SecurityMethodType,
 	SecurityPasskey,
 } from "@/types/models";
+import { useDeleteMethod } from "../hooks/use-delete-method";
 import { useSecurityOverview } from "../hooks/use-security-overview";
+import { useSetPasskeysGroupRequired } from "../hooks/use-set-passkeys-group-required";
 import { useSetRequired } from "../hooks/use-set-required";
 import { useToggleMethod } from "../hooks/use-toggle-method";
 import { ChangePasswordForm } from "./change-password-form";
@@ -76,13 +83,27 @@ function asString(detail: Record<string, unknown>, key: string): string | null {
 }
 
 /**
+ * @function isMfaPending
+ * @description True si el metodo MFA esta configurado pero NO confirmado (ej.
+ *   un setup-totp abandonado: detail.confirmed === false). Un pendiente no es
+ *   una via de entrada real: no se puede marcar requerido y se ofrece
+ *   confirmar o eliminar.
+ */
+function isMfaPending(method: SecurityMethod): boolean {
+	return method.configured && method.detail.confirmed === false;
+}
+
+/**
  * @function StatusBadge
- * @description Badge de estado de un metodo: 'No configurado' / 'Activo' /
- *   'Desactivado' segun configured + enabled.
+ * @description Badge de estado de un metodo: 'No configurado' / 'Pendiente' /
+ *   'Activo' / 'Desactivado' segun configured + confirmed + enabled.
  */
 function StatusBadge({ method }: { method: SecurityMethod }) {
 	if (!method.configured) {
 		return <Badge variant="outline">No configurado</Badge>;
+	}
+	if (isMfaPending(method)) {
+		return <Badge variant="outline">Pendiente de confirmacion</Badge>;
 	}
 	return method.enabled ? (
 		<Badge variant="secondary">Activo</Badge>
@@ -208,15 +229,21 @@ function PasskeyRow({
 
 /**
  * @function WebauthnRow
- * @description Fila del metodo webauthn: estado + expansion de cada passkey.
+ * @description Fila del metodo webauthn: estado + toggle MAESTRO 'Requerido al
+ *   loguear' del grupo (exige passkey al iniciar sesion; basta una de las
+ *   activas) + expansion de cada passkey con su toggle individual independiente.
  *   El boton 'Eliminar' por passkey se omite si no se provee onDelete.
  */
 function WebauthnRow({
 	method,
 	onToggle,
 	onRequired,
+	onGroupRequired,
+	onDeleteCredential,
 	toggling,
 	settingRequired,
+	settingGroupRequired,
+	deleting,
 }: {
 	method: SecurityMethod;
 	onToggle: (vars: {
@@ -229,40 +256,72 @@ function WebauthnRow({
 		recordId: string;
 		required: boolean;
 	}) => void;
+	onGroupRequired: (required: boolean) => void;
+	onDeleteCredential: (recordId: string) => void;
 	toggling: boolean;
 	settingRequired: boolean;
+	settingGroupRequired: boolean;
+	deleting: boolean;
 }) {
 	const passkeys = asPasskeys(method.detail);
+	const hasActivePasskey = passkeys.some((pk) => pk.enabled);
 
 	return (
-		<div className="space-y-3 rounded-md border p-4">
-			<div className="flex items-center justify-between gap-3">
+		<div
+			data-testid="security-row-webauthn"
+			className="space-y-3 rounded-md border p-4"
+		>
+			<div
+				data-testid="security-webauthn-header"
+				className="flex flex-wrap items-center justify-between gap-3"
+			>
 				<span className="text-sm font-medium">{method.label}</span>
-				<StatusBadge method={method} />
+				<div className="flex flex-wrap items-center gap-3">
+					{/* Toggle MAESTRO del grupo: exige (o no) passkey al loguear. Se
+					    satisface con cualquier passkey requerida; los toggles
+					    individuales de abajo afinan cuales. Solo si hay >=1 activa. */}
+					{hasActivePasskey ? (
+						<RequiredSwitch
+							required={method.required}
+							disabled={settingGroupRequired}
+							onConfirm={onGroupRequired}
+						/>
+					) : null}
+					<StatusBadge method={method} />
+				</div>
 			</div>
 			{passkeys.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
 					No tienes passkeys registrados.
 				</p>
 			) : (
-				<ul className="space-y-2">
-					{passkeys.map((passkey) => (
-						<PasskeyRow
-							key={passkey.credential_id}
-							passkey={passkey}
-							toggling={toggling}
-							settingRequired={settingRequired}
-							deleting={false}
-							onToggle={(recordId, enable) =>
-								onToggle({ type: "webauthn", recordId, enable })
-							}
-							onRequired={(recordId, required) =>
-								onRequired({ type: "webauthn", recordId, required })
-							}
-							onDelete={() => undefined}
-						/>
-					))}
-				</ul>
+				<>
+					<ul className="space-y-2">
+						{passkeys.map((passkey) => (
+							<PasskeyRow
+								key={passkey.credential_id}
+								passkey={passkey}
+								toggling={toggling}
+								settingRequired={settingRequired}
+								deleting={deleting}
+								onToggle={(recordId, enable) =>
+									onToggle({ type: "webauthn", recordId, enable })
+								}
+								onRequired={(recordId, required) =>
+									onRequired({ type: "webauthn", recordId, required })
+								}
+								onDelete={onDeleteCredential}
+							/>
+						))}
+					</ul>
+					{/* El factor 'webauthn' del login se satisface con CUALQUIER passkey
+					    marcada como requerida: marcar varias NO obliga a usar todas, basta
+					    una al iniciar sesion. */}
+					<p className="text-xs text-muted-foreground">
+						Si marcas varias passkeys como requeridas, al iniciar sesion basta
+						con usar una de ellas.
+					</p>
+				</>
 			)}
 			{/* Registrar un passkey nuevo (navigator.credentials.create via
 			    webauthn.register-options -> register-verify). */}
@@ -273,16 +332,22 @@ function WebauthnRow({
 
 /**
  * @function MfaRow
- * @description Fila de un metodo MFA (totp / email_code): estado + Switch on/off
- *   + Switch requerido. Si no esta configurado, muestra un boton 'Configurar'.
+ * @description Fila de un metodo MFA (totp / email_code) con 3 estados:
+ *   - no configurado: boton 'Configurar'.
+ *   - pendiente (configured && !confirmed, ej. setup-totp abandonado): SIN
+ *     switch requerido (no es marcable); botones 'Confirmar' (reabre el setup)
+ *     y 'Eliminar' (disable, anti-lockout).
+ *   - confirmado: Switch on/off + Switch 'Requerido al loguear'.
  */
 function MfaRow({
 	method,
 	onToggle,
 	onRequired,
 	onConfigure,
+	onDelete,
 	toggling,
 	settingRequired,
+	deleting,
 }: {
 	method: SecurityMethod;
 	onToggle: (vars: {
@@ -296,19 +361,54 @@ function MfaRow({
 		required: boolean;
 	}) => void;
 	onConfigure: (type: SecurityMethodType) => void;
+	onDelete: (vars: { type: SecurityMethodType; kind: MfaKind }) => void;
 	toggling: boolean;
 	settingRequired: boolean;
+	deleting: boolean;
 }) {
 	const kind = method.type as MfaKind;
+	const pending = isMfaPending(method);
 
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
+		<div
+			data-testid={`security-row-${method.type}`}
+			className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4"
+		>
 			<div className="flex items-center gap-2">
 				<span className="text-sm font-medium">{method.label}</span>
 				{method.preferred ? <Badge variant="secondary">Preferido</Badge> : null}
 				<StatusBadge method={method} />
 			</div>
-			{method.configured ? (
+			{!method.configured ? (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => onConfigure(method.type)}
+				>
+					Configurar
+				</Button>
+			) : pending ? (
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => onConfigure(method.type)}
+					>
+						Confirmar
+					</Button>
+					<Button
+						type="button"
+						variant="destructive"
+						size="sm"
+						disabled={deleting}
+						onClick={() => onDelete({ type: method.type, kind })}
+					>
+						Eliminar
+					</Button>
+				</div>
+			) : (
 				<div className="flex flex-wrap items-center gap-3">
 					<span className="flex items-center gap-2 text-xs text-muted-foreground">
 						<span>Activo</span>
@@ -329,15 +429,6 @@ function MfaRow({
 						}
 					/>
 				</div>
-			) : (
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={() => onConfigure(method.type)}
-				>
-					Configurar
-				</Button>
 			)}
 		</div>
 	);
@@ -355,21 +446,33 @@ function RecoveryCodesRow({ method }: { method: SecurityMethod }) {
 		<div className="space-y-3 rounded-md border p-4">
 			<div className="flex items-center justify-end gap-3">
 				<p className="mr-auto text-sm text-muted-foreground">
-					Codigos disponibles: {remaining} de {total}.
+					{total > 0
+						? `Codigos disponibles: ${remaining} de ${total}.`
+						: "Aun no generaste codigos de recuperacion."}
 				</p>
 				<StatusBadge method={method} />
 			</div>
-			<RecoveryCodesSection />
+			<RecoveryCodesSection total={total} remaining={remaining} />
 		</div>
 	);
 }
 
 /**
  * @function PasswordRow
- * @description Fila de password: SIN switches. Muestra ultimo cambio + boton
- *   'Cambiar contrasena' que abre el ChangePasswordForm en un Dialog.
+ * @description Fila de password: muestra ultimo cambio + Switch 'Requerido al
+ *   loguear' (security.password-set-required) + boton 'Cambiar contrasena' que
+ *   abre el ChangePasswordForm en un Dialog. El Switch solo aparece si el user
+ *   ya tiene contrasena configurada (no hay flag required sin password).
  */
-function PasswordRow({ method }: { method: SecurityMethod }) {
+function PasswordRow({
+	method,
+	onRequired,
+	settingRequired,
+}: {
+	method: SecurityMethod;
+	onRequired: (vars: { type: SecurityMethodType; required: boolean }) => void;
+	settingRequired: boolean;
+}) {
 	const [open, setOpen] = useState(false);
 	const lastChange = asString(method.detail, "last_change_at");
 	// configured=true => el user ya tiene contrasena seteada.
@@ -377,7 +480,10 @@ function PasswordRow({ method }: { method: SecurityMethod }) {
 	const cta = hasPassword ? "Cambiar contrasena" : "Establecer contrasena";
 
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
+		<div
+			data-testid="security-row-password"
+			className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4"
+		>
 			<div className="space-y-0.5">
 				<div className="flex items-center gap-2">
 					<span className="text-sm font-medium">{method.label}</span>
@@ -389,14 +495,25 @@ function PasswordRow({ method }: { method: SecurityMethod }) {
 					</p>
 				) : null}
 			</div>
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				onClick={() => setOpen(true)}
-			>
-				{cta}
-			</Button>
+			<div className="flex flex-wrap items-center gap-3">
+				{hasPassword ? (
+					<RequiredSwitch
+						required={method.required}
+						disabled={settingRequired}
+						onConfirm={(required) =>
+							onRequired({ type: method.type, required })
+						}
+					/>
+				) : null}
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => setOpen(true)}
+				>
+					{cta}
+				</Button>
+			</div>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent>
 					<DialogHeader>
@@ -427,6 +544,9 @@ export function SecurityOverviewPanel() {
 	const overview = useSecurityOverview();
 	const toggle = useToggleMethod();
 	const setRequired = useSetRequired();
+	const setGroupRequired = useSetPasskeysGroupRequired();
+	const deleteMethod = useDeleteMethod();
+	const deleteCredential = useDeleteCredential();
 	const [setupKind, setSetupKind] = useState<MfaKind | null>(null);
 
 	if (overview.isLoading) {
@@ -450,11 +570,9 @@ export function SecurityOverviewPanel() {
 		);
 	}
 
-	// email_code NO se lista: es el canal de entrada del login (siempre
-	// disponible), no un metodo configurable desde el panel de seguridad.
-	const methods = overview.data.methods.filter(
-		(method) => method.type !== "email_code",
-	);
+	// Todos los metodos se listan, incluido email_code (activo/inactivo +
+	// requerido al loguear + configurar), igual que el resto.
+	const methods = overview.data.methods;
 
 	return (
 		<Card>
@@ -474,21 +592,38 @@ export function SecurityOverviewPanel() {
 								method={method}
 								toggling={toggle.isPending}
 								settingRequired={setRequired.isPending}
+								settingGroupRequired={setGroupRequired.isPending}
+								deleting={deleteCredential.isPending}
 								onToggle={(vars) => toggle.mutate(vars)}
 								onRequired={(vars) => setRequired.mutate(vars)}
+								onGroupRequired={(required) =>
+									setGroupRequired.mutate({
+										required,
+										passkeys: asPasskeys(method.detail),
+									})
+								}
+								onDeleteCredential={(recordId) =>
+									deleteCredential.mutate({ credential_id: recordId })
+								}
 							/>
 						) : method.type === "recovery_codes" ? (
 							<RecoveryCodesRow method={method} />
 						) : method.type === "password" ? (
-							<PasswordRow method={method} />
+							<PasswordRow
+								method={method}
+								settingRequired={setRequired.isPending}
+								onRequired={(vars) => setRequired.mutate(vars)}
+							/>
 						) : (
 							<MfaRow
 								method={method}
 								toggling={toggle.isPending}
 								settingRequired={setRequired.isPending}
+								deleting={deleteMethod.isPending}
 								onToggle={(vars) => toggle.mutate(vars)}
 								onRequired={(vars) => setRequired.mutate(vars)}
 								onConfigure={(type) => setSetupKind(type as MfaKind)}
+								onDelete={(vars) => deleteMethod.mutate({ kind: vars.kind })}
 							/>
 						)}
 					</div>
@@ -509,6 +644,24 @@ export function SecurityOverviewPanel() {
 						</DialogDescription>
 					</DialogHeader>
 					<TotpSetup />
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={setupKind === "email_code"}
+				onOpenChange={(open) => {
+					if (!open) setSetupKind(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Configurar codigo por email</DialogTitle>
+						<DialogDescription>
+							Activa el envio de un codigo de 8 caracteres a tu email al iniciar
+							sesion.
+						</DialogDescription>
+					</DialogHeader>
+					<EmailCodeSetup onDone={() => setSetupKind(null)} />
 				</DialogContent>
 			</Dialog>
 		</Card>

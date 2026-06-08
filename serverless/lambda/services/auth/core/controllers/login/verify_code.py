@@ -202,6 +202,10 @@ class VerifyCode(BaseController):
         # active, solo loguea. El backend decide por el STATUS, no por el flow.
         if user.status == AuthUserStatus.PENDING:
             user_svc.mark_active(user)
+            # El email queda verificado en el alta: crea el metodo email_code
+            # confirmado (idempotente, sin revoke -> no blacklistea los tokens
+            # que decide_mfa_step emite abajo).
+            mfa_svc.ensure_email_code(user_id=user.id)
 
         # Code OK: blacklistea el temp recibido (rolling).
         jwt_svc.blacklist(

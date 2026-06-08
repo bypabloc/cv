@@ -1,10 +1,9 @@
-"""AC-15: login.verify-code de entrada (solo passwordless) -> tokens.
+"""AC-1: login.verify-code del alta (pending) crea el email_code confirmado.
 
-Given un temp_token de login (step=1) valido + code correcto + el user no
-  tiene mas factores required (solo passwordless),
-When se invoca login.verify-code,
-Then suma 'passwordless' a satisfied, no quedan pendientes -> emite
-access+refresh + update_last_login (NO mark_active, ya esta active).
+Given un user PENDING que verifica su code de alta (step=1, flow='login'),
+When login.verify-code lo marca active,
+Then ademas llama mfa_svc.ensure_email_code (el email queda verificado en el
+  alta -> email_code configurado) y emite los tokens normalmente.
 """
 
 from unittest.mock import MagicMock
@@ -17,14 +16,13 @@ from .._helpers import (
 )
 
 
-def test_login_verify_code_ok_updates_last_login(monkeypatch):
-    """AC-15: code de entrada (solo passwordless) -> tokens directo."""
-    from controllers.login import verify_code
-    from controllers.login import _mfa_login
+def test_login_verify_code_pending_creates_email_code(monkeypatch):
+    """El alta (pending->active) crea el email_code confirmado."""
+    from controllers.login import _mfa_login, verify_code
 
     uid = uuid4()
     claims = _make_jwt_claims(user_id=uid, flow='login', step=1)
-    user = _make_user(user_id=uid, status='active')
+    user = _make_user(user_id=uid, status='pending')
 
     flow_svc = MagicMock()
     flow_svc.verify_temp_token.return_value = claims
@@ -36,8 +34,8 @@ def test_login_verify_code_ok_updates_last_login(monkeypatch):
     code_svc.verify.return_value = True
 
     jwt_svc = MagicMock()
-    jwt_svc.issue_access.return_value = ('LOGIN-ACC', MagicMock())
-    jwt_svc.issue_refresh.return_value = ('LOGIN-REF', MagicMock())
+    jwt_svc.issue_access.return_value = ('ACC', MagicMock())
+    jwt_svc.issue_refresh.return_value = ('REF', MagicMock())
 
     mfa_svc = MagicMock()
     mfa_svc.required_methods.return_value = ['passwordless']
@@ -49,7 +47,6 @@ def test_login_verify_code_ok_updates_last_login(monkeypatch):
     monkeypatch.setattr(verify_code, 'MfaMethodService', lambda _c: mfa_svc)
     monkeypatch.setattr(verify_code, 'AuditService', lambda _c: MagicMock())
     monkeypatch.setattr(verify_code, 'RateLimitService', lambda _c: MagicMock())
-    # issue_terminal_tokens registra la sesion (DB) — mockeamos el tracking.
     monkeypatch.setattr(
         _mfa_login, 'SessionTrackingService', lambda _c: MagicMock(),
     )
@@ -59,11 +56,5 @@ def test_login_verify_code_ok_updates_last_login(monkeypatch):
 
     assert result['is_valid'] is True
     assert result['code'] == 0
-    assert result['data']['access_token'] == 'LOGIN-ACC'
-    assert result['data']['refresh_token'] == 'LOGIN-REF'
-    assert result['data']['mfa_complete'] is True
-    user_svc.update_last_login.assert_called_once_with(user)
-    user_svc.mark_active.assert_not_called()
-    # user ya active -> NO se crea email_code (solo en el alta pending->active).
-    mfa_svc.ensure_email_code.assert_not_called()
-    jwt_svc.blacklist.assert_called_once()
+    user_svc.mark_active.assert_called_once_with(user)
+    mfa_svc.ensure_email_code.assert_called_once_with(user_id=user.id)

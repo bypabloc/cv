@@ -26,6 +26,7 @@ __all__ = [
     'confirm_mfa',
     'consume_recovery_code',
     'count_active_mfa',
+    'delete_mfa',
     'delete_webauthn_credential',
     'disable_mfa',
     'disable_webauthn_credential',
@@ -157,6 +158,29 @@ def disable_mfa(
         return False
     method.disabled_at = _now(when)
     method.preferred = False
+    session.flush()
+    return True
+
+
+def delete_mfa(
+    session: Session,
+    *,
+    user_id: str,
+    kind: AuthMfaKind,
+) -> bool:
+    """Borra (hard-delete) el row `(user_id, kind)`. False si no existe.
+
+    A diferencia de `disable_mfa` (soft-disable reversible que conserva el
+    row con `disabled_at`), esto ELIMINA el row de `auth_mfa_methods`. Lo usa
+    `mfa.delete` para que un metodo borrado vuelva a `configured:false` en el
+    overview (no queda como fantasma `configured:true, enabled:false`) y para
+    que un `setup-totp` posterior empiece de cero (created_at nuevo) en vez de
+    reusar el row viejo. Filtra por `user_id` (anti-enumeration).
+    """
+    method = get_mfa_method(session, user_id=user_id, kind=kind)
+    if method is None:
+        return False
+    session.delete(method)
     session.flush()
     return True
 

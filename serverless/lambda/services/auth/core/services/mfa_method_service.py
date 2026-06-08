@@ -17,6 +17,7 @@ from shared.db.repositories.auth import get_password_required
 from shared.db.repositories.auth_mfa import (
     confirm_mfa,
     count_active_mfa,
+    delete_mfa,
     disable_mfa,
     enable_mfa,
     get_all_mfa_methods,
@@ -319,6 +320,16 @@ class MfaMethodService:
         """Deshabilita el metodo. False si no existe (controller valida count)."""
         with db_session() as session:
             return disable_mfa(session, user_id=str(user_id), kind=kind)
+
+    def delete(self, *, user_id: UUID | str, kind: AuthMfaKind) -> bool:
+        """Borra (hard-delete) el metodo. False si no existe.
+
+        El metodo desaparece de la tabla -> vuelve a `configured:false` en el
+        overview y un `setup-totp` posterior empieza de cero. El controller
+        valida el guard MUST_KEEP_ONE (solo para metodos confirmados).
+        """
+        with db_session() as session:
+            return delete_mfa(session, user_id=str(user_id), kind=kind)
 
     def count_active(self, *, user_id: UUID | str) -> int:
         """Cuenta transversal de metodos MFA activos (MUST_KEEP_ONE)."""

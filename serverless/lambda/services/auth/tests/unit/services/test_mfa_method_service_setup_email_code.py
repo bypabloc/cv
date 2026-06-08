@@ -55,11 +55,11 @@ def test_confirm_not_first_no_revoke(monkeypatch):
     confirmed_b.confirmed_at = object()
 
     monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
-    # count_active: 1 antes, 2 despues (no transicion 0->1).
+    # cuenta FUERTE: 1 antes, 2 despues (no transicion 0->1).
     counts = iter([1, 2])
     monkeypatch.setattr(
         mfa_method_service,
-        'count_active_mfa',
+        'count_active_strong_mfa',
         lambda _s, *, user_id: next(counts),
     )
     monkeypatch.setattr(
@@ -98,7 +98,7 @@ def test_confirm_method_not_found_returns_false(monkeypatch):
     monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
     monkeypatch.setattr(
         mfa_method_service,
-        'count_active_mfa',
+        'count_active_strong_mfa',
         lambda _s, *, user_id: 0,
     )
     monkeypatch.setattr(

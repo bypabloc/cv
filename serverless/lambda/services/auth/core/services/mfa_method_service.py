@@ -17,6 +17,7 @@ from shared.db.repositories.auth import get_password_required
 from shared.db.repositories.auth_mfa import (
     confirm_mfa,
     count_active_mfa,
+    count_active_strong_mfa,
     delete_mfa,
     disable_mfa,
     enable_mfa,
@@ -240,10 +241,17 @@ class MfaMethodService:
             return bytes(method.totp_secret_ciphertext)
 
     def confirm(self, *, user_id: UUID | str, kind: AuthMfaKind) -> bool:
-        """Confirma el metodo. Si es el primer MFA del user, revoca sesiones."""
+        """Confirma el metodo. Si es el primer MFA FUERTE, revoca sesiones.
+
+        El revoke se mide con `count_active_strong_mfa` (excluye email_code):
+        el email_code del alta NO cuenta como "primer MFA", asi que confirmar
+        el primer TOTP SI dispara la re-autenticacion (transicion 0->1 fuerte).
+        El `preferred` del primer metodo confirmado (UX) sigue contando TODOS
+        los confirmados, incluido email_code.
+        """
         revoke = False
         with db_session() as session:
-            before = count_active_mfa(session, user_id=str(user_id))
+            before = count_active_strong_mfa(session, user_id=str(user_id))
             method = confirm_mfa(session, user_id=str(user_id), kind=kind)
             if method is None:
                 return False
@@ -255,7 +263,7 @@ class MfaMethodService:
             if len(confirmed) == 1:
                 method.preferred = True
                 session.flush()
-            after = count_active_mfa(session, user_id=str(user_id))
+            after = count_active_strong_mfa(session, user_id=str(user_id))
             revoke = before == 0 and after == 1
         if revoke:
             SessionService(self.app_config).revoke_all_for_user(

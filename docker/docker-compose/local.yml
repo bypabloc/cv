@@ -28,7 +28,7 @@ x-admin-environment: &admin-environment
   # E2E bypass: en local SIEMPRE on. El form NO renderiza el Turnstile real
   # (auto-emite token vacio) y apiFetch manda el bypass token Ed25519 que el
   # spec inyecta en window.__E2E_BYPASS_TOKEN__. Sin token valido + backend
-  # dev/stage el bypass NO surte efecto, asi que es seguro en local.
+  # dev el bypass NO surte efecto, asi que es seguro en local.
   NEXT_PUBLIC_E2E_BYPASS: ${NEXT_PUBLIC_E2E_BYPASS:-true}
 
 services:
@@ -258,7 +258,7 @@ services:
     restart: unless-stopped
 
   # E2E unificado (Python 3.14 + playwright-python). On-demand via
-  # `profile: [e2e]`. Corre contra el backend DESPLEGADO (dev|stage), NO
+  # `profile: [e2e]`. Corre contra el backend DESPLEGADO (dev), NO
   # contra el stack local: `network_mode: host` (salida a internet) +
   # ~/.aws montado read-only para resolver SSM/Neon. NO depende de nginx ni
   # de las apps. El sentinel /tmp/.e2e-ready lo crea e2e-entrypoint.sh.

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Entrypoint compartido para el container `e2e` (E2E unificado Python 3.14).
 #
-# El container corre contra el backend DESPLEGADO (dev|stage): NO necesita
+# El container corre contra el backend DESPLEGADO (dev): NO necesita
 # resolver subdominios *.localhost ni el stack de apps. Solo necesita salida
 # a internet (URLs publicas) + acceso a SSM/Neon (creds AWS montadas).
 #

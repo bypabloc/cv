@@ -3,11 +3,11 @@
 # Valores PUBLICOS: acaban en el bundle del browser via import.meta.env.PUBLIC_*
 # o configuran infra local (puertos, dominios). NO contienen secretos.
 #
-# Copiar a docker/env/client/.{local,dev,stage,test,prod}.
+# Copiar a docker/env/client/.{local,dev,test,prod}.
 # Los archivos .{env} estan en .gitignore; este .example si se versiona.
 
 # Puerto Nginx publicado al host.
-# Defaults: local 9970, dev 9971, test 9972, prod 9973, stage 9974
+# Defaults: local 9970, dev 9971, test 9972, prod 9973
 PROXY_PORT=
 
 # URLs publicas — derivadas en build time:
@@ -18,7 +18,7 @@ BASE_DOMAIN=
 BASE_SCHEME=
 BASE_PORT=
 
-# Flag de CI mode (solo .test y .stage). Vacio fuera de CI.
+# Flag de CI mode (solo .test). Vacio fuera de CI.
 CI=
 
 # Base URL del API Gateway (sin trailing slash). La pagina /contact arma
@@ -28,14 +28,13 @@ PUBLIC_API_ENDPOINT=
 # Cloudflare Turnstile sitekey publica del widget Portfolio Backend.
 # Es publica (no es secreto): se inyecta en el HTML del frontend.
 #
-# IMPORTANTE: hay UN widget Turnstile POR ENTORNO (dev / stage / prod), cada
+# IMPORTANTE: hay UN widget Turnstile POR ENTORNO (dev / prod), cada
 # uno con su propio par sitekey + secret. El sitekey que va aqui DEBE emparejar
 # con el secret en SSM `/portfolio/{stage}/turnstile-secret` del mismo entorno;
 # si no emparejan, `siteverify` devuelve `invalid-input-secret` y el backend
 # responde 403 al form de contacto. Mapeo de los widgets "Portfolio Backend":
 #   .local  -> reusa el widget de dev   (su allowlist incluye localhost)
 #   .dev    -> widget "Portfolio Backend (dev)"
-#   .stage  -> widget "Portfolio Backend (stage)"
 #   .prod   -> widget "Portfolio Backend (prod)"
 # El sitekey de cada widget se ve en el dashboard de Cloudflare Turnstile;
 # el secret se rota con `serverless setup-ssm` (ver serverless-secrets.md).
@@ -57,7 +56,7 @@ TURNSTILE_ENABLED=
 # Equivalencia con las apps Astro:
 #   NEXT_PUBLIC_API_ENDPOINT      = mismo valor que PUBLIC_API_ENDPOINT
 #   NEXT_PUBLIC_TURNSTILE_SITEKEY = mismo valor que PUBLIC_TURNSTILE_SITEKEY
-# URL del admin por entorno (admin.portfolio.{dev,stage}.the-full-stack.com,
+# URL del admin por entorno (admin.portfolio.dev.the-full-stack.com,
 # admin.portfolio.the-full-stack.com en prod, admin.localhost:9970 en local).
 NEXT_PUBLIC_API_ENDPOINT=
 NEXT_PUBLIC_TURNSTILE_SITEKEY=

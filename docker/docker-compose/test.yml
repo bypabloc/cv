@@ -243,7 +243,7 @@ services:
     restart: unless-stopped
 
   # E2E unificado (Python 3.14 + playwright-python). On-demand via
-  # `profile: [e2e]`. Corre contra el backend DESPLEGADO (dev|stage), NO
+  # `profile: [e2e]`. Corre contra el backend DESPLEGADO (dev), NO
   # contra el stack local: `network_mode: host` (salida a internet) +
   # ~/.aws montado read-only para resolver SSM/Neon. El sentinel
   # /tmp/.e2e-ready lo crea e2e-entrypoint.sh.

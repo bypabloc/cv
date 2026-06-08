@@ -8,7 +8,7 @@
 # devtools (en `serverless deploy --stage=<env>`) lee este .env y publica
 # cada secreto a SSM Parameter Store. Las Lambdas leen SSM en runtime.
 #
-# Copiar a docker/env/server/.{local,dev,stage,test,prod}.
+# Copiar a docker/env/server/.{local,dev,test,prod}.
 # Los archivos .{env} estan en .gitignore; este .example si se versiona.
 
 # === Catalogo: serverless/lambda/resources/secrets/ ========================
@@ -19,7 +19,7 @@
 # SSM: /portfolio/${stage}/turnstile-secret
 TURNSTILE_SECRET_KEY=
 
-# --- turnstile-bypass-public-key.yaml (String, dev/stage) ---
+# --- turnstile-bypass-public-key.yaml (String, dev) ---
 # Clave PUBLICA Ed25519 que verifica el bypass token de los tests E2E.
 # NO es secreta. La genera `bypass_token keygen` (la PRIVADA va a dev-cli,
 # nunca aca). SSM: /portfolio/${stage}/turnstile-bypass-public-key
@@ -56,7 +56,7 @@ ADMIN_EMAILS=
 # --- AWS endpoints (override para local-dev con dynamodb-local) ---
 # Solo en .local y .test: apunta boto3 al container amazon/dynamodb-local
 # del compose. boto3 1.28+ respeta AWS_ENDPOINT_URL_<SERVICE> nativamente.
-# En .dev/.stage/.prod debe quedar vacio para usar el endpoint AWS real.
+# En .dev/.prod debe quedar vacio para usar el endpoint AWS real.
 #   .local -> http://localhost:8000
 #   .test  -> http://localhost:8001
 AWS_ENDPOINT_URL_DYNAMODB=

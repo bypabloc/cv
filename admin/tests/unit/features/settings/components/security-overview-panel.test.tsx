@@ -658,6 +658,148 @@ describe("SecurityOverviewPanel", () => {
 		});
 	});
 
+	it("Given passkeys grupo no-requerido When activo el toggle MAESTRO y confirmo Then exige una passkey via webauthn.set-required {required:true}", async () => {
+		// Arrange: el grupo webauthn tiene required=false (ninguna passkey marcada)
+		// y una passkey activa cred_01. El toggle MAESTRO del header marca la
+		// primera passkey activa como requerida (basta una al loguear).
+		mockOverview(fiveMethods());
+		let requiredCred: string | null = null;
+		let requiredValue: boolean | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					credential_id?: string;
+					required?: boolean;
+				};
+				if (body.operation === "webauthn" && body.action === "set-required") {
+					requiredCred = body.credential_id ?? null;
+					requiredValue = body.required ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods: fiveMethods() },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: el header del grupo webauthn tiene el toggle MAESTRO 'Requerido'
+		// (unico switch del header) -> activarlo abre el AlertDialog -> Confirmar.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const header = await screen.findByTestId("security-webauthn-header");
+		await user.click(within(header).getByRole("switch"));
+		await user.click(
+			await screen.findByRole("button", { name: /^confirmar$/i }),
+		);
+
+		// Assert: marca la primera passkey activa (cred_01) como requerida.
+		await waitFor(() => {
+			expect(requiredCred).toBe("cred_01");
+			expect(requiredValue).toBe(true);
+		});
+	});
+
+	it("Given passkeys grupo requerido When desactivo el toggle MAESTRO Then desmarca todas via webauthn.set-required {required:false}", async () => {
+		// Arrange: el grupo webauthn tiene required=true (cred_01 marcada). El
+		// toggle MAESTRO desactivado quita el required de TODAS (desactivar es
+		// directo, sin AlertDialog).
+		const methods = fiveMethods().map((m) =>
+			m.type === "webauthn"
+				? {
+						...m,
+						required: true,
+						detail: {
+							credentials: [
+								{
+									credential_id: "cred_01",
+									nickname: "YubiKey",
+									transports: ["usb"],
+									enabled: true,
+									required: true,
+									created_at: "2026-05-02T00:00:00Z",
+									last_used_at: null,
+								},
+							],
+						},
+					}
+				: m,
+		);
+		mockOverview(methods);
+		let requiredCred: string | null = null;
+		let requiredValue: boolean | null = null;
+		server.use(
+			http.post(`${API_BASE}/auth`, async ({ request }) => {
+				const body = (await request.json()) as {
+					operation: string;
+					action: string;
+					credential_id?: string;
+					required?: boolean;
+				};
+				if (body.operation === "webauthn" && body.action === "set-required") {
+					requiredCred = body.credential_id ?? null;
+					requiredValue = body.required ?? null;
+					return new HttpResponse(null, { status: 204 });
+				}
+				return HttpResponse.json({
+					is_valid: true,
+					code: 0,
+					data: { methods },
+				});
+			}),
+		);
+		const user = userEvent.setup();
+
+		// Act: el toggle MAESTRO del header esta ON -> apagarlo es directo.
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const header = await screen.findByTestId("security-webauthn-header");
+		await user.click(within(header).getByRole("switch"));
+
+		// Assert: desmarca cred_01 (la unica requerida) con required=false.
+		await waitFor(() => {
+			expect(requiredCred).toBe("cred_01");
+			expect(requiredValue).toBe(false);
+		});
+	});
+
+	it("Given webauthn sin passkeys activas When render Then NO muestra el toggle MAESTRO", async () => {
+		// Arrange: la unica passkey esta desactivada -> el toggle maestro no tiene
+		// sentido (no hay nada que exigir) y se oculta.
+		const methods = fiveMethods().map((m) =>
+			m.type === "webauthn"
+				? {
+						...m,
+						enabled: false,
+						required: false,
+						detail: {
+							credentials: [
+								{
+									credential_id: "cred_01",
+									nickname: "YubiKey",
+									transports: ["usb"],
+									enabled: false,
+									required: false,
+									created_at: "2026-05-02T00:00:00Z",
+									last_used_at: null,
+								},
+							],
+						},
+					}
+				: m,
+		);
+		mockOverview(methods);
+
+		// Act
+		render((<SecurityOverviewPanel />) as ReactElement);
+		const header = await screen.findByTestId("security-webauthn-header");
+
+		// Assert: el header NO tiene switch maestro (sin passkeys activas).
+		expect(within(header).queryByRole("switch")).toBeNull();
+	});
+
 	it("Given security.overview falla When render Then muestra el ErrorAlert", async () => {
 		// Arrange
 		server.use(

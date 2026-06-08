@@ -45,6 +45,7 @@ import type {
 } from "@/types/models";
 import { useDeleteMethod } from "../hooks/use-delete-method";
 import { useSecurityOverview } from "../hooks/use-security-overview";
+import { useSetPasskeysGroupRequired } from "../hooks/use-set-passkeys-group-required";
 import { useSetRequired } from "../hooks/use-set-required";
 import { useToggleMethod } from "../hooks/use-toggle-method";
 import { ChangePasswordForm } from "./change-password-form";
@@ -228,16 +229,20 @@ function PasskeyRow({
 
 /**
  * @function WebauthnRow
- * @description Fila del metodo webauthn: estado + expansion de cada passkey.
+ * @description Fila del metodo webauthn: estado + toggle MAESTRO 'Requerido al
+ *   loguear' del grupo (exige passkey al iniciar sesion; basta una de las
+ *   activas) + expansion de cada passkey con su toggle individual independiente.
  *   El boton 'Eliminar' por passkey se omite si no se provee onDelete.
  */
 function WebauthnRow({
 	method,
 	onToggle,
 	onRequired,
+	onGroupRequired,
 	onDeleteCredential,
 	toggling,
 	settingRequired,
+	settingGroupRequired,
 	deleting,
 }: {
 	method: SecurityMethod;
@@ -251,18 +256,39 @@ function WebauthnRow({
 		recordId: string;
 		required: boolean;
 	}) => void;
+	onGroupRequired: (required: boolean) => void;
 	onDeleteCredential: (recordId: string) => void;
 	toggling: boolean;
 	settingRequired: boolean;
+	settingGroupRequired: boolean;
 	deleting: boolean;
 }) {
 	const passkeys = asPasskeys(method.detail);
+	const hasActivePasskey = passkeys.some((pk) => pk.enabled);
 
 	return (
-		<div className="space-y-3 rounded-md border p-4">
-			<div className="flex items-center justify-between gap-3">
+		<div
+			data-testid="security-row-webauthn"
+			className="space-y-3 rounded-md border p-4"
+		>
+			<div
+				data-testid="security-webauthn-header"
+				className="flex flex-wrap items-center justify-between gap-3"
+			>
 				<span className="text-sm font-medium">{method.label}</span>
-				<StatusBadge method={method} />
+				<div className="flex flex-wrap items-center gap-3">
+					{/* Toggle MAESTRO del grupo: exige (o no) passkey al loguear. Se
+					    satisface con cualquier passkey requerida; los toggles
+					    individuales de abajo afinan cuales. Solo si hay >=1 activa. */}
+					{hasActivePasskey ? (
+						<RequiredSwitch
+							required={method.required}
+							disabled={settingGroupRequired}
+							onConfirm={onGroupRequired}
+						/>
+					) : null}
+					<StatusBadge method={method} />
+				</div>
 			</div>
 			{passkeys.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
@@ -518,6 +544,7 @@ export function SecurityOverviewPanel() {
 	const overview = useSecurityOverview();
 	const toggle = useToggleMethod();
 	const setRequired = useSetRequired();
+	const setGroupRequired = useSetPasskeysGroupRequired();
 	const deleteMethod = useDeleteMethod();
 	const deleteCredential = useDeleteCredential();
 	const [setupKind, setSetupKind] = useState<MfaKind | null>(null);
@@ -565,9 +592,16 @@ export function SecurityOverviewPanel() {
 								method={method}
 								toggling={toggle.isPending}
 								settingRequired={setRequired.isPending}
+								settingGroupRequired={setGroupRequired.isPending}
 								deleting={deleteCredential.isPending}
 								onToggle={(vars) => toggle.mutate(vars)}
 								onRequired={(vars) => setRequired.mutate(vars)}
+								onGroupRequired={(required) =>
+									setGroupRequired.mutate({
+										required,
+										passkeys: asPasskeys(method.detail),
+									})
+								}
 								onDeleteCredential={(recordId) =>
 									deleteCredential.mutate({ credential_id: recordId })
 								}

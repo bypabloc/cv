@@ -48,8 +48,8 @@ uses:
   # true si el Lambda envia email (SES).
   sends-email: false
 
-# --- Variables de entorno por stage ---
-# 'default' aplica a todos; un stage especifico sobrescribe esas claves.
+# --- Variables de entorno por entorno ---
+# 'default' aplica a todos; un entorno especifico sobrescribe esas claves.
 env:
   default:
     LOG_LEVEL: INFO

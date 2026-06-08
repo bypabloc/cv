@@ -60,18 +60,18 @@ uses:
     - turnstile-secret             # validacion del captcha Cloudflare Turnstile
     - turnstile-bypass-public-key  # clave PUBLICA Ed25519 (String) para
                                    # verificar el token de bypass de tests
-                                   # E2E (solo dev/stage; la PRIVADA es local)
+                                   # E2E (solo dev; la PRIVADA es local)
     - owner-email                  # destinatario del email al owner (recipients)
     - neon-url                     # connection string Neon (escritura inline)
   # El email transaccional ya NO lo manda este Lambda: lo delega a
   # send_email via invoke async. Por eso sends-email: false (sin permiso SES).
   sends-email: false
 
-# --- Variables de entorno por stage ---
+# --- Variables de entorno por entorno ---
 # CORS_ALLOWED_ORIGINS define la whitelist de origins permitidos por
 # el handler HTTP (common/cors.py) Y el set de hostnames validos del
 # widget Turnstile (shared/http/turnstile._expected_hostnames). Por eso
-# debe coincidir con el dominio publico de cada stage; si falta, el
+# debe coincidir con el dominio publico de cada entorno; si falta, el
 # siteverify rechaza con CAPTCHA_HOSTNAME_MISMATCH (defensa contra
 # widget hijacking). Misma whitelist que tracking_pixel y cv.
 #
@@ -86,9 +86,6 @@ env:
   dev:
     LOG_LEVEL: INFO
     CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
-  stage:
-    LOG_LEVEL: INFO
-    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
     CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'

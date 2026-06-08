@@ -46,7 +46,7 @@ uses:
     - jwt-secret                   # verifica el access JWT (HS256)
   sends-email: false
 
-# --- Variables de entorno por stage ---
+# --- Variables de entorno por entorno ---
 # CORS: refleja el Origin del admin (echo) — NUNCA '*'. http_handler resuelve
 # el origen permitido contra CORS_ALLOWED_ORIGINS. En dev se agrega
 # localhost:3000 para el dev server del admin.
@@ -58,9 +58,6 @@ env:
   dev:
     LOG_LEVEL: INFO
     CORS_ALLOWED_ORIGINS: 'https://admin.portfolio.dev.the-full-stack.com,http://localhost:3000'
-  stage:
-    LOG_LEVEL: INFO
-    CORS_ALLOWED_ORIGINS: 'https://admin.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
     CORS_ALLOWED_ORIGINS: 'https://admin.portfolio.the-full-stack.com'

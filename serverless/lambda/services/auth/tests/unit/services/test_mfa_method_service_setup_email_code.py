@@ -1,15 +1,15 @@
-"""MfaMethodService.setup_email_code: inserta el metodo (no primer MFA = no revoke).
+"""MfaMethodService.setup_email_code: delega en ensure_email_code, sin revoke.
 
-Given un user que ya tiene un metodo MFA (count antes=1, despues=2),
-When se invoca setup_email_code (sin metodo email_code previo),
-Then inserta el row y NO revoca sesiones (no es el primer MFA).
+`setup_email_code` ya NO mide count ni revoca: delega en `ensure_email_code`
+(idempotente). Con un email_code inexistente, inserta el row confirmado y
+NUNCA revoca sesiones (el email_code no es "primer MFA fuerte").
 """
 
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 
-def test_setup_email_code_not_first_no_revoke(monkeypatch):
+def test_setup_email_code_inserts_without_revoke(monkeypatch):
     from services import mfa_method_service
 
     session = MagicMock()
@@ -19,14 +19,7 @@ def test_setup_email_code_not_first_no_revoke(monkeypatch):
         yield session
 
     monkeypatch.setattr(mfa_method_service, 'db_session', _fake_session)
-    # count_active: 1 antes, 2 despues (no transicion 0->1).
-    counts = iter([1, 2])
-    monkeypatch.setattr(
-        mfa_method_service,
-        'count_active_mfa',
-        lambda _s, *, user_id: next(counts),
-    )
-    # No existe metodo email_code -> entra al branch del INSERT.
+    # No existe metodo email_code -> ensure_email_code entra al INSERT.
     monkeypatch.setattr(
         mfa_method_service,
         'get_mfa_method',

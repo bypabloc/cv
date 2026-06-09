@@ -115,7 +115,7 @@
   step=2 (factor fuerte: password / webauthn) — magic-link / email-code
   -> `403 RECOVERY_REQUIRES_STRONG_FACTOR`.
 - **SIEMPRE** el RP_ID de WebAuthn es por env (apex en prod,
-  `portfolio.{dev,stage}.the-full-stack.com` en dev/stage). Un passkey NO
+  `portfolio.dev.the-full-stack.com` en dev). Un passkey NO
   migra entre envs.
 - **NUNCA** `disable`/`delete-credential` que deje `total_mfa == 0` (guard
   transversal `MUST_KEEP_ONE_MFA_METHOD`); credential de otro user ->

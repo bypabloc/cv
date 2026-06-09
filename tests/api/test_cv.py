@@ -23,7 +23,7 @@ def test_cv_read_actions_and_errors(
     lambda_filter: str | None,
 ) -> None:
     """
-    Given el Lambda cv desplegado en dev/stage,
+    Given el Lambda cv desplegado en dev,
     When se invocan sus 10 read actions + 2 payloads invalidos,
     Then las 10 reads dan 2xx y los 2 invalidos dan 4xx (el Runner registra
     cada caso con su veredicto y timing). [AC-1, AC-11]

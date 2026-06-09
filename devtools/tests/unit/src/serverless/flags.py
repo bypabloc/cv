@@ -153,7 +153,7 @@ class TestTestsTypeFlag:
 class TestRunStage:
     """`run` acepta --stage local y deployado."""
 
-    @pytest.mark.parametrize('stage', ['local', 'dev', 'stage', 'prod'])
+    @pytest.mark.parametrize('stage', ['local', 'dev', 'prod'])
     def test_run_accepts_all_stages(self, monkeypatch, stage):
         _argv(monkeypatch, 'run', f'--stage={stage}')
         from serverless.flags import flag

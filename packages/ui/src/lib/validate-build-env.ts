@@ -55,7 +55,7 @@ export function validateApiEndpoint(apiEndpoint: string | undefined): string {
     )
   }
   const baseDomain = readBaseDomain()
-  // El match estricto solo aplica en builds remotos (dev/stage/prod).
+  // El match estricto solo aplica en builds remotos (dev/prod).
   // En local docker BASE_DOMAIN=localhost pero PUBLIC_API_ENDPOINT apunta
   // al API custom de dev (api.portfolio.dev.the-full-stack.com), no a
   // api.localhost (no existe un backend local). Por eso el match estricto
@@ -67,7 +67,7 @@ export function validateApiEndpoint(apiEndpoint: string | undefined): string {
       throw new Error(
         `PUBLIC_API_ENDPOINT (${apiEndpoint}) no matchea BASE_DOMAIN ` +
           `(${baseDomain}). Esperado: ${expected}. Revisa las GitHub ` +
-          'Environment Variables del env destino (dev/stage/prod).',
+          'Environment Variables del env destino (dev/prod).',
       )
     }
   }

@@ -31,7 +31,7 @@ description: >
   "model context protocol portfolio".
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash
-argument-hint: "[--env=prod|stage|dev] [--niches=...] [--tools=...] [--targets=niche:/path,...]"
+argument-hint: "[--env=prod|dev] [--niches=...] [--tools=...] [--targets=niche:/path,...]"
 ---
 
 # AI readiness audit del portfolio
@@ -150,7 +150,7 @@ Ver [04-troubleshooting.md](../../docs/ai-audit/04-troubleshooting.md).
 
 ## Reglas duras (de la rule)
 
-- SIEMPRE prod como fuente de verdad. dev/stage = falsos negativos.
+- SIEMPRE prod como fuente de verdad. dev = falsos negativos.
 - SIEMPRE `PSI_API_KEY` en `docker/env/dev-cli/.{env}`. NUNCA en
   client/server/SSM.
 - SIEMPRE reportes a `tmp/ai-audit/`. NUNCA a `docs/`.
@@ -171,7 +171,7 @@ Detalle en [01-tools-evaluadas.md](../../docs/ai-audit/01-tools-evaluadas.md).
 
 ## Anti-patrones
 
-- Auditar dev/stage como gate de PR (esos envs bloquean AI crawlers
+- Auditar dev como gate de PR (ese env bloquea AI crawlers
   por diseno).
 - Confiar solo en isitagentready (no mide performance ni JSON-LD
   Person en el HTML rendered).

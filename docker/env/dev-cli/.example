@@ -9,7 +9,7 @@
 # (export, gestor de secretos, o resuelto desde SSM/keychain). Ver
 # .claude/rules/security.md.
 #
-# Copiar a docker/env/dev-cli/.{local,dev,stage,test,prod}.
+# Copiar a docker/env/dev-cli/.{local,dev,test,prod}.
 # Los archivos .{env} estan en .gitignore; este .example si se versiona.
 
 # --- AWS (IAM user `dev`, account the-full-stack) -------------------------
@@ -36,5 +36,5 @@ ACCOUNT_ID=
 # Clave privada que firma el token de bypass de Turnstile para los tests
 # E2E (api_e2e) y dev local. La genera `bypass_token keygen`. NUNCA se
 # sincroniza a ningun remoto: el Lambda solo tiene la PUBLICA (en SSM).
-# Un valor por env (dev/stage); este .example es solo plantilla.
+# Un valor por env (dev); este .example es solo plantilla.
 TURNSTILE_BYPASS_PRIVATE_KEY=

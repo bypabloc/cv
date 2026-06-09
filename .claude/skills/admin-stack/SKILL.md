@@ -2,7 +2,7 @@
 name: admin-stack
 description: >
   Admin SPA stack reference for the portfolio admin panel
-  (`admin.portfolio.{dev|stage|prod}.the-full-stack.com`). Covers
+  (`admin.portfolio.{dev|prod}.the-full-stack.com`). Covers
   Next.js 16.2.6 static export (`output: 'export'`), React 19.2.6
   (with React Compiler stable, ref-as-prop, `useActionState`,
   `useOptimistic`, `useDeferredValue` with initialValue, Document
@@ -23,8 +23,8 @@ description: >
   link callback + mutex refresh rotation + BroadcastChannel multi-tab
   logout sync), Cloudflare Pages deploy via the same
   `devtools/cloudflare_setup` + `deploy-apps.yml` pipeline as the 6
-  Astro apps (`admin` becomes the 7th project per env, total 21
-  projects = 7 apps x 3 envs), per-env env vars with `NEXT_PUBLIC_*`
+  Astro apps (`admin` becomes the 7th project per env, total 14
+  projects = 7 apps x 2 envs), per-env env vars with `NEXT_PUBLIC_*`
   prefix synced via `sync_secrets --category=client`. ALWAYS invoke
   this skill BEFORE answering ANY question about the admin panel,
   including questions framed as "next.js spa", "next 16 export",
@@ -136,7 +136,7 @@ portfolio. Stack 100% 2026 (React 19.2.6 + Next.js 16.2.6).
 | Carpeta | `admin/` en root del repo | Usuario lo pidio explicito; entra a pnpm workspace |
 | Subdominio | `admin.portfolio.{env}.the-full-stack.com` | Sigue subdomain-standard |
 | Deploy | Cloudflare Pages (REST API via `devtools/cloudflare_setup`) | Mismo pipeline que las 6 apps Astro |
-| Envs CI | dev/stage/prod (3 Cloudflare Pages projects) | Branch `dev`/`stage`/`main` mapping |
+| Envs CI | dev/prod (2 Cloudflare Pages projects) | Branch `dev`/`main` mapping |
 | Auth backend | Lambda `auth` planes 01-02 (aun pending) | Admin usa MSW hasta que esten deployadas |
 | Auth storage | Access + refresh JWT en `localStorage` (Zustand persist). SPA cross-origin (admin → api) hace HttpOnly cookies no viables (requeriria `SameSite=None` cross-site + vector CSRF). Defensa: CSP estricta + SRI + access TTL 15min + family_id refresh rotation | OWASP JWT Cheat Sheet + RFC 9700 Jan 2025 |
 | Refresh rotation | Mutex pattern (1 sola refresh in-flight) + family_id detection | Backend ya lo implementa; client previene race conditions |

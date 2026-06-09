@@ -79,17 +79,6 @@ def test_flag_when_env_prod_then_raises() -> None:
         flag({'env': 'prod'})
 
 
-def test_flag_when_env_stage_then_accepted() -> None:
-    """
-    Given --env=stage,
-    When flag(),
-    Then se acepta (stage es valido).
-    """
-    result = flag({'env': 'stage'})
-
-    assert result['env'] == 'stage'
-
-
 def test_flag_when_lambda_invalid_then_raises() -> None:
     """
     Given --lambda=nope,

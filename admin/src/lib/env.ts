@@ -40,7 +40,7 @@ const envSchema = z.object({
 			"SOLO E2E: cuando 'true', el form NO renderiza el Turnstile real " +
 				"(auto-emite un token dummy) y apiFetch manda el bypass token " +
 				"Ed25519 firmado (window.__E2E_BYPASS_TOKEN__) en el header " +
-				"X-Turnstile-Bypass-Token. El backend dev/stage acepta el bypass " +
+				"X-Turnstile-Bypass-Token. El backend dev acepta el bypass " +
 				"con cf_turnstile_response vacio; prod lo rechaza SIEMPRE. NUNCA " +
 				"setear 'true' en builds de produccion.",
 		),

@@ -4,7 +4,7 @@
 para detectar drift: claves (PK/SK), atributo TTL y GSIs. NO declara
 `BillingMode`/`SSE`/`PITR`/`StreamSpecification` — esos quedan como
 responsabilidad exclusiva de `serverless/infra/infra.yaml` (el stack
-CloudFormation es el dueno del DDL real de dev/stage/prod).
+CloudFormation es el dueno del DDL real de dev/prod).
 
 `create_table`/`ensure_table` del `BaseModel` usan `TableMeta` SOLO para
 tests (moto) y entorno local. `check_schema` lo usa para comparar contra

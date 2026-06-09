@@ -1,7 +1,7 @@
 # e2e — orquestador unificado de los E2E del portfolio
 
 > Comando monocommand (Python 3.14) que corre los tests E2E del portfolio
-> contra el entorno DESPLEGADO (dev | stage, NUNCA prod) via pytest.
+> contra el entorno DESPLEGADO (dev, NUNCA prod) via pytest.
 > Unifica los dos sistemas viejos (`api_e2e` Python + la suite Playwright
 > TypeScript `tests/feature/`) en UNA sola fuente de verdad.
 
@@ -48,7 +48,7 @@ python devtools/run.py e2e --module=api --env=dev --keep-data \
 | Flag | Default | Descripcion |
 |------|---------|-------------|
 | `--module` | (los 3) | `api` / `admin` / `app`. Ausente -> los 3 en orden |
-| `--env` | `dev` | Entorno de deploy: `dev` o `stage` (NUNCA prod) |
+| `--env` | `dev` | Entorno de deploy: `dev` (NUNCA prod) |
 | `--samples` | `5` | Muestras por endpoint read-safe del modulo `api` (>= 1) |
 | `--aws-profile` | (shell) | Perfil AWS CLI para SSM/Neon (ej. `tfs-dev`) |
 | `--keep-data` | `false` | No limpiar los datos sinteticos creados en Neon |

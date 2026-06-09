@@ -1,7 +1,7 @@
 """Turnstile service handler: setup/rotate widgets and write env files.
 
 Estrategia:
-  - 3 widgets en Cloudflare (uno por env logico: dev, stage, prod).
+  - 2 widgets en Cloudflare (uno por env logico: dev, prod).
   - .local y .test reusan el widget dev (su allowlist incluye localhost).
   - Cada widget cubre los hostnames del estandar de subdominios del portfolio.
 
@@ -26,7 +26,7 @@ ENV_CLIENT_DIR = PROJECT_ROOT / 'docker' / 'env' / 'client'
 
 WIDGET_NAME_PREFIX = 'Portfolio Backend'
 
-# Definicion de widgets por env logico (dev, stage, prod). Hostnames alineados
+# Definicion de widgets por env logico (dev, prod). Hostnames alineados
 # con el estandar de subdominios `[{component}.]{product}.{env}.{domain}` y el
 # apex `the-full-stack.com` para prod.
 _WIDGETS = {
@@ -44,19 +44,6 @@ _WIDGETS = {
             'vibe.portfolio.dev.the-full-stack.com',
             'generic.portfolio.dev.the-full-stack.com',
             'admin.portfolio.dev.the-full-stack.com',
-        ],
-    },
-    'stage': {
-        'name': f'{WIDGET_NAME_PREFIX} (stage)',
-        'domains': [
-            'stage.the-full-stack.com',
-            'hub.portfolio.stage.the-full-stack.com',
-            'fintech.portfolio.stage.the-full-stack.com',
-            'architect.portfolio.stage.the-full-stack.com',
-            'leader.portfolio.stage.the-full-stack.com',
-            'vibe.portfolio.stage.the-full-stack.com',
-            'generic.portfolio.stage.the-full-stack.com',
-            'admin.portfolio.stage.the-full-stack.com',
         ],
     },
     'prod': {
@@ -80,7 +67,6 @@ ENV_TO_WIDGET = {
     'local': 'dev',
     'test': 'dev',
     'dev': 'dev',
-    'stage': 'stage',
     'prod': 'prod',
 }
 
@@ -94,7 +80,7 @@ def _resolve_widget(
     rotate: bool,
     dry_run: bool,
 ) -> dict[str, str]:
-    """Resuelve sitekey + secret de un widget logico (dev/stage/prod)."""
+    """Resuelve sitekey + secret de un widget logico (dev/prod)."""
     conf = _WIDGETS[widget_key]
     name = conf['name']
     domains = conf['domains']

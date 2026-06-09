@@ -3,10 +3,9 @@
 Path mirroring: devtools/ai_audit/catalog.py -> this file.
 """
 
-import pytest
-
 from ai_audit.catalog import resolve_targets
 from ai_audit.catalog import resolve_url
+import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -33,15 +32,15 @@ def test_resolve_url_when_prod_niche_then_portfolio_subdomain() -> None:
     )
 
 
-def test_resolve_url_when_stage_with_custom_path_then_includes_path() -> None:
+def test_resolve_url_when_dev_with_custom_path_then_includes_path() -> None:
     """
-    Given env=stage, niche=generic, path='/projects',
+    Given env=dev, niche=hub, path='/projects',
     When resolve_url,
-    Then https://generic.portfolio.stage.the-full-stack.com/projects.
+    Then https://hub.portfolio.dev.the-full-stack.com/projects.
     """
     assert (
-        resolve_url('stage', 'generic', '/projects')
-        == 'https://generic.portfolio.stage.the-full-stack.com/projects'
+        resolve_url('dev', 'hub', '/projects')
+        == 'https://hub.portfolio.dev.the-full-stack.com/projects'
     )
 
 

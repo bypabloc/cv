@@ -39,7 +39,7 @@ uses:
     - ses-from-address         # String: from address verificado en SES
   sends-email: true            # SES SendEmail
 
-# --- Variables de entorno por stage ---
+# --- Variables de entorno por entorno ---
 env:
   default:
     LOG_LEVEL: INFO

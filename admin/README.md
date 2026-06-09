@@ -2,7 +2,7 @@
 
 > Panel admin SPA del portfolio. Next.js 16 (`output: 'export'`) + React 19
 > + shadcn/ui + Tanstack Query v5 + Zustand 5. Deployado a Cloudflare Pages
-> en `admin.portfolio.{dev|stage|prod}.the-full-stack.com`.
+> en `admin.portfolio.{dev|prod}.the-full-stack.com`.
 
 ## Que es
 

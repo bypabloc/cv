@@ -354,8 +354,7 @@ Aplica SIEMPRE que se trabaje con:
   deje `total_mfa == 0` -> `409`. Credential/metodo de otro user -> `404
   NOT_FOUND` (anti-enumeration).
 - **SIEMPRE** el `WEBAUTHN_RP_ID` es por env: apex `the-full-stack.com` en
-  prod, `portfolio.dev.the-full-stack.com` en dev,
-  `portfolio.stage.the-full-stack.com` en stage. Un passkey NO migra
+  prod, `portfolio.dev.the-full-stack.com` en dev. Un passkey NO migra
   entre envs (es esperado).
 - **NUNCA** editar la migration `00000003_auth_mfa.py` aplicada; nuevo
   cambio = migration nueva. El `downgrade` NO se corre en prod.
@@ -411,7 +410,7 @@ Aplica SIEMPRE que se trabaje con:
 | WebAuthn challenge en Neon | DDB con TTL 5 min, single-use (`get_and_consume`) |
 | Ignorar regresion de `sign_count` | clone detection -> disable credential + 401 |
 | `recovery-codes-consume` tras magic-link/email-code | exige temp `flow='login-mfa'` step=2 (factor fuerte) |
-| RP_ID unico para todos los envs | RP_ID por env (apex prod, `portfolio.{dev,stage}...`) |
+| RP_ID unico para todos los envs | RP_ID por env (apex prod, `portfolio.dev...`) |
 | Permitir quedar en `total_mfa == 0` | guard transversal `MUST_KEEP_ONE_MFA_METHOD` |
 | `import argon2` o `from passlib import ...` | `from shared.auth import hash_password, verify_password` |
 | Comparar codes con `==` (timing attack) | `from shared.auth import compare_code` (secrets.compare_digest) |

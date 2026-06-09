@@ -1,8 +1,8 @@
 # AWS OIDC + S3 state setup — runbook
 
 > Configuracion MANUAL (una sola vez) que habilita el pipeline CI/CD del
-> portfolio. Crea: OpenID Connect provider en AWS, 3 IAM roles
-> (dev/stage/prod) con trust policy scoped al repo + branch, y el bucket
+> portfolio. Crea: OpenID Connect provider en AWS, 2 IAM roles
+> (dev/prod) con trust policy scoped al repo + branch, y el bucket
 > S3 `portfolio-devtools-state` con encryption KMS + versioning +
 > lifecycle.
 
@@ -43,11 +43,11 @@ aws iam list-open-id-connect-providers \
 
 Esperado: `arn:aws:iam::637423614564:oidc-provider/token.actions.githubusercontent.com`.
 
-## Paso 2: Crear los 3 IAM roles
+## Paso 2: Crear los 2 IAM roles
 
 ### 2.1 — Trust policy por rol
 
-Crear tres archivos JSON en `./tmp/iam/` (efimero, NO commitear):
+Crear dos archivos JSON en `./tmp/iam/` (efimero, NO commitear):
 
 ```bash
 mkdir -p ./tmp/iam
@@ -76,10 +76,9 @@ mkdir -p ./tmp/iam
 }
 ```
 
-`./tmp/iam/trust-stage.json`: idem, cambiar `dev` -> `stage`.
 `./tmp/iam/trust-prod.json`: idem, cambiar `dev` -> `main`.
 
-### 2.2 — Permissions policy (UNICA, comparten los 3 roles)
+### 2.2 — Permissions policy (UNICA, comparten los 2 roles)
 
 `./tmp/iam/policy-permissions.json`:
 
@@ -243,8 +242,6 @@ mkdir -p ./tmp/iam
       "Resource": [
         "arn:aws:s3:::portfolio-email-templates-dev",
         "arn:aws:s3:::portfolio-email-templates-dev/*",
-        "arn:aws:s3:::portfolio-email-templates-stage",
-        "arn:aws:s3:::portfolio-email-templates-stage/*",
         "arn:aws:s3:::portfolio-email-templates-prod",
         "arn:aws:s3:::portfolio-email-templates-prod/*"
       ]
@@ -258,10 +255,10 @@ mkdir -p ./tmp/iam
 > El statement `SQS` quedo OBSOLETO tras eliminar SQS del backend (invoke async
 > Lambda->Lambda): no hace dano (no hay colas que crear) pero se puede quitar.
 
-### 2.3 — Crear los 3 roles
+### 2.3 — Crear los 2 roles
 
 ```bash
-for env in dev stage prod; do
+for env in dev prod; do
   aws iam create-role \
     --role-name portfolio-deploy-$env \
     --assume-role-policy-document file://./tmp/iam/trust-$env.json \
@@ -278,17 +275,16 @@ done
 Verificar:
 
 ```bash
-for env in dev stage prod; do
+for env in dev prod; do
   echo "--- portfolio-deploy-$env ---"
   aws iam get-role --role-name portfolio-deploy-$env \
     --query 'Role.[Arn,AssumeRolePolicyDocument.Statement[0].Condition.StringLike]'
 done
 ```
 
-Anotar los 3 ARNs — los referenciamos en el workflow:
+Anotar los 2 ARNs — los referenciamos en el workflow:
 
 - `arn:aws:iam::637423614564:role/portfolio-deploy-dev`
-- `arn:aws:iam::637423614564:role/portfolio-deploy-stage`
 - `arn:aws:iam::637423614564:role/portfolio-deploy-prod`
 
 ## Paso 3: Crear bucket S3 portfolio-devtools-state
@@ -369,7 +365,7 @@ on:
         description: "Env del rol a asumir"
         required: true
         type: choice
-        options: [dev, stage, prod]
+        options: [dev, prod]
 
 permissions:
   id-token: write
@@ -389,7 +385,7 @@ jobs:
 Disparar desde la branch correcta:
 
 ```bash
-git checkout dev   # o stage, o main
+git checkout dev   # o main
 gh workflow run _test-oidc.yml --field env=dev
 gh run watch
 ```
@@ -429,8 +425,8 @@ rm -rf ./tmp/iam/
 Si algo sale mal y querés deshacer:
 
 ```bash
-# Borrar los 3 roles
-for env in dev stage prod; do
+# Borrar los 2 roles
+for env in dev prod; do
   aws iam delete-role-policy --role-name portfolio-deploy-$env \
     --policy-name portfolio-deploy-permissions
   aws iam delete-role --role-name portfolio-deploy-$env
@@ -456,7 +452,7 @@ aws s3api delete-bucket --bucket portfolio-devtools-state
 - El bucket S3 tiene versioning + lifecycle. Si necesitas inspectar
   un state anterior: `aws s3api list-object-versions --bucket
   portfolio-devtools-state --prefix state/`.
-- Costos: 3 roles + 1 OIDC provider + 1 bucket S3 = $0/mes (free
+- Costos: 2 roles + 1 OIDC provider + 1 bucket S3 = $0/mes (free
   tier perpetuo).
 
 ## Referencias cruzadas

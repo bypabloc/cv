@@ -3,13 +3,11 @@
 Path mirroring: devtools/cloudflare_setup/config.py -> this file.
 
 Cubre:
-- ENVS declara dev/stage/prod con los valores correctos
+- ENVS declara dev/prod con los valores correctos
 - project_name_for aplica sufijo -dev/-stage y deja prod sin sufijo
 - custom_domain_for arma el FQDN segun env+niche (generic vs niches)
 - site_url_for produce https://<custom_domain>
 """
-
-import pytest
 
 from cloudflare_setup.config import APEX_DOMAIN
 from cloudflare_setup.config import APPS
@@ -20,6 +18,7 @@ from cloudflare_setup.config import EnvConfig
 from cloudflare_setup.config import custom_domain_for
 from cloudflare_setup.config import project_name_for
 from cloudflare_setup.config import site_url_for
+import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -29,10 +28,10 @@ pytestmark = pytest.mark.unit
 
 
 class TestEnvsRegistry:
-    """ENVS declara los 3 entornos con los valores reales de Cloudflare."""
+    """ENVS declara los 2 entornos con los valores reales de Cloudflare."""
 
-    def test_valid_envs_are_dev_stage_prod(self):
-        assert set(VALID_ENVS) == {'dev', 'stage', 'prod'}
+    def test_valid_envs_are_dev_prod(self):
+        assert set(VALID_ENVS) == {'dev', 'prod'}
 
     def test_prod_has_apex_domain_set(self):
         cfg = ENVS['prod']
@@ -48,23 +47,16 @@ class TestEnvsRegistry:
         assert cfg.apex_domain is None
         assert cfg.api_endpoint == f'https://api.portfolio.dev.{APEX_DOMAIN}'
 
-    def test_stage_has_no_apex_domain(self):
-        cfg = ENVS['stage']
-        assert cfg.branch == 'stage'
-        assert cfg.base_domain == f'portfolio.stage.{APEX_DOMAIN}'
-        assert cfg.apex_domain is None
-        assert cfg.api_endpoint == f'https://api.portfolio.stage.{APEX_DOMAIN}'
-
     def test_each_env_has_distinct_turnstile_sitekey(self):
-        sitekeys = {ENVS[e].turnstile_sitekey for e in ('prod', 'dev', 'stage')}
-        assert len(sitekeys) == 3
+        sitekeys = {ENVS[e].turnstile_sitekey for e in ('prod', 'dev')}
+        assert len(sitekeys) == 2
 
 
 # ---- project_name_for ----------------------------------------------------
 
 
 class TestProjectNameFor:
-    """Sufijo -<env> en dev/stage; prod sin sufijo."""
+    """Sufijo -<env> en dev; prod sin sufijo."""
 
     @pytest.fixture
     def app_generic(self):
@@ -94,12 +86,6 @@ class TestProjectNameFor:
     def test_dev_niche_gets_dev_suffix(self, app_hub):
         assert project_name_for(app_hub, 'dev') == 'hub-dev'
 
-    def test_stage_generic_gets_stage_suffix(self, app_generic):
-        assert project_name_for(app_generic, 'stage') == 'generic-stage'
-
-    def test_stage_niche_gets_stage_suffix(self, app_hub):
-        assert project_name_for(app_hub, 'stage') == 'hub-stage'
-
 
 # ---- custom_domain_for ---------------------------------------------------
 
@@ -108,8 +94,8 @@ class TestCustomDomainFor:
     """
     prod   generic -> apex (the-full-stack.com)
     prod   niche   -> niche.portfolio.the-full-stack.com
-    dev/st generic -> portfolio.<env>.the-full-stack.com (base_domain)
-    dev/st niche   -> niche.portfolio.<env>.the-full-stack.com
+    dev    generic -> portfolio.dev.the-full-stack.com (base_domain)
+    dev    niche   -> niche.portfolio.dev.the-full-stack.com
     """
 
     @pytest.fixture
@@ -143,14 +129,6 @@ class TestCustomDomainFor:
     def test_dev_niche_uses_env_subdomain(self, app_hub):
         result = custom_domain_for(app_hub, ENVS['dev'])
         assert result == 'hub.portfolio.dev.the-full-stack.com'
-
-    def test_stage_generic_uses_base_domain(self, app_generic):
-        result = custom_domain_for(app_generic, ENVS['stage'])
-        assert result == 'portfolio.stage.the-full-stack.com'
-
-    def test_stage_niche_uses_env_subdomain(self, app_hub):
-        result = custom_domain_for(app_hub, ENVS['stage'])
-        assert result == 'hub.portfolio.stage.the-full-stack.com'
 
 
 # ---- site_url_for --------------------------------------------------------
@@ -218,7 +196,6 @@ def test_admin_project_name_gets_env_suffix():
     admin = next(a for a in APPS if a.project_name == 'admin')
     assert project_name_for(admin, 'prod') == 'admin'
     assert project_name_for(admin, 'dev') == 'admin-dev'
-    assert project_name_for(admin, 'stage') == 'admin-stage'
 
 
 def test_admin_custom_domain_is_not_apex_in_prod():
@@ -231,10 +208,6 @@ def test_admin_custom_domain_is_not_apex_in_prod():
     assert (
         custom_domain_for(admin, ENVS['dev'])
         == 'admin.portfolio.dev.the-full-stack.com'
-    )
-    assert (
-        custom_domain_for(admin, ENVS['stage'])
-        == 'admin.portfolio.stage.the-full-stack.com'
     )
 
 

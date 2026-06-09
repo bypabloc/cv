@@ -82,7 +82,9 @@ describe('buildRobotsTxt', () => {
     expect(txt).toBe('User-agent: *\nDisallow: /\n')
   })
 
-  it('Given a stage hostname When build Then disallows all crawlers', () => {
+  it('Given a non-prod intermediate-label host When build Then disallows all crawlers', () => {
+    // El guard generico de label de entorno intermedio (.stage.) se
+    // conserva como defensa aunque el entorno stage ya no exista.
     const txt = buildRobotsTxt(
       'https://fintech.portfolio.stage.the-full-stack.com',
     )

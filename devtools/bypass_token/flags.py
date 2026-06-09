@@ -1,7 +1,7 @@
 """Validacion de flags del script bypass_token.
 
 Subcommand-style:
-  python devtools/run.py bypass_token keygen [--envs=dev,stage] [--dry-run]
+  python devtools/run.py bypass_token keygen [--envs=dev] [--dry-run]
   python devtools/run.py bypass_token mint --env=dev [--private-key=...]
                                                       [--ttl=300]
 
@@ -26,7 +26,7 @@ from utils.flags_to_dict import validate_allowed_flags
 VALID_COMMANDS = ('keygen', 'mint')
 
 # Envs validos para generar/firmar. NUNCA prod: el bypass no existe en prod.
-VALID_ENVS = ('dev', 'stage')
+VALID_ENVS = ('dev',)
 
 ALLOWED_FLAGS = [
     'command',
@@ -40,7 +40,7 @@ ALLOWED_FLAGS = [
 ]
 
 _DEFAULTS: dict[str, Any] = {
-    'envs': 'dev,stage',
+    'envs': 'dev',
     'env': 'dev',
     'private_key': None,
     'ttl': 300,
@@ -86,7 +86,7 @@ def _validate_command(flags_dict: dict[str, Any]) -> str:
             'Falta el comando posicional. Comandos validos: '
             f'{", ".join(VALID_COMMANDS)}.\n'
             'Ejemplo: python devtools/run.py bypass_token keygen '
-            '--envs=dev,stage'
+            '--envs=dev'
         )
         raise ValueError(msg)
     if command not in VALID_COMMANDS:
@@ -162,12 +162,12 @@ def describe() -> ScriptDescribe:
         'flags': {
             'envs': {
                 'type': 'string',
-                'summary': 'CSV de envs para keygen (default dev,stage)',
+                'summary': 'CSV de envs para keygen (default dev)',
                 'required': False,
             },
             'env': {
                 'type': 'string',
-                'summary': 'Env para mint (dev|stage; default dev)',
+                'summary': 'Env para mint (dev; default dev)',
                 'required': False,
             },
             'private_key': {

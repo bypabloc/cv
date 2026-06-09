@@ -6,7 +6,7 @@ Sigue el estandar de subdominios del portfolio (ver
 Prod:
   - generic           -> https://the-full-stack.com{path}
   - hub/fintech/...   -> https://{niche}.portfolio.the-full-stack.com{path}
-Dev/Stage:
+Dev:
   - todos             -> https://{niche}.portfolio.{env}.the-full-stack.com{path}
 Local:
   - todos             -> http://{niche}.localhost:9970{path} (generic = localhost)
@@ -37,7 +37,7 @@ def resolve_url(env: str, niche: str, path: str = '/') -> str:
             return f'https://{APEX_DOMAIN}{path}'
         return f'https://{niche}.portfolio.{APEX_DOMAIN}{path}'
 
-    if env in ('dev', 'stage'):
+    if env == 'dev':
         return f'https://{niche}.portfolio.{env}.{APEX_DOMAIN}{path}'
 
     if env == 'local':
@@ -45,7 +45,7 @@ def resolve_url(env: str, niche: str, path: str = '/') -> str:
         return f'http://{host}:9970{path}'
 
     raise ValueError(
-        f"unknown env: '{env}'. Validos: local, dev, stage, prod",
+        f"unknown env: '{env}'. Validos: local, dev, prod",
     )
 
 

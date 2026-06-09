@@ -4,14 +4,14 @@ name: Deploy Apps
 # disparar manual desde la UI (con el env como input).
 on:
   push:
-    branches: [dev, stage, main]
+    branches: [dev, main]
   workflow_dispatch:
     inputs:
       env:
         description: "Environment to deploy to"
         required: true
         type: choice
-        options: [dev, stage, main]
+        options: [dev, main]
 
 # Queue por env. Alineado con deploy-backend.yml para que dos pushes
 # seguidos al mismo env no compitan.
@@ -51,16 +51,12 @@ jobs:
               echo "stage=dev"             >> "$GITHUB_OUTPUT"
               echo "project-suffix=-dev"   >> "$GITHUB_OUTPUT"
               ;;
-            stage)
-              echo "stage=stage"           >> "$GITHUB_OUTPUT"
-              echo "project-suffix=-stage" >> "$GITHUB_OUTPUT"
-              ;;
             main)
               echo "stage=prod"            >> "$GITHUB_OUTPUT"
               echo "project-suffix="       >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "ERROR: branch $branch no es dev/stage/main"
+              echo "ERROR: branch $branch no es dev/main"
               exit 1
               ;;
           esac
@@ -72,7 +68,7 @@ jobs:
   # destino, entonces todas las URLs y endpoints caen al fallback de
   # produccion. deploy-apps necesita inyectar BASE_DOMAIN, APEX_DOMAIN,
   # PUBLIC_API_ENDPOINT, PUBLIC_TURNSTILE_SITEKEY del GH Environment del
-  # stage destino — esas se hornean en build time via import.meta.env.*
+  # env destino — esas se hornean en build time via import.meta.env.*
   # y `site-urls.ts`.
   #
   # `environment: <stage>` da acceso a vars.* del environment del mismo
@@ -107,7 +103,7 @@ jobs:
         run: pnpm --filter @portfolio/cv-filters run build
 
       - name: Build all apps with env vars del stage
-        # Las vars vienen de GH Environment (dev/stage/prod) pobladas por
+        # Las vars vienen de GH Environment (dev/prod) pobladas por
         # `python devtools/run.py sync_secrets --env=<X> --category=client`.
         # Son publicas (PUBLIC_* / NEXT_PUBLIC_*) — no se mascarean en logs
         # porque son Variables, no Secrets.
@@ -126,7 +122,7 @@ jobs:
           NEXT_PUBLIC_FEATURE_MFA: ${{ vars.NEXT_PUBLIC_FEATURE_MFA }}
           # E2E bypass del Turnstile: solo el environment `dev` la tiene en
           # 'true' (para automatizar el form de login en los E2E browser).
-          # En stage/prod la var no existe -> vars.* resuelve a '' -> el
+          # En prod la var no existe -> vars.* resuelve a '' -> el
           # env.ts del admin aplica su default 'false'. El backend prod
           # rechaza el bypass SIEMPRE (defensa server-side independiente).
           NEXT_PUBLIC_E2E_BYPASS: ${{ vars.NEXT_PUBLIC_E2E_BYPASS }}
@@ -156,7 +152,6 @@ jobs:
   # ---------------------------------------------------------------------------
   # Deploy de las 7 apps en paralelo (6 Astro + admin Next.js). Mapeo:
   #   dev   -> {app}-dev
-  #   stage -> {app}-stage
   #   main  -> {app}    (sin sufijo)
   # El admin tiene dist-dir distinto (admin/out vs apps/<niche>/dist), por
   # eso el matrix usa `include` con name/dist-dir/project explicitos.
@@ -166,7 +161,7 @@ jobs:
     needs: [resolve-env, build-apps]
     runs-on: ubuntu-24.04
     # SIN `environment:` a proposito: los secrets CLOUDFLARE_* son
-    # Repository Secrets (mismo valor en dev/stage/prod, no varian).
+    # Repository Secrets (mismo valor en dev/prod, no varian).
     # Cuando un job declara `environment:`, GitHub OCULTA los Repository
     # Secrets — solo los Environment Secrets del env activo son visibles.
     # Si en el futuro los CF tokens varian por env, migrarlos a
@@ -210,7 +205,7 @@ jobs:
   # Capa C del plan build-env-vars-per-env: smoke test post-deploy.
   # Curl al hostname desplegado + grep:
   #   - data-api-endpoint matchea PUBLIC_API_ENDPOINT del stage
-  #   - hrefs del dropdown NO apuntan a prod cuando stage != prod
+  #   - hrefs del dropdown NO apuntan a prod cuando el env != prod
   # Detecta drift entre lo que sube el matrix y lo que sirve Cloudflare
   # (cache stale, deploy parcial, etc.).
   # ---------------------------------------------------------------------------
@@ -314,7 +309,7 @@ jobs:
             exit 1
           fi
 
-      - name: Curl y assert dropdown hrefs no apunten a prod en dev/stage
+      - name: Curl y assert dropdown hrefs no apunten a prod en dev
         if: steps.url.outputs.is_admin != 'true' && steps.url.outputs.stage != 'prod'
         run: |
           html=$(curl -fsSL --max-time 30 "${{ steps.url.outputs.url }}/")

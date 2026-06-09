@@ -104,7 +104,7 @@ def _validate_required_creds(command: str, flags_dict: dict) -> None:
 
 
 def _parse_envs(flags_dict: dict) -> list[str]:
-    valid_envs = ['local', 'test', 'dev', 'stage', 'prod']
+    valid_envs = ['local', 'test', 'dev', 'prod']
     raw = flags_dict.get('envs')
     if not raw:
         return valid_envs
@@ -191,7 +191,7 @@ def describe() -> ScriptDescribe:
                 'type': 'list',
                 'summary': (
                     'Subset de envs a actualizar '
-                    '(local,test,dev,stage,prod). Default: todos.'
+                    '(local,test,dev,prod). Default: todos.'
                 ),
             },
             'dry_run': {

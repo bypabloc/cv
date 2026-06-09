@@ -4,14 +4,13 @@ Path mirroring: devtools/cloudflare_setup/flags.py -> this file.
 
 Cubre:
 - phase posicional valido / invalido / default
-- --env=dev|stage|prod aceptado; otros rechazados
+- --env=dev|prod aceptado; otros rechazados
 - flag() rellena defaults y normaliza
 """
 
-import pytest
-
 from cloudflare_setup.flags import VALID_PHASES
 from cloudflare_setup.flags import flag
+import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -49,9 +48,9 @@ class TestPhasePositional:
 
 
 class TestEnvFlag:
-    """--env=dev|stage|prod. Default = prod."""
+    """--env=dev|prod. Default = prod."""
 
-    @pytest.mark.parametrize('env', ['dev', 'stage', 'prod'])
+    @pytest.mark.parametrize('env', ['dev', 'prod'])
     def test_valid_env_accepted(self, monkeypatch, env):
         _argv(monkeypatch, 'trigger')
         result = flag({'env': env})
@@ -78,11 +77,11 @@ class TestCombinations:
         assert result['phase'] == 'trigger'
         assert result['env'] == 'dev'
 
-    def test_all_stage_passes(self, monkeypatch):
+    def test_all_dev_passes(self, monkeypatch):
         _argv(monkeypatch, 'all')
-        result = flag({'env': 'stage'})
+        result = flag({'env': 'dev'})
         assert result['phase'] == 'all'
-        assert result['env'] == 'stage'
+        assert result['env'] == 'dev'
 
     def test_status_default_env_is_prod(self, monkeypatch):
         _argv(monkeypatch, 'status')

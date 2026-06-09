@@ -4,7 +4,7 @@
 > estatico (`output: 'export'`) + React 19.2.6 + TypeScript 6 strict +
 > Biome v2 + Tailwind v4 + shadcn/ui + Tanstack Query v5 + Zustand 5,
 > deployado a Cloudflare Pages en
-> `admin.portfolio.{dev|stage|prod}.the-full-stack.com`. Consume DOS
+> `admin.portfolio.{dev|prod}.the-full-stack.com`. Consume DOS
 > Lambdas del backend serverless del repo: el Lambda `auth`
 > (desplegado: 6 operations / 26 actions) y el Lambda `users`
 > (desplegado: 3 operations / 15 actions — profile, status, admin). La
@@ -41,8 +41,8 @@ Aplica SIEMPRE que se trabaje con:
 
 - Cualquier archivo bajo `admin/` (carpeta nueva en root del repo)
 - Configuracion de Cloudflare Pages del project `portfolio-admin*`
-  (3 projects, uno por env)
-- Subdominio `admin.portfolio.{dev|stage|prod}.the-full-stack.com`
+  (2 projects, uno por env)
+- Subdominio `admin.portfolio.{dev|prod}.the-full-stack.com`
 - Env vars `NEXT_PUBLIC_*` del admin en
   `docker/env/client/.{env}` o en GH Environment Variables
 - Extension de `devtools/cloudflare_setup/config.py` para incluir el
@@ -378,8 +378,8 @@ para la gestion total de la cuenta y de otros usuarios — ver la seccion
   devueltas por el backend (con su `challenge_id`, TTL 5 min single-use).
 - **SIEMPRE** `NEXT_PUBLIC_WEBAUTHN_RP_ID` es config BASE por env (apex
   `the-full-stack.com` en prod, `portfolio.dev.the-full-stack.com` en
-  dev, `portfolio.stage.the-full-stack.com` en stage). Un passkey NO
-  migra entre envs (esperado). NO esta detras de un flag de "pending".
+  dev). Un passkey NO migra entre envs (esperado). NO esta detras de un
+  flag de "pending".
 - **SIEMPRE** si se conserva `NEXT_PUBLIC_FEATURE_MFA`, es solo un toggle
   de UI opcional (mostrar / ocultar la seccion de seguridad de
   `settings`), NUNCA un gate de "backend pending": el backend MFA +
@@ -414,7 +414,7 @@ para la gestion total de la cuenta y de otros usuarios — ver la seccion
   Lista permitida hoy: `challenges.cloudflare.com/turnstile/v0/api.js`
   (Cloudflare publica los hashes oficiales por version).
 - **NUNCA** tratar MFA + WebAuthn como funcionalidad diferida: estan
-  desplegados en el Lambda `auth` (dev/stage/prod) y son scope del
+  desplegados en el Lambda `auth` (dev/prod) y son scope del
   admin (feature `settings`) desde el inicio. NO condicionarlos a
   "cuando se mergee X".
 - **NUNCA** invocar `mfa.recovery-codes-consume` con el access JWT (usar
@@ -427,7 +427,7 @@ para la gestion total de la cuenta y de otros usuarios — ver la seccion
 
 ### Gestion total (consume el Lambda `users` desplegado: 3 operations / 15 actions)
 
-El Lambda `users` esta desplegado (dev/stage/prod) y expone 3
+El Lambda `users` esta desplegado (dev/prod) y expone 3
 operations / 15 actions, todas via `POST /users` con body JSON
 `{operation, action, data}` y `Authorization: Bearer <access JWT>`:
 
@@ -663,13 +663,11 @@ su access JWT enviando `{current_password, new_password}`.
 
 ### Deploy (Cloudflare Pages)
 
-- **SIEMPRE** 3 projects Cloudflare Pages: `portfolio-admin-dev`,
-  `portfolio-admin-stage`, `portfolio-admin` (prod sin sufijo).
-- **SIEMPRE** branch mapping: `dev` -> dev project, `stage` -> stage,
-  `main` -> prod.
+- **SIEMPRE** 2 projects Cloudflare Pages: `portfolio-admin-dev`,
+  `portfolio-admin` (prod sin sufijo).
+- **SIEMPRE** branch mapping: `dev` -> dev project, `main` -> prod.
 - **SIEMPRE** custom domain attached al provisionar:
   - `admin.portfolio.dev.the-full-stack.com` (dev)
-  - `admin.portfolio.stage.the-full-stack.com` (stage)
   - `admin.portfolio.the-full-stack.com` (prod)
 - **SIEMPRE** SSL cert se emite automatico por Cloudflare ACM al
   attach del custom domain (no manual).
@@ -702,8 +700,8 @@ su access JWT enviando `{current_password, new_password}`.
   incluyendo el admin) en cada PR.
 - **SIEMPRE** `deploy-apps.yml` con `environment: <stage>` para leer
   GH Variables correctas (NEXT_PUBLIC_*).
-- **SIEMPRE** branch-flow-guard sigue aplicando: PR `dev -> stage` y
-  `stage -> main` con merge commit (NO rebase — ver
+- **SIEMPRE** branch-flow-guard sigue aplicando: PR `dev -> main`
+  con merge commit (NO rebase — ver
   `.claude/rules/git-workflow.md`).
 - **SIEMPRE** el admin se mergea junto a los backends que consume
   (auth + users; analytics para la UI de metricas del plan

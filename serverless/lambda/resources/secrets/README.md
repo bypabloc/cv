@@ -19,10 +19,10 @@ kms_key_alias: alias/portfolio-lambdas    # solo si SecureString
                                            # default: alias/portfolio-lambdas
 
 # Mapeo .env -> Lambda
-source_env_var: <KEY_EN_EL_.ENV>          # KEY en docker/env/server/.{stage}
+source_env_var: <KEY_EN_EL_.ENV>          # KEY en docker/env/server/.{env}
 target_env_var: <KEY_EN_EL_LAMBDA>        # env var del Lambda
 
-stages: [dev, stage, prod]                 # subset de [dev, stage, prod]
+stages: [dev, prod]                        # subset de [dev, prod]
                                             # NUNCA incluir 'local'
 required: true                             # bool
 
@@ -38,7 +38,7 @@ tags: { Project: portfolio, ManagedBy: devtools }
 1. Crear `<short-name>.yaml` siguiendo el ejemplo de
    `turnstile-secret.yaml`.
 2. Agregar la KEY a `docker/env/server/.example` (sin valor).
-3. Agregar el valor real a `docker/env/server/.{dev,stage,prod}`
+3. Agregar el valor real a `docker/env/server/.{dev,prod}`
    (gitignored).
 4. Listar `<short-name>` en `uses.secrets` del `manifest.yaml` del
    Lambda consumer.
@@ -50,7 +50,7 @@ tags: { Project: portfolio, ManagedBy: devtools }
 ## Como rotar un secreto
 
 ```bash
-# Despues de actualizar docker/env/server/.{stage}
+# Despues de actualizar docker/env/server/.{env}
 python devtools/run.py serverless sync-secrets --stage=dev --aws-profile=tfs-dev
 ```
 
@@ -58,12 +58,12 @@ python devtools/run.py serverless sync-secrets --stage=dev --aws-profile=tfs-dev
 
 | Archivo | Path SSM | Tipo | Stages | Required |
 |---------|----------|------|--------|----------|
-| `turnstile-secret.yaml` | `/portfolio/${stage}/turnstile-secret` | SecureString | dev,stage,prod | true |
-| `turnstile-bypass-public-key.yaml` | `/portfolio/${stage}/turnstile-bypass-public-key` | String | dev,stage | false |
-| `neon-url.yaml` | `/portfolio/${stage}/neon-url` | SecureString | dev,stage,prod | true |
-| `owner-email.yaml` | `/portfolio/owner-email` | String | dev,stage,prod | true |
-| `ses-from-address.yaml` | `/portfolio/ses-from-address` | String | dev,stage,prod | true |
-| `ses-from-name.yaml` | `/portfolio/ses-from-name` | String | dev,stage,prod | false |
+| `turnstile-secret.yaml` | `/portfolio/${stage}/turnstile-secret` | SecureString | dev,prod | true |
+| `turnstile-bypass-public-key.yaml` | `/portfolio/${stage}/turnstile-bypass-public-key` | String | dev | false |
+| `neon-url.yaml` | `/portfolio/${stage}/neon-url` | SecureString | dev,prod | true |
+| `owner-email.yaml` | `/portfolio/owner-email` | String | dev,prod | true |
+| `ses-from-address.yaml` | `/portfolio/ses-from-address` | String | dev,prod | true |
+| `ses-from-name.yaml` | `/portfolio/ses-from-name` | String | dev,prod | false |
 
 Comando rapido para auditar:
 

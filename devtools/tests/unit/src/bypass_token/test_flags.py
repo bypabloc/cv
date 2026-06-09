@@ -6,9 +6,8 @@ El conftest de devtools agrega devtools/ al sys.path, asi que
 
 import sys
 
-import pytest
-
 from bypass_token.flags import flag
+import pytest
 
 
 def _argv(*args: str) -> list[str]:
@@ -19,14 +18,14 @@ def test_flag_keygen_defaults(monkeypatch) -> None:
     """
     Given el comando keygen sin flags,
     When flag(),
-    Then command=keygen + envs=[dev,stage] (default).
+    Then command=keygen + envs=[dev] (default).
     """
     monkeypatch.setattr(sys, 'argv', _argv('keygen'))
 
     result = flag({})
 
     assert result['command'] == 'keygen'
-    assert result['envs'] == ['dev', 'stage']
+    assert result['envs'] == ['dev']
     assert result['dry_run'] is False
 
 

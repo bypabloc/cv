@@ -1,7 +1,7 @@
 # Client env sync — politica del flujo
 
 > Sincronizar `docker/env/client/.{env}` a GitHub Environment Variables
-> (dev/stage/prod). NO editar GH Variables a mano; usar el script
+> (dev/prod). NO editar GH Variables a mano; usar el script
 > hermetico de devtools. Las keys del client son PUBLIC_* — Variables,
 > nunca Secrets.
 >
@@ -15,8 +15,8 @@ Aplica SIEMPRE que se trabaje con:
 
 - Rotar `PUBLIC_TURNSTILE_SITEKEY` (cambio del widget Cloudflare).
 - Agregar una `PUBLIC_*` nueva que el build deba consumir.
-- Onboardear un env nuevo en GitHub (dev / stage / prod).
-- Editar valores en `docker/env/client/.{dev,stage,prod}` que afecten el build.
+- Onboardear un env nuevo en GitHub (dev / prod).
+- Editar valores en `docker/env/client/.{dev,prod}` que afecten el build.
 - Inspeccionar/debuggear el deploy de las 6 apps a Cloudflare Pages.
 
 ## Reglas duras (SIEMPRE / NUNCA)
@@ -48,7 +48,7 @@ python devtools/run.py sync_secrets --env=dev --category=client --dry-run
 python devtools/run.py sync_secrets --env=dev --category=client
 
 # Crear el GH Environment si no existe (primera vez por env)
-python devtools/run.py sync_secrets --env=stage --category=client --create-env
+python devtools/run.py sync_secrets --env=dev --category=client --create-env
 
 # Subset (rotacion puntual de Turnstile)
 python devtools/run.py sync_secrets --env=prod --category=client --keys=PUBLIC_TURNSTILE_SITEKEY
@@ -77,8 +77,8 @@ Cuando se regenera el widget Cloudflare:
 1. Copiar el nuevo sitekey al `docker/env/client/.{env}` correspondiente
    (extraer la KEY puntual; nunca abrir el `.env` completo).
 2. `python devtools/run.py sync_secrets --env=<X> --category=client --keys=PUBLIC_TURNSTILE_SITEKEY`.
-3. Re-deployar las 6 apps del env: empujar a la branch (`dev`/`stage`/
-   `main`) o `gh workflow run deploy-apps.yml --ref <branch>`.
+3. Re-deployar las 6 apps del env: empujar a la branch (`dev`/`main`)
+   o `gh workflow run deploy-apps.yml --ref <branch>`.
 4. El widget secret (server-side) se rota aparte via `serverless setup-ssm`
    — ver [serverless-secrets.md](serverless-secrets.md).
 

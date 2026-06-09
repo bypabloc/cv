@@ -1,7 +1,7 @@
 """shared.crypto.bypass_token — rechaza stage distinto.
 
 Given un token firmado para stage='dev',
-When se verifica exigiendo stage='stage',
+When se verifica exigiendo stage='prod',
 Then levanta BypassTokenError(code='STAGE_MISMATCH').
 """
 
@@ -25,12 +25,12 @@ def test_verify_rejects_stage_mismatch() -> None:
         now=now,
     )
 
-    # Act / Assert: el Lambda es 'stage', el token dice 'dev'.
+    # Act / Assert: el Lambda es 'prod', el token dice 'dev'.
     with pytest.raises(BypassTokenError) as exc_info:
         verify_bypass_token(
             token,
             public_key_b64=public_b64,
-            stage='stage',
+            stage='prod',
             now=now + 10,
         )
 

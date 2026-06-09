@@ -123,7 +123,7 @@ def cmd_help(flags: dict[str, Any]) -> int:
     print(f'  {_c(YELLOW, "Flags globales:")}')
     print(
         f'    {_c(GREEN, "--env=<env>"):<30s} '
-        'Ambiente (local|dev|test|stage|prod, default: local)'
+        'Ambiente (local|dev|test|prod, default: local)'
     )
     print(
         f'    {_c(GREEN, "--output=json"):<30s} '

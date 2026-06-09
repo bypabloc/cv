@@ -110,14 +110,22 @@ def wait_selector(
     selector: str,
     *,
     state: str = 'visible',
+    timeout: float | None = None,
 ) -> None:
     """Espera a que `selector` alcance `state` (visible|attached|hidden|...).
 
     Given un selector que aparece de forma asincrona,
     When se espera,
     Then bloquea hasta que el elemento llega al estado pedido (o timeout).
+
+    `timeout` (ms) sobreescribe el default de Playwright (30s); util cuando un
+    island React re-hidrata tras un reload contra dev (cold-start lento).
     """
-    page.wait_for_selector(selector, state=state)  # type: ignore[arg-type]
+    page.wait_for_selector(
+        selector,
+        state=state,  # type: ignore[arg-type]
+        timeout=timeout,
+    )
 
 
 def text_of(page: Page, selector: str) -> str:

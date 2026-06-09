@@ -13,7 +13,6 @@
 | `faststruct-dev.the-full-stack.com` | Env como sufijo flat invertido | `faststruct.dev.the-full-stack.com` |
 | `faststruct-api.the-full-stack.com` | Component como sufijo slug compuesto rompe wildcards | `api.faststruct.the-full-stack.com` |
 | `dev.the-full-stack.com` | Falta product, queda env solo | nunca usar — env siempre con product |
-| `stage.the-full-stack.com` | Idem dev | nunca usar |
 | `Faststruct.the-full-stack.com` | Mayusculas violan RFC 1035 | `faststruct.the-full-stack.com` |
 | `faststruct_api.the-full-stack.com` | Underscore prohibido en hostnames | `api.faststruct.the-full-stack.com` |
 | `faststruct.com.the-full-stack.com` | Punto extra en slug, parece TLD pegado | usar slug propio |
@@ -35,20 +34,21 @@
 
 | Prohibido | Por que | Correcto |
 |-----------|---------|----------|
-| `qa.faststruct.the-full-stack.com` | `qa` no esta en la lista cerrada | usar `stage` |
-| `uat.faststruct.the-full-stack.com` | idem | usar `stage` |
+| `qa.faststruct.the-full-stack.com` | `qa` no esta en la lista cerrada | usar `dev` |
+| `uat.faststruct.the-full-stack.com` | idem | usar `dev` |
+| `stage.faststruct.the-full-stack.com` | env intermedio eliminado, no esta en la lista cerrada | usar `dev` |
 | `preview.faststruct.the-full-stack.com` | extender el patron para previews | usar default `<hash>.<project>.pages.dev` |
 | `beta.faststruct.the-full-stack.com` | sub-env post-prod no formal | usar feature flags + prod URL |
 | `test.faststruct.the-full-stack.com` | tests corren en CI, no necesitan URL | usar CI / local |
 | `feature-x.faststruct.the-full-stack.com` | env temporal por feature | usar default pages.dev |
-| `release-candidate.faststruct.the-full-stack.com` | sub-env informal | usar `stage` |
+| `release-candidate.faststruct.the-full-stack.com` | sub-env informal | usar `dev` |
 
 ### Multiples envs en un slug
 
 | Prohibido | Por que | Correcto |
 |-----------|---------|----------|
-| `faststruct.dev-stage.the-full-stack.com` | dos envs combinados sin sentido | uno o el otro |
-| `faststruct.dev.stage.the-full-stack.com` | 2 labels env, ambigüo | uno solo |
+| `faststruct.dev.prod.the-full-stack.com` | 2 labels env, ambigüo | uno solo |
+| `faststruct.dev.dev.the-full-stack.com` | label env repetido | uno solo |
 
 ## Anti-patterns por motivo
 
@@ -122,7 +122,7 @@ Script de auditoria sugerido:
 Regex del estandar (para validacion):
 
 ```regex
-^(?:[a-z][a-z0-9-]*\.)?[a-z][a-z0-9-]*(?:\.(?:dev|stage))?\.the-full-stack\.com$
+^(?:[a-z][a-z0-9-]*\.)?[a-z][a-z0-9-]*(?:\.dev)?\.the-full-stack\.com$
 ```
 
 Reservados a excluir adicionalmente: el conjunto del portfolio (apex, www, hub, fintech, architect, leader, vibe).

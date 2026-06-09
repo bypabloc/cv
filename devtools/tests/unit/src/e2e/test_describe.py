@@ -51,7 +51,7 @@ def test_describe_when_env_flag_then_default_dev_and_no_prod() -> None:
     env_flag = describe()['flags']['env']
 
     assert env_flag['default'] == 'dev'
-    assert env_flag['choices'] == ['dev', 'stage']
+    assert env_flag['choices'] == ['dev']
     assert 'prod' not in env_flag['choices']
 
 

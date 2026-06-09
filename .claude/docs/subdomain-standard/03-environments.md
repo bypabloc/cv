@@ -1,39 +1,34 @@
-# 03 - Environments (dev / stage / prod)
+# 03 - Environments (dev / prod)
 
 > [<- 02-naming-rules](./02-naming-rules.md) | [04-portfolio-exception ->](./04-portfolio-exception.md)
 
-## 3 environments formales
+## 2 environments formales
 
 | Env | Label en URL | Proposito | Datos | Acceso |
 |-----|--------------|-----------|-------|--------|
 | **prod** | (vacio) | Production estable, publica | Reales | Publico |
-| **stage** | `.stage.` | Release candidate antes de prod | Mirror de prod (datos de prueba) | Publico con BasicAuth o token |
 | **dev** | `.dev.` | Trabajo en curso (branch dev / trunk) | Synthetic / mock | Publico con BasicAuth o token |
 
 ## Asimetria prod
 
 Prod NO lleva label de env. La regla es:
 
-> Si NO hay label `.dev.` ni `.stage.` antes de `the-full-stack.com`, es prod.
+> Si NO hay label `.dev.` antes de `the-full-stack.com`, es prod.
 
 Razones:
 1. URLs de prod limpias para marketing / SEO.
-2. Diferencia visual inmediata en logs / monitoring (`*.dev.*` y
-   `*.stage.*` saltan a la vista).
+2. Diferencia visual inmediata en logs / monitoring (`*.dev.*`
+   salta a la vista).
 3. Coherente con SaaS modernos (`linear.app`, no `prod.linear.app`).
 
 ## Ejemplos completos
 
-### Producto faststruct con 3 envs
+### Producto faststruct con 2 envs
 
 ```text
 prod    faststruct.the-full-stack.com
         app.faststruct.the-full-stack.com
         api.faststruct.the-full-stack.com
-
-stage   faststruct.stage.the-full-stack.com
-        app.faststruct.stage.the-full-stack.com
-        api.faststruct.stage.the-full-stack.com
 
 dev     faststruct.dev.the-full-stack.com
         app.faststruct.dev.the-full-stack.com
@@ -46,8 +41,6 @@ dev     faststruct.dev.the-full-stack.com
 prod    status.the-full-stack.com
 dev     status.dev.the-full-stack.com
 ```
-
-Stage es opcional en servicios infra — depende de criticidad.
 
 ## Previews por PR — NO extender el patron
 
@@ -68,28 +61,25 @@ Ejemplo: `a1b2c3d.faststruct.pages.dev`.
 3. Si se necesita URL "linda" para compartir un preview en PR review,
    usar la `pages.dev` directa.
 
-## Flujo dev -> stage -> prod
+## Flujo dev -> prod
 
 ```text
 1. Branch feature -> merge a dev -> deploy automatico a *.dev.*
-2. Cuando dev esta estable -> merge dev a release branch -> deploy a *.stage.*
-3. QA + smoke test en stage -> tag release -> deploy a prod (sin label)
+2. QA + smoke test en dev -> merge dev a main -> deploy a prod (sin label)
 ```
 
-Si tu flujo no necesita stage (proyectos chicos), omitir el ambiente.
-Pero NO inventar variantes (`pre-prod`, `release-candidate`, `beta`).
-Las 3 etiquetas (dev/stage/prod) son la lista cerrada.
+NO inventar variantes (`pre-prod`, `release-candidate`, `beta`, `stage`,
+`qa`, `uat`). Las 2 etiquetas (dev/prod) son la lista cerrada.
 
-## Caso portfolio: los 3 envs del frontend
+## Caso portfolio: los 2 envs del frontend
 
 El portfolio sigue el patron component-based con `product = portfolio`
-en los 3 ambientes. La unica excepcion es el apex en prod
+en los 2 ambientes. La unica excepcion es el apex en prod
 (`the-full-stack.com`), que ES el niche `generic`.
 
 | Env | apex (generic) | niches (hub/fintech/architect/leader/vibe) |
 |-----|----------------|---------------------------------------------|
 | prod | `the-full-stack.com` (+ `www`) | `<niche>.portfolio.the-full-stack.com` |
-| stage | `portfolio.stage.the-full-stack.com` | `<niche>.portfolio.stage.the-full-stack.com` |
 | dev | `portfolio.dev.the-full-stack.com` | `<niche>.portfolio.dev.the-full-stack.com` |
 
 En prod tambien existe `portfolio.the-full-stack.com`, que hace redirect
@@ -99,13 +89,13 @@ generic). El backend sigue la misma logica:
 [06-migration-backend-api](./06-migration-backend-api.md)).
 
 El branch dispara el env via la integracion git nativa de Cloudflare
-Pages: `dev` -> proyectos `<app>-dev`, `stage` -> `<app>-stage`,
-`main` -> `<app>`. Cada proyecto Pages tiene su `BASE_DOMAIN` y
-`SITE_URL` como build env vars (no hay workflow de deploy).
+Pages: `dev` -> proyectos `<app>-dev`, `main` -> `<app>`. Cada proyecto
+Pages tiene su `BASE_DOMAIN` y `SITE_URL` como build env vars (no hay
+workflow de deploy).
 
 ## Acceso restringido en no-prod
 
-Recomendado para dev y stage:
+Recomendado para dev:
 
 | Mecanismo | Cuando usar |
 |-----------|-------------|
@@ -114,20 +104,21 @@ Recomendado para dev y stage:
 | IP allowlist | Si trabajas siempre desde IPs conocidas |
 | Robot.txt + noindex | SIEMPRE (evitar indexacion en Google) |
 
-`robots.txt` en dev/stage debe tener:
+`robots.txt` en dev debe tener:
 
 ```text
 User-agent: *
 Disallow: /
 ```
 
-Servido condicionalmente segun hostname (detectar `.dev.` o `.stage.`).
+Servido condicionalmente segun hostname (detectar `.dev.`).
 
 ## Que NO usar
 
 ```text
-❌ qa.faststruct.the-full-stack.com       — usa stage
-❌ uat.faststruct.the-full-stack.com      — usa stage
+❌ qa.faststruct.the-full-stack.com       — usa dev
+❌ uat.faststruct.the-full-stack.com      — usa dev
+❌ stage.faststruct.the-full-stack.com    — env eliminado, usa dev
 ❌ preview.faststruct.the-full-stack.com  — usa default pages.dev
 ❌ beta.faststruct.the-full-stack.com     — releases en prod con feature flags
 ❌ test.faststruct.the-full-stack.com     — tests corren en CI, no necesitan URL
@@ -138,7 +129,7 @@ Servido condicionalmente segun hostname (detectar `.dev.` o `.stage.`).
 ## Variables de entorno asociadas
 
 Sugerencia para mantener consistencia con
-`docker/env/client/.{local,dev,test,prod}` (las vars `BASE_*` son de la
+`docker/env/client/.{local,dev,prod}` (las vars `BASE_*` son de la
 categoria `client`):
 
 ```bash

@@ -11,13 +11,12 @@ from utils.flags_to_dict import set_default_values
 from utils.flags_to_dict import validate_allowed_flags
 
 
-VALID_ENVS = ['local', 'dev', 'test', 'stage', 'prod']
+VALID_ENVS = ['local', 'dev', 'test', 'prod']
 
 ENV_DESCRIPTIONS = {
     'local': 'Desarrollo local con hot reload',
     'dev': 'Desarrollo remoto (codigo en imagen)',
     'test': 'Ambiente de testing aislado',
-    'stage': 'Pre-produccion (build + preview, replica prod)',
     'prod': 'Producción con Gunicorn',
 }
 
@@ -25,7 +24,6 @@ COMPOSE_FILES = {
     'local': 'docker-compose/local.yml',
     'dev': 'docker-compose/dev.yml',
     'test': 'docker-compose/test.yml',
-    'stage': 'docker-compose/stage.yml',
     'prod': 'docker-compose/prod.yml',
 }
 

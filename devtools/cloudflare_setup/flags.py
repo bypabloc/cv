@@ -2,7 +2,7 @@
 
 Subcommand-style: ``phase`` is a positional argument
 (``projects|domains|dns|status|trigger|all``, default ``all``). The
-optional ``--env=dev|stage|prod`` flag selects the target environment
+optional ``--env=dev|prod`` flag selects the target environment
 (default ``prod``).
 """
 
@@ -103,7 +103,7 @@ def describe() -> ScriptDescribe:
         'summary': (
             'Orquestador idempotente de Cloudflare Pages: crea/patchea los '
             'projects, adjunta dominios, configura DNS, triggerea deploys '
-            'y muestra el status. Soporta los 3 envs (dev|stage|prod).'
+            'y muestra el status. Soporta los 2 envs (dev|prod).'
         ),
         'commands': [
             {
@@ -119,7 +119,7 @@ def describe() -> ScriptDescribe:
                 'type': 'string',
                 'default': 'prod',
                 'summary': (
-                    'Entorno objetivo (dev|stage|prod). Selecciona el '
+                    'Entorno objetivo (dev|prod). Selecciona el '
                     'sufijo de project_name, la branch GitHub y los env '
                     'vars per env.'
                 ),

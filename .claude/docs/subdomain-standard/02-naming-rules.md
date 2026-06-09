@@ -35,12 +35,11 @@
 
 ## Reglas para `{env}`
 
-Solo 3 valores formales:
+Solo 2 valores formales:
 
 | Env | Label | Que es |
 |-----|-------|--------|
 | prod | (vacio) | Production estable, publica |
-| stage | `stage` | Release candidate, mirror de prod con datos de prueba |
 | dev | `dev` | Branch dev / trunk, expuesto publicamente con auth si aplica |
 
 Para previews por PR, ver [03-environments.md](./03-environments.md) —
@@ -119,7 +118,7 @@ Para un component: mismo regex.
 Para una URL completa (sin protocolo):
 
 ```regex
-^(?:[a-z][a-z0-9-]*\.)?[a-z][a-z0-9-]*(?:\.(?:dev|stage))?\.the-full-stack\.com$
+^(?:[a-z][a-z0-9-]*\.)?[a-z][a-z0-9-]*(?:\.dev)?\.the-full-stack\.com$
 ```
 
 ## Casos limite

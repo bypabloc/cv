@@ -1,7 +1,7 @@
 # E2E testing del portfolio (comando `e2e`, Python unico)
 
 > TODOS los tests E2E del portfolio son Python 3.14 (`devtools/.venv`),
-> corren contra el entorno DESPLEGADO (dev/stage, NUNCA prod) via UN solo
+> corren contra el entorno DESPLEGADO (dev, NUNCA prod) via UN solo
 > comando: `python devtools/run.py e2e --module=<api|admin|app>`. Las
 > herramientas compartidas viven en `tests/shared/`. Reemplaza los dos
 > sistemas viejos (el harness Python `api_e2e` + la suite Playwright
@@ -25,11 +25,11 @@ al backend serverless (esos tienen sus propios runners).
 - **SIEMPRE** los E2E son Python 3.14 bajo `devtools/.venv`. Browser via
   `playwright` (python, sync API). API via `httpx`. Neon via `psycopg`.
   NUNCA TypeScript/Playwright-TS para E2E.
-- **SIEMPRE** corren contra el entorno DESPLEGADO (dev o stage). NUNCA prod
+- **SIEMPRE** corren contra el entorno DESPLEGADO (dev). NUNCA prod
   (mutan datos). NUNCA contra el stack Docker local de las apps (ese stack
   ya no participa de los E2E).
 - **SIEMPRE** un solo comando:
-  `python devtools/run.py e2e --module=<api|admin|app> --env=<dev|stage>`.
+  `python devtools/run.py e2e --module=<api|admin|app> --env=dev`.
   Sin `--module` corre los 3 en orden (api -> admin -> app).
 - **SIEMPRE** las herramientas compartidas viven en `tests/shared/`
   (config, http, runner, reporter, totp, auth_support, environment,
@@ -131,8 +131,8 @@ python devtools/run.py e2e --module=api --env=dev --keep-data --aws-profile=tfs-
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
 | Escribir un E2E en TypeScript/Playwright-TS | El runtime unico es Python 3.14 | playwright-python en `tests/<module>/` |
-| Correr E2E contra el stack Docker local | Los E2E prueban el sistema desplegado real | `--env=dev` o `--env=stage` |
-| Correr `api`/`admin` contra prod | Mutan datos (users/contacts/tracking) | NUNCA prod; solo dev/stage |
+| Correr E2E contra el stack Docker local | Los E2E prueban el sistema desplegado real | `--env=dev` |
+| Correr `api`/`admin` contra prod | Mutan datos (users/contacts/tracking) | NUNCA prod; solo dev |
 | Duplicar bypass/seed/browser en un modulo | Rompe el portador unico | Importar de `tests/shared` |
 | Imprimir el bypass token o la Neon URL | Leak de secreto | Hermetico: nunca a stdout |
 | Sondear `admin.list-users` tras el bust | Crea contenedores nuevos en la ventana del cold -> 404 perpetuo | `_wait_ssm_promoted` ANTES del bust, nada despues |

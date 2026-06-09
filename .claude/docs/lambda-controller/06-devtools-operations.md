@@ -96,14 +96,14 @@ python devtools/run.py serverless run \
 python devtools/run.py serverless run \
   --stage=local --lambda=<nombre> --event=events/create.json --runtime-mode=direct
 
-# --stage=dev|stage|prod -> `aws lambda invoke` contra el ya deployado
+# --stage=dev|prod -> `aws lambda invoke` contra el ya deployado
 python devtools/run.py serverless run \
   --stage=dev --lambda=<nombre> --event=events/create.json --aws-profile=<perfil>
 ```
 
 `run` SIEMPRE necesita `--stage` y `--lambda` (o `--path`). El `--stage`
 decide el modo: `local` corre el Lambda en local (RIE via Docker, o
-modo directo con `--runtime-mode=direct`); `dev`/`stage`/`prod` usan
+modo directo con `--runtime-mode=direct`); `dev`/`prod` usan
 `aws lambda invoke` contra la funcion ya deployada (requiere AWS CLI +
 credenciales). El `--event` es relativo a la raiz del lambda.
 
@@ -111,7 +111,6 @@ credenciales). El `--event` es relativo a la raiz del lambda.
 
 ```bash
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev --aws-profile=<perfil>
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-profile=<perfil>
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=<perfil>
 ```
 
@@ -185,8 +184,7 @@ python devtools/run.py serverless deploy --lambda=<nombre> --stage=dev --aws-pro
 python devtools/run.py serverless run \
   --stage=dev --lambda=<nombre> --event=events/create.json --aws-profile=tfs-dev
 
-# 4. Promover a stage y prod
-python devtools/run.py serverless deploy --lambda=<nombre> --stage=stage --aws-profile=tfs-dev
+# 4. Promover a prod
 python devtools/run.py serverless deploy --lambda=<nombre> --stage=prod --aws-profile=tfs-dev
 ```
 

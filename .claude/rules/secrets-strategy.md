@@ -11,7 +11,7 @@ Aplica SIEMPRE que se trabaje con:
 
 - Cualquier archivo en `docker/env/{client,server,dev-cli}/`
 - Rotar un secreto / sitekey / API key
-- Onboardear un env nuevo (dev/stage/prod) en GH o AWS
+- Onboardear un env nuevo (dev/prod) en GH o AWS
 - Auditar drift entre `.env` local y los destinos remotos
 - Agregar una variable nueva al build/lambda/devtools
 - El comando `python devtools/run.py sync_secrets ...`
@@ -46,7 +46,7 @@ python devtools/run.py sync_secrets --env=prod --keys=PUBLIC_TURNSTILE_SITEKEY \
   --category=client
 
 # Crear GH Environment (primera vez por env)
-python devtools/run.py sync_secrets --env=stage --category=client --create-env
+python devtools/run.py sync_secrets --env=dev --category=client --create-env
 ```
 
 Acciones reportadas: `SKIP` (match) / `PUSH` (update) / `CREATE` (nuevo) /

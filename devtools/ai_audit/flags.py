@@ -16,7 +16,7 @@ from utils.flags_to_dict import set_default_values
 from utils.flags_to_dict import validate_allowed_flags
 
 
-VALID_ENVS = ('local', 'dev', 'stage', 'prod')
+VALID_ENVS = ('local', 'dev', 'prod')
 VALID_NICHES = ('generic', 'hub', 'fintech', 'architect', 'leader', 'vibe')
 VALID_TOOLS = ('isitagentready', 'validators', 'lighthouse_psi')
 VALID_SUBCOMMANDS = ('audit', 'report')

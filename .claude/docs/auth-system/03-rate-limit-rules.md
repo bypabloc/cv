@@ -53,7 +53,7 @@ python devtools/run.py serverless rate-limit set --stage=dev \
 python devtools/run.py serverless rate-limit set --stage=dev \
   --endpoint='session.logout' --limit=30 --window=60 --aws-profile=tfs-dev
 
-# Repetir 1 a 1 con --stage=stage y --stage=prod
+# Repetir 1 a 1 con --stage=prod
 ```
 
 Idempotente: ejecutar de nuevo sobrescribe los valores.

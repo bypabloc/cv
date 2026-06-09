@@ -1,7 +1,7 @@
 # Admin SPA — Knowledge Tree
 
 > Knowledge tree del admin del portfolio
-> (`admin.portfolio.{dev|stage|prod}.the-full-stack.com`). Next.js
+> (`admin.portfolio.{dev|prod}.the-full-stack.com`). Next.js
 > 16.2.6 SPA + React 19.2.6 + shadcn + Tanstack Query v5 + Cloudflare
 > Pages.
 >
@@ -210,7 +210,6 @@ Browser (admin.portfolio.{env}.the-full-stack.com)
 | Env | Subdomain | Pages project | Branch GitHub |
 |-----|-----------|---------------|---------------|
 | dev | `admin.portfolio.dev.the-full-stack.com` | `portfolio-admin-dev` | `dev` |
-| stage | `admin.portfolio.stage.the-full-stack.com` | `portfolio-admin-stage` | `stage` |
 | prod | `admin.portfolio.the-full-stack.com` | `portfolio-admin` | `main` |
 
 ## Endpoints API consumidos
@@ -222,7 +221,7 @@ es del plan `b-analytics-api`.
 
 ### POST /auth (Lambda `auth` desplegado: 6 operations / 26 actions)
 
-> El Lambda `auth` ya esta implementado y desplegado (dev/stage/prod).
+> El Lambda `auth` ya esta implementado y desplegado (dev/prod).
 > Reglas: `.claude/rules/auth-system.md`, docs: `.claude/docs/auth-system/`.
 > Todo va por `POST /auth` body `{operation, action, data}` salvo los
 > `verify-magic-link` (GET callback). `_meta` lo inyecta `http_handler`.

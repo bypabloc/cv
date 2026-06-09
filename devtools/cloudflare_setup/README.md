@@ -1,7 +1,7 @@
 # cloudflare_setup
 
-Orquestador idempotente de los 18 proyectos Cloudflare Pages del portfolio
-(6 niches x 3 envs). Cada fase chequea estado actual antes de mutar, asi
+Orquestador idempotente de los 14 proyectos Cloudflare Pages del portfolio
+(7 apps x 2 envs). Cada fase chequea estado actual antes de mutar, asi
 que se puede re-correr sin riesgo.
 
 ## Uso
@@ -11,7 +11,7 @@ python devtools/run.py cloudflare_setup <phase> [--env=<env>]
 ```
 
 - `phase` (posicional, default `all`): que fase ejecutar.
-- `--env=dev|stage|prod` (default `prod`): entorno objetivo.
+- `--env=dev|prod` (default `prod`): entorno objetivo.
 
 ## Fases
 
@@ -26,16 +26,14 @@ python devtools/run.py cloudflare_setup <phase> [--env=<env>]
 
 ## Modelo: project_name + branch + custom_domain por env
 
-Los 18 projects se derivan de `APPS` x `ENVS` en `config.py`:
+Los 14 projects se derivan de `APPS` x `ENVS` en `config.py`:
 
 | Niche x Env | project_name | branch | custom_domain |
 | --- | --- | --- | --- |
 | generic / prod | `generic` | `main` | `the-full-stack.com` (apex) |
 | generic / dev | `generic-dev` | `dev` | `portfolio.dev.the-full-stack.com` |
-| generic / stage | `generic-stage` | `stage` | `portfolio.stage.the-full-stack.com` |
 | `<niche>` / prod | `<niche>` | `main` | `<niche>.portfolio.the-full-stack.com` |
 | `<niche>` / dev | `<niche>-dev` | `dev` | `<niche>.portfolio.dev.the-full-stack.com` |
-| `<niche>` / stage | `<niche>-stage` | `stage` | `<niche>.portfolio.stage.the-full-stack.com` |
 
 donde `<niche>` esta en `{hub, fintech, architect, leader, vibe}`.
 
@@ -45,14 +43,14 @@ Las env vars se aplican via patch en cada `projects --env=<X>` (config
 es la unica fuente de verdad — cambios manuales en la consola Cloudflare
 se revierten). Por env:
 
-| Variable | prod | dev | stage |
-| --- | --- | --- | --- |
-| `BASE_DOMAIN` | `portfolio.the-full-stack.com` | `portfolio.dev.the-full-stack.com` | `portfolio.stage.the-full-stack.com` |
-| `APEX_DOMAIN` | `the-full-stack.com` | (ausente) | (ausente) |
-| `PUBLIC_API_ENDPOINT` | `https://api.portfolio.the-full-stack.com` | `https://api.portfolio.dev.the-full-stack.com` | `https://api.portfolio.stage.the-full-stack.com` |
-| `PUBLIC_TURNSTILE_SITEKEY` | widget prod | widget dev | widget stage |
-| `SITE_URL` (generic) | `https://the-full-stack.com` | `https://portfolio.dev.the-full-stack.com` | `https://portfolio.stage.the-full-stack.com` |
-| `SITE_URL` (`<niche>`) | `https://<niche>.portfolio.the-full-stack.com` | `https://<niche>.portfolio.dev.the-full-stack.com` | `https://<niche>.portfolio.stage.the-full-stack.com` |
+| Variable | prod | dev |
+| --- | --- | --- |
+| `BASE_DOMAIN` | `portfolio.the-full-stack.com` | `portfolio.dev.the-full-stack.com` |
+| `APEX_DOMAIN` | `the-full-stack.com` | (ausente) |
+| `PUBLIC_API_ENDPOINT` | `https://api.portfolio.the-full-stack.com` | `https://api.portfolio.dev.the-full-stack.com` |
+| `PUBLIC_TURNSTILE_SITEKEY` | widget prod | widget dev |
+| `SITE_URL` (generic) | `https://the-full-stack.com` | `https://portfolio.dev.the-full-stack.com` |
+| `SITE_URL` (`<niche>`) | `https://<niche>.portfolio.the-full-stack.com` | `https://<niche>.portfolio.dev.the-full-stack.com` |
 
 Constantes en todos los envs: `NODE_VERSION=24`, `PNPM_VERSION=11.0.9`,
 `BASE_SCHEME=https`.
@@ -77,8 +75,8 @@ volcar el archivo `.env` completo).
 # Estado de los 6 *-dev projects
 python devtools/run.py cloudflare_setup status --env=dev
 
-# Triggerea rebuild de los 6 *-stage projects (sin push a GitHub)
-python devtools/run.py cloudflare_setup trigger --env=stage
+# Triggerea rebuild de los 7 *-dev projects (sin push a GitHub)
+python devtools/run.py cloudflare_setup trigger --env=dev
 
 # Setup desde cero o reconciliacion total de prod (idempotente)
 python devtools/run.py cloudflare_setup all --env=prod

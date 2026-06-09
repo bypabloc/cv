@@ -16,7 +16,7 @@
 
 ## Reglas criticas (resumen — autoritativa en [rules/ai-audit.md](../../rules/ai-audit.md))
 
-- SIEMPRE auditar prod como fuente de verdad. dev/stage = falsos negativos.
+- SIEMPRE auditar prod como fuente de verdad. dev = falsos negativos.
 - SIEMPRE `PSI_API_KEY` en `docker/env/dev-cli/.{env}` (LOCAL-ONLY, gitignored).
 - SIEMPRE reportes a `tmp/ai-audit/` (no a `docs/`).
 - NUNCA correr en CI/CD (consumo de APIs externas + ToS).

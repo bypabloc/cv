@@ -21,7 +21,7 @@ Flags comunes:
   --dry-run     No escribe en disco ni hace cambios en Cloudflare
   --force       Para `turnstile`: crear widget aunque exista uno con el mismo nombre
   --rotate      Para `turnstile`: rotar el secret de widgets existentes
-  --envs=local,test,dev,stage,prod
+  --envs=local,test,dev,prod
                 Subset de envs a escribir (default: todos)
 """
 

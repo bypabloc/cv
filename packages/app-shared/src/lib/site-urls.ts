@@ -13,7 +13,7 @@
  *       (`BASE_DOMAIN=portfolio.the-full-stack.com`) pero el apex de generic
  *       es `the-full-stack.com` (`APEX_DOMAIN=the-full-stack.com`).
  *     - Si `APEX_DOMAIN` NO esta definida, `generic` usa `BASE_DOMAIN` tal
- *       cual. Esto cubre dev/stage/local, donde el apex del env coincide con
+ *       cual. Esto cubre dev/local, donde el apex del env coincide con
  *       el `BASE_DOMAIN` (`portfolio.dev.the-full-stack.com`, `localhost`).
  *   - `hub` es el selector multi-niche, NO es un niche del CV
  *     (Niche solo cubre fintech/architect/leader/vibe/generic).
@@ -84,7 +84,7 @@ function isStandardPort(scheme: string, port: string): boolean {
  *
  *   Los 5 niches cuelgan de `BASE_DOMAIN`. `generic` usa `APEX_DOMAIN` si
  *   esta definida (caso prod, donde el apex difiere del dominio de los
- *   niches); si no, usa `BASE_DOMAIN` (caso dev/stage/local).
+ *   niches); si no, usa `BASE_DOMAIN` (caso dev/local).
  *
  * @param {SiteKey} key - "generic" (apex) | "hub" | "fintech" | "architect" | "leader" | "vibe"
  * @returns {string} URL absoluta sin trailing slash
@@ -95,7 +95,7 @@ export function buildSiteUrl(key: SiteKey): string {
   const scheme = readEnv('BASE_SCHEME') || DEFAULT_SCHEME
   const port = readEnv('BASE_PORT')
   // Apex de `generic`: APEX_DOMAIN si esta seteada. Si no:
-  // - con BASE_DOMAIN definido (dev/stage/local) el apex = BASE_DOMAIN.
+  // - con BASE_DOMAIN definido (dev/local) el apex = BASE_DOMAIN.
   // - sin ninguna env var, el apex = DEFAULT_APEX (fallback prod).
   const apexDomain =
     readEnv('APEX_DOMAIN') || (baseDomain ? domain : DEFAULT_APEX)

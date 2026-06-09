@@ -84,7 +84,7 @@ class LambdaState:
     scope : str
         `'infra'` o el nombre del Lambda.
     stage : str
-        `dev` | `stage` | `prod`.
+        `dev` | `prod`.
     config_hash : str
         SHA256 de la config renderizada aplicada.
     code_hash : str

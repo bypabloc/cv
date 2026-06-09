@@ -173,7 +173,7 @@ manteniendo un archivo de estado local. NO hay SAM ni CloudFormation.
 
 ```bash
 # Ejecutar el Lambda: --stage=local -> RIE via Docker (o --runtime-mode=direct);
-#   --stage=dev|stage|prod -> aws lambda invoke contra el ya deployado.
+#   --stage=dev|prod -> aws lambda invoke contra el ya deployado.
 python devtools/run.py serverless run \
   --stage=local --path=<dir> --event=events/create.json
 python devtools/run.py serverless run \

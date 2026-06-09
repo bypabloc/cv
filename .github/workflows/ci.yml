@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, master, dev, stage]
+    branches: [main, master, dev]
   push:
-    branches: [main, dev, stage]
+    branches: [main, dev]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -29,7 +29,7 @@ jobs:
   # PRs, agregar Codecov en un PR aparte.
   # --------------------------------------------------------------------------
   quality-gates:
-    # Nombre alineado con el required_status_check del ruleset de stage/main
+    # Nombre alineado con el required_status_check del ruleset de main
     # ("Lint + Typecheck + Unit + Build"). El CI hoy solo corre lint +
     # build; typecheck + unit los hace el pre-push hook local
     # (.git-hooks/pre-push). Mantener el nombre del ruleset preserva el
@@ -65,7 +65,7 @@ jobs:
 
       - name: Build all apps (con prod defaults — validacion only)
         # ci.yml NO deploya; solo valida que el build no tenga errores.
-        # Las env vars reales por env (dev/stage/prod) las inyecta
+        # Las env vars reales por env (dev/prod) las inyecta
         # deploy-apps.yml desde GH Environment Variables (vars.*).
         # Aqui usamos defaults de prod para que el guard de
         # TrackingPixel.astro (validateApiEndpoint) y el validador de

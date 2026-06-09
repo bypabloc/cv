@@ -54,7 +54,7 @@ SOLO NO aisla nada a nivel git.
 - **SIEMPRE** `.claude/worktrees/` esta gitignored (ya lo esta en este
   repo, `.gitignore` linea 7) para que los worktrees no aparezcan como
   untracked en el checkout principal.
-- **NUNCA** crear ni borrar el branch base (`dev`/`stage`/`main`) como
+- **NUNCA** crear ni borrar el branch base (`dev`/`main`) como
   worktree: son ramas de entorno. Un worktree es SIEMPRE una rama de
   trabajo (`feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`).
 - **NUNCA** confiar en multi-tab de VS Code para aislar archivos: las tabs
@@ -83,7 +83,7 @@ SOLO NO aisla nada a nivel git.
   en `.worktreeinclude` ANTES de correr cualquier build/test/push. Solo
   `claude --worktree` (e `isolation:'worktree'`) aplica `.worktreeinclude`
   automaticamente; `git worktree add` crea un checkout que SOLO tiene los
-  archivos tracked (los `.example`, NO los `.local`/`.dev`/`.stage`/`.prod`).
+  archivos tracked (los `.example`, NO los `.local`/`.dev`/`.prod`).
   Comando (copia file-a-file, no lee contenido -> cumple
   [env-files.md](env-files.md)):
 
@@ -215,7 +215,7 @@ forma de NO perder de vista las 2-3 sesiones en paralelo.
 | Abrir 5+ ventanas activas para ir mas rapido | La cuota es de cuenta + throttle de rafaga -> 429 | 2-3 sesiones activas a la vez; combinar capas, no multiplicarlas |
 | Correr un workflow Y abrir varias ventanas activas | El throttle se suma -> pega el techo | Una cosa a la vez: o el workflow, o las ventanas |
 | Dejar worktrees de `--worktree` sin borrar | NO se barren solos (solo los de subagentes/background) | `git worktree remove` + `prune` al terminar |
-| Crear `dev`/`stage`/`main` como worktree | Son ramas de entorno protegidas | Worktree = rama de trabajo (`feature/`, `fix/`, ...) |
+| Crear `dev`/`main` como worktree | Son ramas de entorno protegidas | Worktree = rama de trabajo (`feature/`, `fix/`, ...) |
 | Decir / buscar "FleetView" | No es feature oficial | Es **Agent View** (`claude agents`) |
 
 ## Referencias cruzadas
@@ -227,7 +227,7 @@ forma de NO perder de vista las 2-3 sesiones en paralelo.
   worktrees) y seccion 8 (descomposicion): el ORDEN de merge entre
   worktrees y que tareas son worktree-safe.
 - [git-workflow.md](git-workflow.md) — ramas de trabajo vs entorno, flujo
-  `dev -> stage -> main`, merge en orden.
+  `dev -> main`, merge en orden.
 - [env-files.md](env-files.md) — NUNCA leer `.env` al contexto;
   `.worktreeinclude` COPIA file-a-file, no lee (compatible).
 - [harness-protocol.md](harness-protocol.md) — `docs/progress/current.md`

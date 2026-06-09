@@ -3,7 +3,7 @@
  * @description Genera el contenido del archivo `_headers` (Cloudflare Pages
  *   custom headers) con CSP `connect-src` por env: solo incluye el
  *   hostname del API del env correspondiente, en vez de listar los 3
- *   (prod/dev/stage) como antes.
+ *   (prod/dev) como antes.
  *
  *   Cloudflare Pages lee `dist/_headers` y aplica las directivas a cada
  *   ruta. Sintaxis: `/*` matchea todo, headers indentados 2 espacios.
@@ -27,7 +27,7 @@
  *
  * @example
  *   buildHeaders({ apiEndpoint: 'https://api.portfolio.dev.the-full-stack.com' })
- *   // CSP connect-src incluye solo ese hostname (NO prod ni stage)
+ *   // CSP connect-src incluye solo ese hostname (NO prod)
  */
 export function buildHeaders(opts: { apiEndpoint: string }): string {
   const apiOrigin = parseOrigin(opts.apiEndpoint)

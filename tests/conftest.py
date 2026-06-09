@@ -38,8 +38,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--env',
         action='store',
         default='dev',
-        choices=('dev', 'stage'),
-        help='Entorno de deploy contra el que correr (dev|stage). NUNCA prod.',
+        choices=('dev',),
+        help='Entorno de deploy contra el que correr (dev). NUNCA prod.',
     )
     parser.addoption(
         '--aws-profile',
@@ -70,7 +70,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 @pytest.fixture(scope='session')
 def env(request: pytest.FixtureRequest) -> str:
-    """Entorno de deploy elegido (`dev` | `stage`)."""
+    """Entorno de deploy elegido (`dev`)."""
     return str(request.config.getoption('--env'))
 
 

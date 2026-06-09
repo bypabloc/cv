@@ -18,7 +18,6 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from playwright.sync_api import Page
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 import pytest
 from shared import browser as browser_tools
 
@@ -42,6 +41,10 @@ def _goto_contact_ready(page: Page, origin: str) -> None:
     browser_tools.wait_selector(page, 'input[name="name"]')
     # El island esta hidratado cuando su <astro-island> contenedor ya no tiene
     # el atributo `ssr` (Astro lo quita al hidratar el componente client:load).
+    # Timeout explicito de 60s (no el default de 30s): contra dev el cold-start
+    # del Pages project + la descarga del bundle del island puede superar 30s
+    # de forma intermitente (flake observado). La espera termina apenas hidrata,
+    # asi que NO penaliza el caso warm.
     page.wait_for_function(
         """() => {
             const form = document.querySelector('[data-testid="contact-form"]');
@@ -50,6 +53,7 @@ def _goto_contact_ready(page: Page, origin: str) -> None:
             // Sin <astro-island> (otro montaje) o ya hidratado (sin attr ssr).
             return !island || !island.hasAttribute('ssr');
         }""",
+        timeout=60_000,
     )
 
 
@@ -158,7 +162,13 @@ def test_contact_form_persisted_record_shows_sent_card_on_reload(
 
     # Act
     page.reload(wait_until='domcontentloaded')
-    browser_tools.wait_selector(page, '[data-testid="contact-sent-card"]')
+    # Tras el reload el island React re-hidrata para leer localStorage y
+    # renderizar la card; contra dev (cold-start) puede tardar mas de 30s.
+    browser_tools.wait_selector(
+        page,
+        '[data-testid="contact-sent-card"]',
+        timeout=60_000,
+    )
 
     # Assert
     assert (
@@ -187,7 +197,13 @@ def test_contact_form_resend_button_clears_storage_and_shows_form(
     _goto_contact_ready(page, subdomain('generic'))
     _seed_contact_sent(page, 'test-resend-id')
     page.reload(wait_until='domcontentloaded')
-    browser_tools.wait_selector(page, '[data-testid="contact-sent-card"]')
+    # Re-hidratacion del island tras el reload (cold-start de dev, ver test
+    # de persistencia): timeout extendido para evitar flake.
+    browser_tools.wait_selector(
+        page,
+        '[data-testid="contact-sent-card"]',
+        timeout=60_000,
+    )
 
     # Act
     page.locator('[data-testid="contact-resend-btn"]').click()

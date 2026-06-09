@@ -16,12 +16,11 @@ from utils.flags_to_dict import validate_allowed_flags
 
 # Stages soportados por el backend serverless. ``local`` no es un stage
 # AWS real — apunta a la ejecucion local del Lambda (RIE / modo directo).
-VALID_STAGES = ['local', 'dev', 'stage', 'prod']
+VALID_STAGES = ['local', 'dev', 'prod']
 
 STAGE_DESCRIPTIONS = {
     'local': 'Ejecucion local del Lambda (RIE / modo directo, sin AWS)',
     'dev': 'Recursos provisionados en us-east-1 (cuenta dev / sandbox)',
-    'stage': 'Recursos de pre-produccion en us-east-1 (replica prod)',
     'prod': 'Recursos provisionados en us-east-1 (cuenta productiva)',
 }
 

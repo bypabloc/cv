@@ -31,7 +31,7 @@ provisiona por separado.
 | `portfolio-tracking-pixel-<stage>` | `http` | Lambda `tracking_pixel` + ruta `POST /track` sobre la API compartida |
 | `portfolio-stream-processor-<stage>` | `on-table-changes` | Lambda `stream_processor` + Event Source Mappings de los Streams de `contacts` y `tracking` |
 
-`<stage>` es `dev`, `stage` o `prod`. Cada stage es un set completo de
+`<stage>` es `dev` o `prod`. Cada stage es un set completo de
 todos los recursos, aislado, con su propio set de archivos de estado.
 
 ## 2. Por que recurso-por-recurso y no un stack de infra unico
@@ -86,7 +86,7 @@ Parameters (`String` planos). Convencion del `Name`:
 ```text
 /portfolio/{stage}/{tipo}/{nombre}/{atributo}
 
-  {stage}     dev | stage | prod
+  {stage}     dev | prod
   {tipo}      carpeta del recurso: dynamodb | api_gateway | sqs
   {nombre}    archivo sin extension: contacts, portfolio-api, ...
   {atributo}  kebab-case: arn, name, stream-arn, id, url, ...
@@ -276,7 +276,7 @@ Campos:
 | `uses.tables` | Tablas DynamoDB con nivel de acceso (`read` \| `write` \| `read-write`) |
 | `uses.secrets` | Secretos SSM por nombre corto (`turnstile-secret`, `neon-url`, ...) |
 | `uses.sends-email` | `true` si el Lambda manda email por SES |
-| `env` | Variables de entorno por stage (`default` + override por `dev`/`stage`/`prod`) |
+| `env` | Variables de entorno por stage (`default` + override por `dev`/`prod`) |
 
 `provisioner.py` lo traduce a llamadas AWS CLI:
 
@@ -303,7 +303,6 @@ de estado (ver [05-estado-local.md](05-estado-local.md)).
 |-------|-------------|
 | `local` | Lambda corre en local (RIE via Docker o modo directo) con eventos de `events/` — sin AWS |
 | `dev` | Todos los recursos provisionados en `us-east-1` (cuenta dev) |
-| `stage` | Todos los recursos provisionados (pre-produccion) |
 | `prod` | Todos los recursos provisionados (cuenta productiva) |
 
 ## 9. Region y costos

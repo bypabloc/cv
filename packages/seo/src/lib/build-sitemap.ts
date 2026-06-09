@@ -71,10 +71,12 @@ const AI_CRAWLERS = [
 /**
  * @function isNonProdHost
  * @description Detecta si un siteUrl corresponde a un entorno no productivo
- *   (dev / stage / local). Esos entornos NO deben indexarse.
+ *   (dev / local). Esos entornos NO deben indexarse. El guard de `.stage.`
+ *   se conserva como defensa generica ante cualquier host con label de
+ *   entorno intermedio, aunque el entorno stage ya no exista.
  *
  * @param {string} siteUrl - URL absoluta del sitio
- * @returns {boolean} true si el host es dev/stage/localhost/pages.dev
+ * @returns {boolean} true si el host es dev/localhost/pages.dev
  *
  * @example
  *   isNonProdHost('https://portfolio.dev.the-full-stack.com')  // true
@@ -104,7 +106,7 @@ export function isNonProdHost(siteUrl: string): boolean {
  *   - Prod: indexable. Permite `*` + lista explicita de crawlers de IA
  *     (GPTBot, ClaudeBot, Google-Extended, PerplexityBot, CCBot...) para
  *     maximizar GEO. Apunta a los sitemaps.
- *   - dev / stage / localhost / pages.dev: `Disallow: /` total. Evita que
+ *   - dev / localhost / pages.dev: `Disallow: /` total. Evita que
  *     Google y los crawlers de IA indexen entornos no productivos.
  *
  * @param {string} siteUrl - URL absoluta del sitio (define el entorno)

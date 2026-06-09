@@ -8,7 +8,6 @@
 |----------|-------|-----------|
 | `*.the-full-stack.com` | Cualquier subdomain de 1 nivel: `faststruct`, `hub`, `status`, etc. | Universal SSL de Cloudflare (default) |
 | `*.dev.the-full-stack.com` | Products en dev: `faststruct.dev`, `proyectoX.dev`, etc. | Cert wildcard 1-nivel por env dev |
-| `*.stage.the-full-stack.com` | Products en stage | Cert wildcard 1-nivel por env stage |
 | `*.faststruct.the-full-stack.com` | Components de faststruct prod: `app`, `api`, `admin`, etc. | Cert wildcard 1-nivel por product prod |
 | `*.faststruct.dev.the-full-stack.com` | Components de faststruct dev | Cert wildcard 1-nivel por product+env dev |
 
@@ -122,6 +121,6 @@ Services) o `letsencrypt.org`.
 |----------------|-----|
 | Apex / www (estable) | 3600s (1h) |
 | Products en prod (estables) | 3600s |
-| Products en dev/stage (rotacion frecuente) | 300s (5min) |
+| Products en dev (rotacion frecuente) | 300s (5min) |
 | Records de verificacion (DKIM, SPF, DMARC, atproto) | 3600s |
 | Validacion ACM/Let's Encrypt (temporales) | 300s |

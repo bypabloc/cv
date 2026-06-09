@@ -102,7 +102,7 @@ def check_auth_gate(
             f'en docker/env/dev-cli/.{env}. Los modulos api/admin la '
             'necesitan para firmar el token de bypass de Turnstile.\n'
             '  Genera el par con: '
-            'python devtools/run.py bypass_token keygen --envs=dev,stage',
+            'python devtools/run.py bypass_token keygen --envs=dev',
         )
         return False
 

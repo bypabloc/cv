@@ -77,7 +77,7 @@ class Environment:
         (30 min): el harness completo (auth + users + admin con cold restart)
         encadena decenas de invocaciones que superan el default de 300s; el
         backend solo valida `now >= exp` (sin tope de TTL). Aplica solo a
-        dev/stage.
+        dev.
         """
         private_key = self._bypass_private_key()
         if not private_key:

@@ -1,6 +1,6 @@
 # Tests E2E del portfolio (Python 3.14)
 
-> Suite E2E unificada contra el entorno DESPLEGADO (dev/stage), en Python
+> Suite E2E unificada contra el entorno DESPLEGADO (dev), en Python
 > 3.14 (`devtools/.venv`). UN comando, tres modulos: `api` (Lambdas HTTP),
 > `admin` (panel Next.js, browser) y `app` (las 6 apps Astro, browser).
 
@@ -10,7 +10,7 @@ El orquestador es el comando `e2e` de devtools (se implementa en una fase
 posterior del plan). Forma canonica:
 
 ```bash
-python devtools/run.py e2e --module=<api|admin|app> --env=<dev|stage>
+python devtools/run.py e2e --module=<api|admin|app> --env=dev
 ```
 
 Mientras tanto, los modulos se pueden invocar directo con pytest bajo el
@@ -23,7 +23,7 @@ devtools/.venv/bin/python -m pytest tests/app  --env=dev
 devtools/.venv/bin/python -m pytest tests/admin --env=dev
 ```
 
-Opciones (en `tests/conftest.py`): `--env` (dev|stage, default dev),
+Opciones (en `tests/conftest.py`): `--env` (dev, default dev),
 `--aws-profile`, `--samples` (modulo api), `--keep-data`, `--lambda`.
 
 ## Estructura
@@ -47,7 +47,7 @@ distintos que nunca conviven en el mismo `sys.path`.
 ## Reglas
 
 - SIEMPRE Python 3.14 (`devtools/.venv`), NUNCA TypeScript en E2E.
-- SIEMPRE contra dev/stage desplegado, NUNCA prod, NUNCA stack Docker local.
+- SIEMPRE contra dev desplegado, NUNCA prod, NUNCA stack Docker local.
 - SIEMPRE hermetico: ningun valor de secreto (bypass, Neon URL) a stdout.
 - Los modulos `api`/`admin` exigen credenciales (SSO + clave privada Ed25519
   local); sin ellas fallan duro. El modulo `app` (no-auth) puede correr sin.

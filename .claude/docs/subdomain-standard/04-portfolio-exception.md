@@ -18,7 +18,7 @@ Los 5 niches no son una excepcion: cuelgan de `portfolio` como components.
 ## Niches bajo el estandar (product = portfolio)
 
 Los niches del portfolio son components del product `portfolio`, en los
-3 ambientes:
+2 ambientes:
 
 ```text
 prod    hub.portfolio.the-full-stack.com
@@ -27,18 +27,14 @@ prod    hub.portfolio.the-full-stack.com
         leader.portfolio.the-full-stack.com
         vibe.portfolio.the-full-stack.com
 
-stage   hub.portfolio.stage.the-full-stack.com
-        fintech.portfolio.stage.the-full-stack.com
-        ...
-
 dev     hub.portfolio.dev.the-full-stack.com
         fintech.portfolio.dev.the-full-stack.com
         ...
 ```
 
-El apex `the-full-stack.com` ES el niche `generic` en prod. En dev/stage
-el apex del ambiente es `portfolio.dev.the-full-stack.com` /
-`portfolio.stage.the-full-stack.com` (no hay apex desnudo en no-prod).
+El apex `the-full-stack.com` ES el niche `generic` en prod. En dev
+el apex del ambiente es `portfolio.dev.the-full-stack.com`
+(no hay apex desnudo en no-prod).
 
 `portfolio.the-full-stack.com` existe (consistencia de patron) y hace
 redirect 301 al apex `the-full-stack.com` — el apex es la URL canonica
@@ -69,7 +65,6 @@ sigue el estandar como component `api` del product `portfolio`:
 
 ```text
 prod    api.portfolio.the-full-stack.com
-stage   api.portfolio.stage.the-full-stack.com
 dev     api.portfolio.dev.the-full-stack.com
 ```
 

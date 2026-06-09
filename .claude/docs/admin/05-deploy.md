@@ -8,11 +8,11 @@
 |------|-------|
 | Provider | Cloudflare Pages (REST API) |
 | Account | mismo que las 6 apps Astro |
-| Projects | 3: `portfolio-admin-dev`, `portfolio-admin-stage`, `portfolio-admin` (prod) |
-| Branch mapping | `dev` → dev project, `stage` → stage, `main` → prod |
+| Projects | 2: `portfolio-admin-dev`, `portfolio-admin` (prod) |
+| Branch mapping | `dev` → dev project, `main` → prod |
 | Build command | `pnpm install --frozen-lockfile && pnpm --filter @portfolio/admin... build` |
 | Output dir | `admin/out/` |
-| Custom domains | `admin.portfolio.{dev|stage|prod}.the-full-stack.com` |
+| Custom domains | `admin.portfolio.{dev|prod}.the-full-stack.com` |
 | SSL | Cloudflare ACM (auto, per-hostname) |
 | DNS records | CNAME `admin.portfolio.<env>` → `portfolio-admin-<env>.pages.dev` |
 
@@ -22,7 +22,6 @@
 [{component}.]{product}.{env}.{domain}
 
 admin.portfolio.dev.the-full-stack.com    (dev)
-admin.portfolio.stage.the-full-stack.com  (stage)
 admin.portfolio.the-full-stack.com        (prod, env omitido)
 ```
 
@@ -86,7 +85,7 @@ def build_command_for(app: AppConfig) -> str:
 ```
 
 > El cambio clave es `build_output_dir`: Astro = `dist`, Next.js = `out`.
-> El `project_name` del admin es `admin` (sufijo `-dev`/`-stage`
+> El `project_name` del admin es `admin` (sufijo `-dev`
 > o sin sufijo en prod via la logica existente del script).
 
 ## Custom domain wiring
@@ -408,8 +407,6 @@ Sigue el patron del repo (rule `git-workflow.md`):
 ```text
 feature/admin-X → PR → dev  → auto-deploy dev (admin.portfolio.dev.the-full-stack.com)
                               ↓
-                       PR → stage → auto-deploy stage
-                              ↓
                        PR → main → auto-deploy prod
 ```
 
@@ -438,7 +435,7 @@ Merge commit en todos los PRs (rebase forbidden — ver memory
 | Hardcodear el sitekey Turnstile en `next.config.ts` | Acopla con rotacion | `NEXT_PUBLIC_TURNSTILE_SITEKEY` env var |
 | Olvidar `admin/out` en upload-artifact | Deploy descarga vacio | Path explicito con `|` multi-line |
 | `cancel-in-progress: true` en deploy | Cancela mid-deploy = AWS state parcial | `cancel-in-progress: false` |
-| Push directo a `dev`/`stage`/`main` | Branches protegidas (rulesets) | PR con merge commit |
+| Push directo a `dev`/`main` | Branches protegidas (rulesets) | PR con merge commit |
 | `wrangler.toml` con `name` distinto al project Cloudflare | wrangler crea uno nuevo | NO usar wrangler.toml — todo via devtools |
 | Setear `NEXT_PUBLIC_*` como GH Secret | Mascarea en logs, dificulta debug | Como GH Variable (publico por contrato) |
 

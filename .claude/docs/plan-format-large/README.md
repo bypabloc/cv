@@ -219,7 +219,7 @@ PR NO se mergea hasta que esa bateria pasa completa.
 ## Reglas de la seccion 9
 
 - ANTES del primer commit se verifica la rama actual: si es protegida
-  (`dev`/`stage`/`main`/`master`) se crea una rama de trabajo
+  (`dev`/`main`/`master`) se crea una rama de trabajo
   (`feature/<nombre>` partiendo de `dev`). Los commits del plan NUNCA van
   directo sobre una rama protegida. Ver la "Regla de ejecucion" de
   `.claude/rules/plan-format.md`.
@@ -458,7 +458,7 @@ requieren recursos externos sin acceso en el momento (AWS, Docker): se
 documentan como pendientes en el PR y se corren antes del merge.
 
 Esto enlaza con la "Regla de ejecucion" de `.claude/rules/plan-format.md`:
-antes del primer commit se verifica la rama (si es `dev`/`stage`/`main` se
+antes del primer commit se verifica la rama (si es `dev`/`main` se
 crea una rama de trabajo); al final, recien con la bateria verde, se hace
 push + PR.
 
@@ -472,7 +472,7 @@ push + PR.
 - Saltar el bucle de correccion ("se ve bien, lo dejo asi")
 - Hacer `git push` o abrir el PR con la bateria en rojo (el push/PR es el
   gate de cierre, no un paso intermedio)
-- Implementar el plan directo sobre `dev`/`stage`/`main` sin crear una rama
+- Implementar el plan directo sobre `dev`/`main` sin crear una rama
   de trabajo
 
 ---

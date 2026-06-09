@@ -7,7 +7,7 @@ Pages project del niche.
 
 Desviacion vs el spec TS: el sub-caso `services.localhost` ("Servicios del
 portfolio") NO tiene equivalente desplegado (es un indice del stack local
-nginx), asi que se DESCARTA en este modulo (corre solo contra dev/stage).
+nginx), asi que se DESCARTA en este modulo (corre solo contra dev).
 """
 
 from __future__ import annotations

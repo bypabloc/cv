@@ -9,7 +9,7 @@ description: >
   dev-cli (docker/env/dev-cli -> LOCAL-ONLY, personal IAM keys + API
   tokens that devtools uses to deploy from the developer laptop, NOT
   synced anywhere because CI uses OIDC). The unified command is
-  `python devtools/run.py sync_secrets --env=<dev|stage|prod>
+  `python devtools/run.py sync_secrets --env=<dev|prod>
   [--category=all|client|server|dev-cli] [--dry-run] [--keys=A,B]
   [--create-env] [--aws-profile=tfs-dev]`. Hermetic: NO value of any
   secret appears in stdout, stderr, or error messages — only SHA256

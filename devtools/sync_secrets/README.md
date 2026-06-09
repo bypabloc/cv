@@ -30,14 +30,14 @@ python devtools/run.py sync_secrets --env=prod --category=client \
   --keys=PUBLIC_TURNSTILE_SITEKEY
 
 # Crear GH Environment si no existe (primera vez por env)
-python devtools/run.py sync_secrets --env=stage --category=client --create-env
+python devtools/run.py sync_secrets --env=dev --category=client --create-env
 ```
 
 ## Flags
 
 | Flag | Default | Descripcion |
 |---|---|---|
-| `--env` | (requerido) | `local` \| `dev` \| `stage` \| `prod` |
+| `--env` | (requerido) | `local` \| `dev` \| `prod` |
 | `--category` | `all` | `all` \| `client` \| `server` \| `dev-cli` |
 | `--dry-run` | `false` | Reporta sin ejecutar |
 | `--keys` | (todas) | CSV de keys a sincronizar (filtra el catalogo activo) |

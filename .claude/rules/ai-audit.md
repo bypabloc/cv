@@ -25,10 +25,10 @@ en CI). Tampoco a estrategia general de portfolio (skill
 ## Reglas criticas (SIEMPRE / NUNCA)
 
 - **SIEMPRE** correr el audit contra **prod** como fuente de verdad.
-  dev/stage tienen `noindex` + robots bloqueando AI crawlers por
-  diseno; auditarlos da scores falsos negativos. El flag `--env=stage`
+  dev tiene `noindex` + robots bloqueando AI crawlers por
+  diseno; auditarlo da scores falsos negativos. El flag `--env=dev`
   existe solo para validar regresiones de config (ej. confirmar que
-  stage SI bloquea bots).
+  dev SI bloquea bots).
 - **SIEMPRE** la `PSI_API_KEY` (lighthouse_psi) vive en
   `docker/env/dev-cli/.{env}` — categoria `dev-cli`, LOCAL-ONLY,
   gitignored. NUNCA en `client/`, `server/` ni en SSM.
@@ -167,7 +167,7 @@ Detalle de cada descarte: [.claude/docs/ai-audit/01-tools-evaluadas.md](../docs/
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
 | Correr el audit cada commit en CI | Consumo de APIs externas + ToS riesgo | Manual on-demand, max 1-2 por semana |
-| Auditar dev/stage como gate de PR | Esos envs bloquean AI crawlers por diseno | Solo prod como gate |
+| Auditar dev como gate de PR | Ese env bloquea AI crawlers por diseno | Solo prod como gate |
 | Commitear `tmp/ai-audit/` al repo | Es scratch; pollute history | Esta en `.gitignore` |
 | Hardcodear `PSI_API_KEY` en codigo o yaml | Secreto leak en git | Solo en `docker/env/dev-cli/.{env}` |
 | Confiar solo en isitagentready | No mide performance ni JSON-LD del HTML rendered | Combinar las 3 tools (isitagentready + validators + lighthouse_psi) |

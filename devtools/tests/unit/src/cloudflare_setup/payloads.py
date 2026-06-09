@@ -8,14 +8,13 @@ Cubre:
 - _env_vars: incluye APEX_DOMAIN solo en prod
 """
 
-import pytest
-
 from cloudflare_setup.config import APPS
 from cloudflare_setup.config import ENVS
 from cloudflare_setup.config import AppConfig
 from cloudflare_setup.payloads import _env_vars
 from cloudflare_setup.payloads import build_create_project_payload
 from cloudflare_setup.payloads import build_patch_project_payload
+import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -110,21 +109,6 @@ class TestEnvVarsDev:
         assert dev_key != prod_key
 
 
-class TestEnvVarsStage:
-    """Stage analog a dev pero con .stage. en lugar de .dev."""
-
-    def test_stage_base_domain(self, hub):
-        result = _env_vars(hub, ENVS['stage'])
-        assert (
-            result['BASE_DOMAIN']['value']
-            == 'portfolio.stage.the-full-stack.com'
-        )
-
-    def test_stage_does_not_include_apex_domain(self, hub):
-        result = _env_vars(hub, ENVS['stage'])
-        assert 'APEX_DOMAIN' not in result
-
-
 # ---- build_create_project_payload --------------------------------------
 
 
@@ -143,10 +127,6 @@ class TestCreatePayload:
         payload = build_create_project_payload(hub, ENVS['dev'])
         assert payload['production_branch'] == 'dev'
         assert payload['source']['config']['production_branch'] == 'dev'
-
-    def test_stage_production_branch_is_stage(self, hub):
-        payload = build_create_project_payload(hub, ENVS['stage'])
-        assert payload['production_branch'] == 'stage'
 
     def test_prod_production_branch_is_main(self, hub):
         payload = build_create_project_payload(hub, ENVS['prod'])

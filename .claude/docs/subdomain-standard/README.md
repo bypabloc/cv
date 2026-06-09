@@ -2,7 +2,7 @@
 
 > Convencion canonica para nombrar subdominios bajo `the-full-stack.com`,
 > cubriendo productos, servicios de infra y multiples environments
-> (`dev`, `stage`, `prod`). Aplicable a todo lo que viva en el dominio.
+> (`dev`, `prod`). Aplicable a todo lo que viva en el dominio.
 > La unica excepcion permanente es el apex `the-full-stack.com` + `www`.
 
 ## Patron canonico
@@ -14,7 +14,7 @@
 Reglas de presencia:
 
 - `{domain}` — siempre `the-full-stack.com`.
-- `{env}` — opcional; presente solo cuando NO es prod. Valores: `dev`, `stage`.
+- `{env}` — opcional; presente solo cuando NO es prod. Valor: `dev`.
 - `{product}` — slug del producto. Obligatorio salvo apex/www del portfolio.
 - `{component}` — opcional, identifica componentes dentro del producto.
 
@@ -22,7 +22,6 @@ Reglas de presencia:
 
 ```text
 prod    [{component}.]{product}.the-full-stack.com
-stage   [{component}.]{product}.stage.the-full-stack.com
 dev     [{component}.]{product}.dev.the-full-stack.com
 ```
 
@@ -32,7 +31,7 @@ dev     [{component}.]{product}.dev.the-full-stack.com
 |------|---------|-------------|
 | Patron canonico + ejemplos | [01-pattern.md](./01-pattern.md) | Entender la forma `[{component}.]{product}.{env}.{domain}` |
 | Reglas de naming + reservados | [02-naming-rules.md](./02-naming-rules.md) | Antes de elegir nombre de producto o componente |
-| Environments (dev/stage/prod) | [03-environments.md](./03-environments.md) | Definir flujo dev/stage/prod, decision sobre previews por PR |
+| Environments (dev/prod) | [03-environments.md](./03-environments.md) | Definir flujo dev/prod, decision sobre previews por PR |
 | Excepcion del portfolio personal | [04-portfolio-exception.md](./04-portfolio-exception.md) | Por que solo el apex es excepcion y los niches usan `{niche}.portfolio.*` |
 | Wildcards y certificados | [05-wildcards-and-certs.md](./05-wildcards-and-certs.md) | Planear SSL: por hostname, wildcard 1-nivel, Advanced Cert |
 | Migracion backend serverless | [06-migration-backend-api.md](./06-migration-backend-api.md) | Plan concreto para migrar `execute-api.amazonaws.com` |
@@ -42,12 +41,12 @@ dev     [{component}.]{product}.dev.the-full-stack.com
 
 - SIEMPRE prod va SIN label de env (`faststruct.the-full-stack.com`, no
   `prod.faststruct.the-full-stack.com`).
-- SIEMPRE `dev` y `stage` van como label intermedio
+- SIEMPRE `dev` va como label intermedio
   (`faststruct.dev.the-full-stack.com`, no `dev-faststruct.the-full-stack.com`).
 - NUNCA usar nombres reservados como `{product}` — ver
   [02-naming-rules.md](./02-naming-rules.md) para la lista completa.
-- NUNCA inventar un 4to environment (`qa`, `uat`, `preview-N`). Para
-  previews por PR usar el default de Cloudflare Pages
+- NUNCA inventar un 3er environment (`qa`, `uat`, `stage`, `preview-N`).
+  Para previews por PR usar el default de Cloudflare Pages
   (`<hash>.<project>.pages.dev`) — ver [03-environments.md](./03-environments.md).
 - La unica excepcion permanente es el apex `the-full-stack.com` + `www`.
   Los 5 niches del portfolio siguen el estandar como components del
@@ -73,14 +72,13 @@ faststruct.the-full-stack.com               (prod, landing)
 app.faststruct.the-full-stack.com           (prod, app)
 api.faststruct.the-full-stack.com           (prod, api)
 api.faststruct.dev.the-full-stack.com       (dev, api)
-api.faststruct.stage.the-full-stack.com     (stage, api)
 
 # Portfolio (product = portfolio): apex es excepcion, niches y api siguen el estandar
 the-full-stack.com                          (prod, apex = niche generic, excepcion)
 fintech.portfolio.the-full-stack.com        (prod, niche fintech)
 hub.portfolio.dev.the-full-stack.com        (dev, niche hub)
 api.portfolio.the-full-stack.com            (prod, backend)
-api.portfolio.stage.the-full-stack.com      (stage, backend)
+api.portfolio.dev.the-full-stack.com        (dev, backend)
 
 # Servicio infra status page
 status.the-full-stack.com                   (prod)

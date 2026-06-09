@@ -62,7 +62,7 @@ const DEFAULT_OG_PATH = '/og-image.svg'
  * Deriva el SITE_URL default del niche cuando el caller no pasa `siteUrl`.
  *
  * Usa `buildSiteUrl` (env-driven via BASE_DOMAIN/SCHEME/PORT), de modo que
- * el default respeta el ambiente activo (prod / stage / dev / local) sin
+ * el default respeta el ambiente activo (prod / dev / local) sin
  * hardcodear `the-full-stack.com`.
  */
 function defaultSiteUrlFor(niche: Niche): string {

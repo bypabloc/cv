@@ -81,7 +81,6 @@ style(components): unifica spacing del Footer con tokens del DS
 Ramas de entorno (protegidas, deploy automatico a Cloudflare Pages):
 
 - `main` — produccion / live site desplegado (`the-full-stack.com`)
-- `stage` — release candidate (`*.portfolio.stage.the-full-stack.com`)
 - `dev` — desarrollo, rama base para features (`*.portfolio.dev.the-full-stack.com`)
 
 Ramas de trabajo (efimeras, separador `/` obligatorio para VS Code):
@@ -91,17 +90,17 @@ Ramas de trabajo (efimeras, separador `/` obligatorio para VS Code):
 - `chore/<nombre>` — mantenimiento, deps, configs
 - `docs/<nombre>` — solo cambios de documentacion
 
-> Las promociones de entorno se hacen con un PR directo `dev -> stage` y
-> `stage -> main` (merge commit). NO se usan ramas `release/*`: con merge
-> commit las ramas no divergen, asi que no hace falta una rama puente
-> rebaseada (ver "Flujo de promocion" abajo).
+> La promocion de entorno se hace con un PR directo `dev -> main`
+> (merge commit). NO se usan ramas `release/*`: con merge commit las ramas
+> no divergen, asi que no hace falta una rama puente rebaseada (ver
+> "Flujo de promocion" abajo).
 
-## Flujo de promocion dev -> stage -> main (OBLIGATORIO)
+## Flujo de promocion dev -> main (OBLIGATORIO)
 
-Las ramas de entorno se promueven SIEMPRE en cadena, nunca salteando:
+Las features pasan por `dev` antes de llegar a produccion, nunca directo:
 
 ```text
-feature/* --PR--> dev --PR--> stage --PR--> main
+feature/* --PR--> dev --PR--> main
 ```
 
 TODOS los PRs se mergean con **merge commit** (una sola estrategia, ver
@@ -109,29 +108,25 @@ TODOS los PRs se mergean con **merge commit** (una sola estrategia, ver
 
 Reglas duras:
 
-- Un PR a `main` SOLO puede tener como head `stage`. NUNCA `dev -> main`
-  directo.
-- Un PR a `stage` SOLO puede tener como head `dev`.
+- Un PR a `main` SOLO puede tener como head `dev`. NUNCA una feature branch
+  directo a `main`.
 - Enforced por el workflow `branch-flow-guard.yml` + ruleset de GitHub.
 
 ### Como promover
 
-1. `dev -> stage`: `gh pr create --base stage --head dev`, mergear con
+1. `dev -> main`: `gh pr create --base main --head dev`, mergear con
    `gh pr merge --merge` (NUNCA `--delete-branch`: `dev` es permanente).
-2. `stage -> main`: `gh pr create --base main --head stage`, mergear con
-   `gh pr merge --merge`.
 
-El PR de promocion es directo `dev -> stage` y `stage -> main`: sin
-conflictos, sin `release/*` branches, sin rebase manual. El merge commit
-preserva los SHAs de los commits promovidos, asi que las tres ramas
-comparten exactamente los mismos commits (mas un merge commit por
-promocion). No hay divergencia.
+El PR de promocion es directo `dev -> main`: sin conflictos, sin
+`release/*` branches, sin rebase manual. El merge commit preserva los
+SHAs de los commits promovidos, asi que las dos ramas comparten
+exactamente los mismos commits (mas un merge commit por promocion). No
+hay divergencia.
 
 ### Resincronizar tras un hotfix directo a main
 
 Si por emergencia un fix entra directo a `main`, propagarlo el MISMO dia
-a `stage` y `dev` con merge commit (PR `main -> stage`, luego
-`stage -> dev`). No dejar ramas divergentes.
+a `dev` con merge commit (PR `main -> dev`). No dejar ramas divergentes.
 
 ## Merge strategy
 
@@ -139,8 +134,8 @@ a `stage` y `dev` con merge commit (PR `main -> stage`, luego
 
 - Feature -> `dev`: `gh pr merge --merge --delete-branch` (la feature
   branch es efimera, se borra al mergear).
-- Promocion `dev -> stage` y `stage -> main`: `gh pr merge --merge`
-  (SIN `--delete-branch` — las ramas de entorno son permanentes).
+- Promocion `dev -> main`: `gh pr merge --merge` (SIN `--delete-branch` —
+  las ramas de entorno son permanentes).
 
 En GitHub solo esta habilitado `allow_merge_commit`; `allow_rebase_merge`
 y `allow_squash_merge` estan deshabilitados.
@@ -148,21 +143,21 @@ y `allow_squash_merge` estan deshabilitados.
 ### Por que merge commit y NO rebase
 
 El rebase RE-APLICA cada commit con un SHA nuevo. Si se rebasea al
-promover `dev -> stage`, el commit `feat: X` que estaba en `dev` como
-`abc123` aparece en `stage` como `def456`: mismo contenido, hash distinto.
+promover `dev -> main`, el commit `feat: X` que estaba en `dev` como
+`abc123` aparece en `main` como `def456`: mismo contenido, hash distinto.
 git identifica commits por SHA, no por contenido — entonces el siguiente
-PR `dev -> stage` ve `abc123` y `def456` como commits diferentes que
+PR `dev -> main` ve `abc123` y `def456` como commits diferentes que
 tocan las mismas lineas y da **conflicto fantasma**.
 
 El merge commit PRESERVA los SHAs: el commit `abc123` de `dev` se mergea
-a `stage` siendo `abc123`. `stage` y `dev` comparten el SHA -> cero
+a `main` siendo `abc123`. `main` y `dev` comparten el SHA -> cero
 divergencia, cero conflicto. Por eso TODO se mergea con merge commit.
 
 Trade-off aceptado: la historia tiene un merge commit por cada PR (no es
-100% lineal), a cambio de cero divergencia entre `dev`/`stage`/`main` y
-un unico metodo de merge para todos los PRs.
+100% lineal), a cambio de cero divergencia entre `dev`/`main` y un unico
+metodo de merge para todos los PRs.
 
-- NUNCA force push en ramas compartidas (`dev`, `stage`, `main`)
+- NUNCA force push en ramas compartidas (`dev`, `main`)
 - Conflictos en una feature branch se resuelven con `git merge origin/dev`
   (o `git rebase origin/dev` dentro de la propia feature branch antes de
   abrir el PR — el rebase local de una feature no afecta la divergencia)
@@ -187,9 +182,9 @@ un unico metodo de merge para todos los PRs.
 
 ## Pull Requests
 
-- Target: `dev` para features/fixes/chores. Promocion a `stage` y `main`
-  solo via el flujo en cadena (ver "Flujo de promocion" arriba) — NUNCA
-  un PR de feature directo a `stage` o `main`.
+- Target: `dev` para features/fixes/chores. Promocion a `main` solo via el
+  flujo en cadena (ver "Flujo de promocion" arriba) — NUNCA un PR de feature
+  directo a `main`.
 - CI ejecuta mismos quality gates que pre-push
 - Trigger: PRs a `main`/`master`/`dev`
 - Template automatico: `.github/pull_request_template.md` (si existe)

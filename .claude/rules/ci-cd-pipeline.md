@@ -2,7 +2,7 @@
 
 > Workflows GitHub Actions del backend serverless y las apps Astro.
 > Auth via AWS OIDC (cero secrets de larga vida), deploy automatizado
-> en merge a `dev`/`stage`/`main`, migraciones de DB previas a
+> en merge a `dev`/`main`, migraciones de DB previas a
 > redeploy de Lambdas, queue por env, estado de devtools en S3.
 
 ## Activacion
@@ -59,18 +59,17 @@ Aplica SIEMPRE al editar:
 
 | Workflow | Trigger | Que hace | Duracion |
 |----------|---------|----------|----------|
-| `ci.yml` | PRs + push dev/stage/main | Biome check + build apps (artifact dist-all-apps-<sha>) | ~45s |
-| `branch-flow-guard.yml` | PRs a main/stage | Valida cadena dev->stage->main | <10s |
+| `ci.yml` | PRs + push dev/main | Biome check + build apps (artifact dist-all-apps-<sha>) | ~45s |
+| `branch-flow-guard.yml` | PRs a main | Valida cadena dev->main | <10s |
 | `clean-pr-attribution.yml` | PRs | Limpia atribucion IA | <10s |
-| `deploy-backend.yml` | Push dev/stage/main | migrate-db -> detect-changes -> deploy-lambdas (matrix) | 2-5 min |
-| `deploy-apps.yml` | Push dev/stage/main + manual | build-apps -> deploy-pages (matrix 6 niches) | 1-3 min |
+| `deploy-backend.yml` | Push dev/main | migrate-db -> detect-changes -> deploy-lambdas (matrix) | 2-5 min |
+| `deploy-apps.yml` | Push dev/main + manual | build-apps -> deploy-pages (matrix 6 niches) | 1-3 min |
 
 ## Mapeo branch -> env -> recursos
 
 | Branch | Stage | IAM role | Cloudflare Pages projects | URL pattern |
 |--------|-------|----------|---------------------------|-------------|
 | `dev` | `dev` | `portfolio-deploy-dev` | `portfolio-{niche}-dev` | `{niche}.portfolio.dev.the-full-stack.com` |
-| `stage` | `stage` | `portfolio-deploy-stage` | `portfolio-{niche}-stage` | `{niche}.portfolio.stage.the-full-stack.com` |
 | `main` | `prod` | `portfolio-deploy-prod` | `portfolio-{niche}` | `{niche}.portfolio.the-full-stack.com` (apex para `generic`) |
 
 ## Estado de devtools en S3
@@ -104,13 +103,13 @@ imprime JSON `{"affected": [...]}`.
 GH Variables del environment activo. Sin eso, las vars caen al default
 prod (bug que motivo el plan build-env-vars-per-env).
 
-| Var | dev | stage | prod |
-|---|---|---|---|
-| `BASE_DOMAIN` | `portfolio.dev.the-full-stack.com` | `portfolio.stage.the-full-stack.com` | `portfolio.the-full-stack.com` |
-| `APEX_DOMAIN` | (vacio) | (vacio) | `the-full-stack.com` |
-| `BASE_SCHEME` | `https` | `https` | `https` |
-| `PUBLIC_API_ENDPOINT` | `https://api.portfolio.dev...` | `...stage...` | `...prod...` |
-| `PUBLIC_TURNSTILE_SITEKEY` | sitekey dev | sitekey stage | sitekey prod |
+| Var | dev | prod |
+|---|---|---|
+| `BASE_DOMAIN` | `portfolio.dev.the-full-stack.com` | `portfolio.the-full-stack.com` |
+| `APEX_DOMAIN` | (vacio) | `the-full-stack.com` |
+| `BASE_SCHEME` | `https` | `https` |
+| `PUBLIC_API_ENDPOINT` | `https://api.portfolio.dev...` | `...prod...` |
+| `PUBLIC_TURNSTILE_SITEKEY` | sitekey dev | sitekey prod |
 
 **SIEMPRE** el build de `deploy-apps.yml` declara `environment: <stage>`
 para leer `vars.*` correctas. Sin eso, las vars son `''` y los guards
@@ -190,11 +189,11 @@ datos ni cambiar el endpoint:
 ## Referencias cruzadas
 
 - `.claude/docs/ci-cd-pipeline/aws-oidc-setup.md` — runbook completo
-  del setup AWS (OIDC provider + 3 IAM roles + S3 bucket).
+  del setup AWS (OIDC provider + 2 IAM roles + S3 bucket).
 - `.claude/docs/ci-cd-pipeline/troubleshooting.md` — errores comunes.
 - Skill `ci-cd-pipeline` — guia rapida invocable.
 - `devtools/serverless/state.py` — backend de estado.
 - `devtools/serverless/change_detector.py` — detector de lambdas.
-- `.claude/rules/git-workflow.md` — flujo `dev -> stage -> main`.
+- `.claude/rules/git-workflow.md` — flujo `dev -> main`.
 - `.claude/rules/neon-management.md` — migrations Alembic via la
   Lambda `db`.

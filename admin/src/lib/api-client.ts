@@ -51,7 +51,7 @@ function flattenBody(body: unknown): unknown {
  * @description SOLO E2E: cuando `NEXT_PUBLIC_E2E_BYPASS === 'true'`, devuelve el
  *   bypass token Ed25519 firmado que el spec Playwright inyecta en
  *   `window.__E2E_BYPASS_TOKEN__`. apiFetch lo manda en el header
- *   `X-Turnstile-Bypass-Token`; el backend dev/stage acepta el bypass cuando
+ *   `X-Turnstile-Bypass-Token`; el backend dev acepta el bypass cuando
  *   `cf_turnstile_response` viaja vacio. En cualquier build que no sea E2E
  *   devuelve null (el bypass nunca se activa). Prod rechaza el bypass aunque
  *   llegue el header.

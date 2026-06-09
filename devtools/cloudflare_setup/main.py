@@ -12,7 +12,7 @@ Phases:
   - trigger:  trigger a fresh deploy for each project (no GitHub push)
   - all:      run projects -> domains -> dns -> status in order
 
-Environment selection (--env=dev|stage|prod, default prod):
+Environment selection (--env=dev|prod, default prod):
   Each env targets a separate set of Pages projects with its own
   production_branch, custom_domain, and env vars. See ``config.ENVS``.
 

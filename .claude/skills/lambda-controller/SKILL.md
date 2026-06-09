@@ -7,7 +7,7 @@ description: >
   validation, the preload -> validate -> execute lifecycle, and a
   unit + integration testing standard. Also covers OPERATING these
   lambdas with devtools: the manifest.yaml manifest, running locally,
-  deploying to dev/stage/prod, destroying and running the tests.
+  deploying to dev/prod, destroying and running the tests.
   ALWAYS invoke this skill BEFORE creating, scaffolding,
   refactoring, running, deploying or testing ANY Python AWS Lambda that
   follows this pattern, including requests framed only as "lambda
@@ -173,7 +173,7 @@ hay SAM ni CloudFormation. Los comandos apuntan al lambda con
 
 ```bash
 # Ejecutar el Lambda: --stage=local -> RIE via Docker (o --runtime-mode=direct);
-#   --stage=dev|stage|prod -> aws lambda invoke contra el ya deployado.
+#   --stage=dev|prod -> aws lambda invoke contra el ya deployado.
 python devtools/run.py serverless run \
   --stage=local --lambda=<nombre> --event=events/create.json
 python devtools/run.py serverless run \

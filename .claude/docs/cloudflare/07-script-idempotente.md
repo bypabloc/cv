@@ -1,8 +1,8 @@
 # Script idempotente: `devtools/cloudflare_setup/`
 
 > Como esta organizado el script Python que gestiona todo el setup,
-> que fases tiene, y como usarlo. Soporta los 18 Pages projects del
-> portfolio (6 niches x 3 envs) via `--env=dev|stage|prod`.
+> que fases tiene, y como usarlo. Soporta los 12 Pages projects del
+> portfolio (6 niches x 2 envs) via `--env=dev|prod`.
 
 [← Gotchas](./06-gotchas.md) | [README](./README.md) | [Siguiente: Comparacion proveedores →](./08-vercel-netlify-vs-cloudflare.md)
 
@@ -11,7 +11,7 @@
 - **Devtools** del portfolio ya usa Python 3.14 + uv
 - **Idempotente**: re-correr no rompe (chequea state antes de mutar)
 - **Reproducible**: agrega una app nueva → tocar `config.py` → re-correr
-- **Multi-env**: la misma fase opera contra dev/stage/prod con
+- **Multi-env**: la misma fase opera contra dev/prod con
   `--env=<env>` (default `prod`); no hay codigo duplicado por env
 - **Sin dependencia en wrangler**: la REST API directa cubre todo el
   flow (wrangler no soporta git-connected creation)
@@ -33,7 +33,7 @@ devtools/cloudflare_setup/
 ### `config.py`
 
 Define `APPS: tuple[AppConfig, ...]` y `ENVS: dict[str, EnvConfig]`. La
-combinacion `APPS x ENVS` da los 18 Pages projects.
+combinacion `APPS x ENVS` da los 12 Pages projects.
 
 `AppConfig` (niche-level, env-agnostic):
 
@@ -47,16 +47,16 @@ combinacion `APPS x ENVS` da los 18 Pages projects.
 
 | Campo | Significado |
 |-------|-------------|
-| `env` | `'dev'` \| `'stage'` \| `'prod'` |
-| `branch` | Branch GitHub que Pages construye (`main`/`dev`/`stage`) |
+| `env` | `'dev'` \| `'prod'` |
+| `branch` | Branch GitHub que Pages construye (`main`/`dev`) |
 | `base_domain` | FQDN al que cuelgan los niches |
-| `apex_domain` | Solo prod (`the-full-stack.com`); `None` en dev/stage |
+| `apex_domain` | Solo prod (`the-full-stack.com`); `None` en dev |
 | `api_endpoint` | URL del backend API (`https://api.<base_domain>`) |
 | `turnstile_sitekey` | Public sitekey del widget Cloudflare Turnstile (1 por env) |
 
 Helpers que derivan los valores per (app, env):
 
-- `project_name_for(app, env)` — `generic` (prod) | `generic-dev` | `generic-stage`
+- `project_name_for(app, env)` — `generic` (prod) | `generic-dev`
 - `custom_domain_for(app, env_cfg)` — apex en prod-generic, sino subdominio
 - `site_url_for(app, env_cfg)` — `https://<custom_domain>`
 
@@ -119,8 +119,7 @@ def phase_projects(client, env_cfg):
 python devtools/run.py cloudflare_setup <phase> [--env=<env>]
 ```
 
-`<env>` por defecto es `prod`. Para dev/stage agregar `--env=dev` o
-`--env=stage`.
+`<env>` por defecto es `prod`. Para dev agregar `--env=dev`.
 
 | Phase | Que hace | Idempotente? |
 |-------|----------|--------------|
@@ -172,17 +171,17 @@ Politica de extraccion: NUNCA volcar el `.env` completo. Ver
        ),
    )
    ```
-3. Cargar credenciales y correr (3 envs = 3 invocaciones):
+3. Cargar credenciales y correr (2 envs = 2 invocaciones):
    ```bash
    set -a; . tmp/cloudflare-creds.env; set +a
-   for env in prod dev stage; do
+   for env in prod dev; do
      python devtools/run.py cloudflare_setup all --env=$env
    done
    ```
 
 El script para cada env:
 
-- Crea el proyecto `nueva` / `nueva-dev` / `nueva-stage` (skip los
+- Crea el proyecto `nueva` / `nueva-dev` (skip los
   existentes)
 - Attacha el domain derivado per env (apex/subdomain) (skip los
   existentes)
@@ -241,7 +240,7 @@ curl -s "https://api.cloudflare.com/client/v4/zones?name=the-full-stack.com" \
 
 ### "env invalido: 'local'"
 
-Solo `dev|stage|prod` son envs soportados. No hay `local` (eso es
+Solo `dev|prod` son envs soportados. No hay `local` (eso es
 Docker, ver `python devtools/run.py docker up --env=local`).
 
 ## Verificacion

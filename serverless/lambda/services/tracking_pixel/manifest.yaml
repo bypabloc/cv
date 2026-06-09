@@ -55,14 +55,14 @@ uses:
     cache: read-write          # @cached del parsing de user-agent (sync path)
     rate-limit-rules: read-write   # rate-limit per-IP
     rate-limit-buckets: read-write
-  # neon-url: connection string del Neon dev/stage/prod. SE MANTIENE
+  # neon-url: connection string del Neon dev/prod. SE MANTIENE
   # mientras dure el flag ASYNC_MODE — el sync path (ASYNC_MODE=false)
   # sigue escribiendo a Neon directamente.
   secrets:
     - neon-url
   sends-email: false
 
-# --- Variables de entorno por stage ---
+# --- Variables de entorno por entorno ---
 env:
   default:
     LOG_LEVEL: INFO
@@ -71,10 +71,6 @@ env:
     LOG_LEVEL: INFO
     ASYNC_MODE: 'true'
     CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
-  stage:
-    LOG_LEVEL: INFO
-    ASYNC_MODE: 'true'
-    CORS_ALLOWED_ORIGINS: 'https://portfolio.stage.the-full-stack.com,https://hub.portfolio.stage.the-full-stack.com,https://fintech.portfolio.stage.the-full-stack.com,https://architect.portfolio.stage.the-full-stack.com,https://leader.portfolio.stage.the-full-stack.com,https://vibe.portfolio.stage.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
     ASYNC_MODE: 'true'

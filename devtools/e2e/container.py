@@ -3,7 +3,7 @@
 Analogo a `test_runner/feature.py` pero para el container `e2e`: lo levanta
 on-demand (profile `e2e`), espera el sentinel `/tmp/.e2e-ready` (creado por
 `docker/scripts/e2e-entrypoint.sh`) y corre pytest DENTRO del container con
-`compose_exec`. El container corre contra el backend DESPLEGADO (dev|stage):
+`compose_exec`. El container corre contra el backend DESPLEGADO (dev):
 solo necesita salida a internet + acceso a SSM/Neon (no el stack de apps).
 
 Solo lo usan los modulos browser (`admin`, `app`). El modulo `api` corre

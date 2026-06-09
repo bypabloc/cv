@@ -14,7 +14,7 @@
 | Build config para monorepo pnpm | [04-monorepo-build-config.md](./04-monorepo-build-config.md) | Build command + root_dir + destination_dir correctos |
 | DNS records y CNAME flattening | [05-dns-and-custom-domains.md](./05-dns-and-custom-domains.md) | Apex con CNAME, subdomain real con sufijo aleatorio |
 | Gotchas conocidos | [06-gotchas.md](./06-gotchas.md) | Errores tipicos: Cannot find cwd, 403 cert pending, DNS cache |
-| Script idempotente del proyecto | [07-script-idempotente.md](./07-script-idempotente.md) | devtools/cloudflare_setup/ — 18 projects (6 niches x 3 envs via `--env=<X>`), fases, comandos, troubleshoot |
+| Script idempotente del proyecto | [07-script-idempotente.md](./07-script-idempotente.md) | devtools/cloudflare_setup/ — 12 projects (6 niches x 2 envs via `--env=<X>`), fases, comandos, troubleshoot |
 | Comparacion con alternativas | [08-vercel-netlify-vs-cloudflare.md](./08-vercel-netlify-vs-cloudflare.md) | Por que Cloudflare Pages para este portfolio |
 | Workers Static Assets (futuro) | [09-workers-static-assets-future.md](./09-workers-static-assets-future.md) | Cuando migrar de Pages a Workers |
 
@@ -39,7 +39,7 @@
 cp tmp/cloudflare-creds.env.template tmp/cloudflare-creds.env
 # editar y completar CLOUDFLARE_API_TOKEN + ACCOUNT_ID
 
-# 2. Correr script idempotente (default --env=prod; pasar --env=dev|stage para otros)
+# 2. Correr script idempotente (default --env=prod; pasar --env=dev para otros)
 set -a; . tmp/cloudflare-creds.env; set +a
 python devtools/run.py cloudflare_setup all --env=prod
 
@@ -51,27 +51,26 @@ rm -f tmp/cloudflare-creds.env
 # revocar token en dashboard: https://dash.cloudflare.com/profile/api-tokens
 ```
 
-Para dev/stage:
+Para dev:
 
 ```bash
 python devtools/run.py cloudflare_setup status  --env=dev      # los 6 *-dev
-python devtools/run.py cloudflare_setup trigger --env=stage    # rebuild *-stage sin push
+python devtools/run.py cloudflare_setup trigger --env=dev      # rebuild *-dev sin push
 python devtools/run.py cloudflare_setup all     --env=dev      # reconciliacion full dev
 ```
 
 ## Estado actual del deploy (2026-05-23)
 
-- 18 proyectos Pages: 6 niches x 3 envs (prod sin sufijo, dev y stage
-  con sufijo `-dev`/`-stage`)
+- 12 proyectos Pages: 6 niches x 2 envs (prod sin sufijo, dev
+  con sufijo `-dev`)
   - Prod: `generic`, `hub`, `fintech`, `architect`, `leader`, `vibe`
   - Dev: `generic-dev`, `hub-dev`, `fintech-dev`, `architect-dev`, `leader-dev`, `vibe-dev`
-  - Stage: `generic-stage`, `hub-stage`, `fintech-stage`, `architect-stage`, `leader-stage`, `vibe-stage`
 - Dominio: `the-full-stack.com` (apex + www) + 5 subdominios prod;
-  `portfolio.dev.the-full-stack.com` + 5 subdominios dev; idem stage
+  `portfolio.dev.the-full-stack.com` + 5 subdominios dev
 - DNS: zona en Cloudflare DNS (NS = `*.ns.cloudflare.com`)
 - Registrar: AWS Route 53 (no requiere migracion)
 - SSL: Universal SSL automatico (Google CA via CF)
-- Branch -> env: `main` -> prod, `dev` -> dev, `stage` -> stage
+- Branch -> env: `main` -> prod, `dev` -> dev
   (`preview_branch_includes` lockea cada project a su propia branch)
 - Build: `pnpm install --frozen-lockfile && pnpm --filter @portfolio/<app>... build`
 - Headers: `_headers` en `apps/*/public/` con CSP estricta + HSTS + X-Frame DENY

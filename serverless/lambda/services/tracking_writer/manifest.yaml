@@ -47,13 +47,11 @@ uses:
     - neon-url
   sends-email: false
 
-# --- Variables de entorno por stage ---
+# --- Variables de entorno por entorno ---
 env:
   default:
     LOG_LEVEL: INFO
   dev:
-    LOG_LEVEL: INFO
-  stage:
     LOG_LEVEL: INFO
   prod:
     LOG_LEVEL: WARNING

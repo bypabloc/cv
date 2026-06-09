@@ -1,6 +1,6 @@
 /**
  * @description Tests para buildHeaders. CSP connect-src debe incluir solo
- *   el API del env, NO los 3 (prod+dev+stage). Los bloques de
+ *   el API del env, NO los 2 (prod+dev). Los bloques de
  *   .well-known/*.json se removieron en ai-audit-level-4 (los sirven
  *   Pages Functions con sus propios headers).
  */
@@ -17,16 +17,6 @@ describe('buildHeaders', () => {
       "connect-src 'self' https://challenges.cloudflare.com https://api.portfolio.dev.the-full-stack.com",
     )
     expect(out).not.toContain('https://api.portfolio.the-full-stack.com ')
-    expect(out).not.toContain('https://api.portfolio.stage.the-full-stack.com')
-  })
-
-  it('Given apiEndpoint stage When build Then connect-src incluye solo el host stage', () => {
-    const out = buildHeaders({
-      apiEndpoint: 'https://api.portfolio.stage.the-full-stack.com',
-    })
-    expect(out).toContain('https://api.portfolio.stage.the-full-stack.com')
-    expect(out).not.toMatch(/https:\/\/api\.portfolio\.the-full-stack\.com[^.]/)
-    expect(out).not.toContain('https://api.portfolio.dev.the-full-stack.com')
   })
 
   it('Given apiEndpoint prod When build Then connect-src incluye solo el host prod', () => {
@@ -35,7 +25,6 @@ describe('buildHeaders', () => {
     })
     expect(out).toContain('https://api.portfolio.the-full-stack.com')
     expect(out).not.toContain('https://api.portfolio.dev.the-full-stack.com')
-    expect(out).not.toContain('https://api.portfolio.stage.the-full-stack.com')
   })
 
   it('Given URL con path When build Then descarta el path y queda solo el origen', () => {

@@ -3,11 +3,11 @@ name: subdomain-standard
 description: >
   Subdomain naming standard for the-full-stack.com — canonical pattern
   [{component}.]{product}.{env}.{domain} with prod implicit (no env
-  label), dev and stage as middle labels. Covers naming rules (kebab-case,
+  label) and dev as the only middle label. Covers naming rules (kebab-case,
   ASCII lowercase, reserved names: www/api/app/admin/mail/status/dev/stage/
   prod/test/localhost/infra/internal/private/vpn/tunnel + portfolio niches
   hub/fintech/architect/leader/vibe/generic), environment conventions
-  (dev/stage/prod only — qa/uat/beta/preview prohibited, use stage or
+  (dev/prod only — qa/uat/beta/stage/preview prohibited, use dev or
   pages.dev), portfolio personal exception (ONLY the apex the-full-stack.com
   + www is a permanent exception; the 5 niches follow the standard as
   components of product portfolio: {niche}.portfolio.the-full-stack.com),
@@ -68,7 +68,7 @@ relevante:
 |----------------------|------|
 | Que patron uso? Como armo la URL? | `.claude/docs/subdomain-standard/01-pattern.md` |
 | Como nombro el product? Que palabras estan reservadas? | `.claude/docs/subdomain-standard/02-naming-rules.md` |
-| Como manejo dev/stage/prod? Que pasa con QA/UAT/beta? | `.claude/docs/subdomain-standard/03-environments.md` |
+| Como manejo dev/prod? Que pasa con QA/UAT/beta/stage? | `.claude/docs/subdomain-standard/03-environments.md` |
 | Por que el portfolio no sigue el patron? Puedo nombrar mi product como un niche? | `.claude/docs/subdomain-standard/04-portfolio-exception.md` |
 | Como configuro SSL wildcard? Necesito Advanced Cert? | `.claude/docs/subdomain-standard/05-wildcards-and-certs.md` |
 | Como migro el backend de execute-api a custom domain? | `.claude/docs/subdomain-standard/06-migration-backend-api.md` |
@@ -83,7 +83,6 @@ especifico), leer primero `README.md` del directorio docs.
 [{component}.]{product}.{env}.{domain}
 
 prod    [{component}.]{product}.the-full-stack.com
-stage   [{component}.]{product}.stage.the-full-stack.com
 dev     [{component}.]{product}.dev.the-full-stack.com
 ```
 
@@ -101,7 +100,7 @@ dev     [{component}.]{product}.dev.the-full-stack.com
 - SIEMPRE la unica excepcion permanente es el apex `the-full-stack.com`
   + `www`. Los 5 niches del portfolio siguen el estandar como components
   del product `portfolio` (`{niche}.portfolio.{env}.the-full-stack.com`).
-- SIEMPRE solo 3 envs formales: `dev`, `stage`, prod. Previews por PR
+- SIEMPRE solo 2 envs formales: `dev`, prod. Previews por PR
   usan default `<hash>.<project>.pages.dev`.
 
 ## Quick decision flow
@@ -122,7 +121,7 @@ dev     [{component}.]{product}.dev.the-full-stack.com
 faststruct.the-full-stack.com               (prod, landing)
 api.faststruct.the-full-stack.com           (prod, component api)
 api.faststruct.dev.the-full-stack.com       (dev, component api)
-app.faststruct.stage.the-full-stack.com     (stage, component app)
+app.faststruct.dev.the-full-stack.com       (dev, component app)
 
 # Backend portfolio (post-migracion)
 api.portfolio.the-full-stack.com            (prod)
@@ -136,7 +135,7 @@ status.dev.the-full-stack.com               (dev)
 ## Validacion regex
 
 ```regex
-^(?:[a-z][a-z0-9-]*\.)?[a-z][a-z0-9-]*(?:\.(?:dev|stage))?\.the-full-stack\.com$
+^(?:[a-z][a-z0-9-]*\.)?[a-z][a-z0-9-]*(?:\.dev)?\.the-full-stack\.com$
 ```
 
 Mas: nombres reservados a rechazar adicionalmente segun
@@ -147,7 +146,7 @@ Mas: nombres reservados a rechazar adicionalmente segun
 - **Adopcion**: 2026-05-15
 - **Excepcion permanente**: solo el apex `the-full-stack.com` + `www`.
   Los 5 niches del portfolio siguen el estandar como
-  `{niche}.portfolio.the-full-stack.com` (prod) + dev/stage.
+  `{niche}.portfolio.the-full-stack.com` (prod) + dev.
 - **Migraciones pendientes**: ninguna. El backend ya usa custom domains
   `api.portfolio.{env}.the-full-stack.com` y el frontend prod los
   `{niche}.portfolio.the-full-stack.com`.

@@ -3,10 +3,25 @@
  *   defaults (SITE_URL derivado del niche, OG_IMAGE sobre SITE_URL) y que
  *   STRINGS se compone desde los YAML i18n de @portfolio/content.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineSiteConfig } from '../../../src/lib/define-site-config'
 
 describe('defineSiteConfig', () => {
+  // El SITE_URL default se deriva de buildSiteUrl, que lee BASE_DOMAIN /
+  // APEX_DOMAIN / BASE_SCHEME / BASE_PORT del entorno. Fijamos el env prod
+  // component-based para que los tests sean deterministas sin importar las
+  // env vars que el runner (o el pre-push hook) tenga inyectadas.
+  beforeEach(() => {
+    vi.stubEnv('BASE_DOMAIN', 'portfolio.the-full-stack.com')
+    vi.stubEnv('APEX_DOMAIN', 'the-full-stack.com')
+    vi.stubEnv('BASE_SCHEME', 'https')
+    vi.stubEnv('BASE_PORT', '')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('Given niche fintech without siteUrl When invoked Then SITE_URL derives from niche', () => {
     const r = defineSiteConfig({ niche: 'fintech' })
     expect(r.SITE_URL).toBe('https://fintech.portfolio.the-full-stack.com')

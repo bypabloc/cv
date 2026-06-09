@@ -162,9 +162,9 @@ Si NO es draft:
 
 ```bash
 # Feature -> dev: merge commit + borrar la feature branch (es efimera).
-# Promocion dev -> stage / stage -> main: merge commit SIN --delete-branch
-# (las ramas de entorno son permanentes).
-if [ "$BASE" = "stage" ] || [ "$BASE" = "main" ] || [ "$BASE" = "master" ]; then
+# Promocion dev -> main: merge commit SIN --delete-branch (las ramas de
+# entorno son permanentes).
+if [ "$BASE" = "main" ] || [ "$BASE" = "master" ]; then
   gh pr merge "$PR_NUMBER" --merge 2>&1 | tail -10
 else
   gh pr merge "$PR_NUMBER" --merge --delete-branch 2>&1 | tail -10
@@ -172,7 +172,7 @@ fi
 ```
 
 `--merge` (merge commit) preserva los SHAs y evita la divergencia entre
-`dev`/`stage`/`main` — regla del proyecto en `.claude/rules/git-workflow.md`.
+`dev`/`main` — regla del proyecto en `.claude/rules/git-workflow.md`.
 El proyecto es **merge-commit-only**: `--rebase` y `--squash` estan
 deshabilitados en GitHub.
 
@@ -250,8 +250,8 @@ Si Docker no esta disponible o un container queda `unhealthy`, marcar
 **[OMITIDO]** (igual que el pre-push hook) y anotarlo en el reporte — NO es
 PASS ni FAIL, es cobertura no ejecutada.
 
-**D. api_e2e (HTTP real contra el entorno desplegado) — solo si `BASE=dev` (o
-`stage`) y `BACKEND=1`:**
+**D. api_e2e (HTTP real contra el entorno desplegado) — solo si `BASE=dev` y
+`BACKEND=1`:**
 
 El merge a `dev` dispara `deploy-backend.yml`, que redeploya los Lambdas. Hay
 que ESPERAR a que termine antes de pegarle a la API (si no, da 500s por
@@ -327,7 +327,7 @@ con el reporte (las demas suites ya corrieron).
   debe usar `gh pr merge --admin` manualmente.
 - SIEMPRE mergear con `--merge` (merge commit). NUNCA `--rebase` ni
   `--squash`: el proyecto es merge-commit-only — el merge commit preserva
-  los SHAs y evita la divergencia entre `dev`/`stage`/`main`
+  los SHAs y evita la divergencia entre `dev`/`main`
   (`.claude/rules/git-workflow.md`).
 - NUNCA atribucion de IA en titulo, body, ni comentarios del PR (politica
   global, hook `prepare-commit-msg` la elimina si se cuela).

@@ -17,21 +17,24 @@ El prefijo `_` evita que pytest recolecte este modulo como tests.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 import secrets
 import time
 from typing import Any
 import uuid
 
-from shared.auth_support import (
-    create_active_user_with_password,
-    login_with_password,
-)
-from shared.config import admin_origin, cv_origin
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import login_with_password
+from shared.config import admin_origin
+from shared.config import cv_origin
 from shared.environment import Environment
-from shared.http import HttpClient, Response
+from shared.http import HttpClient
+from shared.http import Response
 
+from ._flows import _converge_admin_recognized as _converge_users_lambda
 from ._flows import _wait_ssm_promoted
+
 
 # Prefijo de TODO dato sintetico de los tests de cv_admin.
 TAG = 'e2e-cvadm'
@@ -119,7 +122,10 @@ class CvAdminSession:
 
     def _relogin(self) -> None:
         access, _refresh = login_with_password(
-            self.http, self.origin, self.email, self.bypass,
+            self.http,
+            self.origin,
+            self.email,
+            self.bypass,
         )
         if not access:
             msg = 'login del admin sintetico de cv_admin fallo'
@@ -176,7 +182,10 @@ class CvAdminSession:
         last: Response | None = None
         for attempt in range(1, retries + 1):
             last = self.post_raw(
-                action, data, operation=operation, bearer=self.token(),
+                action,
+                data,
+                operation=operation,
+                bearer=self.token(),
             )
             if last.status == 401:
                 self._relogin()
@@ -220,9 +229,7 @@ class CvAdminSession:
         """
         rows = self.catalogs_data()[kind]
         names = [
-            str(r['name'])
-            for r in rows
-            if not str(r['slug']).startswith(TAG)
+            str(r['name']) for r in rows if not str(r['slug']).startswith(TAG)
         ]
         if len(names) < count:
             msg = f'el catalogo {kind} no tiene {count} entradas reales'
@@ -237,9 +244,7 @@ class CvAdminSession:
 
     def register_vocab(self, kind: str, slug: str) -> None:
         """Registra una skill/tech tag NUEVA para limpiarla en Neon."""
-        target = (
-            self.vocab_skills if kind == 'skill' else self.vocab_tech_tags
-        )
+        target = self.vocab_skills if kind == 'skill' else self.vocab_tech_tags
         target.add(slug)
 
 
@@ -263,7 +268,11 @@ def open_admin_session(
         f'success+{TAG}-admin-{secrets.token_hex(3)}@simulator.amazonses.com'
     )
     user_id = create_active_user_with_password(
-        http, environment, admin_origin(env_name), email, bypass,
+        http,
+        environment,
+        admin_origin(env_name),
+        email,
+        bypass,
     )
     if not user_id:
         msg = 'no se pudo crear el user admin sintetico de cv_admin'
@@ -286,6 +295,25 @@ def open_admin_session(
     return session
 
 
+def converge_users_recognized(session: CvAdminSession) -> None:
+    """Converge el reconocimiento de admin TAMBIEN en el Lambda `users`.
+
+    El sidebar del admin decide el item adminOnly "Gestion CV" sondeando
+    `users.admin.list-users` (`use-is-admin`) — un Lambda DISTINTO de
+    cv_admin, con su propia cache de whitelist (TTL 300s repartida entre
+    varios contenedores). Sin esta convergencia el probe del browser es
+    una loteria: los specs cuyo probe pega un contenedor stale ven 404 y
+    el item "Gestion CV" nunca aparece (timeout en goto_cv_overview).
+    Reusa el patron 2 fases de `_flows._converge_admin_recognized`.
+    """
+    _converge_users_lambda(
+        session.http,
+        session.environment,
+        session.origin,
+        session.token(),
+    )
+
+
 def _converge_admin_recognized(
     session: CvAdminSession,
     *,
@@ -306,7 +334,9 @@ def _converge_admin_recognized(
     """
     for _ in range(bust_rounds):
         resp = session.post_raw(
-            'catalogs', {}, bearer=session.token(),
+            'catalogs',
+            {},
+            bearer=session.token(),
         )
         if resp.status == 200:
             break
@@ -316,7 +346,9 @@ def _converge_admin_recognized(
     hits = 0
     for _ in range(confirm_rounds):
         resp = session.post_raw(
-            'catalogs', {}, bearer=session.token(),
+            'catalogs',
+            {},
+            bearer=session.token(),
         )
         if resp.status == 200:
             hits += 1
@@ -383,9 +415,7 @@ def _warn_leftovers(session: CvAdminSession) -> None:
     for action in _TEARDOWN_GET_ACTIONS:
         try:
             leftovers = [
-                s
-                for s in slugs_of(session.cv_get(action))
-                if s.startswith(TAG)
+                s for s in slugs_of(session.cv_get(action)) if s.startswith(TAG)
             ]
         except RuntimeError as exc:
             print(f'  [WARN] cv_admin teardown: GET {action} fallo: {exc}')
@@ -471,9 +501,7 @@ def _assert_projection(
     """Asserts EXACTOS campo a campo de una proyeccion del GET."""
     for key, expected in expect.items():
         got = entity.get(key)
-        assert got == expected, (
-            f'[{step}] {key}: {got!r} != {expected!r}'
-        )
+        assert got == expected, f'[{step}] {key}: {got!r} != {expected!r}'
     for key, expected_set in expect_sets.items():
         got_list = entity.get(key)
         assert set(got_list) == expected_set, (
@@ -531,6 +559,15 @@ def run_entity_lifecycle(
             spec.create_expect_key_order,
             step='create-get',
         )
+        # Round-trip de priority por niche (TODAS las entidades lo
+        # exponen en el GET; el editor del admin hidrata el picker de
+        # este mapa — regresion: las simples no lo serializaban y cada
+        # save desde el admin reseteaba la prioridad a 1).
+        if 'priority' in spec.create_payload:
+            assert entity['priority'] == spec.create_payload['priority'], (
+                f'[create-priority] {entity.get("priority")!r} != '
+                f'{spec.create_payload["priority"]!r}'
+            )
         # 3. READ por niche: n1 la incluye, n2 (no asignado) NO.
         in_n1 = slugs_of(session.cv_get(spec.get_action, niche=spec.niche_in))
         assert in_n1.count(spec.slug) == 1, (
@@ -558,6 +595,13 @@ def run_entity_lifecycle(
             spec.update_expect_key_order,
             step='update-get',
         )
+        # Round-trip de priority tambien tras el update (ej. certificate
+        # recorta el mapa al quitar un niche).
+        if 'priority' in spec.update_payload:
+            assert entity['priority'] == spec.update_payload['priority'], (
+                f'[update-priority] {entity.get("priority")!r} != '
+                f'{spec.update_payload["priority"]!r}'
+            )
         for key in spec.update_absent:
             assert key not in entity, (
                 f'[update-absent] {key} deberia estar ausente: '
@@ -566,7 +610,8 @@ def run_entity_lifecycle(
         if spec.update_niche_out is not None:
             gone = slugs_of(
                 session.cv_get(
-                    spec.get_action, niche=spec.update_niche_out,
+                    spec.get_action,
+                    niche=spec.update_niche_out,
                 ),
             )
             assert gone.count(spec.slug) == 0, (

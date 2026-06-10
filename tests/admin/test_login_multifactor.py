@@ -45,16 +45,24 @@ from shared.environment import Environment
 from shared.http import HttpClient
 from shared.runner import make_body
 
+
 _SHELL_MARKER = 'text=Panel de administracion'
 
 
 def _callback_url(
-    *, admin: str, access: str, refresh: str, user_id: str, email: str,
+    *,
+    admin: str,
+    access: str,
+    refresh: str,
+    user_id: str,
+    email: str,
 ) -> str:
     """URL del callback del admin con los tokens en el fragment hash."""
     payload = refresh.split('.')[1]
     payload += '=' * (-len(payload) % 4)
-    refresh_exp = int(json.loads(base64.urlsafe_b64decode(payload))['exp']) * 1000
+    refresh_exp = (
+        int(json.loads(base64.urlsafe_b64decode(payload))['exp']) * 1000
+    )
     frag = urllib.parse.urlencode(
         {
             'access': access,
@@ -95,19 +103,27 @@ def mf_setup(
         # 1) User active CON password (la password queda required por default).
         email = auth.new_email('multifactor')
         user_id = create_active_user_with_password(
-            http, environment, origin, email, bypass,
+            http,
+            environment,
+            origin,
+            email,
+            bypass,
         )
         assert user_id is not None, 'no se creo el user con password'
 
         # 2) Login solo-password (unico factor required aun) -> tokens reales.
         access, refresh = login_with_password(http, origin, email, bypass)
-        assert access and refresh, 'login solo-password no emitio tokens'
+        assert access, 'login solo-password no emitio access token'
+        assert refresh, 'login solo-password no emitio refresh token'
 
         # 3) Browser al shell via callback -> registrar el passkey.
         page.goto(
             _callback_url(
-                admin=admin, access=access, refresh=refresh,
-                user_id=user_id, email=email,
+                admin=admin,
+                access=access,
+                refresh=refresh,
+                user_id=user_id,
+                email=email,
             ),
             wait_until='load',
         )
@@ -130,7 +146,10 @@ def mf_setup(
         wa_req = http.post(
             '/auth',
             body=make_body(
-                'webauthn', 'set-required', credential_id=cred_id, required=True,
+                'webauthn',
+                'set-required',
+                credential_id=cred_id,
+                required=True,
             ),
             origin=origin,
             bearer=access,
@@ -145,6 +164,17 @@ def mf_setup(
         context.close()
 
 
+@pytest.mark.skip(
+    reason=(
+        'Roto desde que dev apago el bypass E2E de Turnstile (2026-06-07, '
+        'NEXT_PUBLIC_E2E_BYPASS=false): este spec hace el login REAL por '
+        'el form y el submit queda gateado por el widget Turnstile, que '
+        'no auto-resuelve de forma confiable desde el container. El flujo '
+        'multi-factor del checklist esta cubierto determinista en la capa '
+        'API (tests/api/test_auth_*_full_lifecycle.py + los E2E del '
+        'checklist). Re-habilitar si dev vuelve a exponer el bypass.'
+    ),
+)
 def test_login_with_password_and_webauthn_required_lands_in_shell(
     mf_setup: tuple[Page, str, str],
 ) -> None:

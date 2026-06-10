@@ -16,7 +16,7 @@ def _ctx(session):
 
 def test_content_upsert_profile_returns_handle(monkeypatch):
     from services import content_service
-    from shared.db.repositories import cv_write_entities
+    import shared.db.repositories.cv_write_entities as cv_write_entities
 
     monkeypatch.setattr(
         content_service, 'db_session', lambda: _ctx(MagicMock()),

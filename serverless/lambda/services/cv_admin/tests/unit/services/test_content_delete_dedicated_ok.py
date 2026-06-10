@@ -17,7 +17,7 @@ def _ctx(session):
 
 def test_content_delete_dedicated_ok(monkeypatch):
     from services import content_service
-    from shared.db.repositories import cv_write_entities
+    import shared.db.repositories.cv_write_entities as cv_write_entities
 
     fake_session = MagicMock()
     monkeypatch.setattr(

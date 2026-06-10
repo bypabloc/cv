@@ -19,7 +19,7 @@ def _ctx(session):
 def test_content_delete_slug_not_found(monkeypatch):
     from services import content_service
     from services._errors import ServiceError
-    from shared.db.repositories import cv_write_entities
+    import shared.db.repositories.cv_write_entities as cv_write_entities
 
     monkeypatch.setattr(
         content_service, 'db_session', lambda: _ctx(MagicMock()),

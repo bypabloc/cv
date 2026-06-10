@@ -1169,3 +1169,32 @@ class TestDeprovision:
             'iam.delete-role',
             'logs.delete-log-group',
         ]
+
+
+class TestBucketStatements:
+    def test_bucket_statements_grant_get_object_and_list_bucket(self):
+        """
+        Given un uses.buckets con access read,
+        When se traducen a Statements IAM,
+        Then otorga s3:GetObject sobre las keys Y s3:ListBucket sobre el
+        bucket (el restore del Lambda db lista el prefijo del snapshot).
+        """
+        from serverless.provisioner import _bucket_statements
+
+        statements = _bucket_statements(
+            [{'name': 'portfolio-db-backups-${stage}', 'access': 'read'}],
+            'dev',
+        )
+
+        assert statements == [
+            {
+                'Effect': 'Allow',
+                'Action': ['s3:GetObject'],
+                'Resource': 'arn:aws:s3:::portfolio-db-backups-dev/*',
+            },
+            {
+                'Effect': 'Allow',
+                'Action': ['s3:ListBucket'],
+                'Resource': 'arn:aws:s3:::portfolio-db-backups-dev',
+            },
+        ]

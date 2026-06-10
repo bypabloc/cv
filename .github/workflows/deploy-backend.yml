@@ -89,6 +89,10 @@ jobs:
       DB_CHANNEL_BINDING: ${{ secrets.DB_CHANNEL_BINDING }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      # GitHub prohibe secrets con prefijo GITHUB_: el secret del
+      # environment se llama GH_DEPLOY_TOKEN y aca se mapea al env var
+      # GITHUB_DEPLOY_TOKEN que espera el catalogo (github-deploy-token).
+      GITHUB_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -251,6 +255,10 @@ jobs:
       DB_CHANNEL_BINDING: ${{ secrets.DB_CHANNEL_BINDING }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      # GitHub prohibe secrets con prefijo GITHUB_: el secret del
+      # environment se llama GH_DEPLOY_TOKEN y aca se mapea al env var
+      # GITHUB_DEPLOY_TOKEN que espera el catalogo (github-deploy-token).
+      GITHUB_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 

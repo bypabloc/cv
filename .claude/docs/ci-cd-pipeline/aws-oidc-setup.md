@@ -245,6 +245,25 @@ mkdir -p ./tmp/iam
         "arn:aws:s3:::portfolio-email-templates-prod",
         "arn:aws:s3:::portfolio-email-templates-prod/*"
       ]
+    },
+    {
+      "Sid": "S3DbBackups",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:ListBucket",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutEncryptionConfiguration",
+        "s3:GetEncryptionConfiguration",
+        "s3:PutBucketVersioning",
+        "s3:GetBucketVersioning",
+        "s3:PutLifecycleConfiguration",
+        "s3:GetLifecycleConfiguration"
+      ],
+      "Resource": [
+        "arn:aws:s3:::portfolio-db-backups-dev",
+        "arn:aws:s3:::portfolio-db-backups-prod"
+      ]
     }
   ]
 }
@@ -252,6 +271,13 @@ mkdir -p ./tmp/iam
 
 > El statement `S3EmailTemplates` lo necesita `provision-infra` + `seed-email-config`
 > para crear/configurar el bucket de templates de email y subir los archivos.
+> El statement `S3DbBackups` lo necesita `provision-infra` para adoptar y
+> endurecer (public-access-block + SSE + versioning + lifecycle) el bucket de
+> backups de la DB (`portfolio-db-backups-{dev,prod}`, plan c-cv-management);
+> sin el, `head-bucket` da 403 -> el provisioner intenta `create-bucket` ->
+> AccessDenied y el job `Apply DB migrations` del deploy-backend FALLA. Los
+> objetos del bucket NO los toca este rol: los escribe el rol OIDC
+> `portfolio-db-backup` (workflow db-backup.yml) y los lee la Lambda `db`.
 > El statement `SQS` quedo OBSOLETO tras eliminar SQS del backend (invoke async
 > Lambda->Lambda): no hace dano (no hay colas que crear) pero se puede quitar.
 

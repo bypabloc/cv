@@ -1,6 +1,7 @@
 """Modelos Pydantic de los upserts grandes de la operation `content`.
 
-Espejo EXACTO del shape YAML del seed (`services/db/core/seeds/data/`):
+Espejo EXACTO del shape YAML de los snapshots (el que escribe
+`devtools db_export` y consume el restore del Lambda db):
 claves camelCase (`companyUrl`, `avatarUrl`, `skillsTechnical`, ...) via
 `alias` + `populate_by_name=True`. Los services vuelcan el payload con
 `model_dump(by_alias=True)` para entregarle a la capa de escritura

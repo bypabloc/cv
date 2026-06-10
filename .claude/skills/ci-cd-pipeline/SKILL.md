@@ -59,7 +59,7 @@ Pages.
 `devtools/serverless/change_detector.py`:
 
 - `services/<X>/**` cambia -> redeploy `X` (excluyendo `tests/`,
-  `events/`, `build/`, `core/seeds/data/`).
+  `events/`, `build/`).
 - `shared/<Y>/**` cambia -> redeploy consumers transitivos.
 - `db` se excluye del matrix (ya redeployado en `migrate-db`).
 

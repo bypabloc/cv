@@ -153,10 +153,12 @@ Con sesion admin, una sub-aserción por caso (mismo escenario):
 
 ### `test_cv_admin_rate_limit_content.py` (marker `slow`)
 
-- Con IP fija del `IpRotator`: 31 `catalogs` consecutivos → los primeros
-  30 con `status == 200`, el 31 con `status == 429` y el body del
-  rate-limit del backend (asserts exactos). IP dedicada para no
-  contaminar otros tests.
+- Con IP fija dedicada (fuera del pool del `IpRotator`) y buckets
+  limpios: `catalogs` consecutivos hasta el primer `429` (cap 2x limite).
+  Invariantes: nunca un `429` antes de 30 doscientos, y el body/headers
+  del `429` EXACTOS (`RATE_LIMIT_EXCEEDED` + extra + `Retry-After`). El
+  conteo de 200s no es exacto: el sliding window weighted bucketiza por
+  el reloj del Lambda y el drift puede partir la rafaga en 2 ventanas.
 
 ## Cobertura AC de esta capa
 

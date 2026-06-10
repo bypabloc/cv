@@ -30,6 +30,8 @@ from shared.http import HttpClient
 from shared.reporter import Reporter
 from shared.runner import Runner
 
+from . import _cv_admin_flows
+
 
 # Orden de ejecucion canonico del modulo (el de `api_e2e/main._run_flows`):
 # los Lambdas read primero, luego auth (produce el access_token vivo),
@@ -164,6 +166,41 @@ def http(env: str) -> Iterator[HttpClient]:
         yield client
     finally:
         client.close()
+
+
+@pytest.fixture(scope='session')
+def cv_admin_session(
+    http: HttpClient,
+    environment: Environment,
+    env: str,
+    bypass: str | None,
+    keep_data: bool,
+    lambda_filter: str | None,
+) -> Iterator[_cv_admin_flows.CvAdminSession]:
+    """Sesion admin sintetica para los tests del Lambda cv_admin.
+
+    Setup: crea un user activo `e2e-cvadm-admin-*`, lo promueve a la
+    whitelist SSM `admin-emails` (`_wait_ssm_promoted` ANTES del bust de
+    cache — gotcha conocido del scope admin) y converge el reconocimiento
+    antes de entregar la sesion. Teardown: deletes idempotentes de los
+    slugs sinteticos registrados + restore de la whitelist + cleanup del
+    vocabulario y el user en Neon (salvo `--keep-data`). HERMETICO.
+    """
+    if lambda_filter is not None and lambda_filter != 'cv_admin':
+        pytest.skip(f'--lambda={lambda_filter}: cv_admin omitido')
+    if not bypass:
+        pytest.skip('bypass Turnstile no disponible')
+
+    session = _cv_admin_flows.open_admin_session(
+        http=http,
+        environment=environment,
+        env_name=env,
+        bypass=bypass,
+    )
+    try:
+        yield session
+    finally:
+        _cv_admin_flows.close_admin_session(session, keep_data=keep_data)
 
 
 @pytest.fixture(scope='session')

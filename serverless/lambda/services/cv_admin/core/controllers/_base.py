@@ -41,6 +41,7 @@ from shared.lambda_kit.base_controller import BaseController
 _CODE_TO_STATUS: dict[int, int] = {
     1100: 400,  # UNKNOWN_NICHE (validacion contra el catalogo)
     1101: 400,  # REORDER_SLUGS_MISMATCH
+    1102: 400,  # INVALID_FIELD_VALUE (coercion fallida, ej. fecha YYYY-13)
     4404: 404,  # SLUG_NOT_FOUND / NICHE_NOT_FOUND
     5200: 502,  # GITHUB_API_ERROR
 }

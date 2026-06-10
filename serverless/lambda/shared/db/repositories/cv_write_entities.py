@@ -481,6 +481,9 @@ def upsert_skill_category(
         data.get('niches'),
         niche_ids,
     )
+    set_niche_priorities(
+        session, 'skill_category', cat_id, data.get('priority'), niche_ids
+    )
     session.execute(
         delete(SkillCategorySkill).where(
             SkillCategorySkill.skill_category_id == cat_id

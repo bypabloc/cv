@@ -16,8 +16,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import shared.db.repositories.cv_write_entities as cv_write_entities
 from shared.cache.client import DynamoDBCache
-from shared.db.repositories import cv_write_entities
 from shared.db.repositories.cv_write import resolve_niches
 from shared.db.session import db_session
 
@@ -90,7 +90,10 @@ def upsert_entity(*, entity: str, data: dict[str, Any]) -> dict[str, Any]:
 
     Raises:
         ServiceError: 1100 UNKNOWN_NICHE si un niche referenciado no
-            existe en el catalogo (rollback, nada se escribe).
+            existe en el catalogo (rollback, nada se escribe); 1102
+            INVALID_FIELD_VALUE si un valor pasa el shape del modelo
+            pero no es coercible (ej. fecha 'YYYY-13' que revienta
+            `coerce_date`) — 400 de contrato, nunca un 500 unhandled.
     """
     if entity not in _UPSERT_ENTITIES:
         msg = f'entidad desconocida: {entity!r}'
@@ -99,7 +102,14 @@ def upsert_entity(*, entity: str, data: dict[str, Any]) -> dict[str, Any]:
     with db_session() as session:
         niche_ids = resolve_niches(session)
         _ensure_known_niches(data, niche_ids)
-        entity_id = upsert_fn(session, data, niche_ids)
+        try:
+            entity_id = upsert_fn(session, data, niche_ids)
+        except ValueError as exc:
+            raise ServiceError(
+                f'valor invalido en {entity}: {exc}',
+                code=1102,
+                error_code='INVALID_FIELD_VALUE',
+            ) from exc
     invalidate_cv_cache()
     natural_key = data['handle'] if entity == 'profile' else data['slug']
     return {'entity': natural_key, 'id': str(entity_id)}

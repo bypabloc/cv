@@ -583,6 +583,9 @@ def list_certificates(*, niche: str | None = None) -> list[dict[str, Any]]:
             niches_by_cert = _niches_by_entity(
                 session, CertificateNiche, 'certificate_id', ids
             )
+            all_priorities = _all_priorities_by_entity(
+                session, 'certificate', ids
+            )
             return [
                 _drop_nones(
                     {
@@ -594,6 +597,7 @@ def list_certificates(*, niche: str | None = None) -> list[dict[str, Any]]:
                         ),
                         'url': c.url,
                         'niches': niches_by_cert.get(c.id, []),
+                        'priority': all_priorities.get(c.id, {}),
                     },
                 )
                 for c in certificates
@@ -624,6 +628,7 @@ def list_awards(
             niches_by_award = _niches_by_entity(
                 session, AwardNiche, 'award_id', ids
             )
+            all_priorities = _all_priorities_by_entity(session, 'award', ids)
             return [
                 _drop_nones(
                     {
@@ -636,6 +641,7 @@ def list_awards(
                             'motivation', {}
                         ),
                         'niches': niches_by_award.get(a.id, []),
+                        'priority': all_priorities.get(a.id, {}),
                     },
                 )
                 for a in awards
@@ -666,6 +672,9 @@ def list_education(
             niches_by_edu = _niches_by_entity(
                 session, EducationEntryNiche, 'education_entry_id', ids
             )
+            all_priorities = _all_priorities_by_entity(
+                session, 'education', ids
+            )
             return [
                 _drop_nones(
                     {
@@ -688,6 +697,7 @@ def list_education(
                             'description', {}
                         ),
                         'niches': _niches_or_omit(niches_by_edu.get(e.id, [])),
+                        'priority': all_priorities.get(e.id, {}),
                     },
                 )
                 for e in educations
@@ -718,6 +728,9 @@ def list_languages(
             niches_by_lang = _niches_by_entity(
                 session, LanguageNiche, 'language_id', ids
             )
+            all_priorities = _all_priorities_by_entity(
+                session, 'language', ids
+            )
             return [
                 _drop_nones(
                     {
@@ -731,6 +744,7 @@ def list_languages(
                         'niches': _niches_or_omit(
                             niches_by_lang.get(language.id, [])
                         ),
+                        'priority': all_priorities.get(language.id, {}),
                     },
                 )
                 for language in languages
@@ -766,6 +780,9 @@ def list_references(
             niches_by_ref = _niches_by_entity(
                 session, EndorsementNiche, 'endorsement_id', ids
             )
+            all_priorities = _all_priorities_by_entity(
+                session, 'endorsement', ids
+            )
             return [
                 _drop_nones(
                     {
@@ -778,6 +795,7 @@ def list_references(
                             'relation', {}
                         ),
                         'niches': _niches_or_omit(niches_by_ref.get(r.id, [])),
+                        'priority': all_priorities.get(r.id, {}),
                     },
                 )
                 for r in references
@@ -824,6 +842,9 @@ def list_skill_categories(
             for row in session.execute(skill_stmt):
                 skills_by_cat[row.skill_category_id].append(row.name)
 
+            all_priorities = _all_priorities_by_entity(
+                session, 'skill_category', ids
+            )
             return [
                 {
                     'slug': c.slug,
@@ -831,6 +852,7 @@ def list_skill_categories(
                     'name': translations.get(c.id, {}).get('name', {}),
                     'skills': skills_by_cat.get(c.id, []),
                     'niches': niches_by_cat.get(c.id, []),
+                    'priority': all_priorities.get(c.id, {}),
                 }
                 for c in categories
             ]

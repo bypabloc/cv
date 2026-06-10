@@ -1,10 +1,13 @@
-# Configuracion de Lambdas: memoria/timeout minimos medidos
+# Configuracion de Lambdas: memoria minima 1024 MB + timeout
 
-> Los AWS Lambda del backend usan la configuracion MINIMA que pasa los
-> tests funcionales + cold start, justificada con una medicion en el
-> comentario del manifest. NUNCA se sube memoria para enmascarar un cold
-> start lento de imports: primero se corta el import (carga lazy). Aplica
-> a `serverless/lambda/services/*/manifest.yaml`.
+> TODOS los AWS Lambda del backend declaran `memory: 1024` como MINIMO en
+> su `manifest.yaml` (politica del proyecto, decision del dueno
+> 2026-06-10: memoria == CPU, se prioriza la latencia warm/cold; el free
+> tier de GB-s cubre el trafico del portfolio). Las mediciones de minimos
+> previas (128/256/512) quedan OBSOLETAS como justificacion del valor.
+> El cold start se sigue atacando de raiz con imports lazy (subir memoria
+> no reemplaza cortar imports). Aplica a
+> `serverless/lambda/services/*/manifest.yaml`.
 
 ## Activacion
 
@@ -20,34 +23,40 @@ NO aplica al frontend Astro ni a las apps de Cloudflare Pages.
 
 ## Reglas duras (SIEMPRE / NUNCA)
 
-- **SIEMPRE** `memory`/`timeout` = el MINIMO medido que pasa los tests con
-  latencia aceptable para el caso de uso del Lambda (interactivo vs
-  fire-and-forget).
-- **SIEMPRE** justificar el valor en el comentario del manifest con una
-  medicion real (init / handler / cold observados + por que no menos).
+- **SIEMPRE** `memory: 1024` MINIMO en TODO `manifest.yaml` de
+  `serverless/lambda/services/*/`. Es el piso del proyecto: NINGUN Lambda
+  declara menos, aunque una medicion muestre que "cabe" en menos.
+- **SIEMPRE** un Lambda nuevo nace con `memory: 1024`. El comentario del
+  manifest referencia esta politica (no exige medicion para el piso).
+- El piso tambien es el DEFAULT en codigo: si un manifest omite `memory`,
+  devtools resuelve 1024 (`serverless/resolve.py` `_MANIFEST_DEFAULTS` +
+  `provisioner.py`). Aun asi, los manifests lo declaran explicito.
+- **SIEMPRE** que se quiera MAS de 1024, justificarlo en el comentario del
+  manifest con una medicion real (OOM o latencia medida a 1024).
 - **SIEMPRE** el `timeout` cubre el cold SIN SnapStart restore — el restore
   NO esta garantizado (ventana de optimizacion post-deploy, escalado,
-  Lambdas sin SnapStart). Default del backend: `30`.
-- **SIEMPRE** ante un cold start lento, la PRIMERA palanca es **cortar
-  imports** (carga lazy), NO subir memoria.
-- **NUNCA** subir `memory`/`timeout` "por las dudas" ni para enmascarar el
-  costo de imports. Eso es over-provisioning.
-- **NUNCA** asumir que `128 MB` (el default de AWS) alcanza: el footprint
-  base (Python + boto3 + pydantic + el cierre de `shared/`) ya supera
-  ~118 MB. Hay que MEDIR; el minimo real de estos Lambdas es >= 256 MB.
+  Lambdas sin SnapStart). Valores actuales del backend: 30-60 segun Lambda.
+- **SIEMPRE** ante un cold start lento, la PRIMERA palanca sigue siendo
+  **cortar imports** (carga lazy): el piso de memoria compra CPU, pero no
+  elimina el costo de importar lo que no se usa.
+- **NUNCA** bajar `memory` por debajo de 1024 — ni "porque la medicion
+  dice que entra en 256", ni para ahorrar: la politica del piso pesa mas
+  que el minimo medido.
 - **NUNCA** un re-export en el `__init__.py` de un subpaquete de `shared/`
   (deben estar VACIOS): un re-export eager de una dep pesada (fido2/
   cryptography, argon2, pyotp) la arrastra en toda accion. Importar del
   modulo concreto (`from shared.auth.webauthn import ...`). Lo enforza
   `serverless lint-deps`. Ver `.claude/rules/lambda-shared-imports.md`.
 
-## Por que la memoria importa (memoria == CPU)
+## Por que el piso es 1024 (memoria == CPU)
 
 En Lambda la `memory` controla TAMBIEN la CPU asignada (proporcional).
-128 MB ~= 0.07 vCPU. Por eso bajar memoria no solo arriesga OOM: ralentiza
-el cold init Y el handler (cada request). El handler de un Lambda que toca
-Neon/DynamoDB/SSM escala fuerte con la memoria (medido en auth: handler
-~2.7s a 512 MB vs ~7.6s a 256 MB).
+128 MB ~= 0.07 vCPU; 1024 MB ~= 0.57 vCPU. Bajar memoria no solo arriesga
+OOM: ralentiza el cold init Y el handler (cada request). Medido en auth:
+handler ~2.7s a 512 MB vs ~7.6s a 256 MB. Con el piso de 1024 todos los
+Lambdas operan con ~4x la CPU de los viejos minimos de 256 — la latencia
+manda sobre el costo (el free tier de 400k GB-s/mes cubre con holgura el
+trafico del portfolio).
 
 ## Imports concretos: el fix de raiz del cold start
 
@@ -133,32 +142,26 @@ get_effective_count(ip='0.0.0.0', endpoint='/track', window_seconds=60)
 cliente NO basta: hay que ejercitar las OPERACIONES reales que el EXECUTE
 usara, porque boto3 las modela por-operacion bajo demanda.
 
-## Minimos medidos actuales (dev, 2026-05, cold `$LATEST` sin restore)
+## Config actual: 1024/30 uniforme en los 10 Lambdas
 
-Medidos tras el refactor shared-no-barrels: lazy imports + X-Ray eliminado
-+ models per-dominio + warmup en INIT (`shared.db.warmup.warm_db`).
+Desde 2026-06-10 los 10 Lambdas (`analytics`, `auth`, `contact_form`,
+`cv`, `cv_admin`, `db`, `send_email`, `tracking_pixel`,
+`tracking_writer`, `users`) declaran `memory: 1024` (piso uniforme) con
+`timeout` 30-60 segun Lambda.
 
-| Lambda | memory | timeout | Razon medida |
-|--------|--------|---------|--------------|
-| `auth` | 256 | 30 | webauthn (fido2) a 128 MB: 127/128 MB (OOM inminente) + 21s CPU-starved ~ al borde del timeout. A 256 entra comodo (login 174 MB) |
-| `users` | 256 | 30 | misma familia que auth; argon2id (password) es memory-hard |
-| `cv` | 256 | 30 | read-only Neon usa 118-165 MB; a 128 quedan 10 MB headroom. Handler ~9s es Neon-I/O-bound (no escala con memoria) |
-| `contact_form` | 256 | 30 | footprint Neon 117/128 MB a 128 (11 MB headroom); 157 MB a 256 |
-| `tracking_pixel` | 128 | 30 | UNICO a 128: async (sin Neon -> sin sqlalchemy). Imports de Neon/ua_parser diferidos al path sync legacy (lazy) + warmup de los clientes boto3 (incluye el cliente `lambda` para invocar `tracking_writer` async) y del read-path del rate-limit en INIT (`shared.aws.warmup.warm_aws_clients` + `get_ip/endpoint_rule`). Restore (SnapStart) ~1.16s, warm ~380ms, 111/128 MB (17 MB headroom). SIN warmup, boto3 construia los modelos de operacion (get_item/query) en EXECUTE a 0.07 vCPU -> >30s -> timeout 502/504 |
-| `send_email` | 256 | 30 | estimado, MEDIR tras deploy. Target async (InvocationType='Event'): render Jinja2 + boto3 dynamodb/s3/ses. SIN Neon (no importa sqlalchemy) -> podria bajar a 128, pero jinja2 + 3 clientes boto3 (dynamodb/s3/ses) sugieren empezar en 256 hasta medir |
-| `tracking_writer` | 256 | 30 | estimado, MEDIR tras deploy. Target async invocado por `tracking_pixel`: INSERT a Neon (sqlalchemy + psycopg). Importa `shared.db` -> footprint base >= 256 MB (regla de abajo) |
-
-**El footprint base de un lambda Neon (sqlalchemy + pydantic + modelos +
-clientes) es ~117-127 MB** -> 128 MB NO deja headroom seguro: el minimo
-real de cualquier lambda que importe `shared.db`/sqlalchemy es **256 MB**.
-Solo un lambda async sin Neon (como `tracking_pixel` en `ASYNC_MODE`) baja
-a 128. Verificar SIEMPRE con la medicion de abajo, NUNCA asumir 128.
+Historia (solo contexto, NO usar como justificacion para bajar): entre
+2026-05 y 2026-06 se midieron minimos por Lambda (128-512 MB segun
+footprint: fido2/argon2 en auth/users, sqlalchemy+psycopg en los Neon,
+boto3 en los async). Esa practica se reemplazo por el piso uniforme de
+1024: menos config divergente, ~4x CPU para cold y handler, y el costo
+sigue dentro del free tier. Las observaciones tecnicas siguen validas
+(footprint Neon ~117-214 MB; memoria==CPU; el warmup en INIT y los
+imports lazy son lo que evita los timeouts, no la memoria).
 
 Los lambdas async-target (`send_email`, `tracking_writer`) se invocan via
-`invoke` Lambda->Lambda con `InvocationType='Event'` (NUNCA SQS) y se
-dimensionan por su carga propia: `send_email` por el render Jinja2 + SES,
-`tracking_writer` por el INSERT a Neon. La Lambda `db` se dimensiona por
-las migraciones, no por esta tabla.
+`invoke` Lambda->Lambda con `InvocationType='Event'` (NUNCA SQS). La
+Lambda `db` se dimensiona por las migraciones; con el piso de 1024 ya no
+requiere ajuste propio.
 
 ## X-Ray: NO se usa en este backend
 
@@ -170,41 +173,36 @@ las migraciones, no por esta tabla.
 - Si en el futuro se quiere tracing, es una decision explicita: re-evaluar
   costo ($ por traza) + el import en el cold start.
 
-## Como medir el minimo
+## Como medir (solo para subir POR ENCIMA del piso o diagnosticar)
 
-1. Deployar el Lambda (con la carga lazy ya aplicada).
-2. Probar memorias decrecientes sobre `$LATEST` (sin SnapStart = peor caso
-   cold), invocando la accion mas pesada del Lambda:
+La medicion ya NO se usa para elegir el valor base (es 1024 fijo). Se usa
+para: (a) justificar MAS de 1024 (OOM o latencia inaceptable medida), o
+(b) diagnosticar un 502/timeout. Sin tocar la funcion, la via preferida
+son los REPORT de CloudWatch de invocaciones reales:
 
 ```bash
-for mem in 512 256 128; do
-  aws lambda update-function-configuration --function-name <fn> \
-    --memory-size $mem --region us-east-1 --profile tfs-dev >/dev/null
-  aws lambda wait function-updated --function-name <fn> \
-    --region us-east-1 --profile tfs-dev
-  aws lambda invoke --function-name <fn> --payload fileb://<event>.json \
-    --log-type Tail --region us-east-1 --profile tfs-dev ./tmp/out.json \
-    --query 'LogResult' --output text | base64 -d \
-    | rg 'Init Duration|^REPORT.*Duration|Max Memory'
-done
+aws logs filter-log-events --log-group-name /aws/lambda/<fn> \
+  --start-time $(( ($(date +%s) - 21600) * 1000 )) \
+  --filter-pattern 'REPORT' --region us-east-1 --profile tfs-dev \
+  --query 'events[].message' --output text | tr '\t' '\n' \
+  | rg -o 'Init Duration: [0-9.]+ ms|Max Memory Used: [0-9]+ MB|Duration: [0-9.]+ ms'
 ```
 
-3. Elegir el MENOR `memory` donde: (a) no hay OOM, (b) el cold no-restore
-   queda holgado bajo el `timeout`, (c) la latencia warm es aceptable para
-   el caso de uso. Documentarlo en el comentario del manifest.
-4. `serverless deploy` reconcilia `$LATEST` al manifest (descarta el drift
-   de la medicion) y publica la version con SnapStart.
+Si `Max Memory Used` se acerca al limite o el handler queda CPU-bound,
+subir el manifest por ENCIMA de 1024 documentando la medicion en el
+comentario. `serverless deploy` reconcilia `$LATEST` al manifest.
 
 ## Anti-patrones
 
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
-| Subir a 1024 MB porque "daba 502" | Enmascara un cold start de imports; over-provisioning | Cortar imports (lazy) + medir el minimo |
+| `memory` < 1024 en un manifest ("la medicion dice que cabe en 256") | Viola el piso del proyecto; CPU-starved en cold y handler | `memory: 1024` minimo, sin excepcion |
+| Lambda nuevo con el default de AWS (128) o con un minimo medido | El piso es politica, no medicion | Nace con `memory: 1024` |
+| Confiar en el piso de memoria para "arreglar" un cold start de imports | 4x CPU acelera, pero el costo de importar lo que no se usa sigue | Cortar imports (lazy) + warmup en INIT |
 | `timeout` ajustado al cold CON restore | El restore no esta garantizado -> 502 en la ventana post-deploy | timeout cubre el cold SIN restore |
 | Re-export en `__init__` de `shared/*` (deben estar vacios) | Toda accion paga el import aunque no lo use | Importar del modulo concreto; lint-deps lo enforza |
 | Mover imports al `preload()` de cada controller | No evita el costo + churn + pelea con SnapStart | Imports concretos en el top + warmup en INIT |
-| Setear 128 MB "porque es el default" | El footprint base ya supera 128 MB -> OOM/lento | Medir; minimo real >= 256 MB |
-| Subir memoria sin justificar en el manifest | Se pierde el por que; vuelve el over-provisioning | Comentario con la medicion |
+| Subir POR ENCIMA de 1024 sin medicion en el comentario | Se pierde el por que; over-provisioning sin control | Comentario con la medicion (REPORT reales) |
 
 ## Referencias cruzadas
 

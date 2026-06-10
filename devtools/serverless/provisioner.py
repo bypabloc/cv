@@ -719,7 +719,9 @@ def render(manifest: dict[str, Any], *, stage: str) -> RenderedLambda:
         runtime=str(manifest['runtime']),
         architecture=str(manifest.get('architecture', 'arm64')),
         handler=str(manifest['handler']),
-        memory=int(manifest.get('memory', 256)),
+        # 1024 = PISO de memoria del proyecto (lambda-config.md):
+        # ningun Lambda corre con menos aunque el manifest lo omita.
+        memory=int(manifest.get('memory', 1024)),
         timeout=int(manifest.get('timeout', 30)),
         snap_start=bool(manifest.get('snap_start', False)),
         env_vars=_build_env_vars(manifest, stage),

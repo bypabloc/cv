@@ -24,7 +24,7 @@ runtime: python3.13                     # python3.12 | python3.13
 handler: core.handler.lambda_handler    # el handler vive en core/
 
 # Opcionales (con defaults)
-memory: 256                             # MB    (default 256)
+memory: 1024                            # MB    (default 1024 — PISO del proyecto, ver lambda-config.md)
 timeout: 30                             # seg   (default 30)
 region: us-east-1                       # AWS region (default us-east-1)
 

@@ -13,12 +13,10 @@ description: API read-only de metricas del admin (GET /analytics, JWT-authed).
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 512       # MB — footprint Neon (sqlalchemy + pydantic + clientes)
-                  # ~117-127 MB a 128 sin headroom seguro; cualquier lambda
-                  # que importe shared.db tiene minimo real >= 256. 512 da
-                  # CPU comoda para el fan-out de queries agregadas (overview
-                  # son 7 round-trips). MEDIR tras deploy y ajustar.
-                  # Ver .claude/rules/lambda-config.md.
+memory: 1024      # MB — PISO del proyecto (.claude/rules/lambda-config.md):
+                  # TODOS los lambdas declaran 1024 como minimo (memoria==CPU,
+                  # decision 2026-06-10). Subir por encima requiere medicion
+                  # documentada; bajar esta prohibido.
 timeout: 30       # segundos — el listado con filtros raros < 5s; 30s cubre
                   # el cold sin restore + la query mas pesada.
 

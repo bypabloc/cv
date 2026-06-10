@@ -11,11 +11,10 @@ description: Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv.
 # --- Runtime ---
 runtime: python3.13
 handler: core.handler.lambda_handler
-memory: 1024      # MB — EXPERIMENTO de config 1024 (ver .claude/rules/lambda-config.md). Config uniforme 1024 para medir warm/cold con
-                  # CPU x4. OJO: el handler de cv es Neon-I/O-bound; la palanca
-                  # real es la query (1 sesion), NO la memoria. Minimo medido
-                  # previo: 256 (usa 165 MB). REVERTIR al minimo tras medir.
-                  # Ver .claude/rules/lambda-config.md.
+memory: 1024      # MB — PISO del proyecto (.claude/rules/lambda-config.md):
+                  # TODOS los lambdas declaran 1024 como minimo (memoria==CPU,
+                  # decision 2026-06-10). Subir por encima requiere medicion
+                  # documentada; bajar esta prohibido.
 timeout: 60       # segundos — colchon uniforme (cold sin restore + query).
 
 # SnapStart DESACTIVADO (2026-06): el storage del snapshot

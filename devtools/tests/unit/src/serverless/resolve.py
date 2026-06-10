@@ -181,7 +181,7 @@ class TestManifestValidation:
 
         resolved = resolve_lambda({'path': str(lambda_dir)})
 
-        assert resolved.manifest['memory'] == 256
+        assert resolved.manifest['memory'] == 1024
         assert resolved.manifest['timeout'] == 30
         assert resolved.manifest['region'] == 'us-east-1'
 

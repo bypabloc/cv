@@ -298,7 +298,7 @@ class TestRender:
 
         rendered = provisioner.render(_manifest_direct(), stage='dev')
 
-        assert rendered.memory == 256
+        assert rendered.memory == 1024
         assert rendered.timeout == 30
         assert rendered.architecture == 'arm64'
         assert rendered.function_name == 'portfolio-db-dev'

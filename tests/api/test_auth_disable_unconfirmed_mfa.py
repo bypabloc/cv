@@ -25,12 +25,10 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
@@ -38,19 +36,26 @@ from shared.runner import make_body
 
 
 def _access_via_password(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> str:
     """Login solo-password -> access token (la password es el unico required)."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -62,7 +67,9 @@ def _access_via_password(
 def _overview(http: HttpClient, origin: str, access: str) -> dict:
     """security.overview -> {type: entry} indexado por tipo de metodo."""
     r = http.post(
-        '/auth', body=make_body('security', 'overview'), origin=origin,
+        '/auth',
+        body=make_body('security', 'overview'),
+        origin=origin,
         bearer=access,
     )
     methods = r.body.get('methods') or []
@@ -93,14 +100,20 @@ def test_disable_unconfirmed_totp_is_allowed(
     email = f'success+disunc-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
     access = _access_via_password(http, origin, email, bypass)
 
     # setup-totp: crea el row TOTP PENDIENTE (confirmed=false), sin confirmar.
     setup = http.post(
-        '/auth', body=make_body('mfa', 'setup-totp'), origin=origin,
+        '/auth',
+        body=make_body('mfa', 'setup-totp'),
+        origin=origin,
         bearer=access,
     )
     assert field(setup.body, 'secret_b32') is not None, (
@@ -114,7 +127,8 @@ def test_disable_unconfirmed_totp_is_allowed(
     disabled = http.post(
         '/auth',
         body=make_body('mfa', 'disable', kind='totp'),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert disabled.status == 204, (
         f'disable de un TOTP pendiente deberia ser 204, '

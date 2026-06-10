@@ -1,0 +1,22 @@
+{
+  "httpMethod": "POST",
+  "path": "/cv-admin",
+  "headers": {
+    "Content-Type": "application/json",
+    "Origin": "https://admin.portfolio.dev.the-full-stack.com",
+    "CF-Connecting-IP": "203.0.113.10",
+    "CF-IPCountry": "CL",
+    "Authorization": "Bearer REPLACE_WITH_REAL_ACCESS_JWT"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": "{\"operation\": \"publish\", \"action\": \"status\", \"data\": {}}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "identity": {
+      "sourceIp": "203.0.113.10"
+    },
+    "requestId": "local-request-id",
+    "stage": "dev"
+  }
+}

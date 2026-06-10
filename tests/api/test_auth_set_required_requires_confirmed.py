@@ -24,12 +24,10 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
@@ -38,19 +36,26 @@ from shared.totp import totp_now
 
 
 def _access_via_password(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> str:
     """Login solo-password -> access token (la password es el unico required)."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -60,12 +65,17 @@ def _access_via_password(
 
 
 def _login_methods(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> list[str]:
     """`login.start` -> la lista de factores `methods` que el login exige."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     return list(start.body.get('methods') or [])
@@ -95,14 +105,20 @@ def test_set_required_unconfirmed_totp_is_rejected_and_not_in_login(
     email = f'success+reqconf-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
     access = _access_via_password(http, origin, email, bypass)
 
     # setup-totp: crea el row TOTP PENDIENTE (confirmed=false), sin confirmar.
     setup = http.post(
-        '/auth', body=make_body('mfa', 'setup-totp'), origin=origin,
+        '/auth',
+        body=make_body('mfa', 'setup-totp'),
+        origin=origin,
         bearer=access,
     )
     secret = field(setup.body, 'secret_b32')
@@ -112,7 +128,8 @@ def test_set_required_unconfirmed_totp_is_rejected_and_not_in_login(
     req_unconfirmed = http.post(
         '/auth',
         body=make_body('mfa', 'set-required', kind='totp', required=True),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert req_unconfirmed.status == 404, (
         f'set-required de un TOTP no confirmado deberia ser 404, '
@@ -129,13 +146,15 @@ def test_set_required_unconfirmed_totp_is_rejected_and_not_in_login(
     confirm = http.post(
         '/auth',
         body=make_body('mfa', 'confirm-totp', code=totp_now(secret)),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert confirm.status == 204, f'confirm-totp fallo: {confirm.body}'
     req_confirmed = http.post(
         '/auth',
         body=make_body('mfa', 'set-required', kind='totp', required=True),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert req_confirmed.status == 204, (
         f'set-required de un TOTP confirmado deberia ser 204, '

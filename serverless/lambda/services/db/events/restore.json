@@ -1,0 +1,7 @@
+{
+  "command": "seed",
+  "args": {
+    "source": "s3://portfolio-db-backups-dev/latest/",
+    "confirm_overwrite": true
+  }
+}

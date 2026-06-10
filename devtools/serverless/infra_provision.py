@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
+import json
 from pathlib import Path
 from typing import Any
 
@@ -1244,6 +1245,30 @@ def _create_s3_bucket(
     )
 
 
+def _build_lifecycle_configuration(rules: list[dict]) -> dict:
+    """Traduce las `lifecycle_rules` del YAML al shape de la API S3.
+
+    Cada regla soporta: `id`, `prefix` (filtro), `expiration_days`
+    (expira objetos actuales) y `noncurrent_expiration_days` (expira
+    versiones noncurrent — requiere versioning habilitado).
+    """
+    out: list[dict] = []
+    for rule in rules:
+        item: dict = {
+            'ID': rule['id'],
+            'Status': 'Enabled',
+            'Filter': {'Prefix': rule.get('prefix', '')},
+        }
+        if 'expiration_days' in rule:
+            item['Expiration'] = {'Days': int(rule['expiration_days'])}
+        if 'noncurrent_expiration_days' in rule:
+            item['NoncurrentVersionExpiration'] = {
+                'NoncurrentDays': int(rule['noncurrent_expiration_days']),
+            }
+        out.append(item)
+    return {'Rules': out}
+
+
 def _harden_s3_bucket(
     rendered: RenderedResource,
     bucket: str,
@@ -1251,7 +1276,12 @@ def _harden_s3_bucket(
     profile: str | None,
     region: str,
 ) -> None:
-    """Aplica public-access-block (todo bloqueado) + SSE-S3 (AES256)."""
+    """Aplica public-access-block (todo bloqueado) + SSE-S3 (AES256).
+
+    Opcionales del spec: `versioning: true` habilita el versioning del
+    bucket; `lifecycle_rules: [...]` aplica la configuracion de ciclo de
+    vida (ver _build_lifecycle_configuration). Ambos idempotentes.
+    """
     if rendered.spec.get('block_public_access', True):
         aws_cli.aws(
             [
@@ -1276,6 +1306,34 @@ def _harden_s3_bucket(
                 '--server-side-encryption-configuration',
                 '{"Rules":[{"ApplyServerSideEncryptionByDefault":'
                 '{"SSEAlgorithm":"AES256"}}]}',
+            ],
+            profile=profile,
+            region=region,
+        )
+    if rendered.spec.get('versioning'):
+        aws_cli.aws(
+            [
+                's3api',
+                'put-bucket-versioning',
+                '--bucket',
+                bucket,
+                '--versioning-configuration',
+                'Status=Enabled',
+            ],
+            profile=profile,
+            region=region,
+        )
+    lifecycle_rules = rendered.spec.get('lifecycle_rules')
+    if lifecycle_rules:
+        config = _build_lifecycle_configuration(lifecycle_rules)
+        aws_cli.aws(
+            [
+                's3api',
+                'put-bucket-lifecycle-configuration',
+                '--bucket',
+                bucket,
+                '--lifecycle-configuration',
+                json.dumps(config),
             ],
             profile=profile,
             region=region,

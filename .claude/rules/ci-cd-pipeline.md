@@ -88,7 +88,7 @@ Aplica SIEMPRE al editar:
 `devtools/serverless/change_detector.py` decide que lambdas redeployar:
 
 1. `services/<X>/**` cambia -> redeploy `X` (excepto `tests/`, `events/`,
-   `build/`, `core/seeds/data/`).
+   `build/`).
 2. `shared/<Y>/**` cambia -> redeploy TODOS los consumers (cierre
    transitivo via `shared_resolver.resolve_lambda_shared`).
 3. `shared/tests/**` no dispara redeploy.

@@ -134,6 +134,13 @@ _VALID_ENDPOINTS = [
     '/users#profile.delete-account',
     '/users#status',
     '/users#admin',
+    # Plan c-cv-management (Lambda cv_admin): escritura del CV + publish.
+    # JWT-authed + admin (sin Turnstile). `content` comparte una key por
+    # operation (todas las actions ~30/min); `publish` separa dispatch
+    # (trigger de CI, 3/min) de status (polling, 30/min).
+    '/cv-admin#content',
+    '/cv-admin#publish.dispatch',
+    '/cv-admin#publish.status',
 ]
 
 

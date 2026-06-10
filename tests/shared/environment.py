@@ -61,7 +61,9 @@ class Environment:
         """
         if self._private_key is None:
             self._private_key = ''
-            path = _PROJECT_ROOT / 'docker' / 'env' / 'dev-cli' / f'.{self._env}'
+            path = (
+                _PROJECT_ROOT / 'docker' / 'env' / 'dev-cli' / f'.{self._env}'
+            )
             if path.exists():
                 prefix = f'{_PRIVATE_KEY_VAR}='
                 for line in path.read_text().splitlines():
@@ -216,16 +218,20 @@ class Environment:
             Overwrite=True,
         )
 
-    def bust_users_cache(self) -> None:
-        """Fuerza un cold start del Lambda users (recicla el contenedor).
+    def bust_lambda_cache(self, short_name: str) -> None:
+        """Fuerza un cold start de un Lambda (recicla el contenedor).
 
         La whitelist de admins se cachea module-level por contenedor (TTL
-        300s). Tras promover un email en SSM, el contenedor caliente sigue
-        con el cache viejo -> 404. Cambiar una env var EFIMERA recicla el
+        300s) en los Lambdas con scope admin (`users`, `cv_admin`). Tras
+        promover un email en SSM, el contenedor caliente sigue con el
+        cache viejo -> 404. Cambiar una env var EFIMERA recicla el
         contenedor (cold start -> cache fresco). La env var se BORRA en
-        restore (`clear_users_cache_buster`) para no dejar drift de config.
+        restore (`clear_lambda_cache_buster`) para no dejar drift.
+
+        `short_name` es el nombre corto del Lambda en el repo (`users`,
+        `cv_admin`); el nombre fisico es `portfolio-<short>-<env>`.
         """
-        fn = f'portfolio-users-{self._env}'
+        fn = f'portfolio-{short_name}-{self._env}'
         current = self._lambda.get_function_configuration(FunctionName=fn)
         env_vars = dict(current.get('Environment', {}).get('Variables', {}))
         # Marca unica por corrida (token_hex en vez de timestamp: el harness
@@ -237,9 +243,9 @@ class Environment:
         )
         self._lambda.get_waiter('function_updated').wait(FunctionName=fn)
 
-    def clear_users_cache_buster(self) -> None:
+    def clear_lambda_cache_buster(self, short_name: str) -> None:
         """Quita la env var efimera para dejar la config como estaba."""
-        fn = f'portfolio-users-{self._env}'
+        fn = f'portfolio-{short_name}-{self._env}'
         current = self._lambda.get_function_configuration(FunctionName=fn)
         env_vars = dict(current.get('Environment', {}).get('Variables', {}))
         if env_vars.pop('E2E_CACHE_BUSTER', None) is None:
@@ -250,6 +256,80 @@ class Environment:
         )
         self._lambda.get_waiter('function_updated').wait(FunctionName=fn)
 
+    def bust_users_cache(self) -> None:
+        """Alias legacy: recicla el contenedor del Lambda `users`."""
+        self.bust_lambda_cache('users')
+
+    def clear_users_cache_buster(self) -> None:
+        """Alias legacy: limpia la env var efimera del Lambda `users`."""
+        self.clear_lambda_cache_buster('users')
+
+    # --- Catalogos del CV (Neon, read-only) + cleanup de vocabularios ---
+
+    # Tablas de vocabulario del CV que los tests pueden consultar/limpiar.
+    _CV_VOCAB_TABLES = ('cv_skills', 'tax_tech_tags')
+
+    def niche_slugs_display_order(self) -> list[str]:
+        """Slugs de `tax_niches` en el orden real de `display_order`.
+
+        Es la fuente contra la que se valida el `niches` del action
+        `catalogs` del Lambda cv_admin (sin inventar el orden).
+        """
+        rows = self._query(
+            'SELECT slug FROM tax_niches ORDER BY display_order, slug',
+            (),
+        )
+        return [str(r[0]) for r in rows]
+
+    def cv_vocab_rows(self, table: str) -> list[tuple[str, str]]:
+        """Filas `(slug, name)` de un vocabulario del CV ordenadas por slug.
+
+        `table` debe ser una de `_CV_VOCAB_TABLES` (whitelist dura: evita
+        interpolar SQL arbitrario).
+        """
+        if table not in self._CV_VOCAB_TABLES:
+            msg = f'tabla de vocabulario no permitida: {table!r}'
+            raise ValueError(msg)
+        rows = self._query(
+            f'SELECT slug, name FROM {table} ORDER BY slug',  # noqa: S608
+            (),
+        )
+        return [(str(r[0]), str(r[1])) for r in rows]
+
+    def cleanup_cv_vocab(
+        self,
+        *,
+        skill_slugs: list[str],
+        tech_tag_slugs: list[str],
+    ) -> int:
+        """Borra filas sinteticas de `cv_skills` / `tax_tech_tags`.
+
+        Los upserts del Lambda cv_admin agregan al vocabulario las skills /
+        tech tags NUEVAS referenciadas (ensure_named_vocab) y el delete de
+        la entidad NO las quita (el vocabulario es compartido). Este
+        cleanup las elimina por slug. Best-effort: una FK violation (la
+        fila quedo referenciada por un residuo) no aborta el teardown.
+        """
+        deleted = 0
+        for table, slugs in (
+            ('cv_skills', skill_slugs),
+            ('tax_tech_tags', tech_tag_slugs),
+        ):
+            if not slugs:
+                continue
+            try:
+                deleted += self._exec(
+                    f'DELETE FROM {table} WHERE slug = ANY(%s)',  # noqa: S608
+                    (slugs,),
+                    ignore_missing=True,
+                )
+            except psycopg.Error as exc:
+                print(
+                    f'  [WARN] cleanup vocab {table} parcial: '
+                    f'{type(exc).__name__}'
+                )
+        return deleted
+
     # --- Rate-limit blacklist de IPs TEST-NET (DynamoDB) ---
 
     def _rate_limit_table_name(self) -> str:
@@ -259,6 +339,41 @@ class Environment:
                 Name=f'/portfolio/{self._env}/dynamodb/rate-limit-rules/name',
             )['Parameter']['Value']
         return self._rate_limit_table
+
+    def cleanup_rate_limit_buckets(self, *, ip: str, endpoint: str) -> int:
+        """Borra los buckets sliding-window de `(ip, endpoint)`.
+
+        El test de rate-limit necesita una ventana LIMPIA para que el
+        weighted count arranque exacto en 0 (un bucket de una corrida
+        previa en la ventana anterior contaminaria el conteo). Scan por
+        prefijo `ip#<ip>#endpoint#<endpoint>#window#` + delete. Devuelve
+        cuantos borro. Best-effort.
+        """
+        table = self._ssm.get_parameter(
+            Name=f'/portfolio/{self._env}/dynamodb/rate-limit-buckets/name',
+        )['Parameter']['Value']
+        prefix = f'ip#{ip}#endpoint#{endpoint}#window#'
+        deleted = 0
+        start_key: dict[str, Any] | None = None
+        while True:
+            kwargs: dict[str, Any] = {
+                'TableName': table,
+                'FilterExpression': 'begins_with(bucket_key, :p)',
+                'ExpressionAttributeValues': {':p': {'S': prefix}},
+                'ProjectionExpression': 'bucket_key',
+            }
+            if start_key:
+                kwargs['ExclusiveStartKey'] = start_key
+            resp = self._dynamodb.scan(**kwargs)
+            for item in resp.get('Items', []):
+                self._dynamodb.delete_item(
+                    TableName=table,
+                    Key={'bucket_key': item['bucket_key']},
+                )
+                deleted += 1
+            start_key = resp.get('LastEvaluatedKey')
+            if not start_key:
+                return deleted
 
     def cleanup_rate_limit_blacklist(self) -> int:
         """Borra las ip_blacklist auto-creadas para las IPs TEST-NET del pool.
@@ -392,7 +507,7 @@ class Environment:
             ):
                 cur.execute(sql, params)
                 return cur.rowcount
-        except (psycopg.errors.UndefinedTable, psycopg.errors.UndefinedColumn):
+        except psycopg.errors.UndefinedTable, psycopg.errors.UndefinedColumn:
             if ignore_missing:
                 return 0
             raise

@@ -5,7 +5,8 @@ hay que disparar. Reglas:
 
 1. `serverless/lambda/services/<X>/**` cambia -> redeploy `<X>` (excepto
    subpaths excluidos: `tests/`, `events/`, `build/`,
-   `core/seeds/data/`).
+   `build/`). El viejo `core/seeds/data/` ya no existe: el seed
+   restaura snapshots desde S3 (plan c-cv-management).
 2. `serverless/lambda/shared/<Y>/**` cambia -> redeploy TODOS los
    lambdas cuyo cierre transitivo incluye `shared.<Y>` (resuelto via
    `shared_resolver`). Excluye `shared/<Y>/tests/`.
@@ -34,7 +35,6 @@ _EXCLUDED_SERVICE_SUBPATHS: tuple[str, ...] = (
     'tests/',
     'events/',
     'build/',
-    'core/seeds/data/',
 )
 
 # Paths dentro de shared/<Y>/ que NO disparan redeploy.

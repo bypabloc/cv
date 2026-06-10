@@ -121,9 +121,11 @@ python devtools/run.py serverless run --stage=dev --lambda=db \
 # tablas + row counts
 python devtools/run.py serverless run --stage=dev --lambda=db \
   --event=events/tables.json --aws-profile=tfs-dev
-# seed de datos (CV)
+# restore del CV desde el snapshot S3 (latest/ del bucket de backups;
+#   exige confirm_overwrite si las tablas tienen datos — la DB editada via
+#   cv_admin es la fuente de verdad)
 python devtools/run.py serverless run --stage=dev --lambda=db \
-  --event=events/seed.json --aws-profile=tfs-dev
+  --event=events/restore.json --aws-profile=tfs-dev
 ```
 
 > `serverless db-shell` y `serverless db-branch` ya NO existen en el CLI.
@@ -143,7 +145,7 @@ commands soportados (cada uno con su event en `events/`):
 {"command": "current"}                                  // revision aplicada
 {"command": "show-migrations"}                          // historial
 {"command": "stamp", "args": {"target": "head"}}        // adoptar sin recrear
-{"command": "seed"}                                     // seed de datos (CV)
+{"command": "seed", "args": {"source": "s3://...", "confirm_overwrite": true}}  // restore del CV (snapshot S3)
 {"command": "tables"}                                   // tablas + row counts
 ```
 

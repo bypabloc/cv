@@ -111,13 +111,16 @@ class TestResolveByLambdaName:
 
         names = available_lambdas()
 
-        # 8 lambdas reales tras eliminar SQS y los workers: el async se
-        # hace por invoke Lambda->Lambda (contact_form -> send_email,
-        # tracking_pixel -> tracking_writer), sin colas ni workers SQS.
+        # 10 lambdas reales: los 8 post-eliminacion de SQS (el async se
+        # hace por invoke Lambda->Lambda, sin colas ni workers) +
+        # analytics (plan b-analytics-api) + cv_admin (plan
+        # c-cv-management).
         assert names == [
+            'analytics',
             'auth',
             'contact_form',
             'cv',
+            'cv_admin',
             'db',
             'send_email',
             'tracking_pixel',

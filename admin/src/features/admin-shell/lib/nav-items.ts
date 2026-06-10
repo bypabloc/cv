@@ -31,5 +31,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
 	// /settings (ver el layout de /settings); el sidebar solo expone la raiz.
 	{ href: ROUTES.admin.settings, label: "Configuracion", icon: Settings },
 	{ href: ROUTES.admin.users, label: "Usuarios", icon: Users, adminOnly: true },
-	{ href: ROUTES.admin.cv, label: "Gestion CV", icon: FileText },
+	{
+		href: ROUTES.admin.cv,
+		label: "Gestion CV",
+		icon: FileText,
+		adminOnly: true,
+	},
 ];

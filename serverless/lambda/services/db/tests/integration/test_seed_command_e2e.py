@@ -1,10 +1,18 @@
-"""Integration — command 'seed' end-to-end.
+"""Integration — command 'seed' (restore) end-to-end.
 
-Given un evento crudo {command: 'seed'} y la DB con el schema migrado,
-When se invoca lambda_handler real,
-Then el flujo handler -> controller Seed -> run_seed lee los YAML de
-     seeds/data/, los inserta en la DB y devuelve {status: 'ok',
-     seeded: True} con los conteos por tabla.
+Given un evento crudo {command: 'seed'} SIN confirm_overwrite contra una
+DB con datos, When se invoca lambda_handler real, Then el guard aborta
+con SEED_REQUIRES_CONFIRM (la DB editada via cv_admin es la fuente de
+verdad).
+
+Given el mismo evento con args {confirm_overwrite: true} y
+S3_DB_BACKUPS_BUCKET apuntando al bucket del stage, When se invoca,
+Then baja el snapshot latest/ de S3, lo upsertea y devuelve
+{status: 'ok', seeded: True} con los invariantes del CV (1 profile,
+5 niches) en los conteos.
+
+Requiere: DATABASE_URL (schema migrado, con datos), credenciales AWS con
+lectura del bucket y S3_DB_BACKUPS_BUCKET en el entorno.
 """
 
 import pytest
@@ -20,34 +28,24 @@ pytestmark = pytest.mark.integration
 def test_seed_command_e2e():
     import handler
 
-    # Act
-    result = handler.lambda_handler(invoke_event('seed'), lambda_context())
+    # Act 1: sin confirm sobre una DB poblada -> guard.
+    blocked = handler.lambda_handler(invoke_event('seed'), lambda_context())
 
-    # Assert
+    # Assert 1
+    assert blocked['status'] == 'error'
+    assert blocked['error_code'] == 'SEED_REQUIRES_CONFIRM'
+
+    # Act 2: restore real desde el snapshot latest/ del stage.
+    result = handler.lambda_handler(
+        invoke_event('seed', args={'confirm_overwrite': True}),
+        lambda_context(),
+    )
+
+    # Assert 2: invariantes del CV (el contenido editable es volatil; los
+    # conteos exactos por entidad viven en el snapshot, no en el test).
     assert result['command'] == 'seed'
     assert result['status'] == 'ok'
     assert result['seeded'] is True
     counts = result['counts']
-    # El seed real puebla las tablas del CV con la data de los YAML.
     assert counts['profile'] == 1
     assert counts['niches'] == 5
-    assert counts['experiences'] == 9
-    assert counts['projects'] == 6
-    assert counts['skill_categories'] == 10
-    assert counts['certificates'] == 11
-    assert counts['references'] == 10
-
-
-def test_seed_command_is_idempotent_e2e():
-    """Given el seed ya aplicado,
-    When se invoca el command 'seed' una segunda vez,
-    Then los conteos por tabla son identicos (upsert idempotente).
-    """
-    import handler
-
-    # Act
-    first = handler.lambda_handler(invoke_event('seed'), lambda_context())
-    second = handler.lambda_handler(invoke_event('seed'), lambda_context())
-
-    # Assert
-    assert first['counts'] == second['counts']

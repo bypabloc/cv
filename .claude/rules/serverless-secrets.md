@@ -151,6 +151,18 @@ Aplica SIEMPRE que se trabaje con:
 
   Detalle operativo de Neon: ver [neon-management.md](neon-management.md).
 
+### `/portfolio/{stage}/github-deploy-token` (SecureString + KMS)
+
+- **Que es**: PAT fine-grained de GitHub scoped al repo `bypabloc/cv` con
+  permiso `Actions: read and write` (nada mas).
+- **Quien lo lee**: Lambda `cv_admin` (operation `publish`) para disparar
+  `workflow_dispatch` de `deploy-apps.yml` (boton "Publicar" del admin) y
+  consultar el estado del ultimo run.
+- **Rotacion**: anual (expiracion del PAT) o ante sospecha de leak:
+  regenerar el token en GitHub → pegar en `docker/env/server/.{stage}`
+  como `GITHUB_DEPLOY_TOKEN=` → `sync_secrets --env=<X> --category=server`.
+- **NUNCA** usar un PAT classic ni ampliar permisos mas alla de Actions RW.
+
 ### `/portfolio/owner-email` (String)
 
 - **Que es**: email(s) del owner, destinatario(s) del form de contacto.
@@ -241,6 +253,7 @@ recurso se puede recrear sin bloquear a quien lo consume.
 | `/portfolio/{stage}/dynamodb/rate-limit-buckets/{name,arn}` | tabla DynamoDB de buckets de rate-limit |
 | `/portfolio/{stage}/dynamodb/email-config/{name,arn}` | tabla DynamoDB de config de email (la lee `send_email`) |
 | `/portfolio/{stage}/s3/email-templates/{name,arn}` | bucket S3 de templates Jinja2 (`portfolio-email-templates-${stage}`, lo lee `send_email`) |
+| `/portfolio/{stage}/s3/db-backups/{name,arn}` | bucket S3 de backups de la DB (`portfolio-db-backups-${stage}`, versioning + lifecycle 12 semanas; escribe `devtools db_export` via rol OIDC `portfolio-db-backup`, lee la Lambda `db` en el restore) |
 | `/portfolio/{stage}/api_gateway/portfolio-api/{id,root-resource-id,access-log-group-arn}` | API Gateway REST |
 
 Las Lambdas resuelven el **nombre de cada tabla DynamoDB en el cold start**

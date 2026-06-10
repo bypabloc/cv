@@ -25,17 +25,16 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    WRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import WRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
 from shared.runner import make_body
+
 
 # Credencial nueva para change-password: derivada de STRONG_PASSWORD cambiando
 # un fragmento (no un literal nuevo). Valida (>=12, complejidad) y distinta.
@@ -43,19 +42,27 @@ _NEW_PASSWORD = STRONG_PASSWORD.replace('K7m', 'N3w')
 
 
 def _login_password(
-    http: HttpClient, origin: str, email: str, bypass: str, password: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
+    password: str,
 ) -> tuple[int, str | None]:
     """Login solo-password con `password`. Devuelve (status, access|None)."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=password, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=password,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -65,7 +72,9 @@ def _login_password(
 def _password_overview(http: HttpClient, origin: str, access: str) -> dict:
     """security.overview -> la entry de password."""
     r = http.post(
-        '/auth', body=make_body('security', 'overview'), origin=origin,
+        '/auth',
+        body=make_body('security', 'overview'),
+        origin=origin,
         bearer=access,
     )
     by_type = {m['type']: m for m in (r.body.get('methods') or [])}
@@ -97,19 +106,27 @@ def test_password_full_lifecycle_required_toggle_change_relogin(
     email = f'success+pwlc-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
 
     # 1. login solo-password -> tokens + access para operar.
-    status, access = _login_password(http, origin, email, bypass, STRONG_PASSWORD)
-    assert status == 200 and access, f'login solo-password fallo: {status}'
+    status, access = _login_password(
+        http, origin, email, bypass, STRONG_PASSWORD
+    )
+    assert status == 200, f'login solo-password fallo: {status}'
+    assert access, 'login solo-password no emitio access token'
 
     # 2. set-required false -> 204; overview password required=false.
     off = http.post(
         '/auth',
         body=make_body('security', 'password-set-required', required=False),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert off.status == 204, f'password-set-required false fallo: {off.body}'
     assert _password_overview(http, origin, access)['required'] is False
@@ -118,7 +135,8 @@ def test_password_full_lifecycle_required_toggle_change_relogin(
     on = http.post(
         '/auth',
         body=make_body('security', 'password-set-required', required=True),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert on.status == 204, f'password-set-required true fallo: {on.body}'
     assert _password_overview(http, origin, access)['required'] is True
@@ -127,10 +145,13 @@ def test_password_full_lifecycle_required_toggle_change_relogin(
     wrong = http.post(
         '/users',
         body=make_body(
-            'profile', 'change-password',
-            current_password=WRONG_PASSWORD, new_password=_NEW_PASSWORD,
+            'profile',
+            'change-password',
+            current_password=WRONG_PASSWORD,
+            new_password=_NEW_PASSWORD,
         ),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert wrong.status == 401, (
         f'change-password con current incorrecta deberia ser 401: '
@@ -141,10 +162,13 @@ def test_password_full_lifecycle_required_toggle_change_relogin(
     ok = http.post(
         '/users',
         body=make_body(
-            'profile', 'change-password',
-            current_password=STRONG_PASSWORD, new_password=_NEW_PASSWORD,
+            'profile',
+            'change-password',
+            current_password=STRONG_PASSWORD,
+            new_password=_NEW_PASSWORD,
         ),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert ok.status in (200, 204), (
         f'change-password con current correcta deberia ser 2xx: '
@@ -153,13 +177,20 @@ def test_password_full_lifecycle_required_toggle_change_relogin(
 
     # 6. login con la password NUEVA -> tokens; la vieja ya no sirve.
     new_status, new_access = _login_password(
-        http, origin, email, bypass, _NEW_PASSWORD,
+        http,
+        origin,
+        email,
+        bypass,
+        _NEW_PASSWORD,
     )
-    assert new_status == 200 and new_access, (
-        f'login con la password nueva fallo: {new_status}'
-    )
+    assert new_status == 200, f'login con la password nueva fallo: {new_status}'
+    assert new_access, 'login con la password nueva no emitio access token'
     old_status, _ = _login_password(
-        http, origin, email, bypass, STRONG_PASSWORD,
+        http,
+        origin,
+        email,
+        bypass,
+        STRONG_PASSWORD,
     )
     assert old_status == 401, (
         f'la password vieja ya no deberia servir: {old_status}'

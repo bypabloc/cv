@@ -13,7 +13,8 @@ vi.mock("@/features/admin-shell/hooks/use-nav-items", () => ({
 }));
 
 const ADMIN_ITEMS = NAV_ITEMS; // los 4 (incluye Usuarios adminOnly)
-const NON_ADMIN_ITEMS = NAV_ITEMS.filter((i) => !i.adminOnly); // 3 (sin Usuarios)
+// 2 (sin Usuarios ni Gestion CV, ambos adminOnly desde c-cv-management)
+const NON_ADMIN_ITEMS = NAV_ITEMS.filter((i) => !i.adminOnly);
 
 describe("Sidebar", () => {
 	beforeEach(() => {
@@ -49,7 +50,7 @@ describe("Sidebar", () => {
 		expect(screen.getByRole("link", { name: /usuarios/i })).toBeInTheDocument();
 	});
 
-	it("Given un NO-admin When render Then oculta el item Usuarios (3 items)", () => {
+	it("Given un NO-admin When render Then oculta Usuarios y Gestion CV (2 items)", () => {
 		// Arrange
 		useVisibleNavItemsMock.mockReturnValue(NON_ADMIN_ITEMS);
 
@@ -57,8 +58,9 @@ describe("Sidebar", () => {
 		render(<Sidebar />);
 
 		// Assert
-		expect(screen.getAllByRole("link")).toHaveLength(3);
+		expect(screen.getAllByRole("link")).toHaveLength(2);
 		expect(screen.queryByRole("link", { name: /usuarios/i })).toBe(null);
+		expect(screen.queryByRole("link", { name: /gestion cv/i })).toBe(null);
 	});
 
 	it("Given el sidebar When render Then muestra el item Metricas", () => {

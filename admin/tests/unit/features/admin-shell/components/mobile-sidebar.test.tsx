@@ -20,7 +20,8 @@ vi.mock("@/features/admin-shell/hooks/use-nav-items", () => ({
 }));
 
 const ADMIN_ITEMS = NAV_ITEMS; // los 4 (incluye Usuarios adminOnly)
-const NON_ADMIN_ITEMS = NAV_ITEMS.filter((i) => !i.adminOnly); // 3 (sin Usuarios)
+// 2 (sin Usuarios ni Gestion CV, ambos adminOnly desde c-cv-management)
+const NON_ADMIN_ITEMS = NAV_ITEMS.filter((i) => !i.adminOnly);
 
 describe("MobileSidebar", () => {
 	beforeEach(() => {
@@ -41,7 +42,7 @@ describe("MobileSidebar", () => {
 		expect(links).toHaveLength(4);
 	});
 
-	it("Given un NO-admin When abre el Sheet Then oculta el item Usuarios (3 items)", async () => {
+	it("Given un NO-admin When abre el Sheet Then oculta Usuarios y Gestion CV (2 items)", async () => {
 		// Arrange
 		useVisibleNavItemsMock.mockReturnValue(NON_ADMIN_ITEMS);
 		const user = userEvent.setup();
@@ -52,8 +53,9 @@ describe("MobileSidebar", () => {
 
 		// Assert
 		const links = await screen.findAllByRole("link");
-		expect(links).toHaveLength(3);
+		expect(links).toHaveLength(2);
 		expect(screen.queryByRole("link", { name: /usuarios/i })).toBe(null);
+		expect(screen.queryByRole("link", { name: /gestion cv/i })).toBe(null);
 	});
 
 	it("Given pathname /settings When abierto Then el item Configuracion esta activo", async () => {

@@ -4,7 +4,7 @@ Path mirroring: devtools/serverless/change_detector.py -> this file.
 
 Verifica:
 - classify_path detecta cambios de service / shared / ignore con sus
-  excepciones (tests/, events/, build/, core/seeds/data/).
+  excepciones (tests/, events/, build/).
 - detect_affected_lambdas combina cambios directos + cierre transitivo
   via shared_resolver real.
 - cmd_detect_changes imprime JSON y maneja errores de CLI.
@@ -80,16 +80,6 @@ class TestClassifyPath:
         """
         assert classify_path(
             'serverless/lambda/services/cv/build/index.html'
-        ) == ChangeKind(kind='ignore')
-
-    def test_service_seeds_data_no_dispara(self):
-        """
-        Given un path core/seeds/data/ del lambda db,
-        When invoco classify_path,
-        Then devuelve kind='ignore' (seeds requieren re-run manual).
-        """
-        assert classify_path(
-            'serverless/lambda/services/db/core/seeds/data/foo.yaml'
         ) == ChangeKind(kind='ignore')
 
     def test_shared_subpackage_dispara_redeploy_de_consumers(self):
@@ -188,18 +178,18 @@ class TestDetectAffectedLambdas:
         )
         assert result == set()
 
-    def test_seeds_data_no_dispara_db(self):
+    def test_events_no_dispara_db(self):
         """
-        Given files con cambios solo en core/seeds/data/ del lambda db,
+        Given files con cambios solo en events/ del lambda db,
         When invoco detect_affected_lambdas,
-        Then devuelve set() (los seeds no van al deploy automatico).
+        Then devuelve set() (los events de ejemplo no van al deploy).
         """
         result = detect_affected_lambdas(
             base_sha='_unused',
             head_sha='_unused',
             lambdas_root=_lambdas_root(),
             files=[
-                'serverless/lambda/services/db/core/seeds/data/profile.yaml'
+                'serverless/lambda/services/db/events/restore.json'
             ],
         )
         assert result == set()

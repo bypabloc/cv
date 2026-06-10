@@ -28,12 +28,10 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
@@ -45,7 +43,9 @@ from shared.webauthn_device import SoftPasskey
 def _enroll_totp(http: HttpClient, origin: str, access: str) -> str:
     """Enrola + confirma TOTP y lo marca required. Devuelve el secret_b32."""
     setup = http.post(
-        '/auth', body=make_body('mfa', 'setup-totp'), origin=origin,
+        '/auth',
+        body=make_body('mfa', 'setup-totp'),
+        origin=origin,
         bearer=access,
     )
     secret = field(setup.body, 'secret_b32')
@@ -53,46 +53,61 @@ def _enroll_totp(http: HttpClient, origin: str, access: str) -> str:
     http.post(
         '/auth',
         body=make_body('mfa', 'confirm-totp', code=totp_now(secret)),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     http.post(
         '/auth',
         body=make_body('mfa', 'set-required', kind='totp', required=True),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     return secret
 
 
 def _enroll_passkey(
-    http: HttpClient, origin: str, admin: str, access: str,
+    http: HttpClient,
+    origin: str,
+    admin: str,
+    access: str,
 ) -> SoftPasskey:
     """Registra un passkey (SoftPasskey) y lo marca required. Devuelve el device."""
     pk = SoftPasskey(admin)
     ro = http.post(
-        '/auth', body=make_body('webauthn', 'register-options'),
-        origin=origin, bearer=access,
+        '/auth',
+        body=make_body('webauthn', 'register-options'),
+        origin=origin,
+        bearer=access,
     )
     rv = http.post(
         '/auth',
         body=make_body(
-            'webauthn', 'register-verify',
+            'webauthn',
+            'register-verify',
             challenge_id=ro.body['challenge_id'],
             response=pk.register_response(ro.body['options']),
         ),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert rv.status == 201, f'register-verify fallo: {rv.status} {rv.body}'
     cs = http.post(
-        '/auth', body=make_body('webauthn', 'list-credentials'),
-        origin=origin, bearer=access,
+        '/auth',
+        body=make_body('webauthn', 'list-credentials'),
+        origin=origin,
+        bearer=access,
     )
     cred_id = cs.body['credentials'][0]['credential_id']
     http.post(
         '/auth',
         body=make_body(
-            'webauthn', 'set-required', credential_id=cred_id, required=True,
+            'webauthn',
+            'set-required',
+            credential_id=cred_id,
+            required=True,
         ),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     return pk
 
@@ -119,8 +134,10 @@ def _verify_factor(
         r = http.post(
             '/auth',
             body=make_body(
-                'login', 'verify-password',
-                password=STRONG_PASSWORD, temp_token=temp,
+                'login',
+                'verify-password',
+                password=STRONG_PASSWORD,
+                temp_token=temp,
             ),
             origin=origin,
         )
@@ -130,7 +147,10 @@ def _verify_factor(
         r = http.post(
             '/auth',
             body=make_body(
-                'login', 'verify-totp', code=totp_now(secret), temp_token=temp,
+                'login',
+                'verify-totp',
+                code=totp_now(secret),
+                temp_token=temp,
             ),
             origin=origin,
         )
@@ -145,7 +165,8 @@ def _verify_factor(
         r = http.post(
             '/auth',
             body=make_body(
-                'webauthn', 'login-verify',
+                'webauthn',
+                'login-verify',
                 challenge_id=lo.body['challenge_id'],
                 response=passkey.login_response(lo.body['options']),
                 temp_token=temp,
@@ -177,7 +198,9 @@ def _run_checklist(
     user_id = enroll['user_id']
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     # check del set de required: el backend lista TODOS los factores.
@@ -189,9 +212,15 @@ def _run_checklist(
     final_body: dict = {}
     for i, factor in enumerate(factors_order):
         body = _verify_factor(
-            http, origin, factor, temp=temp, email=email,
-            secret=enroll.get('secret'), passkey=enroll.get('passkey'),
-            env_obj=environment, user_id=user_id,
+            http,
+            origin,
+            factor,
+            temp=temp,
+            email=email,
+            secret=enroll.get('secret'),
+            passkey=enroll.get('passkey'),
+            env_obj=environment,
+            user_id=user_id,
         )
         if i < last:
             # Contrato intermedio: NO completo, faltan factores, temp rolling.
@@ -232,20 +261,28 @@ def _setup_user(
     email = f'success+mfck-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
     # access fresco para el enroll (password unico required aun).
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -279,12 +316,21 @@ def test_login_checklist_password_and_totp(
     if not bypass:
         pytest.skip('bypass Turnstile no disponible')
     enroll = _setup_user(
-        http, environment, env, bypass, created_emails,
-        with_totp=True, with_webauthn=False,
+        http,
+        environment,
+        env,
+        bypass,
+        created_emails,
+        with_totp=True,
+        with_webauthn=False,
     )
     _run_checklist(
-        http, environment, env, bypass,
-        factors_order=['password', 'totp'], enroll=enroll,
+        http,
+        environment,
+        env,
+        bypass,
+        factors_order=['password', 'totp'],
+        enroll=enroll,
     )
 
 
@@ -308,12 +354,21 @@ def test_login_checklist_password_and_webauthn(
     if not bypass:
         pytest.skip('bypass Turnstile no disponible')
     enroll = _setup_user(
-        http, environment, env, bypass, created_emails,
-        with_totp=False, with_webauthn=True,
+        http,
+        environment,
+        env,
+        bypass,
+        created_emails,
+        with_totp=False,
+        with_webauthn=True,
     )
     _run_checklist(
-        http, environment, env, bypass,
-        factors_order=['password', 'webauthn'], enroll=enroll,
+        http,
+        environment,
+        env,
+        bypass,
+        factors_order=['password', 'webauthn'],
+        enroll=enroll,
     )
 
 
@@ -337,10 +392,19 @@ def test_login_checklist_three_factors_arbitrary_order(
     if not bypass:
         pytest.skip('bypass Turnstile no disponible')
     enroll = _setup_user(
-        http, environment, env, bypass, created_emails,
-        with_totp=True, with_webauthn=True,
+        http,
+        environment,
+        env,
+        bypass,
+        created_emails,
+        with_totp=True,
+        with_webauthn=True,
     )
     _run_checklist(
-        http, environment, env, bypass,
-        factors_order=['webauthn', 'password', 'totp'], enroll=enroll,
+        http,
+        environment,
+        env,
+        bypass,
+        factors_order=['webauthn', 'password', 'totp'],
+        enroll=enroll,
     )

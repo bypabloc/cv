@@ -7,9 +7,9 @@ Con sesion admin, una sub-asercion por caso (mismo escenario):
 2. niche inexistente -> 400 UNKNOWN_NICHE exacto; nada persiste.
 3. fecha malformada `2026-13` -> el regex FlexDate la ACEPTA (dos
    digitos) y `coerce_date` revienta dentro de la transaccion ->
-   rollback + 500 INTERNAL_ERROR generico; nada persiste. (Looseness
-   conocida del contrato: el doc 11 esperaba 1xxx, el comportamiento
-   real es el 500 hermetico del http_handler.)
+   rollback + 400 INVALID_FIELD_VALUE (code 1102): el ValueError de la
+   coercion se traduce a error de contrato en content_service, ya NO
+   escapa como 500 unhandled; nada persiste.
 4. action desconocida `upsert-nope` -> 400 INVALID_REQUEST (resolucion
    de operation/action).
 5. payload sin `slug` -> 400 INVALID_REQUEST. (El detail del body es el
@@ -82,17 +82,17 @@ def test_cv_admin_validation_errors(
     }
     assert slugs_of(session.cv_get('experiences')).count(slug2) == 0
 
-    # 3. fecha malformada 2026-13 -> 500 INTERNAL_ERROR (rollback total).
+    # 3. fecha malformada 2026-13 -> 400 INVALID_FIELD_VALUE (rollback).
     slug3 = synthetic_slug('valdate')
     session.register('experience', slug3)
     r3 = session.post(
         'upsert-experience',
         {**minimal_experience_payload(slug3), 'start': '2026-13'},
     )
-    assert r3.status == 500, f'[fecha] HTTP {r3.status}: {r3.body!r}'
+    assert r3.status == 400, f'[fecha] HTTP {r3.status}: {r3.body!r}'
     assert r3.body == {
-        'error': 'Internal server error',
-        'code': 'INTERNAL_ERROR',
+        'error_code': 'INVALID_FIELD_VALUE',
+        'message': 'valor invalido en experience: month must be in 1..12',
     }
     assert slugs_of(session.cv_get('experiences')).count(slug3) == 0
 

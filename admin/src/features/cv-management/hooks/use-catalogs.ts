@@ -9,6 +9,9 @@ import type { CvCatalogs } from "../types";
  * @function useCatalogs
  * @description Catalogos (niches/skills/techTags) para los selects de los
  *   forms via content.catalogs. Cambian raramente -> staleTime largo.
+ *   retry 3: sin catalogos el picker de niches queda vacio y los forms
+ *   inusables, asi que un fallo transitorio de red se reintenta mas que
+ *   el default global (1).
  */
 export function useCatalogs() {
 	return useQuery({
@@ -17,5 +20,6 @@ export function useCatalogs() {
 			(await cvAdminClient.catalogs()).data,
 		staleTime: 5 * 60_000,
 		refetchOnWindowFocus: false,
+		retry: 3,
 	});
 }

@@ -8,16 +8,18 @@ import type { CvSection, CvUpsertPayload } from "../types";
 
 /**
  * @function useUpsertEntity
- * @description Mutation de upsert de la seccion: invalida el prefix de la
- *   seccion (todas las variantes de niche) y notifica con toast.
+ * @description Mutation de upsert de la seccion: ESPERA la invalidacion del
+ *   prefix de la seccion (incluye el refetch de las queries activas) y
+ *   recien ahi notifica — "Cambios guardados" implica lista fresca, asi
+ *   reabrir el dialog hidrata los valores recien guardados.
  */
 export function useUpsertEntity(section: CvSection) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: (payload: CvUpsertPayload) => upsertEntity(section, payload),
-		onSuccess: () => {
-			void queryClient.invalidateQueries({
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
 				queryKey: cvKeys.sectionAll(section),
 			});
 			toast.success("Cambios guardados");

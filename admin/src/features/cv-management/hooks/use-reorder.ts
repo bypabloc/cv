@@ -18,8 +18,8 @@ export function useReorder(section: CvSection) {
 
 	return useMutation({
 		mutationFn: (payload: ReorderPayload) => cvAdminClient.reorder(payload),
-		onSuccess: () => {
-			void queryClient.invalidateQueries({
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
 				queryKey: cvKeys.sectionAll(section),
 			});
 			toast.success("Orden actualizado");

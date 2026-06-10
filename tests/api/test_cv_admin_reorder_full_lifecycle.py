@@ -22,12 +22,10 @@ from __future__ import annotations
 
 import pytest
 
-from ._cv_admin_flows import (
-    CvAdminSession,
-    minimal_experience_payload,
-    slugs_of,
-    synthetic_slug,
-)
+from ._cv_admin_flows import CvAdminSession
+from ._cv_admin_flows import minimal_experience_payload
+from ._cv_admin_flows import slugs_of
+from ._cv_admin_flows import synthetic_slug
 
 
 @pytest.mark.api
@@ -111,9 +109,12 @@ def test_cv_admin_reorder_full_lifecycle(
             'detail': {'missing': [synth[2]], 'extra': []},
         }
         # El edge NO altero el orden.
-        assert slugs_of(
-            session.cv_get('experiences', niche='generic'),
-        ) == reordered
+        assert (
+            slugs_of(
+                session.cv_get('experiences', niche='generic'),
+            )
+            == reordered
+        )
 
         # 7. RESTORE: el orden del snapshot.
         restore = session.post(
@@ -127,9 +128,12 @@ def test_cv_admin_reorder_full_lifecycle(
         assert restore.status == 200, (
             f'[restore] HTTP {restore.status}: {restore.body!r}'
         )
-        assert slugs_of(
-            session.cv_get('experiences', niche='generic'),
-        ) == snapshot
+        assert (
+            slugs_of(
+                session.cv_get('experiences', niche='generic'),
+            )
+            == snapshot
+        )
     finally:
         # 8. CLEANUP: borrar las 3 sinteticas (idempotente).
         for slug in synth:

@@ -10,12 +10,10 @@ from __future__ import annotations
 
 import pytest
 
-from ._cv_admin_flows import (
-    CvAdminSession,
-    minimal_experience_payload,
-    slugs_of,
-    synthetic_slug,
-)
+from ._cv_admin_flows import CvAdminSession
+from ._cv_admin_flows import minimal_experience_payload
+from ._cv_admin_flows import slugs_of
+from ._cv_admin_flows import synthetic_slug
 
 
 @pytest.mark.api

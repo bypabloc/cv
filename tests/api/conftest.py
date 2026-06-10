@@ -124,9 +124,7 @@ def reporter(
     `--keep-data`).
     """
     print('=' * 80)
-    print(
-        f'api e2e — tests reales contra {env.upper()} ({api_base(env)})'
-    )
+    print(f'api e2e — tests reales contra {env.upper()} ({api_base(env)})')
     print('=' * 80)
     _print_bypass_note(env, bypass)
 

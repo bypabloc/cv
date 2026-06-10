@@ -154,5 +154,5 @@ def _parse(resp: httpx.Response) -> Any:
     """Parsea el body como JSON; si no es JSON devuelve el texto crudo."""
     try:
         return resp.json()
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return resp.text

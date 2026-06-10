@@ -15,6 +15,7 @@ import pytest
 
 from ._cv_admin_flows import CvAdminSession
 
+
 _RUN_URL_PREFIX = 'https://github.com/bypabloc/cv/actions/runs/'
 _STATUS_ENUM = {'queued', 'in_progress', 'completed'}
 _CONCLUSION_ENUM = {
@@ -56,7 +57,5 @@ def test_cv_admin_publish_status(
     assert r.body['conclusion'] in _CONCLUSION_ENUM
     url = r.body['url']
     assert url[: len(_RUN_URL_PREFIX)] == _RUN_URL_PREFIX
-    created = datetime.fromisoformat(
-        r.body['created_at'].replace('Z', '+00:00'),
-    )
+    created = datetime.fromisoformat(r.body['created_at'])
     assert created.utcoffset().total_seconds() == 0

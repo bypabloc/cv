@@ -15,13 +15,16 @@ Dispatch REAL en dev: encola un run de deploy-apps.yml para el ref `dev`
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC
+from datetime import datetime
+from datetime import timedelta
 import time
 from typing import Any
 
 import pytest
 
 from ._cv_admin_flows import CvAdminSession
+
 
 _RUN_URL_PREFIX = 'https://github.com/bypabloc/cv/actions/runs/'
 _STATUS_ENUM = {'queued', 'in_progress', 'completed'}
@@ -30,7 +33,7 @@ _POLL_BUDGET_SECONDS = 60.0
 
 def _parse_created(raw: str) -> datetime:
     """created_at ISO 8601 de GitHub (`...Z`) -> datetime aware UTC."""
-    return datetime.fromisoformat(raw.replace('Z', '+00:00'))
+    return datetime.fromisoformat(raw)
 
 
 @pytest.mark.api
@@ -59,8 +62,7 @@ def test_cv_admin_publish_dispatch_full_lifecycle(
         'dispatched': True,
         'ref': 'dev',
         'actions_url': (
-            'https://github.com/bypabloc/cv/actions/workflows/'
-            'deploy-apps.yml'
+            'https://github.com/bypabloc/cv/actions/workflows/deploy-apps.yml'
         ),
     }
 

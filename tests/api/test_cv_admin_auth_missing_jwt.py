@@ -13,7 +13,8 @@ import pytest
 from shared.config import admin_origin
 from shared.http import HttpClient
 
-from ._cv_admin_flows import minimal_experience_payload, synthetic_slug
+from ._cv_admin_flows import minimal_experience_payload
+from ._cv_admin_flows import synthetic_slug
 
 
 @pytest.mark.api

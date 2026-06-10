@@ -20,12 +20,10 @@ import secrets
 
 import pytest
 
-from ._cv_admin_flows import (
-    CvAdminSession,
-    LifecycleSpec,
-    run_entity_lifecycle,
-    synthetic_slug,
-)
+from ._cv_admin_flows import CvAdminSession
+from ._cv_admin_flows import LifecycleSpec
+from ._cv_admin_flows import run_entity_lifecycle
+from ._cv_admin_flows import synthetic_slug
 
 
 @pytest.mark.api

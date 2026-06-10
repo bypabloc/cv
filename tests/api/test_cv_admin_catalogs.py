@@ -12,7 +12,8 @@ from __future__ import annotations
 import pytest
 from shared.environment import Environment
 
-from ._cv_admin_flows import NICHES_DISPLAY_ORDER, CvAdminSession
+from ._cv_admin_flows import NICHES_DISPLAY_ORDER
+from ._cv_admin_flows import CvAdminSession
 
 
 @pytest.mark.api

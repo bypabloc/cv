@@ -22,7 +22,6 @@ import re
 import time
 
 import pytest
-
 from shared.environment import Environment
 
 from ._cv_admin_flows import CvAdminSession

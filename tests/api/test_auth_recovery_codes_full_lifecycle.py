@@ -26,12 +26,10 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
@@ -46,23 +44,32 @@ def _codes(body: object) -> list[str]:
     data = body.get('data')
     container = data if isinstance(data, dict) else body
     raw = container.get('codes')
-    return [c for c in raw if isinstance(c, str)] if isinstance(raw, list) else []
+    return (
+        [c for c in raw if isinstance(c, str)] if isinstance(raw, list) else []
+    )
 
 
 def _access_via_password(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> str:
     """Login solo-password -> access token (la password es el unico required)."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -72,7 +79,10 @@ def _access_via_password(
 
 
 def _strong_temp_step2(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> str:
     """Login con MFA hasta el temp step=2 de factor fuerte (password hecho).
 
@@ -82,14 +92,18 @@ def _strong_temp_step2(
     """
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -104,7 +118,9 @@ def _strong_temp_step2(
 def _recovery_overview(http: HttpClient, origin: str, access: str) -> dict:
     """security.overview -> la entry de recovery_codes (con su detail)."""
     r = http.post(
-        '/auth', body=make_body('security', 'overview'), origin=origin,
+        '/auth',
+        body=make_body('security', 'overview'),
+        origin=origin,
         bearer=access,
     )
     by_type = {m['type']: m for m in (r.body.get('methods') or [])}
@@ -136,35 +152,52 @@ def test_recovery_codes_full_lifecycle_generate_consume_regenerate(
     email = f'success+rclc-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
     access = _access_via_password(http, origin, email, bypass)
 
     # TOTP confirmado + required: el login emite un temp step=2 de factor fuerte.
     setup = http.post(
-        '/auth', body=make_body('mfa', 'setup-totp'), origin=origin,
+        '/auth',
+        body=make_body('mfa', 'setup-totp'),
+        origin=origin,
         bearer=access,
     )
     secret = field(setup.body, 'secret_b32')
     assert secret is not None
-    assert http.post(
-        '/auth', body=make_body('mfa', 'confirm-totp', code=totp_now(secret)),
-        origin=origin, bearer=access,
-    ).status == 204
+    assert (
+        http.post(
+            '/auth',
+            body=make_body('mfa', 'confirm-totp', code=totp_now(secret)),
+            origin=origin,
+            bearer=access,
+        ).status
+        == 204
+    )
     http.post(
-        '/auth', body=make_body('mfa', 'set-required', kind='totp', required=True),
-        origin=origin, bearer=access,
+        '/auth',
+        body=make_body('mfa', 'set-required', kind='totp', required=True),
+        origin=origin,
+        bearer=access,
     )
 
     # 1. generate -> 10 codes.
     gen = http.post(
-        '/auth', body=make_body('mfa', 'recovery-codes-generate'),
-        origin=origin, bearer=access,
+        '/auth',
+        body=make_body('mfa', 'recovery-codes-generate'),
+        origin=origin,
+        bearer=access,
     )
     assert gen.status == 200, f'recovery-codes-generate fallo: {gen.body}'
     codes = _codes(gen.body)
-    assert len(codes) == 10, f'deberian ser 10 codes, fueron {len(codes)}: {gen.body}'
+    assert len(codes) == 10, (
+        f'deberian ser 10 codes, fueron {len(codes)}: {gen.body}'
+    )
 
     # 2. overview: total=10, remaining=10.
     ov = _recovery_overview(http, origin, access)
@@ -177,15 +210,22 @@ def test_recovery_codes_full_lifecycle_generate_consume_regenerate(
     consume = http.post(
         '/auth',
         body=make_body(
-            'mfa', 'recovery-codes-consume', temp_token=temp, code=codes[0],
+            'mfa',
+            'recovery-codes-consume',
+            temp_token=temp,
+            code=codes[0],
         ),
         origin=origin,
     )
     assert consume.status == 200, (
         f'recovery-codes-consume deberia ser 200: {consume.status} {consume.body}'
     )
-    assert field(consume.body, 'access_token'), f'falta access_token: {consume.body}'
-    assert field(consume.body, 'refresh_token'), f'falta refresh: {consume.body}'
+    assert field(consume.body, 'access_token'), (
+        f'falta access_token: {consume.body}'
+    )
+    assert field(consume.body, 'refresh_token'), (
+        f'falta refresh: {consume.body}'
+    )
 
     # 5. overview: remaining baja a 9.
     ov2 = _recovery_overview(http, origin, access)
@@ -198,7 +238,10 @@ def test_recovery_codes_full_lifecycle_generate_consume_regenerate(
     reuse = http.post(
         '/auth',
         body=make_body(
-            'mfa', 'recovery-codes-consume', temp_token=temp2, code=codes[0],
+            'mfa',
+            'recovery-codes-consume',
+            temp_token=temp2,
+            code=codes[0],
         ),
         origin=origin,
     )
@@ -208,8 +251,10 @@ def test_recovery_codes_full_lifecycle_generate_consume_regenerate(
 
     # 7. regenerate -> 10 codes nuevos; un code VIEJO no consumido ya no sirve.
     regen = http.post(
-        '/auth', body=make_body('mfa', 'recovery-codes-generate'),
-        origin=origin, bearer=access,
+        '/auth',
+        body=make_body('mfa', 'recovery-codes-generate'),
+        origin=origin,
+        bearer=access,
     )
     assert regen.status == 200, f'regenerate fallo: {regen.body}'
     new_codes = _codes(regen.body)
@@ -221,7 +266,10 @@ def test_recovery_codes_full_lifecycle_generate_consume_regenerate(
     old_unused = http.post(
         '/auth',
         body=make_body(
-            'mfa', 'recovery-codes-consume', temp_token=temp3, code=codes[1],
+            'mfa',
+            'recovery-codes-consume',
+            temp_token=temp3,
+            code=codes[1],
         ),
         origin=origin,
     )

@@ -61,7 +61,9 @@ class Environment:
         """
         if self._private_key is None:
             self._private_key = ''
-            path = _PROJECT_ROOT / 'docker' / 'env' / 'dev-cli' / f'.{self._env}'
+            path = (
+                _PROJECT_ROOT / 'docker' / 'env' / 'dev-cli' / f'.{self._env}'
+            )
             if path.exists():
                 prefix = f'{_PRIVATE_KEY_VAR}='
                 for line in path.read_text().splitlines():
@@ -505,7 +507,7 @@ class Environment:
             ):
                 cur.execute(sql, params)
                 return cur.rowcount
-        except (psycopg.errors.UndefinedTable, psycopg.errors.UndefinedColumn):
+        except psycopg.errors.UndefinedTable, psycopg.errors.UndefinedColumn:
             if ignore_missing:
                 return 0
             raise

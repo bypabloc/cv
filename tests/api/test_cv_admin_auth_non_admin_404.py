@@ -13,15 +13,14 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    create_active_user_with_password,
-    login_with_password,
-)
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import login_with_password
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
 
-from ._cv_admin_flows import minimal_experience_payload, synthetic_slug
+from ._cv_admin_flows import minimal_experience_payload
+from ._cv_admin_flows import synthetic_slug
 
 
 @pytest.mark.api
@@ -52,7 +51,11 @@ def test_cv_admin_auth_non_admin_404(
     )
     try:
         user_id = create_active_user_with_password(
-            http, environment, origin, email, bypass,
+            http,
+            environment,
+            origin,
+            email,
+            bypass,
         )
         if not user_id:
             pytest.fail('no se pudo crear el user sintetico no-admin')

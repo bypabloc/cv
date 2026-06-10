@@ -102,12 +102,16 @@ def run_tables() -> dict[str, Any]:
         ) from exc
 
 
-def run_seed() -> dict[str, Any]:
-    """Carga la data del CV (YAML de `seeds/data/`) en la DB.
+def run_seed(
+    source: str | None = None,
+    confirm_overwrite: bool = False,
+) -> dict[str, Any]:
+    """Restaura un snapshot YAML del CV (S3 o path local) en la DB.
 
-    Delega en `seed_service.run_seed`, que lee los YAML del CV del arbol
-    del Lambda e inserta cada fila con upsert idempotente. Correr el seed
-    N veces deja siempre el mismo estado.
+    Delega en `seed_service.run_seed`, que baja el snapshot (default
+    `latest/` del bucket de backups del stage) e inserta cada fila con
+    upsert idempotente. Correr el restore N veces con el mismo snapshot
+    deja siempre el mismo estado.
 
     Returns
     -------
@@ -118,13 +122,22 @@ def run_seed() -> dict[str, Any]:
     Raises
     ------
     ServiceError
-        Si el seed falla (DB inaccesible, schema sin migrar, YAML
-        invalido) con `code=5000` y `error_code='SEED_FAILED'`.
+        `code=4000` / `SEED_REQUIRES_CONFIRM` si las tablas CV ya tienen
+        datos y no vino `confirm_overwrite: true`; `code=5000` /
+        `SEED_FAILED` ante cualquier otro fallo (DB inaccesible, schema
+        sin migrar, snapshot invalido).
     """
+    from services.seed_service import SeedRequiresConfirmError
     from services.seed_service import run_seed as _run_cv_seed
 
     try:
-        return _run_cv_seed()
+        return _run_cv_seed(source=source, confirm_overwrite=confirm_overwrite)
+    except SeedRequiresConfirmError as exc:
+        raise ServiceError(
+            str(exc),
+            code=4000,
+            error_code='SEED_REQUIRES_CONFIRM',
+        ) from exc
     except Exception as exc:
         raise ServiceError(
             f'El seed del CV fallo: {exc}',

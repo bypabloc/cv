@@ -41,6 +41,11 @@ trigger:
 uses:
   # Tablas DynamoDB que el Lambda lee/escribe. El Lambda db no usa.
   tables: []
+  # Bucket de backups: el command `seed` (restore) baja el snapshot YAML
+  # seed-compatible (latest/ o history/<fecha>/) que escribe db_export.
+  buckets:
+    - name: portfolio-db-backups-${stage}
+      access: read
   # Secretos que el Lambda lee (de SSM). Solo el nombre corto: devtools
   # resuelve el path completo y el permiso de descifrado.
   secrets:

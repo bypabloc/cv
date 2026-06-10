@@ -17,10 +17,12 @@ Body JSON `{operation, action, data}` + header
 | `content` | `upsert-profile`, `upsert-experience` / `delete-experience`, `upsert-project` / `delete-project`, `upsert-education` / `delete-education`, `upsert-certificate` / `delete-certificate`, `upsert-award` / `delete-award`, `upsert-language` / `delete-language`, `upsert-endorsement` / `delete-endorsement`, `upsert-publication` / `delete-publication`, `upsert-skill-category` / `delete-skill-category`, `reorder`, `catalogs` |
 | `publish` | `dispatch`, `status` |
 
-Errores: `1100 UNKNOWN_NICHE` / `1101 REORDER_SLUGS_MISMATCH` (400),
-`4404 SLUG_NOT_FOUND` / `NICHE_NOT_FOUND` (404), `5200 GITHUB_API_ERROR`
-(502). Detalle del contrato:
-`docs/specs/c-cv-management/02-arquitectura-flujos.md`.
+Errores: `1100 UNKNOWN_NICHE` / `1101 REORDER_SLUGS_MISMATCH` /
+`1102 INVALID_FIELD_VALUE` (400), `4404 SLUG_NOT_FOUND` /
+`NICHE_NOT_FOUND` (404), `5200 GITHUB_API_ERROR` (502). El contrato
+vive en el codigo: payloads en `core/models/` (Pydantic, shape YAML del
+seed), mapeo codigo->status en `core/controllers/_base.py` y los E2E de
+`tests/api/test_cv_admin_*.py` como especificacion ejecutable.
 
 ## Escritura
 

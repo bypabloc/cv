@@ -17,12 +17,14 @@ description: HTTP endpoint POST /cv-admin (escritura del CV + publish).
 
 # --- Runtime ---
 runtime: python3.13
-memory: 256       # MB — importa shared.db (sqlalchemy + psycopg): el
-                  # footprint base de un lambda Neon es ~117-127 MB, por lo
-                  # que el minimo de la regla lambda-config es 256. MEDIR
-                  # tras deploy (procedimiento de lambda-config.md) y
-                  # ajustar este comentario con la medicion real.
-timeout: 30       # segundos — cubre el cold SIN SnapStart restore.
+memory: 256       # MB — MEDIDO en dev (2026-06-10, 814 invocaciones reales
+                  # de las suites E2E cubriendo todas las actions: upserts,
+                  # deletes, reorder, catalogs, publish, rate-limit):
+                  # Max Memory Used 173-214 MB -> 128 daria OOM; 256 deja
+                  # ~42 MB de headroom en el pico. Importa shared.db
+                  # (sqlalchemy + psycopg) + invalidacion DDB por tag.
+timeout: 30       # segundos — cubre el cold SIN SnapStart restore: medido
+                  # Init ~3.2s + handler worst-case ~8.5s (Neon I/O) ~ 12s.
 handler: core.handler.lambda_handler
 
 # SnapStart DESACTIVADO (2026-06): el storage del snapshot se factura por

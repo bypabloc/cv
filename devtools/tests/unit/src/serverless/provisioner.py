@@ -160,6 +160,35 @@ class TestRender:
             'table/portfolio-email-config-dev/index/*',
         ]
 
+    def test_render_table_read_grants_scan_for_tag_invalidation(self):
+        """
+        Given un manifest con una tabla `uses.tables` en modo read,
+        When se renderiza la policy IAM,
+        Then el Statement read incluye dynamodb:Scan (lo usa la
+        invalidacion por tag del cache: invalidate_by_tag hace
+        table.scan; sin Scan, cv_admin revienta con AccessDenied al
+        invalidar el tag 'cv' tras cada escritura).
+        """
+        from serverless import provisioner
+
+        manifest = _manifest_http()
+        manifest['uses']['tables'] = {'cache': 'read'}
+
+        rendered = provisioner.render(manifest, stage='dev')
+
+        statements = rendered.iam_policy['Statement']
+        dynamo = [
+            s
+            for s in statements
+            if any(a.startswith('dynamodb:') for a in s['Action'])
+        ]
+        assert dynamo[0]['Action'] == [
+            'dynamodb:GetItem',
+            'dynamodb:Query',
+            'dynamodb:BatchGetItem',
+            'dynamodb:Scan',
+        ]
+
     def test_render_iam_policy_when_uses_secrets(self):
         from serverless import provisioner
 

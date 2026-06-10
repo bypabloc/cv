@@ -118,6 +118,12 @@ _DYNAMO_ACTIONS: dict[str, list[str]] = {
         'dynamodb:GetItem',
         'dynamodb:Query',
         'dynamodb:BatchGetItem',
+        # Scan es read-only: lo usa la invalidacion por tag del cache
+        # (shared.cache.invalidation.invalidate_by_tag hace table.scan
+        # sobre la tabla cache). Sin esto, cualquier Lambda que escriba
+        # el CV (cv_admin) revienta con AccessDeniedException al
+        # invalidar el tag 'cv' tras el commit.
+        'dynamodb:Scan',
     ],
     'write': [
         'dynamodb:PutItem',

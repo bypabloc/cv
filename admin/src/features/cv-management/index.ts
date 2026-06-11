@@ -30,6 +30,7 @@ export { SkillCategoryForm } from "./components/skill-category-form";
 export { useCatalogs } from "./hooks/use-catalogs";
 export { useCvSection } from "./hooks/use-cv-section";
 export { useDeleteEntity } from "./hooks/use-delete-entity";
+export { useFullCv } from "./hooks/use-full-cv";
 export { usePublish, usePublishStatus } from "./hooks/use-publish";
 export { useReorder } from "./hooks/use-reorder";
 export { useUpsertEntity } from "./hooks/use-upsert-entity";

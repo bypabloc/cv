@@ -39,7 +39,7 @@ describe("PublishCard", () => {
 	it("Given sin runs When la query resuelve Then dice Sin publicaciones recientes", async () => {
 		// Arrange
 		server.use(
-			http.post(`${API}/cv-admin`, () =>
+			http.post(`${API}/cv`, () =>
 				HttpResponse.json({
 					is_valid: true,
 					code: 0,
@@ -80,7 +80,7 @@ describe("PublishCard", () => {
 		// Arrange: contar los dispatch reales.
 		let dispatchCount = 0;
 		server.use(
-			http.post(`${API}/cv-admin`, async ({ request }) => {
+			http.post(`${API}/cv`, async ({ request }) => {
 				const body = (await request.json()) as { action: string };
 				if (body.action === "dispatch") {
 					dispatchCount += 1;

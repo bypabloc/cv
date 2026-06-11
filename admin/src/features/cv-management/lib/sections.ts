@@ -70,8 +70,8 @@ export const SECTION_CONFIG: Record<CvSection, SectionConfig> = {
 		readAction: "references",
 		entityType: "endorsement",
 	},
-	// El GET /cv NO expone publications (sin lectura publica todavia): la
-	// lista del admin queda vacia hasta que el backend agregue la action.
+	// El GET /cv publico NO expone publications: el admin la lee del
+	// content.get-all (POST /cv, Bearer admin) con filtro client-side.
 	publications: {
 		label: "Publicaciones",
 		readAction: null,
@@ -178,11 +178,10 @@ export function toListItem(
 /**
  * @function countEntries
  * @description Conteo de entradas para la card del overview: arrays -> length,
- *   profile -> 1 si tiene datos, secciones sin lectura (publications) -> null
- *   (la card muestra un guion).
+ *   profile -> 1 si tiene datos. El overview deriva cada seccion del
+ *   content.get-all, asi que publications tambien cuenta su array real.
  */
-export function countEntries(section: CvSection, data: unknown): number | null {
-	if (SECTION_CONFIG[section].readAction === null) return null;
+export function countEntries(section: CvSection, data: unknown): number {
 	if (section === "profile") {
 		return data !== null &&
 			typeof data === "object" &&

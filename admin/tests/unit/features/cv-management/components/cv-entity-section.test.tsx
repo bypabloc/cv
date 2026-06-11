@@ -56,10 +56,10 @@ interface CapturedRequest {
 	body: Record<string, unknown>;
 }
 
-/** Override de /cv-admin que captura upsert/delete/reorder (catalogs pasa). */
+/** Override del POST /cv que captura upsert/delete/reorder (catalogs pasa). */
 function captureCvAdmin(captured: CapturedRequest[]): void {
 	server.use(
-		http.post(`${API}/cv-admin`, async ({ request }) => {
+		http.post(`${API}/cv`, async ({ request }) => {
 			const body = (await request.json()) as Record<string, unknown> & {
 				action: string;
 			};
@@ -327,15 +327,16 @@ describe("CvEntitySection", () => {
 		expect(captured).toHaveLength(0);
 	});
 
-	it("Given la seccion publications (sin lectura) When se renderiza Then muestra la nota", async () => {
+	it("Given la seccion publications When se renderiza Then lista desde content.get-all sin nota", async () => {
 		// Arrange + Act
 		render(<CvEntitySection section="publications" />);
 
-		// Assert
-		await waitFor(() => {
-			expect(screen.getByRole("note")).toHaveTextContent(
-				"aun no tiene lectura publica",
-			);
-		});
+		// Assert: las 2 fixtures del get-all, sin la vieja nota de "sin
+		// lectura publica".
+		await waitForCards(2);
+		const cards = screen.getAllByTestId("cv-entity-card");
+		expect(cards[0]).toHaveAttribute("data-slug", "post-astro-portfolio");
+		expect(cards[1]).toHaveAttribute("data-slug", "post-lambda-coldstart");
+		expect(screen.queryByRole("note")).not.toBeInTheDocument();
 	});
 });

@@ -14,6 +14,12 @@ export const cvKeys = {
 	/** Key completa de una seccion + niche activo. */
 	section: (section: CvSection, niche?: string) =>
 		[...cvKeys.sectionAll(section), { niche: niche ?? null }] as const,
+	/**
+	 * CV completo de content.get-all (overview). Cuelga de `all` para
+	 * heredar la exclusion de persistencia localStorage (query-provider) y
+	 * cualquier barrido de invalidaciones por el prefix del dominio.
+	 */
+	fullCv: () => [...cvKeys.all, "full-cv"] as const,
 	catalogs: () => [...cvKeys.all, "catalogs"] as const,
 	publishStatus: () => [...cvKeys.all, "publish-status"] as const,
 };

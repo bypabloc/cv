@@ -8,7 +8,8 @@ import type { CvSection } from "../types";
  *   `${API}/cv?operation=cv&action=<accion>[&niche=<n>]`. La respuesta llega
  *   FLAT (el array/objeto de la seccion al nivel raiz) con los datos BiLang
  *   completos. La seccion `publications` no tiene action de lectura publica:
- *   resuelve a lista vacia sin tocar la red.
+ *   aqui resuelve a lista vacia sin tocar la red (el admin la lee del
+ *   content.get-all via useCvSection).
  */
 
 export class CvReadError extends Error {

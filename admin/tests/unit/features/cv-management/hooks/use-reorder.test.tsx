@@ -61,13 +61,16 @@ describe("useReorder", () => {
 		expect(invalidateSpy).toHaveBeenCalledWith({
 			queryKey: ["cv-management", "section", "experiences"],
 		});
+		expect(invalidateSpy).toHaveBeenCalledWith({
+			queryKey: ["cv-management", "full-cv"],
+		});
 		expect(toastSuccess).toHaveBeenCalledWith("Orden actualizado");
 	});
 
 	it("Given slugs que no matchean el niche When muta Then toastea el error 1101", async () => {
 		// Arrange
 		server.use(
-			http.post("https://api.test.the-full-stack.com/cv-admin", () =>
+			http.post("https://api.test.the-full-stack.com/cv", () =>
 				HttpResponse.json(
 					{
 						error: "REORDER_SLUGS_MISMATCH",

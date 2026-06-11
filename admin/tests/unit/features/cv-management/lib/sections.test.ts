@@ -248,8 +248,10 @@ describe("countEntries", () => {
 		expect(countEntries("profile", undefined)).toBe(0);
 	});
 
-	it("Given publications (sin lectura) When se cuenta Then null", () => {
-		// Arrange + Act + Assert
-		expect(countEntries("publications", [])).toBeNull();
+	it("Given publications When se cuenta Then devuelve el length real del get-all", () => {
+		// Arrange + Act + Assert: ya no hay caso especial (guion) — el
+		// overview deriva publications del content.get-all como el resto.
+		expect(countEntries("publications", [{}, {}, {}])).toBe(3);
+		expect(countEntries("publications", [])).toBe(0);
 	});
 });

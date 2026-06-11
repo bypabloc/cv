@@ -1,4 +1,4 @@
-"""E2E del action `content.catalogs` del Lambda cv_admin.
+"""E2E del action `content.catalogs` de las operations admin del Lambda cv.
 
 `catalogs {}` devuelve los 3 vocabularios para los selects del admin:
 `niches` (los 5 slugs en el ORDEN REAL de `display_order` — verificado
@@ -22,7 +22,7 @@ def test_cv_admin_catalogs(
     environment: Environment,
 ) -> None:
     """
-    Given una sesion admin sintetica contra cv_admin en dev,
+    Given una sesion admin sintetica contra las operations admin del cv en dev,
     When invoca content.catalogs,
     Then `niches` es EXACTAMENTE la lista de tax_niches en display_order
     (consultada en Neon) y `skills`/`techTags` replican los vocabularios

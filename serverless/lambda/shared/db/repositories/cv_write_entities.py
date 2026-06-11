@@ -7,7 +7,7 @@ traducciones + prioridades. Los deletes limpian hijos, uniones,
 traducciones polimorficas y prioridades antes de borrar la fila.
 
 Los consumen el seed/restore de la Lambda `db` y la operation `content`
-del Lambda `cv_admin`. Toda funcion asume que corre DENTRO de una
+del Lambda `cv` (operation `content`). Toda funcion asume que corre DENTRO de una
 transaccion gestionada por el caller (`db_session()`).
 """
 
@@ -712,7 +712,7 @@ def upsert_publication(
 
 
 # Registro de entidades simples: model, union, columna FK, entity_type.
-# Lo usa `delete_simple` (y el cv_admin para resolver el delete generico).
+# Lo usa `delete_simple` (y la operation content del cv para el delete generico).
 SIMPLE_ENTITIES: dict[str, tuple[type, type, str, str]] = {
     'certificate': (Certificate, CertificateNiche, 'certificate_id', 'certificate'),
     'award': (Award, AwardNiche, 'award_id', 'award'),

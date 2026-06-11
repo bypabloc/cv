@@ -1,4 +1,4 @@
-"""E2E de los errores de validacion del Lambda cv_admin (5 casos, doc 11).
+"""E2E de los errores de validacion de las operations admin del Lambda cv (5 casos, doc 11).
 
 Con sesion admin, una sub-asercion por caso (mismo escenario):
 
@@ -47,7 +47,7 @@ def test_cv_admin_validation_errors(
     cv_admin_session: CvAdminSession,
 ) -> None:
     """
-    Given una sesion admin sintetica contra cv_admin en dev,
+    Given una sesion admin sintetica contra las operations admin del cv en dev,
     When envia los 5 payloads invalidos del doc 11,
     Then cada uno responde su error exacto y el GET publico confirma que
     NADA persistio. [AC-1]

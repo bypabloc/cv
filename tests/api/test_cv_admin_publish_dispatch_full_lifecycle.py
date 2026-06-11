@@ -1,4 +1,4 @@
-"""E2E del action `publish.dispatch` del Lambda cv_admin (run REAL).
+"""E2E del action `publish.dispatch` de las operations admin del Lambda cv (run REAL).
 
 Dispatch REAL en dev: encola un run de deploy-apps.yml para el ref `dev`
 (aceptable — el workflow tiene concurrency queue por env). Marker pytest
@@ -42,7 +42,7 @@ def test_cv_admin_publish_dispatch_full_lifecycle(
     cv_admin_session: CvAdminSession,
 ) -> None:
     """
-    Given una sesion admin sintetica contra cv_admin en dev,
+    Given una sesion admin sintetica contra las operations admin del cv en dev,
     When dispara publish.dispatch y sondea publish.status con backoff
     hasta 60s,
     Then el dispatch responde su contrato exacto y aparece un run NUEVO

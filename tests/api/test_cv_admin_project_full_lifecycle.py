@@ -31,7 +31,7 @@ def test_cv_admin_project_full_lifecycle(
     cv_admin_session: CvAdminSession,
 ) -> None:
     """
-    Given una sesion admin sintetica contra cv_admin en dev,
+    Given una sesion admin sintetica contra las operations admin del cv en dev,
     When recorre los 6 pasos del lifecycle de un project sintetico,
     Then cada paso responde su contrato exacto (incl. orden de stack y
     metrics) y el GET publico refleja create/update/delete.

@@ -1,6 +1,6 @@
 {
   "httpMethod": "POST",
-  "path": "/cv-admin",
+  "path": "/cv",
   "headers": {
     "Content-Type": "application/json",
     "Origin": "https://admin.portfolio.dev.the-full-stack.com",

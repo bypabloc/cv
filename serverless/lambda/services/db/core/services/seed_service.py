@@ -4,12 +4,12 @@ El seed es el mecanismo de RESTORE del CV: baja un snapshot YAML
 seed-compatible desde S3 (el que produce `devtools db_export` en
 `s3://portfolio-db-backups-<stage>/{latest,history/<fecha>}/`) y lo
 inserta en el schema relacional. La fuente de verdad del CV es la DB
-(editada por el Lambda `cv_admin`); el snapshot es backup.
+(editada por la operation `content` del Lambda `cv`); el snapshot es backup.
 
 La logica de escritura (upserts idempotentes, traducciones, uniones de
 niches, prioridades) vive en `shared.db.repositories.cv_write` /
 `cv_write_entities` — la misma capa que usa la operation `content` del
-Lambda `cv_admin`. Este modulo solo resuelve la fuente, carga los YAML y
+Lambda `cv` (operation `content`). Este modulo resuelve la fuente, carga los YAML y
 orquesta.
 
 Guard anti-pisada: si las tablas CV ya tienen datos, el seed ABORTA salvo
@@ -301,7 +301,7 @@ def run_seed(
         None usa `s3://$S3_DB_BACKUPS_BUCKET/latest/`.
     confirm_overwrite : bool
         Obligatorio en `true` cuando las tablas CV ya tienen datos
-        (restaurar pisa las ediciones hechas via cv_admin).
+        (restaurar pisa las ediciones hechas via el admin).
 
     Returns
     -------
@@ -317,7 +317,7 @@ def run_seed(
     with db_session() as session:
         if _has_cv_data(session) and not confirm_overwrite:
             raise SeedRequiresConfirmError(
-                'Las tablas CV ya tienen datos (editados via cv_admin). '
+                'Las tablas CV ya tienen datos (editados via el admin). '
                 'Restaurar requiere confirm_overwrite: true.'
             )
     data_dir = _resolve_data_dir(source)

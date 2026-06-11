@@ -155,7 +155,7 @@ Aplica SIEMPRE que se trabaje con:
 
 - **Que es**: PAT fine-grained de GitHub scoped al repo `bypabloc/cv` con
   permiso `Actions: read and write` (nada mas).
-- **Quien lo lee**: Lambda `cv_admin` (operation `publish`) para disparar
+- **Quien lo lee**: Lambda `cv` (operation `publish`) para disparar
   `workflow_dispatch` de `deploy-apps.yml` (boton "Publicar" del admin) y
   consultar el estado del ultimo run.
 - **Rotacion**: anual (expiracion del PAT) o ante sospecha de leak:

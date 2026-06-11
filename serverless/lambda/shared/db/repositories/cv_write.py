@@ -3,7 +3,7 @@
 Capa UNICA de escritura a las tablas `cv_*` + `i18n_translations` +
 `tax_niche_priorities` + catalogos (`tax_niches`, `cv_skills`,
 `tax_tech_tags`). La consumen el seed/restore de la Lambda `db` y la
-operation `content` del Lambda `cv_admin` — cero duplicacion.
+operation `content` del Lambda `cv` — cero duplicacion.
 
 Idempotencia: `INSERT ... ON CONFLICT ... DO UPDATE` sobre la clave
 natural (slug / clave compuesta). Las uniones y los hijos ordenados usan

@@ -1,7 +1,7 @@
 """Publish UI del overview /cv — INTERCEPTADO (sin dispatch real).
 
 Doc 12 (`test_cv_overview_publish_ui`): el dispatch REAL del workflow lo
-cubre la capa API; aqui `POST /cv-admin` con `operation == 'publish'` se
+cubre la capa API; aqui `POST /cv` con `operation == 'publish'` se
 intercepta con `page.route` (patron del modulo app para /track): se
 captura el request, se responde 200 LOCAL y se assertan el AlertDialog
 (titulo + descripcion + cancelar sin request), el body FLAT exacto del
@@ -41,7 +41,7 @@ def test_cv_overview_publish_ui(cv_page: CvAdminPage) -> None:
         publish-status muestra `queued` con su timestamp. Cero errores de
         consola.
     """
-    # Arrange: interceptor de /cv-admin SOLO para operation=publish.
+    # Arrange: interceptor del POST /cv SOLO para operation=publish.
     page = cv_page.page
     dispatched: list[dict[str, object]] = []
 
@@ -80,7 +80,7 @@ def test_cv_overview_publish_ui(cv_page: CvAdminPage) -> None:
             body=json.dumps(payload),
         )
 
-    page.route('**/cv-admin', _handle)
+    page.route('**/cv', _handle)
 
     # Act: overview con la publish-card hidratada (status interceptado).
     goto_cv_overview(page)

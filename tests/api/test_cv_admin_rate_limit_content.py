@@ -1,4 +1,4 @@
-"""E2E del rate-limit per-IP del endpoint `/cv-admin#content` (30/60s).
+"""E2E del rate-limit per-IP del endpoint `/cv#content` (30/60s).
 
 Marker `slow`: el test alinea la rafaga al INICIO de una ventana de 60s
 alineada a epoch (mejor caso: cae entera en una ventana). IP FIJA dedicada
@@ -29,7 +29,7 @@ from ._cv_admin_flows import CvAdminSession
 
 # IP dedicada FUERA del pool TEST-NET del IpRotator (hosts .1-.254).
 _FIXED_IP = '203.0.113.0'
-_ENDPOINT = '/cv-admin#content'
+_ENDPOINT = '/cv#content'
 _LIMIT = 30
 _WINDOW_SECONDS = 60
 
@@ -54,7 +54,7 @@ def test_cv_admin_rate_limit_content(
     environment: Environment,
 ) -> None:
     """
-    Given la regla 30/60s del endpoint /cv-admin#content y una IP fija
+    Given la regla 30/60s del endpoint /cv#content y una IP fija
     dedicada con sus buckets limpios,
     When dispara catalogs consecutivos con la misma IP hasta el primer 429,
     Then nunca recibe un 429 antes de 30 doscientos y el 429 llega con el

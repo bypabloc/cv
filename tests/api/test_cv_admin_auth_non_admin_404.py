@@ -39,8 +39,8 @@ def test_cv_admin_auth_non_admin_404(
     Then las 3 responden 404 con `error == 'NOT_FOUND'` exacto
     (anti-enumeration: mismo body que una ruta inexistente). [AC-2]
     """
-    if lambda_filter is not None and lambda_filter != 'cv_admin':
-        pytest.skip(f'--lambda={lambda_filter}: cv_admin omitido')
+    if lambda_filter is not None and lambda_filter != 'cv':
+        pytest.skip(f'--lambda={lambda_filter}: cv (admin) omitido')
     if not bypass:
         pytest.skip('bypass Turnstile no disponible')
 
@@ -74,7 +74,7 @@ def test_cv_admin_auth_non_admin_404(
         )
         for operation, action, payload in cases:
             r = http.post(
-                '/cv-admin',
+                '/cv',
                 body={'operation': operation, 'action': action, **payload},
                 origin=origin,
                 bearer=access,

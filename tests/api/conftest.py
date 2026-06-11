@@ -184,8 +184,8 @@ def cv_admin_session(
     slugs sinteticos registrados + restore de la whitelist + cleanup del
     vocabulario y el user en Neon (salvo `--keep-data`). HERMETICO.
     """
-    if lambda_filter is not None and lambda_filter != 'cv_admin':
-        pytest.skip(f'--lambda={lambda_filter}: cv_admin omitido')
+    if lambda_filter is not None and lambda_filter != 'cv':
+        pytest.skip(f'--lambda={lambda_filter}: cv (admin) omitido')
     if not bypass:
         pytest.skip('bypass Turnstile no disponible')
 

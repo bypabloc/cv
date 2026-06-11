@@ -2,7 +2,7 @@
 
 Sesion admin sintetica (user activo + whitelist SSM `admin-emails` con
 `_wait_ssm_promoted` ANTES del bust de cache + access JWT), helpers de
-POST `/cv-admin` (con retry SOLO ante el 404 de consistencia eventual de
+POST `/cv` (con retry SOLO ante el 404 de consistencia eventual de
 la whitelist) y GET `/cv` publico, registro de slugs sinteticos para el
 teardown idempotente y el runner generico de la plantilla "full
 lifecycle" de las 9 entidades del CV.
@@ -89,7 +89,7 @@ class CvAdminSession:
     """Sesion admin sintetica contra el Lambda cv_admin desplegado.
 
     Mantiene el access JWT fresco (relogin preventivo), expone los
-    helpers POST `/cv-admin` y GET `/cv`, y registra los slugs/vocab
+    helpers POST `/cv` y GET `/cv`, y registra los slugs/vocab
     sinteticos creados para el teardown idempotente del conftest.
     """
 
@@ -151,10 +151,10 @@ class CvAdminSession:
         bearer: str | None = None,
         ip: str | None = None,
     ) -> Response:
-        """POST /cv-admin SIN retries (body FLAT: operation/action + data)."""
+        """POST /cv SIN retries (body FLAT: operation/action + data)."""
         body = {'operation': operation, 'action': action, **data}
         return self.http.post(
-            '/cv-admin',
+            '/cv',
             body=body,
             origin=self.origin,
             bearer=bearer,
@@ -170,7 +170,7 @@ class CvAdminSession:
         retries: int = 15,
         delay: float = 4.0,
     ) -> Response:
-        """POST /cv-admin autenticado con retry de consistencia eventual.
+        """POST /cv autenticado con retry de consistencia eventual.
 
         Reintenta SOLO ante (a) el 404 NOT_FOUND del guard admin (un
         contenedor con la whitelist vieja cacheada — mismo patron que
@@ -340,7 +340,7 @@ def _converge_admin_recognized(
         )
         if resp.status == 200:
             break
-        session.environment.bust_lambda_cache('cv_admin')
+        session.environment.bust_lambda_cache('cv')
         time.sleep(delay)
 
     hits = 0
@@ -400,7 +400,7 @@ def close_admin_session(
             _warn_leftovers(session)
     finally:
         env.write_admin_emails(session.original_whitelist)
-        env.clear_lambda_cache_buster('cv_admin')
+        env.clear_lambda_cache_buster('cv')
         print('  [INFO] cv_admin: whitelist SSM restaurada + buster off')
         if not keep_data:
             env.cleanup_cv_vocab(

@@ -1,11 +1,12 @@
 """Navegacion completa del editor CV: overview + las 10 sub-rutas.
 
 Doc 12 (`test_cv_navigation_all_sections`): login admin real -> /cv ->
-las 10 cards del overview con su conteo == el GET /cv de cada seccion ->
-publish-card visible con boton habilitado -> cada sub-ruta renderiza su
-lista (N items == GET), marca la seccion activa en el sub-nav y no deja
-skeleton residual tras networkidle. Cierra con cero errores de consola
-acumulados en TODO el recorrido.
+las 10 cards del overview con su conteo == la fuente de datos de cada
+seccion (GET /cv publico; publications via content.get-all admin, su
+unica lectura) -> publish-card visible con boton habilitado -> cada
+sub-ruta renderiza su lista (N items == la fuente), marca la seccion
+activa en el sub-nav y no deja skeleton residual tras networkidle.
+Cierra con cero errores de consola acumulados en TODO el recorrido.
 """
 
 from __future__ import annotations
@@ -19,8 +20,8 @@ from ._cv_ui import settle_network
 from .conftest import CvAdminPage
 
 
-# Seccion del admin -> action del GET /cv publico (None = sin lectura:
-# publications muestra '—' en el overview y lista vacia en la sub-ruta).
+# Seccion del admin -> action del GET /cv publico (None = sin lectura
+# publica: publications se lee del content.get-all admin).
 _READ_ACTIONS: dict[str, str | None] = {
     'profile': 'profile',
     'experiences': 'experiences',
@@ -36,10 +37,14 @@ _READ_ACTIONS: dict[str, str | None] = {
 
 
 def _expected_count(session: CvAdminSession, section: str) -> int | None:
-    """Conteo esperado de la card del overview (None = guion '—')."""
+    """Conteo esperado de la card del overview de cada seccion."""
     action = _READ_ACTIONS[section]
     if action is None:
-        return None
+        # publications: la UI (overview y sub-ruta) lee del get-all
+        # admin — misma fuente aqui.
+        r = session.post('get-all', {})
+        assert r.status == 200
+        return len(r.body['publications'])
     data = session.cv_get(action)
     if section == 'profile':
         return 1 if isinstance(data, dict) and len(data) > 0 else 0

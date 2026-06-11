@@ -111,16 +111,15 @@ class TestResolveByLambdaName:
 
         names = available_lambdas()
 
-        # 10 lambdas reales: los 8 post-eliminacion de SQS (el async se
+        # 9 lambdas reales: los 8 post-eliminacion de SQS (el async se
         # hace por invoke Lambda->Lambda, sin colas ni workers) +
-        # analytics (plan b-analytics-api) + cv_admin (plan
-        # c-cv-management).
+        # analytics (plan b-analytics-api). cv_admin fue absorbido por
+        # el lambda cv (plan d-cv-consolidation).
         assert names == [
             'analytics',
             'auth',
             'contact_form',
             'cv',
-            'cv_admin',
             'db',
             'send_email',
             'tracking_pixel',

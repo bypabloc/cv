@@ -7,7 +7,7 @@ Flags:
   --aws-profile=<X>        perfil AWS CLI para SSM/Neon (default: shell)
   --keep-data              NO limpiar los datos sinteticos creados en Neon
   --lambda=<name>          sub-filtro del modulo api (cv|contact_form|
-                           tracking_pixel|auth|users|cv_admin); default todos
+                           tracking_pixel|auth|users); default todos
   --headed                 browser visible (admin/app, debug local sin container)
   --verbose / --quiet
 """
@@ -41,7 +41,6 @@ VALID_LAMBDAS = (
     'tracking_pixel',
     'auth',
     'users',
-    'cv_admin',
 )
 
 ALLOWED_FLAGS = [

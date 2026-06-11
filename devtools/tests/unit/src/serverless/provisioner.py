@@ -166,7 +166,7 @@ class TestRender:
         When se renderiza la policy IAM,
         Then el Statement read incluye dynamodb:Scan (lo usa la
         invalidacion por tag del cache: invalidate_by_tag hace
-        table.scan; sin Scan, cv_admin revienta con AccessDenied al
+        table.scan; sin Scan, la escritura del CV revienta con AccessDenied al
         invalidar el tag 'cv' tras cada escritura).
         """
         from serverless import provisioner

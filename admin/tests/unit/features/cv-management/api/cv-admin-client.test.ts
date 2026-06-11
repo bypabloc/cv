@@ -11,9 +11,10 @@ import type {
 
 /**
  * @module tests/unit/features/cv-management/api/cv-admin-client
- * @description Verifica las 23 actions del cliente cv_admin contra MSW
- *   (contrato FLAT del request + Envelope en la respuesta): upserts por
- *   entidad, deletes por slug, reorder, catalogs y publish.
+ * @description Verifica las 24 actions del cliente admin del Lambda `cv`
+ *   (POST /cv) contra MSW (contrato FLAT del request + Envelope en la
+ *   respuesta): upserts por entidad, deletes por slug, reorder, catalogs,
+ *   get-all y publish.
  */
 
 const EXPERIENCE: CvExperience = {
@@ -195,6 +196,35 @@ describe("cvAdminClient", () => {
 			{ slug: "astro", name: "Astro" },
 			{ slug: "nextjs", name: "Next.js" },
 		]);
+	});
+
+	it("Given get-all When se invoca Then responde las 10 claves del CV completo", async () => {
+		// Arrange + Act
+		const envelope = await cvAdminClient.getAll();
+
+		// Assert: las 10 claves exactas del shape de edicion + datos sin
+		// filtrar por niche.
+		expect(Object.keys(envelope.data).sort()).toEqual([
+			"awards",
+			"certificates",
+			"education",
+			"endorsements",
+			"experiences",
+			"languages",
+			"profile",
+			"projects",
+			"publications",
+			"skills",
+		]);
+		expect(envelope.is_valid).toBe(true);
+		expect(envelope.data.profile.handle).toBe("bypabloc");
+		expect(envelope.data.experiences).toHaveLength(2);
+		expect(envelope.data.projects).toHaveLength(1);
+		expect(envelope.data.publications.map((pub) => pub.slug)).toEqual([
+			"post-astro-portfolio",
+			"post-lambda-coldstart",
+		]);
+		expect(envelope.data.skills).toEqual([]);
 	});
 
 	it("Given publish dispatch + status When se invocan Then responden run url y estado", async () => {

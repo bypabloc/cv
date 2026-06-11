@@ -16,6 +16,25 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+def _real_permission_checker():
+    """Registra el checker REAL del Lambda en cada test (fase Authorize).
+
+    Replica lo que hace `handler.py` en cold start: los controllers de
+    content/publish declaran `required_permission='admin'` y sin checker
+    registrado fallarian con CONFIGURATION_MISSING. Los tests que quieren
+    CONCEDER el permiso mockean `services.permission_checker.
+    require_active_user` (el email admin@example.com del conftest esta
+    whitelisteado).
+    """
+    from services.permission_checker import check_permission
+    from shared.lambda_kit.base_controller import set_permission_checker
+
+    set_permission_checker(check_permission)
+    yield
+    set_permission_checker(None)
+
+
+@pytest.fixture(autouse=True)
 def _cache_transparent(monkeypatch):
     """Fuerza MISS en `@cached`: recompute siempre, sin tocar DynamoDB."""
     fake_cache = MagicMock()

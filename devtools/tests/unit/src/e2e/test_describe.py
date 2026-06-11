@@ -69,5 +69,4 @@ def test_describe_when_lambda_flag_then_choices_are_six_lambdas() -> None:
         'tracking_pixel',
         'auth',
         'users',
-        'cv_admin',
     ]

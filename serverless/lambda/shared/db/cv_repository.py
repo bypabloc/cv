@@ -25,6 +25,8 @@ que el `cv_service` del Lambda mapea a `ServiceError`.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from sqlalchemy import select
@@ -39,6 +41,8 @@ from shared.db.models.cv.cv_entity import (
     EndorsementNiche,
     Language,
     LanguageNiche,
+    Publication,
+    PublicationNiche,
 )
 from shared.db.models.cv.education import EducationEntry, EducationEntryNiche
 from shared.db.models.cv.experience import (
@@ -67,6 +71,23 @@ from shared.db.models.taxonomy.priority import NichePriority
 
 from .repository import RepositoryError
 from .session import db_session
+
+
+@contextmanager
+def _session_scope(session: Session | None) -> Iterator[Session]:
+    """Cede la Session recibida o abre una propia (back-compat).
+
+    Todas las funciones publicas de este modulo aceptan una `session`
+    opcional: con None abren/cierran la suya (comportamiento historico);
+    con una Session compartida la reutilizan — asi `get_full_cv` y
+    `get_full_cv_admin` resuelven TODAS las secciones en UNA sola
+    conexion Neon en vez de 9-10.
+    """
+    if session is not None:
+        yield session
+        return
+    with db_session() as own_session:
+        yield own_session
 
 
 def _ensure_locale(locale: str) -> str:
@@ -255,11 +276,13 @@ def _experience_skills_by_exp(
     return out
 
 
-def get_profile(*, locale: str = 'es') -> dict[str, Any]:
+def get_profile(
+    *, locale: str = 'es', session: Session | None = None
+) -> dict[str, Any]:
     """Devuelve el profile + stats + textos bilingues."""
     locale = _ensure_locale(locale)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             profile = session.execute(select(Profile)).scalar_one_or_none()
             if profile is None:
                 return {}
@@ -322,7 +345,10 @@ def get_profile(*, locale: str = 'es') -> dict[str, Any]:
 
 
 def list_experiences(
-    *, niche: str | None = None, locale: str = 'es'
+    *,
+    niche: str | None = None,
+    locale: str = 'es',
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     """Devuelve las experiencias filtradas por niche en shape Zod.
 
@@ -335,7 +361,7 @@ def list_experiences(
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(Experience)
             filtered_ids = _ids_for_niche(
                 session, ExperienceNiche, 'experience_id', niche
@@ -441,13 +467,16 @@ def list_experiences(
 
 
 def list_projects(
-    *, niche: str | None = None, locale: str = 'es'
+    *,
+    niche: str | None = None,
+    locale: str = 'es',
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     """Devuelve los proyectos filtrados por niche, con stack + metrics."""
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(Project)
             filtered_ids = _ids_for_niche(
                 session, ProjectNiche, 'project_id', niche
@@ -565,11 +594,13 @@ def list_projects(
         raise RepositoryError(f'projects query failed: {exc}') from exc
 
 
-def list_certificates(*, niche: str | None = None) -> list[dict[str, Any]]:
+def list_certificates(
+    *, niche: str | None = None, session: Session | None = None
+) -> list[dict[str, Any]]:
     """Devuelve los certificados filtrados por niche."""
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(Certificate)
             filtered_ids = _ids_for_niche(
                 session, CertificateNiche, 'certificate_id', niche
@@ -607,13 +638,16 @@ def list_certificates(*, niche: str | None = None) -> list[dict[str, Any]]:
 
 
 def list_awards(
-    *, niche: str | None = None, locale: str = 'es'
+    *,
+    niche: str | None = None,
+    locale: str = 'es',
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     """Devuelve los premios filtrados por niche, con title/motivation bilingues."""
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(Award)
             filtered_ids = _ids_for_niche(
                 session, AwardNiche, 'award_id', niche
@@ -651,13 +685,16 @@ def list_awards(
 
 
 def list_education(
-    *, niche: str | None = None, locale: str = 'es'
+    *,
+    niche: str | None = None,
+    locale: str = 'es',
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     """Devuelve la educacion filtrada por niche."""
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(EducationEntry)
             filtered_ids = _ids_for_niche(
                 session, EducationEntryNiche, 'education_entry_id', niche
@@ -707,13 +744,16 @@ def list_education(
 
 
 def list_languages(
-    *, niche: str | None = None, locale: str = 'es'
+    *,
+    niche: str | None = None,
+    locale: str = 'es',
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     """Devuelve los idiomas filtrados por niche."""
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(Language)
             filtered_ids = _ids_for_niche(
                 session, LanguageNiche, 'language_id', niche
@@ -754,7 +794,10 @@ def list_languages(
 
 
 def list_references(
-    *, niche: str | None = None, locale: str = 'es'
+    *,
+    niche: str | None = None,
+    locale: str = 'es',
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     """Devuelve los endorsements filtrados por niche.
 
@@ -765,7 +808,7 @@ def list_references(
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(Endorsement)
             filtered_ids = _ids_for_niche(
                 session, EndorsementNiche, 'endorsement_id', niche
@@ -805,13 +848,16 @@ def list_references(
 
 
 def list_skill_categories(
-    *, niche: str | None = None, locale: str = 'es'
+    *,
+    niche: str | None = None,
+    locale: str = 'es',
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     """Devuelve las categorias de skills filtradas por niche, con sus skills."""
     _ = _ensure_locale(locale)
     niche = _ensure_niche(niche)
     try:
-        with db_session() as session:
+        with _session_scope(session) as session:
             stmt = select(SkillCategory)
             filtered_ids = _ids_for_niche(
                 session, SkillCategoryNiche, 'skill_category_id', niche
@@ -860,23 +906,125 @@ def list_skill_categories(
         raise RepositoryError(f'skill_categories query failed: {exc}') from exc
 
 
+def list_publications(
+    *, niche: str | None = None, session: Session | None = None
+) -> list[dict[str, Any]]:
+    """Devuelve las publicaciones filtradas por niche.
+
+    Sin lectura en el GET publico historico: la consume el shape de
+    edicion del admin (`get_full_cv_admin`). Shape espejo del payload de
+    `upsert_publication` (title/platform/url/canonical/date + summary
+    bilingue + niches + priority).
+    """
+    niche = _ensure_niche(niche)
+    try:
+        with _session_scope(session) as session:
+            stmt = select(Publication)
+            filtered_ids = _ids_for_niche(
+                session, PublicationNiche, 'publication_id', niche
+            )
+            if filtered_ids is not None:
+                if not filtered_ids:
+                    return []
+                stmt = stmt.where(Publication.id.in_(filtered_ids))
+            publications = list(session.execute(stmt).scalars())
+            ids = [p.id for p in publications]
+            translations = _translations_map(session, 'publication', ids)
+            niches_by_pub = _niches_by_entity(
+                session, PublicationNiche, 'publication_id', ids
+            )
+            all_priorities = _all_priorities_by_entity(
+                session, 'publication', ids
+            )
+            return [
+                _drop_nones(
+                    {
+                        'slug': p.slug,
+                        'title': p.title,
+                        'platform': p.platform,
+                        'url': p.url,
+                        'canonical': p.canonical_url,
+                        'date': p.published_on.isoformat(),
+                        'summary': translations.get(p.id, {}).get(
+                            'summary', {}
+                        ),
+                        'niches': _niches_or_omit(niches_by_pub.get(p.id, [])),
+                        'priority': all_priorities.get(p.id, {}),
+                    },
+                )
+                for p in publications
+            ]
+    except Exception as exc:  # pragma: no cover
+        raise RepositoryError(f'publications query failed: {exc}') from exc
+
+
 def get_full_cv(
     *, niche: str | None = None, locale: str = 'es'
 ) -> dict[str, Any]:
     """Devuelve el CV completo en un solo dict.
 
-    Orquesta las funciones por entidad. Cada call abre/cierra su propia
-    Session — el costo (Neon pooled) es despreciable frente al beneficio
-    de mantener cada query autonoma.
+    Orquesta las funciones por entidad sobre UNA Session compartida: una
+    sola conexion Neon para las 9 secciones (antes cada call abria la
+    suya: 9 sesiones y ~55 round-trips por miss).
     """
-    return {
-        'profile': get_profile(locale=locale),
-        'experiences': list_experiences(niche=niche, locale=locale),
-        'projects': list_projects(niche=niche, locale=locale),
-        'certificates': list_certificates(niche=niche),
-        'awards': list_awards(niche=niche, locale=locale),
-        'education': list_education(niche=niche, locale=locale),
-        'languages': list_languages(niche=niche, locale=locale),
-        'references': list_references(niche=niche, locale=locale),
-        'skillCategories': list_skill_categories(niche=niche, locale=locale),
-    }
+    try:
+        with db_session() as session:
+            return {
+                'profile': get_profile(locale=locale, session=session),
+                'experiences': list_experiences(
+                    niche=niche, locale=locale, session=session
+                ),
+                'projects': list_projects(
+                    niche=niche, locale=locale, session=session
+                ),
+                'certificates': list_certificates(
+                    niche=niche, session=session
+                ),
+                'awards': list_awards(
+                    niche=niche, locale=locale, session=session
+                ),
+                'education': list_education(
+                    niche=niche, locale=locale, session=session
+                ),
+                'languages': list_languages(
+                    niche=niche, locale=locale, session=session
+                ),
+                'references': list_references(
+                    niche=niche, locale=locale, session=session
+                ),
+                'skillCategories': list_skill_categories(
+                    niche=niche, locale=locale, session=session
+                ),
+            }
+    except RepositoryError:
+        raise
+    except Exception as exc:  # pragma: no cover
+        raise RepositoryError(f'full cv query failed: {exc}') from exc
+
+
+def get_full_cv_admin() -> dict[str, Any]:
+    """Shape de edicion del admin: las 10 secciones en UNA sesion Neon.
+
+    A diferencia de `get_full_cv` (shape publico, filtrable por niche),
+    devuelve TODO sin filtrar — incluye `publications` (sin lectura
+    publica) y usa las claves de seccion del editor del admin
+    (`skills` = categorias, `endorsements` = ex references).
+    """
+    try:
+        with db_session() as session:
+            return {
+                'profile': get_profile(session=session),
+                'experiences': list_experiences(session=session),
+                'projects': list_projects(session=session),
+                'skills': list_skill_categories(session=session),
+                'education': list_education(session=session),
+                'certificates': list_certificates(session=session),
+                'awards': list_awards(session=session),
+                'languages': list_languages(session=session),
+                'endorsements': list_references(session=session),
+                'publications': list_publications(session=session),
+            }
+    except RepositoryError:
+        raise
+    except Exception as exc:  # pragma: no cover
+        raise RepositoryError(f'full admin cv query failed: {exc}') from exc

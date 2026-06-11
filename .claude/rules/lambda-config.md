@@ -145,7 +145,7 @@ usara, porque boto3 las modela por-operacion bajo demanda.
 ## Config actual: 1024/30 uniforme en los 10 Lambdas
 
 Desde 2026-06-10 los 10 Lambdas (`analytics`, `auth`, `contact_form`,
-`cv`, `cv_admin`, `db`, `send_email`, `tracking_pixel`,
+`cv`, `db`, `send_email`, `tracking_pixel`,
 `tracking_writer`, `users`) declaran `memory: 1024` (piso uniforme) con
 `timeout` 30-60 segun Lambda.
 

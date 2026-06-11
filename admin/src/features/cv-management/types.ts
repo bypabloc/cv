@@ -1,10 +1,10 @@
 /**
  * @module features/cv-management/types
- * @description Tipos espejo del contrato del Lambda `cv_admin` (operations
- *   `content` + `publish`) y del shape de lectura del GET /cv publico. Las
- *   claves son camelCase (los alias Pydantic del backend: `companyUrl`,
- *   `skillsTechnical`, `metricsEstimated`, ...). Ver
- *   serverless/lambda/services/cv_admin/core/models/.
+ * @description Tipos espejo del contrato admin del Lambda `cv` (operations
+ *   `content` + `publish`, antes el Lambda `cv_admin`) y del shape de lectura
+ *   del GET /cv publico. Las claves son camelCase (los alias Pydantic del
+ *   backend: `companyUrl`, `skillsTechnical`, `metricsEstimated`, ...). Ver
+ *   serverless/lambda/services/cv/core/models/.
  */
 
 /** Bloque bilingue `{es, en}` — el backend exige al menos un locale. */
@@ -205,6 +205,25 @@ export interface CvSkillCategory {
 	skills: string[];
 	niches: string[];
 	priority?: PriorityMap;
+}
+
+/**
+ * Respuesta de content.get-all: el CV completo en shape de edicion. Todas
+ * las listas vienen SIN filtrar por niche; cada item trae `niches` (slugs) y
+ * `priority` ({niche: peso}). `endorsements` usa el shape del GET publico
+ * action=references; `publications` NO tiene lectura publica (solo aqui).
+ */
+export interface CvFullAdmin {
+	profile: CvProfile;
+	experiences: CvExperience[];
+	projects: CvProject[];
+	skills: CvSkillCategory[];
+	education: CvEducation[];
+	certificates: CvCertificate[];
+	awards: CvAward[];
+	languages: CvLanguage[];
+	endorsements: CvEndorsement[];
+	publications: CvPublication[];
 }
 
 /** Union de los records que renderizan las listas por seccion. */

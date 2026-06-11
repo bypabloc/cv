@@ -43,7 +43,10 @@ def ui_slug(prefix: str) -> str:
 
 
 def cv_admin_response(action: str) -> Callable[[PwResponse], bool]:
-    """Predicado para `expect_response`: POST /cv-admin 200 de `action`.
+    """Predicado para `expect_response`: POST /cv 200 de `action`.
+
+    Solo matchea el POST admin: el GET publico del CV lleva query string
+    (la URL no termina en `/cv`) y ademas se exige method POST.
 
     El api-client del admin serializa el body FLAT sin espacios
     (`JSON.stringify`), por eso el needle es `"action":"<action>"`.
@@ -53,7 +56,7 @@ def cv_admin_response(action: str) -> Callable[[PwResponse], bool]:
     def _match(response: PwResponse) -> bool:
         request = response.request
         return (
-            request.url.endswith('/cv-admin')
+            request.url.endswith('/cv')
             and request.method == 'POST'
             and needle in (request.post_data or '')
             and response.status == 200

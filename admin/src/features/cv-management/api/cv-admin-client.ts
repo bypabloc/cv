@@ -8,6 +8,7 @@ import type {
 	CvEndorsement,
 	CvEntitySectionKind,
 	CvExperience,
+	CvFullAdmin,
 	CvLanguage,
 	CvProfile,
 	CvProject,
@@ -26,22 +27,23 @@ import type {
 
 /**
  * @module features/cv-management/api/cv-admin-client
- * @description Cliente tipado del Lambda `cv_admin` (admin-only via whitelist
- *   SSM): POST /cv-admin con body `{operation: 'content'|'publish', action,
- *   data}` via apiFetch (Bearer + mutex + contrato FLAT). Un metodo por
- *   action (21 content + 2 publish) + dispatch generico por seccion
+ * @description Cliente tipado de las operations admin del Lambda `cv`
+ *   (admin-only via whitelist SSM; el viejo Lambda `cv_admin` se fusiono en
+ *   `cv`): POST /cv con body `{operation: 'content'|'publish', action, data}`
+ *   via apiFetch (Bearer + mutex + contrato FLAT). Un metodo por action
+ *   (22 content + 2 publish) + dispatch generico por seccion
  *   (`upsertEntity`/`deleteEntity`) para los hooks parametrizados.
  */
 
 function content<T>(action: string, data: unknown): Promise<Envelope<T>> {
-	return apiFetch<Envelope<T>>("/cv-admin", {
+	return apiFetch<Envelope<T>>("/cv", {
 		method: "POST",
 		body: { operation: "content", action, data },
 	});
 }
 
 function publishOp<T>(action: string): Promise<Envelope<T>> {
-	return apiFetch<Envelope<T>>("/cv-admin", {
+	return apiFetch<Envelope<T>>("/cv", {
 		method: "POST",
 		body: { operation: "publish", action, data: {} },
 	});
@@ -135,6 +137,8 @@ export const cvAdminClient = {
 	// --- operation content: transversales ---
 	reorder: (data: ReorderPayload) => content<ReorderResponse>("reorder", data),
 	catalogs: () => content<CvCatalogs>("catalogs", {}),
+	/** CV completo en shape de edicion (las 10 secciones, sin filtrar). */
+	getAll: () => content<CvFullAdmin>("get-all", {}),
 
 	// --- operation publish ---
 	publishDispatch: () => publishOp<PublishDispatchResponse>("dispatch"),

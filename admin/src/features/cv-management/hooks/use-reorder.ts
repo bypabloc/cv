@@ -11,7 +11,7 @@ import type { CvSection, ReorderPayload } from "../types";
  * @description Mutation content.reorder: reescribe las prioridades del niche
  *   con la lista COMPLETA de slugs en el orden nuevo (el backend exige que
  *   `ordered_slugs` coincida con todas las entidades del niche). Invalida el
- *   prefix de la seccion.
+ *   prefix de la seccion + el get-all del overview.
  */
 export function useReorder(section: CvSection) {
 	const queryClient = useQueryClient();
@@ -19,9 +19,12 @@ export function useReorder(section: CvSection) {
 	return useMutation({
 		mutationFn: (payload: ReorderPayload) => cvAdminClient.reorder(payload),
 		onSuccess: async () => {
-			await queryClient.invalidateQueries({
-				queryKey: cvKeys.sectionAll(section),
-			});
+			await Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: cvKeys.sectionAll(section),
+				}),
+				queryClient.invalidateQueries({ queryKey: cvKeys.fullCv() }),
+			]);
 			toast.success("Orden actualizado");
 		},
 		onError: (error) => {

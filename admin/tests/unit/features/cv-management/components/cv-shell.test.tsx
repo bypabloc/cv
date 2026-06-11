@@ -7,7 +7,8 @@ import { CvShell } from "@/features/cv-management/components/cv-shell";
  * @description Verifica el marco de /cv/**: gate admin-only (skeleton
  *   mientras resuelve, pantalla de no autorizado para no-admin — NUNCA
  *   redirect a login) y el sub-nav con las 10 secciones + resumen, con la
- *   activa marcada por pathname.
+ *   activa marcada por pathname NORMALIZADO (trailingSlash: true del export
+ *   hace que usePathname() llegue con slash final; los hrefs van sin el).
  */
 
 const useIsAdminMock = vi.fn();
@@ -115,6 +116,79 @@ describe("CvShell", () => {
 		// inactivas tienen hover:bg-accent, por eso no se usa bg-accent).
 		await waitFor(() => {
 			expect(screen.getByTestId("cv-subnav-experiences").className).toContain(
+				"text-accent-foreground",
+			);
+		});
+		expect(screen.getByTestId("cv-subnav-overview").className).not.toContain(
+			"text-accent-foreground",
+		);
+	});
+
+	it("Given el pathname /cv/experiences/ (trailing slash del export) When se renderiza Then marca esa seccion activa", async () => {
+		// Arrange
+		useIsAdminMock.mockReturnValue({ isAdmin: true, isResolved: true });
+		usePathnameMock.mockReturnValue("/cv/experiences/");
+
+		// Act
+		render(
+			<CvShell>
+				<p>contenido</p>
+			</CvShell>,
+		);
+
+		// Assert: normaliza el slash final -> el tab matchea igual; el
+		// resumen NO se marca (no es prefijo-match).
+		await waitFor(() => {
+			expect(screen.getByTestId("cv-subnav-experiences").className).toContain(
+				"text-accent-foreground",
+			);
+		});
+		expect(screen.getByTestId("cv-subnav-overview").className).not.toContain(
+			"text-accent-foreground",
+		);
+	});
+
+	it("Given el pathname /cv/ (trailing slash) When se renderiza Then SOLO el resumen queda activo", async () => {
+		// Arrange
+		useIsAdminMock.mockReturnValue({ isAdmin: true, isResolved: true });
+		usePathnameMock.mockReturnValue("/cv/");
+
+		// Act
+		render(
+			<CvShell>
+				<p>contenido</p>
+			</CvShell>,
+		);
+
+		// Assert
+		await waitFor(() => {
+			expect(screen.getByTestId("cv-subnav-overview").className).toContain(
+				"text-accent-foreground",
+			);
+		});
+		expect(screen.getByTestId("cv-subnav-experiences").className).not.toContain(
+			"text-accent-foreground",
+		);
+		expect(screen.getByTestId("cv-subnav-profile").className).not.toContain(
+			"text-accent-foreground",
+		);
+	});
+
+	it("Given el pathname /cv/profile/ When se renderiza Then el resumen NO queda activo (igualdad exacta)", async () => {
+		// Arrange
+		useIsAdminMock.mockReturnValue({ isAdmin: true, isResolved: true });
+		usePathnameMock.mockReturnValue("/cv/profile/");
+
+		// Act
+		render(
+			<CvShell>
+				<p>contenido</p>
+			</CvShell>,
+		);
+
+		// Assert
+		await waitFor(() => {
+			expect(screen.getByTestId("cv-subnav-profile").className).toContain(
 				"text-accent-foreground",
 			);
 		});

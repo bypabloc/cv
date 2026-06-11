@@ -53,13 +53,16 @@ describe("useDeleteEntity", () => {
 		expect(invalidateSpy).toHaveBeenCalledWith({
 			queryKey: ["cv-management", "section", "certificates"],
 		});
+		expect(invalidateSpy).toHaveBeenCalledWith({
+			queryKey: ["cv-management", "full-cv"],
+		});
 		expect(toastSuccess).toHaveBeenCalledWith("Entrada eliminada");
 	});
 
 	it("Given un slug inexistente When muta Then toastea el error del backend", async () => {
 		// Arrange
 		server.use(
-			http.post("https://api.test.the-full-stack.com/cv-admin", () =>
+			http.post("https://api.test.the-full-stack.com/cv", () =>
 				HttpResponse.json(
 					{ error: "NOT_FOUND", code: 4040, message: "Slug inexistente" },
 					{ status: 404 },

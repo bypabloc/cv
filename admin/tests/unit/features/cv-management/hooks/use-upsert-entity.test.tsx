@@ -64,13 +64,16 @@ describe("useUpsertEntity", () => {
 		expect(invalidateSpy).toHaveBeenCalledWith({
 			queryKey: ["cv-management", "section", "languages"],
 		});
+		expect(invalidateSpy).toHaveBeenCalledWith({
+			queryKey: ["cv-management", "full-cv"],
+		});
 		expect(toastSuccess).toHaveBeenCalledWith("Cambios guardados");
 	});
 
 	it("Given un backend en error When muta Then toastea el mensaje y NO invalida", async () => {
 		// Arrange
 		server.use(
-			http.post(`${API}/cv-admin`, () =>
+			http.post(`${API}/cv`, () =>
 				HttpResponse.json(
 					{ error: "UNKNOWN_NICHE", code: 4004, message: "Niche desconocido" },
 					{ status: 422 },

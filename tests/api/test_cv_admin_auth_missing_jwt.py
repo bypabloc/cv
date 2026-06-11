@@ -1,4 +1,4 @@
-"""E2E: POST /cv-admin SIN header Authorization -> 401 exacto.
+"""E2E: POST /cv SIN header Authorization -> 401 exacto.
 
 Cubre las DOS operations (content y publish): el 401 sale de
 `require_active_user` ANTES de tocar el rate-limit, el guard admin o el
@@ -30,8 +30,8 @@ def test_cv_admin_auth_missing_jwt(
     Then ambas responden 401 con el body exacto del contrato (sin filtrar
     detalles) y nada se escribe ni se dispara. [AC-2]
     """
-    if lambda_filter is not None and lambda_filter != 'cv_admin':
-        pytest.skip(f'--lambda={lambda_filter}: cv_admin omitido')
+    if lambda_filter is not None and lambda_filter != 'cv':
+        pytest.skip(f'--lambda={lambda_filter}: cv (admin) omitido')
     origin = admin_origin(env)
     expected_body = {
         'error': 'Missing Authorization header',
@@ -40,7 +40,7 @@ def test_cv_admin_auth_missing_jwt(
 
     # content.upsert-experience (payload valido, sin niches -> no escribe).
     r1 = http.post(
-        '/cv-admin',
+        '/cv',
         body={
             'operation': 'content',
             'action': 'upsert-experience',
@@ -53,7 +53,7 @@ def test_cv_admin_auth_missing_jwt(
 
     # publish.dispatch (no llega a GitHub: 401 antes del service).
     r2 = http.post(
-        '/cv-admin',
+        '/cv',
         body={'operation': 'publish', 'action': 'dispatch'},
         origin=origin,
     )

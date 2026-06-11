@@ -9,8 +9,9 @@ import type { CvEntitySectionKind, DeletePayload } from "../types";
 /**
  * @function useDeleteEntity
  * @description Mutation de delete-<entidad> por slug: ESPERA la invalidacion
- *   del prefix de la seccion (refetch incluido) y recien ahi notifica — la
- *   card eliminada ya no esta en la lista cuando aparece el toast.
+ *   del prefix de la seccion + el get-all del overview (refetch incluido) y
+ *   recien ahi notifica — la card eliminada ya no esta en la lista cuando
+ *   aparece el toast.
  */
 export function useDeleteEntity(section: CvEntitySectionKind) {
 	const queryClient = useQueryClient();
@@ -18,9 +19,12 @@ export function useDeleteEntity(section: CvEntitySectionKind) {
 	return useMutation({
 		mutationFn: (payload: DeletePayload) => deleteEntity(section, payload),
 		onSuccess: async () => {
-			await queryClient.invalidateQueries({
-				queryKey: cvKeys.sectionAll(section),
-			});
+			await Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: cvKeys.sectionAll(section),
+				}),
+				queryClient.invalidateQueries({ queryKey: cvKeys.fullCv() }),
+			]);
 			toast.success("Entrada eliminada");
 		},
 		onError: (error) => {

@@ -123,7 +123,7 @@ python devtools/run.py serverless run --stage=dev --lambda=db \
   --event=events/tables.json --aws-profile=tfs-dev
 # restore del CV desde el snapshot S3 (latest/ del bucket de backups;
 #   exige confirm_overwrite si las tablas tienen datos — la DB editada via
-#   cv_admin es la fuente de verdad)
+#   la operation content del cv es la fuente de verdad)
 python devtools/run.py serverless run --stage=dev --lambda=db \
   --event=events/restore.json --aws-profile=tfs-dev
 ```

@@ -91,7 +91,7 @@ describe("usePublish", () => {
 	it("Given GitHub caido When muta Then toastea el error", async () => {
 		// Arrange
 		server.use(
-			http.post(`${API}/cv-admin`, () =>
+			http.post(`${API}/cv`, () =>
 				HttpResponse.json(
 					{
 						error: "GITHUB_API_ERROR",

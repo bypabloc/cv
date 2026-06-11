@@ -154,12 +154,6 @@ export function CvEntitySection({ section }: CvEntitySectionProps) {
 	return (
 		<section className="space-y-4">
 			<h2 className="text-xl font-semibold">{config.label}</h2>
-			{config.readAction === null ? (
-				<p className="text-sm text-muted-foreground" role="note">
-					Esta seccion aun no tiene lectura publica en el GET /cv: la lista se
-					mostrara cuando el backend exponga la action.
-				</p>
-			) : null}
 
 			<SectionList
 				items={items}

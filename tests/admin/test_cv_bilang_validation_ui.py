@@ -48,7 +48,7 @@ def test_cv_bilang_validation_ui(
 
     def _spy(request: Request) -> None:
         if (
-            request.url.endswith('/cv-admin')
+            request.url.endswith('/cv')
             and request.method == 'POST'
             and '"action":"upsert-experience"' in (request.post_data or '')
         ):

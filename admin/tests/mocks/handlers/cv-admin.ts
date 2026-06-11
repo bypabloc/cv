@@ -10,10 +10,11 @@ interface CvAdminBody {
 
 /**
  * @module tests/mocks/handlers/cv-admin
- * @description MSW handlers del dominio cv-management: POST /cv-admin
+ * @description MSW handlers del dominio cv-management: POST /cv admin
  *   (operations content + publish, contrato FLAT en el request + Envelope
  *   {is_valid, code, data} en la respuesta) y GET /cv publico (respuesta
- *   FLAT: el array/objeto de la seccion al nivel raiz) con fixtures.
+ *   FLAT: el array/objeto de la seccion al nivel raiz) con fixtures. MSW
+ *   separa los handlers del mismo path por metodo (GET vs POST).
  */
 
 export const CV_PROFILE_FIXTURE = {
@@ -97,6 +98,44 @@ export const CV_PROJECTS_FIXTURE = [
 	},
 ];
 
+export const CV_PUBLICATIONS_FIXTURE = [
+	{
+		slug: "post-astro-portfolio",
+		title: "Portfolio multi-niche con Astro",
+		platform: "Dev.to",
+		url: "https://dev.to/bypabloc/astro-portfolio",
+		canonical: "https://the-full-stack.com/blog/astro-portfolio",
+		date: "2026-03",
+		summary: { es: "Resumen es", en: "Summary en" },
+		niches: ["generic", "vibe"],
+		priority: { generic: 2, vibe: 5 },
+	},
+	{
+		slug: "post-lambda-coldstart",
+		title: "Lambda cold starts en Python",
+		platform: "Blog",
+		url: "https://blog.test/lambda-coldstart",
+		date: "2026-01",
+		summary: { es: "Resumen es", en: "Summary en" },
+		niches: ["vibe"],
+		priority: { vibe: 9 },
+	},
+];
+
+/** Respuesta de content.get-all: las 10 claves del CV en shape de edicion. */
+export const CV_FULL_ADMIN_FIXTURE = {
+	profile: CV_PROFILE_FIXTURE,
+	experiences: CV_EXPERIENCES_FIXTURE,
+	projects: CV_PROJECTS_FIXTURE,
+	skills: [],
+	education: [],
+	certificates: [],
+	awards: [],
+	languages: [],
+	endorsements: [],
+	publications: CV_PUBLICATIONS_FIXTURE,
+};
+
 export const CV_CATALOGS_FIXTURE = {
 	niches: ["generic", "vibe", "fintech"],
 	skills: [
@@ -151,7 +190,7 @@ export const cvAdminHandlers = [
 		);
 	}),
 
-	http.post(`${API}/cv-admin`, async ({ request }) => {
+	http.post(`${API}/cv`, async ({ request }) => {
 		const body = (await request.json()) as CvAdminBody;
 		// Contrato FLAT del backend: campos al nivel raiz, no anidados en
 		// `data`. `data` = todo menos operation/action.
@@ -185,6 +224,13 @@ export const cvAdminHandlers = [
 		}
 
 		// --- operation content ---
+		if (operation === "content" && action === "get-all") {
+			return HttpResponse.json({
+				is_valid: true,
+				code: 0,
+				data: CV_FULL_ADMIN_FIXTURE,
+			});
+		}
 		if (operation === "content" && action === "catalogs") {
 			return HttpResponse.json({
 				is_valid: true,

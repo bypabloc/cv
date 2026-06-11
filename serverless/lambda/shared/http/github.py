@@ -1,7 +1,7 @@
 """@module shared.http.github — cliente minimo de la GitHub REST API.
 
 Portador unico de las llamadas salientes a `api.github.com` del backend
-(hoy: la operation `publish` del Lambda `cv_admin`). Mismo criterio que
+(hoy: la operation `publish` del Lambda `cv`). Mismo criterio que
 `shared.http.turnstile`: httpx sincrono con timeout corto, y un error
 tipado (`GithubApiError`) que el caller traduce a su contrato.
 

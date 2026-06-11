@@ -24,9 +24,22 @@ interface CvShellProps {
 	children: ReactNode;
 }
 
+/**
+ * @function normalizePathname
+ * @description Quita el slash final del pathname (salvo la raiz "/"):
+ *   `next.config.ts` usa `trailingSlash: true`, asi que en el export
+ *   desplegado `usePathname()` devuelve '/cv/profile/' mientras los hrefs
+ *   de ROUTES van sin slash — sin normalizar NINGUN tab matchea.
+ */
+function normalizePathname(pathname: string): string {
+	return pathname.length > 1 && pathname.endsWith("/")
+		? pathname.slice(0, -1)
+		: pathname;
+}
+
 export function CvShell({ children }: CvShellProps) {
 	const { isAdmin, isResolved } = useIsAdmin();
-	const pathname = usePathname();
+	const pathname = normalizePathname(usePathname());
 
 	if (!isResolved) {
 		return (

@@ -535,9 +535,9 @@ su access JWT enviando `{current_password, new_password}`.
   c-cv-management) es ADMIN-ONLY (nav `adminOnly: true` + gate en el
   shell de la feature, mismo tratamiento no-autorizado que users-admin):
   overview con conteos + boton "Publicar cambios" (dispara deploy-apps
-  via la operation `publish` del Lambda `cv_admin`) + 10 sub-rutas por
+  via la operation `publish` del Lambda `cv`) + 10 sub-rutas por
   seccion con forms es/en, niches+prioridades y reorden. Escribe via
-  `POST /cv-admin {operation:'content'|'publish', action, data}` y lee
+  `POST /cv {operation:'content'|'publish', action, data}` y lee
   del GET /cv publico.
 - **NUNCA** nombrar la vista de metricas `/dashboard` ni el feature del
   marco `dashboard-shell`: la ruta es `/metrics` (o las rutas por

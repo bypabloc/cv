@@ -1,4 +1,4 @@
-"""E2E del action `publish.status` del Lambda cv_admin (sin dispatch).
+"""E2E del action `publish.status` de las operations admin del Lambda cv (sin dispatch).
 
 `publish.status {}` consulta el run mas reciente del workflow
 `deploy-apps.yml` para el ref del stage (dev -> branch `dev`) via la

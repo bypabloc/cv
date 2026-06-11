@@ -40,10 +40,10 @@ describe("ProfileSection", () => {
 	});
 
 	it("Given el form hidratado When se guarda Then envia upsert-profile con el contrato FLAT", async () => {
-		// Arrange: capturar el body del POST /cv-admin.
+		// Arrange: capturar el body del POST /cv admin.
 		let capturedBody: Record<string, unknown> | null = null;
 		server.use(
-			http.post(`${API}/cv-admin`, async ({ request }) => {
+			http.post(`${API}/cv`, async ({ request }) => {
 				const body = (await request.json()) as Record<string, unknown>;
 				// El catalogs de la misma pantalla sigue respondiendo su shape.
 				if (body.action === "catalogs") {

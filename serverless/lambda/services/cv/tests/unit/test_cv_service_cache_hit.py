@@ -5,8 +5,7 @@ When se invoca cv_service.get_full_cv,
 Then devuelve el valor cacheado y NO llama a la query de Neon.
 """
 
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

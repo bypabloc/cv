@@ -1,12 +1,20 @@
 # Manifiesto del Lambda `cv` — fuente de verdad de su config.
 #
-# Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv. devtools
-# traduce este manifiesto a llamadas AWS CLI directas:
+# TODA la logica del CV en un solo Lambda (plan d-cv-consolidation):
+# - operation `cv` (publica, GET /cv): lectura cacheada desde Neon.
+# - operation `content` (admin, POST /cv): escritura de las entidades
+#   cv_* + reorder + catalogs + get-all (CV de edicion en 1 sesion).
+# - operation `publish` (admin, POST /cv): dispara/consulta el workflow
+#   deploy-apps.yml via la GitHub API.
+# Las operations admin exigen access JWT + whitelist SSM admin-emails
+# (required_permission='admin' resuelto por la fase Authorize del kit).
+#
+# devtools traduce este manifiesto a llamadas AWS CLI directas:
 #   python devtools/run.py serverless deploy --lambda=cv
 
 # --- Identidad ---
 name: cv
-description: Sirve el CV (lectura) desde Neon PostgreSQL via GET /cv.
+description: CV completo via /cv (lectura publica + escritura admin + publish).
 
 # --- Runtime ---
 runtime: python3.13
@@ -27,23 +35,35 @@ snap_start: false
 # --- Trigger HTTP ---
 trigger:
   type: http
-  method: GET
+  methods: [GET, POST]   # GET = operation cv (publica); POST = content/publish (admin)
   path: /cv
 
 # --- Recursos que usa ---
 uses:
+  # Tablas DynamoDB: cache (@cached de lecturas + invalidacion por tag
+  # 'cv' tras cada escritura) + jwt-blacklist (solo lookup del jti del
+  # access JWT) + rate-limit per-IP de las operations admin.
   tables:
-    cache: read-write          # @cached de las respuestas (CV cambia raramente)
+    cache: read-write
+    jwt-blacklist: read
+    rate-limit-rules: read
+    rate-limit-buckets: read-write
+  # Secretos que el Lambda lee de SSM (solo el nombre corto).
   secrets:
-    - neon-url                 # connection string PostgreSQL (SecureString)
+    - neon-url             # connection string PostgreSQL (lectura + escritura cv_*)
+    - jwt-secret           # verifica el access JWT (HS256) de las operations admin
+    - admin-emails         # whitelist del scope admin (content/publish)
+    - github-deploy-token  # PAT fine-grained (Actions RW en bypabloc/cv) para publish
   sends-email: false
 
 # --- Variables de entorno por entorno ---
 env:
   default:
     LOG_LEVEL: INFO
+    JWT_ISSUER: portfolio-auth
+    JWT_AUDIENCE: portfolio
   dev:
-    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com'
+    CORS_ALLOWED_ORIGINS: 'https://portfolio.dev.the-full-stack.com,https://hub.portfolio.dev.the-full-stack.com,https://fintech.portfolio.dev.the-full-stack.com,https://architect.portfolio.dev.the-full-stack.com,https://leader.portfolio.dev.the-full-stack.com,https://vibe.portfolio.dev.the-full-stack.com,https://admin.portfolio.dev.the-full-stack.com'
   prod:
     LOG_LEVEL: WARNING
-    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com'
+    CORS_ALLOWED_ORIGINS: 'https://the-full-stack.com,https://www.the-full-stack.com,https://hub.portfolio.the-full-stack.com,https://fintech.portfolio.the-full-stack.com,https://architect.portfolio.the-full-stack.com,https://leader.portfolio.the-full-stack.com,https://vibe.portfolio.the-full-stack.com,https://admin.portfolio.the-full-stack.com'

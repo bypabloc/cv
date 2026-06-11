@@ -23,6 +23,9 @@ from shared.db.cv_repository import (
     get_full_cv as _get_full_cv,
 )
 from shared.db.cv_repository import (
+    get_full_cv_admin as _get_full_cv_admin,
+)
+from shared.db.cv_repository import (
     get_profile as _get_profile,
 )
 from shared.db.cv_repository import (
@@ -94,6 +97,19 @@ def _wrap(fn: Any, **kwargs: Any) -> Any:
 def get_full_cv(*, niche: str | None, locale: str) -> dict[str, Any]:
     """Devuelve el CV completo (todas las colecciones)."""
     return _wrap(_get_full_cv, niche=niche, locale=locale)
+
+
+@cached(ttl=_CV_TTL, namespace=_CV_NS, stale_for=0, tags=_CV_TAGS)
+def get_all_admin() -> dict[str, Any]:
+    """CV completo en shape de edicion (action admin `content.get-all`).
+
+    Las 10 secciones (incluida publications) sin filtrar por niche, en
+    UNA sesion Neon. Cacheada con el MISMO tag `cv` que la lectura
+    publica: cada escritura de `content_service` invalida el tag, asi el
+    editor nunca ve datos stale tras editar. `stale_for=0` (sin SWR): un
+    editor no debe recibir una version vieja mientras revalida.
+    """
+    return _wrap(_get_full_cv_admin)
 
 
 @cached(ttl=_CV_TTL, namespace=_CV_NS, stale_for=_CV_STALE, tags=_CV_TAGS)

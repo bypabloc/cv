@@ -30,6 +30,16 @@ describe("NAV_ITEMS", () => {
 		expect(hrefs).toEqual(["/metrics", "/settings", "/users", "/cv"]);
 	});
 
+	it("Given los items When se inspeccionan Then users y cv son adminOnly", () => {
+		// Arrange + Act
+		const adminOnly = NAV_ITEMS.filter((item) => item.adminOnly === true).map(
+			(item) => item.href,
+		);
+
+		// Assert: Gestion CV es adminOnly (AC-13 del plan c-cv-management).
+		expect(adminOnly).toEqual(["/users", "/cv"]);
+	});
+
 	it("Given los items When se busca Then NO hay item separado de Seguridad ni Sesiones", () => {
 		// Arrange + Act
 		const hrefs = NAV_ITEMS.map((item) => item.href);

@@ -33,6 +33,8 @@ export const ROUTES = {
 		settingsSessions: "/settings/sessions",
 		users: "/users",
 		cv: "/cv",
+		/** Sub-rutas de gestion CV: /cv/<seccion> (10 secciones). */
+		cvSection: (section: string) => `/cv/${section}`,
 	},
 } as const;
 

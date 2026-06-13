@@ -138,7 +138,7 @@ admin/src/
 │   │   │   └── security/page.tsx       # MFA (TOTP + email-code) + WebAuthn + recovery + password
 │   │   ├── account-sessions/page.tsx   # /account-sessions (feature sessions-mgmt: mis sesiones auth)
 │   │   ├── users/page.tsx              # /users (feature users-admin: gestionar otros users, solo admin)
-│   │   ├── cv/page.tsx                 # /cv (placeholder gestion CV, plan futuro c-cv-management)
+│   │   ├── cv/                         # /cv gestion del CV (feature cv-management): overview + 10 sub-rutas por seccion
 │   │   ├── metrics/page.tsx            # /metrics (UI de metricas — plan b-analytics-api)
 │   │   ├── analytics/page.tsx          # /analytics (plan b-analytics-api)
 │   │   ├── sessions/page.tsx           # /sessions (tracking de visitas — plan b-analytics-api)
@@ -527,13 +527,18 @@ su access JWT enviando `{current_password, new_password}`.
 - **SIEMPRE** el sidebar de `admin-shell` declara los slots/links a las
   secciones: metricas (`/metrics`), settings (`/settings`),
   mis sesiones (`/account-sessions`), gestion de usuarios (`/users`,
-  solo admin) y gestion CV (`/cv`, placeholder). Las PANTALLAS de
+  solo admin) y gestion CV (`/cv`, solo admin). Las PANTALLAS de
   metricas NO se implementan en el plan `a-admin`: el shell deja los
   links y pages placeholder, y el plan `b-analytics-api` monta la UI
   real dentro de este mismo shell.
-- **SIEMPRE** el placeholder de gestion CV (`/cv`) es solo un link en el
-  sidebar + una page con una nota "plan futuro c-cv-management". SIN
-  backend ni UI de edicion.
+- **SIEMPRE** la gestion CV (`/cv`, feature `cv-management` del plan
+  c-cv-management) es ADMIN-ONLY (nav `adminOnly: true` + gate en el
+  shell de la feature, mismo tratamiento no-autorizado que users-admin):
+  overview con conteos + boton "Publicar cambios" (dispara deploy-apps
+  via la operation `publish` del Lambda `cv`) + 10 sub-rutas por
+  seccion con forms es/en, niches+prioridades y reorden. Escribe via
+  `POST /cv {operation:'content'|'publish', action, data}` y lee
+  del GET /cv publico.
 - **NUNCA** nombrar la vista de metricas `/dashboard` ni el feature del
   marco `dashboard-shell`: la ruta es `/metrics` (o las rutas por
   feature) y el feature es `admin-shell`.

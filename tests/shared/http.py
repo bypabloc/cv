@@ -64,10 +64,11 @@ class HttpClient:
         origin: str,
         bypass_token: str | None,
         bearer: str | None,
+        ip: str | None = None,
     ) -> dict[str, str]:
         headers = {
             'Origin': origin,
-            'CF-Connecting-IP': self._ips.next(),
+            'CF-Connecting-IP': ip or self._ips.next(),
             'CF-IPCountry': 'CL',
             'User-Agent': 'portfolio-api-e2e/1.0',
             'Content-Type': 'application/json',
@@ -86,16 +87,19 @@ class HttpClient:
         origin: str,
         bypass_token: str | None = None,
         bearer: str | None = None,
+        ip: str | None = None,
     ) -> Response:
         """GET con query params (operation/action van en params).
 
         NO sigue redirects (el 302 del magic-link vuelve con su header
         Location). Acepta bypass/bearer por uniformidad con post().
+        `ip` fija la CF-Connecting-IP (default: rota una del pool).
         """
         headers = self._headers(
             origin=origin,
             bypass_token=bypass_token,
             bearer=bearer,
+            ip=ip,
         )
         start = time.monotonic()
         resp = self._client.get(
@@ -119,12 +123,17 @@ class HttpClient:
         origin: str,
         bypass_token: str | None = None,
         bearer: str | None = None,
+        ip: str | None = None,
     ) -> Response:
-        """POST con body JSON (operation/action + campos FLAT en el body)."""
+        """POST con body JSON (operation/action + campos FLAT en el body).
+
+        `ip` fija la CF-Connecting-IP (default: rota una del pool).
+        """
         headers = self._headers(
             origin=origin,
             bypass_token=bypass_token,
             bearer=bearer,
+            ip=ip,
         )
         start = time.monotonic()
         resp = self._client.post(
@@ -145,5 +154,5 @@ def _parse(resp: httpx.Response) -> Any:
     """Parsea el body como JSON; si no es JSON devuelve el texto crudo."""
     try:
         return resp.json()
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return resp.text

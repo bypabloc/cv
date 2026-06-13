@@ -89,6 +89,10 @@ jobs:
       DB_CHANNEL_BINDING: ${{ secrets.DB_CHANNEL_BINDING }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      # GitHub prohibe secrets con prefijo GITHUB_: el secret del
+      # environment se llama GH_DEPLOY_TOKEN y aca se mapea al env var
+      # GITHUB_DEPLOY_TOKEN que espera el catalogo (github-deploy-token).
+      GITHUB_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -158,6 +162,18 @@ jobs:
             --lambda=db \
             --stage=${{ needs.resolve-env.outputs.stage }} \
             --event=events/seed.json
+
+      # Seed de email-config: idempotente (s3 cp sobreescribe, put-item
+      # reemplaza la fila por PK kind). Re-correrlo en cada deploy reconcilia
+      # los templates S3 + las filas DynamoDB de email-config con la fuente
+      # de verdad del repo (send_email/seeds/email_config.py) en TODOS los
+      # stages. Sin esto, una migracion de kinds (ej. register-* ->
+      # login-unified) deja prod con kinds viejos y send_email rechaza el
+      # envio con EMAIL_KIND_NOT_FOUND (correo de login/registro nunca llega).
+      - name: Run email-config seed (idempotent)
+        run: |
+          python devtools/run.py serverless seed-email-config \
+            --stage=${{ needs.resolve-env.outputs.stage }}
 
   # ---------------------------------------------------------------------------
   # 2. Detect lambdas afectados (path-based + cierre shared) entre el sha
@@ -251,6 +267,10 @@ jobs:
       DB_CHANNEL_BINDING: ${{ secrets.DB_CHANNEL_BINDING }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      # GitHub prohibe secrets con prefijo GITHUB_: el secret del
+      # environment se llama GH_DEPLOY_TOKEN y aca se mapea al env var
+      # GITHUB_DEPLOY_TOKEN que espera el catalogo (github-deploy-token).
+      GITHUB_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 

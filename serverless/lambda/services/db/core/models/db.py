@@ -64,6 +64,15 @@ class TablesModel(BaseModel):
 
 
 class SeedModel(BaseModel):
-    """Valida el payload de db/seed (sin campos)."""
+    """Valida el payload de db/seed (restore de un snapshot).
+
+    `source` es opcional: prefijo S3 `s3://bucket/prefix/` o path local;
+    None usa el `latest/` del bucket de backups del stage.
+    `confirm_overwrite` es obligatorio en `true` cuando las tablas CV ya
+    tienen datos (la validacion es del service: regla de negocio).
+    """
+
+    source: str | None = None
+    confirm_overwrite: bool = False
 
     model_config = ConfigDict(extra='forbid')

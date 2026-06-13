@@ -111,10 +111,12 @@ class TestResolveByLambdaName:
 
         names = available_lambdas()
 
-        # 8 lambdas reales tras eliminar SQS y los workers: el async se
-        # hace por invoke Lambda->Lambda (contact_form -> send_email,
-        # tracking_pixel -> tracking_writer), sin colas ni workers SQS.
+        # 9 lambdas reales: los 8 post-eliminacion de SQS (el async se
+        # hace por invoke Lambda->Lambda, sin colas ni workers) +
+        # analytics (plan b-analytics-api). cv_admin fue absorbido por
+        # el lambda cv (plan d-cv-consolidation).
         assert names == [
+            'analytics',
             'auth',
             'contact_form',
             'cv',
@@ -178,7 +180,7 @@ class TestManifestValidation:
 
         resolved = resolve_lambda({'path': str(lambda_dir)})
 
-        assert resolved.manifest['memory'] == 256
+        assert resolved.manifest['memory'] == 1024
         assert resolved.manifest['timeout'] == 30
         assert resolved.manifest['region'] == 'us-east-1'
 

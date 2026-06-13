@@ -26,26 +26,26 @@ en el teardown del conftest.
 from __future__ import annotations
 
 import secrets
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
 from shared.runner import make_body
 from shared.totp import totp_now
 
+
 # Un secret base32 sintetico DISTINTO al que genera el backend, COMPUESTO en
 # runtime de fragmentos neutros (no un literal): asi no dispara el scanner de
 # secretos del repo. 32 chars base32 validos (A-Z2-7), pero NO el secret de la
 # DB -> el code que produce no matchea (caso 'app con entrada vieja').
-_OTHER_SECRET = ('JBSWY3DP' 'EHPK3PXP') * 2
+_OTHER_SECRET = ('JBSWY3DPEHPK3PXP') * 2
 
 
 def _secret_from_otpauth(otpauth_url: str) -> str | None:
@@ -62,19 +62,26 @@ def _secret_from_otpauth(otpauth_url: str) -> str | None:
 
 
 def _access_via_password(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> str:
     """Login solo-password -> access token (la password es el unico required)."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -86,7 +93,9 @@ def _access_via_password(
 def _overview_by_type(http: HttpClient, origin: str, access: str) -> dict:
     """security.overview -> {type: entry} indexado por tipo de metodo."""
     r = http.post(
-        '/auth', body=make_body('security', 'overview'), origin=origin,
+        '/auth',
+        body=make_body('security', 'overview'),
+        origin=origin,
         bearer=access,
     )
     return {m['type']: m for m in (r.body.get('methods') or [])}
@@ -117,14 +126,20 @@ def test_totp_full_lifecycle_setup_confirm_required_login(
     email = f'success+totplc-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
     access = _access_via_password(http, origin, email, bypass)
 
     # 1. setup-totp -> secret_b32 (el secret NUEVO que la app debe cargar).
     setup = http.post(
-        '/auth', body=make_body('mfa', 'setup-totp'), origin=origin,
+        '/auth',
+        body=make_body('mfa', 'setup-totp'),
+        origin=origin,
         bearer=access,
     )
     assert setup.status == 200, f'setup-totp fallo: {setup.body}'
@@ -150,7 +165,8 @@ def test_totp_full_lifecycle_setup_confirm_required_login(
     confirm = http.post(
         '/auth',
         body=make_body('mfa', 'confirm-totp', code=totp_now(qr_value)),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert confirm.status == 204, (
         f'confirm-totp con el code del QR deberia ser 204, '
@@ -161,9 +177,12 @@ def test_totp_full_lifecycle_setup_confirm_required_login(
     req = http.post(
         '/auth',
         body=make_body('mfa', 'set-required', kind='totp', required=True),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
-    assert req.status == 204, f'set-required totp fallo: {req.status} {req.body}'
+    assert req.status == 204, (
+        f'set-required totp fallo: {req.status} {req.body}'
+    )
 
     # 4. security.overview refleja totp required + confirmed.
     overview = _overview_by_type(http, origin, access)
@@ -175,7 +194,9 @@ def test_totp_full_lifecycle_setup_confirm_required_login(
     # 5. login completo por el checklist: password (intermedio) -> totp (cierra).
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     assert set(start.body.get('methods') or []) == {'password', 'totp'}, (
@@ -187,7 +208,10 @@ def test_totp_full_lifecycle_setup_confirm_required_login(
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password', password=STRONG_PASSWORD, temp_token=temp,
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=temp,
         ),
         origin=origin,
     )
@@ -203,15 +227,22 @@ def test_totp_full_lifecycle_setup_confirm_required_login(
     vt = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-totp', code=totp_now(secret), temp_token=temp2,
+            'login',
+            'verify-totp',
+            code=totp_now(secret),
+            temp_token=temp2,
         ),
         origin=origin,
     )
     assert vt.body.get('mfa_complete') is True, (
         f'totp deberia cerrar el login: {vt.body}'
     )
-    assert field(vt.body, 'access_token'), f'falta access_token final: {vt.body}'
-    assert field(vt.body, 'refresh_token'), f'falta refresh_token final: {vt.body}'
+    assert field(vt.body, 'access_token'), (
+        f'falta access_token final: {vt.body}'
+    )
+    assert field(vt.body, 'refresh_token'), (
+        f'falta refresh_token final: {vt.body}'
+    )
 
 
 @pytest.mark.api
@@ -239,14 +270,20 @@ def test_confirm_totp_wrong_secret_is_invalid(
     email = f'success+totpwr-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
     access = _access_via_password(http, origin, email, bypass)
 
     # setup-totp -> secret A (el que queda guardado en la DB).
     setup = http.post(
-        '/auth', body=make_body('mfa', 'setup-totp'), origin=origin,
+        '/auth',
+        body=make_body('mfa', 'setup-totp'),
+        origin=origin,
         bearer=access,
     )
     assert field(setup.body, 'secret_b32') is not None, (
@@ -259,7 +296,8 @@ def test_confirm_totp_wrong_secret_is_invalid(
     confirm = http.post(
         '/auth',
         body=make_body('mfa', 'confirm-totp', code=wrong_code),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert confirm.status == 400, (
         f'confirm con un code de otro secret deberia ser 400, '

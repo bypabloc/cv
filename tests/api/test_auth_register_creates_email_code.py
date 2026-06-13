@@ -18,12 +18,10 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
@@ -31,19 +29,26 @@ from shared.runner import make_body
 
 
 def _access_via_password(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> str:
     """Login solo-password -> access token (la password es el unico required)."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -78,14 +83,20 @@ def test_register_creates_email_code_configured(
 
     # Alta por el flujo real (verify-code activa el pending -> crea email_code).
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
 
     # overview SIN setup-email-code: email_code ya configurado por el alta.
     access = _access_via_password(http, origin, email, bypass)
     r = http.post(
-        '/auth', body=make_body('security', 'overview'), origin=origin,
+        '/auth',
+        body=make_body('security', 'overview'),
+        origin=origin,
         bearer=access,
     )
     by_type = {m['type']: m for m in (r.body.get('methods') or [])}

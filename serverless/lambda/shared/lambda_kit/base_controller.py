@@ -15,12 +15,17 @@ resuelven asi:
   `set_app_config(app_config)`. `preload()` lo usa para resolver el ARN
   de un Lambda downstream. Un Lambda sin `arn_config_key` no necesita
   inyectarlo.
+- `permission checker`  : lo INYECTA cada Lambda en su cold start con
+  `set_permission_checker(fn)`. La fase Authorize de `run()` lo invoca
+  para los controllers que declaran `required_permission`. El kit NUNCA
+  importa `shared.auth`/`shared.db` (arrastraria pyjwt/sqlalchemy al
+  vendoring de todos los Lambdas): el checker es del dominio del Lambda.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
 from pydantic import BaseModel, ValidationError
 
@@ -35,6 +40,29 @@ from shared.observability.logger import logger
 _app_config: object | None = None
 
 
+class PermissionChecker(Protocol):
+    """Contrato del checker de permisos inyectado por el Lambda.
+
+    Recibe el permiso declarado por el controller, el `_meta` CRUDO del
+    event (ip, authorization, ...) y el nombre de la action (clase del
+    controller) para logging/auditoria. Si el caller NO tiene el permiso,
+    RAISEA una `ApplicationError` (401/403/404 segun el dominio) que
+    propaga hasta el `except ApplicationError` de `http_handler`. Si lo
+    tiene, devuelve el subject autenticado (ej. `AuthUser`).
+    """
+
+    def __call__(
+        self,
+        permission: str,
+        meta: dict[str, Any],
+        *,
+        action: str,
+    ) -> Any: ...
+
+
+_permission_checker: PermissionChecker | None = None
+
+
 def set_app_config(app_config: object) -> None:
     """Inyecta el `AppConfig` del Lambda para que `preload()` resuelva ARNs.
 
@@ -46,6 +74,17 @@ def set_app_config(app_config: object) -> None:
     _app_config = app_config
 
 
+def set_permission_checker(checker: PermissionChecker | None) -> None:
+    """Inyecta el checker que resuelve `required_permission` en Authorize.
+
+    El Lambda lo llama una vez en el cold start (desde su `handler.py`).
+    Un Lambda cuyos controllers no declaran `required_permission` no
+    necesita llamarlo. Pasar `None` lo des-registra (util en tests).
+    """
+    global _permission_checker
+    _permission_checker = checker
+
+
 class BaseController(ABC):
     """Clase base para todos los controllers de un Lambda.
 
@@ -54,20 +93,33 @@ class BaseController(ABC):
       2. `validate` - valida el evento contra `event_model` (Pydantic).
       3. `execute`  - logica de negocio del controller (abstracto).
 
+    El metodo `run()` antepone una fase Authorize cuando la subclase
+    declara `required_permission`: invoca el checker inyectado con
+    `set_permission_checker()` ANTES de preload/validate (un caller sin
+    permiso recibe su 401/403/404 sin filtrar detalles de validacion ni
+    consumir rate-limit del execute).
+
     Atributos de clase a definir en cada subclase:
-      - `event_model`    : modelo Pydantic que valida el payload.
-      - `arn_config_key` : nombre del campo de `AppConfig` con el ARN
-                           downstream. Vacio si el controller no invoca
-                           otro Lambda.
+      - `event_model`         : modelo Pydantic que valida el payload.
+      - `arn_config_key`      : nombre del campo de `AppConfig` con el ARN
+                                downstream. Vacio si el controller no
+                                invoca otro Lambda.
+      - `required_permission` : permiso que el caller debe tener (ej.
+                                'admin'). None (default) = endpoint sin
+                                auth declarativa.
     """
 
     event_model: type[BaseModel] | None = None
     arn_config_key: str = ''
+    required_permission: str | None = None
 
     def __init__(self, event: dict[str, Any]) -> None:
         self.event = event
         self.validated_data: BaseModel | None = None
         self.arn: str = ''
+        # Subject autenticado que devolvio el permission checker en la
+        # fase Authorize (ej. AuthUser). None si no hay required_permission.
+        self.permission_subject: Any = None
 
     def preload(self) -> dict[str, Any]:
         """Carga configuracion previa a la ejecucion.
@@ -137,8 +189,62 @@ class BaseController(ABC):
         `{is_valid, data, code}`.
         """
 
+    def authorize(self) -> dict[str, Any]:
+        """Resuelve `required_permission` contra el checker inyectado.
+
+        No-op si el controller no declara `required_permission`. Si lo
+        declara y no hay checker inyectado -> CONFIGURATION_MISSING (el
+        Lambda olvido llamar `set_permission_checker` en su cold start).
+        El rechazo de permiso NO devuelve `{is_valid: False}`: el checker
+        RAISEA una `ApplicationError` (401/403/404) que propaga limpia
+        por `run_controller` hasta `http_handler` (metrica rejected).
+        """
+        if self.required_permission is None:
+            return {'is_valid': True, 'data': {}, 'code': 0}
+
+        if _permission_checker is None:
+            return {
+                'is_valid': False,
+                'data': {
+                    'error_code': 'CONFIGURATION_MISSING',
+                    'message': 'permission checker no configurado',
+                },
+                'code': ErrorCode.CONFIGURATION_MISSING.value,
+            }
+
+        # _meta del event CRUDO: validate aun no corrio (validated_data
+        # es None en esta fase).
+        meta: dict[str, Any] = (self.event or {}).get('_meta') or {}
+        self.permission_subject = _permission_checker(
+            self.required_permission,
+            meta,
+            action=type(self).__name__,
+        )
+        return {'is_valid': True, 'data': {}, 'code': 0}
+
     def run(self) -> dict[str, Any]:
-        """Ejecuta el ciclo `preload -> validate -> execute` con logging."""
+        """Ejecuta `authorize -> preload -> validate -> execute` con logging."""
+        # --- Authorize ---
+        if self.required_permission is not None:
+            logger.info(
+                'Starting authorize phase',
+                extra={
+                    'metric_type': LogMetricType.PHASE_START.value,
+                    'phase': 'AUTHORIZE',
+                },
+            )
+            authorize_result = self.authorize()
+            if not authorize_result.get('is_valid', True):
+                logger.error(
+                    'Authorize phase failed',
+                    extra={
+                        'metric_type': (
+                            LogMetricType.AUTHORIZE_PHASE_FAILED.value
+                        ),
+                    },
+                )
+                return authorize_result
+
         # --- Preload ---
         logger.info(
             'Starting preload phase',

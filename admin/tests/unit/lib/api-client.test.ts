@@ -112,4 +112,46 @@ describe("apiFetch + mutex refresh", () => {
 		expect((error as ApiError).code).toBe(4001);
 		expect((error as ApiError).message).toBe("mal");
 	});
+
+	it("Given un body SIN operation/action When apiFetch Then NO lo aplana (viaja tal cual)", async () => {
+		// Arrange: flattenBody solo aplana el shape {operation, action, data}.
+		let capturedBody: Record<string, unknown> | null = null;
+		server.use(
+			http.post(`${API}/custom`, async ({ request }) => {
+				capturedBody = (await request.json()) as Record<string, unknown>;
+				return HttpResponse.json({ is_valid: true, code: 0, data: null });
+			}),
+		);
+
+		// Act
+		await apiFetch("/custom", {
+			method: "POST",
+			skipAuth: true,
+			body: { foo: "bar" },
+		});
+
+		// Assert
+		expect(capturedBody).toEqual({ foo: "bar" });
+	});
+
+	it("Given un body con data null When apiFetch Then aplana a {operation, action} sin campos", async () => {
+		// Arrange: la rama data no-objeto de flattenBody cae a {}.
+		let capturedBody: Record<string, unknown> | null = null;
+		server.use(
+			http.post(`${API}/custom`, async ({ request }) => {
+				capturedBody = (await request.json()) as Record<string, unknown>;
+				return HttpResponse.json({ is_valid: true, code: 0, data: null });
+			}),
+		);
+
+		// Act
+		await apiFetch("/custom", {
+			method: "POST",
+			skipAuth: true,
+			body: { operation: "x", action: "y", data: null },
+		});
+
+		// Assert
+		expect(capturedBody).toEqual({ operation: "x", action: "y" });
+	});
 });

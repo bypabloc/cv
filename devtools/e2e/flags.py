@@ -34,8 +34,14 @@ VALID_ENVS = ('dev',)
 # Modulos first-class del harness E2E.
 VALID_MODULES = ('api', 'admin', 'app')
 
-# Sub-filtro del modulo api (los 5 Lambdas HTTP).
-VALID_LAMBDAS = ('cv', 'contact_form', 'tracking_pixel', 'auth', 'users')
+# Sub-filtro del modulo api (los 6 Lambdas HTTP).
+VALID_LAMBDAS = (
+    'cv',
+    'contact_form',
+    'tracking_pixel',
+    'auth',
+    'users',
+)
 
 ALLOWED_FLAGS = [
     'module',

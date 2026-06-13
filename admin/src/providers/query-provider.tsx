@@ -60,6 +60,11 @@ export function QueryProvider({ children }: { children: ReactNode }) {
 						const key = query.queryKey[0];
 						// No persistir datos sensibles (usuarios admin, sesiones)
 						if (key === "admin") return false;
+						// No persistir el contenido del editor CV: rehidratar
+						// del localStorage muestra datos viejos tras un reload
+						// (los forms capturan defaultValues UNA vez) y el
+						// staleTime 0 del editor ya garantiza fetch fresco.
+						if (key === "cv-management") return false;
 						// Metricas con PII (contacts, sessions de tracking): no
 						// persistir. Las agregadas si (UX rapida al recargar).
 						if (

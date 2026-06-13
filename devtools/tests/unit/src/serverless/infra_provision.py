@@ -915,3 +915,149 @@ class TestCreateS3Bucket:
                 profile=None,
                 region='us-east-1',
             )
+
+
+# --------------------------------------------------------------------------
+# Lifecycle del bucket de backups: builder puro + harden con versioning
+# --------------------------------------------------------------------------
+def _s3_backups_fragment() -> str:
+    """Fragmento YAML de un bucket con versioning + lifecycle_rules."""
+    return (
+        'kind: s3-bucket\n'
+        'name: portfolio-db-backups-${stage}\n'
+        'block_public_access: true\n'
+        'encryption: true\n'
+        'versioning: true\n'
+        'lifecycle_rules:\n'
+        '  - id: expire-history-snapshots\n'
+        '    prefix: history/\n'
+        '    expiration_days: 84\n'
+        '  - id: expire-noncurrent-versions\n'
+        "    prefix: ''\n"
+        '    noncurrent_expiration_days: 84\n'
+        'publishes_ssm:\n'
+        '  name: /portfolio/${stage}/s3/db-backups/name\n'
+        '  arn: /portfolio/${stage}/s3/db-backups/arn\n'
+        'tags: { Project: portfolio, ManagedBy: devtools }\n'
+    )
+
+
+class TestBuildLifecycleConfiguration:
+    def test_build_lifecycle_configuration_maps_rules_to_s3_shape(self):
+        """
+        Given dos lifecycle_rules del YAML (expiracion de history/ y de
+        versiones noncurrent),
+        When se construye la configuracion,
+        Then el shape es el de la API S3 con ambas reglas Enabled.
+        """
+        from serverless import infra_provision
+
+        rules = [
+            {
+                'id': 'expire-history-snapshots',
+                'prefix': 'history/',
+                'expiration_days': 84,
+            },
+            {
+                'id': 'expire-noncurrent-versions',
+                'prefix': '',
+                'noncurrent_expiration_days': 84,
+            },
+        ]
+
+        config = infra_provision._build_lifecycle_configuration(rules)
+
+        assert config == {
+            'Rules': [
+                {
+                    'ID': 'expire-history-snapshots',
+                    'Status': 'Enabled',
+                    'Filter': {'Prefix': 'history/'},
+                    'Expiration': {'Days': 84},
+                },
+                {
+                    'ID': 'expire-noncurrent-versions',
+                    'Status': 'Enabled',
+                    'Filter': {'Prefix': ''},
+                    'NoncurrentVersionExpiration': {'NoncurrentDays': 84},
+                },
+            ],
+        }
+
+
+class TestHardenS3BucketVersioning:
+    def test_harden_applies_versioning_and_lifecycle(
+        self, tmp_path, monkeypatch
+    ):
+        """
+        Given un spec s3-bucket con versioning + lifecycle_rules,
+        When _harden_s3_bucket corre,
+        Then aplica public-access-block, SSE, put-bucket-versioning y
+        put-bucket-lifecycle-configuration en ese orden.
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'db-backups.yaml',
+            _s3_backups_fragment(),
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+        fake = _FakeAws()
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        infra_provision._harden_s3_bucket(
+            rendered,
+            'portfolio-db-backups-dev',
+            profile=None,
+            region='us-east-1',
+        )
+
+        verbs = ['.'.join(c[:2]) for c in fake.calls]
+        assert verbs == [
+            's3api.put-public-access-block',
+            's3api.put-bucket-encryption',
+            's3api.put-bucket-versioning',
+            's3api.put-bucket-lifecycle-configuration',
+        ]
+
+    def test_harden_skips_versioning_when_not_declared(
+        self, tmp_path, monkeypatch
+    ):
+        """
+        Given un spec s3-bucket SIN versioning ni lifecycle_rules (el de
+        email-templates),
+        When _harden_s3_bucket corre,
+        Then solo aplica public-access-block + SSE (comportamiento previo
+        intacto).
+        """
+        from serverless import aws_cli
+        from serverless import infra_provision
+
+        path = _write(
+            tmp_path / 'email-templates.yaml',
+            'kind: s3-bucket\n'
+            'name: portfolio-email-templates-${stage}\n'
+            'block_public_access: true\n'
+            'encryption: true\n'
+            'publishes_ssm:\n'
+            '  name: /portfolio/${stage}/s3/email-templates/name\n'
+            '  arn: /portfolio/${stage}/s3/email-templates/arn\n'
+            'tags: { Project: portfolio, ManagedBy: devtools }\n',
+        )
+        rendered = infra_provision.render_resource(path, stage='dev')
+        fake = _FakeAws()
+        monkeypatch.setattr(aws_cli, 'aws', fake)
+
+        infra_provision._harden_s3_bucket(
+            rendered,
+            'portfolio-email-templates-dev',
+            profile=None,
+            region='us-east-1',
+        )
+
+        verbs = ['.'.join(c[:2]) for c in fake.calls]
+        assert verbs == [
+            's3api.put-public-access-block',
+            's3api.put-bucket-encryption',
+        ]

@@ -182,11 +182,31 @@ def _resolve_origin_value(
     return cors_origin
 
 
+def _cors_mode_for(
+    cors_origin: str | dict[str, str],
+    operation: str | None,
+) -> str:
+    """Resuelve el modo CORS efectivo para una operation.
+
+    `cors_origin` string -> se usa tal cual (comportamiento historico).
+    `cors_origin` dict   -> modo por operation (`{'cv': 'public',
+    'content': 'echo'}`); la clave `'*'` es el fallback para operations
+    no listadas y para errores previos a conocer la operation (default
+    `'echo'`, el modo mas restrictivo).
+    """
+    if isinstance(cors_origin, str):
+        return cors_origin
+    fallback = cors_origin.get('*', 'echo')
+    if operation is None:
+        return fallback
+    return cors_origin.get(operation, fallback)
+
+
 def http_handler(
     event: dict[str, Any],
     *,
     event_model: EventModelClass,
-    cors_origin: str = 'echo',
+    cors_origin: str | dict[str, str] = 'echo',
     success_status: int = 200,
     metric_names: dict[str, str] | None = None,
 ) -> JsonResponse:
@@ -205,11 +225,13 @@ def http_handler(
         Evento crudo de API Gateway REST proxy.
     event_model : EventModelClass
         Clase `EventModel` del Lambda (de `build_event_model(OPERATIONS)`).
-    cors_origin : str
+    cors_origin : str | dict[str, str]
         `'echo'` (refleja el Origin matcheado, default; usalo para contact
         form) o `'public'` (`'*'`; usalo para tracking pixel via sendBeacon
         ping o APIs publicas como `cv`). Cualquier otro valor se usa tal
-        cual.
+        cual. Un dict define el modo POR OPERATION (ej. `{'cv': 'public',
+        '*': 'echo'}` para el Lambda cv que sirve el GET publico y las
+        operations admin en el mismo endpoint); `'*'` es el fallback.
     success_status : int
         Codigo HTTP de exito (200, 201, 204). Para `204` no se serializa el
         body (`no_content_response`).
@@ -223,7 +245,11 @@ def http_handler(
         Respuesta lista para API Gateway REST proxy.
     """
     headers = event.get('headers') or {}
-    origin = _resolve_origin_value(headers, cors_origin)
+    # Con cors_origin dict el modo definitivo depende de la operation
+    # (que aun no se extrajo): se parte del fallback y se re-resuelve
+    # tras extract_request. Los errores previos (JSON invalido, falta
+    # operation) responden con el fallback.
+    origin = _resolve_origin_value(headers, _cors_mode_for(cors_origin, None))
     # Origin header raw del request (sin echo / public translation).
     # Lo usan los modelos Pydantic que necesitan inferir niche del
     # subdominio (spec sessions-normalize: contact_form/niche fallback).
@@ -246,6 +272,13 @@ def http_handler(
     try:
         # 1. Extraer operation/action/data del request.
         extracted = extract_request(event)
+
+        # Re-resolver el modo CORS con la operation ya conocida (solo
+        # cambia algo cuando cors_origin es dict por-operation).
+        origin = _resolve_origin_value(
+            headers,
+            _cors_mode_for(cors_origin, extracted.operation),
+        )
 
         # 2. Inyectar metadata de transporte en data._meta (lo consume el
         #    modelo Pydantic del controller cuando lo necesita).

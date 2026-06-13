@@ -32,15 +32,23 @@ from __future__ import annotations
 
 import base64
 from collections.abc import Iterator
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 import json
 import os
 import secrets
 import urllib.parse
 
+from api._cv_admin_flows import CvAdminSession
+from api._cv_admin_flows import close_admin_session
+from api._cv_admin_flows import converge_users_recognized
+from api._cv_admin_flows import open_admin_session
 from playwright.sync_api import Browser
+from playwright.sync_api import ConsoleMessage
 from playwright.sync_api import Page
 import pytest
 from shared.auth_support import field
+from shared.auth_support import login_with_password
 from shared.browser import install_bypass_token
 from shared.browser import launch
 from shared.config import admin_origin
@@ -128,12 +136,17 @@ class AdminAuth:
         user_id = field(start.body, 'user_id') or self._env.find_user_id(email)
         temp = field(start.body, 'temp_token')
         self._env.seed_code(
-            user_id=user_id, kind='login', plaintext=_SEED_CODE,
+            user_id=user_id,
+            kind='login',
+            plaintext=_SEED_CODE,
         )
         verify = self._http.post(
             '/auth',
             body=make_body(
-                'login', 'verify-code', code=_SEED_CODE, temp_token=temp,
+                'login',
+                'verify-code',
+                code=_SEED_CODE,
+                temp_token=temp,
             ),
             origin=self._origin,
         )
@@ -152,7 +165,10 @@ class AdminAuth:
         resp = self._http.post(
             '/auth',
             body=make_body(
-                'login', 'check-email', email=email, cf_turnstile_response='',
+                'login',
+                'check-email',
+                email=email,
+                cf_turnstile_response='',
             ),
             origin=self._origin,
             bypass_token=self._bypass,
@@ -199,7 +215,10 @@ class AdminAuth:
         verify = self._http.post(
             '/auth',
             body=make_body(
-                'login', 'verify-code', code=_SEED_CODE, temp_token=temp,
+                'login',
+                'verify-code',
+                code=_SEED_CODE,
+                temp_token=temp,
             ),
             origin=self._origin,
         )
@@ -287,7 +306,10 @@ class AdminAuth:
         resp = self._http.post(
             '/auth',
             body=make_body(
-                'login', 'check-email', email=email, cf_turnstile_response='',
+                'login',
+                'check-email',
+                email=email,
+                cf_turnstile_response='',
             ),
             origin=self._origin,
             bypass_token=self._bypass,
@@ -317,13 +339,16 @@ class AdminAuth:
         self._http.post(
             '/auth',
             body=make_body(
-                'login', 'send-email-code',
+                'login',
+                'send-email-code',
                 temp_token=field(start.body, 'temp_token'),
             ),
             origin=self._origin,
         )
         token = secrets.token_urlsafe(24)
-        self._env.seed_magic_link(user_id=user_id, kind='login', plaintext=token)
+        self._env.seed_magic_link(
+            user_id=user_id, kind='login', plaintext=token
+        )
         resp = self._http.get(
             '/auth',
             params={
@@ -350,16 +375,39 @@ class AdminAuth:
         (epoch ms) para que el `refreshExpiry` persista y el bootstrap tras
         reload no expulse la sesion.
         """
-        fragment = urllib.parse.urlencode(
-            {
-                'access': access,
-                'refresh': refresh,
-                'user_id': user_id,
-                'email': email,
-                'refresh_exp': str(_jwt_exp_ms(refresh)),
-            },
+        return build_callback_url(
+            self._origin,
+            access=access,
+            refresh=refresh,
+            user_id=user_id,
+            email=email,
         )
-        return f'{self._origin}/callback#{fragment}'
+
+
+def build_callback_url(
+    origin: str,
+    *,
+    access: str,
+    refresh: str,
+    user_id: str,
+    email: str,
+) -> str:
+    """URL del callback del admin con los tokens en el fragment hash.
+
+    Version libre (sin `AdminAuth`) del builder: la usan las fixtures de
+    cv_admin, que autentican el browser con tokens emitidos por
+    `login_with_password` del user admin whitelisted.
+    """
+    fragment = urllib.parse.urlencode(
+        {
+            'access': access,
+            'refresh': refresh,
+            'user_id': user_id,
+            'email': email,
+            'refresh_exp': str(_jwt_exp_ms(refresh)),
+        },
+    )
+    return f'{origin}/callback#{fragment}'
 
 
 def land_in_shell(page: Page, url: str) -> None:
@@ -513,15 +561,165 @@ def logged_in_page(
     """
     email, user_id, access, refresh = auth.create_active_user('shell')
     url = auth.callback_url(
-        access=access, refresh=refresh, user_id=user_id, email=email,
+        access=access,
+        refresh=refresh,
+        user_id=user_id,
+        email=email,
     )
     land_in_shell(page, url)
     return page, email, user_id
 
 
+# =========================================================================
+# Editor CV (plan c-cv-management): sesion admin whitelisted + page con
+# captura de errores de consola para los specs test_cv_*.py
+# =========================================================================
+
+
+@dataclass
+class CvAdminPage:
+    """Pagina autenticada como el admin de cv_admin + consola capturada.
+
+    `console_errors` acumula `console.error` + `pageerror` desde ANTES de
+    la primera navegacion: cada spec cierra con
+    `assert cvp.console_errors == []` (convencion del doc 12).
+    """
+
+    page: Page
+    console_errors: list[str] = dataclass_field(default_factory=list)
+
+
+# Ruido SIEMPRE ignorado por la captura de consola:
+# - El beacon de Web Analytics que Cloudflare Pages auto-inyecta y la CSP
+#   estricta del admin bloquea a proposito (script-src sin
+#   cloudflareinsights): el error de consola es la defensa funcionando.
+# - Fallos TRANSITORIOS de red del container (connection reset/drop): el
+#   browser los reporta como "blocked by CORS policy" (la respuesta caida
+#   no trae headers) + net::ERR_FAILED. Un CORS roto DE VERDAD igual
+#   revienta los asserts funcionales del spec (save/toast/200); el assert
+#   de consola es un tripwire para errores DE LA APP, no del transporte.
+_CONSOLE_IGNORED_NOISE = (
+    'static.cloudflareinsights.com',
+    'blocked by CORS policy',
+    'net::ERR_FAILED',
+)
+
+
+def attach_console_capture(
+    page: Page,
+    *,
+    ignore_substrings: tuple[str, ...] = (),
+) -> list[str]:
+    """Captura errores de consola de la page y devuelve el acumulador.
+
+    Given una page recien creada (antes de navegar),
+    When la pagina emite `console.error` o una excepcion no capturada,
+    Then el mensaje queda en la lista devuelta — salvo que matchee un
+    substring de `ignore_substrings` (ej. el 404 ESPERADO del probe de rol
+    admin en el spec de no-admin) o del ruido conocido de terceros
+    (`_CONSOLE_IGNORED_NOISE`).
+    """
+    errors: list[str] = []
+    ignored = _CONSOLE_IGNORED_NOISE + ignore_substrings
+
+    def _on_console(message: ConsoleMessage) -> None:
+        if message.type != 'error':
+            return
+        if any(token in message.text for token in ignored):
+            return
+        errors.append(f'console.error: {message.text}')
+
+    page.on('console', _on_console)
+    page.on('pageerror', lambda exc: errors.append(f'pageerror: {exc}'))
+    return errors
+
+
+@pytest.fixture(scope='session')
+def cv_admin_session(
+    env: str,
+    environment: Environment,
+    keep_data: bool,
+) -> Iterator[CvAdminSession]:
+    """Sesion admin sintetica de cv_admin (whitelist SSM promovida).
+
+    Reusa la maquinaria del modulo api (`api/_cv_admin_flows`): crea el
+    user admin con password, lo promueve a la whitelist `admin-emails`
+    (`_wait_ssm_promoted` ANTES del bust — gotcha conocido) y converge el
+    reconocimiento. Teardown: deletes idempotentes de los slugs
+    registrados + restore de la whitelist + cleanup en Neon (salvo
+    `--keep-data`). HERMETICO.
+    """
+    bypass = environment.bypass_token()
+    if not bypass:
+        pytest.skip('bypass de Turnstile no disponible para cv_admin')
+    http = HttpClient(base_url=api_base(env))
+    session = open_admin_session(
+        http=http,
+        environment=environment,
+        env_name=env,
+        bypass=bypass,
+    )
+    # El sidebar decide "Gestion CV" sondeando users.admin.list-users:
+    # converger TAMBIEN el Lambda `users` o el probe del browser es una
+    # loteria de contenedores con la whitelist vieja (404 -> item oculto).
+    print('  [INFO] cv_admin: convergiendo reconocimiento en users...')
+    converge_users_recognized(session)
+    try:
+        yield session
+    finally:
+        try:
+            close_admin_session(session, keep_data=keep_data)
+        finally:
+            http.close()
+
+
+@pytest.fixture
+def cv_page(
+    browser: Browser,
+    cv_admin_session: CvAdminSession,
+    environment: Environment,
+) -> Iterator[CvAdminPage]:
+    """Page autenticada en el shell como el ADMIN de cv_admin + consola.
+
+    Abre una sesion REAL nueva del user whitelisted (login con password,
+    familia propia por test) y la inyecta al browser via el callback del
+    magic-link. La captura de consola se instala ANTES de navegar.
+    """
+    access, refresh = login_with_password(
+        cv_admin_session.http,
+        cv_admin_session.origin,
+        cv_admin_session.email,
+        cv_admin_session.bypass,
+    )
+    assert access is not None, 'login del admin de cv_admin fallo (sin access)'
+    assert refresh is not None, (
+        'login del admin de cv_admin fallo (sin refresh)'
+    )
+    user_id = environment.find_user_id(cv_admin_session.email)
+    assert user_id is not None
+    context = browser.new_context()
+    page_obj = context.new_page()
+    errors = attach_console_capture(page_obj)
+    url = build_callback_url(
+        cv_admin_session.origin,
+        access=access,
+        refresh=refresh,
+        user_id=user_id,
+        email=cv_admin_session.email,
+    )
+    land_in_shell(page_obj, url)
+    try:
+        yield CvAdminPage(page=page_obj, console_errors=errors)
+    finally:
+        context.close()
+
+
 __all__ = [
     'AdminAuth',
+    'CvAdminPage',
     'Flows',
+    'attach_console_capture',
+    'build_callback_url',
     'land_in_shell',
     'logout',
     'nav_via_sidebar',

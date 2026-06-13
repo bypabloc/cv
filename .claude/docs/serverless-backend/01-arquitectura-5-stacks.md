@@ -255,10 +255,10 @@ dependencias de deploy cruzadas entre Lambdas.
 
 | Lambda | Trigger | Memoria | Timeout |
 |--------|---------|---------|---------|
-| `db` | `direct` (invoke directo) | 512 MB | 120s |
-| `contact_form` | `http` `POST /contact` | 512 MB | 30s |
-| `tracking_pixel` | `http` `POST /track` | 256 MB | 10s |
-| `stream_processor` | `on-table-changes` (`contacts`, `tracking`) | 512 MB | 60s |
+| `db` | `direct` (invoke directo) | 1024 MB | 120s |
+| `contact_form` | `http` `POST /contact` | 1024 MB | 30s |
+| `tracking_pixel` | `http` `POST /track` | 1024 MB | 10s |
+| `stream_processor` | `on-table-changes` (`contacts`, `tracking`) | 1024 MB | 60s |
 
 ### El manifiesto `manifest.yaml` (formato dev)
 

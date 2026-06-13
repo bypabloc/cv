@@ -18,4 +18,6 @@ markers = [
     'api: Lambdas HTTP del backend (httpx puro, sin browser)',
     'admin: flujos completos del panel admin (browser)',
     'app: las 6 apps Astro desplegadas (browser)',
+    'publish: dispatch REAL del workflow deploy-apps (excluir con -m "not publish")',
+    'slow: tests largos (rate-limit con espera de ventana, etc.)',
 ]

@@ -1,0 +1,24 @@
+# Bucket de backups semanales de la DB (export YAML seed-compatible).
+# Layout: history/{YYYY-MM-DD}/<entidad>/<slug>.yaml + latest/<...>.
+# Versioning ON; lifecycle: history/ expira a las 12 semanas (84 dias) y
+# las versiones noncurrent tambien — latest/ nunca expira (solo rota
+# versiones). Lo escriben `devtools db_export` (cron db-backup.yml) y lo
+# lee la Lambda `db` (command seed = restore).
+kind: s3-bucket
+name: portfolio-db-backups-${stage}
+block_public_access: true
+encryption: true
+versioning: true
+lifecycle_rules:
+  - id: expire-history-snapshots
+    prefix: history/
+    expiration_days: 84
+  - id: expire-noncurrent-versions
+    prefix: ''
+    noncurrent_expiration_days: 84
+publishes_ssm:
+  name: /portfolio/${stage}/s3/db-backups/name
+  arn: /portfolio/${stage}/s3/db-backups/arn
+tags:
+  Project: portfolio
+  ManagedBy: devtools

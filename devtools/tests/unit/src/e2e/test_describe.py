@@ -55,11 +55,11 @@ def test_describe_when_env_flag_then_default_dev_and_no_prod() -> None:
     assert 'prod' not in env_flag['choices']
 
 
-def test_describe_when_lambda_flag_then_choices_are_five_lambdas() -> None:
+def test_describe_when_lambda_flag_then_choices_are_six_lambdas() -> None:
     """
     Given describe(),
     When se mira el flag lambda,
-    Then sus choices son los 5 Lambdas HTTP del modulo api.
+    Then sus choices son los 6 Lambdas HTTP del modulo api.
     """
     lambda_flag = describe()['flags']['lambda']
 

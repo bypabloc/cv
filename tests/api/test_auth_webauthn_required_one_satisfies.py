@@ -22,12 +22,10 @@ from __future__ import annotations
 import secrets
 
 import pytest
-from shared.auth_support import (
-    STRONG_PASSWORD,
-    create_active_user_with_password,
-    field,
-    login_precheck,
-)
+from shared.auth_support import STRONG_PASSWORD
+from shared.auth_support import create_active_user_with_password
+from shared.auth_support import field
+from shared.auth_support import login_precheck
 from shared.config import admin_origin
 from shared.environment import Environment
 from shared.http import HttpClient
@@ -36,19 +34,26 @@ from shared.webauthn_device import SoftPasskey
 
 
 def _access_via_password(
-    http: HttpClient, origin: str, email: str, bypass: str,
+    http: HttpClient,
+    origin: str,
+    email: str,
+    bypass: str,
 ) -> str:
     """Login solo-password -> access token (la password es el unico required)."""
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password',
-            password=STRONG_PASSWORD, temp_token=field(start.body, 'temp_token'),
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=field(start.body, 'temp_token'),
         ),
         origin=origin,
     )
@@ -66,28 +71,38 @@ def _register_passkey(
 ) -> str:
     """Registra un passkey (register-options -> verify) y devuelve su record id."""
     ro = http.post(
-        '/auth', body=make_body('webauthn', 'register-options'),
-        origin=origin, bearer=access,
+        '/auth',
+        body=make_body('webauthn', 'register-options'),
+        origin=origin,
+        bearer=access,
     )
     assert ro.status == 200, f'register-options fallo: {ro.status} {ro.body}'
     rv = http.post(
         '/auth',
         body=make_body(
-            'webauthn', 'register-verify',
+            'webauthn',
+            'register-verify',
             challenge_id=ro.body['challenge_id'],
             response=pk.register_response(ro.body['options']),
             nickname=nickname,
         ),
-        origin=origin, bearer=access,
+        origin=origin,
+        bearer=access,
     )
     assert rv.status == 201, f'register-verify fallo: {rv.status} {rv.body}'
     cs = http.post(
-        '/auth', body=make_body('webauthn', 'list-credentials'),
-        origin=origin, bearer=access,
+        '/auth',
+        body=make_body('webauthn', 'list-credentials'),
+        origin=origin,
+        bearer=access,
     )
-    by_nick = {c['nickname']: c['credential_id'] for c in cs.body['credentials']}
+    by_nick = {
+        c['nickname']: c['credential_id'] for c in cs.body['credentials']
+    }
     record_id = by_nick.get(nickname)
-    assert record_id is not None, f'no se encontro el passkey {nickname}: {cs.body}'
+    assert record_id is not None, (
+        f'no se encontro el passkey {nickname}: {cs.body}'
+    )
     return record_id
 
 
@@ -115,7 +130,11 @@ def test_two_required_passkeys_one_satisfies_webauthn_factor(
     email = f'success+wa2req-{secrets.token_hex(4)}@simulator.amazonses.com'
     created_emails.append(email)
     user_id = create_active_user_with_password(
-        http, environment, origin, email, bypass,
+        http,
+        environment,
+        origin,
+        email,
+        bypass,
     )
     assert user_id is not None
     access = _access_via_password(http, origin, email, bypass)
@@ -130,16 +149,24 @@ def test_two_required_passkeys_one_satisfies_webauthn_factor(
         req = http.post(
             '/auth',
             body=make_body(
-                'webauthn', 'set-required', credential_id=rec, required=True,
+                'webauthn',
+                'set-required',
+                credential_id=rec,
+                required=True,
             ),
-            origin=origin, bearer=access,
+            origin=origin,
+            bearer=access,
         )
-        assert req.status == 204, f'set-required {rec} fallo: {req.status} {req.body}'
+        assert req.status == 204, (
+            f'set-required {rec} fallo: {req.status} {req.body}'
+        )
 
     # login.start: 'webauthn' aparece UNA sola vez (no una por passkey).
     precheck = login_precheck(http, origin, email, bypass)
     start = http.post(
-        '/auth', body=make_body('login', 'start'), origin=origin,
+        '/auth',
+        body=make_body('login', 'start'),
+        origin=origin,
         bearer=precheck,
     )
     methods = start.body.get('methods') or []
@@ -154,7 +181,10 @@ def test_two_required_passkeys_one_satisfies_webauthn_factor(
     vp = http.post(
         '/auth',
         body=make_body(
-            'login', 'verify-password', password=STRONG_PASSWORD, temp_token=temp,
+            'login',
+            'verify-password',
+            password=STRONG_PASSWORD,
+            temp_token=temp,
         ),
         origin=origin,
     )
@@ -164,14 +194,16 @@ def test_two_required_passkeys_one_satisfies_webauthn_factor(
 
     # UNA sola passkey (A) cierra el login: NO se exige la segunda (B).
     lo = http.post(
-        '/auth', body=make_body('webauthn', 'login-options', email=email),
+        '/auth',
+        body=make_body('webauthn', 'login-options', email=email),
         origin=origin,
     )
     assert lo.status == 200, f'login-options fallo: {lo.status} {lo.body}'
     lv = http.post(
         '/auth',
         body=make_body(
-            'webauthn', 'login-verify',
+            'webauthn',
+            'login-verify',
             challenge_id=lo.body['challenge_id'],
             response=pk_a.login_response(lo.body['options']),
             temp_token=temp2,
@@ -182,5 +214,9 @@ def test_two_required_passkeys_one_satisfies_webauthn_factor(
         f'UNA passkey deberia cerrar el login (basta una de las 2 required): '
         f'{lv.body}'
     )
-    assert field(lv.body, 'access_token'), f'falta access_token final: {lv.body}'
-    assert field(lv.body, 'refresh_token'), f'falta refresh_token final: {lv.body}'
+    assert field(lv.body, 'access_token'), (
+        f'falta access_token final: {lv.body}'
+    )
+    assert field(lv.body, 'refresh_token'), (
+        f'falta refresh_token final: {lv.body}'
+    )

@@ -1,0 +1,85 @@
+name: DB Backup
+
+# Export semanal de la data CV de Neon a YAML seed-compatible en S3
+# (s3://portfolio-db-backups-<stage>/history/<fecha>/ + latest/).
+# Sin secretos de GitHub: AWS via OIDC y la Neon URL via SSM.
+on:
+  schedule:
+    - cron: '0 6 * * 1' # lunes 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Stage a respaldar'
+        type: choice
+        options: [all, dev, prod]
+        default: all
+
+permissions:
+  id-token: write # OIDC (aws-actions/configure-aws-credentials)
+  contents: read
+
+# Un backup a la vez. NO cancel-in-progress: cancelar mid-sync dejaria
+# latest/ a medio reflejar.
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Resuelve la matrix de stages: schedule -> [dev, prod]; dispatch con
+  # input stage != all -> solo ese stage. (matrix no es accesible desde
+  # jobs.<id>.if, por eso la matrix se computa en un job previo.)
+  # ---------------------------------------------------------------------------
+  resolve-stages:
+    name: Resolve stages
+    runs-on: ubuntu-24.04
+    outputs:
+      stages: ${{ steps.resolve.outputs.stages }}
+    steps:
+      - id: resolve
+        run: |
+          input="${{ inputs.stage || 'all' }}"
+          if [[ "$input" == "all" ]]; then
+            echo 'stages=["dev","prod"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "stages=[\"$input\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Export por stage. fail-fast: false para que un fallo en dev no aborte
+  # el backup de prod (y viceversa).
+  # ---------------------------------------------------------------------------
+  backup:
+    name: Backup ${{ matrix.stage }}
+    needs: resolve-stages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: ${{ fromJSON(needs.resolve-stages.outputs.stages) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::637423614564:role/portfolio-db-backup
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup uv (devtools bootstrap)
+        run: pip install uv
+
+      # db_export resuelve la Neon URL desde SSM (hermetico) y sube el
+      # snapshot YAML a history/<fecha>/ + latest/. Sin --aws-profile:
+      # usa las credenciales OIDC del step anterior.
+      - name: Export ${{ matrix.stage }} to S3
+        run: |
+          python devtools/run.py db_export --stage=${{ matrix.stage }}

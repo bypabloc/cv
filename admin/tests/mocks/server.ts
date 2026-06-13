@@ -1,5 +1,6 @@
 import { setupServer } from "msw/node";
 import { authHandlers } from "./handlers/auth";
+import { cvAdminHandlers } from "./handlers/cv-admin";
 import { metricsHandlers } from "./handlers/metrics";
 import { usersHandlers } from "./handlers/users";
 
@@ -8,4 +9,5 @@ export const server = setupServer(
 	...authHandlers,
 	...usersHandlers,
 	...metricsHandlers,
+	...cvAdminHandlers,
 );

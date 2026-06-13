@@ -1,7 +1,7 @@
-"""Controller db/seed — carga data de prueba en la DB.
+"""Controller db/seed — restaura un snapshot YAML del CV en la DB.
 
 Orquestador delgado: delega al service y normaliza el resultado. NO
-contiene logica de negocio.
+contiene logica de negocio (el guard confirm_overwrite es del service).
 """
 
 from __future__ import annotations
@@ -18,8 +18,12 @@ class Seed(BaseController):
 
     def execute(self) -> dict:
         """Orquesta db/seed: delega al service y normaliza la salida."""
+        data = self.validated_data  # SeedModel
         try:
-            result = run_seed()
+            result = run_seed(
+                source=data.source,
+                confirm_overwrite=data.confirm_overwrite,
+            )
         except ServiceError as exc:
             return {
                 'is_valid': False,

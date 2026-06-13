@@ -43,6 +43,23 @@ def get_object_text(bucket: str, key: str, *, encoding: str = 'utf-8') -> str:
     return response['Body'].read().decode(encoding)
 
 
+def list_keys(bucket: str, prefix: str) -> list[str]:
+    """Lista TODAS las keys de un bucket bajo un prefijo (paginado).
+
+    Args:
+        bucket: nombre del bucket.
+        prefix: prefijo de las keys (ej. 'latest/').
+
+    Returns:
+        Las keys completas, en el orden que devuelve S3 (lexicografico).
+    """
+    paginator = get_client().get_paginator('list_objects_v2')
+    keys: list[str] = []
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        keys.extend(obj['Key'] for obj in page.get('Contents', []))
+    return keys
+
+
 def reset_client_cache() -> None:
     """Resetea el cache del cliente (para tests con moto)."""
     _client_cache.clear()

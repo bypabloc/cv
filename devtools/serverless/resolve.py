@@ -40,8 +40,10 @@ _REQUIRED_FIELDS = ('name', 'runtime', 'handler')
 _VALID_RUNTIMES = ('python3.12', 'python3.13')
 
 # Defaults aplicados cuando el manifiesto no los declara.
+# memory 1024 = PISO del proyecto (lambda-config.md): ningun Lambda
+# corre con menos aunque el manifest lo omita.
 _MANIFEST_DEFAULTS: dict[str, Any] = {
-    'memory': 256,
+    'memory': 1024,
     'timeout': 30,
     'region': 'us-east-1',
 }

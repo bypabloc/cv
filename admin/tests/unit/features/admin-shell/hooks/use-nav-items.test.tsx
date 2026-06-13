@@ -30,17 +30,18 @@ describe("useVisibleNavItems", () => {
 		expect(hrefs).toEqual(["/metrics", "/settings", "/users", "/cv"]);
 	});
 
-	it("Given un NO-admin When resuelve Then excluye los items adminOnly", () => {
+	it("Given un NO-admin When resuelve Then excluye los items adminOnly (users y cv)", () => {
 		// Arrange
 		useIsAdminMock.mockReturnValue({ isAdmin: false, isResolved: true });
 
 		// Act
 		const { result } = renderHook(() => useVisibleNavItems());
 
-		// Assert
+		// Assert: Gestion CV paso a adminOnly (AC-13 del plan c-cv-management).
 		const hrefs = result.current.map((i) => i.href);
-		expect(hrefs).toEqual(["/metrics", "/settings", "/cv"]);
+		expect(hrefs).toEqual(["/metrics", "/settings"]);
 		expect(hrefs).not.toContain("/users");
+		expect(hrefs).not.toContain("/cv");
 	});
 
 	it("Given el rol sin resolver When isAdmin false Then oculta los adminOnly (asume no-admin)", () => {
@@ -52,5 +53,6 @@ describe("useVisibleNavItems", () => {
 
 		// Assert
 		expect(result.current.map((i) => i.href)).not.toContain("/users");
+		expect(result.current.map((i) => i.href)).not.toContain("/cv");
 	});
 });

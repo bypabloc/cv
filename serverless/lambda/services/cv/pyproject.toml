@@ -1,12 +1,12 @@
 # @config: lambda/services/cv/pyproject.toml
 # @description: manifiesto de dependencias y tooling del Lambda cv
-#   (sirve el CV en read-only desde Neon). Lambda autonomo: tiene su
-#   propio uv.lock y .venv aislado.
+#   (lectura publica del CV + operations admin content/publish, ex
+#   cv_admin). Lambda autonomo: tiene su propio uv.lock y .venv aislado.
 
 [project]
 name = "cv"
 version = "0.1.0"
-description = "Lambda de lectura del CV (GET /cv) desde Neon PostgreSQL."
+description = "Lambda del CV: lectura publica + escritura admin + publish."
 requires-python = ">=3.13"
 
 # El core/ del Lambda no declara dependencias propias: todo le llega por
@@ -25,6 +25,7 @@ dev = [
   "mypy>=1.10,<2.0",
   "ruff>=0.6,<1.0",
   "moto[dynamodb,ssm,kms]>=5.0,<6.0",
+  "freezegun>=1.4,<2.0",
 ]
 
 [tool.uv]
@@ -45,7 +46,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "S105", "S106"]
+"tests/**/*.py" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "ANN204", "RUF059", "S105", "S106", "S107"]
 "core/handler.py" = ["E402"]
 
 [tool.ruff.format]

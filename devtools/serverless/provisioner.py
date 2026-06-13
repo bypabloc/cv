@@ -118,6 +118,12 @@ _DYNAMO_ACTIONS: dict[str, list[str]] = {
         'dynamodb:GetItem',
         'dynamodb:Query',
         'dynamodb:BatchGetItem',
+        # Scan es read-only: lo usa la invalidacion por tag del cache
+        # (shared.cache.invalidation.invalidate_by_tag hace table.scan
+        # sobre la tabla cache). Sin esto, cualquier Lambda que escriba
+        # el CV (operation content del cv) revienta con AccessDeniedException al
+        # invalidar el tag 'cv' tras el commit.
+        'dynamodb:Scan',
     ],
     'write': [
         'dynamodb:PutItem',
@@ -466,10 +472,13 @@ def _bucket_statements(
     buckets: list[Any],
     stage: str,
 ) -> list[dict[str, Any]]:
-    """Traduce `uses.buckets` a Statements S3 `s3:GetObject` por bucket.
+    """Traduce `uses.buckets` a Statements S3 por bucket.
 
-    Solo se soporta `access: read` (los Lambdas leen templates de email). El
-    nombre del bucket NO va por SSM: se inyecta como env var S3_<X>_BUCKET.
+    Solo se soporta `access: read`: `s3:GetObject` sobre las keys +
+    `s3:ListBucket` sobre el bucket (listar un prefijo — el restore del
+    Lambda db enumera el snapshot con list_objects_v2 antes de bajarlo).
+    El nombre del bucket NO va por SSM: se inyecta como env var
+    S3_<X>_BUCKET.
     """
     statements: list[dict[str, Any]] = []
     for bucket in buckets:
@@ -487,6 +496,13 @@ def _bucket_statements(
                 'Effect': 'Allow',
                 'Action': ['s3:GetObject'],
                 'Resource': f'arn:aws:s3:::{name_full}/*',
+            }
+        )
+        statements.append(
+            {
+                'Effect': 'Allow',
+                'Action': ['s3:ListBucket'],
+                'Resource': f'arn:aws:s3:::{name_full}',
             }
         )
     return statements
@@ -703,7 +719,9 @@ def render(manifest: dict[str, Any], *, stage: str) -> RenderedLambda:
         runtime=str(manifest['runtime']),
         architecture=str(manifest.get('architecture', 'arm64')),
         handler=str(manifest['handler']),
-        memory=int(manifest.get('memory', 256)),
+        # 1024 = PISO de memoria del proyecto (lambda-config.md):
+        # ningun Lambda corre con menos aunque el manifest lo omita.
+        memory=int(manifest.get('memory', 1024)),
         timeout=int(manifest.get('timeout', 30)),
         snap_start=bool(manifest.get('snap_start', False)),
         env_vars=_build_env_vars(manifest, stage),
@@ -1173,7 +1191,7 @@ def _cleanup_legacy_permissions(
         return
     try:
         policy = json.loads(raw)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return
     for stmt in policy.get('Statement', []) or []:
         sid = stmt.get('Sid', '')

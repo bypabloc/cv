@@ -124,7 +124,7 @@ gh api -H "Accept: application/json" \
 **Causas**:
 
 1. El cambio toca solo paths excluidos (`tests/`, `events/`, `build/`,
-   `core/seeds/data/`, `shared/tests/`).
+   `shared/tests/`).
 2. `github.event.before` es `zeros` (primer push) -> fallback a
    `HEAD~10`. Si el cambio relevante esta mas atras, no lo detecta.
 3. El cambio toca `apps/` o `packages/` (no es backend) -> correcto,

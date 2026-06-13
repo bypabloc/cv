@@ -91,3 +91,9 @@ DB_PASSWORD=
 # Generar: python -c "import secrets; print(secrets.token_urlsafe(64))"
 # SSM: /portfolio/${stage}/jwt-secret
 JWT_SECRET=
+
+# --- github-deploy-token.yaml (SecureString) ---
+# PAT fine-grained de GitHub (repo bypabloc/cv, permiso Actions RW) que
+# usa el Lambda cv (operation publish) para workflow_dispatch de
+# deploy-apps.yml. SSM: /portfolio/${stage}/github-deploy-token
+GITHUB_DEPLOY_TOKEN=

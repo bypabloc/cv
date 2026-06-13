@@ -163,6 +163,18 @@ jobs:
             --stage=${{ needs.resolve-env.outputs.stage }} \
             --event=events/seed.json
 
+      # Seed de email-config: idempotente (s3 cp sobreescribe, put-item
+      # reemplaza la fila por PK kind). Re-correrlo en cada deploy reconcilia
+      # los templates S3 + las filas DynamoDB de email-config con la fuente
+      # de verdad del repo (send_email/seeds/email_config.py) en TODOS los
+      # stages. Sin esto, una migracion de kinds (ej. register-* ->
+      # login-unified) deja prod con kinds viejos y send_email rechaza el
+      # envio con EMAIL_KIND_NOT_FOUND (correo de login/registro nunca llega).
+      - name: Run email-config seed (idempotent)
+        run: |
+          python devtools/run.py serverless seed-email-config \
+            --stage=${{ needs.resolve-env.outputs.stage }}
+
   # ---------------------------------------------------------------------------
   # 2. Detect lambdas afectados (path-based + cierre shared) entre el sha
   # del push anterior y el actual. Excluye `db` (ya redeployado).

@@ -24,12 +24,14 @@ describe('buildPagesWorker', () => {
     expect(out).toContain('handleRequest')
   })
 
-  it('Given se invoca When inspecciono Then importa los 3 JSON snapshots del _worker-data', () => {
+  it('Given se invoca When inspecciono Then importa los 5 JSON snapshots del _worker-data', () => {
     const out = buildPagesWorker()
 
     expect(out).toContain("from './_worker-data/cv-snapshot.json'")
     expect(out).toContain("from './_worker-data/api-catalog.json'")
     expect(out).toContain("from './_worker-data/mcp-server-card.json'")
+    expect(out).toContain("from './_worker-data/agent-card.json'")
+    expect(out).toContain("from './_worker-data/agent-skills.json'")
   })
 
   it('Given se invoca When inspecciono Then maneja POST /mcp y OPTIONS /mcp', () => {
@@ -51,6 +53,35 @@ describe('buildPagesWorker', () => {
     const out = buildPagesWorker()
 
     expect(out).toContain("'/.well-known/mcp/server-card.json'")
+  })
+
+  it('Given se invoca When inspecciono Then maneja GET /.well-known/api-catalog SIN .json (RFC 9727)', () => {
+    const out = buildPagesWorker()
+
+    expect(out).toContain("url.pathname === '/.well-known/api-catalog'")
+  })
+
+  it('Given se invoca When inspecciono Then maneja GET /.well-known/agent-card.json', () => {
+    const out = buildPagesWorker()
+
+    expect(out).toContain("'/.well-known/agent-card.json'")
+  })
+
+  it('Given se invoca When inspecciono Then maneja GET /.well-known/agent-skills/index.json', () => {
+    const out = buildPagesWorker()
+
+    expect(out).toContain("'/.well-known/agent-skills/index.json'")
+  })
+
+  it('Given se invoca When inspecciono Then devuelve 404 para los .well-known OAuth y /auth.md (no SPA fallback)', () => {
+    const out = buildPagesWorker()
+
+    expect(out).toContain('NOT_FOUND_PATHS')
+    expect(out).toContain("'/.well-known/openid-configuration'")
+    expect(out).toContain("'/.well-known/oauth-authorization-server'")
+    expect(out).toContain("'/.well-known/oauth-protected-resource'")
+    expect(out).toContain("'/auth.md'")
+    expect(out).toContain('status: 404')
   })
 
   it('Given se invoca When inspecciono Then incluye content negotiation Accept: text/markdown', () => {

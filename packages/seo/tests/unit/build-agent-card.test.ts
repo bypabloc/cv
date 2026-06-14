@@ -15,7 +15,28 @@ describe('buildAgentCard', () => {
     expect(parsed.name).toBe('portfolio-agent')
     expect(parsed.version).toBe('0.1.0')
     expect(parsed.url).toBe('https://the-full-stack.com/mcp')
-    expect(parsed.preferredTransport).toBe('http')
+    expect(parsed.preferredTransport).toBe('HTTP+JSON')
+  })
+
+  it('Given el A2A schema When build Then protocolVersion top-level es 0.3.0', () => {
+    const out = buildAgentCard({ siteUrl: 'https://the-full-stack.com' })
+
+    const parsed = JSON.parse(out)
+    expect(parsed.protocolVersion).toBe('0.3.0')
+  })
+
+  it('Given el A2A schema When build Then supportedInterfaces no esta vacio y declara HTTP+JSON', () => {
+    const out = buildAgentCard({ siteUrl: 'https://the-full-stack.com' })
+
+    const parsed = JSON.parse(out)
+    expect(parsed.supportedInterfaces).toEqual([
+      {
+        url: 'https://the-full-stack.com/mcp',
+        transport: 'HTTP+JSON',
+        protocolBinding: 'HTTP+JSON',
+        protocolVersion: '0.3.0',
+      },
+    ])
   })
 
   it('Given siteUrl When build Then provider apunta al apex', () => {

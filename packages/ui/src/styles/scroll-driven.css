@@ -57,12 +57,14 @@
 }
 
 @keyframes scroll-reveal {
+  /* Solo transform (sin opacity): el fade 0->1 hacia que el contraste del
+     texto interno cayera bajo AA en frames intermedios (Lighthouse no emula
+     prefers-reduced-motion y captura el container a mitad del reveal ->
+     muted grey-50 a ~0.42 opacity = 1.9:1). El slide-up basta como reveal. */
   from {
-    opacity: 0;
     transform: translateY(48px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }

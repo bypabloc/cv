@@ -25,10 +25,16 @@
   --color-grey-95: #0a0a0a;
 
   /* === Brand === */
-  --color-primary: #4f6ef7;
+  --color-primary: #4a68f0;
+  /* #4a68f0 es el ajuste minimo de #4f6ef7 para que texto blanco sobre el
+     (botones primary) alcance AA 4.64:1 (#4f6ef7 daba 4.28:1 < 4.5). */
   --color-primary-hover: #6481f9;
   --color-primary-muted: rgba(79, 110, 247, 0.18);
   --color-primary-contrast: #ffffff;
+  /* --color-primary como TEXTO (no fondo) necesita un tono theme-aware:
+     en dark mas claro, en light mas oscuro. El primary plano fallaba AA
+     como texto pequeno (#4f6ef7 sobre #f7f7f5 = 3.99:1). Ver bloques light. */
+  --color-primary-text: #7e96fb;
 
   /* === Accents === */
   --color-accent-cyan: #38d9d6;
@@ -172,6 +178,11 @@
   --niche-glow: rgba(79, 110, 247, 0.35);
   --niche-gradient: linear-gradient(135deg, #4f6ef7 0%, #b97cf2 100%);
   --niche-mood: sans;
+  /* El accent del niche como TEXTO: en dark es el accent crudo (brillante,
+     pasa AA sobre fondos oscuros); en light se oscurece (ver bloques light)
+     porque el accent brillante como texto pequeno falla AA sobre bg claro.
+     Decorativo (borders/glow/tints) sigue usando --niche-accent crudo. */
+  --niche-accent-text: var(--niche-accent);
 
   /* === Mesh gradient palette (mezcla con --niche-accent en runtime) === */
   --mesh-1: rgba(79, 110, 247, 0.28);
@@ -192,6 +203,11 @@
      grey-60 (#46463f) sobre #f7f7f5 = 8.95:1 (ok). */
   --color-text-subtle: var(--color-grey-60);
   --color-primary-muted: rgba(79, 110, 247, 0.1);
+  /* Primary/accent como TEXTO oscurecidos para AA sobre bg claro (#f7f7f5):
+     #3a57e0 sobre #f7f7f5 = 5.41:1; el accent crudo se oscurece 50% via
+     color-mix (resuelve el accent por-niche inyectado en .niche-root). */
+  --color-primary-text: #3a57e0;
+  --niche-accent-text: color-mix(in srgb, var(--niche-accent) 50%, black);
   --shadow-light: 0 1px 4px rgba(0, 0, 0, 0.04);
   --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
@@ -206,8 +222,12 @@
     --color-border-strong: var(--color-grey-15);
     --color-text: var(--color-grey-95);
     --color-text-muted: var(--color-grey-50);
-    --color-text-subtle: var(--color-grey-40);
+    /* grey-40 (#7a7a74) sobre #f7f7f5 = 4.31:1 < 4.5 (fail AA); grey-60
+       (#46463f) = 8.95:1. Se alinea con :root.light. */
+    --color-text-subtle: var(--color-grey-60);
     --color-primary-muted: rgba(79, 110, 247, 0.1);
+    --color-primary-text: #3a57e0;
+    --niche-accent-text: color-mix(in srgb, var(--niche-accent) 50%, black);
     --shadow-light: 0 1px 4px rgba(0, 0, 0, 0.04);
     --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.08);
   }

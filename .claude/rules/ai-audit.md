@@ -191,6 +191,52 @@ El portfolio NO implementa estos checks por decision arquitectonica:
 intencional de esos 2 checks es correcto. Cualquier "fix" que publique
 stubs de auth se debe rechazar en code review.
 
+### isitagentready es FLAKY: un 1/5 puntual NO es una regresion
+
+El scanner externo isitagentready fetchea el robots.txt en vivo en cada
+scan; un timeout transitorio del lado de Cloudflare/del scanner puede dar
+`botAccessControl: 0` -> level **1/5** en UNA corrida, aunque el sitio sea
+identico a los demas niches (verificado 2026-06-14: vibe dio 1/5 en una
+corrida y 4/5 estable en las 4 siguientes — 3 directas + 1 via el comando).
+
+- **SIEMPRE** ante un `1/5` o un `botAccessControl: 0` aislado en UN niche
+  mientras los otros dan 4/5, RE-CORRER el scan 2-3 veces antes de
+  diagnosticar un bug. Si los demas niches (mismo build, mismo robots.txt
+  servido) dan 4/5, el 1/5 es flaky del scanner, NO del sitio.
+- **NUNCA** abrir un "fix" de codigo por un `1/5` puntual sin reconfirmar la
+  estabilidad: el robots.txt servido es identico entre niches (es el block
+  managed de Cloudflare a nivel zona), asi que un niche no puede tener un
+  robots.txt "peor" que otro.
+
+## Ceiling intencional del score validators: robots.txt = 50/100
+
+El tool `validators` da **robots.txt = 50/100** (neutral, media credito) en
+los 6 niches de forma persistente. NO es una regresion ni un bug del repo:
+
+- La causa es la feature **"Manage AI bots" / Content Signals** de Cloudflare
+  (a nivel zona, plan Free), que PREPENDE al edge un block
+  `# BEGIN Cloudflare Managed content` con `Disallow: /` para GPTBot,
+  ClaudeBot, Google-Extended, CCBot, etc. — DESPUES de que el origin sirve su
+  robots.txt. El robots.txt del repo (allow-all-AI) es correcto; queda
+  sombreado por el block de Cloudflare.
+- El validator detecta el block managed + los AI bots bloqueados y devuelve
+  `neutral` (0.5 -> 50) a proposito: lo trata como **decision de politica del
+  dueno**, NO como `fail` (por eso no emite un Fix accionable).
+- **NO es desactivable por API en plan Free**: `PUT/GET
+  /zones/{zone}/bot_management` da `403 Authentication error` con cualquier
+  token (muro de plan, no de scope). Es dashboard-only
+  (Security -> Settings -> "Instruct AI bot traffic with robots.txt" -> OFF).
+- **Decision del dueno (2026-06-14)**: dejar el block de Cloudflare activo +
+  documentar. El `50/100` es el **ceiling esperado** mientras Content Signals
+  este activo. NO se toca el robots.txt del repo (ya es correcto). NO se
+  intenta un fallback de codigo (Pages Function / `_headers` / Transform
+  Rule): el research confirma que NINGUNO puede impedir el prepend al edge.
+- **SIEMPRE** tratar robots.txt=50 (validators) como estado normal, no como
+  hallazgo a corregir. Si en el futuro se decide permitir los AI crawlers
+  (para maximizar GEO), el unico camino es desactivar la feature en el
+  dashboard de Cloudflare — y entonces re-correr el ai_audit para confirmar
+  que sube a 100.
+
 ## MCP server endpoint (Pages Functions, Free tier)
 
 Los 6 niches del portfolio exponen un MCP server (Model Context Protocol

@@ -176,20 +176,36 @@ Detalle de cada descarte: [.claude/docs/ai-audit/01-tools-evaluadas.md](../docs/
 | Scrapear paths internos sin override explicito | PSI cobra quota por request; gastar en `/404` es desperdicio | Default = home; paths internos via `--targets=` |
 | Re-anadir aibotchecker/Ahrefs/Semrush sin discutir | Ya descartados con razones documentadas | Si crees que reapareciera valor, abrir issue antes de PR |
 
-## Ceiling intencional del score isitagentready
+## Score isitagentready: 5/5 Agent-Native (logrado 2026-06-14)
 
-El portfolio NO implementa estos checks por decision arquitectonica:
+El apex `the-full-stack.com` + los 6 niches alcanzan **5/5 Agent-Native**
+(estable en re-scans, PRs #295-#299). El nivel se calcula por CATEGORIAS;
+los 4 checks "core" de `discovery` en pass bastan para 5/5:
 
-- `/.well-known/openid-configuration` — el portfolio NO tiene auth real.
-  Publicar un stub OAuth/OIDC es anti-pattern y confunde a los agentes
-  (intentaran iniciar un flujo OAuth que no existe). Joost.blog (83/100
-  = Level 5) deliberadamente rechaza este check por la misma razon.
-- `/.well-known/oauth-protected-resource` — idem. Turnstile CAPTCHA del
-  Lambda de contacto NO es OAuth standard.
+- `apiCatalog` (RFC 9727, ruta `/.well-known/api-catalog` SIN `.json`)
+- `a2aAgentCard` (A2A spec v0.3.0: requiere `protocolVersion` + `supportedInterfaces`)
+- `agentSkills` (`/.well-known/agent-skills/index.json`)
+- `mcpServerCard` (`/.well-known/mcp/server-card.json`)
 
-**Ceiling esperado**: isitagentready 3-4/5. Aceptar la penalizacion
-intencional de esos 2 checks es correcto. Cualquier "fix" que publique
-stubs de auth se debe rechazar en code review.
+Los builders viven en `packages/seo` (skills derivadas de los 3 MCP tools de
+`@portfolio/mcp`); el routing lo hace el `_worker.js` (Cloudflare Pages
+Advanced Mode) generado por `packages/markdown-export` (NO `_redirects` ni
+Pages Functions, que no corren en prod). Detalle: la memoria del proyecto.
+
+### Los checks OAuth quedan `fail` POR DISENO (y NO bloquean el 5/5)
+
+- `/.well-known/openid-configuration`, `/oauth-authorization-server`,
+  `/oauth-protected-resource`, `/auth.md` — el portfolio publico NO tiene
+  auth de agentes. Publicar un stub OAuth/OIDC es anti-pattern (los agentes
+  intentarian un flujo que no existe); implementar un OIDC provider real
+  seria semanas de backend de seguridad + expondria el admin privado. El
+  dueno (2026-06-14) descarto OIDC real.
+- El Worker devuelve **404 honesto** para esas rutas (no el HTML del home);
+  el SET `NOT_FOUND_PATHS` en `build-pages-worker.ts` lo hace.
+- **CORRECCION de una suposicion previa**: se creia que los OAuth ponian un
+  techo de 4/5. ES FALSO — isitagentready llega a 5/5 con los 4 discovery
+  core, y los OAuth en `fail` no lo impiden. NO implementar stubs de auth
+  para "subir el numero": el 5/5 ya esta sin ellos.
 
 ### isitagentready es FLAKY: un 1/5 puntual NO es una regresion
 

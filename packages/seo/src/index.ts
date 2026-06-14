@@ -2,6 +2,8 @@
  * @module @portfolio/seo
  */
 
+export { buildAgentCard } from './lib/build-agent-card'
+export { buildAgentSkills } from './lib/build-agent-skills'
 export { buildApiCatalog } from './lib/build-api-catalog'
 export { buildHeaders } from './lib/build-headers'
 export { buildLlmsTxt } from './lib/build-llms-txt'

@@ -26,7 +26,12 @@ import {
   buildPagesWorker,
   bundlePagesFunction,
 } from '@portfolio/markdown-export'
-import { buildApiCatalog, buildMcpServerCard } from '@portfolio/seo'
+import {
+  buildAgentCard,
+  buildAgentSkills,
+  buildApiCatalog,
+  buildMcpServerCard,
+} from '@portfolio/seo'
 import { writeSnapshot } from '../../../packages/mcp/scripts/build-snapshot.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -64,7 +69,19 @@ await writeFile(
   buildMcpServerCard({ siteUrl: SITE_URL }),
   'utf8',
 )
-console.info('[postbuild-functions] api-catalog.json + mcp-server-card.json')
+await writeFile(
+  resolve(DATA_DIR, 'agent-card.json'),
+  buildAgentCard({ siteUrl: SITE_URL }),
+  'utf8',
+)
+await writeFile(
+  resolve(DATA_DIR, 'agent-skills.json'),
+  buildAgentSkills({ siteUrl: SITE_URL }),
+  'utf8',
+)
+console.info(
+  '[postbuild-functions] api-catalog.json + mcp-server-card.json + agent-card.json + agent-skills.json',
+)
 
 // 3. Generar source del Worker + bundle a dist/_worker.js
 await writeFile(WORKER_SRC_PATH, buildPagesWorker(), 'utf8')

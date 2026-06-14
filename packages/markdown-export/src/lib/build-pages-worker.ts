@@ -36,6 +36,8 @@ import type { CvSnapshot } from '@portfolio/mcp'
 import cvSnapshot from './_worker-data/cv-snapshot.json'
 import apiCatalog from './_worker-data/api-catalog.json'
 import mcpServerCard from './_worker-data/mcp-server-card.json'
+import agentCard from './_worker-data/agent-card.json'
+import agentSkills from './_worker-data/agent-skills.json'
 
 interface Env {
   ASSETS: { fetch: (request: Request) => Promise<Response> }
@@ -88,6 +90,20 @@ function methodNotAllowed(allow: string): Response {
     status: 405,
     headers: { ...corsHeaders, allow },
   })
+}
+
+// Rutas que NO existen en este sitio estatico (el portfolio publico no tiene
+// auth de agentes / OAuth). Devuelven 404 honesto en vez del SPA fallback
+// (que serviria el HTML del home con 200, confundiendo a los agentes).
+const NOT_FOUND_PATHS = new Set([
+  '/.well-known/openid-configuration',
+  '/.well-known/oauth-authorization-server',
+  '/.well-known/oauth-protected-resource',
+  '/auth.md',
+])
+
+function notFound(): Response {
+  return new Response('', { status: 404, headers: { ...corsHeaders } })
 }
 
 async function tryMarkdownNegotiation(
@@ -146,7 +162,11 @@ export default {
       return methodNotAllowed('POST, OPTIONS')
     }
 
-    if (url.pathname === '/.well-known/api-catalog.json') {
+    // RFC 9727 pide la ruta SIN .json; servimos ambas con el mismo linkset.
+    if (
+      url.pathname === '/.well-known/api-catalog' ||
+      url.pathname === '/.well-known/api-catalog.json'
+    ) {
       if (request.method !== 'GET') return methodNotAllowed('GET')
       return jsonResponse(apiCatalog, 'application/linkset+json')
     }
@@ -154,6 +174,21 @@ export default {
     if (url.pathname === '/.well-known/mcp/server-card.json') {
       if (request.method !== 'GET') return methodNotAllowed('GET')
       return jsonResponse(mcpServerCard, 'application/json')
+    }
+
+    if (url.pathname === '/.well-known/agent-card.json') {
+      if (request.method !== 'GET') return methodNotAllowed('GET')
+      return jsonResponse(agentCard, 'application/json')
+    }
+
+    if (url.pathname === '/.well-known/agent-skills/index.json') {
+      if (request.method !== 'GET') return methodNotAllowed('GET')
+      return jsonResponse(agentSkills, 'application/json')
+    }
+
+    // OAuth / OIDC: no existen en este sitio -> 404 honesto (no SPA fallback).
+    if (NOT_FOUND_PATHS.has(url.pathname)) {
+      return notFound()
     }
 
     // Content negotiation Accept: text/markdown

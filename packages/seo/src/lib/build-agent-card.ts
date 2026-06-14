@@ -33,13 +33,29 @@ interface AgentCardParams {
  */
 export function buildAgentCard(params: AgentCardParams): string {
   const baseUrl = stripTrailingSlash(params.siteUrl)
+  const endpoint = `${baseUrl}/mcp`
   const card = {
     name: 'portfolio-agent',
     description:
       "Pablo Contreras' portfolio agent — read-only CV exploration over MCP.",
     version: '0.1.0',
-    url: `${baseUrl}/mcp`,
-    preferredTransport: 'http',
+    // protocolVersion es required top-level en la A2A spec v0.3.0.
+    protocolVersion: '0.3.0',
+    url: endpoint,
+    preferredTransport: 'HTTP+JSON',
+    // supportedInterfaces (required, no-vacio): array de interfaces con su
+    // transport. Los unicos transports A2A validos son JSONRPC/GRPC/HTTP+JSON;
+    // MCP no es un transport A2A, asi que el endpoint HTTP se declara como
+    // HTTP+JSON. Se incluye protocolBinding (clave v1.0) ademas de transport
+    // (clave v0.3.0) para pasar cualquier validador.
+    supportedInterfaces: [
+      {
+        url: endpoint,
+        transport: 'HTTP+JSON',
+        protocolBinding: 'HTTP+JSON',
+        protocolVersion: '0.3.0',
+      },
+    ],
     provider: {
       organization: 'Pablo Contreras',
       url: baseUrl,

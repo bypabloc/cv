@@ -119,6 +119,12 @@ const layers = isEs
   /* Mobile-first */
   .arch {
     padding-block: var(--space-40);
+    /* Difiere el paint del bloque ASCII denso hasta que se acerca al
+       viewport: mejora el Speed Index sin reordenar la seccion ni cambiar
+       la UX. contain-intrinsic-size reserva el alto estimado para evitar
+       layout shift mientras el browser aun no lo pinto. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 640px;
   }
   .arch__header {
     display: grid;

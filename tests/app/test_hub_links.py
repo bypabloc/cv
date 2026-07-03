@@ -1,8 +1,9 @@
 """Hub cards -> hrefs derivados del entorno + navegacion cross-subdominio.
 
-Porta `tests/feature/smoke/hub-links.spec.ts`: las 5 cards del hub generan
-hrefs absolutos al subdominio del env activo y el click lleva al sitio
-correspondiente con HTTP < 400. Cubre AC-3 (env-driven site URLs).
+Porta `tests/feature/smoke/hub-links.spec.ts`: las 6 cards del hub (5
+niches + journey) generan hrefs absolutos al subdominio del env activo y el
+click lleva al sitio correspondiente con HTTP < 400. Cubre AC-3
+(env-driven site URLs).
 
 Contra DESPLEGADO los hrefs son las URLs reales del Cloudflare Pages project
 de cada niche (`https://{niche}.portfolio.{env}.the-full-stack.com`,
@@ -18,20 +19,20 @@ import pytest
 from shared import browser as browser_tools
 
 
-# Las 5 cards de niche del hub (generic resuelve al apex del env).
-_NICHE_CARDS = ('fintech', 'architect', 'leader', 'vibe', 'generic')
+# Las 6 cards del hub: 5 niches (generic resuelve al apex) + journey.
+_NICHE_CARDS = ('fintech', 'architect', 'leader', 'vibe', 'generic', 'journey')
 
 
 @pytest.mark.app
-def test_hub_renders_five_niche_cards(
+def test_hub_renders_six_site_cards(
     page: Page,
     subdomain: Callable[[str], str],
 ) -> None:
-    """El hub renderiza exactamente 5 anchors de card con data-niche.
+    """El hub renderiza exactamente 6 anchors de card con data-niche.
 
     Given el hub desplegado abierto,
     When se inspeccionan los anchors `a.hub-card[data-niche]`,
-    Then hay exactamente 5 (una card por niche del selector).
+    Then hay exactamente 6 (una card por niche del selector + journey).
     """
     # Arrange
     browser_tools.goto(page, f'{subdomain("hub")}/')
@@ -40,7 +41,7 @@ def test_hub_renders_five_niche_cards(
     count = page.locator('a.hub-card[data-niche]').count()
 
     # Assert
-    assert count == 5
+    assert count == 6
 
 
 @pytest.mark.app

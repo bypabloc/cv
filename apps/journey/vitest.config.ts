@@ -19,7 +19,9 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],
       include: ['src/lib/**/*.ts'],
-      exclude: ['**/*.d.ts'],
+      // site-config es wiring de defineSiteConfig (sin logica propia),
+      // mismo criterio que content excluyendo src/data/**.
+      exclude: ['**/*.d.ts', 'src/lib/site-config.ts'],
       thresholds: {
         perFile: true,
         statements: 80,

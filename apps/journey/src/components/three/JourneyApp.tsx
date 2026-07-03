@@ -21,6 +21,7 @@ import { useJourneyStore } from '../../lib/store'
 import type { Tier } from '../../lib/tiers'
 import { ambientAudio } from './ambient-audio'
 import { Door } from './Door'
+import { GuidedTour } from './GuidedTour'
 import { Hud } from './Hud'
 import { PlayerControls } from './PlayerControls'
 import { RoomContents } from './RoomContents'
@@ -117,7 +118,11 @@ export default function JourneyApp({ tier, locale, onExit }: JourneyAppProps) {
           {layout.doors.map((door) => (
             <Door key={door.corridorIndex} door={door} />
           ))}
-          <PlayerControls layout={layout} walls={colliders} />
+          {tier === 'reduced' ? (
+            <GuidedTour layout={layout} />
+          ) : (
+            <PlayerControls layout={layout} walls={colliders} />
+          )}
         </Canvas>
       </div>
       {/* grano + glitch de transicion al cruzar el portal */}

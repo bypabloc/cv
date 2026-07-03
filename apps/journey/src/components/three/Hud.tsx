@@ -32,6 +32,7 @@ const HUD_STRINGS = {
     aprendizajes: 'Aprendizajes',
     close: 'Cerrar (Esc)',
     map: 'Mapa (M)',
+    tourHint: 'Tour automatico — usa el Mapa para saltar de sala',
     mapTitle: 'Teletransporte',
     audioOn: 'Sonido: ON',
     audioOff: 'Sonido: OFF',
@@ -51,6 +52,7 @@ const HUD_STRINGS = {
     aprendizajes: 'Learnings',
     close: 'Close (Esc)',
     map: 'Map (M)',
+    tourHint: 'Auto tour — use the Map to jump between rooms',
     mapTitle: 'Teleport',
     audioOn: 'Sound: ON',
     audioOff: 'Sound: OFF',
@@ -100,6 +102,7 @@ export function Hud({ rooms, layout, locale, onExit }: HudProps) {
   const toggleTeleportMenu = useJourneyStore((s) => s.toggleTeleportMenu)
   const audioOn = useJourneyStore((s) => s.audioOn)
   const toggleAudio = useJourneyStore((s) => s.toggleAudio)
+  const tier = useJourneyStore((s) => s.tier)
   const [fading, setFading] = useState(false)
   const t = HUD_STRINGS[locale]
   const pastDef = past !== null ? rooms[past] : null
@@ -257,7 +260,7 @@ export function Hud({ rooms, layout, locale, onExit }: HudProps) {
       />
 
       {/* crosshair */}
-      {isLocked && !ficha && (
+      {tier === 'full' && isLocked && !ficha && (
         <div
           style={{
             position: 'absolute',
@@ -275,7 +278,7 @@ export function Hud({ rooms, layout, locale, onExit }: HudProps) {
       )}
 
       {/* prompt de interaccion */}
-      {isLocked && !ficha && prompt && (
+      {tier === 'full' && isLocked && !ficha && prompt && (
         <div
           style={{
             ...panelStyle,
@@ -300,7 +303,7 @@ export function Hud({ rooms, layout, locale, onExit }: HudProps) {
       )}
 
       {/* click para tomar el control */}
-      {!isLocked && !ficha && (
+      {tier === 'full' && !isLocked && !ficha && (
         <div
           style={{
             ...panelStyle,
@@ -320,7 +323,7 @@ export function Hud({ rooms, layout, locale, onExit }: HudProps) {
       )}
 
       {/* hints de controles */}
-      {isLocked && !ficha && (
+      {tier === 'full' && isLocked && !ficha && (
         <div
           style={{
             ...panelStyle,
@@ -332,6 +335,50 @@ export function Hud({ rooms, layout, locale, onExit }: HudProps) {
           }}
         >
           {t.controls}
+        </div>
+      )}
+
+      {/* caption del tour guiado (tier Reduced): textos por etapa */}
+      {tier === 'reduced' && zone.kind === 'room' && !contactOpen && (
+        <div
+          style={{
+            ...panelStyle,
+            position: 'absolute',
+            bottom: 56,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'min(440px, calc(100vw - 24px))',
+          }}
+        >
+          {(() => {
+            const room = rooms[zone.index]
+            if (!room) {
+              return null
+            }
+            const texts = room.texts[locale]
+            return (
+              <>
+                <strong>
+                  {texts.title} · {texts.period}
+                </strong>
+                <p style={{ margin: '0.3rem 0 0', opacity: 0.85 }}>
+                  {t.retos}: {texts.retos[0] ?? ''}
+                </p>
+                <p style={{ margin: '0.25rem 0 0', opacity: 0.85 }}>
+                  {t.aprendizajes}: {texts.aprendizajes[0] ?? ''}
+                </p>
+                <p
+                  style={{
+                    margin: '0.35rem 0 0',
+                    fontSize: '0.7rem',
+                    opacity: 0.6,
+                  }}
+                >
+                  {t.tourHint}
+                </p>
+              </>
+            )
+          })()}
         </div>
       )}
 

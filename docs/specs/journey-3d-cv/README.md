@@ -15,7 +15,7 @@
 | Plan detallado (este doc) | HECHO |
 | Eleccion del usuario | HECHO (2026-07-02): **Propuesta A**, MVP 3 salas |
 | Plan de ejecucion (secciones 8-11) | HECHO — ver [07](07-implementacion-mvp.md)-[10](10-verificacion-e2e.md) |
-| Implementacion Propuesta A (MVP) | EN CURSO — rama `feature/journey-3d-propuesta-a` |
+| Implementacion Propuesta A (MVP) | CODIGO COMPLETO en `feature/journey-3d-propuesta-a` (C1-C8); pendiente: verificacion visual manual del usuario + push/PR |
 
 ### Decisiones de arranque (2026-07-02 — no reabrir sin el usuario)
 

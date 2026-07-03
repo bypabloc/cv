@@ -9,6 +9,7 @@ import { Text } from '@react-three/drei'
 import { useMemo, useState } from 'react'
 import { useJourneyStore } from '../../../lib/store'
 import { Npc } from '../Npc'
+import { TEXT_FONT } from '../text-font'
 import { useInteractable } from '../use-interactable'
 import { PALETTES } from './palettes'
 import {
@@ -68,7 +69,12 @@ function ProjectsBoard({
               emissiveIntensity={0.35}
             />
           </mesh>
-          <Text position={[0, 0, 0.04]} fontSize={0.11} color="#f5f2e8">
+          <Text
+            position={[0, 0, 0.04]}
+            fontSize={0.11}
+            color="#f5f2e8"
+            font={TEXT_FONT}
+          >
             {caption}
           </Text>
         </group>

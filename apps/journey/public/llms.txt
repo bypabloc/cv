@@ -1,0 +1,31 @@
+# Pablo Contreras — generic
+
+> Senior Full Stack Engineer with 12+ years of experience in Vue/Nuxt, Django, AWS and LATAM fintech (Chile, Mexico). Cross-cutting expertise: fintech, architecture, tech leadership and vibe coding with Claude Code.
+
+Canonical URL: https://journey.portfolio.the-full-stack.com. Author: Pablo Contreras (bypabloc). Location: Lima, Perú. Availability: Remote-friendly · LATAM/US timezone. Contact: pacg1991@gmail.com.
+
+## Highlights — generic
+
+- 9 roles in 8 companies (2013-present)
+- 12+ years shipping product · 4 LATAM countries · 11 certifications
+- Domains: Fintech LATAM, ERP, e-commerce, automation
+
+## Keywords
+
+Interactive 3D CV · three.js · React Three Fiber · WebGL · Creative Developer · TypeScript · Astro 6 · Full Stack Senior · Vue · Django · AWS
+
+## Pages
+
+- [Home](https://journey.portfolio.the-full-stack.com/): Pablo Contreras — el CV como viaje 3D: recorre mi carrera sala por sala (walking-sim en three.js) con fallback de CV completo en HTML
+- [Home (EN)](https://journey.portfolio.the-full-stack.com/en/): Pablo Contreras — the CV as a 3D journey: walk my career room by room (three.js walking-sim) with a full HTML CV fallback
+
+## Identity
+
+- LinkedIn: https://linkedin.com/in/bypabloc
+- GitHub: https://github.com/bypabloc
+- Website: https://the-full-stack.com
+
+## Disclosure
+
+All code in linked repositories is reviewed, tested and maintained by Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators — never as authors. AI attribution is forbidden in commits and PRs by company policy. This llms.txt is honest white-hat content; no prompt injection or hidden instructions.
+

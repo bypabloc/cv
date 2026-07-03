@@ -14,6 +14,7 @@ import type {
 } from '../../../lib/layout'
 import type { RoomDef } from '../../../lib/rooms'
 import { useJourneyStore } from '../../../lib/store'
+import { TEXT_FONT } from '../text-font'
 import { plasterTexture, tileTexture } from '../textures'
 import { Desk, ExitPortal, PaperStack, ScreenPanel } from './shared'
 
@@ -180,6 +181,7 @@ export default function PastScene({
         rotation-y={Math.PI}
         fontSize={0.22}
         color="#c8a878"
+        font={TEXT_FONT}
       >
         {locale === 'es' ? `ANTES · ${def.year}` : `BEFORE · ${def.year}`}
       </Text>

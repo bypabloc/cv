@@ -20,6 +20,7 @@ import {
 import type { RoomDef, RoomId } from '../../lib/rooms'
 import { useJourneyStore } from '../../lib/store'
 import { PALETTES } from './rooms/palettes'
+import { TEXT_FONT } from './text-font'
 import { plasterTexture, tileTexture } from './textures'
 
 interface StructureProps {
@@ -232,6 +233,7 @@ export function Structure({ layout, rooms, walls }: StructureProps) {
             color="#8fa3c8"
             anchorX="center"
             anchorY="middle"
+            font={TEXT_FONT}
           >
             {corridor.year}
           </Text>

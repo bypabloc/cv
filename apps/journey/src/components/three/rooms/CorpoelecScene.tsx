@@ -9,6 +9,7 @@ import { Text } from '@react-three/drei'
 import { useMemo, useState } from 'react'
 import { useJourneyStore } from '../../../lib/store'
 import { Npc } from '../Npc'
+import { TEXT_FONT } from '../text-font'
 import { makeCanvasTexture } from '../textures'
 import { useInteractable } from '../use-interactable'
 import { PALETTES } from './palettes'
@@ -192,6 +193,7 @@ export default function CorpoelecScene({ room }: RoomSceneProps) {
         fontSize={0.09}
         color="#f2b705"
         anchorX="center"
+        font={TEXT_FONT}
       >
         {locale === 'es' ? 'INVENTARIO' : 'INVENTORY'}
       </Text>
@@ -237,6 +239,7 @@ export default function CorpoelecScene({ room }: RoomSceneProps) {
         rotation-y={Math.PI / 2}
         fontSize={0.14}
         color={pal.accent}
+        font={TEXT_FONT}
       >
         YARACUY · CARABOBO · LARA
       </Text>

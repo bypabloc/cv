@@ -11,6 +11,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { MeshStandardMaterial } from 'three'
 import { useJourneyStore } from '../../../lib/store'
 import { Npc } from '../Npc'
+import { TEXT_FONT } from '../text-font'
 import { makeCanvasTexture } from '../textures'
 import { useInteractable } from '../use-interactable'
 import { PALETTES } from './palettes'
@@ -110,10 +111,20 @@ function Orchestration({
           emissiveIntensity={0.4}
         />
       </mesh>
-      <Text position={[-1.1, 1.08, 0]} fontSize={0.12} color="#9db8ff">
+      <Text
+        position={[-1.1, 1.08, 0]}
+        fontSize={0.12}
+        color="#9db8ff"
+        font={TEXT_FONT}
+      >
         CHILE
       </Text>
-      <Text position={[1.1, 1.08, 0]} fontSize={0.12} color="#9db8ff">
+      <Text
+        position={[1.1, 1.08, 0]}
+        fontSize={0.12}
+        color="#9db8ff"
+        font={TEXT_FONT}
+      >
         MEXICO
       </Text>
       {/* conexiones */}
@@ -375,10 +386,20 @@ export default function CimaScene({ room }: RoomSceneProps) {
             emissiveIntensity={0.12}
           />
         </mesh>
-        <Text position={[0, 1.35, 0.09]} fontSize={0.13} color="#9db8ff">
+        <Text
+          position={[0, 1.35, 0.09]}
+          fontSize={0.13}
+          color="#9db8ff"
+          font={TEXT_FONT}
+        >
           {locale === 'es' ? 'PROXIMAMENTE' : 'COMING SOON'}
         </Text>
-        <Text position={[0, 1.1, 0.09]} fontSize={0.08} color="#5f77a8">
+        <Text
+          position={[0, 1.1, 0.09]}
+          fontSize={0.08}
+          color="#5f77a8"
+          font={TEXT_FONT}
+        >
           {locale === 'es' ? 'ideas futuras' : 'future ideas'}
         </Text>
       </group>

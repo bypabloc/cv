@@ -485,12 +485,21 @@ importers:
       '@astrojs/react':
         specifier: ^4.4.2
         version: 4.4.2(@types/node@24.12.4)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tsx@4.21.0)(yaml@2.9.0)
+      '@astrojs/sitemap':
+        specifier: ^3.7.2
+        version: 3.7.2
       '@portfolio/app-shared':
         specifier: workspace:*
         version: link:../../packages/app-shared
       '@portfolio/content':
         specifier: workspace:*
         version: link:../../packages/content
+      '@portfolio/markdown-export':
+        specifier: workspace:*
+        version: link:../../packages/markdown-export
+      '@portfolio/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@portfolio/seo':
         specifier: workspace:*
         version: link:../../packages/seo
@@ -558,6 +567,9 @@ importers:
       vite:
         specifier: ^7.3.3
         version: 7.3.3(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.9.0)
+      vite-node:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@24.12.4)(lightningcss@1.32.0)
       vitest:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@24.12.4)(happy-dom@15.11.7)(lightningcss@1.32.0)(msw@2.14.6(@types/node@24.12.4)(typescript@5.9.3))

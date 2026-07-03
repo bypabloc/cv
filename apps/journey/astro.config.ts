@@ -2,13 +2,14 @@
  * @config astro
  * @description Astro config para apps/journey (CV como viaje 3D, Propuesta A).
  *   i18n es default + en, React (isla 3D), Tailwind v4 via @tailwindcss/vite.
- *   Sin sitemap ni postbuilds de discovery: la app aun no se deploya (el PR
- *   de deploy los agrega junto con el SiteKey 'journey').
+ *   Sitemap + postbuilds de discovery (llms.txt, .well-known, _worker.js)
+ *   como los niches — ver scripts/.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@astrojs/react'
+import sitemap from '@astrojs/sitemap'
 import yaml from '@modyfi/vite-plugin-yaml'
 import { buildSiteUrl } from '@portfolio/app-shared/lib/site-urls'
 import tailwindcss from '@tailwindcss/vite'
@@ -35,11 +36,7 @@ if (!process.env.PUBLIC_API_ENDPOINT && existsSync(CLIENT_ENV_LOCAL)) {
   }
 }
 
-// journey aun no es un SiteKey (sin deploy en este PR): deriva su hostname
-// del patron de los niches (`journey.<BASE_DOMAIN>`) a partir de otro key.
-const SITE =
-  process.env.SITE_URL ??
-  buildSiteUrl('fintech').replace('//fintech.', '//journey.')
+const SITE = process.env.SITE_URL ?? buildSiteUrl('journey')
 
 export default defineConfig({
   site: SITE,
@@ -52,7 +49,7 @@ export default defineConfig({
       prefixDefaultLocale: false,
     },
   },
-  integrations: [react()],
+  integrations: [sitemap(), react()],
   vite: {
     plugins: [yaml({ schema: JSON_SCHEMA }), tailwindcss()],
     optimizeDeps: {

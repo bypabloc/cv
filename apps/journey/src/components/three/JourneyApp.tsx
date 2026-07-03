@@ -6,9 +6,10 @@
  *   filter sobre el canvas (barato, sin post-processing).
  *   Se carga por dynamic import desde la isla (chunk separado del CV).
  */
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
-import { ACESFilmicToneMapping } from 'three'
+import { AgXToneMapping, PMREMGenerator } from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import {
   buildLayout,
   buildPastRooms,
@@ -25,7 +26,32 @@ import { GuidedTour } from './GuidedTour'
 import { Hud } from './Hud'
 import { PlayerControls } from './PlayerControls'
 import { RoomContents } from './RoomContents'
+import { ShadowGroup } from './ShadowGroup'
 import { Structure } from './Structure'
+
+/**
+ * IBL procedural self-hosted: RoomEnvironment (viene dentro de three, cero
+ * CDN — el preset de drei Environment descarga HDRIs de raw.githack y la
+ * CSP lo prohibe) via PMREM como scene.environment. Es lo que hace que
+ * MeshStandardMaterial tenga algo que reflejar y no se vea "plastico".
+ */
+function ProceduralEnvironment({ intensity }: { intensity: number }) {
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  useEffect(() => {
+    const pmrem = new PMREMGenerator(gl)
+    const roomEnv = new RoomEnvironment()
+    const target = pmrem.fromScene(roomEnv, 0.04)
+    scene.environment = target.texture
+    scene.environmentIntensity = intensity
+    return () => {
+      scene.environment = null
+      target.dispose()
+      pmrem.dispose()
+    }
+  }, [gl, scene, intensity])
+  return null
+}
 
 interface JourneyAppProps {
   tier: Exclude<Tier, 'static'>
@@ -92,8 +118,9 @@ export default function JourneyApp({ tier, locale, onExit }: JourneyAppProps) {
         }}
       >
         <Canvas
-          shadows={tier === 'full'}
+          shadows={tier === 'full' ? 'soft' : false}
           dpr={tier === 'full' ? [1, 2] : [1, 1.5]}
+          gl={{ antialias: true, powerPreference: 'high-performance' }}
           camera={{
             fov: 72,
             near: 0.05,
@@ -101,13 +128,18 @@ export default function JourneyApp({ tier, locale, onExit }: JourneyAppProps) {
             position: [0, EYE_HEIGHT, startZ],
           }}
           onCreated={({ gl, camera }) => {
-            gl.toneMapping = ACESFilmicToneMapping
+            // AgX (r160+) sobre el ACES default de R3F: ACES oscurece y
+            // desatura interiores; AgX + exposure ~1.15 da el look natural
+            gl.toneMapping = AgXToneMapping
+            gl.toneMappingExposure = 1.15
             camera.lookAt(0, EYE_HEIGHT, startZ + 5)
           }}
         >
           <color attach="background" args={['#07070b']} />
           <fog attach="fog" args={['#07070b', 12, 70]} />
-          <hemisphereLight args={['#94a7c8', '#2a2622', 0.45]} />
+          <ProceduralEnvironment intensity={0.6} />
+          {/* fill bajo: el relleno real lo da el environment (IBL) */}
+          <hemisphereLight args={['#94a7c8', '#2a2622', 0.3]} />
           <Structure layout={layout} rooms={rooms} walls={walls} />
           <RoomContents
             rooms={rooms}
@@ -115,9 +147,11 @@ export default function JourneyApp({ tier, locale, onExit }: JourneyAppProps) {
             pastRooms={pastRooms}
             pastWalls={pastWalls}
           />
-          {layout.doors.map((door) => (
-            <Door key={door.corridorIndex} door={door} />
-          ))}
+          <ShadowGroup>
+            {layout.doors.map((door) => (
+              <Door key={door.corridorIndex} door={door} />
+            ))}
+          </ShadowGroup>
           {tier === 'reduced' ? (
             <GuidedTour layout={layout} />
           ) : (
@@ -125,6 +159,17 @@ export default function JourneyApp({ tier, locale, onExit }: JourneyAppProps) {
           )}
         </Canvas>
       </div>
+      {/* vignette CSS: sensacion de lente sin lib de post-processing */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          background:
+            'radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,0.4) 100%)',
+        }}
+      />
       {/* grano + glitch de transicion al cruzar el portal */}
       {inPast && (
         <div

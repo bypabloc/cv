@@ -18,6 +18,7 @@ import {
   type WallBox,
 } from '../../lib/layout'
 import type { RoomDef, RoomId } from '../../lib/rooms'
+import { useJourneyStore } from '../../lib/store'
 import { PALETTES } from './rooms/palettes'
 import { plasterTexture, tileTexture } from './textures'
 
@@ -76,25 +77,42 @@ interface RoomTextures {
 }
 
 export function Structure({ layout, rooms, walls }: StructureProps) {
-  const corridorTexture = useMemo(
-    () => plasterTexture('#2b2b33', '#9fb4ff', 13),
-    [],
-  )
-  const ceilingTexture = useMemo(
-    () => plasterTexture('#202027', '#000000', 5),
-    [],
-  )
+  const tier = useJourneyStore((s) => s.tier)
+  // repeat en espacio de mundo: texel density consistente (la causa #1 del
+  // look pixelado era 1 textura estirada sobre paredes/pisos de 8-13m)
+  const corridorTexture = useMemo(() => {
+    const texture = plasterTexture('#2b2b33', '#9fb4ff', 13, true)
+    texture.repeat.set(2, 1)
+    return texture
+  }, [])
+  const corridorFloorTexture = useMemo(() => {
+    const texture = tileTexture('#26262e', '#1c1c22', 2, 3)
+    texture.repeat.set(1, 2.5)
+    return texture
+  }, [])
+  const ceilingTexture = useMemo(() => {
+    const texture = plasterTexture('#202027', '#000000', 5)
+    texture.repeat.set(3, 3)
+    return texture
+  }, [])
   const roomTextures = useMemo(() => {
     const map: Partial<Record<RoomId, RoomTextures>> = {}
     for (const def of rooms) {
       const pal = PALETTES[def.id]
-      map[def.id] = {
-        wall: plasterTexture(pal.wall, pal.wallSpeck, 7 + def.order),
-        floor: tileTexture(pal.floor, pal.floorLine, 5, 11 + def.order),
+      const room = layout.rooms[def.order]
+      // repeat vertical = 1 exacto: el gradiente AO del canvas mapea
+      // piso->techo (una franja oscura a media pared delataria el tile)
+      const wall = plasterTexture(pal.wall, pal.wallSpeck, 7 + def.order, true)
+      wall.repeat.set(2.5, 1)
+      const floor = tileTexture(pal.floor, pal.floorLine, 2, 11 + def.order)
+      if (room) {
+        // 2 baldosas por textura -> repeat = metros/2 = baldosas de ~1m
+        floor.repeat.set(room.width / 2, room.depth / 2)
       }
+      map[def.id] = { wall, floor }
     }
     return map
-  }, [rooms])
+  }, [rooms, layout])
   const headers = useMemo(() => buildHeaders(layout), [layout])
 
   const wallTextureFor = (wall: WallBox): CanvasTexture => {
@@ -156,7 +174,7 @@ export function Structure({ layout, rooms, walls }: StructureProps) {
               <planeGeometry args={[room.width, room.depth]} />
               <meshStandardMaterial
                 map={textures ? textures.floor : corridorTexture}
-                roughness={0.9}
+                roughness={0.62}
               />
             </mesh>
             <mesh
@@ -171,7 +189,11 @@ export function Structure({ layout, rooms, walls }: StructureProps) {
               intensity={14 * intensity}
               distance={room.width * 2.2}
               decay={1.6}
-              castShadow={false}
+              castShadow={tier === 'full'}
+              shadow-mapSize={[1024, 1024]}
+              shadow-bias={-0.0005}
+              shadow-normalBias={0.02}
+              shadow-camera-near={0.2}
               color={pal.lightColor}
             />
           </group>
@@ -183,9 +205,10 @@ export function Structure({ layout, rooms, walls }: StructureProps) {
           <mesh
             rotation-x={-Math.PI / 2}
             position={[corridor.x, 0, corridor.z]}
+            receiveShadow
           >
             <planeGeometry args={[corridor.width, corridor.depth]} />
-            <meshStandardMaterial map={corridorTexture} roughness={0.9} />
+            <meshStandardMaterial map={corridorFloorTexture} roughness={0.75} />
           </mesh>
           <mesh
             rotation-x={Math.PI / 2}

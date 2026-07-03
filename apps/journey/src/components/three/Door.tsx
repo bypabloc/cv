@@ -71,11 +71,7 @@ export function Door({ door }: DoorProps) {
         {/* manija */}
         <mesh position={[DOOR_WIDTH - 0.14, DOOR_HEIGHT / 2, 0.06]}>
           <sphereGeometry args={[0.045, 12, 12]} />
-          <meshStandardMaterial
-            color="#c9b037"
-            metalness={0.7}
-            roughness={0.3}
-          />
+          <meshStandardMaterial color="#c9b037" metalness={1} roughness={0.3} />
         </mesh>
       </group>
     </group>

@@ -5,16 +5,16 @@
  *   del pasado solo mientras se visita. El `Suspense` queda cubierto por el
  *   pasillo/puerta (el "pasillo de carga").
  */
-import { lazy, Suspense } from 'react'
+import { type ComponentType, lazy, Suspense } from 'react'
 import type { JourneyLayout, PastRoomLayout, WallBox } from '../../lib/layout'
 import type { RoomDef, RoomId } from '../../lib/rooms'
 import { useJourneyStore } from '../../lib/store'
 import type { RoomSceneProps } from './rooms/shared'
+import { ShadowGroup } from './ShadowGroup'
 
-const SCENES: Record<
-  RoomId,
-  React.LazyExoticComponent<(props: RoomSceneProps) => React.JSX.Element>
-> = {
+// ComponentType importado de 'react' (nunca el namespace global React.*:
+// resolveria al @types/react 19 hoisted del admin -> TS2786 'bigint')
+const SCENES: Record<RoomId, ComponentType<RoomSceneProps>> = {
   aula: lazy(() => import('./rooms/AulaScene')),
   corpoelec: lazy(() => import('./rooms/CorpoelecScene')),
   cima: lazy(() => import('./rooms/CimaScene')),
@@ -59,18 +59,22 @@ export function RoomContents({
         const Scene = SCENES[def.id]
         return (
           <Suspense key={def.id} fallback={null}>
-            <Scene room={room} def={def} />
+            <ShadowGroup>
+              <Scene room={room} def={def} />
+            </ShadowGroup>
           </Suspense>
         )
       })}
       {pastDef && pastRoom && (
         <Suspense fallback={null}>
-          <PastScene
-            def={pastDef}
-            pastRoom={pastRoom}
-            walls={pastWalls}
-            layout={layout}
-          />
+          <ShadowGroup>
+            <PastScene
+              def={pastDef}
+              pastRoom={pastRoom}
+              walls={pastWalls}
+              layout={layout}
+            />
+          </ShadowGroup>
         </Suspense>
       )}
     </group>

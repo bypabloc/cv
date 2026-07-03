@@ -121,7 +121,7 @@ export default function PastScene({
 }: PastSceneProps) {
   const locale = useJourneyStore((s) => s.locale)
   const wallTexture = useMemo(
-    () => plasterTexture('#3a352c', '#c8b088', 21),
+    () => plasterTexture('#3a352c', '#c8b088', 21, true),
     [],
   )
   const floorTexture = useMemo(

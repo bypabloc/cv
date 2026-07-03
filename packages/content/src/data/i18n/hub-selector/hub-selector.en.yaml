@@ -11,13 +11,14 @@ heroHeadline:
   mid: "angles."
   tail: "Pick the one that fits."
 
-heroIntro: "Pick how to read my profile: fintech, architecture, leadership, vibe coding or full stack. Five angles, one single story."
+heroIntro: "Pick how to read my profile: fintech, architecture, leadership, vibe coding or full stack. Five angles, one single story — or walk it in 3D like a game."
 
 cardCta: "Enter"
 otherLocaleLink: "Versión en español →"
 
-# The 5 selector cards, in render order. The accent and URL are resolved in
+# The 6 selector cards, in render order. The accent and URL are resolved in
 # code (SITE_URLS + DS tokens) — only the text lives here.
+# `journey` is not a CV niche: it is the CV-as-a-3D-journey site.
 cards:
   - niche: generic
     title: "Senior Full Stack"
@@ -34,3 +35,6 @@ cards:
   - niche: vibe
     title: "Vibe Coding"
     blurb: "Claude Code · Cursor · dev tools · AI workflows"
+  - niche: journey
+    title: "Interactive 3D CV"
+    blurb: "Walk through my career like a game · walking-sim · three.js"

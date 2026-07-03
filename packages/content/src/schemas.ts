@@ -580,10 +580,17 @@ export const CurriculumOverrideSchema = z.object({
 })
 export type CurriculumOverride = z.infer<typeof CurriculumOverrideSchema>
 
-/** Card del selector del hub: titulo + blurb por niche. */
+/**
+ * Destino de una card del hub: un niche del CV o el sitio `journey`
+ * (el CV como viaje 3D — es un sitio desplegable, NO un niche del CV).
+ */
+export const HubCardSiteSchema = z.union([NicheSchema, z.literal('journey')])
+export type HubCardSite = z.infer<typeof HubCardSiteSchema>
+
+/** Card del selector del hub: titulo + blurb por sitio destino. */
 export const HubSelectorCardSchema = z.object({
-  /** Niche al que apunta la card (la URL se deriva de SITE_URLS). */
-  niche: NicheSchema,
+  /** Sitio al que apunta la card (la URL se deriva de SITE_URLS). */
+  niche: HubCardSiteSchema,
   title: z.string().min(1),
   blurb: z.string().min(1),
 })

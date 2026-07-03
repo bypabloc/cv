@@ -40,9 +40,10 @@ TRACKING_EVENT_TYPE_ID = '019e372b-e0a7-7154-8279-8829bcf6a08c'
 # Niche valido para cv/tracking.
 NICHE = 'fintech'
 
-# Niches DESPLEGADOS (cada uno es un Cloudflare Pages project propio).
+# Sitios DESPLEGADOS (cada uno es un Cloudflare Pages project propio).
 # `generic` NO esta aqui: es el apex (ver _NICHE_ORIGIN + niche_origin).
-NICHES = ('hub', 'fintech', 'architect', 'leader', 'vibe')
+# `journey` no es un niche del CV pero cuelga del subdominio igual.
+NICHES = ('hub', 'fintech', 'architect', 'leader', 'vibe', 'journey')
 
 # Origins de los 6 niches DESPLEGADOS por env, para el modulo `app`.
 # Patron de los niches:  {niche}.portfolio.{env}.the-full-stack.com

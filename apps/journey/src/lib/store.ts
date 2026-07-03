@@ -21,6 +21,11 @@ export interface Interactable {
 
 export type FichaKind = 'retos' | 'aprendizajes'
 
+export interface Vec2Like {
+  x: number
+  z: number
+}
+
 export interface JourneyStateData {
   tier: Tier
   locale: Locale
@@ -30,6 +35,12 @@ export interface JourneyStateData {
   interactables: Record<string, Interactable>
   activeInteractableId: string | null
   isLocked: boolean
+  /** Indice de la sala cuyo "antes" se esta visitando (portal al pasado). */
+  past: number | null
+  /** Teleport pendiente que PlayerControls consume en el proximo frame. */
+  teleportTarget: Vec2Like | null
+  /** Panel de contacto (CTA de la CIMA). */
+  contactOpen: boolean
 }
 
 export interface JourneyState extends JourneyStateData {
@@ -43,6 +54,12 @@ export interface JourneyState extends JourneyStateData {
   setActiveInteractable: (id: string | null) => void
   activateCurrent: () => void
   setLocked: (locked: boolean) => void
+  enterPast: (roomIndex: number, spawn: Vec2Like) => void
+  exitPast: (returnTo: Vec2Like) => void
+  requestTeleport: (target: Vec2Like) => void
+  consumeTeleport: () => Vec2Like | null
+  openContact: () => void
+  closeContact: () => void
   isUiOpen: () => boolean
 }
 
@@ -55,6 +72,9 @@ export const INITIAL_JOURNEY_STATE: JourneyStateData = {
   interactables: {},
   activeInteractableId: null,
   isLocked: false,
+  past: null,
+  teleportTarget: null,
+  contactOpen: false,
 }
 
 export const useJourneyStore = create<JourneyState>()((set, get) => ({
@@ -87,5 +107,18 @@ export const useJourneyStore = create<JourneyState>()((set, get) => ({
     }
   },
   setLocked: (locked) => set({ isLocked: locked }),
-  isUiOpen: () => get().ficha !== null,
+  enterPast: (roomIndex, spawn) =>
+    set({ past: roomIndex, teleportTarget: spawn }),
+  exitPast: (returnTo) => set({ past: null, teleportTarget: returnTo }),
+  requestTeleport: (target) => set({ teleportTarget: target }),
+  consumeTeleport: () => {
+    const target = get().teleportTarget
+    if (target) {
+      set({ teleportTarget: null })
+    }
+    return target
+  },
+  openContact: () => set({ contactOpen: true }),
+  closeContact: () => set({ contactOpen: false }),
+  isUiOpen: () => get().ficha !== null || get().contactOpen,
 }))

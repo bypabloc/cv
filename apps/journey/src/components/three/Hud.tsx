@@ -5,9 +5,11 @@
  *   accesible) y salida al CV 2D. Todo el texto es HTML — nunca pixeles
  *   dentro del WebGL (regla dura del plan).
  */
+import { profile } from '@portfolio/content'
 import type { CSSProperties } from 'react'
 import type { Locale, RoomDef } from '../../lib/rooms'
 import { useJourneyStore } from '../../lib/store'
+import { PAST_CAPTIONS } from './rooms/palettes'
 
 interface HudProps {
   rooms: readonly RoomDef[]
@@ -26,6 +28,10 @@ const HUD_STRINGS = {
     retos: 'Retos',
     aprendizajes: 'Aprendizajes',
     close: 'Cerrar (Esc)',
+    contactTitle: 'Hablemos',
+    contactBody: 'Disponible para roles de arquitectura y liderazgo tecnico.',
+    email: 'Email',
+    downloadCv: 'Descargar CV',
   },
   en: {
     exit: 'View 2D CV',
@@ -37,6 +43,10 @@ const HUD_STRINGS = {
     retos: 'Challenges',
     aprendizajes: 'Learnings',
     close: 'Close (Esc)',
+    contactTitle: "Let's talk",
+    contactBody: 'Open to architecture and tech-leadership roles.',
+    email: 'Email',
+    downloadCv: 'Download CV',
   },
 } as const
 
@@ -54,6 +64,17 @@ const panelStyle: CSSProperties = {
   backdropFilter: 'blur(6px)',
 }
 
+const contactLinkStyle: CSSProperties = {
+  display: 'block',
+  padding: '0.5rem 0.8rem',
+  borderRadius: 8,
+  border: '1px solid color-mix(in srgb, currentColor 35%, transparent)',
+  color: 'inherit',
+  textDecoration: 'none',
+  background:
+    'color-mix(in srgb, var(--color-primary, #4f6ef7) 22%, transparent)',
+}
+
 export function Hud({ rooms, locale, onExit }: HudProps) {
   const zone = useJourneyStore((s) => s.zone)
   const activeId = useJourneyStore((s) => s.activeInteractableId)
@@ -61,9 +82,16 @@ export function Hud({ rooms, locale, onExit }: HudProps) {
   const ficha = useJourneyStore((s) => s.ficha)
   const closeFicha = useJourneyStore((s) => s.closeFicha)
   const isLocked = useJourneyStore((s) => s.isLocked)
+  const past = useJourneyStore((s) => s.past)
+  const contactOpen = useJourneyStore((s) => s.contactOpen)
+  const closeContact = useJourneyStore((s) => s.closeContact)
   const t = HUD_STRINGS[locale]
+  const pastDef = past !== null ? rooms[past] : null
 
   const zoneLabel = (() => {
+    if (pastDef) {
+      return PAST_CAPTIONS[pastDef.id][locale]
+    }
     if (zone.kind === 'room') {
       const room = rooms[zone.index]
       if (!room) {
@@ -187,6 +215,73 @@ export function Hud({ rooms, locale, onExit }: HudProps) {
         >
           {t.controls}
         </div>
+      )}
+
+      {/* panel de contacto (CTA de la CIMA) */}
+      {contactOpen && (
+        <aside
+          aria-label={t.contactTitle}
+          style={{
+            ...panelStyle,
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'min(360px, calc(100vw - 48px))',
+            pointerEvents: 'auto',
+            padding: '1.2rem 1.3rem',
+            textAlign: 'center',
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: '1.15rem' }}>{t.contactTitle}</h2>
+          <p style={{ opacity: 0.8, fontSize: '0.85rem' }}>{t.contactBody}</p>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              marginTop: '0.8rem',
+            }}
+          >
+            <a
+              href={`mailto:${profile.contacts.email}`}
+              style={contactLinkStyle}
+            >
+              {t.email}
+            </a>
+            <a
+              href={profile.contacts.linkedin}
+              target="_blank"
+              rel="noreferrer"
+              style={contactLinkStyle}
+            >
+              LinkedIn
+            </a>
+            <a
+              href={profile.contacts.github}
+              target="_blank"
+              rel="noreferrer"
+              style={contactLinkStyle}
+            >
+              GitHub
+            </a>
+          </div>
+          <button
+            type="button"
+            onClick={closeContact}
+            style={{
+              marginTop: '0.9rem',
+              background: 'transparent',
+              color: 'inherit',
+              border: '1px solid currentColor',
+              borderRadius: 6,
+              padding: '0.3rem 0.7rem',
+              cursor: 'pointer',
+            }}
+          >
+            {t.close}
+          </button>
+        </aside>
       )}
 
       {/* ficha retos / aprendizajes */}

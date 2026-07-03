@@ -107,7 +107,7 @@ export function buildLayout(rooms: readonly RoomDef[]): JourneyLayout {
 
 export interface WallBox extends Box2 {
   height: number
-  source: { kind: 'room' | 'corridor'; index: number }
+  source: { kind: 'room' | 'corridor' | 'past'; index: number }
 }
 
 interface WallSegmentInput {
@@ -270,4 +270,86 @@ export function zoneAt(layout: JourneyLayout, z: number): Zone {
     }
   }
   return { kind: 'room', index: z < 0 ? 0 : layout.rooms.length - 1 }
+}
+
+export const PAST_OFFSET_X = 40
+export const PAST_ROOM_SIZE = 6
+export const PAST_ROOM_HEIGHT = 2.7
+
+export interface PastRoomLayout {
+  index: number
+  x: number
+  z: number
+  width: number
+  depth: number
+  height: number
+}
+
+/**
+ * @function buildPastRooms
+ * @description Una mini-sala "antes" por sala, desplazada PAST_OFFSET_X en X
+ *   y alineada en Z con su sala (asi zoneAt sigue reportando la sala
+ *   correcta mientras se visita el pasado). Se entra/sale por teleport
+ *   (portal), no por puertas: sus 4 muros son solidos.
+ */
+export function buildPastRooms(layout: JourneyLayout): PastRoomLayout[] {
+  return layout.rooms.map((room) => ({
+    index: room.index,
+    x: PAST_OFFSET_X,
+    z: room.z,
+    width: PAST_ROOM_SIZE,
+    depth: PAST_ROOM_SIZE,
+    height: PAST_ROOM_HEIGHT,
+  }))
+}
+
+export function buildPastWallBoxes(
+  pastRooms: readonly PastRoomLayout[],
+): WallBox[] {
+  const boxes: WallBox[] = []
+  for (const past of pastRooms) {
+    const half = past.width / 2
+    const zFront = past.z - past.depth / 2
+    const zBack = past.z + past.depth / 2
+    const source = { kind: 'past' as const, index: past.index }
+    const outerL = past.x - half - WALL_THICKNESS
+    const outerR = past.x + half + WALL_THICKNESS
+    boxes.push(
+      // frontal / trasero
+      {
+        minX: outerL,
+        maxX: outerR,
+        minZ: zFront - WALL_THICKNESS,
+        maxZ: zFront,
+        height: past.height,
+        source,
+      },
+      {
+        minX: outerL,
+        maxX: outerR,
+        minZ: zBack,
+        maxZ: zBack + WALL_THICKNESS,
+        height: past.height,
+        source,
+      },
+      // laterales
+      {
+        minX: outerL,
+        maxX: past.x - half,
+        minZ: zFront,
+        maxZ: zBack,
+        height: past.height,
+        source,
+      },
+      {
+        minX: past.x + half,
+        maxX: outerR,
+        minZ: zFront,
+        maxZ: zBack,
+        height: past.height,
+        source,
+      },
+    )
+  }
+  return boxes
 }

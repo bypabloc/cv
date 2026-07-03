@@ -2,11 +2,13 @@
  * @component Structure
  * @description Estructura procedural del recorrido: muros (las MISMAS cajas
  *   que los colisionadores), pisos, techos, dinteles sobre las puertas y la
- *   luz base por sala/pasillo. El eje seniority se ve aqui: cada sala usa la
- *   `lightIntensity` de su RoomDef y su tamaño ya viene escalado del layout.
+ *   luz base por sala/pasillo. El eje seniority se ve aqui: cada sala usa
+ *   la paleta de su rubro y la `lightIntensity` de su RoomDef, y su tamaño
+ *   ya viene escalado del layout.
  */
 import { Text } from '@react-three/drei'
 import { useMemo } from 'react'
+import type { CanvasTexture } from 'three'
 import {
   CORRIDOR_HEIGHT,
   DOOR_HEIGHT,
@@ -15,7 +17,8 @@ import {
   WALL_THICKNESS,
   type WallBox,
 } from '../../lib/layout'
-import type { RoomDef } from '../../lib/rooms'
+import type { RoomDef, RoomId } from '../../lib/rooms'
+import { PALETTES } from './rooms/palettes'
 import { plasterTexture, tileTexture } from './textures'
 
 interface StructureProps {
@@ -43,7 +46,6 @@ function buildHeaders(layout: JourneyLayout): HeaderBox[] {
     if (!roomBefore || !roomAfter) {
       continue
     }
-    // dintel en el muro trasero de la sala origen (arranque del pasillo)
     const backZ = roomBefore.z + roomBefore.depth / 2
     headers.push({
       key: `header-back-${door.corridorIndex}`,
@@ -54,7 +56,6 @@ function buildHeaders(layout: JourneyLayout): HeaderBox[] {
       height: roomBefore.height - DOOR_HEIGHT,
       depth: WALL_THICKNESS,
     })
-    // dintel en el muro frontal de la sala destino (plano de la puerta)
     const frontZ = roomAfter.z - roomAfter.depth / 2
     headers.push({
       key: `header-front-${door.corridorIndex}`,
@@ -69,53 +70,82 @@ function buildHeaders(layout: JourneyLayout): HeaderBox[] {
   return headers
 }
 
+interface RoomTextures {
+  wall: CanvasTexture
+  floor: CanvasTexture
+}
+
 export function Structure({ layout, rooms, walls }: StructureProps) {
-  const wallTexture = useMemo(() => plasterTexture('#34343e', '#ffffff'), [])
   const corridorTexture = useMemo(
     () => plasterTexture('#2b2b33', '#9fb4ff', 13),
     [],
   )
-  const floorTexture = useMemo(() => tileTexture('#26262d', '#1c1c22'), [])
   const ceilingTexture = useMemo(
     () => plasterTexture('#202027', '#000000', 5),
     [],
   )
+  const roomTextures = useMemo(() => {
+    const map: Partial<Record<RoomId, RoomTextures>> = {}
+    for (const def of rooms) {
+      const pal = PALETTES[def.id]
+      map[def.id] = {
+        wall: plasterTexture(pal.wall, pal.wallSpeck, 7 + def.order),
+        floor: tileTexture(pal.floor, pal.floorLine, 5, 11 + def.order),
+      }
+    }
+    return map
+  }, [rooms])
   const headers = useMemo(() => buildHeaders(layout), [layout])
+
+  const wallTextureFor = (wall: WallBox): CanvasTexture => {
+    if (wall.source.kind === 'room') {
+      const id = layout.rooms[wall.source.index]?.id
+      const textures = id ? roomTextures[id] : undefined
+      if (textures) {
+        return textures.wall
+      }
+    }
+    return corridorTexture
+  }
 
   return (
     <group>
-      {walls.map((wall) => {
-        const width = wall.maxX - wall.minX
-        const depth = wall.maxZ - wall.minZ
-        return (
-          <mesh
-            key={`wall-${wall.minX}:${wall.maxX}:${wall.minZ}:${wall.maxZ}`}
-            position={[
-              (wall.minX + wall.maxX) / 2,
-              wall.height / 2,
-              (wall.minZ + wall.maxZ) / 2,
-            ]}
-            receiveShadow
-          >
-            <boxGeometry args={[width, wall.height, depth]} />
-            <meshStandardMaterial
-              map={wall.source.kind === 'room' ? wallTexture : corridorTexture}
-              roughness={0.95}
-            />
-          </mesh>
-        )
-      })}
+      {walls
+        .filter((wall) => wall.source.kind !== 'past')
+        .map((wall) => {
+          const width = wall.maxX - wall.minX
+          const depth = wall.maxZ - wall.minZ
+          return (
+            <mesh
+              key={`wall-${wall.minX}:${wall.maxX}:${wall.minZ}:${wall.maxZ}`}
+              position={[
+                (wall.minX + wall.maxX) / 2,
+                wall.height / 2,
+                (wall.minZ + wall.maxZ) / 2,
+              ]}
+              receiveShadow
+            >
+              <boxGeometry args={[width, wall.height, depth]} />
+              <meshStandardMaterial
+                map={wallTextureFor(wall)}
+                roughness={0.95}
+              />
+            </mesh>
+          )
+        })}
 
       {headers.map((h) => (
         <mesh key={h.key} position={[h.x, h.y, h.z]}>
           <boxGeometry args={[h.width, h.height, h.depth]} />
-          <meshStandardMaterial map={wallTexture} roughness={0.95} />
+          <meshStandardMaterial map={corridorTexture} roughness={0.95} />
         </mesh>
       ))}
 
       {layout.rooms.map((room) => {
         const def = rooms[room.index]
+        const pal = PALETTES[room.id]
         const intensity = def ? def.lightIntensity : 0.6
+        const textures = roomTextures[room.id]
         return (
           <group key={`room-${room.id}`}>
             <mesh
@@ -124,7 +154,10 @@ export function Structure({ layout, rooms, walls }: StructureProps) {
               receiveShadow
             >
               <planeGeometry args={[room.width, room.depth]} />
-              <meshStandardMaterial map={floorTexture} roughness={0.9} />
+              <meshStandardMaterial
+                map={textures ? textures.floor : corridorTexture}
+                roughness={0.9}
+              />
             </mesh>
             <mesh
               rotation-x={Math.PI / 2}
@@ -139,7 +172,7 @@ export function Structure({ layout, rooms, walls }: StructureProps) {
               distance={room.width * 2.2}
               decay={1.6}
               castShadow={false}
-              color="#ffe9c9"
+              color={pal.lightColor}
             />
           </group>
         )
@@ -152,7 +185,7 @@ export function Structure({ layout, rooms, walls }: StructureProps) {
             position={[corridor.x, 0, corridor.z]}
           >
             <planeGeometry args={[corridor.width, corridor.depth]} />
-            <meshStandardMaterial map={floorTexture} roughness={0.9} />
+            <meshStandardMaterial map={corridorTexture} roughness={0.9} />
           </mesh>
           <mesh
             rotation-x={Math.PI / 2}

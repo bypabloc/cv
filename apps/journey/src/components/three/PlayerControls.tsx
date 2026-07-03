@@ -166,6 +166,11 @@ export function PlayerControls({ layout, walls }: PlayerControlsProps) {
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05)
     const store = useJourneyStore.getState()
+    const teleport = store.consumeTeleport()
+    if (teleport) {
+      camera.position.x = teleport.x
+      camera.position.z = teleport.z
+    }
     if (store.isUiOpen()) {
       return
     }

@@ -6,6 +6,7 @@ settings:
 
 overrides:
   react-is: 19.2.6
+  '@types/react-reconciler@0.26.7>@types/react': 18.3.28
 
 importers:
 
@@ -8019,7 +8020,7 @@ snapshots:
 
   '@types/react-reconciler@0.26.7':
     dependencies:
-      '@types/react': 19.2.15
+      '@types/react': 18.3.28
 
   '@types/react-reconciler@0.28.9(@types/react@18.3.28)':
     dependencies:

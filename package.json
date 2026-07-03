@@ -44,6 +44,18 @@
   "pnpm": {
     "overrides": {
       "vite": "^7"
+    },
+    "packageExtensions": {
+      "@react-three/fiber@8": {
+        "peerDependencies": {
+          "@types/react": "*"
+        }
+      },
+      "@react-three/drei@9": {
+        "peerDependencies": {
+          "@types/react": "*"
+        }
+      }
     }
   }
 }

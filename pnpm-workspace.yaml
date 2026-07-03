@@ -13,5 +13,9 @@ allowBuilds:
 
 # Recharts (admin) importa react-is internamente; forzar el alias a la
 # version de React 19 para evitar el mismatch que rompe el render.
+# @types/react-reconciler 0.26.7 (dep de @react-three/fiber v8, journey)
+# declara @types/react@* y pnpm le resuelve la copia 19 del admin ->
+# ts(2786) "Canvas cannot be used as a JSX component". Se pinea a la 18.
 overrides:
   react-is: 19.2.6
+  '@types/react-reconciler@0.26.7>@types/react': 18.3.28

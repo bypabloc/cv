@@ -5,23 +5,24 @@
  *   de SITE_URLS, accent del DS). Los textos NO se hardcodean aqui.
  */
 import { SITE_URLS } from '@portfolio/app-shared'
-import { getHubSelector, type Niche } from '@portfolio/content'
+import { getHubSelector, type HubCardSite } from '@portfolio/content'
 
 export interface NicheCard {
-  niche: Niche
+  niche: HubCardSite
   url: string
   title: string
   blurb: string
   accent: string
 }
 
-/** Accent del DS por niche. Dato visual, no textual. */
-const ACCENT_BY_NICHE: Record<Niche, string> = {
+/** Accent del DS por sitio destino. Dato visual, no textual. */
+const ACCENT_BY_NICHE: Record<HubCardSite, string> = {
   generic: '#9e9e99',
   fintech: '#4f6ef7',
   architect: '#38d9d6',
   leader: '#f4b740',
   vibe: '#f06e9c',
+  journey: '#8b5cf6',
 }
 
 /**

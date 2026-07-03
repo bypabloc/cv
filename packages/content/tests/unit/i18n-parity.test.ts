@@ -70,9 +70,17 @@ describe('i18n content sanity', () => {
     }
   })
 
-  it('Given hub-selector When loaded Then it has exactly 5 cards', () => {
-    expect(hubSelector.es.cards).toHaveLength(5)
-    expect(hubSelector.en.cards).toHaveLength(5)
+  it('Given hub-selector When loaded Then it has exactly 6 cards (5 niches + journey)', () => {
+    expect(hubSelector.es.cards).toHaveLength(6)
+    expect(hubSelector.en.cards).toHaveLength(6)
+    expect(hubSelector.es.cards.map((c) => c.niche)).toEqual([
+      'generic',
+      'fintech',
+      'architect',
+      'leader',
+      'vibe',
+      'journey',
+    ])
   })
 
   it('Given the fintech niche When curriculum loaded Then hero.summary is fintech-specific (mentions financial institutions)', () => {

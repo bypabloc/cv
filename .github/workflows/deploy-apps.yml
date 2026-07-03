@@ -62,7 +62,7 @@ jobs:
           esac
 
   # ---------------------------------------------------------------------------
-  # Build de las 6 apps. SIEMPRE rebuildea (NO reusa el artifact de ci.yml).
+  # Build de las 7 apps Astro + admin. SIEMPRE rebuildea (NO reusa el artifact de ci.yml).
   #
   # Razon: el artifact de ci.yml se construye sin env vars del environment
   # destino, entonces todas las URLs y endpoints caen al fallback de
@@ -134,8 +134,8 @@ jobs:
           : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py sync_secrets --env=${{ needs.resolve-env.outputs.stage }} --category=client' para poblarlo.}"
           : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre sync_secrets --category=client.}"
           : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre sync_secrets --category=client.}"
-          # 6 apps Astro + el admin Next.js (@portfolio/admin) = 7 packages.
-          pnpm -r --filter "./apps/*" --filter "@portfolio/admin" --workspace-concurrency=7 run build
+          # 7 apps Astro + el admin Next.js (@portfolio/admin) = 8 packages.
+          pnpm -r --filter "./apps/*" --filter "@portfolio/admin" --workspace-concurrency=8 run build
 
       # Subir el artifact con un nombre estable para los jobs del matrix.
       # Incluye los 6 dist Astro + el out del admin Next.js.
@@ -177,6 +177,7 @@ jobs:
           - {name: architect, dist-dir: apps/architect/dist, project: architect}
           - {name: leader, dist-dir: apps/leader/dist, project: leader}
           - {name: vibe, dist-dir: apps/vibe/dist, project: vibe}
+          - {name: journey, dist-dir: apps/journey/dist, project: journey}
           - {name: admin, dist-dir: admin/out, project: admin}
     steps:
       - name: Download dist artifact
@@ -218,7 +219,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [generic, hub, fintech, architect, leader, vibe, admin]
+        name: [generic, hub, fintech, architect, leader, vibe, journey, admin]
     steps:
       - name: Resolve expected URL + API endpoint
         id: url
@@ -356,7 +357,7 @@ jobs:
             echo
             echo "| App | Project | URL |"
             echo "|-----|---------|-----|"
-            for niche in generic hub fintech architect leader vibe admin; do
+            for niche in generic hub fintech architect leader vibe journey admin; do
               project="${niche}${suffix}"
               if [[ "$niche" == "admin" ]]; then
                 # admin NO es apex (a diferencia de generic): cuelga de

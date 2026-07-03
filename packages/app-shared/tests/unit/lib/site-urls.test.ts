@@ -50,6 +50,11 @@ describe('SITE_URLS', () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
       expect(SITE_URLS.vibe).toBe('http://vibe.localhost:9970')
     })
+
+    it('Given env local When read SITE_URLS.journey Then returns "http://journey.localhost:9970" [AC-1]', async () => {
+      const { SITE_URLS } = await import('../../../src/lib/site-urls')
+      expect(SITE_URLS.journey).toBe('http://journey.localhost:9970')
+    })
   })
 
   describe('prod env component-based (BASE_DOMAIN=portfolio.the-full-stack.com, APEX_DOMAIN=the-full-stack.com)', () => {
@@ -80,6 +85,13 @@ describe('SITE_URLS', () => {
     it('Given env prod When read SITE_URLS.vibe Then returns "https://vibe.portfolio.the-full-stack.com" [AC-2]', async () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
       expect(SITE_URLS.vibe).toBe('https://vibe.portfolio.the-full-stack.com')
+    })
+
+    it('Given env prod When read SITE_URLS.journey Then returns "https://journey.portfolio.the-full-stack.com" [AC-2]', async () => {
+      const { SITE_URLS } = await import('../../../src/lib/site-urls')
+      expect(SITE_URLS.journey).toBe(
+        'https://journey.portfolio.the-full-stack.com',
+      )
     })
   })
 

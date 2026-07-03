@@ -11,13 +11,14 @@ heroHeadline:
   mid: "enfoques."
   tail: "Elige el que conecta."
 
-heroIntro: "Elige por dónde entrar a mi perfil: fintech, arquitectura, liderazgo, vibe coding o full stack. Cinco vistas, una sola historia."
+heroIntro: "Elige por dónde entrar a mi perfil: fintech, arquitectura, liderazgo, vibe coding o full stack. Cinco vistas, una sola historia — o recórrela en 3D como un juego."
 
 cardCta: "Entrar"
 otherLocaleLink: "English version →"
 
-# Las 5 cards del selector, en orden de render. El accent y la URL se
+# Las 6 cards del selector, en orden de render. El accent y la URL se
 # resuelven en codigo (SITE_URLS + tokens del DS) — aqui solo el texto.
+# `journey` no es un niche del CV: es el sitio del CV como viaje 3D.
 cards:
   - niche: generic
     title: "Full Stack Senior"
@@ -34,3 +35,6 @@ cards:
   - niche: vibe
     title: "Vibe Coding"
     blurb: "Claude Code · Cursor · dev tools · workflows IA"
+  - niche: journey
+    title: "CV Interactivo 3D"
+    blurb: "Recorre mi carrera como un juego · walking-sim · three.js"

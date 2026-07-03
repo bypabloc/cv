@@ -72,12 +72,10 @@ async function main() {
     }),
   )
   await write('robots.txt', buildRobotsTxt(SITE_URL))
-  // allowBlobWorkers: troika-three-text (drei Text) tipografia en un worker
-  // creado desde Blob URL; sin worker-src blob: la CSP lo bloquea.
-  await write(
-    '_headers',
-    buildHeaders({ apiEndpoint: API_ENDPOINT, allowBlobWorkers: true }),
-  )
+  // CSP identica a los niches: troika tipografia en el main thread
+  // (configureTextBuilder useWorker:false en text-font.ts), asi que no
+  // hace falta relajar worker-src/script-src con blob:.
+  await write('_headers', buildHeaders({ apiEndpoint: API_ENDPOINT }))
   await write('_redirects', buildRedirects())
   await write('openapi.json', buildOpenApi({ apiEndpoint: API_ENDPOINT }))
 

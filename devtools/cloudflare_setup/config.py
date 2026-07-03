@@ -1,7 +1,7 @@
 """
 Configuration for the portfolio Cloudflare Pages setup.
 
-Seven apps and two environments (dev | prod) -> 14 Pages projects.
+Eight apps and two environments (dev | prod) -> 16 Pages projects.
 Project name and custom domain are derived from (app, env):
 
   prod   generic -> name `generic`,        domain `the-full-stack.com` (apex)
@@ -90,8 +90,15 @@ APPS: tuple[AppConfig, ...] = (
         package_name='@portfolio/vibe',
         root_dir='apps/vibe',
     ),
+    # journey: el CV como viaje 3D (three.js walking-sim). No es un niche
+    # del CV pero cuelga del subdominio igual que los niches.
+    AppConfig(
+        project_name='journey',
+        package_name='@portfolio/journey',
+        root_dir='apps/journey',
+    ),
     # Admin panel Next.js (NO en apps/, vive en root como admin/).
-    # 7mo project por env -> 14 projects totales (7 apps x 2 envs).
+    # 8vo project por env -> 16 projects totales (8 apps x 2 envs).
     AppConfig(
         project_name='admin',
         package_name='@portfolio/admin',

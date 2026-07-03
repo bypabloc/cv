@@ -22,6 +22,10 @@
  *   (sin trailing slash). Ej: `https://api.portfolio.dev.the-full-stack.com`.
  *   Se valida que sea https + sin path para preservar el modelo de
  *   origenes de CSP.
+ * @param {boolean} [opts.allowBlobWorkers] - agrega `worker-src 'self' blob:`
+ *   a la CSP. Sin la directiva, los Web Workers caen a `default-src 'self'`
+ *   y un worker creado desde Blob URL queda bloqueado. Lo necesita journey:
+ *   troika-three-text (drei Text) tipografia en un worker via Blob.
  * @returns {string} Contenido completo del archivo `_headers` listo para
  *   escribirse a `public/_headers`.
  *
@@ -29,7 +33,10 @@
  *   buildHeaders({ apiEndpoint: 'https://api.portfolio.dev.the-full-stack.com' })
  *   // CSP connect-src incluye solo ese hostname (NO prod)
  */
-export function buildHeaders(opts: { apiEndpoint: string }): string {
+export function buildHeaders(opts: {
+  apiEndpoint: string
+  allowBlobWorkers?: boolean
+}): string {
   const apiOrigin = parseOrigin(opts.apiEndpoint)
   const csp = [
     "default-src 'self'",
@@ -38,6 +45,7 @@ export function buildHeaders(opts: { apiEndpoint: string }): string {
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     `connect-src 'self' https://challenges.cloudflare.com ${apiOrigin}`,
+    ...(opts.allowBlobWorkers ? ["worker-src 'self' blob:"] : []),
     'frame-src https://challenges.cloudflare.com',
     "object-src 'none'",
     "frame-ancestors 'none'",

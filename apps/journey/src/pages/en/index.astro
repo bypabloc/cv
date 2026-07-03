@@ -1,0 +1,34 @@
+---
+import CvSections from '@portfolio/app-shared/components/CvSections.astro'
+import { SITE_URLS } from '@portfolio/app-shared/lib/site-urls'
+import Journey3D from '../../components/Journey3D'
+/**
+ * @page index (en) journey
+ * @description English variant of the 3D journey experience with the 2D CV
+ *   fallback always present in the HTML (Static tier + SEO/ATS).
+ */
+import PageLayout from '../../layouts/PageLayout.astro'
+import { NICHE, STRINGS } from '../../lib/site-config'
+
+const t = STRINGS.en
+const title = 'Pablo Contreras — CV as a 3D journey'
+const description =
+  "Walk through Pablo Contreras' career as a 3D journey: one room per " +
+  'experience, from university to fintech architecture.'
+const cvHref = `${SITE_URLS.generic}/cv-en.html`
+---
+
+<PageLayout
+  title={title}
+  description={description}
+  canonicalPath="/en/"
+  locale="en"
+  otherLocalePath="/"
+>
+  <!-- SEO/ATS fallback: the full CV lives in the HTML without running JS -->
+  <div id="cv-fallback">
+    <CvSections niche={NICHE} locale="en" strings={t} cvHref={cvHref} />
+  </div>
+  <!-- 3D island: mounts only on Full/Reduced tiers (client:only, AC-1/AC-2) -->
+  <Journey3D client:only="react" locale="en" />
+</PageLayout>

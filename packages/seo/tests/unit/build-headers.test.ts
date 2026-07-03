@@ -87,6 +87,21 @@ describe('buildHeaders', () => {
     expect(out).not.toMatch(/\n\/\.well-known\/mcp\/server-card\.json\n/)
   })
 
+  it('Given allowBlobWorkers When build Then CSP incluye worker-src blob', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+      allowBlobWorkers: true,
+    })
+    expect(out).toContain("worker-src 'self' blob:")
+  })
+
+  it('Given sin allowBlobWorkers When build Then CSP NO incluye worker-src', () => {
+    const out = buildHeaders({
+      apiEndpoint: 'https://api.portfolio.the-full-stack.com',
+    })
+    expect(out).not.toContain('worker-src')
+  })
+
   it('Given build When inspecciono Then expone Content-Type text/markdown para /*.md', () => {
     const out = buildHeaders({
       apiEndpoint: 'https://api.portfolio.the-full-stack.com',

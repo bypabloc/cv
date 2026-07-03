@@ -6,13 +6,15 @@
  *   dentro del WebGL (regla dura del plan).
  */
 import { profile } from '@portfolio/content'
-import type { CSSProperties } from 'react'
+import { type CSSProperties, useState } from 'react'
+import type { JourneyLayout } from '../../lib/layout'
 import type { Locale, RoomDef } from '../../lib/rooms'
 import { useJourneyStore } from '../../lib/store'
 import { PAST_CAPTIONS } from './rooms/palettes'
 
 interface HudProps {
   rooms: readonly RoomDef[]
+  layout: JourneyLayout
   locale: Locale
   onExit: () => void
 }
@@ -20,7 +22,8 @@ interface HudProps {
 const HUD_STRINGS = {
   es: {
     exit: 'Ver CV 2D',
-    controls: 'WASD / flechas — caminar · mouse — mirar · E — interactuar',
+    controls:
+      'WASD / flechas — caminar · mouse — mirar · E — interactuar · M — mapa',
     clickToStart: 'Click para explorar',
     corridorTo: 'Rumbo a',
     roomOf: (n: number, total: number) => `Sala ${n} de ${total}`,
@@ -28,6 +31,10 @@ const HUD_STRINGS = {
     retos: 'Retos',
     aprendizajes: 'Aprendizajes',
     close: 'Cerrar (Esc)',
+    map: 'Mapa (M)',
+    mapTitle: 'Teletransporte',
+    audioOn: 'Sonido: ON',
+    audioOff: 'Sonido: OFF',
     contactTitle: 'Hablemos',
     contactBody: 'Disponible para roles de arquitectura y liderazgo tecnico.',
     email: 'Email',
@@ -35,7 +42,7 @@ const HUD_STRINGS = {
   },
   en: {
     exit: 'View 2D CV',
-    controls: 'WASD / arrows — walk · mouse — look · E — interact',
+    controls: 'WASD / arrows — walk · mouse — look · E — interact · M — map',
     clickToStart: 'Click to explore',
     corridorTo: 'Heading to',
     roomOf: (n: number, total: number) => `Room ${n} of ${total}`,
@@ -43,6 +50,10 @@ const HUD_STRINGS = {
     retos: 'Challenges',
     aprendizajes: 'Learnings',
     close: 'Close (Esc)',
+    map: 'Map (M)',
+    mapTitle: 'Teleport',
+    audioOn: 'Sound: ON',
+    audioOff: 'Sound: OFF',
     contactTitle: "Let's talk",
     contactBody: 'Open to architecture and tech-leadership roles.',
     email: 'Email',
@@ -75,7 +86,7 @@ const contactLinkStyle: CSSProperties = {
     'color-mix(in srgb, var(--color-primary, #4f6ef7) 22%, transparent)',
 }
 
-export function Hud({ rooms, locale, onExit }: HudProps) {
+export function Hud({ rooms, layout, locale, onExit }: HudProps) {
   const zone = useJourneyStore((s) => s.zone)
   const activeId = useJourneyStore((s) => s.activeInteractableId)
   const interactables = useJourneyStore((s) => s.interactables)
@@ -85,6 +96,11 @@ export function Hud({ rooms, locale, onExit }: HudProps) {
   const past = useJourneyStore((s) => s.past)
   const contactOpen = useJourneyStore((s) => s.contactOpen)
   const closeContact = useJourneyStore((s) => s.closeContact)
+  const teleportMenuOpen = useJourneyStore((s) => s.teleportMenuOpen)
+  const toggleTeleportMenu = useJourneyStore((s) => s.toggleTeleportMenu)
+  const audioOn = useJourneyStore((s) => s.audioOn)
+  const toggleAudio = useJourneyStore((s) => s.toggleAudio)
+  const [fading, setFading] = useState(false)
   const t = HUD_STRINGS[locale]
   const pastDef = past !== null ? rooms[past] : null
 
@@ -107,6 +123,27 @@ export function Hud({ rooms, locale, onExit }: HudProps) {
   const prompt = activeId ? interactables[activeId]?.label[locale] : null
   const fichaRoom = ficha ? rooms[ficha.roomIndex] : null
 
+  const teleportTo = (index: number) => {
+    const target = layout.rooms[index]
+    if (!target) {
+      return
+    }
+    const spawn = { x: 0, z: target.z - target.depth / 2 + 1.5 }
+    setFading(true)
+    const store = useJourneyStore.getState()
+    store.closeAllUi()
+    window.setTimeout(() => {
+      const st = useJourneyStore.getState()
+      if (st.past !== null) {
+        st.exitPast(spawn)
+      } else {
+        st.requestTeleport(spawn)
+      }
+      st.setZone({ kind: 'room', index })
+    }, 180)
+    window.setTimeout(() => setFading(false), 620)
+  }
+
   return (
     <div
       style={{
@@ -122,21 +159,102 @@ export function Hud({ rooms, locale, onExit }: HudProps) {
         {zoneLabel}
       </div>
 
-      {/* salida al CV 2D */}
+      {/* salida al CV 2D + toggle de audio (opt-in) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: 12,
+          display: 'flex',
+          gap: 8,
+        }}
+      >
+        <button
+          type="button"
+          aria-pressed={audioOn}
+          onClick={toggleAudio}
+          style={{ ...panelStyle, pointerEvents: 'auto', cursor: 'pointer' }}
+        >
+          {audioOn ? t.audioOn : t.audioOff}
+        </button>
+        <button
+          type="button"
+          onClick={onExit}
+          style={{ ...panelStyle, pointerEvents: 'auto', cursor: 'pointer' }}
+        >
+          {t.exit}
+        </button>
+      </div>
+
+      {/* boton del menu de teletransporte */}
       <button
         type="button"
-        onClick={onExit}
+        onClick={toggleTeleportMenu}
         style={{
           ...panelStyle,
           position: 'absolute',
-          top: 12,
+          bottom: 12,
           right: 12,
           pointerEvents: 'auto',
           cursor: 'pointer',
         }}
       >
-        {t.exit}
+        {t.map}
       </button>
+
+      {/* menu de teletransporte (tecla M) */}
+      {teleportMenuOpen && (
+        <nav
+          aria-label={t.mapTitle}
+          style={{
+            ...panelStyle,
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'min(380px, calc(100vw - 48px))',
+            pointerEvents: 'auto',
+            padding: '1.1rem 1.2rem',
+          }}
+        >
+          <h2 style={{ margin: '0 0 0.7rem', fontSize: '1.05rem' }}>
+            {t.mapTitle}
+          </h2>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+          >
+            {rooms.map((def) => (
+              <button
+                key={def.id}
+                type="button"
+                onClick={() => teleportTo(def.order)}
+                style={{
+                  ...contactLinkStyle,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  font: 'inherit',
+                }}
+              >
+                {t.roomOf(def.order + 1, rooms.length)} —{' '}
+                {def.texts[locale].title} ({def.texts[locale].period})
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      {/* fade del teletransporte */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: '#07070b',
+          opacity: fading ? 1 : 0,
+          transition: 'opacity 180ms ease',
+          pointerEvents: 'none',
+        }}
+      />
 
       {/* crosshair */}
       {isLocked && !ficha && (

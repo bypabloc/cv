@@ -8,6 +8,7 @@
 import { Text } from '@react-three/drei'
 import { useMemo, useState } from 'react'
 import { useJourneyStore } from '../../../lib/store'
+import { Npc } from '../Npc'
 import { useInteractable } from '../use-interactable'
 import { PALETTES } from './palettes'
 import {
@@ -151,6 +152,25 @@ export default function AulaScene({ room }: RoomSceneProps) {
         position={[-half + 0.35, 0, room.z + 2.2]}
         rotationY={Math.PI / 2}
         accent={pal.accent}
+      />
+
+      {/* NPCs: estudiantes en los pupitres + uno paseando */}
+      <Npc
+        position={[-1.4, 0, room.z - 0.6]}
+        shirt="#7a5c3a"
+        rotationY={Math.PI}
+      />
+      <Npc position={[1.4, 0, room.z + 1.2]} shirt="#4a6a52" rotationY={0.4} />
+      <Npc
+        position={[0, 0, room.z + 2.6]}
+        path={[
+          [0, room.z + 2.6],
+          [2.2, room.z + 2.6],
+          [2.2, room.z - 2.2],
+          [-2.4, room.z - 2.2],
+        ]}
+        shirt="#5a7a9a"
+        speed={0.7}
       />
     </group>
   )

@@ -8,6 +8,7 @@
 import { Text } from '@react-three/drei'
 import { useMemo, useState } from 'react'
 import { useJourneyStore } from '../../../lib/store'
+import { Npc } from '../Npc'
 import { makeCanvasTexture } from '../textures'
 import { useInteractable } from '../use-interactable'
 import { PALETTES } from './palettes'
@@ -273,6 +274,25 @@ export default function CorpoelecScene({ room }: RoomSceneProps) {
         position={[half - 0.35, 0, room.z + 2.6]}
         rotationY={-Math.PI / 2}
         accent={pal.accent}
+      />
+
+      {/* NPCs: tecnicos con casco (uno en ronda de inspeccion) */}
+      <Npc
+        position={[-half + 2.4, 0, room.z - 1.8]}
+        shirt="#3f5a73"
+        helmet="#f2b705"
+        rotationY={-0.9}
+      />
+      <Npc
+        position={[0, 0, room.z]}
+        path={[
+          [0, room.z],
+          [half - 2.2, room.z - 2],
+          [-1.2, room.z + 1.4],
+        ]}
+        shirt="#5a6a48"
+        helmet="#f2b705"
+        speed={0.6}
       />
     </group>
   )

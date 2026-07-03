@@ -41,6 +41,10 @@ export interface JourneyStateData {
   teleportTarget: Vec2Like | null
   /** Panel de contacto (CTA de la CIMA). */
   contactOpen: boolean
+  /** Menu de teletransporte (tecla M). */
+  teleportMenuOpen: boolean
+  /** Audio ambiente: SIEMPRE arranca apagado (autoplay policy, opt-in). */
+  audioOn: boolean
 }
 
 export interface JourneyState extends JourneyStateData {
@@ -60,6 +64,9 @@ export interface JourneyState extends JourneyStateData {
   consumeTeleport: () => Vec2Like | null
   openContact: () => void
   closeContact: () => void
+  toggleTeleportMenu: () => void
+  toggleAudio: () => void
+  closeAllUi: () => void
   isUiOpen: () => boolean
 }
 
@@ -75,6 +82,8 @@ export const INITIAL_JOURNEY_STATE: JourneyStateData = {
   past: null,
   teleportTarget: null,
   contactOpen: false,
+  teleportMenuOpen: false,
+  audioOn: false,
 }
 
 export const useJourneyStore = create<JourneyState>()((set, get) => ({
@@ -120,5 +129,13 @@ export const useJourneyStore = create<JourneyState>()((set, get) => ({
   },
   openContact: () => set({ contactOpen: true }),
   closeContact: () => set({ contactOpen: false }),
-  isUiOpen: () => get().ficha !== null || get().contactOpen,
+  toggleTeleportMenu: () =>
+    set((state) => ({ teleportMenuOpen: !state.teleportMenuOpen })),
+  toggleAudio: () => set((state) => ({ audioOn: !state.audioOn })),
+  closeAllUi: () =>
+    set({ ficha: null, contactOpen: false, teleportMenuOpen: false }),
+  isUiOpen: () => {
+    const state = get()
+    return state.ficha !== null || state.contactOpen || state.teleportMenuOpen
+  },
 }))

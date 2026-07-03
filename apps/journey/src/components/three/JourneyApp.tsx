@@ -19,6 +19,7 @@ import {
 import { buildRooms, type Locale } from '../../lib/rooms'
 import { useJourneyStore } from '../../lib/store'
 import type { Tier } from '../../lib/tiers'
+import { ambientAudio } from './ambient-audio'
 import { Door } from './Door'
 import { Hud } from './Hud'
 import { PlayerControls } from './PlayerControls'
@@ -53,10 +54,24 @@ export default function JourneyApp({ tier, locale, onExit }: JourneyAppProps) {
   const pastWalls = useMemo(() => buildPastWallBoxes(pastRooms), [pastRooms])
   const colliders = useMemo(() => [...walls, ...pastWalls], [walls, pastWalls])
   const inPast = useJourneyStore((s) => s.past !== null)
+  const audioOn = useJourneyStore((s) => s.audioOn)
+  const zone = useJourneyStore((s) => s.zone)
+  const audioRoomId =
+    rooms[zone.kind === 'corridor' ? zone.index + 1 : zone.index]?.id ?? 'aula'
 
   useEffect(() => {
     useJourneyStore.getState().configure(tier, locale)
   }, [tier, locale])
+
+  // audio ambiente por sala — SIEMPRE opt-in (toggle del HUD)
+  useEffect(() => {
+    if (audioOn) {
+      ambientAudio.enable(audioRoomId)
+    } else {
+      ambientAudio.disable()
+    }
+  }, [audioOn, audioRoomId])
+  useEffect(() => () => ambientAudio.disable(), [])
 
   const firstRoom = layout.rooms[0]
   const startZ = firstRoom ? firstRoom.z - firstRoom.depth / 4 : 2
@@ -135,7 +150,7 @@ export default function JourneyApp({ tier, locale, onExit }: JourneyAppProps) {
           }}
         />
       )}
-      <Hud rooms={rooms} locale={locale} onExit={onExit} />
+      <Hud rooms={rooms} layout={layout} locale={locale} onExit={onExit} />
     </div>
   )
 }

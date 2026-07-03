@@ -136,8 +136,10 @@ export function PlayerControls({ layout, walls }: PlayerControlsProps) {
       const store = useJourneyStore.getState()
       if (event.code === 'KeyE') {
         store.activateCurrent()
+      } else if (event.code === 'KeyM') {
+        store.toggleTeleportMenu()
       } else if (event.code === 'Escape') {
-        store.closeFicha()
+        store.closeAllUi()
       }
     }
     const onKeyUp = (event: KeyboardEvent) => {

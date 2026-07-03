@@ -10,6 +10,7 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef, useState } from 'react'
 import type { MeshStandardMaterial } from 'three'
 import { useJourneyStore } from '../../../lib/store'
+import { Npc } from '../Npc'
 import { makeCanvasTexture } from '../textures'
 import { useInteractable } from '../use-interactable'
 import { PALETTES } from './palettes'
@@ -414,6 +415,20 @@ export default function CimaScene({ room }: RoomSceneProps) {
         position={[-half + 0.35, 0, room.z + room.depth / 2 - 1.4]}
         rotationY={Math.PI / 2}
         accent={pal.accent}
+      />
+
+      {/* NPCs: equipo en reunion + un dev en ronda */}
+      <Npc position={[-1.6, 0, room.z + 2.4]} shirt="#24466e" rotationY={0.9} />
+      <Npc position={[1.6, 0, room.z + 2.6]} shirt="#3a3f52" rotationY={-1.1} />
+      <Npc
+        position={[0, 0, room.z - 1]}
+        path={[
+          [0, room.z - 1],
+          [-3, room.z - 3],
+          [3.2, room.z - 3.4],
+        ]}
+        shirt="#0e3a80"
+        speed={0.75}
       />
 
       {/* acento dramatico azul de la CIMA */}

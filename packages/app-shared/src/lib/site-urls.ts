@@ -34,7 +34,11 @@
  *   SITE_URLS.generic   // "https://the-full-stack.com" (apex via APEX_DOMAIN)
  */
 
-/** Sitios desplegables del monorepo: los 5 niches + el hub selector. */
+/**
+ * Sitios desplegables del monorepo: los 5 niches + el hub selector +
+ * journey (el CV como viaje 3D; cuelga del subdominio como los niches
+ * pero NO es un Niche del CV — su contenido usa el niche `generic`).
+ */
 export type SiteKey =
   | 'generic'
   | 'hub'
@@ -42,6 +46,7 @@ export type SiteKey =
   | 'architect'
   | 'leader'
   | 'vibe'
+  | 'journey'
 
 // Defaults de prod: los niches cuelgan de `portfolio.the-full-stack.com`,
 // el apex de generic es `the-full-stack.com`. Cubren `pnpm run build` sin
@@ -86,7 +91,7 @@ function isStandardPort(scheme: string, port: string): boolean {
  *   esta definida (caso prod, donde el apex difiere del dominio de los
  *   niches); si no, usa `BASE_DOMAIN` (caso dev/local).
  *
- * @param {SiteKey} key - "generic" (apex) | "hub" | "fintech" | "architect" | "leader" | "vibe"
+ * @param {SiteKey} key - "generic" (apex) | "hub" | "fintech" | "architect" | "leader" | "vibe" | "journey"
  * @returns {string} URL absoluta sin trailing slash
  */
 export function buildSiteUrl(key: SiteKey): string {
@@ -118,4 +123,5 @@ export const SITE_URLS: Record<SiteKey, string> = {
   architect: buildSiteUrl('architect'),
   leader: buildSiteUrl('leader'),
   vibe: buildSiteUrl('vibe'),
+  journey: buildSiteUrl('journey'),
 }

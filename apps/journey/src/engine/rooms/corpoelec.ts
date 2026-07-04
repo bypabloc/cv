@@ -16,7 +16,7 @@ import {
   disposeDeep,
   label,
   makeCanvasTexture,
-  mergedBoxes,
+  outlinedMergedBoxes,
   outlineGroup,
   toonMat,
   toonMatOwn,
@@ -114,18 +114,19 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   group.add(transformer([-half + 1.4, 0, room.z - 2.2]))
   staticColliders.push(footprint(-half + 1.4, room.z - 2.2, 1.8, 1.1))
 
-  // cajas de inventario fusionadas (1 draw call) + etiqueta
-  const crates = mergedBoxes(
-    [
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.3, z: room.z - 2.6 },
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1.7, y: 0.3, z: room.z - 2.4 },
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.9, z: room.z - 2.6 },
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1.1, y: 0.3, z: room.z - 1.7 },
-    ],
-    toonMat('#8a6f4d'),
+  // cajas de inventario fusionadas con contorno correcto (2 draw calls)
+  group.add(
+    outlinedMergedBoxes(
+      [
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.3, z: room.z - 2.6 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.7, y: 0.3, z: room.z - 2.4 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.9, z: room.z - 2.6 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.1, y: 0.3, z: room.z - 1.7 },
+      ],
+      toonMat('#8a6f4d'),
+      { castShadow: true },
+    ),
   )
-  crates.castShadow = true
-  group.add(crates)
   staticColliders.push(footprint(half - 1.35, room.z - 2.15, 1.6, 1.6))
   const inventoryLabel = label(
     state.locale === 'es' ? 'INVENTARIO' : 'INVENTORY',

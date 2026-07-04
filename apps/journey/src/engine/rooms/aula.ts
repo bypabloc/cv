@@ -1,29 +1,33 @@
 /**
  * @module rooms/aula (engine)
  * @description Sala 0 — Aula/Universidad (iai + projects-degrees, 2015).
- *   Salon CLASICO: pupitres en filas mirando al frente (+Z, donde la puerta
- *   al pasillo lleva su marquesina — la monta world), escritorio del
- *   profesor, pizarras de RETOS y APRENDIZAJES tituladas en las paredes
- *   laterales y micro-interaccion narrativa: encender la PC del laboratorio
- *   -> los monitores bootean en cascada mostrando el codigo cliente-servidor
- *   del proyecto de grado. 3 NPCs estudiantes. Manga-ink: toon + outline.
+ *   Salon CLASICO: pupitres con silla en filas mirando al frente (+Z, donde
+ *   la puerta al pasillo lleva su marquesina — la monta world), escritorio
+ *   del profesor, pizarras de RETOS y APRENDIZAJES en las paredes laterales.
+ *   2 estudiantes SENTADOS tecleando con sus pantallas encendidas (codigo
+ *   cliente-servidor del proyecto de grado); las 2 PCs libres — la tuya y
+ *   una del laboratorio — se encienden INDIVIDUALMENTE con E. Manga-ink.
  */
 import { Group } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import { unregisterInteractable } from '../state'
-import { disposeDeep, mergedBoxes, outlineGroup, toonMat } from '../toon'
-import type { RoomBuild, RoomCtx } from '../world'
 import {
-  fichaBoard,
-  footprint,
-  pastPortal,
-  type ScreenSwap,
-  switchableMonitor,
-} from './props'
+  disposeDeep,
+  outlinedMergedBoxes,
+  outlineGroup,
+  toonMat,
+} from '../toon'
+import type { RoomBuild, RoomCtx } from '../world'
+import { fichaBoard, footprint, pastPortal, switchableMonitor } from './props'
 
-const MICRO_LABEL = {
+const MICRO_LABEL_MINE = {
+  es: 'Encender tu PC',
+  en: 'Power on your PC',
+} as const
+
+const MICRO_LABEL_LAB = {
   es: 'Encender la PC del laboratorio',
   en: 'Power on the lab PC',
 } as const
@@ -90,23 +94,44 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     [-1.4, room.z - 0.8],
     [1.4, room.z - 0.8],
   ]
-  // escritorio del profesor + 4 pupitres fusionados: 1 mesh + 1 hull (AC-10)
+  // silla de un puesto: asiento + respaldo + 2 patas (dir=-1 la del profe)
+  const chairParts = (x: number, cz: number, dir: 1 | -1) => [
+    { w: 0.42, h: 0.05, d: 0.42, x, y: 0.44, z: cz },
+    { w: 0.42, h: 0.5, d: 0.05, x, y: 0.72, z: cz - 0.2 * dir },
+    { w: 0.05, h: 0.44, d: 0.05, x: x - 0.17, y: 0.22, z: cz - 0.1 * dir },
+    { w: 0.05, h: 0.44, d: 0.05, x: x + 0.17, y: 0.22, z: cz - 0.1 * dir },
+  ]
+  // profesor + 4 pupitres + 5 sillas fusionados: 2 draw calls (AC-10)
   const allDesks: readonly (readonly [number, number])[] = [
     [-1.6, room.z + 2.5],
     ...deskSpots,
   ]
   group.add(
-    mergedBoxes(
-      allDesks.flatMap(([x, z]) => [
-        { w: 1.1, h: 0.05, d: 0.6, x, y: 0.72, z },
-        { w: 0.06, h: 0.72, d: 0.55, x: x - 0.5, y: 0.36, z },
-        { w: 0.06, h: 0.72, d: 0.55, x: x + 0.5, y: 0.36, z },
-      ]),
+    outlinedMergedBoxes(
+      [
+        ...allDesks.flatMap(([x, z]) => [
+          { w: 1.1, h: 0.05, d: 0.6, x, y: 0.72, z },
+          { w: 0.06, h: 0.72, d: 0.55, x: x - 0.5, y: 0.36, z },
+          { w: 0.06, h: 0.72, d: 0.55, x: x + 0.5, y: 0.36, z },
+        ]),
+        ...deskSpots.flatMap(([x, z]) => chairParts(x, z - 0.55, 1)),
+        ...chairParts(-1.6, room.z + 3.05, -1),
+      ],
       toonMat('#5a4632'),
+      { inflate: 0.035, castShadow: true },
     ),
   )
-  staticColliders.push(footprint(-1.6, room.z + 2.5, 1.2, 0.8))
-  const monitors: ScreenSwap[] = []
+  staticColliders.push(
+    footprint(-1.6, room.z + 2.5, 1.2, 0.8),
+    // sillas vacias (tu PC, la del lab y la del profesor)
+    footprint(1.4, room.z + 0.25, 0.5, 0.5),
+    footprint(-1.4, room.z - 1.35, 0.5, 0.5),
+    footprint(-1.6, room.z + 3.05, 0.5, 0.5),
+  )
+
+  // monitores: los de los NPCs ya estan ENCENDIDOS (estan trabajando);
+  // las 2 PCs libres se encienden INDIVIDUALMENTE con E
+  const NPC_PCS: ReadonlySet<number> = new Set([0, 3])
   deskSpots.forEach(([x, z], index) => {
     staticColliders.push(footprint(x, z, 1.3, 0.8))
     const isPlayerPc = index === 1
@@ -126,43 +151,24 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
           dot: '#3f9d63',
         },
       },
-      initial: 'off',
+      initial: NPC_PCS.has(index) ? 'on' : 'off',
     })
     group.add(monitorGroup)
-    monitors.push(screen)
     disposables.push(screen)
-  })
-
-  // micro-interaccion narrativa: encender la PC -> boot en cascada
-  const microId = `micro-aula-${room.index}`
-  let bootStart = -1
-  const booted = new Set<number>()
-  interactables.push({
-    id: microId,
-    x: 1.4,
-    z: room.z + 0.8,
-    radius: 2,
-    label: MICRO_LABEL,
-    onActivate: () => {
-      bootStart = -2 // el proximo update fija el inicio del cascade
-      unregisterInteractable(state, microId)
-    },
-  })
-  updates.push((t) => {
-    if (bootStart === -2) {
-      bootStart = t
+    if (!NPC_PCS.has(index)) {
+      const microId = `micro-aula-${room.index}-pc${index}`
+      interactables.push({
+        id: microId,
+        x,
+        z,
+        radius: 1.8,
+        label: isPlayerPc ? MICRO_LABEL_MINE : MICRO_LABEL_LAB,
+        onActivate: () => {
+          screen.show('on')
+          unregisterInteractable(state, microId)
+        },
+      })
     }
-    if (bootStart < 0 || booted.size === monitors.length) {
-      return
-    }
-    monitors.forEach((screen, index) => {
-      // tu PC (index 1) bootea primero, el resto en cascada
-      const delay = index === 1 ? 0 : 0.5 + index * 0.4
-      if (!booted.has(index) && t - bootStart >= delay) {
-        booted.add(index)
-        screen.show('on')
-      }
-    })
   })
 
   // pizarras tituladas: RETOS (muro izq) / APRENDIZAJES (muro der)
@@ -209,7 +215,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     }
   }
 
-  // NPCs estudiantes: 2 en sus pupitres mirando al frente + 1 en ronda
+  // NPCs estudiantes: 2 SENTADOS tecleando en sus PCs + 1 en ronda
   npcs.push(
     makeNpc({
       skin: '#e8b48c',
@@ -219,6 +225,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       faceSeed: 11,
       position: [-1.4, 0, room.z + 0.25],
       rotationY: 0,
+      pose: 'sit',
     }),
     makeNpc({
       skin: '#d9a684',
@@ -228,6 +235,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       faceSeed: 23,
       position: [1.4, 0, room.z - 1.35],
       rotationY: 0,
+      pose: 'sit',
     }),
     makeNpc({
       skin: '#c98f6a',
@@ -235,10 +243,10 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       top: '#3f5a8a',
       bottom: '#3a4048',
       faceSeed: 37,
-      position: [2.6, 0, room.z + 2.3],
+      position: [2.6, 0, room.z + 1.7],
       path: [
-        [2.6, room.z + 2.3],
-        [-2.6, room.z + 2.3],
+        [2.6, room.z + 1.7],
+        [-2.6, room.z + 1.7],
         [-2.6, room.z - 2.3],
         [2.6, room.z - 2.3],
       ],

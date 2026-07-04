@@ -21,7 +21,7 @@ import {
   disposeDeep,
   label,
   makeCanvasTexture,
-  mergedBoxes,
+  outlinedMergedBoxes,
   outlineGroup,
   screenPanel,
   toonMat,
@@ -214,15 +214,15 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   // corrida del centro para dejar libre el pasillo de la puerta
   const meeting = new Group()
   meeting.position.set(-1.7, 0, room.z + 1.6)
-  const table = mergedBoxes(
+  const table = outlinedMergedBoxes(
     [
       { w: 3.4, h: 0.07, d: 1.5, x: 0, y: 0.74, z: 0 },
       { w: 0.12, h: 0.74, d: 1.3, x: -1.5, y: 0.37, z: 0 },
       { w: 0.12, h: 0.74, d: 1.3, x: 1.5, y: 0.37, z: 0 },
     ],
     toonMat('#1b2433'),
+    { castShadow: true },
   )
-  table.castShadow = true
   const chairs: readonly (readonly [number, number])[] = [
     [-1.1, -0.9],
     [0, -0.9],
@@ -231,7 +231,7 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     [0, 0.9],
     [1.1, 0.9],
   ]
-  const chairSet = mergedBoxes(
+  const chairSet = outlinedMergedBoxes(
     chairs.flatMap(([x, dz]) => [
       { w: 0.44, h: 0.06, d: 0.44, x, y: 0.45, z: dz },
       {
@@ -244,6 +244,7 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
       },
     ]),
     toonMat('#26303f'),
+    { inflate: 0.035 },
   )
   meeting.add(table, chairSet)
   group.add(meeting)

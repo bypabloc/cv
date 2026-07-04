@@ -95,7 +95,11 @@ export interface PastCtx {
   state: EngineState
   /** Punto de retorno en la sala presente (lo calcula world). */
   returnTo: { x: number; z: number }
-  actions: { exitPast(returnTo: { x: number; z: number }): void }
+  actions: {
+    exitPast(returnTo: { x: number; z: number }): void
+    /** Panel DOM expandible (la historia "antes de la uni"). */
+    openStory(title: string, paragraphs: readonly string[]): void
+  }
 }
 
 export type PastFactory = (ctx: PastCtx) => RoomBuild
@@ -131,6 +135,7 @@ export interface WorldDeps {
   ui: {
     openFicha(roomIndex: number, kind: FichaKind): void
     openContact(): void
+    openStory(title: string, paragraphs: readonly string[]): void
   }
   /** Mueve al jugador (lo implementa controls). */
   teleportPlayer(x: number, z: number): void
@@ -815,6 +820,7 @@ export function createWorld(deps: WorldDeps): World {
           exitPast: (returnTo) => {
             void world.exitPast(returnTo)
           },
+          openStory: deps.ui.openStory,
         },
       })
       pastBuild = build

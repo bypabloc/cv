@@ -183,6 +183,8 @@ export interface Hud {
   setCameraMode(mode: CameraMode): void
   setPointerLocked(locked: boolean): void
   openFicha(roomIndex: number, kind: FichaKind): void
+  /** Panel de texto libre (la historia del pasado, expandida con E). */
+  openStory(title: string, paragraphs: readonly string[]): void
   openContact(): void
   toggleTeleport(): void
   closeAll(): void
@@ -512,6 +514,26 @@ export function createHud(deps: HudDeps): Hud {
         meta,
         title,
         list,
+        button('jny-close jny-btn', t.close, () => hud.closeAll()),
+      )
+      ficha.style.display = ''
+      refreshOverlayState()
+    },
+
+    openStory(title, paragraphs) {
+      state.ui = 'ficha'
+      ficha.setAttribute('aria-label', title)
+      ficha.replaceChildren()
+      const heading = el('h2', '', title)
+      heading.style.cssText = 'margin:0 0 0.6rem;font-size:1.05rem'
+      ficha.appendChild(heading)
+      for (const text of paragraphs) {
+        const paragraph = el('p', '', text)
+        paragraph.style.cssText =
+          'margin:0 0 0.55rem;opacity:0.9;line-height:1.45'
+        ficha.appendChild(paragraph)
+      }
+      ficha.appendChild(
         button('jny-close jny-btn', t.close, () => hud.closeAll()),
       )
       ficha.style.display = ''

@@ -196,6 +196,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     ui: {
       openFicha: (roomIndex, kind) => hud.openFicha(roomIndex, kind),
       openContact: () => hud.openContact(),
+      openStory: (title, paragraphs) => hud.openStory(title, paragraphs),
     },
     teleportPlayer: (x, z) => controls.teleport(x, z),
     shadowLight: tier === 'full' ? sun : undefined,

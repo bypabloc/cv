@@ -25,6 +25,7 @@ import {
   makeCanvasTexture,
   makeRng,
   mergedBoxes,
+  outlinedMergedBoxes,
   type ScreenPanelOpts,
   screenPanel,
   screenTexture,
@@ -47,6 +48,30 @@ export function footprint(x: number, z: number, w: number, d: number): Box2 {
     minZ: z - d / 2,
     maxZ: z + d / 2,
   }
+}
+
+/** Silla simple contorneada: asiento + respaldo (local -Z) + 2 patas. */
+export function chair(opts: {
+  position: readonly [number, number, number]
+  rotationY?: number
+  color?: string
+}): Group {
+  const group = new Group()
+  group.position.set(opts.position[0], opts.position[1], opts.position[2])
+  group.rotation.y = opts.rotationY ?? 0
+  group.add(
+    outlinedMergedBoxes(
+      [
+        { w: 0.42, h: 0.05, d: 0.42, x: 0, y: 0.44, z: 0 },
+        { w: 0.42, h: 0.5, d: 0.05, x: 0, y: 0.72, z: -0.2 },
+        { w: 0.05, h: 0.44, d: 0.05, x: -0.17, y: 0.22, z: -0.1 },
+        { w: 0.05, h: 0.44, d: 0.05, x: 0.17, y: 0.22, z: -0.1 },
+      ],
+      toonMat(opts.color ?? '#4a3b2a'),
+      { inflate: 0.03 },
+    ),
+  )
+  return group
 }
 
 /** Escritorio/mesa minima: tapa + 2 patas fusionadas (1 draw call). */
@@ -87,7 +112,7 @@ export function monitor(opts: {
   const group = new Group()
   group.position.set(opts.position[0], opts.position[1], opts.position[2])
   group.rotation.y = opts.rotationY ?? 0
-  // pie + marco fusionados (1 draw call)
+  // pie + marco + teclado fusionados (1 draw call)
   const body = mergedBoxes(
     [
       { w: 0.16, h: 0.14, d: 0.16, x: 0, y: 0.07, z: 0 },
@@ -99,6 +124,7 @@ export function monitor(opts: {
         y: height / 2 + 0.14,
         z: -0.02,
       },
+      { w: 0.36, h: 0.025, d: 0.14, x: 0, y: 0.013, z: 0.26 },
     ],
     toonMat('#15151a'),
   )
@@ -304,6 +330,7 @@ export function switchableMonitor(opts: {
         y: height / 2 + 0.14,
         z: -0.02,
       },
+      { w: 0.36, h: 0.025, d: 0.14, x: 0, y: 0.013, z: 0.26 },
     ],
     toonMat('#15151a'),
   )
@@ -383,7 +410,7 @@ interface PortalArch {
  */
 function portalArch(accent: string, signText: string): PortalArch {
   const group = new Group()
-  const arch = mergedBoxes(
+  const arch = outlinedMergedBoxes(
     [
       { w: 0.16, h: 2.3, d: 0.16, x: -0.72, y: 1.15, z: 0 },
       { w: 0.16, h: 2.3, d: 0.16, x: 0.72, y: 1.15, z: 0 },
@@ -391,8 +418,8 @@ function portalArch(accent: string, signText: string): PortalArch {
       { w: 1.66, h: 0.1, d: 0.18, x: 0, y: 2.12, z: 0 },
     ],
     toonMat('#2a1c12'),
+    { castShadow: true },
   )
-  arch.castShadow = true
   const caps = mergedBoxes(
     [
       { w: 0.24, h: 0.2, d: 0.28, x: -1.03, y: 2.38, z: 0 },

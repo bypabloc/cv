@@ -17,6 +17,7 @@ import {
   Color,
   type ColorRepresentation,
   CylinderGeometry,
+  Group,
   type Material,
   Mesh,
   MeshBasicMaterial,
@@ -679,6 +680,39 @@ export function mergedBoxes(
     geo.dispose()
   }
   return new Mesh(merged, material)
+}
+
+/**
+ * @function outlinedMergedBoxes
+ * @description mergedBoxes + su contorno CORRECTO. El hull escalado de un
+ *   merge con posiciones horneadas se DESPLAZA del centro (losas negras
+ *   flotando); aqui el contorno es un segundo merge con cada caja inflada
+ *   en absoluto. 2 draw calls totales para N cajas contorneadas.
+ */
+export function outlinedMergedBoxes(
+  parts: readonly BoxSpec[],
+  material: MeshToonMaterial | MeshBasicMaterial,
+  opts: { inflate?: number; castShadow?: boolean } = {},
+): Group {
+  const inflate = opts.inflate ?? 0.045
+  const group = new Group()
+  const fill = mergedBoxes(parts, material)
+  fill.userData.noOutline = true
+  if (opts.castShadow) {
+    fill.castShadow = true
+  }
+  const hull = mergedBoxes(
+    parts.map((p) => ({
+      ...p,
+      w: p.w + inflate,
+      h: p.h + inflate,
+      d: p.d + inflate,
+    })),
+    outlineMaterial(),
+  )
+  hull.userData.outline = true
+  group.add(fill, hull)
+  return group
 }
 
 // ---------------------------------------------------------------------------

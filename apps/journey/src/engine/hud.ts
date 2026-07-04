@@ -24,6 +24,9 @@ const STRINGS = {
       'WASD / flechas — caminar · arrastra — camara · E — interactuar · V — POV · M — mapa',
     controlsPov:
       'WASD / flechas — caminar · mouse — mirar · E — interactuar · V — 3ª persona · M — mapa',
+    controlsThirdTouch:
+      'joystick — caminar · arrastra — camara · E — interactuar',
+    controlsPovTouch: 'joystick — caminar · arrastra — mirar · E — interactuar',
     clickToStart: 'Click para explorar',
     corridorTo: 'Rumbo a',
     roomOf: (n: number, total: number) => `Sala ${n} de ${total}`,
@@ -51,6 +54,8 @@ const STRINGS = {
       'WASD / arrows — walk · drag — camera · E — interact · V — POV · M — map',
     controlsPov:
       'WASD / arrows — walk · mouse — look · E — interact · V — 3rd person · M — map',
+    controlsThirdTouch: 'joystick — walk · drag — camera · E — interact',
+    controlsPovTouch: 'joystick — walk · drag — look · E — interact',
     clickToStart: 'Click to explore',
     corridorTo: 'Heading to',
     roomOf: (n: number, total: number) => `Room ${n} of ${total}`,
@@ -142,6 +147,11 @@ const CSS = `
   border-radius: 50%; background: color-mix(in srgb, var(--color-primary, #4f6ef7) 85%, transparent);
   color: #fff; font-size: 1rem; font-weight: 700; border: 2px solid #0b0b10;
   pointer-events: auto; touch-action: none; }
+@media (max-width: 640px) {
+  .jny-panel { font-size: 0.7rem; padding: 0.35rem 0.55rem; }
+  .jny-top-left { max-width: 42vw; }
+  .jny-hints { max-width: 52vw; font-size: 0.62rem; }
+}
 `
 
 export interface HudActions {
@@ -388,14 +398,22 @@ export function createHud(deps: HudDeps): Hud {
   let pointerLocked = false
   let currentPrompt: string | null = null
 
+  function hintsFor(mode: CameraMode): string {
+    if (touch) {
+      return mode === 'pov' ? t.controlsPovTouch : t.controlsThirdTouch
+    }
+    return mode === 'pov' ? t.controlsPov : t.controlsThird
+  }
+
   function refreshOverlayState(): void {
     const uiOpen = isUiOpen(state)
-    const povIdle = cameraMode === 'pov' && !pointerLocked && !uiOpen
-    clickToStart.style.display = povIdle ? '' : 'none'
-    crosshair.style.display =
-      cameraMode === 'pov' && pointerLocked && !uiOpen ? '' : 'none'
+    const pov = cameraMode === 'pov'
+    // en touch no hay pointer-lock: ni "click para explorar" ni crosshair
+    const lookReady = pointerLocked || touch !== null
+    clickToStart.style.display = pov && !lookReady && !uiOpen ? '' : 'none'
+    crosshair.style.display = pov && lookReady && !uiOpen ? '' : 'none'
     prompt.style.display = currentPrompt && !uiOpen ? '' : 'none'
-    hints.textContent = cameraMode === 'pov' ? t.controlsPov : t.controlsThird
+    hints.textContent = hintsFor(cameraMode)
   }
 
   function updateCaption(): void {
@@ -563,6 +581,9 @@ export function createHud(deps: HudDeps): Hud {
       root.remove()
     },
   }
+
+  // estado inicial de overlays/hints (en touch: texto de joystick)
+  refreshOverlayState()
 
   return hud
 }

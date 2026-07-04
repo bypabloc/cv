@@ -273,8 +273,8 @@ export function zoneAt(layout: JourneyLayout, z: number): Zone {
 }
 
 export const PAST_OFFSET_X = 40
-export const PAST_ROOM_SIZE = 6
-export const PAST_ROOM_HEIGHT = 2.7
+export const PAST_ROOM_SIZE = 9
+export const PAST_ROOM_HEIGHT = 3.1
 
 export interface PastRoomLayout {
   index: number

@@ -7,6 +7,8 @@
  *   2 NPCs tecnicos con casco.
  */
 import { Group, Mesh, MeshBasicMaterial, PointLight } from 'three'
+import type { Box2 } from '../../lib/collision'
+import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import { unregisterInteractable } from '../state'
@@ -15,14 +17,21 @@ import {
   disposeDeep,
   label,
   makeCanvasTexture,
-  mergedBoxes,
+  outlinedMergedBoxes,
   outlineGroup,
   toonMat,
   toonMatOwn,
   unitGeo,
 } from '../toon'
 import type { RoomBuild, RoomCtx } from '../world'
-import { desk, fichaProp, monitor, pastPortal } from './props'
+import {
+  desk,
+  fichaBoard,
+  footprint,
+  lecternNotebook,
+  pastPortal,
+  switchableMonitor,
+} from './props'
 
 const MICRO_LABEL = {
   es: 'Accionar el tablero de control',
@@ -95,27 +104,32 @@ function towersWindow(position: readonly [number, number, number]): Group {
 }
 
 export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
-  const { room, theme, state, actions } = ctx
+  const { def, room, theme, state, actions } = ctx
   const group = new Group()
   const interactables: Interactable[] = []
   const updates: ((t: number, dt: number) => void)[] = []
   const npcs: NpcHandle[] = []
+  const disposables: { dispose(): void }[] = []
+  const staticColliders: Box2[] = []
   const half = room.width / 2
 
   group.add(transformer([-half + 1.4, 0, room.z - 2.2]))
+  staticColliders.push(footprint(-half + 1.4, room.z - 2.2, 1.8, 1.1))
 
-  // cajas de inventario fusionadas (1 draw call) + etiqueta
-  const crates = mergedBoxes(
-    [
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.3, z: room.z - 2.6 },
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1.7, y: 0.3, z: room.z - 2.4 },
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.9, z: room.z - 2.6 },
-      { w: 0.6, h: 0.6, d: 0.6, x: half - 1.1, y: 0.3, z: room.z - 1.7 },
-    ],
-    toonMat('#8a6f4d'),
+  // cajas de inventario fusionadas con contorno correcto (2 draw calls)
+  group.add(
+    outlinedMergedBoxes(
+      [
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.3, z: room.z - 2.6 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.7, y: 0.3, z: room.z - 2.4 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.9, z: room.z - 2.6 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.1, y: 0.3, z: room.z - 1.7 },
+      ],
+      toonMat('#8a6f4d'),
+      { castShadow: true },
+    ),
   )
-  crates.castShadow = true
-  group.add(crates)
+  staticColliders.push(footprint(half - 1.35, room.z - 2.15, 1.6, 1.6))
   const inventoryLabel = label(
     state.locale === 'es' ? 'INVENTARIO' : 'INVENTORY',
     { size: 0.16, color: '#f2b705' },
@@ -124,33 +138,55 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   inventoryLabel.rotation.y = Math.PI
   group.add(inventoryLabel)
 
-  // monitor con la tabla de inventario + badge OFFLINE
+  // monitor del inventario: arranca OFFLINE, el tablero lo pone ONLINE
+  const screenTheme = {
+    screenBg: theme.screenBg,
+    screenFg: theme.screenFg,
+    ink: theme.ink,
+  }
   group.add(
-    desk({ position: [0.6, 0, room.z + 2.4], width: 1.4, color: '#3a3e44' }),
-    monitor({
-      position: [0.6, 0.75, room.z + 2.3],
-      rotationY: Math.PI,
-      title: '[OFFLINE] inventario',
-      lines: [
-        'ID    EQUIPO       SEDE',
-        '0041  transformador yaracuy',
-        '0042  aislador      carabobo',
-        '0043  medidor       lara',
-        'busqueda: inmediata',
-      ],
-      theme: {
-        screenBg: theme.screenBg,
-        screenFg: theme.screenFg,
-        ink: theme.ink,
-      },
-      width: 0.72,
-    }),
+    desk({ position: [1.4, 0, room.z + 2.4], width: 1.4, color: '#3a3e44' }),
   )
+  staticColliders.push(footprint(1.4, room.z + 2.4, 1.5, 0.8))
+  const inventory = switchableMonitor({
+    position: [1.4, 0.72, room.z + 2.3],
+    rotationY: Math.PI,
+    width: 0.72,
+    variants: {
+      offline: {
+        title: '[OFFLINE] inventario',
+        lines: [
+          'ID    EQUIPO       SEDE',
+          '0041  transformador yaracuy',
+          '0042  aislador      carabobo',
+          '0043  medidor       lara',
+          'busqueda: en papel...',
+        ],
+        theme: screenTheme,
+        dot: '#cc3b3b',
+      },
+      online: {
+        title: '[ONLINE] inventario',
+        lines: [
+          'ID    EQUIPO       SEDE',
+          '0041  transformador yaracuy',
+          '0042  aislador      carabobo',
+          '0043  medidor       lara',
+          'sync 3 sedes: OK   2ms',
+        ],
+        theme: screenTheme,
+        dot: '#4dcc7a',
+      },
+    },
+    initial: 'offline',
+  })
+  group.add(inventory.group)
+  disposables.push(inventory.screen)
 
   // ventana con torres + casco de seguridad sobre el escritorio
   group.add(towersWindow([half - 0.42, 1.7, room.z + 0.8]))
   const helmet = new Group()
-  helmet.position.set(0.9, 0.85, room.z + 2.1)
+  helmet.position.set(1.9, 0.85, room.z + 2.3)
   const units = unitGeo()
   const dome = new Mesh(units.sphere, toonMat('#f2b705'))
   dome.scale.set(0.32, 0.22, 0.32)
@@ -160,20 +196,22 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   helmet.add(dome, brim)
   group.add(helmet)
 
-  // guiño geografico discreto en el muro izquierdo
+  // guiño geografico discreto en el muro izquierdo (al fondo, sobre el
+  // transformador — el frente del muro lo ocupa la grieta al pasado)
   const geo = label('YARACUY · CARABOBO · LARA', {
     size: 0.22,
     color: theme.accent,
   })
-  geo.position.set(-half + 0.3, 2.1, room.z + 1.6)
+  geo.position.set(-half + 0.3, 2.5, room.z - 2.3)
   geo.rotation.y = Math.PI / 2
   group.add(geo)
 
   // micro-interaccion: tablero de medidores rojo -> verde + luz de estado
+  // (muro DERECHO — el izquierdo es del portal al pasado)
   const microId = `micro-corpoelec-${room.index}`
   const micro = new Group()
-  micro.position.set(-half + 0.42, 0, room.z + 1.6)
-  micro.rotation.y = Math.PI / 2
+  micro.position.set(half - 0.42, 0, room.z + 2.6)
+  micro.rotation.y = -Math.PI / 2
   const panel = boxMesh(1.6, 1.1, 0.08, toonMat('#2e3238'))
   panel.position.set(0, 1.5, 0)
   micro.add(panel)
@@ -204,47 +242,66 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   group.add(micro)
   interactables.push({
     id: microId,
-    x: -half + 0.42,
-    z: room.z + 1.6,
+    x: half - 0.42,
+    z: room.z + 2.6,
     radius: 2,
     label: MICRO_LABEL,
     onActivate: () => {
+      // el sistema se energiza: lamparas verdes + el inventario pasa ONLINE
       lampMat.color.set('#4dcc7a')
       lampMat.emissive.set('#4dcc7a')
       gaugeMat.emissive.set('#4dcc7a')
       statusLight?.color.set('#4dcc7a')
+      inventory.screen.show('online')
+      sfx.play('boot')
       unregisterInteractable(state, microId)
     },
   })
 
-  // RETOS: pizarra de paradas / APRENDIZAJES: cuaderno de campo / portal
-  const retos = fichaProp({
+  // pizarras tituladas: RETOS (muro del fondo) / APRENDIZAJES (muro izq)
+  const texts = def.texts[state.locale]
+  const retos = fichaBoard({
     roomIndex: room.index,
     kind: 'retos',
-    style: 'pizarra',
-    position: [-1.6, 0, room.z + room.depth / 2 - 0.5],
+    position: [-1.6, 0, room.z + room.depth / 2 - 0.35],
     rotationY: Math.PI,
-    accent: theme.accent,
-    state,
+    theme,
+    locale: state.locale,
+    preview: texts.retos,
     onOpen: actions.openFicha,
   })
-  const aprendizajes = fichaProp({
+  const aprendizajes = fichaBoard({
     roomIndex: room.index,
     kind: 'aprendizajes',
-    style: 'cuaderno',
-    position: [1.9, 0, room.z - 0.6],
-    accent: theme.accent,
-    state,
+    position: [-half + 0.35, 0, room.z - 0.4],
+    rotationY: Math.PI / 2,
+    theme,
+    locale: state.locale,
+    preview: texts.aprendizajes,
     onOpen: actions.openFicha,
   })
+  // grieta al pasado, pegada al muro IZQUIERDO (antes estaba a la derecha)
   const portal = pastPortal({
     room,
-    position: [half - 0.35, 0, room.z + 2.6],
-    rotationY: -Math.PI / 2,
+    position: [-half + 0.1, 0, room.z + 2.8],
+    rotationY: Math.PI / 2,
     accent: theme.accent,
+    year: def.year,
+    locale: state.locale,
     onEnter: actions.enterPast,
   })
-  for (const prop of [retos, aprendizajes, portal]) {
+  // pilar-atril con la reseña de la etapa, a la DERECHA
+  const nota = lecternNotebook({
+    roomIndex: room.index,
+    position: [half - 1, 0, room.z + 0.2],
+    rotationY: -Math.PI / 2,
+    theme,
+    notebook: { title: texts.title, lines: texts.notebook },
+    story: { title: texts.title, paragraphs: texts.resena },
+    onOpen: actions.openStory,
+  })
+  staticColliders.push(footprint(half - 1, room.z + 0.2, 0.7, 0.7))
+  for (const prop of [retos, aprendizajes, portal, nota]) {
     group.add(prop.group)
     if (prop.interactable) {
       interactables.push(prop.interactable)
@@ -292,6 +349,7 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   return {
     group,
     interactables,
+    colliders: () => [...staticColliders, ...npcs.map((npc) => npc.collider())],
     update: (t, dt) => {
       for (const fn of updates) {
         fn(t, dt)
@@ -300,6 +358,9 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     dispose: () => {
       for (const npc of npcs) {
         npc.dispose()
+      }
+      for (const item of disposables) {
+        item.dispose()
       }
       disposeDeep(group)
     },

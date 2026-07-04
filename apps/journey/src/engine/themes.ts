@@ -22,6 +22,8 @@ export interface RoomTheme {
   ink: string
   /** Acento de la sala (fichas, portal, micro-interaccion). */
   accent: string
+  /** Guiño secundario (zocalo de muros, marcos de pizarras). Default: ink. */
+  trim?: string
   /** Color de la luz principal de la zona. */
   lightColor: string
   /** Niebla de la zona (lerp al entrar). */
@@ -36,18 +38,20 @@ export interface RoomTheme {
 }
 
 export const THEMES: Record<ThemeZoneId, RoomTheme> = {
-  // aula: papel calido + madera clara, tinta sepia-negra, verde pizarra
+  // aula: paredes blancas + piso beige, acento AZUL y guiños MORADOS
+  // (zocalo/marcos via trim) — decision del usuario 2026-07-04
   aula: {
-    wall: '#5a4c3a',
-    floor: '#6b5233',
-    ink: '#241a10',
-    accent: '#7fb069',
-    lightColor: '#ffd9a0',
-    fog: '#171310',
-    sky: '#1d1712',
-    gradient: ['#4a3c2c', '#a8875e', '#f7e9cc'],
-    screenBg: '#22331f',
-    screenFg: '#c6eab4',
+    wall: '#eae6dc',
+    floor: '#d8c6a0',
+    ink: '#232840',
+    accent: '#2f6fd0',
+    trim: '#7a4fc0',
+    lightColor: '#dfe9ff',
+    fog: '#141722',
+    sky: '#181c2a',
+    gradient: ['#7d829a', '#c2c8da', '#ffffff'],
+    screenBg: '#101c34',
+    screenFg: '#8fb8ff',
   },
   // corpoelec: grises industriales frios + naranja + amarillo seguridad
   corpoelec: {
@@ -106,8 +110,8 @@ export const THEMES: Record<ThemeZoneId, RoomTheme> = {
 /** Captions del portal al pasado (van al HUD como DOM, nunca WebGL). */
 export const PAST_CAPTIONS: Record<RoomId, Record<'es' | 'en', string>> = {
   aula: {
-    es: 'Antes: dos proyectos de grado bloqueados por meses',
-    en: 'Before: two degree projects stuck for months',
+    es: 'Antes: karate-do, videojuegos y aires acondicionados — cero codigo',
+    en: 'Before: karate-do, video games and AC repair — zero code',
   },
   corpoelec: {
     es: 'Antes: planillas de papel duplicadas en 3 sedes',

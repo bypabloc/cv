@@ -16,10 +16,17 @@ import {
   SphereGeometry,
   SRGBColorSpace,
 } from 'three'
+import type { Box2 } from '../lib/collision'
+import { sfx } from './audio'
 import { basicMat, makeRng, outlineGroup, toonMat, unitGeo } from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
 export type Accessory = 'helmet' | 'glasses' | 'tie' | 'badge'
+/**
+ * Poses fijas ademas de idle/walk: fight = kihon de karate (tsuki + mae
+ * geri), sit = sentado en silla tipeando, kneel = arrodillado trabajando.
+ */
+export type CharacterPose = 'idle' | 'walk' | 'fight' | 'sit' | 'kneel'
 
 export interface CharacterSpec {
   skin: string
@@ -34,6 +41,7 @@ export interface CharacterSpec {
 export interface CharacterHandle {
   group: Group
   setWalking(on: boolean): void
+  setPose(pose: CharacterPose): void
   update(t: number, dt: number): void
   /** POV oculta al jugador. */
   setVisible(on: boolean): void
@@ -43,6 +51,8 @@ export interface CharacterHandle {
 export interface NpcHandle {
   group: Group
   update(t: number, dt: number): void
+  /** AABB alrededor de la posicion ACTUAL (bloquea el paso del jugador). */
+  collider(): Box2
   dispose(): void
 }
 
@@ -130,15 +140,16 @@ function drawFace(
   for (const x of eyeXs) {
     drawEye(ctx, x, eyeY, params, closed)
   }
-  // cejas (trazo de tinta con tilt por seed)
+  // cejas: arcos suaves y SIMETRICOS (tilt sutil por seed, espejado)
   ctx.strokeStyle = '#141018'
-  ctx.lineWidth = 4
+  ctx.lineWidth = 3.5
   ctx.lineCap = 'round'
   for (const [i, x] of eyeXs.entries()) {
     const dir = i === 0 ? -1 : 1
+    const tilt = dir * params.browTilt * 4
     ctx.beginPath()
-    ctx.moveTo(x - 11, eyeY - 24 + dir * params.browTilt * 8)
-    ctx.lineTo(x + 11, eyeY - 24 - dir * params.browTilt * 8)
+    ctx.moveTo(x - 10, eyeY - 21 + tilt)
+    ctx.quadraticCurveTo(x, eyeY - 28, x + 10, eyeY - 21 - tilt)
     ctx.stroke()
   }
   // boca pequeña
@@ -410,7 +421,7 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   outlineGroup(group, 1.05)
 
   const parts: Parts = { legL, legR, armL, armR, torso, head, tail }
-  let walking = false
+  let pose: CharacterPose = 'idle'
   let cycle = 0
   const blinkPhase = ((spec.faceSeed % 97) / 97) * 5
   const blinkInterval = 3 + ((spec.faceSeed % 31) / 31) * 3
@@ -439,6 +450,52 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     parts.torso.scale.y = 1 + Math.sin(t * 1.6) * 0.012
   }
 
+  /** Kihon: 3 tsuki alternados (golpes rectos) + mae geri (patada). */
+  function poseFight(t: number): void {
+    const beat = t % 3.6
+    let punchL = 0
+    let punchR = 0
+    let kickR = 0
+    if (beat < 2.4) {
+      // sin(beat·π·1.25) cierra en 0 justo a los 2.4 s (sin salto)
+      const punch = Math.sin(beat * Math.PI * 1.25)
+      punchL = Math.max(0, punch) * 1.5
+      punchR = Math.max(0, -punch) * 1.5
+    } else {
+      const kick = Math.sin(((beat - 2.4) / 1.2) * Math.PI)
+      kickR = kick * 1.35
+      punchL = kick * 0.5
+      punchR = kick * 0.5
+    }
+    parts.armL.rotation.x = punchL
+    parts.armR.rotation.x = punchR
+    parts.legR.rotation.x = kickR
+    parts.legL.rotation.x = 0
+    group.position.y = Math.abs(Math.sin(t * 6)) * 0.012
+    group.rotation.x = 0
+    parts.torso.scale.y = 1
+  }
+
+  /** Sentado en silla (tipeando) o arrodillado en el piso (trabajando). */
+  function poseSeated(t: number, kind: 'sit' | 'kneel'): void {
+    const sitting = kind === 'sit'
+    // rotation.x NEGATIVO lleva la extremidad hacia +Z (el frente del
+    // chibi). sit: muslos AL FRENTE a altura de asiento; kneel: piernas
+    // dobladas hacia atras, con el cuerpo bajado solo hasta la rodilla
+    // (antes -0.5 lo hundia en el piso y quedaba "incompleto").
+    parts.legL.rotation.x = sitting ? -1.45 : 1.0
+    parts.legR.rotation.x = sitting ? -1.45 : 1.0
+    group.position.y = sitting ? -0.07 : -0.24
+    // brazos hacia ADELANTE (teclado / la unidad que repara)
+    const base = sitting ? -0.85 : -0.7
+    const speed = sitting ? 9 : 5
+    const amp = sitting ? 0.07 : 0.18
+    parts.armL.rotation.x = base - Math.sin(t * speed) * amp
+    parts.armR.rotation.x = base - Math.cos(t * speed * 0.9) * amp
+    group.rotation.x = 0
+    parts.torso.scale.y = 1 + Math.sin(t * 1.6) * 0.012
+  }
+
   function updateBlink(t: number): void {
     const closed = (t + blinkPhase) % blinkInterval < 0.12
     if (closed !== eyesClosed) {
@@ -450,11 +507,18 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   return {
     group,
     setWalking(on) {
-      walking = on
+      pose = on ? 'walk' : 'idle'
+    },
+    setPose(next) {
+      pose = next
     },
     update(t, dt) {
-      if (walking) {
+      if (pose === 'walk') {
         poseWalk(dt)
+      } else if (pose === 'fight') {
+        poseFight(t)
+      } else if (pose === 'sit' || pose === 'kneel') {
+        poseSeated(t, pose)
       } else {
         poseIdle(t, dt)
       }
@@ -487,6 +551,8 @@ export interface NpcOpts extends CharacterSpec {
   path?: readonly (readonly [number, number])[]
   rotationY?: number
   speed?: number
+  /** Pose fija (sin path): fight / sit / kneel. Sin pose: idle con sway. */
+  pose?: 'fight' | 'sit' | 'kneel'
 }
 
 /** Avanza por los waypoints en loop a velocidad constante y orienta. */
@@ -526,6 +592,8 @@ function moveAlongPath(
   root.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1])
 }
 
+let npcSeq = 0
+
 export function makeNpc(opts: NpcOpts): NpcHandle {
   const character = makeCharacter(opts)
   const { group } = character
@@ -536,18 +604,49 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
     (opts.position[0] * 7.3 + opts.position[2] * 3.1) % (Math.PI * 2)
   const walking = (opts.path?.length ?? 0) >= 2
   const speed = opts.speed ?? 0.7
-  character.setWalking(walking)
+  if (walking) {
+    character.setWalking(true)
+  } else if (opts.pose) {
+    character.setPose(opts.pose)
+  }
 
+  // sonido: pasos por zancada (caminantes) / tecleo (sentados a la PC),
+  // ambos con volumen por cercania al jugador (sfx keep-alive)
+  npcSeq += 1
+  const sfxId = `npc-${npcSeq}`
+  let stride = 0
+  let prevX = opts.position[0]
+  let prevZ = opts.position[2]
+
+  const NPC_RADIUS = 0.26
   return {
     group,
     update(t, dt) {
       const tt = t + phase
       if (walking && opts.path) {
         moveAlongPath(group, opts.path, tt, speed)
-      } else {
+        stride += Math.hypot(group.position.x - prevX, group.position.z - prevZ)
+        prevX = group.position.x
+        prevZ = group.position.z
+        if (stride > 0.62) {
+          stride = 0
+          sfx.stepAt(group.position.x, group.position.z)
+        }
+      } else if (!opts.pose) {
+        // con pose fija no hay sway: esta concentrado en lo suyo
         group.rotation.y = (opts.rotationY ?? 0) + Math.sin(tt * 0.7) * 0.08
+      } else if (opts.pose === 'sit') {
+        sfx.feed(sfxId, 'typing', group.position.x, group.position.z)
       }
       character.update(tt, dt)
+    },
+    collider() {
+      return {
+        minX: group.position.x - NPC_RADIUS,
+        maxX: group.position.x + NPC_RADIUS,
+        minZ: group.position.z - NPC_RADIUS,
+        maxZ: group.position.z + NPC_RADIUS,
+      }
     },
     dispose() {
       character.dispose()

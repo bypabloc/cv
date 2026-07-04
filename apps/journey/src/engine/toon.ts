@@ -17,6 +17,7 @@ import {
   Color,
   type ColorRepresentation,
   CylinderGeometry,
+  Group,
   type Material,
   Mesh,
   MeshBasicMaterial,
@@ -344,6 +345,8 @@ function screentone(
   ctx.globalAlpha = 1
 }
 
+/** Hatching diagonal de esquina — SOLO para pantallas/viñetas (en los
+ *  muros se veia como "lineas sin sentido" en cada esquina y se elimino). */
 function hatchCorner(
   ctx: CanvasRenderingContext2D,
   originX: number,
@@ -366,11 +369,13 @@ function hatchCorner(
 /**
  * @function inkWallTexture
  * @description Muro manga-ink: base plana + lineas horizontales wobbly +
- *   hatching en esquinas superiores + zocalo de trazo grueso + screentone
- *   sutil + AO fake leve. Cacheada por theme y COMPARTIDA (pool).
+ *   zocalo de trazo grueso (color `trim` del theme — el guiño morado del
+ *   aula) + screentone sutil + AO fake leve. Sin hatching de esquinas.
+ *   Cacheada por theme y COMPARTIDA (pool).
  */
 export function inkWallTexture(theme: RoomTheme): CanvasTexture {
-  const key = `wall|${theme.wall}|${theme.ink}`
+  const trim = theme.trim ?? theme.ink
+  const key = `wall|${theme.wall}|${theme.ink}|${trim}`
   const cached = inkTextureCache.get(key)
   if (cached) {
     return cached
@@ -388,16 +393,15 @@ export function inkWallTexture(theme: RoomTheme): CanvasTexture {
       wobblyLine(ctx, 0, size * yRatio, size, size * yRatio, rng)
     }
     ctx.globalAlpha = 1
-    // hatching diagonal corto en las 2 esquinas superiores
-    hatchCorner(ctx, 0, 1, rng)
-    hatchCorner(ctx, size, -1, rng)
-    // zocalo inferior: banda de trazo grueso irregular
-    ctx.globalAlpha = 0.55
-    ctx.fillStyle = theme.ink
+    // zocalo inferior: banda de trazo grueso irregular (trim)
+    ctx.globalAlpha = 0.75
+    ctx.fillStyle = trim
     ctx.fillRect(0, size - 14, size, 14)
-    ctx.globalAlpha = 0.8
+    ctx.globalAlpha = 0.85
+    ctx.strokeStyle = trim
     ctx.lineWidth = 5
     wobblyLine(ctx, 0, size - 16, size, size - 16, rng, 3)
+    ctx.strokeStyle = theme.ink
     ctx.globalAlpha = 1
     screentone(ctx, size, theme.ink, 0.05)
     // AO fake sutil (el look plano manda): union techo + contacto piso
@@ -531,17 +535,19 @@ export interface ScreenPanelOpts {
   theme: Pick<RoomTheme, 'screenBg' | 'screenFg' | 'ink'>
   width: number
   height: number
+  /** LED de estado abajo a la derecha (pantallas apagadas/encendidas). */
+  dot?: string
 }
 
 /**
- * @function screenPanel
- * @description Pantalla/pizarra como viñeta manga: marco de tinta irregular
- *   con hatching en 2 esquinas + texto monospace. MeshBasicMaterial (plano
- *   emisivo: no depende de luz). NO compartido: se libera con la sala.
+ * @function screenTexture
+ * @description Textura de pantalla/viñeta manga: marco de tinta irregular
+ *   con hatching + texto monospace + LED opcional. Base de screenPanel y
+ *   de las pantallas intercambiables (PC que bootea, OFFLINE->ONLINE).
  */
-export function screenPanel(opts: ScreenPanelOpts): Mesh {
+export function screenTexture(opts: ScreenPanelOpts): CanvasTexture {
   const rng = makeRng(hashSeed([opts.title ?? '', ...opts.lines].join('|')))
-  const texture = makeCanvasTexture(512, (ctx, size) => {
+  return makeCanvasTexture(512, (ctx, size) => {
     ctx.fillStyle = opts.theme.screenBg
     ctx.fillRect(0, 0, size, size)
     // marco de viñeta: doble trazo wobbly
@@ -573,8 +579,23 @@ export function screenPanel(opts: ScreenPanelOpts): Mesh {
       ctx.fillText(line.slice(0, 34), 28, y)
       y += 36
     }
+    if (opts.dot) {
+      ctx.fillStyle = opts.dot
+      ctx.beginPath()
+      ctx.arc(size - 34, size - 34, 9, 0, Math.PI * 2)
+      ctx.fill()
+    }
   })
-  const material = new MeshBasicMaterial({ map: texture })
+}
+
+/**
+ * @function screenPanel
+ * @description Pantalla/pizarra como viñeta manga sobre un plane.
+ *   MeshBasicMaterial (plano emisivo: no depende de luz). NO compartido:
+ *   se libera con la sala.
+ */
+export function screenPanel(opts: ScreenPanelOpts): Mesh {
+  const material = new MeshBasicMaterial({ map: screenTexture(opts) })
   const mesh = new Mesh(new PlaneGeometry(opts.width, opts.height), material)
   mesh.userData.noOutline = true
   return mesh
@@ -662,6 +683,39 @@ export function mergedBoxes(
     geo.dispose()
   }
   return new Mesh(merged, material)
+}
+
+/**
+ * @function outlinedMergedBoxes
+ * @description mergedBoxes + su contorno CORRECTO. El hull escalado de un
+ *   merge con posiciones horneadas se DESPLAZA del centro (losas negras
+ *   flotando); aqui el contorno es un segundo merge con cada caja inflada
+ *   en absoluto. 2 draw calls totales para N cajas contorneadas.
+ */
+export function outlinedMergedBoxes(
+  parts: readonly BoxSpec[],
+  material: MeshToonMaterial | MeshBasicMaterial,
+  opts: { inflate?: number; castShadow?: boolean } = {},
+): Group {
+  const inflate = opts.inflate ?? 0.045
+  const group = new Group()
+  const fill = mergedBoxes(parts, material)
+  fill.userData.noOutline = true
+  if (opts.castShadow) {
+    fill.castShadow = true
+  }
+  const hull = mergedBoxes(
+    parts.map((p) => ({
+      ...p,
+      w: p.w + inflate,
+      h: p.h + inflate,
+      d: p.d + inflate,
+    })),
+    outlineMaterial(),
+  )
+  hull.userData.outline = true
+  group.add(fill, hull)
+  return group
 }
 
 // ---------------------------------------------------------------------------

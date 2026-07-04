@@ -23,6 +23,8 @@ export interface RoomSpec {
   /** Experiences (por slug) que alimentan la sala, en orden narrativo. */
   slugs: readonly string[]
   title: Record<Locale, string>
+  /** Que representa la sala (la reseña del cuaderno-atril). */
+  represents: Record<Locale, string>
 }
 
 /**
@@ -34,6 +36,16 @@ export const MVP_ROOM_SPECS: readonly RoomSpec[] = [
     id: 'aula',
     slugs: ['iai', 'projects-degrees'],
     title: { es: 'Aula — Universidad', en: 'Classroom — University' },
+    represents: {
+      es:
+        'Esta sala representa los años de universidad: liderar equipos ' +
+        'academicos, montar redes cliente-servidor y sentar la base de la ' +
+        'arquitectura de software.',
+      en:
+        'This room represents the university years: leading academic ' +
+        'teams, building client-server networks and laying the foundations ' +
+        'of software architecture.',
+    },
   },
   {
     id: 'corpoelec',
@@ -42,11 +54,31 @@ export const MVP_ROOM_SPECS: readonly RoomSpec[] = [
       es: 'CORPOELEC — Central electrica',
       en: 'CORPOELEC — Power utility',
     },
+    represents: {
+      es:
+        'Esta sala representa la primera experiencia profesional: ' +
+        'digitalizar el inventario de una central electrica estatal que ' +
+        'vivia en planillas de papel.',
+      en:
+        'This room represents the first professional experience: ' +
+        'digitising the inventory of a state power utility that lived on ' +
+        'paper records.',
+    },
   },
   {
     id: 'cima',
     slugs: ['destacame-architect'],
     title: { es: 'La Cima — Destacame', en: 'The Summit — Destacame' },
+    represents: {
+      es:
+        'Esta sala representa la cima actual: arquitectura frontend y ' +
+        'microservicios para fintech, orquestando operaciones en Chile y ' +
+        'Mexico.',
+      en:
+        'This room represents the current summit: frontend architecture ' +
+        'and microservices for fintech, orchestrating operations across ' +
+        'Chile and Mexico.',
+    },
   },
 ]
 
@@ -69,8 +101,16 @@ export interface RoomTexts {
   title: string
   role: string
   period: string
+  /** Empresas de la etapa (unidas con ' · ' si son varias). */
+  company: string
+  /** Pais(es) del cliente/empleador de la etapa. */
+  country: string
   retos: string[]
   aprendizajes: string[]
+  /** Reseña completa del cuaderno-atril (parrafos para el panel DOM). */
+  resena: string[]
+  /** Lineas cortas del cuaderno 3D (empresa, lugar, periodo, rol). */
+  notebook: string[]
 }
 
 export interface RoomDef extends SeniorityParams {
@@ -142,12 +182,31 @@ function buildTexts(
   exps: readonly Experience[],
   locale: Locale,
 ): RoomTexts {
+  const role = exps[0]?.role[locale] ?? ''
+  const period = formatPeriod(exps, locale)
+  const company = [...new Set(exps.map((exp) => exp.company))].join(' · ')
+  const country = [...new Set(exps.map((exp) => exp.country))].join(' · ')
+  const labels =
+    locale === 'es'
+      ? { company: 'Empresa', role: 'Rol', period: 'Periodo', where: 'Donde' }
+      : { company: 'Company', role: 'Role', period: 'Period', where: 'Where' }
   return {
     title: spec.title[locale],
-    role: exps[0]?.role[locale] ?? '',
-    period: formatPeriod(exps, locale),
+    role,
+    period,
+    company,
+    country,
     retos: buildRetos(exps, locale),
     aprendizajes: buildAprendizajes(exps, locale),
+    resena: [
+      spec.represents[locale],
+      `${labels.company}: ${company}`,
+      `${labels.where}: ${country}`,
+      `${labels.role}: ${role}`,
+      `${labels.period}: ${period}`,
+      ...exps.flatMap((exp) => (exp.summary ? [exp.summary[locale]] : [])),
+    ],
+    notebook: [company, country, period, role],
   }
 }
 

@@ -13,6 +13,7 @@ import {
   OctahedronGeometry,
   PointLight,
 } from 'three'
+import type { Box2 } from '../../lib/collision'
 import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import {
@@ -28,7 +29,14 @@ import {
   unitGeo,
 } from '../toon'
 import type { RoomBuild, RoomCtx } from '../world'
-import { desk, fichaProp, monitor, pastPortal } from './props'
+import {
+  desk,
+  fichaBoard,
+  footprint,
+  monitor,
+  pastPortal,
+  screenVariants,
+} from './props'
 
 const MICRO_LABEL = {
   es: 'Orquestar Chile + Mexico',
@@ -102,6 +110,8 @@ function buildOrchestration(
   group: Group
   interactable: Interactable
   update(t: number, dt: number): void
+  /** true cuando el pulso completo al menos una vez (deploy hecho). */
+  completed(): boolean
 } {
   const units = unitGeo()
   const group = new Group()
@@ -148,6 +158,7 @@ function buildOrchestration(
     group.add(link)
   }
   let pulseStart = -1
+  let done = false
   return {
     group,
     interactable: {
@@ -170,6 +181,7 @@ function buildOrchestration(
       const elapsed = t - pulseStart
       if (elapsed > 2.4) {
         pulseStart = -1
+        done = true
         clMat.emissiveIntensity = 0.4
         mxMat.emissiveIntensity = 0.4
         return
@@ -178,15 +190,18 @@ function buildOrchestration(
       clMat.emissiveIntensity = 0.4 + wave * 1.4
       mxMat.emissiveIntensity = 0.4 + (1 - wave) * 1.4
     },
+    completed: () => done,
   }
 }
 
 export default function buildCima(ctx: RoomCtx): RoomBuild {
-  const { room, theme, state, actions } = ctx
+  const { def, room, theme, state, actions } = ctx
   const group = new Group()
   const interactables: Interactable[] = []
   const updates: ((t: number, dt: number) => void)[] = []
   const npcs: NpcHandle[] = []
+  const disposables: { dispose(): void }[] = []
+  const staticColliders: Box2[] = []
   const half = room.width / 2
   const units = unitGeo()
   const screenTheme = {
@@ -195,9 +210,10 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     ink: theme.ink,
   }
 
-  // mesa de reunion + 6 sillas (fusionadas por material: 3 draw calls)
+  // mesa de reunion + 6 sillas (fusionadas por material: 3 draw calls),
+  // corrida del centro para dejar libre el pasillo de la puerta
   const meeting = new Group()
-  meeting.position.set(0, 0, room.z + 1.2)
+  meeting.position.set(-1.7, 0, room.z + 1.6)
   const table = mergedBoxes(
     [
       { w: 3.4, h: 0.07, d: 1.5, x: 0, y: 0.74, z: 0 },
@@ -231,17 +247,39 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   )
   meeting.add(table, chairSet)
   group.add(meeting)
+  staticColliders.push(footprint(-1.7, room.z + 1.6, 3.7, 3.2))
 
-  // pared de paneles: observabilidad + vibe coding
-  const obs = screenPanel({
-    title: 'observability',
-    lines: ['p95: 180ms', 'uptime: 99.97%', 'campanas: 4 min (antes: horas)'],
-    theme: screenTheme,
+  // pared de paneles: observabilidad (se actualiza con la orquestacion)
+  // + vibe coding
+  const obs = screenVariants({
     width: 2.2,
     height: 1.3,
+    variants: {
+      live: {
+        title: 'observability',
+        lines: [
+          'p95: 180ms',
+          'uptime: 99.97%',
+          'campanas: 4 min (antes: horas)',
+        ],
+        theme: screenTheme,
+      },
+      deployed: {
+        title: 'observability',
+        lines: [
+          'deploy CL+MX: OK',
+          'p95: 95ms   uptime: 99.99%',
+          'campanas: 4 min (antes: horas)',
+        ],
+        theme: screenTheme,
+        dot: '#4dcc7a',
+      },
+    },
+    initial: 'live',
   })
-  obs.position.set(-2.2, 1.9, room.z + room.depth / 2 - 0.12)
-  obs.rotation.y = Math.PI
+  obs.mesh.position.set(-2.2, 1.9, room.z + room.depth / 2 - 0.12)
+  obs.mesh.rotation.y = Math.PI
+  disposables.push(obs)
   const vibe = screenPanel({
     title: 'vibe coding',
     lines: [
@@ -255,7 +293,7 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   })
   vibe.position.set(2.2, 1.9, room.z + room.depth / 2 - 0.12)
   vibe.rotation.y = Math.PI
-  group.add(obs, vibe)
+  group.add(obs.mesh, vibe)
 
   // grafo de microservicios en el muro izquierdo
   const graph = new Mesh(
@@ -284,8 +322,10 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
       width: 1.1,
     }),
   )
+  staticColliders.push(footprint(half - 1.6, room.z - 2.4, 2.1, 0.8))
 
-  // micro-interaccion: pulso CL <-> MX via el nodo central
+  // micro-interaccion: lanzar la orquestacion CL <-> MX — el pulso viaja
+  // y el panel de observabilidad reporta el deploy
   const orchestration = buildOrchestration(room.index, [
     0,
     0,
@@ -294,6 +334,11 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   group.add(orchestration.group)
   interactables.push(orchestration.interactable)
   updates.push(orchestration.update)
+  updates.push(() => {
+    if (orchestration.completed()) {
+      obs.show('deployed')
+    }
+  })
 
   // puerta PROXIMAMENTE al fondo
   const coming = new Group()
@@ -347,6 +392,7 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     beacon.add(holoLight)
   }
   group.add(beacon)
+  staticColliders.push(footprint(half - 1.3, room.z - 0.4, 0.8, 0.8))
   interactables.push({
     id: `contact-${room.index}`,
     x: half - 1.3,
@@ -360,22 +406,26 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     holo.rotation.y += dt * 0.8
   })
 
-  // RETOS / APRENDIZAJES / portal al pasado
-  const retos = fichaProp({
+  // pizarras tituladas: RETOS (muro frontal) / APRENDIZAJES (muro izq)
+  const texts = def.texts[state.locale]
+  const retos = fichaBoard({
     roomIndex: room.index,
     kind: 'retos',
-    style: 'pizarra',
-    position: [-2.6, 0, room.z - room.depth / 2 + 0.5],
-    accent: theme.accent,
+    position: [-2.6, 0, room.z - room.depth / 2 + 0.35],
+    theme,
+    locale: state.locale,
+    preview: texts.retos,
     state,
     onOpen: actions.openFicha,
   })
-  const aprendizajes = fichaProp({
+  const aprendizajes = fichaBoard({
     roomIndex: room.index,
     kind: 'aprendizajes',
-    style: 'cuaderno',
-    position: [-half + 1.4, 0, room.z + 2.4],
-    accent: theme.accent,
+    position: [-half + 0.35, 0, room.z + 1.4],
+    rotationY: Math.PI / 2,
+    theme,
+    locale: state.locale,
+    preview: texts.aprendizajes,
     state,
     onOpen: actions.openFicha,
   })
@@ -405,8 +455,8 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
       bottom: '#1c2430',
       accessory: 'tie',
       faceSeed: 71,
-      position: [-1.6, 0, room.z + 2.4],
-      rotationY: 0.9,
+      position: [-3.95, 0, room.z + 1.6],
+      rotationY: Math.PI / 2,
     }),
     makeNpc({
       skin: '#d9a684',
@@ -443,6 +493,7 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   return {
     group,
     interactables,
+    colliders: () => [...staticColliders, ...npcs.map((npc) => npc.collider())],
     update: (t, dt) => {
       for (const fn of updates) {
         fn(t, dt)
@@ -451,6 +502,9 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     dispose: () => {
       for (const npc of npcs) {
         npc.dispose()
+      }
+      for (const item of disposables) {
+        item.dispose()
       }
       disposeDeep(group)
     },

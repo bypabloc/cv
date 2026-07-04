@@ -16,6 +16,7 @@ import {
   SphereGeometry,
   SRGBColorSpace,
 } from 'three'
+import type { Box2 } from '../lib/collision'
 import { basicMat, makeRng, outlineGroup, toonMat, unitGeo } from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
@@ -43,6 +44,8 @@ export interface CharacterHandle {
 export interface NpcHandle {
   group: Group
   update(t: number, dt: number): void
+  /** AABB alrededor de la posicion ACTUAL (bloquea el paso del jugador). */
+  collider(): Box2
   dispose(): void
 }
 
@@ -538,6 +541,7 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
   const speed = opts.speed ?? 0.7
   character.setWalking(walking)
 
+  const NPC_RADIUS = 0.26
   return {
     group,
     update(t, dt) {
@@ -548,6 +552,14 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
         group.rotation.y = (opts.rotationY ?? 0) + Math.sin(tt * 0.7) * 0.08
       }
       character.update(tt, dt)
+    },
+    collider() {
+      return {
+        minX: group.position.x - NPC_RADIUS,
+        maxX: group.position.x + NPC_RADIUS,
+        minZ: group.position.z - NPC_RADIUS,
+        maxZ: group.position.z + NPC_RADIUS,
+      }
     },
     dispose() {
       character.dispose()

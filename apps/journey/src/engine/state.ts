@@ -5,6 +5,7 @@
  *   Incluye el registro de interactables por proximidad que controls
  *   consulta cada frame y las salas registran/des-registran al montar.
  */
+import type { Box2 } from '../lib/collision'
 import type { Zone } from '../lib/layout'
 import type { Locale } from '../lib/rooms'
 
@@ -44,6 +45,12 @@ export interface EngineState {
   tourOn: boolean
   interactables: Map<string, Interactable>
   activeId: string | null
+  /**
+   * Colliders del CONTENIDO por fuente (sala montada / pasado): cada
+   * fuente es una funcion evaluada por frame (cubre props estaticos y
+   * NPCs en movimiento). Los registra/borra el world al montar/desmontar.
+   */
+  obstacleSources: Map<string, () => readonly Box2[]>
 }
 
 export function createEngineState(
@@ -63,7 +70,17 @@ export function createEngineState(
     tourOn: false,
     interactables: new Map(),
     activeId: null,
+    obstacleSources: new Map(),
   }
+}
+
+/** Aplana los colliders de contenido activos (props + NPCs) del frame. */
+export function collectObstacles(state: EngineState): Box2[] {
+  const out: Box2[] = []
+  for (const source of state.obstacleSources.values()) {
+    out.push(...source())
+  }
+  return out
 }
 
 export function registerInteractable(

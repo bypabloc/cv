@@ -8,7 +8,7 @@
  */
 import type { PerspectiveCamera } from 'three'
 import type { Box2 } from '../lib/collision'
-import { resolveMovement } from '../lib/collision'
+import { circleIntersectsBox, resolveMovement } from '../lib/collision'
 import {
   doorBlockerBox,
   EYE_HEIGHT,
@@ -29,6 +29,7 @@ import type { CharacterHandle } from './character'
 import {
   activateCurrent,
   type CameraMode,
+  collectObstacles,
   type EngineState,
   isUiOpen,
   nearestInteractableIn,
@@ -150,11 +151,21 @@ export function createControls(deps: ControlsDeps): Controls {
     const dirX = -cosY * nx - sinY * nz
     const dirZ = sinY * nx - cosY * nz
     const step = WALK_SPEED * dt
+    const candidates = [
+      ...deps.walls,
+      ...closedDoorBoxes(),
+      ...collectObstacles(state),
+    ]
+    // anti-atasco: una caja que YA contiene al jugador (un NPC que camino
+    // sobre el, un teleport) no bloquea — siempre se puede salir
+    const blockers = candidates.filter(
+      (box) => !circleIntersectsBox(pos.x, pos.z, PLAYER_RADIUS, box),
+    )
     const next = resolveMovement(
       pos,
       { x: dirX * step, z: dirZ * step },
       PLAYER_RADIUS,
-      [...deps.walls, ...closedDoorBoxes()],
+      blockers,
     )
     pos.x = next.x
     pos.z = next.z

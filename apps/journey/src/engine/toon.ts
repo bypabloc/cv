@@ -531,17 +531,19 @@ export interface ScreenPanelOpts {
   theme: Pick<RoomTheme, 'screenBg' | 'screenFg' | 'ink'>
   width: number
   height: number
+  /** LED de estado abajo a la derecha (pantallas apagadas/encendidas). */
+  dot?: string
 }
 
 /**
- * @function screenPanel
- * @description Pantalla/pizarra como viñeta manga: marco de tinta irregular
- *   con hatching en 2 esquinas + texto monospace. MeshBasicMaterial (plano
- *   emisivo: no depende de luz). NO compartido: se libera con la sala.
+ * @function screenTexture
+ * @description Textura de pantalla/viñeta manga: marco de tinta irregular
+ *   con hatching + texto monospace + LED opcional. Base de screenPanel y
+ *   de las pantallas intercambiables (PC que bootea, OFFLINE->ONLINE).
  */
-export function screenPanel(opts: ScreenPanelOpts): Mesh {
+export function screenTexture(opts: ScreenPanelOpts): CanvasTexture {
   const rng = makeRng(hashSeed([opts.title ?? '', ...opts.lines].join('|')))
-  const texture = makeCanvasTexture(512, (ctx, size) => {
+  return makeCanvasTexture(512, (ctx, size) => {
     ctx.fillStyle = opts.theme.screenBg
     ctx.fillRect(0, 0, size, size)
     // marco de viñeta: doble trazo wobbly
@@ -573,8 +575,23 @@ export function screenPanel(opts: ScreenPanelOpts): Mesh {
       ctx.fillText(line.slice(0, 34), 28, y)
       y += 36
     }
+    if (opts.dot) {
+      ctx.fillStyle = opts.dot
+      ctx.beginPath()
+      ctx.arc(size - 34, size - 34, 9, 0, Math.PI * 2)
+      ctx.fill()
+    }
   })
-  const material = new MeshBasicMaterial({ map: texture })
+}
+
+/**
+ * @function screenPanel
+ * @description Pantalla/pizarra como viñeta manga sobre un plane.
+ *   MeshBasicMaterial (plano emisivo: no depende de luz). NO compartido:
+ *   se libera con la sala.
+ */
+export function screenPanel(opts: ScreenPanelOpts): Mesh {
+  const material = new MeshBasicMaterial({ map: screenTexture(opts) })
   const mesh = new Mesh(new PlaneGeometry(opts.width, opts.height), material)
   mesh.userData.noOutline = true
   return mesh

@@ -19,6 +19,7 @@ import {
   type Scene,
   type WebGLRenderer,
 } from 'three'
+import type { Box2 } from '../lib/collision'
 import {
   buildPastWallBoxes,
   buildWallBoxes,
@@ -77,6 +78,8 @@ export interface RoomCtx {
 export interface RoomBuild {
   group: Group
   interactables: Interactable[]
+  /** Colliders del contenido (props + NPCs), evaluados por frame. */
+  colliders?(): readonly Box2[]
   update?(t: number, dt: number): void
   /** Libera SOLO lo propio (no el pool toon): tipicamente disposeDeep. */
   dispose(): void
@@ -530,6 +533,9 @@ export function createWorld(deps: WorldDeps): World {
     for (const item of build.interactables) {
       registerInteractable(state, item)
     }
+    if (build.colliders) {
+      state.obstacleSources.set(`room-${index}`, build.colliders)
+    }
     // calienta shaders con la sala ya montada (pool toon = casi noop)
     renderer.compile(scene, camera)
   }
@@ -543,6 +549,7 @@ export function createWorld(deps: WorldDeps): World {
     for (const item of build.interactables) {
       unregisterInteractable(state, item.id)
     }
+    state.obstacleSources.delete(`room-${index}`)
     build.dispose()
     contents.delete(index)
   }
@@ -734,6 +741,7 @@ export function createWorld(deps: WorldDeps): World {
         for (const item of pastBuild.interactables) {
           unregisterInteractable(state, item.id)
         }
+        state.obstacleSources.delete('past')
         pastBuild.dispose()
         pastBuild = null
         state.past = null
@@ -786,6 +794,9 @@ export function createWorld(deps: WorldDeps): World {
       for (const item of build.interactables) {
         registerInteractable(state, item)
       }
+      if (build.colliders) {
+        state.obstacleSources.set('past', build.colliders)
+      }
       syncShells(new Set<ShellKey>([`past-${roomIndex}`]))
       applyTheme('past')
       deps.teleportPlayer(spawn.x, spawn.z)
@@ -805,6 +816,7 @@ export function createWorld(deps: WorldDeps): World {
         for (const item of pastBuild.interactables) {
           unregisterInteractable(state, item.id)
         }
+        state.obstacleSources.delete('past')
         pastBuild.dispose()
         pastBuild = null
       }
@@ -851,6 +863,7 @@ export function createWorld(deps: WorldDeps): World {
       for (const index of [...contents.keys()]) {
         unmountBuild(index)
       }
+      state.obstacleSources.clear()
       if (pastBuild) {
         scene.remove(pastBuild.group)
         pastBuild.dispose()

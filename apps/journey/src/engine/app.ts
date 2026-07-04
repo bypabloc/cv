@@ -266,9 +266,12 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   if (import.meta.env.DEV) {
     // introspeccion para los smokes con browser (solo DEV, cero en prod)
     const w = window as Window & {
-      __journeyDebug?: { player: { x: number; y: number; z: number } }
+      __journeyDebug?: {
+        player: { x: number; y: number; z: number }
+        state: EngineState
+      }
     }
-    w.__journeyDebug = { player: player.group.position }
+    w.__journeyDebug = { player: player.group.position, state }
   }
 
   return {

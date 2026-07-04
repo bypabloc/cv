@@ -20,6 +20,7 @@ import {
   disposeDeep,
   label,
   makeCanvasTexture,
+  mergedBoxes,
   outlineGroup,
   screenPanel,
   toonMat,
@@ -194,18 +195,18 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     ink: theme.ink,
   }
 
-  // mesa de reunion + 6 sillas
+  // mesa de reunion + 6 sillas (fusionadas por material: 3 draw calls)
   const meeting = new Group()
   meeting.position.set(0, 0, room.z + 1.2)
-  const tableTop = boxMesh(3.4, 0.07, 1.5, toonMat('#1b2433'))
-  tableTop.position.y = 0.74
-  tableTop.castShadow = true
-  meeting.add(tableTop)
-  for (const x of [-1.5, 1.5]) {
-    const leg = boxMesh(0.12, 0.74, 1.3, toonMat('#141a26'))
-    leg.position.set(x, 0.37, 0)
-    meeting.add(leg)
-  }
+  const table = mergedBoxes(
+    [
+      { w: 3.4, h: 0.07, d: 1.5, x: 0, y: 0.74, z: 0 },
+      { w: 0.12, h: 0.74, d: 1.3, x: -1.5, y: 0.37, z: 0 },
+      { w: 0.12, h: 0.74, d: 1.3, x: 1.5, y: 0.37, z: 0 },
+    ],
+    toonMat('#1b2433'),
+  )
+  table.castShadow = true
   const chairs: readonly (readonly [number, number])[] = [
     [-1.1, -0.9],
     [0, -0.9],
@@ -214,13 +215,21 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     [0, 0.9],
     [1.1, 0.9],
   ]
-  for (const [x, dz] of chairs) {
-    const seat = boxMesh(0.44, 0.06, 0.44, toonMat('#26303f'))
-    seat.position.set(x, 0.45, dz)
-    const back = boxMesh(0.44, 0.55, 0.05, toonMat('#26303f'))
-    back.position.set(x, 0.75, dz + (dz > 0 ? 0.2 : -0.2))
-    meeting.add(seat, back)
-  }
+  const chairSet = mergedBoxes(
+    chairs.flatMap(([x, dz]) => [
+      { w: 0.44, h: 0.06, d: 0.44, x, y: 0.45, z: dz },
+      {
+        w: 0.44,
+        h: 0.55,
+        d: 0.05,
+        x,
+        y: 0.75,
+        z: dz + (dz > 0 ? 0.2 : -0.2),
+      },
+    ]),
+    toonMat('#26303f'),
+  )
+  meeting.add(table, chairSet)
   group.add(meeting)
 
   // pared de paneles: observabilidad + vibe coding

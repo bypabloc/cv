@@ -1,14 +1,14 @@
 /**
  * @config astro
- * @description Astro config para apps/journey (CV como viaje 3D, Propuesta A).
- *   i18n es default + en, React (isla 3D), Tailwind v4 via @tailwindcss/vite.
+ * @description Astro config para apps/journey (CV como viaje 3D vanilla).
+ *   i18n es default + en, Tailwind v4 via @tailwindcss/vite. Sin React:
+ *   el 3D es Three.js vanilla cargado por dynamic import desde lib/boot.
  *   Sitemap + postbuilds de discovery (llms.txt, .well-known, _worker.js)
  *   como los niches — ver scripts/.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import react from '@astrojs/react'
 import sitemap from '@astrojs/sitemap'
 import yaml from '@modyfi/vite-plugin-yaml'
 import { buildSiteUrl } from '@portfolio/app-shared/lib/site-urls'
@@ -49,17 +49,13 @@ export default defineConfig({
       prefixDefaultLocale: false,
     },
   },
-  integrations: [sitemap(), react()],
+  integrations: [sitemap()],
   vite: {
     plugins: [yaml({ schema: JSON_SCHEMA }), tailwindcss()],
+    // three llega por dynamic import (chunk 3D): prebundlearlo evita la
+    // re-optimizacion de vite a mitad de la primera carga en dev
     optimizeDeps: {
-      include: [
-        'react',
-        'react-dom',
-        'react-dom/client',
-        'react/jsx-runtime',
-        'react/jsx-dev-runtime',
-      ],
+      include: ['three'],
     },
     ssr: {
       noExternal: [

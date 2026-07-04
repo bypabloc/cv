@@ -4,7 +4,7 @@
  *   MeshToonMaterial (compartir material = menos state changes y shaders
  *   compilados 1 sola vez), gradientes de 3 escalones duros, contornos
  *   inverted hull, texturas canvas de tinta deterministas (LCG), labels
- *   con lettering manga (reemplazan a troika Text) y disposeDeep con
+ *   con lettering manga (reemplazan al Text SDF anterior) y disposeDeep con
  *   guard `userData.shared` para nunca liberar el pool.
  *
  *   Nota DS: los hex son colores de MATERIAL WebGL/canvas, no CSS del UI.
@@ -28,6 +28,7 @@ import {
   SRGBColorSpace,
   Texture,
 } from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { RoomTheme } from './themes'
 
 /** Tinta universal de contornos y trazos (negro-azulado manga). */
@@ -460,7 +461,7 @@ export function inkFloorTexture(theme: RoomTheme): CanvasTexture {
 }
 
 // ---------------------------------------------------------------------------
-// Labels (lettering manga — reemplazo de troika Text)
+// Labels (lettering manga — reemplazo del Text SDF anterior)
 // ---------------------------------------------------------------------------
 
 export interface LabelOpts {
@@ -617,6 +618,42 @@ export function boxMesh(
   const mesh = new Mesh(unitGeo().box, material)
   mesh.scale.set(w, h, d)
   return mesh
+}
+
+export interface BoxSpec {
+  w: number
+  h: number
+  d: number
+  x: number
+  y: number
+  z: number
+  rotY?: number
+}
+
+/**
+ * @function mergedBoxes
+ * @description N cajas estaticas del mismo material fusionadas en UNA
+ *   geometry (1 draw call). Palanca principal del presupuesto AC-10:
+ *   muros de shell, escritorios, sillas, jambas. La geometry resultante
+ *   es propia (disposeDeep la libera).
+ */
+export function mergedBoxes(
+  parts: readonly BoxSpec[],
+  material: MeshToonMaterial | MeshBasicMaterial,
+): Mesh {
+  const geos = parts.map((p) => {
+    const geo = new BoxGeometry(p.w, p.h, p.d)
+    if (p.rotY) {
+      geo.rotateY(p.rotY)
+    }
+    geo.translate(p.x, p.y, p.z)
+    return geo
+  })
+  const merged = mergeGeometries(geos)
+  for (const geo of geos) {
+    geo.dispose()
+  }
+  return new Mesh(merged, material)
 }
 
 // ---------------------------------------------------------------------------

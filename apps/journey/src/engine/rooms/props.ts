@@ -9,7 +9,7 @@ import { Group, Mesh, RingGeometry } from 'three'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
 import type { EngineState, FichaKind, Interactable } from '../state'
 import type { RoomTheme } from '../themes'
-import { boxMesh, screenPanel, toonMat, toonMatOwn, unitGeo } from '../toon'
+import { boxMesh, mergedBoxes, screenPanel, toonMat, toonMatOwn } from '../toon'
 
 export interface PropHandle {
   group: Group
@@ -17,7 +17,7 @@ export interface PropHandle {
   update?(t: number, dt: number): void
 }
 
-/** Escritorio/mesa minima: tapa + 2 patas laterales. */
+/** Escritorio/mesa minima: tapa + 2 patas fusionadas (1 draw call). */
 export function desk(opts: {
   position: readonly [number, number, number]
   rotationY?: number
@@ -25,17 +25,19 @@ export function desk(opts: {
   color?: string
 }): Group {
   const width = opts.width ?? 1.2
-  const material = toonMat(opts.color ?? '#4a4038')
   const group = new Group()
   group.position.set(opts.position[0], opts.position[1], opts.position[2])
   group.rotation.y = opts.rotationY ?? 0
-  const top = boxMesh(width, 0.05, 0.6, material)
-  top.position.y = 0.72
-  const legL = boxMesh(0.06, 0.72, 0.55, material)
-  legL.position.set(-width / 2 + 0.05, 0.36, 0)
-  const legR = boxMesh(0.06, 0.72, 0.55, material)
-  legR.position.set(width / 2 - 0.05, 0.36, 0)
-  group.add(top, legL, legR)
+  group.add(
+    mergedBoxes(
+      [
+        { w: width, h: 0.05, d: 0.6, x: 0, y: 0.72, z: 0 },
+        { w: 0.06, h: 0.72, d: 0.55, x: -width / 2 + 0.05, y: 0.36, z: 0 },
+        { w: 0.06, h: 0.72, d: 0.55, x: width / 2 - 0.05, y: 0.36, z: 0 },
+      ],
+      toonMat(opts.color ?? '#4a4038'),
+    ),
+  )
   return group
 }
 
@@ -53,11 +55,22 @@ export function monitor(opts: {
   const group = new Group()
   group.position.set(opts.position[0], opts.position[1], opts.position[2])
   group.rotation.y = opts.rotationY ?? 0
-  const base = new Mesh(unitGeo().cylinder, toonMat('#1c1c20'))
-  base.scale.set(0.22, 0.12, 0.22)
-  base.position.y = 0.06
-  const frame = boxMesh(width + 0.05, height + 0.05, 0.05, toonMat('#15151a'))
-  frame.position.set(0, height / 2 + 0.14, -0.02)
+  // pie + marco fusionados (1 draw call)
+  const body = mergedBoxes(
+    [
+      { w: 0.16, h: 0.14, d: 0.16, x: 0, y: 0.07, z: 0 },
+      {
+        w: width + 0.05,
+        h: height + 0.05,
+        d: 0.05,
+        x: 0,
+        y: height / 2 + 0.14,
+        z: -0.02,
+      },
+    ],
+    toonMat('#15151a'),
+  )
+  body.userData.noOutline = true
   const screen = screenPanel({
     lines: opts.lines,
     title: opts.title,
@@ -66,7 +79,7 @@ export function monitor(opts: {
     height,
   })
   screen.position.set(0, height / 2 + 0.14, 0.01)
-  group.add(base, frame, screen)
+  group.add(body, screen)
   return group
 }
 
@@ -103,6 +116,7 @@ export function fichaProp(opts: {
     board.position.set(0, 1.6, 0)
     const backing = boxMesh(2.05, 1.35, 0.04, toonMat('#5a4632'))
     backing.position.set(0, 1.6, -0.05)
+    backing.userData.noOutline = true
     group.add(board, backing)
   } else {
     const podium = boxMesh(0.42, 1, 0.42, toonMat('#4a3b2a'))
@@ -110,9 +124,11 @@ export function fichaProp(opts: {
     const pageL = boxMesh(0.3, 0.03, 0.42, pulseMat)
     pageL.position.set(-0.14, 1.03, 0)
     pageL.rotation.z = 0.16
+    pageL.userData.noOutline = true
     const pageR = boxMesh(0.3, 0.03, 0.42, toonMat('#e8dfc8'))
     pageR.position.set(0.14, 1.03, 0)
     pageR.rotation.z = -0.16
+    pageR.userData.noOutline = true
     group.add(podium, pageL, pageR)
   }
   return {
@@ -174,6 +190,7 @@ export function pastPortal(opts: {
     toonMat(opts.accent, { emissive: opts.accent, emissiveIntensity: 0.5 }),
   )
   header.position.set(0, 2.28, 0)
+  header.userData.noOutline = true
   group.add(frame, swirl, header)
   return {
     group,
@@ -224,7 +241,7 @@ export function exitPortal(opts: {
   }
 }
 
-/** Pila de papeles: laminas apiladas con leve desorden determinista. */
+/** Pila de papeles: laminas fusionadas en 1 mesh, desorden determinista. */
 export function paperStack(opts: {
   position: readonly [number, number, number]
   count?: number
@@ -232,13 +249,19 @@ export function paperStack(opts: {
   const count = opts.count ?? 8
   const group = new Group()
   group.position.set(opts.position[0], opts.position[1], opts.position[2])
-  const material = toonMat('#e8e2d0')
-  for (let i = 0; i < count; i += 1) {
-    const sheet = boxMesh(0.3, 0.012, 0.42, material)
-    sheet.position.y = 0.012 * i
-    sheet.rotation.y = Math.sin(i * 2.3) * 0.25
-    sheet.userData.noOutline = true
-    group.add(sheet)
-  }
+  const stack = mergedBoxes(
+    Array.from({ length: count }, (_, i) => ({
+      w: 0.3,
+      h: 0.012,
+      d: 0.42,
+      x: 0,
+      y: 0.012 * i,
+      z: 0,
+      rotY: Math.sin(i * 2.3) * 0.25,
+    })),
+    toonMat('#e8e2d0'),
+  )
+  stack.userData.noOutline = true
+  group.add(stack)
   return group
 }

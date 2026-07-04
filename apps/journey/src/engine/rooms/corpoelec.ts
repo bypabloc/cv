@@ -15,6 +15,7 @@ import {
   disposeDeep,
   label,
   makeCanvasTexture,
+  mergedBoxes,
   outlineGroup,
   toonMat,
   toonMatOwn,
@@ -103,20 +104,18 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
 
   group.add(transformer([-half + 1.4, 0, room.z - 2.2]))
 
-  // cajas de inventario con etiqueta
-  const crateMat = toonMat('#8a6f4d')
-  const crates: readonly (readonly [number, number, number])[] = [
-    [half - 1, 0.3, room.z - 2.6],
-    [half - 1.7, 0.3, room.z - 2.4],
-    [half - 1, 0.9, room.z - 2.6],
-    [half - 1.1, 0.3, room.z - 1.7],
-  ]
-  for (const [x, y, z] of crates) {
-    const crate = boxMesh(0.6, 0.6, 0.6, crateMat)
-    crate.position.set(x, y, z)
-    crate.castShadow = true
-    group.add(crate)
-  }
+  // cajas de inventario fusionadas (1 draw call) + etiqueta
+  const crates = mergedBoxes(
+    [
+      { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.3, z: room.z - 2.6 },
+      { w: 0.6, h: 0.6, d: 0.6, x: half - 1.7, y: 0.3, z: room.z - 2.4 },
+      { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.9, z: room.z - 2.6 },
+      { w: 0.6, h: 0.6, d: 0.6, x: half - 1.1, y: 0.3, z: room.z - 1.7 },
+    ],
+    toonMat('#8a6f4d'),
+  )
+  crates.castShadow = true
+  group.add(crates)
   const inventoryLabel = label(
     state.locale === 'es' ? 'INVENTARIO' : 'INVENTORY',
     { size: 0.16, color: '#f2b705' },

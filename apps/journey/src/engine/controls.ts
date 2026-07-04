@@ -107,7 +107,8 @@ export function createControls(deps: ControlsDeps): Controls {
   }
   const joy = { x: 0, y: 0 }
   const pos = { x: 0, z: 0 }
-  let yaw = Math.PI // mirando hacia +Z (el recorrido avanza en +Z)
+  // yaw 0 => la camara mira hacia +Z (el recorrido avanza en +Z)
+  let yaw = 0
   let pitch = 0.14
   let povPitch = 0
   let time = 0
@@ -120,7 +121,7 @@ export function createControls(deps: ControlsDeps): Controls {
   const firstRoom = layout.rooms[0]
   pos.z = firstRoom ? firstRoom.z - firstRoom.depth / 4 : 2
   player.group.position.set(pos.x, 0, pos.z)
-  player.group.rotation.y = Math.PI
+  player.group.rotation.y = 0
 
   // -------------------------------------------------------------------------
   // Movimiento + colision (identica en 3a persona y POV)

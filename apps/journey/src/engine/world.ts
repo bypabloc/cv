@@ -44,11 +44,13 @@ import {
 import { type RoomTheme, THEMES, type ThemeZoneId } from './themes'
 import {
   addOutline,
+  type BoxSpec,
   boxMesh,
   disposeDeep,
   inkFloorTexture,
   inkWallTexture,
   label,
+  mergedBoxes,
   toonMat,
   unitGeo,
 } from './toon'
@@ -191,20 +193,21 @@ export function createWorld(deps: WorldDeps): World {
   // Shells
   // -------------------------------------------------------------------------
 
-  function wallMesh(box: WallBox, theme: RoomTheme): Mesh {
-    const mesh = boxMesh(
-      box.maxX - box.minX,
-      box.height,
-      box.maxZ - box.minZ,
+  /** TODOS los muros de una zona fusionados en 1 mesh (presupuesto AC-10). */
+  function wallsMesh(boxes: readonly WallBox[], theme: RoomTheme): Mesh {
+    const mesh = mergedBoxes(
+      boxes.map((box) => ({
+        w: box.maxX - box.minX,
+        h: box.height,
+        d: box.maxZ - box.minZ,
+        x: (box.minX + box.maxX) / 2,
+        y: box.height / 2,
+        z: (box.minZ + box.maxZ) / 2,
+      })),
       toonMat('#ffffff', {
         map: inkWallTexture(theme),
         gradient: theme.gradient,
       }),
-    )
-    mesh.position.set(
-      (box.minX + box.maxX) / 2,
-      box.height / 2,
-      (box.minZ + box.maxZ) / 2,
     )
     mesh.receiveShadow = true
     return mesh
@@ -272,11 +275,14 @@ export function createWorld(deps: WorldDeps): World {
       return group
     }
     const theme = THEMES[def.id]
-    for (const box of wallBoxes) {
-      if (box.source.kind === 'room' && box.source.index === index) {
-        group.add(wallMesh(box, theme))
-      }
-    }
+    group.add(
+      wallsMesh(
+        wallBoxes.filter(
+          (box) => box.source.kind === 'room' && box.source.index === index,
+        ),
+        theme,
+      ),
+    )
     group.add(
       floorMesh(room.x, room.z, room.width, room.depth, theme, {
         x: room.width / 2,
@@ -291,7 +297,7 @@ export function createWorld(deps: WorldDeps): World {
           room.height - 0.35,
           room.z,
           theme.lightColor,
-          9 * def.lightIntensity,
+          14 * def.lightIntensity,
           room.width * 2.2,
         ),
       )
@@ -299,17 +305,40 @@ export function createWorld(deps: WorldDeps): World {
     return group
   }
 
-  /** Puerta con bisagra (port de Door.tsx a toon + outline). */
+  /** Puerta con bisagra (port de Door.tsx): marco fusionado + hoja. */
   function buildDoor(door: DoorLayout): Group {
     const group = new Group()
     group.position.set(door.x, 0, door.z)
-    const jambMat = toonMat('#4a3b2a')
-    const jambL = boxMesh(0.09, DOOR_HEIGHT, 0.22, jambMat)
-    jambL.position.set(-DOOR_WIDTH / 2 - 0.045, DOOR_HEIGHT / 2, 0)
-    const jambR = boxMesh(0.09, DOOR_HEIGHT, 0.22, jambMat)
-    jambR.position.set(DOOR_WIDTH / 2 + 0.045, DOOR_HEIGHT / 2, 0)
-    const lintel = boxMesh(DOOR_WIDTH + 0.18, 0.09, 0.22, jambMat)
-    lintel.position.set(0, DOOR_HEIGHT + 0.045, 0)
+    const frame = mergedBoxes(
+      [
+        {
+          w: 0.09,
+          h: DOOR_HEIGHT,
+          d: 0.22,
+          x: -DOOR_WIDTH / 2 - 0.045,
+          y: DOOR_HEIGHT / 2,
+          z: 0,
+        },
+        {
+          w: 0.09,
+          h: DOOR_HEIGHT,
+          d: 0.22,
+          x: DOOR_WIDTH / 2 + 0.045,
+          y: DOOR_HEIGHT / 2,
+          z: 0,
+        },
+        {
+          w: DOOR_WIDTH + 0.18,
+          h: 0.09,
+          d: 0.22,
+          x: 0,
+          y: DOOR_HEIGHT + 0.045,
+          z: 0,
+        },
+      ],
+      toonMat('#4a3b2a'),
+    )
+    frame.userData.noOutline = true
     const leaf = new Group()
     leaf.position.set(-DOOR_WIDTH / 2, 0, 0)
     const panel = boxMesh(
@@ -325,50 +354,37 @@ export function createWorld(deps: WorldDeps): World {
     handle.scale.setScalar(0.09)
     handle.position.set(DOOR_WIDTH - 0.14, DOOR_HEIGHT / 2, 0.06)
     leaf.add(panel, handle)
-    group.add(jambL, jambR, lintel, leaf)
+    group.add(frame, leaf)
     doorAnims.push({ index: door.corridorIndex, leaf })
     return group
   }
 
-  /** Dinteles sobre el hueco de puerta (port de buildHeaders). */
-  function buildHeaders(door: DoorLayout, group: Group): void {
+  /** Dinteles sobre el hueco de puerta (van fusionados con los muros). */
+  function headerSpecs(door: DoorLayout): BoxSpec[] {
+    const specs: BoxSpec[] = []
     const before = layout.rooms[door.corridorIndex]
     const after = layout.rooms[door.corridorIndex + 1]
-    const theme = THEMES.corridor
-    const mat = toonMat('#ffffff', {
-      map: inkWallTexture(theme),
-      gradient: theme.gradient,
-    })
     if (before) {
-      const backZ = before.z + before.depth / 2
-      const header = boxMesh(
-        DOOR_WIDTH,
-        before.height - DOOR_HEIGHT,
-        WALL_THICKNESS,
-        mat,
-      )
-      header.position.set(
-        0,
-        (before.height + DOOR_HEIGHT) / 2,
-        backZ + WALL_THICKNESS / 2,
-      )
-      group.add(header)
+      specs.push({
+        w: DOOR_WIDTH,
+        h: before.height - DOOR_HEIGHT,
+        d: WALL_THICKNESS,
+        x: 0,
+        y: (before.height + DOOR_HEIGHT) / 2,
+        z: before.z + before.depth / 2 + WALL_THICKNESS / 2,
+      })
     }
     if (after) {
-      const frontZ = after.z - after.depth / 2
-      const header = boxMesh(
-        DOOR_WIDTH,
-        after.height - DOOR_HEIGHT,
-        WALL_THICKNESS,
-        mat,
-      )
-      header.position.set(
-        0,
-        (after.height + DOOR_HEIGHT) / 2,
-        frontZ - WALL_THICKNESS / 2,
-      )
-      group.add(header)
+      specs.push({
+        w: DOOR_WIDTH,
+        h: after.height - DOOR_HEIGHT,
+        d: WALL_THICKNESS,
+        x: 0,
+        y: (after.height + DOOR_HEIGHT) / 2,
+        z: after.z - after.depth / 2 - WALL_THICKNESS / 2,
+      })
     }
+    return specs
   }
 
   function buildCorridorShell(index: number): Group {
@@ -379,12 +395,29 @@ export function createWorld(deps: WorldDeps): World {
       return group
     }
     const theme = THEMES.corridor
-    for (const box of wallBoxes) {
-      if (box.source.kind === 'corridor' && box.source.index === index) {
-        group.add(wallMesh(box, theme))
-      }
-    }
+    // muros laterales + dinteles: 1 solo mesh (mismo material del theme)
+    const sideBoxes = wallBoxes
+      .filter(
+        (box) => box.source.kind === 'corridor' && box.source.index === index,
+      )
+      .map((box) => ({
+        w: box.maxX - box.minX,
+        h: box.height,
+        d: box.maxZ - box.minZ,
+        x: (box.minX + box.maxX) / 2,
+        y: box.height / 2,
+        z: (box.minZ + box.maxZ) / 2,
+      }))
+    const walls = mergedBoxes(
+      [...sideBoxes, ...headerSpecs(door)],
+      toonMat('#ffffff', {
+        map: inkWallTexture(theme),
+        gradient: theme.gradient,
+      }),
+    )
+    walls.receiveShadow = true
     group.add(
+      walls,
       floorMesh(corridor.x, corridor.z, corridor.width, corridor.depth, theme, {
         x: 1,
         y: 2.5,
@@ -399,10 +432,11 @@ export function createWorld(deps: WorldDeps): World {
       ),
       buildDoor(door),
     )
-    buildHeaders(door, group)
-    // mini-timeline: el año de la etapa destino pintado en el piso
+    // mini-timeline: el año de la etapa destino pintado en el piso,
+    // orientado para leerse caminando hacia +Z
     const year = label(corridor.year, { size: 0.9, color: '#aab6d8' })
     year.rotation.x = -Math.PI / 2
+    year.rotation.z = Math.PI
     year.position.set(corridor.x, 0.02, corridor.z)
     group.add(year)
     if (state.tier === 'full') {
@@ -427,11 +461,12 @@ export function createWorld(deps: WorldDeps): World {
       return group
     }
     const theme = THEMES.past
-    for (const box of pastWallBoxes) {
-      if (box.source.index === index) {
-        group.add(wallMesh(box, theme))
-      }
-    }
+    group.add(
+      wallsMesh(
+        pastWallBoxes.filter((box) => box.source.index === index),
+        theme,
+      ),
+    )
     group.add(
       floorMesh(past.x, past.z, past.width, past.depth, theme, {
         x: past.width / 2,

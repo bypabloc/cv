@@ -10,9 +10,9 @@ import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import { unregisterInteractable } from '../state'
 import {
-  boxMesh,
   disposeDeep,
   label,
+  mergedBoxes,
   outlineGroup,
   screenPanel,
   toonMatOwn,
@@ -122,17 +122,28 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
   })
   const captions = { es: ['BLOQUEADO', 'LISTO'], en: ['BLOCKED', 'DONE'] }
   const [blockedText, doneText] = captions[state.locale]
+  // las 2 tarjetas fusionadas (1 draw call, mismo material animable)
+  const cards = mergedBoxes(
+    [-0.55, 0.55].map((x) => ({
+      w: 0.85,
+      h: 0.55,
+      d: 0.05,
+      x,
+      y: 1.5,
+      z: 0,
+    })),
+    boardMat,
+  )
+  micro.add(cards)
   // al activar se alterna la visibilidad: BLOQUEADO off, LISTO on
   const toggleLabels: { visible: boolean }[] = []
   for (const x of [-0.55, 0.55]) {
-    const card = boxMesh(0.85, 0.55, 0.05, boardMat)
-    card.position.set(x, 1.5, 0)
     const blocked = label(blockedText ?? 'BLOQUEADO', { size: 0.12 })
     blocked.position.set(x, 1.5, 0.04)
     const done = label(doneText ?? 'LISTO', { size: 0.12 })
     done.position.set(x, 1.5, 0.04)
     done.visible = false
-    micro.add(card, blocked, done)
+    micro.add(blocked, done)
     toggleLabels.push(blocked, done)
   }
   group.add(micro)

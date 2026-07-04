@@ -16,7 +16,14 @@ import {
   SphereGeometry,
   SRGBColorSpace,
 } from 'three'
-import { basicMat, makeRng, outlineGroup, toonMat, unitGeo } from './toon'
+import {
+  basicMat,
+  makeRng,
+  mergedBoxes,
+  outlineGroup,
+  toonMat,
+  unitGeo,
+} from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
 export type Accessory = 'helmet' | 'glasses' | 'tie' | 'badge'
@@ -216,6 +223,7 @@ function buildHair(
       lock.scale.set(0.07, 0.12, 0.05)
       lock.position.set(x, 0.05, 0.19)
       lock.rotation.x = 0.25
+      lock.userData.noOutline = true
       head.add(lock)
     }
     return null
@@ -233,6 +241,7 @@ function buildHair(
         Math.sin(angle) * 0.13 - 0.02,
       )
       spike.rotation.set(Math.sin(angle) * 0.6, 0, -Math.cos(angle) * 0.6)
+      spike.userData.noOutline = true
       head.add(spike)
     }
     return null
@@ -244,10 +253,12 @@ function buildHair(
     strand.scale.set(0.14, 0.34, 0.14)
     strand.position.set(0, -0.16, -0.04)
     strand.rotation.x = 0.35
+    strand.userData.noOutline = true
     tail.add(strand)
     const tip = new Mesh(units.sphere, hairMat)
     tip.scale.setScalar(0.15)
     tip.position.set(0, -0.32, -0.1)
+    tip.userData.noOutline = true
     tail.add(tip)
     head.add(tail)
     return tail
@@ -272,6 +283,7 @@ function buildAccessory(head: Group, group: Group, spec: CharacterSpec): void {
     const brim = new Mesh(units.cylinder, helmetMat)
     brim.scale.set(0.62, 0.03, 0.62)
     brim.position.set(0, 0.02, -0.02)
+    brim.userData.noOutline = true
     head.add(dome, brim)
     return
   }
@@ -279,6 +291,7 @@ function buildAccessory(head: Group, group: Group, spec: CharacterSpec): void {
     const tie = new Mesh(units.box, toonMat('#8a2431'))
     tie.scale.set(0.07, 0.26, 0.03)
     tie.position.set(0, 0.86, 0.15)
+    tie.userData.noOutline = true
     group.add(tie)
     return
   }
@@ -309,26 +322,52 @@ interface Parts {
   tail: Group | null
 }
 
+// Las extremidades NO llevan hull (presupuesto AC-10): el contorno de
+// silueta lo dan cabeza/pelo/torso; las piezas chicas se leen igual.
+// Pierna + zapato van fusionados en 1 mesh (mismo material del bottom).
 function buildLimb(
   x: number,
   pivotY: number,
   scale: readonly [number, number, number],
   material: ReturnType<typeof toonMat>,
   withShoe: boolean,
+  owned?: OwnedGeos,
 ): Group {
   const units = unitGeo()
   const limb = new Group()
   limb.position.set(x, pivotY, 0)
+  if (withShoe && owned) {
+    const mesh = mergedBoxes(
+      [
+        {
+          w: scale[0],
+          h: scale[1],
+          d: scale[2],
+          x: 0,
+          y: -scale[1] / 2,
+          z: 0,
+        },
+        {
+          w: scale[0] + 0.02,
+          h: 0.07,
+          d: 0.2,
+          x: 0,
+          y: -scale[1] + 0.035,
+          z: 0.04,
+        },
+      ],
+      material,
+    )
+    mesh.userData.noOutline = true
+    owned.list.push(mesh.geometry)
+    limb.add(mesh)
+    return limb
+  }
   const mesh = new Mesh(units.box, material)
   mesh.scale.set(scale[0], scale[1], scale[2])
   mesh.position.y = -scale[1] / 2
+  mesh.userData.noOutline = true
   limb.add(mesh)
-  if (withShoe) {
-    const shoe = new Mesh(units.box, toonMat('#23232a'))
-    shoe.scale.set(scale[0] + 0.02, 0.07, 0.2)
-    shoe.position.set(0, -scale[1] + 0.035, 0.04)
-    limb.add(shoe)
-  }
   return limb
 }
 
@@ -349,6 +388,7 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     [0.13, HIP_Y, 0.16],
     toonMat(spec.bottom),
     true,
+    owned,
   )
   const legR = buildLimb(
     0.09,
@@ -356,6 +396,7 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     [0.13, HIP_Y, 0.16],
     toonMat(spec.bottom),
     true,
+    owned,
   )
   const armL = buildLimb(
     -0.26,
@@ -371,13 +412,6 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     toonMat(spec.top),
     false,
   )
-  // manos de piel al final de cada brazo
-  for (const arm of [armL, armR]) {
-    const hand = new Mesh(units.sphere, toonMat(spec.skin))
-    hand.scale.setScalar(0.1)
-    hand.position.y = -0.42
-    arm.add(hand)
-  }
 
   const torso = new Mesh(units.box, toonMat(spec.top))
   torso.scale.set(0.42, 0.48, 0.26)

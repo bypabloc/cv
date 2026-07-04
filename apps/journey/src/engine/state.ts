@@ -1,6 +1,6 @@
 /**
  * @module state (engine)
- * @description Estado plano del motor vanilla (sin zustand ni pub/sub):
+ * @description Estado plano del motor vanilla (sin store lib ni pub/sub):
  *   el motor es dueño del objeto y llama metodos del HUD directamente.
  *   Incluye el registro de interactables por proximidad que controls
  *   consulta cada frame y las salas registran/des-registran al montar.

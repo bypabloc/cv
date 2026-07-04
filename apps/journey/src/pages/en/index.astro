@@ -1,7 +1,6 @@
 ---
 import CvSections from '@portfolio/app-shared/components/CvSections.astro'
 import { SITE_URLS } from '@portfolio/app-shared/lib/site-urls'
-import Journey3D from '../../components/Journey3D'
 /**
  * @page index (en) journey
  * @description English variant of the 3D journey experience with the 2D CV
@@ -29,6 +28,11 @@ const cvHref = `${SITE_URLS.generic}/cv-en.html`
   <div id="cv-fallback">
     <CvSections niche={NICHE} locale="en" strings={t} cvHref={cvHref} />
   </div>
-  <!-- 3D island: mounts only on Full/Reduced tiers (client:only, AC-1/AC-2) -->
-  <Journey3D client:only="react" locale="en" />
+  <!-- 3D boot: mounts only on Full/Reduced tiers (AC-1/AC-2) -->
+  <div id="journey-root" data-locale="en"></div>
+  <script>
+    import { initJourney } from '../../lib/boot'
+
+    void initJourney()
+  </script>
 </PageLayout>

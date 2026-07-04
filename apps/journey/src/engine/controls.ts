@@ -144,9 +144,11 @@ export function createControls(deps: ControlsDeps): Controls {
     const nz = iz / Math.max(mag, 1)
     const sinY = Math.sin(yaw)
     const cosY = Math.cos(yaw)
-    // W (iz=-1) avanza hacia donde mira la camara (base relativa al yaw)
-    const dirX = cosY * nx + sinY * -nz
-    const dirZ = -sinY * nx + cosY * -nz
+    // base relativa a la camara: forward = (sinψ, cosψ) y right = f×up =
+    // (-cosψ, sinψ). W (iz=-1) avanza hacia donde mira; D/joystick-derecha
+    // (ix=+1) se mueve a la DERECHA de la pantalla.
+    const dirX = -cosY * nx - sinY * nz
+    const dirZ = sinY * nx - cosY * nz
     const step = WALK_SPEED * dt
     const next = resolveMovement(
       pos,
@@ -326,9 +328,11 @@ export function createControls(deps: ControlsDeps): Controls {
   let dragId: number | null = null
   let lastX = 0
   let lastY = 0
+  // en touch NO hay pointer-lock: el POV tambien mira con drag
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches
 
   function onCanvasPointerDown(event: PointerEvent): void {
-    if (state.cameraMode === 'pov') {
+    if (state.cameraMode === 'pov' && !coarsePointer) {
       if (document.pointerLockElement !== canvas && !isUiOpen(state)) {
         canvas.requestPointerLock()
       }
@@ -347,11 +351,14 @@ export function createControls(deps: ControlsDeps): Controls {
     if (dragId !== event.pointerId) {
       return
     }
-    yaw -= (event.clientX - lastX) * 0.005
-    pitch = Math.min(
-      Math.max(pitch + (event.clientY - lastY) * 0.004, -0.15),
-      0.55,
-    )
+    const dx = event.clientX - lastX
+    const dy = event.clientY - lastY
+    yaw -= dx * 0.005
+    if (state.cameraMode === 'pov') {
+      povPitch = Math.min(Math.max(povPitch - dy * 0.005, -1.35), 1.35)
+    } else {
+      pitch = Math.min(Math.max(pitch + dy * 0.004, -0.15), 0.55)
+    }
     lastX = event.clientX
     lastY = event.clientY
   }
@@ -491,7 +498,7 @@ export function createControls(deps: ControlsDeps): Controls {
         player.setVisible(false)
         hud.setCameraMode('pov')
         povPitch = 0
-        if (!isUiOpen(state)) {
+        if (!isUiOpen(state) && !coarsePointer) {
           canvas.requestPointerLock()
         }
       } else {

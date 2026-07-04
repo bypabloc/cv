@@ -263,6 +263,14 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   hud.setZoneFromState()
   frame()
 
+  if (import.meta.env.DEV) {
+    // introspeccion para los smokes con browser (solo DEV, cero en prod)
+    const w = window as Window & {
+      __journeyDebug?: { player: { x: number; y: number; z: number } }
+    }
+    w.__journeyDebug = { player: player.group.position }
+  }
+
   return {
     dispose() {
       cancelAnimationFrame(raf)

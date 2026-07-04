@@ -13,6 +13,7 @@ import {
   BackSide,
   BoxGeometry,
   CanvasTexture,
+  CapsuleGeometry,
   Color,
   type ColorRepresentation,
   CylinderGeometry,
@@ -588,6 +589,10 @@ interface UnitGeometries {
   sphere: SphereGeometry
   cylinder: CylinderGeometry
   plane: PlaneGeometry
+  /** Cuerpos chibi redondeados (una talla, compartida por TODOS). */
+  capsuleTorso: CapsuleGeometry
+  capsuleLeg: CapsuleGeometry
+  capsuleArm: CapsuleGeometry
 }
 
 let units: UnitGeometries | null = null
@@ -600,6 +605,9 @@ export function unitGeo(): UnitGeometries {
       sphere: new SphereGeometry(0.5, 16, 12),
       cylinder: new CylinderGeometry(0.5, 0.5, 1, 12),
       plane: new PlaneGeometry(1, 1),
+      capsuleTorso: new CapsuleGeometry(0.16, 0.18, 4, 12),
+      capsuleLeg: new CapsuleGeometry(0.07, 0.36, 4, 10),
+      capsuleArm: new CapsuleGeometry(0.055, 0.28, 4, 10),
     }
     for (const geometry of Object.values(units)) {
       geometry.userData.shared = true

@@ -16,14 +16,7 @@ import {
   SphereGeometry,
   SRGBColorSpace,
 } from 'three'
-import {
-  basicMat,
-  makeRng,
-  mergedBoxes,
-  outlineGroup,
-  toonMat,
-  unitGeo,
-} from './toon'
+import { basicMat, makeRng, outlineGroup, toonMat, unitGeo } from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
 export type Accessory = 'helmet' | 'glasses' | 'tie' | 'badge'
@@ -324,48 +317,21 @@ interface Parts {
 
 // Las extremidades NO llevan hull (presupuesto AC-10): el contorno de
 // silueta lo dan cabeza/pelo/torso; las piezas chicas se leen igual.
-// Pierna + zapato van fusionados en 1 mesh (mismo material del bottom).
+// Cuerpos REDONDEADOS: capsulas compartidas del pool (nada de cajas).
 function buildLimb(
   x: number,
   pivotY: number,
-  scale: readonly [number, number, number],
+  kind: 'leg' | 'arm',
   material: ReturnType<typeof toonMat>,
-  withShoe: boolean,
-  owned?: OwnedGeos,
 ): Group {
   const units = unitGeo()
   const limb = new Group()
   limb.position.set(x, pivotY, 0)
-  if (withShoe && owned) {
-    const mesh = mergedBoxes(
-      [
-        {
-          w: scale[0],
-          h: scale[1],
-          d: scale[2],
-          x: 0,
-          y: -scale[1] / 2,
-          z: 0,
-        },
-        {
-          w: scale[0] + 0.02,
-          h: 0.07,
-          d: 0.2,
-          x: 0,
-          y: -scale[1] + 0.035,
-          z: 0.04,
-        },
-      ],
-      material,
-    )
-    mesh.userData.noOutline = true
-    owned.list.push(mesh.geometry)
-    limb.add(mesh)
-    return limb
-  }
-  const mesh = new Mesh(units.box, material)
-  mesh.scale.set(scale[0], scale[1], scale[2])
-  mesh.position.y = -scale[1] / 2
+  const geometry = kind === 'leg' ? units.capsuleLeg : units.capsuleArm
+  // media altura del capsule (largo + 2 radios) para colgar del pivote
+  const half = kind === 'leg' ? 0.25 : 0.195
+  const mesh = new Mesh(geometry, material)
+  mesh.position.y = -half
   mesh.userData.noOutline = true
   limb.add(mesh)
   return limb
@@ -382,39 +348,14 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   const owned: OwnedGeos = { list: [] }
   const group = new Group()
 
-  const legL = buildLimb(
-    -0.09,
-    HIP_Y,
-    [0.13, HIP_Y, 0.16],
-    toonMat(spec.bottom),
-    true,
-    owned,
-  )
-  const legR = buildLimb(
-    0.09,
-    HIP_Y,
-    [0.13, HIP_Y, 0.16],
-    toonMat(spec.bottom),
-    true,
-    owned,
-  )
-  const armL = buildLimb(
-    -0.26,
-    SHOULDER_Y,
-    [0.1, 0.4, 0.12],
-    toonMat(spec.top),
-    false,
-  )
-  const armR = buildLimb(
-    0.26,
-    SHOULDER_Y,
-    [0.1, 0.4, 0.12],
-    toonMat(spec.top),
-    false,
-  )
+  const legL = buildLimb(-0.09, HIP_Y, 'leg', toonMat(spec.bottom))
+  const legR = buildLimb(0.09, HIP_Y, 'leg', toonMat(spec.bottom))
+  const armL = buildLimb(-0.26, SHOULDER_Y, 'arm', toonMat(spec.top))
+  const armR = buildLimb(0.26, SHOULDER_Y, 'arm', toonMat(spec.top))
 
-  const torso = new Mesh(units.box, toonMat(spec.top))
-  torso.scale.set(0.42, 0.48, 0.26)
+  // torso capsula (redondeado, canon chibi), aplanado hacia el frente
+  const torso = new Mesh(units.capsuleTorso, toonMat(spec.top))
+  torso.scale.set(1.3, 1, 0.8)
   torso.position.y = 0.76
 
   const head = new Group()
@@ -494,8 +435,8 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     parts.armR.rotation.x = -Math.sin(t * 1.6) * 0.06
     group.position.y = Math.sin(t * 1.6) * 0.012
     group.rotation.x = 0
-    // respiracion: el torso "late" apenas
-    parts.torso.scale.y = 0.48 * (1 + Math.sin(t * 1.6) * 0.012)
+    // respiracion: el torso "late" apenas (base de la capsula = 1)
+    parts.torso.scale.y = 1 + Math.sin(t * 1.6) * 0.012
   }
 
   function updateBlink(t: number): void {

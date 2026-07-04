@@ -310,6 +310,34 @@ export function createWorld(deps: WorldDeps): World {
         ),
       )
     }
+    // marquesina sobre el hueco al pasillo: invita a seguir la trayectoria
+    const next = rooms[index + 1]
+    if (next) {
+      const marquee = new Group()
+      marquee.position.set(0, DOOR_HEIGHT + 0.62, room.z + room.depth / 2 - 0.1)
+      marquee.rotation.y = Math.PI
+      const backing = boxMesh(3.1, 0.54, 0.07, toonMat('#241a10'))
+      const trim = boxMesh(
+        3.1,
+        0.06,
+        0.08,
+        toonMat(theme.accent, {
+          emissive: theme.accent,
+          emissiveIntensity: 0.35,
+        }),
+      )
+      trim.position.y = -0.33
+      trim.userData.noOutline = true
+      const text = label(
+        state.locale === 'es'
+          ? `SIGUE LA TRAYECTORIA → ${next.year}`
+          : `FOLLOW THE PATH → ${next.year}`,
+        { size: 0.24, color: '#f2e6c8' },
+      )
+      text.position.z = 0.05
+      marquee.add(backing, trim, text)
+      group.add(marquee)
+    }
     return group
   }
 

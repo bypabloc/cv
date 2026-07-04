@@ -7,11 +7,11 @@
  */
 import {
   type CanvasTexture,
+  CircleGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
-  RingGeometry,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
@@ -19,7 +19,9 @@ import type { Locale } from '../../lib/rooms'
 import type { EngineState, FichaKind, Interactable } from '../state'
 import type { RoomTheme } from '../themes'
 import {
+  basicMat,
   boxMesh,
+  label,
   makeCanvasTexture,
   makeRng,
   mergedBoxes,
@@ -28,6 +30,7 @@ import {
   screenTexture,
   toonMat,
   toonMatOwn,
+  unitGeo,
 } from '../toon'
 
 export interface PropHandle {
@@ -326,42 +329,136 @@ const EXIT_LABEL = {
   en: 'Return to the present',
 } as const
 
+/** Textura del vortice temporal: espiral de tinta con el acento. */
+function swirlTexture(accent: string): CanvasTexture {
+  return makeCanvasTexture(256, (ctx, size) => {
+    const c = size / 2
+    const bg = ctx.createRadialGradient(c, c, 8, c, c, c)
+    bg.addColorStop(0, '#1c1410')
+    bg.addColorStop(0.72, '#0d0a08')
+    bg.addColorStop(1, '#040302')
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, size, size)
+    // 3 brazos espirales (2 del acento + 1 crema) — remolino temporal
+    const arms: readonly string[] = [accent, accent, '#e8d8b0']
+    ctx.lineCap = 'round'
+    arms.forEach((color, arm) => {
+      ctx.strokeStyle = color
+      ctx.globalAlpha = arm === 2 ? 0.8 : 0.9
+      ctx.lineWidth = 7 - arm
+      ctx.beginPath()
+      const offset = (arm / arms.length) * Math.PI * 2
+      for (let i = 0; i <= 60; i += 1) {
+        const t = i / 60
+        const angle = offset + t * Math.PI * 3.2
+        const radius = 6 + t * (c - 14)
+        const px = c + Math.cos(angle) * radius
+        const py = c + Math.sin(angle) * radius
+        if (i === 0) {
+          ctx.moveTo(px, py)
+        } else {
+          ctx.lineTo(px, py)
+        }
+      }
+      ctx.stroke()
+    })
+    ctx.globalAlpha = 1
+    ctx.fillStyle = '#f2e6c8'
+    ctx.beginPath()
+    ctx.arc(c, c, 10, 0, Math.PI * 2)
+    ctx.fill()
+  })
+}
+
+interface PortalArch {
+  group: Group
+  update(t: number): void
+}
+
+/**
+ * Arco de portal temporal: torii de madera entintada con remates del
+ * acento, vortice espiral girando, motas orbitando en contrasentido,
+ * letrero encima y alfombra gastada al pie. Compartido por el portal de
+ * entrada (presente) y el de salida (pasado).
+ */
+function portalArch(accent: string, signText: string): PortalArch {
+  const group = new Group()
+  const arch = mergedBoxes(
+    [
+      { w: 0.16, h: 2.3, d: 0.16, x: -0.72, y: 1.15, z: 0 },
+      { w: 0.16, h: 2.3, d: 0.16, x: 0.72, y: 1.15, z: 0 },
+      { w: 2.14, h: 0.14, d: 0.24, x: 0, y: 2.38, z: 0 },
+      { w: 1.66, h: 0.1, d: 0.18, x: 0, y: 2.12, z: 0 },
+    ],
+    toonMat('#2a1c12'),
+  )
+  arch.castShadow = true
+  const caps = mergedBoxes(
+    [
+      { w: 0.24, h: 0.2, d: 0.28, x: -1.03, y: 2.38, z: 0 },
+      { w: 0.24, h: 0.2, d: 0.28, x: 1.03, y: 2.38, z: 0 },
+    ],
+    toonMat(accent, { emissive: accent, emissiveIntensity: 0.45 }),
+  )
+  caps.userData.noOutline = true
+  const swirl = new Mesh(
+    new CircleGeometry(0.62, 32),
+    new MeshBasicMaterial({ map: swirlTexture(accent) }),
+  )
+  swirl.position.set(0, 1.28, 0.02)
+  swirl.userData.noOutline = true
+  const motes = mergedBoxes(
+    Array.from({ length: 9 }, (_, i) => {
+      const angle = (i / 9) * Math.PI * 2
+      const radius = 0.78 + (i % 3) * 0.07
+      return {
+        w: 0.05,
+        h: 0.05,
+        d: 0.05,
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+        z: 0,
+      }
+    }),
+    basicMat(accent),
+  )
+  motes.position.set(0, 1.28, 0.08)
+  motes.userData.noOutline = true
+  const sign = label(signText, { size: 0.18, color: '#e8d8b0' })
+  sign.position.set(0, 2.64, 0.06)
+  const rug = new Mesh(unitGeo().plane, toonMat('#211812'))
+  rug.rotation.x = -Math.PI / 2
+  rug.scale.set(1.7, 1.1, 1)
+  rug.position.set(0, 0.012, 0.55)
+  rug.userData.noOutline = true
+  group.add(arch, caps, swirl, motes, sign, rug)
+  return {
+    group,
+    update: (t) => {
+      swirl.rotation.z = -t * 1.3
+      motes.rotation.z = t * 0.45
+    },
+  }
+}
+
 /** Puerta-portal al "antes" de la sala (teleporta a la sala espejo). */
 export function pastPortal(opts: {
   room: RoomLayout
   position: readonly [number, number, number]
   rotationY?: number
   accent: string
+  /** Año de la etapa: letrero ANTES · {año}. */
+  year: string
+  locale: Locale
   onEnter(roomIndex: number, spawn: { x: number; z: number }): void
 }): PropHandle {
-  const group = new Group()
-  group.position.set(opts.position[0], opts.position[1], opts.position[2])
-  group.rotation.y = opts.rotationY ?? 0
-  const frame = boxMesh(1.3, 2.1, 0.08, toonMat('#141018'))
-  frame.position.set(0, 1.05, 0)
-  const swirlGeo = new RingGeometry(0.32, 0.55, 24)
-  const swirl = new Mesh(
-    swirlGeo,
-    toonMatOwn(opts.accent, {
-      emissive: opts.accent,
-      emissiveIntensity: 1.1,
-      transparent: true,
-      opacity: 0.85,
-    }),
-  )
-  swirl.position.set(0, 1.05, 0.06)
-  swirl.userData.noOutline = true
-  const header = boxMesh(
-    1.5,
-    0.16,
-    0.12,
-    toonMat(opts.accent, { emissive: opts.accent, emissiveIntensity: 0.5 }),
-  )
-  header.position.set(0, 2.28, 0)
-  header.userData.noOutline = true
-  group.add(frame, swirl, header)
+  const sign =
+    opts.locale === 'es' ? `ANTES · ${opts.year}` : `BEFORE · ${opts.year}`
+  const arch = portalArch(opts.accent, sign)
+  arch.group.position.set(opts.position[0], opts.position[1], opts.position[2])
+  arch.group.rotation.y = opts.rotationY ?? 0
   return {
-    group,
+    group: arch.group,
     interactable: {
       id: `portal-${opts.room.index}`,
       x: opts.position[0],
@@ -374,9 +471,7 @@ export function pastPortal(opts: {
           z: opts.room.z + 1.6,
         }),
     },
-    update: (t) => {
-      swirl.rotation.z = t * 0.9
-    },
+    update: (t) => arch.update(t),
   }
 }
 
@@ -384,20 +479,16 @@ export function pastPortal(opts: {
 export function exitPortal(opts: {
   roomIndex: number
   position: readonly [number, number, number]
+  rotationY?: number
+  locale: Locale
   onExit(): void
 }): PropHandle {
-  const group = new Group()
-  group.position.set(opts.position[0], opts.position[1], opts.position[2])
-  const frame = boxMesh(
-    1.3,
-    2.1,
-    0.08,
-    toonMat('#1a1a22', { emissive: '#8fd4ff', emissiveIntensity: 0.4 }),
-  )
-  frame.position.set(0, 1.05, 0)
-  group.add(frame)
+  const sign = opts.locale === 'es' ? 'VOLVER · HOY' : 'BACK · TODAY'
+  const arch = portalArch('#c8a878', sign)
+  arch.group.position.set(opts.position[0], opts.position[1], opts.position[2])
+  arch.group.rotation.y = opts.rotationY ?? 0
   return {
-    group,
+    group: arch.group,
     interactable: {
       id: `portal-exit-${opts.roomIndex}`,
       x: opts.position[0],
@@ -406,6 +497,7 @@ export function exitPortal(opts: {
       label: EXIT_LABEL,
       onActivate: () => opts.onExit(),
     },
+    update: (t) => arch.update(t),
   }
 }
 

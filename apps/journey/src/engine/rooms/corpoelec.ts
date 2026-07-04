@@ -281,6 +281,8 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     position: [half - 0.35, 0, room.z + 2.6],
     rotationY: -Math.PI / 2,
     accent: theme.accent,
+    year: def.year,
+    locale: state.locale,
     onEnter: actions.enterPast,
   })
   for (const prop of [retos, aprendizajes, portal]) {

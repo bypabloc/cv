@@ -106,8 +106,8 @@ export const THEMES: Record<ThemeZoneId, RoomTheme> = {
 /** Captions del portal al pasado (van al HUD como DOM, nunca WebGL). */
 export const PAST_CAPTIONS: Record<RoomId, Record<'es' | 'en', string>> = {
   aula: {
-    es: 'Antes: dos proyectos de grado bloqueados por meses',
-    en: 'Before: two degree projects stuck for months',
+    es: 'Antes: karate-do, videojuegos y aires acondicionados — cero codigo',
+    en: 'Before: karate-do, video games and AC repair — zero code',
   },
   corpoelec: {
     es: 'Antes: planillas de papel duplicadas en 3 sedes',

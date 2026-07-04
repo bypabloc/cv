@@ -1,22 +1,21 @@
 /**
  * @module rooms/aula (engine)
  * @description Sala 0 — Aula/Universidad (iai + projects-degrees, 2015).
- *   Salon CLASICO: pupitres en filas mirando a la pizarra principal
- *   (CLIENTE<->SERVIDOR), escritorio del profesor al frente, pizarras de
- *   RETOS y APRENDIZAJES tituladas en las paredes laterales y micro-
- *   interaccion narrativa: encender la PC del laboratorio -> los monitores
- *   bootean en cascada mostrando el codigo cliente-servidor del proyecto
- *   de grado. 3 NPCs estudiantes. Manga-ink: toon + outline.
+ *   Salon CLASICO: pupitres en filas mirando al frente (+Z, donde la puerta
+ *   al pasillo lleva su marquesina — la monta world), escritorio del
+ *   profesor, pizarras de RETOS y APRENDIZAJES tituladas en las paredes
+ *   laterales y micro-interaccion narrativa: encender la PC del laboratorio
+ *   -> los monitores bootean en cascada mostrando el codigo cliente-servidor
+ *   del proyecto de grado. 3 NPCs estudiantes. Manga-ink: toon + outline.
  */
 import { Group } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import { unregisterInteractable } from '../state'
-import { disposeDeep, outlineGroup, screenPanel } from '../toon'
+import { disposeDeep, mergedBoxes, outlineGroup, toonMat } from '../toon'
 import type { RoomBuild, RoomCtx } from '../world'
 import {
-  desk,
   fichaBoard,
   footprint,
   pastPortal,
@@ -81,27 +80,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     dot: '#b23a3a',
   }
 
-  // pizarra principal del salon (el plan de rescate) en el muro del fondo
-  const board = screenPanel({
-    title: '[CLIENTE] <-> [SERVIDOR]',
-    lines: [
-      'red local del laboratorio',
-      'plan de rescate: 1 semana',
-      '2 tesis: bloqueado -> listo',
-    ],
-    theme: { screenBg: '#2e4d3a', screenFg: '#d8ecc8', ink: theme.ink },
-    width: 2.6,
-    height: 1.4,
-  })
-  board.position.set(0, 1.7, room.z + room.depth / 2 - 0.12)
-  board.rotation.y = Math.PI
-  group.add(board)
-
-  // escritorio del profesor al frente, junto a la pizarra
-  group.add(
-    desk({ position: [-1.6, 0, room.z + 2.5], width: 1.1, color: '#5a4632' }),
-  )
-  staticColliders.push(footprint(-1.6, room.z + 2.5, 1.2, 0.8))
+  // el muro del fondo queda libre: ahi vive la puerta al pasillo con su
+  // marquesina SIGUE LA TRAYECTORIA (la monta world en el shell)
 
   // pupitres en filas mirando al frente (+Z); el front-right es "tu PC"
   const deskSpots: readonly (readonly [number, number])[] = [
@@ -110,9 +90,24 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     [-1.4, room.z - 0.8],
     [1.4, room.z - 0.8],
   ]
+  // escritorio del profesor + 4 pupitres fusionados: 1 mesh + 1 hull (AC-10)
+  const allDesks: readonly (readonly [number, number])[] = [
+    [-1.6, room.z + 2.5],
+    ...deskSpots,
+  ]
+  group.add(
+    mergedBoxes(
+      allDesks.flatMap(([x, z]) => [
+        { w: 1.1, h: 0.05, d: 0.6, x, y: 0.72, z },
+        { w: 0.06, h: 0.72, d: 0.55, x: x - 0.5, y: 0.36, z },
+        { w: 0.06, h: 0.72, d: 0.55, x: x + 0.5, y: 0.36, z },
+      ]),
+      toonMat('#5a4632'),
+    ),
+  )
+  staticColliders.push(footprint(-1.6, room.z + 2.5, 1.2, 0.8))
   const monitors: ScreenSwap[] = []
   deskSpots.forEach(([x, z], index) => {
-    group.add(desk({ position: [x, 0, z], width: 1.1, color: '#5a4632' }))
     staticColliders.push(footprint(x, z, 1.3, 0.8))
     const isPlayerPc = index === 1
     const code = isPlayerPc
@@ -200,6 +195,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     position: [-half + 0.35, 0, room.z + 2.2],
     rotationY: Math.PI / 2,
     accent: theme.accent,
+    year: def.year,
+    locale: state.locale,
     onEnter: actions.enterPast,
   })
   for (const prop of [retos, aprendizajes, portal]) {

@@ -434,6 +434,8 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     position: [-half + 0.35, 0, room.z + room.depth / 2 - 1.4],
     rotationY: Math.PI / 2,
     accent: theme.accent,
+    year: def.year,
+    locale: state.locale,
     onEnter: actions.enterPast,
   })
   for (const prop of [retos, aprendizajes, portal]) {

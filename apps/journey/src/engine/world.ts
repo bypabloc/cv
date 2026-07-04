@@ -133,6 +133,11 @@ export interface WorldDeps {
   teleportPlayer(x: number, z: number): void
   /** Luz direccional con sombra (solo full) para ceñir su frustum. */
   shadowLight?: DirectionalLight
+  /**
+   * Se llama cuando el world cambia la zona/pasado por su cuenta
+   * (teleport, portal): el app sincroniza HUD + audio.
+   */
+  onZoneApplied?(): void
 }
 
 export interface World {
@@ -737,6 +742,7 @@ export function createWorld(deps: WorldDeps): World {
       deps.teleportPlayer(0, target.z - target.depth / 2 + 1.5)
       state.zone = { kind: 'room', index }
       await applyZone(state.zone, false)
+      deps.onZoneApplied?.()
       await deps.fade(false)
     },
 
@@ -784,6 +790,7 @@ export function createWorld(deps: WorldDeps): World {
       applyTheme('past')
       deps.teleportPlayer(spawn.x, spawn.z)
       renderer.compile(scene, camera)
+      deps.onZoneApplied?.()
       await deps.fade(false)
     },
 
@@ -810,6 +817,7 @@ export function createWorld(deps: WorldDeps): World {
       deps.teleportPlayer(returnTo.x, returnTo.z)
       state.zone = { kind: 'room', index: roomIndex }
       await applyZone(state.zone, false)
+      deps.onZoneApplied?.()
       await deps.fade(false)
     },
 

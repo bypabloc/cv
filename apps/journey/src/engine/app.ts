@@ -152,6 +152,14 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     },
   })
 
+  // sincroniza HUD + audio con la zona/pasado actual del estado
+  function syncZoneUi(): void {
+    hud.setZoneFromState()
+    if (state.audioOn) {
+      ambientAudio.setRoom(audioRoomId(state, rooms))
+    }
+  }
+
   const controls = createControls({
     camera,
     player,
@@ -164,10 +172,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     touch: hud.touch ?? undefined,
     onZoneChange: (zone) => {
       world.setZone(zone)
-      hud.setZoneFromState()
-      if (state.audioOn) {
-        ambientAudio.setRoom(audioRoomId(state, rooms))
-      }
+      syncZoneUi()
     },
     toggleTeleport: () => hud.toggleTeleport(),
     closeUi: () => hud.closeAll(),
@@ -194,6 +199,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     },
     teleportPlayer: (x, z) => controls.teleport(x, z),
     shadowLight: tier === 'full' ? sun : undefined,
+    onZoneApplied: () => syncZoneUi(),
   })
 
   function onResize(): void {

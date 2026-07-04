@@ -4,8 +4,7 @@
  *   peso de red — coherente con procedural-first): perfiles por sala
  *   (aula: room-tone suave; corpoelec: hum electrico 60/120 Hz; cima: pad
  *   sintetico). SIEMPRE opt-in: el contexto se crea recien tras el gesto
- *   del usuario (toggle del HUD) — nunca autoplay. Movido 1:1 desde
- *   components/three/ambient-audio.ts (ya era vanilla).
+ *   del usuario (toggle del HUD) — nunca autoplay.
  *
  *   ponytail: sintesis simple (osciladores + noise buffer). Si se quiere
  *   mas riqueza, el swap es a clips CC0 en AudioBufferSource — la interfaz

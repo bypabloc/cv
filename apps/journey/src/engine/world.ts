@@ -1,0 +1,826 @@
+/**
+ * @module world (engine)
+ * @description Zone manager del motor vanilla: manifest WORLD data-driven
+ *   (chunk por sala via dynamic import), shells cacheados por zona
+ *   (muros/piso/techo/puerta/año — baratos, viven hasta el exit), carga por
+ *   ESCLUSA (al entrar al pasillo i se libera el contenido de la sala i y
+ *   se precarga el de la i+1 con renderer.compile), fade si la precarga no
+ *   llego, teleport y portal al pasado. Regla de memoria: 1 solo content de
+ *   sala vivo (AC-3/AC-4).
+ */
+import {
+  Color,
+  type DirectionalLight,
+  Fog,
+  Group,
+  Mesh,
+  type PerspectiveCamera,
+  PointLight,
+  type Scene,
+  type WebGLRenderer,
+} from 'three'
+import {
+  buildPastWallBoxes,
+  buildWallBoxes,
+  CORRIDOR_HEIGHT,
+  DOOR_HEIGHT,
+  DOOR_WIDTH,
+  type DoorLayout,
+  type JourneyLayout,
+  type PastRoomLayout,
+  type RoomLayout,
+  WALL_THICKNESS,
+  type WallBox,
+  type Zone,
+} from '../lib/layout'
+import type { Locale, RoomDef, RoomId } from '../lib/rooms'
+import {
+  type EngineState,
+  type FichaKind,
+  type Interactable,
+  registerInteractable,
+  unregisterInteractable,
+} from './state'
+import { type RoomTheme, THEMES, type ThemeZoneId } from './themes'
+import {
+  addOutline,
+  boxMesh,
+  disposeDeep,
+  inkFloorTexture,
+  inkWallTexture,
+  label,
+  toonMat,
+  unitGeo,
+} from './toon'
+
+// ---------------------------------------------------------------------------
+// Contratos (congelados para las factories de sala — plan seccion 8)
+// ---------------------------------------------------------------------------
+
+export interface WorldActions {
+  openFicha(roomIndex: number, kind: FichaKind): void
+  openContact(): void
+  enterPast(roomIndex: number, spawn: { x: number; z: number }): void
+}
+
+export interface RoomCtx {
+  def: RoomDef
+  room: RoomLayout
+  theme: RoomTheme
+  locale: Locale
+  state: EngineState
+  actions: WorldActions
+}
+
+export interface RoomBuild {
+  group: Group
+  interactables: Interactable[]
+  update?(t: number, dt: number): void
+  /** Libera SOLO lo propio (no el pool toon): tipicamente disposeDeep. */
+  dispose(): void
+}
+
+export type RoomFactory = (ctx: RoomCtx) => RoomBuild
+
+export interface PastCtx {
+  def: RoomDef
+  pastRoom: PastRoomLayout
+  theme: RoomTheme
+  locale: Locale
+  state: EngineState
+  actions: { exitPast(returnTo: { x: number; z: number }): void }
+}
+
+export type PastFactory = (ctx: PastCtx) => RoomBuild
+
+/** Manifest data-driven: agregar sala = 1 entrada aqui + 1 factory. */
+export const WORLD: Record<
+  RoomId,
+  { load: () => Promise<{ default: RoomFactory }> }
+> = {
+  aula: { load: () => import('./rooms/aula') },
+  corpoelec: { load: () => import('./rooms/corpoelec') },
+  cima: { load: () => import('./rooms/cima') },
+}
+
+const loadPast = (): Promise<{ default: PastFactory }> => import('./rooms/past')
+
+// ---------------------------------------------------------------------------
+// createWorld
+// ---------------------------------------------------------------------------
+
+export interface WorldDeps {
+  scene: Scene
+  renderer: WebGLRenderer
+  camera: PerspectiveCamera
+  rooms: readonly RoomDef[]
+  layout: JourneyLayout
+  pastRooms: readonly PastRoomLayout[]
+  state: EngineState
+  /** Fade de esclusa/teleport/portal (lo implementa el HUD). */
+  fade(on: boolean): Promise<void>
+  /** Sepia + grano del pasado (overlay CSS del HUD). */
+  setPastMode(on: boolean): void
+  ui: {
+    openFicha(roomIndex: number, kind: FichaKind): void
+    openContact(): void
+  }
+  /** Mueve al jugador (lo implementa controls). */
+  teleportPlayer(x: number, z: number): void
+  /** Luz direccional con sombra (solo full) para ceñir su frustum. */
+  shadowLight?: DirectionalLight
+}
+
+export interface World {
+  /** Monta sala 0 + shells iniciales (el loader del boot cubre esto). */
+  init(): Promise<void>
+  /** Reporta el cambio de zona (lo llama controls/tour). */
+  setZone(zone: Zone): void
+  openDoor(index: number): void
+  openAllDoors(): void
+  teleportToRoom(index: number): Promise<void>
+  enterPast(roomIndex: number, spawn: { x: number; z: number }): Promise<void>
+  exitPast(returnTo: { x: number; z: number }): Promise<void>
+  /** Degradacion automatica: apaga/enciende los acentos por zona. */
+  setAccentsEnabled(on: boolean): void
+  update(t: number, dt: number): void
+  dispose(): void
+}
+
+type ShellKey = `room-${number}` | `corridor-${number}` | `past-${number}`
+
+interface DoorAnim {
+  index: number
+  leaf: Group
+}
+
+export function createWorld(deps: WorldDeps): World {
+  const { scene, renderer, camera, rooms, layout, pastRooms, state } = deps
+  const wallBoxes = buildWallBoxes(layout)
+  const pastWallBoxes = buildPastWallBoxes(pastRooms)
+
+  const shells = new Map<ShellKey, Group>()
+  const mountedShells = new Set<ShellKey>()
+  const contents = new Map<number, RoomBuild>()
+  const pending = new Map<number, Promise<void>>()
+  const wantedContent = new Set<number>()
+  const doorAnims: DoorAnim[] = []
+  const accentLights: PointLight[] = []
+  let pastBuild: RoomBuild | null = null
+  let disposed = false
+
+  // theme actual (lerp en update para no "saltar" al cambiar de zona)
+  const background = new Color(THEMES.corridor.sky)
+  const fog = new Fog(background.clone(), 12, 70)
+  const targetSky = new Color(THEMES.corridor.sky)
+  const targetFog = new Color(THEMES.corridor.fog)
+  scene.background = background
+  scene.fog = fog
+
+  const actions: WorldActions = {
+    openFicha: deps.ui.openFicha,
+    openContact: deps.ui.openContact,
+    enterPast: (roomIndex, spawn) => {
+      void world.enterPast(roomIndex, spawn)
+    },
+  }
+
+  // -------------------------------------------------------------------------
+  // Shells
+  // -------------------------------------------------------------------------
+
+  function wallMesh(box: WallBox, theme: RoomTheme): Mesh {
+    const mesh = boxMesh(
+      box.maxX - box.minX,
+      box.height,
+      box.maxZ - box.minZ,
+      toonMat('#ffffff', {
+        map: inkWallTexture(theme),
+        gradient: theme.gradient,
+      }),
+    )
+    mesh.position.set(
+      (box.minX + box.maxX) / 2,
+      box.height / 2,
+      (box.minZ + box.maxZ) / 2,
+    )
+    mesh.receiveShadow = true
+    return mesh
+  }
+
+  function floorMesh(
+    x: number,
+    z: number,
+    width: number,
+    depth: number,
+    theme: RoomTheme,
+    repeat: { x: number; y: number },
+  ): Mesh {
+    const texture = inkFloorTexture(theme)
+    texture.repeat.set(repeat.x, repeat.y)
+    const mesh = new Mesh(
+      unitGeo().plane,
+      toonMat('#ffffff', { map: texture, gradient: theme.gradient }),
+    )
+    mesh.rotation.x = -Math.PI / 2
+    mesh.scale.set(width, depth, 1)
+    mesh.position.set(x, 0, z)
+    mesh.receiveShadow = true
+    return mesh
+  }
+
+  function ceilingMesh(
+    x: number,
+    z: number,
+    width: number,
+    depth: number,
+    height: number,
+    theme: RoomTheme,
+  ): Mesh {
+    const dim = `#${new Color(theme.wall).multiplyScalar(0.55).getHexString()}`
+    const mesh = new Mesh(
+      unitGeo().plane,
+      toonMat(dim, { gradient: theme.gradient }),
+    )
+    mesh.rotation.x = Math.PI / 2
+    mesh.scale.set(width, depth, 1)
+    mesh.position.set(x, height, z)
+    return mesh
+  }
+
+  function accentLight(
+    x: number,
+    y: number,
+    z: number,
+    color: string,
+    intensity: number,
+    distance: number,
+  ): PointLight {
+    const light = new PointLight(color, intensity, distance, 1.7)
+    light.position.set(x, y, z)
+    accentLights.push(light)
+    return light
+  }
+
+  function buildRoomShell(index: number): Group {
+    const group = new Group()
+    const def = rooms[index]
+    const room = layout.rooms[index]
+    if (!def || !room) {
+      return group
+    }
+    const theme = THEMES[def.id]
+    for (const box of wallBoxes) {
+      if (box.source.kind === 'room' && box.source.index === index) {
+        group.add(wallMesh(box, theme))
+      }
+    }
+    group.add(
+      floorMesh(room.x, room.z, room.width, room.depth, theme, {
+        x: room.width / 2,
+        y: room.depth / 2,
+      }),
+      ceilingMesh(room.x, room.z, room.width, room.depth, room.height, theme),
+    )
+    if (state.tier === 'full') {
+      group.add(
+        accentLight(
+          room.x,
+          room.height - 0.35,
+          room.z,
+          theme.lightColor,
+          9 * def.lightIntensity,
+          room.width * 2.2,
+        ),
+      )
+    }
+    return group
+  }
+
+  /** Puerta con bisagra (port de Door.tsx a toon + outline). */
+  function buildDoor(door: DoorLayout): Group {
+    const group = new Group()
+    group.position.set(door.x, 0, door.z)
+    const jambMat = toonMat('#4a3b2a')
+    const jambL = boxMesh(0.09, DOOR_HEIGHT, 0.22, jambMat)
+    jambL.position.set(-DOOR_WIDTH / 2 - 0.045, DOOR_HEIGHT / 2, 0)
+    const jambR = boxMesh(0.09, DOOR_HEIGHT, 0.22, jambMat)
+    jambR.position.set(DOOR_WIDTH / 2 + 0.045, DOOR_HEIGHT / 2, 0)
+    const lintel = boxMesh(DOOR_WIDTH + 0.18, 0.09, 0.22, jambMat)
+    lintel.position.set(0, DOOR_HEIGHT + 0.045, 0)
+    const leaf = new Group()
+    leaf.position.set(-DOOR_WIDTH / 2, 0, 0)
+    const panel = boxMesh(
+      DOOR_WIDTH - 0.02,
+      DOOR_HEIGHT - 0.02,
+      0.07,
+      toonMat('#6b543a'),
+    )
+    panel.position.set(DOOR_WIDTH / 2, DOOR_HEIGHT / 2, 0)
+    panel.castShadow = true
+    addOutline(panel, 1.03)
+    const handle = new Mesh(unitGeo().sphere, toonMat('#c9b037'))
+    handle.scale.setScalar(0.09)
+    handle.position.set(DOOR_WIDTH - 0.14, DOOR_HEIGHT / 2, 0.06)
+    leaf.add(panel, handle)
+    group.add(jambL, jambR, lintel, leaf)
+    doorAnims.push({ index: door.corridorIndex, leaf })
+    return group
+  }
+
+  /** Dinteles sobre el hueco de puerta (port de buildHeaders). */
+  function buildHeaders(door: DoorLayout, group: Group): void {
+    const before = layout.rooms[door.corridorIndex]
+    const after = layout.rooms[door.corridorIndex + 1]
+    const theme = THEMES.corridor
+    const mat = toonMat('#ffffff', {
+      map: inkWallTexture(theme),
+      gradient: theme.gradient,
+    })
+    if (before) {
+      const backZ = before.z + before.depth / 2
+      const header = boxMesh(
+        DOOR_WIDTH,
+        before.height - DOOR_HEIGHT,
+        WALL_THICKNESS,
+        mat,
+      )
+      header.position.set(
+        0,
+        (before.height + DOOR_HEIGHT) / 2,
+        backZ + WALL_THICKNESS / 2,
+      )
+      group.add(header)
+    }
+    if (after) {
+      const frontZ = after.z - after.depth / 2
+      const header = boxMesh(
+        DOOR_WIDTH,
+        after.height - DOOR_HEIGHT,
+        WALL_THICKNESS,
+        mat,
+      )
+      header.position.set(
+        0,
+        (after.height + DOOR_HEIGHT) / 2,
+        frontZ - WALL_THICKNESS / 2,
+      )
+      group.add(header)
+    }
+  }
+
+  function buildCorridorShell(index: number): Group {
+    const group = new Group()
+    const corridor = layout.corridors[index]
+    const door = layout.doors[index]
+    if (!corridor || !door) {
+      return group
+    }
+    const theme = THEMES.corridor
+    for (const box of wallBoxes) {
+      if (box.source.kind === 'corridor' && box.source.index === index) {
+        group.add(wallMesh(box, theme))
+      }
+    }
+    group.add(
+      floorMesh(corridor.x, corridor.z, corridor.width, corridor.depth, theme, {
+        x: 1,
+        y: 2.5,
+      }),
+      ceilingMesh(
+        corridor.x,
+        corridor.z,
+        corridor.width,
+        corridor.depth,
+        CORRIDOR_HEIGHT,
+        theme,
+      ),
+      buildDoor(door),
+    )
+    buildHeaders(door, group)
+    // mini-timeline: el año de la etapa destino pintado en el piso
+    const year = label(corridor.year, { size: 0.9, color: '#aab6d8' })
+    year.rotation.x = -Math.PI / 2
+    year.position.set(corridor.x, 0.02, corridor.z)
+    group.add(year)
+    if (state.tier === 'full') {
+      group.add(
+        accentLight(
+          corridor.x,
+          CORRIDOR_HEIGHT - 0.25,
+          corridor.z,
+          theme.lightColor,
+          3,
+          corridor.depth * 1.6,
+        ),
+      )
+    }
+    return group
+  }
+
+  function buildPastShell(index: number): Group {
+    const group = new Group()
+    const past = pastRooms[index]
+    if (!past) {
+      return group
+    }
+    const theme = THEMES.past
+    for (const box of pastWallBoxes) {
+      if (box.source.index === index) {
+        group.add(wallMesh(box, theme))
+      }
+    }
+    group.add(
+      floorMesh(past.x, past.z, past.width, past.depth, theme, {
+        x: past.width / 2,
+        y: past.depth / 2,
+      }),
+      ceilingMesh(past.x, past.z, past.width, past.depth, past.height, theme),
+      accentLight(past.x, past.height - 0.3, past.z, theme.lightColor, 5, 9),
+    )
+    return group
+  }
+
+  function getShell(key: ShellKey): Group {
+    const cached = shells.get(key)
+    if (cached) {
+      return cached
+    }
+    const [kind, rawIndex] = key.split('-')
+    const index = Number(rawIndex)
+    let group: Group
+    if (kind === 'room') {
+      group = buildRoomShell(index)
+    } else if (kind === 'corridor') {
+      group = buildCorridorShell(index)
+    } else {
+      group = buildPastShell(index)
+    }
+    shells.set(key, group)
+    return group
+  }
+
+  function syncShells(wanted: ReadonlySet<ShellKey>): void {
+    for (const key of mountedShells) {
+      if (!wanted.has(key)) {
+        const group = shells.get(key)
+        if (group) {
+          scene.remove(group)
+        }
+        mountedShells.delete(key)
+      }
+    }
+    for (const key of wanted) {
+      if (!mountedShells.has(key)) {
+        scene.add(getShell(key))
+        mountedShells.add(key)
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Contents (la parte que se paga: 1 sala viva)
+  // -------------------------------------------------------------------------
+
+  function mountBuild(index: number, build: RoomBuild): void {
+    contents.set(index, build)
+    scene.add(build.group)
+    for (const item of build.interactables) {
+      registerInteractable(state, item)
+    }
+    // calienta shaders con la sala ya montada (pool toon = casi noop)
+    renderer.compile(scene, camera)
+  }
+
+  function unmountBuild(index: number): void {
+    const build = contents.get(index)
+    if (!build) {
+      return
+    }
+    scene.remove(build.group)
+    for (const item of build.interactables) {
+      unregisterInteractable(state, item.id)
+    }
+    build.dispose()
+    contents.delete(index)
+  }
+
+  function preload(index: number): Promise<void> {
+    if (disposed || contents.has(index)) {
+      return Promise.resolve()
+    }
+    const inFlight = pending.get(index)
+    if (inFlight) {
+      return inFlight
+    }
+    const def = rooms[index]
+    const room = layout.rooms[index]
+    if (!def || !room) {
+      return Promise.resolve()
+    }
+    const promise = WORLD[def.id]
+      .load()
+      .then(({ default: factory }) => {
+        pending.delete(index)
+        if (disposed || !wantedContent.has(index)) {
+          return
+        }
+        const build = factory({
+          def,
+          room,
+          theme: THEMES[def.id],
+          locale: state.locale,
+          state,
+          actions,
+        })
+        mountBuild(index, build)
+      })
+      .catch((error: unknown) => {
+        pending.delete(index)
+        console.error('[journey] preload de sala fallo', error)
+      })
+    pending.set(index, promise)
+    return promise
+  }
+
+  function disposeContentsExcept(keep: number): void {
+    for (const index of [...contents.keys()]) {
+      if (index !== keep) {
+        unmountBuild(index)
+      }
+    }
+  }
+
+  /** Content de la sala listo; con fade solo si hay que construirlo ya. */
+  async function ensureContent(index: number, useFade: boolean): Promise<void> {
+    if (contents.has(index)) {
+      return
+    }
+    if (useFade) {
+      await deps.fade(true)
+    }
+    await preload(index)
+    if (useFade) {
+      await deps.fade(false)
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Zonas + theme
+  // -------------------------------------------------------------------------
+
+  function applyTheme(id: ThemeZoneId): void {
+    const theme = THEMES[id]
+    targetSky.set(theme.sky)
+    targetFog.set(theme.fog)
+  }
+
+  function themeIdForZone(zone: Zone): ThemeZoneId {
+    if (zone.kind === 'corridor') {
+      return 'corridor'
+    }
+    return rooms[zone.index]?.id ?? 'corridor'
+  }
+
+  /** Frustum de la sombra ceñido a la zona activa (solo full). */
+  function focusShadow(zone: Zone): void {
+    const light = deps.shadowLight
+    if (!light) {
+      return
+    }
+    const area =
+      zone.kind === 'room'
+        ? layout.rooms[zone.index]
+        : layout.corridors[zone.index]
+    if (!area) {
+      return
+    }
+    const half = Math.max(area.width, area.depth) / 2 + 1.5
+    light.position.set(area.x + 4, area.height + 6, area.z - 4)
+    light.target.position.set(area.x, 0, area.z)
+    light.target.updateMatrixWorld()
+    const shadowCam = light.shadow.camera
+    shadowCam.left = -half
+    shadowCam.right = half
+    shadowCam.top = half
+    shadowCam.bottom = -half
+    shadowCam.updateProjectionMatrix()
+  }
+
+  function applyZone(zone: Zone, manageFade: boolean): Promise<void> {
+    const wanted = new Set<ShellKey>()
+    let result: Promise<void> = Promise.resolve()
+    if (zone.kind === 'room') {
+      wanted.add(`room-${zone.index}`)
+      if (layout.corridors[zone.index - 1]) {
+        wanted.add(`corridor-${zone.index - 1}`)
+      }
+      if (layout.corridors[zone.index]) {
+        wanted.add(`corridor-${zone.index}`)
+      }
+      wantedContent.clear()
+      wantedContent.add(zone.index)
+      disposeContentsExcept(zone.index)
+      result = ensureContent(zone.index, manageFade)
+    } else {
+      wanted.add(`corridor-${zone.index}`)
+      wanted.add(`room-${zone.index}`)
+      if (layout.rooms[zone.index + 1]) {
+        wanted.add(`room-${zone.index + 1}`)
+      }
+      // esclusa: libera la sala anterior y precarga la siguiente
+      wantedContent.clear()
+      wantedContent.add(zone.index + 1)
+      unmountBuild(zone.index)
+      disposeContentsExcept(zone.index + 1)
+      result = preload(zone.index + 1)
+    }
+    syncShells(wanted)
+    applyTheme(themeIdForZone(zone))
+    focusShadow(zone)
+    return result
+  }
+
+  // -------------------------------------------------------------------------
+  // API
+  // -------------------------------------------------------------------------
+
+  const world: World = {
+    async init() {
+      // interactables permanentes: las puertas de los pasillos
+      for (const door of layout.doors) {
+        registerInteractable(state, {
+          id: `door-${door.corridorIndex}`,
+          x: door.x,
+          z: door.z,
+          radius: 2.1,
+          label: { es: 'Abrir la puerta', en: 'Open the door' },
+          onActivate: () => world.openDoor(door.corridorIndex),
+        })
+      }
+      state.zone = { kind: 'room', index: 0 }
+      await applyZone(state.zone, false)
+    },
+
+    setZone(zone) {
+      state.zone = zone
+      if (state.past !== null) {
+        return
+      }
+      void applyZone(zone, true)
+    },
+
+    openDoor(index) {
+      state.doorsOpen.add(index)
+      unregisterInteractable(state, `door-${index}`)
+    },
+
+    openAllDoors() {
+      for (const door of layout.doors) {
+        world.openDoor(door.corridorIndex)
+      }
+    },
+
+    async teleportToRoom(index) {
+      const target = layout.rooms[index]
+      if (!target) {
+        return
+      }
+      await deps.fade(true)
+      if (state.past !== null && pastBuild) {
+        scene.remove(pastBuild.group)
+        for (const item of pastBuild.interactables) {
+          unregisterInteractable(state, item.id)
+        }
+        pastBuild.dispose()
+        pastBuild = null
+        state.past = null
+        deps.setPastMode(false)
+      }
+      deps.teleportPlayer(0, target.z - target.depth / 2 + 1.5)
+      state.zone = { kind: 'room', index }
+      await applyZone(state.zone, false)
+      await deps.fade(false)
+    },
+
+    async enterPast(roomIndex, spawn) {
+      const def = rooms[roomIndex]
+      const pastRoom = pastRooms[roomIndex]
+      if (!def || !pastRoom || state.past !== null) {
+        return
+      }
+      await deps.fade(true)
+      state.past = roomIndex
+      deps.setPastMode(true)
+      // el content presente sigue construido pero fuera de escena
+      const present = contents.get(roomIndex)
+      if (present) {
+        scene.remove(present.group)
+      }
+      const { default: factory } = await loadPast()
+      if (disposed) {
+        return
+      }
+      const build = factory({
+        def,
+        pastRoom,
+        theme: THEMES.past,
+        locale: state.locale,
+        state,
+        actions: {
+          exitPast: (returnTo) => {
+            void world.exitPast(returnTo)
+          },
+        },
+      })
+      pastBuild = build
+      scene.add(build.group)
+      for (const item of build.interactables) {
+        registerInteractable(state, item)
+      }
+      syncShells(new Set<ShellKey>([`past-${roomIndex}`]))
+      applyTheme('past')
+      deps.teleportPlayer(spawn.x, spawn.z)
+      renderer.compile(scene, camera)
+      await deps.fade(false)
+    },
+
+    async exitPast(returnTo) {
+      const roomIndex = state.past
+      if (roomIndex === null) {
+        return
+      }
+      await deps.fade(true)
+      if (pastBuild) {
+        scene.remove(pastBuild.group)
+        for (const item of pastBuild.interactables) {
+          unregisterInteractable(state, item.id)
+        }
+        pastBuild.dispose()
+        pastBuild = null
+      }
+      state.past = null
+      deps.setPastMode(false)
+      const present = contents.get(roomIndex)
+      if (present) {
+        scene.add(present.group)
+      }
+      deps.teleportPlayer(returnTo.x, returnTo.z)
+      state.zone = { kind: 'room', index: roomIndex }
+      await applyZone(state.zone, false)
+      await deps.fade(false)
+    },
+
+    setAccentsEnabled(on) {
+      for (const light of accentLights) {
+        light.visible = on
+      }
+    },
+
+    update(t, dt) {
+      // puertas: lerp de la hoja hacia su estado
+      for (const anim of doorAnims) {
+        const target = state.doorsOpen.has(anim.index) ? -Math.PI * 0.52 : 0
+        anim.leaf.rotation.y +=
+          (target - anim.leaf.rotation.y) * Math.min(1, dt * 3.2)
+      }
+      // theme: lerp de background/fog (~400 ms)
+      const k = 1 - Math.exp(-dt * 8)
+      background.lerp(targetSky, k)
+      fog.color.lerp(targetFog, k)
+      // animaciones del contenido vivo (NPCs, micro-interacciones)
+      for (const build of contents.values()) {
+        build.update?.(t, dt)
+      }
+      pastBuild?.update?.(t, dt)
+    },
+
+    dispose() {
+      disposed = true
+      wantedContent.clear()
+      for (const index of [...contents.keys()]) {
+        unmountBuild(index)
+      }
+      if (pastBuild) {
+        scene.remove(pastBuild.group)
+        pastBuild.dispose()
+        pastBuild = null
+      }
+      for (const key of mountedShells) {
+        const group = shells.get(key)
+        if (group) {
+          scene.remove(group)
+        }
+      }
+      mountedShells.clear()
+      for (const group of shells.values()) {
+        disposeDeep(group)
+      }
+      shells.clear()
+      doorAnims.length = 0
+      accentLights.length = 0
+    },
+  }
+
+  return world
+}

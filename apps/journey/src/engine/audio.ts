@@ -1,5 +1,5 @@
 /**
- * @module ambient-audio
+ * @module audio (engine)
  * @description Audio ambiente PROCEDURAL via WebAudio (cero archivos, cero
  *   peso de red — coherente con procedural-first): perfiles por sala
  *   (aula: room-tone suave; corpoelec: hum electrico 60/120 Hz; cima: pad
@@ -10,7 +10,7 @@
  *   mas riqueza, el swap es a clips CC0 en AudioBufferSource — la interfaz
  *   (enable/disable/setRoom) no cambia.
  */
-import type { RoomId } from '../../lib/rooms'
+import type { RoomId } from '../lib/rooms'
 
 interface Voice {
   stop: () => void

@@ -35,6 +35,7 @@ import {
   type Zone,
 } from '../lib/layout'
 import type { Locale, RoomDef, RoomId } from '../lib/rooms'
+import { sfx } from './audio'
 import {
   type EngineState,
   type FichaKind,
@@ -64,6 +65,8 @@ export interface WorldActions {
   openFicha(roomIndex: number, kind: FichaKind): void
   openContact(): void
   enterPast(roomIndex: number, spawn: { x: number; z: number }): void
+  /** Panel DOM de texto libre (la reseña del cuaderno de cada sala). */
+  openStory(title: string, paragraphs: readonly string[]): void
 }
 
 export interface RoomCtx {
@@ -128,8 +131,9 @@ export interface WorldDeps {
   layout: JourneyLayout
   pastRooms: readonly PastRoomLayout[]
   state: EngineState
-  /** Fade de esclusa/teleport/portal (lo implementa el HUD). */
-  fade(on: boolean): Promise<void>
+  /** Fade de esclusa/teleport ('dark') o de sueño para los portales al
+   *  pasado ('dream' — white-out con blur). Lo implementa el HUD. */
+  fade(on: boolean, style?: 'dark' | 'dream'): Promise<void>
   /** Sepia + grano del pasado (overlay CSS del HUD). */
   setPastMode(on: boolean): void
   ui: {
@@ -197,6 +201,7 @@ export function createWorld(deps: WorldDeps): World {
   const actions: WorldActions = {
     openFicha: deps.ui.openFicha,
     openContact: deps.ui.openContact,
+    openStory: deps.ui.openStory,
     enterPast: (roomIndex, spawn) => {
       void world.enterPast(roomIndex, spawn)
     },
@@ -315,71 +320,16 @@ export function createWorld(deps: WorldDeps): World {
         ),
       )
     }
-    // marquesina sobre el hueco al pasillo: invita a seguir la trayectoria
-    const next = rooms[index + 1]
-    if (next) {
-      const marquee = new Group()
-      marquee.position.set(0, DOOR_HEIGHT + 0.62, room.z + room.depth / 2 - 0.1)
-      marquee.rotation.y = Math.PI
-      const backing = boxMesh(3.1, 0.54, 0.07, toonMat('#241a10'))
-      const trim = boxMesh(
-        3.1,
-        0.06,
-        0.08,
-        toonMat(theme.accent, {
-          emissive: theme.accent,
-          emissiveIntensity: 0.35,
-        }),
-      )
-      trim.position.y = -0.33
-      trim.userData.noOutline = true
-      const text = label(
-        state.locale === 'es'
-          ? `SIGUE LA TRAYECTORIA → ${next.year}`
-          : `FOLLOW THE PATH → ${next.year}`,
-        { size: 0.24, color: '#f2e6c8' },
-      )
-      text.position.z = 0.05
-      marquee.add(backing, trim, text)
-      group.add(marquee)
-    }
+    // (la marquesina "SIGUE LA TRAYECTORIA" se elimino — el año destino ya
+    // esta pintado grande en el piso del pasillo)
     return group
   }
 
-  /** Puerta con bisagra (port de Door.tsx): marco fusionado + hoja. */
+  /** Puerta con bisagra: SOLO la hoja + manija (sin marco — los "pilares"
+   *  laterales se eliminaron; el hueco del muro es el marco). */
   function buildDoor(door: DoorLayout): Group {
     const group = new Group()
     group.position.set(door.x, 0, door.z)
-    const frame = mergedBoxes(
-      [
-        {
-          w: 0.09,
-          h: DOOR_HEIGHT,
-          d: 0.22,
-          x: -DOOR_WIDTH / 2 - 0.045,
-          y: DOOR_HEIGHT / 2,
-          z: 0,
-        },
-        {
-          w: 0.09,
-          h: DOOR_HEIGHT,
-          d: 0.22,
-          x: DOOR_WIDTH / 2 + 0.045,
-          y: DOOR_HEIGHT / 2,
-          z: 0,
-        },
-        {
-          w: DOOR_WIDTH + 0.18,
-          h: 0.09,
-          d: 0.22,
-          x: 0,
-          y: DOOR_HEIGHT + 0.045,
-          z: 0,
-        },
-      ],
-      toonMat('#4a3b2a'),
-    )
-    frame.userData.noOutline = true
     const leaf = new Group()
     leaf.position.set(-DOOR_WIDTH / 2, 0, 0)
     const panel = boxMesh(
@@ -395,7 +345,7 @@ export function createWorld(deps: WorldDeps): World {
     handle.scale.setScalar(0.09)
     handle.position.set(DOOR_WIDTH - 0.14, DOOR_HEIGHT / 2, 0.06)
     leaf.add(panel, handle)
-    group.add(frame, leaf)
+    group.add(leaf)
     doorAnims.push({ index: door.corridorIndex, leaf })
     return group
   }
@@ -664,21 +614,24 @@ export function createWorld(deps: WorldDeps): World {
     return rooms[zone.index]?.id ?? 'corridor'
   }
 
-  /** Frustum de la sombra ceñido a la zona activa (solo full). */
-  function focusShadow(zone: Zone): void {
+  interface ShadowArea {
+    x: number
+    z: number
+    width: number
+    depth: number
+    height: number
+  }
+
+  /** Luz de sombra CENITAL sobre el centro del area (coherente con la
+   *  lampara central de cada sala: la sombra cae bajo el personaje, no en
+   *  una diagonal arbitraria) + frustum ceñido (solo full). */
+  function aimShadow(area: ShadowArea): void {
     const light = deps.shadowLight
     if (!light) {
       return
     }
-    const area =
-      zone.kind === 'room'
-        ? layout.rooms[zone.index]
-        : layout.corridors[zone.index]
-    if (!area) {
-      return
-    }
     const half = Math.max(area.width, area.depth) / 2 + 1.5
-    light.position.set(area.x + 4, area.height + 6, area.z - 4)
+    light.position.set(area.x + 0.8, area.height + 6, area.z + 0.8)
     light.target.position.set(area.x, 0, area.z)
     light.target.updateMatrixWorld()
     const shadowCam = light.shadow.camera
@@ -687,6 +640,16 @@ export function createWorld(deps: WorldDeps): World {
     shadowCam.top = half
     shadowCam.bottom = -half
     shadowCam.updateProjectionMatrix()
+  }
+
+  function focusShadow(zone: Zone): void {
+    const area =
+      zone.kind === 'room'
+        ? layout.rooms[zone.index]
+        : layout.corridors[zone.index]
+    if (area) {
+      aimShadow(area)
+    }
   }
 
   function applyZone(zone: Zone, manageFade: boolean): Promise<void> {
@@ -753,8 +716,12 @@ export function createWorld(deps: WorldDeps): World {
     },
 
     openDoor(index) {
+      if (state.doorsOpen.has(index)) {
+        return
+      }
       state.doorsOpen.add(index)
       unregisterInteractable(state, `door-${index}`)
+      sfx.play('door')
     },
 
     openAllDoors() {
@@ -794,7 +761,9 @@ export function createWorld(deps: WorldDeps): World {
       if (!def || !pastRoom || !presentRoom || state.past !== null) {
         return
       }
-      await deps.fade(true)
+      // transicion "de sueño": whoosh + white-out (tapa la carga)
+      sfx.play('whoosh')
+      await deps.fade(true, 'dream')
       state.past = roomIndex
       deps.setPastMode(true)
       // el content presente sigue construido pero fuera de escena
@@ -833,10 +802,11 @@ export function createWorld(deps: WorldDeps): World {
       }
       syncShells(new Set<ShellKey>([`past-${roomIndex}`]))
       applyTheme('past')
+      aimShadow(pastRoom)
       deps.teleportPlayer(spawn.x, spawn.z)
       renderer.compile(scene, camera)
       deps.onZoneApplied?.()
-      await deps.fade(false)
+      await deps.fade(false, 'dream')
     },
 
     async exitPast(returnTo) {
@@ -844,7 +814,8 @@ export function createWorld(deps: WorldDeps): World {
       if (roomIndex === null) {
         return
       }
-      await deps.fade(true)
+      sfx.play('whoosh')
+      await deps.fade(true, 'dream')
       if (pastBuild) {
         scene.remove(pastBuild.group)
         for (const item of pastBuild.interactables) {
@@ -864,7 +835,7 @@ export function createWorld(deps: WorldDeps): World {
       state.zone = { kind: 'room', index: roomIndex }
       await applyZone(state.zone, false)
       deps.onZoneApplied?.()
-      await deps.fade(false)
+      await deps.fade(false, 'dream')
     },
 
     setAccentsEnabled(on) {

@@ -114,6 +114,12 @@ const CSS = `
   width: min(440px, calc(100vw - 24px)); }
 .jny-fade { position: absolute; inset: 0; background: #0b0b10; opacity: 0;
   transition: opacity 350ms ease; pointer-events: none; z-index: 40; }
+.jny-dream { position: absolute; inset: 0; pointer-events: none; z-index: 41;
+  opacity: 0; visibility: hidden;
+  transition: opacity 620ms ease, visibility 0s linear 620ms;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #fdf6e6 55%, #e8dcc0 100%); }
+.jny-dream.on { opacity: 1; visibility: visible;
+  transition: opacity 520ms ease; backdrop-filter: blur(12px) brightness(1.3); }
 .jny-loader { position: absolute; inset: 0; display: grid; place-items: center;
   background: #0b0b10; color: var(--color-grey-5, #f7f7f5); z-index: 50; }
 .jny-screentone { position: absolute; inset: 0; pointer-events: none;
@@ -188,7 +194,8 @@ export interface Hud {
   openContact(): void
   toggleTeleport(): void
   closeAll(): void
-  fade(on: boolean): Promise<void>
+  /** 'dark' (esclusa/teleport) o 'dream' (portal al pasado: white-out). */
+  fade(on: boolean, style?: 'dark' | 'dream'): Promise<void>
   setPastMode(on: boolean): void
   setAudio(on: boolean): void
   setTour(on: boolean): void
@@ -246,13 +253,18 @@ export function createHud(deps: HudDeps): Hud {
   // indicador de zona
   const zoneLabel = el('div', 'jny-panel jny-top-left')
 
-  // top-right: audio + camara + salida
-  const audioBtn = button('jny-panel jny-btn', t.audioOff, () => {
-    state.audioOn = !state.audioOn
-    hud.setAudio(state.audioOn)
-    actions.onToggleAudio(state.audioOn)
-  })
-  audioBtn.setAttribute('aria-pressed', 'false')
+  // top-right: audio + camara + salida (el audio arranca ON: los SFX
+  // suenan desde el primer gesto; el toggle silencia TODO)
+  const audioBtn = button(
+    'jny-panel jny-btn',
+    state.audioOn ? t.audioOn : t.audioOff,
+    () => {
+      state.audioOn = !state.audioOn
+      hud.setAudio(state.audioOn)
+      actions.onToggleAudio(state.audioOn)
+    },
+  )
+  audioBtn.setAttribute('aria-pressed', state.audioOn ? 'true' : 'false')
   const cameraBtn = button('jny-panel jny-btn', t.cameraThird, () => {
     actions.onToggleCamera()
   })
@@ -355,9 +367,11 @@ export function createHud(deps: HudDeps): Hud {
     teleport.append(title, list)
   }
 
-  // fade + loader
+  // fade (negro) + fade de sueño (white-out del portal) + loader
   const fadeEl = el('div', 'jny-fade')
   fadeEl.setAttribute('aria-hidden', 'true')
+  const dreamEl = el('div', 'jny-dream')
+  dreamEl.setAttribute('aria-hidden', 'true')
   const loader = el('div', 'jny-loader', t.loading)
   loader.style.display = 'none'
 
@@ -392,6 +406,7 @@ export function createHud(deps: HudDeps): Hud {
     contact,
     teleport,
     fadeEl,
+    dreamEl,
     loader,
   )
   container.appendChild(root)
@@ -566,7 +581,13 @@ export function createHud(deps: HudDeps): Hud {
       refreshOverlayState()
     },
 
-    fade(on) {
+    fade(on, mode = 'dark') {
+      if (mode === 'dream') {
+        dreamEl.classList.toggle('on', on)
+        return new Promise((resolve) => {
+          window.setTimeout(resolve, on ? 560 : 650)
+        })
+      }
       fadeEl.style.opacity = on ? '1' : '0'
       return new Promise((resolve) => {
         window.setTimeout(resolve, 380)

@@ -23,7 +23,7 @@ import {
   buildWallBoxes,
 } from '../lib/layout'
 import { buildRooms, type Locale, type RoomId } from '../lib/rooms'
-import { ambientAudio } from './audio'
+import { ambientAudio, sfx } from './audio'
 import {
   type CharacterSpec,
   configureCharacters,
@@ -46,13 +46,13 @@ export interface StartOptions {
   onExit: () => void
 }
 
-/** Jugador: short negro, hoodie azul Destacame, jeans, badge (plan §04). */
+/** Jugador: short negro, hoodie azul Destacame, jeans — sin accesorios
+ *  (el badge blanco en el pecho se elimino a pedido del usuario). */
 const PLAYER_SPEC: CharacterSpec = {
   skin: '#e8b48c',
   hair: { style: 'short', color: '#181410' },
   top: '#0052cc',
   bottom: '#31435e',
-  accessory: 'badge',
   faceSeed: 5,
 }
 
@@ -141,8 +141,11 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       },
       onToggleAudio: (on) => {
         if (on) {
+          sfx.unlock()
+          sfx.setMuted(false)
           ambientAudio.enable(audioRoomId(state, rooms))
         } else {
+          sfx.setMuted(true)
           ambientAudio.disable()
         }
       },
@@ -210,6 +213,20 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   }
   window.addEventListener('resize', onResize)
 
+  // el audio (ambiente + SFX) arranca en el PRIMER gesto del usuario
+  // (autoplay policy) — sin configurar nada; el toggle del HUD silencia todo
+  function unlockAudio(): void {
+    window.removeEventListener('pointerdown', unlockAudio)
+    window.removeEventListener('keydown', unlockAudio)
+    if (!state.audioOn) {
+      return
+    }
+    sfx.unlock()
+    ambientAudio.enable(audioRoomId(state, rooms))
+  }
+  window.addEventListener('pointerdown', unlockAudio)
+  window.addEventListener('keydown', unlockAudio)
+
   // RAF unico: controls -> world -> render (+ degradacion + budget DEV)
   const clock = new Clock()
   let raf = 0
@@ -217,6 +234,10 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   let accentsOn = true
   // -5 => el primer log de presupuesto sale en el primer frame (AC-14)
   let lastBudgetLog = -5
+  // pasos del jugador por distancia recorrida (zancada ~0.62 m)
+  let stride = 0
+  let lastPx = player.group.position.x
+  let lastPz = player.group.position.z
 
   function degrade(dt: number): void {
     if (1 / dt < 30) {
@@ -243,6 +264,23 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     const t = clock.elapsedTime
     controls.update(t, dt)
     world.update(t, dt)
+    // audio posicional: listener en el jugador + pasos por zancada
+    const px = player.group.position.x
+    const pz = player.group.position.z
+    sfx.setListener(px, pz)
+    const moved = Math.hypot(px - lastPx, pz - lastPz)
+    lastPx = px
+    lastPz = pz
+    if (moved > 1) {
+      stride = 0 // teleport/portal: no cuenta como zancada
+    } else {
+      stride += moved
+      if (stride > 0.62) {
+        stride = 0
+        sfx.stepAt(px, pz, true)
+      }
+    }
+    sfx.update(dt)
     renderer.render(scene, camera)
     if (dt > 0) {
       degrade(dt)
@@ -279,7 +317,10 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     dispose() {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('pointerdown', unlockAudio)
+      window.removeEventListener('keydown', unlockAudio)
       ambientAudio.disable()
+      sfx.dispose()
       controls.dispose()
       world.dispose()
       hud.dispose()

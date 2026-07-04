@@ -8,6 +8,7 @@
  */
 import { Group, Mesh, MeshBasicMaterial, PointLight } from 'three'
 import type { Box2 } from '../../lib/collision'
+import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import { unregisterInteractable } from '../state'
@@ -27,6 +28,7 @@ import {
   desk,
   fichaBoard,
   footprint,
+  lecternNotebook,
   pastPortal,
   switchableMonitor,
 } from './props'
@@ -194,20 +196,22 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   helmet.add(dome, brim)
   group.add(helmet)
 
-  // guiño geografico discreto en el muro izquierdo
+  // guiño geografico discreto en el muro izquierdo (al fondo, sobre el
+  // transformador — el frente del muro lo ocupa la grieta al pasado)
   const geo = label('YARACUY · CARABOBO · LARA', {
     size: 0.22,
     color: theme.accent,
   })
-  geo.position.set(-half + 0.3, 2.1, room.z + 1.6)
+  geo.position.set(-half + 0.3, 2.5, room.z - 2.3)
   geo.rotation.y = Math.PI / 2
   group.add(geo)
 
   // micro-interaccion: tablero de medidores rojo -> verde + luz de estado
+  // (muro DERECHO — el izquierdo es del portal al pasado)
   const microId = `micro-corpoelec-${room.index}`
   const micro = new Group()
-  micro.position.set(-half + 0.42, 0, room.z + 1.6)
-  micro.rotation.y = Math.PI / 2
+  micro.position.set(half - 0.42, 0, room.z + 2.6)
+  micro.rotation.y = -Math.PI / 2
   const panel = boxMesh(1.6, 1.1, 0.08, toonMat('#2e3238'))
   panel.position.set(0, 1.5, 0)
   micro.add(panel)
@@ -238,8 +242,8 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   group.add(micro)
   interactables.push({
     id: microId,
-    x: -half + 0.42,
-    z: room.z + 1.6,
+    x: half - 0.42,
+    z: room.z + 2.6,
     radius: 2,
     label: MICRO_LABEL,
     onActivate: () => {
@@ -249,6 +253,7 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
       gaugeMat.emissive.set('#4dcc7a')
       statusLight?.color.set('#4dcc7a')
       inventory.screen.show('online')
+      sfx.play('boot')
       unregisterInteractable(state, microId)
     },
   })
@@ -263,7 +268,6 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     theme,
     locale: state.locale,
     preview: texts.retos,
-    state,
     onOpen: actions.openFicha,
   })
   const aprendizajes = fichaBoard({
@@ -274,19 +278,30 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     theme,
     locale: state.locale,
     preview: texts.aprendizajes,
-    state,
     onOpen: actions.openFicha,
   })
+  // grieta al pasado, pegada al muro IZQUIERDO (antes estaba a la derecha)
   const portal = pastPortal({
     room,
-    position: [half - 0.35, 0, room.z + 2.6],
-    rotationY: -Math.PI / 2,
+    position: [-half + 0.1, 0, room.z + 2.8],
+    rotationY: Math.PI / 2,
     accent: theme.accent,
     year: def.year,
     locale: state.locale,
     onEnter: actions.enterPast,
   })
-  for (const prop of [retos, aprendizajes, portal]) {
+  // pilar-atril con la reseña de la etapa, a la DERECHA
+  const nota = lecternNotebook({
+    roomIndex: room.index,
+    position: [half - 1, 0, room.z + 0.2],
+    rotationY: -Math.PI / 2,
+    theme,
+    notebook: { title: texts.title, lines: texts.notebook },
+    story: { title: texts.title, paragraphs: texts.resena },
+    onOpen: actions.openStory,
+  })
+  staticColliders.push(footprint(half - 1, room.z + 0.2, 0.7, 0.7))
+  for (const prop of [retos, aprendizajes, portal, nota]) {
     group.add(prop.group)
     if (prop.interactable) {
       interactables.push(prop.interactable)

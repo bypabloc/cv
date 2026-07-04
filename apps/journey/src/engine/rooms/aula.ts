@@ -1,15 +1,17 @@
 /**
  * @module rooms/aula (engine)
  * @description Sala 0 — Aula/Universidad (iai + projects-degrees, 2015).
- *   Salon CLASICO: pupitres con silla en filas mirando al frente (+Z, donde
- *   la puerta al pasillo lleva su marquesina — la monta world), escritorio
- *   del profesor, pizarras de RETOS y APRENDIZAJES en las paredes laterales.
+ *   Salon CLASICO en paleta blanca/beige/azul con guiños morados: pupitres
+ *   azules en filas mirando al frente (+Z), escritorio del profesor,
+ *   pizarras de RETOS y APRENDIZAJES en las paredes laterales, grieta al
+ *   pasado a la IZQUIERDA y pilar-atril con la reseña a la DERECHA.
  *   2 estudiantes SENTADOS tecleando con sus pantallas encendidas (codigo
  *   cliente-servidor del proyecto de grado); las 2 PCs libres — la tuya y
  *   una del laboratorio — se encienden INDIVIDUALMENTE con E. Manga-ink.
  */
 import { Group } from 'three'
 import type { Box2 } from '../../lib/collision'
+import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import { unregisterInteractable } from '../state'
@@ -20,7 +22,13 @@ import {
   toonMat,
 } from '../toon'
 import type { RoomBuild, RoomCtx } from '../world'
-import { fichaBoard, footprint, pastPortal, switchableMonitor } from './props'
+import {
+  fichaBoard,
+  footprint,
+  lecternNotebook,
+  pastPortal,
+  switchableMonitor,
+} from './props'
 
 const MICRO_LABEL_MINE = {
   es: 'Encender tu PC',
@@ -101,7 +109,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     { w: 0.05, h: 0.44, d: 0.05, x: x - 0.17, y: 0.22, z: cz - 0.1 * dir },
     { w: 0.05, h: 0.44, d: 0.05, x: x + 0.17, y: 0.22, z: cz - 0.1 * dir },
   ]
-  // profesor + 4 pupitres + 5 sillas fusionados: 2 draw calls (AC-10)
+  // profesor + 4 pupitres + 5 sillas fusionados: 2 draw calls (AC-10).
+  // Mobiliario AZUL (tema del aula: blanco + beige + azul, guiños morados)
   const allDesks: readonly (readonly [number, number])[] = [
     [-1.6, room.z + 2.5],
     ...deskSpots,
@@ -117,7 +126,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
         ...deskSpots.flatMap(([x, z]) => chairParts(x, z - 0.55, 1)),
         ...chairParts(-1.6, room.z + 3.05, -1),
       ],
-      toonMat('#5a4632'),
+      toonMat('#33517e'),
       { inflate: 0.035, castShadow: true },
     ),
   )
@@ -165,6 +174,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
         label: isPlayerPc ? MICRO_LABEL_MINE : MICRO_LABEL_LAB,
         onActivate: () => {
           screen.show('on')
+          sfx.play('boot')
           unregisterInteractable(state, microId)
         },
       })
@@ -181,7 +191,6 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     theme,
     locale: state.locale,
     preview: texts.retos,
-    state,
     onOpen: actions.openFicha,
   })
   const aprendizajes = fichaBoard({
@@ -192,20 +201,30 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     theme,
     locale: state.locale,
     preview: texts.aprendizajes,
-    state,
     onOpen: actions.openFicha,
   })
-  // portal al pasado (las tesis bloqueadas)
+  // grieta al pasado, pegada al muro IZQUIERDO (el pasado a la izquierda)
   const portal = pastPortal({
     room,
-    position: [-half + 0.35, 0, room.z + 2.2],
+    position: [-half + 0.1, 0, room.z + 2.2],
     rotationY: Math.PI / 2,
     accent: theme.accent,
     year: def.year,
     locale: state.locale,
     onEnter: actions.enterPast,
   })
-  for (const prop of [retos, aprendizajes, portal]) {
+  // pilar-atril con la reseña de la etapa, a la DERECHA (espejo del portal)
+  const nota = lecternNotebook({
+    roomIndex: room.index,
+    position: [half - 0.9, 0, room.z + 2.4],
+    rotationY: -Math.PI / 2,
+    theme,
+    notebook: { title: texts.title, lines: texts.notebook },
+    story: { title: texts.title, paragraphs: texts.resena },
+    onOpen: actions.openStory,
+  })
+  staticColliders.push(footprint(half - 0.9, room.z + 2.4, 0.7, 0.7))
+  for (const prop of [retos, aprendizajes, portal, nota]) {
     group.add(prop.group)
     if (prop.interactable) {
       interactables.push(prop.interactable)

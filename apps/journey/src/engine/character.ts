@@ -17,6 +17,7 @@ import {
   SRGBColorSpace,
 } from 'three'
 import type { Box2 } from '../lib/collision'
+import { sfx } from './audio'
 import { basicMat, makeRng, outlineGroup, toonMat, unitGeo } from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
@@ -139,15 +140,16 @@ function drawFace(
   for (const x of eyeXs) {
     drawEye(ctx, x, eyeY, params, closed)
   }
-  // cejas (trazo de tinta con tilt por seed)
+  // cejas: arcos suaves y SIMETRICOS (tilt sutil por seed, espejado)
   ctx.strokeStyle = '#141018'
-  ctx.lineWidth = 4
+  ctx.lineWidth = 3.5
   ctx.lineCap = 'round'
   for (const [i, x] of eyeXs.entries()) {
     const dir = i === 0 ? -1 : 1
+    const tilt = dir * params.browTilt * 4
     ctx.beginPath()
-    ctx.moveTo(x - 11, eyeY - 24 + dir * params.browTilt * 8)
-    ctx.lineTo(x + 11, eyeY - 24 - dir * params.browTilt * 8)
+    ctx.moveTo(x - 10, eyeY - 21 + tilt)
+    ctx.quadraticCurveTo(x, eyeY - 28, x + 10, eyeY - 21 - tilt)
     ctx.stroke()
   }
   // boca pequeña
@@ -477,15 +479,19 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   /** Sentado en silla (tipeando) o arrodillado en el piso (trabajando). */
   function poseSeated(t: number, kind: 'sit' | 'kneel'): void {
     const sitting = kind === 'sit'
-    // sit: muslos al frente a altura de asiento; kneel: piernas atras
-    parts.legL.rotation.x = sitting ? 1.45 : -1.5
-    parts.legR.rotation.x = sitting ? 1.45 : -1.5
-    group.position.y = sitting ? -0.07 : -0.5
-    const base = sitting ? 0.85 : 0.7
+    // rotation.x NEGATIVO lleva la extremidad hacia +Z (el frente del
+    // chibi). sit: muslos AL FRENTE a altura de asiento; kneel: piernas
+    // dobladas hacia atras, con el cuerpo bajado solo hasta la rodilla
+    // (antes -0.5 lo hundia en el piso y quedaba "incompleto").
+    parts.legL.rotation.x = sitting ? -1.45 : 1.0
+    parts.legR.rotation.x = sitting ? -1.45 : 1.0
+    group.position.y = sitting ? -0.07 : -0.24
+    // brazos hacia ADELANTE (teclado / la unidad que repara)
+    const base = sitting ? -0.85 : -0.7
     const speed = sitting ? 9 : 5
     const amp = sitting ? 0.07 : 0.18
-    parts.armL.rotation.x = base + Math.sin(t * speed) * amp
-    parts.armR.rotation.x = base + Math.cos(t * speed * 0.9) * amp
+    parts.armL.rotation.x = base - Math.sin(t * speed) * amp
+    parts.armR.rotation.x = base - Math.cos(t * speed * 0.9) * amp
     group.rotation.x = 0
     parts.torso.scale.y = 1 + Math.sin(t * 1.6) * 0.012
   }
@@ -586,6 +592,8 @@ function moveAlongPath(
   root.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1])
 }
 
+let npcSeq = 0
+
 export function makeNpc(opts: NpcOpts): NpcHandle {
   const character = makeCharacter(opts)
   const { group } = character
@@ -602,6 +610,14 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
     character.setPose(opts.pose)
   }
 
+  // sonido: pasos por zancada (caminantes) / tecleo (sentados a la PC),
+  // ambos con volumen por cercania al jugador (sfx keep-alive)
+  npcSeq += 1
+  const sfxId = `npc-${npcSeq}`
+  let stride = 0
+  let prevX = opts.position[0]
+  let prevZ = opts.position[2]
+
   const NPC_RADIUS = 0.26
   return {
     group,
@@ -609,9 +625,18 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
       const tt = t + phase
       if (walking && opts.path) {
         moveAlongPath(group, opts.path, tt, speed)
+        stride += Math.hypot(group.position.x - prevX, group.position.z - prevZ)
+        prevX = group.position.x
+        prevZ = group.position.z
+        if (stride > 0.62) {
+          stride = 0
+          sfx.stepAt(group.position.x, group.position.z)
+        }
       } else if (!opts.pose) {
         // con pose fija no hay sway: esta concentrado en lo suyo
         group.rotation.y = (opts.rotationY ?? 0) + Math.sin(tt * 0.7) * 0.08
+      } else if (opts.pose === 'sit') {
+        sfx.feed(sfxId, 'typing', group.position.x, group.position.z)
       }
       character.update(tt, dt)
     },

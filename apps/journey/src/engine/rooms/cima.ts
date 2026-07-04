@@ -14,6 +14,7 @@ import {
   PointLight,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
+import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
 import type { Interactable } from '../state'
 import {
@@ -33,6 +34,7 @@ import {
   desk,
   fichaBoard,
   footprint,
+  lecternNotebook,
   monitor,
   pastPortal,
   screenVariants,
@@ -169,6 +171,7 @@ function buildOrchestration(
       label: MICRO_LABEL,
       onActivate: () => {
         pulseStart = -2 // marca "pendiente": el proximo update fija el inicio
+        sfx.play('boot')
       },
     },
     update: (t) => {
@@ -405,6 +408,8 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   updates.push((t, dt) => {
     holoMat.emissiveIntensity = 0.9 + Math.sin(t * 2.4) * 0.35
     holo.rotation.y += dt * 0.8
+    // hum cristalino del holograma, audible al acercarse
+    sfx.feed(`holo-${room.index}`, 'holo', half - 1.3, room.z - 0.4)
   })
 
   // pizarras tituladas: RETOS (muro frontal) / APRENDIZAJES (muro izq)
@@ -416,7 +421,6 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     theme,
     locale: state.locale,
     preview: texts.retos,
-    state,
     onOpen: actions.openFicha,
   })
   const aprendizajes = fichaBoard({
@@ -427,19 +431,30 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     theme,
     locale: state.locale,
     preview: texts.aprendizajes,
-    state,
     onOpen: actions.openFicha,
   })
+  // grieta al pasado, pegada al muro IZQUIERDO
   const portal = pastPortal({
     room,
-    position: [-half + 0.35, 0, room.z + room.depth / 2 - 1.4],
+    position: [-half + 0.1, 0, room.z + room.depth / 2 - 1.4],
     rotationY: Math.PI / 2,
     accent: theme.accent,
     year: def.year,
     locale: state.locale,
     onEnter: actions.enterPast,
   })
-  for (const prop of [retos, aprendizajes, portal]) {
+  // pilar-atril con la reseña de la etapa, a la DERECHA
+  const nota = lecternNotebook({
+    roomIndex: room.index,
+    position: [half - 1, 0, room.z + 2.9],
+    rotationY: -Math.PI / 2,
+    theme,
+    notebook: { title: texts.title, lines: texts.notebook },
+    story: { title: texts.title, paragraphs: texts.resena },
+    onOpen: actions.openStory,
+  })
+  staticColliders.push(footprint(half - 1, room.z + 2.9, 0.7, 0.7))
+  for (const prop of [retos, aprendizajes, portal, nota]) {
     group.add(prop.group)
     if (prop.interactable) {
       interactables.push(prop.interactable)

@@ -9,17 +9,24 @@
  *   El panel "antes de la uni" se expande con E a la historia completa.
  *   El shell lo monta world; el look sepia lo remata el overlay del HUD.
  */
-import { type CanvasTexture, Group, Mesh, MeshBasicMaterial } from 'three'
+import {
+  CanvasTexture,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  SRGBColorSpace,
+} from 'three'
 import type { Box2 } from '../../lib/collision'
 import type { Locale } from '../../lib/rooms'
+import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
 import type { EngineState, Interactable } from '../state'
 import { unregisterInteractable } from '../state'
 import {
+  basicMat,
   boxMesh,
   disposeDeep,
   label,
-  makeCanvasTexture,
   mergedBoxes,
   outlineGroup,
   screenPanel,
@@ -90,35 +97,140 @@ const AC_LABEL = {
   en: 'Power on the AC unit',
 } as const
 
-/** Pantalla de la PC de juegos: shooter retro pixel-art (la semilla). */
-function gameTexture(): CanvasTexture {
-  return makeCanvasTexture(256, (ctx, size) => {
-    ctx.fillStyle = '#0c0a14'
-    ctx.fillRect(0, 0, size, size)
-    const rows: readonly string[] = ['#c86a4a', '#c8a04a', '#7aa04a']
-    rows.forEach((color, row) => {
-      ctx.fillStyle = color
-      for (let col = 0; col < 6; col += 1) {
-        const x = 34 + col * 34
-        const y = 52 + row * 30
-        ctx.fillRect(x, y, 18, 12)
-        ctx.fillRect(x + 3, y - 5, 12, 5)
+interface AnimatedScreen {
+  texture: CanvasTexture
+  update(t: number): void
+}
+
+/**
+ * Pantalla de la PC de juegos: homenaje procedural a GTA San Andreas
+ * (2004, la epoca): tercera persona con el personaje de espaldas, calle
+ * con un auto CRUZANDO, palmeras y el HUD clasico — radar circular
+ * abajo-izquierda con blip parpadeante, hora, dinero verde y barras de
+ * vida/chaleco. Redibuja el canvas ~8 fps (256px, costo trivial).
+ */
+function gtaScreen(): AnimatedScreen {
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const maybeCtx = canvas.getContext('2d')
+  if (!maybeCtx) {
+    throw new Error('past: canvas 2d context no disponible')
+  }
+  const ctx = maybeCtx
+  const texture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  let last = -1
+
+  function draw(t: number): void {
+    // atardecer naranja (Los Santos vibes)
+    ctx.fillStyle = '#e0904e'
+    ctx.fillRect(0, 0, size, 78)
+    ctx.fillStyle = '#ecb066'
+    ctx.fillRect(0, 78, size, 30)
+    ctx.fillStyle = '#f7e6b0'
+    ctx.beginPath()
+    ctx.arc(198, 56, 15, 0, Math.PI * 2)
+    ctx.fill()
+    // skyline en silueta
+    ctx.fillStyle = '#5a4458'
+    ctx.fillRect(8, 62, 26, 46)
+    ctx.fillRect(44, 48, 20, 60)
+    ctx.fillRect(72, 70, 30, 38)
+    ctx.fillRect(150, 66, 22, 42)
+    // palmeras
+    ctx.strokeStyle = '#3a2c28'
+    ctx.lineWidth = 5
+    ctx.lineCap = 'round'
+    for (const px of [122, 236]) {
+      ctx.beginPath()
+      ctx.moveTo(px, 108)
+      ctx.lineTo(px - 4, 58)
+      ctx.stroke()
+      ctx.strokeStyle = '#3f6a38'
+      ctx.lineWidth = 4
+      for (const dir of [-1, -0.4, 0.4, 1]) {
+        ctx.beginPath()
+        ctx.moveTo(px - 4, 58)
+        ctx.quadraticCurveTo(px - 4 + dir * 14, 48, px - 4 + dir * 22, 56)
+        ctx.stroke()
       }
-    })
-    // nave del jugador + disparo en vuelo
-    ctx.fillStyle = '#e8d8b0'
-    ctx.fillRect(118, 210, 22, 10)
-    ctx.fillRect(126, 202, 6, 8)
-    ctx.fillRect(128, 162, 3, 22)
+      ctx.strokeStyle = '#3a2c28'
+      ctx.lineWidth = 5
+    }
+    // calle + linea discontinua + acera
+    ctx.fillStyle = '#3a3a42'
+    ctx.fillRect(0, 108, size, 88)
+    ctx.fillStyle = '#d8d0a8'
+    for (let x = 0; x < size; x += 34) {
+      ctx.fillRect(x, 150, 18, 4)
+    }
+    ctx.fillStyle = '#6a625a'
+    ctx.fillRect(0, 196, size, 60)
+    // auto lowrider cruzando (loop ~6 s)
+    const carX = ((t * 46) % (size + 150)) - 75
+    ctx.fillStyle = '#7a2430'
+    ctx.fillRect(carX, 122, 62, 16)
+    ctx.fillRect(carX + 14, 112, 32, 12)
+    ctx.fillStyle = '#141018'
+    ctx.beginPath()
+    ctx.arc(carX + 14, 140, 7, 0, Math.PI * 2)
+    ctx.arc(carX + 48, 140, 7, 0, Math.PI * 2)
+    ctx.fill()
+    // personaje de espaldas (tercera persona) en la acera
+    ctx.fillStyle = '#2c3e2c'
+    ctx.fillRect(118, 196, 20, 26)
+    ctx.fillStyle = '#274a8c'
+    ctx.fillRect(118, 222, 20, 20)
+    ctx.fillStyle = '#c98f6a'
+    ctx.fillRect(122, 184, 12, 12)
+    // HUD clasico: hora + dinero + barras vida/chaleco
     ctx.font = 'bold 16px monospace'
-    ctx.fillStyle = '#b08a6a'
-    ctx.fillText('SCORE 12500', 20, 26)
-    ctx.fillText('HI 99999', 164, 26)
-  })
+    ctx.fillStyle = '#f2f2f2'
+    ctx.fillText('12:00', 192, 24)
+    ctx.fillStyle = '#4dcc7a'
+    ctx.fillText('$0035000', 160, 44)
+    ctx.fillStyle = '#c23b3b'
+    ctx.fillRect(160, 52, 62, 7)
+    ctx.fillStyle = '#c8c8d0'
+    ctx.fillRect(160, 62, 46, 7)
+    // radar circular abajo-izquierda + blip parpadeante + flecha
+    ctx.fillStyle = 'rgba(18,22,18,0.92)'
+    ctx.beginPath()
+    ctx.arc(38, 216, 28, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = '#c8b878'
+    ctx.lineWidth = 3
+    ctx.stroke()
+    if (Math.floor(t * 2) % 2 === 0) {
+      ctx.fillStyle = '#e8c84a'
+      ctx.fillRect(48, 202, 6, 6)
+    }
+    ctx.fillStyle = '#f2f2f2'
+    ctx.beginPath()
+    ctx.moveTo(38, 209)
+    ctx.lineTo(33, 222)
+    ctx.lineTo(43, 222)
+    ctx.closePath()
+    ctx.fill()
+  }
+
+  return {
+    texture,
+    update(t) {
+      if (t - last < 0.12) {
+        return
+      }
+      last = t
+      draw(t)
+      texture.needsUpdate = true
+    },
+  }
 }
 
 /** PC de escritorio noventera con el juego corriendo (CRT + teclado). */
-function gamingPc(): Group {
+function gamingPc(): { group: Group; update(t: number): void } {
   const group = new Group()
   const body = mergedBoxes(
     [
@@ -130,21 +242,24 @@ function gamingPc(): Group {
     ],
     toonMat('#c8c0a8'),
   )
+  const game = gtaScreen()
   const screen = new Mesh(
     unitGeo().plane,
-    new MeshBasicMaterial({ map: gameTexture() }),
+    new MeshBasicMaterial({ map: game.texture }),
   )
   screen.scale.set(0.42, 0.3, 1)
   screen.position.set(0, 0.28, 0.105)
   screen.userData.noOutline = true
   group.add(body, screen)
-  return group
+  return { group, update: (t) => game.update(t) }
 }
 
 /**
- * Rincon de tecnico A/C: unidad de muro con el panel abierto (se puede
- * ENCENDER con E: LED verde + el panel se cierra), otra unidad a medio
- * desarmar en el piso y la caja de herramientas.
+ * Rincon de tecnico A/C: unidad de muro con la salida de aire inferior
+ * REDISEÑADA (marco + 3 lamas orientables — antes era una tapa colgando
+ * sin sentido). Con E se ENCIENDE: LED verde, las lamas se abren y
+ * oscilan, y salen lineas de brisa estilo manga. Ademas: otra unidad a
+ * medio desarmar en el piso, su tapa apoyada y la caja de herramientas.
  */
 function acCorner(
   x: number,
@@ -157,17 +272,28 @@ function acCorner(
   update(t: number, dt: number): void
 } {
   const group = new Group()
-  // unidad montada en el muro derecho, con el panel frontal abierto
+  // unidad montada en el muro derecho
   const wallUnit = new Group()
   wallUnit.position.set(x + 4.3, 1.8, z + 1.8)
   wallUnit.rotation.y = -Math.PI / 2
   const body = boxMesh(1.05, 0.36, 0.24, toonMat('#cec8b4'))
-  const vents = boxMesh(0.9, 0.08, 0.02, toonMat('#5a5244'))
-  vents.position.set(0, -0.08, 0.13)
-  vents.userData.noOutline = true
-  const openPanel = boxMesh(0.95, 0.3, 0.02, toonMat('#bdb6a0'))
-  openPanel.position.set(0, -0.3, 0.16)
-  openPanel.rotation.x = 0.85
+  // salida de aire inferior: marco + 3 lamas con pivote (cerradas al
+  // arrancar; al encender se abren y oscilan barriendo el aire)
+  const outletFrame = boxMesh(0.94, 0.03, 0.06, toonMat('#a8a292'))
+  outletFrame.position.set(0, -0.185, 0.1)
+  outletFrame.userData.noOutline = true
+  const louvers: Mesh[] = []
+  const louverGroup = new Group()
+  louverGroup.position.set(0, -0.17, 0.08)
+  for (const [i, dy] of [-0.01, -0.05, -0.09].entries()) {
+    const louver = boxMesh(0.86, 0.014, 0.07, toonMat('#8f897a'))
+    louver.position.set(0, dy, i * 0.015)
+    louver.rotation.x = 0.12
+    louver.userData.noOutline = true
+    louvers.push(louver)
+    louverGroup.add(louver)
+  }
+  wallUnit.add(louverGroup)
   const ledMat = toonMatOwn('#b23a3a', {
     emissive: '#b23a3a',
     emissiveIntensity: 1.1,
@@ -176,7 +302,19 @@ function acCorner(
   led.scale.setScalar(0.05)
   led.position.set(0.42, 0.1, 0.14)
   led.userData.noOutline = true
-  wallUnit.add(body, vents, openPanel, led)
+  // lineas de brisa manga (aparecen al encender, derivan hacia el piso)
+  const breeze: Mesh[] = []
+  const breezeMat = basicMat('#f5f2e8', { transparent: true, opacity: 0.3 })
+  for (let i = 0; i < 4; i += 1) {
+    const line = new Mesh(unitGeo().box, breezeMat)
+    line.scale.set(0.4 - i * 0.04, 0.012, 0.012)
+    line.position.set((i - 1.5) * 0.18, -0.25, 0.16)
+    line.visible = false
+    line.userData.noOutline = true
+    breeze.push(line)
+    wallUnit.add(line)
+  }
+  wallUnit.add(body, outletFrame, led)
   // unidad en el piso a medio desarmar + tapa apoyada + herramientas
   const floorUnit = boxMesh(0.95, 0.34, 0.32, toonMat('#b8b0a0'))
   floorUnit.position.set(x + 3.5, 0.17, z + 1.8)
@@ -210,14 +348,29 @@ function acCorner(
         powered = true
         ledMat.color.set('#4dcc7a')
         ledMat.emissive.set('#4dcc7a')
+        sfx.play('breeze-on')
         unregisterInteractable(state, 'past-ac')
       },
     },
-    update: (_t, dt) => {
-      // reparado y encendido: el panel frontal se cierra suave
-      if (powered && openPanel.rotation.x > 0.06) {
-        openPanel.rotation.x = Math.max(0.06, openPanel.rotation.x - dt * 1.1)
+    update: (t, dt) => {
+      if (!powered) {
+        return
       }
+      // lamas: se abren suave y luego barren oscilando
+      const sweep = 0.55 + Math.sin(t * 1.6) * 0.2
+      for (const louver of louvers) {
+        louver.rotation.x = Math.min(louver.rotation.x + dt * 1.2, sweep)
+      }
+      // brisa manga: las lineas derivan hacia el piso y reinician
+      for (const [i, line] of breeze.entries()) {
+        line.visible = true
+        const phase = (t * 0.55 + i / 4) % 1
+        line.position.y = -0.24 - phase * 0.85
+        line.position.z = 0.14 + phase * 0.55
+        line.scale.x = (0.42 - i * 0.04) * (1 - phase * 0.55)
+      }
+      // aire audible al acercarse (keep-alive)
+      sfx.feed('past-ac-breeze', 'breeze', x + 3.9, z + 1.8)
     },
   }
 }
@@ -284,9 +437,10 @@ function aulaPast(
   )
   colliders.push(footprint(x + 3.2, z - 2.4, 0.8, 1.5))
   const pc = gamingPc()
-  pc.position.set(x + 3.2, 0.75, z - 2.4)
-  pc.rotation.y = -Math.PI / 2
-  group.add(pc)
+  pc.group.position.set(x + 3.2, 0.75, z - 2.4)
+  pc.group.rotation.y = -Math.PI / 2
+  group.add(pc.group)
+  updates.push((t) => pc.update(t))
   const tower = boxMesh(0.22, 0.5, 0.42, toonMat('#b8b098'))
   tower.position.set(x + 3.25, 0.25, z - 1.5)
   group.add(tower)
@@ -530,10 +684,10 @@ export default function buildPast(ctx: PastCtx): RoomBuild {
     updates.push((t, dt) => npc.update(t, dt))
   }
 
-  // portal de salida PEGADO al muro trasero, mirando a la sala
+  // grieta de salida PEGADA al muro trasero, mirando a la sala
   const exit = exitPortal({
     roomIndex: pastRoom.index,
-    position: [pastRoom.x, 0, pastRoom.z + pastRoom.depth / 2 - 0.15],
+    position: [pastRoom.x, 0, pastRoom.z + pastRoom.depth / 2 - 0.08],
     rotationY: Math.PI,
     locale: state.locale,
     onExit: () => actions.exitPast(returnTo),

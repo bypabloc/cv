@@ -345,6 +345,8 @@ function screentone(
   ctx.globalAlpha = 1
 }
 
+/** Hatching diagonal de esquina — SOLO para pantallas/viñetas (en los
+ *  muros se veia como "lineas sin sentido" en cada esquina y se elimino). */
 function hatchCorner(
   ctx: CanvasRenderingContext2D,
   originX: number,
@@ -367,11 +369,13 @@ function hatchCorner(
 /**
  * @function inkWallTexture
  * @description Muro manga-ink: base plana + lineas horizontales wobbly +
- *   hatching en esquinas superiores + zocalo de trazo grueso + screentone
- *   sutil + AO fake leve. Cacheada por theme y COMPARTIDA (pool).
+ *   zocalo de trazo grueso (color `trim` del theme — el guiño morado del
+ *   aula) + screentone sutil + AO fake leve. Sin hatching de esquinas.
+ *   Cacheada por theme y COMPARTIDA (pool).
  */
 export function inkWallTexture(theme: RoomTheme): CanvasTexture {
-  const key = `wall|${theme.wall}|${theme.ink}`
+  const trim = theme.trim ?? theme.ink
+  const key = `wall|${theme.wall}|${theme.ink}|${trim}`
   const cached = inkTextureCache.get(key)
   if (cached) {
     return cached
@@ -389,16 +393,15 @@ export function inkWallTexture(theme: RoomTheme): CanvasTexture {
       wobblyLine(ctx, 0, size * yRatio, size, size * yRatio, rng)
     }
     ctx.globalAlpha = 1
-    // hatching diagonal corto en las 2 esquinas superiores
-    hatchCorner(ctx, 0, 1, rng)
-    hatchCorner(ctx, size, -1, rng)
-    // zocalo inferior: banda de trazo grueso irregular
-    ctx.globalAlpha = 0.55
-    ctx.fillStyle = theme.ink
+    // zocalo inferior: banda de trazo grueso irregular (trim)
+    ctx.globalAlpha = 0.75
+    ctx.fillStyle = trim
     ctx.fillRect(0, size - 14, size, 14)
-    ctx.globalAlpha = 0.8
+    ctx.globalAlpha = 0.85
+    ctx.strokeStyle = trim
     ctx.lineWidth = 5
     wobblyLine(ctx, 0, size - 16, size, size - 16, rng, 3)
+    ctx.strokeStyle = theme.ink
     ctx.globalAlpha = 1
     screentone(ctx, size, theme.ink, 0.05)
     // AO fake sutil (el look plano manda): union techo + contacto piso

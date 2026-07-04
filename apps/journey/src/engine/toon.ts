@@ -269,20 +269,30 @@ export function addOutline(mesh: Mesh, thickness = 1.04): Mesh {
   return hull
 }
 
-/** Aplica hull a todos los meshes del arbol salvo `userData.noOutline`. */
+/**
+ * Aplica hull a todos los meshes del arbol salvo `userData.noOutline`
+ * (que corta el subtree completo) y los que ya tienen su hull.
+ */
 export function outlineGroup(root: Object3D, thickness = 1.04): void {
   const targets: Mesh[] = []
-  root.traverse((obj) => {
-    if (
-      obj instanceof Mesh &&
-      obj.userData.outline !== true &&
-      obj.userData.noOutline !== true
-    ) {
-      targets.push(obj)
-    }
-  })
+  collectOutlineTargets(root, targets)
   for (const mesh of targets) {
     addOutline(mesh, thickness)
+  }
+}
+
+function collectOutlineTargets(obj: Object3D, out: Mesh[]): void {
+  if (obj.userData.noOutline === true || obj.userData.outline === true) {
+    return
+  }
+  if (
+    obj instanceof Mesh &&
+    !obj.children.some((child) => child.userData.outline === true)
+  ) {
+    out.push(obj)
+  }
+  for (const child of obj.children) {
+    collectOutlineTargets(child, out)
   }
 }
 

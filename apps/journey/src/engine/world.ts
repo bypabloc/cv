@@ -88,6 +88,8 @@ export interface PastCtx {
   theme: RoomTheme
   locale: Locale
   state: EngineState
+  /** Punto de retorno en la sala presente (lo calcula world). */
+  returnTo: { x: number; z: number }
   actions: { exitPast(returnTo: { x: number; z: number }): void }
 }
 
@@ -706,7 +708,8 @@ export function createWorld(deps: WorldDeps): World {
     async enterPast(roomIndex, spawn) {
       const def = rooms[roomIndex]
       const pastRoom = pastRooms[roomIndex]
-      if (!def || !pastRoom || state.past !== null) {
+      const presentRoom = layout.rooms[roomIndex]
+      if (!def || !pastRoom || !presentRoom || state.past !== null) {
         return
       }
       await deps.fade(true)
@@ -727,6 +730,10 @@ export function createWorld(deps: WorldDeps): World {
         theme: THEMES.past,
         locale: state.locale,
         state,
+        returnTo: {
+          x: 0,
+          z: presentRoom.z - presentRoom.depth / 2 + 1.5,
+        },
         actions: {
           exitPast: (returnTo) => {
             void world.exitPast(returnTo)

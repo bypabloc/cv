@@ -368,6 +368,37 @@ estado en archivos locales (sin SAM ni CloudFormation). Costo: $0/mes
 Reglas: [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md)
 y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
 
+## Code Discovery Protocol (codebase-memory-mcp)
+
+Servidor MCP `codebase-memory-mcp` configurado en `.claude/.mcp.json`
+(binario `/home/bypabloc/.local/bin/codebase-memory-mcp`). Indexa el repo
+en un knowledge graph (tree-sitter + resolucion de tipos) consultable con
+14 tools MCP, para reemplazar exploraciones grep/read masivas por queries
+estructuradas de bajo costo en tokens.
+
+**SIEMPRE** antes de explorar codigo (que funcion existe, quien llama a
+que, arquitectura, dead code, impact analysis de un diff), preferir estas
+tools sobre Grep/Glob de proposito general:
+
+- `search_graph(name_pattern, label, ...)` — buscar funciones/clases/rutas
+- `trace_path(function_name, mode=calls|data_flow)` — cadenas de llamadas
+- `get_code_snippet(qualified_name)` — leer una funcion por su qualified name
+- `get_architecture()` — overview de lenguajes, paquetes, rutas, hotspots
+- `search_code(pattern)` — grep aumentado por el grafo
+- `query_graph(query)` — Cypher-like para patrones complejos
+- `detect_changes()` — mapea el diff actual a simbolos afectados
+
+Si el proyecto (o un sub-modulo tocado) no esta indexado todavia, correr
+`index_repository(repo_path=...)` primero. Grep/Glob/Read siguen siendo la
+via correcta para texto plano, configs y archivos no-codigo; SIEMPRE Read
+antes de editar un archivo (el grafo es de solo lectura y puede quedar
+desactualizado tras un edit).
+
+**NUNCA** tratar el grafo como fuente de verdad absoluta para decisiones
+destructivas (ej. "esta funcion no tiene callers, la borro"): verificar con
+Grep antes de un borrado basado solo en `trace_path`/dead-code detection —
+el indexador puede perder edges en imports con alias o patrones dinamicos.
+
 ## Gotchas
 
 - WSL2: `find` esta aliasado a `fd`, `grep -E/-r/-rn` a `rg`. Cada uso

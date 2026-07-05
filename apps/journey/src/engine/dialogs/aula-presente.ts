@@ -2206,4 +2206,553 @@ export const AULA_PRESENTE_DIALOGS = {
       },
     },
   }),
+  profesor: defineDialog({
+    name: { es: 'Profesor de la catedra', en: 'Course professor' },
+    chatter: [
+      {
+        es: 'En años de catedra se ven pocos alumnos asi.',
+        en: 'In years of teaching you meet few students like him.',
+      },
+      {
+        es: 'Dos tesis rescatadas en una semana. Una semana.',
+        en: 'Two theses rescued in one week. One week.',
+      },
+      {
+        es: 'La documentacion de ese proyecto era de nivel profesional.',
+        en: 'The documentation of that project was professional-grade.',
+      },
+      {
+        es: 'Un lider no nace en la pizarra: se ve en el laboratorio.',
+        en: 'A leader is not born at the blackboard: you see it in the lab.',
+      },
+    ],
+    start: 'hub',
+    nodes: {
+      hub: {
+        text: {
+          es:
+            'Adelante. Soy el profesor de la catedra de sistemas. Si ' +
+            'busca referencias de Pablo Contreras, llego al lugar ' +
+            'indicado: fue de los mejores ingenieros de software que ' +
+            'pasaron por esta aula. ¿Que le interesa saber?',
+          en:
+            'Come in. I teach the systems course here. If you are ' +
+            'looking for references on Pablo Contreras, you came to ' +
+            'the right place: he was one of the best software ' +
+            'engineers to pass through this classroom. What would you ' +
+            'like to know?',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como era como ingeniero?',
+              en: 'What was he like as an engineer?',
+            },
+            next: 'ingeniero',
+          },
+          {
+            label: {
+              es: 'El rescate de las dos tesis',
+              en: 'The rescue of the two theses',
+            },
+            next: 'rescate',
+          },
+          {
+            label: {
+              es: '¿Y como lider de equipo?',
+              en: 'And as a team lead?',
+            },
+            next: 'lider',
+          },
+          {
+            label: {
+              es: 'Gracias, profesor',
+              en: 'Thank you, professor',
+            },
+            next: null,
+          },
+        ],
+      },
+      ingeniero: {
+        text: {
+          es:
+            'Riguroso. Diseño una arquitectura cliente-servidor sobre ' +
+            'la red local — una PC como servidor central — y elimino ' +
+            'las copias de datos desincronizadas del proyecto. Y lo ' +
+            'documento todo: cada decision con su porque.',
+          en:
+            'Rigorous. He designed a client-server architecture over ' +
+            'the local network — one PC as the central server — and ' +
+            'removed the out-of-sync data copies from the project. ' +
+            'And he documented everything: every decision with its why.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Eso era comun en un alumno?',
+              en: 'Was that common in a student?',
+            },
+            next: 'raro',
+          },
+          {
+            label: {
+              es: 'Otro tema',
+              en: 'Another topic',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      raro: {
+        text: {
+          es:
+            'Nada comun. Los alumnos entregan codigo; Pablo entregaba ' +
+            'sistemas: con arquitectura, con plan de hitos, con ' +
+            'riesgos gestionados. Por eso hablo de el como ingeniero ' +
+            'de software y no como estudiante.',
+          en:
+            'Not common at all. Students hand in code; Pablo handed ' +
+            'in systems: with architecture, with milestones, with ' +
+            'managed risks. That is why I speak of him as a software ' +
+            'engineer, not as a student.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y las tesis rescatadas?',
+              en: 'And the rescued theses?',
+            },
+            next: 'rescate',
+          },
+          {
+            label: {
+              es: 'Volver',
+              en: 'Back',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      rescate: {
+        text: {
+          es:
+            'Dos equipos llevaban meses bloqueados con sus proyectos ' +
+            'de grado. Pablo diagnostico los puntos de falla, armo un ' +
+            'plan de trabajo y en mas o menos una semana ambos ' +
+            'proyectos estaban listos para defensa. Sin recortar el ' +
+            'alcance.',
+          en:
+            'Two teams had been stuck on their final projects for ' +
+            'months. Pablo diagnosed the failure points, put together ' +
+            'a work plan and in roughly one week both projects were ' +
+            'ready for their defense. Without cutting scope.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como lo logro tan rapido?',
+              en: 'How did he do it so fast?',
+            },
+            next: 'metodo',
+          },
+          {
+            label: {
+              es: 'Otro tema',
+              en: 'Another topic',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      metodo: {
+        text: {
+          es:
+            'No fue magia: fue diagnostico. Encontro donde fallaba el ' +
+            'codigo heredado, prioritizo lo critico para la entrega y ' +
+            'ademas capacito a los tesistas para defender su propia ' +
+            'solucion. El cuadro del plan esta ahi en la pared.',
+          en:
+            'It was not magic: it was diagnosis. He found where the ' +
+            'inherited code failed, prioritized what was critical for ' +
+            'delivery and also coached the students to defend their ' +
+            'own solution. The plan is framed right there on the wall.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y como lider?',
+              en: 'And as a leader?',
+            },
+            next: 'lider',
+          },
+          {
+            label: {
+              es: 'Volver',
+              en: 'Back',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      lider: {
+        text: {
+          es:
+            'Coordino un equipo de unas tres personas y llevo su ' +
+            'proyecto de grado a una entrega exitosa, dentro del ' +
+            'plazo. Distribuia tareas, hacia seguimiento y explicaba ' +
+            'el razonamiento de cada decision. Liderazgo temprano, ' +
+            'del que se ve poco.',
+          en:
+            'He coordinated a team of about three people and took ' +
+            'their final project to a successful delivery, on time. ' +
+            'He distributed tasks, tracked progress and explained the ' +
+            'reasoning behind every decision. Early leadership, the ' +
+            'kind you rarely see.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Otro tema',
+              en: 'Another topic',
+            },
+            next: 'hub',
+          },
+          {
+            label: {
+              es: 'Gracias, profesor',
+              en: 'Thank you, professor',
+            },
+            next: null,
+          },
+        ],
+      },
+    },
+  }),
+  'companero-proyecto': defineDialog({
+    name: { es: 'Compañero del proyecto', en: 'Project teammate' },
+    chatter: [
+      {
+        es: 'Presupuestos y avances de obra, todo sale del sistema.',
+        en: 'Budgets and site progress, it all comes out of the system.',
+      },
+      {
+        es: 'Antes consolidar datos era una jornada entera. Ya no.',
+        en: 'Consolidating data used to take a full day. Not anymore.',
+      },
+      {
+        es: 'Eramos tres. Pablo nos hizo sentir un equipo de verdad.',
+        en: 'We were three. Pablo made us feel like a real team.',
+      },
+    ],
+    start: 'hub',
+    nodes: {
+      hub: {
+        text: {
+          es:
+            '¿Que tal? Estoy con el sistema de gestion de obras — el ' +
+            'proyecto que sacamos adelante con Pablo. Eramos un ' +
+            'equipo chico, unas tres personas, y el lo lideraba. ' +
+            '¿Quieres que te cuente?',
+          en:
+            'Hey! I am working on the construction-site management ' +
+            'system — the project we pulled off with Pablo. We were a ' +
+            'small team, about three people, and he led it. Want me ' +
+            'to tell you about it?',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que hacia el sistema?',
+              en: 'What did the system do?',
+            },
+            next: 'sistema',
+          },
+          {
+            label: {
+              es: '¿Como era trabajar con Pablo?',
+              en: 'What was working with Pablo like?',
+            },
+            next: 'equipo',
+          },
+          {
+            label: {
+              es: 'Sigo mi camino',
+              en: 'I will keep going',
+            },
+            next: null,
+          },
+        ],
+      },
+      sistema: {
+        text: {
+          es:
+            'Gestion de obras: presupuestos, avances, reportes. Antes ' +
+            'consolidar todo eso era trabajo manual de jornadas; con ' +
+            'el sistema salia directo en reportes. Y corria en red ' +
+            'local, con una PC como servidor central para que todos ' +
+            'compartieramos los mismos datos.',
+          en:
+            'Site management: budgets, progress, reports. ' +
+            'Consolidating all that used to be days of manual work; ' +
+            'with the system it came straight out as reports. And it ' +
+            'ran on a local network, with one PC as the central ' +
+            'server so we all shared the same data.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Quien diseño esa red?',
+              en: 'Who designed that network?',
+            },
+            next: 'red',
+          },
+          {
+            label: {
+              es: 'Otro tema',
+              en: 'Another topic',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      red: {
+        text: {
+          es:
+            'Pablo. El diagrama cliente-servidor que esta enmarcado ' +
+            'en la pared es de esa epoca: una PC servidor, los demas ' +
+            'conectados, cero copias desincronizadas. Suena obvio ' +
+            'hoy; en ese laboratorio fue una revolucion.',
+          en:
+            'Pablo. The client-server diagram framed on the wall is ' +
+            'from that time: one server PC, the rest connected, zero ' +
+            'out-of-sync copies. It sounds obvious today; in that lab ' +
+            'it was a revolution.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y el equipo?',
+              en: 'And the team?',
+            },
+            next: 'equipo',
+          },
+          {
+            label: {
+              es: 'Volver',
+              en: 'Back',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      equipo: {
+        text: {
+          es:
+            'Ordenado sin ser rigido. Repartia las tareas, seguia el ' +
+            'avance y cuando algo se trababa se sentaba contigo hasta ' +
+            'destrabarlo. Entregamos dentro del plazo y cada uno ' +
+            'podia explicar su parte. Eso ultimo era lo que mas le ' +
+            'importaba.',
+          en:
+            'Organized without being rigid. He split the tasks, ' +
+            'tracked progress and when something got stuck he sat ' +
+            'with you until it was unstuck. We delivered on time and ' +
+            'each of us could explain our part. That last bit was ' +
+            'what he cared about most.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que aprendiste de el?',
+              en: 'What did you learn from him?',
+            },
+            next: 'aprendi',
+          },
+          {
+            label: {
+              es: 'Volver',
+              en: 'Back',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      aprendi: {
+        text: {
+          es:
+            'Que la arquitectura no es un dibujo: es poder justificar ' +
+            'cada decision. La documentacion del proyecto explicaba ' +
+            'los porques, no solo los comos. Todavia escribo mis docs ' +
+            'imitando esas.',
+          en:
+            'That architecture is not a drawing: it is being able to ' +
+            'justify every decision. The project documentation ' +
+            'explained the whys, not just the hows. I still write my ' +
+            'docs imitating those.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Otro tema',
+              en: 'Another topic',
+            },
+            next: 'hub',
+          },
+          {
+            label: {
+              es: 'Me despido',
+              en: 'I will head out',
+            },
+            next: null,
+          },
+        ],
+      },
+    },
+  }),
+  'companero-ayudado': defineDialog({
+    name: { es: 'Estudiante desatascado', en: 'Unstuck student' },
+    chatter: [
+      {
+        es: 'Yo estaba TRABADO. Pablo me desatasco en una tarde.',
+        en: 'I was STUCK. Pablo unstuck me in one afternoon.',
+      },
+      {
+        es: 'No me dio el codigo: me enseño a leer el error.',
+        en: 'He did not give me the code: he taught me to read the error.',
+      },
+      {
+        es: 'Ahora el servidor me responde el pong. A la primera.',
+        en: 'Now the server answers my pong. On the first try.',
+      },
+    ],
+    start: 'hub',
+    nodes: {
+      hub: {
+        text: {
+          es:
+            '¡Mira! El socket ya conecta. Semanas peleando con esto y ' +
+            'Pablo me lo desenredo... sin tocar mi teclado. Soy uno ' +
+            'de los seis que capacito para sostener la red del ' +
+            'laboratorio. ¿Que quieres saber?',
+          en:
+            'Look! The socket finally connects. Weeks fighting this ' +
+            'and Pablo untangled it... without touching my keyboard. ' +
+            'I am one of the six he trained to sustain the lab ' +
+            'network. What do you want to know?',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como te ayudo?',
+              en: 'How did he help you?',
+            },
+            next: 'ayuda',
+          },
+          {
+            label: {
+              es: '¿Que es eso de los seis?',
+              en: 'What is that about the six?',
+            },
+            next: 'seis',
+          },
+          {
+            label: {
+              es: 'Suerte con el socket',
+              en: 'Good luck with the socket',
+            },
+            next: null,
+          },
+        ],
+      },
+      ayuda: {
+        text: {
+          es:
+            'Me hacia preguntas. "¿Que dice el error? ¿Que esperabas ' +
+            'que pasara?" Y de pregunta en pregunta el bug aparecio ' +
+            'solo. Despues me explico la implementacion completa, con ' +
+            'el razonamiento detras de cada decision.',
+          en:
+            'He asked me questions. "What does the error say? What ' +
+            'did you expect to happen?" And question by question the ' +
+            'bug showed itself. Then he explained the full ' +
+            'implementation, with the reasoning behind every decision.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y funciono?',
+              en: 'Did it work?',
+            },
+            next: 'funciono',
+          },
+          {
+            label: {
+              es: 'Otro tema',
+              en: 'Another topic',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      funciono: {
+        text: {
+          es:
+            'Funciono tanto que ahora puedo defender mi solucion sin ' +
+            'mirar apuntes. Esa era su vara: no que compile — que la ' +
+            'puedas explicar.',
+          en:
+            'It worked so well that now I can defend my solution ' +
+            'without notes. That was his bar: not that it compiles — ' +
+            'that you can explain it.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que es eso de los seis?',
+              en: 'What about the six?',
+            },
+            next: 'seis',
+          },
+          {
+            label: {
+              es: 'Volver',
+              en: 'Back',
+            },
+            next: 'hub',
+          },
+        ],
+      },
+      seis: {
+        text: {
+          es:
+            'Cuando rescato los dos proyectos de grado, no se llevo ' +
+            'el conocimiento con el: nos capacito a unos seis ' +
+            'estudiantes de los dos equipos para que la solucion se ' +
+            'sostuviera sola. La estudiante de la ronda es otra de ' +
+            'nosotros.',
+          en:
+            'When he rescued the two final projects, he did not take ' +
+            'the knowledge with him: he trained about six of us ' +
+            'across the two teams so the solution could stand on its ' +
+            'own. The student doing the rounds is another one of us.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como te ayudo a ti?',
+              en: 'How did he help you?',
+            },
+            next: 'ayuda',
+          },
+          {
+            label: {
+              es: 'Me despido',
+              en: 'I will head out',
+            },
+            next: null,
+          },
+        ],
+      },
+    },
+  }),
 } satisfies Record<string, NpcDialog>

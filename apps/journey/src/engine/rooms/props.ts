@@ -1106,7 +1106,7 @@ export interface WallFrame {
   /** Si es inspeccionable: E abre esta ficha en el panel DOM. */
   ficha?: {
     title: Record<Locale, string>
-    paragraphs: Record<Locale, string[]>
+    paragraphs: Record<Locale, readonly string[]>
   }
 }
 

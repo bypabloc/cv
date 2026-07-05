@@ -14,6 +14,7 @@ import {
   PerspectiveCamera,
   Scene,
   SRGBColorSpace,
+  Vector3,
   WebGLRenderer,
 } from 'three'
 import {
@@ -200,6 +201,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       openFicha: (roomIndex, kind) => hud.openFicha(roomIndex, kind),
       openContact: () => hud.openContact(),
       openStory: (title, paragraphs) => hud.openStory(title, paragraphs),
+      openDialog: (npc, onClose) => hud.openDialog(npc, onClose),
     },
     teleportPlayer: (x, z) => controls.teleport(x, z),
     shadowLight: tier === 'full' ? sun : undefined,
@@ -226,6 +228,21 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   }
   window.addEventListener('pointerdown', unlockAudio)
   window.addEventListener('keydown', unlockAudio)
+
+  // proyeccion 3D -> pantalla para la burbuja de habla del HUD
+  const projectVec = new Vector3()
+  function projectToScreen(
+    x: number,
+    y: number,
+    z: number,
+  ): { x: number; y: number; behind: boolean } {
+    projectVec.set(x, y, z).project(camera)
+    return {
+      x: (projectVec.x * 0.5 + 0.5) * container.clientWidth,
+      y: (-projectVec.y * 0.5 + 0.5) * container.clientHeight,
+      behind: projectVec.z > 1,
+    }
+  }
 
   // RAF unico: controls -> world -> render (+ degradacion + budget DEV)
   const clock = new Clock()
@@ -264,6 +281,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     const t = clock.elapsedTime
     controls.update(t, dt)
     world.update(t, dt)
+    hud.updateBubble(projectToScreen)
     // audio posicional: listener en el jugador + pasos por zancada
     const px = player.group.position.x
     const pz = player.group.position.z

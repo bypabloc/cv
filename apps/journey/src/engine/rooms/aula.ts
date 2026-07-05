@@ -7,14 +7,17 @@
  *   pasado a la IZQUIERDA y pilar-atril con la reseña a la DERECHA.
  *   2 estudiantes SENTADOS tecleando con sus pantallas encendidas (codigo
  *   cliente-servidor del proyecto de grado); las 2 PCs libres — la tuya y
- *   una del laboratorio — se encienden INDIVIDUALMENTE con E. Manga-ink.
+ *   una del laboratorio — se ENCIENDEN y APAGAN con E (toggle ilimitado).
+ *   Los 3 estudiantes son conversables (arboles de dialogo bilingues +
+ *   burbuja de habla suelta al acercarse). Manga-ink.
  */
 import { Group } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
+import { npcTalk } from '../dialog'
+import { AULA_PRESENTE_DIALOGS } from '../dialogs/aula-presente'
 import type { Interactable } from '../state'
-import { unregisterInteractable } from '../state'
 import {
   disposeDeep,
   outlinedMergedBoxes,
@@ -30,14 +33,21 @@ import {
   switchableMonitor,
 } from './props'
 
-const MICRO_LABEL_MINE = {
-  es: 'Encender tu PC',
-  en: 'Power on your PC',
-} as const
-
-const MICRO_LABEL_LAB = {
-  es: 'Encender la PC del laboratorio',
-  en: 'Power on the lab PC',
+const PC_LABELS = {
+  mine: {
+    on: { es: 'Encender tu PC', en: 'Power on your PC' },
+    off: { es: 'Apagar tu PC', en: 'Power off your PC' },
+  },
+  lab: {
+    on: {
+      es: 'Encender la PC del laboratorio',
+      en: 'Power on the lab PC',
+    },
+    off: {
+      es: 'Apagar la PC del laboratorio',
+      en: 'Power off the lab PC',
+    },
+  },
 } as const
 
 /** Codigo era-2015 del proyecto: red local + cliente-servidor en C. */
@@ -165,19 +175,23 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     group.add(monitorGroup)
     disposables.push(screen)
     if (!NPC_PCS.has(index)) {
-      const microId = `micro-aula-${room.index}-pc${index}`
-      interactables.push({
-        id: microId,
+      // toggle ilimitado: encender/apagar cambia pantalla, sfx y label
+      const labels = isPlayerPc ? PC_LABELS.mine : PC_LABELS.lab
+      let powered = false
+      const item: Interactable = {
+        id: `micro-aula-${room.index}-pc${index}`,
         x,
         z,
         radius: 1.8,
-        label: isPlayerPc ? MICRO_LABEL_MINE : MICRO_LABEL_LAB,
+        label: { ...labels.on },
         onActivate: () => {
-          screen.show('on')
-          sfx.play('boot')
-          unregisterInteractable(state, microId)
+          powered = !powered
+          screen.show(powered ? 'on' : 'off')
+          sfx.play(powered ? 'boot' : 'shutdown')
+          item.label = powered ? labels.off : labels.on
         },
-      })
+      }
+      interactables.push(item)
     }
   })
 
@@ -234,47 +248,71 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     }
   }
 
-  // NPCs estudiantes: 2 SENTADOS tecleando en sus PCs + 1 en ronda
-  npcs.push(
-    makeNpc({
-      skin: '#e8b48c',
-      hair: { style: 'ponytail', color: '#5a3a22' },
-      top: '#4a6a52',
-      bottom: '#3a4048',
-      faceSeed: 11,
-      position: [-1.4, 0, room.z + 0.25],
-      rotationY: 0,
-      pose: 'sit',
-    }),
-    makeNpc({
-      skin: '#d9a684',
-      hair: { style: 'spiky', color: '#1c1410' },
-      top: '#7a5c3a',
-      bottom: '#2e3238',
-      faceSeed: 23,
-      position: [1.4, 0, room.z - 1.35],
-      rotationY: 0,
-      pose: 'sit',
-    }),
-    makeNpc({
-      skin: '#c98f6a',
-      hair: { style: 'bun', color: '#2a1c12' },
-      top: '#3f5a8a',
-      bottom: '#3a4048',
-      faceSeed: 37,
-      position: [2.6, 0, room.z + 1.7],
-      path: [
-        [2.6, room.z + 1.7],
-        [-2.6, room.z + 1.7],
-        [-2.6, room.z - 2.3],
-        [2.6, room.z - 2.3],
-      ],
-      speed: 0.7,
-    }),
-  )
+  // NPCs estudiantes: 2 SENTADOS tecleando en sus PCs + 1 en ronda.
+  // Todos conversables con E (arbol de dialogo + burbuja de habla suelta).
+  const tesistaUno = makeNpc({
+    skin: '#e8b48c',
+    hair: { style: 'ponytail', color: '#5a3a22' },
+    top: '#4a6a52',
+    bottom: '#3a4048',
+    faceSeed: 11,
+    position: [-1.4, 0, room.z + 0.25],
+    rotationY: 0,
+    pose: 'sit',
+  })
+  const tesistaDos = makeNpc({
+    skin: '#d9a684',
+    hair: { style: 'spiky', color: '#1c1410' },
+    top: '#7a5c3a',
+    bottom: '#2e3238',
+    faceSeed: 23,
+    position: [1.4, 0, room.z - 1.35],
+    rotationY: 0,
+    pose: 'sit',
+  })
+  const estudianteRonda = makeNpc({
+    skin: '#c98f6a',
+    hair: { style: 'bun', color: '#2a1c12' },
+    top: '#3f5a8a',
+    bottom: '#3a4048',
+    faceSeed: 37,
+    position: [2.6, 0, room.z + 1.7],
+    path: [
+      [2.6, room.z + 1.7],
+      [-2.6, room.z + 1.7],
+      [-2.6, room.z - 2.3],
+      [2.6, room.z - 2.3],
+    ],
+    speed: 0.7,
+  })
+  npcs.push(tesistaUno, tesistaDos, estudianteRonda)
   for (const npc of npcs) {
     group.add(npc.group)
     updates.push((t, dt) => npc.update(t, dt))
+  }
+  const talks = [
+    npcTalk({
+      id: `talk-aula-${room.index}-tesista-uno`,
+      npc: tesistaUno,
+      dialog: AULA_PRESENTE_DIALOGS['tesista-uno'],
+      openDialog: actions.openDialog,
+    }),
+    npcTalk({
+      id: `talk-aula-${room.index}-tesista-dos`,
+      npc: tesistaDos,
+      dialog: AULA_PRESENTE_DIALOGS['tesista-dos'],
+      openDialog: actions.openDialog,
+    }),
+    npcTalk({
+      id: `talk-aula-${room.index}-estudiante-ronda`,
+      npc: estudianteRonda,
+      dialog: AULA_PRESENTE_DIALOGS['estudiante-ronda'],
+      openDialog: actions.openDialog,
+    }),
+  ]
+  for (const talk of talks) {
+    interactables.push(talk.interactable)
+    updates.push(talk.update)
   }
 
   // contorno de tinta en todos los props (screens/labels/caras se excluyen)

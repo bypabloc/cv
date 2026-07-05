@@ -4,7 +4,9 @@
  *   2022-hoy). War room azul #0052CC: mesa de reunion, paneles de
  *   observabilidad y vibe coding, grafo de microservicios (canvas ink),
  *   escritorio ultrawide code-base -> forks, puerta PROXIMAMENTE y CTA de
- *   contacto. Micro-interaccion: orquestacion CL <-> MX (pulso).
+ *   contacto. Micros: orquestacion CL <-> MX (pulso, relanzable), ciclo
+ *   de pantallas de codigo (vibe -> Python/Django -> TS) y fork del
+ *   code-base por entidad. 3 NPCs del equipo conversables con E.
  */
 import {
   Group,
@@ -16,6 +18,8 @@ import {
 import type { Box2 } from '../../lib/collision'
 import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
+import { npcTalk } from '../dialog'
+import { CIMA_PRESENTE_DIALOGS } from '../dialogs/cima-presente'
 import type { Interactable } from '../state'
 import {
   boxMesh,
@@ -24,7 +28,6 @@ import {
   makeCanvasTexture,
   outlinedMergedBoxes,
   outlineGroup,
-  screenPanel,
   toonMat,
   toonMatOwn,
   unitGeo,
@@ -35,9 +38,9 @@ import {
   fichaBoard,
   footprint,
   lecternNotebook,
-  monitor,
   pastPortal,
   screenVariants,
+  switchableMonitor,
 } from './props'
 
 const MICRO_LABEL = {
@@ -48,6 +51,16 @@ const MICRO_LABEL = {
 const CONTACT_LABEL = {
   es: 'Contactar a Pablo',
   en: 'Contact Pablo',
+} as const
+
+const CODE_LABEL = {
+  es: 'Ver el codigo del equipo (Python / TS)',
+  en: 'Browse the team code (Python / TS)',
+} as const
+
+const FORK_LABEL = {
+  es: 'Forkear el code-base a una entidad',
+  en: 'Fork the code base to an entity',
 } as const
 
 /** Grafo de microservicios dibujado en canvas (estilo tinta plana). */
@@ -284,20 +297,66 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   obs.mesh.position.set(-2.2, 1.9, room.z + room.depth / 2 - 0.12)
   obs.mesh.rotation.y = Math.PI
   disposables.push(obs)
-  const vibe = screenPanel({
-    title: 'vibe coding',
-    lines: [
-      '> claude "refactor module"',
-      'tests: 128 passed',
-      'review: aprobado',
-    ],
-    theme: screenTheme,
+  // panel vibe coding con el codigo REAL detras: E cicla vibe -> Python
+  // (servicio Django) -> TS (frontend) -> vibe
+  const vibe = screenVariants({
     width: 2.2,
     height: 1.3,
+    variants: {
+      vibe: {
+        title: 'vibe coding',
+        lines: [
+          '> claude "refactor module"',
+          'tests: 128 passed',
+          'review: aprobado',
+        ],
+        theme: screenTheme,
+      },
+      python: {
+        title: 'campanas/service.py — Django',
+        lines: [
+          '@transaction.atomic',
+          'def lanzar(campana):',
+          '    targets = scoring.filtrar(',
+          '        pais=campana.pais)',
+          '    return dispatch(targets)',
+        ],
+        theme: screenTheme,
+        dot: '#4dcc7a',
+      },
+      ts: {
+        title: 'usePagos.ts — frontend',
+        lines: [
+          'const { data } = useQuery(',
+          "  ['deudas', rut],",
+          '  fetchDeudas,',
+          ')',
+          'if (data) renderPlan(data)',
+        ],
+        theme: screenTheme,
+        dot: '#4dcc7a',
+      },
+    },
+    initial: 'vibe',
   })
-  vibe.position.set(2.2, 1.9, room.z + room.depth / 2 - 0.12)
-  vibe.rotation.y = Math.PI
-  group.add(obs.mesh, vibe)
+  vibe.mesh.position.set(2.2, 1.9, room.z + room.depth / 2 - 0.12)
+  vibe.mesh.rotation.y = Math.PI
+  disposables.push(vibe)
+  group.add(obs.mesh, vibe.mesh)
+  const VIBE_SEQ = ['vibe', 'python', 'ts'] as const
+  let vibeIndex = 0
+  interactables.push({
+    id: `micro-cima-code-${room.index}`,
+    x: 2.2,
+    z: room.z + room.depth / 2 - 0.9,
+    radius: 2.1,
+    label: CODE_LABEL,
+    onActivate: () => {
+      vibeIndex = (vibeIndex + 1) % VIBE_SEQ.length
+      vibe.show(VIBE_SEQ[vibeIndex] ?? 'vibe')
+      sfx.play('blip')
+    },
+  })
 
   // grafo de microservicios en el muro izquierdo
   const graph = new Mesh(
@@ -310,23 +369,59 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   graph.userData.noOutline = true
   group.add(graph)
 
-  // setup de escritorio ultrawide: code base -> forks
+  // setup de escritorio ultrawide: code base -> forks; E forkea a la
+  // siguiente entidad financiera (mismo DS, N entidades) en ciclo
   group.add(
     desk({
       position: [half - 1.6, 0, room.z - 2.4],
       width: 2,
       color: '#1b2433',
     }),
-    monitor({
-      position: [half - 1.6, 0.75, room.z - 2.55],
-      rotationY: 0.2,
-      title: 'code base -> forks',
-      lines: ['santander/', 'scotiabank/', 'lider/', 'mismo DS, N entidades'],
-      theme: screenTheme,
-      width: 1.1,
-    }),
   )
+  const forkVariant = (entity: string) => ({
+    title: `fork -> ${entity}/`,
+    lines: [
+      `$ fork code-base ${entity}`,
+      'tokens del DS: aplicados',
+      'modulos DDD: enlazados',
+      'deploy: OK',
+    ],
+    theme: screenTheme,
+    dot: '#4dcc7a',
+  })
+  const forks = switchableMonitor({
+    position: [half - 1.6, 0.75, room.z - 2.55],
+    rotationY: 0.2,
+    width: 1.1,
+    variants: {
+      base: {
+        title: 'code base -> forks',
+        lines: ['santander/', 'scotiabank/', 'lider/', 'mismo DS, N entidades'],
+        theme: screenTheme,
+      },
+      santander: forkVariant('santander'),
+      scotiabank: forkVariant('scotiabank'),
+      lider: forkVariant('lider'),
+    },
+    initial: 'base',
+  })
+  group.add(forks.group)
+  disposables.push(forks.screen)
   staticColliders.push(footprint(half - 1.6, room.z - 2.4, 2.1, 0.8))
+  const FORK_SEQ = ['base', 'santander', 'scotiabank', 'lider'] as const
+  let forkIndex = 0
+  interactables.push({
+    id: `micro-cima-fork-${room.index}`,
+    x: half - 1.6,
+    z: room.z - 2.4,
+    radius: 2,
+    label: FORK_LABEL,
+    onActivate: () => {
+      forkIndex = (forkIndex + 1) % FORK_SEQ.length
+      forks.screen.show(FORK_SEQ[forkIndex] ?? 'base')
+      sfx.play(forkIndex === 0 ? 'blip' : 'boot')
+    },
+  })
 
   // micro-interaccion: lanzar la orquestacion CL <-> MX — el pulso viaja
   // y el panel de observabilidad reporta el deploy
@@ -464,46 +559,69 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     }
   }
 
-  // NPCs: equipo en reunion + un dev en ronda (todos distinguibles)
-  npcs.push(
-    makeNpc({
-      skin: '#e8b48c',
-      hair: { style: 'ponytail', color: '#3a2a1a' },
-      top: '#24466e',
-      bottom: '#1c2430',
-      accessory: 'tie',
-      faceSeed: 71,
-      position: [-3.95, 0, room.z + 1.6],
-      rotationY: Math.PI / 2,
-    }),
-    makeNpc({
-      skin: '#d9a684',
-      hair: { style: 'short', color: '#4a3a28' },
-      top: '#3a3f52',
-      bottom: '#2a2f3c',
-      accessory: 'glasses',
-      faceSeed: 83,
-      position: [1.6, 0, room.z + 2.6],
-      rotationY: -1.1,
-    }),
-    makeNpc({
-      skin: '#c98f6a',
-      hair: { style: 'bun', color: '#1c1410' },
-      top: '#0e3a80',
-      bottom: '#1c2430',
-      faceSeed: 97,
-      position: [0, 0, room.z - 1],
-      path: [
-        [0, room.z - 1],
-        [-3, room.z - 3],
-        [3.2, room.z - 3.4],
-      ],
-      speed: 0.75,
-    }),
-  )
+  // NPCs: equipo en reunion + un dev en ronda, todos conversables
+  const leadReunion = makeNpc({
+    skin: '#e8b48c',
+    hair: { style: 'ponytail', color: '#3a2a1a' },
+    top: '#24466e',
+    bottom: '#1c2430',
+    accessory: 'tie',
+    faceSeed: 71,
+    position: [-3.95, 0, room.z + 1.6],
+    rotationY: Math.PI / 2,
+  })
+  const devObservabilidad = makeNpc({
+    skin: '#d9a684',
+    hair: { style: 'short', color: '#4a3a28' },
+    top: '#3a3f52',
+    bottom: '#2a2f3c',
+    accessory: 'glasses',
+    faceSeed: 83,
+    position: [1.6, 0, room.z + 2.6],
+    rotationY: -1.1,
+  })
+  const devRonda = makeNpc({
+    skin: '#c98f6a',
+    hair: { style: 'bun', color: '#1c1410' },
+    top: '#0e3a80',
+    bottom: '#1c2430',
+    faceSeed: 97,
+    position: [0, 0, room.z - 1],
+    path: [
+      [0, room.z - 1],
+      [-3, room.z - 3],
+      [3.2, room.z - 3.4],
+    ],
+    speed: 0.75,
+  })
+  npcs.push(leadReunion, devObservabilidad, devRonda)
   for (const npc of npcs) {
     group.add(npc.group)
     updates.push((t, dt) => npc.update(t, dt))
+  }
+  const talks = [
+    npcTalk({
+      id: `talk-cima-${room.index}-lead`,
+      npc: leadReunion,
+      dialog: CIMA_PRESENTE_DIALOGS['lead-reunion'],
+      openDialog: actions.openDialog,
+    }),
+    npcTalk({
+      id: `talk-cima-${room.index}-observabilidad`,
+      npc: devObservabilidad,
+      dialog: CIMA_PRESENTE_DIALOGS['dev-observabilidad'],
+      openDialog: actions.openDialog,
+    }),
+    npcTalk({
+      id: `talk-cima-${room.index}-ronda`,
+      npc: devRonda,
+      dialog: CIMA_PRESENTE_DIALOGS['dev-ronda'],
+      openDialog: actions.openDialog,
+    }),
+  ]
+  for (const talk of talks) {
+    interactables.push(talk.interactable)
+    updates.push(talk.update)
   }
 
   outlineGroup(group, 1.03)

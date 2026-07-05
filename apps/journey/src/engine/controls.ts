@@ -31,12 +31,15 @@ import {
   type CameraMode,
   collectObstacles,
   type EngineState,
+  type InteractableBubble,
   isUiOpen,
   nearestInteractableIn,
 } from './state'
 
 export interface ControlsHud {
   showPrompt(label: string | null): void
+  /** Burbuja de habla suelta del NPC activo (null la oculta). */
+  setBubble(bubble: InteractableBubble | null): void
   setCameraMode(mode: CameraMode): void
   setPointerLocked(locked: boolean): void
 }
@@ -249,12 +252,20 @@ export function createControls(deps: ControlsDeps): Controls {
   // Proximidad + zona
   // -------------------------------------------------------------------------
 
+  let lastPromptText: string | null = null
+
   function updateProximity(): void {
     const active = nearestInteractableIn(state.interactables, pos.x, pos.z)
+    const item = active ? state.interactables.get(active) : null
     if (active !== state.activeId) {
       state.activeId = active
-      const item = active ? state.interactables.get(active) : null
-      hud.showPrompt(item ? item.label[state.locale] : null)
+      hud.setBubble(item?.bubble ?? null)
+    }
+    // el label puede mutar tras activar (toggles): refresco por TEXTO
+    const label = item ? item.label[state.locale] : null
+    if (label !== lastPromptText) {
+      lastPromptText = label
+      hud.showPrompt(label)
     }
   }
 
@@ -302,7 +313,7 @@ export function createControls(deps: ControlsDeps): Controls {
   function onActionKey(code: string): void {
     if (code === 'KeyE') {
       if (!isUiOpen(state)) {
-        activateCurrent(state)
+        activateCurrent(state, { x: pos.x, z: pos.z })
       }
     } else if (code === 'KeyV') {
       controls.toggleCameraMode()
@@ -445,7 +456,7 @@ export function createControls(deps: ControlsDeps): Controls {
 
   function onActionButton(): void {
     if (!isUiOpen(state)) {
-      activateCurrent(state)
+      activateCurrent(state, { x: pos.x, z: pos.z })
     }
   }
 

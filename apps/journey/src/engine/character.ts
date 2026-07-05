@@ -24,9 +24,17 @@ export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
 export type Accessory = 'helmet' | 'glasses' | 'tie' | 'badge'
 /**
  * Poses fijas ademas de idle/walk: fight = kihon de karate (tsuki + mae
- * geri), sit = sentado en silla tipeando, kneel = arrodillado trabajando.
+ * geri), sit = sentado en silla tipeando, kneel = arrodillado trabajando,
+ * wave = saludo con el brazo, talk = gesticulando en conversacion.
  */
-export type CharacterPose = 'idle' | 'walk' | 'fight' | 'sit' | 'kneel'
+export type CharacterPose =
+  | 'idle'
+  | 'walk'
+  | 'fight'
+  | 'sit'
+  | 'kneel'
+  | 'wave'
+  | 'talk'
 
 export interface CharacterSpec {
   skin: string
@@ -42,6 +50,8 @@ export interface CharacterHandle {
   group: Group
   setWalking(on: boolean): void
   setPose(pose: CharacterPose): void
+  /** Giro extra de cabeza (mirar al jugador sin girar el cuerpo). */
+  setHeadYaw(yaw: number | null): void
   update(t: number, dt: number): void
   /** POV oculta al jugador. */
   setVisible(on: boolean): void
@@ -53,6 +63,12 @@ export interface NpcHandle {
   update(t: number, dt: number): void
   /** AABB alrededor de la posicion ACTUAL (bloquea el paso del jugador). */
   collider(): Box2
+  /** Modo conversacion: pausa patrulla/sway, mira al jugador y saluda. */
+  talk(player?: { x: number; z: number }): void
+  /** Cierra la conversacion y retoma patrulla/pose original. */
+  endTalk(): void
+  /** Salto one-shot (arco ~0.55 s) montado sobre la pose actual. */
+  jump(): void
   dispose(): void
 }
 
@@ -476,6 +492,30 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     parts.torso.scale.y = 1
   }
 
+  /** Saludo: brazo derecho arriba oscilando (entrada a la conversacion). */
+  function poseWave(t: number): void {
+    parts.legL.rotation.x = 0
+    parts.legR.rotation.x = 0
+    parts.armL.rotation.x = 0
+    parts.armR.rotation.x = -2.7
+    parts.armR.rotation.z = Math.sin(t * 9) * 0.35
+    group.position.y = Math.abs(Math.sin(t * 9)) * 0.02
+    group.rotation.x = 0
+    parts.torso.scale.y = 1
+  }
+
+  /** Conversando: gesticula con los brazos y asiente con la cabeza. */
+  function poseTalk(t: number): void {
+    parts.legL.rotation.x = 0
+    parts.legR.rotation.x = 0
+    parts.armL.rotation.x = -0.5 + Math.sin(t * 3.1) * 0.25
+    parts.armR.rotation.x = -0.65 + Math.cos(t * 2.6) * 0.3
+    parts.head.rotation.x = Math.sin(t * 2.2) * 0.06
+    group.position.y = Math.sin(t * 1.8) * 0.015
+    group.rotation.x = 0
+    parts.torso.scale.y = 1 + Math.sin(t * 1.6) * 0.012
+  }
+
   /** Sentado en silla (tipeando) o arrodillado en el piso (trabajando). */
   function poseSeated(t: number, kind: 'sit' | 'kneel'): void {
     const sitting = kind === 'sit'
@@ -504,6 +544,24 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     }
   }
 
+  let headYaw: number | null = null
+
+  function applyPose(t: number, dt: number): void {
+    if (pose === 'walk') {
+      poseWalk(dt)
+    } else if (pose === 'fight') {
+      poseFight(t)
+    } else if (pose === 'sit' || pose === 'kneel') {
+      poseSeated(t, pose)
+    } else if (pose === 'wave') {
+      poseWave(t)
+    } else if (pose === 'talk') {
+      poseTalk(t)
+    } else {
+      poseIdle(t, dt)
+    }
+  }
+
   return {
     group,
     setWalking(on) {
@@ -512,16 +570,20 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     setPose(next) {
       pose = next
     },
+    setHeadYaw(yaw) {
+      headYaw = yaw
+    },
     update(t, dt) {
-      if (pose === 'walk') {
-        poseWalk(dt)
-      } else if (pose === 'fight') {
-        poseFight(t)
-      } else if (pose === 'sit' || pose === 'kneel') {
-        poseSeated(t, pose)
-      } else {
-        poseIdle(t, dt)
+      applyPose(t, dt)
+      const decay = Math.min(1, dt * 8)
+      if (pose !== 'wave') {
+        parts.armR.rotation.z *= 1 - decay
       }
+      if (pose !== 'talk') {
+        parts.head.rotation.x *= 1 - decay
+      }
+      // mirar al jugador: la cabeza gira suave hacia el yaw pedido
+      parts.head.rotation.y += ((headYaw ?? 0) - parts.head.rotation.y) * decay
       if (parts.tail) {
         parts.tail.rotation.z = Math.sin(t * 2.2) * 0.12
       }
@@ -594,6 +656,9 @@ function moveAlongPath(
 
 let npcSeq = 0
 
+/** Duracion (s) del arco de salto one-shot de un NPC. */
+const JUMP_DURATION = 0.55
+
 export function makeNpc(opts: NpcOpts): NpcHandle {
   const character = makeCharacter(opts)
   const { group } = character
@@ -618,20 +683,68 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
   let prevX = opts.position[0]
   let prevZ = opts.position[2]
 
+  // conversacion: reloj de patrulla propio (se congela al hablar), giro
+  // hacia el jugador (cuerpo de pie / solo cabeza si esta sentado) y
+  // saludo breve antes de gesticular
+  const seated = opts.pose === 'sit' || opts.pose === 'kneel'
+  let talking = false
+  let faceYaw = opts.rotationY ?? 0
+  let waveLeft = 0
+  let jumpLeft = 0
+  let walkTime = phase
+
   const NPC_RADIUS = 0.26
+
+  /** Conversando: gira suave hacia el jugador y pasa de wave a talk. */
+  function updateTalking(dt: number): void {
+    if (seated) {
+      return
+    }
+    let delta = faceYaw - group.rotation.y
+    delta = Math.atan2(Math.sin(delta), Math.cos(delta))
+    group.rotation.y += delta * Math.min(1, dt * 10)
+    if (waveLeft > 0) {
+      waveLeft -= dt
+      if (waveLeft <= 0) {
+        character.setPose('talk')
+      }
+    }
+  }
+
+  /** Patrulla por waypoints con reloj propio + pasos por zancada. */
+  function updatePatrol(dt: number): void {
+    if (!opts.path) {
+      return
+    }
+    walkTime += dt
+    moveAlongPath(group, opts.path, walkTime, speed)
+    stride += Math.hypot(group.position.x - prevX, group.position.z - prevZ)
+    prevX = group.position.x
+    prevZ = group.position.z
+    if (stride > 0.62) {
+      stride = 0
+      sfx.stepAt(group.position.x, group.position.z)
+    }
+  }
+
+  /** Salto: arco sobre lo que la pose haya decidido para position.y. */
+  function applyJump(dt: number): void {
+    if (jumpLeft <= 0) {
+      return
+    }
+    jumpLeft = Math.max(0, jumpLeft - dt)
+    const progress = 1 - jumpLeft / JUMP_DURATION
+    group.position.y += Math.sin(progress * Math.PI) * 0.5
+  }
+
   return {
     group,
     update(t, dt) {
       const tt = t + phase
-      if (walking && opts.path) {
-        moveAlongPath(group, opts.path, tt, speed)
-        stride += Math.hypot(group.position.x - prevX, group.position.z - prevZ)
-        prevX = group.position.x
-        prevZ = group.position.z
-        if (stride > 0.62) {
-          stride = 0
-          sfx.stepAt(group.position.x, group.position.z)
-        }
+      if (talking) {
+        updateTalking(dt)
+      } else if (walking && opts.path) {
+        updatePatrol(dt)
       } else if (!opts.pose) {
         // con pose fija no hay sway: esta concentrado en lo suyo
         group.rotation.y = (opts.rotationY ?? 0) + Math.sin(tt * 0.7) * 0.08
@@ -639,6 +752,7 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
         sfx.feed(sfxId, 'typing', group.position.x, group.position.z)
       }
       character.update(tt, dt)
+      applyJump(dt)
     },
     collider() {
       return {
@@ -647,6 +761,43 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
         minZ: group.position.z - NPC_RADIUS,
         maxZ: group.position.z + NPC_RADIUS,
       }
+    },
+    talk(player) {
+      talking = true
+      if (player) {
+        faceYaw = Math.atan2(
+          player.x - group.position.x,
+          player.z - group.position.z,
+        )
+        if (seated) {
+          let rel = faceYaw - group.rotation.y
+          rel = Math.atan2(Math.sin(rel), Math.cos(rel))
+          character.setHeadYaw(Math.min(Math.max(rel, -1.1), 1.1))
+        }
+      }
+      if (walking) {
+        character.setWalking(false)
+      }
+      if (!seated) {
+        character.setPose('wave')
+        waveLeft = 0.9
+      }
+    },
+    endTalk() {
+      talking = false
+      waveLeft = 0
+      character.setHeadYaw(null)
+      if (walking) {
+        character.setWalking(true)
+      } else if (opts.pose) {
+        character.setPose(opts.pose)
+        group.rotation.y = opts.rotationY ?? 0
+      } else {
+        character.setPose('idle')
+      }
+    },
+    jump() {
+      jumpLeft = JUMP_DURATION
     },
     dispose() {
       character.dispose()

@@ -1,13 +1,14 @@
 /**
  * @module rooms/past (engine)
- * @description Mini-salas sepia del "antes" (portal al pasado, 9x9), cada
- *   una con NPCs interactuando con los objetos: aula = el Pablo
- *   PRE-universidad (kihon de karate contra el makiwara, un amigo jugando
- *   en la PC — la pregunta semilla "¿como se hacen?" — y un tecnico
- *   reparando el aire acondicionado, que se puede ENCENDER con E);
- *   corpoelec = oficina de planillas en papel; cima = procesos manuales.
- *   El panel "antes de la uni" se expande con E a la historia completa.
- *   El shell lo monta world; el look sepia lo remata el overlay del HUD.
+ * @description Mini-salas sepia del "antes" (portal al pasado, 9x9), las
+ *   TRES con paridad de interacciones: NPCs conversables con E (arboles de
+ *   dialogo de dialogs/*-pasado), panel que expande la historia completa y
+ *   micro-interacciones tematicas. Aula = el Pablo PRE-uni (salta al
+ *   hablarle, kihon contra el makiwara), el amigo gamer y el tecnico con
+ *   el A/C encendible/apagable. Corpoelec = buscar el 0042 entre planillas
+ *   (22 min) + archivador que se abre. Cima = el telefono-integracion que
+ *   suena + la pila del admin manual. El shell lo monta world; el look
+ *   sepia lo remata el overlay del HUD.
  */
 import {
   CanvasTexture,
@@ -20,8 +21,11 @@ import type { Box2 } from '../../lib/collision'
 import type { Locale } from '../../lib/rooms'
 import { sfx } from '../audio'
 import { makeNpc, type NpcHandle } from '../character'
-import type { EngineState, Interactable } from '../state'
-import { unregisterInteractable } from '../state'
+import { npcTalk } from '../dialog'
+import { AULA_PASADO_DIALOGS } from '../dialogs/aula-pasado'
+import { CIMA_PASADO_DIALOGS } from '../dialogs/cima-pasado'
+import { CORPOELEC_PASADO_DIALOGS } from '../dialogs/corpoelec-pasado'
+import type { Interactable } from '../state'
 import {
   basicMat,
   boxMesh,
@@ -92,9 +96,19 @@ const STORY_LABEL = {
   en: 'Read my story',
 } as const
 
-const AC_LABEL = {
+const PAST_STORY_LABEL = {
+  es: 'Leer la historia',
+  en: 'Read the story',
+} as const
+
+const AC_LABEL_ON = {
   es: 'Encender el aire acondicionado',
   en: 'Power on the AC unit',
+} as const
+
+const AC_LABEL_OFF = {
+  es: 'Apagar el aire acondicionado',
+  en: 'Power off the AC unit',
 } as const
 
 interface AnimatedScreen {
@@ -264,7 +278,6 @@ function gamingPc(): { group: Group; update(t: number): void } {
 function acCorner(
   x: number,
   z: number,
-  state: EngineState,
   colliders: Box2[],
 ): {
   group: Group
@@ -335,25 +348,35 @@ function acCorner(
     footprint(x + 3.5, z + 1.8, 1.05, 0.5),
     footprint(x + 3.5, z + 1.1, 0.5, 0.35),
   )
+  // toggle ilimitado: encender abre lamas + brisa; apagar las cierra
   let powered = false
+  const item: Interactable = {
+    id: 'past-ac',
+    x: x + 3.9,
+    z: z + 1.8,
+    radius: 2,
+    label: { ...AC_LABEL_ON },
+    onActivate: () => {
+      powered = !powered
+      const color = powered ? '#4dcc7a' : '#b23a3a'
+      ledMat.color.set(color)
+      ledMat.emissive.set(color)
+      sfx.play(powered ? 'breeze-on' : 'shutdown')
+      item.label = powered ? AC_LABEL_OFF : AC_LABEL_ON
+    },
+  }
   return {
     group,
-    interactable: {
-      id: 'past-ac',
-      x: x + 3.9,
-      z: z + 1.8,
-      radius: 2,
-      label: AC_LABEL,
-      onActivate: () => {
-        powered = true
-        ledMat.color.set('#4dcc7a')
-        ledMat.emissive.set('#4dcc7a')
-        sfx.play('breeze-on')
-        unregisterInteractable(state, 'past-ac')
-      },
-    },
+    interactable: item,
     update: (t, dt) => {
       if (!powered) {
+        // lamas se cierran suave y la brisa desaparece
+        for (const louver of louvers) {
+          louver.rotation.x = Math.max(louver.rotation.x - dt * 1.6, 0.12)
+        }
+        for (const line of breeze) {
+          line.visible = false
+        }
         return
       }
       // lamas: se abren suave y luego barren oscilando
@@ -385,7 +408,6 @@ function aulaPast(
   z: number,
   depth: number,
   locale: Locale,
-  state: EngineState,
   actions: PastCtx['actions'],
 ): PastSet {
   const group = new Group()
@@ -425,6 +447,19 @@ function aulaPast(
   belt.userData.noOutline = true
   karateka.group.add(belt)
   npcs.push(karateka)
+  // hablarle al Pablo del pasado: SALTA (tobi geri) y abre su arbol
+  const karateTalk = npcTalk({
+    id: 'talk-past-aula-karate',
+    npc: karateka,
+    dialog: AULA_PASADO_DIALOGS['pablo-karate'],
+    openDialog: actions.openDialog,
+    onGreet: () => {
+      karateka.jump()
+      sfx.play('blip')
+    },
+  })
+  interactables.push(karateTalk.interactable)
+  updates.push(karateTalk.update)
 
   // --- videojuegos: la PC con el shooter corriendo + un amigo SENTADO
   group.add(
@@ -452,18 +487,25 @@ function aulaPast(
       color: '#4a3b2a',
     }),
   )
-  npcs.push(
-    makeNpc({
-      skin: '#c98f6a',
-      hair: { style: 'spiky', color: '#2a1c10' },
-      top: '#7a5c48',
-      bottom: '#4a4438',
-      faceSeed: 29,
-      position: [x + 2.6, 0, z - 2.4],
-      rotationY: Math.PI / 2,
-      pose: 'sit',
-    }),
-  )
+  const gamer = makeNpc({
+    skin: '#c98f6a',
+    hair: { style: 'spiky', color: '#2a1c10' },
+    top: '#7a5c48',
+    bottom: '#4a4438',
+    faceSeed: 29,
+    position: [x + 2.6, 0, z - 2.4],
+    rotationY: Math.PI / 2,
+    pose: 'sit',
+  })
+  npcs.push(gamer)
+  const gamerTalk = npcTalk({
+    id: 'talk-past-aula-gamer',
+    npc: gamer,
+    dialog: AULA_PASADO_DIALOGS['amigo-gamer'],
+    openDialog: actions.openDialog,
+  })
+  interactables.push(gamerTalk.interactable)
+  updates.push(gamerTalk.update)
   // la pregunta que lo cambio todo, flotando sobre la pantalla
   const seed = label(
     locale === 'es' ? '¿como se HACEN los juegos?' : 'how are games MADE?',
@@ -474,22 +516,29 @@ function aulaPast(
   group.add(seed)
 
   // --- aires acondicionados: tecnico arrodillado reparando + encendido
-  const ac = acCorner(x, z, state, colliders)
+  const ac = acCorner(x, z, colliders)
   group.add(ac.group)
   interactables.push(ac.interactable)
   updates.push(ac.update)
-  npcs.push(
-    makeNpc({
-      skin: '#d9a684',
-      hair: { style: 'short', color: '#2a1c12' },
-      top: '#5a6a73',
-      bottom: '#3a4048',
-      faceSeed: 47,
-      position: [x + 2.95, 0, z + 1.8],
-      rotationY: Math.PI / 2,
-      pose: 'kneel',
-    }),
-  )
+  const tecnicoAc = makeNpc({
+    skin: '#d9a684',
+    hair: { style: 'short', color: '#2a1c12' },
+    top: '#5a6a73',
+    bottom: '#3a4048',
+    faceSeed: 47,
+    position: [x + 2.95, 0, z + 1.8],
+    rotationY: Math.PI / 2,
+    pose: 'kneel',
+  })
+  npcs.push(tecnicoAc)
+  const tecnicoTalk = npcTalk({
+    id: 'talk-past-aula-tecnico',
+    npc: tecnicoAc,
+    dialog: AULA_PASADO_DIALOGS['tecnico-ac'],
+    openDialog: actions.openDialog,
+  })
+  interactables.push(tecnicoTalk.interactable)
+  updates.push(tecnicoTalk.update)
 
   // panel-resumen: se expande con E a la historia completa (DOM)
   const story = STORY[locale]
@@ -532,21 +581,152 @@ function aulaPast(
 // Corpoelec: oficina de planillas en papel
 // ---------------------------------------------------------------------------
 
-function corpoelecPast(x: number, z: number, depth: number): PastSet {
+const CORPOELEC_STORY: Record<Locale, { title: string; paragraphs: string[] }> =
+  {
+    es: {
+      title: 'Antes del sistema (2013)',
+      paragraphs: [
+        'Cada sede llevaba su propia copia en papel del inventario: Yaracuy ' +
+          'una, Carabobo otra distinta, y la de Lara aparecia... a veces. ' +
+          'Nadie sabia cual valia.',
+        'Localizar un equipo era abrir carpetas durante 20 minutos o mas — ' +
+          'si el registro no estaba traspapelado o copiado con errores.',
+        'Ese año un pasante propuso otra cosa: un sistema de inventario que ' +
+          'funcionara aun sin conexion y sincronizara las 3 sedes en una ' +
+          'sola base. Cruza de vuelta y lo ves funcionando.',
+      ],
+    },
+    en: {
+      title: 'Before the system (2013)',
+      paragraphs: [
+        'Each site kept its own paper copy of the inventory: Yaracuy had ' +
+          'one, Carabobo a different one, and the Lara copy showed up... ' +
+          'sometimes. Nobody knew which one was right.',
+        'Locating an asset meant digging through folders for 20+ minutes — ' +
+          'if the record was not misplaced or copied with errors.',
+        'That year an intern proposed something else: an inventory system ' +
+          'that worked even offline and kept the 3 sites in one database. ' +
+          'Cross back and you can see it running.',
+      ],
+    },
+  }
+
+const SEARCH_PAPER_LABEL = {
+  es: 'Buscar el equipo 0042 en las planillas',
+  en: 'Search the paper records for asset 0042',
+} as const
+
+const DRAWER_LABEL_OPEN = {
+  es: 'Abrir el archivador',
+  en: 'Open the filing cabinet',
+} as const
+
+const DRAWER_LABEL_CLOSE = {
+  es: 'Cerrar el archivador',
+  en: 'Close the filing cabinet',
+} as const
+
+function corpoelecPast(
+  x: number,
+  z: number,
+  depth: number,
+  locale: Locale,
+  actions: PastCtx['actions'],
+): PastSet {
   const group = new Group()
   const colliders: Box2[] = []
   const npcs: NpcHandle[] = []
+  const interactables: Interactable[] = []
+  const updates: ((t: number, dt: number) => void)[] = []
+  const stacks: Group[] = []
   for (const dx of [-2.2, 0, 2.2]) {
-    group.add(
-      desk({ position: [x + dx, 0, z - 0.6], color: '#4c4740' }),
-      paperStack({ position: [x + dx, 0.76, z - 0.6], count: 12 }),
-    )
+    const stack = paperStack({ position: [x + dx, 0.76, z - 0.6], count: 12 })
+    stacks.push(stack)
+    group.add(desk({ position: [x + dx, 0, z - 0.6], color: '#4c4740' }), stack)
     colliders.push(footprint(x + dx, z - 0.6, 1.3, 0.8))
   }
   const cabinet = boxMesh(0.6, 1.8, 0.5, toonMat('#5a5750'))
   cabinet.position.set(x + 3.6, 0.9, z + 2.2)
   group.add(cabinet)
   colliders.push(footprint(x + 3.6, z + 2.2, 0.7, 0.6))
+
+  // micro: buscar el 0042 a mano — las pilas tiemblan y el veredicto
+  // flota unos segundos (papel = 20+ min y copia desactualizada)
+  const verdict = label(
+    locale === 'es'
+      ? '22 min despues: copia DESACTUALIZADA'
+      : '22 min later: an OUTDATED copy',
+    { size: 0.13, color: '#e8d8b0' },
+  )
+  verdict.position.set(x, 1.5, z - 0.6)
+  verdict.visible = false
+  group.add(verdict)
+  let searchT = -1
+  interactables.push({
+    id: 'past-search',
+    x,
+    z: z - 0.6,
+    radius: 2.1,
+    label: SEARCH_PAPER_LABEL,
+    onActivate: () => {
+      if (searchT === -1) {
+        searchT = -2 // pendiente: el proximo update fija el inicio
+        sfx.play('blip')
+      }
+    },
+  })
+  updates.push((t) => {
+    if (searchT === -2) {
+      searchT = t
+    }
+    if (searchT < 0) {
+      return
+    }
+    const elapsed = t - searchT
+    if (elapsed < 2.2) {
+      for (const [i, stack] of stacks.entries()) {
+        stack.rotation.y = Math.sin(t * 24 + i * 2.1) * 0.08
+      }
+    } else if (elapsed < 5.5) {
+      for (const stack of stacks) {
+        stack.rotation.y = 0
+      }
+      verdict.visible = true
+    } else {
+      verdict.visible = false
+      searchT = -1
+    }
+  })
+
+  // micro: el archivador se abre/cierra (cajon deslizante + planillas)
+  const drawer = boxMesh(0.5, 0.26, 0.45, toonMat('#4a4740'))
+  drawer.position.set(x + 3.6, 1.2, z + 2.2)
+  const drawerPapers = paperStack({
+    position: [x + 3.6, 1.33, z + 1.88],
+    count: 5,
+  })
+  drawerPapers.visible = false
+  group.add(drawer, drawerPapers)
+  let drawerOpen = false
+  const drawerItem: Interactable = {
+    id: 'past-drawer',
+    x: x + 3.6,
+    z: z + 2.2,
+    radius: 2,
+    label: { ...DRAWER_LABEL_OPEN },
+    onActivate: () => {
+      drawerOpen = !drawerOpen
+      sfx.play('door')
+      drawerItem.label = drawerOpen ? DRAWER_LABEL_CLOSE : DRAWER_LABEL_OPEN
+    },
+  }
+  interactables.push(drawerItem)
+  updates.push((_t, dt) => {
+    const target = drawerOpen ? z + 2.2 - 0.42 : z + 2.2
+    drawer.position.z += (target - drawer.position.z) * Math.min(1, dt * 6)
+    drawerPapers.visible = drawerOpen && drawer.position.z < z + 2.2 - 0.3
+  })
+
   // oficinista cargando planillas entre los escritorios y el archivador
   const carrier = makeNpc({
     skin: '#d9a684',
@@ -563,43 +743,133 @@ function corpoelecPast(x: number, z: number, depth: number): PastSet {
     speed: 0.55,
   })
   carryPapers(carrier)
-  npcs.push(
-    carrier,
-    // otro transcribiendo a mano en su escritorio
-    makeNpc({
-      skin: '#e8b48c',
-      hair: { style: 'short', color: '#3a2a1a' },
-      top: '#6a6152',
-      bottom: '#4a4438',
-      accessory: 'glasses',
-      faceSeed: 53,
-      position: [x, 0, z + 0.1],
-      rotationY: Math.PI,
+  // otro transcribiendo a mano en su escritorio
+  const transcriber = makeNpc({
+    skin: '#e8b48c',
+    hair: { style: 'short', color: '#3a2a1a' },
+    top: '#6a6152',
+    bottom: '#4a4438',
+    accessory: 'glasses',
+    faceSeed: 53,
+    position: [x, 0, z + 0.1],
+    rotationY: Math.PI,
+  })
+  npcs.push(carrier, transcriber)
+  const talks = [
+    npcTalk({
+      id: 'talk-past-corpoelec-planillas',
+      npc: carrier,
+      dialog: CORPOELEC_PASADO_DIALOGS['oficinista-planillas'],
+      openDialog: actions.openDialog,
     }),
-  )
+    npcTalk({
+      id: 'talk-past-corpoelec-transcribe',
+      npc: transcriber,
+      dialog: CORPOELEC_PASADO_DIALOGS['oficinista-transcribe'],
+      openDialog: actions.openDialog,
+    }),
+  ]
+  for (const talk of talks) {
+    interactables.push(talk.interactable)
+    updates.push(talk.update)
+  }
+
+  const story = CORPOELEC_STORY[locale]
   const panel = screenPanel({
-    title: 'planillas duplicadas',
-    lines: ['sede A: copia 1', 'sede B: copia 2 (distinta)', 'sede C: perdida'],
+    title: locale === 'es' ? 'planillas duplicadas' : 'duplicated records',
+    lines:
+      locale === 'es'
+        ? [
+            'sede A: copia 1',
+            'sede B: copia 2 (distinta)',
+            'sede C: perdida',
+            '',
+            '[E] leer la historia',
+          ]
+        : [
+            'site A: copy 1',
+            'site B: copy 2 (different)',
+            'site C: lost',
+            '',
+            '[E] read the story',
+          ],
     theme: PAST_SCREEN,
     width: 1.8,
-    height: 1.1,
+    height: 1.25,
   })
   panel.position.set(x, 1.6, z - depth / 2 + 0.12)
   group.add(panel)
-  return { group, colliders, npcs, interactables: [], updates: [] }
+  interactables.push({
+    id: 'past-story',
+    x,
+    z: z - depth / 2 + 0.5,
+    radius: 2.4,
+    label: PAST_STORY_LABEL,
+    onActivate: () => actions.openStory(story.title, story.paragraphs),
+  })
+  return { group, colliders, npcs, interactables, updates }
 }
 
 // ---------------------------------------------------------------------------
 // Cima: procesos manuales, un solo pais
 // ---------------------------------------------------------------------------
 
-function cimaPast(x: number, z: number, depth: number): PastSet {
+const CIMA_STORY: Record<Locale, { title: string; paragraphs: string[] }> = {
+  es: {
+    title: 'Antes de la plataforma',
+    paragraphs: [
+      'El admin de campañas se armaba a mano: horas de planillas para ' +
+        'lanzar una sola campaña.',
+      'Cada area era un silo. La "integracion" entre servicios era una ' +
+        'llamada telefonica o alguien corriendo con papeles entre ' +
+        'escritorios.',
+      'Con esos procesos, operar UN pais ya era cuesta arriba — ' +
+        'expandirse a otro era impensable. La plataforma de ' +
+        'microservicios cambio esa historia: cruza de vuelta y mirala ' +
+        'orquestar Chile y Mexico.',
+    ],
+  },
+  en: {
+    title: 'Before the platform',
+    paragraphs: [
+      'The campaign admin was assembled by hand: hours of spreadsheets ' +
+        'to launch a single campaign.',
+      'Every area was a silo. "Integration" between services was a ' +
+        'phone call, or someone running papers between desks.',
+      'With those processes, operating in ONE country was already an ' +
+        'uphill battle — expanding to another was unthinkable. The ' +
+        'microservices platform changed that story: cross back and ' +
+        'watch it orchestrate Chile and Mexico.',
+    ],
+  },
+}
+
+const PHONE_LABEL = {
+  es: 'Llamar por telefono (la integracion v0)',
+  en: 'Make a phone call (integration v0)',
+} as const
+
+const PILE_LABEL = {
+  es: 'Revisar la pila del admin de campañas',
+  en: 'Check the campaign-admin pile',
+} as const
+
+function cimaPast(
+  x: number,
+  z: number,
+  depth: number,
+  locale: Locale,
+  actions: PastCtx['actions'],
+): PastSet {
   const group = new Group()
   const colliders: Box2[] = []
   const npcs: NpcHandle[] = []
+  const interactables: Interactable[] = []
+  const updates: ((t: number, dt: number) => void)[] = []
+  const pile = paperStack({ position: [x - 0.4, 0.76, z - 0.6], count: 16 })
   group.add(
     desk({ position: [x, 0, z - 0.6], width: 1.6, color: '#3c3a44' }),
-    paperStack({ position: [x - 0.4, 0.76, z - 0.6], count: 16 }),
+    pile,
   )
   colliders.push(footprint(x, z - 0.6, 1.7, 0.8))
   // telefono de escritorio: la "integracion" de la epoca
@@ -612,6 +882,93 @@ function cimaPast(x: number, z: number, depth: number): PastSet {
   )
   phone.position.set(x + 0.45, 0.755, z - 0.7)
   group.add(phone)
+
+  // micro: el telefono suena — asi se "integraban" los servicios
+  const phoneVerdict = label(
+    locale === 'es'
+      ? 'integracion v0: una llamada y a esperar'
+      : 'integration v0: one phone call, then wait',
+    { size: 0.12, color: '#e8d8b0' },
+  )
+  phoneVerdict.position.set(x + 0.45, 1.45, z - 0.7)
+  phoneVerdict.visible = false
+  group.add(phoneVerdict)
+  let ringT = -1
+  interactables.push({
+    id: 'past-phone',
+    x: x + 0.45,
+    z: z - 0.7,
+    radius: 2,
+    label: PHONE_LABEL,
+    onActivate: () => {
+      if (ringT === -1) {
+        ringT = -2
+        sfx.play('ring')
+      }
+    },
+  })
+  updates.push((t) => {
+    if (ringT === -2) {
+      ringT = t
+    }
+    if (ringT < 0) {
+      return
+    }
+    const elapsed = t - ringT
+    if (elapsed < 1.6) {
+      phone.rotation.z = Math.sin(t * 40) * 0.12
+    } else if (elapsed < 5) {
+      phone.rotation.z = 0
+      phoneVerdict.visible = true
+    } else {
+      phoneVerdict.visible = false
+      ringT = -1
+    }
+  })
+
+  // micro: la pila del admin manual — el costo real en horas
+  const pileVerdict = label(
+    locale === 'es'
+      ? 'una campaña = 6+ horas a mano'
+      : 'one campaign = 6+ hours by hand',
+    { size: 0.12, color: '#e8d8b0' },
+  )
+  pileVerdict.position.set(x - 0.4, 1.5, z - 0.6)
+  pileVerdict.visible = false
+  group.add(pileVerdict)
+  let pileT = -1
+  interactables.push({
+    id: 'past-pile',
+    x: x - 0.4,
+    z: z - 0.6,
+    radius: 1.9,
+    label: PILE_LABEL,
+    onActivate: () => {
+      if (pileT === -1) {
+        pileT = -2
+        sfx.play('blip')
+      }
+    },
+  })
+  updates.push((t) => {
+    if (pileT === -2) {
+      pileT = t
+    }
+    if (pileT < 0) {
+      return
+    }
+    const elapsed = t - pileT
+    if (elapsed < 1.2) {
+      pile.rotation.y = Math.sin(t * 26) * 0.07
+    } else if (elapsed < 4.5) {
+      pile.rotation.y = 0
+      pileVerdict.visible = true
+    } else {
+      pileVerdict.visible = false
+      pileT = -1
+    }
+  })
+
   // operador al telefono + alguien corriendo con papeles entre areas
   const runner = makeNpc({
     skin: '#c98f6a',
@@ -628,45 +985,82 @@ function cimaPast(x: number, z: number, depth: number): PastSet {
     speed: 1.15,
   })
   carryPapers(runner)
-  npcs.push(
-    runner,
-    makeNpc({
-      skin: '#e8b48c',
-      hair: { style: 'bun', color: '#3a2a1a' },
-      top: '#6a5c48',
-      bottom: '#4a4438',
-      accessory: 'tie',
-      faceSeed: 73,
-      position: [x + 0.5, 0, z + 0.1],
-      rotationY: Math.PI,
+  const operator = makeNpc({
+    skin: '#e8b48c',
+    hair: { style: 'bun', color: '#3a2a1a' },
+    top: '#6a5c48',
+    bottom: '#4a4438',
+    accessory: 'tie',
+    faceSeed: 73,
+    position: [x + 0.5, 0, z + 0.1],
+    rotationY: Math.PI,
+  })
+  npcs.push(runner, operator)
+  const talks = [
+    npcTalk({
+      id: 'talk-past-cima-runner',
+      npc: runner,
+      dialog: CIMA_PASADO_DIALOGS['runner-papeles'],
+      openDialog: actions.openDialog,
     }),
-  )
+    npcTalk({
+      id: 'talk-past-cima-operador',
+      npc: operator,
+      dialog: CIMA_PASADO_DIALOGS['operador-telefono'],
+      openDialog: actions.openDialog,
+    }),
+  ]
+  for (const talk of talks) {
+    interactables.push(talk.interactable)
+    updates.push(talk.update)
+  }
+
+  const story = CIMA_STORY[locale]
   const panel = screenPanel({
-    title: 'procesos manuales',
-    lines: [
-      'admin de campanas: horas',
-      'servicios sin orquestar',
-      'un solo pais, silos',
-    ],
+    title: locale === 'es' ? 'procesos manuales' : 'manual processes',
+    lines:
+      locale === 'es'
+        ? [
+            'admin de campanas: horas',
+            'servicios sin orquestar',
+            'un solo pais, silos',
+            '',
+            '[E] leer la historia',
+          ]
+        : [
+            'campaign admin: hours',
+            'services not orchestrated',
+            'one country, silos',
+            '',
+            '[E] read the story',
+          ],
     theme: PAST_SCREEN,
     width: 2,
-    height: 1.1,
+    height: 1.25,
   })
   panel.position.set(x, 1.6, z - depth / 2 + 0.12)
   group.add(panel)
-  return { group, colliders, npcs, interactables: [], updates: [] }
+  interactables.push({
+    id: 'past-story',
+    x,
+    z: z - depth / 2 + 0.5,
+    radius: 2.4,
+    label: PAST_STORY_LABEL,
+    onActivate: () => actions.openStory(story.title, story.paragraphs),
+  })
+  return { group, colliders, npcs, interactables, updates }
 }
 
 function buildSet(ctx: PastCtx): PastSet {
   const { def, pastRoom, state, actions } = ctx
   const { x, z, depth } = pastRoom
   if (def.id === 'aula') {
-    return aulaPast(x, z, depth, state.locale, state, actions)
+    return aulaPast(x, z, depth, state.locale, actions)
   }
   if (def.id === 'corpoelec') {
-    return corpoelecPast(x, z, depth)
+    return corpoelecPast(x, z, depth, state.locale, actions)
   }
-  return cimaPast(x, z, depth)
+  return cimaPast(x, z, depth, state.locale, actions)
 }
 
 export default function buildPast(ctx: PastCtx): RoomBuild {

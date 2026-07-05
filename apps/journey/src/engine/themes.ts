@@ -6,6 +6,10 @@
  *   `rooms/palettes.ts` subiendo contraste y saturacion (decision 5 del
  *   plan journey-vanilla-manga).
  *
+ *   Regla del canon (plan journey-salas-estandar): TODAS las salas
+ *   presentes llevan `wall: '#f2f0eb'` (blanco hueso); el color del rubro
+ *   vive en floor/trim/accent/lightColor/screen — NUNCA en la pared.
+ *
  *   Nota DS: son colores de MATERIAL WebGL/canvas, no CSS del UI — los
  *   tokens var(--color-*) no aplican dentro del renderer.
  */
@@ -38,31 +42,32 @@ export interface RoomTheme {
 }
 
 export const THEMES: Record<ThemeZoneId, RoomTheme> = {
-  // aula: paredes blancas + piso beige, acento AZUL y guiños MORADOS
-  // (zocalo/marcos via trim) — decision del usuario 2026-07-04
+  // aula: academico claro, acento AZUL y guiños MORADOS (zocalo/marcos
+  // via trim)
   aula: {
-    wall: '#eae6dc',
-    floor: '#d8c6a0',
+    wall: '#f2f0eb',
+    floor: '#e6dcc4',
     ink: '#232840',
     accent: '#2f6fd0',
     trim: '#7a4fc0',
-    lightColor: '#dfe9ff',
-    fog: '#141722',
-    sky: '#181c2a',
+    lightColor: '#eef2ff',
+    fog: '#d8dce6',
+    sky: '#e6e9f0',
     gradient: ['#7d829a', '#c2c8da', '#ffffff'],
     screenBg: '#101c34',
     screenFg: '#8fb8ff',
   },
-  // corpoelec: grises industriales frios + naranja + amarillo seguridad
+  // corpoelec: oficina industrial, naranja + amarillo seguridad
   corpoelec: {
-    wall: '#454b54',
-    floor: '#33373c',
+    wall: '#f2f0eb',
+    floor: '#c9cdd4',
     ink: '#121418',
     accent: '#e2572b',
-    lightColor: '#e6ecff',
-    fog: '#101216',
-    sky: '#14171c',
-    gradient: ['#383e48', '#8b93a2', '#eef2f8'],
+    trim: '#f2b705',
+    lightColor: '#f0f3f8',
+    fog: '#d6dae0',
+    sky: '#e2e5ea',
+    gradient: ['#8a8f98', '#c8ccd4', '#ffffff'],
     screenBg: '#0f1822',
     screenFg: '#84e0a0',
   },
@@ -122,17 +127,18 @@ export const THEMES: Record<ThemeZoneId, RoomTheme> = {
     screenBg: '#0e2018',
     screenFg: '#5fd8a8',
   },
-  // destacame (ex-cima): azul Destacame sobre casi-negro (C3 lo pasa a
-  // paredes blancas segun la tabla del canon)
+  // destacame: fintech premium, azul Destacame; conserva el sky/fog
+  // oscuros (drama de acento sobre paredes blancas)
   destacame: {
-    wall: '#1d2942',
-    floor: '#161d2c',
-    ink: '#080c16',
+    wall: '#f2f0eb',
+    floor: '#d5dae6',
+    ink: '#0e1626',
     accent: '#0052cc',
-    lightColor: '#9db8ff',
-    fog: '#0a0e16',
-    sky: '#0a0e16',
-    gradient: ['#1e2840', '#4d6cab', '#d4e2ff'],
+    trim: '#8ea6d8',
+    lightColor: '#eef3ff',
+    fog: '#0e1422',
+    sky: '#111828',
+    gradient: ['#767f96', '#bcc6dc', '#ffffff'],
     screenBg: '#0a1220',
     screenFg: '#6fa8ff',
   },

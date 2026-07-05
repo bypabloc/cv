@@ -16,12 +16,14 @@ import type { PastCtx, RoomBuild } from '../../world'
 import { exitPortal } from '../props'
 import { aulaPast } from './aula'
 import { corpoelecPast } from './corpoelec'
+import { ipasmePast } from './ipasme'
 import type { PastSet, PastSetBuilder } from './shared'
 
 /** Builders por sala; sin entrada = pasado aun no construido (Etapa 2). */
 const PAST_BUILDERS: Partial<Record<RoomId, PastSetBuilder>> = {
   aula: aulaPast,
   corpoelec: corpoelecPast,
+  ipasme: ipasmePast,
 }
 
 function buildSet(ctx: PastCtx): PastSet {

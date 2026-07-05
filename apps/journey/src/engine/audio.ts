@@ -163,7 +163,14 @@ export const ambientAudio = new AmbientAudio()
 export type FeedKind = 'typing' | 'portal' | 'holo' | 'breeze'
 
 /** Efectos disparados una vez (volumen fijo, no posicionales). */
-export type OneShot = 'door' | 'boot' | 'whoosh' | 'breeze-on'
+export type OneShot =
+  | 'door'
+  | 'boot'
+  | 'whoosh'
+  | 'breeze-on'
+  | 'blip'
+  | 'ring'
+  | 'shutdown'
 
 /** Alcance (m) por tipo de fuente: mas alla, gain 0. */
 const FEED_RANGE: Record<FeedKind, number> = {
@@ -316,6 +323,25 @@ export class SfxEngine {
         frequency: 320,
         frequencyTo: 2400,
       })
+      return
+    }
+    if (name === 'blip') {
+      // click suave de avanzar el dialogo
+      this.beep(520, 0.05, 0.03, 0)
+      return
+    }
+    if (name === 'ring') {
+      // timbre clasico de telefono fijo: dos tonos batiendo, dos rafagas
+      for (const delay of [0, 0.8]) {
+        this.beep(440, 0.4, 0.028, delay)
+        this.beep(480, 0.4, 0.028, delay)
+      }
+      return
+    }
+    if (name === 'shutdown') {
+      // beep doble descendente de apagado
+      this.beep(660, 0.07, 0.05, 0)
+      this.beep(330, 0.1, 0.05, 0.09)
       return
     }
     // breeze-on: el A/C arranca (swell de aire)

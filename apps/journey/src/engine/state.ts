@@ -12,8 +12,15 @@ import type { Locale } from '../lib/rooms'
 /** Tiers que montan el 3D (static nunca llega al engine). */
 export type EngineTier = 'full' | 'reduced'
 export type CameraMode = 'third' | 'pov'
-export type UiPanel = 'none' | 'ficha' | 'contact' | 'teleport'
+export type UiPanel = 'none' | 'ficha' | 'contact' | 'teleport' | 'dialog'
 export type FichaKind = 'retos' | 'aprendizajes'
+
+/** Burbuja manga de "habla suelta": 1 linea al azar sobre el NPC activo. */
+export interface InteractableBubble {
+  lines: readonly Record<Locale, string>[]
+  /** Punto de anclaje mundial (la cabeza del NPC), evaluado por frame. */
+  anchor(): { x: number; y: number; z: number }
+}
 
 export interface Interactable {
   id: string
@@ -21,7 +28,9 @@ export interface Interactable {
   z: number
   radius: number
   label: Record<Locale, string>
-  onActivate: () => void
+  /** Recibe la posicion del jugador (los NPCs se giran a mirarlo). */
+  onActivate: (player?: { x: number; z: number }) => void
+  bubble?: InteractableBubble
 }
 
 export interface FichaRef {
@@ -99,7 +108,10 @@ export function unregisterInteractable(state: EngineState, id: string): void {
 }
 
 /** Ejecuta el interactable activo (tecla E / boton tactil). */
-export function activateCurrent(state: EngineState): boolean {
+export function activateCurrent(
+  state: EngineState,
+  player?: { x: number; z: number },
+): boolean {
   if (state.activeId === null) {
     return false
   }
@@ -107,7 +119,7 @@ export function activateCurrent(state: EngineState): boolean {
   if (!item) {
     return false
   }
-  item.onActivate()
+  item.onActivate(player)
   return true
 }
 

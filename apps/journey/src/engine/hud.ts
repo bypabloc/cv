@@ -8,10 +8,13 @@
  */
 import { profile } from '@portfolio/content'
 import type { Locale, RoomDef } from '../lib/rooms'
+import { sfx } from './audio'
+import type { NpcDialog } from './dialog'
 import {
   type CameraMode,
   type EngineState,
   type FichaKind,
+  type InteractableBubble,
   isUiOpen,
 } from './state'
 import { PAST_CAPTIONS } from './themes'
@@ -112,6 +115,22 @@ const CSS = `
   border: 1px solid currentColor; border-radius: 6px; padding: 0.3rem 0.7rem; }
 .jny-caption { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
   width: min(440px, calc(100vw - 24px)); }
+.jny-dialog { position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px)); max-height: 46vh; overflow-y: auto;
+  pointer-events: auto; padding: 0.9rem 1.1rem; }
+.jny-dialog-name { margin: 0 0 0.35rem; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-primary, #4f6ef7); }
+.jny-dialog-text { margin: 0 0 0.7rem; line-height: 1.5; }
+.jny-dialog-options { display: flex; flex-direction: column; gap: 0.45rem; }
+.jny-bubble { position: absolute; transform: translate(-50%, calc(-100% - 14px));
+  max-width: 240px; background: #f7f4ea; color: #1c1822;
+  border: 2px solid #1c1822; border-radius: 14px; padding: 0.4rem 0.65rem;
+  font-size: 0.78rem; line-height: 1.35; pointer-events: none; z-index: 12;
+  display: none; }
+.jny-bubble::after { content: ''; position: absolute; left: 50%; bottom: -10px;
+  transform: translateX(-50%); border: 6px solid transparent;
+  border-top: 10px solid #1c1822; border-bottom: 0; }
 .jny-fade { position: absolute; inset: 0; background: #0b0b10; opacity: 0;
   transition: opacity 350ms ease; pointer-events: none; z-index: 40; }
 .jny-dream { position: absolute; inset: 0; pointer-events: none; z-index: 41;
@@ -191,6 +210,18 @@ export interface Hud {
   openFicha(roomIndex: number, kind: FichaKind): void
   /** Panel de texto libre (la historia del pasado, expandida con E). */
   openStory(title: string, paragraphs: readonly string[]): void
+  /** Panel de conversacion con un NPC (arbol de opciones 1-9/click). */
+  openDialog(npc: NpcDialog, onClose?: () => void): void
+  /** Burbuja de habla suelta del NPC activo (null la oculta). */
+  setBubble(bubble: InteractableBubble | null): void
+  /** Reposiciona la burbuja proyectando su anclaje 3D (cada frame). */
+  updateBubble(
+    project: (
+      x: number,
+      y: number,
+      z: number,
+    ) => { x: number; y: number; behind: boolean },
+  ): void
   openContact(): void
   toggleTeleport(): void
   closeAll(): void
@@ -316,6 +347,12 @@ export function createHud(deps: HudDeps): Hud {
   teleport.style.display = 'none'
   teleport.setAttribute('aria-label', t.mapTitle)
 
+  // panel de conversacion con NPCs + burbuja manga de habla suelta
+  const dialog = el('aside', 'jny-panel jny-dialog')
+  dialog.style.display = 'none'
+  const bubble = el('div', 'jny-bubble')
+  bubble.setAttribute('aria-hidden', 'true')
+
   // contenido estatico del panel de contacto
   {
     const title = el('h2', '', t.contactTitle)
@@ -405,6 +442,8 @@ export function createHud(deps: HudDeps): Hud {
     ficha,
     contact,
     teleport,
+    dialog,
+    bubble,
     fadeEl,
     dreamEl,
     loader,
@@ -414,6 +453,59 @@ export function createHud(deps: HudDeps): Hud {
   let cameraMode: CameraMode = 'third'
   let pointerLocked = false
   let currentPrompt: string | null = null
+  let dialogOnClose: (() => void) | null = null
+  let dialogOptions: HTMLButtonElement[] = []
+  let bubbleSpec: InteractableBubble | null = null
+
+  /** Renderiza un nodo del arbol; las opciones avanzan o cierran. */
+  function renderDialogNode(npc: NpcDialog, id: string): void {
+    const node = npc.nodes[id]
+    if (!node) {
+      hud.closeAll()
+      return
+    }
+    dialog.replaceChildren()
+    dialogOptions = []
+    const name = el('p', 'jny-dialog-name', npc.name[locale])
+    const text = el('p', 'jny-dialog-text', node.text[locale])
+    const list = el('div', 'jny-dialog-options')
+    node.options.forEach((option, index) => {
+      const item = button(
+        'jny-link jny-btn',
+        `${index + 1}. ${option.label[locale]}`,
+        () => {
+          sfx.play('blip')
+          if (option.next === null) {
+            hud.closeAll()
+            return
+          }
+          renderDialogNode(npc, option.next)
+        },
+      )
+      list.appendChild(item)
+      dialogOptions.push(item)
+    })
+    const hint = el('p', '', t.close)
+    hint.style.cssText = 'margin:0.6rem 0 0;font-size:0.66rem;opacity:0.55'
+    dialog.append(name, text, list, hint)
+  }
+
+  /** Teclas 1-9 eligen la opcion del dialogo abierto. */
+  function onDialogKey(event: KeyboardEvent): void {
+    if (state.ui !== 'dialog') {
+      return
+    }
+    const { code } = event
+    const digit = code.startsWith('Digit')
+      ? Number(code.slice(5))
+      : code.startsWith('Numpad')
+        ? Number(code.slice(6))
+        : Number.NaN
+    if (Number.isInteger(digit)) {
+      dialogOptions[digit - 1]?.click()
+    }
+  }
+  window.addEventListener('keydown', onDialogKey)
 
   function hintsFor(mode: CameraMode): string {
     if (touch) {
@@ -555,6 +647,41 @@ export function createHud(deps: HudDeps): Hud {
       refreshOverlayState()
     },
 
+    openDialog(npc, onClose) {
+      hud.closeAll()
+      state.ui = 'dialog'
+      dialogOnClose = onClose ?? null
+      renderDialogNode(npc, npc.start)
+      dialog.style.display = ''
+      refreshOverlayState()
+    },
+
+    setBubble(spec) {
+      bubbleSpec = spec
+      const line = spec?.lines[Math.floor(Math.random() * spec.lines.length)]
+      if (line) {
+        bubble.textContent = line[locale]
+      } else {
+        bubble.style.display = 'none'
+      }
+    },
+
+    updateBubble(project) {
+      if (!bubbleSpec || bubbleSpec.lines.length === 0 || isUiOpen(state)) {
+        bubble.style.display = 'none'
+        return
+      }
+      const anchor = bubbleSpec.anchor()
+      const point = project(anchor.x, anchor.y, anchor.z)
+      if (point.behind) {
+        bubble.style.display = 'none'
+        return
+      }
+      bubble.style.display = ''
+      bubble.style.left = `${point.x}px`
+      bubble.style.top = `${point.y}px`
+    },
+
     openContact() {
       state.ui = 'contact'
       contact.style.display = ''
@@ -578,6 +705,11 @@ export function createHud(deps: HudDeps): Hud {
       ficha.style.display = 'none'
       contact.style.display = 'none'
       teleport.style.display = 'none'
+      dialog.style.display = 'none'
+      dialogOptions = []
+      const done = dialogOnClose
+      dialogOnClose = null
+      done?.()
       refreshOverlayState()
     },
 
@@ -621,6 +753,7 @@ export function createHud(deps: HudDeps): Hud {
     touch,
 
     dispose() {
+      window.removeEventListener('keydown', onDialogKey)
       root.remove()
     },
   }

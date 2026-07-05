@@ -36,6 +36,7 @@ import {
 } from '../lib/layout'
 import type { Locale, RoomDef, RoomId } from '../lib/rooms'
 import { sfx } from './audio'
+import type { OpenDialog } from './dialog'
 import {
   type EngineState,
   type FichaKind,
@@ -67,6 +68,8 @@ export interface WorldActions {
   enterPast(roomIndex: number, spawn: { x: number; z: number }): void
   /** Panel DOM de texto libre (la reseña del cuaderno de cada sala). */
   openStory(title: string, paragraphs: readonly string[]): void
+  /** Panel de conversacion con un NPC (arbol de dialogo del HUD). */
+  openDialog: OpenDialog
 }
 
 export interface RoomCtx {
@@ -102,6 +105,8 @@ export interface PastCtx {
     exitPast(returnTo: { x: number; z: number }): void
     /** Panel DOM expandible (la historia "antes de la uni"). */
     openStory(title: string, paragraphs: readonly string[]): void
+    /** Panel de conversacion con un NPC (arbol de dialogo del HUD). */
+    openDialog: OpenDialog
   }
 }
 
@@ -140,6 +145,7 @@ export interface WorldDeps {
     openFicha(roomIndex: number, kind: FichaKind): void
     openContact(): void
     openStory(title: string, paragraphs: readonly string[]): void
+    openDialog: OpenDialog
   }
   /** Mueve al jugador (lo implementa controls). */
   teleportPlayer(x: number, z: number): void
@@ -202,6 +208,7 @@ export function createWorld(deps: WorldDeps): World {
     openFicha: deps.ui.openFicha,
     openContact: deps.ui.openContact,
     openStory: deps.ui.openStory,
+    openDialog: deps.ui.openDialog,
     enterPast: (roomIndex, spawn) => {
       void world.enterPast(roomIndex, spawn)
     },
@@ -315,7 +322,7 @@ export function createWorld(deps: WorldDeps): World {
           room.height - 0.35,
           room.z,
           theme.lightColor,
-          14 * def.lightIntensity,
+          14,
           room.width * 2.2,
         ),
       )
@@ -790,6 +797,7 @@ export function createWorld(deps: WorldDeps): World {
             void world.exitPast(returnTo)
           },
           openStory: deps.ui.openStory,
+          openDialog: deps.ui.openDialog,
         },
       })
       pastBuild = build

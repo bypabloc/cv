@@ -10,8 +10,10 @@
 import type { Box2 } from './collision'
 import type { RoomDef, RoomId } from './rooms'
 
-export const ROOM_BASE_SIZE = 8
-export const ROOM_HEIGHT_BASE = 3.2
+// Salas UNIFORMES (decision del usuario 2026-07-04): todas replican el
+// tamaño de la CIMA (el viejo 8 * escala-lead 1.65 y su altura derivada).
+export const ROOM_SIZE = 13.2
+export const ROOM_HEIGHT = 4.24
 export const CORRIDOR_WIDTH = 2.4
 export const CORRIDOR_LENGTH = 6
 export const CORRIDOR_HEIGHT = 2.6
@@ -56,11 +58,6 @@ export interface JourneyLayout {
   totalDepth: number
 }
 
-/** La altura crece con el seniority, a la mitad del ritmo de la planta. */
-function roomHeight(scale: number): number {
-  return ROOM_HEIGHT_BASE * (1 + (scale - 1) / 2)
-}
-
 /**
  * @function buildLayout
  * @description Encadena las salas sobre +Z: [sala][pasillo][sala]...
@@ -74,7 +71,7 @@ export function buildLayout(rooms: readonly RoomDef[]): JourneyLayout {
   let cursor = 0
 
   rooms.forEach((room, index) => {
-    const size = ROOM_BASE_SIZE * room.scale
+    const size = ROOM_SIZE
     roomLayouts.push({
       id: room.id,
       index,
@@ -82,7 +79,7 @@ export function buildLayout(rooms: readonly RoomDef[]): JourneyLayout {
       z: cursor + size / 2,
       width: size,
       depth: size,
-      height: roomHeight(room.scale),
+      height: ROOM_HEIGHT,
     })
     cursor += size
 

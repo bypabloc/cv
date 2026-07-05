@@ -3,17 +3,14 @@
  * @description Mapeo data-driven de las experiences reales de
  *   `@portfolio/content` a las salas del journey 3D (Propuesta A).
  *   Deriva los textos del plan: RETOS <- summary + responsibilities;
- *   APRENDIZAJES <- achievements + linea de skills. Los params visuales
- *   (escala/luz/densidad) materializan el eje seniority (AC-12).
+ *   APRENDIZAJES <- achievements + linea de skills. Las salas son
+ *   UNIFORMES en tamaño/luz/densidad (decision del usuario 2026-07-04:
+ *   se replico el tamaño de la CIMA a todas — el viejo eje seniority
+ *   escala/luz/densidad se elimino).
  *
  * @see docs/specs/journey-3d-cv/07-implementacion-mvp.md
  */
-import {
-  type Experience,
-  experiences,
-  SENIORITIES,
-  type SeniorityValue,
-} from '@portfolio/content'
+import { type Experience, experiences } from '@portfolio/content'
 
 export type RoomId = 'aula' | 'corpoelec' | 'cima'
 export type Locale = 'es' | 'en'
@@ -82,21 +79,6 @@ export const MVP_ROOM_SPECS: readonly RoomSpec[] = [
   },
 ]
 
-interface SeniorityParams {
-  scale: number
-  lightIntensity: number
-  propDensity: number
-}
-
-/** El eje seniority en numeros: la sala crece en tamaño, luz y densidad. */
-const SENIORITY_PARAMS: Record<SeniorityValue, SeniorityParams> = {
-  intern: { scale: 1, lightIntensity: 0.55, propDensity: 0.4 },
-  junior: { scale: 1.15, lightIntensity: 0.65, propDensity: 0.55 },
-  mid: { scale: 1.3, lightIntensity: 0.75, propDensity: 0.7 },
-  senior: { scale: 1.45, lightIntensity: 0.85, propDensity: 0.85 },
-  lead: { scale: 1.65, lightIntensity: 1, propDensity: 1 },
-}
-
 export interface RoomTexts {
   title: string
   role: string
@@ -113,26 +95,13 @@ export interface RoomTexts {
   notebook: string[]
 }
 
-export interface RoomDef extends SeniorityParams {
+export interface RoomDef {
   id: RoomId
   order: number
   slugs: readonly string[]
-  seniority: SeniorityValue
   /** Año de inicio de la etapa (mini-timeline del pasillo). */
   year: string
   texts: Record<Locale, RoomTexts>
-}
-
-function seniorityRank(value: SeniorityValue): number {
-  return SENIORITIES.indexOf(value)
-}
-
-function maxSeniority(exps: readonly Experience[]): SeniorityValue {
-  return exps.reduce<SeniorityValue>(
-    (acc, exp) =>
-      seniorityRank(exp.seniority) > seniorityRank(acc) ? exp.seniority : acc,
-    'intern',
-  )
 }
 
 function yearOf(yearMonth: string): string {
@@ -237,14 +206,11 @@ export function buildRooms(
       }
       return found
     })
-    const seniority = maxSeniority(exps)
     return {
       id: spec.id,
       order,
       slugs: spec.slugs,
-      seniority,
       year: yearOf(exps.map((e) => e.start).reduce((a, b) => (a < b ? a : b))),
-      ...SENIORITY_PARAMS[seniority],
       texts: {
         es: buildTexts(spec, exps, 'es'),
         en: buildTexts(spec, exps, 'en'),

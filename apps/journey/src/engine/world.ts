@@ -130,7 +130,8 @@ export const WORLD: Record<
   futuro: { load: () => import('./rooms/futuro') },
 }
 
-const loadPast = (): Promise<{ default: PastFactory }> => import('./rooms/past')
+const loadPast = (): Promise<{ default: PastFactory }> =>
+  import('./rooms/past/index')
 
 // ---------------------------------------------------------------------------
 // createWorld

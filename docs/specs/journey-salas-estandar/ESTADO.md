@@ -29,7 +29,7 @@
 | Orden | Sala | Informe | Estado | Commit |
 | --- | --- | --- | --- | --- |
 | 1 | `corpoelec` | [08-sala-corpoelec.md](08-sala-corpoelec.md) | HECHO | `46f28551` |
-| 2 | `ipasme` | [09-sala-ipasme.md](09-sala-ipasme.md) | PENDIENTE | — |
+| 2 | `ipasme` | [09-sala-ipasme.md](09-sala-ipasme.md) | HECHO | `d22c3988` |
 | 3 | `cofasa` | [10-sala-cofasa.md](10-sala-cofasa.md) | PENDIENTE | — |
 | 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | PENDIENTE | — |
 | 5 | `goodmeal` | [12-sala-goodmeal.md](12-sala-goodmeal.md) | PENDIENTE | — |
@@ -56,6 +56,18 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
   y 3 cuadros wallArt (1 inspeccionable); pasados partidos (aula intacto,
   corpoelec movido, cima eliminado); nota perf: el aula con 6 NPCs puede
   rozar los 100 draw calls — medir/optimizar en C15.
+- [2026-07-05] sala `ipasme` HECHA en commit `d22c3988` — informe 09 tal
+  cual (decision del usuario: 5 NPCs, sin recortar). Showcase con look app
+  de escritorio Windows 2014 (3 demos: ficha, buscador 0,2 s, control de
+  acceso por rol). 5 NPCs nuevos (2C+2P+1J): Daniela y Jose Miguel (devs),
+  Yuleima (enfermera en ronda), Argenis (archivista), Dr. Villasmil (jefe).
+  Pasado: archivo de carpetas manila + hueco del tarjeton + reloj + 3 NPCs
+  (Argenis/Yuleima del arco + Petra nueva) + busqueda lenta "solo el
+  tarjeton". Micros presente: buscar historia (instante) + tomar turno.
+  Smoke browser completo verde x2 (23 interactables, showcase E/Esc, 5
+  dialogos, ficha carnet, pasado 29 interactables); el unico error de
+  consola es el 504 transitorio de vite (gotcha conocido). Nota perf: 5
+  NPCs + lotes clinicos — medir en C15 igual que aula/corpoelec.
 - [2026-07-05] sala `corpoelec` HECHA en commit `46f28551` — primer
   consumidor real de officeLayout + softwareShowcase (3 demos intranet
   2013, badge OFFLINE). 5 NPCs (2C+2P+1J): los 2 arboles ricos existentes

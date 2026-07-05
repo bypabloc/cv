@@ -10,15 +10,19 @@
 
 | Commit | Que | Estado |
 | --- | --- | --- |
-| C2 | infra RoomId->8 + rename cima->destacame (stubs) | PENDIENTE |
-| C3 | paleta paredes-blancas (themes.ts) | PENDIENTE |
-| C4 | helpers canon (officeLayout/npcCoworkers/wallArt/softwareShowcase) + UI action showcase | PENDIENTE |
-| C5 | partir pasados en rooms/past/<id>.ts + dispatcher | PENDIENTE |
-| C6 | Aula refactor (prueba del canon, AC-9) | PENDIENTE |
-| — | **STOP GATE**: verificar Etapa 1, commit, NO merge, detener | — |
+| C2 | infra RoomId->8 + rename cima->destacame (stubs) | HECHO `9163b0cb` |
+| C3 | paleta paredes-blancas (themes.ts) | HECHO `5405fee8` |
+| C4 | helpers canon (officeLayout/npcCoworkers/wallArt/softwareShowcase) + UI action showcase | HECHO `3db5f9dc` |
+| C5 | partir pasados en rooms/past/<id>.ts + dispatcher | HECHO `8acd4915` |
+| C6 | Aula refactor (prueba del canon, AC-9) | HECHO `af82a772` |
+| — | **STOP GATE**: verificar Etapa 1, commit, NO merge, detener | **ALCANZADO 2026-07-05** |
 
-> Cuando ETAPA 1 este HECHA, marcar aqui y **detener el plan**. Las salas de
-> Etapa 2 se ejecutan en sesiones separadas.
+> ETAPA 1 HECHA (2026-07-05). Verificada: typecheck + lint + build verdes,
+> smoke con browser (8 salas montan via teleport, showcase abre/cicla/cierra
+> end-to-end sobre un arnes temporal en el stub de ipasme, luego revertido).
+> Decisiones de ejecucion: destacame quedo como STUB VACIO (literal del
+> plan); los stubs llevan placeholder "en construccion" (cartel + barrera
+> con el acento). Las salas de Etapa 2 se ejecutan en sesiones separadas.
 
 ## ETAPA 2 — salas 1 a 1 (orden cronologico sugerido, se puede saltar)
 
@@ -47,4 +51,8 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
 
-- (vacio: aun no se ha implementado ninguna sala)
+- [2026-07-05] ETAPA 1 HECHA (C1 `2196e8dd` .. C6 `af82a772`) — canon
+  completo en props.ts; aula con 6 NPCs (profesor y 2 compañeros nuevos)
+  y 3 cuadros wallArt (1 inspeccionable); pasados partidos (aula intacto,
+  corpoelec movido, cima eliminado); nota perf: el aula con 6 NPCs puede
+  rozar los 100 draw calls — medir/optimizar en C15.

@@ -119,7 +119,12 @@ export const WORLD: Record<
 > = {
   aula: { load: () => import('./rooms/aula') },
   corpoelec: { load: () => import('./rooms/corpoelec') },
-  cima: { load: () => import('./rooms/cima') },
+  ipasme: { load: () => import('./rooms/ipasme') },
+  cofasa: { load: () => import('./rooms/cofasa') },
+  dibal: { load: () => import('./rooms/dibal') },
+  goodmeal: { load: () => import('./rooms/goodmeal') },
+  destacame: { load: () => import('./rooms/destacame') },
+  futuro: { load: () => import('./rooms/futuro') },
 }
 
 const loadPast = (): Promise<{ default: PastFactory }> => import('./rooms/past')

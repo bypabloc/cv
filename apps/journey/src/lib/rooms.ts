@@ -1,34 +1,123 @@
 /**
  * @module rooms
  * @description Mapeo data-driven de las experiences reales de
- *   `@portfolio/content` a las salas del journey 3D (Propuesta A).
- *   Deriva los textos del plan: RETOS <- summary + responsibilities;
- *   APRENDIZAJES <- achievements + linea de skills. Las salas son
- *   UNIFORMES en tamaño/luz/densidad (decision del usuario 2026-07-04:
- *   se replico el tamaño de la CIMA a todas — el viejo eje seniority
- *   escala/luz/densidad se elimino).
+ *   `@portfolio/content` a las 8 salas del journey 3D (plan
+ *   journey-salas-estandar). Deriva los textos: RETOS <- summary +
+ *   responsibilities; APRENDIZAJES <- achievements + linea de skills.
+ *   Las salas son UNIFORMES en tamaño/luz/densidad. La sala `futuro` es
+ *   SINTETICA (sin slug): sus textos son literales del spec.
  *
- * @see docs/specs/journey-3d-cv/07-implementacion-mvp.md
+ * @see docs/specs/journey-salas-estandar/README.md
  */
 import { type Experience, experiences } from '@portfolio/content'
 
-export type RoomId = 'aula' | 'corpoelec' | 'cima'
+export type RoomId =
+  | 'aula'
+  | 'corpoelec'
+  | 'ipasme'
+  | 'cofasa'
+  | 'dibal'
+  | 'goodmeal'
+  | 'destacame'
+  | 'futuro'
 export type Locale = 'es' | 'en'
+
+export interface RoomTexts {
+  title: string
+  role: string
+  period: string
+  /** Empresas de la etapa (unidas con ' · ' si son varias). */
+  company: string
+  /** Pais(es) del cliente/empleador de la etapa. */
+  country: string
+  retos: string[]
+  aprendizajes: string[]
+  /** Reseña completa del cuaderno-atril (parrafos para el panel DOM). */
+  resena: string[]
+  /** Lineas cortas del cuaderno 3D (empresa, lugar, periodo, rol). */
+  notebook: string[]
+}
 
 export interface RoomSpec {
   id: RoomId
-  /** Experiences (por slug) que alimentan la sala, en orden narrativo. */
+  /** Experiences (por slug) que alimentan la sala; vacio = sala sintetica. */
   slugs: readonly string[]
   title: Record<Locale, string>
-  /** Que representa la sala (la reseña del cuaderno-atril). */
   represents: Record<Locale, string>
+  /** Sala sintetica (sin slug): año + textos literales (ej. `futuro`). */
+  synthetic?: { year: string; texts: Record<Locale, RoomTexts> }
+}
+
+/** Reseña de la sala `futuro` (spec.represents + resena del cuaderno). */
+const FUTURO_REPRESENTS: Record<Locale, string> = {
+  es:
+    'Esta sala representa hacia donde voy: el siguiente escalon tecnico, ' +
+    'la IA a escala y la mentoria. El recorrido termina mirando adelante ' +
+    '— hablemos.',
+  en:
+    "This room represents where I'm heading: the next technical step, " +
+    "AI at scale, and mentorship. The journey ends looking forward — let's " +
+    'talk.',
+}
+
+/** Textos literales de la sala `futuro` (vision profesional, sin slug). */
+const FUTURO_TEXTS: Record<Locale, RoomTexts> = {
+  es: {
+    title: 'Futuro — Vision',
+    role: 'Rumbo a Staff / Principal Engineer',
+    period: 'proximamente',
+    company: 'Pablo Contreras',
+    country: 'donde el reto valga la pena',
+    retos: [
+      'Crecer a Staff / Principal Engineer sin dejar de construir.',
+      'Llevar la IA (vibe coding, AI workflows) a la escala de un equipo.',
+      'Multiplicar impacto via mentoria y liderazgo tecnico.',
+    ],
+    aprendizajes: [
+      'Arquitectura de sistemas distribuidos robustos y observables.',
+      'Equipos que shippean con estandares y sin acoplamiento.',
+      'Adopcion de IA productiva y segura como norma del equipo.',
+    ],
+    resena: [FUTURO_REPRESENTS.es],
+    notebook: [
+      'Pablo Contreras',
+      'lo que viene',
+      'proximamente',
+      'Staff / Principal',
+    ],
+  },
+  en: {
+    title: 'Future — Vision',
+    role: 'Toward Staff / Principal Engineer',
+    period: 'coming soon',
+    company: 'Pablo Contreras',
+    country: 'wherever the challenge is worth it',
+    retos: [
+      'Grow into Staff / Principal Engineer while still building.',
+      'Bring AI (vibe coding, AI workflows) to team scale.',
+      'Multiply impact through mentorship and technical leadership.',
+    ],
+    aprendizajes: [
+      'Architecture of robust, observable distributed systems.',
+      'Teams that ship with standards and without coupling.',
+      'Productive, safe AI adoption as a team norm.',
+    ],
+    resena: [FUTURO_REPRESENTS.en],
+    notebook: [
+      'Pablo Contreras',
+      "what's next",
+      'coming soon',
+      'Staff / Principal',
+    ],
+  },
 }
 
 /**
- * Specs del MVP (3 salas). Agregar una sala = agregar un spec (+ su escena).
- * El orden del array ES el orden narrativo del recorrido (plan, Mapa de salas).
+ * Specs de las 8 salas. Agregar una sala = agregar un spec (+ su escena).
+ * El orden del array ES el orden narrativo del recorrido (cronologico +
+ * futuro; plan journey-salas-estandar, Mapa de salas).
  */
-export const MVP_ROOM_SPECS: readonly RoomSpec[] = [
+export const ROOM_SPECS: readonly RoomSpec[] = [
   {
     id: 'aula',
     slugs: ['iai', 'projects-degrees'],
@@ -63,37 +152,90 @@ export const MVP_ROOM_SPECS: readonly RoomSpec[] = [
     },
   },
   {
-    id: 'cima',
-    slugs: ['destacame-architect'],
-    title: { es: 'La Cima — Destacame', en: 'The Summit — Destacame' },
+    id: 'ipasme',
+    slugs: ['ipasme'],
+    title: { es: 'IPASME — Salud', en: 'IPASME — Healthcare' },
     represents: {
       es:
-        'Esta sala representa la cima actual: arquitectura frontend y ' +
-        'microservicios para fintech, orquestando operaciones en Chile y ' +
-        'Mexico.',
+        'Esta sala representa el salto a los datos sensibles: historias ' +
+        'medicas digitales que reemplazaron las carpetas de papel de un ' +
+        'servicio de salud.',
       en:
-        'This room represents the current summit: frontend architecture ' +
-        'and microservices for fintech, orchestrating operations across ' +
-        'Chile and Mexico.',
+        'This room represents the leap into sensitive data: digital ' +
+        'medical records replacing the paper folders of a healthcare ' +
+        'service.',
     },
   },
+  {
+    id: 'cofasa',
+    slugs: ['cofasa'],
+    title: {
+      es: 'Cofasa — Laboratorio farmaceutico',
+      en: 'Cofasa — Pharma lab',
+    },
+    represents: {
+      es:
+        'Esta sala representa la industria: monitorear la produccion ' +
+        'farmaceutica y convertir las paradas de maquina en indicadores ' +
+        'accionables.',
+      en:
+        'This room represents industry: monitoring pharma production and ' +
+        'turning machine downtime into actionable indicators.',
+    },
+  },
+  {
+    id: 'dibal',
+    slugs: ['dibal'],
+    title: { es: 'Dibal — SaaS POS', en: 'Dibal — POS SaaS' },
+    represents: {
+      es:
+        'Esta sala representa el liderazgo desde cero: primer ' +
+        'desarrollador y tech lead de un SaaS POS multi-restaurante con ' +
+        'facturacion electronica en Peru.',
+      en:
+        'This room represents leadership from scratch: first developer ' +
+        'and tech lead of a multi-restaurant POS SaaS with e-invoicing ' +
+        'in Peru.',
+    },
+  },
+  {
+    id: 'goodmeal',
+    slugs: ['goodmeal'],
+    title: { es: 'GoodMeal — Food-tech', en: 'GoodMeal — Food tech' },
+    represents: {
+      es:
+        'Esta sala representa el food-tech con proposito: liderar la ' +
+        'migracion del frontend a Vue 3 y reforzar el flujo de pagos de ' +
+        'una app anti-desperdicio en Chile.',
+      en:
+        'This room represents purposeful food tech: leading the frontend ' +
+        'migration to Vue 3 and hardening the payments flow of an ' +
+        'anti-waste app in Chile.',
+    },
+  },
+  {
+    id: 'destacame',
+    slugs: ['destacame-architect', 'destacame-frontend'],
+    title: { es: 'Destacame — Fintech', en: 'Destacame — Fintech' },
+    represents: {
+      es:
+        'Esta sala representa la cima actual: interfaces y arquitectura ' +
+        'fintech para Destacame — PagaloAqui con la banca y el producto ' +
+        'propio — orquestando operaciones en Chile y Mexico.',
+      en:
+        'This room represents the current summit: fintech interfaces and ' +
+        'architecture for Destacame — PagaloAqui with the banks and the ' +
+        'core product — orchestrating operations across Chile and Mexico.',
+    },
+  },
+  {
+    id: 'futuro',
+    slugs: [],
+    title: { es: 'Futuro — Vision', en: 'Future — Vision' },
+    represents: FUTURO_REPRESENTS,
+    synthetic: { year: '∞', texts: FUTURO_TEXTS },
+  },
 ]
-
-export interface RoomTexts {
-  title: string
-  role: string
-  period: string
-  /** Empresas de la etapa (unidas con ' · ' si son varias). */
-  company: string
-  /** Pais(es) del cliente/empleador de la etapa. */
-  country: string
-  retos: string[]
-  aprendizajes: string[]
-  /** Reseña completa del cuaderno-atril (parrafos para el panel DOM). */
-  resena: string[]
-  /** Lineas cortas del cuaderno 3D (empresa, lugar, periodo, rol). */
-  notebook: string[]
-}
 
 export interface RoomDef {
   id: RoomId
@@ -181,22 +323,39 @@ function buildTexts(
 
 /**
  * @function buildRooms
- * @description Construye las salas del MVP desde las experiences reales.
+ * @description Construye las 8 salas desde las experiences reales.
  *   Falla rapido (build-time) si un slug del spec no existe en el CV.
+ *   Las salas sinteticas (slugs vacios, ej. `futuro`) usan sus textos
+ *   literales del spec.
  *
  * @param {readonly Experience[]} source - experiences (default: las reales)
  * @returns {RoomDef[]} salas en orden narrativo
- * @throws {Error} si un slug del spec no esta en source
+ * @throws {Error} si un slug del spec no esta en source, o si una sala
+ *   sintetica no trae `synthetic`
  *
  * @example
  *   const rooms = buildRooms()
  *   rooms[0].id            // 'aula'
- *   rooms[2].texts.es.period  // '2022 — hoy'
+ *   rooms[7].id            // 'futuro'
  */
 export function buildRooms(
   source: readonly Experience[] = experiences,
 ): RoomDef[] {
-  return MVP_ROOM_SPECS.map((spec, order) => {
+  return ROOM_SPECS.map((spec, order) => {
+    if (spec.slugs.length === 0) {
+      if (!spec.synthetic) {
+        throw new Error(
+          `buildRooms: sala sintetica "${spec.id}" sin textos literales`,
+        )
+      }
+      return {
+        id: spec.id,
+        order,
+        slugs: spec.slugs,
+        year: spec.synthetic.year,
+        texts: spec.synthetic.texts,
+      }
+    }
     const exps = spec.slugs.map((slug) => {
       const found = source.find((e) => e.slug === slug)
       if (!found) {

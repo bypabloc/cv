@@ -89,7 +89,7 @@ function profileFor(ctx: AudioContext, out: GainNode, room: RoomId): Voice[] {
         oscVoice(ctx, out, 120, 0.028, 'triangle'),
         noiseVoice(ctx, out, 500, 0.02),
       ]
-    case 'cima':
+    case 'destacame':
       // pad sintetico premium: dos senos detuneados + sub
       return [
         oscVoice(ctx, out, 110, 0.03, 'sine', -6),

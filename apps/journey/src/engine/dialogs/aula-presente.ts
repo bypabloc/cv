@@ -1,10 +1,12 @@
 /**
  * @module dialogs/aula-presente (engine)
  * @description Arboles de dialogo de la Sala 0 presente: aula/laboratorio
- *   universitario (~2015). La estudiante de ronda (rescate de las dos tesis,
- *   red cliente-servidor del proyecto IAI, capacitacion de ~6 estudiantes),
- *   la tesista aliviada y el tesista de los sockets (C, puerto 8080,
- *   ping-pong en 2ms, base de datos comun).
+ *   universitario (~2015). Los tres NPCs recuerdan como Pablo colaboro con
+ *   cada uno: la estudiante de ronda (una de los ~6 que Pablo capacito para
+ *   sostener la red cliente-servidor del proyecto IAI), la tesista aliviada
+ *   (su tesis fue una de las dos que Pablo reencamino en una semana) y el
+ *   tesista de los sockets (Pablo le enseño C, el puerto 8080 y el primer
+ *   pong en 2ms).
  */
 import { defineDialog, type NpcDialog } from '../dialog'
 
@@ -13,16 +15,16 @@ export const AULA_PRESENTE_DIALOGS = {
     name: { es: 'Estudiante de ronda', en: 'Student on rounds' },
     chatter: [
       {
-        es: 'Ping... pong. Me encanta ese sonido.',
-        en: 'Ping... pong. I love that sound.',
+        es: 'Ping... pong. Pablo decia que era el latido del aula.',
+        en: 'Ping... pong. Pablo called it the heartbeat of the room.',
       },
       {
         es: '¿Ya viste las pizarras de RETOS y APRENDIZAJES?',
         en: 'Have you seen the CHALLENGES and LESSONS boards?',
       },
       {
-        es: 'Meses trabados... y en una semana, listos.',
-        en: 'Months stuck... and in one week, back on track.',
+        es: 'Meses trabados... y Pablo los reencamino en una semana.',
+        en: 'Months stuck... and Pablo turned it around in a week.',
       },
       {
         es: 'Este laboratorio es mi lugar favorito.',
@@ -38,19 +40,19 @@ export const AULA_PRESENTE_DIALOGS = {
       hub: {
         text: {
           es:
-            '¡Hola! Bienvenido al laboratorio. Aqui pasamos de dos tesis ' +
-            'trabadas a un sistema corriendo en red. Yo hago la ronda: ' +
-            'reviso que cada PC responda. ¿Que te cuento?',
+            '¡Hola! Bienvenido al laboratorio. Yo soy una de los seis ' +
+            'que Pablo capacito para sostener este sistema. Hago la ' +
+            'ronda: reviso que cada PC responda. ¿Que te cuento?',
           en:
-            'Hi! Welcome to the lab. We went from two stuck theses to a ' +
-            'system running on the network. I do the rounds: I check ' +
-            'that every PC responds. What can I tell you?',
+            'Hi! Welcome to the lab. I am one of the six students ' +
+            'Pablo trained to sustain this system. I do the rounds: ' +
+            'I check that every PC responds. What can I tell you?',
         },
         options: [
           {
             label: {
-              es: 'Las dos tesis bloqueadas',
-              en: 'The two blocked theses',
+              es: 'Las dos tesis que Pablo rescato',
+              en: 'The two theses Pablo rescued',
             },
             next: 'tesisIntro',
           },
@@ -63,8 +65,8 @@ export const AULA_PRESENTE_DIALOGS = {
           },
           {
             label: {
-              es: '¿Que se aprende aqui?',
-              en: 'What do you learn here?',
+              es: '¿Que aprendiste de Pablo?',
+              en: 'What did you learn from Pablo?',
             },
             next: 'aprenderIntro',
           },
@@ -82,11 +84,11 @@ export const AULA_PRESENTE_DIALOGS = {
           es:
             'Dos proyectos de grado llevaban meses bloqueados. Meses. ' +
             'Los tesistas venian, tecleaban, borraban... y el reloj ' +
-            'corria hacia la fecha de grado.',
+            'corria hacia la fecha de grado. Hasta que llego Pablo.',
           en:
             'Two thesis projects were blocked for months. Months. The ' +
             'students came in, typed, deleted... and the clock kept ' +
-            'running toward graduation day.',
+            'running toward graduation day. Until Pablo arrived.',
         },
         options: [
           {
@@ -98,8 +100,8 @@ export const AULA_PRESENTE_DIALOGS = {
           },
           {
             label: {
-              es: '¿Y como salieron?',
-              en: 'And how did they get out?',
+              es: '¿Que hizo Pablo?',
+              en: 'What did Pablo do?',
             },
             next: 'tesisAsesor',
           },
@@ -144,12 +146,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Habia miedo de verdad: sin tesis no hay grado. La tesista ' +
-            'de alla casi no dormia. Preguntale: hoy ya lo cuenta ' +
-            'sonriendo.',
+            'de alla casi no dormia. Preguntale por Pablo: hoy lo ' +
+            'cuenta sonriendo.',
           en:
             'There was real fear: no thesis, no degree. The student ' +
-            'over there barely slept. Ask her: today she tells it with ' +
-            'a smile.',
+            'over there barely slept. Ask her about Pablo: today she ' +
+            'tells it with a smile.',
         },
         options: [
           {
@@ -161,8 +163,8 @@ export const AULA_PRESENTE_DIALOGS = {
           },
           {
             label: {
-              es: '¿Quien los rescato?',
-              en: 'Who rescued them?',
+              es: '¿Que hizo Pablo?',
+              en: 'What did Pablo do?',
             },
             next: 'tesisAsesor',
           },
@@ -181,8 +183,8 @@ export const AULA_PRESENTE_DIALOGS = {
         options: [
           {
             label: {
-              es: '¿Quien los rescato?',
-              en: 'Who rescued them?',
+              es: '¿Y que hizo Pablo?',
+              en: 'And what did Pablo do?',
             },
             next: 'tesisAsesor',
           },
@@ -198,13 +200,13 @@ export const AULA_PRESENTE_DIALOGS = {
       tesisAsesor: {
         text: {
           es:
-            'En 2015 llego el asesor de proyectos de grado, con el ' +
-            'proyecto academico IAI bajo el brazo. No toco nada al ' +
-            'llegar: pregunto, leyo y escucho.',
+            'En 2015 llego Pablo como asesor de proyectos de grado, ' +
+            'con el proyecto academico IAI bajo el brazo. No toco nada ' +
+            'al llegar: pregunto, leyo y escucho.',
           en:
-            'In 2015 the thesis advisor arrived, with the IAI academic ' +
-            'project under his arm. He touched nothing on arrival: he ' +
-            'asked, read and listened.',
+            'In 2015 Pablo arrived as thesis advisor, with the IAI ' +
+            'academic project under his arm. He touched nothing on ' +
+            'arrival: he asked, read and listened.',
         },
         options: [
           {
@@ -226,11 +228,11 @@ export const AULA_PRESENTE_DIALOGS = {
       tesisDia1: {
         text: {
           es:
-            'El primer dia solo escucho y leyo todo lo que habia: ' +
-            'borradores, notas, codigo. Decia que opinar antes de ' +
-            'entender sale caro.',
+            'El primer dia Pablo solo escucho y leyo todo lo que ' +
+            'habia: borradores, notas, codigo. Decia que opinar antes ' +
+            'de entender sale caro.',
           en:
-            'On day one he only listened and read everything there ' +
+            'On day one Pablo only listened and read everything there ' +
             'was: drafts, notes, code. He said giving opinions before ' +
             'understanding is expensive.',
         },
@@ -254,12 +256,13 @@ export const AULA_PRESENTE_DIALOGS = {
       tesisDiagnostico: {
         text: {
           es:
-            'El diagnostico fue directo: no faltaba capacidad, faltaba ' +
-            'foco. Demasiados frentes abiertos y ninguna meta medible.',
+            'El diagnostico de Pablo fue directo: no faltaba ' +
+            'capacidad, faltaba foco. Demasiados frentes abiertos y ' +
+            'ninguna meta medible.',
           en:
-            'The diagnosis was direct: ability was not missing, focus ' +
-            'was. Too many open fronts and not a single measurable ' +
-            'goal.',
+            'The diagnosis from Pablo was direct: ability was not ' +
+            'missing, focus was. Too many open fronts and not a ' +
+            'single measurable goal.',
         },
         options: [
           {
@@ -281,12 +284,12 @@ export const AULA_PRESENTE_DIALOGS = {
       tesisPlan: {
         text: {
           es:
-            'Del diagnostico salio un plan de rescate: recortar cada ' +
-            'tesis a su nucleo, ordenar los pasos y ponerles entregas ' +
-            'claras.',
+            'Del diagnostico Pablo saco un plan de rescate: recortar ' +
+            'cada tesis a su nucleo, ordenar los pasos y ponerles ' +
+            'entregas claras.',
           en:
-            'From the diagnosis came a rescue plan: cut each thesis ' +
-            'down to its core, order the steps and set clear ' +
+            'From the diagnosis Pablo built a rescue plan: cut each ' +
+            'thesis down to its core, order the steps and set clear ' +
             'deliverables.',
         },
         options: [
@@ -338,11 +341,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Eran dos tesis distintas, pero el problema era el mismo: ' +
-            'la falta de plan. El mismo metodo las reencamino a las ' +
-            'dos.',
+            'la falta de plan. El mismo metodo de Pablo las reencamino ' +
+            'a las dos.',
           en:
             'They were two different theses, but the problem was the ' +
-            'same: no plan. The same method got both back on track.',
+            'same: no plan. The same method from Pablo got both back ' +
+            'on track.',
         },
         options: [
           {
@@ -364,13 +368,13 @@ export const AULA_PRESENTE_DIALOGS = {
       tesisSemana: {
         text: {
           es:
-            'En mas o menos una semana, las dos estaban reencaminadas. ' +
-            'Una semana contra meses de bloqueo. No fue magia: fue ' +
-            'metodo.',
+            'En mas o menos una semana por tesis, Pablo las dejo ' +
+            'reencaminadas. Una semana contra meses de bloqueo. No fue ' +
+            'magia: fue metodo.',
           en:
-            'In about one week, both were back on track. One week ' +
-            'against months of blockage. It was not magic: it was ' +
-            'method.',
+            'In about one week each, Pablo had them back on track. ' +
+            'One week against months of blockage. It was not magic: ' +
+            'it was method.',
         },
         options: [
           {
@@ -426,13 +430,13 @@ export const AULA_PRESENTE_DIALOGS = {
       tesisSecreto: {
         text: {
           es:
-            'Dos habitos: diagnosticar antes de tocar nada y documentar ' +
-            'cada decision. Suena simple. Lo dificil es hacerlo ' +
-            'siempre.',
+            'Dos habitos de Pablo: diagnosticar antes de tocar nada y ' +
+            'documentar cada decision. Suena simple. Lo dificil es ' +
+            'hacerlo siempre.',
           en:
-            'Two habits: diagnose before touching anything and document ' +
-            'every decision. It sounds simple. The hard part is doing ' +
-            'it always.',
+            'Two habits from Pablo: diagnose before touching anything ' +
+            'and document every decision. It sounds simple. The hard ' +
+            'part is doing it always.',
         },
         options: [
           {
@@ -455,12 +459,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Ahi los tienes, tecleando. Ella por fin compila y celebra ' +
-            'cada paso. El te recita el servidor de sockets sin ' +
-            'respirar.',
+            'cada paso. El te recita el servidor de sockets que armo ' +
+            'con Pablo sin respirar.',
           en:
             'There they are, typing. She finally compiles and ' +
-            'celebrates every step. He recites the socket server ' +
-            'without taking a breath.',
+            'celebrates every step. He recites the socket server he ' +
+            'built with Pablo without taking a breath.',
         },
         options: [
           {
@@ -483,12 +487,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Que estar meses trabado no es falta de talento: es falta ' +
-            'de plan. Una semana bien dirigida vale mas que un ' +
-            'semestre a ciegas.',
+            'de plan. Una semana bien guiada vale mas que un semestre ' +
+            'a ciegas. Eso me lo mostro Pablo.',
           en:
             'That being stuck for months is not lack of talent: it is ' +
             'lack of a plan. One well-guided week beats a blind ' +
-            'semester.',
+            'semester. Pablo showed me that.',
         },
         options: [
           {
@@ -500,8 +504,8 @@ export const AULA_PRESENTE_DIALOGS = {
           },
           {
             label: {
-              es: '¿Que mas se aprende aqui?',
-              en: 'What else do you learn here?',
+              es: '¿Que mas te enseño Pablo?',
+              en: 'What else did Pablo teach?',
             },
             next: 'aprenderIntro',
           },
@@ -511,12 +515,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Cada pupitre tiene una PC conectada a la red local del ' +
-            'aula. Es una arquitectura cliente-servidor que diseño el ' +
-            'asesor.',
+            'aula. Es la arquitectura cliente-servidor que diseño ' +
+            'Pablo para el proyecto IAI.',
           en:
-            'Every desk has a PC connected to the local network of the ' +
-            'room. It is a client-server architecture designed by the ' +
-            'advisor.',
+            'Every desk has a PC connected to the local network of ' +
+            'the room. It is the client-server architecture Pablo ' +
+            'designed for the IAI project.',
         },
         options: [
           {
@@ -601,11 +605,10 @@ export const AULA_PRESENTE_DIALOGS = {
       redDiseno: {
         text: {
           es:
-            'El asesor. Separar cliente y servidor sobre la red local ' +
-            'hizo el sistema mas claro: cada parte con su ' +
-            'responsabilidad.',
+            'Pablo. Separar cliente y servidor sobre la red local hizo ' +
+            'el sistema mas claro: cada parte con su responsabilidad.',
           en:
-            'The advisor. Splitting client and server over the local ' +
+            'Pablo did. Splitting client and server over the local ' +
             'network made the system clearer: each part with its own ' +
             'responsibility.',
         },
@@ -657,13 +660,13 @@ export const AULA_PRESENTE_DIALOGS = {
       redSocket: {
         text: {
           es:
-            'Cada PC corre un servidor de sockets escrito en C. Hace ' +
-            'bind al puerto 8080, listen, y se queda esperando ' +
-            'conexiones.',
+            'Cada PC corre servidor.c, un servidor de sockets escrito ' +
+            'en C. Hace bind al puerto 8080, listen, y se queda ' +
+            'esperando conexiones.',
           en:
-            'Every PC runs a socket server written in C. It binds to ' +
-            'port 8080, listens, and stays there waiting for ' +
-            'connections.',
+            'Every PC runs servidor.c, a socket server written in C. ' +
+            'It binds to port 8080, listens, and stays there waiting ' +
+            'for connections.',
         },
         options: [
           {
@@ -685,12 +688,12 @@ export const AULA_PRESENTE_DIALOGS = {
       redC: {
         text: {
           es:
-            'Porque C no esconde nada: bind, listen, accept, a mano. ' +
-            'Si entiendes sockets en C, entiendes lo que corre debajo ' +
-            'de todo lo demas.',
+            'Pablo lo decia siempre: C no esconde nada. Si entiendes ' +
+            'bind, listen y accept a mano, entiendes lo que corre ' +
+            'debajo de todo lo demas.',
           en:
-            'Because C hides nothing: bind, listen, accept, by hand. ' +
-            'If you understand sockets in C, you understand what runs ' +
+            'Pablo always said it: C hides nothing. If you understand ' +
+            'bind, listen and accept by hand, you understand what runs ' +
             'under everything else.',
         },
         options: [
@@ -766,12 +769,13 @@ export const AULA_PRESENTE_DIALOGS = {
       red2ms: {
         text: {
           es:
-            'En red local, 2ms es un latido sano. Lo medimos siempre, ' +
-            'porque lo que no se mide no se puede diagnosticar.',
+            'En red local, 2ms es un latido sano. Lo medimos siempre; ' +
+            'Pablo repetia que lo que no se mide no se puede ' +
+            'diagnosticar.',
           en:
-            'On a local network, 2ms is a healthy heartbeat. We always ' +
-            'measure it, because what is not measured cannot be ' +
-            'diagnosed.',
+            'On a local network, 2ms is a healthy heartbeat. We ' +
+            'always measure it; Pablo repeated that what is not ' +
+            'measured cannot be diagnosed.',
         },
         options: [
           {
@@ -793,13 +797,13 @@ export const AULA_PRESENTE_DIALOGS = {
       redFalla: {
         text: {
           es:
-            'Diagnostico, no panico: ¿responde el puerto 8080? ¿corre ' +
-            'el proceso? ¿esta el cable? Se revisa en orden y se anota ' +
-            'lo encontrado.',
+            'Diagnostico, no panico. Asi nos entreno Pablo: ¿responde ' +
+            'el puerto 8080? ¿corre el proceso? ¿esta el cable? Se ' +
+            'revisa en orden y se anota lo encontrado.',
           en:
-            'Diagnosis, not panic: does port 8080 answer? Is the ' +
-            'process running? Is the cable in? You check in order and ' +
-            'write down findings.',
+            'Diagnosis, not panic. That is how Pablo trained us: does ' +
+            'port 8080 answer? Is the process running? Is the cable ' +
+            'in? You check in order and write down findings.',
         },
         options: [
           {
@@ -821,12 +825,12 @@ export const AULA_PRESENTE_DIALOGS = {
       redMantener: {
         text: {
           es:
-            'Nosotros. El asesor capacito a unos seis estudiantes para ' +
+            'Nosotros. Pablo capacito a unos seis estudiantes para ' +
             'sostener la solucion sin el. Yo soy una de ellos; por eso ' +
             'la ronda.',
           en:
-            'We do. The advisor trained about six students to sustain ' +
-            'the solution without him. I am one of them; hence the ' +
+            'We do. Pablo trained about six students to sustain the ' +
+            'solution without him. I am one of them; hence the ' +
             'rounds.',
         },
         options: [
@@ -857,12 +861,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Recorro las PCs, lanzo un ping en cada una y anoto el ' +
-            'tiempo. Doce rondas al dia. Si algo tarda de mas, se ' +
-            'investiga.',
+            'tiempo, como nos mostro Pablo. Doce rondas al dia. Si ' +
+            'algo tarda de mas, se investiga.',
           en:
             'I walk past the PCs, fire a ping on each one and write ' +
-            'down the time. Twelve rounds a day. If one takes too ' +
-            'long, we investigate.',
+            'down the time, the way Pablo showed us. Twelve rounds a ' +
+            'day. If one takes too long, we investigate.',
         },
         options: [
           {
@@ -884,13 +888,13 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderIntro: {
         text: {
           es:
-            'Aqui se aprende mas que a programar: arquitectura, ' +
+            'De Pablo aprendi mas que a programar: arquitectura, ' +
             'diagnostico y documentacion. Todo dentro del proyecto ' +
             'academico IAI.',
           en:
-            'Here you learn more than programming: architecture, ' +
-            'diagnosis and documentation. All within the IAI academic ' +
-            'project.',
+            'From Pablo I learned more than programming: ' +
+            'architecture, diagnosis and documentation. All within ' +
+            'the IAI academic project.',
         },
         options: [
           {
@@ -919,12 +923,12 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderCapacitacion: {
         text: {
           es:
-            'Fuimos unos seis estudiantes. El asesor no daba recetas: ' +
-            'nos enseño a diagnosticar y a sostener el sistema por ' +
-            'nuestra cuenta.',
+            'Fuimos unos seis estudiantes. Pablo no daba recetas: nos ' +
+            'enseño a diagnosticar y a sostener el sistema por nuestra ' +
+            'cuenta.',
           en:
-            'We were about six students. The advisor gave no recipes: ' +
-            'he taught us to diagnose and to sustain the system on our ' +
+            'We were about six students. Pablo gave no recipes: he ' +
+            'taught us to diagnose and to sustain the system on our ' +
             'own.',
         },
         options: [
@@ -947,12 +951,12 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderSostener: {
         text: {
           es:
-            'Esa era la meta: que la solucion no dependiera de una ' +
-            'sola persona. Si el asesor no esta, el laboratorio sigue ' +
+            'Esa era la meta de Pablo: que la solucion no dependiera ' +
+            'de una sola persona. Si el no esta, el laboratorio sigue ' +
             'andando.',
           en:
-            'That was the goal: that the solution would not depend on ' +
-            'one person. If the advisor is away, the lab keeps ' +
+            'That was the goal Pablo set: that the solution would not ' +
+            'depend on one person. If he is away, the lab keeps ' +
             'running.',
         },
         options: [
@@ -975,13 +979,13 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderFunciono: {
         text: {
           es:
-            'Mira alrededor: todo corre y el no esta en esta sala. La ' +
-            'mejor señal de una buena capacitacion es dejar de ' +
+            'Mira alrededor: todo corre y Pablo no esta en esta sala. ' +
+            'La mejor señal de una buena capacitacion es dejar de ' +
             'necesitar al maestro.',
           en:
-            'Look around: everything runs and he is not in this room. ' +
-            'The best sign of good training is no longer needing the ' +
-            'teacher.',
+            'Look around: everything runs and Pablo is not in this ' +
+            'room. The best sign of good training is no longer ' +
+            'needing the teacher.',
         },
         options: [
           {
@@ -1003,13 +1007,13 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderDoc: {
         text: {
           es:
-            'Cada decision quedo escrita: diagramas, pasos, hasta el ' +
-            'ping-pong. Aqui la documentacion tecnica es habito, no ' +
-            'castigo.',
+            'Pablo dejo cada decision escrita: diagramas, pasos, hasta ' +
+            'el ping-pong. Gracias a el, aqui la documentacion tecnica ' +
+            'es habito, no castigo.',
           en:
-            'Every decision was written down: diagrams, steps, even ' +
-            'the ping-pong. Here technical documentation is a habit, ' +
-            'not a punishment.',
+            'Pablo left every decision written down: diagrams, steps, ' +
+            'even the ping-pong. Thanks to him, technical ' +
+            'documentation here is a habit, not a punishment.',
         },
         options: [
           {
@@ -1057,12 +1061,12 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderDiagnostico: {
         text: {
           es:
-            'Antes de tocar, entender. Es la regla numero uno del ' +
-            'asesor. Un buen diagnostico ahorra semanas de arreglos a ' +
+            'Antes de tocar, entender. Es la regla numero uno de ' +
+            'Pablo. Un buen diagnostico ahorra semanas de arreglos a ' +
             'ciegas.',
           en:
-            'Before touching, understand. That is rule number one from ' +
-            'the advisor. A good diagnosis saves weeks of blind fixes.',
+            'Before touching, understand. That is rule number one ' +
+            'from Pablo. A good diagnosis saves weeks of blind fixes.',
         },
         options: [
           {
@@ -1091,13 +1095,13 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderHabito: {
         text: {
           es:
-            'Lo mejor: esos habitos se van con uno. Diagnostico y ' +
-            'documentacion sirven en cualquier proyecto, no solo en ' +
-            'esta aula.',
+            'Lo mejor: los habitos que nos dejo Pablo se van con uno. ' +
+            'Diagnostico y documentacion sirven en cualquier proyecto, ' +
+            'no solo en esta aula.',
           en:
-            'The best part: those habits leave with you. Diagnosis and ' +
-            'documentation work on any project, not only in this ' +
-            'classroom.',
+            'The best part: the habits Pablo left us travel with you. ' +
+            'Diagnosis and documentation work on any project, not ' +
+            'only in this classroom.',
         },
         options: [
           {
@@ -1147,11 +1151,13 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderReto: {
         text: {
           es:
-            'El mayor: dos tesis con meses de bloqueo. Hoy vive en la ' +
-            'pizarra de APRENDIZAJES, con su fecha de 2015 y todo.',
+            'El mayor: dos tesis con meses de bloqueo que Pablo ' +
+            'reencamino. Hoy vive en la pizarra de APRENDIZAJES, con ' +
+            'su fecha de 2015 y todo.',
           en:
-            'The biggest: two theses blocked for months. Today it ' +
-            'lives on the LESSONS board, with its 2015 date and all.',
+            'The biggest: two theses blocked for months that Pablo ' +
+            'got back on track. Today it lives on the LESSONS board, ' +
+            'with its 2015 date and all.',
         },
         options: [
           {
@@ -1173,12 +1179,13 @@ export const AULA_PRESENTE_DIALOGS = {
       aprenderFuturo: {
         text: {
           es:
-            'Asi es. Mi plan: seguir documentando y algun dia ' +
-            'capacitar yo a los siguientes seis. La ronda no se hereda ' +
-            'sola.',
+            'Asi es. Mi plan: seguir documentando como Pablo y algun ' +
+            'dia capacitar yo a los siguientes seis. La ronda no se ' +
+            'hereda sola.',
           en:
-            'It does. My plan: keep documenting and someday train the ' +
-            'next six myself. The rounds do not inherit themselves.',
+            'It does. My plan: keep documenting like Pablo and ' +
+            'someday train the next six myself. The rounds do not ' +
+            'inherit themselves.',
         },
         options: [
           {
@@ -1207,16 +1214,16 @@ export const AULA_PRESENTE_DIALOGS = {
         en: 'It compiles! It finally compiles!',
       },
       {
-        es: 'Paso tres del plan: casi listo.',
-        en: 'Step three of the plan: almost done.',
+        es: 'Paso tres del plan de Pablo: casi listo.',
+        en: 'Step three of the plan from Pablo: almost done.',
       },
       {
         es: 'Meses trabada... nunca mas.',
         en: 'Months stuck... never again.',
       },
       {
-        es: 'Hoy si me voy a graduar.',
-        en: 'Today I really will graduate.',
+        es: 'Gracias a Pablo, hoy si me voy a graduar.',
+        en: 'Thanks to Pablo, today I really will graduate.',
       },
     ],
     start: 'hub',
@@ -1224,13 +1231,13 @@ export const AULA_PRESENTE_DIALOGS = {
       hub: {
         text: {
           es:
-            '¿Hm? Perdona, estaba celebrando: mi tesis compila. Hace ' +
-            'unos meses no te habria ni mirado, estaba hundida. ¿Que ' +
-            'quieres saber?',
+            '¿Hm? Perdona, estaba celebrando: mi tesis compila. Era ' +
+            'una de las dos que llevaban meses trabadas, hasta que ' +
+            'Pablo se sento conmigo. ¿Que quieres saber?',
           en:
-            'Hm? Sorry, I was celebrating: my thesis compiles. A few ' +
-            'months ago I would not even have looked up, I was ' +
-            'sinking. What do you want to know?',
+            'Hm? Sorry, I was celebrating: my thesis compiles. It was ' +
+            'one of the two stuck for months, until Pablo sat down ' +
+            'with me. What do you want to know?',
         },
         options: [
           {
@@ -1242,8 +1249,8 @@ export const AULA_PRESENTE_DIALOGS = {
           },
           {
             label: {
-              es: 'El plan de rescate',
-              en: 'The rescue plan',
+              es: 'El dia que llego Pablo',
+              en: 'The day Pablo arrived',
             },
             next: 'planLlegada',
           },
@@ -1351,18 +1358,18 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Una vez. Cerre la laptop y dije "hasta aqui". Esa misma ' +
-            'semana llego el asesor al laboratorio. El universo tiene ' +
-            'su timing.',
+            'semana Pablo llego al laboratorio. El universo tiene su ' +
+            'timing.',
           en:
             'Once. I closed the laptop and said "this is it". That ' +
-            'same week the advisor arrived at the lab. The universe ' +
-            'has its timing.',
+            'same week Pablo arrived at the lab. The universe has its ' +
+            'timing.',
         },
         options: [
           {
             label: {
-              es: '¿Que hizo el asesor?',
-              en: 'What did the advisor do?',
+              es: '¿Que hizo Pablo?',
+              en: 'What did Pablo do?',
             },
             next: 'planLlegada',
           },
@@ -1378,19 +1385,19 @@ export const AULA_PRESENTE_DIALOGS = {
       planLlegada: {
         text: {
           es:
-            'Llego en 2015, como asesor de proyectos de grado. Lo ' +
-            'primero que dijo fue algo como "primero entendamos, ' +
-            'despues opinamos".',
+            'Pablo llego en 2015 como asesor de proyectos de grado. ' +
+            'El primer dia no toco mi codigo: se sento a mi lado, me ' +
+            'escucho y leyo todo lo que yo habia escrito.',
           en:
-            'He arrived in 2015 as a thesis advisor. The first thing ' +
-            'he said was something like "first we understand, then we ' +
-            'give opinions".',
+            'Pablo arrived in 2015 as thesis advisor. On day one he ' +
+            'did not touch my code: he sat next to me, listened, and ' +
+            'read everything I had written.',
         },
         options: [
           {
             label: {
-              es: '¿Y entendio?',
-              en: 'And did he understand?',
+              es: '¿Y que te dijo?',
+              en: 'And what did he tell you?',
             },
             next: 'planDiagnostico',
           },
@@ -1406,13 +1413,13 @@ export const AULA_PRESENTE_DIALOGS = {
       planDiagnostico: {
         text: {
           es:
-            'Leyo mis borradores, mis notas, todo. Y me devolvio un ' +
-            'diagnostico que dolio de lo preciso: no me faltaba ' +
-            'capacidad, me faltaba plan.',
+            'Me devolvio un diagnostico que dolio de lo preciso: no ' +
+            'me faltaba capacidad, me faltaba plan. Y mi alcance era ' +
+            'tres tesis en una.',
           en:
-            'He read my drafts, my notes, everything. And he handed ' +
-            'back a diagnosis so precise it hurt: I was not lacking ' +
-            'ability, I was lacking a plan.',
+            'He handed back a diagnosis so precise it hurt: I was not ' +
+            'lacking ability, I was lacking a plan. And my scope was ' +
+            'three theses in one.',
         },
         options: [
           {
@@ -1434,13 +1441,13 @@ export const AULA_PRESENTE_DIALOGS = {
       planPasos: {
         text: {
           es:
-            'Recortamos la tesis a su nucleo y la partimos en pasos ' +
-            'con entregas claras. De "terminar la tesis" a "hoy cierro ' +
-            'este capitulo".',
+            'Pablo recorto mi tesis a su nucleo y la partio conmigo ' +
+            'en pasos con entregas claras. De "terminar la tesis" a ' +
+            '"hoy cierro este capitulo".',
           en:
-            'We cut the thesis down to its core and split it into ' +
-            'steps with clear deliverables. From "finish the thesis" ' +
-            'to "close this chapter today".',
+            'Pablo cut my thesis down to its core and split it with ' +
+            'me into steps with clear deliverables. From "finish the ' +
+            'thesis" to "close this chapter today".',
         },
         options: [
           {
@@ -1462,11 +1469,13 @@ export const AULA_PRESENTE_DIALOGS = {
       planSemana: {
         text: {
           es:
-            'En una semana estaba reencaminada. Una semana, despues de ' +
-            'meses. Llore un poco. De alegria, que conste en acta.',
+            'En una semana estaba reencaminada. Una semana, despues ' +
+            'de meses. Cuando Pablo dijo "listo, ya tienes rumbo", ' +
+            'llore. De alivio, que conste en acta.',
           en:
             'In one week I was back on track. One week, after months. ' +
-            'I cried a little. Tears of joy, for the record.',
+            'When Pablo said "done, you have a course now", I cried. ' +
+            'Tears of relief, for the record.',
         },
         options: [
           {
@@ -1488,13 +1497,13 @@ export const AULA_PRESENTE_DIALOGS = {
       planEscribir: {
         text: {
           es:
-            'Escribir el diagnostico. Ver el problema en papel lo ' +
-            'achica: deja de ser un monstruo y pasa a ser una lista de ' +
-            'pasos.',
+            'Escribir el diagnostico, como me enseño Pablo. Ver el ' +
+            'problema en papel lo achica: deja de ser un monstruo y ' +
+            'pasa a ser una lista de pasos.',
           en:
-            'Writing the diagnosis down. Seeing the problem on paper ' +
-            'shrinks it: it stops being a monster and becomes a list ' +
-            'of steps.',
+            'Writing the diagnosis down, the way Pablo taught me. ' +
+            'Seeing the problem on paper shrinks it: it stops being a ' +
+            'monster and becomes a list of steps.',
         },
         options: [
           {
@@ -1543,13 +1552,13 @@ export const AULA_PRESENTE_DIALOGS = {
       ahoraDos: {
         text: {
           es:
-            'Primero graduarme. Despues quiero quedarme cerca del ' +
-            'grupo que sostiene el sistema del laboratorio: son unos ' +
-            'seis y enseñan bien.',
+            'Primero graduarme. Despues quiero unirme al grupo que ' +
+            'Pablo capacito para sostener el sistema del laboratorio: ' +
+            'son unos seis y enseñan bien.',
           en:
-            'First, graduate. Then I want to stay close to the group ' +
-            'that sustains the lab system: about six of them, and they ' +
-            'teach well.',
+            'First, graduate. Then I want to join the group Pablo ' +
+            'trained to sustain the lab system: about six of them, ' +
+            'and they teach well.',
         },
         options: [
           {
@@ -1572,11 +1581,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Hasta documento sin que me lo pidan. Si mi yo de hace ' +
-            'unos meses me viera, no me lo creeria. El habito se pega.',
+            'unos meses me viera, no me lo creeria. Los habitos de ' +
+            'Pablo se pegan.',
           en:
-            'I even document without being asked. If my past self from ' +
-            'months ago saw me, she would not believe it. The habit ' +
-            'sticks.',
+            'I even document without being asked. If my past self ' +
+            'from months ago saw me, she would not believe it. The ' +
+            'habits from Pablo stick.',
         },
         options: [
           {
@@ -1598,13 +1608,13 @@ export const AULA_PRESENTE_DIALOGS = {
       ahoraCuatro: {
         text: {
           es:
-            'El te dira que documentar no es opcional y que su ' +
-            'servidor responde en dos milisegundos. Tiene razon. Pero ' +
-            'no se lo digas de mi parte.',
+            'Al de alla Pablo le enseño sockets y a debuggear la red. ' +
+            'Te recitara su servidor y sus dos milisegundos sin ' +
+            'respirar. Pero no le digas que te lo dije.',
           en:
-            'He will tell you documenting is not optional and that his ' +
-            'server answers in two milliseconds. He is right. But do ' +
-            'not tell him I said so.',
+            'Pablo taught the guy over there sockets and how to debug ' +
+            'the network. He will recite his server and his two ' +
+            'milliseconds nonstop. But do not tell him I said so.',
         },
         options: [
           {
@@ -1627,12 +1637,12 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Que pedir ayuda a tiempo no es fracasar. Del miedo al ' +
-            'alivio hubo una semana y un buen plan. Ojala lo hubiera ' +
-            'sabido antes.',
+            'alivio hubo una semana y el plan de Pablo. Ojala lo ' +
+            'hubiera conocido antes.',
           en:
-            'That asking for help in time is not failing. Between fear ' +
-            'and relief there was one week and a good plan. I wish I ' +
-            'had known sooner.',
+            'That asking for help in time is not failing. Between ' +
+            'fear and relief there was one week and the plan from ' +
+            'Pablo. I wish I had met him sooner.',
         },
         options: [
           {
@@ -1657,20 +1667,20 @@ export const AULA_PRESENTE_DIALOGS = {
     name: { es: 'Tesista de los sockets', en: 'Socket thesis student' },
     chatter: [
       {
-        es: 'bind, listen, accept. Como la vida.',
-        en: 'bind, listen, accept. Like life.',
+        es: 'bind, listen, accept. Como me enseño Pablo.',
+        en: 'bind, listen, accept. Just like Pablo taught me.',
       },
       {
         es: 'Dos milisegundos. Ni uno mas.',
         en: 'Two milliseconds. Not one more.',
       },
       {
-        es: 'Si no esta documentado, no existe.',
-        en: 'If it is not documented, it does not exist.',
+        es: 'Si no esta documentado, no existe. Regla de Pablo.',
+        en: 'If it is not documented, it does not exist. Rule from Pablo.',
       },
       {
-        es: 'El servidor escucha. Aprende de el.',
-        en: 'The server listens. Learn from it.',
+        es: 'Aquel primer pong... todavia lo escucho.',
+        en: 'That first pong... I can still hear it.',
       },
     ],
     start: 'hub',
@@ -1678,13 +1688,13 @@ export const AULA_PRESENTE_DIALOGS = {
       hub: {
         text: {
           es:
-            '¿Necesitas algo? Estoy contando milisegundos. Es broma. A ' +
-            'medias. Puedo hablarte del servidor, de la base de datos ' +
-            'o de documentar.',
+            '¿Necesitas algo? Estoy contando milisegundos. Es broma. ' +
+            'A medias. Puedo hablarte de mi servidor, de la base de ' +
+            'datos o de lo que aprendi con Pablo.',
           en:
             'Need something? I am counting milliseconds. Joking. Half ' +
-            'joking. I can talk about the server, the database, or ' +
-            'documenting.',
+            'joking. I can talk about my server, the database, or ' +
+            'what I learned with Pablo.',
         },
         options: [
           {
@@ -1720,13 +1730,13 @@ export const AULA_PRESENTE_DIALOGS = {
       sockUno: {
         text: {
           es:
-            'Cada PC del aula corre un servidor de sockets escrito en ' +
-            'C. Hace bind al puerto 8080, listen, y espera conexiones. ' +
-            'Paciencia de monje.',
+            'Mi tesis es cliente-servidor: servidor.c en C hace bind ' +
+            'al puerto 8080, listen, y espera conexiones. Pablo me ' +
+            'enseño cada llamada, a mano, sin atajos.',
           en:
-            'Every PC in the room runs a socket server written in C. ' +
-            'It binds to port 8080, listens, and waits for ' +
-            'connections. Monk-level patience.',
+            'My thesis is client-server: servidor.c in C binds to ' +
+            'port 8080, listens, and waits for connections. Pablo ' +
+            'taught me every call, by hand, no shortcuts.',
         },
         options: [
           {
@@ -1748,9 +1758,9 @@ export const AULA_PRESENTE_DIALOGS = {
       sockDos: {
         text: {
           es:
-            'El cliente manda "ping". El servidor responde "pong". Dos ' +
-            'milisegundos. He visto conversaciones humanas mucho menos ' +
-            'eficientes.',
+            'El cliente manda "ping". El servidor responde "pong". ' +
+            'Dos milisegundos. He visto conversaciones humanas mucho ' +
+            'menos eficientes.',
           en:
             'The client sends "ping". The server answers "pong". Two ' +
             'milliseconds. I have seen far less efficient human ' +
@@ -1759,30 +1769,30 @@ export const AULA_PRESENTE_DIALOGS = {
         options: [
           {
             label: {
+              es: '¿Como fue el primer pong?',
+              en: 'How was the first pong?',
+            },
+            next: 'pongPrimero',
+          },
+          {
+            label: {
               es: '¿Por que en C?',
               en: 'Why in C?',
             },
             next: 'sockTres',
-          },
-          {
-            label: {
-              es: '¿Y si no responde?',
-              en: 'What if it does not answer?',
-            },
-            next: 'sockCinco',
           },
         ],
       },
       sockTres: {
         text: {
           es:
-            'Porque C no perdona ni esconde. Si entiendes bind, listen ' +
-            'y accept a mano, entiendes lo que corre debajo de ' +
-            'cualquier cosa moderna.',
+            'Porque C no perdona ni esconde. Pablo me lo dijo el ' +
+            'primer dia: si entiendes bind, listen y accept a mano, ' +
+            'entiendes lo que corre debajo de todo lo moderno.',
           en:
-            'Because C forgives nothing and hides nothing. If you ' +
-            'understand bind, listen and accept by hand, you ' +
-            'understand what runs under anything modern.',
+            'Because C forgives nothing and hides nothing. Pablo told ' +
+            'me on day one: if you understand bind, listen and accept ' +
+            'by hand, you understand what runs under anything modern.',
         },
         options: [
           {
@@ -1804,13 +1814,13 @@ export const AULA_PRESENTE_DIALOGS = {
       sockCuatro: {
         text: {
           es:
-            'En red local, es lo esperado. Lo importante es medirlo ' +
+            'En red local, es lo esperado. Pablo me enseño a medirlo ' +
             'siempre: un numero que no mides es una opinion, y las ' +
             'opiniones no compilan.',
           en:
-            'On a local network, it is what you expect. The key is to ' +
-            'always measure it: an unmeasured number is an opinion, ' +
-            'and opinions do not compile.',
+            'On a local network, it is what you expect. Pablo taught ' +
+            'me to always measure it: an unmeasured number is an ' +
+            'opinion, and opinions do not compile.',
         },
         options: [
           {
@@ -1832,13 +1842,13 @@ export const AULA_PRESENTE_DIALOGS = {
       sockCinco: {
         text: {
           es:
-            'Entonces tengo trabajo. Diagnostico en orden: ¿corre el ' +
-            'proceso? ¿escucha el 8080? ¿esta el cable? Y todo se ' +
-            'anota. Todo.',
+            'Entonces diagnostico en orden, como me entreno Pablo: ' +
+            '¿corre el proceso? ¿escucha el 8080? ¿esta el cable? Y ' +
+            'todo se anota. Todo.',
           en:
-            'Then I have work to do. Diagnosis in order: is the ' +
-            'process running? Is 8080 listening? Is the cable in? And ' +
-            'everything gets written down. Everything.',
+            'Then diagnosis in order, the way Pablo drilled me: is ' +
+            'the process running? Is 8080 listening? Is the cable in? ' +
+            'And everything gets written down. Everything.',
         },
         options: [
           {
@@ -1854,6 +1864,36 @@ export const AULA_PRESENTE_DIALOGS = {
               en: 'Write even that down?',
             },
             next: 'docUno',
+          },
+        ],
+      },
+      pongPrimero: {
+        text: {
+          es:
+            'Semanas peleando con la red y nada. Una tarde Pablo se ' +
+            'quedo conmigo a debuggear: IPs, cables, el bind, todo en ' +
+            'orden. Y de pronto: pong. Grite tan fuerte que toda el ' +
+            'aula volteo.',
+          en:
+            'Weeks fighting the network and nothing. One afternoon ' +
+            'Pablo stayed with me to debug: IPs, cables, the bind, ' +
+            'all in order. And suddenly: pong. I yelled so loud the ' +
+            'whole room turned around.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que cambio ese dia?',
+              en: 'What changed that day?',
+            },
+            next: 'rescTres',
+          },
+          {
+            label: {
+              es: 'Volver',
+              en: 'Back',
+            },
+            next: 'hub',
           },
         ],
       },
@@ -1942,19 +1982,19 @@ export const AULA_PRESENTE_DIALOGS = {
       bdCuatro: {
         text: {
           es:
-            'El asesor, en 2015: cliente-servidor sobre la red local. ' +
-            'Arquitectura simple y clara. Lo simple bien hecho ' +
-            'envejece bien.',
+            'Pablo, en 2015: cliente-servidor sobre la red local del ' +
+            'laboratorio. Arquitectura simple y clara. Lo simple bien ' +
+            'hecho envejece bien.',
           en:
-            'The advisor, in 2015: client-server over the local ' +
-            'network. Simple, clear architecture. Simple done well ' +
+            'Pablo did, in 2015: client-server over the local network ' +
+            'of the lab. Simple, clear architecture. Simple done well ' +
             'ages well.',
         },
         options: [
           {
             label: {
-              es: '¿El mismo del rescate de tesis?',
-              en: 'The one from the thesis rescue?',
+              es: '¿El mismo que rescato tu tesis?',
+              en: 'The one who rescued your thesis?',
             },
             next: 'rescUno',
           },
@@ -1970,13 +2010,13 @@ export const AULA_PRESENTE_DIALOGS = {
       docUno: {
         text: {
           es:
-            'Documentar no es opcional. El codigo dice como; el ' +
-            'documento dice por que. Y el "por que" es lo primero que ' +
-            'se olvida.',
+            'Documentar no es opcional; eso me lo enseño Pablo. El ' +
+            'codigo dice como; el documento dice por que. Y el "por ' +
+            'que" es lo primero que se olvida.',
           en:
-            'Documenting is not optional. The code says how; the ' +
-            'document says why. And the "why" is the first thing you ' +
-            'forget.',
+            'Documenting is not optional; Pablo taught me that. The ' +
+            'code says how; the document says why. And the "why" is ' +
+            'the first thing you forget.',
         },
         options: [
           {
@@ -1998,15 +2038,15 @@ export const AULA_PRESENTE_DIALOGS = {
       docDos: {
         text: {
           es:
-            'No. Cuando el asesor hablo de diagnostico y documentacion ' +
+            'No. Cuando Pablo hablo de diagnostico y documentacion ' +
             'como habitos, pense: burocracia. Despues lei mi propio ' +
             'codigo de hace un mes, sin documentar. No entendi nada. ' +
             'Fin del debate.',
           en:
-            'No. When the advisor talked about diagnosis and ' +
-            'documentation as habits, I thought: bureaucracy. Then I ' +
-            'read my own month-old undocumented code. I understood ' +
-            'nothing. End of debate.',
+            'No. When Pablo talked about diagnosis and documentation ' +
+            'as habits, I thought: bureaucracy. Then I read my own ' +
+            'month-old undocumented code. I understood nothing. End ' +
+            'of debate.',
         },
         options: [
           {
@@ -2083,13 +2123,13 @@ export const AULA_PRESENTE_DIALOGS = {
       rescUno: {
         text: {
           es:
-            'El mismo. Mi tesis estuvo meses trabada. Su plan de ' +
-            'rescate me reencamino en una semana. No fue magia: fue ' +
-            'diagnostico. Y si, esta documentado.',
+            'Si. Mi tesis estuvo meses trabada; era una de las dos ' +
+            'que Pablo rescato. Su plan me reencamino en una semana. ' +
+            'No fue magia: fue diagnostico. Y esta documentado.',
           en:
-            'The same one. My thesis was stuck for months. His rescue ' +
-            'plan got me back on track in one week. It was not magic: ' +
-            'it was diagnosis. And yes, it is documented.',
+            'Yes. My thesis was stuck for months; it was one of the ' +
+            'two Pablo rescued. His plan got me back on track in one ' +
+            'week. It was not magic: it was diagnosis. Documented.',
         },
         options: [
           {
@@ -2112,20 +2152,20 @@ export const AULA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Como un accept() que nunca recibe conexion: tecnicamente ' +
-            'vivo, funcionalmente inutil. Ahora avanzo. Paso a paso, ' +
-            'con entregas claras.',
+            'vivo, funcionalmente inutil. Apagaba la pantalla cuando ' +
+            'alguien pasaba, de pura pena.',
           en:
             'Like an accept() that never receives a connection: ' +
-            'technically alive, functionally useless. Now I move. Step ' +
-            'by step, with clear deliverables.',
+            'technically alive, functionally useless. I switched the ' +
+            'screen off when anyone walked by, out of embarrassment.',
         },
         options: [
           {
             label: {
-              es: 'Bonita metafora',
-              en: 'Nice metaphor',
+              es: '¿Y como saliste?',
+              en: 'And how did you get out?',
             },
-            next: 'rescTres',
+            next: 'pongPrimero',
           },
           {
             label: {
@@ -2139,13 +2179,13 @@ export const AULA_PRESENTE_DIALOGS = {
       rescTres: {
         text: {
           es:
-            'No es metafora, es diagnostico. La otra tesista lo cuenta ' +
-            'con lagrimas de alegria. Yo lo cuento en milisegundos. ' +
-            'Cada quien.',
+            'Desde ese pong tecleo con la pantalla encendida, a la ' +
+            'vista de todos. La otra tesista lo cuenta con lagrimas ' +
+            'de alegria. Yo lo cuento en milisegundos. Cada quien.',
           en:
-            'It is not a metaphor, it is a diagnosis. The other thesis ' +
-            'student tells it with tears of joy. I tell it in ' +
-            'milliseconds. To each their own.',
+            'Since that pong I type with the screen on, in plain ' +
+            'sight. The other thesis student tells it with tears of ' +
+            'joy. I tell it in milliseconds. To each their own.',
         },
         options: [
           {

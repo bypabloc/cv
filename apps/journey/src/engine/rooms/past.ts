@@ -451,7 +451,7 @@ function aulaPast(
   const karateTalk = npcTalk({
     id: 'talk-past-aula-karate',
     npc: karateka,
-    dialog: AULA_PASADO_DIALOGS['pablo-karate'],
+    dialog: AULA_PASADO_DIALOGS['pablo-karateka'],
     openDialog: actions.openDialog,
     onGreet: () => {
       karateka.jump()
@@ -501,7 +501,7 @@ function aulaPast(
   const gamerTalk = npcTalk({
     id: 'talk-past-aula-gamer',
     npc: gamer,
-    dialog: AULA_PASADO_DIALOGS['amigo-gamer'],
+    dialog: AULA_PASADO_DIALOGS['pablo-gamer'],
     openDialog: actions.openDialog,
   })
   interactables.push(gamerTalk.interactable)
@@ -534,7 +534,7 @@ function aulaPast(
   const tecnicoTalk = npcTalk({
     id: 'talk-past-aula-tecnico',
     npc: tecnicoAc,
-    dialog: AULA_PASADO_DIALOGS['tecnico-ac'],
+    dialog: AULA_PASADO_DIALOGS['pablo-tecnico'],
     openDialog: actions.openDialog,
   })
   interactables.push(tecnicoTalk.interactable)

@@ -3,8 +3,8 @@
  * @description Props procedurales compartidos entre salas manga-ink:
  *   escritorio, monitor (estatico e intercambiable), pizarra de ficha con
  *   titulo + tiza, GRIETA TEMPORAL al pasado (rasgadura con vortice-reloj),
- *   atril con el cuaderno-reseña de la etapa y pila de papeles. Todo
- *   primitivas del pool toon — cero .glb, cero red.
+ *   pedestal con el cuaderno-reseña FLOTANTE de la etapa y pila de
+ *   papeles. Todo primitivas del pool toon — cero .glb, cero red.
  */
 import {
   type CanvasTexture,
@@ -13,6 +13,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
+  PointLight,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
@@ -602,8 +603,10 @@ function timeRift(accent: string, signText: string): PortalRift {
 }
 
 /** Grieta-portal al "antes" de la sala (teleporta a la sala espejo).
- *  SIEMPRE en el muro IZQUIERDO de la sala (el pasado queda a la
- *  izquierda — decision del usuario 2026-07-04). */
+ *  SIEMPRE en el muro que queda a la MANO IZQUIERDA del jugador que
+ *  avanza hacia la siguiente sala — el muro +X: mirando +Z, la derecha
+ *  es -X (decision del usuario 2026-07-04; antes estaba espejado en -X,
+ *  que en primera persona es la derecha). */
 export function pastPortal(opts: {
   room: RoomLayout
   position: readonly [number, number, number]
@@ -723,11 +726,17 @@ function notebookTexture(opts: {
   })
 }
 
+/** Altura base del cuaderno flotante sobre su pedestal. */
+const NOTE_FLOAT_Y = 1.42
+
 /**
- * Pilar-atril con el cuaderno de la etapa (a la DERECHA de cada sala, el
- * espejo del portal-al-pasado de la izquierda): resumen corto legible en
- * el cuaderno 3D (empresa, lugar, periodo, rol) y E abre el panel DOM con
- * la reseña completa. Mismo lenguaje visual que el pedestal de contacto.
+ * Pedestal con el cuaderno de la etapa FLOTANDO encima (a la mano
+ * DERECHA del jugador que avanza — muro -X — junto a la puerta de
+ * salida, el espejo de la grieta-al-pasado del muro izquierdo). El
+ * cuaderno levita separado del pilar con vaiven + halo del acento +
+ * luz propia (tier full): llama la atencion como la grieta. Mismo
+ * lenguaje visual que el pedestal de contacto de la CIMA. El resumen
+ * corto se lee en la pagina 3D y E abre el panel DOM con la reseña.
  */
 export function lecternNotebook(opts: {
   roomIndex: number
@@ -738,46 +747,54 @@ export function lecternNotebook(opts: {
   notebook: { title: string; lines: readonly string[] }
   /** Reseña completa para el panel DOM (titulo + parrafos). */
   story: { title: string; paragraphs: readonly string[] }
+  /** Luz puntual de acento sobre el cuaderno (solo tier full). */
+  withLight?: boolean
   onOpen(title: string, paragraphs: readonly string[]): void
 }): PropHandle {
   const group = new Group()
   group.position.set(opts.position[0], opts.position[1], opts.position[2])
   group.rotation.y = opts.rotationY ?? 0
   const trim = opts.theme.trim ?? opts.theme.accent
-  // base + columna del pilar
-  group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 0.5, h: 0.06, d: 0.5, x: 0, y: 0.03, z: 0 },
-        { w: 0.3, h: 0.86, d: 0.3, x: 0, y: 0.49, z: 0 },
-      ],
-      toonMat('#232634'),
-      { castShadow: true },
-    ),
+  const units = unitGeo()
+  // pilar cilindrico (mismo lenguaje que el pedestal de contacto)
+  const pedestal = new Mesh(units.cylinder, toonMat('#141a26'))
+  pedestal.scale.set(0.5, 0.9, 0.5)
+  pedestal.position.y = 0.45
+  pedestal.castShadow = true
+  // filo superior con el trim de la sala (guiño)
+  const lip = new Mesh(
+    units.cylinder,
+    toonMat(trim, { emissive: trim, emissiveIntensity: 0.35 }),
   )
-  // tapa inclinada del atril hacia el lector + filo con el trim (guiño)
-  const top = boxMesh(0.64, 0.05, 0.52, toonMat('#3a3040'))
-  top.position.set(0, 0.98, 0.05)
-  top.rotation.x = 0.42
-  top.castShadow = true
-  const lip = boxMesh(
-    0.64,
-    0.03,
-    0.03,
-    toonMat(trim, { emissive: trim, emissiveIntensity: 0.3 }),
-  )
-  lip.position.set(0, 0.87, 0.27)
-  lip.rotation.x = 0.42
+  lip.scale.set(0.54, 0.04, 0.54)
+  lip.position.y = 0.92
   lip.userData.noOutline = true
-  // cuaderno abierto sobre el atril (top de la pagina hacia el fondo)
+  group.add(pedestal, lip)
+  // cuaderno FLOTANDO separado del pilar: pagina vertical hacia la sala
+  // + halo del acento detras (el pulso lo anima el update)
+  const float = new Group()
   const page = new Mesh(
-    new PlaneGeometry(0.56, 0.46),
+    new PlaneGeometry(0.62, 0.5),
     new MeshBasicMaterial({ map: notebookTexture(opts.notebook) }),
   )
-  page.position.set(0, 1.02, 0.06)
-  page.rotation.x = -Math.PI / 2 + 0.42
   page.userData.noOutline = true
-  group.add(top, lip, page)
+  const haloMat = new MeshBasicMaterial({
+    color: trim,
+    transparent: true,
+    opacity: 0.26,
+  })
+  const halo = new Mesh(new PlaneGeometry(0.76, 0.62), haloMat)
+  halo.position.z = -0.02
+  halo.userData.noOutline = true
+  float.add(halo, page)
+  float.position.set(0, NOTE_FLOAT_Y, 0.02)
+  float.rotation.x = -0.1
+  group.add(float)
+  const light = opts.withLight ? new PointLight(trim, 1.5, 3.5) : null
+  if (light) {
+    light.position.set(0, NOTE_FLOAT_Y + 0.35, 0.4)
+    group.add(light)
+  }
   return {
     group,
     interactable: {
@@ -787,6 +804,16 @@ export function lecternNotebook(opts: {
       radius: 2.2,
       label: NOTE_LABEL,
       onActivate: () => opts.onOpen(opts.story.title, opts.story.paragraphs),
+    },
+    update: (t) => {
+      // levita: vaiven vertical + balanceo suave + halo/luz latiendo
+      float.position.y = NOTE_FLOAT_Y + Math.sin(t * 1.7) * 0.06
+      float.rotation.y = Math.sin(t * 0.8) * 0.16
+      const pulse = (Math.sin(t * 2.3) + 1) / 2
+      haloMat.opacity = 0.2 + pulse * 0.14
+      if (light) {
+        light.intensity = 1.2 + pulse * 0.7
+      }
     },
   }
 }

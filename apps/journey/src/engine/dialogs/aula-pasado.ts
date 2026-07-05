@@ -1,15 +1,16 @@
 /**
  * @module dialogs/aula-pasado (engine)
  * @description Arboles de dialogo del "antes" del aula (sepia, Venezuela
- *   pre-universitaria): el Pablo joven entrenando kihon en el tatami, su
- *   amigo gamer frente al GTA San Andreas y el tecnico veterano de aires
- *   acondicionados que le enseño el oficio.
+ *   pre-universitaria): tres versiones del mismo Pablo joven, partido en
+ *   tres por la grieta temporal — el karateka del tatami, el gamer frente
+ *   al GTA San Andreas y el tecnico de aires que ahorra para la
+ *   universidad. Los tres hablan en primera persona y se reconocen.
  */
 import { defineDialog, type NpcDialog } from '../dialog'
 
 export const AULA_PASADO_DIALOGS = {
-  'pablo-karate': defineDialog({
-    name: { es: 'Pablo joven', en: 'Young Pablo' },
+  'pablo-karateka': defineDialog({
+    name: { es: 'Pablo karateka', en: 'Karateka Pablo' },
     chatter: [
       {
         es: '¡Mil golpes al dia, ni uno menos!',
@@ -36,11 +37,16 @@ export const AULA_PASADO_DIALOGS = {
           es:
             '¡Osu! Perdona el salto, es la costumbre del dojo. ' +
             'Bienvenido a mi rincon: tatami, una PC que ruge y un ' +
-            'aire a medio armar. ¿De que quieres hablar?',
+            'aire a medio armar. Y si: los tres de aqui somos el ' +
+            'mismo Pablo. Despues de ver esa grieta, ser tres ya ' +
+            'no me parece tan raro. ¿De que quieres hablar?',
           en:
             'Osu! Sorry about the jump, dojo habit. Welcome to my ' +
-            'corner: a tatami, a roaring PC and a half-assembled AC ' +
-            'unit. What do you want to talk about?',
+            'corner: a tatami, a roaring PC and a half-assembled ' +
+            'AC unit. And yes: the three of us here are the same ' +
+            'Pablo. After seeing that crack, being three does not ' +
+            'feel that strange anymore. What do you want to talk ' +
+            'about?',
         },
         options: [
           {
@@ -336,18 +342,18 @@ export const AULA_PASADO_DIALOGS = {
       g1: {
         text: {
           es:
-            'Esa PC vieja es mi otro dojo. Paso horas ahi con mi ' +
-            'amigo: el juega en serio, yo hago algo mas ademas de ' +
-            'jugar.',
+            'Esa PC vieja es mi otro dojo. ¿Y el que esta jugando ' +
+            'ahi? Tambien soy yo: mi lado gamer. La grieta nos ' +
+            'partio en tres y a el le toco la silla.',
           en:
-            'That old PC is my other dojo. I spend hours there with ' +
-            'my friend: he plays for real, I do something else ' +
-            'besides playing.',
+            'That old PC is my other dojo. And the one playing ' +
+            'there? Also me: my gamer side. The crack split us in ' +
+            'three and he got the chair.',
         },
         options: [
           {
             label: {
-              es: '¿Que estan jugando?',
+              es: '¿Que estas jugando?',
               en: 'What are you playing?',
             },
             next: 'g2',
@@ -389,11 +395,13 @@ export const AULA_PASADO_DIALOGS = {
       g3: {
         text: {
           es:
-            'El, sin discusion. Yo me distraigo: a mitad de mision ' +
-            'me quedo mirando como se mueve la ciudad, y pierdo.',
+            'Mi yo gamer, sin discusion. Este yo se distrae: a ' +
+            'mitad de mision me quedo mirando como se mueve la ' +
+            'ciudad, y pierdo.',
           en:
-            'He does, no contest. I get distracted: mid-mission I ' +
-            'just stare at how the city moves, and I lose.',
+            'My gamer self, no contest. This me gets distracted: ' +
+            'mid-mission I just stare at how the city moves, and ' +
+            'I lose.',
         },
         options: [
           {
@@ -471,11 +479,11 @@ export const AULA_PASADO_DIALOGS = {
           es:
             'Husmeo. Abro las carpetas del juego y miro los ' +
             'archivos: texturas, sonidos, cosas con nombres raros. ' +
-            'Mi amigo se desespera.',
+            'Mi lado gamer se desespera.',
           en:
             'I snoop. I open the game folders and look at the ' +
             'files: textures, sounds, things with weird names. My ' +
-            'friend despairs.',
+            'gamer side despairs.',
         },
         options: [
           {
@@ -697,13 +705,13 @@ export const AULA_PASADO_DIALOGS = {
       a8: {
         text: {
           es:
-            'Un tecnico veterano, ese que esta alla arrodillado. ' +
-            'Sabe escuchar maquinas como otros escuchan musica. ' +
-            'Aprendo mirandolo.',
+            'Un maestro veterano me enseño el oficio; hoy anda en ' +
+            'otro techo. ¿Y el que esta arrodillado con el aire? ' +
+            'Tambien soy yo: mi lado tecnico.',
           en:
-            'A veteran technician, the one kneeling over there. He ' +
-            'listens to machines the way others listen to music. I ' +
-            'learn by watching him.',
+            'A veteran master taught me the trade; he is on some ' +
+            'other rooftop today. And the one kneeling by the AC ' +
+            'unit? Also me: my technician side.',
         },
         options: [
           {
@@ -954,11 +962,14 @@ export const AULA_PASADO_DIALOGS = {
           es:
             'Intuicion de karateka. Miras este lugar como quien ' +
             'mira una foto vieja: con cariño y con ventaja. Nadie ' +
-            'mira asi su presente.',
+            'mira asi su presente. Y oye: al que la grieta partio ' +
+            'en tres, nada le parece raro ya.',
           en:
             'Karateka intuition. You look at this place like ' +
             'someone looking at an old photo: with fondness and an ' +
-            'advantage. Nobody sees their present like that.',
+            'advantage. Nobody sees their present like that. And ' +
+            'hey: nothing looks strange anymore to someone the ' +
+            'crack split in three.',
         },
         options: [
           { label: { es: 'Touche', en: 'Touche' }, next: 'f3' },
@@ -1059,8 +1070,8 @@ export const AULA_PASADO_DIALOGS = {
       },
     },
   }),
-  'amigo-gamer': defineDialog({
-    name: { es: 'Amigo gamer', en: 'Gamer friend' },
+  'pablo-gamer': defineDialog({
+    name: { es: 'Pablo gamer', en: 'Gamer Pablo' },
     chatter: [
       {
         es: 'CJ, sigue el punto rojo... ¡el rojo!',
@@ -1071,12 +1082,16 @@ export const AULA_PASADO_DIALOGS = {
         en: 'This mission is rigged, I swear.',
       },
       {
-        es: 'Pablo, suelta los archivos y juega.',
-        en: 'Pablo, drop the files and play.',
+        es: 'Estos creditos no se saltan. Jamas.',
+        en: 'You never skip these credits. Never.',
       },
       {
-        es: 'Una partida mas y me voy. Bueno, dos.',
-        en: 'One more game and I leave. Okay, two.',
+        es: 'Una partida mas y estudio. Bueno, dos.',
+        en: 'One more game and I study. Okay, two.',
+      },
+      {
+        es: 'El del tatami tambien soy yo. Largo de contar.',
+        en: 'The one on the tatami is also me. Long story.',
       },
     ],
     start: 'hub',
@@ -1085,12 +1100,14 @@ export const AULA_PASADO_DIALOGS = {
         text: {
           es:
             'Espera, espera... dejame guardar la partida. Listo. ' +
-            'Hola. Si buscas a Pablo, esta alla saltando. Si ' +
-            'buscas al bueno del juego, ese soy yo.',
+            'Hola. Si, yo tambien soy Pablo: el mismo que salta en ' +
+            'el tatami y el que pelea con ese aire. La grieta nos ' +
+            'repartio los hobbies. ¿Que quieres saber?',
           en:
-            'Wait, wait... let me save the game. Done. Hi. If you ' +
-            'want Pablo, he is over there jumping. If you want the ' +
-            'good player, that would be me.',
+            'Wait, wait... let me save the game. Done. Hi. Yes, I ' +
+            'am also Pablo: the same one jumping on the tatami and ' +
+            'the one fighting that AC unit. The crack split our ' +
+            'hobbies. What do you want to know?',
         },
         options: [
           {
@@ -1102,10 +1119,10 @@ export const AULA_PASADO_DIALOGS = {
           },
           {
             label: {
-              es: 'Hablame de Pablo',
-              en: 'Tell me about Pablo',
+              es: 'Eso de ser tres, explica',
+              en: 'Explain the three of you',
             },
-            next: 'p1',
+            next: 's1',
           },
           {
             label: {
@@ -1119,24 +1136,21 @@ export const AULA_PASADO_DIALOGS = {
       j1: {
         text: {
           es:
-            'GTA San Andreas. Salio este año y desde entonces no ' +
-            'dormimos igual. Una ciudad entera para hacer lo que ' +
-            'quieras.',
+            'GTA San Andreas, en esta PC vieja que ruge como un ' +
+            'avion. Un estado entero dentro de una caja beige. ' +
+            'Cada vez que carga me parece un milagro.',
           en:
-            'GTA San Andreas. It came out this year and we have ' +
-            'not slept the same since. A whole city to do ' +
-            'whatever you want.',
+            'GTA San Andreas, on this old PC that roars like a ' +
+            'plane. A whole state inside a beige box. Every time ' +
+            'it loads it feels like a miracle.',
         },
         options: [
           {
-            label: { es: '¿Tan bueno es?', en: 'Is it that good?' },
+            label: { es: '¿Corre bien?', en: 'Does it run well?' },
             next: 'j2',
           },
           {
-            label: {
-              es: '¿Juegan por turnos?',
-              en: 'Do you take turns?',
-            },
+            label: { es: '¿Y juegas bien?', en: 'And do you play well?' },
             next: 'j3',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
@@ -1145,19 +1159,19 @@ export const AULA_PASADO_DIALOGS = {
       j2: {
         text: {
           es:
-            'Es gigante. Tres ciudades, campo, desierto... todo ' +
-            'dentro de esta pobre PC que ya venia cansada de los ' +
-            'noventa.',
+            'Se arrastra en las persecuciones, pero corre. Cuando ' +
+            'bajan los frames pienso: algo ahi adentro trabaja ' +
+            'demasiado. ¿Que sera?',
           en:
-            'It is huge. Three cities, countryside, desert... all ' +
-            'inside this poor PC that was already tired from the ' +
-            'nineties.',
+            'It crawls during chases, but it runs. When the frames ' +
+            'drop I think: something in there is working too hard. ' +
+            'What could it be?',
         },
         options: [
           {
             label: {
-              es: '¿Y corre bien?',
-              en: 'And does it run well?',
+              es: '¿Y eso te intriga?',
+              en: 'Does that intrigue you?',
             },
             next: 'j4',
           },
@@ -1167,21 +1181,21 @@ export const AULA_PASADO_DIALOGS = {
       j3: {
         text: {
           es:
-            'Turnos, si. El problema es el turno de Pablo: agarra ' +
-            'la bici, pedalea dos cuadras y se queda viendo el ' +
-            'atardecer del juego.',
+            'Mejor que el karateka, que se distrae con el ' +
+            'atardecer del juego. Aunque... el karateka soy yo. ' +
+            'Digamos que gano y pierdo a la vez.',
           en:
-            "Turns, yes. The problem is Pablo's turn: he grabs " +
-            'the bike, pedals two blocks and just stares at the ' +
-            'in-game sunset.',
+            'Better than the karateka, who gets distracted by the ' +
+            'in-game sunset. Although... the karateka is me. Let ' +
+            'us say I win and lose at the same time.',
         },
         options: [
           {
             label: {
-              es: '¿Mirando el atardecer?',
-              en: 'Staring at the sunset?',
+              es: '¿Que te distrae tanto?',
+              en: 'What distracts you so much?',
             },
-            next: 'j5',
+            next: 'j4',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
@@ -1189,17 +1203,20 @@ export const AULA_PASADO_DIALOGS = {
       j4: {
         text: {
           es:
-            'Se arrastra en las persecuciones, pero corre. Pablo ' +
-            'dice que cuando bajan los frames "la maquina esta ' +
-            'pensando". Rarisimo.',
+            'Un dia deje correr los creditos COMPLETOS y vi pasar ' +
+            'cientos de nombres. Personas reales hicieron este ' +
+            'mundo. Personas como yo.',
           en:
-            'It crawls during chases, but it runs. Pablo says that ' +
-            'when the frames drop "the machine is thinking". So ' +
-            'weird.',
+            'One day I let the credits roll ALL the way and saw ' +
+            'hundreds of names go by. Real people built this ' +
+            'world. People like me.',
         },
         options: [
           {
-            label: { es: '¿Raro por que?', en: 'Weird how?' },
+            label: {
+              es: '¿Y eso que te hizo?',
+              en: 'What did that do to you?',
+            },
             next: 'j5',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
@@ -1208,19 +1225,19 @@ export const AULA_PASADO_DIALOGS = {
       j5: {
         text: {
           es:
-            'No juega como la gente normal. Deja pasar los ' +
-            'creditos COMPLETOS. ¿Quien hace eso? Lee los nombres ' +
-            'como si fueran un poster.',
+            'Me cambio la pregunta. Antes era "¿como se gana?". ' +
+            'Desde esa noche es "¿como se HACE esto?". Y ya no ' +
+            'pude volver atras.',
           en:
-            'He does not play like normal people. He lets the ' +
-            'credits roll ALL the way. Who does that? He reads ' +
-            'the names like a poster.',
+            'It changed my question. It used to be "how do you ' +
+            'win?". Since that night it is "how is this MADE?". ' +
+            'No way back since.',
         },
         options: [
           {
             label: {
-              es: '¿Los creditos del juego?',
-              en: 'The game credits?',
+              es: '¿Y que haces al respecto?',
+              en: 'And what do you do about it?',
             },
             next: 'j6',
           },
@@ -1230,19 +1247,19 @@ export const AULA_PASADO_DIALOGS = {
       j6: {
         text: {
           es:
-            'Los creditos, si. Dice que ahi esta la gente que ' +
-            'HIZO el juego. Y despues abre las carpetas de ' +
-            'instalacion a husmear.',
+            'Husmeo. Abro las carpetas de instalacion y miro los ' +
+            'archivos: texturas, sonidos, cosas con nombres raros. ' +
+            'Un mapa a medio revelar.',
           en:
-            'The credits, yes. He says that is where the people ' +
-            'who MADE the game are. Then he opens the install ' +
-            'folders to snoop.',
+            'I snoop. I open the install folders and look at the ' +
+            'files: textures, sounds, things with weird names. A ' +
+            'half-revealed map.',
         },
         options: [
           {
             label: {
-              es: '¿Y que busca ahi?',
-              en: 'What is he looking for?',
+              es: '¿Entiendes algo?',
+              en: 'Do you understand any of it?',
             },
             next: 'j7',
           },
@@ -1252,19 +1269,21 @@ export const AULA_PASADO_DIALOGS = {
       j7: {
         text: {
           es:
-            'Ni idea. Archivos con nombres raros. Yo le digo "asi ' +
-            'no se juega" y el me contesta "yo juego otro juego". ' +
-            'Filosofo, el tipo.',
+            'Casi nada, y eso es lo mejor: cada archivo es una ' +
+            'pista de como esta armado el sistema por dentro. Una ' +
+            'parte de mi grita "¡asi no se juega!". Yo contesto: ' +
+            '"yo juego otro juego".',
           en:
-            'No idea. Files with weird names. I tell him "that is ' +
-            'not how you play" and he answers "I am playing ' +
-            'another game". A philosopher.',
+            'Almost nothing, and that is the best part: every ' +
+            'file is a clue to how the system is built inside. ' +
+            'Part of me yells "that is not how you play!". I ' +
+            'answer: "I am playing another game".',
         },
         options: [
           {
             label: {
-              es: '¿Y te molesta?',
-              en: 'Does it bother you?',
+              es: '¿A donde lleva ese juego?',
+              en: 'Where does that game lead?',
             },
             next: 'j8',
           },
@@ -1274,196 +1293,181 @@ export const AULA_PASADO_DIALOGS = {
       j8: {
         text: {
           es:
-            'Solo cuando es mi turno y la pantalla esta llena de ' +
-            'carpetas. Pero la verdad... pregunta cosas que yo ' +
-            'nunca me pregunte.',
+            'A una idea fija: quiero construir mis propios mundos. ' +
+            'No solo jugar los que hicieron otros. Que algun dia ' +
+            'alguien lea MI nombre en unos creditos.',
           en:
-            'Only when it is my turn and the screen is full of ' +
-            'folders. But honestly... he asks things I had never ' +
-            'asked myself.',
+            'To one fixed idea: I want to build my own worlds. ' +
+            'Not just play the ones others made. Someday somebody ' +
+            'will read MY name in some credits.',
         },
         options: [
           {
             label: {
-              es: '¿Como que cosas?',
-              en: 'Things like what?',
+              es: '¿Y como piensas lograrlo?',
+              en: 'How will you get there?',
             },
-            next: 'j9',
+            next: 'u1',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      j9: {
+      u1: {
         text: {
           es:
-            '"¿Como sabe el juego donde esta cada carro?" "¿Quien ' +
-            'dibujo esta calle?" "¿Como se HACE esto?" Asi todo ' +
-            'el dia. TODO el dia.',
+            'La universidad es el plan. Computacion. Ahi debe ' +
+            'estar escrito como se hacen estos mundos... o al ' +
+            'menos por donde se empieza.',
           en:
-            '"How does the game know where every car is?" "Who ' +
-            'drew this street?" "How is this MADE?" All day like ' +
-            'that. ALL day.',
+            'University is the plan. Computing. That is where it ' +
+            'must say how these worlds are made... or at least ' +
+            'where to start.',
         },
         options: [
           {
             label: {
-              es: '¿Y tu que respondes?',
-              en: 'What do you answer?',
+              es: '¿Y mientras tanto?',
+              en: 'And in the meantime?',
             },
-            next: 'j10',
+            next: 'u2',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      j10: {
+      u2: {
         text: {
           es:
-            'Que es magia. Pero el no acepta magia como respuesta. ' +
-            'Te apuesto lo que sea a que un dia termina haciendo ' +
-            'estas cosas el.',
+            'Trabajo en equipo conmigo mismo: el tecnico ahorra ' +
+            'reparando aires, el karateka pone la disciplina y yo ' +
+            'pongo la pregunta. No es mal reparto.',
           en:
-            'That it is magic. But he does not accept magic as an ' +
-            'answer. I bet you anything one day he ends up making ' +
-            'these things.',
+            'Teamwork with myself: the technician saves money ' +
+            'fixing AC units, the karateka brings discipline and ' +
+            'I bring the question. Not a bad split.',
         },
         options: [
           {
             label: {
-              es: 'Yo no apostaria en contra',
-              en: 'I would not bet against it',
+              es: '¿Y cual manda?',
+              en: 'Which one is in charge?',
             },
-            next: 'j11',
+            next: 'u3',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      j11: {
+      u3: {
         text: {
           es:
-            'Nadie deberia. Cuando a Pablo se le mete algo, lo ' +
-            'repite hasta que le sale. Lo vi con el karate. Da un ' +
-            'poco de miedo.',
+            'La pregunta manda. "¿Como se HACE esto?" nos levanta ' +
+            'a los tres cada mañana. Bueno, al karateka lo ' +
+            'levanta el kihon, pero es casi lo mismo.',
           en:
-            'Nobody should. When Pablo sets his mind on something, ' +
-            'he repeats it until he gets it. I saw it with karate. ' +
-            'A bit scary.',
+            'The question is in charge. "How is this MADE?" gets ' +
+            'the three of us up every morning. Well, kihon gets ' +
+            'the karateka up, but that is almost the same.',
         },
         options: [
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
           {
             label: {
-              es: 'Suerte con la mision',
-              en: 'Good luck with the mission',
+              es: 'Suerte con esos mundos. Adios',
+              en: 'Good luck with those worlds. Bye',
             },
             next: null,
           },
         ],
       },
-      p1: {
+      s1: {
         text: {
           es:
-            'Pablo es intenso, hermano. Karate al amanecer, aires ' +
-            'todo el dia y esta PC de noche. No se de donde saca ' +
-            'energia.',
+            'Facil: la grieta temporal nos partio en tres. El que ' +
+            'entrena, el que repara y yo. Mismo Pablo, tres ' +
+            'turnos. Ese de alla tambien soy yo.',
           en:
-            'Pablo is intense, brother. Karate at dawn, AC units ' +
-            'all day and this PC at night. Where does the energy ' +
-            'come from?',
+            'Easy: the time crack split us in three. The one ' +
+            'training, the one repairing and me. Same Pablo, ' +
+            'three shifts. That one over there is also me.',
         },
         options: [
           {
             label: {
-              es: '¿Duerme algo?',
-              en: 'Does he sleep at all?',
+              es: '¿Y no te parece raro?',
+              en: 'Does it not feel strange?',
             },
-            next: 'p2',
+            next: 's2',
+          },
+          {
+            label: {
+              es: '¿Quien es el original?',
+              en: 'Which one is the original?',
+            },
+            next: 's3',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      p2: {
+      s2: {
         text: {
           es:
-            'Poco. Dice que ahorra para la universidad y que "la ' +
-            'constancia gana". Yo digo que dormir tambien cuenta, ' +
-            'pero bueno.',
+            '¿Raro? Hay una grieta brillante flotando en medio ' +
+            'del aula. Comparado con eso, ser tres es hasta ' +
+            'comodo: nunca pierdo mi turno en la PC.',
           en:
-            'Not much. He says he is saving for university and ' +
-            'that "consistency wins". I say sleep also counts, ' +
-            'but oh well.',
+            'Strange? There is a glowing crack floating in the ' +
+            'middle of the classroom. Next to that, being three ' +
+            'is even handy: I never lose my turn at the PC.',
         },
         options: [
           {
             label: {
-              es: '¿Tu que opinas?',
-              en: 'What do you think?',
+              es: '¿Y se llevan bien?',
+              en: 'Do you get along?',
             },
-            next: 'p3',
+            next: 's4',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      p3: {
+      s3: {
         text: {
           es:
-            'Que esta medio loco... y que lo va a lograr. Esa ' +
-            'combinacion exacta. Los que lo logran siempre estan ' +
-            'un poco locos, ¿no?',
+            'Los tres. Ninguno es copia: yo pongo la curiosidad, ' +
+            'el karateka la constancia y el tecnico la paciencia. ' +
+            'Juntos somos el Pablo completo.',
           en:
-            'That he is half crazy... and that he will make it. ' +
-            'That exact combo. The ones who make it are always a ' +
-            'little crazy, right?',
+            'All three. None of us is a copy: I bring curiosity, ' +
+            'the karateka brings consistency and the technician ' +
+            'brings patience. Together we are the full Pablo.',
         },
         options: [
           {
             label: {
-              es: '¿Y tu mientras tanto?',
-              en: 'And you, meanwhile?',
+              es: '¿Y se llevan bien?',
+              en: 'Do you get along?',
             },
-            next: 'p4',
+            next: 's4',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      p4: {
+      s4: {
         text: {
           es:
-            'Yo cuido lo importante: la partida guardada y que la ' +
-            'PC no se muera. Alguien tiene que mantener la ' +
-            'infraestructura, ¿no?',
+            'Casi siempre. Discutimos por la silla: yo digo que ' +
+            'husmear archivos es investigar, y otro yo dice que ' +
+            'es perder la mision. Los dos tenemos razon.',
           en:
-            'I take care of what matters: the saved game and ' +
-            'keeping the PC alive. Somebody has to maintain the ' +
-            'infrastructure, right?',
-        },
-        options: [
-          {
-            label: {
-              es: 'Un heroe silencioso',
-              en: 'A silent hero',
-            },
-            next: 'p5',
-          },
-          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
-        ],
-      },
-      p5: {
-        text: {
-          es:
-            'Exacto. Cuando Pablo haga juegos o lo que sea, que se ' +
-            'acuerde de quien le soplaba los trucos. Ese voy a ' +
-            'ser yo.',
-          en:
-            'Exactly. When Pablo makes games or whatever, he ' +
-            'better remember who whispered him the cheat codes. ' +
-            'That will be me.',
+            'Almost always. We argue over the chair: I say that ' +
+            'snooping files is research, and another me says it ' +
+            'is losing the mission. We are both right.',
         },
         options: [
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
           {
             label: {
-              es: 'Quedo registrado. Adios',
-              en: 'Duly noted. Bye',
+              es: 'Que gane el mejor Pablo. Adios',
+              en: 'May the best Pablo win. Bye',
             },
             next: null,
           },
@@ -1471,8 +1475,11 @@ export const AULA_PASADO_DIALOGS = {
       },
     },
   }),
-  'tecnico-ac': defineDialog({
-    name: { es: 'Tecnico veterano', en: 'Veteran technician' },
+  'pablo-tecnico': defineDialog({
+    name: {
+      es: 'Pablo tecnico de aires acondicionados',
+      en: 'AC technician Pablo',
+    },
     chatter: [
       {
         es: 'Este compresor suena a viernes cansado.',
@@ -1483,12 +1490,16 @@ export const AULA_PASADO_DIALOGS = {
         en: 'In this heat, cold air is health.',
       },
       {
-        es: 'Primero se escucha, despues se abre.',
-        en: 'First you listen, then you open it.',
+        es: 'Como decia mi maestro: primero se escucha.',
+        en: 'As my mentor used to say: first you listen.',
       },
       {
-        es: 'Muchacho, ¿y la llave del diez?',
-        en: 'Kid, where is the ten wrench?',
+        es: 'Un equipo mas, un ladrillo mas.',
+        en: 'One more unit, one more brick.',
+      },
+      {
+        es: 'El del tatami tambien soy yo. Si, ya se.',
+        en: 'The one on the tatami is also me. Yes, I know.',
       },
     ],
     start: 'hub',
@@ -1496,12 +1507,14 @@ export const AULA_PASADO_DIALOGS = {
       hub: {
         text: {
           es:
-            'Pasame esa llave... ah, no, disculpa. Tu eres visita. ' +
+            'Pasame esa llave... ah, no, perdona: tu eres visita. ' +
+            'Si, tambien soy Pablo. El turno que paga las cuentas. ' +
             'Estoy con esta unidad que no quiere enfriar. ¿Que se ' +
             'te ofrece?',
           en:
-            'Hand me that wrench... ah, no, my apologies. You are ' +
-            'a guest. I am busy with this unit that refuses to ' +
+            'Hand me that wrench... ah, no, sorry: you are a ' +
+            'guest. Yes, I am also Pablo. The shift that pays the ' +
+            'bills. I am busy with this unit that refuses to ' +
             'cool. What can I do for you?',
         },
         options: [
@@ -1514,10 +1527,17 @@ export const AULA_PASADO_DIALOGS = {
           },
           {
             label: {
-              es: 'Hablame del muchacho',
-              en: 'Tell me about the kid',
+              es: '¿Por que este trabajo?',
+              en: 'Why this job?',
             },
-            next: 'm1',
+            next: 'w1',
+          },
+          {
+            label: {
+              es: 'Eso de ser tres, explica',
+              en: 'Explain the three of you',
+            },
+            next: 's1',
           },
           {
             label: {
@@ -1532,18 +1552,18 @@ export const AULA_PASADO_DIALOGS = {
         text: {
           es:
             'El compresor no arranca. Podria ser el capacitor, el ' +
-            'relay, el cableado... El equipo lo sabe. Mi trabajo ' +
-            'es hacerlo confesar.',
+            'relay, el cableado... Mi rutina es una sola: ' +
+            'diagnosticar, desarmar, reparar.',
           en:
             'The compressor will not start. Could be the ' +
-            'capacitor, the relay, the wiring... The unit knows. ' +
-            'My job is to make it confess.',
+            'capacitor, the relay, the wiring... My routine is ' +
+            'one and the same: diagnose, take apart, repair.',
         },
         options: [
           {
             label: {
-              es: '¿Y como confiesa?',
-              en: 'And how does it confess?',
+              es: '¿Como diagnosticas?',
+              en: 'How do you diagnose?',
             },
             next: 't2',
           },
@@ -1553,20 +1573,17 @@ export const AULA_PASADO_DIALOGS = {
       t2: {
         text: {
           es:
-            'Por los sintomas. Cada falla tiene su sonido, su ' +
-            'olor, su temperatura. Un clic seco dice una cosa; un ' +
-            'zumbido, otra.',
+            'Escucho la maquina. Cada falla tiene su sonido, su ' +
+            'olor, su temperatura. Mido, descarto una causa, ' +
+            'pruebo la siguiente. Paso a paso.',
           en:
-            'Through the symptoms. Every fault has its sound, its ' +
-            'smell, its temperature. A dry click says one thing; ' +
-            'a hum, another.',
+            'I listen to the machine. Every fault has its sound, ' +
+            'its smell, its temperature. I measure, rule out one ' +
+            'cause, try the next. Step by step.',
         },
         options: [
           {
-            label: {
-              es: '¿Como se aprende eso?',
-              en: 'How do you learn that?',
-            },
+            label: { es: '¿En que orden?', en: 'In what order?' },
             next: 't3',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
@@ -1575,20 +1592,17 @@ export const AULA_PASADO_DIALOGS = {
       t3: {
         text: {
           es:
-            'Con años y con metodo: descartas una causa a la vez, ' +
-            'de la mas simple a la mas cara. Nunca al reves, que ' +
-            'el bolsillo llora.',
+            'De la causa mas simple a la mas cara. Nunca al ' +
+            'reves, que el bolsillo llora. El que cambia piezas ' +
+            'al azar no es tecnico: es lotero.',
           en:
-            'With years and with method: you rule out one cause ' +
-            'at a time, from simplest to most expensive. Never ' +
-            'backwards, or the wallet cries.',
+            'From the simplest cause to the most expensive one. ' +
+            'Never backwards, or the wallet cries. Whoever swaps ' +
+            'parts at random is no technician: a lottery player.',
         },
         options: [
           {
-            label: {
-              es: '¿Y si cambias al azar?',
-              en: 'What if you swap at random?',
-            },
+            label: { es: 'Eso es debugging', en: 'That is debugging' },
             next: 't4',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
@@ -1597,17 +1611,21 @@ export const AULA_PASADO_DIALOGS = {
       t4: {
         text: {
           es:
-            'El que cambia piezas al azar no es tecnico: es ' +
-            'lotero. A veces acierta, si, pero nunca sabe por ' +
-            'que. Y lo que no sabes, se repite.',
+            '¿Debu... que? Suena a palabra del futuro. Pero si ' +
+            'asi se llama perseguir fallas con paciencia, ' +
+            'entonces sin saberlo ya estoy debuggeando.',
           en:
-            'Whoever swaps parts at random is no technician: he ' +
-            'plays the lottery. He may win sometimes, but never ' +
-            'knows why. And what you do not know, repeats.',
+            'De-bug... what? Sounds like a word from the future. ' +
+            'But if that is the name for chasing faults with ' +
+            'patience, then I am already debugging without ' +
+            'knowing it.',
         },
         options: [
           {
-            label: { es: 'Sabias palabras', en: 'Wise words' },
+            label: {
+              es: '¿Y disfrutas el oficio?',
+              en: 'Do you enjoy the trade?',
+            },
             next: 't5',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
@@ -1616,238 +1634,238 @@ export const AULA_PASADO_DIALOGS = {
       t5: {
         text: {
           es:
-            'Es el oficio. Aqui el calor no negocia: un aire ' +
-            'dañado no es capricho, es salud, es sueño, es el ' +
-            'humor de la casa entera.',
+            'El momento exacto en que el equipo arranca y sale ' +
+            'aire frio no se compara con nada. Mi lado karateka ' +
+            'dice que es como ganar sin tirar un golpe.',
           en:
-            'That is the trade. Here the heat does not negotiate: ' +
-            'a broken AC is no whim, it is health, sleep, the ' +
-            'mood of the whole house.',
+            'The exact moment the unit starts and cold air comes ' +
+            'out compares to nothing. My karateka side says it is ' +
+            'like winning without throwing a single strike.',
         },
         options: [
           {
             label: {
-              es: '¿Es duro el trabajo?',
-              en: 'Is the job hard?',
+              es: '¿Y por que lo haces?',
+              en: 'Why do you do it?',
             },
-            next: 't6',
+            next: 'w1',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      t6: {
+      w1: {
         text: {
           es:
-            'Techos al mediodia, escaleras, equipos que pesan como ' +
-            'un piano chico. Duro es. Pero uno baja del techo con ' +
-            'la falla resuelta y algo de paz.',
+            'Para pagarme la universidad. Aqui el calor no ' +
+            'perdona, asi que trabajo nunca falta. Cada equipo ' +
+            'reparado es un ladrillo mas del plan.',
           en:
-            'Rooftops at noon, ladders, units as heavy as a small ' +
-            'piano. Hard it is. But you climb down with the fault ' +
-            'solved and some peace.',
+            'To pay my own way through university. The heat here ' +
+            'shows no mercy, so there is never a shortage of ' +
+            'work. Every repaired unit is one more brick.',
+        },
+        options: [
+          { label: { es: '¿Es duro?', en: 'Is it hard?' }, next: 'w2' },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      w2: {
+        text: {
+          es:
+            'Techos hirviendo al mediodia, escaleras, equipos que ' +
+            'pesan como un piano chico. Duro es. Pero es trabajo ' +
+            'honesto y tiene su ciencia.',
+          en:
+            'Boiling rooftops at noon, ladders, units as heavy as ' +
+            'a small piano. Hard it is. But it is honest work and ' +
+            'it has its science.',
         },
         options: [
           {
-            label: {
-              es: '¿Cual es el secreto?',
-              en: 'What is the secret?',
-            },
-            next: 't7',
+            label: { es: '¿Quien te enseño?', en: 'Who taught you?' },
+            next: 'w3',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      t7: {
+      w3: {
         text: {
           es:
-            'Paciencia y oido. La maquina siempre esta diciendo ' +
-            'donde le duele. El truco es callarse uno para poder ' +
-            'escucharla.',
+            'Un maestro veterano del oficio. Hoy anda en otro ' +
+            'techo de la ciudad, pero lo llevo en la cabeza: ' +
+            '"primero se escucha, despues se abre", decia.',
           en:
-            'Patience and a good ear. The machine is always ' +
-            'telling you where it hurts. The trick is to quiet ' +
-            'down and listen.',
+            'A veteran master of the trade. He is on some other ' +
+            'rooftop today, but I carry him in my head: "first ' +
+            'you listen, then you open it", he would say.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que mas te enseño?',
+              en: 'What else did he teach you?',
+            },
+            next: 'w4',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      w4: {
+        text: {
+          es:
+            'Que todo es un sistema: el frio viaja, se pierde, ' +
+            'vuelve. Si entiendes el todo, la pieza rota se ' +
+            'delata sola. El veia el mapa, no solo el tornillo.',
+          en:
+            'That everything is a system: the cold travels, ' +
+            'leaks, returns. If you understand the whole, the ' +
+            'broken part gives itself away. He saw the map, not ' +
+            'just the screw.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Eso aplica a mas cosas',
+              en: 'That applies to more things',
+            },
+            next: 'w5',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      w5: {
+        text: {
+          es:
+            'Eso sospecho. Siento que cada falla acorralada aqui ' +
+            'me entrena para las maquinas que vienen. La falla ' +
+            'cambia de traje, no de alma.',
+          en:
+            'So I suspect. Every fault cornered up here feels ' +
+            'like training for the machines to come. Faults ' +
+            'change suits, not souls.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que maquinas vienen?',
+              en: 'Which machines are coming?',
+            },
+            next: 'u1',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      u1: {
+        text: {
+          es:
+            'Las computadoras. Quiero estudiar computacion en la ' +
+            'universidad. Estos ahorros son el pasaje: no es ' +
+            'rapido, pero cada reparacion suma.',
+          en:
+            'Computers. I want to study computing at university. ' +
+            'These savings are the ticket: it is not fast, but ' +
+            'every repair adds up.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y si no alcanza?',
+              en: 'What if it is not enough?',
+            },
+            next: 'u2',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      u2: {
+        text: {
+          es:
+            'Alcanzara. Tengo la constancia del karateka, la ' +
+            'curiosidad del gamer y estas manos. Tres contra un ' +
+            'problema: me gusta esa proporcion.',
+          en:
+            'It will be enough. I have the karateka consistency, ' +
+            'the gamer curiosity and these hands. Three against ' +
+            'one problem: I like those odds.',
         },
         options: [
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
           {
             label: {
-              es: 'Gracias por la leccion',
-              en: 'Thanks for the lesson',
+              es: 'Vas a llegar. Hasta luego',
+              en: 'You will make it. Goodbye',
             },
             next: null,
           },
         ],
       },
-      m1: {
+      s1: {
         text: {
           es:
-            '¿Pablo? Ese muchacho tiene cabeza para los sistemas. ' +
-            'Se lo digo yo, que llevo veinte años viendo pasar ' +
-            'aprendices.',
+            'La grieta nos partio en tres. El que salta en el ' +
+            'tatami y el de la PC tambien soy yo. Mismo Pablo: ' +
+            'uno entrena, otro pregunta, yo cargo el compresor.',
           en:
-            'Pablo? That kid has a head for systems. Take it from ' +
-            'me: I have watched apprentices come and go for ' +
-            'twenty years.',
+            'The crack split us in three. The one jumping on the ' +
+            'tatami and the one at the PC are also me. Same ' +
+            'Pablo: one trains, one asks, I carry the compressor.',
         },
         options: [
           {
             label: {
-              es: '¿Por que lo dices?',
-              en: 'Why do you say that?',
+              es: '¿No te incomoda?',
+              en: 'Does it not bother you?',
             },
-            next: 'm2',
+            next: 's2',
+          },
+          {
+            label: { es: '¿Se llevan bien?', en: 'Do you get along?' },
+            next: 's3',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      m2: {
+      s2: {
         text: {
           es:
-            'Porque pregunta el PORQUE de cada pieza, no solo el ' +
-            'como. El aprendiz comun quiere terminar; el quiere ' +
-            'entender. Es distinto.',
+            'Al principio si. Despues hice lo que hago con toda ' +
+            'falla rara: observar, descartar, aceptar el ' +
+            'diagnostico. Diagnostico: somos tres. Se trabaja ' +
+            'igual.',
           en:
-            'Because he asks the WHY of every part, not just the ' +
-            'how. The average apprentice wants to finish; he ' +
-            'wants to understand.',
+            'At first, yes. Then I did what I do with any odd ' +
+            'fault: observe, rule out, accept the diagnosis. ' +
+            'Diagnosis: we are three. Work goes on the same.',
         },
         options: [
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
           {
             label: {
-              es: '¿Entender que, por ejemplo?',
-              en: 'Understand what, say?',
+              es: 'Buen diagnostico. Adios',
+              en: 'Good diagnosis. Bye',
             },
-            next: 'm3',
+            next: null,
           },
-          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
-      m3: {
+      s3: {
         text: {
           es:
-            'El sistema completo: de donde viene el frio, por ' +
-            'donde se escapa, que pieza empuja a cual. Ve el ' +
-            'mapa, no solo el tornillo.',
+            'Como buenos colegas. El karateka madruga, el gamer ' +
+            'trasnocha y yo sudo el turno del medio. Entre los ' +
+            'tres, el dia rinde triple.',
           en:
-            'The whole system: where the cold comes from, where ' +
-            'it leaks, which part pushes which. He sees the map, ' +
-            'not just the screw.',
+            'Like good coworkers. The karateka wakes up early, ' +
+            'the gamer stays up late and I sweat the middle ' +
+            'shift. Between the three, the day yields triple.',
         },
         options: [
-          {
-            label: { es: '¿Y eso es raro?', en: 'Is that rare?' },
-            next: 'm4',
-          },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
-        ],
-      },
-      m4: {
-        text: {
-          es:
-            'Rarisimo. A la mayoria hay que enseñarle a mirar ' +
-            'asi, y a muchos ni asi. El vino con esa mirada ' +
-            'puesta de fabrica.',
-          en:
-            'Very rare. Most must be taught to look that way, and ' +
-            'many never learn. He came with that gaze installed ' +
-            'at the factory.',
-        },
-        options: [
           {
             label: {
-              es: '¿Le ves futuro aqui?',
-              en: 'A future in the trade?',
+              es: 'Buen equipo. Hasta luego',
+              en: 'Good team. Goodbye',
             },
-            next: 'm5',
-          },
-          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
-        ],
-      },
-      m5: {
-        text: {
-          es:
-            'En los aires no se queda, y esta bien. Esta ' +
-            'ahorrando para estudiar. Computacion, dice. Las ' +
-            'maquinas del futuro, supongo.',
-          en:
-            'He will not stay in AC repair, and that is fine. He ' +
-            'is saving up to study. Computing, he says. The ' +
-            'machines of the future, I suppose.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Le habra servido esto?',
-              en: 'Will this have helped?',
-            },
-            next: 'm6',
-          },
-          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
-        ],
-      },
-      m6: {
-        text: {
-          es:
-            'Todo lo que aprendio aqui viaja con el: diagnosticar ' +
-            'es diagnosticar, aqui o en una computadora. La falla ' +
-            'cambia de traje, no de alma.',
-          en:
-            'Everything he learned here travels with him: ' +
-            'diagnosing is diagnosing, here or inside a computer. ' +
-            'Faults change suits, not souls.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Bonita forma de decirlo',
-              en: 'A fine way to put it',
-            },
-            next: 'm7',
-          },
-          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
-        ],
-      },
-      m7: {
-        text: {
-          es:
-            'Cuando repara algo, sonrie como si hubiera ganado ' +
-            'una pelea. Esa alegria no se enseña. Con eso se ' +
-            'llega lejos.',
-          en:
-            'When he fixes something, he smiles as if he had won ' +
-            'a fight. That joy cannot be taught. It takes you far.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Algun consejo final?',
-              en: 'Any last advice?',
-            },
-            next: 'm8',
-          },
-          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
-        ],
-      },
-      m8: {
-        text: {
-          es:
-            'Uno solo: si algun dia el muchacho trabaja contigo, ' +
-            'dale problemas dificiles. Con los faciles se aburre.',
-          en:
-            'Just one: if that kid ever works with you, give him ' +
-            'hard problems. The easy ones bore him.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Lo tendre en cuenta',
-              en: 'I will keep it in mind',
-            },
-            next: 'hub',
-          },
-          {
-            label: { es: 'Anotado. Hasta luego', en: 'Noted. Goodbye' },
             next: null,
           },
         ],

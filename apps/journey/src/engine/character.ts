@@ -466,7 +466,9 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     parts.torso.scale.y = 1 + Math.sin(t * 1.6) * 0.012
   }
 
-  /** Kihon: 3 tsuki alternados (golpes rectos) + mae geri (patada). */
+  /** Kihon: 3 tsuki alternados (golpes rectos) + mae geri (patada).
+   *  rotation.x NEGATIVO lleva la extremidad al FRENTE (+Z local): los
+   *  golpes/patada salen hacia adelante (antes iban a la espalda). */
   function poseFight(t: number): void {
     const beat = t % 3.6
     let punchL = 0
@@ -483,9 +485,9 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
       punchL = kick * 0.5
       punchR = kick * 0.5
     }
-    parts.armL.rotation.x = punchL
-    parts.armR.rotation.x = punchR
-    parts.legR.rotation.x = kickR
+    parts.armL.rotation.x = -punchL
+    parts.armR.rotation.x = -punchR
+    parts.legR.rotation.x = -kickR
     parts.legL.rotation.x = 0
     group.position.y = Math.abs(Math.sin(t * 6)) * 0.012
     group.rotation.x = 0
@@ -521,11 +523,12 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     const sitting = kind === 'sit'
     // rotation.x NEGATIVO lleva la extremidad hacia +Z (el frente del
     // chibi). sit: muslos AL FRENTE a altura de asiento; kneel: piernas
-    // dobladas hacia atras, con el cuerpo bajado solo hasta la rodilla
-    // (antes -0.5 lo hundia en el piso y quedaba "incompleto").
-    parts.legL.rotation.x = sitting ? -1.45 : 1.0
-    parts.legR.rotation.x = sitting ? -1.45 : 1.0
-    group.position.y = sitting ? -0.07 : -0.24
+    // casi verticales con leve avance (rodillas al frente) y el cuerpo
+    // bajado — el tramo bajo el piso no se ve y lee como "de rodillas"
+    // (antes +1.0 doblaba las piernas hacia ATRAS: se veian invertidas).
+    parts.legL.rotation.x = sitting ? -1.45 : -0.22
+    parts.legR.rotation.x = sitting ? -1.45 : -0.22
+    group.position.y = sitting ? -0.07 : -0.26
     // brazos hacia ADELANTE (teclado / la unidad que repara)
     const base = sitting ? -0.85 : -0.7
     const speed = sitting ? 9 : 5

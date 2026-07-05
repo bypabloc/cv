@@ -4,7 +4,8 @@
  *   Salon CLASICO en paleta blanca/beige/azul con guiños morados: pupitres
  *   azules en filas mirando al frente (+Z), escritorio del profesor,
  *   pizarras de RETOS y APRENDIZAJES en las paredes laterales, grieta al
- *   pasado a la IZQUIERDA y pilar-atril con la reseña a la DERECHA.
+ *   pasado en el muro +X (la mano IZQUIERDA de quien avanza) y el
+ *   cuaderno-reseña flotante en el -X (su DERECHA), junto a la puerta.
  *   2 estudiantes SENTADOS tecleando con sus pantallas encendidas (codigo
  *   cliente-servidor del proyecto de grado); las 2 PCs libres — la tuya y
  *   una del laboratorio — se ENCIENDEN y APAGAN con E (toggle ilimitado).
@@ -217,27 +218,29 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     preview: texts.aprendizajes,
     onOpen: actions.openFicha,
   })
-  // grieta al pasado, pegada al muro IZQUIERDO (el pasado a la izquierda)
+  // grieta al pasado en el muro +X (la mano izquierda de quien avanza)
   const portal = pastPortal({
     room,
-    position: [-half + 0.1, 0, room.z + 2.2],
-    rotationY: Math.PI / 2,
+    position: [half - 0.1, 0, room.z + 2.2],
+    rotationY: -Math.PI / 2,
     accent: theme.accent,
     year: def.year,
     locale: state.locale,
     onEnter: actions.enterPast,
   })
-  // pilar-atril con la reseña de la etapa, a la DERECHA (espejo del portal)
+  // cuaderno flotante con la reseña, en el -X (la derecha del jugador),
+  // pegado a la puerta de salida
   const nota = lecternNotebook({
     roomIndex: room.index,
-    position: [half - 0.9, 0, room.z + 2.4],
-    rotationY: -Math.PI / 2,
+    position: [-half + 0.9, 0, room.z + 2.6],
+    rotationY: Math.PI / 2,
     theme,
     notebook: { title: texts.title, lines: texts.notebook },
     story: { title: texts.title, paragraphs: texts.resena },
+    withLight: state.tier === 'full',
     onOpen: actions.openStory,
   })
-  staticColliders.push(footprint(half - 0.9, room.z + 2.4, 0.7, 0.7))
+  staticColliders.push(footprint(-half + 0.9, room.z + 2.6, 0.7, 0.7))
   for (const prop of [retos, aprendizajes, portal, nota]) {
     group.add(prop.group)
     if (prop.interactable) {

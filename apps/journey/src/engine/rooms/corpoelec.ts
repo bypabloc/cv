@@ -286,7 +286,8 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   interactables.push(codeItem)
 
   // ventana con torres + casco de seguridad sobre el escritorio
-  group.add(towersWindow([half - 0.42, 1.7, room.z + 0.8]))
+  // (corrida hacia el fondo: el frente del muro +X es de la grieta)
+  group.add(towersWindow([half - 0.42, 1.7, room.z - 1.2]))
   const helmet = new Group()
   helmet.position.set(1.9, 0.85, room.z + 2.3)
   const units = unitGeo()
@@ -298,8 +299,8 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   helmet.add(dome, brim)
   group.add(helmet)
 
-  // guiño geografico discreto en el muro izquierdo (al fondo, sobre el
-  // transformador — el frente del muro lo ocupa la grieta al pasado)
+  // guiño geografico discreto en el muro -X (al fondo, sobre el
+  // transformador — el frente de ese muro es del cuaderno flotante)
   const geo = label('YARACUY · CARABOBO · LARA', {
     size: 0.22,
     color: theme.accent,
@@ -309,10 +310,10 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   group.add(geo)
 
   // micro-interaccion: tablero de medidores rojo -> verde + luz de estado
-  // (muro DERECHO — el izquierdo es del portal al pasado)
+  // (muro +X entre la ventana y la grieta al pasado)
   const microId = `micro-corpoelec-${room.index}`
   const micro = new Group()
-  micro.position.set(half - 0.42, 0, room.z + 2.6)
+  micro.position.set(half - 0.42, 0, room.z + 0.6)
   micro.rotation.y = -Math.PI / 2
   const panel = boxMesh(1.6, 1.1, 0.08, toonMat('#2e3238'))
   panel.position.set(0, 1.5, 0)
@@ -347,7 +348,7 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   const boardItem: Interactable = {
     id: microId,
     x: half - 0.42,
-    z: room.z + 2.6,
+    z: room.z + 0.6,
     radius: 2,
     label: { ...BOARD_LABEL_ON },
     onActivate: () => {
@@ -411,27 +412,29 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     preview: texts.aprendizajes,
     onOpen: actions.openFicha,
   })
-  // grieta al pasado, pegada al muro IZQUIERDO (antes estaba a la derecha)
+  // grieta al pasado en el muro +X (la mano izquierda de quien avanza)
   const portal = pastPortal({
     room,
-    position: [-half + 0.1, 0, room.z + 2.8],
-    rotationY: Math.PI / 2,
+    position: [half - 0.1, 0, room.z + 2.8],
+    rotationY: -Math.PI / 2,
     accent: theme.accent,
     year: def.year,
     locale: state.locale,
     onEnter: actions.enterPast,
   })
-  // pilar-atril con la reseña de la etapa, a la DERECHA
+  // cuaderno flotante con la reseña, en el -X (la derecha del jugador),
+  // pegado a la puerta de salida
   const nota = lecternNotebook({
     roomIndex: room.index,
-    position: [half - 1, 0, room.z + 0.2],
-    rotationY: -Math.PI / 2,
+    position: [-half + 0.9, 0, room.z + 2.7],
+    rotationY: Math.PI / 2,
     theme,
     notebook: { title: texts.title, lines: texts.notebook },
     story: { title: texts.title, paragraphs: texts.resena },
+    withLight: state.tier === 'full',
     onOpen: actions.openStory,
   })
-  staticColliders.push(footprint(half - 1, room.z + 0.2, 0.7, 0.7))
+  staticColliders.push(footprint(-half + 0.9, room.z + 2.7, 0.7, 0.7))
   for (const prop of [retos, aprendizajes, portal, nota]) {
     group.add(prop.group)
     if (prop.interactable) {

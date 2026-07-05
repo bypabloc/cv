@@ -28,7 +28,7 @@
 
 | Orden | Sala | Informe | Estado | Commit |
 | --- | --- | --- | --- | --- |
-| 1 | `corpoelec` | [08-sala-corpoelec.md](08-sala-corpoelec.md) | PENDIENTE | — |
+| 1 | `corpoelec` | [08-sala-corpoelec.md](08-sala-corpoelec.md) | HECHO | `46f28551` |
 | 2 | `ipasme` | [09-sala-ipasme.md](09-sala-ipasme.md) | PENDIENTE | — |
 | 3 | `cofasa` | [10-sala-cofasa.md](10-sala-cofasa.md) | PENDIENTE | — |
 | 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | PENDIENTE | — |
@@ -56,3 +56,14 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
   y 3 cuadros wallArt (1 inspeccionable); pasados partidos (aula intacto,
   corpoelec movido, cima eliminado); nota perf: el aula con 6 NPCs puede
   rozar los 100 draw calls — medir/optimizar en C15.
+- [2026-07-05] sala `corpoelec` HECHA en commit `46f28551` — primer
+  consumidor real de officeLayout + softwareShowcase (3 demos intranet
+  2013, badge OFFLINE). 5 NPCs (2C+2P+1J): los 2 arboles ricos existentes
+  se CONSERVARON renombrados (veterano -> Wilmer Colina, tecnica de ronda
+  -> Dubraska Piña reencuadrada administrativa) + 3 nuevos (Yorman,
+  Genesis, Ing. Betancourt). Pasado: 3 NPCs (Dubraska y Wilmer del arco +
+  el transcriptor conservado; Alcides opcional se fusiono en el Wilmer del
+  pasado). wallArt 4 cuadros (2 inspeccionables). Smoke browser completo
+  verde (23 interactables, showcase E/Esc, 5 dialogos, ficha 765 kV,
+  pasado). Nota perf: 5 NPCs + estanteria + showcase — medir en C15 igual
+  que el aula.

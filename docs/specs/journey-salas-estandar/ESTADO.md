@@ -31,7 +31,7 @@
 | 1 | `corpoelec` | [08-sala-corpoelec.md](08-sala-corpoelec.md) | HECHO | `46f28551` |
 | 2 | `ipasme` | [09-sala-ipasme.md](09-sala-ipasme.md) | HECHO | `d22c3988` |
 | 3 | `cofasa` | [10-sala-cofasa.md](10-sala-cofasa.md) | HECHO | `7eecf589` |
-| 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | PENDIENTE | — |
+| 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | HECHO | `b6059f33` |
 | 5 | `goodmeal` | [12-sala-goodmeal.md](12-sala-goodmeal.md) | PENDIENTE | — |
 | 6 | `destacame` | [13-sala-destacame.md](13-sala-destacame.md) | PENDIENTE | — |
 | 7 | `futuro` | [14-sala-futuro.md](14-sala-futuro.md) | PENDIENTE | — |
@@ -50,6 +50,30 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-05] sala `dibal` HECHA en commit `b6059f33` — informe 11 con
+  4 decisiones del usuario: 5 NPCs presente (Andrea la comensal
+  incluida), 3 NPCs pasado (Doña Carmen Flores la opcional incluida),
+  3 cuadros INSPECCIONABLES (flujo mozo->KDS + boleta SUNAT +
+  organigrama "De 1 a 5 devs" que honra el eje leader 95; mapa
+  multi-local decorativo) y officeLayout = LA MESA DE PABLO (unico dev:
+  laptop encendida con codigo Laravel/Vue mas 1 libre togglable con E;
+  validateMix off como el aula). Presente en dos mitades: SALON (3
+  mesas peruanas + comensales fusionados + caja navy con POS/termica/
+  boleta flotante QR+sello) y COCINA (mesada + KDS + KOT + pase "para
+  servir"). Micros nuevas: enviar comanda (sobre navy VUELA de la
+  tablet al KDS; tarjeta nueva -> para servir) y emitir boleta (ticket
+  sube de la termica + "Enviado a SUNAT ✓" ciclando efectivo/tarjeta/
+  Yape). Showcase POS navy+teal (3 demos: pedido tablet, KDS, boleta
+  SUNAT con placa del CV). Pasado: papelitos + clavo del pase +
+  talonario/carbon + cajon descuadrado (falta S/40) + reloj + seguir
+  el papelito perdido + arco Julio/Carmen/Elena. Nota tecnica:
+  comandaMicro/boletaMicro y kdsVariantsFor/posVariantsFor extraidas a
+  modulo por el limite de complejidad de Biome. Smoke browser verde x2
+  (23 interactables, showcase E/Esc, 5 dialogos, 3 fichas, 2 micros,
+  laptop toggle, pasado 29 interactables); unico error de consola: el
+  504 transitorio de vite (gotcha conocido). Nota perf: 5 NPCs + salon
+  + cocina — medir en C15 igual que aula/corpoelec/ipasme/cofasa.
 
 - [2026-07-05] ETAPA 1 HECHA (C1 `2196e8dd` .. C6 `af82a772`) — canon
   completo en props.ts; aula con 6 NPCs (profesor y 2 compañeros nuevos)

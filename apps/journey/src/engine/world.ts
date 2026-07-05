@@ -42,6 +42,7 @@ import {
   type FichaKind,
   type Interactable,
   registerInteractable,
+  type ShowcaseRef,
   unregisterInteractable,
 } from './state'
 import { type RoomTheme, THEMES, type ThemeZoneId } from './themes'
@@ -70,6 +71,8 @@ export interface WorldActions {
   openStory(title: string, paragraphs: readonly string[]): void
   /** Panel de conversacion con un NPC (arbol de dialogo del HUD). */
   openDialog: OpenDialog
+  /** Panel HTML operable del showcase de software (E cicla demos). */
+  openShowcase(ref: ShowcaseRef): void
 }
 
 export interface RoomCtx {
@@ -151,6 +154,7 @@ export interface WorldDeps {
     openContact(): void
     openStory(title: string, paragraphs: readonly string[]): void
     openDialog: OpenDialog
+    openShowcase(ref: ShowcaseRef): void
   }
   /** Mueve al jugador (lo implementa controls). */
   teleportPlayer(x: number, z: number): void
@@ -214,6 +218,7 @@ export function createWorld(deps: WorldDeps): World {
     openContact: deps.ui.openContact,
     openStory: deps.ui.openStory,
     openDialog: deps.ui.openDialog,
+    openShowcase: deps.ui.openShowcase,
     enterPast: (roomIndex, spawn) => {
       void world.enterPast(roomIndex, spawn)
     },

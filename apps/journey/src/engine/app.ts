@@ -202,6 +202,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       openContact: () => hud.openContact(),
       openStory: (title, paragraphs) => hud.openStory(title, paragraphs),
       openDialog: (npc, onClose) => hud.openDialog(npc, onClose),
+      openShowcase: (ref) => hud.openShowcase(ref),
     },
     teleportPlayer: (x, z) => controls.teleport(x, z),
     shadowLight: tier === 'full' ? sun : undefined,

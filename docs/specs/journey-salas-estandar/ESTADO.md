@@ -30,7 +30,7 @@
 | --- | --- | --- | --- | --- |
 | 1 | `corpoelec` | [08-sala-corpoelec.md](08-sala-corpoelec.md) | HECHO | `46f28551` |
 | 2 | `ipasme` | [09-sala-ipasme.md](09-sala-ipasme.md) | HECHO | `d22c3988` |
-| 3 | `cofasa` | [10-sala-cofasa.md](10-sala-cofasa.md) | PENDIENTE | — |
+| 3 | `cofasa` | [10-sala-cofasa.md](10-sala-cofasa.md) | HECHO | `7eecf589` |
 | 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | PENDIENTE | — |
 | 5 | `goodmeal` | [12-sala-goodmeal.md](12-sala-goodmeal.md) | PENDIENTE | — |
 | 6 | `destacame` | [13-sala-destacame.md](13-sala-destacame.md) | PENDIENTE | — |
@@ -68,6 +68,23 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
   dialogos, ficha carnet, pasado 29 interactables); el unico error de
   consola es el 504 transitorio de vite (gotcha conocido). Nota perf: 5
   NPCs + lotes clinicos — medir en C15 igual que aula/corpoelec.
+- [2026-07-05] sala `cofasa` HECHA en commit `7eecf589` — informe 10 con
+  3 decisiones del usuario: 5 NPCs presente (sin recortar a Douglas), 3
+  NPCs pasado (Carmen la opcional incluida), 3 cuadros INSPECCIONABLES
+  (envasado + Pareto + disponibilidad; cGMP decorativo) + guiño Lebrun
+  (etiqueta sobre la puerta). Showcase panel admin jQuery/Bootstrap 2017
+  (3 demos: registrar parada, Pareto por causa, disponibilidad). Micro
+  nueva: torre andon (unico rojo/verde) — E simula una parada, el
+  monitor de linea registra la causa ciclando el catalogo real y vuelve
+  a verde a los ~4 s. NPCs: Yorman y Douglas (devs en officeLayout,
+  powered {0,1}, 1 laptop libre togglable), Nelida (ronda), Rafael
+  (cofia = hair bun blanco), Carmen (jefa). Pasado: llenadora detenida +
+  andon rojo fijo + reloj de pared + consolidar planillas (los totales
+  NO cuadran) + arco Nelida/Rafael/Carmen. Smoke browser completo verde
+  x2 (22 interactables, showcase E/Esc, 5 dialogos, 3 fichas, laptop
+  toggle, pasado 28 interactables); unico error de consola: el 504
+  transitorio de vite (gotcha conocido). Nota perf: 5 NPCs + linea +
+  andon — medir en C15 igual que aula/corpoelec/ipasme.
 - [2026-07-05] sala `corpoelec` HECHA en commit `46f28551` — primer
   consumidor real de officeLayout + softwareShowcase (3 demos intranet
   2013, badge OFFLINE). 5 NPCs (2C+2P+1J): los 2 arboles ricos existentes

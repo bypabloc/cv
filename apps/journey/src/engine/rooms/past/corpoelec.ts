@@ -1,9 +1,17 @@
 /**
  * @module rooms/past/corpoelec (engine)
- * @description El "antes" de CORPOELEC: oficina de planillas en papel.
- *   Buscar el equipo 0042 a mano (22 min, copia desactualizada), el
- *   archivador que se abre/cierra y oficinistas cargando/transcribiendo
- *   planillas. Etapa 2 (informe 08) lo refactoriza al nivel del presente.
+ * @description El "antes" de CORPOELEC al nivel del canon (informe 08):
+ *   oficina sepia de planillas en papel SIN el sistema. Tres escritorios
+ *   rotulados SEDE YARACUY / CARABOBO / LARA con pilas de planillas
+ *   duplicadas, el archivador saturado que se abre/cierra, y los MISMOS
+ *   equipos que el presente guarda ordenados en cajas — walkie-talkies,
+ *   radios, telefonos, una PC apagada — aqui regados por suelo y mesas
+ *   sin etiqueta. Buscar el equipo 0042 a mano (22 min, copia
+ *   desactualizada) como objeto de busqueda lenta. 3 NPCs frustrados
+ *   conversables: Dubraska cargando planillas, Wilmer de rodillas
+ *   hurgando el archivador por un radio sin registro, y el oficinista
+ *   que transcribe seriales (el arco: Dubraska y Wilmer reaparecen en el
+ *   presente usando el sistema).
  */
 import { Group } from 'three'
 import type { Box2 } from '../../../lib/collision'
@@ -13,7 +21,13 @@ import { makeNpc, type NpcHandle } from '../../character'
 import { npcTalk } from '../../dialog'
 import { CORPOELEC_PASADO_DIALOGS } from '../../dialogs/corpoelec-pasado'
 import type { Interactable } from '../../state'
-import { boxMesh, label, screenPanel, toonMat } from '../../toon'
+import {
+  boxMesh,
+  label,
+  outlinedMergedBoxes,
+  screenPanel,
+  toonMat,
+} from '../../toon'
 import type { PastCtx } from '../../world'
 import { desk, footprint, paperStack } from '../props'
 import {
@@ -82,16 +96,54 @@ export function corpoelecPast(
   const interactables: Interactable[] = []
   const updates: ((t: number, dt: number) => void)[] = []
   const stacks: Group[] = []
-  for (const dx of [-2.2, 0, 2.2]) {
+  const sedeNames =
+    locale === 'es'
+      ? (['SEDE YARACUY', 'SEDE CARABOBO', 'SEDE LARA'] as const)
+      : (['YARACUY SITE', 'CARABOBO SITE', 'LARA SITE'] as const)
+  for (const [index, dx] of [-2.2, 0, 2.2].entries()) {
     const stack = paperStack({ position: [x + dx, 0.76, z - 0.6], count: 12 })
     stacks.push(stack)
     group.add(desk({ position: [x + dx, 0, z - 0.6], color: '#4c4740' }), stack)
     colliders.push(footprint(x + dx, z - 0.6, 1.3, 0.8))
+    // cada escritorio es "una sede": la misma planilla copiada tres veces
+    const sede = label(sedeNames[index] ?? '', {
+      size: 0.12,
+      color: '#e8d8b0',
+    })
+    sede.position.set(x + dx, 1.35, z - 0.6)
+    group.add(sede)
   }
   const cabinet = boxMesh(0.6, 1.8, 0.5, toonMat('#5a5750'))
   cabinet.position.set(x + 3.6, 0.9, z + 2.2)
   group.add(cabinet)
   colliders.push(footprint(x + 3.6, z + 2.2, 0.7, 0.6))
+
+  // los MISMOS equipos que el presente guarda etiquetados en cajas,
+  // aqui regados por suelo y mesas sin orden ni etiqueta (1 lote sepia):
+  // walkie-talkies, radio base, telefono descolgado, laptop gruesa y la
+  // PC apagada polvorienta del rincon
+  group.add(
+    outlinedMergedBoxes(
+      [
+        // walkie tirado en el piso + su antena
+        { w: 0.09, h: 0.06, d: 0.24, x: x - 1.1, y: 0.03, z: z + 1.4 },
+        { w: 0.14, h: 0.02, d: 0.02, x: x - 0.95, y: 0.02, z: z + 1.5 },
+        // radio base torcida sobre el escritorio central
+        { w: 0.3, h: 0.12, d: 0.22, x: x + 0.45, y: 0.82, z: z - 0.75 },
+        // telefono con el auricular descolgado al lado
+        { w: 0.22, h: 0.08, d: 0.2, x: x - 2.6, y: 0.8, z: z - 0.4 },
+        { w: 0.06, h: 0.05, d: 0.18, x: x - 2.38, y: 0.785, z: z - 0.32 },
+        // laptop gruesa cerrada en el piso, contra una pata
+        { w: 0.32, h: 0.06, d: 0.24, x: x + 1.5, y: 0.03, z: z + 0.2 },
+        // PC de escritorio apagada y polvorienta en el rincon + monitor
+        { w: 0.2, h: 0.52, d: 0.46, x: x - 3.4, y: 0.26, z: z + 2.3 },
+        { w: 0.34, h: 0.3, d: 0.36, x: x - 3.35, y: 0.67, z: z + 2.3 },
+      ],
+      toonMat('#4a453c'),
+      { castShadow: true },
+    ),
+  )
+  colliders.push(footprint(x - 3.38, z + 2.3, 0.5, 0.6))
 
   // micro: buscar el 0042 a mano — las pilas tiemblan y el veredicto
   // flota unos segundos (papel = 20+ min y copia desactualizada)
@@ -170,13 +222,14 @@ export function corpoelecPast(
     drawerPapers.visible = drawerOpen && drawer.position.z < z + 2.2 - 0.3
   })
 
-  // oficinista cargando planillas entre los escritorios y el archivador
-  const carrier = makeNpc({
+  // Dubraska (antes) cargando planillas entre los escritorios y el
+  // archivador — misma cara y peinado que su version del presente
+  const dubraska = makeNpc({
     skin: '#d9a684',
-    hair: { style: 'bun', color: '#2a1c12' },
+    hair: { style: 'ponytail', color: '#1c1410' },
     top: '#8a8270',
     bottom: '#5a5548',
-    faceSeed: 41,
+    faceSeed: 67,
     position: [x - 2.2, 0, z + 0.5],
     path: [
       [x - 2.2, z + 0.5],
@@ -185,8 +238,8 @@ export function corpoelecPast(
     ],
     speed: 0.55,
   })
-  carryPapers(carrier)
-  // otro transcribiendo a mano en su escritorio
+  carryPapers(dubraska)
+  // el oficinista que transcribe seriales a mano en su escritorio
   const transcriber = makeNpc({
     skin: '#e8b48c',
     hair: { style: 'short', color: '#3a2a1a' },
@@ -197,18 +250,37 @@ export function corpoelecPast(
     position: [x, 0, z + 0.1],
     rotationY: Math.PI,
   })
-  npcs.push(carrier, transcriber)
+  // Wilmer (antes) de rodillas frente al archivador, hurgando carpetas
+  // por el radio que nadie registro — el mismo veterano del presente
+  const wilmer = makeNpc({
+    skin: '#b5825f',
+    hair: { style: 'short', color: '#8a8a92' },
+    top: '#6a6a52',
+    bottom: '#4a4438',
+    faceSeed: 51,
+    position: [x + 2.9, 0, z + 2.1],
+    rotationY: Math.PI / 2,
+    pose: 'kneel',
+  })
+  group.add(paperStack({ position: [x + 2.5, 0, z + 1.6], count: 8 }))
+  npcs.push(dubraska, transcriber, wilmer)
   const talks = [
     npcTalk({
-      id: 'talk-past-corpoelec-planillas',
-      npc: carrier,
-      dialog: CORPOELEC_PASADO_DIALOGS['oficinista-planillas'],
+      id: 'talk-past-corpoelec-dubraska',
+      npc: dubraska,
+      dialog: CORPOELEC_PASADO_DIALOGS.dubraska,
       openDialog: actions.openDialog,
     }),
     npcTalk({
       id: 'talk-past-corpoelec-transcribe',
       npc: transcriber,
       dialog: CORPOELEC_PASADO_DIALOGS['oficinista-transcribe'],
+      openDialog: actions.openDialog,
+    }),
+    npcTalk({
+      id: 'talk-past-corpoelec-wilmer',
+      npc: wilmer,
+      dialog: CORPOELEC_PASADO_DIALOGS.wilmer,
       openDialog: actions.openDialog,
     }),
   ]

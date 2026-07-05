@@ -1,9 +1,11 @@
 /**
  * @module dialogs/corpoelec-pasado (engine)
  * @description Arboles de dialogo de la sala 1 pasado: CORPOELEC (2013)
- *   antes del sistema. Oficina de planillas en papel: copias duplicadas
- *   entre las sedes de Yaracuy, Carabobo y Lara, busquedas de 20+ minutos
- *   entre carpetas y el rumor de que un pasante esta armando un sistema.
+ *   antes de que llegue el pasante. Oficina de planillas en papel: 38
+ *   carpetas, busquedas de 20+ minutos, copias duplicadas y desincronizadas
+ *   entre las sedes de Yaracuy, Carabobo y Lara, y el rumor de que viene un
+ *   pasante de la universidad a digitalizarlo todo (esperanza de una,
+ *   escepticismo comico del otro).
  */
 import { defineDialog, type NpcDialog } from '../dialog'
 
@@ -16,16 +18,16 @@ export const CORPOELEC_PASADO_DIALOGS = {
         en: 'These stacks do not carry themselves.',
       },
       {
-        es: '¿Copia uno o copia dos? Nadie sabe.',
-        en: 'Copy one or copy two? Nobody knows.',
+        es: 'Carpeta 7 de 38... no, la 12. ¿O la 30?',
+        en: 'Folder 7 of 38... no, 12. Or was it 30?',
+      },
+      {
+        es: 'Dicen que llega un pasante de la universidad.',
+        en: 'They say a university intern is coming.',
       },
       {
         es: '¿Buscas algo? Agarra cafe primero.',
         en: 'Looking for something? Get coffee first.',
-      },
-      {
-        es: 'Dicen que un pasante arma un sistema.',
-        en: 'They say an intern is building a system.',
       },
       {
         es: 'Otra planilla. Y otra. Y otra mas.',
@@ -38,12 +40,12 @@ export const CORPOELEC_PASADO_DIALOGS = {
         text: {
           es:
             'Cuidado con las pilas, que tienen su equilibrio. Yo llevo ' +
-            'las planillas del inventario entre escritorios. ¿Que ' +
-            'quieres saber?',
+            'las planillas del inventario entre escritorios... y entre ' +
+            'estados. ¿Que quieres saber?',
           en:
             'Watch the stacks, they have their own balance. I carry ' +
-            'the inventory forms between desks. What do you want ' +
-            'to know?',
+            'the inventory forms between desks... and between states. ' +
+            'What do you want to know?',
         },
         options: [
           {
@@ -88,8 +90,8 @@ export const CORPOELEC_PASADO_DIALOGS = {
           },
           {
             label: {
-              es: 'Oi un rumor sobre un sistema',
-              en: 'I heard a rumor about a system',
+              es: 'Oi un rumor sobre un pasante',
+              en: 'I heard a rumor about an intern',
             },
             next: 'rum-1',
           },
@@ -101,10 +103,12 @@ export const CORPOELEC_PASADO_DIALOGS = {
       },
       hub3: {
         text: {
-          es: 'Queda lo mio: el oficio de cargar papel. ¿O ya te ' + 'aburri?',
+          es:
+            'Queda mi dia a dia... y esa mirada tuya, que me tiene ' +
+            'intrigada. ¿Que sera?',
           en:
-            'What is left is my part: the craft of hauling paper. Or ' +
-            'did I bore you already?',
+            'There is my day-to-day left... and that look of yours, ' +
+            'which intrigues me. Which will it be?',
         },
         options: [
           {
@@ -113,6 +117,13 @@ export const CORPOELEC_PASADO_DIALOGS = {
               en: 'Tell me about your day',
             },
             next: 'dia-1',
+          },
+          {
+            label: {
+              es: '¿Que tiene mi mirada?',
+              en: 'What about my look?',
+            },
+            next: 'fut-1',
           },
           {
             label: {
@@ -146,19 +157,18 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'cop-1': {
         text: {
           es:
-            'El mismo inventario vive en tres planillas: Yaracuy ' +
-            'lleva una copia, Carabobo lleva otra... y no dicen lo ' +
-            'mismo.',
+            'El mismo inventario vive en tres planillas: una en ' +
+            'Yaracuy, otra en Carabobo, otra en Lara. Y ninguna dice ' +
+            'lo mismo.',
           en:
-            'The same inventory lives in three forms: Yaracuy keeps ' +
-            'one copy, Carabobo keeps another... and they do not ' +
-            'match.',
+            'The same inventory lives in three forms: one in Yaracuy, ' +
+            'one in Carabobo, one in Lara. And no two of them match.',
         },
         options: [
           {
             label: {
-              es: '¿Y la tercera sede?',
-              en: 'And the third site?',
+              es: '¿Como llegaron a eso?',
+              en: 'How did it get like this?',
             },
             next: 'cop-2',
           },
@@ -178,24 +188,25 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'cop-2': {
         text: {
           es:
-            'La copia de Lara se perdio. Asi, sin drama: un dia ' +
-            'estaba y al otro nadie la habia visto nunca.',
+            'Cada sede llena su planilla y manda la copia por valija. ' +
+            'Semanas de viaje. Cuando llega, alla ya cambio todo.',
           en:
-            'The Lara copy got lost. Just like that: one day it was ' +
-            'there, the next day nobody had ever seen it.',
+            'Each site fills its own form and ships the copy by ' +
+            'courier bag. Weeks on the road. By the time it arrives, ' +
+            'everything already changed over there.',
         },
         options: [
           {
             label: {
-              es: '¿Como se pierde eso?',
-              en: 'How does that get lost?',
+              es: '¿No hay conexion entre sedes?',
+              en: 'No connection between sites?',
             },
             next: 'cop-3',
           },
           {
             label: {
-              es: '¿Y cual vale entonces?',
-              en: 'So which one counts?',
+              es: '¿Y cual copia vale?',
+              en: 'So which copy counts?',
             },
             next: 'cop-4',
           },
@@ -204,11 +215,13 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'cop-3': {
         text: {
           es:
-            'Una mudanza, una caja mal rotulada, un archivador que se ' +
-            'cerro para siempre. Elige tu teoria, todas valen igual.',
+            '¿Conexion? Aqui la linea se cae mas seguido que la luz. ' +
+            'Y entre estados, ni hablar: los datos viajan en papel y ' +
+            'en autobus.',
           en:
-            'A move, a mislabeled box, a cabinet that closed forever. ' +
-            'Pick your theory, they are all equally valid.',
+            'Connection? The line here drops more often than the ' +
+            'power. Between states, forget it: data travels by paper ' +
+            'and by bus.',
         },
         options: [
           {
@@ -281,10 +294,10 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'cop-6': {
         text: {
           es:
-            'Llamadas, un viaje entre sedes si la cosa es seria, y al ' +
-            'final... fe. Mucha fe.',
+            'Llamadas, un viaje entre estados si la cosa es seria, y ' +
+            'al final... fe. Mucha fe.',
           en:
-            'Phone calls, a trip between sites if it is serious, and ' +
+            'Phone calls, a trip between states if it is serious, and ' +
             'in the end... faith. A lot of faith.',
         },
         options: [
@@ -370,18 +383,19 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'cop-10': {
         text: {
           es:
-            'Una sola fuente para las tres sedes... suena a sueño. ' +
-            'Aunque dicen que un pasante anda en algo asi.',
+            'Una sola fuente para las tres sedes... eso pido yo cada ' +
+            'noche. Dicen que el pasante que viene quiere justo eso: ' +
+            'digitalizarlo todo.',
           en:
-            'A single source for all three sites... sounds like a ' +
-            'dream. Though they say an intern is onto something like ' +
-            'that.',
+            'A single source for all three sites... that is my ' +
+            'nightly wish. They say the intern who is coming wants ' +
+            'exactly that: to digitize everything.',
         },
         options: [
           {
             label: {
-              es: 'Cuentame del pasante',
-              en: 'Tell me about the intern',
+              es: 'Cuentame de ese pasante',
+              en: 'Tell me about that intern',
             },
             next: 'rum-1',
           },
@@ -394,11 +408,13 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'bus-1': {
         text: {
           es:
-            '¿Ves ese archivador? Encontrar un equipo ahi toma veinte ' +
-            'minutos. Y eso cuando hay suerte.',
+            '¿Ves ese archivador? Treinta y ocho carpetas. Encontrar ' +
+            'un equipo ahi toma veinte minutos largos. Y eso con ' +
+            'suerte.',
           en:
-            'See that cabinet? Finding one piece of equipment in ' +
-            'there takes twenty minutes. And that is with luck.',
+            'See that cabinet? Thirty-eight folders. Finding one ' +
+            'piece of equipment in there takes a long twenty minutes. ' +
+            'And that is with luck.',
         },
         options: [
           {
@@ -523,19 +539,19 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'bus-6': {
         text: {
           es:
-            'Vuelvo a empezar, carpeta por carpeta. Y a veces no ' +
-            'aparece nunca. Se anota "no ubicado" y se cierra la ' +
-            'carpeta.',
+            'Vuelvo a empezar: carpeta uno de treinta y ocho, carpeta ' +
+            'dos... El otro dia perdi una mañana ENTERA buscando un ' +
+            'aislador.',
           en:
-            'I start over, folder by folder. And sometimes it never ' +
-            'shows up. You write down "not located" and close the ' +
-            'folder.',
+            'I start over: folder one of thirty-eight, folder two... ' +
+            'The other day I lost an ENTIRE morning looking for one ' +
+            'insulator.',
         },
         options: [
           {
             label: {
-              es: '¿Y eso queda asi?',
-              en: 'And it just stays like that?',
+              es: '¿Una mañana entera?',
+              en: 'An entire morning?',
             },
             next: 'bus-7',
           },
@@ -548,19 +564,18 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'bus-7': {
         text: {
           es:
-            'Queda asi hasta que alguien lo necesita con urgencia. ' +
-            'Ese dia todos recuerdan que existe y nadie sabe donde ' +
-            'esta.',
+            'Entera. Aparecio en la carpeta treinta y uno, archivado ' +
+            'bajo "varios". El cafe se me enfrio tres veces ' +
+            'esperandome.',
           en:
-            'It stays like that until someone needs it urgently. That ' +
-            'day everyone remembers it exists and nobody knows where ' +
-            'it is.',
+            'Entire. It turned up in folder thirty-one, filed under ' +
+            '"misc". My coffee went cold three times waiting for me.',
         },
         options: [
           {
             label: {
-              es: '¿Y que pasa ese dia?',
-              en: 'What happens that day?',
+              es: '¿Y si es urgente?',
+              en: 'What if it is urgent?',
             },
             next: 'bus-8',
           },
@@ -573,13 +588,13 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'bus-8': {
         text: {
           es:
-            'Suena el telefono, viene el jefe, y media oficina ' +
-            'termina de rodillas revisando gavetas. Un clasico de la ' +
-            'casa.',
+            'Si es urgente suena el telefono, viene el jefe, y media ' +
+            'oficina termina de rodillas revisando gavetas. Un ' +
+            'clasico de la casa.',
           en:
-            'The phone rings, the boss shows up, and half the office ' +
-            'ends up on their knees going through drawers. A house ' +
-            'classic.',
+            'If it is urgent the phone rings, the boss shows up, and ' +
+            'half the office ends up on their knees going through ' +
+            'drawers. A house classic.',
         },
         options: [
           {
@@ -619,11 +634,13 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'bus-10': {
         text: {
           es:
-            'Dicen que si. Que un pasante esta armando algo con una ' +
-            'computadora. Yo, mientras tanto, sigo cargando.',
+            'Yo sueño con escribir el nombre del equipo y que ' +
+            'aparezca solo. Dicen que el pasante que viene promete ' +
+            'algo asi. Mientras tanto, sigo cargando.',
           en:
-            'They say there is. That an intern is building something ' +
-            'with a computer. Meanwhile, I keep hauling.',
+            'I dream of typing the equipment name and having it just ' +
+            'show up. They say the incoming intern promises something ' +
+            'like that. Meanwhile, I keep hauling.',
         },
         options: [
           {
@@ -642,17 +659,19 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-1': {
         text: {
           es:
-            'El rumor dice que un pasante esta armando un sistema ' +
-            'para el inventario. Con computadora y todo.',
+            'El rumor dice que llega un pasante de la universidad que ' +
+            'quiere digitalizar todo el inventario. Nadie lo conoce ' +
+            'todavia: llega en unas semanas.',
           en:
-            'The rumor says an intern is building a system for the ' +
-            'inventory. Computer and all.',
+            'The rumor says a university intern is coming, and he ' +
+            'wants to digitize the whole inventory. Nobody knows him ' +
+            'yet: he arrives in a few weeks.',
         },
         options: [
           {
             label: {
-              es: '¿Y tu que crees?',
-              en: 'And what do you think?',
+              es: '¿Y tu que esperas?',
+              en: 'And what do you expect?',
             },
             next: 'rum-2',
           },
@@ -661,7 +680,7 @@ export const CORPOELEC_PASADO_DIALOGS = {
               es: '¿Un pasante? ¿En serio?',
               en: 'An intern? Seriously?',
             },
-            next: 'rum-5',
+            next: 'rum-4',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -672,45 +691,49 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-2': {
         text: {
           es:
-            'He visto pasar tres grandes ideas en esta oficina. Las ' +
-            'tres terminaron dentro del archivador, bien selladas.',
+            'Yo espero todo. Que una sola copia valga para las tres ' +
+            'sedes. Que buscar un equipo deje de ser una expedicion ' +
+            'arqueologica.',
           en:
-            'I have seen three big ideas come through this office. ' +
-            'All three ended up inside the cabinet, properly stamped.',
+            'I expect everything. That a single copy counts for all ' +
+            'three sites. That finding equipment stops being an ' +
+            'archaeological dig.',
         },
         options: [
           {
             label: {
-              es: '¿Entonces no crees?',
-              en: 'So you do not believe it?',
+              es: '¿No es demasiada fe?',
+              en: 'Is that not too much faith?',
             },
             next: 'rum-3',
           },
           {
             label: {
-              es: '¿Y si esta vez funciona?',
-              en: 'What if this time it works?',
+              es: '¿Que mas le pedirias?',
+              en: 'What else would you ask for?',
             },
-            next: 'rum-4',
+            next: 'rum-5',
           },
         ],
       },
       'rum-3': {
         text: {
           es:
-            'No dije eso. Digo que el papel nunca me ha dejado sin ' +
-            'trabajo... aunque tampoco me deja dormir.',
+            'Puede ser. Pero alguien tiene que creer primero para que ' +
+            'las cosas pasen. Yo ya me ofreci: cuando llegue, le voy ' +
+            'a contar como trabajamos de verdad.',
           en:
-            'I did not say that. I say paper has never left me ' +
-            'without a job... though it does not let me sleep either.',
+            'Maybe. But somebody has to believe first so that things ' +
+            'happen. I already volunteered: when he arrives, I will ' +
+            'tell him how we actually work.',
         },
         options: [
           {
             label: {
-              es: '¿Y si esta vez funciona?',
-              en: 'What if this time it works?',
+              es: '¿Y si el sistema falla?',
+              en: 'What if the system fails?',
             },
-            next: 'rum-4',
+            next: 'rum-6',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -721,21 +744,21 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-4': {
         text: {
           es:
-            'Si funciona, escribes el nombre del equipo y aparece. ' +
-            'Sin carpetas, sin gavetas. No me hagas ilusionar, que ' +
-            'luego duele.',
+            'Eso dicen todos: ¿un pasante contra treinta y ocho ' +
+            'carpetas? Yo digo otra cosa: el que no ha cargado este ' +
+            'papel no sabe la falta que hace.',
           en:
-            'If it works, you type the equipment name and it shows ' +
-            'up. No folders, no drawers. Do not get my hopes up, it ' +
-            'hurts afterwards.',
+            'That is what everyone says: an intern against ' +
+            'thirty-eight folders? I say something else: whoever has ' +
+            'not hauled this paper does not know how badly we need it.',
         },
         options: [
           {
             label: {
-              es: '¿Que le pedirias al sistema?',
-              en: 'What would you ask of it?',
+              es: '¿Y tu que esperas de el?',
+              en: 'What do you expect from him?',
             },
-            next: 'rum-6',
+            next: 'rum-2',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -746,42 +769,41 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-5': {
         text: {
           es:
-            'Eso dije yo: ¿un pasante? Pero se queda hasta tarde y ' +
-            'pregunta como trabajamos de verdad. Eso no lo hace ' +
-            'cualquiera.',
+            'Que aguante sin conexion. Aqui la linea y la luz se van ' +
+            'cuando quieren. Si ese sistema respira sin internet, le ' +
+            'hago un altar.',
           en:
-            'That is what I said: an intern? But he stays late and ' +
-            'asks how we actually work. Not everyone does that.',
+            'That it holds up offline. The line and the power here ' +
+            'leave whenever they please. If that system can breathe ' +
+            'without internet, I will build it a shrine.',
         },
         options: [
           {
             label: {
-              es: '¿Y tu que opinas?',
-              en: 'And what is your take?',
+              es: '¿Se va la luz aqui?',
+              en: 'The power goes out here?',
             },
-            next: 'rum-2',
+            next: 'rum-7',
           },
           {
-            label: { es: '¿Le has hablado?', en: 'Have you talked?' },
-            next: 'rum-7',
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
           },
         ],
       },
       'rum-6': {
         text: {
           es:
-            'Que una sola copia valga para las tres sedes. Y que ' +
-            'buscar un equipo no sea una expedicion arqueologica.',
+            'Si falla, seguimos como siempre: cargando. Pero si ' +
+            'funciona, jubilo este archivador con honores y desfile.',
           en:
-            'That a single copy counts for all three sites. And that ' +
-            'finding equipment stops being an archaeological dig.',
+            'If it fails, we go on as always: hauling. But if it ' +
+            'works, I retire this cabinet with full honors and a ' +
+            'parade.',
         },
         options: [
           {
-            label: {
-              es: '¿Algo mas de la lista?',
-              en: 'Anything else on the list?',
-            },
+            label: { es: 'Ojala funcione', en: 'I hope it works' },
             next: 'rum-8',
           },
           {
@@ -793,16 +815,18 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-7': {
         text: {
           es:
-            'Me pidio una planilla de ejemplo. Le di la mas fea que ' +
-            'tenia, para que supiera donde se estaba metiendo.',
+            'En la empresa electrica, si. La ironia no se nos escapa, ' +
+            'tranquilo. Por eso lo digo: lo que llegue tiene que ' +
+            'funcionar aunque todo lo demas se caiga.',
           en:
-            'He asked me for a sample form. I gave him the ugliest ' +
-            'one I had, so he would know what he was getting into.',
+            'At the power company, yes. The irony is not lost on us, ' +
+            'do not worry. That is why I say it: whatever arrives ' +
+            'must keep working even when everything else goes down.',
         },
         options: [
           {
-            label: { es: '¿Y que dijo?', en: 'And what did he say?' },
-            next: 'rum-9',
+            label: { es: 'Ojala funcione', en: 'I hope it works' },
+            next: 'rum-8',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -813,19 +837,20 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-8': {
         text: {
           es:
-            'Que no se caiga cuando se va la luz. Aqui la luz... ' +
-            'digamos que conocemos el tema de cerca.',
+            'Ojala. El dia que escriba un codigo y la respuesta ' +
+            'llegue antes de que se enfrie el cafe, lloro de la ' +
+            'felicidad.',
           en:
-            'That it does not die when the power goes out. Here, ' +
-            'power... let us say we know the subject closely.',
+            'Hopefully. The day I type a code and the answer arrives ' +
+            'before my coffee cools down, I will cry of joy.',
         },
         options: [
           {
             label: {
-              es: '¿Se va la luz aqui?',
-              en: 'The power goes out here?',
+              es: '¿Viste esa pantalla rara?',
+              en: 'Did you see that odd screen?',
             },
-            next: 'rum-10',
+            next: 'rum-9',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -836,20 +861,21 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-9': {
         text: {
           es:
-            'La miro un buen rato y anoto algo en su cuaderno. Ni se ' +
-            'asusto. Eso me dio esperanza, o lastima. Aun no decido.',
+            '¿La que aparecio junto a la grieta? Dice "0.2 s" donde ' +
+            'mi vida entera dice "20 minutos". Los demas juran que es ' +
+            'un error de tipeo. Yo digo que es una promesa.',
           en:
-            'He stared at it for a while and wrote something in his ' +
-            'notebook. Not even scared. That gave me hope, or pity. ' +
-            'Still deciding.',
+            'The one that showed up next to the crack? It says ' +
+            '"0.2 s" where my whole life says "20 minutes". The ' +
+            'others swear it is a typo. I say it is a promise.',
         },
         options: [
           {
             label: {
-              es: 'Dale esperanza, mejor',
-              en: 'Go with hope, better',
+              es: 'Yo apostaria a la promesa',
+              en: 'I would bet on the promise',
             },
-            next: 'rum-11',
+            next: 'rum-10',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -860,32 +886,11 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'rum-10': {
         text: {
           es:
-            'La ironia no se nos escapa, tranquilo. Por eso lo digo: ' +
-            'si ese sistema aguanta sin conexion, le hago un altar.',
+            '¿Verdad que si? Guardo esa apuesta en la carpeta buena. ' +
+            'Si algun dia se cumple, te debo un cafe caliente.',
           en:
-            'The irony is not lost on us, do not worry. That is why I ' +
-            'say: if that system holds up offline, I will build it a ' +
-            'shrine.',
-        },
-        options: [
-          {
-            label: { es: 'Ojala funcione', en: 'I hope it works' },
-            next: 'rum-11',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back to topics' },
-            next: 'hub',
-          },
-        ],
-      },
-      'rum-11': {
-        text: {
-          es:
-            'Ojala. El dia que escriba un codigo y me diga donde esta ' +
-            'el equipo, jubilo este archivador con honores.',
-          en:
-            'Hopefully. The day I type a code and it tells me where ' +
-            'the equipment is, I retire this cabinet with full honors.',
+            'Right? I am filing that bet in the good folder. If it ' +
+            'ever comes true, I owe you a hot coffee.',
         },
         options: [
           {
@@ -893,7 +898,7 @@ export const CORPOELEC_PASADO_DIALOGS = {
             next: 'hub',
           },
           {
-            label: { es: 'Suerte con eso', en: 'Good luck with that' },
+            label: { es: 'Trato hecho', en: 'Deal' },
             next: null,
           },
         ],
@@ -931,12 +936,12 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'dia-2': {
         text: {
           es:
-            'Las que ves y las que no ves. Cada equipo nuevo son tres ' +
-            'copias, una por sede. Multiplica y llora conmigo.',
+            'Cada equipo nuevo son tres copias, una por sede. Y cada ' +
+            'correccion, otras tres. Multiplica y llora conmigo.',
           en:
-            'The ones you see and the ones you do not. Each new asset ' +
-            'means three copies, one per site. Do the math and weep ' +
-            'with me.',
+            'Each new asset means three copies, one per site. And ' +
+            'each correction, three more. Do the math and weep with ' +
+            'me.',
         },
         options: [
           {
@@ -952,11 +957,13 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'dia-3': {
         text: {
           es:
-            'Ese mueble sabe mas de esta empresa que cualquier ' +
-            'gerente. Lastima que no hable.',
+            'Treinta y ocho carpetas de historia pura. Ese mueble ' +
+            'sabe mas de esta empresa que cualquier gerente. Lastima ' +
+            'que no hable.',
           en:
-            'That cabinet knows more about this company than any ' +
-            'manager. A shame it cannot talk.',
+            'Thirty-eight folders of pure history. That cabinet knows ' +
+            'more about this company than any manager. A shame it ' +
+            'cannot talk.',
         },
         options: [
           {
@@ -1018,34 +1025,13 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'dia-6': {
         text: {
           es:
-            'Yo las reclamo. Por eso me conocen en las tres sedes. No ' +
-            'siempre por lo bueno.',
+            'Yo las reclamo. Por eso me conocen en los tres estados, ' +
+            'y no siempre por lo bueno. Si el pasante del rumor ' +
+            'arregla esto, cedo el trono feliz.',
           en:
-            'I claim them back. That is why all three sites know me. ' +
-            'Not always for the good reasons.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Eres la heroina de esto',
-              en: 'You are the hero here',
-            },
-            next: 'dia-7',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back to topics' },
-            next: 'hub',
-          },
-        ],
-      },
-      'dia-7': {
-        text: {
-          es:
-            'Heroina con papel carbon en los dedos. Si el rumor del ' +
-            'sistema es cierto, cedo el trono feliz.',
-          en:
-            'A hero with carbon paper on her fingers. If the system ' +
-            'rumor is true, I will hand over the throne gladly.',
+            'I claim them back. That is why all three states know me, ' +
+            'not always for the good reasons. If the rumored intern ' +
+            'fixes this, I will hand over the throne gladly.',
         },
         options: [
           {
@@ -1054,6 +1040,131 @@ export const CORPOELEC_PASADO_DIALOGS = {
           },
           {
             label: { es: 'Descansa un poco', en: 'Get some rest' },
+            next: null,
+          },
+        ],
+      },
+      'fut-1': {
+        text: {
+          es:
+            'Baja la voz un momento... Tu no eres de por aqui, ' +
+            '¿cierto? Miras esta oficina como quien mira una foto ' +
+            'vieja. Y hueles a... futuro.',
+          en:
+            'Lower your voice for a moment... You are not from around ' +
+            'here, right? You look at this office like someone ' +
+            'looking at an old photo. And you smell of... future.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como lo supiste?',
+              en: 'How did you know?',
+            },
+            next: 'fut-2',
+          },
+          {
+            label: {
+              es: 'Vengo de mas adelante, si',
+              en: 'I come from later on, yes',
+            },
+            next: 'fut-3',
+          },
+          {
+            label: { es: 'Mejor volvamos', en: 'Let us go back' },
+            next: 'hub',
+          },
+        ],
+      },
+      'fut-2': {
+        text: {
+          es:
+            'Intuicion de archivadora. Me paso el dia fechando ' +
+            'papeles: aprendi a fechar personas de un vistazo. Y tu, ' +
+            'querido, no eres de este año.',
+          en:
+            'Filing clerk intuition. I spend my days dating papers: I ' +
+            'learned to date people at a glance. And you, dear, are ' +
+            'not from this year.',
+        },
+        options: [
+          { label: { es: 'Touche', en: 'Touche' }, next: 'fut-3' },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'fut-3': {
+        text: {
+          es:
+            'Entonces dime una sola cosa, sin detalles: el rumor del ' +
+            'pasante que viene a digitalizar todo... ¿termina bien?',
+          en:
+            'Then tell me just one thing, no details: the rumor about ' +
+            'the intern coming to digitize everything... does it end ' +
+            'well?',
+        },
+        options: [
+          {
+            label: {
+              es: 'Termina bien. Muy bien',
+              en: 'It ends well. Very well',
+            },
+            next: 'fut-4',
+          },
+          {
+            label: {
+              es: 'No doy spoilers',
+              en: 'I do not give spoilers',
+            },
+            next: 'fut-5',
+          },
+        ],
+      },
+      'fut-4': {
+        text: {
+          es:
+            'Con eso me alcanza. Mañana cargo estas pilas con otro ' +
+            'animo. Y cuando ese muchacho llegue, le voy a contar ' +
+            'TODO: donde duele y por que.',
+          en:
+            'That is all I need. Tomorrow I will haul these stacks in ' +
+            'a better mood. And when that kid arrives, I will tell ' +
+            'him EVERYTHING: where it hurts and why.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Perfecto. Hasta pronto',
+              en: 'Perfect. See you soon',
+            },
+            next: null,
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'fut-5': {
+        text: {
+          es:
+            'Ja, justo. Los archivos tampoco adelantan el final: hay ' +
+            'que llegar hasta la ultima carpeta. Esperare, que ' +
+            'paciencia me sobra.',
+          en:
+            'Ha, fair. Files do not skip to the ending either: you ' +
+            'must reach the last folder. I will wait, patience I have ' +
+            'plenty.',
+        },
+        options: [
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+          {
+            label: { es: 'Suerte esperando', en: 'Good luck waiting' },
             next: null,
           },
         ],
@@ -1072,12 +1183,12 @@ export const CORPOELEC_PASADO_DIALOGS = {
         en: 'No talking while I copy serials.',
       },
       {
-        es: 'El papel carbon mancha, pero cumple.',
-        en: 'Carbon paper stains, but it delivers.',
+        es: 'Asi se ha hecho siempre. Y asi seguira.',
+        en: 'It has always been done this way. And it will stay.',
       },
       {
-        es: 'Asi se ha hecho siempre. Creo.',
-        en: 'It has always been done this way. I think.',
+        es: '¿Un pasante digitalizando esto? Ja.',
+        en: 'An intern digitizing all this? Ha.',
       },
       {
         es: 'Sin sello, esto no vale nada.',
@@ -1137,8 +1248,11 @@ export const CORPOELEC_PASADO_DIALOGS = {
             next: 'car-1',
           },
           {
-            label: { es: '¿Y ese sello?', en: 'And that stamp?' },
-            next: 'sel-1',
+            label: {
+              es: 'Oi que llega un pasante',
+              en: 'I heard an intern is coming',
+            },
+            next: 'rum-1',
           },
           {
             label: { es: '¿Algo mas?', en: 'Anything else?' },
@@ -1149,19 +1263,23 @@ export const CORPOELEC_PASADO_DIALOGS = {
       hub3: {
         text: {
           es:
-            '¿Todavia aqui? Bueno. Queda una pregunta que todos hacen ' +
-            'tarde o temprano.',
+            '¿Todavia aqui? Bueno. Queda el sello, que es sagrado... ' +
+            'y una cosa tuya que no me cierra.',
           en:
-            'Still here? Fine. There is one question everyone asks ' +
-            'sooner or later.',
+            'Still here? Fine. There is the stamp left, which is ' +
+            'sacred... and one thing about you that does not add up.',
         },
         options: [
           {
+            label: { es: '¿Y ese sello?', en: 'And that stamp?' },
+            next: 'sel-1',
+          },
+          {
             label: {
-              es: '¿Por que lo hacen asi?',
-              en: 'Why do you do it this way?',
+              es: '¿Que no te cierra de mi?',
+              en: 'What does not add up about me?',
             },
-            next: 'asi-1',
+            next: 'fut-1',
           },
           {
             label: {
@@ -1195,18 +1313,19 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'err-1': {
         text: {
           es:
-            'Paso las planillas de campo a limpio. A mano. Cada ' +
-            'numero se escribe dos veces: donde nace y donde muere.',
+            'Paso las planillas de campo a limpio. A mano. El mismo ' +
+            'registro se escribe tres veces: en el campo, aqui, y en ' +
+            'la sede que recibe la copia.',
           en:
-            'I copy the field forms into clean ones. By hand. Every ' +
-            'number gets written twice: where it is born and where it ' +
-            'dies.',
+            'I copy the field forms into clean ones. By hand. The ' +
+            'same record gets written three times: in the field, ' +
+            'here, and at the site that receives the copy.',
         },
         options: [
           {
             label: {
-              es: '¿Y si te equivocas?',
-              en: 'What if you make a mistake?',
+              es: '¿Tres veces el mismo dato?',
+              en: 'The same data three times?',
             },
             next: 'err-2',
           },
@@ -1219,15 +1338,18 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'err-2': {
         text: {
           es:
-            'Pasa. Un siete apurado parece un uno. Y ese equipo ' +
-            'cambia de serial para siempre, sin enterarse.',
+            'Tres, minimo. Y cada mano nueva es una oportunidad nueva ' +
+            'de error: un siete apurado parece un uno.',
           en:
-            'It happens. A rushed seven looks like a one. And that ' +
-            'asset changes serial forever, without ever knowing.',
+            'Three, at least. And every new hand is a new chance for ' +
+            'error: a rushed seven looks like a one.',
         },
         options: [
           {
-            label: { es: '¿Para siempre?', en: 'Forever?' },
+            label: {
+              es: '¿Y si eso pasa?',
+              en: 'And if that happens?',
+            },
             next: 'err-3',
           },
           {
@@ -1239,9 +1361,11 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'err-3': {
         text: {
           es:
+            'Ese equipo cambia de serial para siempre, sin enterarse. ' +
             'Hasta que alguien lo busca por el serial bueno y no ' +
             'aparece. Ese dia el error, claro, es mio.',
           en:
+            'That asset changes serial forever, without ever knowing. ' +
             'Until someone searches by the right serial and nothing ' +
             'shows up. That day the mistake, of course, is mine.',
         },
@@ -1286,20 +1410,25 @@ export const CORPOELEC_PASADO_DIALOGS = {
       'err-5': {
         text: {
           es:
-            'Dicen que un pasante arma un sistema donde escribes una ' +
-            'vez y queda. Si es verdad, firmo donde sea.',
+            'Dicen que el pasante que viene quiere que cada dato se ' +
+            'escriba UNA sola vez. Una. Cuando termine de reirme, le ' +
+            'explico donde esta parado.',
           en:
-            'They say an intern is building a system where you type ' +
-            'once and it stays. If that is true, I will sign anywhere.',
+            'They say the incoming intern wants every piece of data ' +
+            'written down ONCE. Once. When I am done laughing, I will ' +
+            'explain to him where he is standing.',
         },
         options: [
           {
-            label: { es: 'Volvamos', en: 'Back to topics' },
-            next: 'hub',
+            label: {
+              es: 'Cuentame de ese pasante',
+              en: 'Tell me about that intern',
+            },
+            next: 'rum-1',
           },
           {
-            label: { es: 'Que sea pronto', en: 'May it come soon' },
-            next: null,
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
           },
         ],
       },
@@ -1353,12 +1482,12 @@ export const CORPOELEC_PASADO_DIALOGS = {
         text: {
           es:
             'Alla la vuelven a transcribir. Otro siete que parece ' +
-            'uno. Asi nacen dos inventarios distintos del mismo ' +
-            'equipo.',
+            'uno. Asi el mismo equipo termina con dos vidas, una por ' +
+            'sede, y ninguna se entera de la otra.',
           en:
             'Over there they transcribe it again. Another seven that ' +
-            'looks like a one. That is how one asset ends up with two ' +
-            'inventories.',
+            'looks like a one. That is how the same asset ends up ' +
+            'with two lives, one per site, neither aware of the other.',
         },
         options: [
           {
@@ -1378,10 +1507,12 @@ export const CORPOELEC_PASADO_DIALOGS = {
         text: {
           es:
             'Exacto. No es que la gente sea descuidada. Es que el ' +
-            'metodo multiplica el error el solito.',
+            'metodo multiplica el error el solito. Y el metodo soy ' +
+            'yo, asi que un respeto.',
           en:
             'Exactly. It is not that people are careless. It is that ' +
-            'the method multiplies the error all by itself.',
+            'the method multiplies the error all by itself. And I am ' +
+            'the method, so show some respect.',
         },
         options: [
           {
@@ -1444,11 +1575,12 @@ export const CORPOELEC_PASADO_DIALOGS = {
         text: {
           es:
             'El jefe. Y el jefe confia en mi letra. Todo el ' +
-            'inventario descansa sobre estos lentes. No lo digas muy ' +
-            'fuerte.',
+            'inventario de tres estados descansa sobre estos lentes. ' +
+            'No lo digas muy fuerte.',
           en:
             'The boss. And the boss trusts my handwriting. The whole ' +
-            'inventory rests on these glasses. Do not say it too loud.',
+            'three-state inventory rests on these glasses. Do not say ' +
+            'it too loud.',
         },
         options: [
           {
@@ -1464,22 +1596,31 @@ export const CORPOELEC_PASADO_DIALOGS = {
           },
         ],
       },
-      'asi-1': {
+      'rum-1': {
         text: {
           es:
-            'Porque asi se ha hecho siempre. Lo dije yo tambien, con ' +
-            'orgullo, durante años.',
+            'Ah, el famoso pasante de la universidad que viene a ' +
+            '"digitalizar todo". Todavia no pisa la oficina y ya lo ' +
+            'citan mas que al jefe.',
           en:
-            'Because it has always been done this way. I used to say ' +
-            'it too, with pride, for years.',
+            'Ah, the famous university intern who is coming to ' +
+            '"digitize everything". He has not set foot in the office ' +
+            'yet and he is already quoted more than the boss.',
         },
         options: [
           {
             label: {
-              es: '¿Ya no lo dices?',
-              en: 'You do not say it anymore?',
+              es: '¿No le crees?',
+              en: 'You do not believe it?',
             },
-            next: 'asi-2',
+            next: 'rum-2',
+          },
+          {
+            label: {
+              es: '¿Que dicen que hara?',
+              en: 'What do they say he will do?',
+            },
+            next: 'rum-3',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -1487,22 +1628,24 @@ export const CORPOELEC_PASADO_DIALOGS = {
           },
         ],
       },
-      'asi-2': {
+      'rum-2': {
         text: {
           es:
-            '"Siempre" es la costumbre con años de servicio. El dia ' +
-            'que vi tres copias distintas del mismo equipo, dude.',
+            'He visto pasar tres grandes ideas por esta oficina. Las ' +
+            'tres terminaron dentro del archivador, bien selladas. La ' +
+            'computadora sera la cuarta.',
           en:
-            '"Always" is just habit with seniority. The day I saw ' +
-            'three different copies of the same asset, I had doubts.',
+            'I have seen three big ideas come through this office. ' +
+            'All three ended up inside the cabinet, properly stamped. ' +
+            'The computer will be the fourth.',
         },
         options: [
           {
             label: {
-              es: '¿Y ahora que piensas?',
-              en: 'And what do you think now?',
+              es: '¿Y si esta vez funciona?',
+              en: 'What if this time it works?',
             },
-            next: 'asi-3',
+            next: 'rum-4',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -1510,23 +1653,146 @@ export const CORPOELEC_PASADO_DIALOGS = {
           },
         ],
       },
-      'asi-3': {
+      'rum-3': {
         text: {
           es:
-            'Que si el rumor del sistema es cierto, sere el primero ' +
-            'en aprender. Con estos lentes y todo.',
+            'Que escribiras el nombre del equipo y aparecera al ' +
+            'instante. Al instante. Yo tardo veinte minutos con ' +
+            'veinte años de practica. Saca la cuenta de cuanto le ' +
+            'creo.',
           en:
-            'That if the system rumor is true, I will be the first to ' +
-            'learn. Glasses and all.',
+            'That you will type the equipment name and it will show ' +
+            'up instantly. Instantly. I take twenty minutes with ' +
+            'twenty years of practice. Do the math on how much I ' +
+            'believe it.',
         },
         options: [
+          {
+            label: { es: '¿Y si es verdad?', en: 'What if it is true?' },
+            next: 'rum-4',
+          },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
             next: 'hub',
           },
+        ],
+      },
+      'rum-4': {
+        text: {
+          es:
+            'Si es verdad, me como una planilla. Con sello. ...Esta ' +
+            'bien: si es verdad, aprendo. Pero que no me toque el ' +
+            'sello, que sin el no soy nadie.',
+          en:
+            'If it is true, I will eat a form. Stamp included. ' +
+            '...Fine: if it is true, I will learn. But hands off my ' +
+            'stamp, without it I am nobody.',
+        },
+        options: [
           {
-            label: { es: 'Asi se habla', en: 'That is the spirit' },
+            label: {
+              es: '¿Y esa pantalla rara de alla?',
+              en: 'And that odd screen over there?',
+            },
+            next: 'rum-5',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'rum-5': {
+        text: {
+          es:
+            '¿La que dice "0.2 s"? Error de tipeo, claramente. Le ' +
+            'faltan los veinte minutos adelante. ...¿Y tu por que ' +
+            'sonries asi?',
+          en:
+            'The one that says "0.2 s"? A typo, clearly. It is ' +
+            'missing the twenty minutes in front. ...And why are you ' +
+            'smiling like that?',
+        },
+        options: [
+          {
+            label: {
+              es: 'Por nada. Volvamos',
+              en: 'No reason. Back to topics',
+            },
+            next: 'hub',
+          },
+          {
+            label: { es: 'El tiempo dira', en: 'Time will tell' },
             next: null,
+          },
+        ],
+      },
+      'fut-1': {
+        text: {
+          es:
+            'A ver... Tu no eres de por aqui. Miras mi papel carbon ' +
+            'como quien mira una pieza de museo. Y hueles a... ' +
+            'futuro.',
+          en:
+            'Let me see... You are not from around here. You look at ' +
+            'my carbon paper like someone eyeing a museum piece. And ' +
+            'you smell of... future.',
+        },
+        options: [
+          {
+            label: { es: '¿Tan obvio soy?', en: 'Am I that obvious?' },
+            next: 'fut-2',
+          },
+          {
+            label: { es: 'Mejor volvamos', en: 'Let us go back' },
+            next: 'hub',
+          },
+        ],
+      },
+      'fut-2': {
+        text: {
+          es:
+            'Veinte años comparando letras. Detectar lo que no encaja ' +
+            'es mi oficio, y tu no encajas en este año. Tranquilo: ' +
+            'sin sello, no es oficial.',
+          en:
+            'Twenty years comparing handwriting. Spotting what does ' +
+            'not fit is my trade, and you do not fit in this year. ' +
+            'Relax: without a stamp, it is not official.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Entonces un consejo: aprende',
+              en: 'Then one piece of advice: learn',
+            },
+            next: 'fut-3',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'fut-3': {
+        text: {
+          es:
+            '¿Aprender? ¿Lo del pasante? Ja... ja. ¿En serio? Bueno. ' +
+            'Si el futuro en persona me lo pide, le dejo una esquina ' +
+            'del escritorio a la computadora. Pequeña.',
+          en:
+            'Learn? The intern thing? Ha... ha. Seriously? Fine. If ' +
+            'the future in person asks me to, I will clear a corner ' +
+            'of the desk for the computer. A small one.',
+        },
+        options: [
+          {
+            label: { es: 'Sabia decision', en: 'Wise decision' },
+            next: null,
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
           },
         ],
       },

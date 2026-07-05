@@ -17,7 +17,7 @@ import {
 } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
-import type { Locale } from '../../lib/rooms'
+import type { Locale, RoomTexts } from '../../lib/rooms'
 import { sfx } from '../audio'
 import type { FichaKind, Interactable } from '../state'
 import type { RoomTheme } from '../themes'
@@ -815,6 +815,77 @@ export function lecternNotebook(opts: {
         light.intensity = 1.2 + pulse * 0.7
       }
     },
+  }
+}
+
+/**
+ * KIT INFORMATIVO ESTANDAR de la sala (decision del usuario 2026-07-04):
+ * los 4 elementos que muestran el CV van en la MISMA posicion y tamaño en
+ * TODAS las salas (el orden del aula, la primera sala, es el canon):
+ *   - RETOS       -> muro -X (la DERECHA de quien avanza), a media sala.
+ *   - APRENDIZAJES-> muro +X (su IZQUIERDA), a media sala (espejo).
+ *   - grieta      -> muro +X al fondo (mano izquierda, junto a la salida).
+ *   - cuaderno    -> muro -X al fondo (mano derecha, junto a la puerta).
+ * Las salas son uniformes (13.2 m), asi que las coordenadas resultantes
+ * son identicas sala a sala — consistencia garantizada por construccion.
+ */
+export function infoKit(opts: {
+  room: RoomLayout
+  /** Año de la etapa (letrero ANTES · {año} de la grieta). */
+  year: string
+  theme: RoomTheme
+  locale: Locale
+  texts: RoomTexts
+  /** Luz del cuaderno flotante (solo tier full). */
+  withLight: boolean
+  onFicha(roomIndex: number, kind: FichaKind): void
+  onEnterPast(roomIndex: number, spawn: { x: number; z: number }): void
+  onStory(title: string, paragraphs: readonly string[]): void
+}): { props: PropHandle[]; colliders: Box2[] } {
+  const { room, texts } = opts
+  const half = room.width / 2
+  const retos = fichaBoard({
+    roomIndex: room.index,
+    kind: 'retos',
+    position: [-half + 0.35, 0, room.z - 0.6],
+    rotationY: Math.PI / 2,
+    theme: opts.theme,
+    locale: opts.locale,
+    preview: texts.retos,
+    onOpen: opts.onFicha,
+  })
+  const aprendizajes = fichaBoard({
+    roomIndex: room.index,
+    kind: 'aprendizajes',
+    position: [half - 0.35, 0, room.z - 0.6],
+    rotationY: -Math.PI / 2,
+    theme: opts.theme,
+    locale: opts.locale,
+    preview: texts.aprendizajes,
+    onOpen: opts.onFicha,
+  })
+  const portal = pastPortal({
+    room,
+    position: [half - 0.1, 0, room.z + 5.2],
+    rotationY: -Math.PI / 2,
+    accent: opts.theme.accent,
+    year: opts.year,
+    locale: opts.locale,
+    onEnter: opts.onEnterPast,
+  })
+  const nota = lecternNotebook({
+    roomIndex: room.index,
+    position: [-half + 0.9, 0, room.z + 5.1],
+    rotationY: Math.PI / 2,
+    theme: opts.theme,
+    notebook: { title: texts.title, lines: texts.notebook },
+    story: { title: texts.title, paragraphs: texts.resena },
+    withLight: opts.withLight,
+    onOpen: opts.onStory,
+  })
+  return {
+    props: [retos, aprendizajes, portal, nota],
+    colliders: [footprint(-half + 0.9, room.z + 5.1, 0.7, 0.7)],
   }
 }
 

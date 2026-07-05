@@ -1,12 +1,14 @@
 /**
  * @module rooms/corpoelec (engine)
  * @description Sala 1 — CORPOELEC (central electrica estatal, VE, 2013).
- *   Transformador con bujes, cajas de inventario, monitor con la tabla
+ *   Fila de transformadores con bujes, cajas de inventario, planillas de
+ *   papel apiladas (lo que el sistema digitalizo), monitor con la tabla
  *   OFFLINE, ventana con torres (canvas ink), casco de seguridad y guiño
- *   YARACUY·CARABOBO·LARA. Micros: tablero rojo <-> verde (toggle),
- *   buscar el equipo 0042 (papel lento vs sistema inmediato) y el monitor
- *   con el codigo PHP + jQuery de la epoca. 2 NPCs tecnicos con casco,
- *   conversables con E (arboles de dialogo bilingues).
+ *   YARACUY·CARABOBO·LARA. Kit informativo ESTANDAR (`infoKit`) en las
+ *   mismas posiciones que el aula. Micros: tablero rojo <-> verde
+ *   (toggle), buscar el equipo 0042 (papel lento vs sistema inmediato) y
+ *   el monitor con el codigo PHP + jQuery de la epoca. 2 NPCs tecnicos
+ *   con casco, conversables con E (arboles de dialogo bilingues).
  */
 import { Group, Mesh, MeshBasicMaterial, PointLight } from 'three'
 import type { Box2 } from '../../lib/collision'
@@ -29,10 +31,9 @@ import {
 import type { RoomBuild, RoomCtx } from '../world'
 import {
   desk,
-  fichaBoard,
   footprint,
-  lecternNotebook,
-  pastPortal,
+  infoKit,
+  paperStack,
   switchableMonitor,
 } from './props'
 
@@ -136,28 +137,36 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   const staticColliders: Box2[] = []
   const half = room.width / 2
 
-  group.add(transformer([-half + 1.4, 0, room.z - 2.2]))
-  staticColliders.push(footprint(-half + 1.4, room.z - 2.2, 1.8, 1.1))
+  // fila de transformadores (subestacion) en el muro -X, hacia el frente
+  group.add(
+    transformer([-half + 1.5, 0, room.z - 4.9]),
+    transformer([-half + 1.5, 0, room.z - 3]),
+  )
+  staticColliders.push(
+    footprint(-half + 1.5, room.z - 4.9, 1.8, 1.1),
+    footprint(-half + 1.5, room.z - 3, 1.8, 1.1),
+  )
 
-  // cajas de inventario fusionadas con contorno correcto (2 draw calls)
+  // cajas de inventario fusionadas con contorno correcto (2 draw calls),
+  // en la esquina frontal del muro +X (bajo la ventana de torres)
   group.add(
     outlinedMergedBoxes(
       [
-        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.3, z: room.z - 2.6 },
-        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.7, y: 0.3, z: room.z - 2.4 },
-        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.9, z: room.z - 2.6 },
-        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.1, y: 0.3, z: room.z - 1.7 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.3, z: room.z - 4.6 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.7, y: 0.3, z: room.z - 4.4 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1, y: 0.9, z: room.z - 4.6 },
+        { w: 0.6, h: 0.6, d: 0.6, x: half - 1.1, y: 0.3, z: room.z - 3.7 },
       ],
       toonMat('#8a6f4d'),
       { castShadow: true },
     ),
   )
-  staticColliders.push(footprint(half - 1.35, room.z - 2.15, 1.6, 1.6))
+  staticColliders.push(footprint(half - 1.35, room.z - 4.15, 1.6, 1.6))
   const inventoryLabel = label(
     state.locale === 'es' ? 'INVENTARIO' : 'INVENTORY',
     { size: 0.16, color: '#f2b705' },
   )
-  inventoryLabel.position.set(half - 1, 1.35, room.z - 2.6)
+  inventoryLabel.position.set(half - 1, 1.35, room.z - 4.6)
   inventoryLabel.rotation.y = Math.PI
   group.add(inventoryLabel)
 
@@ -168,11 +177,16 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     ink: theme.ink,
   }
   group.add(
-    desk({ position: [1.4, 0, room.z + 2.4], width: 1.4, color: '#3a3e44' }),
+    desk({ position: [1.8, 0, room.z + 2.4], width: 1.4, color: '#3a3e44' }),
   )
-  staticColliders.push(footprint(1.4, room.z + 2.4, 1.5, 0.8))
+  staticColliders.push(footprint(1.8, room.z + 2.4, 1.5, 0.8))
+  // planillas de papel junto al monitor: lo que el sistema digitalizo
+  group.add(
+    paperStack({ position: [1.3, 0.745, room.z + 2.5], count: 5 }),
+    paperStack({ position: [2.75, 0, room.z + 2.1], count: 11 }),
+  )
   const inventory = switchableMonitor({
-    position: [1.4, 0.72, room.z + 2.3],
+    position: [1.8, 0.72, room.z + 2.3],
     rotationY: Math.PI,
     width: 0.72,
     variants: {
@@ -285,11 +299,11 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   }
   interactables.push(codeItem)
 
-  // ventana con torres + casco de seguridad sobre el escritorio
-  // (corrida hacia el fondo: el frente del muro +X es de la grieta)
-  group.add(towersWindow([half - 0.42, 1.7, room.z - 1.2]))
+  // ventana con torres (muro +X, mitad frontal — sobre las cajas) +
+  // casco de seguridad sobre el escritorio del inventario
+  group.add(towersWindow([half - 0.42, 1.7, room.z - 2.9]))
   const helmet = new Group()
-  helmet.position.set(1.9, 0.85, room.z + 2.3)
+  helmet.position.set(2.35, 0.85, room.z + 2.3)
   const units = unitGeo()
   const dome = new Mesh(units.sphere, toonMat('#f2b705'))
   dome.scale.set(0.32, 0.22, 0.32)
@@ -299,21 +313,21 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   helmet.add(dome, brim)
   group.add(helmet)
 
-  // guiño geografico discreto en el muro -X (al fondo, sobre el
-  // transformador — el frente de ese muro es del cuaderno flotante)
+  // guiño geografico discreto en el muro -X, sobre la fila de
+  // transformadores (las 3 sedes donde el sistema quedo desplegado)
   const geo = label('YARACUY · CARABOBO · LARA', {
     size: 0.22,
     color: theme.accent,
   })
-  geo.position.set(-half + 0.3, 2.5, room.z - 2.3)
+  geo.position.set(-half + 0.3, 2.6, room.z - 3.9)
   geo.rotation.y = Math.PI / 2
   group.add(geo)
 
   // micro-interaccion: tablero de medidores rojo -> verde + luz de estado
-  // (muro +X entre la ventana y la grieta al pasado)
+  // (muro +X entre la pizarra de APRENDIZAJES y la grieta al pasado)
   const microId = `micro-corpoelec-${room.index}`
   const micro = new Group()
-  micro.position.set(half - 0.42, 0, room.z + 0.6)
+  micro.position.set(half - 0.42, 0, room.z + 2.6)
   micro.rotation.y = -Math.PI / 2
   const panel = boxMesh(1.6, 1.1, 0.08, toonMat('#2e3238'))
   panel.position.set(0, 1.5, 0)
@@ -348,7 +362,7 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   const boardItem: Interactable = {
     id: microId,
     x: half - 0.42,
-    z: room.z + 0.6,
+    z: room.z + 2.6,
     radius: 2,
     label: { ...BOARD_LABEL_ON },
     onActivate: () => {
@@ -370,7 +384,7 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   let searchUntil = -1
   interactables.push({
     id: `micro-corpoelec-search-${room.index}`,
-    x: 1.4,
+    x: 1.8,
     z: room.z + 2.4,
     radius: 1.9,
     label: SEARCH_LABEL,
@@ -390,52 +404,22 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     }
   })
 
-  // pizarras tituladas: RETOS (muro del fondo) / APRENDIZAJES (muro izq)
+  // kit informativo estandar (RETOS / APRENDIZAJES / grieta / cuaderno):
+  // mismas posiciones que el aula (el canon de todas las salas)
   const texts = def.texts[state.locale]
-  const retos = fichaBoard({
-    roomIndex: room.index,
-    kind: 'retos',
-    position: [-1.6, 0, room.z + room.depth / 2 - 0.35],
-    rotationY: Math.PI,
-    theme,
-    locale: state.locale,
-    preview: texts.retos,
-    onOpen: actions.openFicha,
-  })
-  const aprendizajes = fichaBoard({
-    roomIndex: room.index,
-    kind: 'aprendizajes',
-    position: [-half + 0.35, 0, room.z - 0.4],
-    rotationY: Math.PI / 2,
-    theme,
-    locale: state.locale,
-    preview: texts.aprendizajes,
-    onOpen: actions.openFicha,
-  })
-  // grieta al pasado en el muro +X (la mano izquierda de quien avanza)
-  const portal = pastPortal({
+  const kit = infoKit({
     room,
-    position: [half - 0.1, 0, room.z + 2.8],
-    rotationY: -Math.PI / 2,
-    accent: theme.accent,
     year: def.year,
-    locale: state.locale,
-    onEnter: actions.enterPast,
-  })
-  // cuaderno flotante con la reseña, en el -X (la derecha del jugador),
-  // pegado a la puerta de salida
-  const nota = lecternNotebook({
-    roomIndex: room.index,
-    position: [-half + 0.9, 0, room.z + 2.7],
-    rotationY: Math.PI / 2,
     theme,
-    notebook: { title: texts.title, lines: texts.notebook },
-    story: { title: texts.title, paragraphs: texts.resena },
+    locale: state.locale,
+    texts,
     withLight: state.tier === 'full',
-    onOpen: actions.openStory,
+    onFicha: actions.openFicha,
+    onEnterPast: actions.enterPast,
+    onStory: actions.openStory,
   })
-  staticColliders.push(footprint(-half + 0.9, room.z + 2.7, 0.7, 0.7))
-  for (const prop of [retos, aprendizajes, portal, nota]) {
+  staticColliders.push(...kit.colliders)
+  for (const prop of kit.props) {
     group.add(prop.group)
     if (prop.interactable) {
       interactables.push(prop.interactable)
@@ -453,7 +437,7 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     bottom: '#2e3238',
     accessory: 'helmet',
     faceSeed: 51,
-    position: [-half + 2.4, 0, room.z - 1.8],
+    position: [-half + 2.8, 0, room.z - 3.6],
     rotationY: -0.9,
   })
   const tecnicaRonda = makeNpc({
@@ -466,8 +450,8 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     position: [0, 0, room.z],
     path: [
       [0, room.z],
-      [half - 2.2, room.z - 2],
-      [-1.2, room.z + 1.4],
+      [4.2, room.z - 2.8],
+      [-2.2, room.z + 1.8],
     ],
     speed: 0.6,
   })

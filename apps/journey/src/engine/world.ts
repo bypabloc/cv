@@ -322,7 +322,7 @@ export function createWorld(deps: WorldDeps): World {
           room.height - 0.35,
           room.z,
           theme.lightColor,
-          14 * def.lightIntensity,
+          14,
           room.width * 2.2,
         ),
       )

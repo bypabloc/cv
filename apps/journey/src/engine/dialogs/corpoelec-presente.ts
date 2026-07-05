@@ -4,6 +4,9 @@
  *   subestacion y almacen donde Pablo, de pasante, construyo el sistema de
  *   inventario de activos electricos en PHP + jQuery, con modo offline y
  *   una base de datos comun para las sedes de Yaracuy, Carabobo y Lara.
+ *   Los dos tecnicos trabajaron con Pablo: el les levanto requerimientos,
+ *   los capacito, les dejo guias documentadas y les cambio la produccion
+ *   (busquedas de 20+ min en papel a 0,2 s).
  */
 import { defineDialog, type NpcDialog } from '../dialog'
 
@@ -12,20 +15,20 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
     name: { es: 'Tecnica de ronda', en: 'Rounds technician' },
     chatter: [
       {
-        es: 'Medidores en verde. Todo en orden.',
-        en: 'Meters in the green. All good.',
+        es: 'Del papel al enter. Pablo nos cambio la vida.',
+        en: 'From paper to enter. Pablo changed our lives.',
+      },
+      {
+        es: 'El 0042... yo estuve en esa primera busqueda.',
+        en: 'The 0042... I was there for that first search.',
+      },
+      {
+        es: 'Cero coma dos segundos. Todavia sonrio.',
+        en: 'Zero point two seconds. Still smiling.',
       },
       {
         es: '¿Y tu casco? Quedate cerca de mi.',
         en: 'Where is your helmet? Stay close.',
-      },
-      {
-        es: 'Antes esto era papel. Puro papel.',
-        en: 'This used to be paper. All paper.',
-      },
-      {
-        es: 'La planta suena bien hoy. Se nota.',
-        en: 'The plant sounds right today.',
       },
       {
         es: 'Reviso, anoto, sigo. Ronda es ronda.',
@@ -37,19 +40,28 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       hub: {
         text: {
           es:
-            'Bienvenido a la subestacion. Yo hago la ronda de inspeccion, ' +
-            'asi que conozco cada rincon. ¿Que quieres saber?',
+            'Bienvenido a la subestacion. Yo hago la ronda de inspeccion ' +
+            'y en 2013 trabaje codo a codo con Pablo, el pasante que ' +
+            'construyo el sistema del monitor. ¿Que quieres saber?',
           en:
-            'Welcome to the substation. I do the inspection rounds, so I ' +
-            'know every corner of this place. What do you want to know?',
+            'Welcome to the substation. I do the inspection rounds, and ' +
+            'in 2013 I worked side by side with Pablo, the intern who ' +
+            'built the system on that monitor. What do you want to know?',
         },
         options: [
           {
             label: {
-              es: '¿Que es ese sistema del monitor?',
-              en: 'What is that system on the monitor?',
+              es: '¿Quien es ese Pablo?',
+              en: 'Who is this Pablo?',
             },
-            next: 'sys-1',
+            next: 'pablo-1',
+          },
+          {
+            label: {
+              es: 'Cuentame la primera busqueda',
+              en: 'Tell me about the first search',
+            },
+            next: 'busca-1',
           },
           {
             label: { es: 'Hay mas temas, ¿no?', en: 'There is more, right?' },
@@ -63,8 +75,12 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       },
       hub2: {
         text: {
-          es: 'Claro que hay mas. ¿Por donde seguimos?',
-          en: 'Of course there is more. Where to next?',
+          es:
+            'Claro que hay mas. Con Pablo dio para rato. ¿Por donde ' +
+            'seguimos?',
+          en:
+            'Of course there is more. Pablo gave us plenty of stories. ' +
+            'Where to next?',
         },
         options: [
           {
@@ -76,8 +92,8 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
           {
             label: {
-              es: 'Cuentame de las otras sedes',
-              en: 'Tell me about the other sites',
+              es: 'Cuentame de las tres sedes',
+              en: 'Tell me about the three sites',
             },
             next: 'sedes-1',
           },
@@ -89,16 +105,27 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       },
       hub3: {
         text: {
-          es: 'Lo mejor para el final: el campo. ¿O ya te vas?',
-          en: 'Saved the best for last: the field. Or are you leaving?',
+          es:
+            'Queda lo mejor: como nos capacito Pablo y ese codigo verde ' +
+            'del monitor. ¿O ya te vas?',
+          en:
+            'The best is left: how Pablo trained us and that green code ' +
+            'on the monitor. Or are you leaving?',
         },
         options: [
           {
             label: {
-              es: '¿Como es el trabajo en campo?',
-              en: 'What is field work like?',
+              es: '¿Como los capacito Pablo?',
+              en: 'How did Pablo train you?',
             },
-            next: 'campo-1',
+            next: 'capa-1',
+          },
+          {
+            label: {
+              es: '¿Que es ese codigo verde?',
+              en: 'What is that green code?',
+            },
+            next: 'code-1',
           },
           {
             label: {
@@ -117,11 +144,12 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
         text: {
           es:
             'Cuidate ahi afuera. Y si ves al veterano del transformador, ' +
-            'no le digas que hablo bien del pasante. Se pone raro.',
+            'preguntale por Pablo: lo niega todo, pero quiere a ese ' +
+            'muchacho como a un hijo.',
           en:
             'Take care out there. And if you see the veteran by the ' +
-            'transformer, do not tell him he praises the intern. He gets ' +
-            'weird about it.',
+            'transformer, ask him about Pablo: he denies everything, but ' +
+            'he loves that kid like a son.',
         },
         options: [
           {
@@ -131,31 +159,31 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
         ],
       },
 
-      'sys-1': {
+      'pablo-1': {
         text: {
           es:
-            '¿Ves esa tabla en el monitor? Es el inventario de activos ' +
-            'electricos. Lo construyo un pasante en 2013, con PHP y ' +
-            'jQuery. Nada lujoso, pero nos cambio la vida.',
+            'Pablo llego en 2013, de pasante, a construir el inventario ' +
+            'de activos. Yo esperaba a alguien pegado a un escritorio... ' +
+            'y aparecio aqui, con casco amarillo, siguiendome la ronda.',
           en:
-            'See that table on the monitor? That is the electrical asset ' +
-            'inventory. An intern built it in 2013, with PHP and jQuery. ' +
-            'Nothing fancy, but it changed our lives.',
+            'Pablo arrived in 2013 as an intern, here to build the asset ' +
+            'inventory. I expected someone glued to a desk... and he ' +
+            'showed up here, yellow helmet on, following my rounds.',
         },
         options: [
           {
             label: {
-              es: '¿Como era antes del sistema?',
-              en: 'What was it like before?',
+              es: '¿Que te preguntaba?',
+              en: 'What did he ask you?',
             },
-            next: 'sys-2',
+            next: 'pablo-2',
           },
           {
             label: {
-              es: '¿Un pasante lo hizo solo?',
-              en: 'An intern built it alone?',
+              es: '¿Confiaste en el de entrada?',
+              en: 'Did you trust him right away?',
             },
-            next: 'sys-alt',
+            next: 'pablo-3',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -163,154 +191,108 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'sys-2': {
+      'pablo-2': {
         text: {
           es:
-            'Planillas de papel. Y no una copia: TRES, una por sede. ' +
-            'Buscar un equipo era revisar carpeta por carpeta. Mas de ' +
-            'veinte minutos, si tenias suerte.',
+            'De todo: como buscaba yo un equipo, donde anotaba, que ' +
+            'pasaba si se iba la red. Pablo apuntaba cada respuesta en ' +
+            'su cuaderno. Nuestro trabajo real termino dentro del sistema.',
           en:
-            'Paper spreadsheets. And not one copy: THREE, one per site. ' +
-            'Finding a piece of equipment meant going folder by folder. ' +
-            'Twenty plus minutes, if you were lucky.',
+            'Everything: how I searched for equipment, where I logged, ' +
+            'what happened when the network died. Pablo wrote every ' +
+            'answer in his notebook. Our real work ended up in the system.',
         },
         options: [
           {
             label: {
-              es: '¿Veinte minutos por un equipo?',
-              en: 'Twenty minutes for one item?',
+              es: '¿Eso era levantar requerimientos?',
+              en: 'Was that requirements gathering?',
             },
-            next: 'sys-3',
+            next: 'pablo-4',
           },
           {
             label: {
-              es: '¿Y con el sistema, cuanto?',
-              en: 'And with the system, how long?',
+              es: '¿Y que salio de tanto apunte?',
+              en: 'What came out of those notes?',
             },
-            next: 'sys-4',
+            next: 'busca-1',
           },
         ],
       },
-      'sys-3': {
+      'pablo-3': {
         text: {
           es:
-            'Minimo. Y si el papel estaba en otra sede, olvidalo: llamada, ' +
-            'espera, que alguien busque alla... Un repuesto podia estar a ' +
-            'una hora de camino y nadie lo sabia.',
+            'Al principio no. Aqui ya habian venido a "modernizarnos" ' +
+            'sin preguntar nada, y todo termino en un cajon. Pablo fue ' +
+            'distinto desde el primer dia.',
           en:
-            'At least. And if the paper was at another site, forget it: a ' +
-            'phone call, waiting, someone searching over there... A spare ' +
-            'could sit an hour away and nobody knew.',
+            'Not at first. People had come to "modernize" us before ' +
+            'without asking a thing, and it all ended in a drawer. Pablo ' +
+            'was different from day one.',
         },
         options: [
           {
             label: {
-              es: '¿Y ahora como funciona?',
-              en: 'And how does it work now?',
+              es: '¿Distinto como?',
+              en: 'Different how?',
             },
-            next: 'sys-4',
+            next: 'pablo-5',
           },
           {
-            label: { es: 'Que desastre', en: 'What a mess' },
-            next: 'sys-3b',
+            label: {
+              es: '¿Que hacia el en cambio?',
+              en: 'What did he do instead?',
+            },
+            next: 'pablo-4',
           },
         ],
       },
-      'sys-3b': {
+      'pablo-4': {
         text: {
           es:
-            'Lo era. Y lo peor: las tres copias nunca coincidian. Cada ' +
-            'sede anotaba lo suyo y el papel no viaja solo. Duplicado no ' +
-            'es respaldo, es confusion por triplicado.',
+            'Pablo levanto los requerimientos con nosotros, el personal ' +
+            'operativo: recorrio las tres sedes, dibujo las pantallas en ' +
+            'papel y nos las mostro antes de programar una sola linea.',
           en:
-            'It was. Worst part: the three copies never matched. Each site ' +
-            'logged its own and paper does not travel by itself. Duplicated ' +
-            'is not backup, it is confusion in triplicate.',
+            'Pablo gathered the requirements with us, the operations ' +
+            'staff: he toured the three sites, sketched the screens on ' +
+            'paper and showed them to us before coding a single line.',
         },
         options: [
           {
             label: {
-              es: '¿Y el sistema arreglo eso?',
-              en: 'Did the system fix that?',
+              es: '¿Y ustedes le corregian?',
+              en: 'And you corrected him?',
             },
-            next: 'sys-4',
+            next: 'pablo-6',
+          },
+          {
+            label: {
+              es: '¿Tambien los capacito?',
+              en: 'Did he train you too?',
+            },
+            next: 'capa-1',
           },
         ],
       },
-      'sys-4': {
+      'pablo-5': {
         text: {
           es:
-            'Ahora escribes el activo, enter, y ahi esta: que es, donde ' +
-            'esta, en que sede. Localizacion inmediata. De veinte minutos ' +
-            'a un parpadeo. Yo lo uso en cada ronda.',
+            'Aqui lo bautizamos asi: el pasante que nos escuchaba en vez ' +
+            'de imponernos el sistema. La frase es mia, que conste. Y ' +
+            'Pablo se la gano dia a dia.',
           en:
-            'Now you type the asset, hit enter, and there it is: what it ' +
-            'is, where it sits, at which site. Instant lookup. From twenty ' +
-            'minutes to a blink. I use it every round.',
+            'We gave him a name here: the intern who listened to us ' +
+            'instead of imposing the system on us. My phrase, for the ' +
+            'record. And Pablo earned it day after day.',
         },
         options: [
           {
             label: {
-              es: '¿Que dijo el personal al verlo?',
-              en: 'How did the staff react?',
+              es: '¿Que le dirias hoy?',
+              en: 'What would you tell him today?',
             },
-            next: 'sys-5',
-          },
-          {
-            label: {
-              es: '¿Con que estaba hecho?',
-              en: 'What was it built with?',
-            },
-            next: 'sys-6',
-          },
-        ],
-      },
-      'sys-5': {
-        text: {
-          es:
-            'Primero desconfianza, como con todo lo nuevo. Pero el pasante ' +
-            'no lo diseño desde un escritorio: vino aqui, al campo, a ' +
-            'preguntarnos como trabajamos. Eso se noto en el resultado.',
-          en:
-            'Distrust at first, like with anything new. But the intern did ' +
-            'not design it from a desk: he came here, to the field, and ' +
-            'asked us how we work. You could tell in the result.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Como levanto los requerimientos?',
-              en: 'How did he gather requirements?',
-            },
-            next: 'campo-2',
-          },
-          {
-            label: {
-              es: '¿Y todos terminaron usandolo?',
-              en: 'And everyone ended up using it?',
-            },
-            next: 'sys-5b',
-          },
-        ],
-      },
-      'sys-5b': {
-        text: {
-          es:
-            'Todos. Porque lo mejor no es la velocidad: es que las tres ' +
-            'sedes por fin ven lo mismo. Una sola verdad en vez de tres ' +
-            'papeles peleados entre si.',
-          en:
-            'Everyone. Because the best part is not the speed: it is that ' +
-            'all three sites finally see the same thing. One truth instead ' +
-            'of three quarreling papers.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Cuentame de esas sedes',
-              en: 'Tell me about those sites',
-            },
-            next: 'sedes-1',
+            next: 'pablo-8',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -318,24 +300,24 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'sys-6': {
+      'pablo-6': {
         text: {
           es:
-            'PHP para el servidor y jQuery para la pantalla. Herramientas ' +
-            'de la epoca, simples y confiables. Aqui no necesitabamos ' +
-            'magia: necesitabamos encontrar las cosas.',
+            'Claro. Yo le dije a Pablo que el buscador debia aceptar el ' +
+            'codigo con o sin ceros adelante, porque asi los dictamos ' +
+            'aqui. A la semana ya lo tenia cambiado.',
           en:
-            'PHP on the server and jQuery for the screen. Tools of the ' +
-            'time, simple and reliable. We did not need magic here: we ' +
-            'needed to find our things.',
+            'Of course. I told Pablo the search box had to take the code ' +
+            'with or without leading zeros, because that is how we call ' +
+            'them out here. Within a week he had it changed.',
         },
         options: [
           {
             label: {
-              es: '¿Simple fue mejor entonces?',
-              en: 'So simple was better?',
+              es: '¿Les mostraba avances?',
+              en: 'Did he show you progress?',
             },
-            next: 'sys-7',
+            next: 'pablo-7',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -343,24 +325,25 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'sys-7': {
+      'pablo-7': {
         text: {
           es:
-            'Para nosotros, si. Lo importante era que aguantara nuestra ' +
-            'realidad: red que se cae, tres sedes, gente con guantes y ' +
-            'poco tiempo. Y eso lo aguanto desde el primer dia.',
+            'Cada semana Pablo traia la pantalla y preguntaba: ¿asi ' +
+            'buscan ustedes? Si algo no calzaba con la ronda, lo ' +
+            'ajustaba. Por eso el sistema se siente hecho a nuestra ' +
+            'medida.',
           en:
-            'For us, yes. What mattered was surviving our reality: a ' +
-            'network that drops, three sites, people wearing gloves with ' +
-            'little time. And it survived it from day one.',
+            'Every week Pablo brought the screen over and asked: is this ' +
+            'how you search? If something did not match the rounds, he ' +
+            'adjusted it. That is why the system feels tailor-made.',
         },
         options: [
           {
             label: {
-              es: '¿Tu como lo usas en la ronda?',
-              en: 'How do you use it on rounds?',
+              es: 'Cuentame la primera busqueda',
+              en: 'Tell me about the first search',
             },
-            next: 'sys-8',
+            next: 'busca-3',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -368,24 +351,57 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'sys-8': {
+      'pablo-8': {
         text: {
           es:
-            'Antes de salir reviso la tabla: que hay en el almacen, que ' +
-            'se movio, que falta. Llego a cada punto sabiendo que voy a ' +
-            'encontrar. La ronda rinde el doble.',
+            'Gracias, Pablo. Mi ronda rinde el doble y nadie vuelve a ' +
+            'perder una mañana por un papel. Y que ese cuaderno suyo ' +
+            'vale mas que muchos titulos.',
           en:
-            'Before heading out I check the table: what is in the ' +
-            'warehouse, what moved, what is missing. I reach each stop ' +
-            'knowing what to expect. Rounds are twice as productive.',
+            'Thank you, Pablo. My rounds are twice as productive and ' +
+            'nobody loses a whole morning to a piece of paper anymore. ' +
+            'And that notebook of his is worth more than many diplomas.',
         },
         options: [
           {
             label: {
-              es: '¿Que muestra la tabla?',
-              en: 'What does the table show?',
+              es: 'Bien merecido. Volvamos',
+              en: 'Well deserved. Back to topics',
             },
-            next: 'sys-9',
+            next: 'hub',
+          },
+          {
+            label: { es: 'Me voy con eso', en: 'I will leave with that' },
+            next: null,
+          },
+        ],
+      },
+
+      'busca-1': {
+        text: {
+          es:
+            '¿Ves las dos pantallas del monitor? La de "carpeta 7 de 38, ' +
+            'mas de veinte minutos" era nuestra vida. La de "0,2 s" es ' +
+            'lo que Pablo nos dejo. Yo vivi las dos.',
+          en:
+            'See the two screens on the monitor? The one with "folder 7 ' +
+            'of 38, twenty plus minutes" was our life. The "0.2 s" one ' +
+            'is what Pablo left us. I lived both.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como era ese antes?',
+              en: 'What was the before like?',
+            },
+            next: 'busca-2',
+          },
+          {
+            label: {
+              es: 'Cuentame la del 0042',
+              en: 'Tell me the 0042 story',
+            },
+            next: 'busca-3',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -393,24 +409,83 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'sys-9': {
+      'busca-2': {
         text: {
           es:
-            'Cada activo con su sede y su ubicacion. Y arriba, ese ' +
-            'indicador que va de OFFLINE a ONLINE. La primera vez que lo ' +
-            'vi pense que estaba roto. Era al reves: era la gracia.',
+            'Planillas de papel, carpeta por carpeta. Buscar un equipo ' +
+            'eran veinte minutos con suerte; por un aislador llegamos a ' +
+            'perder una mañana entera. Pablo cronometro todo eso en su ' +
+            'cuaderno.',
           en:
-            'Every asset with its site and location. And on top, that ' +
-            'badge flipping from OFFLINE to ONLINE. First time I saw it I ' +
-            'thought it was broken. Quite the opposite: it was the trick.',
+            'Paper spreadsheets, folder by folder. Finding one unit took ' +
+            'twenty minutes if lucky; we once lost a whole morning over ' +
+            'an insulator. Pablo timed all of it in his notebook.',
         },
         options: [
           {
             label: {
-              es: '¿Por que es la gracia?',
-              en: 'Why is it the trick?',
+              es: '¿Y el dia del 0042?',
+              en: 'And the 0042 day?',
             },
-            next: 'off-1',
+            next: 'busca-3',
+          },
+          {
+            label: {
+              es: '¿Que costaba tanta demora?',
+              en: 'What did the delay cost?',
+            },
+            next: 'busca-4',
+          },
+        ],
+      },
+      'busca-3': {
+        text: {
+          es:
+            'El dia de la demo, Pablo me dijo: pideme un equipo. Yo ' +
+            'solte "transformador 0042" para hundirlo. Enter... 0,2 ' +
+            'segundos: sede, deposito y responsable en pantalla. El ' +
+            'almacen entero aplaudio.',
+          en:
+            'On demo day Pablo told me: ask me for any unit. I said ' +
+            '"transformer 0042" to sink him. Enter... 0.2 seconds: site, ' +
+            'depot and responsible on screen. The whole warehouse ' +
+            'applauded.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y tu que hiciste?',
+              en: 'And what did you do?',
+            },
+            next: 'busca-5',
+          },
+          {
+            label: {
+              es: '¿Que cambio despues?',
+              en: 'What changed afterwards?',
+            },
+            next: 'busca-6',
+          },
+        ],
+      },
+      'busca-4': {
+        text: {
+          es:
+            'Cuadrillas paradas esperando un repuesto, camiones saliendo ' +
+            '"a ver que hay" y compras duplicadas de cosas que ya ' +
+            'teniamos. La demora costaba produccion, no solo paciencia.',
+          en:
+            'Crews standing around waiting for a spare, trucks leaving ' +
+            '"to see what is there" and duplicate purchases of things we ' +
+            'already had. The delay cost production, not just patience.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y el dia del 0042?',
+              en: 'And the 0042 day?',
+            },
+            next: 'busca-3',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -418,31 +493,103 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'sys-alt': {
+      'busca-5': {
         text: {
           es:
-            'Solo, si. Pasante de 2013. Aqui muchos esperaban que viniera ' +
-            'una empresa grande con algo carisimo. Vino un muchacho con ' +
-            'preguntas y un cuaderno.',
+            'Le hice repetirlo tres veces, convencida de que era truco. ' +
+            'Pedi el 0087, el 0113, uno de Lara... todos al instante. ' +
+            'Ahi entendi que Pablo nos habia devuelto horas de vida.',
           en:
-            'Alone, yes. A 2013 intern. Many here expected some big ' +
-            'company with something pricey. Instead came a young guy with ' +
-            'questions and a notebook.',
+            'I made him repeat it three times, sure it was a trick. I ' +
+            'asked for 0087, 0113, one from Lara... all instant. That is ' +
+            'when I understood Pablo had given us hours of life back.',
         },
         options: [
           {
             label: {
-              es: '¿Y como salio tan bien?',
-              en: 'How did it turn out so well?',
+              es: '¿Que cambio en tu ronda?',
+              en: 'What changed in your rounds?',
             },
-            next: 'sys-5',
+            next: 'busca-6',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'busca-6': {
+        text: {
+          es:
+            'Ahora antes de salir consulto la tabla: que hay, que se ' +
+            'movio, que falta. Llego a cada punto sabiendo que voy a ' +
+            'encontrar. Desde Pablo, la ronda rinde el doble.',
+          en:
+            'Now before heading out I check the table: what is there, ' +
+            'what moved, what is missing. I reach each stop knowing what ' +
+            'to expect. Since Pablo, rounds are twice as productive.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Ponlo en numeros',
+              en: 'Put it in numbers',
+            },
+            next: 'busca-7',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'busca-7': {
+        text: {
+          es:
+            'De mas de veinte minutos por busqueda a 0,2 segundos. De ' +
+            'perder mañanas a no perder ninguna. Y entregado dentro del ' +
+            'año previsto. Pablo cumplio con todo lo que prometio.',
+          en:
+            'From twenty plus minutes per search to 0.2 seconds. From ' +
+            'losing mornings to losing none. Delivered within the ' +
+            'planned year. Pablo delivered on everything he promised.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y la produccion de la central?',
+              en: 'And the plant production?',
+            },
+            next: 'busca-8',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub2',
+          },
+        ],
+      },
+      'busca-8': {
+        text: {
+          es:
+            'La central respira distinto: menos cuadrillas esperando, ' +
+            'menos viajes en vano, cero compras repetidas. Cuando el ' +
+            'papeleo deja de estorbar, la energia fluye. Gracias, Pablo.',
+          en:
+            'The plant breathes differently: fewer crews waiting, fewer ' +
+            'wasted trips, zero repeated purchases. When paperwork stops ' +
+            'getting in the way, the energy flows. Thanks, Pablo.',
+        },
+        options: [
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub2',
           },
           {
             label: {
-              es: '¿Que problema resolvia?',
-              en: 'What problem did it solve?',
+              es: 'Gran historia. Me voy',
+              en: 'Great story. I will go',
             },
-            next: 'sys-2',
+            next: null,
           },
         ],
       },
@@ -450,26 +597,26 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       'off-1': {
         text: {
           es:
-            'Buen ojo. Ese OFFLINE que se vuelve ONLINE no es un error: ' +
-            'es la funcion estrella. Aqui la conectividad va y viene, ' +
-            'sobre todo en las sedes mas alejadas.',
+            'Buen ojo. Ese OFFLINE que se vuelve ONLINE es la funcion ' +
+            'estrella. Pablo pregunto primero como era la red aqui... y ' +
+            'la respuesta fue: a veces no hay.',
           en:
-            'Good eye. That OFFLINE flipping to ONLINE is not an error: ' +
-            'it is the star feature. Connectivity here comes and goes, ' +
-            'especially at the more remote sites.',
+            'Good eye. That OFFLINE flipping to ONLINE is the star ' +
+            'feature. Pablo asked first what the network was like ' +
+            'here... and the answer was: sometimes there is none.',
         },
         options: [
           {
             label: {
-              es: '¿El sistema funciona sin red?',
-              en: 'The system works without network?',
+              es: '¿Como funciona sin red?',
+              en: 'How does it work without network?',
             },
             next: 'off-2',
           },
           {
             label: {
-              es: '¿Tan mala era la conexion?',
-              en: 'Was the connection that bad?',
+              es: '¿Lo viste en accion?',
+              en: 'Did you see it in action?',
             },
             next: 'off-3',
           },
@@ -482,69 +629,66 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       'off-2': {
         text: {
           es:
-            'Exacto. Si se cae la red, tu sigues registrando activos como ' +
-            'si nada. Cuando vuelve la conexion, el sistema sincroniza ' +
-            'solo lo pendiente. Nadie pierde trabajo.',
+            'Si se cae la red, tu sigues registrando como si nada. ' +
+            'Cuando vuelve, el sistema de Pablo sincroniza solo lo ' +
+            'pendiente. Nadie pierde trabajo.',
           en:
-            'Exactly. If the network drops, you keep logging assets like ' +
-            'nothing happened. When the connection returns, the system ' +
-            'syncs the pending work by itself. Nothing gets lost.',
+            'If the network drops, you keep logging like nothing ' +
+            'happened. When it returns, the system Pablo built syncs the ' +
+            'pending work on its own. Nobody loses work.',
         },
         options: [
           {
             label: {
-              es: '¿Y donde termina todo eso?',
-              en: 'And where does it all end up?',
+              es: '¿Y a donde va todo eso?',
+              en: 'And where does it all go?',
             },
             next: 'off-4',
           },
           {
             label: {
-              es: '¿Lo viste fallar alguna vez?',
-              en: 'Ever seen it fail?',
+              es: '¿Lo viste en accion?',
+              en: 'Did you see it in action?',
             },
-            next: 'off-6',
+            next: 'off-3',
           },
         ],
       },
       'off-3': {
         text: {
           es:
-            'La red aqui es intermitente, y en 2013 mas todavia. Un ' +
-            'sistema que solo sirviera con internet habria muerto la ' +
-            'primera semana. El pasante lo entendio porque pregunto antes.',
+            'Una tarde entera sin red en plena recepcion de equipos. ' +
+            'Pablo estaba aqui esa semana y ni se inmuto: sigan ' +
+            'registrando, dijo. En la noche subio todo solo.',
           en:
-            'The network here is intermittent, and in 2013 even more so. ' +
-            'A system that only worked online would have died its first ' +
-            'week. The intern got it because he asked first.',
+            'A whole afternoon without network right while receiving ' +
+            'equipment. Pablo was here that week and did not flinch: ' +
+            'keep logging, he said. At night it all went up by itself.',
         },
         options: [
           {
             label: {
-              es: '¿Como registran sin conexion?',
-              en: 'How do you log while offline?',
-            },
-            next: 'off-2',
-          },
-          {
-            label: {
-              es: '¿Eso fue clave para adoptarlo?',
-              en: 'Was that key to adoption?',
+              es: '¿El ya lo habia avisado?',
+              en: 'Had he warned you before?',
             },
             next: 'off-5',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub2',
           },
         ],
       },
       'off-4': {
         text: {
           es:
-            'Al sincronizar, todo cae a la base de datos comun de las ' +
-            'tres sedes. Ese es el punto: una sola fuente. Los papeles de ' +
-            'antes jamas se ponian de acuerdo; la base si.',
+            'A la base de datos comun de las tres sedes. Una sola fuente ' +
+            'de verdad. Los papeles de antes jamas se ponian de acuerdo; ' +
+            'la base que armo Pablo, si.',
           en:
-            'On sync, everything lands in the shared database of the ' +
-            'three sites. That is the point: a single source. The old ' +
-            'papers never agreed with each other; the database does.',
+            'Into the shared database of the three sites. A single ' +
+            'source of truth. The old papers never agreed with each ' +
+            'other; the database Pablo put together does.',
         },
         options: [
           {
@@ -563,47 +707,42 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       'off-5': {
         text: {
           es:
-            'Total. Si la primera vez que se cayo la red el sistema se ' +
-            'hubiera trabado, nadie lo usaba mas. En cambio siguio ' +
-            'andando y la gente dijo: esto entiende como es aqui.',
+            'En la capacitacion Pablo lo repitio mil veces: si se va la ' +
+            'red, ustedes sigan, que el sistema se encarga. Costaba ' +
+            'creerle... hasta que lo vimos con nuestros ojos.',
           en:
-            'Absolutely. If the system had frozen the first time the ' +
-            'network dropped, nobody would touch it again. Instead it ' +
-            'kept going and people said: this thing gets how it is here.',
+            'During training Pablo repeated it a thousand times: if the ' +
+            'network goes, you keep working, the system handles it. Hard ' +
+            'to believe... until we saw it with our own eyes.',
         },
         options: [
           {
             label: {
-              es: '¿Y la sincronizacion posterior?',
-              en: 'And the later sync?',
+              es: '¿Y le creyeron desde entonces?',
+              en: 'And you believed him since?',
             },
-            next: 'off-4',
+            next: 'off-6',
           },
           {
-            label: {
-              es: '¿Volverian al papel?',
-              en: 'Would you go back to paper?',
-            },
-            next: 'off-8',
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub2',
           },
         ],
       },
       'off-6': {
         text: {
           es:
-            'Fallar, no. Una tarde entera nos quedamos sin red en plena ' +
-            'recepcion de equipos. Seguimos registrando tranquilos y en ' +
-            'la noche, cuando volvio la señal, subio todo solo.',
+            'Desde esa noche, ciegamente. Un sistema que aguanta nuestra ' +
+            'realidad se gana el puesto. ¿Volver al papel? Ni loca.',
           en:
-            'Fail, no. One whole afternoon we lost the network right in ' +
-            'the middle of receiving equipment. We kept logging calmly ' +
-            'and at night, when the signal returned, it all went up alone.',
+            'Blindly, since that night. A system that survives our ' +
+            'reality earns its place. Back to paper? No way.',
         },
         options: [
           {
             label: {
-              es: '¿Subio todo sin perder nada?',
-              en: 'Everything synced, nothing lost?',
+              es: '¿Por que era tan clave el offline?',
+              en: 'Why was offline so critical?',
             },
             next: 'off-7',
           },
@@ -616,43 +755,25 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       'off-7': {
         text: {
           es:
-            'Todo. Lo pendiente espera su turno y se sube cuando hay ' +
-            'conexion. Al dia siguiente las otras sedes ya veian lo que ' +
-            'registramos a oscuras. Como si nada hubiera pasado.',
+            'Porque hay sedes con conectividad de a ratos. Un sistema ' +
+            'solo-online habria muerto la primera semana. Pablo lo ' +
+            'diseño offline porque nos pregunto antes de programar.',
           en:
-            'Everything. Pending work waits its turn and goes up when ' +
-            'there is a connection. Next day the other sites already saw ' +
-            'what we logged in the dark. As if nothing had happened.',
+            'Because some sites get connectivity in bursts. An ' +
+            'online-only system would have died its first week. Pablo ' +
+            'designed it offline because he asked us before coding.',
         },
         options: [
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub2',
+          },
           {
             label: {
-              es: '¿Las sedes ven todo al instante?',
-              en: 'Sites see everything instantly?',
+              es: 'Eso lo explica todo',
+              en: 'That explains everything',
             },
-            next: 'sedes-2',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back to topics' },
-            next: 'hub2',
-          },
-        ],
-      },
-      'off-8': {
-        text: {
-          es:
-            '¿Al papel? Ni loca. Seria como devolver la luz electrica y ' +
-            'volver a las velas. Hay cosas que, una vez que funcionan, ya ' +
-            'no se negocian.',
-          en:
-            'To paper? No way. It would be like returning electric light ' +
-            'and going back to candles. Some things, once they work, are ' +
-            'no longer negotiable.',
-        },
-        options: [
-          {
-            label: { es: 'Volvamos', en: 'Back to topics' },
-            next: 'hub2',
+            next: null,
           },
         ],
       },
@@ -660,13 +781,13 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       'sedes-1': {
         text: {
           es:
-            'Somos tres sedes: Yaracuy, Carabobo y Lara. Antes cada una ' +
-            'era una isla con sus propias planillas de papel. Tres islas, ' +
-            'tres verdades distintas sobre los mismos equipos.',
+            'Yaracuy, Carabobo y Lara. Tres sedes que eran tres islas de ' +
+            'papel, cada una con su propia verdad. Pablo visito las tres ' +
+            'para levantar los requerimientos con cada equipo.',
           en:
-            'We are three sites: Yaracuy, Carabobo and Lara. Each used to ' +
-            'be an island with its own paper spreadsheets. Three islands, ' +
-            'three different truths about the same equipment.',
+            'Yaracuy, Carabobo and Lara. Three sites that were three ' +
+            'paper islands, each with its own truth. Pablo visited all ' +
+            'three to gather requirements with every crew.',
         },
         options: [
           {
@@ -678,8 +799,8 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
           {
             label: {
-              es: '¿Que problemas causaba eso?',
-              en: 'What problems did that cause?',
+              es: '¿Que problemas daba el papel?',
+              en: 'What problems did paper cause?',
             },
             next: 'sedes-3',
           },
@@ -693,76 +814,76 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
         text: {
           es:
             'Una base de datos comun para las tres. Si Lara registra un ' +
-            'equipo nuevo, Yaracuy y Carabobo lo ven. Puedo saber desde ' +
-            'aqui que hay en el almacen de otra sede sin llamar.',
+            'equipo, Yaracuy y Carabobo lo ven. Se que hay en otra sede ' +
+            'sin levantar el telefono, gracias a Pablo.',
           en:
-            'One shared database for all three. If Lara logs a new unit, ' +
-            'Yaracuy and Carabobo see it. From here I can know what sits ' +
-            'in another site warehouse without a phone call.',
+            'One shared database for all three. If Lara logs a unit, ' +
+            'Yaracuy and Carabobo see it. I know what sits at another ' +
+            'site without picking up the phone, thanks to Pablo.',
         },
         options: [
           {
             label: {
-              es: '¿Aunque una sede este sin red?',
-              en: 'Even if a site is offline?',
+              es: '¿Eso ahorro traslados?',
+              en: 'Did that save trips?',
             },
-            next: 'off-2',
+            next: 'sedes-4',
           },
           {
             label: {
-              es: '¿Eso ahorra traslados?',
-              en: 'Does that save trips?',
+              es: '¿Y si una sede esta sin red?',
+              en: 'And if a site is offline?',
             },
-            next: 'sedes-4',
+            next: 'off-2',
           },
         ],
       },
       'sedes-3': {
         text: {
           es:
-            'Pedias un repuesto que tu sede no tenia y era una odisea. A ' +
-            'veces hasta se compraba algo que ya existia guardado en otra ' +
-            'sede, porque nadie podia saberlo.',
+            'Planillas duplicadas y peleadas entre si. Llegamos a ' +
+            'comprar equipos que ya existian guardados en otra sede, ' +
+            'porque nadie podia saberlo.',
           en:
-            'You needed a spare your site did not have and it was an ' +
-            'odyssey. Sometimes we even bought things another site ' +
-            'already had in storage, because nobody could know.',
+            'Duplicated spreadsheets quarreling with each other. We even ' +
+            'bought equipment that already sat in storage at another ' +
+            'site, because nobody could know.',
         },
         options: [
           {
             label: {
-              es: '¿Compraban duplicado?',
-              en: 'You bought duplicates?',
+              es: '¿Y la base comun lo arreglo?',
+              en: 'Did the shared DB fix it?',
             },
-            next: 'sedes-3b',
+            next: 'sedes-2',
           },
           {
             label: {
               es: '¿Como era pedir a otra sede?',
               en: 'How was asking another site?',
             },
-            next: 'sedes-6',
+            next: 'sedes-5',
           },
         ],
       },
-      'sedes-3b': {
+      'sedes-4': {
         text: {
           es:
-            'Pasaba. Si nadie sabia que Carabobo tenia el equipo ' +
-            'guardado, se pedia otro. Con la base comun eso se acabo: ' +
-            'primero miras la tabla, despues decides.',
+            'Muchisimos. Antes el camion salia "a ver que hay". Ahora ' +
+            'sale solo cuando la tabla de Pablo dice que el equipo esta ' +
+            'ahi. Destino, no esperanza.',
           en:
-            'It happened. If nobody knew Carabobo had the unit in ' +
-            'storage, another one got ordered. With the shared database ' +
-            'that ended: first you check the table, then you decide.',
+            'Plenty. The truck used to leave "to see what is there". Now ' +
+            'it only leaves when the table Pablo built says the unit is ' +
+            'there. Destination, not hope.',
         },
         options: [
           {
             label: {
-              es: '¿Y los traslados entre sedes?',
-              en: 'And the trips between sites?',
+              es: '¿Y Pablo cumplio los plazos?',
+              en: 'Did Pablo meet the deadlines?',
             },
-            next: 'sedes-4',
+            next: 'sedes-6',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -770,52 +891,24 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'sedes-4': {
-        text: {
-          es:
-            'Muchisimos menos. Antes viajabas a otra sede "a ver que ' +
-            'hay". Ahora viajas solo cuando la tabla dice que el equipo ' +
-            'esta ahi. El camion sale con destino, no con esperanza.',
-          en:
-            'Far fewer. You used to drive to another site just to see ' +
-            'what was there. Now you only go when the table says the unit ' +
-            'is there. The truck leaves with a destination, not with hope.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Buena frase: destino, no esperanza',
-              en: 'Nice line: destination, not hope',
-            },
-            next: 'sedes-5',
-          },
-          {
-            label: {
-              es: '¿Que es lo que mas valoras tu?',
-              en: 'What do you value the most?',
-            },
-            next: 'sedes-7',
-          },
-        ],
-      },
       'sedes-5': {
         text: {
           es:
-            'Me la dijo un chofer, no es mia. Pero resume bien lo que ' +
-            'cambio: menos vueltas, menos llamadas, mas certeza. Y todo ' +
-            'empezo con un pasante preguntando por que tardabamos tanto.',
+            'Un ritual: llamada, alguien alla dejaba todo para revisar ' +
+            'carpetas, y te respondian... con suerte el mismo dia. Pablo ' +
+            'convirtio ese ritual en un enter.',
           en:
-            'A driver said it, not me. But it sums up what changed: fewer ' +
-            'detours, fewer calls, more certainty. And it all started ' +
-            'with an intern asking why we took so long.',
+            'A ritual: a phone call, someone there dropped everything to ' +
+            'dig through folders, and they got back to you... same day ' +
+            'if lucky. Pablo turned that ritual into one enter.',
         },
         options: [
           {
             label: {
-              es: '¿Como fue ese trabajo en campo?',
-              en: 'How was that field work?',
+              es: '¿Como lo logro la base comun?',
+              en: 'How did the shared DB do it?',
             },
-            next: 'campo-2',
+            next: 'sedes-2',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -826,46 +919,21 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       'sedes-6': {
         text: {
           es:
-            'Un ritual: llamabas, alla alguien dejaba lo que hacia para ' +
-            'revisar carpetas, y te devolvian la llamada... con suerte el ' +
-            'mismo dia. Hoy esa respuesta tarda lo que tarda un enter.',
+            'Dentro del año previsto, con las tres sedes andando. Un ' +
+            'pasante, tres estados, cero drama. Y encima Pablo nos ' +
+            'capacito antes de irse.',
           en:
-            'A ritual: you called, someone there dropped their work to ' +
-            'dig through folders, and they called you back... same day if ' +
-            'lucky. Today that answer takes as long as pressing enter.',
+            'Within the planned year, with all three sites running. One ' +
+            'intern, three states, zero drama. And on top of that Pablo ' +
+            'trained us before leaving.',
         },
         options: [
           {
             label: {
-              es: '¿La base comun mato el ritual?',
-              en: 'The shared DB killed the ritual?',
+              es: '¿Como fue esa capacitacion?',
+              en: 'How was that training?',
             },
-            next: 'sedes-2',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back to topics' },
-            next: 'hub2',
-          },
-        ],
-      },
-      'sedes-7': {
-        text: {
-          es:
-            'La tranquilidad. Saber donde esta cada cosa sin depender de ' +
-            'la memoria de nadie ni del papel de nadie. La informacion ' +
-            'dejo de vivir en cabezas y carpetas.',
-          en:
-            'The peace of mind. Knowing where everything is without ' +
-            'depending on anyone memory or anyone paper. Information ' +
-            'stopped living in heads and folders.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Y en el dia a dia del campo?',
-              en: 'And in day-to-day field work?',
-            },
-            next: 'campo-1',
+            next: 'capa-1',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -874,31 +942,31 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
         ],
       },
 
-      'campo-1': {
+      'capa-1': {
         text: {
           es:
-            'El campo es lo mio. Subestacion, tablero de medidores, ' +
-            'almacen. Y regla numero uno: casco puesto siempre. Aqui hay ' +
-            'alta tension de verdad, no de la de las peliculas.',
+            'Pablo capacito al personal de cada sede, y yo estuve en el ' +
+            'primer grupo. Nada de charlas eternas: practica real, con ' +
+            'nuestras cajas y nuestros codigos.',
           en:
-            'The field is my thing. Substation, meter panel, warehouse. ' +
-            'Rule number one: helmet on, always. This is real high ' +
-            'voltage, not the movie kind.',
+            'Pablo trained the staff at every site, and I was in the ' +
+            'first group. No endless lectures: real practice, with our ' +
+            'own boxes and our own codes.',
         },
         options: [
           {
             label: {
-              es: '¿El pasante tambien uso casco?',
-              en: 'Did the intern wear a helmet too?',
+              es: '¿Como eran las sesiones?',
+              en: 'What were the sessions like?',
             },
-            next: 'campo-2',
+            next: 'capa-2',
           },
           {
             label: {
-              es: '¿Como es la seguridad aqui?',
-              en: 'How does safety work here?',
+              es: '¿Y las guias que dejo?',
+              en: 'And the guides he left?',
             },
-            next: 'campo-6',
+            next: 'capa-3',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -906,52 +974,52 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'campo-2': {
+      'capa-2': {
         text: {
           es:
-            'Casco amarillo como todos. Levanto los requerimientos aqui ' +
-            'mismo, con el personal operativo: nos seguia en la ronda, ' +
-            'preguntaba como buscabamos un equipo y anotaba todo.',
+            'Pablo se sentaba al lado de cada uno, sin jerga rara. ' +
+            'Registrabamos equipos de verdad y buscabamos los nuestros. ' +
+            'Al final nadie queria soltar el teclado.',
           en:
-            'Yellow helmet like everyone. He gathered requirements right ' +
-            'here, with the operations staff: he followed our rounds, ' +
-            'asked how we searched for equipment and wrote it all down.',
+            'Pablo sat next to each of us, no weird jargon. We logged ' +
+            'real equipment and searched for our own. By the end nobody ' +
+            'wanted to let go of the keyboard.',
         },
         options: [
           {
             label: {
-              es: '¿Eso mejoro el sistema?',
-              en: 'Did that improve the system?',
+              es: '¿Capacito hasta a los duros?',
+              en: 'Did he train the tough ones?',
             },
-            next: 'campo-4',
+            next: 'capa-4',
           },
           {
             label: {
-              es: '¿Que preguntaba exactamente?',
-              en: 'What did he ask exactly?',
+              es: '¿Y las guias?',
+              en: 'And the guides?',
             },
-            next: 'campo-5',
+            next: 'capa-3',
           },
         ],
       },
-      'campo-3': {
+      'capa-3': {
         text: {
           es:
-            'Orgullo, sobre todo. Esta planta alumbra hogares que no ' +
-            'conocemos. Cuando el tablero esta en verde y las torres ' +
-            'zumban parejo, sabes que hiciste bien tu trabajo.',
+            'Pablo documento guias paso a paso, con pantallazos y todo. ' +
+            'Siguen pegadas en el almacen. Ante la duda, primero la ' +
+            'guia; casi siempre la respuesta esta ahi.',
           en:
-            'Pride, mostly. This plant lights homes we will never see. ' +
-            'When the panel is green and the towers hum steady, you know ' +
-            'you did your job right.',
+            'Pablo documented step-by-step guides, screenshots and all. ' +
+            'They are still pinned up in the warehouse. When in doubt, ' +
+            'guide first; the answer is almost always there.',
         },
         options: [
           {
             label: {
-              es: 'Se nota que amas la planta',
-              en: 'You clearly love this plant',
+              es: '¿Tan claras son?',
+              en: 'Are they that clear?',
             },
-            next: 'campo-3b',
+            next: 'capa-5',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -959,23 +1027,24 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'campo-3b': {
+      'capa-4': {
         text: {
           es:
-            'Por eso me gusto que el sistema naciera aqui adentro y no ' +
-            'en una oficina lejana. Las herramientas buenas huelen a ' +
-            'campo.',
+            'Hasta al veterano del transformador, que juraba que jamas ' +
+            'tocaria una computadora. Pablo le enseño con paciencia de ' +
+            'santo. Hoy busca sus repuestos solo... aunque lo niegue.',
           en:
-            'That is why I liked that the system was born in here and ' +
-            'not in some faraway office. Good tools smell like the field.',
+            'Even the veteran by the transformer, who swore he would ' +
+            'never touch a computer. Pablo taught him with the patience ' +
+            'of a saint. Now he looks up his own spares... and denies it.',
         },
         options: [
           {
             label: {
-              es: '¿Como se hizo en el campo?',
-              en: 'How was it built in the field?',
+              es: '¿Y eso que demuestra?',
+              en: 'And what does that prove?',
             },
-            next: 'campo-2',
+            next: 'capa-6',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -983,24 +1052,24 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'campo-4': {
+      'capa-5': {
         text: {
           es:
-            'Muchisimo. Por escucharnos entendio que la red se cae, que ' +
-            'el almacen se maneja por cajas, que buscar tardaba veinte ' +
-            'minutos. Resolvio lo que vivimos, no lo que alguien imagino.',
+            'Escritas para entenderse hasta con los guantes puestos, ' +
+            'como deciamos aqui. Pablo escribia pensando en quien iba a ' +
+            'leer, no en lucirse.',
           en:
-            'A lot. By listening he learned the network drops, the ' +
-            'warehouse runs on boxes, searches took twenty minutes. He ' +
-            'solved what we live, not what someone imagined.',
+            'Written to be understood even with gloves on, as we used to ' +
+            'say here. Pablo wrote thinking of the reader, not of ' +
+            'showing off.',
         },
         options: [
           {
             label: {
-              es: '¿Y el resultado final?',
-              en: 'And the final result?',
+              es: '¿Y sirvieron a la larga?',
+              en: 'Did they pay off long term?',
             },
-            next: 'sys-4',
+            next: 'capa-6',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -1008,24 +1077,24 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'campo-5': {
+      'capa-6': {
         text: {
           es:
-            'Cosas simples: ¿donde anotas esto? ¿cuanto tardas en hallar ' +
-            'aquello? ¿que pasa si no hay red? Preguntas de quien quiere ' +
-            'entender antes de construir. Ojala todos empezaran asi.',
+            'La prueba es esta: Pablo termino su pasantia, se fue... y ' +
+            'el sistema siguio andando con nosotros. Capacitar y ' +
+            'documentar fue tan importante como programar.',
           en:
-            'Simple things: where do you log this? how long to find ' +
-            'that? what happens with no network? Questions from someone ' +
-            'who understands before building. Wish everyone started so.',
+            'Here is the proof: Pablo finished his internship, left... ' +
+            'and the system kept running with us. Training and ' +
+            'documenting mattered as much as coding.',
         },
         options: [
           {
             label: {
-              es: '¿Que salio de esas preguntas?',
-              en: 'What came out of those questions?',
+              es: '¿Que le dirias hoy a Pablo?',
+              en: 'What would you tell Pablo now?',
             },
-            next: 'campo-4',
+            next: 'pablo-8',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -1033,59 +1102,26 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'campo-6': {
+
+      'code-1': {
         text: {
           es:
-            'Casco obligatorio, distancias marcadas y nada de improvisar ' +
-            'cerca del transformador. La subestacion se respeta. Por eso ' +
-            'los cascos amarillos que ves colgados en la entrada.',
+            'Ese codigo verde es del sistema: PHP con sus mysql_query y ' +
+            'jQuery para la pantalla. Yo no leo codigo, pero Pablo me ' +
+            'mostro cual linea hacia la busqueda. Brujeria buena, dije.',
           en:
-            'Mandatory helmet, marked distances and no improvising near ' +
-            'the transformer. You respect the substation. That is why you ' +
-            'see those yellow helmets hanging by the entrance.',
+            'That green code is from the system: PHP with its ' +
+            'mysql_query calls and jQuery for the screen. I do not read ' +
+            'code, but Pablo showed me which line ran the search. Good ' +
+            'witchcraft, I said.',
         },
         options: [
           {
             label: {
-              es: '¿Y ese tablero de medidores?',
-              en: 'And that meter board?',
+              es: '¿Herramientas viejas, no?',
+              en: 'Old tools, right?',
             },
-            next: 'campo-7',
-          },
-          {
-            label: {
-              es: '¿Que se siente trabajar aqui?',
-              en: 'What is working here like?',
-            },
-            next: 'campo-3',
-          },
-        ],
-      },
-      'campo-7': {
-        text: {
-          es:
-            'El tablero es el pulso de la planta: tension, carga, todo a ' +
-            'la vista. En mi ronda lo leo primero. Verde parejo, dia ' +
-            'tranquilo. Una aguja inquieta, y la ronda cambia de plan.',
-          en:
-            'The board is the plant pulse: voltage, load, all in sight. ' +
-            'On my rounds I read it first. Steady green, calm day. One ' +
-            'restless needle, and the round changes plans.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Y las torres de la ventana?',
-              en: 'And the towers out the window?',
-            },
-            next: 'campo-8',
-          },
-          {
-            label: {
-              es: '¿Que se siente trabajar aqui?',
-              en: 'What is working here like?',
-            },
-            next: 'campo-3',
+            next: 'code-2',
           },
           {
             label: { es: 'Volvamos', en: 'Back to topics' },
@@ -1093,28 +1129,28 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
           },
         ],
       },
-      'campo-8': {
+      'code-2': {
         text: {
           es:
-            'Alta tension saliendo a recorrer el pais. Cada torre que ves ' +
-            'por esa ventana carga luz para miles de casas. Bonitas de ' +
-            'lejos, respetables de cerca.',
+            'De la epoca, 2013. Pablo decia: simple y que funcione aqui. ' +
+            'Y funciono: rapido, offline y en tres sedes. La verdadera ' +
+            'brujeria fue escuchar primero.',
           en:
-            'High voltage heading out across the country. Every tower you ' +
-            'see through that window carries light for thousands of ' +
-            'homes. Pretty from afar, demanding respect up close.',
+            'Of the era, 2013. Pablo used to say: simple, and working ' +
+            'here. And it worked: fast, offline and across three sites. ' +
+            'The real witchcraft was listening first.',
         },
         options: [
           {
-            label: {
-              es: '¿Que se siente trabajar aqui?',
-              en: 'What is working here like?',
-            },
-            next: 'campo-3',
-          },
-          {
             label: { es: 'Volvamos', en: 'Back to topics' },
             next: 'hub3',
+          },
+          {
+            label: {
+              es: 'Buena leccion. Adios',
+              en: 'Good lesson. Goodbye',
+            },
+            next: null,
           },
         ],
       },
@@ -1133,12 +1169,12 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
         en: 'No helmet? Keep your distance then.',
       },
       {
-        es: 'Mmm. Los bujes suenan bien hoy.',
-        en: 'Hmm. The bushings sound fine today.',
+        es: 'El muchacho Pablo... buen oido, ese.',
+        en: 'That Pablo kid... good ears on him.',
       },
       {
-        es: '¿Turista? Aqui no hay recuerditos.',
-        en: 'Tourist? No souvenirs around here.',
+        es: 'Treinta años de carpetas y un enter las jubilo.',
+        en: 'Thirty years of folders, retired by one enter.',
       },
     ],
     start: 'hub',
@@ -1147,14 +1183,67 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
         text: {
           es:
             'Cuidado por donde pisas. Yo vigilo este transformador desde ' +
-            'antes de que tu supieras que existe la corriente alterna. ' +
-            '¿Que buscas?',
+            'antes de que llegara internet por aqui. Y si: trabaje con ' +
+            'Pablo, el pasante de 2013. ¿Que buscas?',
           en:
             'Watch your step. I have watched this transformer since ' +
-            'before you knew alternating current existed. What do you ' +
-            'want?',
+            'before the internet reached this place. And yes: I worked ' +
+            'with Pablo, the 2013 intern. What do you want?',
         },
         options: [
+          {
+            label: {
+              es: 'Hableme de Pablo',
+              en: 'Tell me about Pablo',
+            },
+            next: 'pablo-1',
+          },
+          {
+            label: {
+              es: 'El dia que el tablero revivio',
+              en: 'The day the board came back',
+            },
+            next: 'tablero-1',
+          },
+          {
+            label: {
+              es: 'Hay mas historias, ¿no?',
+              en: 'There are more stories, right?',
+            },
+            next: 'hub2',
+          },
+          {
+            label: { es: 'Nada, ya me voy', en: 'Nothing, I am leaving' },
+            next: null,
+          },
+        ],
+      },
+      hub2: {
+        text: {
+          es:
+            'Historias sobran. Del almacen, del transformador, de mi ' +
+            '"conversion"... aunque esa palabra no me gusta. ¿Que ' +
+            'quieres?',
+          en:
+            'Plenty of stories. The warehouse, the transformer, my ' +
+            '"conversion"... though I do not like that word. What will ' +
+            'it be?',
+        },
+        options: [
+          {
+            label: {
+              es: 'Las cajas del almacen',
+              en: 'The warehouse boxes',
+            },
+            next: 'cajas-1',
+          },
+          {
+            label: {
+              es: 'Su famosa conversion',
+              en: 'Your famous conversion',
+            },
+            next: 'conv-1',
+          },
           {
             label: {
               es: 'Hableme del transformador',
@@ -1163,14 +1252,497 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
             next: 'trafo-1',
           },
           {
+            label: { es: 'Me despido', en: 'I will head out' },
+            next: 'bye',
+          },
+        ],
+      },
+      bye: {
+        text: {
+          es:
+            'Anda con cuidado. Y lo que te conte de Pablo queda entre ' +
+            'nosotros: si la de la ronda pregunta, yo lo niego todo.',
+          en:
+            'Move along carefully. And what I told you about Pablo stays ' +
+            'between us: if the rounds tech asks, I deny everything.',
+        },
+        options: [
+          {
+            label: { es: 'Trato hecho. Adios', en: 'Deal. Goodbye' },
+            next: null,
+          },
+        ],
+      },
+
+      'pablo-1': {
+        text: {
+          es:
+            'Pablo... Mira, yo desconfio de todo lo que tenga pantalla. ' +
+            'Y me llega un pasante a "inventariar" mi almacen. Pero el ' +
+            'muchacho no impuso nada: vino, pregunto y escucho.',
+          en:
+            'Pablo... Look, I distrust anything with a screen. And in ' +
+            'comes an intern to "inventory" my warehouse. But the kid ' +
+            'imposed nothing: he came, asked and listened.',
+        },
+        options: [
+          {
             label: {
-              es: '¿Y ese pasante del que hablan?',
-              en: 'What about that intern?',
+              es: '¿Que le pregunto a usted?',
+              en: 'What did he ask you?',
             },
-            next: 'pasante-1',
+            next: 'pablo-2',
           },
           {
-            label: { es: 'Nada, ya me voy', en: 'Nothing, I am leaving' },
+            label: {
+              es: '¿O sea que le tiene aprecio?',
+              en: 'So you are fond of him?',
+            },
+            next: 'pablo-3',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub',
+          },
+        ],
+      },
+      'pablo-2': {
+        text: {
+          es:
+            'Donde estaba cada repuesto. Le dije: en mi cabeza, ' +
+            'muchacho. Pablo anoto todo y me contesto: su cabeza no ' +
+            'puede ser el unico respaldo de esta central. Tenia razon, ' +
+            'el condenado.',
+          en:
+            'Where every spare was. I told him: in my head, kid. Pablo ' +
+            'wrote it all down and answered: your head cannot be the ' +
+            'only backup this plant has. He was right, the rascal.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y que hizo con eso?',
+              en: 'And what did he do with it?',
+            },
+            next: 'pablo-4',
+          },
+          {
+            label: {
+              es: '¿De ahi salieron las cajas?',
+              en: 'Is that where the boxes came from?',
+            },
+            next: 'cajas-1',
+          },
+        ],
+      },
+      'pablo-3': {
+        text: {
+          es:
+            'Yo no dije eso. Dije que escuchaba. Es distinto. ...Esta ' +
+            'bien: Pablo resulto bueno. Pero si se lo cuentas a la de la ' +
+            'ronda, lo niego.',
+          en:
+            'I did not say that. I said he listened. Different thing. ' +
+            '...Fine: Pablo turned out good. But if you tell the rounds ' +
+            'tech, I deny it.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que lo convencio de Pablo?',
+              en: 'What won you over about Pablo?',
+            },
+            next: 'pablo-4',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub',
+          },
+        ],
+      },
+      'pablo-4': {
+        text: {
+          es:
+            'Que el sistema se adapto a como trabajamos NOSOTROS, no al ' +
+            'reves. La de la ronda lo bautizo bien: el pasante que nos ' +
+            'escuchaba en vez de imponernos el sistema. Por una vez ' +
+            'coincido con ella.',
+          en:
+            'That the system adapted to how WE work, not the other way ' +
+            'around. The rounds tech named him well: the intern who ' +
+            'listened to us instead of imposing the system on us. For ' +
+            'once, she and I agree.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que le diria hoy a Pablo?',
+              en: 'What would you tell Pablo now?',
+            },
+            next: 'pablo-5',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub',
+          },
+        ],
+      },
+      'pablo-5': {
+        text: {
+          es:
+            'Que siga preguntando antes de construir. Pablo primero ' +
+            'entendio la central y despues escribio el codigo. En ese ' +
+            'orden. Por eso su sistema sigue vivo y mi almacen en paz.',
+          en:
+            'To keep asking before building. Pablo first understood the ' +
+            'plant and then wrote the code. In that order. That is why ' +
+            'his system is still alive and my warehouse at peace.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Se lo dire si lo veo',
+              en: 'I will tell him if I see him',
+            },
+            next: 'hub',
+          },
+          {
+            label: { es: 'Gracias. Adios', en: 'Thanks. Goodbye' },
+            next: null,
+          },
+        ],
+      },
+
+      'tablero-1': {
+        text: {
+          es:
+            '¿Ves ese tablero en verde? Una tarde de 2013 se puso rojo: ' +
+            'falla en la subestacion y un repuesto urgente. Antes eso ' +
+            'eran horas de carpetas y llamadas. Ese dia fue un enter en ' +
+            'el sistema de Pablo.',
+          en:
+            'See that board in green? One afternoon in 2013 it went red: ' +
+            'substation fault and an urgent spare needed. That used to ' +
+            'mean hours of folders and calls. That day it took one enter ' +
+            'in the system Pablo built.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como termino la falla?',
+              en: 'How did the fault end?',
+            },
+            next: 'tablero-2',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub',
+          },
+        ],
+      },
+      'tablero-2': {
+        text: {
+          es:
+            'Buscamos la pieza en la tabla: 0,2 segundos y aparecio ' +
+            'guardada en Carabobo. El camion salio con destino, no a ' +
+            'ciegas, y esa misma noche el tablero volvio al verde. El ' +
+            'dia que el tablero volvio a la vida, le decimos.',
+          en:
+            'We looked the part up in the table: 0.2 seconds and there ' +
+            'it was, stored in Carabobo. The truck left with a ' +
+            'destination, not blind, and that same night the board went ' +
+            'back to green. The day the board came back to life, we say.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Pablo estaba ese dia?',
+              en: 'Was Pablo there that day?',
+            },
+            next: 'tablero-3',
+          },
+          {
+            label: {
+              es: '¿Antes cuanto habria tardado?',
+              en: 'How long would it take before?',
+            },
+            next: 'tablero-4',
+          },
+        ],
+      },
+      'tablero-3': {
+        text: {
+          es:
+            'Estaba, terminando su pasantia. ¿Y sabes que hizo cuando ' +
+            'todos celebraban? Saco el cuaderno y anoto que se podia ' +
+            'mejorar. Asi era Pablo: la fiesta cinco minutos, las notas ' +
+            'toda la vida.',
+          en:
+            'He was, wrapping up his internship. And you know what he ' +
+            'did while everyone celebrated? He pulled out the notebook ' +
+            'and wrote down what could be better. That was Pablo: five ' +
+            'minutes of party, a lifetime of notes.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que le diria hoy?',
+              en: 'What would you tell him now?',
+            },
+            next: 'pablo-5',
+          },
+          {
+            label: {
+              es: '¿Y antes del sistema?',
+              en: 'And before the system?',
+            },
+            next: 'tablero-4',
+          },
+        ],
+      },
+      'tablero-4': {
+        text: {
+          es:
+            'Años atras una falla parecida nos tuvo dos dias a media ' +
+            'marcha, porque el repuesto "no existia"... y estaba ' +
+            'guardado en Lara. Con la base comun de Pablo, eso no vuelve ' +
+            'a pasar.',
+          en:
+            'Years back a similar fault kept us two days at half ' +
+            'capacity, because the spare "did not exist"... and it sat ' +
+            'in storage in Lara. With the shared database Pablo built, ' +
+            'that never happens again.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y usted termino usandolo?',
+              en: 'And you ended up using it?',
+            },
+            next: 'conv-1',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub',
+          },
+        ],
+      },
+
+      'cajas-1': {
+        text: {
+          es:
+            '¿Ves esas cajas etiquetadas? Obra de Pablo. Etiqueto hasta ' +
+            'la ultima caja del almacen para meterla al inventario. Caja ' +
+            'por caja, con este calor.',
+          en:
+            'See those labeled boxes? All Pablo. He labeled every last ' +
+            'box in the warehouse to load it into the inventory. Box by ' +
+            'box, in this heat.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Usted lo ayudo?',
+              en: 'Did you help him?',
+            },
+            next: 'cajas-2',
+          },
+          {
+            label: {
+              es: '¿Y sirvio de algo?',
+              en: 'And was it worth it?',
+            },
+            next: 'cajas-3',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub2',
+          },
+        ],
+      },
+      'cajas-2': {
+        text: {
+          es:
+            'Dos semanas juntos: yo dictaba de memoria que habia en cada ' +
+            'caja y Pablo etiquetaba y registraba. Aposte a que se ' +
+            'rendia en la tercera fila. Perdi la apuesta y gane un ' +
+            'sistema.',
+          en:
+            'Two weeks side by side: I dictated from memory what was in ' +
+            'each box and Pablo labeled and logged. I bet he would quit ' +
+            'by the third row. I lost the bet and won a system.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y sirvio de algo?',
+              en: 'And was it worth it?',
+            },
+            next: 'cajas-3',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub2',
+          },
+        ],
+      },
+      'cajas-3': {
+        text: {
+          es:
+            'Un inventario vale lo que vale su peor etiqueta. Por eso la ' +
+            'tabla de Pablo no miente: hoy el 0042 aparece antes de que ' +
+            'se me enfrie el cafe.',
+          en:
+            'An inventory is worth its worst label. That is why the ' +
+            'table Pablo built does not lie: today the 0042 shows up ' +
+            'before my coffee gets cold.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y el dia del tablero?',
+              en: 'And the board day?',
+            },
+            next: 'tablero-1',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub2',
+          },
+        ],
+      },
+
+      'conv-1': {
+        text: {
+          es:
+            'Al principio me negue a tocar el aparato. Pablo no se burlo ' +
+            'ni una vez: se sento conmigo tardes enteras, hasta que el ' +
+            'teclado dejo de ganarme.',
+          en:
+            'At first I refused to touch the thing. Pablo never mocked ' +
+            'me once: he sat with me whole afternoons, until the ' +
+            'keyboard stopped beating me.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y las guias que dejo?',
+              en: 'And the guides he left?',
+            },
+            next: 'conv-2',
+          },
+          {
+            label: {
+              es: '¿Recuerda su primera busqueda?',
+              en: 'Remember your first search?',
+            },
+            next: 'conv-3',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub2',
+          },
+        ],
+      },
+      'conv-2': {
+        text: {
+          es:
+            'Pablo me dejo guias impresas, paso a paso, con dibujitos. ' +
+            'Escritas para que hasta yo las siguiera, y mira que soy ' +
+            'caso dificil. Las guardo en ese cajon como oro.',
+          en:
+            'Pablo left me printed guides, step by step, little pictures ' +
+            'included. Written so even I could follow them, and I am a ' +
+            'tough case. I keep them in that drawer like gold.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y hoy las usa?',
+              en: 'Do you use them today?',
+            },
+            next: 'conv-4',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub2',
+          },
+        ],
+      },
+      'conv-3': {
+        text: {
+          es:
+            'Escribi con dos dedos, temblando, y enter: 0,2 segundos. ' +
+            'Murmure: treinta años buscando carpetas como un tonto. ' +
+            'Pablo tuvo la decencia de no reirse.',
+          en:
+            'I typed with two fingers, shaking, and enter: 0.2 seconds. ' +
+            'I muttered: thirty years digging through folders like a ' +
+            'fool. Pablo had the decency not to laugh.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y desde entonces?',
+              en: 'And since then?',
+            },
+            next: 'conv-4',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub2',
+          },
+        ],
+      },
+      'conv-4': {
+        text: {
+          es:
+            'Desde entonces las tres sedes vemos lo mismo y ya no llamo ' +
+            'a Lara por cada tuerca. Hasta les enseño el sistema a los ' +
+            'nuevos... con las guias de Pablo, claro.',
+          en:
+            'Since then the three sites see the same thing and I no ' +
+            'longer call Lara over every bolt. I even teach the system ' +
+            'to the new hires... with the guides from Pablo, of course.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Usted, enseñando el sistema?',
+              en: 'You, teaching the system?',
+            },
+            next: 'conv-5',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back' },
+            next: 'hub2',
+          },
+        ],
+      },
+      'conv-5': {
+        text: {
+          es:
+            'La vida da vueltas. El que renegaba de las pantallas, ' +
+            'repartiendo guias. Elogio uno por decada, y el de esta ya ' +
+            'se lo llevo Pablo.',
+          en:
+            'Life comes full circle. The man who cursed screens, handing ' +
+            'out guides. One compliment per decade, and this decade it ' +
+            'went to Pablo.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Bien ganado. Volvamos',
+              en: 'Well earned. Back',
+            },
+            next: 'hub2',
+          },
+          {
+            label: {
+              es: 'Me voy con esa. Adios',
+              en: 'I will leave on that. Bye',
+            },
             next: null,
           },
         ],
@@ -1179,378 +1751,60 @@ export const CORPOELEC_PRESENTE_DIALOGS = {
       'trafo-1': {
         text: {
           es:
-            'Esta belleza sube y baja tension como quien respira. Media ' +
-            'planta depende de que este señor amanezca de buen humor. Y ' +
-            'de que yo lo escuche.',
+            'Esta belleza sube y baja tension como quien respira. Y una ' +
+            'maquina asi se cuida sabiendo QUE tienes y DONDE esta: ' +
+            'repuestos, piezas, aceite. Antes era un misterio de papel; ' +
+            'ahora vive en la tabla de Pablo.',
           en:
-            'This beauty steps voltage up and down like breathing. Half ' +
-            'the plant depends on this gentleman waking up in a good ' +
-            'mood. And on me listening to him.',
+            'This beauty steps voltage up and down like breathing. And ' +
+            'you care for a machine like this by knowing WHAT you have ' +
+            'and WHERE it is: spares, parts, oil. It used to be a paper ' +
+            'mystery; now it lives in the table Pablo built.',
         },
         options: [
           {
             label: {
-              es: '¿Que son esos bujes de arriba?',
-              en: 'What are those bushings on top?',
-            },
-            next: 'trafo-5',
-          },
-          {
-            label: {
-              es: '¿Y las torres de la ventana?',
-              en: 'And the towers out the window?',
+              es: '¿Como sabe que esta sano?',
+              en: 'How do you know it is healthy?',
             },
             next: 'trafo-2',
           },
           {
+            label: {
+              es: '¿La tabla lo salvo alguna vez?',
+              en: 'Did the table ever save it?',
+            },
+            next: 'tablero-1',
+          },
+          {
             label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
+            next: 'hub2',
           },
         ],
       },
       'trafo-2': {
         text: {
           es:
-            'Alta tension rumbo a medio pais. Cada torre que ves carga ' +
-            'luz para miles de casas. Bonitas de lejos, respetables de ' +
-            'cerca. Como yo.',
+            'Por el zumbido: un transformador sano canta parejo. Treinta ' +
+            'años oyendo la misma cancion. Pero donde duerme cada ' +
+            'repuesto... eso mi oido no lo sabe. Eso lo sabe el enter de ' +
+            'Pablo.',
           en:
-            'High voltage heading across half the country. Every tower ' +
-            'you see carries light for thousands of homes. Pretty from ' +
-            'afar, demanding respect up close. Like me.',
+            'By the hum: a healthy transformer sings steady. Thirty ' +
+            'years hearing the same song. But where each spare sleeps... ' +
+            'my ear does not know that. The enter Pablo gave us knows.',
         },
         options: [
           {
             label: {
-              es: 'Ja. ¿Y la seguridad aqui?',
-              en: 'Ha. What about safety here?',
+              es: 'Cuenteme lo del tablero',
+              en: 'Tell me about the board',
             },
-            next: 'trafo-3',
-          },
-          {
-            label: {
-              es: '¿Por que tanto casco?',
-              en: 'Why so much helmet talk?',
-            },
-            next: 'casco-1',
+            next: 'tablero-1',
           },
           {
             label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'trafo-3': {
-        text: {
-          es:
-            'Peligroso es el descuido, no la planta. Por eso el casco es ' +
-            'obligatorio y las distancias se respetan. Treinta años sin ' +
-            'un susto grave. Mi record, no me lo arruines.',
-          en:
-            'Carelessness is dangerous, not the plant. That is why ' +
-            'helmets are mandatory and distances are respected. Thirty ' +
-            'years without a big scare. My record, do not ruin it.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Prometido. ¿Algo mas del trafo?',
-              en: 'Promise. More about the trafo?',
-            },
-            next: 'trafo-4',
-          },
-          {
-            label: {
-              es: '¿Como sabe que esta sano?',
-              en: 'How do you know it is healthy?',
-            },
-            next: 'trafo-6',
-          },
-        ],
-      },
-      'trafo-4': {
-        text: {
-          es:
-            'Solo esto: una maquina se cuida sabiendo QUE tienes y DONDE ' +
-            'esta. Repuestos, piezas, aceite. Antes eso era un misterio ' +
-            'de papel. Ahora esta en la tabla esa del monitor.',
-          en:
-            'Just this: you care for a machine by knowing WHAT you have ' +
-            'and WHERE it is. Spares, parts, oil. That used to be a paper ' +
-            'mystery. Now it lives in that table on the monitor.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿La tabla del pasante?',
-              en: 'The intern table?',
-            },
-            next: 'pasante-1',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'trafo-5': {
-        text: {
-          es:
-            'Porcelana. Por los bujes entra y sale la corriente sin que ' +
-            'el tanque haga corto. Los reviso cada mañana: una grieta ' +
-            'ahi y el dia se pone interesante. Y no del modo bueno.',
-          en:
-            'Porcelain. Current passes through the bushings without ' +
-            'shorting against the tank. I check them every morning: one ' +
-            'crack there and the day gets interesting. Not the good kind.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Es peligroso estar aqui?',
-              en: 'Is it dangerous in here?',
-            },
-            next: 'trafo-3',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'trafo-6': {
-        text: {
-          es:
-            'Por el zumbido. Un transformador sano canta parejo, como un ' +
-            'panal tranquilo. Cuando cambia la nota, algo pasa. Treinta ' +
-            'años oyendo la misma cancion: me se cada estrofa.',
-          en:
-            'By the hum. A healthy transformer sings steady, like a calm ' +
-            'beehive. When the note changes, something is up. Thirty ' +
-            'years hearing the same song: I know every verse.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Y el inventario ayuda en eso?',
-              en: 'Does the inventory help there?',
-            },
-            next: 'trafo-4',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'casco-1': {
-        text: {
-          es:
-            'Porque la cabeza no trae repuesto, muchacho. El casco ' +
-            'amarillo es lo primero que te pones y lo ultimo que ' +
-            'cuestionas. Hasta el pasante lo entendio al primer dia.',
-          en:
-            'Because heads do not come with spares, kid. The yellow ' +
-            'helmet is the first thing you put on and the last thing you ' +
-            'question. Even the intern got it on day one.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Y el record de seguridad?',
-              en: 'And the safety record?',
-            },
-            next: 'trafo-3',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-
-      'pasante-1': {
-        text: {
-          es:
-            'El pasante ese... Mira, yo desconfio de todo lo que tenga ' +
-            'pantalla. Pero el muchacho vino, pregunto, escucho. Y su ' +
-            'sistema funciona hasta cuando se cae la red. No es poca cosa.',
-          en:
-            'That intern... Look, I distrust anything with a screen. But ' +
-            'the kid came, asked, listened. And his system works even ' +
-            'when the network drops. That is no small thing.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿O sea que le tiene aprecio?',
-              en: 'So you are fond of him?',
-            },
-            next: 'pasante-2',
-          },
-          {
-            label: {
-              es: '¿Que hizo en el almacen?',
-              en: 'What did he do in the warehouse?',
-            },
-            next: 'pasante-3',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'pasante-2': {
-        text: {
-          es:
-            'Yo no dije eso. Dije que funciona. Es distinto. ...Bueno, ' +
-            'esta bien: el muchacho resulto bueno. Pero si se lo cuentas ' +
-            'a la de la ronda, lo niego todo.',
-          en:
-            'I did not say that. I said it works. Different thing. ' +
-            '...Fine, alright: the kid turned out good. But if you tell ' +
-            'the rounds tech, I will deny everything.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Secreto guardado. ¿Y el almacen?',
-              en: 'Secret kept. The warehouse?',
-            },
-            next: 'pasante-3',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'pasante-3': {
-        text: {
-          es:
-            '¿Ves esas cajas etiquetadas? Obra suya. Etiqueto hasta la ' +
-            'ultima caja del almacen para meterla al inventario. Caja ' +
-            'por caja, con este calor.',
-          en:
-            'See those labeled boxes? His doing. He labeled every last ' +
-            'box in the warehouse to load it into the inventory. Box by ' +
-            'box, in this heat.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Y eso para que sirvio?',
-              en: 'And what was that good for?',
-            },
-            next: 'pasante-4',
-          },
-          {
-            label: {
-              es: '¿Usted penso que se rendiria?',
-              en: 'Did you think he would quit?',
-            },
-            next: 'pasante-6',
-          },
-        ],
-      },
-      'pasante-4': {
-        text: {
-          es:
-            'Para que la tabla no mienta. Un inventario vale lo que vale ' +
-            'su peor etiqueta. Antes buscar algo era veinte minutos de ' +
-            'papeleo; ahora la de la ronda lo halla antes de mi cafe.',
-          en:
-            'So the table does not lie. An inventory is worth its worst ' +
-            'label. Finding something took twenty minutes of paperwork; ' +
-            'now the rounds tech finds it before I finish my coffee.',
-        },
-        options: [
-          {
-            label: {
-              es: 'Todo un elogio viniendo de usted',
-              en: 'High praise coming from you',
-            },
-            next: 'pasante-5',
-          },
-          {
-            label: {
-              es: '¿Que le diria si volviera?',
-              en: 'What would you tell him now?',
-            },
-            next: 'pasante-7',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'pasante-5': {
-        text: {
-          es:
-            'No te acostumbres. Elogio uno por decada y este ya se ' +
-            'gasto. Ahora dejame trabajar, que el transformador se pone ' +
-            'celoso.',
-          en:
-            'Do not get used to it. One compliment per decade and that ' +
-            'one is spent. Now let me work, the transformer gets jealous.',
-        },
-        options: [
-          {
-            label: { es: 'Entendido. Hasta luego', en: 'Got it. See you' },
-            next: null,
-          },
-          {
-            label: { es: 'Una cosa mas...', en: 'One more thing...' },
-            next: 'hub',
-          },
-        ],
-      },
-      'pasante-6': {
-        text: {
-          es:
-            'Aposte a que se rendia en la tercera fila de cajas. Perdi. ' +
-            'Termino todas, polvo incluido, y todavia tuvo animo de ' +
-            'preguntarme por los bujes. Muchacho terco.',
-          en:
-            'I bet he would quit by the third row of boxes. I lost. He ' +
-            'finished them all, dust included, and still had the energy ' +
-            'to ask me about the bushings. Stubborn kid.',
-        },
-        options: [
-          {
-            label: {
-              es: '¿Y para que sirvio tanta caja?',
-              en: 'And what were the boxes for?',
-            },
-            next: 'pasante-4',
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
-          },
-        ],
-      },
-      'pasante-7': {
-        text: {
-          es:
-            'Que siga preguntando antes de construir. Es lo que lo hizo ' +
-            'distinto: primero entendio el campo, despues escribio el ' +
-            'codigo. En ese orden. Anda, ya te di suficiente.',
-          en:
-            'To keep asking before building. That is what set him apart: ' +
-            'first he understood the field, then he wrote the code. In ' +
-            'that order. Go on, I have given you enough.',
-        },
-        options: [
-          {
-            label: { es: 'Gracias. Adios', en: 'Thanks. Goodbye' },
-            next: null,
-          },
-          {
-            label: { es: 'Volvamos', en: 'Back' },
-            next: 'hub',
+            next: 'hub2',
           },
         ],
       },

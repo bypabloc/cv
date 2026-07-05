@@ -3,8 +3,10 @@
  * @description Sala 2 — LA CIMA (Destacame Fullstack & Lider, CL+MX,
  *   2022-hoy). War room azul #0052CC: mesa de reunion, paneles de
  *   observabilidad y vibe coding, grafo de microservicios (canvas ink),
- *   escritorio ultrawide code-base -> forks, puerta PROXIMAMENTE y CTA de
- *   contacto. Micros: orquestacion CL <-> MX (pulso, relanzable), ciclo
+ *   escritorio ultrawide code-base -> forks, puerta PROXIMAMENTE, CTA de
+ *   contacto al centro del fondo y el kit informativo ESTANDAR
+ *   (`infoKit`) en las mismas posiciones que el aula.
+ *   Micros: orquestacion CL <-> MX (pulso, relanzable), ciclo
  *   de pantallas de codigo (vibe -> Python/Django -> TS) y fork del
  *   code-base por entidad. 3 NPCs del equipo conversables con E.
  */
@@ -35,10 +37,8 @@ import {
 import type { RoomBuild, RoomCtx } from '../world'
 import {
   desk,
-  fichaBoard,
   footprint,
-  lecternNotebook,
-  pastPortal,
+  infoKit,
   screenVariants,
   switchableMonitor,
 } from './props'
@@ -358,14 +358,14 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     },
   })
 
-  // grafo de microservicios en el muro -X (la derecha de quien avanza)
+  // grafo de microservicios en el muro frontal (el -X ahora es de la
+  // pizarra de RETOS del kit estandar)
   const graph = new Mesh(
     units.plane,
     new MeshBasicMaterial({ map: graphTexture() }),
   )
   graph.scale.set(2.6, 2.6, 1)
-  graph.position.set(-half + 0.12, 2, room.z - 1)
-  graph.rotation.y = Math.PI / 2
+  graph.position.set(2.8, 2, room.z - room.depth / 2 + 0.12)
   graph.userData.noOutline = true
   group.add(graph)
 
@@ -439,9 +439,10 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     }
   })
 
-  // puerta PROXIMAMENTE al fondo
+  // puerta PROXIMAMENTE en el muro +X, mitad frontal (la franja central
+  // de ese muro es de la pizarra de APRENDIZAJES del kit estandar)
   const coming = new Group()
-  coming.position.set(half - 0.35, 0, room.z - 1.6)
+  coming.position.set(half - 0.35, 0, room.z - 3.8)
   coming.rotation.y = -Math.PI / 2
   const comingFrame = boxMesh(1.2, 2.1, 0.09, toonMat('#10151f'))
   comingFrame.position.set(0, 1.05, 0)
@@ -468,9 +469,10 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
   coming.add(comingFrame, comingPanel, comingTitle, comingSub)
   group.add(coming)
 
-  // CTA de contacto: holograma girando sobre pedestal
+  // CTA de contacto: holograma girando sobre pedestal, en el centro del
+  // muro del fondo (el climax del recorrido, entre los 2 paneles)
   const beacon = new Group()
-  beacon.position.set(half - 1.3, 0, room.z - 0.4)
+  beacon.position.set(0, 0, room.z + 4.9)
   const pedestal = new Mesh(units.cylinder, toonMat('#141a26'))
   pedestal.scale.set(0.62, 1, 0.62)
   pedestal.position.y = 0.5
@@ -491,11 +493,11 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     beacon.add(holoLight)
   }
   group.add(beacon)
-  staticColliders.push(footprint(half - 1.3, room.z - 0.4, 0.8, 0.8))
+  staticColliders.push(footprint(0, room.z + 4.9, 0.8, 0.8))
   interactables.push({
     id: `contact-${room.index}`,
-    x: half - 1.3,
-    z: room.z - 0.4,
+    x: 0,
+    z: room.z + 4.9,
     radius: 2.2,
     label: CONTACT_LABEL,
     onActivate: () => actions.openContact(),
@@ -504,56 +506,25 @@ export default function buildCima(ctx: RoomCtx): RoomBuild {
     holoMat.emissiveIntensity = 0.9 + Math.sin(t * 2.4) * 0.35
     holo.rotation.y += dt * 0.8
     // hum cristalino del holograma, audible al acercarse
-    sfx.feed(`holo-${room.index}`, 'holo', half - 1.3, room.z - 0.4)
+    sfx.feed(`holo-${room.index}`, 'holo', 0, room.z + 4.9)
   })
 
-  // pizarras tituladas: RETOS (muro frontal) / APRENDIZAJES (muro izq)
+  // kit informativo estandar (RETOS / APRENDIZAJES / grieta / cuaderno):
+  // mismas posiciones que el aula (el canon de todas las salas)
   const texts = def.texts[state.locale]
-  const retos = fichaBoard({
-    roomIndex: room.index,
-    kind: 'retos',
-    position: [-2.6, 0, room.z - room.depth / 2 + 0.35],
-    theme,
-    locale: state.locale,
-    preview: texts.retos,
-    onOpen: actions.openFicha,
-  })
-  const aprendizajes = fichaBoard({
-    roomIndex: room.index,
-    kind: 'aprendizajes',
-    position: [-half + 0.35, 0, room.z + 1.4],
-    rotationY: Math.PI / 2,
-    theme,
-    locale: state.locale,
-    preview: texts.aprendizajes,
-    onOpen: actions.openFicha,
-  })
-  // grieta al pasado en el muro +X (la mano izquierda de quien avanza)
-  const portal = pastPortal({
+  const kit = infoKit({
     room,
-    position: [half - 0.1, 0, room.z + room.depth / 2 - 1.4],
-    rotationY: -Math.PI / 2,
-    accent: theme.accent,
     year: def.year,
-    locale: state.locale,
-    onEnter: actions.enterPast,
-  })
-  // cuaderno flotante con la reseña, en el -X (la derecha del jugador),
-  // al fondo (espejo de la grieta; la CIMA no tiene puerta de salida)
-  const nota = lecternNotebook({
-    roomIndex: room.index,
-    position: [-half + 0.9, 0, room.z + room.depth / 2 - 1.5],
-    rotationY: Math.PI / 2,
     theme,
-    notebook: { title: texts.title, lines: texts.notebook },
-    story: { title: texts.title, paragraphs: texts.resena },
+    locale: state.locale,
+    texts,
     withLight: state.tier === 'full',
-    onOpen: actions.openStory,
+    onFicha: actions.openFicha,
+    onEnterPast: actions.enterPast,
+    onStory: actions.openStory,
   })
-  staticColliders.push(
-    footprint(-half + 0.9, room.z + room.depth / 2 - 1.5, 0.7, 0.7),
-  )
-  for (const prop of [retos, aprendizajes, portal, nota]) {
+  staticColliders.push(...kit.colliders)
+  for (const prop of kit.props) {
     group.add(prop.group)
     if (prop.interactable) {
       interactables.push(prop.interactable)

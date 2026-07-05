@@ -290,6 +290,13 @@ export const CIMA_PRESENTE_DIALOGS = {
           },
           {
             label: {
+              es: '¿Y el frontend? ¿Tambien en piezas?',
+              en: 'And the frontend? Pieces too?',
+            },
+            next: 'mf-1',
+          },
+          {
+            label: {
               es: 'Suficiente arquitectura por hoy',
               en: 'Enough architecture for today',
             },
@@ -408,8 +415,87 @@ export const CIMA_PRESENTE_DIALOGS = {
           },
           {
             label: {
+              es: '¿Y el frontend como se organiza?',
+              en: 'How is the frontend organized?',
+            },
+            next: 'mf-1',
+          },
+          {
+            label: {
               es: 'No, gracias. Buen tour',
               en: 'No, thanks. Good tour',
+            },
+            next: null,
+          },
+        ],
+      },
+      'mf-1': {
+        text: {
+          es:
+            'Y no es solo backend: Pablo tambien definio la ' +
+            'arquitectura de microfrontends. Antes el frontend era un ' +
+            'bloque unico y los equipos chocaban en cada merge.',
+          en:
+            'And it is not just backend: Pablo also defined the ' +
+            'microfrontend architecture. Before, the frontend was one ' +
+            'single block and teams collided on every merge.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que cambio con eso?',
+              en: 'What changed with that?',
+            },
+            next: 'mf-2',
+          },
+          {
+            label: { es: 'Volvamos a los temas', en: 'Back to the topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'mf-2': {
+        text: {
+          es:
+            'Ahora cada equipo tiene su pieza y deploya sin pedir ' +
+            'permiso. Varios equipos en paralelo, menos acoplamiento, ' +
+            'cero fila de espera.',
+          en:
+            'Now each team owns its piece and deploys without asking ' +
+            'permission. Several teams in parallel, less coupling, no ' +
+            'waiting line.',
+        },
+        options: [
+          {
+            label: { es: '¿Tu lo viviste?', en: 'Did you live through it?' },
+            next: 'mf-3',
+          },
+          {
+            label: { es: 'Buen dato. Volvamos', en: 'Good one. Back we go' },
+            next: 'hub',
+          },
+        ],
+      },
+      'mf-3': {
+        text: {
+          es:
+            'Si. Una vez espere tres dias para mergear un boton. Con ' +
+            'los microfrontends de Pablo, mi equipo saca lo suyo el ' +
+            'mismo dia. Eso es producir mas sin correr mas.',
+          en:
+            'Yes. I once waited three days to merge a button. With ' +
+            'the microfrontends Pablo set up, my team ships its part ' +
+            'the same day. That is producing more without running more.',
+        },
+        options: [
+          {
+            label: { es: 'Gran mejora. Volvamos', en: 'Great gain. Back' },
+            next: 'hub',
+          },
+          {
+            label: {
+              es: 'Con eso me quedo. Adios',
+              en: 'I will keep that. Bye',
             },
             next: null,
           },
@@ -498,6 +584,13 @@ export const CIMA_PRESENTE_DIALOGS = {
             next: 'camp-3a',
           },
           {
+            label: {
+              es: '¿Trabajaste con el en eso?',
+              en: 'Did you work with him on it?',
+            },
+            next: 'camp-3b',
+          },
+          {
             label: { es: '¿Y el resultado?', en: 'And the result?' },
             next: 'camp-4',
           },
@@ -515,6 +608,25 @@ export const CIMA_PRESENTE_DIALOGS = {
         options: [
           {
             label: { es: '¿Y el resultado final?', en: 'And the end result?' },
+            next: 'camp-4',
+          },
+        ],
+      },
+      'camp-3b': {
+        text: {
+          es:
+            'Yo estuve en ese proyecto con el. Pablo revisaba mis PRs ' +
+            'explicando cada porque y me dejo piezas clave del flujo. ' +
+            'Aprendi mas ahi que en dos años de tutoriales.',
+          en:
+            'I was on that project with him. Pablo reviewed my PRs ' +
+            'explaining every why and trusted me with key parts of ' +
+            'the flow. I learned more there than in two years of ' +
+            'tutorials.',
+        },
+        options: [
+          {
+            label: { es: '¿Y el resultado?', en: 'And the result?' },
             next: 'camp-4',
           },
         ],
@@ -968,6 +1080,34 @@ export const CIMA_PRESENTE_DIALOGS = {
         options: [
           {
             label: {
+              es: '¿Cuanto tarda un fork nuevo?',
+              en: 'How long does a new fork take?',
+            },
+            next: 'fork-2a',
+          },
+          {
+            label: {
+              es: '¿Y no se desalinean?',
+              en: 'Do they not drift apart?',
+            },
+            next: 'fork-3',
+          },
+        ],
+      },
+      'fork-2a': {
+        text: {
+          es:
+            'Dias. Cuando entra una entidad nueva, Pablo levanta el ' +
+            'fork con su marca y queda andando en dias, no en meses. ' +
+            'La primera vez nadie lo creia.',
+          en:
+            'Days. When a new entity signs, Pablo spins up the fork ' +
+            'with their brand and it is running in days, not months. ' +
+            'The first time nobody believed it.',
+        },
+        options: [
+          {
+            label: {
               es: '¿Y no se desalinean?',
               en: 'Do they not drift apart?',
             },
@@ -1161,6 +1301,13 @@ export const CIMA_PRESENTE_DIALOGS = {
             next: 'ac-1',
           },
           {
+            label: {
+              es: '¿Que cambio Pablo en la produccion?',
+              en: 'What did Pablo change in output?',
+            },
+            next: 'pr-1',
+          },
+          {
             label: { es: 'Volvamos al inicio', en: 'Back to the start' },
             next: 'hub',
           },
@@ -1295,6 +1442,10 @@ export const CIMA_PRESENTE_DIALOGS = {
             next: 're-2a',
           },
           {
+            label: { es: '¿Tu como lo viviste?', en: 'How was it for you?' },
+            next: 're-2b',
+          },
+          {
             label: { es: '¿Que aprendieron?', en: 'What did you learn?' },
             next: 're-3',
           },
@@ -1308,6 +1459,24 @@ export const CIMA_PRESENTE_DIALOGS = {
           en:
             'Straight and early. First the why, then the how, and the ' +
             'names last. In that order it hurts less.',
+        },
+        options: [
+          {
+            label: { es: '¿Y que aprendieron?', en: 'And what did you learn?' },
+            next: 're-3',
+          },
+        ],
+      },
+      're-2b': {
+        text: {
+          es:
+            'En una reorganizacion herede la mitad del equipo de ' +
+            'Pablo. Su traspaso fue tan ordenado que en una semana ' +
+            'entregabamos igual que antes. Eso no se improvisa.',
+          en:
+            "In one reorg I inherited half of Pablo's team. His " +
+            'handover was so tidy that within a week we were ' +
+            'delivering as before. You do not improvise that.',
         },
         options: [
           {
@@ -1424,6 +1593,106 @@ export const CIMA_PRESENTE_DIALOGS = {
           },
         ],
       },
+      'pr-1': {
+        text: {
+          es:
+            'Te doy numeros, que es lo mio. Campañas que costaban ' +
+            'horas de una persona hoy salen en 4 minutos con el admin ' +
+            'que construyo Pablo. Esa capacidad vuelve al equipo.',
+          en:
+            'I will give you numbers, that is my thing. Campaigns ' +
+            'that cost hours of one person now ship in 4 minutes with ' +
+            'the admin Pablo built. That capacity goes back to the ' +
+            'team.',
+        },
+        options: [
+          {
+            label: { es: '¿Y en el frontend?', en: 'And on the frontend?' },
+            next: 'pr-2',
+          },
+          {
+            label: { es: '¿Algun otro numero?', en: 'Any other number?' },
+            next: 'pr-3',
+          },
+          {
+            label: { es: 'Volvamos a los temas', en: 'Back to the topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'pr-2': {
+        text: {
+          es:
+            'Con los microfrontends que definio Pablo, varios equipos ' +
+            'avanzan en paralelo sin pisarse. Antes coordinar un ' +
+            'release era mi peor semana; ahora casi ni me entero.',
+          en:
+            'With the microfrontends Pablo defined, several teams ' +
+            'move in parallel without stepping on each other. ' +
+            'Coordinating a release used to be my worst week; now I ' +
+            'barely notice.',
+        },
+        options: [
+          {
+            label: { es: '¿Algun otro numero?', en: 'Any other number?' },
+            next: 'pr-3',
+          },
+          {
+            label: { es: 'Volvamos a los temas', en: 'Back to the topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'pr-3': {
+        text: {
+          es:
+            'Entidades nuevas. Antes prometia meses para levantar una ' +
+            'plataforma; ahora Pablo forkea el core y en dias esta ' +
+            'andando con la marca del banco. Prometo dias y cumplo.',
+          en:
+            'New entities. I used to promise months to stand up a ' +
+            'platform; now Pablo forks the core and in days it runs ' +
+            "with the bank's brand. I promise days and deliver.",
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como se siente vender eso?',
+              en: 'How does selling that feel?',
+            },
+            next: 'pr-4',
+          },
+          {
+            label: { es: 'Impresionante. Volvamos', en: 'Impressive. Back' },
+            next: 'hub',
+          },
+        ],
+      },
+      'pr-4': {
+        text: {
+          es:
+            'Comodo. Santander, Scotiabank, Lider: mismo design ' +
+            'system, cada uno con su marca. Yo firmo fechas tranquilo ' +
+            'porque Pablo las hace verdad.',
+          en:
+            'Comfortable. Santander, Scotiabank, Lider: same design ' +
+            'system, each with its own brand. I sign dates calmly ' +
+            'because Pablo makes them come true.',
+        },
+        options: [
+          {
+            label: { es: 'Buen duo. Volvamos', en: 'Good duo. Back we go' },
+            next: 'hub',
+          },
+          {
+            label: {
+              es: 'Con eso me sobra. Gracias',
+              en: 'That is plenty. Thanks',
+            },
+            next: 'bye',
+          },
+        ],
+      },
       bye: {
         text: {
           es:
@@ -1446,8 +1715,8 @@ export const CIMA_PRESENTE_DIALOGS = {
     name: { es: 'Dev de observabilidad', en: 'Observability dev' },
     chatter: [
       {
-        es: 'p95 en 180. Respira, todo bien.',
-        en: 'p95 at 180. Breathe, all good.',
+        es: 'p95 en 95. Antes era 180. Respira.',
+        en: 'p95 at 95. Used to be 180. Breathe.',
       },
       {
         es: 'Verde. Verde. Verde. Me encanta.',
@@ -1467,13 +1736,13 @@ export const CIMA_PRESENTE_DIALOGS = {
       hub: {
         text: {
           es:
-            'Mira ese panel: p95 de 180 milisegundos y uptime de 99.97 ' +
-            'por ciento. Yo lo cuido como a una mascota. ¿Que quieres ' +
-            'saber?',
+            'Mira ese panel: p95 de 95 milisegundos, antes 180. Y ' +
+            'uptime de 99.99, antes 99.97. Yo lo cuido como a una ' +
+            'mascota. ¿Que quieres saber?',
           en:
-            'Look at that panel: p95 of 180 milliseconds and 99.97 ' +
-            'percent uptime. I look after it like a pet. What do you ' +
-            'want to know?',
+            'Look at that panel: p95 of 95 milliseconds, down from ' +
+            '180. And 99.99 uptime, up from 99.97. I look after it ' +
+            'like a pet. What do you want to know?',
         },
         options: [
           {
@@ -1529,13 +1798,21 @@ export const CIMA_PRESENTE_DIALOGS = {
         text: {
           es:
             'El p95 dice que el 95 por ciento de las requests responde ' +
-            'en 180 milisegundos o menos. Rapido de verdad, no rapido ' +
-            'de folleto.',
+            'en 95 milisegundos o menos. Hace un tiempo eran 180. ' +
+            'Rapido de verdad, no rapido de folleto.',
           en:
-            'The p95 says 95 percent of requests respond in 180 ' +
-            'milliseconds or less. Actually fast, not brochure fast.',
+            'The p95 says 95 percent of requests respond in 95 ' +
+            'milliseconds or less. A while back it was 180. Actually ' +
+            'fast, not brochure fast.',
         },
         options: [
+          {
+            label: {
+              es: '¿Como bajaron de 180 a 95?',
+              en: 'How did you go from 180 to 95?',
+            },
+            next: 'me-1a',
+          },
           {
             label: { es: '¿Y el uptime?', en: 'And the uptime?' },
             next: 'me-2',
@@ -1546,14 +1823,63 @@ export const CIMA_PRESENTE_DIALOGS = {
           },
         ],
       },
+      'me-1a': {
+        text: {
+          es:
+            'Fue una cruzada de Pablo. Se sento conmigo varias ' +
+            'semanas: cache donde dolia, queries afinadas, llamadas de ' +
+            'mas que sobraban. De 180 a 95, medido, no contado.',
+          en:
+            'It was a crusade Pablo led. He sat with me for weeks: ' +
+            'cache where it hurt, tuned queries, extra calls removed. ' +
+            'From 180 to 95, measured, not told.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Como fue trabajar asi con el?',
+              en: 'How was working with him?',
+            },
+            next: 'me-1b',
+          },
+          {
+            label: { es: '¿Y el uptime?', en: 'And the uptime?' },
+            next: 'me-2',
+          },
+        ],
+      },
+      'me-1b': {
+        text: {
+          es:
+            'Mi mejor pairing. Pablo no te da la respuesta: te ' +
+            'pregunta hasta que la ves tu. Ahora cazo milisegundos sin ' +
+            'ayuda, pero el metodo es suyo.',
+          en:
+            'My best pairing ever. Pablo does not hand you the ' +
+            'answer: he asks until you see it yourself. Now I hunt ' +
+            'milliseconds on my own, but the method is his.',
+        },
+        options: [
+          {
+            label: { es: '¿Y el uptime?', en: 'And the uptime?' },
+            next: 'me-2',
+          },
+          {
+            label: { es: 'Gran historia. Volvamos', en: 'Great story. Back' },
+            next: 'hub',
+          },
+        ],
+      },
       'me-2': {
         text: {
           es:
-            '99.97 por ciento de uptime. En un año eso es apenas un ' +
-            'ratito caido. La gente no nota nada, y asi debe ser.',
+            '99.99 por ciento de uptime, y venimos de 99.97. En un ' +
+            'año eso es apenas un ratito caido. La gente no nota ' +
+            'nada, y asi debe ser.',
           en:
-            '99.97 percent uptime. Over a year that is barely a moment ' +
-            'down. People notice nothing, and that is how it should be.',
+            '99.99 percent uptime, up from 99.97. Over a year that is ' +
+            'barely a moment down. People notice nothing, and that is ' +
+            'how it should be.',
         },
         options: [
           {
@@ -1589,12 +1915,12 @@ export const CIMA_PRESENTE_DIALOGS = {
         text: {
           es:
             'Alertas que avisan antes del incendio, deploys chicos y ' +
-            'reversibles, y review de todo lo que entra. Aburrido a ' +
-            'proposito.',
+            'reversibles, y review de todo lo que entra. La receta la ' +
+            'instalo Pablo. Aburrido a proposito.',
           en:
             'Alerts that warn before the fire, small reversible ' +
-            'deploys, and review on everything that gets in. Boring on ' +
-            'purpose.',
+            'deploys, and review on everything that gets in. Pablo ' +
+            'installed the recipe. Boring on purpose.',
         },
         options: [
           {
@@ -1764,11 +2090,13 @@ export const CIMA_PRESENTE_DIALOGS = {
       'gr-2a': {
         text: {
           es:
-            'Campañas, cuando hay lanzamiento. Pero desde que el admin ' +
-            'arma todo en minutos, hasta ese pico llega ordenado.',
+            'Campañas, cuando hay lanzamiento. Pero desde que el ' +
+            'admin de Pablo arma todo en 4 minutos, hasta ese pico ' +
+            'llega ordenado.',
           en:
-            'Campaigns, on launch days. But since the admin builds ' +
-            'everything in minutes, even that spike arrives tidy.',
+            'Campaigns, on launch days. But since the admin Pablo ' +
+            'built sets everything up in 4 minutes, even that spike ' +
+            'arrives tidy.',
         },
         options: [
           {

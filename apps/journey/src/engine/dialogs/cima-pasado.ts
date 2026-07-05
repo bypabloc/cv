@@ -1,8 +1,12 @@
 /**
  * @module dialogs/cima-pasado (engine)
- * @description Arboles de dialogo del "antes" de la cima (sepia): procesos
- *   manuales y silos en un solo pais. El runner que lleva papeles a pie
- *   entre areas y el operador que sostiene la "integracion" al telefono.
+ * @description Arboles de dialogo del "antes" de la cima (sepia): la
+ *   operacion pre-arquitecto — campañas lanzadas a mano que tardan horas,
+ *   Chile y Mexico coordinados a punta de telefono y papeles, un frontend
+ *   monolitico donde los equipos se pisan y entidades nuevas que tardan
+ *   meses. El runner que lleva papeles a pie entre escritorios y el
+ *   operador que sostiene la "integracion" al telefono; ambos cierran con
+ *   el rumor del arquitecto que viene a ordenar todo.
  */
 import { defineDialog, type NpcDialog } from '../dialog'
 
@@ -24,8 +28,8 @@ export const CIMA_PASADO_DIALOGS = {
         en: 'If I stop, everything stops.',
       },
       {
-        es: '¿Alguien vio la planilla azul?',
-        en: 'Has anyone seen the blue form?',
+        es: '¿Alguien vio la planilla de Mexico?',
+        en: 'Has anyone seen the Mexico form?',
       },
     ],
     start: 'hub',
@@ -34,12 +38,13 @@ export const CIMA_PASADO_DIALOGS = {
         text: {
           es:
             '¿Un visitante? Dame un segundo... uf. Bienvenido al reino ' +
-            'del papel: cada area en su silo y yo corriendo entre ' +
-            'todas. ¿Que quieres saber?',
+            'del papel: cada equipo en su silo, dos paises que ' +
+            'coordinar y yo corriendo en el medio. ¿Que quieres saber?',
           en:
             'A visitor? Give me a second... phew. Welcome to the ' +
-            'kingdom of paper: every area in its own silo and me ' +
-            'running between all of them. What do you want to know?',
+            'kingdom of paper: every team in its own silo, two ' +
+            'countries to coordinate and me running in between. What ' +
+            'do you want to know?',
         },
         options: [
           {
@@ -62,24 +67,27 @@ export const CIMA_PASADO_DIALOGS = {
       hub2: {
         text: {
           es:
-            'Pasa de todo, y todo a mano. Tenemos un admin de campañas ' +
-            'que se arma pieza por pieza y un mapa que solo tiene un ' +
-            'pais. ¿Por donde sigo?',
+            'Pasa de todo, y todo a mano. Campañas que tardan horas en ' +
+            'salir y dos paises que se hablan por telefono. ¿Por donde ' +
+            'sigo?',
           en:
-            'Everything goes on, and all of it by hand. We have a ' +
-            'campaign admin assembled piece by piece and a map with ' +
-            'only one country on it. Where do I go next?',
+            'Everything goes on, and all of it by hand. Campaigns that ' +
+            'take hours to go out and two countries talking to each ' +
+            'other by phone. Where do I go next?',
         },
         options: [
           {
             label: {
-              es: 'El admin de campañas',
-              en: 'The campaign admin',
+              es: 'Las campañas a mano',
+              en: 'The handmade campaigns',
             },
             next: 'c1',
           },
           {
-            label: { es: 'Lo del unico pais', en: 'The one-country thing' },
+            label: {
+              es: 'Lo de los dos paises',
+              en: 'The two-country thing',
+            },
             next: 'p1',
           },
           { label: { es: '¿Algo mas?', en: 'Anything else?' }, next: 'hub3' },
@@ -88,11 +96,40 @@ export const CIMA_PASADO_DIALOGS = {
       hub3: {
         text: {
           es:
-            'Queda lo mejor: mi sueño imposible. Y bueno, si quieres ' +
-            'tambien te cuento quien soy yo en todo este enredo.',
+            'Queda el tablero gigante donde los equipos se pisan y la ' +
+            'historia de la entidad nueva que tardo meses. Elige tu ' +
+            'dolor favorito.',
           en:
-            'The best part is left: my impossible dream. And well, if ' +
-            'you want I can also tell you who I am in this whole mess.',
+            'There is still the giant board where the teams step on ' +
+            'each other, and the story of the new entity that took ' +
+            'months. Pick your favorite pain.',
+        },
+        options: [
+          {
+            label: { es: 'El tablero gigante', en: 'The giant board' },
+            next: 'm1',
+          },
+          {
+            label: {
+              es: 'La entidad de los meses',
+              en: 'The months-long entity',
+            },
+            next: 'x1',
+          },
+          {
+            label: { es: '¿Y algo bueno?', en: 'Anything good?' },
+            next: 'hub4',
+          },
+        ],
+      },
+      hub4: {
+        text: {
+          es:
+            'Lo bueno: mi sueño imposible, un rumor fresquito de ' +
+            'pasillo y, si quieres, quien soy yo en todo este enredo.',
+          en:
+            'The good part: my impossible dream, a fresh hallway rumor ' +
+            'and, if you want, who I am in this whole mess.',
         },
         options: [
           {
@@ -101,6 +138,10 @@ export const CIMA_PASADO_DIALOGS = {
               en: 'Your impossible dream',
             },
             next: 'd1',
+          },
+          {
+            label: { es: 'El rumor del pasillo', en: 'The hallway rumor' },
+            next: 'r1',
           },
           {
             label: { es: '¿Tu quien eres?', en: 'Who are you anyway?' },
@@ -112,13 +153,14 @@ export const CIMA_PASADO_DIALOGS = {
       s1: {
         text: {
           es:
-            'Mira la pila: ordenes, planillas, aprobaciones. Cada area ' +
-            'vive en su silo y no se hablan entre ellas, asi que los ' +
-            'papeles viajan como yo: a pie.',
+            'Mira la pila: ordenes, planillas, aprobaciones. Cada ' +
+            'equipo vive en su silo y no se hablan entre ellos, asi ' +
+            'que los papeles viajan como yo: a pie, de escritorio en ' +
+            'escritorio.',
           en:
-            'Look at the pile: orders, forms, approvals. Every area ' +
+            'Look at the pile: orders, forms, approvals. Every team ' +
             'lives in its own silo and they do not talk to each other, ' +
-            'so the papers travel like me: on foot.',
+            'so the papers travel like me: on foot, desk to desk.',
         },
         options: [
           {
@@ -138,13 +180,15 @@ export const CIMA_PASADO_DIALOGS = {
       s2: {
         text: {
           es:
-            'Porque no hay nada que conecte a las areas. Ningun sistema ' +
-            'las orquesta. Si finanzas necesita algo de operaciones, ' +
-            'alguien tiene que llevarlo caminando. Ese alguien soy yo.',
+            'Porque no hay nada que conecte a los equipos. Ningun ' +
+            'sistema los orquesta. Si finanzas necesita algo de ' +
+            'operaciones, alguien tiene que llevarlo caminando. Ese ' +
+            'alguien soy yo.',
           en:
-            'Because nothing connects the areas. No system orchestrates ' +
-            'them. If finance needs something from operations, someone ' +
-            'has to walk it over. That someone is me.',
+            'Because nothing connects the teams. No system ' +
+            'orchestrates them. If finance needs something from ' +
+            'operations, someone has to walk it over. That someone is ' +
+            'me.',
         },
         options: [
           {
@@ -216,11 +260,11 @@ export const CIMA_PASADO_DIALOGS = {
         text: {
           es:
             'Se rehace desde cero. Una vez un papel desaparecio entre ' +
-            'dos pisos y tres areas se acusaron durante una semana. ' +
+            'dos pisos y tres equipos se acusaron durante una semana. ' +
             'Estaba en mi bolsillo. No se lo digas a nadie.',
           en:
             'You redo it from scratch. Once a paper vanished between ' +
-            'two floors and three areas blamed each other for a week. ' +
+            'two floors and three teams blamed each other for a week. ' +
             'It was in my pocket. Do not tell anyone.',
         },
         options: [
@@ -286,11 +330,11 @@ export const CIMA_PASADO_DIALOGS = {
         text: {
           es:
             'Yo lo digo en broma y en serio: mis piernas son el API de ' +
-            'esta empresa. Toda integracion entre areas pasa por estos ' +
-            'zapatos o por el telefono de alla.',
+            'esta empresa. Toda integracion entre equipos pasa por ' +
+            'estos zapatos o por el telefono de alla.',
           en:
             'I say it half joking, half serious: my legs are the API of ' +
-            'this company. Every integration between areas goes through ' +
+            'this company. Every integration between teams goes through ' +
             'these shoes or through that phone over there.',
         },
         options: [
@@ -323,11 +367,12 @@ export const CIMA_PASADO_DIALOGS = {
           es:
             'El telefono es la otra mitad del sistema. Lo que no viaja ' +
             'en papel, viaja en llamada. El operador de alla sostiene ' +
-            'media empresa con ese aparato.',
+            'media empresa, y a Mexico entero, con ese aparato.',
           en:
             'The phone is the other half of the system. What does not ' +
             'travel on paper travels in a call. The operator over there ' +
-            'holds half the company with that device.',
+            'holds half the company, and all of Mexico, with that ' +
+            'device.',
         },
         options: [
           {
@@ -362,17 +407,18 @@ export const CIMA_PASADO_DIALOGS = {
       c1: {
         text: {
           es:
-            'Ah, el admin de campañas. Se arma a mano, pieza por pieza, ' +
-            'y toma horas. Horas de verdad, de las que duelen. Cada ' +
-            'campaña nueva es una expedicion.',
+            'Ah, las campañas. Se lanzan a mano, pieza por pieza, y ' +
+            'toman horas. La ultima se comio seis horas y dos turnos ' +
+            'de cafe. Cada campaña nueva es una expedicion.',
           en:
-            'Ah, the campaign admin. It is assembled by hand, piece by ' +
-            'piece, and it takes hours. Real hours, the painful kind. ' +
-            'Every new campaign is an expedition.',
+            'Ah, the campaigns. They are launched by hand, piece by ' +
+            'piece, and they take hours. The last one ate six hours ' +
+            'and two coffee shifts. Every new campaign is an ' +
+            'expedition.',
         },
         options: [
           {
-            label: { es: '¿Horas de verdad?', en: 'Actual hours?' },
+            label: { es: '¿Seis horas?', en: 'Six hours?' },
             next: 'c2',
           },
           {
@@ -408,13 +454,15 @@ export const CIMA_PASADO_DIALOGS = {
       c2b: {
         text: {
           es:
-            'Cada area manda su parte por separado: una lista por aqui, ' +
-            'una planilla por alla. Alguien junta todo a mano y arma la ' +
-            'campaña pieza a pieza.',
+            'Cada equipo manda su parte por separado: una lista por ' +
+            'aqui, una planilla por alla, una cifra dictada desde ' +
+            'Mexico. Alguien junta todo a mano y arma la campaña pieza ' +
+            'a pieza.',
           en:
-            'Every area sends its part separately: a list from here, a ' +
-            'form from there. Someone gathers it all by hand and builds ' +
-            'the campaign piece by piece.',
+            'Every team sends its part separately: a list from here, a ' +
+            'form from there, a figure dictated from Mexico. Someone ' +
+            'gathers it all by hand and builds the campaign piece by ' +
+            'piece.',
         },
         options: [
           {
@@ -497,13 +545,13 @@ export const CIMA_PASADO_DIALOGS = {
       c6: {
         text: {
           es:
-            'La noche antes de un lanzamiento. Todos armando el admin a ' +
-            'mano hasta la madrugada. Yo dormi en la escalera, entre ' +
-            'viaje y viaje. Buen colchon, mala almohada.',
+            'La noche antes de un lanzamiento doble: Chile y Mexico el ' +
+            'mismo dia. Todos armando campañas a mano hasta la ' +
+            'madrugada. Yo dormi en la escalera, entre viaje y viaje.',
           en:
-            'The night before a launch. Everyone assembling the admin ' +
-            'by hand until dawn. I slept on the staircase between ' +
-            'trips. Good mattress, bad pillow.',
+            'The night before a double launch: Chile and Mexico on the ' +
+            'same day. Everyone assembling campaigns by hand until ' +
+            'dawn. I slept on the staircase between trips.',
         },
         options: [
           { label: { es: '¿Y el cafe?', en: 'And the coffee?' }, next: 'c7' },
@@ -551,13 +599,13 @@ export const CIMA_PASADO_DIALOGS = {
       c5: {
         text: {
           es:
-            'Que todo estuviera conectado. Que armar una campaña tomara ' +
-            'minutos y no horas. Lo pienso mientras corro y se me ' +
-            'acelera el paso solo de imaginarlo.',
+            'Que todo estuviera conectado. Que lanzar una campaña ' +
+            'tomara minutos y no horas. Alguien lo dijo una vez en una ' +
+            'reunion y todos se rieron. Yo no me rei.',
           en:
-            'Everything being connected. Building a campaign taking ' +
-            'minutes instead of hours. I think about it while I run and ' +
-            'my pace quickens just from imagining it.',
+            'Everything being connected. Launching a campaign taking ' +
+            'minutes instead of hours. Someone said it once in a ' +
+            'meeting and everybody laughed. I did not laugh.',
         },
         options: [
           {
@@ -570,26 +618,26 @@ export const CIMA_PASADO_DIALOGS = {
       p1: {
         text: {
           es:
-            'Operamos en un solo pais. Uno. El mapa de la oficina tiene ' +
-            'una sola bandera y aun asi apenas alcanzamos a movernos ' +
-            'dentro de el.',
+            'Operamos en dos paises. Aqui ayudamos a la gente a salir ' +
+            'de sus deudas; en Mexico damos creditos por niveles. ' +
+            'Suena bonito hasta que ves como se coordina.',
           en:
-            'We operate in a single country. One. The office map has a ' +
-            'single flag on it and even so we can barely keep up moving ' +
-            'inside it.',
+            'We operate in two countries. Here we help people get out ' +
+            'of debt; in Mexico we offer tiered credits. It sounds ' +
+            'lovely until you see how it is coordinated.',
         },
         options: [
           {
             label: {
-              es: '¿Por que no expandirse?',
-              en: 'Why not expand?',
+              es: '¿Como se coordina?',
+              en: 'How is it coordinated?',
             },
             next: 'p2',
           },
           {
             label: {
-              es: '¿Te gustaria salir?',
-              en: 'Would you like to go abroad?',
+              es: '¿Creditos por niveles?',
+              en: 'Tiered credits?',
             },
             next: 'p2b',
           },
@@ -599,21 +647,27 @@ export const CIMA_PASADO_DIALOGS = {
       p2: {
         text: {
           es:
-            'Con estos procesos, expandirse es impensable. Si un papel ' +
-            'tarda una mañana en cruzar el edificio, imagina cruzar una ' +
-            'frontera. Ni mis piernas dan para eso.',
+            'A punta de telefono y papeles. Cada cifra cruza la ' +
+            'frontera dictada en una llamada de larga distancia, y la ' +
+            'version escrita la corro yo entre escritorios.',
           en:
-            'With these processes, expanding is unthinkable. If a paper ' +
-            'takes a whole morning to cross the building, imagine ' +
-            'crossing a border. Not even my legs can cover that.',
+            'By phone and paper, plain and simple. Every figure ' +
+            'crosses the border dictated over a long-distance call, ' +
+            'and I run the written version between desks.',
         },
         options: [
           {
-            label: { es: '¿Que haria falta?', en: 'What would it take?' },
+            label: {
+              es: '¿Y los horarios?',
+              en: 'What about the time zones?',
+            },
             next: 'p3',
           },
           {
-            label: { es: '¿Tan grave es?', en: 'Is it that bad?' },
+            label: {
+              es: '¿Que puede salir mal?',
+              en: 'What can go wrong?',
+            },
             next: 'p5',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
@@ -622,61 +676,74 @@ export const CIMA_PASADO_DIALOGS = {
       p2b: {
         text: {
           es:
-            'Me encantaria ver otros paises. Pero mi metodo de ' +
-            'integracion no pasa aduana: no hay visa para un runner con ' +
-            'una pila de planillas.',
+            'Empiezas con un credito chico y, si pagas bien, subes de ' +
+            'nivel. La idea es buena. El papeleo para sostenerla entre ' +
+            'dos paises es el villano de la pelicula.',
           en:
-            'I would love to see other countries. But my integration ' +
-            'method does not clear customs: there is no visa for a ' +
-            'runner with a pile of forms.',
+            'You start with a small credit and, if you pay well, you ' +
+            'move up a tier. The idea is good. The paperwork holding it ' +
+            'together across two countries is the villain of the movie.',
         },
         options: [
-          { label: { es: 'Ja, cierto', en: 'Ha, true' }, next: 'p3' },
-          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
-        ],
-      },
-      p5: {
-        text: {
-          es:
-            'Piensa: cada dato entre paises seria una llamada de larga ' +
-            'distancia o un sobre viajando dias. La operacion se ' +
-            'quedaria dormida esperando.',
-          en:
-            'Think about it: every piece of data between countries ' +
-            'would be a long-distance call or an envelope traveling for ' +
-            'days. The operation would fall asleep waiting.',
-        },
-        options: [
-          { label: { es: 'Entiendo', en: 'I see' }, next: 'p3' },
+          {
+            label: {
+              es: '¿Como se coordina?',
+              en: 'How is it coordinated?',
+            },
+            next: 'p2',
+          },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
       p3: {
         text: {
           es:
-            'Expandirse asi seria multiplicar los silos por cada pais ' +
-            'nuevo. Mas pilas, mas llamadas, mas runners. El mismo ' +
-            'caos, pero en varios idiomas.',
+            'Cuando alla arranca el dia, aqui ya vamos por el tercer ' +
+            'cafe. Quedan pocas horas en que los dos paises estan ' +
+            'despiertos a la vez, y en esa ventana se decide todo. A ' +
+            'gritos.',
           en:
-            'Expanding like this would multiply the silos by every new ' +
-            'country. More piles, more calls, more runners. The same ' +
-            'chaos, but in several languages.',
+            'When their day starts over there, we are on our third ' +
+            'coffee here. There are only a few hours when both ' +
+            'countries are awake at the same time, and everything gets ' +
+            'decided in that window. Loudly.',
         },
         options: [
-          { label: { es: '¿Entonces que?', en: 'Then what?' }, next: 'p4' },
+          {
+            label: { es: 'Eso no escala', en: 'That does not scale' },
+            next: 'p4',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      p5: {
+        text: {
+          es:
+            'Una vez la llamada con Mexico se corto a la mitad y ' +
+            'lanzamos con cifras viejas. Una semana entera cuadrando ' +
+            'numeros a mano. El operador todavia suspira cuando lo ' +
+            'cuenta.',
+          en:
+            'Once the call with Mexico dropped halfway through and we ' +
+            'launched with stale figures. A whole week squaring numbers ' +
+            'by hand. The operator still sighs when he tells it.',
+        },
+        options: [
+          { label: { es: '¿Y entonces?', en: 'So what then?' }, next: 'p4' },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
       p4: {
         text: {
           es:
-            'Primero habria que ordenar la casa: conectar lo que ya ' +
-            'existe aqui. Con una base asi, cruzar fronteras dejaria de ' +
-            'ser un sueño lejano.',
+            'Alguien tendria que orquestar los dos paises: que los ' +
+            'datos crucen la frontera solos, sin larga distancia ni ' +
+            'planillas viajeras. Ese dia jubilo mis zapatos con ' +
+            'honores.',
           en:
-            'First the house needs to be put in order: connect what ' +
-            'already exists here. With that base, crossing borders ' +
-            'would stop being a distant dream.',
+            'Someone would have to orchestrate both countries: data ' +
+            'crossing the border on its own, no long distance, no ' +
+            'traveling forms. That day I retire my shoes with honors.',
         },
         options: [
           {
@@ -689,16 +756,167 @@ export const CIMA_PASADO_DIALOGS = {
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
+      m1: {
+        text: {
+          es:
+            'El sistema que ven los clientes es UN solo tablero ' +
+            'gigante donde trabajan todos los equipos a la vez. ' +
+            'Imagina cuatro pintores sobre el mismo lienzo, codo ' +
+            'contra codo.',
+          en:
+            'The system our clients see is ONE giant board where every ' +
+            'team works at the same time. Picture four painters on the ' +
+            'same canvas, elbow against elbow.',
+        },
+        options: [
+          {
+            label: { es: '¿Y que pasa?', en: 'And what happens?' },
+            next: 'm2',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      m2: {
+        text: {
+          es:
+            'Que se pisan. Un equipo mueve un boton y a otro se le ' +
+            'rompe su pantalla. Nadie sabe quien toco que, y de pronto ' +
+            'todos corren por el pasillo... como yo, pero sin mi ' +
+            'tecnica.',
+          en:
+            'They step on each other. One team moves a button and ' +
+            'another team watches its screen break. Nobody knows who ' +
+            'touched what, and suddenly everyone is running down the ' +
+            'hallway... like me, but without my technique.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y los lanzamientos?',
+              en: 'What about releases?',
+            },
+            next: 'm3',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      m3: {
+        text: {
+          es:
+            'Cuando un equipo publica, los demas se congelan y cruzan ' +
+            'los dedos. Una tarde entera de "no toques nada". Es mi ' +
+            'unico momento tranquilo para entregar papeles.',
+          en:
+            'When one team publishes, the rest freeze and cross their ' +
+            'fingers. A whole afternoon of "do not touch anything". It ' +
+            'is my only quiet window to deliver papers.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Nadie lo separa?',
+              en: 'Does nobody split it up?',
+            },
+            next: 'm4',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      m4: {
+        text: {
+          es:
+            'Se habla de partirlo en piezas, una por equipo, para que ' +
+            'cada quien avance en paralelo sin chocar. Suena a ' +
+            'sueño... y ultimamente los sueños andan contagiosos por ' +
+            'aqui.',
+          en:
+            'There is talk of splitting it into pieces, one per team, ' +
+            'so everyone can move in parallel without crashing. Sounds ' +
+            'like a dream... and lately dreams have been contagious ' +
+            'around here.',
+        },
+        options: [
+          {
+            label: { es: '¿Contagiosos como?', en: 'Contagious how?' },
+            next: 'r1',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      x1: {
+        text: {
+          es:
+            'Una entidad financiera nueva quiso sumarse a la ' +
+            'plataforma. ¿Sabes cuanto tardo? Meses. Yo gaste dos ' +
+            'pares de zapatos solo en ese proyecto.',
+          en:
+            'A new financial entity wanted to join the platform. Do ' +
+            'you know how long it took? Months. I wore out two pairs ' +
+            'of shoes on that project alone.',
+        },
+        options: [
+          {
+            label: { es: '¿Por que meses?', en: 'Why months?' },
+            next: 'x2',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      x2: {
+        text: {
+          es:
+            'Porque todo se rehace a mano: cada pantalla, cada ' +
+            'formulario, cada color. Es como construir la casa entera ' +
+            'de nuevo solo porque llego un vecino.',
+          en:
+            'Because everything is rebuilt by hand: every screen, ' +
+            'every form, every color. It is like building the whole ' +
+            'house again just because a neighbor arrived.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿No se puede copiar la base?',
+              en: 'Can the base not be copied?',
+            },
+            next: 'x3',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      x3: {
+        text: {
+          es:
+            'Deberia poderse: misma base, otro logo, lista en dias. ' +
+            'Pero hoy nadie sabe por donde cortar sin que se caiga el ' +
+            'resto. Otro sueño para la lista.',
+          en:
+            'It should be possible: same base, different logo, ready ' +
+            'in days. But today nobody knows where to cut without the ' +
+            'rest collapsing. Another dream for the list.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y quien haria eso?',
+              en: 'And who would do that?',
+            },
+            next: 'r1',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
       d1: {
         text: {
           es:
-            'Mi sueño: una sola plataforma que orqueste todo. Las areas ' +
-            'conectadas, los datos fluyendo solos, y las campañas ' +
-            'armandose sin sangre ni cafe frio.',
+            'Mi sueño: una sola plataforma que orqueste todo. Los ' +
+            'equipos sin pisarse, los dos paises hablandose solos y ' +
+            'las campañas listas en minutos, sin sangre ni cafe frio.',
           en:
             'My dream: one single platform orchestrating everything. ' +
-            'Areas connected, data flowing on its own, and campaigns ' +
-            'assembling themselves without blood or cold coffee.',
+            'Teams not stepping on each other, both countries talking ' +
+            'on their own and campaigns ready in minutes, without ' +
+            'blood or cold coffee.',
         },
         options: [
           {
@@ -718,13 +936,13 @@ export const CIMA_PASADO_DIALOGS = {
       d2: {
         text: {
           es:
-            'Cierra los ojos: finanzas pide un dato y le llega solo. ' +
-            'Una campaña se arma en minutos. Y ningun papel viaja a pie ' +
-            'nunca mas. ¿Lo ves?',
+            'Cierra los ojos: una campaña se arma en minutos. Un dato ' +
+            'cruza la frontera sin telefono. Y ningun papel viaja a ' +
+            'pie nunca mas. ¿Lo ves?',
           en:
-            'Close your eyes: finance asks for a piece of data and it ' +
-            'just arrives. A campaign assembles in minutes. And no ' +
-            'paper ever travels on foot again. Can you see it?',
+            'Close your eyes: a campaign assembles in minutes. A ' +
+            'figure crosses the border without a phone. And no paper ' +
+            'ever travels on foot again. Can you see it?',
         },
         options: [
           {
@@ -760,13 +978,15 @@ export const CIMA_PASADO_DIALOGS = {
       d6: {
         text: {
           es:
-            'Como un director de orquesta. Hoy cada area toca su propia ' +
-            'cancion en su propia sala. Orquestar es que todas suenen ' +
-            'juntas, a tiempo, sin gritarse.',
+            'Como un director de orquesta. Hoy cada equipo toca su ' +
+            'propia cancion en su propia sala, y Mexico toca la suya a ' +
+            'kilometros. Orquestar es que todas suenen juntas, a ' +
+            'tiempo, sin gritarse.',
           en:
-            'Like an orchestra conductor. Today every area plays its ' +
-            'own song in its own room. Orchestrating means all of them ' +
-            'sounding together, on time, without shouting.',
+            'Like an orchestra conductor. Today every team plays its ' +
+            'own song in its own room, and Mexico plays theirs miles ' +
+            'away. Orchestrating means all of them sounding together, ' +
+            'on time, without shouting.',
         },
         options: [
           {
@@ -801,21 +1021,18 @@ export const CIMA_PASADO_DIALOGS = {
       d3b: {
         text: {
           es:
-            'Quiza. A veces pasa por aqui gente joven con esa mirada de ' +
-            '"esto se puede hacer mejor". Uno de esos, un dia, no va a ' +
-            'soltar la idea.',
+            'Quiza ya existe. Justo ahora corre un rumor por los ' +
+            'pasillos que me tiene con la sonrisa torcida. Preguntame ' +
+            'por el rumor: me encanta contarlo.',
           en:
-            'Maybe. Sometimes young people pass through here with that ' +
-            '"this can be done better" look in their eyes. One of them, ' +
-            'one day, will not let go of the idea.',
+            'Maybe that someone already exists. Right now there is a ' +
+            'rumor going around the hallways that has me grinning ' +
+            'sideways. Ask me about the rumor: I love telling it.',
         },
         options: [
           {
-            label: {
-              es: '¿Y si ya viene en camino?',
-              en: 'What if they are on their way?',
-            },
-            next: 'd4',
+            label: { es: 'Cuentame el rumor', en: 'Tell me the rumor' },
+            next: 'r1',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
@@ -941,6 +1158,93 @@ export const CIMA_PASADO_DIALOGS = {
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
+      r1: {
+        text: {
+          es:
+            'El rumor: contrataron a un arquitecto. De software, ' +
+            'dicen, y viene a ordenar todo esto: los silos, el tablero ' +
+            'gigante, los dos paises. Llega cualquier dia de estos.',
+          en:
+            'The rumor: they hired an architect. A software one, they ' +
+            'say, coming to put all of this in order: the silos, the ' +
+            'giant board, the two countries. Arriving any day now.',
+        },
+        options: [
+          {
+            label: { es: '¿Y tu le crees?', en: 'And do you believe it?' },
+            next: 'r2',
+          },
+          {
+            label: { es: '¿Que dice la gente?', en: 'What do people say?' },
+            next: 'r3',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      r2: {
+        text: {
+          es:
+            'Yo si le creo. Alguien que mire el edificio completo y no ' +
+            'solo su pedazo es justo lo que falta. Ya estoy ensayando ' +
+            'mi cara de "te lo dije".',
+          en:
+            'I do believe it. Someone who looks at the whole building ' +
+            'and not just their own piece is exactly what is missing. ' +
+            'I am already rehearsing my "told you so" face.',
+        },
+        options: [
+          {
+            label: { es: '¿Y si falla?', en: 'What if it fails?' },
+            next: 'r4',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      r3: {
+        text: {
+          es:
+            'Mitad y mitad. El operador dice que ya vio tres ' +
+            'reorganizaciones y que ninguna apago su telefono. Yo le ' +
+            'digo que ninguna de esas trajo un arquitecto.',
+          en:
+            'Half and half. The operator says he has seen three ' +
+            'reorganizations and none of them silenced his phone. I ' +
+            'tell him none of those brought an architect.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Por que tu si le crees?',
+              en: 'Why do you believe it?',
+            },
+            next: 'r2',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      r4: {
+        text: {
+          es:
+            'Si falla, sigo corriendo, que tampoco es tan malo. Pero ' +
+            'no va a fallar. Y tu... je, tu hueles a futuro. No me ' +
+            'cuentes el final: solo dime si debo estirar antes.',
+          en:
+            'If it fails, I keep running, which is not so bad. But it ' +
+            'will not fail. And you... heh, you smell of the future. ' +
+            'Do not tell me the ending: just tell me whether I should ' +
+            'stretch first.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Estira, por si acaso',
+              en: 'Stretch, just in case',
+            },
+            next: null,
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
     },
   }),
   'operador-telefono': defineDialog({
@@ -951,8 +1255,8 @@ export const CIMA_PASADO_DIALOGS = {
         en: 'Yes, yes... spell it out for me, please.',
       },
       {
-        es: 'No me cuelgue, sigo aqui.',
-        en: 'Do not hang up, I am still here.',
+        es: '¿Mexico? No cuelgue, aqui sigo.',
+        en: 'Mexico? Do not hang up, I am still here.',
       },
       {
         es: 'Linea dos, espere. Linea tres, espere.',
@@ -973,12 +1277,13 @@ export const CIMA_PASADO_DIALOGS = {
         text: {
           es:
             'Espere, no cuelgue... ¡Ah, eres de carne y hueso! Que ' +
-            'gusto. Aqui la integracion entre areas es este telefono y ' +
-            'quien lo atiende: yo. ¿Que necesitas?',
+            'gusto. Aqui la integracion entre equipos, y entre paises, ' +
+            'es este telefono y quien lo atiende: yo. ¿Que necesitas?',
           en:
-            'Hold, please do not hang up... Ah, you are flesh and bone! ' +
-            'What a treat. Around here, integration between areas is ' +
-            'this phone and whoever answers it: me. What do you need?',
+            'Hold, please do not hang up... Ah, you are flesh and ' +
+            'bone! What a treat. Around here, integration between ' +
+            'teams, and between countries, is this phone and whoever ' +
+            'answers it: me. What do you need?',
         },
         options: [
           {
@@ -1001,13 +1306,13 @@ export const CIMA_PASADO_DIALOGS = {
       hub2: {
         text: {
           es:
-            'Mi dia tiene dos deportes: esperar en linea y anotar a ' +
-            'mano lo que dictan del otro lado. Campeon regional en ' +
-            'ambos. ¿Cual te cuento?',
+            'Mi dia tiene tres deportes: esperar en linea, anotar a ' +
+            'mano y marcarle a Mexico. Campeon regional en los tres. ' +
+            '¿Cual te cuento?',
           en:
-            'My day has two sports: waiting on hold and writing down by ' +
-            'hand whatever the other side dictates. Regional champion ' +
-            'at both. Which one do you want?',
+            'My day has three sports: waiting on hold, writing by ' +
+            'hand and dialing Mexico. Regional champion at all three. ' +
+            'Which one do you want?',
         },
         options: [
           {
@@ -1018,17 +1323,21 @@ export const CIMA_PASADO_DIALOGS = {
             label: { es: 'Anotar a mano', en: 'Writing by hand' },
             next: 'n1',
           },
+          {
+            label: { es: 'La linea con Mexico', en: 'The Mexico line' },
+            next: 'mx1',
+          },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
       t1: {
         text: {
           es:
-            'Tal cual. Si un area necesita algo de otra, no hay sistema ' +
-            'que las conecte: hay una llamada. Marcan, pregunto, ' +
-            'transfiero, repito. Soy la centralita humana.',
+            'Tal cual. Si un equipo necesita algo de otro, no hay ' +
+            'sistema que los conecte: hay una llamada. Marcan, ' +
+            'pregunto, transfiero, repito. Soy la centralita humana.',
           en:
-            'Exactly. If one area needs something from another, there ' +
+            'Exactly. If one team needs something from another, there ' +
             'is no system connecting them: there is a phone call. They ' +
             'dial, I ask, I transfer, I repeat. I am the human ' +
             'switchboard.',
@@ -1047,13 +1356,15 @@ export const CIMA_PASADO_DIALOGS = {
       t2: {
         text: {
           es:
-            'Casi todo. Un dato de ventas para finanzas, una fecha para ' +
-            'campañas, una aprobacion urgente: todo entra por este ' +
-            'auricular y sale por mi boca o por mi lapiz.',
+            'Casi todo. Una cifra de cobranza para finanzas, una fecha ' +
+            'para campañas, un nivel de credito desde Mexico: todo ' +
+            'entra por este auricular y sale por mi boca o por mi ' +
+            'lapiz.',
           en:
-            'Almost everything. A sales figure for finance, a date for ' +
-            'campaigns, an urgent approval: it all comes in through ' +
-            'this handset and leaves through my mouth or my pencil.',
+            'Almost everything. A collections figure for finance, a ' +
+            'date for campaigns, a credit tier from Mexico: it all ' +
+            'comes in through this handset and leaves through my mouth ' +
+            'or my pencil.',
         },
         options: [
           {
@@ -1069,11 +1380,11 @@ export const CIMA_PASADO_DIALOGS = {
       t3: {
         text: {
           es:
-            'El dia que me resfrie, las areas simplemente dejaron de ' +
+            'El dia que me resfrie, los equipos simplemente dejaron de ' +
             'hablarse. Volvieron los papelitos por debajo de las ' +
             'puertas. Prefiero no faltar.',
           en:
-            'The day I caught a cold, the areas simply stopped talking ' +
+            'The day I caught a cold, the teams simply stopped talking ' +
             'to each other. Little notes under the doors made a ' +
             'comeback. I prefer not to miss work.',
         },
@@ -1092,12 +1403,12 @@ export const CIMA_PASADO_DIALOGS = {
         text: {
           es:
             'Un cable, una libreta y mi memoria: eso sostiene media ' +
-            'operacion. Cuando lo piensas mucho da vertigo, asi que ' +
-            'mejor atiendo la siguiente llamada.',
+            'operacion en dos paises. Cuando lo piensas mucho da ' +
+            'vertigo, asi que mejor atiendo la siguiente llamada.',
           en:
-            'A cable, a notebook and my memory: that holds up half the ' +
-            'operation. It gets dizzying if you think about it too ' +
-            'long, so I just answer the next call.',
+            'A cable, a notebook and my memory: that holds up half an ' +
+            'operation across two countries. It gets dizzying if you ' +
+            'think about it too long, so I just answer the next call.',
         },
         options: [
           {
@@ -1114,10 +1425,10 @@ export const CIMA_PASADO_DIALOGS = {
         text: {
           es:
             'La mitad de mi jornada es musica de espera. Llamo a un ' +
-            'area, me dejan en linea, y mientras tanto suena esa ' +
+            'equipo, me dejan en linea, y mientras tanto suena esa ' +
             'melodia que ya vive en mi cabeza.',
           en:
-            'Half my working day is hold music. I call an area, they ' +
+            'Half my working day is hold music. I call a team, they ' +
             'put me on hold, and meanwhile that melody plays, the one ' +
             'that lives in my head now.',
         },
@@ -1189,12 +1500,12 @@ export const CIMA_PASADO_DIALOGS = {
       n1: {
         text: {
           es:
-            'Lo que dictan del otro lado, yo lo escribo a mano. Cifras, ' +
-            'nombres, fechas. Mi libreta es la base de datos oficial de ' +
-            'esta empresa, me temo.',
+            'Lo que dictan del otro lado, yo lo escribo a mano. ' +
+            'Cifras, nombres, niveles de credito. Mi libreta es la ' +
+            'base de datos oficial de esta empresa, me temo.',
           en:
             'Whatever the other side dictates, I write down by hand. ' +
-            'Figures, names, dates. My notebook is the official ' +
+            'Figures, names, credit tiers. My notebook is the official ' +
             'database of this company, I am afraid.',
         },
         options: [
@@ -1253,12 +1564,12 @@ export const CIMA_PASADO_DIALOGS = {
       n3: {
         text: {
           es:
-            'Se las doy al runner y el las lleva a pie al area que ' +
-            'toque. Llamada, libreta, piernas: ese es todo nuestro ' +
+            'Se las doy al runner y el las lleva a pie al escritorio ' +
+            'que toque. Llamada, libreta, piernas: ese es todo nuestro ' +
             'protocolo de datos.',
           en:
             'I hand them to the runner and he carries them on foot to ' +
-            'whichever area needs them. Call, notebook, legs: that is ' +
+            'whichever desk needs them. Call, notebook, legs: that is ' +
             'our entire data protocol.',
         },
         options: [
@@ -1294,16 +1605,87 @@ export const CIMA_PASADO_DIALOGS = {
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
+      mx1: {
+        text: {
+          es:
+            'Mexico da creditos por niveles; aca la gente sale de sus ' +
+            'deudas. Todo lo que une a los dos paises pasa por esta ' +
+            'linea de larga distancia. Si se corta, se corta el pais ' +
+            'entero.',
+          en:
+            'Mexico runs tiered credits; here people work their way ' +
+            'out of debt. Everything joining the two countries goes ' +
+            'through this long-distance line. If it drops, a whole ' +
+            'country drops with it.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que viaja por ahi?',
+              en: 'What travels through it?',
+            },
+            next: 'mx2',
+          },
+          {
+            label: {
+              es: '¿Y se corta seguido?',
+              en: 'Does it drop often?',
+            },
+            next: 'mx3',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      mx2: {
+        text: {
+          es:
+            'Cifras de campañas, niveles de credito, aprobaciones. ' +
+            'Todo dictado y deletreado: "M de Maria, X de xilofono". ' +
+            'Una cifra mal oida en la frontera cuesta una semana.',
+          en:
+            'Campaign figures, credit tiers, approvals. All dictated ' +
+            'and spelled out: "M as in Mary, X as in xylophone". One ' +
+            'misheard figure at the border costs a week.',
+        },
+        options: [
+          { label: { es: '¿Una semana?', en: 'A week?' }, next: 'mx3' },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      mx3: {
+        text: {
+          es:
+            'Se corto a mitad de un lanzamiento y salieron numeros ' +
+            'viejos. Dias cuadrando a mano de los dos lados. Desde ' +
+            'entonces le hablo bonito al telefono, por si acaso.',
+          en:
+            'It dropped in the middle of a launch and stale numbers ' +
+            'went out. Days squaring figures by hand on both sides. ' +
+            'Since then I speak sweetly to the phone, just in case.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿No hay otra forma?',
+              en: 'Is there no other way?',
+            },
+            next: 'do1',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
       do1: {
         text: {
           es:
-            'Sueño con que las areas hablen solas, sin mi en el medio ' +
-            'dictando letra por letra. Que la informacion viaje sin ' +
-            'esperar el tono de marcado.',
+            'Sueño con que los equipos y los paises hablen solos, sin ' +
+            'mi en el medio dictando letra por letra. Que la ' +
+            'informacion cruce la frontera sin esperar el tono de ' +
+            'marcado.',
           en:
-            'I dream of the areas talking to each other on their own, ' +
-            'without me in the middle dictating letter by letter. ' +
-            'Information traveling without waiting for a dial tone.',
+            'I dream of teams and countries talking to each other on ' +
+            'their own, without me in the middle dictating letter by ' +
+            'letter. Information crossing the border without waiting ' +
+            'for a dial tone.',
         },
         options: [
           {
@@ -1312,6 +1694,13 @@ export const CIMA_PASADO_DIALOGS = {
               en: 'And what would you do?',
             },
             next: 'do2',
+          },
+          {
+            label: {
+              es: '¿Crees que pase?',
+              en: 'Do you think it will happen?',
+            },
+            next: 'r1',
           },
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
@@ -1330,6 +1719,94 @@ export const CIMA_PASADO_DIALOGS = {
         options: [
           { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
           { label: { es: 'Hasta luego', en: 'See you later' }, next: null },
+        ],
+      },
+      r1: {
+        text: {
+          es:
+            'Ja. Te llego el rumor, ¿verdad? Que contrataron a un ' +
+            'arquitecto que viene a ordenar todo. Yo he visto tres ' +
+            'reorganizaciones y ninguna apago este telefono.',
+          en:
+            'Ha. The rumor reached you, right? That they hired an ' +
+            'architect who is coming to put everything in order. I ' +
+            'have seen three reorganizations and none of them silenced ' +
+            'this phone.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y si esta vez es distinto?',
+              en: 'What if this time is different?',
+            },
+            next: 'r2',
+          },
+          {
+            label: {
+              es: 'El runner si le cree',
+              en: 'The runner does believe it',
+            },
+            next: 'r3',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      r2: {
+        text: {
+          es:
+            'Distinto seria que alguien mirara el sistema completo en ' +
+            'vez de parchar su pedazo. Si este arquitecto hace eso... ' +
+            'bueno. Le doy una semana antes de volver a dudar.',
+          en:
+            'Different would be someone looking at the whole system ' +
+            'instead of patching their own piece. If this architect ' +
+            'does that... fine. I give him a week before I go back to ' +
+            'doubting.',
+        },
+        options: [
+          {
+            label: { es: 'Algo es algo', en: 'That is something' },
+            next: 'r4',
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      r3: {
+        text: {
+          es:
+            'El runner le cree a cualquiera que corra en su misma ' +
+            'direccion. Pero te confieso algo: guarde una hoja en ' +
+            'blanco en la libreta. Por si hay que anotar un milagro.',
+          en:
+            'The runner believes anyone running in his same direction. ' +
+            'But I will confess something: I saved a blank page in my ' +
+            'notebook. In case a miracle needs writing down.',
+        },
+        options: [
+          { label: { es: '¿Un milagro?', en: 'A miracle?' }, next: 'r4' },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
+        ],
+      },
+      r4: {
+        text: {
+          es:
+            'Si algun dia este telefono suena menos y las campañas ' +
+            'salen en minutos, invito el cafe. Y oye... tu hueles ' +
+            'raro. A futuro. No se si me gusta o me asusta.',
+          en:
+            'If someday this phone rings less and campaigns go out in ' +
+            'minutes, coffee is on me. And hey... you smell odd. Of ' +
+            'the future. I cannot tell if I like it or fear it.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Guarda esa hoja en blanco',
+              en: 'Keep that blank page',
+            },
+            next: null,
+          },
+          { label: { es: 'Volver', en: 'Back' }, next: 'hub' },
         ],
       },
     },

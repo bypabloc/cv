@@ -45,7 +45,7 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 
 | Orden | Paso | Informe | Estado | Commit |
 | --- | --- | --- | --- | --- |
-| 2b.0 | infra (RoomId->10 + stubs + aula univ. pura + CV) | [15-infra-salas-2015.md](15-infra-salas-2015.md) | PENDIENTE | — |
+| 2b.0 | infra (RoomId->10 + stubs + aula univ. pura + CV) | [15-infra-salas-2015.md](15-infra-salas-2015.md) | HECHO | `8d051761` + `9d2e227f` |
 | 2b.1 | sala `iai` (index 3 del recorrido) | [16-sala-iai.md](16-sala-iai.md) | PENDIENTE | — |
 | 2b.2 | sala `asesoria` (index 4 del recorrido) | [17-sala-asesoria.md](17-sala-asesoria.md) | PENDIENTE | — |
 
@@ -66,6 +66,38 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-06] paso `2b.0` (infra salas 2015) HECHO en commits
+  `8d051761` (content) + `9d2e227f` (journey) — informe 15 completo.
+  CV: los textos nuevos se aplicaron DIRECTO en la DB Neon de dev Y de
+  prod (decision del usuario en sesion: "db via servicios/conexion
+  directa") usando el write-path real del backend
+  (`shared.db.repositories.cv_write_entities.upsert_experience` +
+  UPDATE puntual de company para iai); el data-cache se regenero desde
+  el API dev con `fetch-cv-cache.mjs` y el baseline de paridad con
+  `REGEN_BASELINE=1`. projects-degrees quedo nov-dic 2015, UNA tesis
+  PROSALUD, con PHP y MySQL sumados a skillsTechnical (confirmado por
+  el usuario).
+  Gotchas de la sesion: (1) el cache regenerado trajo DRIFT
+  pre-existente del API (`priority` en todas las entidades y education
+  SIN `end` en formacion en curso — `ended_on` es DATE nullable
+  post-rename): se arreglo de raiz haciendo `EducationSchema.end`
+  optional + fallback Actual/Present en AboutSection y cv-pdf; (2) el
+  cache DDB del Lambda cv en PROD no se pudo invalidar (SSO AWS
+  expirado, sin creds estaticas) — se auto-sana por TTL de 15 min, sin
+  impacto (no hay build de prod inminente). Journey: RoomId->10, stubs
+  `iai`/`asesoria` (cartel + barrera con su acento), aula SINTETICA
+  universidad pura (spec slugs [] + AULA_TEXTS desde education), los 6
+  arboles de dialogo reescritos (profesor con foreshadowing de una
+  linea; `tesista-uno`/`tesista-dos` renombrados a `companera-lab`/
+  `estudiante-sockets` — tambien sus ids talk-aula-0-*), wallArt sin
+  plan-rescate (entra lamina pensum) y ficha cliente-servidor con
+  guiño sin spoiler. Smoke browser verde x2 (10 salas montan con los
+  indices corridos, stubs con 0 interactables propios — door-N es del
+  shell —, futuro en index 9 con talk-9-pablo y sin portal-9, aula 22
+  interactables con foreshadowing + cuaderno UPTYAB); static con las 9
+  experiences y la company nueva del IAI. Unico error de consola: el
+  504 transitorio de vite (gotcha conocido).
 
 - [2026-07-05] sala `futuro` HECHA en commit `a50f073d` — informe 14, la
   ULTIMA (Etapa 2 completa: 7/7). Sala SINTETICA de cierre con las 3

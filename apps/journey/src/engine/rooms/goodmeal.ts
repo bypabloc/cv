@@ -1142,8 +1142,8 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
   // trabajan en las suyas, la tercera se enciende con E y muestra el
   // contador "bugs recurrentes ↓" (guiño del achievement 3)
   const deskSpots: readonly (readonly [number, number])[] = [
-    [1.6, room.z - 4.8],
-    [3.4, room.z - 4.8],
+    [1.6, room.z - 3.9],
+    [3.4, room.z - 4.3],
     [2.5, room.z - 2.9],
   ]
   const office = officeLayout({
@@ -1161,7 +1161,7 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
     size: 0.13,
     color: theme.accent,
   })
-  devLabel.position.set(2.5, 1.85, room.z - 5.0)
+  devLabel.position.set(2.5, 1.85, room.z - 4.5)
   group.add(devLabel)
 
   // CAFETERIA partner (muro -X, fondo): vitrina con la comida del dia

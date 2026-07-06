@@ -1067,9 +1067,9 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
   // rincon del equipo de tesis (canon): 3 puestos con laptops de la
   // epoca; Keiber y Marielys trabajan en las encendidas, 1 libre con E
   const deskSpots: readonly (readonly [number, number])[] = [
-    [-1.7, room.z - 4.3],
-    [0.7, room.z - 4.3],
-    [-0.5, room.z - 2.1],
+    [-1.7, room.z - 3.3],
+    [0.7, room.z - 3.8],
+    [-2.4, room.z - 1.7],
   ]
   const office = officeLayout({
     spots: deskSpots,

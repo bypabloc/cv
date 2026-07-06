@@ -33,7 +33,7 @@
 | 3 | `cofasa` | [10-sala-cofasa.md](10-sala-cofasa.md) | HECHO | `7eecf589` |
 | 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | HECHO | `b6059f33` |
 | 5 | `goodmeal` | [12-sala-goodmeal.md](12-sala-goodmeal.md) | HECHO | `2e3459fa` |
-| 6 | `destacame` | [13-sala-destacame.md](13-sala-destacame.md) | PENDIENTE | — |
+| 6 | `destacame` | [13-sala-destacame.md](13-sala-destacame.md) | HECHO | `4d8dc7d2` |
 | 7 | `futuro` | [14-sala-futuro.md](14-sala-futuro.md) | PENDIENTE | — |
 
 Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
@@ -50,6 +50,43 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-05] sala `destacame` HECHA en commit `4d8dc7d2` — informe 13
+  (la sala unificada de 2 AREAS, la mas compleja) con 4 decisiones del
+  usuario: 5 NPCs presente con la dev frontend RENOMBRADA a Camila
+  Espinoza (el informe decia "Camila Fuentes" pero ese nombre exacto ya
+  existe en GoodMeal — colision detectada y resuelta; los otros 4:
+  Diego Riquelme dev fullstack, Rodrigo Salinas representante de banco,
+  Valentina Cardenas PM como staff, Ana Sofia Herrera lead MX que honra
+  leader+vibe), 3 NPCs pasado (Don Hernan, Marta y Nicolas — el arco
+  completo), wallArt 4 laminas / 3 fichas (microfrontends +
+  microservicios Django + campañas horas->minutos; pizarra Design
+  System decorativa) y LAS 3 MICROS propuestas: pagar la deuda (el
+  kiosco co-branded procesa WebPay -95%, confirma y cicla el banco),
+  mejorar el score (la aguja 3D del gauge 459-760 sube de coral a
+  verde con easing y el numero celebra 487->712) y lanzar campaña (el
+  admin junto a la mesa del lead procesa en 4 min lo que antes tomaba
+  horas). AREA A (muro -X): kiosco de pago + tarjeta bancaria + sello
+  WebPay + monedas + tag flotante "deuda -95%". AREA B (muro +X):
+  gauge totem + SuperApp en pedestal + tarjeta prepago + panel KPIs
+  "+2M usuarios". Guiños intrinsecos heredados de cima: mesa de
+  reunion (Ana Sofia preside), ciclo vibe coding (E cicla
+  vibe->python->ts), CTA holograma de contacto (contact-6) y puerta
+  PROXIMAMENTE. 2 showcases con key (showcase-6-pagaloaqui: Santander /
+  Consumer / Scotiabank con los rojos SOLO dentro de las cards;
+  showcase-6-producto: destacame.cl + destacame.com.mx). La micro
+  Chile/Mexico fue ELIMINADA (mandato del informe). Pasado: drama de
+  deudas sepia + coral (cartas de cobranza, telefono, gauge en rojo,
+  ventanilla de sucursal con barrotes, operador con planillas, reloj)
+  mas intentar pagar la deuda (la carta rebota con el "vuelva mañana").
+  officeLayout = 3 puestos (Camila y Diego powered {0,1}, laptop libre
+  togglable con el panel de plataforma). Smoke browser verde x2 (27
+  interactables, 2 showcases E/Esc con 3+2 demos, 5 dialogos, 3
+  fichas, 3 micros, ciclo vibe, laptop toggle, pasado 33
+  interactables); unico error de consola: el 504 transitorio de vite
+  (gotcha conocido). Nota perf: 5 NPCs + 2 showcases + gauge + mesa +
+  CTA — medir en C15 igual que aula/corpoelec/ipasme/cofasa/dibal/
+  goodmeal.
 
 - [2026-07-05] sala `goodmeal` HECHA en commit `2e3459fa` — informe 12
   con 4 decisiones del usuario: 5 NPCs presente (Daniela la PM

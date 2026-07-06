@@ -14,6 +14,7 @@ import type { Interactable } from '../../state'
 import { disposeDeep, outlineGroup } from '../../toon'
 import type { PastCtx, RoomBuild } from '../../world'
 import { exitPortal } from '../props'
+import { asesoriaPast } from './asesoria'
 import { aulaPast } from './aula'
 import { cofasaPast } from './cofasa'
 import { corpoelecPast } from './corpoelec'
@@ -26,6 +27,7 @@ import type { PastSet, PastSetBuilder } from './shared'
 
 /** Builders por sala; sin entrada = pasado aun no construido (Etapa 2). */
 const PAST_BUILDERS: Partial<Record<RoomId, PastSetBuilder>> = {
+  asesoria: asesoriaPast,
   aula: aulaPast,
   cofasa: cofasaPast,
   corpoelec: corpoelecPast,

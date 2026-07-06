@@ -1593,9 +1593,14 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
           accessory: 'badge',
           faceSeed: 91,
         },
-        position: [0.0, 0, room.z - 3.2],
+        // path rodea el pilar del cuaderno (x=0, room.z - 3.3, footprint
+        // 1x1): arranca a +1.1 en x para no coincidir con el pilar y
+        // mantiene >=0.5m de margen antes de cruzar hacia el resto de la
+        // sala (plan journey-cuaderno-central, AC-5).
+        position: [1.1, 0, room.z - 3.2],
         path: [
-          [0.0, room.z - 3.2],
+          [1.1, room.z - 3.2],
+          [1.6, room.z - 1.8],
           [-1.8, room.z - 1.4],
           [1.6, room.z + 0.2],
         ],

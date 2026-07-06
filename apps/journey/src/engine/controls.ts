@@ -138,6 +138,9 @@ export function createControls(deps: ControlsDeps): Controls {
   }
 
   function applyMovement(dt: number): boolean {
+    if (state.playerSeat) {
+      return false // sentado: sin WASD hasta levantarse con E
+    }
     const ix = (keys.right ? 1 : 0) - (keys.left ? 1 : 0) + joy.x
     const iz = (keys.back ? 1 : 0) - (keys.forward ? 1 : 0) + joy.y
     const mag = Math.hypot(ix, iz)
@@ -486,13 +489,25 @@ export function createControls(deps: ControlsDeps): Controls {
         if (state.tourOn) {
           tourOffset -= dt
         }
-        player.setWalking(false)
+        if (state.playerSeat) {
+          player.setPose('sit')
+        } else {
+          player.setWalking(false)
+        }
         player.update(time, dt)
         updateCamera(dt)
         return
       }
       if (state.tourOn) {
         updateTour()
+      } else if (state.playerSeat) {
+        // sentado: posicion/orientacion fijas de la silla + pose sit; el
+        // interactable de la silla (radio 1.4) sigue activo para levantarse
+        pos.x = state.playerSeat.x
+        pos.z = state.playerSeat.z
+        player.group.position.set(pos.x, 0, pos.z)
+        player.group.rotation.y = state.playerSeat.rotationY
+        player.setPose('sit')
       } else {
         player.setWalking(applyMovement(dt))
       }
@@ -503,6 +518,9 @@ export function createControls(deps: ControlsDeps): Controls {
     },
 
     teleport(x, z) {
+      // cualquier teleport (esclusa, HUD, portal, cruce de puerta) levanta
+      // al jugador: la sala nueva nunca arranca con el movimiento congelado
+      state.playerSeat = null
       pos.x = x
       pos.z = z
       player.group.position.x = x

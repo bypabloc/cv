@@ -1395,17 +1395,22 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   const tarjeta = boxMesh(0.6, 0.05, 0.4, toonMat('#1a2e5a'))
   tarjeta.position.set(-half + 1.3, 0.81, room.z - 1.9)
   tarjeta.rotation.y = 0.45
+  // C15: tarjeta plana y oscura — el hull no aporta trazo visible
+  tarjeta.userData.noOutline = true
   group.add(tarjeta)
+  // sello WebPay: PANEL_INK casi negro — sin hull (C15, trazo invisible)
+  const selloWebpay = mergedBoxes(
+    [
+      // sello WebPay de pie junto al kiosco
+      { w: 0.55, h: 0.34, d: 0.06, x: -half + 0.5, y: 1.55, z: room.z - 1.6 },
+      { w: 0.1, h: 0.5, d: 0.1, x: -half + 0.5, y: 1.1, z: room.z - 1.6 },
+    ],
+    toonMat(PANEL_INK),
+  )
+  selloWebpay.castShadow = true
+  selloWebpay.userData.noOutline = true
   group.add(
-    outlinedMergedBoxes(
-      [
-        // sello WebPay de pie junto al kiosco
-        { w: 0.55, h: 0.34, d: 0.06, x: -half + 0.5, y: 1.55, z: room.z - 1.6 },
-        { w: 0.1, h: 0.5, d: 0.1, x: -half + 0.5, y: 1.1, z: room.z - 1.6 },
-      ],
-      toonMat(PANEL_INK),
-      { castShadow: true },
-    ),
+    selloWebpay,
     // monedas apiladas (el pago recuperado)
     mergedBoxes(
       [
@@ -1542,6 +1547,8 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   const prepago = boxMesh(0.5, 0.32, 0.04, toonMat(DTC_BLUE))
   prepago.position.set(half - 2.3, 0.36, room.z + 1.7)
   prepago.rotation.y = -Math.PI / 2 + 0.3
+  // C15: tarjeta chica a ras del pedestal — sin hull
+  prepago.userData.noOutline = true
   group.add(prepago)
   const kpiPanel = screenPanel({
     title: locale === 'es' ? 'DESTACAME · KPIs' : 'DESTACAME · KPIs',
@@ -1705,6 +1712,8 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
     toonMat('#141c2b', { emissive: theme.accent, emissiveIntensity: 0.12 }),
   )
   comingPanel.position.set(0, 1.05, 0.05)
+  // C15: panel emisivo DENTRO del marco (el marco ya da el trazo)
+  comingPanel.userData.noOutline = true
   const comingTitle = label(locale === 'es' ? 'PROXIMAMENTE' : 'COMING SOON', {
     size: 0.16,
     color: '#9db8ff',
@@ -1725,6 +1734,8 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   const pedestal = new Mesh(units.cylinder, toonMat('#141a26'))
   pedestal.scale.set(0.62, 1, 0.62)
   pedestal.position.y = 0.5
+  // C15: cilindro casi negro — el holo encima es el foco, sin hull
+  pedestal.userData.noOutline = true
   const holoMat = toonMatOwn(DTC_BLUE, {
     emissive: '#5aa2ff',
     emissiveIntensity: 0.9,

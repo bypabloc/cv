@@ -334,9 +334,16 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       __journeyDebug?: {
         player: { x: number; y: number; z: number }
         state: EngineState
+        info: WebGLRenderer['info']
+        scene: Scene
       }
     }
-    w.__journeyDebug = { player: player.group.position, state }
+    w.__journeyDebug = {
+      player: player.group.position,
+      state,
+      info: renderer.info,
+      scene,
+    }
   }
 
   return {

@@ -10,12 +10,17 @@ import {
   CanvasTexture,
   CircleGeometry,
   ConeGeometry,
+  Euler,
   Group,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
+  Quaternion,
   SphereGeometry,
   SRGBColorSpace,
+  Vector3,
 } from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { Box2 } from '../lib/collision'
 import { sfx } from './audio'
 import { basicMat, makeRng, outlineGroup, toonMat, unitGeo } from './toon'
@@ -249,21 +254,38 @@ function buildHair(
     return null
   }
   if (style === 'spiky') {
+    // C15: los 6 pinchos van FUSIONADOS en una geometry (1 draw call en
+    // vez de 6) — la pose de cada uno se hornea con su matrix
     const cone = new ConeGeometry(0.055, 0.17, 6)
-    owned.list.push(cone)
     const rng = makeRng((spec.faceSeed >>> 0) + 7)
-    for (let i = 0; i < 6; i += 1) {
-      const spike = new Mesh(cone, hairMat)
+    const one = new Vector3(1, 1, 1)
+    const spikes = Array.from({ length: 6 }, (_, i) => {
       const angle = (i / 6) * Math.PI * 2
-      spike.position.set(
-        Math.cos(angle) * 0.13,
-        0.24 + rng() * 0.03,
-        Math.sin(angle) * 0.13 - 0.02,
+      const geo = cone.clone()
+      geo.applyMatrix4(
+        new Matrix4().compose(
+          new Vector3(
+            Math.cos(angle) * 0.13,
+            0.24 + rng() * 0.03,
+            Math.sin(angle) * 0.13 - 0.02,
+          ),
+          new Quaternion().setFromEuler(
+            new Euler(Math.sin(angle) * 0.6, 0, -Math.cos(angle) * 0.6),
+          ),
+          one,
+        ),
       )
-      spike.rotation.set(Math.sin(angle) * 0.6, 0, -Math.cos(angle) * 0.6)
-      spike.userData.noOutline = true
-      head.add(spike)
+      return geo
+    })
+    cone.dispose()
+    const merged = mergeGeometries(spikes)
+    for (const geo of spikes) {
+      geo.dispose()
     }
+    owned.list.push(merged)
+    const mesh = new Mesh(merged, hairMat)
+    mesh.userData.noOutline = true
+    head.add(mesh)
     return null
   }
   if (style === 'ponytail') {

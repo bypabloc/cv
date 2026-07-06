@@ -864,6 +864,9 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
         { w: 0.1, h: 0.6, d: 0.1, x: -half + 1.2, y: 2.0, z: room.z - 5.3 },
         { w: 0.1, h: 0.1, d: 1.2, x: -half + 1.2, y: 2.3, z: room.z - 4.7 },
         { w: 0.1, h: 0.9, d: 0.1, x: -half + 1.2, y: 1.9, z: room.z - 4.15 },
+        // banda de ampollas: tablero (fusionado aqui — mismo material,
+        // C15: un batch STEEL_DARK menos = -2 draw calls)
+        { w: 0.8, h: 0.08, d: 2.6, x: -half + 1.6, y: 0.72, z: room.z - 1.7 },
       ],
       toonMat(STEEL_DARK),
       { castShadow: true },
@@ -904,6 +907,9 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
           y: 1.15,
           z: room.z - 3.9,
         },
+        // linea de blisteres: mesa corta (fusionada aqui — mismo
+        // material, C15: un batch STEEL menos = -2 draw calls)
+        { w: 0.8, h: 0.76, d: 1.1, x: -half + 1.6, y: 0.38, z: room.z + 0.3 },
       ],
       toonMat(STEEL),
       { castShadow: true },
@@ -911,14 +917,9 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
   )
   staticColliders.push(footprint(-half + 1.6, room.z - 3.9, 1.3, 1.1))
 
-  // banda de ampollas: mesa baja con la fila de ampollas ambar saliendo
-  // de la llenadora (lote fusionado)
+  // banda de ampollas: patas + fila de ampollas ambar saliendo de la
+  // llenadora (el tablero viaja en el batch STEEL_DARK del tanque)
   group.add(
-    outlinedMergedBoxes(
-      [{ w: 0.8, h: 0.08, d: 2.6, x: -half + 1.6, y: 0.72, z: room.z - 1.7 }],
-      toonMat(STEEL_DARK),
-      { castShadow: true },
-    ),
     mergedBoxes(
       [
         // patas de la banda
@@ -944,13 +945,9 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
   )
   staticColliders.push(footprint(-half + 1.6, room.z - 1.7, 1.0, 2.8))
 
-  // linea de blisteres: mesa corta con blisteres de aluminio saliendo
+  // linea de blisteres: los blisteres de aluminio saliendo (la mesa
+  // corta viaja en el batch STEEL de la llenadora)
   group.add(
-    outlinedMergedBoxes(
-      [{ w: 0.8, h: 0.76, d: 1.1, x: -half + 1.6, y: 0.38, z: room.z + 0.3 }],
-      toonMat(STEEL),
-      { castShadow: true },
-    ),
     mergedBoxes(
       Array.from({ length: 6 }, (_, i) => ({
         w: 0.2,

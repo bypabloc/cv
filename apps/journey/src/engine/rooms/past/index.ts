@@ -17,6 +17,7 @@ import { exitPortal } from '../props'
 import { aulaPast } from './aula'
 import { cofasaPast } from './cofasa'
 import { corpoelecPast } from './corpoelec'
+import { destacamePast } from './destacame'
 import { dibalPast } from './dibal'
 import { goodmealPast } from './goodmeal'
 import { ipasmePast } from './ipasme'
@@ -27,6 +28,7 @@ const PAST_BUILDERS: Partial<Record<RoomId, PastSetBuilder>> = {
   aula: aulaPast,
   cofasa: cofasaPast,
   corpoelec: corpoelecPast,
+  destacame: destacamePast,
   dibal: dibalPast,
   goodmeal: goodmealPast,
   ipasme: ipasmePast,

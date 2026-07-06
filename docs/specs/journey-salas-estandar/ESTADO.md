@@ -59,13 +59,37 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 | Commit | Que | Estado |
 | --- | --- | --- |
 | C14 | audio ambiente de las salas nuevas | HECHO `62c0c2c2` |
-| C15 | perf <100 draw calls/sala | PENDIENTE |
+| C15 | perf <100 draw calls/sala | HECHO `3d41e07c` |
 | C16 | rule del estandar (.claude/rules/journey-rooms.md) | PENDIENTE |
 | C17 | verificacion E2E + `git rm -r` la carpeta del plan + merge unico a dev | PENDIENTE |
 
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-06] CIERRE C15 (perf <100 draw calls) HECHO en commit
+  `3d41e07c` — medicion con `tmp/journey-smoke-perf.py` (renderer.info
+  via `__journeyDebug`, solo DEV; max sobre ventana de 4 s en el spawn
+  de cada sala, presente Y pasado, swiftshader headless). ANTES solo
+  destacame presente excedia (104) y cofasa rozaba (99); el resto ya
+  cumplia. Tres optimizaciones: (1) SISTEMICA en character.ts — los 6
+  pinchos del pelo `spiky` eran 6 meshes = 6 draw calls por NPC; ahora
+  se fusionan en UNA geometry con la pose horneada por matrix (-5 por
+  NPC spiky, beneficia a toda sala con uno); (2) destacame —
+  `noOutline` en props planos/oscuros cuyo hull no aportaba trazo
+  (tarjeta bancaria, sello WebPay, tarjeta prepago, panel PROXIMAMENTE,
+  pedestal del CTA); (3) cofasa — el tablero de la banda de ampollas y
+  la mesa de blisteres se fusionaron en los batches STEEL_DARK/STEEL
+  del tanque y la llenadora (-4). Resultado antes -> despues (calls,
+  presente): aula 60->60, corpoelec 93->93, ipasme 67->68, iai 86->81,
+  asesoria 71->71, cofasa 99->92, dibal 67->67, goodmeal 79->79,
+  destacame 104->98, futuro 37->37; pasados todos <=84 (destacame
+  pasado 78->73). Las 20 vistas (10 presente + 9 pasado + futuro sin
+  pasado) quedan <100 — AC-10 verde. Verificacion visual del pelo
+  spiky fusionado en iai y destacame (identico). Los "quads negros"
+  del muro trasero (hallazgo de iai) NO se tocaron: son las pizarras
+  oscuras del canon vistas desde atras (estetica, no perf; los hulls
+  no dominan el presupuesto).
 
 - [2026-07-06] CIERRE C14 (audio ambiente) HECHO en commit `62c0c2c2` —
   decisiones del usuario (AskUserQuestion 2026-07-06, NO reabrir): (1)

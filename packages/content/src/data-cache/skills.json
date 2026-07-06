@@ -19,7 +19,8 @@
     "niches": [
       "vibe",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "architecture",
@@ -42,7 +43,8 @@
       "architect",
       "leader",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "backend",
@@ -66,7 +68,8 @@
       "fintech",
       "architect",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "cloud-devops",
@@ -94,7 +97,8 @@
       "architect",
       "leader",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "data",
@@ -113,7 +117,8 @@
       "fintech",
       "architect",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "domains",
@@ -137,7 +142,8 @@
     "niches": [
       "fintech",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "frontend",
@@ -164,7 +170,8 @@
       "leader",
       "vibe",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "leadership",
@@ -187,7 +194,8 @@
       "architect",
       "leader",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "mindset",
@@ -209,7 +217,8 @@
       "leader",
       "vibe",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "team-client",
@@ -231,6 +240,7 @@
       "architect",
       "leader",
       "generic"
-    ]
+    ],
+    "priority": {}
   }
 ]

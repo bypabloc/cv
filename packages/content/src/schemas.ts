@@ -274,7 +274,11 @@ export const EducationSchema = z.object({
   institution: z.string().min(1),
   degree: BiLangSchema.optional(),
   start: z.string().regex(/^\d{4}/),
-  end: z.string().regex(/^\d{4}|Actual|Present/),
+  /** Ausente = formacion en curso (el API omite `end`; render "Actual"). */
+  end: z
+    .string()
+    .regex(/^\d{4}|Actual|Present/)
+    .optional(),
   url: z.string().url().optional(),
   description: BiLangSchema,
   /**

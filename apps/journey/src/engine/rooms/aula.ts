@@ -35,6 +35,7 @@ import {
   infoKit,
   npcCoworkers,
   paperStack,
+  seatInteractable,
   switchableMonitor,
   wallArt,
 } from './props'
@@ -369,6 +370,20 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       }
       interactables.push(item)
     }
+  })
+
+  // sillas vacias sentables (AC-4): tu PC, la del laboratorio y los 4
+  // pupitres decorativos. La silla del profesor (room.z+4.15, dir=-1)
+  // queda EXCLUIDA: la ocupa el NPC profesor.
+  const sittableSpots = [deskSpots[1], deskSpots[2], ...emptySpots]
+  sittableSpots.forEach((spot, index) => {
+    if (!spot) {
+      return
+    }
+    const [x, z] = spot
+    interactables.push(
+      seatInteractable(`silla-aula-${room.index}-${index}`, x, z - 0.55, state),
+    )
   })
 
   // kit informativo estandar (RETOS / APRENDIZAJES / grieta / cuaderno):

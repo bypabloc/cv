@@ -974,6 +974,33 @@ const SIT_LABEL = { es: 'Sentarse', en: 'Sit down' } as const
 const STAND_LABEL = { es: 'Levantarse', en: 'Stand up' } as const
 
 /**
+ * Interactable de silla vacia sentable: toggle Sentarse/Levantarse que
+ * muta state.playerSeat directo, leyendo el estado REAL (si el jugador se
+ * sento en OTRA silla primero, el label no queda desincronizado). Lo usan
+ * officeLayout (puestos sin NPC) y el aula (layout a mano).
+ */
+export function seatInteractable(
+  id: string,
+  x: number,
+  z: number,
+  state: EngineState,
+): Interactable {
+  const item: Interactable = {
+    id,
+    x,
+    z,
+    radius: 1.4,
+    label: { ...SIT_LABEL },
+    onActivate: () => {
+      const sameSeat = state.playerSeat?.x === x && state.playerSeat?.z === z
+      state.playerSeat = sameSeat ? null : { x, z, rotationY: 0 }
+      item.label = sameSeat ? { ...SIT_LABEL } : { ...STAND_LABEL }
+    },
+  }
+  return item
+}
+
+/**
  * Filas de oficina fusionadas: escritorios + sillas en 1 lote outlined
  * (2 draw calls) + una laptop por puesto. Las laptops de los puestos con
  * NPC (poweredSpots) arrancan ENCENDIDAS; las libres quedan en `toggles`
@@ -1051,28 +1078,14 @@ export function officeLayout(opts: {
     screens.push(screen)
     if (!powered.has(index)) {
       toggles.push({ spot: index, screen })
-      // silla vacia sentable: toggle sentarse/levantarse leyendo el estado
-      // REAL de playerSeat (si se sento en OTRA silla, el label no queda
-      // desincronizado — 'sentado' es estado compartido con controls).
-      const seatX = x
-      const seatZ = z - 0.55
-      const item: Interactable = {
-        id: `silla-${opts.roomIndex}-${index}`,
-        x: seatX,
-        z: seatZ,
-        radius: 1.4,
-        label: { ...SIT_LABEL },
-        onActivate: () => {
-          const sameSeat =
-            opts.state.playerSeat?.x === seatX &&
-            opts.state.playerSeat?.z === seatZ
-          opts.state.playerSeat = sameSeat
-            ? null
-            : { x: seatX, z: seatZ, rotationY: 0 }
-          item.label = sameSeat ? { ...SIT_LABEL } : { ...STAND_LABEL }
-        },
-      }
-      seats.push(item)
+      seats.push(
+        seatInteractable(
+          `silla-${opts.roomIndex}-${index}`,
+          x,
+          z - 0.55,
+          opts.state,
+        ),
+      )
     }
   })
   return {

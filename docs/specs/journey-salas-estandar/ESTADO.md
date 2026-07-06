@@ -32,7 +32,7 @@
 | 2 | `ipasme` | [09-sala-ipasme.md](09-sala-ipasme.md) | HECHO | `d22c3988` |
 | 3 | `cofasa` | [10-sala-cofasa.md](10-sala-cofasa.md) | HECHO | `7eecf589` |
 | 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | HECHO | `b6059f33` |
-| 5 | `goodmeal` | [12-sala-goodmeal.md](12-sala-goodmeal.md) | PENDIENTE | — |
+| 5 | `goodmeal` | [12-sala-goodmeal.md](12-sala-goodmeal.md) | HECHO | `2e3459fa` |
 | 6 | `destacame` | [13-sala-destacame.md](13-sala-destacame.md) | PENDIENTE | — |
 | 7 | `futuro` | [14-sala-futuro.md](14-sala-futuro.md) | PENDIENTE | — |
 
@@ -50,6 +50,35 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-05] sala `goodmeal` HECHA en commit `2e3459fa` — informe 12
+  con 4 decisiones del usuario: 5 NPCs presente (Daniela la PM
+  incluida), 3 NPCs pasado (el Sr. Peña opcional incluido), 4 laminas
+  wallArt con 3 fichas INSPECCIONABLES (1/3 se desperdicia + migracion
+  Vue 3 + mapa +3.000 comercios con los partners reales — upgrade
+  sobre el informe que tenia el mapa decorativo; el tagline queda
+  decorativo) y LAS 2 MICROS propuestas: empacar una Good Bag (la dona
+  vuela de la vitrina a la bolsa kraft y el contador de impacto
+  celebra el +1) y comprar la Good Bag (el checkout procesa ciclando
+  tarjeta/Webpay/MACH, confirma y el pin geo late). officeLayout =
+  rincon dev de 3 puestos (Camila y Matias sentados powered {0,1},
+  laptop libre togglable que muestra el contador "bugs recurrentes ↓"
+  — el guiño del achievement 3). Presente en dos mitades: CAFETERIA
+  partner (-X: vitrina con donas/pan/pizza, caja + tarro de propinas,
+  estante del excedente, mesa de empaque con 3 Good Bags kraft + logo
+  teal, contador de impacto) y APP (smartphone gigante con card de
+  precio tachado + pin geo flotante + plantas eco). Showcase teal +
+  kraft (3 demos: Good Bags cerca de ti, checkout con transaccion
+  segura, split Vue 2 vs Vue 3). Pasado: el cierre botando comida
+  (vitrina a medio vaciar + carro de desechos + tacho rebosante +
+  bolsas negras de la puerta trasera + reloj + cartel "excedente →
+  basura" + ver la comida irse al tacho) con el arco Rodrigo/Ignacia/
+  Sr. Peña (el dueño planta la idea de GoodMeal). Smoke browser verde
+  x2 (23 interactables, showcase E/Esc, 5 dialogos, 3 fichas, 2
+  micros, laptop toggle, pasado 29 interactables); unico error de
+  consola: el 504 transitorio de vite (gotcha conocido). Nota perf: 5
+  NPCs + vitrina + smartphone — medir en C15 igual que aula/corpoelec/
+  ipasme/cofasa/dibal.
 
 - [2026-07-05] sala `dibal` HECHA en commit `b6059f33` — informe 11 con
   4 decisiones del usuario: 5 NPCs presente (Andrea la comensal

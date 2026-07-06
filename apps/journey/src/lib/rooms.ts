@@ -1,11 +1,12 @@
 /**
  * @module rooms
  * @description Mapeo data-driven de las experiences reales de
- *   `@portfolio/content` a las 8 salas del journey 3D (plan
+ *   `@portfolio/content` a las 10 salas del journey 3D (plan
  *   journey-salas-estandar). Deriva los textos: RETOS <- summary +
  *   responsibilities; APRENDIZAJES <- achievements + linea de skills.
- *   Las salas son UNIFORMES en tamaño/luz/densidad. La sala `futuro` es
- *   SINTETICA (sin slug): sus textos son literales del spec.
+ *   Las salas son UNIFORMES en tamaño/luz/densidad. Las salas `aula` y
+ *   `futuro` son SINTETICAS (sin slug): sus textos son literales del spec
+ *   (el aula deriva de `education`: UPTYAB 2011-2016).
  *
  * @see docs/specs/journey-salas-estandar/README.md
  */
@@ -15,6 +16,8 @@ export type RoomId =
   | 'aula'
   | 'corpoelec'
   | 'ipasme'
+  | 'iai'
+  | 'asesoria'
   | 'cofasa'
   | 'dibal'
   | 'goodmeal'
@@ -46,6 +49,93 @@ export interface RoomSpec {
   represents: Record<Locale, string>
   /** Sala sintetica (sin slug): año + textos literales (ej. `futuro`). */
   synthetic?: { year: string; texts: Record<Locale, RoomTexts> }
+}
+
+/** Reseña de la sala `aula` (universidad como CIMIENTO, sin narrar 2015). */
+const AULA_REPRESENTS: Record<Locale, string> = {
+  es:
+    'Esta sala representa los años de universidad: liderar equipos ' +
+    'academicos, montar redes cliente-servidor y sentar la base de la ' +
+    'arquitectura de software.',
+  en:
+    'This room represents the university years: leading academic ' +
+    'teams, building client-server networks and laying the foundations ' +
+    'of software architecture.',
+}
+
+/**
+ * Textos literales de la sala `aula` (sintetica, sin slug): derivados de
+ * `education` (UPTYAB, Ingenieria Informatica 2011-2016 + el hilo
+ * autodidacta desde 2012). Las historias de 2015 (IAI y la tesis de
+ * PROSALUD) viven en sus propias salas: aqui solo el cimiento.
+ */
+const AULA_TEXTS: Record<Locale, RoomTexts> = {
+  es: {
+    title: 'Aula — Universidad',
+    role: 'Estudiante de Ingenieria Informatica',
+    period: '2011 — 2016',
+    company: 'UPTYAB — Universidad Politecnica Territorial de Yaracuy',
+    country: 'Venezuela',
+    retos: [
+      'Pagarme la carrera trabajando como tecnico mientras estudiaba.',
+      'Aprender a programar de verdad: POO, bases de datos, redes y ' +
+        'sistemas operativos.',
+      'Asumir los primeros liderazgos academicos en laboratorios y ' +
+        'proyectos de catedra.',
+      'Sostener la disciplina de estudiar, trabajar y aprender por mi ' +
+        'cuenta a la vez.',
+    ],
+    aprendizajes: [
+      'La base de la ingenieria de software: analisis, diseño y ' +
+        'documentacion.',
+      'Redes cliente-servidor montadas y depuradas en el laboratorio.',
+      'El habito autodidacta: material online desde 2012, sin parar de ' +
+        'aprender.',
+      'Liderar equipos academicos y justificar cada decision tecnica.',
+    ],
+    resena: [
+      AULA_REPRESENTS.es,
+      'Ingenieria Informatica — Universidad Politecnica Territorial de ' +
+        'Yaracuy "Aristides Bastidas" (UPTYAB), 2011 — 2016.',
+      'Programacion, bases de datos, redes, sistemas operativos y ' +
+        'arquitectura de software: el cimiento de todo lo que sigue en ' +
+        'el recorrido.',
+    ],
+    notebook: ['UPTYAB', 'Venezuela', '2011 — 2016', 'Ingenieria Informatica'],
+  },
+  en: {
+    title: 'Classroom — University',
+    role: 'Informatics Engineering student',
+    period: '2011 — 2016',
+    company: 'UPTYAB — Yaracuy Territorial Polytechnic University',
+    country: 'Venezuela',
+    retos: [
+      'Paying my way through university working as a technician while ' +
+        'studying.',
+      'Learning to really program: OOP, databases, networks and ' +
+        'operating systems.',
+      'Taking on the first academic leaderships in labs and course ' +
+        'projects.',
+      'Sustaining the discipline of studying, working and self-learning ' +
+        'at once.',
+    ],
+    aprendizajes: [
+      'The foundations of software engineering: analysis, design and ' +
+        'documentation.',
+      'Client-server networks built and debugged in the lab.',
+      'The self-taught habit: online material since 2012, never ' + 'stopping.',
+      'Leading academic teams and justifying every technical decision.',
+    ],
+    resena: [
+      AULA_REPRESENTS.en,
+      'Informatics Engineering — Yaracuy Territorial Polytechnic ' +
+        'University "Aristides Bastidas" (UPTYAB), 2011 — 2016.',
+      'Programming, databases, networks, operating systems and software ' +
+        'architecture: the foundation of everything that follows in ' +
+        'this journey.',
+    ],
+    notebook: ['UPTYAB', 'Venezuela', '2011 — 2016', 'Informatics Engineering'],
+  },
 }
 
 /** Reseña de la sala `futuro` (spec.represents + resena del cuaderno). */
@@ -121,25 +211,17 @@ const FUTURO_TEXTS: Record<Locale, RoomTexts> = {
 }
 
 /**
- * Specs de las 8 salas. Agregar una sala = agregar un spec (+ su escena).
+ * Specs de las 10 salas. Agregar una sala = agregar un spec (+ su escena).
  * El orden del array ES el orden narrativo del recorrido (cronologico +
  * futuro; plan journey-salas-estandar, Mapa de salas).
  */
 export const ROOM_SPECS: readonly RoomSpec[] = [
   {
     id: 'aula',
-    slugs: ['iai', 'projects-degrees'],
+    slugs: [],
     title: { es: 'Aula — Universidad', en: 'Classroom — University' },
-    represents: {
-      es:
-        'Esta sala representa los años de universidad: liderar equipos ' +
-        'academicos, montar redes cliente-servidor y sentar la base de la ' +
-        'arquitectura de software.',
-      en:
-        'This room represents the university years: leading academic ' +
-        'teams, building client-server networks and laying the foundations ' +
-        'of software architecture.',
-    },
+    represents: AULA_REPRESENTS,
+    synthetic: { year: '2011 — 2016', texts: AULA_TEXTS },
   },
   {
     id: 'corpoelec',
@@ -172,6 +254,38 @@ export const ROOM_SPECS: readonly RoomSpec[] = [
         'This room represents the leap into sensitive data: digital ' +
         'medical records replacing the paper folders of a healthcare ' +
         'service.',
+    },
+  },
+  {
+    id: 'iai',
+    slugs: ['iai'],
+    title: { es: 'IAI — Obras publicas', en: 'IAI — Public works' },
+    represents: {
+      es:
+        'Esta sala representa mi proyecto de grado hecho realidad: el ' +
+        'sistema de presupuestos y seguimiento de obras del Instituto ' +
+        'Autonomo de Infraestructura del Estado Yaracuy, con un equipo ' +
+        'de tres y una PC como servidor central.',
+      en:
+        'This room represents my thesis project made real: the budgeting ' +
+        'and construction-site tracking system of the Yaracuy State ' +
+        'Infrastructure Institute, with a team of three and one PC as ' +
+        'the central server.',
+    },
+  },
+  {
+    id: 'asesoria',
+    slugs: ['projects-degrees'],
+    title: { es: 'Asesoria — PROSALUD', en: 'Advisory — PROSALUD' },
+    represents: {
+      es:
+        'Esta sala representa mi primer trabajo pagado como consultor: ' +
+        'rescatar en una semana una tesis bloqueada, desarrollar yo solo ' +
+        'el sistema de PROSALUD y enseñar al equipo a defenderlo.',
+      en:
+        'This room represents my first paid consulting job: rescuing a ' +
+        'stalled thesis in one week, single-handedly building the ' +
+        'PROSALUD system and teaching the team to defend it.',
     },
   },
   {
@@ -331,10 +445,10 @@ function buildTexts(
 
 /**
  * @function buildRooms
- * @description Construye las 8 salas desde las experiences reales.
+ * @description Construye las 10 salas desde las experiences reales.
  *   Falla rapido (build-time) si un slug del spec no existe en el CV.
- *   Las salas sinteticas (slugs vacios, ej. `futuro`) usan sus textos
- *   literales del spec.
+ *   Las salas sinteticas (slugs vacios: `aula` y `futuro`) usan sus
+ *   textos literales del spec.
  *
  * @param {readonly Experience[]} source - experiences (default: las reales)
  * @returns {RoomDef[]} salas en orden narrativo
@@ -344,7 +458,7 @@ function buildTexts(
  * @example
  *   const rooms = buildRooms()
  *   rooms[0].id            // 'aula'
- *   rooms[7].id            // 'futuro'
+ *   rooms[9].id            // 'futuro'
  */
 export function buildRooms(
   source: readonly Experience[] = experiences,

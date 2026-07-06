@@ -1,21 +1,20 @@
 /**
  * @module rooms/aula (engine)
- * @description Sala 0 — Aula/Universidad (iai + projects-degrees, 2015).
- *   Salon CLASICO en paleta blanca/beige/azul con guiños morados: pupitres
- *   azules en filas mirando al frente (+Z), escritorio del profesor con
- *   tesis impresas, y el KIT INFORMATIVO ESTANDAR (`infoKit`): RETOS /
- *   APRENDIZAJES en los muros laterales, grieta al pasado a la mano
- *   izquierda y cuaderno-reseña flotante a la derecha — el canon que
- *   replican todas las salas. 2 estudiantes SENTADOS tecleando con sus
- *   pantallas encendidas (codigo cliente-servidor del proyecto de grado);
- *   las 2 PCs libres — la tuya y una del laboratorio — se ENCIENDEN y
- *   APAGAN con E (toggle ilimitado). 6 NPCs conversables (arboles de
- *   dialogo bilingues + burbuja): los 3 estudiantes originales + el
- *   PROFESOR sentado en su escritorio que habla bien de Pablo, un
- *   compañero del proyecto de grado y un estudiante capacitado (AC-9,
- *   canon journey-salas-estandar). Cuadros de rubro via `wallArt`:
- *   diagrama cliente-servidor (inspeccionable), plan de rescate de 1
- *   semana y la red local. Manga-ink.
+ * @description Sala 0 — Aula/Universidad (sintetica: UPTYAB 2011-2016,
+ *   universidad pura). Salon CLASICO en paleta blanca/beige/azul con
+ *   guiños morados: pupitres azules en filas mirando al frente (+Z),
+ *   escritorio del profesor con trabajos impresos, y el KIT INFORMATIVO
+ *   ESTANDAR (`infoKit`): RETOS / APRENDIZAJES en los muros laterales,
+ *   grieta al pasado a la mano izquierda y cuaderno-reseña flotante a la
+ *   derecha — el canon que replican todas las salas. 2 estudiantes
+ *   SENTADOS tecleando con sus pantallas encendidas (practica de sockets
+ *   del laboratorio de redes); las 2 PCs libres — la tuya y una del
+ *   laboratorio — se ENCIENDEN y APAGAN con E (toggle ilimitado). 6 NPCs
+ *   conversables (arboles de dialogo bilingues + burbuja) re-enfocados a
+ *   la vida universitaria: el PROFESOR anticipa las historias de 2015
+ *   (foreshadowing de las salas IAI y Asesoria) sin contarlas. Cuadros
+ *   de rubro via `wallArt`: diagrama cliente-servidor (inspeccionable,
+ *   semilla academica) y la red del laboratorio. Manga-ink.
  */
 import { Group } from 'three'
 import type { Box2 } from '../../lib/collision'
@@ -57,7 +56,7 @@ const PC_LABELS = {
   },
 } as const
 
-/** Codigo era-2015 del proyecto: red local + cliente-servidor en C. */
+/** Practica del laboratorio de redes: cliente-servidor en C. */
 const CODE_SCREENS = [
   {
     title: 'servidor.c',
@@ -85,7 +84,7 @@ const PLAYER_PC_SCREEN = {
     '64 bytes: t=2ms',
     'conectado: OK',
     'red del laboratorio: VIVA',
-    '2 tesis: EN MARCHA',
+    'practica de redes: OK',
   ],
 } as const
 
@@ -157,38 +156,30 @@ function drawClienteServidor(
   ctx.globalAlpha = 1
 }
 
-/** El plan de rescate: 1 semana, 2 tesis listas para defensa. */
-function drawPlanRescate(ctx: CanvasRenderingContext2D, size: number): void {
+/** El pensum de la carrera: las materias que forman el cimiento. */
+function drawPensum(ctx: CanvasRenderingContext2D, size: number): void {
   artBase(ctx, size)
   ctx.fillStyle = ART_INK
   ctx.font = 'bold 18px "Space Grotesk", system-ui, sans-serif'
-  ctx.fillText('PLAN · 1 SEMANA', 24, 40)
+  ctx.fillText('ING. INFORMATICA', 24, 40)
   ctx.strokeStyle = ART_PURPLE
   ctx.lineWidth = 4
   ctx.beginPath()
   ctx.moveTo(24, 50)
   ctx.lineTo(180, 50)
   ctx.stroke()
-  const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
-  days.forEach((day, i) => {
-    const x = 24 + i * 30
-    artBox(ctx, x, 74, 26, 26, day, ART_INK)
-    ctx.strokeStyle = ART_BLUE
-    ctx.lineWidth = 3
-    ctx.beginPath()
-    ctx.moveTo(x + 6, 88)
-    ctx.lineTo(x + 11, 94)
-    ctx.lineTo(x + 20, 80)
-    ctx.stroke()
+  const materias = ['POO', 'BD', 'REDES', 'SO', 'ARQ']
+  materias.forEach((materia, i) => {
+    const x = 24 + (i % 3) * 70
+    const y = 74 + Math.floor(i / 3) * 44
+    artBox(ctx, x, y, 60, 30, materia, i % 2 === 0 ? ART_BLUE : ART_PURPLE)
   })
   ctx.fillStyle = ART_INK
   ctx.font = '14px "Space Mono", ui-monospace, monospace'
-  ctx.fillText('dia 1-2: diagnostico', 24, 136)
-  ctx.fillText('dia 3-5: plan + codigo', 24, 160)
-  ctx.fillText('dia 6-7: defensa lista', 24, 184)
+  ctx.fillText('2011 -> 2016 · UPTYAB', 24, 186)
   ctx.fillStyle = ART_BLUE
   ctx.font = 'bold 16px "Space Grotesk", system-ui, sans-serif'
-  ctx.fillText('2 tesis: de meses a dias', 24, 222)
+  ctx.fillText('el cimiento de todo', 24, 222)
 }
 
 /** Topologia de la red local del laboratorio. */
@@ -222,31 +213,31 @@ function drawRedLocal(ctx: CanvasRenderingContext2D, size: number): void {
 
 const ART_FICHA = {
   title: {
-    es: 'La red cliente-servidor (2015)',
-    en: 'The client-server network (2015)',
+    es: 'La red cliente-servidor del laboratorio',
+    en: 'The lab client-server network',
   },
   paragraphs: {
     es: [
-      'El proyecto academico corria sobre una red local con una PC como ' +
-        'servidor central: todos los clientes compartian los mismos datos ' +
-        'y desaparecieron las copias desincronizadas.',
+      'En el laboratorio de redes se montaba una red local con una PC ' +
+        'como servidor central: todos los clientes compartian los mismos ' +
+        'datos y el ping-pong entre maquinas era el latido del aula.',
       'Ese diseño — diagnosticar, centralizar, documentar cada decision — ' +
         'fue la base de la arquitectura de software que Pablo siguio ' +
         'construyendo el resto de su carrera.',
-      'El plan enmarcado al lado cuenta la otra historia del aula: dos ' +
-        'proyectos de grado bloqueados durante meses, reencaminados y ' +
-        'listos para defensa en mas o menos una semana.',
+      'Lo que esa semilla germino en 2015 — un instituto de obras ' +
+        'publicas y una tesis rescatada — se cuenta unas salas mas ' +
+        'adelante en el recorrido.',
     ],
     en: [
-      'The academic project ran on a local network with one PC as the ' +
+      'In the networks lab we built a local network with one PC as the ' +
         'central server: every client shared the same data and the ' +
-        'out-of-sync copies disappeared.',
+        'ping-pong between machines was the heartbeat of the room.',
       'That design — diagnose, centralize, document every decision — ' +
         'became the foundation of the software architecture Pablo kept ' +
         'building for the rest of his career.',
-      'The framed plan next to it tells the other story of this room: ' +
-        'two final projects blocked for months, put back on track and ' +
-        'ready for defense in roughly one week.',
+      'What that seed grew into during 2015 — a public-works institute ' +
+        'and a rescued thesis — is told a few rooms ahead in the ' +
+        'journey.',
     ],
   },
 } as const
@@ -330,8 +321,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       footprint(x, z - 0.55, 0.5, 0.5),
     )
   }
-  // tesis impresas sobre el escritorio del profesor (guiño: los proyectos
-  // de grado que Pablo rescato viven en papel sobre esa mesa)
+  // trabajos de catedra impresos sobre el escritorio del profesor
   group.add(paperStack({ position: [-2.3, 0.745, room.z + 3.6], count: 6 }))
 
   // monitores: los de los NPCs ya estan ENCENDIDOS (estan trabajando);
@@ -408,7 +398,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
 
   // NPCs estudiantes: 2 SENTADOS tecleando en sus PCs + 1 en ronda.
   // Todos conversables con E (arbol de dialogo + burbuja de habla suelta).
-  const tesistaUno = makeNpc({
+  const companeraLab = makeNpc({
     skin: '#e8b48c',
     hair: { style: 'ponytail', color: '#5a3a22' },
     top: '#4a6a52',
@@ -418,7 +408,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     rotationY: 0,
     pose: 'sit',
   })
-  const tesistaDos = makeNpc({
+  const estudianteSockets = makeNpc({
     skin: '#d9a684',
     hair: { style: 'spiky', color: '#1c1410' },
     top: '#7a5c3a',
@@ -443,22 +433,22 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     ],
     speed: 0.7,
   })
-  npcs.push(tesistaUno, tesistaDos, estudianteRonda)
+  npcs.push(companeraLab, estudianteSockets, estudianteRonda)
   for (const npc of npcs) {
     group.add(npc.group)
     updates.push((t, dt) => npc.update(t, dt))
   }
   const talks = [
     npcTalk({
-      id: `talk-aula-${room.index}-tesista-uno`,
-      npc: tesistaUno,
-      dialog: AULA_PRESENTE_DIALOGS['tesista-uno'],
+      id: `talk-aula-${room.index}-companera-lab`,
+      npc: companeraLab,
+      dialog: AULA_PRESENTE_DIALOGS['companera-lab'],
       openDialog: actions.openDialog,
     }),
     npcTalk({
-      id: `talk-aula-${room.index}-tesista-dos`,
-      npc: tesistaDos,
-      dialog: AULA_PRESENTE_DIALOGS['tesista-dos'],
+      id: `talk-aula-${room.index}-estudiante-sockets`,
+      npc: estudianteSockets,
+      dialog: AULA_PRESENTE_DIALOGS['estudiante-sockets'],
       openDialog: actions.openDialog,
     }),
     npcTalk({
@@ -539,7 +529,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
   }
 
   // cuadros de rubro (wallArt): diagrama cliente-servidor (inspeccionable,
-  // AC-7) + plan de rescate en el muro del fondo; red local en la entrada
+  // AC-7) + pensum de la carrera en el muro del fondo; red local en la
+  // entrada. (La lamina del plan de rescate se mudo a la sala asesoria.)
   const art = wallArt({
     roomIndex: room.index,
     theme,
@@ -554,10 +545,10 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
         ficha: ART_FICHA,
       },
       {
-        key: 'plan-rescate',
+        key: 'pensum',
         position: [3.6, 2, room.z + room.depth / 2 - 0.08],
         rotationY: Math.PI,
-        draw: drawPlanRescate,
+        draw: drawPensum,
       },
       {
         key: 'red-local',

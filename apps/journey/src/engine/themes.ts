@@ -85,6 +85,36 @@ export const THEMES: Record<ThemeZoneId, RoomTheme> = {
     screenBg: '#0e1e2c',
     screenFg: '#7ec8e8',
   },
+  // iai: obra publica, ambar obra + gris concreto (el rojo Yaracuy SOLO
+  // en props: valla/bandera). Distinto del naranja seguridad de corpoelec
+  iai: {
+    wall: '#f2f0eb',
+    floor: '#d9dbdd',
+    ink: '#1c1a12',
+    accent: '#d9a013',
+    trim: '#8f959e',
+    lightColor: '#f6f4ee',
+    fog: '#dcdad2',
+    sky: '#e8e6de',
+    gradient: ['#8f8c80', '#ccc8bc', '#ffffff'],
+    screenBg: '#1a1608',
+    screenFg: '#e8c860',
+  },
+  // asesoria: salud publica + academia, verde salud + morado (eco del
+  // aula). Distinto del azul institucional + menta de ipasme
+  asesoria: {
+    wall: '#f2f0eb',
+    floor: '#dce6de',
+    ink: '#1a2820',
+    accent: '#2e8b57',
+    trim: '#7a4fc0',
+    lightColor: '#f2f8f4',
+    fog: '#d8e2da',
+    sky: '#e4eee6',
+    gradient: ['#829488', '#c4d4c8', '#ffffff'],
+    screenBg: '#0e2016',
+    screenFg: '#6fd89a',
+  },
   // cofasa: sala limpia farma, azul Cofasa + grises (andon solo en su prop)
   cofasa: {
     wall: '#f2f0eb',
@@ -197,6 +227,14 @@ export const PAST_CAPTIONS: Record<RoomId, Record<'es' | 'en', string>> = {
   ipasme: {
     es: 'Antes: historias medicas en carpetas de papel',
     en: 'Before: medical records in paper folders',
+  },
+  iai: {
+    es: 'Antes: presupuestos de obra a mano y copias desincronizadas',
+    en: 'Before: hand-made construction budgets and out-of-sync copies',
+  },
+  asesoria: {
+    es: 'Antes: la tesis de PROSALUD bloqueada durante meses',
+    en: 'Before: the PROSALUD thesis stalled for months',
   },
   cofasa: {
     es: 'Antes: paradas de maquina anotadas a mano',

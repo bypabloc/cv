@@ -123,6 +123,8 @@ export const WORLD: Record<
   aula: { load: () => import('./rooms/aula') },
   corpoelec: { load: () => import('./rooms/corpoelec') },
   ipasme: { load: () => import('./rooms/ipasme') },
+  iai: { load: () => import('./rooms/iai') },
+  asesoria: { load: () => import('./rooms/asesoria') },
   cofasa: { load: () => import('./rooms/cofasa') },
   dibal: { load: () => import('./rooms/dibal') },
   goodmeal: { load: () => import('./rooms/goodmeal') },

@@ -1332,9 +1332,9 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   // trabajan en las suyas, la tercera se enciende con E y muestra el
   // panel de plataforma (campañas en 4 min, equipos en paralelo)
   const deskSpots: readonly (readonly [number, number])[] = [
-    [-0.9, room.z - 4.8],
-    [0.9, room.z - 4.8],
-    [0.0, room.z - 3.0],
+    [-2.9, room.z - 3.4],
+    [-1.4, room.z - 3.5],
+    [1.8, room.z - 3.4],
   ]
   const office = officeLayout({
     spots: deskSpots,
@@ -1351,7 +1351,7 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
     locale === 'es' ? 'EQUIPO PLATAFORMA' : 'PLATFORM TEAM',
     { size: 0.13, color: theme.accent },
   )
-  devLabel.position.set(0, 1.85, room.z - 5.0)
+  devLabel.position.set(0, 1.85, room.z - 4.5)
   group.add(devLabel)
 
   // AREA A — PagaloAqui (muro -X, mitad del fondo): el kiosco de pago

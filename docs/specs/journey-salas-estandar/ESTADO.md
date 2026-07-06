@@ -46,7 +46,7 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 | Orden | Paso | Informe | Estado | Commit |
 | --- | --- | --- | --- | --- |
 | 2b.0 | infra (RoomId->10 + stubs + aula univ. pura + CV) | [15-infra-salas-2015.md](15-infra-salas-2015.md) | HECHO | `8d051761` + `9d2e227f` |
-| 2b.1 | sala `iai` (index 3 del recorrido) | [16-sala-iai.md](16-sala-iai.md) | PENDIENTE | — |
+| 2b.1 | sala `iai` (index 3 del recorrido) | [16-sala-iai.md](16-sala-iai.md) | HECHO | `5ddda72d` |
 | 2b.2 | sala `asesoria` (index 4 del recorrido) | [17-sala-asesoria.md](17-sala-asesoria.md) | PENDIENTE | — |
 
 > El paso 2b.0 es PREREQUISITO de 2b.1 y 2b.2. Tras la insercion, los
@@ -66,6 +66,45 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-06] sala `iai` HECHA en commit `5ddda72d` — informe 16
+  (Etapa 2b.1, index 3 del recorrido, sala 4 de 10) con 4 decisiones
+  del usuario (AskUserQuestion 2026-07-05, NO reabrir): (1) 5 NPCs
+  presente (informe completo, sin recortar a 4): Keiber Mendoza y
+  Marielys Ochoa (tesistas dev sentados en el officeLayout), Ing.
+  Gregorio Salcedo (inspector en ronda meson->showcase), Belkis
+  Camacaro (analista en su escritorio de sellos) y la Ing. Maritza
+  Oropeza (presidenta junto a la valla); (2) 3 NPCs pasado (con Pastor
+  Rivas, el maestro de obra nuevo: "hasta que no firmen la valuacion,
+  a mi gente no le pagan"); (3) LAS 2 MICROS: recalcular el presupuesto
+  (indices BCV -> los PU parpadean y el TOTAL sale al instante + tag
+  "antes: 40 APU a mano") y conformar una valuacion (el sello CONFORME
+  3D baja y golpea + el avance fisico sube ciclando 68->74->80->86%);
+  (4) wallArt con 3 FICHAS (upgrade sobre el informe que decia 2): la
+  lamina del APU SUBIO a inspeccionable (ficha de como se arma una
+  partida COVENIN) junto a la valla institucional y el diagrama de red;
+  el plano de via agricola quedo decorativo. Showcase look Java/Windows
+  2015 con badge RED LOCAL (3 demos: presupuesto con Recalcular, hoja
+  de APU, valuaciones con curva S). Props firma: la PC-SERVIDOR
+  ("SERVIDOR — NO APAGAR", LED parpadeante, cable de red a los
+  puestos), meson de planos con plano desplegado y pesas, planoteca,
+  valla de la calle 19 con escudo, estante COVENIN/Guia CIV, corcho con
+  tabulador, ventilador oscilante (calor de San Felipe). Pasado: meson
+  saturado + torres de carpetas por obra + Excel con indices BCV
+  vencidos pegados con cinta + telefono descolgado + reloj + PC vieja
+  compartida + consolidar el avance a mano (falta la carpeta de la via
+  agricola). Nota tecnica: recalcMicro/selloMicro extraidas a funciones
+  con selloYAt puro (limite de complejidad de Biome, mismo patron que
+  dibal). Smoke browser verde x2 (25 interactables, showcase E/Esc con
+  3 demos, 5 dialogos, 3 fichas, 2 micros, laptop toggle, pasado 31
+  interactables con Pastor conversable); unico error de consola: el 504
+  transitorio de vite (gotcha conocido). Hallazgo visual verificado con
+  sala de CONTROL (ipasme girada 180): los "quads negros" junto al muro
+  trasero y la columna sobre la puerta aparecen IGUAL en ipasme — son
+  artefacto preexistente del canon/shell (pizarras oscuras + vano de la
+  puerta), NO de esta sala; si se decide pulir, es transversal y va al
+  CIERRE (C15). Nota perf: 5 NPCs + valla + showcase + 2 micros — medir
+  en C15 igual que las demas.
 
 - [2026-07-06] paso `2b.0` (infra salas 2015) HECHO en commits
   `8d051761` (content) + `9d2e227f` (journey) — informe 15 completo.

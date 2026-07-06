@@ -1337,6 +1337,8 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
     [1.8, room.z - 3.4],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: PANEL_INK,
     poweredSpots: new Set([0, 1]),

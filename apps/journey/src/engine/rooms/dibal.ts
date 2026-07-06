@@ -1185,6 +1185,8 @@ export default function buildDibal(ctx: RoomCtx): RoomBuild {
     [4.1, room.z - 4.4],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: NAVY_DARK,
     poweredSpots: new Set([0]),

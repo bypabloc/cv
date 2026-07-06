@@ -835,6 +835,8 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
     [-0.5, room.z - 2.3],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: '#3d4f66',
     poweredSpots: new Set([0, 1]),

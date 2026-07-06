@@ -1147,6 +1147,8 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
     [2.5, room.z - 2.9],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: COUNTER_INK,
     poweredSpots: new Set([0, 1]),

@@ -1030,6 +1030,8 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
     [-2.5, room.z - 2.3],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: '#4a3f5e',
     poweredSpots: new Set([0, 1]),

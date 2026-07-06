@@ -30,6 +30,7 @@ import {
   type OpenDialog,
 } from '../dialog'
 import type {
+  EngineState,
   FichaKind,
   Interactable,
   ShowcaseRef,
@@ -955,9 +956,14 @@ export interface OfficeLayout {
   colliders: Box2[]
   /** ScreenSwap de las laptops togglables (puestos SIN NPC), para E. */
   toggles: { spot: number; screen: ScreenSwap }[]
+  /** Interactables de "sentarse" para los puestos SIN NPC (silla vacia). */
+  seats: Interactable[]
   /** Libera TODAS las variantes de pantalla (disposeDeep solo ve la activa). */
   dispose(): void
 }
+
+const SIT_LABEL = { es: 'Sentarse', en: 'Sit down' } as const
+const STAND_LABEL = { es: 'Levantarse', en: 'Stand up' } as const
 
 /**
  * Filas de oficina fusionadas: escritorios + sillas en 1 lote outlined
@@ -976,11 +982,16 @@ export function officeLayout(opts: {
   screenTheme: Pick<RoomTheme, 'screenBg' | 'screenFg' | 'ink'>
   /** Contenido de pantalla por puesto (loop de codigo del rubro). */
   screenFor?: (index: number) => { title: string; lines: readonly string[] }
+  /** Identificador de la sala, para ids unicos del interactable de silla. */
+  roomIndex: number
+  /** Estado del motor: el toggle de sentarse muta state.playerSeat directo. */
+  state: EngineState
 }): OfficeLayout {
   const powered = opts.poweredSpots ?? new Set<number>()
   const group = new Group()
   const colliders: Box2[] = []
   const toggles: { spot: number; screen: ScreenSwap }[] = []
+  const seats: Interactable[] = []
   const screens: ScreenSwap[] = []
   // silla de un puesto mirando al frente (+Z): asiento + respaldo + patas
   const chairParts = (x: number, cz: number) => [
@@ -1032,12 +1043,35 @@ export function officeLayout(opts: {
     screens.push(screen)
     if (!powered.has(index)) {
       toggles.push({ spot: index, screen })
+      // silla vacia sentable: toggle sentarse/levantarse leyendo el estado
+      // REAL de playerSeat (si se sento en OTRA silla, el label no queda
+      // desincronizado — 'sentado' es estado compartido con controls).
+      const seatX = x
+      const seatZ = z - 0.55
+      const item: Interactable = {
+        id: `silla-${opts.roomIndex}-${index}`,
+        x: seatX,
+        z: seatZ,
+        radius: 1.4,
+        label: { ...SIT_LABEL },
+        onActivate: () => {
+          const sameSeat =
+            opts.state.playerSeat?.x === seatX &&
+            opts.state.playerSeat?.z === seatZ
+          opts.state.playerSeat = sameSeat
+            ? null
+            : { x: seatX, z: seatZ, rotationY: 0 }
+          item.label = sameSeat ? { ...SIT_LABEL } : { ...STAND_LABEL }
+        },
+      }
+      seats.push(item)
     }
   })
   return {
     group,
     colliders,
     toggles,
+    seats,
     dispose: () => {
       for (const screen of screens) {
         screen.dispose()

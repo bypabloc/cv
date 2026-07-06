@@ -845,6 +845,8 @@ export default function buildIpasme(ctx: RoomCtx): RoomBuild {
     [-2.4, room.z - 1.7],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: '#3d5a66',
     poweredSpots: new Set([0]),

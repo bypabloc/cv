@@ -810,6 +810,8 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
     [2, room.z - 1.8],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: '#3d4a5c',
     poweredSpots: new Set([0, 3]),

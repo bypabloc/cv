@@ -841,7 +841,10 @@ export function lecternNotebook(opts: {
  *   - RETOS       -> muro -X (la DERECHA de quien avanza), a media sala.
  *   - APRENDIZAJES-> muro +X (su IZQUIERDA), a media sala (espejo).
  *   - grieta      -> muro +X al fondo (mano izquierda, junto a la salida).
- *   - cuaderno    -> muro -X al fondo (mano derecha, junto a la puerta).
+ *   - cuaderno    -> eje central (x=0), cerca de la entrada, bloqueando
+ *     el paso (decision del usuario 2026-07-06, plan
+ *     journey-cuaderno-central: antes vivia pegado al muro -X junto a la
+ *     puerta, facil de ignorar).
  * Las salas son uniformes (13.2 m), asi que las coordenadas resultantes
  * son identicas sala a sala — consistencia garantizada por construccion.
  */
@@ -894,10 +897,14 @@ export function infoKit(opts: {
           locale: opts.locale,
           onEnter: opts.onEnterPast,
         })
+  // Eje central de transito (x=0), cerca de la entrada: el jugador lo
+  // encuentra de frente al entrar y debe rodearlo (decision del usuario
+  // 2026-07-06, plan journey-cuaderno-central).
+  const noteEntryZ = room.z - room.depth / 4
   const nota = lecternNotebook({
     roomIndex: room.index,
-    position: [-half + 0.9, 0, room.z + 5.1],
-    rotationY: Math.PI / 2,
+    position: [0, 0, noteEntryZ],
+    rotationY: 0,
     theme: opts.theme,
     notebook: { title: texts.title, lines: texts.notebook },
     story: { title: texts.title, paragraphs: texts.resena },
@@ -908,7 +915,7 @@ export function infoKit(opts: {
     props: portal
       ? [retos, aprendizajes, portal, nota]
       : [retos, aprendizajes, nota],
-    colliders: [footprint(-half + 0.9, room.z + 5.1, 0.7, 0.7)],
+    colliders: [footprint(0, noteEntryZ, 1, 1)],
   }
 }
 

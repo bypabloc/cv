@@ -23,14 +23,12 @@ import type { Box2 } from '../lib/collision'
 import {
   buildPastWallBoxes,
   buildWallBoxes,
-  CORRIDOR_HEIGHT,
   DOOR_HEIGHT,
   DOOR_WIDTH,
   type DoorLayout,
   type JourneyLayout,
   type PastRoomLayout,
   type RoomLayout,
-  WALL_THICKNESS,
   type WallBox,
   type Zone,
 } from '../lib/layout'
@@ -48,16 +46,19 @@ import {
 import { type RoomTheme, THEMES, type ThemeZoneId } from './themes'
 import {
   addOutline,
-  type BoxSpec,
   boxMesh,
   disposeDeep,
   inkFloorTexture,
   inkWallTexture,
-  label,
   mergedBoxes,
   toonMat,
   unitGeo,
 } from './toon'
+
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
 
 // ---------------------------------------------------------------------------
 // Contratos (congelados para las factories de sala — plan seccion 8)
@@ -147,9 +148,10 @@ export interface WorldDeps {
   layout: JourneyLayout
   pastRooms: readonly PastRoomLayout[]
   state: EngineState
-  /** Fade de esclusa/teleport ('dark') o de sueño para los portales al
-   *  pasado ('dream' — white-out con blur). Lo implementa el HUD. */
-  fade(on: boolean, style?: 'dark' | 'dream'): Promise<void>
+  /** Fade de esclusa/teleport ('dark'), de sueño para los portales al
+   *  pasado ('dream' — white-out con blur) o de cruce de puerta ('warp' —
+   *  franja de luz, "viaje al futuro"). Lo implementa el HUD. */
+  fade(on: boolean, style?: 'dark' | 'dream' | 'warp'): Promise<void>
   /** Sepia + grano del pasado (overlay CSS del HUD). */
   setPastMode(on: boolean): void
   ui: {
@@ -177,6 +179,9 @@ export interface World {
   setZone(zone: Zone): void
   openDoor(index: number): void
   openAllDoors(): void
+  /** Cruce automatico: abre la hoja, warp, teleport a la sala siguiente,
+   *  cierra la hoja y re-registra el interactable de la puerta. */
+  crossDoor(index: number): Promise<void>
   teleportToRoom(index: number): Promise<void>
   enterPast(roomIndex: number, spawn: { x: number; z: number }): Promise<void>
   exitPast(returnTo: { x: number; z: number }): Promise<void>
@@ -370,98 +375,16 @@ export function createWorld(deps: WorldDeps): World {
     return group
   }
 
-  /** Dinteles sobre el hueco de puerta (van fusionados con los muros). */
-  function headerSpecs(door: DoorLayout): BoxSpec[] {
-    const specs: BoxSpec[] = []
-    const before = layout.rooms[door.corridorIndex]
-    const after = layout.rooms[door.corridorIndex + 1]
-    if (before) {
-      specs.push({
-        w: DOOR_WIDTH,
-        h: before.height - DOOR_HEIGHT,
-        d: WALL_THICKNESS,
-        x: 0,
-        y: (before.height + DOOR_HEIGHT) / 2,
-        z: before.z + before.depth / 2 + WALL_THICKNESS / 2,
-      })
-    }
-    if (after) {
-      specs.push({
-        w: DOOR_WIDTH,
-        h: after.height - DOOR_HEIGHT,
-        d: WALL_THICKNESS,
-        x: 0,
-        y: (after.height + DOOR_HEIGHT) / 2,
-        z: after.z - after.depth / 2 - WALL_THICKNESS / 2,
-      })
-    }
-    return specs
-  }
-
+  /** Solo la puerta: el tramo entre salas ya no renderiza muros, piso,
+   *  techo, año ni luz de pasillo — el cruce es un teleport con warp
+   *  (crossDoor), no una caminata. El "marco" es el hueco del muro. */
   function buildCorridorShell(index: number): Group {
     const group = new Group()
-    const corridor = layout.corridors[index]
     const door = layout.doors[index]
-    if (!corridor || !door) {
+    if (!door) {
       return group
     }
-    const theme = THEMES.corridor
-    // muros laterales + dinteles: 1 solo mesh (mismo material del theme)
-    const sideBoxes = wallBoxes
-      .filter(
-        (box) => box.source.kind === 'corridor' && box.source.index === index,
-      )
-      .map((box) => ({
-        w: box.maxX - box.minX,
-        h: box.height,
-        d: box.maxZ - box.minZ,
-        x: (box.minX + box.maxX) / 2,
-        y: box.height / 2,
-        z: (box.minZ + box.maxZ) / 2,
-      }))
-    const walls = mergedBoxes(
-      [...sideBoxes, ...headerSpecs(door)],
-      toonMat('#ffffff', {
-        map: inkWallTexture(theme),
-        gradient: theme.gradient,
-      }),
-    )
-    walls.receiveShadow = true
-    group.add(
-      walls,
-      floorMesh(corridor.x, corridor.z, corridor.width, corridor.depth, theme, {
-        x: 1,
-        y: 2.5,
-      }),
-      ceilingMesh(
-        corridor.x,
-        corridor.z,
-        corridor.width,
-        corridor.depth,
-        CORRIDOR_HEIGHT,
-        theme,
-      ),
-      buildDoor(door),
-    )
-    // mini-timeline: el año de la etapa destino pintado en el piso,
-    // orientado para leerse caminando hacia +Z
-    const year = label(corridor.year, { size: 0.9, color: '#aab6d8' })
-    year.rotation.x = -Math.PI / 2
-    year.rotation.z = Math.PI
-    year.position.set(corridor.x, 0.02, corridor.z)
-    group.add(year)
-    if (state.tier === 'full') {
-      group.add(
-        accentLight(
-          corridor.x,
-          CORRIDOR_HEIGHT - 0.25,
-          corridor.z,
-          theme.lightColor,
-          3,
-          corridor.depth * 1.6,
-        ),
-      )
-    }
+    group.add(buildDoor(door))
     return group
   }
 
@@ -710,18 +633,24 @@ export function createWorld(deps: WorldDeps): World {
   // API
   // -------------------------------------------------------------------------
 
+  /** Se re-registra tras cada cruce (crossDoor cierra el ciclo completo). */
+  function registerDoorInteractable(door: DoorLayout): void {
+    registerInteractable(state, {
+      id: `door-${door.corridorIndex}`,
+      x: door.x,
+      z: door.z,
+      radius: 2.1,
+      label: { es: 'Abrir la puerta', en: 'Open the door' },
+      onActivate: () => {
+        void world.crossDoor(door.corridorIndex)
+      },
+    })
+  }
+
   const world: World = {
     async init() {
-      // interactables permanentes: las puertas de los pasillos
       for (const door of layout.doors) {
-        registerInteractable(state, {
-          id: `door-${door.corridorIndex}`,
-          x: door.x,
-          z: door.z,
-          radius: 2.1,
-          label: { es: 'Abrir la puerta', en: 'Open the door' },
-          onActivate: () => world.openDoor(door.corridorIndex),
-        })
+        registerDoorInteractable(door)
       }
       state.zone = { kind: 'room', index: 0 }
       await applyZone(state.zone, false)
@@ -747,6 +676,33 @@ export function createWorld(deps: WorldDeps): World {
     openAllDoors() {
       for (const door of layout.doors) {
         world.openDoor(door.corridorIndex)
+      }
+    },
+
+    async crossDoor(index) {
+      if (state.doorsOpen.has(index)) {
+        return // ya hay un cruce en curso (o el tour dejo la hoja abierta)
+      }
+      const target = layout.rooms[index + 1]
+      if (!target) {
+        return
+      }
+      unregisterInteractable(state, `door-${index}`)
+      state.doorsOpen.add(index) // la hoja gira a abierta (lerp de update)
+      sfx.play('door')
+      await wait(320) // deja ver el giro antes del warp
+      sfx.play('whoosh')
+      await deps.fade(true, 'warp')
+      deps.teleportPlayer(0, target.z - target.depth / 2 + 1.5)
+      state.zone = { kind: 'room', index: index + 1 }
+      await applyZone(state.zone, false) // misma esclusa que teleportToRoom
+      deps.onZoneApplied?.()
+      await deps.fade(false, 'warp')
+      state.doorsOpen.delete(index) // la hoja vuelve a cerrada
+      sfx.play('door')
+      const door = layout.doors[index]
+      if (door) {
+        registerDoorInteractable(door) // vuelve a ser interactuable
       }
     },
 

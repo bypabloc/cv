@@ -156,6 +156,15 @@ const CSS = `
   background: radial-gradient(circle at 50% 45%, #ffffff 0%, #fdf6e6 55%, #e8dcc0 100%); }
 .jny-dream.on { opacity: 1; visibility: visible;
   transition: opacity 520ms ease; backdrop-filter: blur(12px) brightness(1.3); }
+.jny-warp { position: absolute; inset: 0; pointer-events: none; z-index: 41;
+  opacity: 0; visibility: hidden;
+  transition: opacity 460ms ease, visibility 0s linear 460ms;
+  background:
+    linear-gradient(105deg, transparent 26%, rgba(96, 200, 255, 0.5) 44%,
+      #eaf7ff 50%, rgba(96, 200, 255, 0.5) 56%, transparent 74%),
+    radial-gradient(circle at 50% 48%, #dff2ff 0%, #5f9fd8 55%, #101a30 100%); }
+.jny-warp.on { opacity: 1; visibility: visible;
+  transition: opacity 400ms ease; backdrop-filter: blur(10px) brightness(1.25); }
 .jny-loader { position: absolute; inset: 0; display: grid; place-items: center;
   background: #0b0b10; color: var(--color-grey-5, #f7f7f5); z-index: 50; }
 .jny-screentone { position: absolute; inset: 0; pointer-events: none;
@@ -244,8 +253,9 @@ export interface Hud {
   openContact(): void
   toggleTeleport(): void
   closeAll(): void
-  /** 'dark' (esclusa/teleport) o 'dream' (portal al pasado: white-out). */
-  fade(on: boolean, style?: 'dark' | 'dream'): Promise<void>
+  /** 'dark' (esclusa/teleport), 'dream' (portal al pasado: white-out) o
+   *  'warp' (cruce de puerta: franja de luz azul, "viaje al futuro"). */
+  fade(on: boolean, style?: 'dark' | 'dream' | 'warp'): Promise<void>
   setPastMode(on: boolean): void
   setAudio(on: boolean): void
   setTour(on: boolean): void
@@ -432,6 +442,8 @@ export function createHud(deps: HudDeps): Hud {
   fadeEl.setAttribute('aria-hidden', 'true')
   const dreamEl = el('div', 'jny-dream')
   dreamEl.setAttribute('aria-hidden', 'true')
+  const warpEl = el('div', 'jny-warp')
+  warpEl.setAttribute('aria-hidden', 'true')
   const loader = el('div', 'jny-loader', t.loading)
   loader.style.display = 'none'
 
@@ -470,6 +482,7 @@ export function createHud(deps: HudDeps): Hud {
     bubble,
     fadeEl,
     dreamEl,
+    warpEl,
     loader,
   )
   container.appendChild(root)
@@ -797,6 +810,12 @@ export function createHud(deps: HudDeps): Hud {
         dreamEl.classList.toggle('on', on)
         return new Promise((resolve) => {
           window.setTimeout(resolve, on ? 560 : 650)
+        })
+      }
+      if (mode === 'warp') {
+        warpEl.classList.toggle('on', on)
+        return new Promise((resolve) => {
+          window.setTimeout(resolve, on ? 420 : 480)
         })
       }
       fadeEl.style.opacity = on ? '1' : '0'

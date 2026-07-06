@@ -201,7 +201,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     layout,
     pastRooms,
     state,
-    fade: (on) => hud.fade(on),
+    fade: (on, style) => hud.fade(on, style),
     setPastMode: (on) => hud.setPastMode(on),
     ui: {
       openFicha: (roomIndex, kind) => hud.openFicha(roomIndex, kind),

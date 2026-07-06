@@ -9,6 +9,7 @@
  *   primitivas del pool toon — cero .glb, cero red.
  */
 import {
+  BoxGeometry,
   CanvasTexture,
   CircleGeometry,
   Group,
@@ -787,13 +788,20 @@ export function lecternNotebook(opts: {
   lip.position.y = 0.92
   lip.userData.noOutline = true
   group.add(pedestal, lip)
-  // cuaderno FLOTANDO separado del pilar: pagina vertical hacia la sala
-  // + halo del acento detras (el pulso lo anima el update)
+  // cuaderno FLOTANDO separado del pilar: libro con VOLUMEN (portada/lomo
+  // como caja delgada) + pagina con el texto al frente + halo del acento
+  // detras (el pulso lo anima el update). La caja garantiza que desde
+  // cualquier angulo se vea un objeto solido, nunca el reverso invisible
+  // de un plane de una sola cara.
   const float = new Group()
+  const cover = new Mesh(new BoxGeometry(0.66, 0.52, 0.06), toonMat(trim))
+  cover.position.z = -0.03
+  cover.castShadow = true
   const page = new Mesh(
-    new PlaneGeometry(0.62, 0.5),
+    new PlaneGeometry(0.6, 0.48),
     new MeshBasicMaterial({ map: notebookTexture(opts.notebook) }),
   )
+  page.position.z = 0.005
   page.userData.noOutline = true
   const haloMat = new MeshBasicMaterial({
     color: trim,
@@ -801,9 +809,9 @@ export function lecternNotebook(opts: {
     opacity: 0.26,
   })
   const halo = new Mesh(new PlaneGeometry(0.76, 0.62), haloMat)
-  halo.position.z = -0.02
+  halo.position.z = -0.08
   halo.userData.noOutline = true
-  float.add(halo, page)
+  float.add(halo, cover, page)
   float.position.set(0, NOTE_FLOAT_Y, 0.02)
   float.rotation.x = -0.1
   group.add(float)
@@ -842,10 +850,10 @@ export function lecternNotebook(opts: {
  *   - RETOS       -> muro -X (la DERECHA de quien avanza), a media sala.
  *   - APRENDIZAJES-> muro +X (su IZQUIERDA), a media sala (espejo).
  *   - grieta      -> muro +X al fondo (mano izquierda, junto a la salida).
- *   - cuaderno    -> eje central (x=0), cerca de la entrada, bloqueando
- *     el paso (decision del usuario 2026-07-06, plan
- *     journey-cuaderno-central: antes vivia pegado al muro -X junto a la
- *     puerta, facil de ignorar).
+ *   - cuaderno    -> centro geometrico de la sala (x=0, z=room.z),
+ *     bloqueando el eje de transito, con el libro de frente a la entrada
+ *     (plan journey-puerta-sillas-pilar: antes quedaba a un cuarto de la
+ *     entrada, encimado con el spawn del jugador).
  * Las salas son uniformes (13.2 m), asi que las coordenadas resultantes
  * son identicas sala a sala — consistencia garantizada por construccion.
  */
@@ -898,14 +906,14 @@ export function infoKit(opts: {
           locale: opts.locale,
           onEnter: opts.onEnterPast,
         })
-  // Eje central de transito (x=0), cerca de la entrada: el jugador lo
-  // encuentra de frente al entrar y debe rodearlo (decision del usuario
-  // 2026-07-06, plan journey-cuaderno-central).
-  const noteEntryZ = room.z - room.depth / 4
+  // Centro geometrico de la sala (x=0, z=room.z), en el eje de transito:
+  // el jugador lo encuentra de frente al entrar y debe rodearlo (plan
+  // journey-puerta-sillas-pilar; ya no se superpone con el spawn). El giro
+  // de 180 grados deja la cara frontal del libro mirando a la entrada.
   const nota = lecternNotebook({
     roomIndex: room.index,
-    position: [0, 0, noteEntryZ],
-    rotationY: 0,
+    position: [0, 0, room.z],
+    rotationY: Math.PI,
     theme: opts.theme,
     notebook: { title: texts.title, lines: texts.notebook },
     story: { title: texts.title, paragraphs: texts.resena },
@@ -916,7 +924,7 @@ export function infoKit(opts: {
     props: portal
       ? [retos, aprendizajes, portal, nota]
       : [retos, aprendizajes, nota],
-    colliders: [footprint(0, noteEntryZ, 1, 1)],
+    colliders: [footprint(0, room.z, 1, 1)],
   }
 }
 

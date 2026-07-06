@@ -857,6 +857,7 @@ export default function buildIpasme(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
 
   // consultorio (-X, fondo): camilla con rollo de papel, escritorio del
   // medico con tensiometro, negatoscopio con radiografia y la bascula —

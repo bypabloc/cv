@@ -847,6 +847,7 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
 
   // tanque de mezcla inox (-X, esquina fondo): cilindro + valvulas +
   // tuberia hacia la llenadora

@@ -1349,6 +1349,7 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
   const devLabel = label(
     locale === 'es' ? 'EQUIPO PLATAFORMA' : 'PLATFORM TEAM',
     { size: 0.13, color: theme.accent },

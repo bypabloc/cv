@@ -1042,6 +1042,7 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
 
   // proyector + pantalla en el muro -X: las laminas de la defensa que
   // E cicla (micro firma de la sala)

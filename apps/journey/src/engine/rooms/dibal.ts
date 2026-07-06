@@ -1197,6 +1197,7 @@ export default function buildDibal(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
   const pabloLabel = label(
     locale === 'es' ? 'LA MESA DE PABLO' : "PABLO'S DESK",
     { size: 0.13, color: theme.accent },

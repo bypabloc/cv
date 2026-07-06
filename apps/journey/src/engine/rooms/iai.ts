@@ -1084,6 +1084,7 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
 
   // la PC-SERVIDOR (muro -X, medio): torre beige en su mesita propia,
   // etiqueta "NO APAGAR", LED parpadeante y cable de red al rincon dev

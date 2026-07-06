@@ -822,6 +822,7 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
 
   // fila de transformadores (subestacion) en el muro -X + etiqueta de
   // activo TX-001 (todo equipo del inventario tiene su codigo)

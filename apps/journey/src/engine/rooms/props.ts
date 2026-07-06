@@ -854,6 +854,8 @@ export function infoKit(opts: {
   texts: RoomTexts
   /** Luz del cuaderno flotante (solo tier full). */
   withLight: boolean
+  /** Sala sin pasado (ej. `futuro`): false omite la grieta. Default true. */
+  withPortal?: boolean
   onFicha(roomIndex: number, kind: FichaKind): void
   onEnterPast(roomIndex: number, spawn: { x: number; z: number }): void
   onStory(title: string, paragraphs: readonly string[]): void
@@ -880,15 +882,18 @@ export function infoKit(opts: {
     preview: texts.aprendizajes,
     onOpen: opts.onFicha,
   })
-  const portal = pastPortal({
-    room,
-    position: [half - 0.1, 0, room.z + 5.2],
-    rotationY: -Math.PI / 2,
-    accent: opts.theme.accent,
-    year: opts.year,
-    locale: opts.locale,
-    onEnter: opts.onEnterPast,
-  })
+  const portal =
+    opts.withPortal === false
+      ? null
+      : pastPortal({
+          room,
+          position: [half - 0.1, 0, room.z + 5.2],
+          rotationY: -Math.PI / 2,
+          accent: opts.theme.accent,
+          year: opts.year,
+          locale: opts.locale,
+          onEnter: opts.onEnterPast,
+        })
   const nota = lecternNotebook({
     roomIndex: room.index,
     position: [-half + 0.9, 0, room.z + 5.1],
@@ -900,7 +905,9 @@ export function infoKit(opts: {
     onOpen: opts.onStory,
   })
   return {
-    props: [retos, aprendizajes, portal, nota],
+    props: portal
+      ? [retos, aprendizajes, portal, nota]
+      : [retos, aprendizajes, nota],
     colliders: [footprint(-half + 0.9, room.z + 5.1, 0.7, 0.7)],
   }
 }

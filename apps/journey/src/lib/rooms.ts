@@ -72,11 +72,15 @@ const FUTURO_TEXTS: Record<Locale, RoomTexts> = {
       'Crecer a Staff / Principal Engineer sin dejar de construir.',
       'Llevar la IA (vibe coding, AI workflows) a la escala de un equipo.',
       'Multiplicar impacto via mentoria y liderazgo tecnico.',
+      'Lanzar productos propios: IA, indie/SaaS y problemas LATAM.',
+      'Abrir nuevos rubros: cada reto nuevo es una sala nueva.',
     ],
     aprendizajes: [
       'Arquitectura de sistemas distribuidos robustos y observables.',
       'Equipos que shippean con estandares y sin acoplamiento.',
       'Adopcion de IA productiva y segura como norma del equipo.',
+      'Open source, contenido tecnico publico y comunidad.',
+      'Siempre estudiante: datos, seguridad, cloud avanzado.',
     ],
     resena: [FUTURO_REPRESENTS.es],
     notebook: [
@@ -96,11 +100,15 @@ const FUTURO_TEXTS: Record<Locale, RoomTexts> = {
       'Grow into Staff / Principal Engineer while still building.',
       'Bring AI (vibe coding, AI workflows) to team scale.',
       'Multiply impact through mentorship and technical leadership.',
+      'Launch products of my own: AI, indie/SaaS and LATAM problems.',
+      'Open new sectors: every new challenge is a new room.',
     ],
     aprendizajes: [
       'Architecture of robust, observable distributed systems.',
       'Teams that ship with standards and without coupling.',
       'Productive, safe AI adoption as a team norm.',
+      'Open source, public technical content and community.',
+      'Always a student: data, security, advanced cloud.',
     ],
     resena: [FUTURO_REPRESENTS.en],
     notebook: [

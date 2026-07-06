@@ -76,7 +76,6 @@ export interface EngineState {
   zone: Zone
   /** Indice de la sala cuyo "antes" se visita (portal al pasado). */
   past: number | null
-  doorsOpen: Set<number>
   cameraMode: CameraMode
   /** Panel de UI abierto (los controles se congelan mientras != 'none'). */
   ui: UiPanel
@@ -106,7 +105,6 @@ export function createEngineState(
     locale,
     zone: { kind: 'room', index: 0 },
     past: null,
-    doorsOpen: new Set(),
     cameraMode: 'third',
     ui: 'none',
     ficha: null,

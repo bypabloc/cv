@@ -12,6 +12,7 @@ import {
   BoxGeometry,
   CanvasTexture,
   CircleGeometry,
+  DoubleSide,
   Group,
   Mesh,
   MeshBasicMaterial,
@@ -567,57 +568,97 @@ interface PortalRift {
  * irregular pegada plana al muro — SIN marco de puerta ni arco — con el
  * vortice-reloj girando adentro, motas orbitando en contrasentido, letrero
  * y marca oscura en el piso. ~2.9 m de alto. Compartida por el portal de
- * entrada (presente) y el de salida (pasado).
+ * entrada (presente), el de salida (pasado) y — sin letrero/marca, doble
+ * cara — el portal del vano a la siguiente sala.
  */
-function timeRift(accent: string, signText: string): PortalRift {
+function timeRift(
+  accent: string,
+  signText: string | null,
+  extra?: { scorch?: boolean; doubleSide?: boolean; motes?: boolean },
+): PortalRift {
+  const side = extra?.doubleSide ? DoubleSide : undefined
   const group = new Group()
   const rift = new Mesh(
     new PlaneGeometry(2.7, 3),
-    new MeshBasicMaterial({ map: riftTexture(accent), transparent: true }),
+    new MeshBasicMaterial({
+      map: riftTexture(accent),
+      transparent: true,
+      side,
+    }),
   )
   rift.position.set(0, 1.5, 0.04)
   rift.userData.noOutline = true
   const swirl = new Mesh(
     new CircleGeometry(0.8, 40),
-    new MeshBasicMaterial({ map: clockSwirlTexture(accent) }),
+    new MeshBasicMaterial({ map: clockSwirlTexture(accent), side }),
   )
   swirl.position.set(0, 1.5, 0.055)
   swirl.userData.noOutline = true
-  const motes = mergedBoxes(
-    Array.from({ length: 12 }, (_, i) => {
-      const angle = (i / 12) * Math.PI * 2
-      const radius = 0.92 + (i % 3) * 0.09
-      return {
-        w: 0.045,
-        h: 0.045,
-        d: 0.045,
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-        z: 0,
-      }
-    }),
-    basicMat(accent),
-  )
-  motes.position.set(0, 1.5, 0.07)
-  motes.userData.noOutline = true
-  const sign = label(signText, { size: 0.16, color: '#e8d8b0' })
-  sign.position.set(0, 2.88, 0.09)
-  const scorch = new Mesh(unitGeo().plane, toonMat('#15101c'))
-  scorch.rotation.x = -Math.PI / 2
-  scorch.scale.set(2.1, 1.3, 1)
-  scorch.position.set(0, 0.014, 0.5)
-  scorch.userData.noOutline = true
-  group.add(rift, swirl, motes, sign, scorch)
+  group.add(rift, swirl)
+  // motas orbitando (1 draw call). El portal del vano las omite: doble cara
+  // se ve desde ambas salas y sumaria draw calls sobre el presupuesto <100.
+  let motes: Mesh | null = null
+  if (extra?.motes !== false) {
+    motes = mergedBoxes(
+      Array.from({ length: 12 }, (_, i) => {
+        const angle = (i / 12) * Math.PI * 2
+        const radius = 0.92 + (i % 3) * 0.09
+        return {
+          w: 0.045,
+          h: 0.045,
+          d: 0.045,
+          x: Math.cos(angle) * radius,
+          y: Math.sin(angle) * radius,
+          z: 0,
+        }
+      }),
+      basicMat(accent),
+    )
+    motes.position.set(0, 1.5, 0.07)
+    motes.userData.noOutline = true
+    group.add(motes)
+  }
+  if (signText !== null) {
+    const sign = label(signText, { size: 0.16, color: '#e8d8b0' })
+    sign.position.set(0, 2.88, 0.09)
+    group.add(sign)
+  }
+  if (extra?.scorch !== false) {
+    const scorch = new Mesh(unitGeo().plane, toonMat('#15101c'))
+    scorch.rotation.x = -Math.PI / 2
+    scorch.scale.set(2.1, 1.3, 1)
+    scorch.position.set(0, 0.014, 0.5)
+    scorch.userData.noOutline = true
+    group.add(scorch)
+  }
   return {
     group,
     update: (t) => {
       // la espiral del reloj gira "hacia atras" y la grieta respira apenas
       swirl.rotation.z = -t * 1.15
-      motes.rotation.z = t * 0.5
+      if (motes) {
+        motes.rotation.z = t * 0.5
+      }
       const pulse = 1 + Math.sin(t * 2.1) * 0.015
       rift.scale.set(pulse, pulse, 1)
     },
   }
+}
+
+/**
+ * Grieta visual del portal a la SIGUIENTE sala (reemplaza a la puerta,
+ * sobre el vano del muro de salida). Sin letrero, marca de piso NI motas —
+ * 2 draw calls (rift + vortice-reloj); doble cara: se ve desde ambas salas,
+ * y al montarse 2 corredores por sala cada mesh cuenta contra el <100 (por
+ * eso se recortan las motas). El año destino viaja en el prompt del
+ * interactable, que registra world.
+ */
+export function nextPortalRift(accent: string): PortalRift {
+  return timeRift(accent, null, {
+    scorch: false,
+    doubleSide: true,
+    motes: false,
+  })
 }
 
 /** Grieta-portal al "antes" de la sala (teleporta a la sala espejo).

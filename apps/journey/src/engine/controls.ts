@@ -131,10 +131,10 @@ export function createControls(deps: ControlsDeps): Controls {
   // Movimiento + colision (identica en 3a persona y POV)
   // -------------------------------------------------------------------------
 
-  function closedDoorBoxes(): Box2[] {
-    return layout.doors
-      .filter((door) => !state.doorsOpen.has(door.corridorIndex))
-      .map(doorBlockerBox)
+  /** El vano SIEMPRE bloquea el paso: cruzar es por el portal (tecla E),
+   *  nunca caminando a traves. */
+  function vanoBlockerBoxes(): Box2[] {
+    return layout.doors.map(doorBlockerBox)
   }
 
   function applyMovement(dt: number): boolean {
@@ -159,7 +159,7 @@ export function createControls(deps: ControlsDeps): Controls {
     const step = WALK_SPEED * dt
     const candidates = [
       ...deps.walls,
-      ...closedDoorBoxes(),
+      ...vanoBlockerBoxes(),
       ...collectObstacles(state),
     ]
     // anti-atasco: una caja que YA contiene al jugador (un NPC que camino

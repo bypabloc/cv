@@ -187,7 +187,8 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     toggleTeleport: () => hud.toggleTeleport(),
     closeUi: () => hud.closeAll(),
     onTourStart: () => {
-      world.openAllDoors()
+      // el riel del tour setea la posicion directo (sin colision): cruza
+      // los vanos sin abrir nada — los portales no tienen estado abierto.
       hud.setTour(true)
     },
     onTourStop: () => hud.setTour(false),

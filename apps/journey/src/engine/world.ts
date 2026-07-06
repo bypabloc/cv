@@ -2,9 +2,9 @@
  * @module world (engine)
  * @description Zone manager del motor vanilla: manifest WORLD data-driven
  *   (chunk por sala via dynamic import), shells cacheados por zona
- *   (muros/piso/techo/puerta/año — baratos, viven hasta el exit), carga por
- *   ESCLUSA (al entrar al pasillo i se libera el contenido de la sala i y
- *   se precarga el de la i+1 con renderer.compile), fade si la precarga no
+ *   (muros/piso/techo/portal — baratos, viven hasta el exit), carga por
+ *   ESCLUSA (cruzar el portal libera el contenido de la sala anterior y
+ *   precarga la siguiente con renderer.compile), fade si la precarga no
  *   llego, teleport y portal al pasado. Regla de memoria: 1 solo content de
  *   sala vivo (AC-3/AC-4).
  */
@@ -23,8 +23,6 @@ import type { Box2 } from '../lib/collision'
 import {
   buildPastWallBoxes,
   buildWallBoxes,
-  DOOR_HEIGHT,
-  DOOR_WIDTH,
   type DoorLayout,
   type JourneyLayout,
   type PastRoomLayout,
@@ -35,6 +33,7 @@ import {
 import type { Locale, RoomDef, RoomId } from '../lib/rooms'
 import { sfx } from './audio'
 import type { OpenDialog } from './dialog'
+import { nextPortalRift } from './rooms/props'
 import {
   type EngineState,
   type FichaKind,
@@ -45,8 +44,6 @@ import {
 } from './state'
 import { type RoomTheme, THEMES, type ThemeZoneId } from './themes'
 import {
-  addOutline,
-  boxMesh,
   disposeDeep,
   inkFloorTexture,
   inkWallTexture,
@@ -54,11 +51,6 @@ import {
   toonMat,
   unitGeo,
 } from './toon'
-
-const wait = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    window.setTimeout(resolve, ms)
-  })
 
 // ---------------------------------------------------------------------------
 // Contratos (congelados para las factories de sala — plan seccion 8)
@@ -177,11 +169,9 @@ export interface World {
   init(): Promise<void>
   /** Reporta el cambio de zona (lo llama controls/tour). */
   setZone(zone: Zone): void
-  openDoor(index: number): void
-  openAllDoors(): void
-  /** Cruce automatico: abre la hoja, warp, teleport a la sala siguiente,
-   *  cierra la hoja y re-registra el interactable de la puerta. */
-  crossDoor(index: number): Promise<void>
+  /** Cruce por el portal del vano: warp, teleport a la sala siguiente y
+   *  re-registro del interactable (mismo patron que el portal al pasado). */
+  crossPortal(index: number): Promise<void>
   teleportToRoom(index: number): Promise<void>
   enterPast(roomIndex: number, spawn: { x: number; z: number }): Promise<void>
   exitPast(returnTo: { x: number; z: number }): Promise<void>
@@ -193,11 +183,6 @@ export interface World {
 
 type ShellKey = `room-${number}` | `corridor-${number}` | `past-${number}`
 
-interface DoorAnim {
-  index: number
-  leaf: Group
-}
-
 export function createWorld(deps: WorldDeps): World {
   const { scene, renderer, camera, rooms, layout, pastRooms, state } = deps
   const wallBoxes = buildWallBoxes(layout)
@@ -208,7 +193,10 @@ export function createWorld(deps: WorldDeps): World {
   const contents = new Map<number, RoomBuild>()
   const pending = new Map<number, Promise<void>>()
   const wantedContent = new Set<number>()
-  const doorAnims: DoorAnim[] = []
+  /** Update (vortice + hum) del portal de cada vano, por corridorIndex. */
+  const corridorRifts = new Map<number, (t: number) => void>()
+  /** Cruces en curso (guard de re-entrada del portal). */
+  const crossing = new Set<number>()
   const accentLights: PointLight[] = []
   let pastBuild: RoomBuild | null = null
   let disposed = false
@@ -350,41 +338,31 @@ export function createWorld(deps: WorldDeps): World {
     return group
   }
 
-  /** Puerta con bisagra: SOLO la hoja + manija (sin marco — los "pilares"
-   *  laterales se eliminaron; el hueco del muro es el marco). */
-  function buildDoor(door: DoorLayout): Group {
-    const group = new Group()
-    group.position.set(door.x, 0, door.z)
-    const leaf = new Group()
-    leaf.position.set(-DOOR_WIDTH / 2, 0, 0)
-    const panel = boxMesh(
-      DOOR_WIDTH - 0.02,
-      DOOR_HEIGHT - 0.02,
-      0.07,
-      toonMat('#6b543a'),
-    )
-    panel.position.set(DOOR_WIDTH / 2, DOOR_HEIGHT / 2, 0)
-    panel.castShadow = true
-    addOutline(panel, 1.03)
-    const handle = new Mesh(unitGeo().sphere, toonMat('#c9b037'))
-    handle.scale.setScalar(0.09)
-    handle.position.set(DOOR_WIDTH - 0.14, DOOR_HEIGHT / 2, 0.06)
-    leaf.add(panel, handle)
-    group.add(leaf)
-    doorAnims.push({ index: door.corridorIndex, leaf })
-    return group
+  /** Portal (grieta doble cara) que reemplaza a la puerta sobre el vano de
+   *  salida. El vortice/motas se animan via corridorRifts (world.update);
+   *  el prompt con el año destino lo pone registerGateInteractable. */
+  function buildPortal(door: DoorLayout, accent: string): Group {
+    const rift = nextPortalRift(accent)
+    rift.group.position.set(door.x, 0, door.z)
+    corridorRifts.set(door.corridorIndex, rift.update)
+    return rift.group
   }
 
-  /** Solo la puerta: el tramo entre salas ya no renderiza muros, piso,
+  /** Solo el portal: el tramo entre salas ya no renderiza muros, piso,
    *  techo, año ni luz de pasillo — el cruce es un teleport con warp
-   *  (crossDoor), no una caminata. El "marco" es el hueco del muro. */
+   *  (crossPortal), no una caminata. El vano queda bloqueado por colision;
+   *  el portal (grieta del muro de salida) es el unico paso. */
   function buildCorridorShell(index: number): Group {
     const group = new Group()
     const door = layout.doors[index]
     if (!door) {
       return group
     }
-    group.add(buildDoor(door))
+    // ponytail: acento de la sala DESTINO (viaje al futuro); el vano de 1.4
+    // recorta la grieta de 2.7 — si molesta el recorte, escalar el group.
+    const next = rooms[index + 1]
+    const accent = next ? THEMES[next.id].accent : THEMES.corridor.accent
+    group.add(buildPortal(door, accent))
     return group
   }
 
@@ -633,16 +611,22 @@ export function createWorld(deps: WorldDeps): World {
   // API
   // -------------------------------------------------------------------------
 
-  /** Se re-registra tras cada cruce (crossDoor cierra el ciclo completo). */
-  function registerDoorInteractable(door: DoorLayout): void {
+  /** Se re-registra tras cada cruce (crossPortal cierra el ciclo). El
+   *  prompt lleva el año de la sala DESTINO — el portal no tiene letrero.
+   *  Id `gate-` (no `portal-`, reservado al portal al pasado). */
+  function registerGateInteractable(door: DoorLayout): void {
+    const year = rooms[door.corridorIndex + 1]?.year ?? ''
     registerInteractable(state, {
-      id: `door-${door.corridorIndex}`,
+      id: `gate-${door.corridorIndex}`,
       x: door.x,
       z: door.z,
       radius: 2.1,
-      label: { es: 'Abrir la puerta', en: 'Open the door' },
+      label: {
+        es: year ? `Cruzar el portal a ${year}` : 'Cruzar el portal',
+        en: year ? `Cross the portal to ${year}` : 'Cross the portal',
+      },
       onActivate: () => {
-        void world.crossDoor(door.corridorIndex)
+        void world.crossPortal(door.corridorIndex)
       },
     })
   }
@@ -650,7 +634,7 @@ export function createWorld(deps: WorldDeps): World {
   const world: World = {
     async init() {
       for (const door of layout.doors) {
-        registerDoorInteractable(door)
+        registerGateInteractable(door)
       }
       state.zone = { kind: 'room', index: 0 }
       await applyZone(state.zone, false)
@@ -664,33 +648,16 @@ export function createWorld(deps: WorldDeps): World {
       void applyZone(zone, true)
     },
 
-    openDoor(index) {
-      if (state.doorsOpen.has(index)) {
-        return
-      }
-      state.doorsOpen.add(index)
-      unregisterInteractable(state, `door-${index}`)
-      sfx.play('door')
-    },
-
-    openAllDoors() {
-      for (const door of layout.doors) {
-        world.openDoor(door.corridorIndex)
-      }
-    },
-
-    async crossDoor(index) {
-      if (state.doorsOpen.has(index)) {
-        return // ya hay un cruce en curso (o el tour dejo la hoja abierta)
+    async crossPortal(index) {
+      if (crossing.has(index)) {
+        return // ya hay un cruce en curso
       }
       const target = layout.rooms[index + 1]
       if (!target) {
         return
       }
-      unregisterInteractable(state, `door-${index}`)
-      state.doorsOpen.add(index) // la hoja gira a abierta (lerp de update)
-      sfx.play('door')
-      await wait(320) // deja ver el giro antes del warp
+      crossing.add(index)
+      unregisterInteractable(state, `gate-${index}`)
       sfx.play('whoosh')
       await deps.fade(true, 'warp')
       deps.teleportPlayer(0, target.z - target.depth / 2 + 1.5)
@@ -698,11 +665,10 @@ export function createWorld(deps: WorldDeps): World {
       await applyZone(state.zone, false) // misma esclusa que teleportToRoom
       deps.onZoneApplied?.()
       await deps.fade(false, 'warp')
-      state.doorsOpen.delete(index) // la hoja vuelve a cerrada
-      sfx.play('door')
+      crossing.delete(index)
       const door = layout.doors[index]
       if (door) {
-        registerDoorInteractable(door) // vuelve a ser interactuable
+        registerGateInteractable(door) // vuelve a ser interactuable
       }
     },
 
@@ -822,11 +788,9 @@ export function createWorld(deps: WorldDeps): World {
     },
 
     update(t, dt) {
-      // puertas: lerp de la hoja hacia su estado
-      for (const anim of doorAnims) {
-        const target = state.doorsOpen.has(anim.index) ? -Math.PI * 0.52 : 0
-        anim.leaf.rotation.y +=
-          (target - anim.leaf.rotation.y) * Math.min(1, dt * 3.2)
+      // portales de vano: vortice-reloj + motas girando (grietas cacheadas)
+      for (const rift of corridorRifts.values()) {
+        rift(t)
       }
       // theme: lerp de background/fog (~400 ms)
       const k = 1 - Math.exp(-dt * 8)
@@ -862,7 +826,8 @@ export function createWorld(deps: WorldDeps): World {
         disposeDeep(group)
       }
       shells.clear()
-      doorAnims.length = 0
+      corridorRifts.clear()
+      crossing.clear()
       accentLights.length = 0
     },
   }

@@ -57,14 +57,18 @@ const PLAYER_SPEC: CharacterSpec = {
   faceSeed: 5,
 }
 
-/** Sala que suena segun la zona (en pasillo, la sala destino). */
-function audioRoomId(
+/** Perfil que suena: la sala segun la zona (en pasillo, la sala destino)
+ *  o el pasado que se visita (tratamiento sepia unificado). */
+function audioTarget(
   state: EngineState,
   rooms: readonly { id: RoomId }[],
-): RoomId {
+): { room: RoomId; past: boolean } {
+  if (state.past !== null) {
+    return { room: rooms[state.past]?.id ?? 'aula', past: true }
+  }
   const index =
     state.zone.kind === 'corridor' ? state.zone.index + 1 : state.zone.index
-  return rooms[index]?.id ?? 'aula'
+  return { room: rooms[index]?.id ?? 'aula', past: false }
 }
 
 export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
@@ -144,7 +148,8 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
         if (on) {
           sfx.unlock()
           sfx.setMuted(false)
-          ambientAudio.enable(audioRoomId(state, rooms))
+          const target = audioTarget(state, rooms)
+          ambientAudio.enable(target.room, target.past)
         } else {
           sfx.setMuted(true)
           ambientAudio.disable()
@@ -160,7 +165,8 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   function syncZoneUi(): void {
     hud.setZoneFromState()
     if (state.audioOn) {
-      ambientAudio.setRoom(audioRoomId(state, rooms))
+      const target = audioTarget(state, rooms)
+      ambientAudio.setRoom(target.room, target.past)
     }
   }
 
@@ -202,6 +208,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       openContact: () => hud.openContact(),
       openStory: (title, paragraphs) => hud.openStory(title, paragraphs),
       openDialog: (npc, onClose) => hud.openDialog(npc, onClose),
+      openShowcase: (ref) => hud.openShowcase(ref),
     },
     teleportPlayer: (x, z) => controls.teleport(x, z),
     shadowLight: tier === 'full' ? sun : undefined,
@@ -224,7 +231,8 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       return
     }
     sfx.unlock()
-    ambientAudio.enable(audioRoomId(state, rooms))
+    const target = audioTarget(state, rooms)
+    ambientAudio.enable(target.room, target.past)
   }
   window.addEventListener('pointerdown', unlockAudio)
   window.addEventListener('keydown', unlockAudio)
@@ -326,9 +334,16 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       __journeyDebug?: {
         player: { x: number; y: number; z: number }
         state: EngineState
+        info: WebGLRenderer['info']
+        scene: Scene
       }
     }
-    w.__journeyDebug = { player: player.group.position, state }
+    w.__journeyDebug = {
+      player: player.group.position,
+      state,
+      info: renderer.info,
+      scene,
+    }
   }
 
   return {

@@ -3,7 +3,6 @@
     "slug": "udemy",
     "institution": "Udemy — Desarrollo Web",
     "start": "2017",
-    "end": "Actual",
     "url": "https://udemy.com",
     "description": {
       "es": "Múltiples cursos de desarrollo web: JavaScript, React, Vue, Node, SQL y más, manteniendo la filosofía de aprender a mi ritmo.",
@@ -13,13 +12,13 @@
   {
     "slug": "uptyab",
     "institution": "Universidad Politécnica Territorial de Yaracuy Arístides Bastidas (UPTYAB)",
-    "start": "2011",
-    "end": "2016",
-    "url": "http://www.uptyab.edu.ve/web/index.php",
     "degree": {
       "es": "Ingeniería Informática",
       "en": "Informatics Engineering"
     },
+    "start": "2011",
+    "end": "2016",
+    "url": "http://www.uptyab.edu.ve/web/index.php",
     "description": {
       "es": "Adquirí conocimientos en programación, bases de datos, redes, sistemas operativos y arquitectura de software.",
       "en": "Acquired knowledge in programming, databases, networks, operating systems and software architecture."
@@ -29,7 +28,6 @@
     "slug": "youtube-autodidacta",
     "institution": "YouTube — Desarrollo Web (autodidacta)",
     "start": "2012",
-    "end": "Actual",
     "url": "https://youtube.com",
     "description": {
       "es": "Desde 2013 accedo a material gratuito y de paga en línea; no paro de aprender.",

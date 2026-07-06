@@ -16,6 +16,8 @@ import {
   type FichaKind,
   type InteractableBubble,
   isUiOpen,
+  type ShowcaseRef,
+  type ShowcaseView,
 } from './state'
 import { PAST_CAPTIONS } from './themes'
 
@@ -49,6 +51,8 @@ const STRINGS = {
     contactTitle: 'Hablemos',
     contactBody: 'Disponible para roles de arquitectura y liderazgo tecnico.',
     email: 'Email',
+    showcaseNext: 'Siguiente demo (E)',
+    showcaseHint: 'E — siguiente demo · Esc — cerrar',
   },
   en: {
     exit: 'View 2D CV',
@@ -78,6 +82,8 @@ const STRINGS = {
     contactTitle: "Let's talk",
     contactBody: 'Open to architecture and tech-leadership roles.',
     email: 'Email',
+    showcaseNext: 'Next demo (E)',
+    showcaseHint: 'E — next demo · Esc — close',
   },
 } as const
 
@@ -123,6 +129,17 @@ const CSS = `
   color: var(--color-primary, #4f6ef7); }
 .jny-dialog-text { margin: 0 0 0.7rem; line-height: 1.5; }
 .jny-dialog-options { display: flex; flex-direction: column; gap: 0.45rem; }
+.jny-showcase-brand { margin: 0 0 0.6rem; padding-left: 0.6rem; font-weight: 700;
+  font-size: 0.95rem; border-left: 4px solid var(--jny-brand, currentColor); }
+.jny-showcase-body { font-size: 0.8rem; line-height: 1.45; }
+.jny-showcase-body input { width: 100%; box-sizing: border-box; font: inherit;
+  color: inherit; background: color-mix(in srgb, currentColor 8%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 6px; padding: 0.35rem 0.55rem; margin-bottom: 0.55rem; }
+.jny-showcase-body table { width: 100%; border-collapse: collapse; }
+.jny-showcase-body th, .jny-showcase-body td { text-align: left;
+  padding: 0.3rem 0.45rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
 .jny-bubble { position: absolute; transform: translate(-50%, calc(-100% - 14px));
   max-width: 240px; background: #f7f4ea; color: #1c1822;
   border: 2px solid #1c1822; border-radius: 14px; padding: 0.4rem 0.65rem;
@@ -212,6 +229,8 @@ export interface Hud {
   openStory(title: string, paragraphs: readonly string[]): void
   /** Panel de conversacion con un NPC (arbol de opciones 1-9/click). */
   openDialog(npc: NpcDialog, onClose?: () => void): void
+  /** Panel HTML operable del showcase de software (E/boton cicla demos). */
+  openShowcase(ref: ShowcaseRef): void
   /** Burbuja de habla suelta del NPC activo (null la oculta). */
   setBubble(bubble: InteractableBubble | null): void
   /** Reposiciona la burbuja proyectando su anclaje 3D (cada frame). */
@@ -353,6 +372,10 @@ export function createHud(deps: HudDeps): Hud {
   const bubble = el('div', 'jny-bubble')
   bubble.setAttribute('aria-hidden', 'true')
 
+  // panel HTML operable del showcase de software (mockup del sistema)
+  const showcase = el('aside', 'jny-panel jny-aside')
+  showcase.style.display = 'none'
+
   // contenido estatico del panel de contacto
   {
     const title = el('h2', '', t.contactTitle)
@@ -443,6 +466,7 @@ export function createHud(deps: HudDeps): Hud {
     contact,
     teleport,
     dialog,
+    showcase,
     bubble,
     fadeEl,
     dreamEl,
@@ -456,6 +480,50 @@ export function createHud(deps: HudDeps): Hud {
   let dialogOnClose: (() => void) | null = null
   let dialogOptions: HTMLButtonElement[] = []
   let bubbleSpec: InteractableBubble | null = null
+  let showcaseRef: ShowcaseRef | null = null
+
+  /** Renderiza la demo activa del showcase (header + mockup + acciones). */
+  function renderShowcase(view: ShowcaseView): void {
+    showcase.replaceChildren()
+    showcase.setAttribute('aria-label', view.title)
+    const head = el(
+      'p',
+      'jny-showcase-brand',
+      `${view.title} · ${view.position}`,
+    )
+    head.style.setProperty('--jny-brand', view.brand)
+    const body = el('div', 'jny-showcase-body')
+    // markup confiable definido en el codigo de cada sala (nunca user input)
+    body.innerHTML = view.html
+    const next = button('jny-link jny-btn', t.showcaseNext, () => {
+      if (showcaseRef) {
+        sfx.play('blip')
+        renderShowcase(showcaseRef.next())
+      }
+    })
+    next.style.marginTop = '0.8rem'
+    const hint = el('p', '', t.showcaseHint)
+    hint.style.cssText = 'margin:0.6rem 0 0;font-size:0.66rem;opacity:0.55'
+    showcase.append(
+      head,
+      body,
+      next,
+      button('jny-close jny-btn', t.close, () => hud.closeAll()),
+      hint,
+    )
+  }
+
+  /** Tecla E con el showcase abierto: cicla a la siguiente demo. */
+  function onShowcaseKey(event: KeyboardEvent): void {
+    if (state.ui !== 'showcase' || showcaseRef === null) {
+      return
+    }
+    if (event.code === 'KeyE') {
+      sfx.play('blip')
+      renderShowcase(showcaseRef.next())
+    }
+  }
+  window.addEventListener('keydown', onShowcaseKey)
 
   /** Renderiza un nodo del arbol; las opciones avanzan o cierran. */
   function renderDialogNode(npc: NpcDialog, id: string): void {
@@ -656,6 +724,15 @@ export function createHud(deps: HudDeps): Hud {
       refreshOverlayState()
     },
 
+    openShowcase(ref) {
+      hud.closeAll()
+      state.ui = 'showcase'
+      showcaseRef = ref
+      renderShowcase(ref.view())
+      showcase.style.display = ''
+      refreshOverlayState()
+    },
+
     setBubble(spec) {
       bubbleSpec = spec
       const line = spec?.lines[Math.floor(Math.random() * spec.lines.length)]
@@ -706,6 +783,8 @@ export function createHud(deps: HudDeps): Hud {
       contact.style.display = 'none'
       teleport.style.display = 'none'
       dialog.style.display = 'none'
+      showcase.style.display = 'none'
+      showcaseRef = null
       dialogOptions = []
       const done = dialogOnClose
       dialogOnClose = null
@@ -754,6 +833,7 @@ export function createHud(deps: HudDeps): Hud {
 
     dispose() {
       window.removeEventListener('keydown', onDialogKey)
+      window.removeEventListener('keydown', onShowcaseKey)
       root.remove()
     },
   }

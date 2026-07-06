@@ -71,7 +71,7 @@ function hashSeed(text: string): number {
   return hash >>> 0
 }
 
-type DrawFn = (ctx: CanvasRenderingContext2D, size: number) => void
+export type DrawFn = (ctx: CanvasRenderingContext2D, size: number) => void
 
 export function makeCanvasTexture(size: number, draw: DrawFn): CanvasTexture {
   const canvas = document.createElement('canvas')

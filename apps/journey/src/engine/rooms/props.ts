@@ -3,27 +3,43 @@
  * @description Props procedurales compartidos entre salas manga-ink:
  *   escritorio, monitor (estatico e intercambiable), pizarra de ficha con
  *   titulo + tiza, GRIETA TEMPORAL al pasado (rasgadura con vortice-reloj),
- *   pedestal con el cuaderno-reseña FLOTANTE de la etapa y pila de
- *   papeles. Todo primitivas del pool toon — cero .glb, cero red.
+ *   pedestal con el cuaderno-reseña FLOTANTE de la etapa, pila de papeles
+ *   y los 4 helpers del CANON de sala (plan journey-salas-estandar):
+ *   officeLayout, npcCoworkers, wallArt y softwareShowcase. Todo
+ *   primitivas del pool toon — cero .glb, cero red.
  */
 import {
-  type CanvasTexture,
+  CanvasTexture,
   CircleGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
   PointLight,
+  SRGBColorSpace,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
 import type { Locale, RoomTexts } from '../../lib/rooms'
 import { sfx } from '../audio'
-import type { FichaKind, Interactable } from '../state'
+import { type CharacterSpec, makeNpc, type NpcHandle } from '../character'
+import {
+  type NpcDialog,
+  type NpcTalk,
+  npcTalk,
+  type OpenDialog,
+} from '../dialog'
+import type {
+  FichaKind,
+  Interactable,
+  ShowcaseRef,
+  ShowcaseView,
+} from '../state'
 import type { RoomTheme } from '../themes'
 import {
   basicMat,
   boxMesh,
+  type DrawFn,
   label,
   MANGA_FONT,
   MONO_FONT,
@@ -838,6 +854,8 @@ export function infoKit(opts: {
   texts: RoomTexts
   /** Luz del cuaderno flotante (solo tier full). */
   withLight: boolean
+  /** Sala sin pasado (ej. `futuro`): false omite la grieta. Default true. */
+  withPortal?: boolean
   onFicha(roomIndex: number, kind: FichaKind): void
   onEnterPast(roomIndex: number, spawn: { x: number; z: number }): void
   onStory(title: string, paragraphs: readonly string[]): void
@@ -864,15 +882,18 @@ export function infoKit(opts: {
     preview: texts.aprendizajes,
     onOpen: opts.onFicha,
   })
-  const portal = pastPortal({
-    room,
-    position: [half - 0.1, 0, room.z + 5.2],
-    rotationY: -Math.PI / 2,
-    accent: opts.theme.accent,
-    year: opts.year,
-    locale: opts.locale,
-    onEnter: opts.onEnterPast,
-  })
+  const portal =
+    opts.withPortal === false
+      ? null
+      : pastPortal({
+          room,
+          position: [half - 0.1, 0, room.z + 5.2],
+          rotationY: -Math.PI / 2,
+          accent: opts.theme.accent,
+          year: opts.year,
+          locale: opts.locale,
+          onEnter: opts.onEnterPast,
+        })
   const nota = lecternNotebook({
     roomIndex: room.index,
     position: [-half + 0.9, 0, room.z + 5.1],
@@ -884,7 +905,9 @@ export function infoKit(opts: {
     onOpen: opts.onStory,
   })
   return {
-    props: [retos, aprendizajes, portal, nota],
+    props: portal
+      ? [retos, aprendizajes, portal, nota]
+      : [retos, aprendizajes, nota],
     colliders: [footprint(-half + 0.9, room.z + 5.1, 0.7, 0.7)],
   }
 }
@@ -912,4 +935,395 @@ export function paperStack(opts: {
   stack.userData.noOutline = true
   group.add(stack)
   return group
+}
+
+// ---------------------------------------------------------------------------
+// CANON DE SALA (plan journey-salas-estandar): officeLayout, npcCoworkers,
+// wallArt y softwareShowcase — los 4 helpers que replican todas las salas.
+// Ver docs/specs/journey-salas-estandar/02-el-canon-de-sala.md.
+// ---------------------------------------------------------------------------
+
+export interface OfficeLayout {
+  group: Group
+  colliders: Box2[]
+  /** ScreenSwap de las laptops togglables (puestos SIN NPC), para E. */
+  toggles: { spot: number; screen: ScreenSwap }[]
+  /** Libera TODAS las variantes de pantalla (disposeDeep solo ve la activa). */
+  dispose(): void
+}
+
+/**
+ * Filas de oficina fusionadas: escritorios + sillas en 1 lote outlined
+ * (2 draw calls) + una laptop por puesto. Las laptops de los puestos con
+ * NPC (poweredSpots) arrancan ENCENDIDAS; las libres quedan en `toggles`
+ * para que la sala las haga encendibles con E (patron del aula).
+ */
+export function officeLayout(opts: {
+  /** Centros [x,z] de cada puesto; la silla queda en z-0.55 mirando +Z. */
+  spots: readonly (readonly [number, number])[]
+  /** Color del mobiliario (tono del rubro). */
+  color: string
+  /** Puestos (indice en spots) con laptop ENCENDIDA (NPC sentado). */
+  poweredSpots?: ReadonlySet<number>
+  /** Tema para las pantallas de las laptops encendidas. */
+  screenTheme: Pick<RoomTheme, 'screenBg' | 'screenFg' | 'ink'>
+  /** Contenido de pantalla por puesto (loop de codigo del rubro). */
+  screenFor?: (index: number) => { title: string; lines: readonly string[] }
+}): OfficeLayout {
+  const powered = opts.poweredSpots ?? new Set<number>()
+  const group = new Group()
+  const colliders: Box2[] = []
+  const toggles: { spot: number; screen: ScreenSwap }[] = []
+  const screens: ScreenSwap[] = []
+  // silla de un puesto mirando al frente (+Z): asiento + respaldo + patas
+  const chairParts = (x: number, cz: number) => [
+    { w: 0.42, h: 0.05, d: 0.42, x, y: 0.44, z: cz },
+    { w: 0.42, h: 0.5, d: 0.05, x, y: 0.72, z: cz - 0.2 },
+    { w: 0.05, h: 0.44, d: 0.05, x: x - 0.17, y: 0.22, z: cz - 0.1 },
+    { w: 0.05, h: 0.44, d: 0.05, x: x + 0.17, y: 0.22, z: cz - 0.1 },
+  ]
+  group.add(
+    outlinedMergedBoxes(
+      opts.spots.flatMap(([x, z]) => [
+        { w: 1.1, h: 0.05, d: 0.6, x, y: 0.72, z },
+        { w: 0.06, h: 0.72, d: 0.55, x: x - 0.5, y: 0.36, z },
+        { w: 0.06, h: 0.72, d: 0.55, x: x + 0.5, y: 0.36, z },
+        ...chairParts(x, z - 0.55),
+      ]),
+      toonMat(opts.color),
+      { inflate: 0.035, castShadow: true },
+    ),
+  )
+  const offVariant = {
+    lines: [],
+    theme: {
+      screenBg: '#08080c',
+      screenFg: '#22301c',
+      ink: opts.screenTheme.ink,
+    },
+    dot: '#b23a3a',
+  }
+  opts.spots.forEach(([x, z], index) => {
+    colliders.push(footprint(x, z, 1.3, 0.8), footprint(x, z - 0.55, 0.5, 0.5))
+    const code = opts.screenFor?.(index) ?? { title: '', lines: [] }
+    const { group: monitorGroup, screen } = switchableMonitor({
+      position: [x, 0.72, z + 0.05],
+      rotationY: Math.PI,
+      width: 0.46,
+      variants: {
+        off: offVariant,
+        on: {
+          title: code.title,
+          lines: code.lines,
+          theme: opts.screenTheme,
+          dot: '#3f9d63',
+        },
+      },
+      initial: powered.has(index) ? 'on' : 'off',
+    })
+    group.add(monitorGroup)
+    screens.push(screen)
+    if (!powered.has(index)) {
+      toggles.push({ spot: index, screen })
+    }
+  })
+  return {
+    group,
+    colliders,
+    toggles,
+    dispose: () => {
+      for (const screen of screens) {
+        screen.dispose()
+      }
+    },
+  }
+}
+
+/** Enfoque narrativo del NPC (estandar de 2 enfoques, decision 3). */
+export type CoworkerRole = 'coworker' | 'staff' | 'boss'
+
+export interface CoworkerDef {
+  key: string
+  /** Enfoque: compañero de desarrollo / personal del sitio / jefe. */
+  role: CoworkerRole
+  spec: CharacterSpec
+  position: readonly [number, number, number]
+  rotationY?: number
+  pose?: 'sit' | 'kneel'
+  path?: readonly (readonly [number, number])[]
+  speed?: number
+  dialog: NpcDialog
+}
+
+/**
+ * NPCs conversables de la sala con los 2 enfoques del estandar:
+ * encapsula el patron makeNpc + npcTalk. En DEV valida el mix
+ * (>=2 'coworker' + >=2 'staff' — AC-5) salvo `validateMix: false`
+ * (el aula esta exenta del mix).
+ */
+export function npcCoworkers(opts: {
+  roomIndex: number
+  npcs: readonly CoworkerDef[]
+  openDialog: OpenDialog
+  /** Valida el mix del estandar en DEV (default true). */
+  validateMix?: boolean
+}): { npcs: NpcHandle[]; talks: NpcTalk[] } {
+  if (import.meta.env.DEV && opts.validateMix !== false) {
+    const count = (role: CoworkerRole): number =>
+      opts.npcs.filter((npc) => npc.role === role).length
+    if (count('coworker') < 2 || count('staff') < 2) {
+      console.error(
+        `[journey] npcCoworkers sala ${opts.roomIndex}: el estandar pide ` +
+          ">=2 'coworker' + >=2 'staff' (AC-5)",
+      )
+    }
+  }
+  const npcs: NpcHandle[] = []
+  const talks: NpcTalk[] = []
+  for (const def of opts.npcs) {
+    const npc = makeNpc({
+      ...def.spec,
+      position: def.position,
+      rotationY: def.rotationY,
+      pose: def.pose,
+      path: def.path,
+      speed: def.speed,
+    })
+    npcs.push(npc)
+    talks.push(
+      npcTalk({
+        id: `talk-${opts.roomIndex}-${def.key}`,
+        npc,
+        dialog: def.dialog,
+        openDialog: opts.openDialog,
+      }),
+    )
+  }
+  return { npcs, talks }
+}
+
+export interface WallFrame {
+  key: string
+  position: readonly [number, number, number]
+  rotationY?: number
+  /** Ancho x alto de la lamina (default 1.1 x 0.8). */
+  size?: readonly [number, number]
+  /** Lamina Canvas del rubro (tinta plana, estilo manga). */
+  draw: DrawFn
+  /** Si es inspeccionable: E abre esta ficha en el panel DOM. */
+  ficha?: {
+    title: Record<Locale, string>
+    paragraphs: Record<Locale, readonly string[]>
+  }
+}
+
+const FRAME_LABEL = {
+  es: 'Mirar el cuadro',
+  en: 'Look at the picture',
+} as const
+
+/**
+ * Cuadros de rubro en la pared: laminas Canvas con marco (trim del theme).
+ * Los marcos de TODOS los cuadros se fusionan en 1 mesh; cada lamina es 1
+ * plane con su textura. 1-2 por sala llevan `ficha` (E abre panel — AC-7).
+ */
+export function wallArt(opts: {
+  roomIndex: number
+  theme: Pick<RoomTheme, 'trim' | 'ink' | 'accent'>
+  locale: Locale
+  frames: readonly WallFrame[]
+  onFicha(title: string, paragraphs: readonly string[]): void
+}): { props: PropHandle[]; colliders: Box2[] } {
+  const trim = opts.theme.trim ?? opts.theme.accent
+  const marcoGroup = new Group()
+  marcoGroup.add(
+    mergedBoxes(
+      opts.frames.map((frame) => {
+        const [w, h] = frame.size ?? [1.1, 0.8]
+        const rotY = frame.rotationY ?? 0
+        return {
+          w: w + 0.1,
+          h: h + 0.1,
+          d: 0.05,
+          x: frame.position[0] - Math.sin(rotY) * 0.035,
+          y: frame.position[1],
+          z: frame.position[2] - Math.cos(rotY) * 0.035,
+          rotY,
+        }
+      }),
+      toonMat(trim),
+    ),
+  )
+  const props: PropHandle[] = [{ group: marcoGroup }]
+  for (const frame of opts.frames) {
+    const [w, h] = frame.size ?? [1.1, 0.8]
+    const art = new Mesh(
+      new PlaneGeometry(w, h),
+      new MeshBasicMaterial({ map: makeCanvasTexture(256, frame.draw) }),
+    )
+    art.position.set(frame.position[0], frame.position[1], frame.position[2])
+    art.rotation.y = frame.rotationY ?? 0
+    art.userData.noOutline = true
+    const group = new Group()
+    group.add(art)
+    const handle: PropHandle = { group }
+    const ficha = frame.ficha
+    if (ficha) {
+      handle.interactable = {
+        id: `cuadro-${opts.roomIndex}-${frame.key}`,
+        x: frame.position[0],
+        z: frame.position[2],
+        radius: 2,
+        label: FRAME_LABEL,
+        onActivate: () =>
+          opts.onFicha(ficha.title[opts.locale], ficha.paragraphs[opts.locale]),
+      }
+    }
+    props.push(handle)
+  }
+  return { props, colliders: [] }
+}
+
+export interface ShowcaseDemo {
+  key: string
+  /** Titulo mostrado en el monitor y en el panel. */
+  title: Record<Locale, string>
+  /** Loop Canvas ambiente del monitor (t en segundos, ~7 fps). */
+  draw(ctx: CanvasRenderingContext2D, size: number, t: number): void
+  /** Panel HTML operable (se abre al pulsar E cerca). */
+  panel: {
+    /** Color de branding del sistema real. */
+    brand: string
+    /** Markup del mockup (buscador, tabla, cards...), por locale. */
+    html: Record<Locale, string>
+  }
+}
+
+const SHOWCASE_LABEL = {
+  es: 'Ver la demo del sistema',
+  en: 'View the system demo',
+} as const
+
+/**
+ * Showcase de software junto a la puerta (AC-6): totem con monitor Canvas
+ * en loop (demo activa, ~7 fps) + panel HTML operable via `openShowcase`.
+ * E (o el boton del panel) cicla a la siguiente demo — el monitor 3D y el
+ * panel se actualizan juntos. Todas las salas presentes menos el aula.
+ */
+export function softwareShowcase(opts: {
+  roomIndex: number
+  /** Distingue multiples showcases en una sala (ej. las 2 areas). */
+  key?: string
+  position: readonly [number, number, number]
+  rotationY?: number
+  theme: Pick<RoomTheme, 'screenBg' | 'screenFg' | 'ink' | 'accent' | 'trim'>
+  locale: Locale
+  /** Demos del sistema real; E cicla a la siguiente. */
+  demos: readonly ShowcaseDemo[]
+  /** Abre el panel HTML del HUD (UI action `openShowcase`). */
+  openShowcase(ref: ShowcaseRef): void
+}): PropHandle {
+  const group = new Group()
+  group.position.set(opts.position[0], opts.position[1], opts.position[2])
+  group.rotation.y = opts.rotationY ?? 0
+  // totem: base + mastil + marco de la pantalla grande
+  const stand = mergedBoxes(
+    [
+      { w: 0.7, h: 0.1, d: 0.5, x: 0, y: 0.05, z: 0 },
+      { w: 0.12, h: 1, d: 0.12, x: 0, y: 0.55, z: 0 },
+      { w: 1.34, h: 0.88, d: 0.07, x: 0, y: 1.5, z: -0.02 },
+    ],
+    toonMat('#15151a'),
+  )
+  stand.castShadow = true
+  // pantalla canvas animada: la demo activa redibuja ~7 fps
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const maybeCtx = canvas.getContext('2d')
+  if (!maybeCtx) {
+    throw new Error('softwareShowcase: canvas 2d no disponible')
+  }
+  const context2d = maybeCtx
+  const texture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  const screen = new Mesh(
+    new PlaneGeometry(1.24, 0.78),
+    new MeshBasicMaterial({ map: texture }),
+  )
+  screen.position.set(0, 1.5, 0.02)
+  screen.userData.noOutline = true
+  group.add(stand, screen)
+
+  let active = 0
+  let needsDraw = true
+  let last = -1
+
+  function demoAt(index: number): ShowcaseDemo {
+    const demo = opts.demos[index]
+    if (!demo) {
+      throw new Error(`softwareShowcase: demo ${index} fuera de rango`)
+    }
+    return demo
+  }
+
+  function drawScreen(t: number): void {
+    const demo = demoAt(active)
+    demo.draw(context2d, size, t)
+    // barra inferior: titulo + posicion en el ciclo + hint [E]
+    context2d.fillStyle = 'rgba(10,10,14,0.85)'
+    context2d.fillRect(0, size - 34, size, 34)
+    context2d.textBaseline = 'alphabetic'
+    context2d.textAlign = 'left'
+    context2d.fillStyle = opts.theme.screenFg
+    context2d.font = `bold 17px ${MANGA_FONT}`
+    context2d.fillText(demo.title[opts.locale].slice(0, 22), 10, size - 12)
+    context2d.textAlign = 'right'
+    context2d.fillText(
+      `${active + 1}/${opts.demos.length} · [E]`,
+      size - 10,
+      size - 12,
+    )
+    context2d.textAlign = 'left'
+    texture.needsUpdate = true
+  }
+
+  function view(): ShowcaseView {
+    const demo = demoAt(active)
+    return {
+      title: demo.title[opts.locale],
+      brand: demo.panel.brand,
+      html: demo.panel.html[opts.locale],
+      position: `${active + 1}/${opts.demos.length}`,
+    }
+  }
+
+  const ref: ShowcaseRef = {
+    view,
+    next: () => {
+      active = (active + 1) % opts.demos.length
+      needsDraw = true
+      return view()
+    },
+  }
+
+  return {
+    group,
+    interactable: {
+      id: `showcase-${opts.roomIndex}-${opts.key ?? 'main'}`,
+      x: opts.position[0],
+      z: opts.position[2],
+      radius: 2.2,
+      label: SHOWCASE_LABEL,
+      onActivate: () => opts.openShowcase(ref),
+    },
+    update: (t) => {
+      if (needsDraw || t - last > 0.14) {
+        needsDraw = false
+        last = t
+        drawScreen(t)
+      }
+    },
+  }
 }

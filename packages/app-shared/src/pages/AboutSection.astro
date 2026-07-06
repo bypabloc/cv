@@ -39,7 +39,7 @@ const pubs = filterByNiche(publications, niche)
           {e.degree && <> — {e.degree[locale]}</>}
           <span class="text-mono text-muted">
             {' '}
-            · {e.start} → {e.end}
+            · {e.start} → {e.end ?? (locale === 'es' ? 'Actual' : 'Present')}
           </span>
           <p class="text-body text-muted">{e.description[locale]}</p>
         </li>

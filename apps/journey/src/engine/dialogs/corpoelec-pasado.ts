@@ -4,14 +4,17 @@
  *   antes de que llegue el pasante. Oficina de planillas en papel: 38
  *   carpetas, busquedas de 20+ minutos, copias duplicadas y desincronizadas
  *   entre las sedes de Yaracuy, Carabobo y Lara, y el rumor de que viene un
- *   pasante de la universidad a digitalizarlo todo (esperanza de una,
- *   escepticismo comico del otro).
+ *   pasante de la universidad a digitalizarlo todo. 3 NPCs frustrados
+ *   (canon, informe 08): Dubraska Piña cargando planillas (esperanza),
+ *   Wilmer Colina hurgando carpetas por un radio sin registro, y el
+ *   oficinista que transcribe seriales (escepticismo comico). Dubraska y
+ *   Wilmer reaparecen en el presente: el arco antes/despues del sistema.
  */
 import { defineDialog, type NpcDialog } from '../dialog'
 
 export const CORPOELEC_PASADO_DIALOGS = {
-  'oficinista-planillas': defineDialog({
-    name: { es: 'Oficinista de planillas', en: 'Paperwork clerk' },
+  dubraska: defineDialog({
+    name: { es: 'Dubraska Piña', en: 'Dubraska Piña' },
     chatter: [
       {
         es: 'Estas pilas no se cargan solas.',
@@ -1788,6 +1791,298 @@ export const CORPOELEC_PASADO_DIALOGS = {
         options: [
           {
             label: { es: 'Sabia decision', en: 'Wise decision' },
+            next: null,
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+    },
+  }),
+
+  wilmer: defineDialog({
+    name: { es: 'Wilmer Colina', en: 'Wilmer Colina' },
+    chatter: [
+      {
+        es: 'Carpeta veinte... esto ANTES estaba aqui.',
+        en: 'Folder twenty... this USED to be here.',
+      },
+      {
+        es: '¿Alguien vio el radio RAD-014? Nadie. Como siempre.',
+        en: 'Anyone seen radio RAD-014? Nobody. As usual.',
+      },
+      {
+        es: 'Treinta años y el papel todavia me gana.',
+        en: 'Thirty years in and paper still beats me.',
+      },
+      {
+        es: 'En mi cabeza esta todo. El problema es sacarlo.',
+        en: 'It is all in my head. Getting it out is the problem.',
+      },
+    ],
+    start: 'hub',
+    nodes: {
+      hub: {
+        text: {
+          es:
+            'Espera, que ando buscando un equipo... hoja por hoja, ' +
+            'como todos los dias. Soy Wilmer, el del almacen. Treinta ' +
+            'años cuidando repuestos que el papel pierde. ¿Que quieres?',
+          en:
+            'Hold on, I am looking for a unit... page by page, like ' +
+            'every day. I am Wilmer, the warehouse keeper. Thirty ' +
+            'years minding spares that paper keeps losing. What do ' +
+            'you want?',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Que buscas ahora?',
+              en: 'What are you looking for now?',
+            },
+            next: 'radio-1',
+          },
+          {
+            label: {
+              es: '¿Siempre es asi de lento?',
+              en: 'Is it always this slow?',
+            },
+            next: 'carpetas-1',
+          },
+          {
+            label: {
+              es: 'Dicen que viene un pasante',
+              en: 'They say an intern is coming',
+            },
+            next: 'rumor-1',
+          },
+          {
+            label: { es: 'Nada, siga buscando', en: 'Nothing, keep looking' },
+            next: null,
+          },
+        ],
+      },
+      'radio-1': {
+        text: {
+          es:
+            'Un radio. Una cuadrilla se lo llevo hace semanas y no hay ' +
+            'papel que diga quien, ni cuando, ni si volvio. Si aparece ' +
+            'dañado, tampoco quedara registro. El equipo muere en ' +
+            'silencio y la culpa cae... adivina: en el almacenista.',
+          en:
+            'A radio. A crew took it weeks ago and there is no paper ' +
+            'saying who, or when, or whether it came back. If it turns ' +
+            'up broken, there will be no record of that either. The ' +
+            'unit dies in silence and the blame lands... guess where: ' +
+            'on the warehouse keeper.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y como lo va a encontrar?',
+              en: 'How will you find it?',
+            },
+            next: 'radio-2',
+          },
+          {
+            label: {
+              es: '¿Eso pasa seguido?',
+              en: 'Does that happen often?',
+            },
+            next: 'radio-3',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'radio-2': {
+        text: {
+          es:
+            'Preguntando cuadrilla por cuadrilla, con el walkie en la ' +
+            'mano y la paciencia en el suelo. Lo que yo pido es poco: ' +
+            'saber QUIEN lo tomo y A QUIEN se le daño. Un cuaderno que ' +
+            'no mienta. ¿Tan dificil es?',
+          en:
+            'Asking crew by crew, walkie in hand and patience on the ' +
+            'floor. What I ask is simple: to know WHO took it and on ' +
+            'WHOSE watch it broke. A ledger that does not lie. Is that ' +
+            'so much?',
+        },
+        options: [
+          {
+            label: {
+              es: 'Alguien deberia construir eso',
+              en: 'Somebody should build that',
+            },
+            next: 'rumor-1',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'radio-3': {
+        text: {
+          es:
+            'Cada semana. Radios, telefonos, hasta una laptop de las ' +
+            'gruesas. Salen del almacen con una firma ilegible y ' +
+            'vuelven cuando quieren... o no vuelven. Y las planillas, ' +
+            'tan tranquilas, diciendo que todo esta "operativo".',
+          en:
+            'Every week. Radios, phones, even one of the thick ' +
+            'laptops. They leave the warehouse under an unreadable ' +
+            'signature and come back whenever they please... or not at ' +
+            'all. And the forms sit there calmly claiming everything ' +
+            'is "operational".',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y nadie arregla eso?',
+              en: 'And nobody fixes that?',
+            },
+            next: 'radio-2',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'carpetas-1': {
+        text: {
+          es:
+            'Lento es poco. Buscar un equipo en estas carpetas me toma ' +
+            'minutos largos, y a veces ni aparece: se traspapelo, esta ' +
+            'en otra sede o nunca existio. Treinta y ocho carpetas y ' +
+            'ni una se pone de acuerdo con la otra.',
+          en:
+            'Slow is generous. Finding a unit in these folders takes ' +
+            'me long minutes, and sometimes it never shows up: ' +
+            'misfiled, at another site, or it never existed. ' +
+            'Thirty-eight folders and not one agrees with another.',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y su memoria no basta?',
+              en: 'Is your memory not enough?',
+            },
+            next: 'carpetas-2',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'carpetas-2': {
+        text: {
+          es:
+            'Mi cabeza sabe donde esta casi todo... pero yo no estoy ' +
+            'en tres estados a la vez, ni pienso vivir para siempre. ' +
+            'El dia que yo falte, este almacen queda ciego. Eso no se ' +
+            'lo digo a nadie, asi que guardamelo.',
+          en:
+            'My head knows where almost everything is... but I am not ' +
+            'in three states at once, and I do not plan to live ' +
+            'forever. The day I am gone, this warehouse goes blind. I ' +
+            'tell that to nobody, so keep it for me.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Su cabeza necesita respaldo',
+              en: 'Your head needs a backup',
+            },
+            next: 'rumor-1',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'rumor-1': {
+        text: {
+          es:
+            'Si, ya oi el cuento: un pasante de la universidad que ' +
+            'viene a "digitalizarlo todo". Aqui ya vinieron a ' +
+            'modernizarnos antes, sin preguntar nada, y todo termino ' +
+            'en un cajon. ¿Por que este seria distinto?',
+          en:
+            'Yes, I heard the tale: a university intern coming to ' +
+            '"digitize everything". People came to modernize us ' +
+            'before, without asking a thing, and it all ended in a ' +
+            'drawer. Why would this one be any different?',
+        },
+        options: [
+          {
+            label: {
+              es: '¿Y si este si pregunta?',
+              en: 'What if this one does ask?',
+            },
+            next: 'rumor-2',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'rumor-2': {
+        text: {
+          es:
+            'Si ese muchacho pisa MI almacen, pregunta como trabajo y ' +
+            'mete al sistema lo del radio — quien lo tomo, a quien se ' +
+            'le daño —, entonces me tiene de su lado. Yo dicto y el ' +
+            'anota. Pero pantallas, lo que se dice tocar pantallas... ' +
+            'eso jamas.',
+          en:
+            'If that kid walks into MY warehouse, asks how I work and ' +
+            'puts the radio thing into his system — who took it, on ' +
+            'whose watch it broke — then he has me on his side. I ' +
+            'dictate, he writes. But screens, as in actually touching ' +
+            'screens... never.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Algo me dice que cedera',
+              en: 'Something tells me you will cave',
+            },
+            next: 'rumor-3',
+          },
+          {
+            label: { es: 'Volvamos', en: 'Back to topics' },
+            next: 'hub',
+          },
+        ],
+      },
+      'rumor-3': {
+        text: {
+          es:
+            'Ja. El dia que YO busque un repuesto en una computadora, ' +
+            'te autorizo a recordarmelo. ...¿Por que sonries asi? No ' +
+            'me gusta esa sonrisa. Anda, vete, que la carpeta ' +
+            'veintiuno no se revisa sola.',
+          en:
+            'Ha. The day I look up a spare on a computer, you have my ' +
+            'permission to remind me. ...Why are you smiling like ' +
+            'that? I do not like that smile. Go on now, folder ' +
+            'twenty-one will not search itself.',
+        },
+        options: [
+          {
+            label: {
+              es: 'Trato hecho. Hasta luego',
+              en: 'Deal. See you around',
+            },
             next: null,
           },
           {

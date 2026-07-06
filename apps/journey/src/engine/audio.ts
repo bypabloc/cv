@@ -9,6 +9,9 @@
  *   El contexto se crea recien tras el PRIMER gesto del usuario (autoplay
  *   policy); el toggle del HUD silencia TODO (ambiente + SFX).
  *
+ *   prefers-reduced-motion: cubierto estructuralmente — el tier resuelve a
+ *   'static' (lib/tiers.ts) y el engine (y este modulo) nunca arranca.
+ *
  *   ponytail: sintesis simple (osciladores + noise buffer). Si se quiere
  *   mas riqueza, el swap es a clips CC0 en AudioBufferSource — la interfaz
  *   (enable/disable/setRoom/feed/play) no cambia.
@@ -80,6 +83,114 @@ function oscVoice(
   }
 }
 
+/**
+ * Ruido filtrado con LFO de amplitud: murmullo de gente (bandpass con
+ * vaiven lento) o ventilador oscilante (lowpass con vaiven profundo).
+ */
+function wobbleNoiseVoice(
+  ctx: AudioContext,
+  out: GainNode,
+  opts: {
+    type: BiquadFilterType
+    frequency: number
+    gain: number
+    wobbleHz: number
+    /** Profundidad del vaiven relativa al gain (0..1). */
+    wobbleDepth: number
+  },
+): Voice {
+  const source = ctx.createBufferSource()
+  source.buffer = makeNoiseBuffer(ctx)
+  source.loop = true
+  const filter = ctx.createBiquadFilter()
+  filter.type = opts.type
+  filter.frequency.value = opts.frequency
+  const g = ctx.createGain()
+  g.gain.value = opts.gain
+  const lfo = ctx.createOscillator()
+  lfo.frequency.value = opts.wobbleHz
+  const depth = ctx.createGain()
+  depth.gain.value = opts.gain * opts.wobbleDepth
+  lfo.connect(depth).connect(g.gain)
+  lfo.start()
+  source.connect(filter).connect(g).connect(out)
+  source.start()
+  return {
+    stop: () => {
+      source.stop()
+      lfo.stop()
+      source.disconnect()
+      lfo.disconnect()
+    },
+  }
+}
+
+/** Escribe un tono senoidal con decay exponencial dentro del buffer. */
+function writeTone(
+  data: Float32Array,
+  sampleRate: number,
+  at: number,
+  frequency: number,
+  duration: number,
+): void {
+  const start = Math.round(at * sampleRate)
+  const count = Math.min(Math.round(duration * sampleRate), data.length - start)
+  for (let i = 0; i < count; i += 1) {
+    const t = i / sampleRate
+    data[start + i] +=
+      Math.sin(2 * Math.PI * frequency * t) * Math.exp((-5 * t) / duration)
+  }
+}
+
+/**
+ * Patron ritmico SIN scheduling: un buffer de `seconds` con los eventos
+ * pre-renderizados (fill) que loopea solo — blip de monitor, pulso de
+ * linea, tic-tac de reloj.
+ */
+function patternVoice(
+  ctx: AudioContext,
+  out: GainNode,
+  seconds: number,
+  gain: number,
+  fill: (data: Float32Array, sampleRate: number) => void,
+): Voice {
+  const buffer = ctx.createBuffer(
+    1,
+    Math.round(ctx.sampleRate * seconds),
+    ctx.sampleRate,
+  )
+  fill(buffer.getChannelData(0), ctx.sampleRate)
+  const source = ctx.createBufferSource()
+  source.buffer = buffer
+  source.loop = true
+  const g = ctx.createGain()
+  g.gain.value = gain
+  source.connect(g).connect(out)
+  source.start()
+  return {
+    stop: () => {
+      source.stop()
+      source.disconnect()
+    },
+  }
+}
+
+/**
+ * PASADO (sepia, unificado): aire sordo + tic-tac de reloj a 1 Hz — el
+ * reloj de pared es EL prop recurrente de los pasados (la espera, la
+ * busqueda lenta). La firma del sistema NO suena: el sistema no existia.
+ */
+function pastProfile(ctx: AudioContext, out: GainNode): Voice[] {
+  return [
+    noiseVoice(ctx, out, 200, 0.04),
+    patternVoice(ctx, out, 2, 0.085, (data, sampleRate) => {
+      writeTone(data, sampleRate, 0, 1900, 0.03) // tic
+      writeTone(data, sampleRate, 1, 1450, 0.035) // tac
+    }),
+  ]
+}
+
+/** PRESENTE: firma sonora por rubro (decision C14 del usuario). */
 function profileFor(ctx: AudioContext, out: GainNode, room: RoomId): Voice[] {
   switch (room) {
     case 'corpoelec':
@@ -89,16 +200,98 @@ function profileFor(ctx: AudioContext, out: GainNode, room: RoomId): Voice[] {
         oscVoice(ctx, out, 120, 0.028, 'triangle'),
         noiseVoice(ctx, out, 500, 0.02),
       ]
-    case 'cima':
+    case 'ipasme':
+      // clinica: aire claro + blip de monitor cada 4 s
+      return [
+        noiseVoice(ctx, out, 620, 0.024),
+        patternVoice(ctx, out, 4, 0.05, (data, sampleRate) => {
+          writeTone(data, sampleRate, 0, 880, 0.12)
+        }),
+      ]
+    case 'iai':
+      // obra publica en San Felipe: aire caluroso + ventilador oscilante
+      return [
+        noiseVoice(ctx, out, 420, 0.026),
+        wobbleNoiseVoice(ctx, out, {
+          type: 'lowpass',
+          frequency: 900,
+          gain: 0.045,
+          wobbleHz: 0.32,
+          wobbleDepth: 0.7,
+        }),
+      ]
+    case 'asesoria':
+      // instituto de salud: murmullo de sala de espera + hum del XAMPP
+      return [
+        wobbleNoiseVoice(ctx, out, {
+          type: 'bandpass',
+          frequency: 350,
+          gain: 0.02,
+          wobbleHz: 0.4,
+          wobbleDepth: 0.5,
+        }),
+        oscVoice(ctx, out, 120, 0.016, 'triangle'),
+        noiseVoice(ctx, out, 520, 0.014),
+      ]
+    case 'cofasa':
+      // planta farma: sala limpia + pulso mecanico de linea (~1.2 Hz)
+      return [
+        noiseVoice(ctx, out, 700, 0.02),
+        patternVoice(ctx, out, 1 / 1.2, 0.11, (data, sampleRate) => {
+          writeTone(data, sampleRate, 0, 70, 0.09)
+        }),
+      ]
+    case 'dibal':
+      // restaurante: murmullo de comensales + siseo de cocina
+      return [
+        wobbleNoiseVoice(ctx, out, {
+          type: 'bandpass',
+          frequency: 420,
+          gain: 0.022,
+          wobbleHz: 0.33,
+          wobbleDepth: 0.5,
+        }),
+        noiseVoice(ctx, out, 1400, 0.011),
+      ]
+    case 'goodmeal':
+      // cafeteria food-tech: murmullo calido + aire
+      return [
+        wobbleNoiseVoice(ctx, out, {
+          type: 'bandpass',
+          frequency: 340,
+          gain: 0.024,
+          wobbleHz: 0.28,
+          wobbleDepth: 0.5,
+        }),
+        noiseVoice(ctx, out, 450, 0.02),
+      ]
+    case 'destacame':
       // pad sintetico premium: dos senos detuneados + sub
       return [
         oscVoice(ctx, out, 110, 0.03, 'sine', -6),
         oscVoice(ctx, out, 165, 0.022, 'sine', 6),
         oscVoice(ctx, out, 55, 0.025, 'sine'),
       ]
+    case 'futuro':
+      // vision: pad etereo agudo + shimmer cristalino (dos senos batiendo)
+      return [
+        oscVoice(ctx, out, 220, 0.02, 'sine', -5),
+        oscVoice(ctx, out, 330, 0.016, 'sine', 5),
+        oscVoice(ctx, out, 620, 0.011, 'sine'),
+        oscVoice(ctx, out, 623.5, 0.011, 'sine'),
+      ]
     default:
-      // aula: room-tone calido (solo aire filtrado)
-      return [noiseVoice(ctx, out, 320, 0.035)]
+      // aula: room-tone calido + murmullo tenue de estudiantes
+      return [
+        noiseVoice(ctx, out, 320, 0.035),
+        wobbleNoiseVoice(ctx, out, {
+          type: 'bandpass',
+          frequency: 380,
+          gain: 0.014,
+          wobbleHz: 0.3,
+          wobbleDepth: 0.5,
+        }),
+      ]
   }
 }
 
@@ -107,9 +300,10 @@ export class AmbientAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private voices: Voice[] = []
-  private room: RoomId | null = null
+  /** Perfil sonando: `<room>` (presente) o `<room>:past`. */
+  private key: string | null = null
 
-  enable(room: RoomId): void {
+  enable(room: RoomId, past = false): void {
     if (!this.ctx) {
       this.ctx = new AudioContext()
       this.master = this.ctx.createGain()
@@ -117,27 +311,30 @@ export class AmbientAudio {
       this.master.connect(this.ctx.destination)
     }
     void this.ctx.resume()
-    this.setRoom(room, true)
+    this.setRoom(room, past, true)
   }
 
   disable(): void {
     this.stopVoices()
-    this.room = null
+    this.key = null
     if (this.ctx) {
       void this.ctx.suspend()
     }
   }
 
-  setRoom(room: RoomId, force = false): void {
+  setRoom(room: RoomId, past = false, force = false): void {
     if (!this.ctx || !this.master) {
       return
     }
-    if (!force && (this.room === room || this.ctx.state !== 'running')) {
+    const key = past ? `${room}:past` : room
+    if (!force && (this.key === key || this.ctx.state !== 'running')) {
       return
     }
     this.stopVoices()
-    this.room = room
-    this.voices = profileFor(this.ctx, this.master, room)
+    this.key = key
+    this.voices = past
+      ? pastProfile(this.ctx, this.master)
+      : profileFor(this.ctx, this.master, room)
   }
 
   private stopVoices(): void {

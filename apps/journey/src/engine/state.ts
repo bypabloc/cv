@@ -12,8 +12,33 @@ import type { Locale } from '../lib/rooms'
 /** Tiers que montan el 3D (static nunca llega al engine). */
 export type EngineTier = 'full' | 'reduced'
 export type CameraMode = 'third' | 'pov'
-export type UiPanel = 'none' | 'ficha' | 'contact' | 'teleport' | 'dialog'
+export type UiPanel =
+  | 'none'
+  | 'ficha'
+  | 'contact'
+  | 'teleport'
+  | 'dialog'
+  | 'showcase'
 export type FichaKind = 'retos' | 'aprendizajes'
+
+/** Vista de la demo activa de un `softwareShowcase` (panel DOM del HUD). */
+export interface ShowcaseView {
+  /** Titulo de la demo (resuelto por locale). */
+  title: string
+  /** Color de branding del sistema real (barra del panel). */
+  brand: string
+  /** Markup del mockup operable (HTML definido en codigo, no user input). */
+  html: string
+  /** Posicion de la demo en el ciclo (ej. "1/3"). */
+  position: string
+}
+
+/** Referencia viva al showcase abierto: E / boton ciclan a la siguiente. */
+export interface ShowcaseRef {
+  view(): ShowcaseView
+  /** Cicla a la siguiente demo (tambien actualiza el monitor 3D). */
+  next(): ShowcaseView
+}
 
 /** Burbuja manga de "habla suelta": 1 linea al azar sobre el NPC activo. */
 export interface InteractableBubble {

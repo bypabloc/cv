@@ -18,7 +18,8 @@
       "leader",
       "vibe",
       "generic"
-    ]
+    ],
+    "priority": {}
   },
   {
     "slug": "triple-alianza-lima-2020",
@@ -36,6 +37,7 @@
     "niches": [
       "leader",
       "generic"
-    ]
+    ],
+    "priority": {}
   }
 ]

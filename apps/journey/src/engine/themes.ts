@@ -6,6 +6,10 @@
  *   `rooms/palettes.ts` subiendo contraste y saturacion (decision 5 del
  *   plan journey-vanilla-manga).
  *
+ *   Regla del canon (plan journey-salas-estandar): TODAS las salas
+ *   presentes llevan `wall: '#f2f0eb'` (blanco hueso); el color del rubro
+ *   vive en floor/trim/accent/lightColor/screen — NUNCA en la pared.
+ *
  *   Nota DS: son colores de MATERIAL WebGL/canvas, no CSS del UI — los
  *   tokens var(--color-*) no aplican dentro del renderer.
  */
@@ -38,46 +42,149 @@ export interface RoomTheme {
 }
 
 export const THEMES: Record<ThemeZoneId, RoomTheme> = {
-  // aula: paredes blancas + piso beige, acento AZUL y guiños MORADOS
-  // (zocalo/marcos via trim) — decision del usuario 2026-07-04
+  // aula: academico claro, acento AZUL y guiños MORADOS (zocalo/marcos
+  // via trim)
   aula: {
-    wall: '#eae6dc',
-    floor: '#d8c6a0',
+    wall: '#f2f0eb',
+    floor: '#e6dcc4',
     ink: '#232840',
     accent: '#2f6fd0',
     trim: '#7a4fc0',
-    lightColor: '#dfe9ff',
-    fog: '#141722',
-    sky: '#181c2a',
+    lightColor: '#eef2ff',
+    fog: '#d8dce6',
+    sky: '#e6e9f0',
     gradient: ['#7d829a', '#c2c8da', '#ffffff'],
     screenBg: '#101c34',
     screenFg: '#8fb8ff',
   },
-  // corpoelec: grises industriales frios + naranja + amarillo seguridad
+  // corpoelec: oficina industrial, naranja + amarillo seguridad
   corpoelec: {
-    wall: '#454b54',
-    floor: '#33373c',
+    wall: '#f2f0eb',
+    floor: '#c9cdd4',
     ink: '#121418',
     accent: '#e2572b',
-    lightColor: '#e6ecff',
-    fog: '#101216',
-    sky: '#14171c',
-    gradient: ['#383e48', '#8b93a2', '#eef2f8'],
+    trim: '#f2b705',
+    lightColor: '#f0f3f8',
+    fog: '#d6dae0',
+    sky: '#e2e5ea',
+    gradient: ['#8a8f98', '#c8ccd4', '#ffffff'],
     screenBg: '#0f1822',
     screenFg: '#84e0a0',
   },
-  // cima: azul Destacame sobre casi-negro, tinta azul-negra, cian plano
-  cima: {
-    wall: '#1d2942',
-    floor: '#161d2c',
-    ink: '#080c16',
+  // ipasme: clinico, azul institucional + verde menta
+  ipasme: {
+    wall: '#f2f0eb',
+    floor: '#dbe8e4',
+    ink: '#1c2a30',
+    accent: '#2f7fb0',
+    trim: '#7ecab0',
+    lightColor: '#f2f8ff',
+    fog: '#d8e2e4',
+    sky: '#e4ecee',
+    gradient: ['#7f949c', '#c4d4d8', '#ffffff'],
+    screenBg: '#0e1e2c',
+    screenFg: '#7ec8e8',
+  },
+  // iai: obra publica, ambar obra + gris concreto (el rojo Yaracuy SOLO
+  // en props: valla/bandera). Distinto del naranja seguridad de corpoelec
+  iai: {
+    wall: '#f2f0eb',
+    floor: '#d9dbdd',
+    ink: '#1c1a12',
+    accent: '#d9a013',
+    trim: '#8f959e',
+    lightColor: '#f6f4ee',
+    fog: '#dcdad2',
+    sky: '#e8e6de',
+    gradient: ['#8f8c80', '#ccc8bc', '#ffffff'],
+    screenBg: '#1a1608',
+    screenFg: '#e8c860',
+  },
+  // asesoria: salud publica + academia, verde salud + morado (eco del
+  // aula). Distinto del azul institucional + menta de ipasme
+  asesoria: {
+    wall: '#f2f0eb',
+    floor: '#dce6de',
+    ink: '#1a2820',
+    accent: '#2e8b57',
+    trim: '#7a4fc0',
+    lightColor: '#f2f8f4',
+    fog: '#d8e2da',
+    sky: '#e4eee6',
+    gradient: ['#829488', '#c4d4c8', '#ffffff'],
+    screenBg: '#0e2016',
+    screenFg: '#6fd89a',
+  },
+  // cofasa: sala limpia farma, azul Cofasa + grises (andon solo en su prop)
+  cofasa: {
+    wall: '#f2f0eb',
+    floor: '#dfe4ea',
+    ink: '#182430',
+    accent: '#1f6fb0',
+    trim: '#c8ccd2',
+    lightColor: '#f4f7fb',
+    fog: '#d9dee6',
+    sky: '#e6eaf0',
+    gradient: ['#848d9a', '#c6cdd8', '#ffffff'],
+    screenBg: '#101a26',
+    screenFg: '#6fb8e8',
+  },
+  // dibal: restaurante + POS, navy + teal Dibal
+  dibal: {
+    wall: '#f2f0eb',
+    floor: '#d6dee0',
+    ink: '#101c22',
+    accent: '#1f8f8a',
+    trim: '#1b2433',
+    lightColor: '#f2f6f6',
+    fog: '#d6dedf',
+    sky: '#e2eaea',
+    gradient: ['#7e8e90', '#c2d0d0', '#ffffff'],
+    screenBg: '#0c1a22',
+    screenFg: '#5fd8c8',
+  },
+  // goodmeal: food-tech, teal GoodMeal + kraft
+  goodmeal: {
+    wall: '#f2f0eb',
+    floor: '#e2ddc8',
+    ink: '#1c241c',
+    accent: '#1fa08a',
+    trim: '#c8a86a',
+    lightColor: '#f4f8f2',
+    fog: '#dee2d6',
+    sky: '#e8ecdf',
+    gradient: ['#8a9184', '#ccd2c4', '#ffffff'],
+    screenBg: '#0e2018',
+    screenFg: '#5fd8a8',
+  },
+  // destacame: fintech premium, azul Destacame; conserva el sky/fog
+  // oscuros (drama de acento sobre paredes blancas)
+  destacame: {
+    wall: '#f2f0eb',
+    floor: '#d5dae6',
+    ink: '#0e1626',
     accent: '#0052cc',
-    lightColor: '#9db8ff',
-    fog: '#0a0e16',
-    sky: '#0a0e16',
-    gradient: ['#1e2840', '#4d6cab', '#d4e2ff'],
+    trim: '#8ea6d8',
+    lightColor: '#eef3ff',
+    fog: '#0e1422',
+    sky: '#111828',
+    gradient: ['#767f96', '#bcc6dc', '#ffffff'],
     screenBg: '#0a1220',
     screenFg: '#6fa8ff',
+  },
+  // futuro: vision, azul-violeta neutro premium
+  futuro: {
+    wall: '#f2f0eb',
+    floor: '#d8dce4',
+    ink: '#181c30',
+    accent: '#5a6ff0',
+    trim: '#a0a8d8',
+    lightColor: '#eef0ff',
+    fog: '#d8dcea',
+    sky: '#e4e7f2',
+    gradient: ['#7d82a0', '#c2c6e0', '#ffffff'],
+    screenBg: '#10142a',
+    screenFg: '#8a9aff',
   },
   // pasillo: neutro oscuro desaturado (esclusa entre etapas)
   corridor: {
@@ -117,9 +224,38 @@ export const PAST_CAPTIONS: Record<RoomId, Record<'es' | 'en', string>> = {
     es: 'Antes: planillas de papel duplicadas en 3 sedes',
     en: 'Before: duplicated paper records across 3 sites',
   },
-  cima: {
-    es: 'Antes: procesos manuales y aislados, un solo pais',
-    en: 'Before: manual, siloed processes in a single country',
+  ipasme: {
+    es: 'Antes: historias medicas en carpetas de papel',
+    en: 'Before: medical records in paper folders',
+  },
+  iai: {
+    es: 'Antes: presupuestos de obra a mano y copias desincronizadas',
+    en: 'Before: hand-made construction budgets and out-of-sync copies',
+  },
+  asesoria: {
+    es: 'Antes: la tesis de PROSALUD bloqueada durante meses',
+    en: 'Before: the PROSALUD thesis stalled for months',
+  },
+  cofasa: {
+    es: 'Antes: paradas de maquina anotadas a mano',
+    en: 'Before: machine downtime logged by hand',
+  },
+  dibal: {
+    es: 'Antes: comandas en papelitos y boletas a mano',
+    en: 'Before: paper order slips and handwritten receipts',
+  },
+  goodmeal: {
+    es: 'Antes: comida buena al tacho en cada cierre',
+    en: 'Before: good food binned at every closing',
+  },
+  destacame: {
+    es: 'Antes: deudas sin gestionar y procesos manuales',
+    en: 'Before: unmanaged debts and manual processes',
+  },
+  // futuro no tiene grieta al pasado: esta caption nunca se muestra
+  futuro: {
+    es: 'El futuro no tiene un antes',
+    en: 'The future has no before',
   },
 }
 

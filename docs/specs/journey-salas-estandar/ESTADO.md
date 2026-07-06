@@ -60,12 +60,32 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 | --- | --- | --- |
 | C14 | audio ambiente de las salas nuevas | HECHO `62c0c2c2` |
 | C15 | perf <100 draw calls/sala | HECHO `3d41e07c` |
-| C16 | rule del estandar (.claude/rules/journey-rooms.md) | PENDIENTE |
-| C17 | verificacion E2E + `git rm -r` la carpeta del plan + merge unico a dev | PENDIENTE |
+| C16 | rule del estandar (.claude/rules/journey-rooms.md) | HECHO `4414d542` |
+| C17 | verificacion E2E + `git rm -r` la carpeta del plan + merge unico a dev | BATERIA VERDE 2026-07-06 — falta merge (confirmacion del usuario) |
 
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-06] CIERRE C17 (verificacion E2E) BATERIA VERDE — Parte A:
+  cero referencias muertas (`cima`/`MVP_ROOM_SPECS`/past monolitico: 0
+  matches; RoomId con los 10 ids; pasados en rooms/past/<id>.ts).
+  Parte B: typecheck (0 errores), biome check apps/journey (69
+  archivos), build del journey (dist + postbuild markdown/functions) y
+  build GLOBAL de todas las apps (admin incluido — exige inyectar las
+  keys NEXT_PUBLIC_*/PUBLIC_* extraidas una a una de
+  docker/env/client/.local, gotcha de parallel-sessions.md) todos
+  verdes. Smoke consolidado de cierre VERDE x2
+  (tmp/journey-smoke-cierre.py): las 10 salas montan via teleport,
+  >=1 dialogo abre con nombre por sala (aula 3 talks, futuro 1, el
+  resto 5), showcase abre/cicla/cierra en las 8 que lo llevan
+  (destacame con 2), pasado ida-y-vuelta por la grieta en las 9 (28-35
+  interactables por pasado), aula y futuro respetan sus excepciones
+  del canon; unico error de consola: el 504 transitorio de vite
+  (gotcha conocido). Parte C: N/A (local-first — el deploy es un PR
+  posterior). El commit siguiente elimina esta carpeta (git rm -r);
+  el push + PR + merge unico a dev queda pendiente de la confirmacion
+  explicita del usuario.
 
 - [2026-07-06] CIERRE C15 (perf <100 draw calls) HECHO en commit
   `3d41e07c` — medicion con `tmp/journey-smoke-perf.py` (renderer.info

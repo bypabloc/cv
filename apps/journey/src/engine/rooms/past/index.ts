@@ -20,6 +20,7 @@ import { corpoelecPast } from './corpoelec'
 import { destacamePast } from './destacame'
 import { dibalPast } from './dibal'
 import { goodmealPast } from './goodmeal'
+import { iaiPast } from './iai'
 import { ipasmePast } from './ipasme'
 import type { PastSet, PastSetBuilder } from './shared'
 
@@ -31,6 +32,7 @@ const PAST_BUILDERS: Partial<Record<RoomId, PastSetBuilder>> = {
   destacame: destacamePast,
   dibal: dibalPast,
   goodmeal: goodmealPast,
+  iai: iaiPast,
   ipasme: ipasmePast,
 }
 

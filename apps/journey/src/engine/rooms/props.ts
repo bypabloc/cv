@@ -12,13 +12,16 @@ import {
   BoxGeometry,
   CanvasTexture,
   CircleGeometry,
+  Color,
   Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
   PointLight,
   RingGeometry,
+  ShaderMaterial,
   SRGBColorSpace,
+  type Texture,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
@@ -561,6 +564,9 @@ function riftTexture(accent: string): CanvasTexture {
 interface PortalRift {
   group: Group
   update(t: number): void
+  /** Alimenta la ventana del portal con el snapshot de la sala destino
+   *  (render-to-texture). El `futurePortal` lo implementa; `timeRift` no. */
+  setPreview?(tex: Texture): void
 }
 
 /**
@@ -621,95 +627,115 @@ function timeRift(accent: string, signText: string): PortalRift {
   }
 }
 
-/** Superficie de energia OPACA del portal al futuro (radial: nucleo
- *  brillante -> aura del rubro -> borde oscuro) con anillos concentricos y
- *  estrias de warp. Opaca a proposito: NO se ve la sala destino a traves. */
-function portalEnergyTexture(accent: string): CanvasTexture {
-  return makeCanvasTexture(256, (ctx, size) => {
-    const c = size / 2
-    const bg = ctx.createRadialGradient(c, c, 3, c, c, c)
-    bg.addColorStop(0, '#f4f8ff')
-    bg.addColorStop(0.16, accent)
-    bg.addColorStop(0.5, '#141d38')
-    bg.addColorStop(1, '#05070f')
-    ctx.fillStyle = bg
-    ctx.beginPath()
-    ctx.arc(c, c, c, 0, Math.PI * 2)
-    ctx.fill()
-    // anillos concentricos (campo de energia)
-    ctx.strokeStyle = accent
-    for (let i = 1; i <= 4; i += 1) {
-      ctx.globalAlpha = 0.14 + i * 0.05
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.arc(c, c, (c * i) / 5, 0, Math.PI * 2)
-      ctx.stroke()
-    }
-    // estrias de warp: radiales, brillantes cerca del nucleo -> "al futuro"
-    ctx.lineCap = 'round'
-    for (let i = 0; i < 30; i += 1) {
-      const angle = (i / 30) * Math.PI * 2
-      const r0 = c * (0.2 + (i % 4) * 0.03)
-      const r1 = c * (0.86 + (i % 3) * 0.04)
-      const grad = ctx.createLinearGradient(
-        c + Math.cos(angle) * r0,
-        c + Math.sin(angle) * r0,
-        c + Math.cos(angle) * r1,
-        c + Math.sin(angle) * r1,
-      )
-      grad.addColorStop(0, accent)
-      grad.addColorStop(1, 'rgba(255,255,255,0)')
-      ctx.strokeStyle = grad
-      ctx.globalAlpha = 0.5
-      ctx.lineWidth = 1.3
-      ctx.beginPath()
-      ctx.moveTo(c + Math.cos(angle) * r0, c + Math.sin(angle) * r0)
-      ctx.lineTo(c + Math.cos(angle) * r1, c + Math.sin(angle) * r1)
-      ctx.stroke()
-    }
-    // vortice espiral (3 brazos) horneado en la MISMA textura: al rotar el
-    // mesh de energia da el remolino, sin sumar un draw call aparte.
-    const arms: readonly string[] = [accent, '#dfeaff', accent]
-    arms.forEach((color, arm) => {
-      ctx.strokeStyle = color
-      ctx.globalAlpha = 0.6
-      ctx.lineWidth = 3 - arm * 0.6
-      ctx.beginPath()
-      const offset = (arm / arms.length) * Math.PI * 2
-      for (let i = 0; i <= 70; i += 1) {
-        const t = i / 70
-        const angle = offset + t * Math.PI * 2.6
-        const radius = c * 0.12 + t * c * 0.8
-        const px = c + Math.cos(angle) * radius
-        const py = c + Math.sin(angle) * radius
-        if (i === 0) {
-          ctx.moveTo(px, py)
-        } else {
-          ctx.lineTo(px, py)
-        }
-      }
-      ctx.stroke()
-    })
-    ctx.globalAlpha = 1
+const PORTAL_VERT = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+// Superficie de energia del portal: vortice espiral + rayos/electricidad
+// procedurales animados por uTime + ventana translucida con el snapshot de la
+// sala destino (uPreview). Todo en 1 fragment shader -> 1 draw call.
+const PORTAL_FRAG = `
+  uniform float uTime;
+  uniform vec3 uAccent;
+  uniform sampler2D uPreview;
+  uniform float uHasPreview;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453);
+  }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  void main() {
+    vec2 p = vUv - 0.5;
+    float r = length(p) * 2.0;
+    if (r > 1.0) discard;
+    float ang = atan(p.y, p.x);
+
+    // gradiente radial: nucleo brillante -> acento -> borde oscuro
+    vec3 core = vec3(0.95, 0.98, 1.0);
+    vec3 col = mix(core, uAccent, smoothstep(0.0, 0.35, r));
+    col = mix(col, vec3(0.02, 0.03, 0.07), smoothstep(0.5, 1.0, r));
+
+    // vortice espiral (3 brazos) girando -> "otra dimension"
+    float spiral = 0.5 + 0.5 * sin((ang - r * 7.0 + uTime * 0.6) * 3.0);
+    col += uAccent * spiral * (0.4 * (1.0 - r));
+
+    // anillos de energia expandiendose
+    float rings = 0.5 + 0.5 * sin(r * 26.0 - uTime * 3.0);
+    col += uAccent * pow(rings, 3.0) * 0.16;
+
+    // rayos / electricidad: filamentos radiales titilando hacia el borde
+    float jitter = vnoise(vec2(ang * 3.0, uTime * 2.0));
+    float fil = abs(sin(ang * 20.0 + jitter * 6.2831 + uTime * 1.4));
+    float bolt = pow(1.0 - fil, 26.0) * smoothstep(0.15, 1.0, r);
+    bolt *= step(0.55, hash(vec2(floor(ang * 5.0), floor(uTime * 8.0))));
+    col += vec3(0.75, 0.88, 1.0) * bolt * 1.5;
+
+    // ventana translucida: guiño de la sala destino en el centro
+    vec3 preview = mix(uAccent * 0.45, texture2D(uPreview, vUv).rgb, uHasPreview);
+    float win = smoothstep(0.72, 0.12, r);
+    col = mix(col, preview, win * 0.5);
+
+    // brillo glassy sutil hacia el centro
+    col += vec3(0.06) * smoothstep(0.6, 0.0, r);
+
+    float alpha = 0.96 * smoothstep(1.0, 0.86, r);
+    gl_FragColor = vec4(col, alpha);
+  }
+`
+
+/** Textura fallback 2x2 (tinte del acento) para el sampler uPreview mientras
+ *  no haya snapshot de la sala destino. */
+function portalFallbackTex(accent: string): CanvasTexture {
+  return makeCanvasTexture(2, (ctx, size) => {
+    ctx.fillStyle = accent
+    ctx.fillRect(0, 0, size, size)
+  })
+}
+
+function portalEnergyMaterial(accent: string): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uAccent: { value: new Color(accent) },
+      uPreview: { value: portalFallbackTex(accent) },
+      uHasPreview: { value: 0 },
+    },
+    vertexShader: PORTAL_VERT,
+    fragmentShader: PORTAL_FRAG,
+    transparent: true,
+    depthWrite: false,
   })
 }
 
 /**
- * PORTAL AL FUTURO / DE REGRESO: reemplaza a la puerta entre salas. Portal
- * ovalado con superficie de energia OPACA (nada de ver la sala destino) que
- * GIRA — el vortice espiral esta horneado en la textura — y un marco-anillo
- * brillante del ACENTO de la sala DESTINO (el guiño al rubro al que se va).
- * Va pegado al muro sellado — no hay vano ni pasillo que cruzar. 2 draw calls
- * (cada sala monta hasta 2 portales: ida + regreso), single-side (solo se ve
- * desde la sala). El año destino va en el prompt del interactable de world.
+ * PORTAL AL FUTURO / DE REGRESO: reemplaza a la puerta entre salas. Oval con
+ * superficie de energia SHADER (vortice + rayos/electricidad procedurales que
+ * giran por uTime) y una VENTANA translucida que insinua la sala destino via
+ * `setPreview` (render-to-texture; cae a un tinte del acento mientras no haya
+ * snapshot). Marco-anillo brillante del ACENTO de la sala DESTINO (el guiño al
+ * rubro al que se va). Va pegado al muro sellado — la ventana es una ilusion
+ * del shader, NO un vano real. 2 draw calls (energia + marco), single-side.
  */
 export function futurePortal(accent: string): PortalRift {
   const group = new Group()
   const cy = 1.4
-  const energy = new Mesh(
-    new CircleGeometry(1, 48),
-    new MeshBasicMaterial({ map: portalEnergyTexture(accent) }),
-  )
+  const material = portalEnergyMaterial(accent)
+  const energy = new Mesh(new CircleGeometry(1, 48), material)
   energy.scale.set(0.8, 1.12, 1)
   energy.position.set(0, cy, 0.02)
   energy.userData.noOutline = true
@@ -724,9 +750,13 @@ export function futurePortal(accent: string): PortalRift {
   return {
     group,
     update: (t) => {
-      energy.rotation.z = t * 0.28
+      material.uniforms.uTime.value = t
       const pulse = 1 + Math.sin(t * 2.4) * 0.02
       frame.scale.set(0.8 * pulse, 1.12 * pulse, 1)
+    },
+    setPreview: (tex) => {
+      material.uniforms.uPreview.value = tex
+      material.uniforms.uHasPreview.value = 1
     },
   }
 }

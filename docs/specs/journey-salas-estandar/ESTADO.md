@@ -34,9 +34,12 @@
 | 4 | `dibal` | [11-sala-dibal.md](11-sala-dibal.md) | HECHO | `b6059f33` |
 | 5 | `goodmeal` | [12-sala-goodmeal.md](12-sala-goodmeal.md) | HECHO | `2e3459fa` |
 | 6 | `destacame` | [13-sala-destacame.md](13-sala-destacame.md) | HECHO | `4d8dc7d2` |
-| 7 | `futuro` | [14-sala-futuro.md](14-sala-futuro.md) | PENDIENTE | — |
+| 7 | `futuro` | [14-sala-futuro.md](14-sala-futuro.md) | HECHO | `a50f073d` |
 
 Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
+
+> **ETAPA 2 COMPLETA (2026-07-05)**: las 7 salas estan HECHAS. Lo que queda
+> del plan es el CIERRE (C14-C17, tabla de abajo) en una sesion propia.
 
 ## CIERRE (tras las 7 salas)
 
@@ -50,6 +53,36 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-05] sala `futuro` HECHA en commit `a50f073d` — informe 14, la
+  ULTIMA (Etapa 2 completa: 7/7). Sala SINTETICA de cierre con las 3
+  excepciones documentadas: SIN grieta al pasado (infoKit gano el flag
+  `withPortal` — futuro es la unica sala que lo usa en false y el smoke
+  asserta que `portal-7` NO existe), SIN showcase de producto y 1 solo
+  NPC. Decisiones del usuario (AskUserQuestion 2026-07-05, NO reabrir):
+  (1) las 8 ideas de futuro elegidas TODAS — productos con IA propios,
+  indie/SaaS, emprendimiento LATAM, open source + comunidad, nuevos
+  rubros, nuevos conocimientos, contenido tecnico publico y la
+  meta-narrativa del journey — sumadas a los 3 ejes base del informe
+  (Staff/Principal, IA+arquitectura, mentoria); (2) NPC "Pablo del
+  futuro" SI + escritorios ligeros (3 puestos, laptops APAGADAS
+  togglables con pantallas de lo-que-viene); (3) puerta PROXIMAMENTE:
+  mantener AMBAS (la de destacame queda como guiño; futuro recibe LA
+  grande y central en el muro final — el recorrido termina de frente a
+  ella con el CTA holograma contact-7 en el eje). Pizarra de roadmap
+  via wallArt (5 nodos ascendentes + estrella) en el muro +X — donde
+  las otras salas tienen la grieta, esta mira adelante; Pablo del
+  futuro la presenta (dialogo 9 nodos es/en, validateMix off). wallArt
+  4 laminas / 3 fichas (manifiesto hacia-donde-voy, productos propios
+  IA/indie/LATAM, comunidad y aprendizaje; la meta-narrativa Astro +
+  Three.js + vibe coding queda decorativa). Los textos sinteticos de
+  lib/rooms.ts se extendieron con las ideas elegidas (+2 retos, +2
+  aprendizajes es/en). Smoke browser verde x2 (18 interactables, sin
+  portal-7, dialogo, 3 fichas, CTA abre el panel Hablemos con
+  LinkedIn, laptops togglean) + pasada visual del muro final y la
+  pizarra; unico error de consola: el 504 transitorio de vite (gotcha
+  conocido). Nota perf: sala liviana (1 NPC) — medir en C15 igual que
+  las demas; destacame sigue siendo la candidata mas pesada.
 
 - [2026-07-05] sala `destacame` HECHA en commit `4d8dc7d2` — informe 13
   (la sala unificada de 2 AREAS, la mas compleja) con 4 decisiones del

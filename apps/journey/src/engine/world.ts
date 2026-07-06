@@ -168,9 +168,12 @@ export interface World {
   init(): Promise<void>
   /** Reporta el cambio de zona (lo llama controls/tour). */
   setZone(zone: Zone): void
-  /** Cruce por el portal del vano: warp, teleport a la sala siguiente y
-   *  re-registro del interactable (mismo patron que el portal al pasado). */
+  /** Cruce hacia adelante: warp, teleport a la sala `index + 1` y re-registro
+   *  del interactable (mismo patron que el portal al pasado). */
   crossPortal(index: number): Promise<void>
+  /** Cruce hacia atras: warp, teleport a la sala `index - 1` (portal de
+   *  regreso en el muro frontal). */
+  crossBack(index: number): Promise<void>
   teleportToRoom(index: number): Promise<void>
   enterPast(roomIndex: number, spawn: { x: number; z: number }): Promise<void>
   exitPast(returnTo: { x: number; z: number }): Promise<void>
@@ -192,8 +195,8 @@ export function createWorld(deps: WorldDeps): World {
   const contents = new Map<number, RoomBuild>()
   const pending = new Map<number, Promise<void>>()
   const wantedContent = new Set<number>()
-  /** Update (vortice del portal al futuro) por sala de ORIGEN. */
-  const roomPortals = new Map<number, (t: number) => void>()
+  /** Updates de los vortices de TODOS los portales montados (ida + regreso). */
+  const portalUpdates: ((t: number) => void)[] = []
   /** Cruces en curso (guard de re-entrada del portal). */
   const crossing = new Set<number>()
   const accentLights: PointLight[] = []
@@ -332,16 +335,24 @@ export function createWorld(deps: WorldDeps): World {
         ),
       )
     }
-    // portal al FUTURO en el muro de salida (si hay sala siguiente): pegado
-    // al muro trasero, mirando hacia adentro de la sala (-Z), con el acento
-    // del rubro que viene. Su vortice se anima via roomPortals (world.update).
+    // portal al FUTURO en el muro de SALIDA (+Z, si hay sala siguiente):
+    // mira hacia adentro (-Z), acento del rubro que VIENE.
     const next = rooms[index + 1]
     if (next) {
       const portal = futurePortal(THEMES[next.id].accent)
       portal.group.position.set(room.x, 0, room.z + room.depth / 2 - 0.05)
       portal.group.rotation.y = Math.PI
       group.add(portal.group)
-      roomPortals.set(index, portal.update)
+      portalUpdates.push(portal.update)
+    }
+    // portal de REGRESO en el muro de ENTRADA (-Z, si hay sala anterior):
+    // mira hacia adentro (+Z, sin rotar), acento del rubro al que se VUELVE.
+    const prev = rooms[index - 1]
+    if (prev) {
+      const back = futurePortal(THEMES[prev.id].accent)
+      back.group.position.set(room.x, 0, room.z - room.depth / 2 + 0.05)
+      group.add(back.group)
+      portalUpdates.push(back.update)
     }
     return group
   }
@@ -623,10 +634,37 @@ export function createWorld(deps: WorldDeps): World {
     })
   }
 
+  /** Interactable del portal de REGRESO, sobre el muro de ENTRADA de la sala
+   *  `index` (se vuelve a `index - 1`). Se re-registra tras cada cruce. El
+   *  prompt lleva el año de la sala ANTERIOR. Id `return-`. */
+  function registerReturnInteractable(index: number): void {
+    const room = layout.rooms[index]
+    const prev = rooms[index - 1]
+    if (!room || !prev) {
+      return
+    }
+    registerInteractable(state, {
+      id: `return-${index}`,
+      x: room.x,
+      z: room.z - room.depth / 2, // muro de entrada
+      radius: 2.4,
+      label: {
+        es: `Volver a ${prev.year}`,
+        en: `Return to ${prev.year}`,
+      },
+      onActivate: () => {
+        void world.crossBack(index)
+      },
+    })
+  }
+
   const world: World = {
     async init() {
-      for (let i = 0; i < rooms.length - 1; i += 1) {
+      // ida (todas menos la ultima) + regreso (todas menos la primera): las
+      // guardas de cada registrar cubren los bordes.
+      for (let i = 0; i < rooms.length; i += 1) {
         registerGateInteractable(i)
+        registerReturnInteractable(i)
       }
       state.zone = { kind: 'room', index: 0 }
       await applyZone(state.zone, false)
@@ -659,6 +697,28 @@ export function createWorld(deps: WorldDeps): World {
       await deps.fade(false, 'warp')
       crossing.delete(index)
       registerGateInteractable(index) // vuelve a ser interactuable
+    },
+
+    async crossBack(index) {
+      if (crossing.has(index)) {
+        return // ya hay un cruce en curso desde esta sala
+      }
+      const target = layout.rooms[index - 1]
+      if (!target) {
+        return
+      }
+      crossing.add(index)
+      unregisterInteractable(state, `return-${index}`)
+      sfx.play('whoosh')
+      await deps.fade(true, 'warp')
+      // aparece al FONDO de la sala anterior (junto a su portal de ida)
+      deps.teleportPlayer(0, target.z + target.depth / 2 - 1.5)
+      state.zone = { kind: 'room', index: index - 1 }
+      await applyZone(state.zone, false)
+      deps.onZoneApplied?.()
+      await deps.fade(false, 'warp')
+      crossing.delete(index)
+      registerReturnInteractable(index) // vuelve a ser interactuable
     },
 
     async teleportToRoom(index) {
@@ -777,8 +837,8 @@ export function createWorld(deps: WorldDeps): World {
     },
 
     update(t, dt) {
-      // portales al futuro: energia + vortice girando (shells cacheados)
-      for (const portal of roomPortals.values()) {
+      // portales (ida + regreso): energia + vortice girando (shells cacheados)
+      for (const portal of portalUpdates) {
         portal(t)
       }
       // theme: lerp de background/fog (~400 ms)
@@ -815,7 +875,7 @@ export function createWorld(deps: WorldDeps): World {
         disposeDeep(group)
       }
       shells.clear()
-      roomPortals.clear()
+      portalUpdates.length = 0
       crossing.clear()
       accentLights.length = 0
     },

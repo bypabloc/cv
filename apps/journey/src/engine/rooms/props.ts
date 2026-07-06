@@ -667,21 +667,12 @@ function portalEnergyTexture(accent: string): CanvasTexture {
       ctx.lineTo(c + Math.cos(angle) * r1, c + Math.sin(angle) * r1)
       ctx.stroke()
     }
-    ctx.globalAlpha = 1
-  })
-}
-
-/** Vortice espiral TRANSPARENTE que gira sobre la energia (le da movimiento
- *  de remolino al portal). Va encima de la superficie opaca. */
-function portalVortexTexture(accent: string): CanvasTexture {
-  return makeCanvasTexture(256, (ctx, size) => {
-    ctx.clearRect(0, 0, size, size)
-    const c = size / 2
-    ctx.lineCap = 'round'
+    // vortice espiral (3 brazos) horneado en la MISMA textura: al rotar el
+    // mesh de energia da el remolino, sin sumar un draw call aparte.
     const arms: readonly string[] = [accent, '#dfeaff', accent]
     arms.forEach((color, arm) => {
       ctx.strokeStyle = color
-      ctx.globalAlpha = 0.58
+      ctx.globalAlpha = 0.6
       ctx.lineWidth = 3 - arm * 0.6
       ctx.beginPath()
       const offset = (arm / arms.length) * Math.PI * 2
@@ -704,13 +695,13 @@ function portalVortexTexture(accent: string): CanvasTexture {
 }
 
 /**
- * PORTAL AL FUTURO: reemplaza a la puerta hacia la SIGUIENTE sala. Portal
- * ovalado con superficie de energia OPACA (nada de ver la sala destino),
- * un vortice espiral girando encima y un marco-anillo brillante del ACENTO
- * de la sala DESTINO (el guiño al rubro que viene). Va pegado al muro de
- * salida sellado — no hay vano ni pasillo que cruzar. 3 draw calls,
- * single-side (solo se ve desde la sala). El año destino va en el prompt del
- * interactable, que registra world.
+ * PORTAL AL FUTURO / DE REGRESO: reemplaza a la puerta entre salas. Portal
+ * ovalado con superficie de energia OPACA (nada de ver la sala destino) que
+ * GIRA — el vortice espiral esta horneado en la textura — y un marco-anillo
+ * brillante del ACENTO de la sala DESTINO (el guiño al rubro al que se va).
+ * Va pegado al muro sellado — no hay vano ni pasillo que cruzar. 2 draw calls
+ * (cada sala monta hasta 2 portales: ida + regreso), single-side (solo se ve
+ * desde la sala). El año destino va en el prompt del interactable de world.
  */
 export function futurePortal(accent: string): PortalRift {
   const group = new Group()
@@ -722,16 +713,6 @@ export function futurePortal(accent: string): PortalRift {
   energy.scale.set(0.8, 1.12, 1)
   energy.position.set(0, cy, 0.02)
   energy.userData.noOutline = true
-  const vortex = new Mesh(
-    new CircleGeometry(0.92, 40),
-    new MeshBasicMaterial({
-      map: portalVortexTexture(accent),
-      transparent: true,
-    }),
-  )
-  vortex.scale.set(0.8, 1.12, 1)
-  vortex.position.set(0, cy, 0.035)
-  vortex.userData.noOutline = true
   const frame = new Mesh(
     new RingGeometry(1, 1.14, 48),
     new MeshBasicMaterial({ color: accent }),
@@ -739,12 +720,11 @@ export function futurePortal(accent: string): PortalRift {
   frame.scale.set(0.8, 1.12, 1)
   frame.position.set(0, cy, 0.03)
   frame.userData.noOutline = true
-  group.add(energy, vortex, frame)
+  group.add(energy, frame)
   return {
     group,
     update: (t) => {
-      energy.rotation.z = t * 0.12
-      vortex.rotation.z = -t * 0.5
+      energy.rotation.z = t * 0.28
       const pulse = 1 + Math.sin(t * 2.4) * 0.02
       frame.scale.set(0.8 * pulse, 1.12 * pulse, 1)
     },

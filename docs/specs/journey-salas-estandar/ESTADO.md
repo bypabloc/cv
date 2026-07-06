@@ -58,7 +58,7 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 
 | Commit | Que | Estado |
 | --- | --- | --- |
-| C14 | audio ambiente de las salas nuevas | PENDIENTE |
+| C14 | audio ambiente de las salas nuevas | HECHO `62c0c2c2` |
 | C15 | perf <100 draw calls/sala | PENDIENTE |
 | C16 | rule del estandar (.claude/rules/journey-rooms.md) | PENDIENTE |
 | C17 | verificacion E2E + `git rm -r` la carpeta del plan + merge unico a dev | PENDIENTE |
@@ -66,6 +66,29 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-06] CIERRE C14 (audio ambiente) HECHO en commit `62c0c2c2` —
+  decisiones del usuario (AskUserQuestion 2026-07-06, NO reabrir): (1)
+  presente = FIRMA POR RUBRO (cada sala 1-2 capas procedurales WebAudio
+  sobre room-tone; corpoelec y destacame conservan su perfil previo);
+  (2) pasado = SEPIA GLOBAL unificado (aire sordo lowpass + tic-tac de
+  reloj a 1 Hz — el reloj es el prop recurrente de los pasados; la firma
+  del sistema NO suena). Helpers nuevos en audio.ts: wobbleNoiseVoice
+  (murmullo/ventilador con LFO de amplitud) y patternVoice (buffer en
+  loop con eventos pre-renderizados — blip ipasme, pulso cofasa,
+  tic-tac del pasado — cero scheduling, cero assets). AmbientAudio gana
+  el flag past (clave `<room>:past`); audioTarget (ex audioRoomId)
+  resuelve sala + pasado desde state.past — onZoneApplied ya disparaba
+  en enterPast/exitPast, cero wiring nuevo. prefers-reduced-motion
+  cubierto estructuralmente (tier static nunca monta el engine),
+  documentado en el docstring del modulo. Smoke browser verde x2
+  (tmp/journey-smoke-audio.py): 2 AudioContext running tras el gesto,
+  10 salas construyen su perfil via teleport, portal-1/portal-exit-1
+  conmutan el sepia, toggle HUD OFF->ON, cero leaks de contexto; unico
+  error: el 504 transitorio de vite (gotcha conocido). Ademas en esta
+  sesion: eliminado el worktree .claude/worktrees/asesoria + la rama
+  temporal feature/journey-sala-asesoria (ya integrados en 0b128c7b;
+  ESTADO.md los daba por eliminados pero seguian en disco).
 
 - [2026-07-06] sala `asesoria` HECHA en commit `0b128c7b` — informe 17
   (Etapa 2b.2, index 4 del recorrido, sala 5 de 10; ETAPA 2b COMPLETA:

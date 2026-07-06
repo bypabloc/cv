@@ -47,7 +47,7 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 | --- | --- | --- | --- | --- |
 | 2b.0 | infra (RoomId->10 + stubs + aula univ. pura + CV) | [15-infra-salas-2015.md](15-infra-salas-2015.md) | HECHO | `8d051761` + `9d2e227f` |
 | 2b.1 | sala `iai` (index 3 del recorrido) | [16-sala-iai.md](16-sala-iai.md) | HECHO | `5ddda72d` |
-| 2b.2 | sala `asesoria` (index 4 del recorrido) | [17-sala-asesoria.md](17-sala-asesoria.md) | PENDIENTE | — |
+| 2b.2 | sala `asesoria` (index 4 del recorrido) | [17-sala-asesoria.md](17-sala-asesoria.md) | HECHO | `0b128c7b` |
 
 > El paso 2b.0 es PREREQUISITO de 2b.1 y 2b.2. Tras la insercion, los
 > indices de las salas posteriores se corren automaticamente (cofasa 5,
@@ -66,6 +66,60 @@ Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 ## Bitacora (append al terminar cada sala)
 
 <!-- Formato: [YYYY-MM-DD] sala <id> HECHA en commit <sha> — notas -->
+
+- [2026-07-06] sala `asesoria` HECHA en commit `0b128c7b` — informe 17
+  (Etapa 2b.2, index 4 del recorrido, sala 5 de 10; ETAPA 2b COMPLETA:
+  las 10 salas existen — solo queda el CIERRE C14-C17). Ejecutada en
+  PARALELO con la sesion de iai via WORKTREE (`git worktree add` manual
+  desde e1653064 + rama temporal `feature/journey-sala-asesoria`,
+  commit original `3e21fca8` cherry-pickeado a la rama del plan cuando
+  iai commiteo; git auto-mergeo `rooms/past/index.ts` sin conflicto;
+  worktree y rama temporal eliminados tras integrar). Decisiones del
+  usuario (AskUserQuestion 2026-07-06, NO reabrir): (1) 5 NPCs presente
+  (informe completo): Jhonny Parra y Oriana Castillo (tesistas sentados
+  en el officeLayout con codigo PHP), Coromoto Linares (farmacia),
+  Maigualida Torres (admision) y la Dra. Xiomara Graterol (directora en
+  ronda mostrador->rincon); (2) LAS 3 MICROS: tomar un turno (el ticket
+  vuela del mostrador a la sala de espera + el display sube 042->043
+  con ring), despachar un medicamento (la caja vuela del estante a la
+  mesa, el stock del monitor baja y el minimo alerta en rojo — la
+  feature de Coromoto; tras la alerta "llega el pedido" y repone) y
+  ENSAYAR LA DEFENSA, la micro firma (E cicla las 5 laminas del
+  proyector titulo->problema->arquitectura->demo->conclusiones; al
+  completar el ciclo Jhonny y Oriana SALTAN con el cartel "¡ensayo
+  redondo!"); (3) sobre de pago SI, CON FICHA (el guiño del primer
+  trabajo COBRADO como consultor — abre panel con la historia).
+  Presente en dos zonas: INSTITUTO (sala de espera con siluetas +
+  display de turnos, mostrador de admision con monitor de afiliados +
+  carnet + cruz verde, farmacia con estante + mesa de despacho,
+  cartelera de campañas vacunacion/dengue, torre XAMPP "SERVIDOR
+  LOCAL" con router y canaleta) y RINCON DE ASESORIA (officeLayout 3
+  puestos — 2 encendidos con citas.php/farmacia.php, 1 libre togglable
+  —, proyector + pantalla, sobre de pago). wallArt 4 laminas / 2 fichas
+  (cartel PROSALUD con la red de 14 municipios + el plan de rescate de
+  7 dias — la pieza MUDADA del aula por el informe 15; diagrama web
+  local y afiche de la defensa decorativos). Showcase look NAVEGADOR
+  2015 (unica sala venezolana web: chrome con pestaña + barra
+  192.168.1.10/prosalud/ + navbar verde Bootstrap 2, badge RED LOCAL ·
+  XAMPP; 3 demos: turnos, farmacia con alerta de minimos, afiliados con
+  buscador por cedula). Pasado sepia con los DOS hilos (decision del
+  informe): instituto en papel (sala de espera desbordada con siluetas,
+  pincho de papelitos, cuaderno de tachones, archivador manila y
+  reloj) mas la mesa de tesis varada (stack trace PHP en rojo, pizarra SIN
+  plan con 3 planes tachados y DEFENSA: 15 DIC rodeada en rojo,
+  calendario con meses tachados); micro "atender a un afiliado sin el
+  sistema" con DOS veredictos (la carpeta aparece a los 9 min... el
+  papelito del turno PERDIDO). Nota tecnica: turnoMicro/despachoMicro/
+  ensayoMicro extraidas a funciones modulo (limite de complejidad de
+  Biome, patron dibal/iai); las carpetas del archivador del pasado van
+  en coords LOCALES con pivote para poder animar el temblor
+  (mergedBoxes hornea coords absolutas en la geometria). Smoke browser
+  verde x2 en el worktree Y x2 tras integrar en la rama del plan (26
+  interactables, showcase E/Esc con 3 demos, 5 dialogos, 3 fichas, 3
+  micros, laptop toggle, pasado 31-32 interactables con los 3 NPCs del
+  arco); unico error de consola: el 504 transitorio de vite (gotcha
+  conocido). Nota perf: 5 NPCs + 2 zonas + proyector — medir en C15
+  igual que las demas.
 
 - [2026-07-06] sala `iai` HECHA en commit `5ddda72d` — informe 16
   (Etapa 2b.1, index 3 del recorrido, sala 4 de 10) con 4 decisiones

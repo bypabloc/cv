@@ -12,12 +12,12 @@ import {
   BoxGeometry,
   CanvasTexture,
   CircleGeometry,
-  DoubleSide,
   Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
   PointLight,
+  RingGeometry,
   SRGBColorSpace,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
@@ -567,98 +567,188 @@ interface PortalRift {
  * GRIETA TEMPORAL (rediseño 2026-07-04, decision del usuario): rasgadura
  * irregular pegada plana al muro — SIN marco de puerta ni arco — con el
  * vortice-reloj girando adentro, motas orbitando en contrasentido, letrero
- * y marca oscura en el piso. ~2.9 m de alto. Compartida por el portal de
- * entrada (presente), el de salida (pasado) y — sin letrero/marca, doble
- * cara — el portal del vano a la siguiente sala.
+ * y marca oscura en el piso. ~2.9 m de alto. Es el portal al PASADO (salida
+ * de la sala espejo); la ida a la sala siguiente usa `futurePortal`.
  */
-function timeRift(
-  accent: string,
-  signText: string | null,
-  extra?: { scorch?: boolean; doubleSide?: boolean; motes?: boolean },
-): PortalRift {
-  const side = extra?.doubleSide ? DoubleSide : undefined
+function timeRift(accent: string, signText: string): PortalRift {
   const group = new Group()
   const rift = new Mesh(
     new PlaneGeometry(2.7, 3),
-    new MeshBasicMaterial({
-      map: riftTexture(accent),
-      transparent: true,
-      side,
-    }),
+    new MeshBasicMaterial({ map: riftTexture(accent), transparent: true }),
   )
   rift.position.set(0, 1.5, 0.04)
   rift.userData.noOutline = true
   const swirl = new Mesh(
     new CircleGeometry(0.8, 40),
-    new MeshBasicMaterial({ map: clockSwirlTexture(accent), side }),
+    new MeshBasicMaterial({ map: clockSwirlTexture(accent) }),
   )
   swirl.position.set(0, 1.5, 0.055)
   swirl.userData.noOutline = true
-  group.add(rift, swirl)
-  // motas orbitando (1 draw call). El portal del vano las omite: doble cara
-  // se ve desde ambas salas y sumaria draw calls sobre el presupuesto <100.
-  let motes: Mesh | null = null
-  if (extra?.motes !== false) {
-    motes = mergedBoxes(
-      Array.from({ length: 12 }, (_, i) => {
-        const angle = (i / 12) * Math.PI * 2
-        const radius = 0.92 + (i % 3) * 0.09
-        return {
-          w: 0.045,
-          h: 0.045,
-          d: 0.045,
-          x: Math.cos(angle) * radius,
-          y: Math.sin(angle) * radius,
-          z: 0,
-        }
-      }),
-      basicMat(accent),
-    )
-    motes.position.set(0, 1.5, 0.07)
-    motes.userData.noOutline = true
-    group.add(motes)
-  }
-  if (signText !== null) {
-    const sign = label(signText, { size: 0.16, color: '#e8d8b0' })
-    sign.position.set(0, 2.88, 0.09)
-    group.add(sign)
-  }
-  if (extra?.scorch !== false) {
-    const scorch = new Mesh(unitGeo().plane, toonMat('#15101c'))
-    scorch.rotation.x = -Math.PI / 2
-    scorch.scale.set(2.1, 1.3, 1)
-    scorch.position.set(0, 0.014, 0.5)
-    scorch.userData.noOutline = true
-    group.add(scorch)
-  }
+  const motes = mergedBoxes(
+    Array.from({ length: 12 }, (_, i) => {
+      const angle = (i / 12) * Math.PI * 2
+      const radius = 0.92 + (i % 3) * 0.09
+      return {
+        w: 0.045,
+        h: 0.045,
+        d: 0.045,
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+        z: 0,
+      }
+    }),
+    basicMat(accent),
+  )
+  motes.position.set(0, 1.5, 0.07)
+  motes.userData.noOutline = true
+  const sign = label(signText, { size: 0.16, color: '#e8d8b0' })
+  sign.position.set(0, 2.88, 0.09)
+  const scorch = new Mesh(unitGeo().plane, toonMat('#15101c'))
+  scorch.rotation.x = -Math.PI / 2
+  scorch.scale.set(2.1, 1.3, 1)
+  scorch.position.set(0, 0.014, 0.5)
+  scorch.userData.noOutline = true
+  group.add(rift, swirl, motes, sign, scorch)
   return {
     group,
     update: (t) => {
       // la espiral del reloj gira "hacia atras" y la grieta respira apenas
       swirl.rotation.z = -t * 1.15
-      if (motes) {
-        motes.rotation.z = t * 0.5
-      }
+      motes.rotation.z = t * 0.5
       const pulse = 1 + Math.sin(t * 2.1) * 0.015
       rift.scale.set(pulse, pulse, 1)
     },
   }
 }
 
+/** Superficie de energia OPACA del portal al futuro (radial: nucleo
+ *  brillante -> aura del rubro -> borde oscuro) con anillos concentricos y
+ *  estrias de warp. Opaca a proposito: NO se ve la sala destino a traves. */
+function portalEnergyTexture(accent: string): CanvasTexture {
+  return makeCanvasTexture(256, (ctx, size) => {
+    const c = size / 2
+    const bg = ctx.createRadialGradient(c, c, 3, c, c, c)
+    bg.addColorStop(0, '#f4f8ff')
+    bg.addColorStop(0.16, accent)
+    bg.addColorStop(0.5, '#141d38')
+    bg.addColorStop(1, '#05070f')
+    ctx.fillStyle = bg
+    ctx.beginPath()
+    ctx.arc(c, c, c, 0, Math.PI * 2)
+    ctx.fill()
+    // anillos concentricos (campo de energia)
+    ctx.strokeStyle = accent
+    for (let i = 1; i <= 4; i += 1) {
+      ctx.globalAlpha = 0.14 + i * 0.05
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(c, c, (c * i) / 5, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+    // estrias de warp: radiales, brillantes cerca del nucleo -> "al futuro"
+    ctx.lineCap = 'round'
+    for (let i = 0; i < 30; i += 1) {
+      const angle = (i / 30) * Math.PI * 2
+      const r0 = c * (0.2 + (i % 4) * 0.03)
+      const r1 = c * (0.86 + (i % 3) * 0.04)
+      const grad = ctx.createLinearGradient(
+        c + Math.cos(angle) * r0,
+        c + Math.sin(angle) * r0,
+        c + Math.cos(angle) * r1,
+        c + Math.sin(angle) * r1,
+      )
+      grad.addColorStop(0, accent)
+      grad.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.strokeStyle = grad
+      ctx.globalAlpha = 0.5
+      ctx.lineWidth = 1.3
+      ctx.beginPath()
+      ctx.moveTo(c + Math.cos(angle) * r0, c + Math.sin(angle) * r0)
+      ctx.lineTo(c + Math.cos(angle) * r1, c + Math.sin(angle) * r1)
+      ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+  })
+}
+
+/** Vortice espiral TRANSPARENTE que gira sobre la energia (le da movimiento
+ *  de remolino al portal). Va encima de la superficie opaca. */
+function portalVortexTexture(accent: string): CanvasTexture {
+  return makeCanvasTexture(256, (ctx, size) => {
+    ctx.clearRect(0, 0, size, size)
+    const c = size / 2
+    ctx.lineCap = 'round'
+    const arms: readonly string[] = [accent, '#dfeaff', accent]
+    arms.forEach((color, arm) => {
+      ctx.strokeStyle = color
+      ctx.globalAlpha = 0.58
+      ctx.lineWidth = 3 - arm * 0.6
+      ctx.beginPath()
+      const offset = (arm / arms.length) * Math.PI * 2
+      for (let i = 0; i <= 70; i += 1) {
+        const t = i / 70
+        const angle = offset + t * Math.PI * 2.6
+        const radius = c * 0.12 + t * c * 0.8
+        const px = c + Math.cos(angle) * radius
+        const py = c + Math.sin(angle) * radius
+        if (i === 0) {
+          ctx.moveTo(px, py)
+        } else {
+          ctx.lineTo(px, py)
+        }
+      }
+      ctx.stroke()
+    })
+    ctx.globalAlpha = 1
+  })
+}
+
 /**
- * Grieta visual del portal a la SIGUIENTE sala (reemplaza a la puerta,
- * sobre el vano del muro de salida). Sin letrero, marca de piso NI motas —
- * 2 draw calls (rift + vortice-reloj); doble cara: se ve desde ambas salas,
- * y al montarse 2 corredores por sala cada mesh cuenta contra el <100 (por
- * eso se recortan las motas). El año destino viaja en el prompt del
+ * PORTAL AL FUTURO: reemplaza a la puerta hacia la SIGUIENTE sala. Portal
+ * ovalado con superficie de energia OPACA (nada de ver la sala destino),
+ * un vortice espiral girando encima y un marco-anillo brillante del ACENTO
+ * de la sala DESTINO (el guiño al rubro que viene). Va pegado al muro de
+ * salida sellado — no hay vano ni pasillo que cruzar. 3 draw calls,
+ * single-side (solo se ve desde la sala). El año destino va en el prompt del
  * interactable, que registra world.
  */
-export function nextPortalRift(accent: string): PortalRift {
-  return timeRift(accent, null, {
-    scorch: false,
-    doubleSide: true,
-    motes: false,
-  })
+export function futurePortal(accent: string): PortalRift {
+  const group = new Group()
+  const cy = 1.4
+  const energy = new Mesh(
+    new CircleGeometry(1, 48),
+    new MeshBasicMaterial({ map: portalEnergyTexture(accent) }),
+  )
+  energy.scale.set(0.8, 1.12, 1)
+  energy.position.set(0, cy, 0.02)
+  energy.userData.noOutline = true
+  const vortex = new Mesh(
+    new CircleGeometry(0.92, 40),
+    new MeshBasicMaterial({
+      map: portalVortexTexture(accent),
+      transparent: true,
+    }),
+  )
+  vortex.scale.set(0.8, 1.12, 1)
+  vortex.position.set(0, cy, 0.035)
+  vortex.userData.noOutline = true
+  const frame = new Mesh(
+    new RingGeometry(1, 1.14, 48),
+    new MeshBasicMaterial({ color: accent }),
+  )
+  frame.scale.set(0.8, 1.12, 1)
+  frame.position.set(0, cy, 0.03)
+  frame.userData.noOutline = true
+  group.add(energy, vortex, frame)
+  return {
+    group,
+    update: (t) => {
+      energy.rotation.z = t * 0.12
+      vortex.rotation.z = -t * 0.5
+      const pulse = 1 + Math.sin(t * 2.4) * 0.02
+      frame.scale.set(0.8 * pulse, 1.12 * pulse, 1)
+    },
+  }
 }
 
 /** Grieta-portal al "antes" de la sala (teleporta a la sala espejo).

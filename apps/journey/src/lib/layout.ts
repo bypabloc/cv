@@ -160,8 +160,11 @@ export function buildWallBoxes(layout: JourneyLayout): WallBox[] {
     const zFront = room.z - room.depth / 2
     const zBack = room.z + room.depth / 2
     const source = { kind: 'room' as const, index: room.index }
-    const hasFrontOpening = room.index > 0
-    const hasBackOpening = room.index < layout.rooms.length - 1
+    // Muros SELLADOS (sin vano): entre salas se cruza por el PORTAL (tecla
+    // E, teleport con warp), nunca caminando — asi no hay hueco que muestre
+    // la sala siguiente ni pasillo-vacio que atravesar.
+    const hasFrontOpening = false
+    const hasBackOpening = false
 
     // frontal (hacia -Z): el muro ocupa la franja EXTERIOR [zFront - t, zFront]
     for (const box of crossWall(

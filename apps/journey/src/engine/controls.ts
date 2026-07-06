@@ -10,7 +10,6 @@ import type { PerspectiveCamera } from 'three'
 import type { Box2 } from '../lib/collision'
 import { circleIntersectsBox, resolveMovement } from '../lib/collision'
 import {
-  doorBlockerBox,
   EYE_HEIGHT,
   type JourneyLayout,
   type PastRoomLayout,
@@ -131,12 +130,6 @@ export function createControls(deps: ControlsDeps): Controls {
   // Movimiento + colision (identica en 3a persona y POV)
   // -------------------------------------------------------------------------
 
-  /** El vano SIEMPRE bloquea el paso: cruzar es por el portal (tecla E),
-   *  nunca caminando a traves. */
-  function vanoBlockerBoxes(): Box2[] {
-    return layout.doors.map(doorBlockerBox)
-  }
-
   function applyMovement(dt: number): boolean {
     if (state.playerSeat) {
       return false // sentado: sin WASD hasta levantarse con E
@@ -157,11 +150,7 @@ export function createControls(deps: ControlsDeps): Controls {
     const dirX = -cosY * nx - sinY * nz
     const dirZ = sinY * nx - cosY * nz
     const step = WALK_SPEED * dt
-    const candidates = [
-      ...deps.walls,
-      ...vanoBlockerBoxes(),
-      ...collectObstacles(state),
-    ]
+    const candidates = [...deps.walls, ...collectObstacles(state)]
     // anti-atasco: una caja que YA contiene al jugador (un NPC que camino
     // sobre el, un teleport) no bloquea — siempre se puede salir
     const blockers = candidates.filter(

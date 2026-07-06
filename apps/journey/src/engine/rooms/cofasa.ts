@@ -830,8 +830,8 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
   // rincon de desarrollo del canon: 3 puestos con laptops de la epoca;
   // Yorman y Douglas trabajan en las suyas, la tercera se enciende con E
   const deskSpots: readonly (readonly [number, number])[] = [
-    [-1.7, room.z - 4.5],
-    [0.7, room.z - 4.5],
+    [-1.7, room.z - 3.7],
+    [0.7, room.z - 4.2],
     [-0.5, room.z - 2.3],
   ]
   const office = officeLayout({

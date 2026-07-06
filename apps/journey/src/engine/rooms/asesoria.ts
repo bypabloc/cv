@@ -1025,8 +1025,8 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   // RINCON DE ASESORIA (-X, fondo): la mesa de los tesistas — 3 puestos,
   // Jhonny y Oriana en codigo PHP, la tercera laptop libre con E
   const deskSpots: readonly (readonly [number, number])[] = [
-    [-3.4, room.z - 4.2],
-    [-1.6, room.z - 4.2],
+    [-3.4, room.z - 3.2],
+    [-1.6, room.z - 3.7],
     [-2.5, room.z - 2.3],
   ]
   const office = officeLayout({

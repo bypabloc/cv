@@ -38,10 +38,23 @@
 
 Estados validos: `PENDIENTE` · `EN CURSO` · `HECHO`.
 
-> **ETAPA 2 COMPLETA (2026-07-05)**: las 7 salas estan HECHAS. Lo que queda
-> del plan es el CIERRE (C14-C17, tabla de abajo) en una sesion propia.
+> **ETAPA 2 COMPLETA (2026-07-05)**: las 7 salas estan HECHAS. Antes del
+> CIERRE queda la **ETAPA 2b** (salas 2015, tabla de abajo).
 
-## CIERRE (tras las 7 salas)
+## ETAPA 2b — salas 2015 (ampliacion 2026-07-05, insertadas ipasme -> cofasa)
+
+| Orden | Paso | Informe | Estado | Commit |
+| --- | --- | --- | --- | --- |
+| 2b.0 | infra (RoomId->10 + stubs + aula univ. pura + CV) | [15-infra-salas-2015.md](15-infra-salas-2015.md) | PENDIENTE | — |
+| 2b.1 | sala `iai` (index 3 del recorrido) | [16-sala-iai.md](16-sala-iai.md) | PENDIENTE | — |
+| 2b.2 | sala `asesoria` (index 4 del recorrido) | [17-sala-asesoria.md](17-sala-asesoria.md) | PENDIENTE | — |
+
+> El paso 2b.0 es PREREQUISITO de 2b.1 y 2b.2. Tras la insercion, los
+> indices de las salas posteriores se corren automaticamente (cofasa 5,
+> dibal 6, goodmeal 7, destacame 8, futuro 9): los ids `talk-N-*`/
+> `showcase-N`/`portal-N` derivan de `room.index` en runtime.
+
+## CIERRE (tras TODAS las salas, incluidas las 2015)
 
 | Commit | Que | Estado |
 | --- | --- | --- |

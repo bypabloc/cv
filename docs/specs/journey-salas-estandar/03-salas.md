@@ -2,21 +2,27 @@
 
 > [<- 02 El canon](02-el-canon-de-sala.md) · [Descomposicion ->](04-descomposicion.md)
 
-Las 8 salas del recorrido. La **Aula** (Etapa 1) se documenta aqui; las **7
-salas de Etapa 2** tienen cada una su informe AUTOCONTENIDO (research completa:
-experiencia, empresa, web oficial, guiños, NPCs con 2 enfoques, dialogos,
-items, pasado, showcase, colores) para poder crearse en sesiones aisladas.
+Las 10 salas del recorrido. La **Aula** (Etapa 1) se documenta aqui; las
+salas de **Etapa 2 y 2b** tienen cada una su informe AUTOCONTENIDO (research
+completa: experiencia, empresa, web oficial, guiños, NPCs con 2 enfoques,
+dialogos, items, pasado, showcase, colores) para poder crearse en sesiones
+aisladas.
 
 | Orden | Sala | Etapa | Informe | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | `aula` | 1 | (aqui, abajo) | ver [ESTADO.md](ESTADO.md) |
 | 1 | `corpoelec` | 2 | [08-sala-corpoelec.md](08-sala-corpoelec.md) | ver [ESTADO.md](ESTADO.md) |
 | 2 | `ipasme` | 2 | [09-sala-ipasme.md](09-sala-ipasme.md) | ver [ESTADO.md](ESTADO.md) |
-| 3 | `cofasa` | 2 | [10-sala-cofasa.md](10-sala-cofasa.md) | ver [ESTADO.md](ESTADO.md) |
-| 4 | `dibal` | 2 | [11-sala-dibal.md](11-sala-dibal.md) | ver [ESTADO.md](ESTADO.md) |
-| 5 | `goodmeal` | 2 | [12-sala-goodmeal.md](12-sala-goodmeal.md) | ver [ESTADO.md](ESTADO.md) |
-| 6 | `destacame` | 2 | [13-sala-destacame.md](13-sala-destacame.md) | ver [ESTADO.md](ESTADO.md) |
-| 7 | `futuro` | 2 | [14-sala-futuro.md](14-sala-futuro.md) | ver [ESTADO.md](ESTADO.md) |
+| 3 | `iai` | 2b | [16-sala-iai.md](16-sala-iai.md) | ver [ESTADO.md](ESTADO.md) |
+| 4 | `asesoria` | 2b | [17-sala-asesoria.md](17-sala-asesoria.md) | ver [ESTADO.md](ESTADO.md) |
+| 5 | `cofasa` | 2 | [10-sala-cofasa.md](10-sala-cofasa.md) | ver [ESTADO.md](ESTADO.md) |
+| 6 | `dibal` | 2 | [11-sala-dibal.md](11-sala-dibal.md) | ver [ESTADO.md](ESTADO.md) |
+| 7 | `goodmeal` | 2 | [12-sala-goodmeal.md](12-sala-goodmeal.md) | ver [ESTADO.md](ESTADO.md) |
+| 8 | `destacame` | 2 | [13-sala-destacame.md](13-sala-destacame.md) | ver [ESTADO.md](ESTADO.md) |
+| 9 | `futuro` | 2 | [14-sala-futuro.md](14-sala-futuro.md) | ver [ESTADO.md](ESTADO.md) |
+
+> Etapa 2b (ampliacion 2026-07-05): la infra de insercion (RoomId 8->10 +
+> aula universidad pura + CV) esta en [15-infra-salas-2015.md](15-infra-salas-2015.md).
 
 Todas cumplen el canon de [02-el-canon-de-sala.md](02-el-canon-de-sala.md)
 (office layout + NPCs 2 enfoques + wallArt + softwareShowcase + infoKit +
@@ -27,8 +33,12 @@ sin pasado ni slug).
 
 ## Sala 0 — Aula (`aula`) · Etapa 1 · refactor MINIMO
 
-Slug(s): `iai`, `projects-degrees` (proyecto academico IAI + asesoria de
-proyectos de grado, 2015). Universidad. Acento azul `#2f6fd0` + guiños morados.
+Slug(s): NINGUNO tras el informe 15 (ampliacion 2026-07-05): el aula pasa a
+**universidad pura** — textos sinteticos derivados de `education` (UPTYAB
+2011-2016 + hilo autodidacta). Las experiencias `iai` y `projects-degrees`
+(que el aula consumia originalmente) ganaron sala propia (informes 16 y 17);
+sus historias salen de los dialogos del aula (el profesor solo las ANTICIPA).
+Universidad. Acento azul `#2f6fd0` + guiños morados.
 
 **Presente** (AC-9): MANTENER lo actual (2 tesistas sentados tecleando +
 estudiante en ronda + PCs togglables con E + tesis en papel sobre el escritorio
@@ -51,11 +61,10 @@ karate/videojuegos/A-C, cero codigo). En Etapa 1 se MUEVE tal cual a
 `rooms/past/aula.ts` sin cambios de contenido (parte del refactor de partir
 los pasados, commit C5).
 
-**Retos/aprendizajes** (data-driven de `iai` + `projects-degrees`): reencaminar
-2 proyectos de grado bloqueados; liderar un equipo pequeño; arquitectura de un
-sistema de gestion de obras sobre red local. Aprendizajes: los reencamino en ~1
-semana; capacito ~6 estudiantes; diseño cliente-servidor; documentacion +
-diagnostico.
+**Retos/aprendizajes** (tras el informe 15: sinteticos, universidad pura):
+pagarse la carrera trabajando; aprender a programar de verdad (POO, redes,
+BD); primeros liderazgos academicos; el habito autodidacta. Los retos del
+IAI y del rescate de la tesis viven ahora en sus salas (informes 16 y 17).
 
 > Aula es la sala CANON (el infoKit, los NPCs conversables y los PCs togglables
 > ya existen y son el modelo que replican las demas). Su refactor solo AGREGA
@@ -79,6 +88,14 @@ Resumen de una linea por sala (el detalle esta en su informe):
 - **ipasme** — salud, historias clinicas (Java escritorio). Consultorio +
   showcase app de escritorio 2014. Pasado: archivo de carpetas manila +
   tarjetones + busqueda lenta.
+- **iai** (2b) — obra publica Yaracuy, proyecto de grado LIDERADO (equipo ~3).
+  Presupuestos COVENIN/APU + valuaciones, Java escritorio + PC-servidor en
+  red local. Meson de planos + valla de obra + showcase 3 demos. Pasado:
+  APUs a mano rehechos por inflacion.
+- **asesoria** (2b) — PROSALUD (salud publica) + rincon de asesoria de tesis.
+  Rescate PAGADO en ~1 semana de una tesis bloqueada: web local PHP+MySQL
+  (citas/farmacia/afiliados) + enseñar a defender. Pasado: instituto en
+  caos y mesa de tesis bloqueada.
 - **cofasa** — laboratorio farma, paradas de maquina. Linea de blisters +
   MIOVIT (producto, no maquina) + torre andon + showcase dashboard de paradas.
   Pasado: planillas de paradas a mano.

@@ -1,12 +1,14 @@
-# journey-salas-estandar — estandarizacion + 8 salas del journey 3D
+# journey-salas-estandar — estandarizacion + 10 salas del journey 3D
 
 > Plan de refactor del journey 3D (`apps/journey`, motor Three.js vanilla
 > manga-ink): estandariza el canon de sala (NPCs con 2 enfoques, cuadros
 > de rubro, showcase de software junto a la puerta, paredes blancas +
 > acento del rubro), refactoriza las 3 salas actuales, unifica Destacame,
 > implementa las 4 salas pendientes + la sala Futuro, y refactoriza TODOS
-> los pasados (excepto Aula). El resultado es un recorrido de **8 salas**
-> cronologicas + futuro, data-driven desde `@portfolio/content`.
+> los pasados (excepto Aula). Ampliacion 2026-07-05: las experiencias 2015
+> (`iai` + `projects-degrees`) ganan sala propia. El resultado es un
+> recorrido de **10 salas** cronologicas + futuro, data-driven desde
+> `@portfolio/content`.
 
 ## Estado
 
@@ -42,12 +44,20 @@ ETAPA 2 — SALAS 1 A 1 (otras sesiones, 1 sala por sesion, orden sugerido)
      -> verificar -> commit en la MISMA rama -> actualizar ESTADO.md
   orden cronologico sugerido (puedes saltarte):
      corpoelec -> ipasme -> cofasa -> dibal -> goodmeal -> destacame -> futuro
-     -> cuando la 7a sala esta lista: cierre (audio + perf + rule) -> merge
-        unico a dev -> git rm -r la carpeta del plan
+
+ETAPA 2b — INSERCION SALAS 2015 (ampliacion 2026-07-05, mismas reglas)
+  [15-infra-salas-2015.md] infra RoomId->10 + stubs iai/asesoria + aula
+    universidad pura + CV (PREREQUISITO de las 2 salas)
+    -> [16-sala-iai.md] sala IAI (1 sesion)
+    -> [17-sala-asesoria.md] sala Asesoria/PROSALUD (1 sesion)
+
+  -> cuando TODAS las salas estan listas: cierre (audio + perf + rule)
+     -> merge unico a dev -> git rm -r la carpeta del plan
 ```
 
 - **Rama unica larga** `feature/journey-salas-estandar` (decision del usuario):
-  Etapa 1 y las 7 salas viven en la MISMA rama, **sin merge hasta el final**.
+  Etapa 1 y TODAS las salas (incluidas las 2015) viven en la MISMA rama,
+  **sin merge hasta el final**.
   La carpeta del plan SOBREVIVE hasta que se cierra la ultima sala (es la cola
   de trabajo persistente entre sesiones).
 - El **STOP GATE** esta despues de la Etapa 1: el plan se DETIENE ahi. Las
@@ -73,6 +83,8 @@ sala). Ver [04-descomposicion.md](04-descomposicion.md) (seccion 8),
 | [02-el-canon-de-sala.md](02-el-canon-de-sala.md) | El ESTANDAR: los 4 helpers + estructura fija presente/pasado + paleta. SIEMPRE leer antes de crear una sala |
 | [03-salas.md](03-salas.md) | Resumen sala por sala (indice a los informes detallados) |
 | [08-sala-corpoelec.md](08-sala-corpoelec.md) .. [14-sala-futuro.md](14-sala-futuro.md) | Informe AUTOCONTENIDO de cada sala de Etapa 2 (research completa: exp, web oficial, guiños, NPCs, dialogos, items, pasado, showcase). Leer el de la sala que se va a crear |
+| [15-infra-salas-2015.md](15-infra-salas-2015.md) | Etapa 2b: infra RoomId->10 + stubs `iai`/`asesoria` + aula universidad pura + actualizacion del CV. PREREQUISITO de los informes 16 y 17 |
+| [16-sala-iai.md](16-sala-iai.md) · [17-sala-asesoria.md](17-sala-asesoria.md) | Informe AUTOCONTENIDO de cada sala 2015 (mismo formato que 08-13) |
 | [04-descomposicion.md](04-descomposicion.md) | Seccion 8: tareas atomicas + paralelizacion |
 | [05-commits.md](05-commits.md) | Seccion 9: secuencia de commits por etapa |
 | [06-paralelizacion-worktrees.md](06-paralelizacion-worktrees.md) | Seccion 10: paralelizacion (N/A entre etapas: 1 sala por sesion) |
@@ -85,8 +97,10 @@ Una sesion que crea una sala de Etapa 2 debe:
 1. **Leer** este README, [ESTADO.md](ESTADO.md), [02-el-canon-de-sala.md](02-el-canon-de-sala.md)
    y el `NN-sala-<id>.md` de la sala a crear.
 2. **Confirmar** que la ETAPA 1 esta HECHA (los 4 helpers en `props.ts`, el
-   theme paredes-blancas, `RoomId` de 8, los pasados partidos). Si no, PARAR:
-   la Etapa 1 es prerequisito.
+   theme paredes-blancas, los pasados partidos). Si no, PARAR: la Etapa 1 es
+   prerequisito. Para las salas 2015 (`iai`/`asesoria`), confirmar ADEMAS que
+   el informe [15-infra-salas-2015.md](15-infra-salas-2015.md) esta HECHO
+   (`RoomId` de 10, stubs, CV actualizado).
 3. **Elegir** la siguiente sala pendiente segun [ESTADO.md](ESTADO.md) (orden
    cronologico sugerido; se puede saltar).
 4. **Crear SOLO esa sala**: `rooms/<id>.ts` (presente) + `rooms/past/<id>.ts`
@@ -109,9 +123,10 @@ Una sesion que crea una sala de Etapa 2 debe:
    de TODOS los pasados **excepto Aula**. Ademas: helpers reutilizables + doc
    del estandar (spec + rule). Fallback Static, teleport, tour y **audio
    ambiente por sala** entran en este plan.
-2. **Recorrido final = 8 salas cronologicas + futuro**:
-   `aula -> corpoelec -> ipasme -> cofasa -> dibal -> goodmeal -> destacame
-   -> futuro`. `RoomId` pasa de 3 a 8 ids.
+2. **Recorrido final = 10 salas cronologicas + futuro** (ampliado
+   2026-07-05): `aula -> corpoelec -> ipasme -> iai -> asesoria -> cofasa ->
+   dibal -> goodmeal -> destacame -> futuro`. `RoomId` paso de 3 a 8 ids en
+   Etapa 1 y pasa de 8 a 10 en el informe 15 (Etapa 2b).
 3. **Estandar de NPCs (2 enfoques, 4-5 por sala)**: cada sala tiene ~2
    **compañeros** de desarrollo (con los que Pablo construyo) + ~2 **personal
    del sitio** (quienes pedian features y a quienes ayudo) + ocasional 1
@@ -154,24 +169,52 @@ Una sesion que crea una sala de Etapa 2 debe:
     `docs/progress/explore_empresas_*.md` + branding de las webs oficiales).
     El usuario revisa y corrige despues.
 
-## Mapa de salas (8 salas, data-driven)
+### Ampliacion 2026-07-05 — salas 2015 (decisiones cerradas, NO reabrir)
+
+1. **`iai` y `projects-degrees` ganan sala propia** entre `ipasme` y
+    `cofasa` (orden: ipasme -> iai -> asesoria -> cofasa). Recorrido = 10
+    salas. Ids de sala: `iai` y `asesoria` (el slug `projects-degrees` y su
+    URL no cambian).
+2. **Aula -> universidad pura**: deja los slugs 2015 y pasa a textos
+    sinteticos desde `education` (UPTYAB); sus NPCs se re-enfocan (el
+    profesor solo ANTICIPA las historias). Detalle en el informe 15.
+3. **CV se actualiza** (DB fuente de verdad + regenerar cache): `iai`
+    company = "Instituto Autonomo de Infraestructura del Estado Yaracuy
+    (IAI)" (confirmado por sentencia TSJ 01229/2012 — singular
+    "Infraestructura"), fechas ene-dic 2015; `projects-degrees` = nov-dic
+    2015, narrativa reescrita a UNA tesis para PROSALUD (la segunda tesis se
+    ELIMINA), company queda "Asesoria de proyectos de grado".
+4. **Stacks fieles a la epoca**: IAI = escritorio Java (Swing) + PC-servidor
+    en red local; PROSALUD = web local PHP + MySQL (XAMPP). El software de
+    PROSALUD = citas/turnos + farmacia/inventario + admision/afiliados.
+5. **Narrativa asesoria**: a Pablo LE PAGARON por desarrollar el solo la
+    solucion del equipo de tesis y por enseñarles a exponer/defender. Sala =
+    instituto de salud + rincon de asesoria; pasado = instituto en caos +
+    mesa de tesis bloqueada.
+
+## Mapa de salas (10 salas, data-driven)
 
 | Orden | RoomId | Etapa | Informe | Slug(s) `@portfolio/content` | Acento (guiño) |
 | --- | --- | --- | --- | --- | --- |
-| 0 | `aula` | **1** | (en [03-salas.md](03-salas.md)) | `iai`, `projects-degrees` | azul `#2f6fd0` + morado |
+| 0 | `aula` | **1** | (en [03-salas.md](03-salas.md)) | (sinteticos desde `education`, tras informe 15) | azul `#2f6fd0` + morado |
 | 1 | `corpoelec` | 2 | [08-sala-corpoelec.md](08-sala-corpoelec.md) | `corpoelec` | naranja `#e2572b` + amarillo |
 | 2 | `ipasme` | 2 | [09-sala-ipasme.md](09-sala-ipasme.md) | `ipasme` | azul institucional + verde menta |
-| 3 | `cofasa` | 2 | [10-sala-cofasa.md](10-sala-cofasa.md) | `cofasa` | azul Cofasa + andon |
-| 4 | `dibal` | 2 | [11-sala-dibal.md](11-sala-dibal.md) | `dibal` | navy + teal Dibal |
-| 5 | `goodmeal` | 2 | [12-sala-goodmeal.md](12-sala-goodmeal.md) | `goodmeal` | teal GoodMeal + kraft |
-| 6 | `destacame` | 2 | [13-sala-destacame.md](13-sala-destacame.md) | `destacame-frontend`, `destacame-architect` | azul `#0052cc` |
-| 7 | `futuro` | 2 | [14-sala-futuro.md](14-sala-futuro.md) | (sin slug: sintetica) | azul-violeta premium |
+| 3 | `iai` | **2b** | [16-sala-iai.md](16-sala-iai.md) | `iai` | ambar obra `#d9a013` + gris concreto |
+| 4 | `asesoria` | **2b** | [17-sala-asesoria.md](17-sala-asesoria.md) | `projects-degrees` | verde salud `#2e8b57` + morado |
+| 5 | `cofasa` | 2 | [10-sala-cofasa.md](10-sala-cofasa.md) | `cofasa` | azul Cofasa + andon |
+| 6 | `dibal` | 2 | [11-sala-dibal.md](11-sala-dibal.md) | `dibal` | navy + teal Dibal |
+| 7 | `goodmeal` | 2 | [12-sala-goodmeal.md](12-sala-goodmeal.md) | `goodmeal` | teal GoodMeal + kraft |
+| 8 | `destacame` | 2 | [13-sala-destacame.md](13-sala-destacame.md) | `destacame-frontend`, `destacame-architect` | azul `#0052cc` |
+| 9 | `futuro` | 2 | [14-sala-futuro.md](14-sala-futuro.md) | (sin slug: sintetica) | azul-violeta premium |
 
 > **Etapa 1** (antes del stop): estandarizacion + `aula` (prueba del canon).
 > El viejo id `cima` se **renombra** a `destacame` en la infra de Etapa 1
 > (queda como stub hasta que Etapa 2 la construye). **Etapa 2** (1 a 1): las
-> 7 salas restantes, cada una con su informe autocontenido. La sala `futuro`
-> NO tiene slug: sus textos son sinteticos.
+> 7 salas restantes, cada una con su informe autocontenido. **Etapa 2b**
+> (ampliacion 2026-07-05): el informe 15 hace la infra (RoomId 8->10 + aula
+> universidad pura + CV) y los informes 16/17 crean las salas `iai` y
+> `asesoria`. Las salas `futuro` y `aula` NO tienen slug: sus textos son
+> sinteticos.
 
 ## Los 4 puntos de infra por sala (el compilador los exige)
 

@@ -1185,8 +1185,11 @@ export function wallArt(opts: {
 }): { props: PropHandle[]; colliders: Box2[] } {
   const trim = opts.theme.trim ?? opts.theme.accent
   const marcoGroup = new Group()
+  // outlinedMergedBoxes (no mergedBoxes + outline generico): el contorno
+  // de un merge con posiciones horneadas se desplaza del marco al escalar
+  // alrededor del origen local — el mismo bug que documenta toon.ts.
   marcoGroup.add(
-    mergedBoxes(
+    outlinedMergedBoxes(
       opts.frames.map((frame) => {
         const [w, h] = frame.size ?? [1.1, 0.8]
         const rotY = frame.rotationY ?? 0

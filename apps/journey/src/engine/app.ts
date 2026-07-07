@@ -337,6 +337,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
         state: EngineState
         info: WebGLRenderer['info']
         scene: Scene
+        camera: PerspectiveCamera
       }
     }
     w.__journeyDebug = {
@@ -344,6 +345,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       state,
       info: renderer.info,
       scene,
+      camera,
     }
   }
 

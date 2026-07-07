@@ -51,6 +51,12 @@ import {
   unitGeo,
 } from './toon'
 
+// Colores FIJOS de los portales entre salas (decision del usuario 2026-07-06):
+// TODOS los de ida al futuro comparten el azul fosforecente; los de regreso a
+// la sala anterior, un azul celeste (mas claro) para distinguirlos.
+const PORTAL_FUTURE_COLOR = '#1fb0ff'
+const PORTAL_RETURN_COLOR = '#8fd6ff'
+
 // ---------------------------------------------------------------------------
 // Contratos (congelados para las factories de sala — plan seccion 8)
 // ---------------------------------------------------------------------------
@@ -336,20 +342,23 @@ export function createWorld(deps: WorldDeps): World {
       )
     }
     // portal al FUTURO en el muro de SALIDA (+Z, si hay sala siguiente):
-    // mira hacia adentro (-Z), acento del rubro que VIENE.
+    // mira hacia adentro (-Z), color azul fosforecente + año destino arriba.
     const next = rooms[index + 1]
     if (next) {
-      const portal = futurePortal(THEMES[next.id].accent)
+      const portal = futurePortal(PORTAL_FUTURE_COLOR, {
+        year: `${next.year}`,
+        mirrorLabel: true,
+      })
       portal.group.position.set(room.x, 0, room.z + room.depth / 2 - 0.05)
       portal.group.rotation.y = Math.PI
       group.add(portal.group)
       portalUpdates.push(portal.update)
     }
     // portal de REGRESO en el muro de ENTRADA (-Z, si hay sala anterior):
-    // mira hacia adentro (+Z, sin rotar), acento del rubro al que se VUELVE.
+    // mira hacia adentro (+Z, sin rotar), azul celeste + año anterior arriba.
     const prev = rooms[index - 1]
     if (prev) {
-      const back = futurePortal(THEMES[prev.id].accent)
+      const back = futurePortal(PORTAL_RETURN_COLOR, { year: `${prev.year}` })
       back.group.position.set(room.x, 0, room.z - room.depth / 2 + 0.05)
       group.add(back.group)
       portalUpdates.push(back.update)

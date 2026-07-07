@@ -43,7 +43,6 @@ import type {
 } from '../state'
 import type { RoomTheme } from '../themes'
 import {
-  basicMat,
   boxMesh,
   type DrawFn,
   label,
@@ -375,84 +374,52 @@ const EXIT_LABEL = {
   en: 'Return to the present',
 } as const
 
+/** Color unico de TODAS las grietas al pasado: marron/sepia (el "antes"). */
+const RIFT_SEPIA = '#c8a878'
+
 /**
- * Vortice-RELOJ del portal: espiral de tinta + 12 marcas horarias y los
- * numeros 12/3/6/9 distorsionados cayendo hacia el centro. El mesh entero
- * rota (la "espiral de un reloj" que pidio el diseño).
+ * Esfera de reloj SEPIA vista de frente, para apoyar PLANA en el piso bajo
+ * la grieta (el reloj ya no vive dentro de la grieta: decision del usuario
+ * 2026-07-06). Marcas horarias + agujas 10:10 horneadas — 1 draw call.
  */
-function clockSwirlTexture(accent: string): CanvasTexture {
+function floorClockTexture(): CanvasTexture {
   return makeCanvasTexture(256, (ctx, size) => {
     const c = size / 2
-    const bg = ctx.createRadialGradient(c, c, 8, c, c, c)
-    bg.addColorStop(0, '#1c1622')
-    bg.addColorStop(0.72, '#0d0a10')
-    bg.addColorStop(1, '#040305')
-    ctx.fillStyle = bg
+    ctx.clearRect(0, 0, size, size)
+    // esfera crema con aro sepia
+    ctx.fillStyle = '#e8d8b0'
     ctx.beginPath()
-    ctx.arc(c, c, c, 0, Math.PI * 2)
+    ctx.arc(c, c, c - 6, 0, Math.PI * 2)
     ctx.fill()
-    // 3 brazos espirales (2 del acento + 1 crema) — remolino temporal
-    const arms: readonly string[] = [accent, accent, '#e8d8b0']
-    ctx.lineCap = 'round'
-    arms.forEach((color, arm) => {
-      ctx.strokeStyle = color
-      ctx.globalAlpha = arm === 2 ? 0.8 : 0.9
-      ctx.lineWidth = 6 - arm
-      ctx.beginPath()
-      const offset = (arm / arms.length) * Math.PI * 2
-      for (let i = 0; i <= 60; i += 1) {
-        const t = i / 60
-        const angle = offset + t * Math.PI * 3.2
-        const radius = 6 + t * (c - 18)
-        const px = c + Math.cos(angle) * radius
-        const py = c + Math.sin(angle) * radius
-        if (i === 0) {
-          ctx.moveTo(px, py)
-        } else {
-          ctx.lineTo(px, py)
-        }
-      }
-      ctx.stroke()
-    })
-    // marcas horarias en el borde (esfera de reloj)
-    ctx.globalAlpha = 0.85
-    ctx.strokeStyle = '#e8d8b0'
-    ctx.lineWidth = 3
+    ctx.strokeStyle = '#6b4a2a'
+    ctx.lineWidth = 9
+    ctx.stroke()
+    // marcas horarias
     for (let i = 0; i < 12; i += 1) {
       const angle = (i / 12) * Math.PI * 2
-      const r0 = c - 5
-      const r1 = i % 3 === 0 ? c - 20 : c - 12
+      const r0 = c - 16
+      const r1 = i % 3 === 0 ? c - 38 : c - 26
+      ctx.lineWidth = i % 3 === 0 ? 7 : 3
       ctx.beginPath()
       ctx.moveTo(c + Math.cos(angle) * r0, c + Math.sin(angle) * r0)
       ctx.lineTo(c + Math.cos(angle) * r1, c + Math.sin(angle) * r1)
       ctx.stroke()
     }
-    // numeros 12/3/6/9 estirados en espiral (los "traga" el vortice)
-    ctx.fillStyle = '#f2e6c8'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const numbers: readonly (readonly [string, number])[] = [
-      ['12', -Math.PI / 2],
-      ['3', 0],
-      ['6', Math.PI / 2],
-      ['9', Math.PI],
-    ]
-    for (const [text, angle] of numbers) {
-      const r = c * 0.62
-      ctx.save()
-      ctx.translate(c + Math.cos(angle) * r, c + Math.sin(angle) * r)
-      ctx.rotate(angle + Math.PI / 2 + 0.5)
-      ctx.transform(1, 0.22, -0.3, 0.9, 0, 0)
-      ctx.font = `bold 34px ${MANGA_FONT}`
-      ctx.globalAlpha = 0.92
-      ctx.fillText(text, 0, 0)
-      ctx.restore()
+    // agujas 10:10 (clasico) horneadas
+    ctx.strokeStyle = '#3a2416'
+    ctx.lineCap = 'round'
+    const hand = (angle: number, len: number, w: number) => {
+      ctx.lineWidth = w
+      ctx.beginPath()
+      ctx.moveTo(c, c)
+      ctx.lineTo(c + Math.cos(angle) * len, c + Math.sin(angle) * len)
+      ctx.stroke()
     }
-    // nucleo
-    ctx.globalAlpha = 1
-    ctx.fillStyle = '#f2e6c8'
+    hand(-Math.PI / 2 - Math.PI / 6, c * 0.48, 10)
+    hand(-Math.PI / 2 + Math.PI / 6, c * 0.68, 7)
+    ctx.fillStyle = '#3a2416'
     ctx.beginPath()
-    ctx.arc(c, c, 8, 0, Math.PI * 2)
+    ctx.arc(c, c, 9, 0, Math.PI * 2)
     ctx.fill()
   })
 }
@@ -570,43 +537,21 @@ interface PortalRift {
 }
 
 /**
- * GRIETA TEMPORAL (rediseño 2026-07-04, decision del usuario): rasgadura
- * irregular pegada plana al muro — SIN marco de puerta ni arco — con el
- * vortice-reloj girando adentro, motas orbitando en contrasentido, letrero
- * y marca oscura en el piso. ~2.9 m de alto. Es el portal al PASADO (salida
- * de la sala espejo); la ida a la sala siguiente usa `futurePortal`.
+ * GRIETA TEMPORAL al pasado (rediseño 2026-07-06, decision del usuario):
+ * rasgadura SEPIA irregular pegada plana al muro — SIN marco ni arco — SOLO
+ * la grieta (el vortice-reloj y las motas se quitaron). El reloj ahora vive
+ * de PIE en el piso, bajo la grieta. Todas las grietas son marron/sepia (el
+ * "antes"). Letrero arriba + marca oscura + reloj en el piso. ~2.9 m de alto.
+ * Es el portal al PASADO; la ida/regreso entre salas usa `futurePortal`.
  */
-function timeRift(accent: string, signText: string): PortalRift {
+function timeRift(signText: string): PortalRift {
   const group = new Group()
   const rift = new Mesh(
     new PlaneGeometry(2.7, 3),
-    new MeshBasicMaterial({ map: riftTexture(accent), transparent: true }),
+    new MeshBasicMaterial({ map: riftTexture(RIFT_SEPIA), transparent: true }),
   )
   rift.position.set(0, 1.5, 0.04)
   rift.userData.noOutline = true
-  const swirl = new Mesh(
-    new CircleGeometry(0.8, 40),
-    new MeshBasicMaterial({ map: clockSwirlTexture(accent) }),
-  )
-  swirl.position.set(0, 1.5, 0.055)
-  swirl.userData.noOutline = true
-  const motes = mergedBoxes(
-    Array.from({ length: 12 }, (_, i) => {
-      const angle = (i / 12) * Math.PI * 2
-      const radius = 0.92 + (i % 3) * 0.09
-      return {
-        w: 0.045,
-        h: 0.045,
-        d: 0.045,
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-        z: 0,
-      }
-    }),
-    basicMat(accent),
-  )
-  motes.position.set(0, 1.5, 0.07)
-  motes.userData.noOutline = true
   const sign = label(signText, { size: 0.16, color: '#e8d8b0' })
   sign.position.set(0, 2.88, 0.09)
   const scorch = new Mesh(unitGeo().plane, toonMat('#15101c'))
@@ -614,13 +559,19 @@ function timeRift(accent: string, signText: string): PortalRift {
   scorch.scale.set(2.1, 1.3, 1)
   scorch.position.set(0, 0.014, 0.5)
   scorch.userData.noOutline = true
-  group.add(rift, swirl, motes, sign, scorch)
+  // reloj SEPIA de piso bajo la grieta (el reloj ya no vive adentro)
+  const clock = new Mesh(
+    new CircleGeometry(0.42, 40),
+    new MeshBasicMaterial({ map: floorClockTexture() }),
+  )
+  clock.rotation.x = -Math.PI / 2
+  clock.position.set(0, 0.02, 0.55)
+  clock.userData.noOutline = true
+  group.add(rift, sign, scorch, clock)
   return {
     group,
     update: (t) => {
-      // la espiral del reloj gira "hacia atras" y la grieta respira apenas
-      swirl.rotation.z = -t * 1.15
-      motes.rotation.z = t * 0.5
+      // la grieta respira apenas (el reloj de piso es estatico)
       const pulse = 1 + Math.sin(t * 2.1) * 0.015
       rift.scale.set(pulse, pulse, 1)
     },
@@ -727,11 +678,16 @@ function portalEnergyMaterial(accent: string): ShaderMaterial {
  * superficie de energia SHADER (vortice + rayos/electricidad procedurales que
  * giran por uTime) y una VENTANA translucida que insinua la sala destino via
  * `setPreview` (render-to-texture; cae a un tinte del acento mientras no haya
- * snapshot). Marco-anillo brillante del ACENTO de la sala DESTINO (el guiño al
- * rubro al que se va). Va pegado al muro sellado — la ventana es una ilusion
- * del shader, NO un vano real. 2 draw calls (energia + marco), single-side.
+ * snapshot). Color FIJO segun el sentido (decision del usuario 2026-07-06):
+ * azul fosforecente al FUTURO, azul celeste (mas claro) al REGRESO — NO el
+ * acento del rubro. Con `opts.year`, muestra el año de la sala destino
+ * flotando arriba. Va pegado al muro sellado — la ventana es una ilusion
+ * del shader, NO un vano real. 2-3 draw calls (energia + marco + año).
  */
-export function futurePortal(accent: string): PortalRift {
+export function futurePortal(
+  accent: string,
+  opts: { year?: string; mirrorLabel?: boolean } = {},
+): PortalRift {
   const group = new Group()
   const cy = 1.4
   const material = portalEnergyMaterial(accent)
@@ -747,6 +703,17 @@ export function futurePortal(accent: string): PortalRift {
   frame.position.set(0, cy, 0.03)
   frame.userData.noOutline = true
   group.add(energy, frame)
+  // año de la sala destino, flotando ARRIBA del portal
+  if (opts.year) {
+    const yearTag = label(opts.year, { size: 0.4, color: '#eaf6ff' })
+    yearTag.position.set(0, cy + 1.5, 0.06)
+    // el muro de salida rota el grupo 180deg -> desespejar el texto
+    if (opts.mirrorLabel) {
+      yearTag.scale.x *= -1
+    }
+    yearTag.userData.noOutline = true
+    group.add(yearTag)
+  }
   return {
     group,
     update: (t) => {
@@ -778,7 +745,9 @@ export function pastPortal(opts: {
 }): PropHandle {
   const sign =
     opts.locale === 'es' ? `ANTES · ${opts.year}` : `BEFORE · ${opts.year}`
-  const rift = timeRift(opts.accent, sign)
+  // ponytail: opts.accent ya no se usa (las grietas siempre son sepia); se
+  // conserva en la firma por los call sites de las salas.
+  const rift = timeRift(sign)
   rift.group.position.set(opts.position[0], opts.position[1], opts.position[2])
   rift.group.rotation.y = opts.rotationY ?? 0
   return {
@@ -817,7 +786,7 @@ export function exitPortal(opts: {
   onExit(): void
 }): PropHandle {
   const sign = opts.locale === 'es' ? 'VOLVER · HOY' : 'BACK · TODAY'
-  const rift = timeRift('#c8a878', sign)
+  const rift = timeRift(sign)
   rift.group.position.set(opts.position[0], opts.position[1], opts.position[2])
   rift.group.rotation.y = opts.rotationY ?? 0
   return {

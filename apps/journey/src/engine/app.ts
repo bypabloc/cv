@@ -29,6 +29,7 @@ import {
   type CharacterSpec,
   configureCharacters,
   makeCharacter,
+  outlineTargets,
 } from './character'
 import { createControls } from './controls'
 import { createHud } from './hud'
@@ -120,6 +121,10 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     width: container.clientWidth,
     height: container.clientHeight,
   })
+  // personajes GLB: OutlinePass reemplaza el inverted-hull manga-ink para
+  // ellos (robusto bajo skinning) — misma referencia de array, character.ts
+  // la muta con push/splice al crear/disponer instancias
+  postFx.outline.selectedObjects = outlineTargets
 
   // luces globales: 1 hemisferio + 1 direccional (sombra 1024 solo full)
   const hemi = new HemisphereLight('#d8e0f2', '#4a4238', 1.35)

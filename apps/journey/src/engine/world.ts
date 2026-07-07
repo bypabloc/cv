@@ -347,7 +347,6 @@ export function createWorld(deps: WorldDeps): World {
     if (next) {
       const portal = futurePortal(PORTAL_FUTURE_COLOR, {
         year: `${next.year}`,
-        mirrorLabel: true,
       })
       portal.group.position.set(room.x, 0, room.z + room.depth / 2 - 0.05)
       portal.group.rotation.y = Math.PI

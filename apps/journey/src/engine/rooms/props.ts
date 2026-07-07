@@ -686,7 +686,7 @@ function portalEnergyMaterial(accent: string): ShaderMaterial {
  */
 export function futurePortal(
   accent: string,
-  opts: { year?: string; mirrorLabel?: boolean } = {},
+  opts: { year?: string } = {},
 ): PortalRift {
   const group = new Group()
   const cy = 1.4
@@ -707,10 +707,8 @@ export function futurePortal(
   if (opts.year) {
     const yearTag = label(opts.year, { size: 0.4, color: '#eaf6ff' })
     yearTag.position.set(0, cy + 1.5, 0.06)
-    // el muro de salida rota el grupo 180deg -> desespejar el texto
-    if (opts.mirrorLabel) {
-      yearTag.scale.x *= -1
-    }
+    // el label hereda la rotacion del grupo: cuando el muro de salida lo
+    // gira 180deg, la cara LEGIBLE queda mirando al jugador (no se espeja).
     yearTag.userData.noOutline = true
     group.add(yearTag)
   }
@@ -738,15 +736,15 @@ export function pastPortal(opts: {
   position: readonly [number, number, number]
   rotationY?: number
   accent: string
-  /** Año de la etapa: letrero ANTES · {año}. */
+  /** Año de la etapa (ya NO se muestra: el letrero solo dice ANTES). */
   year: string
   locale: Locale
   onEnter(roomIndex: number, spawn: { x: number; z: number }): void
 }): PropHandle {
-  const sign =
-    opts.locale === 'es' ? `ANTES · ${opts.year}` : `BEFORE · ${opts.year}`
-  // ponytail: opts.accent ya no se usa (las grietas siempre son sepia); se
-  // conserva en la firma por los call sites de las salas.
+  // letrero solo "ANTES" (decision del usuario 2026-07-06): sin el año.
+  const sign = opts.locale === 'es' ? 'ANTES' : 'BEFORE'
+  // ponytail: opts.accent y opts.year ya no se usan (grietas siempre sepia,
+  // letrero sin año); se conservan en la firma por los call sites de salas.
   const rift = timeRift(sign)
   rift.group.position.set(opts.position[0], opts.position[1], opts.position[2])
   rift.group.rotation.y = opts.rotationY ?? 0

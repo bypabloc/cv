@@ -16,12 +16,13 @@ import {
   Mesh,
   MeshStandardMaterial,
   type Object3D,
+  SkinnedMesh,
 } from 'three'
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import type { Box2 } from '../lib/collision'
 import { sfx } from './audio'
 import { gltfLoader } from './loaders'
-import { toonMat } from './toon'
+import { skinnedOutline, toonMat } from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
 export type Accessory = 'helmet' | 'glasses' | 'tie' | 'badge'
@@ -85,14 +86,6 @@ export function configureCharacters(opts: { shadows?: 'cast' | 'blob' }): void {
     shadowMode = opts.shadows
   }
 }
-
-/**
- * Meshes cuyo contorno de tinta va por OutlinePass (postfx.ts) en vez del
- * inverted-hull manga-ink — screen-space, robusto bajo skinning. app.ts
- * asigna esta MISMA referencia a `postFx.outline.selectedObjects` una vez;
- * este modulo la muta con push/splice y OutlinePass ve los cambios solo.
- */
-export const outlineTargets: Object3D[] = []
 
 // ---------------------------------------------------------------------------
 // Carga del modelo base (una vez, cacheada — todas las instancias clonan)
@@ -189,7 +182,6 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   let pose: CharacterPose = 'idle'
   let headYaw: number | null = null
   let headBone: Object3D | null = null
-  let modelRoot: Object3D | null = null
   let disposed = false
 
   function playClip(name: string): void {
@@ -213,22 +205,38 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
         return
       }
       const clone = cloneSkeleton(model.scene)
-      modelRoot = clone
+      const skinnedMeshes: SkinnedMesh[] = []
       clone.traverse((obj: Object3D) => {
         if (obj instanceof Mesh) {
+          // SkeletonUtils.clone COMPARTE la geometry con el modelo cacheado:
+          // marcarla shared evita que el disposeDeep de una sala la libere
+          // (corromperia el resto de instancias que clonan la misma geometry).
+          obj.geometry.userData.shared = true
           obj.castShadow = shadowMode === 'cast'
           toonifyMesh(obj, spec)
+        }
+        if (obj instanceof SkinnedMesh) {
+          skinnedMeshes.push(obj)
         }
         if (obj.name === 'Head') {
           headBone = obj
         }
       })
+      // contorno de tinta barato: un shell skinned por mesh (comparte esqueleto
+      // y geometry), agregado como HERMANO con el mismo TRS del source para
+      // que coincidan. Reemplaza al OutlinePass (5 pasadas fullscreen).
+      for (const source of skinnedMeshes) {
+        const shell = skinnedOutline(source)
+        shell.position.copy(source.position)
+        shell.quaternion.copy(source.quaternion)
+        shell.scale.copy(source.scale)
+        source.parent?.add(shell)
+      }
       group.add(clone)
       mixer = new AnimationMixer(clone)
       for (const clip of model.animations) {
         clipMap.set(clip.name, clip)
       }
-      outlineTargets.push(clone)
       playClip(POSE_CLIP[pose])
     })
     .catch((err: unknown) => {
@@ -262,12 +270,6 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     dispose() {
       disposed = true
       mixer?.stopAllAction()
-      if (modelRoot) {
-        const idx = outlineTargets.indexOf(modelRoot)
-        if (idx >= 0) {
-          outlineTargets.splice(idx, 1)
-        }
-      }
     },
   }
 }
@@ -362,6 +364,13 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
   let jumpLeft = 0
   let walkTime = phase
 
+  // throttle de animacion: los NPCs de fondo (idle/sentados, sin hablar)
+  // avanzan el mixer a ~22 fps (imperceptible en un idle lento, baja el CPU
+  // con varios NPCs por sala). El rig a fondo se "jala" al interactuar: al
+  // hablar o caminar la animacion vuelve a full rate.
+  const ANIM_STEP = 1 / 22
+  let animAccum = 0
+
   const NPC_RADIUS = 0.26
 
   /** Conversando: gira suave hacia el jugador y pasa de wave a talk. */
@@ -406,6 +415,19 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
     group.position.y += Math.sin(progress * Math.PI) * 0.5
   }
 
+  /** Avanza el mixer: full rate al interactuar/caminar, ~22 fps de fondo. */
+  function advanceAnim(tt: number, dt: number): void {
+    if (talking || walking) {
+      character.update(tt, dt)
+      return
+    }
+    animAccum += dt
+    if (animAccum >= ANIM_STEP) {
+      character.update(tt, animAccum)
+      animAccum = 0
+    }
+  }
+
   return {
     group,
     update(t, dt) {
@@ -420,7 +442,7 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
       } else if (opts.pose === 'sit') {
         sfx.feed(sfxId, 'typing', group.position.x, group.position.z)
       }
-      character.update(tt, dt)
+      advanceAnim(tt, dt)
       applyJump(dt)
     },
     collider() {

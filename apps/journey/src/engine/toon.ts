@@ -26,6 +26,7 @@ import {
   type Object3D,
   PlaneGeometry,
   RepeatWrapping,
+  SkinnedMesh,
   SphereGeometry,
   SRGBColorSpace,
   Texture,
@@ -297,6 +298,66 @@ function collectOutlineTargets(obj: Object3D, out: Mesh[]): void {
   for (const child of obj.children) {
     collectOutlineTargets(child, out)
   }
+}
+
+// ---------------------------------------------------------------------------
+// Contorno inverted-hull para SkinnedMesh (personajes GLB)
+// ---------------------------------------------------------------------------
+
+// Un hull escalado (addOutline) NO sirve para skinning: se infla desde el
+// origen y "flota". El shell skinned empuja el vertice a lo largo de su
+// normal EN OBJECT SPACE antes del skinning (`transformed = position +
+// normal * t` sustituye a `<begin_vertex>`) — el mismo chunk <skinning_vertex>
+// deforma el vertice ya inflado, asi el contorno sigue al cuerpo sin
+// artefactos. Un solo material compartido (una compilacion) para TODO NPC.
+let skinnedOutlineSingleton: MeshBasicMaterial | null = null
+
+function skinnedOutlineMaterial(thickness: number): MeshBasicMaterial {
+  if (!skinnedOutlineSingleton) {
+    const material = new MeshBasicMaterial({ color: INK, side: BackSide })
+    material.userData.shared = true
+    // el param real es WebGLProgramParametersWithUniforms; el tipo estructural
+    // minimo evita acoplar al nombre exacto del tipo entre versiones de three.
+    material.onBeforeCompile = (shader: { vertexShader: string }) => {
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `vec3 transformed = vec3( position ) + normal * ${thickness.toFixed(4)};`,
+      )
+    }
+    skinnedOutlineSingleton = material
+  }
+  return skinnedOutlineSingleton
+}
+
+/**
+ * @function skinnedOutline
+ * @description Shell de tinta para un SkinnedMesh: comparte la MISMA geometry
+ *   y esqueleto que el source (cero memoria extra, deforma identico) con
+ *   material INK BackSide + offset de normal en el vertex shader. Devuelve el
+ *   shell SIN parentar — quien llama lo agrega al parent del source copiando su
+ *   TRS (para que coincidan). 1 draw call por mesh, sin pasadas fullscreen.
+ *
+ *   IMPORTANTE: `thickness` es en unidades de la GEOMETRIA (object space,
+ *   pre-node-scale), NO de mundo. El pack Quaternius esta autorado diminuto
+ *   (~0.018 u de alto) y escalado 100x por el nodo; por eso el default es ~2e-4
+ *   (=> ~0.02 u de mundo de linea). Un valor "de mundo" (0.015) reventaria el
+ *   shell en spikes. Si se cambia de modelo base, re-tunear a su escala local.
+ */
+export function skinnedOutline(
+  source: SkinnedMesh,
+  thickness = 0.0002,
+): SkinnedMesh {
+  const shell = new SkinnedMesh(
+    source.geometry,
+    skinnedOutlineMaterial(thickness),
+  )
+  shell.bind(source.skeleton, source.bindMatrix)
+  shell.bindMode = source.bindMode
+  shell.castShadow = false
+  shell.receiveShadow = false
+  shell.frustumCulled = source.frustumCulled
+  shell.userData.outline = true
+  return shell
 }
 
 // ---------------------------------------------------------------------------
@@ -780,6 +841,10 @@ export function disposeToonPool(): void {
   if (outlineSingleton) {
     outlineSingleton.dispose()
     outlineSingleton = null
+  }
+  if (skinnedOutlineSingleton) {
+    skinnedOutlineSingleton.dispose()
+    skinnedOutlineSingleton = null
   }
   if (units) {
     for (const geometry of Object.values(units)) {

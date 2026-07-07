@@ -29,7 +29,6 @@ import {
   type CharacterSpec,
   configureCharacters,
   makeCharacter,
-  outlineTargets,
 } from './character'
 import { createControls } from './controls'
 import { createHud } from './hud'
@@ -97,7 +96,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     powerPreference: 'high-performance',
   })
   const maxDpr = tier === 'full' ? 2 : 1.5
-  let dpr = Math.min(window.devicePixelRatio, maxDpr)
+  const dpr = Math.min(window.devicePixelRatio, maxDpr)
   renderer.setPixelRatio(dpr)
   renderer.setSize(container.clientWidth, container.clientHeight)
   renderer.outputColorSpace = SRGBColorSpace
@@ -114,17 +113,19 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     80,
   )
   const scene = new Scene()
+  // el composer corre a resolucion CAPADA (moderada) — palanca #1 de
+  // fill-rate; el halftone disimula la baja de nitidez. El DPR del renderer
+  // (para el blit final + shadow map) se mantiene. El contorno de los
+  // personajes ya no va por OutlinePass: es el shell skinned de toon.ts.
+  let composerDpr = Math.min(dpr, 1.25)
   const postFx = createPostFx({
     renderer,
     scene,
     camera,
     width: container.clientWidth,
     height: container.clientHeight,
+    pixelRatio: composerDpr,
   })
-  // personajes GLB: OutlinePass reemplaza el inverted-hull manga-ink para
-  // ellos (robusto bajo skinning) — misma referencia de array, character.ts
-  // la muta con push/splice al crear/disponer instancias
-  postFx.outline.selectedObjects = outlineTargets
 
   // luces globales: 1 hemisferio + 1 direccional (sombra 1024 solo full)
   const hemi = new HemisphereLight('#d8e0f2', '#4a4238', 1.35)
@@ -291,9 +292,12 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       return
     }
     lowFpsTime = 0
-    if (dpr > 1) {
-      dpr = Math.max(1, dpr - 0.25)
-      renderer.setPixelRatio(dpr)
+    if (composerDpr > 0.85) {
+      // baja la resolucion INTERNA del composer: el renderer.setPixelRatio ya
+      // no afecta el fill-rate (todo pasa por el composer, que tiene su propio
+      // pixelRatio). Piso 0.85 — mas abajo los puntos del halftone se agrandan.
+      composerDpr = Math.max(0.85, composerDpr - 0.2)
+      postFx.setPixelRatio(composerDpr)
     } else if (accentsOn) {
       accentsOn = false
       world.setAccentsEnabled(false)

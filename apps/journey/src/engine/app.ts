@@ -32,6 +32,8 @@ import {
 } from './character'
 import { createControls } from './controls'
 import { createHud } from './hud'
+import { configureLoaders } from './loaders'
+import { createPostFx } from './postfx'
 import { createEngineState, type EngineState, type EngineTier } from './state'
 import { configureToon, disposeDeep, disposeToonPool } from './toon'
 import { createWorld } from './world'
@@ -102,6 +104,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   renderer.toneMapping = NoToneMapping
   renderer.shadowMap.enabled = tier === 'full'
   canvasWrap.appendChild(renderer.domElement)
+  configureLoaders(renderer)
 
   const camera = new PerspectiveCamera(
     66,
@@ -110,6 +113,13 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     80,
   )
   const scene = new Scene()
+  const postFx = createPostFx({
+    renderer,
+    scene,
+    camera,
+    width: container.clientWidth,
+    height: container.clientHeight,
+  })
 
   // luces globales: 1 hemisferio + 1 direccional (sombra 1024 solo full)
   const hemi = new HemisphereLight('#d8e0f2', '#4a4238', 1.35)
@@ -220,6 +230,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     camera.aspect = container.clientWidth / Math.max(container.clientHeight, 1)
     camera.updateProjectionMatrix()
     renderer.setSize(container.clientWidth, container.clientHeight)
+    postFx.resize(container.clientWidth, container.clientHeight)
   }
   window.addEventListener('resize', onResize)
 
@@ -308,7 +319,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       }
     }
     sfx.update(dt)
-    renderer.render(scene, camera)
+    postFx.render()
     if (dt > 0) {
       degrade(dt)
     }
@@ -364,6 +375,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       player.dispose()
       disposeDeep(player.group)
       disposeToonPool()
+      postFx.dispose()
       renderer.dispose()
       canvasWrap.remove()
     },

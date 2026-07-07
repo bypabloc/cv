@@ -115,6 +115,10 @@ export function createControls(deps: ControlsDeps): Controls {
   let pitch = 0.14
   let povPitch = 0
   let time = 0
+  // tiempo REAL del frame anterior (clock.elapsedTime, sin clamp): el suavizado
+  // de la camara lo usa para ser independiente del framerate. Con el dt
+  // clampeado (0.05) el asentamiento se estiraba 2-4x en mobile de bajo fps.
+  let lastT = 0
   let timeline: TourTimeline | null = null
   let tourOffset = 0
   let lastTourX = 0
@@ -216,7 +220,10 @@ export function createControls(deps: ControlsDeps): Controls {
     if (snap) {
       camera.position.set(cx, cy, cz)
     } else {
-      const k = 1 - 0.001 ** dt
+      // suavizado exponencial framerate-independiente (dt REAL). base mas
+      // chica = camara mas firme/snappy al soltar el drag (antes 0.001 dejaba
+      // un "arrastre" lento al terminar el giro, notorio en mobile).
+      const k = 1 - 0.00005 ** dt
       camera.position.x += (cx - camera.position.x) * k
       camera.position.y += (cy - camera.position.y) * k
       camera.position.z += (cz - camera.position.z) * k
@@ -468,8 +475,13 @@ export function createControls(deps: ControlsDeps): Controls {
   deps.touch?.actionButton.addEventListener('pointerdown', onActionButton)
 
   const controls: Controls = {
-    update(_t, dt) {
+    update(t, dt) {
       time += dt
+      // `t` (clock.elapsedTime) SI avanza con el delta real; el suavizado de
+      // camara usa ese delta real, no el `dt` clampeado (que lo hace lento
+      // en mobile). El movimiento/fisica siguen con el `dt` clampeado.
+      const realDt = Math.max(t - lastT, 1e-4)
+      lastT = t
       if (isUiOpen(state)) {
         // la UI necesita el cursor: soltar el lock y congelar el riel
         if (document.pointerLockElement === canvas) {
@@ -484,7 +496,7 @@ export function createControls(deps: ControlsDeps): Controls {
           player.setWalking(false)
         }
         player.update(time, dt)
-        updateCamera(dt)
+        updateCamera(realDt)
         return
       }
       if (state.tourOn) {
@@ -503,7 +515,7 @@ export function createControls(deps: ControlsDeps): Controls {
       updateZone()
       updateProximity()
       player.update(time, dt)
-      updateCamera(dt)
+      updateCamera(realDt)
     },
 
     teleport(x, z) {

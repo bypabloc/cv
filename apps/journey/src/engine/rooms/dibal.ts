@@ -1181,10 +1181,12 @@ export default function buildDibal(ctx: RoomCtx): RoomBuild {
   // en el back-office — su laptop encendida con codigo (el anda
   // caminando el salon) + 1 libre togglable con E
   const deskSpots: readonly (readonly [number, number])[] = [
-    [2.4, room.z - 4.9],
-    [4.1, room.z - 4.9],
+    [2.4, room.z - 4.0],
+    [4.1, room.z - 4.4],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: NAVY_DARK,
     poweredSpots: new Set([0]),
@@ -1195,11 +1197,12 @@ export default function buildDibal(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
   const pabloLabel = label(
     locale === 'es' ? 'LA MESA DE PABLO' : "PABLO'S DESK",
     { size: 0.13, color: theme.accent },
   )
-  pabloLabel.position.set(3.25, 1.85, room.z - 5.1)
+  pabloLabel.position.set(3.25, 1.85, room.z - 4.6)
   group.add(pabloLabel)
 
   // router + cableado teal del rincon dev: el SaaS vive en la nube,

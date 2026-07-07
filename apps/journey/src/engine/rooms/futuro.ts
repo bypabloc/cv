@@ -576,6 +576,8 @@ export default function buildFuturo(ctx: RoomCtx): RoomBuild {
     [-2.2, room.z - 1.2],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: PANEL_INK,
     screenTheme,
@@ -585,6 +587,7 @@ export default function buildFuturo(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
   const devLabel = label(
     locale === 'es' ? 'PROXIMOS PROYECTOS' : 'NEXT PROJECTS',
     { size: 0.13, color: theme.accent },

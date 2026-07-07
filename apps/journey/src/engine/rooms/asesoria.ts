@@ -1025,11 +1025,13 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   // RINCON DE ASESORIA (-X, fondo): la mesa de los tesistas — 3 puestos,
   // Jhonny y Oriana en codigo PHP, la tercera laptop libre con E
   const deskSpots: readonly (readonly [number, number])[] = [
-    [-3.4, room.z - 4.2],
-    [-1.6, room.z - 4.2],
+    [-3.4, room.z - 3.2],
+    [-1.6, room.z - 3.7],
     [-2.5, room.z - 2.3],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: '#4a3f5e',
     poweredSpots: new Set([0, 1]),
@@ -1040,6 +1042,7 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
 
   // proyector + pantalla en el muro -X: las laminas de la defensa que
   // E cicla (micro firma de la sala)

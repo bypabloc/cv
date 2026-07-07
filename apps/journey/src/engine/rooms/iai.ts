@@ -1067,11 +1067,13 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
   // rincon del equipo de tesis (canon): 3 puestos con laptops de la
   // epoca; Keiber y Marielys trabajan en las encendidas, 1 libre con E
   const deskSpots: readonly (readonly [number, number])[] = [
-    [-1.7, room.z - 4.3],
-    [0.7, room.z - 4.3],
-    [-0.5, room.z - 2.1],
+    [-1.7, room.z - 3.3],
+    [0.7, room.z - 3.8],
+    [-2.4, room.z - 1.7],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: '#6a6252',
     poweredSpots: new Set([0, 1]),
@@ -1082,6 +1084,7 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
 
   // la PC-SERVIDOR (muro -X, medio): torre beige en su mesita propia,
   // etiqueta "NO APAGAR", LED parpadeante y cable de red al rincon dev

@@ -1142,11 +1142,13 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
   // trabajan en las suyas, la tercera se enciende con E y muestra el
   // contador "bugs recurrentes ↓" (guiño del achievement 3)
   const deskSpots: readonly (readonly [number, number])[] = [
-    [1.6, room.z - 4.8],
-    [3.4, room.z - 4.8],
+    [1.6, room.z - 3.9],
+    [3.4, room.z - 4.3],
     [2.5, room.z - 2.9],
   ]
   const office = officeLayout({
+    roomIndex: room.index,
+    state,
     spots: deskSpots,
     color: COUNTER_INK,
     poweredSpots: new Set([0, 1]),
@@ -1157,11 +1159,12 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
   staticColliders.push(...office.colliders)
   disposables.push(office)
   interactables.push(...laptopToggles(office, deskSpots, room.index))
+  interactables.push(...office.seats)
   const devLabel = label(locale === 'es' ? 'EQUIPO DEV' : 'DEV TEAM', {
     size: 0.13,
     color: theme.accent,
   })
-  devLabel.position.set(2.5, 1.85, room.z - 5.0)
+  devLabel.position.set(2.5, 1.85, room.z - 4.5)
   group.add(devLabel)
 
   // CAFETERIA partner (muro -X, fondo): vitrina con la comida del dia
@@ -1593,9 +1596,14 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
           accessory: 'badge',
           faceSeed: 91,
         },
-        position: [0.0, 0, room.z - 3.2],
+        // path rodea el pilar del cuaderno (x=0, room.z - 3.3, footprint
+        // 1x1): arranca a +1.1 en x para no coincidir con el pilar y
+        // mantiene >=0.5m de margen antes de cruzar hacia el resto de la
+        // sala (plan journey-cuaderno-central, AC-5).
+        position: [1.1, 0, room.z - 3.2],
         path: [
-          [0.0, room.z - 3.2],
+          [1.1, room.z - 3.2],
+          [1.6, room.z - 1.8],
           [-1.8, room.z - 1.4],
           [1.6, room.z + 0.2],
         ],

@@ -9,14 +9,19 @@
  *   primitivas del pool toon — cero .glb, cero red.
  */
 import {
+  BoxGeometry,
   CanvasTexture,
   CircleGeometry,
+  Color,
   Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
   PointLight,
+  RingGeometry,
+  ShaderMaterial,
   SRGBColorSpace,
+  type Texture,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
@@ -30,6 +35,7 @@ import {
   type OpenDialog,
 } from '../dialog'
 import type {
+  EngineState,
   FichaKind,
   Interactable,
   ShowcaseRef,
@@ -37,7 +43,6 @@ import type {
 } from '../state'
 import type { RoomTheme } from '../themes'
 import {
-  basicMat,
   boxMesh,
   type DrawFn,
   label,
@@ -369,84 +374,52 @@ const EXIT_LABEL = {
   en: 'Return to the present',
 } as const
 
+/** Color unico de TODAS las grietas al pasado: marron/sepia (el "antes"). */
+const RIFT_SEPIA = '#c8a878'
+
 /**
- * Vortice-RELOJ del portal: espiral de tinta + 12 marcas horarias y los
- * numeros 12/3/6/9 distorsionados cayendo hacia el centro. El mesh entero
- * rota (la "espiral de un reloj" que pidio el diseño).
+ * Esfera de reloj SEPIA vista de frente, para apoyar PLANA en el piso bajo
+ * la grieta (el reloj ya no vive dentro de la grieta: decision del usuario
+ * 2026-07-06). Marcas horarias + agujas 10:10 horneadas — 1 draw call.
  */
-function clockSwirlTexture(accent: string): CanvasTexture {
+function floorClockTexture(): CanvasTexture {
   return makeCanvasTexture(256, (ctx, size) => {
     const c = size / 2
-    const bg = ctx.createRadialGradient(c, c, 8, c, c, c)
-    bg.addColorStop(0, '#1c1622')
-    bg.addColorStop(0.72, '#0d0a10')
-    bg.addColorStop(1, '#040305')
-    ctx.fillStyle = bg
+    ctx.clearRect(0, 0, size, size)
+    // esfera crema con aro sepia
+    ctx.fillStyle = '#e8d8b0'
     ctx.beginPath()
-    ctx.arc(c, c, c, 0, Math.PI * 2)
+    ctx.arc(c, c, c - 6, 0, Math.PI * 2)
     ctx.fill()
-    // 3 brazos espirales (2 del acento + 1 crema) — remolino temporal
-    const arms: readonly string[] = [accent, accent, '#e8d8b0']
-    ctx.lineCap = 'round'
-    arms.forEach((color, arm) => {
-      ctx.strokeStyle = color
-      ctx.globalAlpha = arm === 2 ? 0.8 : 0.9
-      ctx.lineWidth = 6 - arm
-      ctx.beginPath()
-      const offset = (arm / arms.length) * Math.PI * 2
-      for (let i = 0; i <= 60; i += 1) {
-        const t = i / 60
-        const angle = offset + t * Math.PI * 3.2
-        const radius = 6 + t * (c - 18)
-        const px = c + Math.cos(angle) * radius
-        const py = c + Math.sin(angle) * radius
-        if (i === 0) {
-          ctx.moveTo(px, py)
-        } else {
-          ctx.lineTo(px, py)
-        }
-      }
-      ctx.stroke()
-    })
-    // marcas horarias en el borde (esfera de reloj)
-    ctx.globalAlpha = 0.85
-    ctx.strokeStyle = '#e8d8b0'
-    ctx.lineWidth = 3
+    ctx.strokeStyle = '#6b4a2a'
+    ctx.lineWidth = 9
+    ctx.stroke()
+    // marcas horarias
     for (let i = 0; i < 12; i += 1) {
       const angle = (i / 12) * Math.PI * 2
-      const r0 = c - 5
-      const r1 = i % 3 === 0 ? c - 20 : c - 12
+      const r0 = c - 16
+      const r1 = i % 3 === 0 ? c - 38 : c - 26
+      ctx.lineWidth = i % 3 === 0 ? 7 : 3
       ctx.beginPath()
       ctx.moveTo(c + Math.cos(angle) * r0, c + Math.sin(angle) * r0)
       ctx.lineTo(c + Math.cos(angle) * r1, c + Math.sin(angle) * r1)
       ctx.stroke()
     }
-    // numeros 12/3/6/9 estirados en espiral (los "traga" el vortice)
-    ctx.fillStyle = '#f2e6c8'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const numbers: readonly (readonly [string, number])[] = [
-      ['12', -Math.PI / 2],
-      ['3', 0],
-      ['6', Math.PI / 2],
-      ['9', Math.PI],
-    ]
-    for (const [text, angle] of numbers) {
-      const r = c * 0.62
-      ctx.save()
-      ctx.translate(c + Math.cos(angle) * r, c + Math.sin(angle) * r)
-      ctx.rotate(angle + Math.PI / 2 + 0.5)
-      ctx.transform(1, 0.22, -0.3, 0.9, 0, 0)
-      ctx.font = `bold 34px ${MANGA_FONT}`
-      ctx.globalAlpha = 0.92
-      ctx.fillText(text, 0, 0)
-      ctx.restore()
+    // agujas 10:10 (clasico) horneadas
+    ctx.strokeStyle = '#3a2416'
+    ctx.lineCap = 'round'
+    const hand = (angle: number, len: number, w: number) => {
+      ctx.lineWidth = w
+      ctx.beginPath()
+      ctx.moveTo(c, c)
+      ctx.lineTo(c + Math.cos(angle) * len, c + Math.sin(angle) * len)
+      ctx.stroke()
     }
-    // nucleo
-    ctx.globalAlpha = 1
-    ctx.fillStyle = '#f2e6c8'
+    hand(-Math.PI / 2 - Math.PI / 6, c * 0.48, 10)
+    hand(-Math.PI / 2 + Math.PI / 6, c * 0.68, 7)
+    ctx.fillStyle = '#3a2416'
     ctx.beginPath()
-    ctx.arc(c, c, 8, 0, Math.PI * 2)
+    ctx.arc(c, c, 9, 0, Math.PI * 2)
     ctx.fill()
   })
 }
@@ -558,46 +531,27 @@ function riftTexture(accent: string): CanvasTexture {
 interface PortalRift {
   group: Group
   update(t: number): void
+  /** Alimenta la ventana del portal con el snapshot de la sala destino
+   *  (render-to-texture). El `futurePortal` lo implementa; `timeRift` no. */
+  setPreview?(tex: Texture): void
 }
 
 /**
- * GRIETA TEMPORAL (rediseño 2026-07-04, decision del usuario): rasgadura
- * irregular pegada plana al muro — SIN marco de puerta ni arco — con el
- * vortice-reloj girando adentro, motas orbitando en contrasentido, letrero
- * y marca oscura en el piso. ~2.9 m de alto. Compartida por el portal de
- * entrada (presente) y el de salida (pasado).
+ * GRIETA TEMPORAL al pasado (rediseño 2026-07-06, decision del usuario):
+ * rasgadura SEPIA irregular pegada plana al muro — SIN marco ni arco — SOLO
+ * la grieta (el vortice-reloj y las motas se quitaron). El reloj ahora vive
+ * de PIE en el piso, bajo la grieta. Todas las grietas son marron/sepia (el
+ * "antes"). Letrero arriba + marca oscura + reloj en el piso. ~2.9 m de alto.
+ * Es el portal al PASADO; la ida/regreso entre salas usa `futurePortal`.
  */
-function timeRift(accent: string, signText: string): PortalRift {
+function timeRift(signText: string): PortalRift {
   const group = new Group()
   const rift = new Mesh(
     new PlaneGeometry(2.7, 3),
-    new MeshBasicMaterial({ map: riftTexture(accent), transparent: true }),
+    new MeshBasicMaterial({ map: riftTexture(RIFT_SEPIA), transparent: true }),
   )
   rift.position.set(0, 1.5, 0.04)
   rift.userData.noOutline = true
-  const swirl = new Mesh(
-    new CircleGeometry(0.8, 40),
-    new MeshBasicMaterial({ map: clockSwirlTexture(accent) }),
-  )
-  swirl.position.set(0, 1.5, 0.055)
-  swirl.userData.noOutline = true
-  const motes = mergedBoxes(
-    Array.from({ length: 12 }, (_, i) => {
-      const angle = (i / 12) * Math.PI * 2
-      const radius = 0.92 + (i % 3) * 0.09
-      return {
-        w: 0.045,
-        h: 0.045,
-        d: 0.045,
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-        z: 0,
-      }
-    }),
-    basicMat(accent),
-  )
-  motes.position.set(0, 1.5, 0.07)
-  motes.userData.noOutline = true
   const sign = label(signText, { size: 0.16, color: '#e8d8b0' })
   sign.position.set(0, 2.88, 0.09)
   const scorch = new Mesh(unitGeo().plane, toonMat('#15101c'))
@@ -605,15 +559,169 @@ function timeRift(accent: string, signText: string): PortalRift {
   scorch.scale.set(2.1, 1.3, 1)
   scorch.position.set(0, 0.014, 0.5)
   scorch.userData.noOutline = true
-  group.add(rift, swirl, motes, sign, scorch)
+  // reloj SEPIA de piso bajo la grieta (el reloj ya no vive adentro)
+  const clock = new Mesh(
+    new CircleGeometry(0.42, 40),
+    new MeshBasicMaterial({ map: floorClockTexture() }),
+  )
+  clock.rotation.x = -Math.PI / 2
+  clock.position.set(0, 0.02, 0.55)
+  clock.userData.noOutline = true
+  group.add(rift, sign, scorch, clock)
   return {
     group,
     update: (t) => {
-      // la espiral del reloj gira "hacia atras" y la grieta respira apenas
-      swirl.rotation.z = -t * 1.15
-      motes.rotation.z = t * 0.5
+      // la grieta respira apenas (el reloj de piso es estatico)
       const pulse = 1 + Math.sin(t * 2.1) * 0.015
       rift.scale.set(pulse, pulse, 1)
+    },
+  }
+}
+
+const PORTAL_VERT = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+// Superficie de energia del portal: vortice espiral + rayos/electricidad
+// procedurales animados por uTime + ventana translucida con el snapshot de la
+// sala destino (uPreview). Todo en 1 fragment shader -> 1 draw call.
+const PORTAL_FRAG = `
+  uniform float uTime;
+  uniform vec3 uAccent;
+  uniform sampler2D uPreview;
+  uniform float uHasPreview;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453);
+  }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  void main() {
+    vec2 p = vUv - 0.5;
+    float r = length(p) * 2.0;
+    if (r > 1.0) discard;
+    float ang = atan(p.y, p.x);
+
+    // gradiente radial: nucleo brillante -> acento -> borde oscuro
+    vec3 core = vec3(0.95, 0.98, 1.0);
+    vec3 col = mix(core, uAccent, smoothstep(0.0, 0.35, r));
+    col = mix(col, vec3(0.02, 0.03, 0.07), smoothstep(0.5, 1.0, r));
+
+    // vortice espiral (3 brazos) girando -> "otra dimension"
+    float spiral = 0.5 + 0.5 * sin((ang - r * 7.0 + uTime * 0.6) * 3.0);
+    col += uAccent * spiral * (0.4 * (1.0 - r));
+
+    // anillos de energia expandiendose
+    float rings = 0.5 + 0.5 * sin(r * 26.0 - uTime * 3.0);
+    col += uAccent * pow(rings, 3.0) * 0.16;
+
+    // rayos / electricidad: filamentos radiales titilando hacia el borde
+    float jitter = vnoise(vec2(ang * 3.0, uTime * 2.0));
+    float fil = abs(sin(ang * 20.0 + jitter * 6.2831 + uTime * 1.4));
+    float bolt = pow(1.0 - fil, 26.0) * smoothstep(0.15, 1.0, r);
+    bolt *= step(0.55, hash(vec2(floor(ang * 5.0), floor(uTime * 8.0))));
+    col += vec3(0.75, 0.88, 1.0) * bolt * 1.5;
+
+    // ventana translucida: guiño de la sala destino en el centro
+    vec3 preview = mix(uAccent * 0.45, texture2D(uPreview, vUv).rgb, uHasPreview);
+    float win = smoothstep(0.72, 0.12, r);
+    col = mix(col, preview, win * 0.5);
+
+    // brillo glassy sutil hacia el centro
+    col += vec3(0.06) * smoothstep(0.6, 0.0, r);
+
+    float alpha = 0.96 * smoothstep(1.0, 0.86, r);
+    gl_FragColor = vec4(col, alpha);
+  }
+`
+
+/** Textura fallback 2x2 (tinte del acento) para el sampler uPreview mientras
+ *  no haya snapshot de la sala destino. */
+function portalFallbackTex(accent: string): CanvasTexture {
+  return makeCanvasTexture(2, (ctx, size) => {
+    ctx.fillStyle = accent
+    ctx.fillRect(0, 0, size, size)
+  })
+}
+
+function portalEnergyMaterial(accent: string): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uAccent: { value: new Color(accent) },
+      uPreview: { value: portalFallbackTex(accent) },
+      uHasPreview: { value: 0 },
+    },
+    vertexShader: PORTAL_VERT,
+    fragmentShader: PORTAL_FRAG,
+    transparent: true,
+    depthWrite: false,
+  })
+}
+
+/**
+ * PORTAL AL FUTURO / DE REGRESO: reemplaza a la puerta entre salas. Oval con
+ * superficie de energia SHADER (vortice + rayos/electricidad procedurales que
+ * giran por uTime) y una VENTANA translucida que insinua la sala destino via
+ * `setPreview` (render-to-texture; cae a un tinte del acento mientras no haya
+ * snapshot). Color FIJO segun el sentido (decision del usuario 2026-07-06):
+ * azul fosforecente al FUTURO, azul celeste (mas claro) al REGRESO — NO el
+ * acento del rubro. Con `opts.year`, muestra el año de la sala destino
+ * flotando arriba. Va pegado al muro sellado — la ventana es una ilusion
+ * del shader, NO un vano real. 2-3 draw calls (energia + marco + año).
+ */
+export function futurePortal(
+  accent: string,
+  opts: { year?: string } = {},
+): PortalRift {
+  const group = new Group()
+  const cy = 1.4
+  const material = portalEnergyMaterial(accent)
+  const energy = new Mesh(new CircleGeometry(1, 48), material)
+  energy.scale.set(0.8, 1.12, 1)
+  energy.position.set(0, cy, 0.02)
+  energy.userData.noOutline = true
+  const frame = new Mesh(
+    new RingGeometry(1, 1.14, 48),
+    new MeshBasicMaterial({ color: accent }),
+  )
+  frame.scale.set(0.8, 1.12, 1)
+  frame.position.set(0, cy, 0.03)
+  frame.userData.noOutline = true
+  group.add(energy, frame)
+  // año de la sala destino, flotando ARRIBA del portal
+  if (opts.year) {
+    const yearTag = label(opts.year, { size: 0.4, color: '#eaf6ff' })
+    yearTag.position.set(0, cy + 1.5, 0.06)
+    // el label hereda la rotacion del grupo: cuando el muro de salida lo
+    // gira 180deg, la cara LEGIBLE queda mirando al jugador (no se espeja).
+    yearTag.userData.noOutline = true
+    group.add(yearTag)
+  }
+  return {
+    group,
+    update: (t) => {
+      material.uniforms.uTime.value = t
+      const pulse = 1 + Math.sin(t * 2.4) * 0.02
+      frame.scale.set(0.8 * pulse, 1.12 * pulse, 1)
+    },
+    setPreview: (tex) => {
+      material.uniforms.uPreview.value = tex
+      material.uniforms.uHasPreview.value = 1
     },
   }
 }
@@ -628,14 +736,16 @@ export function pastPortal(opts: {
   position: readonly [number, number, number]
   rotationY?: number
   accent: string
-  /** Año de la etapa: letrero ANTES · {año}. */
+  /** Año de la etapa (ya NO se muestra: el letrero solo dice ANTES). */
   year: string
   locale: Locale
   onEnter(roomIndex: number, spawn: { x: number; z: number }): void
 }): PropHandle {
-  const sign =
-    opts.locale === 'es' ? `ANTES · ${opts.year}` : `BEFORE · ${opts.year}`
-  const rift = timeRift(opts.accent, sign)
+  // letrero solo "ANTES" (decision del usuario 2026-07-06): sin el año.
+  const sign = opts.locale === 'es' ? 'ANTES' : 'BEFORE'
+  // ponytail: opts.accent y opts.year ya no se usan (grietas siempre sepia,
+  // letrero sin año); se conservan en la firma por los call sites de salas.
+  const rift = timeRift(sign)
   rift.group.position.set(opts.position[0], opts.position[1], opts.position[2])
   rift.group.rotation.y = opts.rotationY ?? 0
   return {
@@ -674,7 +784,7 @@ export function exitPortal(opts: {
   onExit(): void
 }): PropHandle {
   const sign = opts.locale === 'es' ? 'VOLVER · HOY' : 'BACK · TODAY'
-  const rift = timeRift('#c8a878', sign)
+  const rift = timeRift(sign)
   rift.group.position.set(opts.position[0], opts.position[1], opts.position[2])
   rift.group.rotation.y = opts.rotationY ?? 0
   return {
@@ -786,13 +896,20 @@ export function lecternNotebook(opts: {
   lip.position.y = 0.92
   lip.userData.noOutline = true
   group.add(pedestal, lip)
-  // cuaderno FLOTANDO separado del pilar: pagina vertical hacia la sala
-  // + halo del acento detras (el pulso lo anima el update)
+  // cuaderno FLOTANDO separado del pilar: libro con VOLUMEN (portada/lomo
+  // como caja delgada) + pagina con el texto al frente + halo del acento
+  // detras (el pulso lo anima el update). La caja garantiza que desde
+  // cualquier angulo se vea un objeto solido, nunca el reverso invisible
+  // de un plane de una sola cara.
   const float = new Group()
+  const cover = new Mesh(new BoxGeometry(0.66, 0.52, 0.06), toonMat(trim))
+  cover.position.z = -0.03
+  cover.castShadow = true
   const page = new Mesh(
-    new PlaneGeometry(0.62, 0.5),
+    new PlaneGeometry(0.6, 0.48),
     new MeshBasicMaterial({ map: notebookTexture(opts.notebook) }),
   )
+  page.position.z = 0.005
   page.userData.noOutline = true
   const haloMat = new MeshBasicMaterial({
     color: trim,
@@ -800,9 +917,9 @@ export function lecternNotebook(opts: {
     opacity: 0.26,
   })
   const halo = new Mesh(new PlaneGeometry(0.76, 0.62), haloMat)
-  halo.position.z = -0.02
+  halo.position.z = -0.08
   halo.userData.noOutline = true
-  float.add(halo, page)
+  float.add(halo, cover, page)
   float.position.set(0, NOTE_FLOAT_Y, 0.02)
   float.rotation.x = -0.1
   group.add(float)
@@ -841,7 +958,10 @@ export function lecternNotebook(opts: {
  *   - RETOS       -> muro -X (la DERECHA de quien avanza), a media sala.
  *   - APRENDIZAJES-> muro +X (su IZQUIERDA), a media sala (espejo).
  *   - grieta      -> muro +X al fondo (mano izquierda, junto a la salida).
- *   - cuaderno    -> muro -X al fondo (mano derecha, junto a la puerta).
+ *   - cuaderno    -> centro geometrico de la sala (x=0, z=room.z),
+ *     bloqueando el eje de transito, con el libro de frente a la entrada
+ *     (plan journey-puerta-sillas-pilar: antes quedaba a un cuarto de la
+ *     entrada, encimado con el spawn del jugador).
  * Las salas son uniformes (13.2 m), asi que las coordenadas resultantes
  * son identicas sala a sala — consistencia garantizada por construccion.
  */
@@ -894,10 +1014,14 @@ export function infoKit(opts: {
           locale: opts.locale,
           onEnter: opts.onEnterPast,
         })
+  // Centro geometrico de la sala (x=0, z=room.z), en el eje de transito:
+  // el jugador lo encuentra de frente al entrar y debe rodearlo (plan
+  // journey-puerta-sillas-pilar; ya no se superpone con el spawn). El giro
+  // de 180 grados deja la cara frontal del libro mirando a la entrada.
   const nota = lecternNotebook({
     roomIndex: room.index,
-    position: [-half + 0.9, 0, room.z + 5.1],
-    rotationY: Math.PI / 2,
+    position: [0, 0, room.z],
+    rotationY: Math.PI,
     theme: opts.theme,
     notebook: { title: texts.title, lines: texts.notebook },
     story: { title: texts.title, paragraphs: texts.resena },
@@ -908,7 +1032,7 @@ export function infoKit(opts: {
     props: portal
       ? [retos, aprendizajes, portal, nota]
       : [retos, aprendizajes, nota],
-    colliders: [footprint(-half + 0.9, room.z + 5.1, 0.7, 0.7)],
+    colliders: [footprint(0, room.z, 1, 1)],
   }
 }
 
@@ -948,8 +1072,40 @@ export interface OfficeLayout {
   colliders: Box2[]
   /** ScreenSwap de las laptops togglables (puestos SIN NPC), para E. */
   toggles: { spot: number; screen: ScreenSwap }[]
+  /** Interactables de "sentarse" para los puestos SIN NPC (silla vacia). */
+  seats: Interactable[]
   /** Libera TODAS las variantes de pantalla (disposeDeep solo ve la activa). */
   dispose(): void
+}
+
+const SIT_LABEL = { es: 'Sentarse', en: 'Sit down' } as const
+const STAND_LABEL = { es: 'Levantarse', en: 'Stand up' } as const
+
+/**
+ * Interactable de silla vacia sentable: toggle Sentarse/Levantarse que
+ * muta state.playerSeat directo, leyendo el estado REAL (si el jugador se
+ * sento en OTRA silla primero, el label no queda desincronizado). Lo usan
+ * officeLayout (puestos sin NPC) y el aula (layout a mano).
+ */
+export function seatInteractable(
+  id: string,
+  x: number,
+  z: number,
+  state: EngineState,
+): Interactable {
+  const item: Interactable = {
+    id,
+    x,
+    z,
+    radius: 1.4,
+    label: { ...SIT_LABEL },
+    onActivate: () => {
+      const sameSeat = state.playerSeat?.x === x && state.playerSeat?.z === z
+      state.playerSeat = sameSeat ? null : { x, z, rotationY: 0 }
+      item.label = sameSeat ? { ...SIT_LABEL } : { ...STAND_LABEL }
+    },
+  }
+  return item
 }
 
 /**
@@ -969,11 +1125,16 @@ export function officeLayout(opts: {
   screenTheme: Pick<RoomTheme, 'screenBg' | 'screenFg' | 'ink'>
   /** Contenido de pantalla por puesto (loop de codigo del rubro). */
   screenFor?: (index: number) => { title: string; lines: readonly string[] }
+  /** Identificador de la sala, para ids unicos del interactable de silla. */
+  roomIndex: number
+  /** Estado del motor: el toggle de sentarse muta state.playerSeat directo. */
+  state: EngineState
 }): OfficeLayout {
   const powered = opts.poweredSpots ?? new Set<number>()
   const group = new Group()
   const colliders: Box2[] = []
   const toggles: { spot: number; screen: ScreenSwap }[] = []
+  const seats: Interactable[] = []
   const screens: ScreenSwap[] = []
   // silla de un puesto mirando al frente (+Z): asiento + respaldo + patas
   const chairParts = (x: number, cz: number) => [
@@ -1025,12 +1186,21 @@ export function officeLayout(opts: {
     screens.push(screen)
     if (!powered.has(index)) {
       toggles.push({ spot: index, screen })
+      seats.push(
+        seatInteractable(
+          `silla-${opts.roomIndex}-${index}`,
+          x,
+          z - 0.55,
+          opts.state,
+        ),
+      )
     }
   })
   return {
     group,
     colliders,
     toggles,
+    seats,
     dispose: () => {
       for (const screen of screens) {
         screen.dispose()
@@ -1136,8 +1306,11 @@ export function wallArt(opts: {
 }): { props: PropHandle[]; colliders: Box2[] } {
   const trim = opts.theme.trim ?? opts.theme.accent
   const marcoGroup = new Group()
+  // outlinedMergedBoxes (no mergedBoxes + outline generico): el contorno
+  // de un merge con posiciones horneadas se desplaza del marco al escalar
+  // alrededor del origen local — el mismo bug que documenta toon.ts.
   marcoGroup.add(
-    mergedBoxes(
+    outlinedMergedBoxes(
       opts.frames.map((frame) => {
         const [w, h] = frame.size ?? [1.1, 0.8]
         const rotY = frame.rotationY ?? 0

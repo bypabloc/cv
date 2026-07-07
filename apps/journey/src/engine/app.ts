@@ -187,7 +187,8 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     toggleTeleport: () => hud.toggleTeleport(),
     closeUi: () => hud.closeAll(),
     onTourStart: () => {
-      world.openAllDoors()
+      // el riel del tour setea la posicion directo (sin colision): cruza
+      // los vanos sin abrir nada — los portales no tienen estado abierto.
       hud.setTour(true)
     },
     onTourStop: () => hud.setTour(false),
@@ -201,7 +202,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     layout,
     pastRooms,
     state,
-    fade: (on) => hud.fade(on),
+    fade: (on, style) => hud.fade(on, style),
     setPastMode: (on) => hud.setPastMode(on),
     ui: {
       openFicha: (roomIndex, kind) => hud.openFicha(roomIndex, kind),

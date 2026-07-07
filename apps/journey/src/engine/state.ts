@@ -63,13 +63,19 @@ export interface FichaRef {
   kind: FichaKind
 }
 
+/** Silla objetivo al sentarse: posicion exacta + orientacion del jugador. */
+export interface SeatTarget {
+  x: number
+  z: number
+  rotationY: number
+}
+
 export interface EngineState {
   readonly tier: EngineTier
   readonly locale: Locale
   zone: Zone
   /** Indice de la sala cuyo "antes" se visita (portal al pasado). */
   past: number | null
-  doorsOpen: Set<number>
   cameraMode: CameraMode
   /** Panel de UI abierto (los controles se congelan mientras != 'none'). */
   ui: UiPanel
@@ -78,6 +84,8 @@ export interface EngineState {
    *  policy); el toggle del HUD silencia TODO (ambiente + SFX). */
   audioOn: boolean
   tourOn: boolean
+  /** Silla donde esta sentado el jugador, o null si esta de pie. */
+  playerSeat: SeatTarget | null
   interactables: Map<string, Interactable>
   activeId: string | null
   /**
@@ -97,12 +105,12 @@ export function createEngineState(
     locale,
     zone: { kind: 'room', index: 0 },
     past: null,
-    doorsOpen: new Set(),
     cameraMode: 'third',
     ui: 'none',
     ficha: null,
     audioOn: true,
     tourOn: false,
+    playerSeat: null,
     interactables: new Map(),
     activeId: null,
     obstacleSources: new Map(),

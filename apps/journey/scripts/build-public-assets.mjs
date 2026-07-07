@@ -72,10 +72,14 @@ async function main() {
     }),
   )
   await write('robots.txt', buildRobotsTxt(SITE_URL))
-  // CSP identica a los niches: troika tipografia en el main thread
-  // (configureTextBuilder useWorker:false en text-font.ts), asi que no
-  // hace falta relajar worker-src/script-src con blob:.
-  await write('_headers', buildHeaders({ apiEndpoint: API_ENDPOINT }))
+  // allowBlobWorkers: DRACOLoader/KTX2Loader crean Web Workers desde Blob
+  // URL en runtime (estilo Spider-Verse, docs/specs/journey-spiderverse-style/).
+  // Sin worker-src la CSP cae a default-src 'self' y bloquea esos workers
+  // solo en produccion (Cloudflare Pages) — en dev local no hay CSP.
+  await write(
+    '_headers',
+    buildHeaders({ apiEndpoint: API_ENDPOINT, allowBlobWorkers: true }),
+  )
   await write('_redirects', buildRedirects())
   await write('openapi.json', buildOpenApi({ apiEndpoint: API_ENDPOINT }))
 

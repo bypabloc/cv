@@ -88,6 +88,12 @@ apps/*/public/_headers
 apps/*/public/_redirects
 apps/*/public/.well-known/
 
+# Decoders de DRACOLoader/KTX2Loader copiados desde node_modules/three por
+# scripts/copy-loader-assets.mjs (prebuild, journey-spiderverse-style).
+# Output puro: se regeneran identicos en cada build, no se commitean.
+apps/journey/public/draco/
+apps/journey/public/basis/
+
 # Playwright
 playwright-report/
 test-results/

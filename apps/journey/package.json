@@ -10,7 +10,7 @@
     "preview": "astro preview --port 4327",
     "astro": "astro",
     "typecheck": "astro check",
-    "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs",
+    "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs && vite-node --config scripts/vite.config.ts scripts/copy-loader-assets.mjs",
     "predev": "pnpm --filter @portfolio/content run fetch-cache",
     "postbuild": "vite-node --config scripts/vite.config.ts scripts/postbuild-markdown.mjs && vite-node --config scripts/vite.config.ts scripts/postbuild-functions.mjs"
   },

@@ -115,3 +115,9 @@ tmp/
 # Lighthouse Chrome temp profiles (WSL: created in CWD as a Windows path)
 lighthouse.*
 C:\\*
+
+# journey-npc-realism: artefactos Blender (regenerables via devtools npc_pipeline)
+apps/journey-realistic/blender/assets/*.blend
+apps/journey-realistic/blender/assets/*.blend1
+apps/journey-realistic/public/models/*.raw.glb
+devtools/npc_pipeline/vendor/*.zip

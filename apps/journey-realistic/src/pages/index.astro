@@ -1,0 +1,39 @@
+---
+import CvSections from '@portfolio/app-shared/components/CvSections.astro'
+import { SITE_URLS } from '@portfolio/app-shared/lib/site-urls'
+/**
+ * @page index (es) journey
+ * @description La experiencia 3D (motor vanilla manga-ink) con el CV 2D
+ *   como fallback SIEMPRE presente en el HTML (tier Static + SEO/ATS).
+ *   El boot detecta el tier y monta el 3D solo en Full/Reduced.
+ */
+import PageLayout from '../layouts/PageLayout.astro'
+import { NICHE, STRINGS } from '../lib/site-config'
+
+const t = STRINGS.es
+const title = 'Pablo Contreras — CV como viaje 3D'
+const description =
+  'Recorre la carrera de Pablo Contreras como un viaje 3D: una habitacion ' +
+  'por experiencia, de la universidad a la arquitectura fintech.'
+const cvHref = `${SITE_URLS.generic}/cv.html`
+---
+
+<PageLayout
+  title={title}
+  description={description}
+  canonicalPath="/"
+  locale="es"
+  otherLocalePath="/en/"
+>
+  <!-- fallback SEO/ATS: el CV completo vive en el HTML sin ejecutar JS -->
+  <div id="cv-fallback">
+    <CvSections niche={NICHE} locale="es" strings={t} cvHref={cvHref} />
+  </div>
+  <!-- boot 3D: monta solo en tiers Full/Reduced (AC-1/AC-2) -->
+  <div id="journey-root" data-locale="es"></div>
+  <script>
+    import { initJourney } from '../lib/boot'
+
+    void initJourney()
+  </script>
+</PageLayout>

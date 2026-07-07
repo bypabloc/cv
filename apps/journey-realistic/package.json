@@ -1,0 +1,40 @@
+{
+  "name": "@portfolio/journey-realistic",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Journey 3D CV — experimento de NPCs humanoides realistas (painterly), banco de pruebas del plan docs/specs/journey-npc-realism (sin deploy)",
+  "scripts": {
+    "dev": "astro dev --port 4328",
+    "build": "astro build",
+    "preview": "astro preview --port 4328",
+    "astro": "astro",
+    "typecheck": "astro check",
+    "prebuild": "pnpm --filter @portfolio/content run fetch-cache && vite-node --config scripts/vite.config.ts scripts/build-public-assets.mjs",
+    "predev": "pnpm --filter @portfolio/content run fetch-cache",
+    "postbuild": "vite-node --config scripts/vite.config.ts scripts/postbuild-markdown.mjs && vite-node --config scripts/vite.config.ts scripts/postbuild-functions.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.2",
+    "@portfolio/app-shared": "workspace:*",
+    "@portfolio/content": "workspace:*",
+    "@portfolio/markdown-export": "workspace:*",
+    "@portfolio/mcp": "workspace:*",
+    "@portfolio/seo": "workspace:*",
+    "@portfolio/ui": "workspace:*",
+    "@tailwindcss/vite": "^4.0.18",
+    "astro": "^6.3.2",
+    "tailwindcss": "^4.0.18",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@modyfi/vite-plugin-yaml": "^1.1.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/three": "^0.170.0",
+    "js-yaml": "^4.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.3",
+    "vite-node": "^2.1.9"
+  }
+}

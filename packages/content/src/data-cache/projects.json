@@ -1,5 +1,59 @@
 [
   {
+    "slug": "faststruct",
+    "name": "FastStruct",
+    "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
+    "repo": "https://github.com/bypabloc/faststruct",
+    "status": "active",
+    "projectType": "cli",
+    "isConfidential": false,
+    "metricsEstimated": true,
+    "summary": {
+      "es": "Extensión de VS Code para visualizar y documentar la estructura de un proyecto en segundos, optimizando workflows con IA.",
+      "en": "VS Code extension that visualizes and documents a project structure in seconds, optimized for AI workflows."
+    },
+    "description": {
+      "es": "Genera documentación clara y bien formateada de la estructura de directorios e incluye contenido de archivos cuando sea necesario. Nació antes de Claude Code para pasarle contexto estructural a la interfaz web de Claude sin copiar manualmente.",
+      "en": "Generates clear, well-formatted documentation of a directory tree, optionally including file contents. Born before Claude Code to feed structural context to the Claude web interface without copy-pasting."
+    },
+    "caseStudy": {
+      "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
+      "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
+    },
+    "stack": [
+      "TypeScript",
+      "VS Code Extension API",
+      "Node.js"
+    ],
+    "metrics": {
+      "speedup": "5x faster context handoff",
+      "adoption": "Marketplace published",
+      "precursor": "Pre-Claude-Code era (< May 2025)"
+    },
+    "niches": [
+      "vibe",
+      "generic"
+    ],
+    "priority": {
+      "vibe": 80,
+      "generic": 65
+    },
+    "caseStudyDetailed": {
+      "problem": {
+        "es": "Antes de Claude Code (mayo 2025) usaba la interfaz web de Claude para programar. Pasarle el contexto de un proyecto significaba copiar archivo por archivo manualmente.",
+        "en": "Before Claude Code (May 2025) I used the Claude web interface to code. Sharing project context meant copy-pasting file by file manually."
+      },
+      "process": {
+        "en": "I built FastStruct as a TypeScript VS Code extension: single command that scans the workspace, honors .gitignore, formats structured markdown and copies to clipboard. Configurable exclusion patterns.",
+        "es": "Construí FastStruct como extensión VS Code en TypeScript: comando único que escanea workspace, respeta .gitignore, formatea en markdown estructurado y copia al portapapeles. Patrones de exclusión configurables."
+      },
+      "result": {
+        "en": "5x faster personal workflow when instructing AIs. Published in the Marketplace, still useful even now with Claude Code for cases where I need compact context for sub-agents or external summaries.",
+        "es": "Workflow personal 5x más rápido para instruir IAs. Publicada en Marketplace, sigue siendo útil incluso ahora con Claude Code para casos donde necesito contexto compacto para sub-agentes o resumenes externos."
+      }
+    }
+  },
+  {
     "slug": "mvp-template-full-stack",
     "name": "MVP template Full Stack",
     "url": "https://the-full-stack.com/",
@@ -48,16 +102,16 @@
     },
     "caseStudyDetailed": {
       "problem": {
-        "es": "Arrancar un proyecto full stack nuevo significaba repetir cada vez la misma configuracion: estructura del harness de Claude Code, quality gates, convenciones de codigo, tooling y backend serverless. Sin un punto de partida estandar, cada repo divergia y el setup consumia tiempo antes de escribir la primera linea de producto.",
-        "en": "Bootstrapping a new full stack project meant repeating the same setup every time: the Claude Code harness structure, quality gates, code conventions, tooling and serverless backend. Without a standard starting point, each repo diverged and setup consumed time before writing the first line of product code."
+        "en": "Bootstrapping a new full stack project meant repeating the same setup every time: the Claude Code harness structure, quality gates, code conventions, tooling and serverless backend. Without a standard starting point, each repo diverged and setup consumed time before writing the first line of product code.",
+        "es": "Arrancar un proyecto full stack nuevo significaba repetir cada vez la misma configuracion: estructura del harness de Claude Code, quality gates, convenciones de codigo, tooling y backend serverless. Sin un punto de partida estandar, cada repo divergia y el setup consumia tiempo antes de escribir la primera linea de producto."
       },
       "process": {
         "es": "Construi un portfolio publico que es a la vez template: 6 apps Astro 6, backend serverless en AWS (Lambdas Python, DynamoDB, Neon, SES, Turnstile) provisionado con devtools y AWS CLI, harness Claude Code con skills/rules/hooks, quality gates en pre-commit y pre-push y un CLI de devtools en Python 3.14 con uv. Biome v2 unifica lint y formato. Es el mismo patron que adopte al introducir Claude Code en el equipo de Destacame.",
         "en": "I built a public portfolio that doubles as a template: 6 Astro 6 apps, AWS serverless backend (Python Lambdas, DynamoDB, Neon, SES, Turnstile) provisioned with devtools and AWS CLI, a Claude Code harness with skills/rules/hooks, quality gates in pre-commit and pre-push and a Python 3.14 devtools CLI with uv. Biome v2 unifies linting and formatting. It is the same pattern I adopted when rolling out Claude Code on the Destacame team."
       },
       "result": {
-        "es": "Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar, con el harness de Claude Code, los quality gates y el backend serverless ya configurados. Sirvio de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos.",
-        "en": "A reusable template that reduces the setup of a new full stack project to cloning and adapting, with the Claude Code harness, the quality gates and the serverless backend already configured. It served as the reference for the Claude Code rollout at Destacame and standardizes the workflow across projects."
+        "en": "A reusable template that reduces the setup of a new full stack project to cloning and adapting, with the Claude Code harness, the quality gates and the serverless backend already configured. It served as the reference for the Claude Code rollout at Destacame and standardizes the workflow across projects.",
+        "es": "Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar, con el harness de Claude Code, los quality gates y el backend serverless ya configurados. Sirvio de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos."
       }
     }
   },
@@ -70,8 +124,8 @@
     "isConfidential": true,
     "metricsEstimated": false,
     "summary": {
-      "es": "Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México.",
-      "en": "Fintech product offering tiered personal credit to users in Mexico."
+      "en": "Fintech product offering tiered personal credit to users in Mexico.",
+      "es": "Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México."
     },
     "description": {
       "es": "Producto desarrollado en Destacame para el mercado mexicano. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus de crédito.",
@@ -107,16 +161,16 @@
     },
     "caseStudyDetailed": {
       "problem": {
-        "es": "Mercado mexicano requeria creditos personales accesibles con onboarding rapido. Restricciones regulatorias locales + fricciones de KYC + integracion con bureaus de credito.",
-        "en": "Mexican market required accessible personal credit with fast onboarding. Local regulatory constraints + KYC friction + credit bureau integrations."
+        "en": "Mexican market required accessible personal credit with fast onboarding. Local regulatory constraints + KYC friction + credit bureau integrations.",
+        "es": "Mercado mexicano requeria creditos personales accesibles con onboarding rapido. Restricciones regulatorias locales + fricciones de KYC + integracion con bureaus de credito."
       },
       "process": {
         "es": "Producto con tramos de credito + scoring embebido + flujo de aprobacion de baja friccion. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus mexicanos. Decisiones de arquitectura documentadas para sucesores.",
         "en": "Tiered-credit product + embedded scoring + low-friction approval flow. Vue/Nuxt frontend + Django microservices + Mexican credit bureau integrations. Documented architecture decisions for successors."
       },
       "result": {
-        "es": "Contribucion clave al portafolio fintech LATAM de Destacame en el mercado mexicano. Reutilizacion de patrones del producto Chile con adaptacion regulatoria local (metricas bajo NDA).",
-        "en": "Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse from the Chilean product with local regulatory adaptation (metrics under NDA)."
+        "en": "Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse from the Chilean product with local regulatory adaptation (metrics under NDA).",
+        "es": "Contribucion clave al portafolio fintech LATAM de Destacame en el mercado mexicano. Reutilizacion de patrones del producto Chile con adaptacion regulatoria local (metricas bajo NDA)."
       }
     }
   },
@@ -192,70 +246,16 @@
     },
     "caseStudyDetailed": {
       "problem": {
-        "es": "Los usuarios chilenos no tenian un canal claro para regularizar deudas y las instituciones financieras perdian cobranzas significativas. Datos sensibles (PII) + compliance financiero LATAM + necesidad de servir multiples marcas comerciales con la misma plataforma tecnica.",
-        "en": "Chilean users lacked a clear channel to regularize debts and financial institutions were losing significant collections. Sensitive data (PII) + LATAM financial compliance + need to serve multiple commercial brands from the same technical platform."
+        "en": "Chilean users lacked a clear channel to regularize debts and financial institutions were losing significant collections. Sensitive data (PII) + LATAM financial compliance + need to serve multiple commercial brands from the same technical platform.",
+        "es": "Los usuarios chilenos no tenian un canal claro para regularizar deudas y las instituciones financieras perdian cobranzas significativas. Datos sensibles (PII) + compliance financiero LATAM + necesidad de servir multiples marcas comerciales con la misma plataforma tecnica."
       },
       "process": {
         "es": "Como Frontend Architect orqueste microservicios Django con frontend Vue/Nuxt: elegibilidad → oferta → pago. Manejo de PII con encriptacion en transito y reposo. Integracion con bureaus + verificacion KYC. Branding white-label para servir a Santander, Santander Consumer y Scotiabank desde una sola base de codigo.",
         "en": "As Frontend Architect I orchestrated Django microservices with Vue/Nuxt frontend: eligibility → offer → payment. PII handling with encryption in transit and at rest. Bureau integrations + KYC verification. White-label branding to serve Santander, Santander Consumer and Scotiabank from a single codebase."
       },
       "result": {
-        "en": "Platform with 3 brands in production (Santander, Santander Consumer, Scotiabank) serving the Chilean market. Measurable improvement in collection operational efficiency and end-user experience (detailed metrics under NDA).",
-        "es": "Plataforma con 3 marcas en produccion (Santander, Santander Consumer, Scotiabank) sirviendo el mercado chileno. Mejora medible en eficiencia operativa de cobranza y experiencia del usuario final (metricas detalladas bajo NDA)."
-      }
-    }
-  },
-  {
-    "slug": "faststruct",
-    "name": "FastStruct",
-    "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
-    "repo": "https://github.com/bypabloc/faststruct",
-    "status": "active",
-    "projectType": "cli",
-    "isConfidential": false,
-    "metricsEstimated": true,
-    "summary": {
-      "es": "Extensión de VS Code para visualizar y documentar la estructura de un proyecto en segundos, optimizando workflows con IA.",
-      "en": "VS Code extension that visualizes and documents a project structure in seconds, optimized for AI workflows."
-    },
-    "description": {
-      "en": "Generates clear, well-formatted documentation of a directory tree, optionally including file contents. Born before Claude Code to feed structural context to the Claude web interface without copy-pasting.",
-      "es": "Genera documentación clara y bien formateada de la estructura de directorios e incluye contenido de archivos cuando sea necesario. Nació antes de Claude Code para pasarle contexto estructural a la interfaz web de Claude sin copiar manualmente."
-    },
-    "caseStudy": {
-      "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
-      "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
-    },
-    "stack": [
-      "TypeScript",
-      "VS Code Extension API",
-      "Node.js"
-    ],
-    "metrics": {
-      "speedup": "5x faster context handoff",
-      "adoption": "Marketplace published",
-      "precursor": "Pre-Claude-Code era (< May 2025)"
-    },
-    "niches": [
-      "vibe",
-      "generic"
-    ],
-    "priority": {
-      "vibe": 80,
-      "generic": 65
-    },
-    "caseStudyDetailed": {
-      "problem": {
-        "es": "Antes de Claude Code (mayo 2025) usaba la interfaz web de Claude para programar. Pasarle el contexto de un proyecto significaba copiar archivo por archivo manualmente.",
-        "en": "Before Claude Code (May 2025) I used the Claude web interface to code. Sharing project context meant copy-pasting file by file manually."
-      },
-      "process": {
-        "es": "Construí FastStruct como extensión VS Code en TypeScript: comando único que escanea workspace, respeta .gitignore, formatea en markdown estructurado y copia al portapapeles. Patrones de exclusión configurables.",
-        "en": "I built FastStruct as a TypeScript VS Code extension: single command that scans the workspace, honors .gitignore, formats structured markdown and copies to clipboard. Configurable exclusion patterns."
-      },
-      "result": {
-        "es": "Workflow personal 5x más rápido para instruir IAs. Publicada en Marketplace, sigue siendo útil incluso ahora con Claude Code para casos donde necesito contexto compacto para sub-agentes o resumenes externos.",
-        "en": "5x faster personal workflow when instructing AIs. Published in the Marketplace, still useful even now with Claude Code for cases where I need compact context for sub-agents or external summaries."
+        "es": "Plataforma con 3 marcas en produccion (Santander, Santander Consumer, Scotiabank) sirviendo el mercado chileno. Mejora medible en eficiencia operativa de cobranza y experiencia del usuario final (metricas detalladas bajo NDA).",
+        "en": "Platform with 3 brands in production (Santander, Santander Consumer, Scotiabank) serving the Chilean market. Measurable improvement in collection operational efficiency and end-user experience (detailed metrics under NDA)."
       }
     }
   }

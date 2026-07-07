@@ -1,38 +1,5 @@
 [
   {
-    "slug": "alan-vergara",
-    "name": "Alan Vergara Bravo",
-    "role": "Software Architect Developer",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/alan-vergara-bravo-b17164145",
-    "relation": {
-      "es": "Compañero de equipo",
-      "en": "Teammate"
-    }
-  },
-  {
-    "slug": "alejandra-medina",
-    "name": "Alejandra Medina Briceño",
-    "role": "Diseñadora UX/UI",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/alejandra-medinab",
-    "relation": {
-      "es": "Compañera de equipo",
-      "en": "Teammate"
-    }
-  },
-  {
-    "slug": "baldomero-aguila",
-    "name": "Baldomero Águila",
-    "role": "Desarrollador Mobile",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/baldomero",
-    "relation": {
-      "es": "Compañero de equipo",
-      "en": "Teammate"
-    }
-  },
-  {
     "slug": "cristian-fuentes",
     "name": "Cristian Fuentes",
     "role": "Desarrollador Full Stack",
@@ -41,7 +8,8 @@
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "priority": {}
   },
   {
     "slug": "edder-ramirez",
@@ -52,7 +20,8 @@
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "priority": {}
   },
   {
     "slug": "felipe-rivera",
@@ -62,7 +31,8 @@
     "relation": {
       "es": "Trabajé en la misma empresa",
       "en": "Worked at the same company"
-    }
+    },
+    "priority": {}
   },
   {
     "slug": "helis-montes",
@@ -73,7 +43,8 @@
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "priority": {}
   },
   {
     "slug": "jacnelly-colmenarez",
@@ -84,7 +55,8 @@
     "relation": {
       "es": "Compañera de equipo",
       "en": "Teammate"
-    }
+    },
+    "priority": {}
   },
   {
     "slug": "jose-namoc",
@@ -95,7 +67,8 @@
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "priority": {}
   },
   {
     "slug": "samuel-espinoza",
@@ -105,6 +78,43 @@
     "relation": {
       "es": "Misma universidad y proyectos juntos",
       "en": "Same university and joint projects"
-    }
+    },
+    "priority": {}
+  },
+  {
+    "slug": "alan-vergara",
+    "name": "Alan Vergara Bravo",
+    "role": "Software Architect Developer",
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/alan-vergara-bravo-b17164145",
+    "relation": {
+      "es": "Compañero de equipo",
+      "en": "Teammate"
+    },
+    "priority": {}
+  },
+  {
+    "slug": "alejandra-medina",
+    "name": "Alejandra Medina Briceño",
+    "role": "Diseñadora UX/UI",
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/alejandra-medinab",
+    "relation": {
+      "es": "Compañera de equipo",
+      "en": "Teammate"
+    },
+    "priority": {}
+  },
+  {
+    "slug": "baldomero-aguila",
+    "name": "Baldomero Águila",
+    "role": "Desarrollador Mobile",
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/baldomero",
+    "relation": {
+      "es": "Compañero de equipo",
+      "en": "Teammate"
+    },
+    "priority": {}
   }
 ]

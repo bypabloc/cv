@@ -249,6 +249,7 @@ Antes de trabajar, identifica que contexto necesitas:
 | Astro + Biome + TS | [.claude/rules/astro-landing.md](.claude/rules/astro-landing.md) | Antes de crear componente / página / utility |
 | TypeScript 6 (politica raiz) | [.claude/rules/typescript.md](.claude/rules/typescript.md) o skill `typescript-6` | Antes de tocar cualquier `.ts`/`.tsx`/`tsconfig.json`. **Solo TypeScript** en codigo de aplicacion (JavaScript nativo prohibido). **`any` PROHIBIDO** sin excepciones — usar `unknown` con narrow, `satisfies` o Zod `z.infer`. Strict + `noUncheckedIndexedAccess` + `verbatimModuleSyntax`. tsconfig canonicos para Astro 6 / Next 16 / packages. Codemod `ts5to6` para migracion 5.x→6.0 |
 | Design System | [.claude/rules/design-system.md](.claude/rules/design-system.md) | Tokens CSS, dark/light, tipografia, fonts |
+| Journey 3D (canon de sala) | [.claude/rules/journey-rooms.md](.claude/rules/journey-rooms.md) | Antes de crear/editar una sala del journey 3D (`apps/journey`) o tocar su infra (rooms/themes/world/dialogs/audio). Canon: 4 helpers (officeLayout/npcCoworkers/wallArt/softwareShowcase), estructura presente/pasado, paredes blancas `#f2f0eb` + acento del rubro, **<100 draw calls/sala**, los 4 puntos de infra por sala nueva, NPCs con 2 enfoques (>=2 coworker + >=2 staff) |
 | YAML data loading | [.claude/rules/yaml-data-loading.md](.claude/rules/yaml-data-loading.md) | Antes de agregar/modificar entry del CV o tocar plugin yaml |
 | Docstrings | [.claude/rules/docstring-standard.md](.claude/rules/docstring-standard.md) | Antes de documentar cualquier unidad de codigo |
 | Python 3.14 + Ruff | [.claude/rules/python.md](.claude/rules/python.md) o skill `python-devtools` | Antes de tocar `.py` en `devtools/`, `.git-hooks/` o `serverless/`. La skill `python-devtools` tiene el detalle: interprete correcto (`.venv` 3.14 vs `python3` del shell), politica de versiones, PEP 758, estructura |
@@ -367,6 +368,37 @@ estado en archivos locales (sin SAM ni CloudFormation). Costo: $0/mes
 
 Reglas: [.claude/rules/markdown-docs.md](.claude/rules/markdown-docs.md)
 y [.claude/rules/harness-protocol.md](.claude/rules/harness-protocol.md).
+
+## Code Discovery Protocol (codebase-memory-mcp)
+
+Servidor MCP `codebase-memory-mcp` configurado en `.claude/.mcp.json`
+(binario `/home/bypabloc/.local/bin/codebase-memory-mcp`). Indexa el repo
+en un knowledge graph (tree-sitter + resolucion de tipos) consultable con
+14 tools MCP, para reemplazar exploraciones grep/read masivas por queries
+estructuradas de bajo costo en tokens.
+
+**SIEMPRE** antes de explorar codigo (que funcion existe, quien llama a
+que, arquitectura, dead code, impact analysis de un diff), preferir estas
+tools sobre Grep/Glob de proposito general:
+
+- `search_graph(name_pattern, label, ...)` — buscar funciones/clases/rutas
+- `trace_path(function_name, mode=calls|data_flow)` — cadenas de llamadas
+- `get_code_snippet(qualified_name)` — leer una funcion por su qualified name
+- `get_architecture()` — overview de lenguajes, paquetes, rutas, hotspots
+- `search_code(pattern)` — grep aumentado por el grafo
+- `query_graph(query)` — Cypher-like para patrones complejos
+- `detect_changes()` — mapea el diff actual a simbolos afectados
+
+Si el proyecto (o un sub-modulo tocado) no esta indexado todavia, correr
+`index_repository(repo_path=...)` primero. Grep/Glob/Read siguen siendo la
+via correcta para texto plano, configs y archivos no-codigo; SIEMPRE Read
+antes de editar un archivo (el grafo es de solo lectura y puede quedar
+desactualizado tras un edit).
+
+**NUNCA** tratar el grafo como fuente de verdad absoluta para decisiones
+destructivas (ej. "esta funcion no tiene callers, la borro"): verificar con
+Grep antes de un borrado basado solo en `trace_path`/dead-code detection —
+el indexador puede perder edges en imports con alias o patrones dinamicos.
 
 ## Gotchas
 

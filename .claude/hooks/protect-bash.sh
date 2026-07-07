@@ -47,9 +47,12 @@ if echo "$LOWER_CMD" | grep -Eq '(curl|wget)[[:space:]].*[[:space:]]\|[[:space:]
   deny "pipe a shell de descarga remota detectado. Riesgo de ejecucion de codigo no auditado."
 fi
 
-# 3. rm -rf con paths sospechosos no cubiertos por deny list.
-if echo "$CMD" | grep -Eq 'rm[[:space:]]+-r?f?[[:space:]]+(/|~|\$HOME|\$\{HOME\})'; then
-  deny "rm -rf con path absoluto al root o home. Usa paths relativos del proyecto."
+# 3. rm con destino = la raiz literal (/ o /*) o el home a secas (~, $HOME).
+#    Solo bloquea cuando el destino ES root/home, no cuando es un archivo o
+#    carpeta concreta bajo un path absoluto (ese caso lo evalua
+#    block-dangerous.py con su regla tmp/gitignore -> allow o ask).
+if echo "$CMD" | grep -Eq 'rm[[:space:]]+-[a-zA-Z]*[[:space:]]+(/|/\*|~|\$HOME|\$\{HOME\})([[:space:]]|$)'; then
+  deny "rm con destino la raiz (/) o el home (~). Usa un path concreto del proyecto."
 fi
 
 # 4. Modificacion de hooks de git via edicion directa de .git/hooks/.

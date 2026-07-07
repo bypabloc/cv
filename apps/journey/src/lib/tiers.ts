@@ -5,8 +5,8 @@
  *   (sin WebGL, HW debil o prefers-reduced-motion -> CV 2D del HTML).
  *
  *   Logica PURA e inyectable: el glue de browser (canvas WebGL2, matchMedia
- *   reales) vive en la isla `Journey3D.tsx`, no aqui — asi el tier es 100%
- *   testeable en node.
+ *   reales) vive en `lib/boot.ts`, no aqui — asi el tier queda aislado
+ *   del DOM.
  *
  * @see docs/specs/journey-3d-cv/04-arquitectura-comun.md
  */

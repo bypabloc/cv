@@ -349,7 +349,7 @@ ${p.repo ? `<p class="proj-meta"><a href="${escapeHtml(p.repo)}">${escapeHtml(p.
           .map(
             (e) => `
 <h3>${escapeHtml(e.institution)}${e.degree ? ` — ${escapeHtml(e.degree[locale])}` : ''}</h3>
-<p class="exp-meta">${escapeHtml(e.start)} — ${escapeHtml(e.end)}</p>
+<p class="exp-meta">${escapeHtml(e.start)} — ${escapeHtml(e.end ?? (locale === 'es' ? 'Actual' : 'Present'))}</p>
 <p>${escapeHtml(e.description[locale])}</p>
 `,
           )

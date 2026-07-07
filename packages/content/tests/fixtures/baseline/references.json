@@ -3,108 +3,108 @@
     "slug": "alan-vergara",
     "name": "Alan Vergara Bravo",
     "role": "Software Architect Developer",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/alan-vergara-bravo-b17164145",
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/alan-vergara-bravo-b17164145"
   },
   {
     "slug": "alejandra-medina",
     "name": "Alejandra Medina Briceño",
     "role": "Diseñadora UX/UI",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/alejandra-medinab",
     "relation": {
       "es": "Compañera de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/alejandra-medinab"
   },
   {
     "slug": "baldomero-aguila",
     "name": "Baldomero Águila",
     "role": "Desarrollador Mobile",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/baldomero",
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/baldomero"
   },
   {
     "slug": "cristian-fuentes",
     "name": "Cristian Fuentes",
     "role": "Desarrollador Full Stack",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/csfuente",
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/csfuente"
   },
   {
     "slug": "edder-ramirez",
     "name": "Edder Ramírez",
     "role": "Desarrollador Full Stack",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/edderleonardo",
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/edderleonardo"
   },
   {
     "slug": "felipe-rivera",
     "name": "Felipe Rivera",
     "role": "Talent Acquisition Lead",
-    "linkedin": "https://www.linkedin.com/in/frtavonatti",
     "relation": {
       "es": "Trabajé en la misma empresa",
       "en": "Worked at the same company"
-    }
+    },
+    "linkedin": "https://www.linkedin.com/in/frtavonatti"
   },
   {
     "slug": "helis-montes",
     "name": "Helis Montes",
     "role": "Desarrollador Full Stack",
-    "company": "Destacame",
-    "linkedin": "https://www.linkedin.com/in/helis-montes",
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Destacame",
+    "linkedin": "https://www.linkedin.com/in/helis-montes"
   },
   {
     "slug": "jacnelly-colmenarez",
     "name": "Jacnelly Colmenarez",
     "role": "UI/UX Designer",
-    "company": "Dibal",
-    "linkedin": "https://www.linkedin.com/in/jacnelly-colmenarez",
     "relation": {
       "es": "Compañera de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Dibal",
+    "linkedin": "https://www.linkedin.com/in/jacnelly-colmenarez"
   },
   {
     "slug": "jose-namoc",
     "name": "José Namoc",
     "role": "Desarrollador Full Stack",
-    "company": "Dibal",
-    "linkedin": "https://www.linkedin.com/in/jose-namoc-lopez",
     "relation": {
       "es": "Compañero de equipo",
       "en": "Teammate"
-    }
+    },
+    "company": "Dibal",
+    "linkedin": "https://www.linkedin.com/in/jose-namoc-lopez"
   },
   {
     "slug": "samuel-espinoza",
     "name": "Samuel Espinoza",
     "role": "Desarrollador Full Stack",
-    "linkedin": "https://www.linkedin.com/in/samuelespinozac",
     "relation": {
       "es": "Misma universidad y proyectos juntos",
       "en": "Same university and joint projects"
-    }
+    },
+    "linkedin": "https://www.linkedin.com/in/samuelespinozac"
   }
 ]

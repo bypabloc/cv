@@ -12,6 +12,7 @@
 import type { AnimationAction, AnimationClip, Material } from 'three'
 import {
   AnimationMixer,
+  Color,
   Group,
   Mesh,
   MeshStandardMaterial,
@@ -120,6 +121,20 @@ function loadModel(): Promise<LoadedModel> {
   return modelPromise
 }
 
+/**
+ * Lleva un color a rango PASTEL: piso de luminosidad + techo de saturacion.
+ * El pack Quaternius trae partes casi negras (#1a1410, #2c2018) que
+ * `toonifyMesh` no recolorea; sin esto los NPCs se ven negros bajo el toon
+ * shading. Pedido del dueno (2026-07-07): paleta clara/pastel.
+ */
+function pastelize(hex: string): string {
+  const color = new Color(hex)
+  const hsl = { h: 0, s: 0, l: 0 }
+  color.getHSL(hsl)
+  color.setHSL(hsl.h, Math.min(hsl.s, 0.68), Math.max(hsl.l, 0.56))
+  return `#${color.getHexString()}`
+}
+
 /** Slots de material del pack Quaternius que se retinen por CharacterSpec. */
 function colorForSlot(
   materialName: string,
@@ -156,7 +171,7 @@ function toonifyMesh(mesh: Mesh, spec: CharacterSpec): void {
     }
     const hex =
       colorForSlot(material.name, spec) ?? `#${material.color.getHexString()}`
-    return toonMat(hex)
+    return toonMat(pastelize(hex))
   }
   mesh.material = Array.isArray(mesh.material)
     ? mesh.material.map(applyOne)

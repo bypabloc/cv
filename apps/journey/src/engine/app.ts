@@ -127,9 +127,11 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     pixelRatio: composerDpr,
   })
 
-  // luces globales: 1 hemisferio + 1 direccional (sombra 1024 solo full)
-  const hemi = new HemisphereLight('#d8e0f2', '#4a4238', 1.35)
-  const sun = new DirectionalLight('#fff2e0', 1.25)
+  // luces globales: 1 hemisferio + 1 direccional (sombra 1024 solo full).
+  // Cielo mas claro + suelo levantado (menos crush en sombra) + mas
+  // intensidad -> paleta clara/pastel (pedido del dueno 2026-07-07).
+  const hemi = new HemisphereLight('#eaf0ff', '#8a8478', 1.7)
+  const sun = new DirectionalLight('#fff6ea', 1.35)
   sun.position.set(4, 8, -4)
   if (tier === 'full') {
     sun.castShadow = true

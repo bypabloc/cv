@@ -57,10 +57,12 @@ export function createPostFx(opts: {
   halftone.uniforms.scatter.value = 0
   halftone.uniforms.width.value = opts.width
   halftone.uniforms.height.value = opts.height
-  // blending alto: el color original manda, los puntos son una textura de
-  // sombreado sutil encima (no reemplazan el color como a blending bajo)
-  halftone.uniforms.blending.value = 0.85
-  halftone.uniforms.blendingMode.value = 2 // multiply: oscurece, no reemplaza
+  // LINEAR (no multiply): mezcla el COLOR REAL con los puntos sin aplastar
+  // los oscuros -> paleta clara/pastel con Ben-Day visible. `blending` = cuanto
+  // pesan los puntos (0.4 => 60% color + 40% puntos). Multiply a 0.85
+  // crusheaba todo a negro (a*(1-b)) y por eso NPCs/props se veian oscuros.
+  halftone.uniforms.blending.value = 0.4
+  halftone.uniforms.blendingMode.value = 1 // LINEAR
   composer.addPass(halftone)
 
   const chromaticAberration = new ShaderPass(RGBShiftShader)

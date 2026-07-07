@@ -157,18 +157,18 @@ export const THEMES: Record<ThemeZoneId, RoomTheme> = {
     screenBg: '#0e2018',
     screenFg: '#5fd8a8',
   },
-  // destacame: fintech premium, azul Destacame; conserva el sky/fog
-  // oscuros (drama de acento sobre paredes blancas)
+  // destacame: fintech premium, azul Destacame. Fog/sky PASTEL (antes eran
+  // oscuros por "drama"; el dueno los pidio claros 2026-07-07)
   destacame: {
     wall: '#f2f0eb',
-    floor: '#d5dae6',
+    floor: '#dbe2f2',
     ink: '#0e1626',
     accent: '#0052cc',
     trim: '#8ea6d8',
     lightColor: '#eef3ff',
-    fog: '#0e1422',
-    sky: '#111828',
-    gradient: ['#767f96', '#bcc6dc', '#ffffff'],
+    fog: '#cdd7ee',
+    sky: '#e3eafa',
+    gradient: ['#9aa2ba', '#d0d8ec', '#ffffff'],
     screenBg: '#0a1220',
     screenFg: '#6fa8ff',
   },

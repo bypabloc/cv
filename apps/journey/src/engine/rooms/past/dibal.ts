@@ -390,6 +390,7 @@ export function dibalPast(
     hair: { style: 'short', color: '#1a140e' },
     top: '#8a8270',
     bottom: '#5a5548',
+    model: 'male-casual',
     faceSeed: 24,
     position: [x + 0.6, 0, z + 2.4],
     path: [
@@ -406,6 +407,7 @@ export function dibalPast(
     hair: { style: 'bun', color: '#d8d2c4' },
     top: '#8a8270',
     bottom: '#6a6152',
+    model: 'female-worker',
     faceSeed: 47,
     position: [x - 1.8, 0, z - 0.6],
     rotationY: -Math.PI / 2,
@@ -417,6 +419,7 @@ export function dibalPast(
     top: '#7a6a58',
     bottom: '#4a4438',
     accessory: 'badge',
+    model: 'female-office',
     faceSeed: 92,
     position: [x + 1.6, 0, z - 1.75],
     rotationY: 0,

@@ -338,6 +338,7 @@ export function goodmealPast(
     hair: { style: 'short', color: '#1a140e' },
     top: '#8a8270',
     bottom: '#5a5548',
+    model: 'male-casual',
     faceSeed: 31,
     position: [x - 2.2, 0, z + 1.2],
     path: [
@@ -358,6 +359,7 @@ export function goodmealPast(
     top: '#7a6a58',
     bottom: '#4a4438',
     accessory: 'badge',
+    model: 'female-casual',
     faceSeed: 58,
     position: [x - 2.4, 0, z - 0.6],
     rotationY: -Math.PI / 2,
@@ -370,6 +372,7 @@ export function goodmealPast(
     top: '#6a6152',
     bottom: '#4a4438',
     accessory: 'tie',
+    model: 'male-suit',
     faceSeed: 73,
     position: [x + 2.3, 0, z + 0.05],
     rotationY: 0,

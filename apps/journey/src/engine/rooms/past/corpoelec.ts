@@ -229,6 +229,7 @@ export function corpoelecPast(
     hair: { style: 'ponytail', color: '#1c1410' },
     top: '#8a8270',
     bottom: '#5a5548',
+    model: 'female-casual',
     faceSeed: 67,
     position: [x - 2.2, 0, z + 0.5],
     path: [
@@ -246,6 +247,7 @@ export function corpoelecPast(
     top: '#6a6152',
     bottom: '#4a4438',
     accessory: 'glasses',
+    model: 'male-casual',
     faceSeed: 53,
     position: [x, 0, z + 0.1],
     rotationY: Math.PI,
@@ -257,6 +259,7 @@ export function corpoelecPast(
     hair: { style: 'short', color: '#8a8a92' },
     top: '#6a6a52',
     bottom: '#4a4438',
+    model: 'male-worker',
     faceSeed: 51,
     position: [x + 2.9, 0, z + 2.1],
     rotationY: Math.PI / 2,

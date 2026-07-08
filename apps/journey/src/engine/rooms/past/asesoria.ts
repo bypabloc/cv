@@ -583,6 +583,7 @@ export function asesoriaPast(
     top: '#6a6152',
     bottom: '#4a4438',
     accessory: 'glasses',
+    model: 'male-casual',
     faceSeed: 41,
     position: [x - 2.6, 0, z - 0.9],
     rotationY: Math.PI,
@@ -595,6 +596,7 @@ export function asesoriaPast(
     top: '#8a8270',
     bottom: '#5a5548',
     accessory: 'badge',
+    model: 'female-office',
     faceSeed: 53,
     position: [x + 2.6, 0, z + 0.25],
     rotationY: Math.PI,
@@ -605,6 +607,7 @@ export function asesoriaPast(
     hair: { style: 'bun', color: '#1c1410' },
     top: '#7a6a58',
     bottom: '#4a4438',
+    model: 'female-casual',
     faceSeed: 34,
     position: [x + 0.3, 0, z + 1.3],
     path: [

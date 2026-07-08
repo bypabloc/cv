@@ -338,6 +338,7 @@ export function destacamePast(
     hair: { style: 'short', color: '#d8d2c4' },
     top: '#6a6152',
     bottom: '#4a4438',
+    model: 'male-casual',
     faceSeed: 37,
     position: [x - 1.6, 0, z + 0.7],
     path: [
@@ -353,6 +354,7 @@ export function destacamePast(
     hair: { style: 'bun', color: '#2a1a12' },
     top: '#7a6a58',
     bottom: '#4a4438',
+    model: 'female-casual',
     faceSeed: 54,
     position: [x - 2.2, 0, z - 0.3],
     rotationY: -Math.PI / 2,
@@ -364,6 +366,7 @@ export function destacamePast(
     top: '#8a8270',
     bottom: '#5a5548',
     accessory: 'glasses',
+    model: 'male-suit',
     faceSeed: 76,
     position: [x + 2.6, 0, z + 1.7],
     rotationY: Math.PI,

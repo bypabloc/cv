@@ -298,6 +298,7 @@ export function ipasmePast(
     hair: { style: 'short', color: '#5a5a62' },
     top: '#6a6152',
     bottom: '#4a4438',
+    model: 'base',
     faceSeed: 58,
     position: [x + 2.4, 0, z - 0.6],
     rotationY: Math.PI / 2,
@@ -310,6 +311,7 @@ export function ipasmePast(
     hair: { style: 'ponytail', color: '#1c1410' },
     top: '#8a8270',
     bottom: '#5a5548',
+    model: 'female-worker',
     faceSeed: 45,
     position: [x - 1.6, 0, z + 0.4],
     path: [
@@ -327,6 +329,7 @@ export function ipasmePast(
     top: '#7a6a58',
     bottom: '#4a4438',
     accessory: 'glasses',
+    model: 'female-casual',
     faceSeed: 29,
     position: [x - 0.4, 0, z + 1.45],
     rotationY: Math.PI,

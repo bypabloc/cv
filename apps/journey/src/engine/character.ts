@@ -17,13 +17,12 @@ import {
   Mesh,
   MeshStandardMaterial,
   type Object3D,
-  SkinnedMesh,
 } from 'three'
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import type { Box2 } from '../lib/collision'
 import { sfx } from './audio'
 import { gltfLoader } from './loaders'
-import { skinnedOutline, toonMat } from './toon'
+import { toonMat } from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
 export type Accessory = 'helmet' | 'glasses' | 'tie' | 'badge'
@@ -222,7 +221,6 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
         return
       }
       const clone = cloneSkeleton(model.scene)
-      const skinnedMeshes: SkinnedMesh[] = []
       clone.traverse((obj: Object3D) => {
         if (obj instanceof Mesh) {
           // SkeletonUtils.clone COMPARTE la geometry con el modelo cacheado:
@@ -232,23 +230,10 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
           obj.castShadow = shadowMode === 'cast'
           toonifyMesh(obj, spec)
         }
-        if (obj instanceof SkinnedMesh) {
-          skinnedMeshes.push(obj)
-        }
         if (obj.name === 'Head') {
           headBone = obj
         }
       })
-      // contorno de tinta barato: un shell skinned por mesh (comparte esqueleto
-      // y geometry), agregado como HERMANO con el mismo TRS del source para
-      // que coincidan. Reemplaza al OutlinePass (5 pasadas fullscreen).
-      for (const source of skinnedMeshes) {
-        const shell = skinnedOutline(source)
-        shell.position.copy(source.position)
-        shell.quaternion.copy(source.quaternion)
-        shell.scale.copy(source.scale)
-        source.parent?.add(shell)
-      }
       group.add(clone)
       mixer = new AnimationMixer(clone)
       for (const clip of model.animations) {
@@ -263,10 +248,21 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   return {
     group,
     setWalking(on) {
-      pose = on ? 'walk' : 'idle'
+      // GUARD: controls llama setWalking cada frame. Sin este guard,
+      // playClip -> reset() reinicia el clip Walk al frame 0 en cada cuadro
+      // (el personaje avanza pero la animacion queda congelada). Solo se
+      // re-dispara el clip cuando la pose CAMBIA.
+      const next: CharacterPose = on ? 'walk' : 'idle'
+      if (next === pose) {
+        return
+      }
+      pose = next
       playClip(POSE_CLIP[pose])
     },
     setPose(next) {
+      if (next === pose) {
+        return
+      }
       pose = next
       playClip(POSE_CLIP[pose])
     },

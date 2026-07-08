@@ -1,16 +1,16 @@
 /**
  * @module toon (engine)
- * @description Base visual manga-ink del motor vanilla: pool GLOBAL de
+ * @description Base visual toon del motor vanilla: pool GLOBAL de
  *   MeshToonMaterial (compartir material = menos state changes y shaders
- *   compilados 1 sola vez), gradientes de 3 escalones duros, contornos
- *   inverted hull, texturas canvas de tinta deterministas (LCG), labels
- *   con lettering manga (reemplazan al Text SDF anterior) y disposeDeep con
- *   guard `userData.shared` para nunca liberar el pool.
+ *   compilados 1 sola vez), gradientes de 3 escalones duros, texturas canvas
+ *   de tinta deterministas (LCG), labels con lettering manga (reemplazan al
+ *   Text SDF anterior) y disposeDeep con guard `userData.shared` para nunca
+ *   liberar el pool. Los contornos inverted-hull se eliminaron (2026-07-07):
+ *   `outlineGroup`/`outlinedMergedBoxes` quedan sin borde.
  *
  *   Nota DS: los hex son colores de MATERIAL WebGL/canvas, no CSS del UI.
  */
 import {
-  BackSide,
   BoxGeometry,
   CanvasTexture,
   CapsuleGeometry,
@@ -26,7 +26,6 @@ import {
   type Object3D,
   PlaneGeometry,
   RepeatWrapping,
-  SkinnedMesh,
   SphereGeometry,
   SRGBColorSpace,
   Texture,
@@ -245,119 +244,19 @@ export function basicMat(
 }
 
 // ---------------------------------------------------------------------------
-// Contornos inverted hull
+// Contornos — ELIMINADOS (pedido del dueno 2026-07-07)
 // ---------------------------------------------------------------------------
 
-let outlineSingleton: MeshBasicMaterial | null = null
-
-function outlineMaterial(): MeshBasicMaterial {
-  if (!outlineSingleton) {
-    outlineSingleton = new MeshBasicMaterial({ color: INK, side: BackSide })
-    outlineSingleton.userData.shared = true
-  }
-  return outlineSingleton
-}
-
 /**
- * @function addOutline
- * @description Contorno de tinta: clon del mesh escalado ~1.04 con material
- *   negro BackSide COMPARTIDO. Reusa la MISMA geometry (cero costo extra de
- *   memoria). Los muros interiores NO llevan hull (se ve del reves): sus
- *   lineas van dibujadas en la textura.
+ * @function outlineGroup
+ * @description NO-OP. Los contornos de tinta (inverted-hull) se eliminaron de
+ *   TODAS las salas: el look pasa a 3D toon limpio, sin borde negro. Se
+ *   conserva la firma vacia para no editar los ~13 archivos de sala que la
+ *   llaman; la llamada simplemente no hace nada (y ahorra draw calls). Marcar
+ *   `userData.noOutline` en un mesh ya no tiene efecto.
  */
-export function addOutline(mesh: Mesh, thickness = 1.04): Mesh {
-  const hull = new Mesh(mesh.geometry, outlineMaterial())
-  hull.scale.setScalar(thickness)
-  hull.userData.outline = true
-  mesh.add(hull)
-  return hull
-}
-
-/**
- * Aplica hull a todos los meshes del arbol salvo `userData.noOutline`
- * (que corta el subtree completo) y los que ya tienen su hull.
- */
-export function outlineGroup(root: Object3D, thickness = 1.04): void {
-  const targets: Mesh[] = []
-  collectOutlineTargets(root, targets)
-  for (const mesh of targets) {
-    addOutline(mesh, thickness)
-  }
-}
-
-function collectOutlineTargets(obj: Object3D, out: Mesh[]): void {
-  if (obj.userData.noOutline === true || obj.userData.outline === true) {
-    return
-  }
-  if (
-    obj instanceof Mesh &&
-    !obj.children.some((child) => child.userData.outline === true)
-  ) {
-    out.push(obj)
-  }
-  for (const child of obj.children) {
-    collectOutlineTargets(child, out)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Contorno inverted-hull para SkinnedMesh (personajes GLB)
-// ---------------------------------------------------------------------------
-
-// Un hull escalado (addOutline) NO sirve para skinning: se infla desde el
-// origen y "flota". El shell skinned empuja el vertice a lo largo de su
-// normal EN OBJECT SPACE antes del skinning (`transformed = position +
-// normal * t` sustituye a `<begin_vertex>`) — el mismo chunk <skinning_vertex>
-// deforma el vertice ya inflado, asi el contorno sigue al cuerpo sin
-// artefactos. Un solo material compartido (una compilacion) para TODO NPC.
-let skinnedOutlineSingleton: MeshBasicMaterial | null = null
-
-function skinnedOutlineMaterial(thickness: number): MeshBasicMaterial {
-  if (!skinnedOutlineSingleton) {
-    const material = new MeshBasicMaterial({ color: INK, side: BackSide })
-    material.userData.shared = true
-    // el param real es WebGLProgramParametersWithUniforms; el tipo estructural
-    // minimo evita acoplar al nombre exacto del tipo entre versiones de three.
-    material.onBeforeCompile = (shader: { vertexShader: string }) => {
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `vec3 transformed = vec3( position ) + normal * ${thickness.toFixed(4)};`,
-      )
-    }
-    skinnedOutlineSingleton = material
-  }
-  return skinnedOutlineSingleton
-}
-
-/**
- * @function skinnedOutline
- * @description Shell de tinta para un SkinnedMesh: comparte la MISMA geometry
- *   y esqueleto que el source (cero memoria extra, deforma identico) con
- *   material INK BackSide + offset de normal en el vertex shader. Devuelve el
- *   shell SIN parentar — quien llama lo agrega al parent del source copiando su
- *   TRS (para que coincidan). 1 draw call por mesh, sin pasadas fullscreen.
- *
- *   IMPORTANTE: `thickness` es en unidades de la GEOMETRIA (object space,
- *   pre-node-scale), NO de mundo. El pack Quaternius esta autorado diminuto
- *   (~0.018 u de alto) y escalado 100x por el nodo; por eso el default es ~2e-4
- *   (=> ~0.02 u de mundo de linea). Un valor "de mundo" (0.015) reventaria el
- *   shell en spikes. Si se cambia de modelo base, re-tunear a su escala local.
- */
-export function skinnedOutline(
-  source: SkinnedMesh,
-  thickness = 0.0002,
-): SkinnedMesh {
-  const shell = new SkinnedMesh(
-    source.geometry,
-    skinnedOutlineMaterial(thickness),
-  )
-  shell.bind(source.skeleton, source.bindMatrix)
-  shell.bindMode = source.bindMode
-  shell.castShadow = false
-  shell.receiveShadow = false
-  shell.frustumCulled = source.frustumCulled
-  shell.userData.outline = true
-  return shell
+export function outlineGroup(_root: Object3D, _thickness = 1.04): void {
+  // sin contorno
 }
 
 // ---------------------------------------------------------------------------
@@ -748,34 +647,21 @@ export function mergedBoxes(
 
 /**
  * @function outlinedMergedBoxes
- * @description mergedBoxes + su contorno CORRECTO. El hull escalado de un
- *   merge con posiciones horneadas se DESPLAZA del centro (losas negras
- *   flotando); aqui el contorno es un segundo merge con cada caja inflada
- *   en absoluto. 2 draw calls totales para N cajas contorneadas.
+ * @description mergedBoxes SIN contorno (los contornos se eliminaron). Devuelve
+ *   solo el fill envuelto en un `Group` para conservar el tipo de retorno que
+ *   esperan las salas. `opts.inflate` queda ignorado.
  */
 export function outlinedMergedBoxes(
   parts: readonly BoxSpec[],
   material: MeshToonMaterial | MeshBasicMaterial,
   opts: { inflate?: number; castShadow?: boolean } = {},
 ): Group {
-  const inflate = opts.inflate ?? 0.045
   const group = new Group()
   const fill = mergedBoxes(parts, material)
-  fill.userData.noOutline = true
   if (opts.castShadow) {
     fill.castShadow = true
   }
-  const hull = mergedBoxes(
-    parts.map((p) => ({
-      ...p,
-      w: p.w + inflate,
-      h: p.h + inflate,
-      d: p.d + inflate,
-    })),
-    outlineMaterial(),
-  )
-  hull.userData.outline = true
-  group.add(fill, hull)
+  group.add(fill)
   return group
 }
 
@@ -838,14 +724,6 @@ export function disposeToonPool(): void {
     material.dispose()
   }
   basicPool.clear()
-  if (outlineSingleton) {
-    outlineSingleton.dispose()
-    outlineSingleton = null
-  }
-  if (skinnedOutlineSingleton) {
-    skinnedOutlineSingleton.dispose()
-    skinnedOutlineSingleton = null
-  }
   if (units) {
     for (const geometry of Object.values(units)) {
       geometry.dispose()

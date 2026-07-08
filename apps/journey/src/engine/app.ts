@@ -33,7 +33,6 @@ import {
 import { createControls } from './controls'
 import { createHud } from './hud'
 import { configureLoaders } from './loaders'
-import { createPostFx } from './postfx'
 import { createEngineState, type EngineState, type EngineTier } from './state'
 import { configureToon, disposeDeep, disposeToonPool } from './toon'
 import { createWorld } from './world'
@@ -113,19 +112,13 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     80,
   )
   const scene = new Scene()
-  // el composer corre a resolucion CAPADA (moderada) — palanca #1 de
-  // fill-rate; el halftone disimula la baja de nitidez. El DPR del renderer
-  // (para el blit final + shadow map) se mantiene. El contorno de los
-  // personajes ya no va por OutlinePass: es el shell skinned de toon.ts.
-  let composerDpr = Math.min(dpr, 1.25)
-  const postFx = createPostFx({
-    renderer,
-    scene,
-    camera,
-    width: container.clientWidth,
-    height: container.clientHeight,
-    pixelRatio: composerDpr,
-  })
+  // render DIRECTO (sin EffectComposer): el postfx comico (halftone +
+  // aberracion cromatica) y los contornos se eliminaron (pedido del dueno
+  // 2026-07-07) -> look 3D toon limpio, MSAA nativo del renderer y cero
+  // pasadas fullscreen. `renderDpr` es la resolucion actual del renderer: el
+  // auto-degrade la baja cuando el FPS cae (ahora SI afecta el fill-rate, ya
+  // que no hay composer con su propio pixelRatio).
+  let renderDpr = dpr
 
   // luces globales: 1 hemisferio + 1 direccional (sombra 1024 solo full).
   // Cielo mas claro + suelo levantado (menos crush en sombra) + mas
@@ -238,7 +231,6 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     camera.aspect = container.clientWidth / Math.max(container.clientHeight, 1)
     camera.updateProjectionMatrix()
     renderer.setSize(container.clientWidth, container.clientHeight)
-    postFx.resize(container.clientWidth, container.clientHeight)
   }
   window.addEventListener('resize', onResize)
 
@@ -294,12 +286,11 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       return
     }
     lowFpsTime = 0
-    if (composerDpr > 0.85) {
-      // baja la resolucion INTERNA del composer: el renderer.setPixelRatio ya
-      // no afecta el fill-rate (todo pasa por el composer, que tiene su propio
-      // pixelRatio). Piso 0.85 — mas abajo los puntos del halftone se agrandan.
-      composerDpr = Math.max(0.85, composerDpr - 0.2)
-      postFx.setPixelRatio(composerDpr)
+    if (renderDpr > 0.85) {
+      // baja la resolucion del renderer (fill-rate). Sin composer, el
+      // setPixelRatio SI afecta el costo de pintado. Piso 0.85.
+      renderDpr = Math.max(0.85, renderDpr - 0.2)
+      renderer.setPixelRatio(renderDpr)
     } else if (accentsOn) {
       accentsOn = false
       world.setAccentsEnabled(false)
@@ -330,7 +321,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       }
     }
     sfx.update(dt)
-    postFx.render()
+    renderer.render(scene, camera)
     if (dt > 0) {
       degrade(dt)
     }
@@ -386,7 +377,6 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       player.dispose()
       disposeDeep(player.group)
       disposeToonPool()
-      postFx.dispose()
       renderer.dispose()
       canvasWrap.remove()
     },

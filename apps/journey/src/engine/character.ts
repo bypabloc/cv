@@ -122,16 +122,18 @@ function loadModel(): Promise<LoadedModel> {
 }
 
 /**
- * Lleva un color a rango PASTEL: piso de luminosidad + techo de saturacion.
- * El pack Quaternius trae partes casi negras (#1a1410, #2c2018) que
- * `toonifyMesh` no recolorea; sin esto los NPCs se ven negros bajo el toon
- * shading. Pedido del dueno (2026-07-07): paleta clara/pastel.
+ * Levanta SOLO los colores muy oscuros para que no se vean negros,
+ * MANTENIENDO la saturacion (colores vibrantes como el journey original, NO
+ * pastel lavado — pedido del dueno 2026-07-07). El pack Quaternius trae
+ * partes casi negras (#1a1410, #2c2018) que `toonifyMesh` no recolorea.
  */
-function pastelize(hex: string): string {
+function brightenColor(hex: string): string {
   const color = new Color(hex)
   const hsl = { h: 0, s: 0, l: 0 }
   color.getHSL(hsl)
-  color.setHSL(hsl.h, Math.min(hsl.s, 0.68), Math.max(hsl.l, 0.56))
+  if (hsl.l < 0.44) {
+    color.setHSL(hsl.h, hsl.s, 0.44)
+  }
   return `#${color.getHexString()}`
 }
 
@@ -171,7 +173,7 @@ function toonifyMesh(mesh: Mesh, spec: CharacterSpec): void {
     }
     const hex =
       colorForSlot(material.name, spec) ?? `#${material.color.getHexString()}`
-    return toonMat(pastelize(hex))
+    return toonMat(brightenColor(hex))
   }
   mesh.material = Array.isArray(mesh.material)
     ? mesh.material.map(applyOne)

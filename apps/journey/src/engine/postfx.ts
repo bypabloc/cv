@@ -61,7 +61,7 @@ export function createPostFx(opts: {
   // los oscuros -> paleta clara/pastel con Ben-Day visible. `blending` = cuanto
   // pesan los puntos (0.4 => 60% color + 40% puntos). Multiply a 0.85
   // crusheaba todo a negro (a*(1-b)) y por eso NPCs/props se veian oscuros.
-  halftone.uniforms.blending.value = 0.4
+  halftone.uniforms.blending.value = 0.3
   halftone.uniforms.blendingMode.value = 1 // LINEAR
   composer.addPass(halftone)
 

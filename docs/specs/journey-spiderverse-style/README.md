@@ -31,6 +31,34 @@
 | Spec/plan creado | Hecho (este documento) |
 | Implementación (T1-T8) | En curso |
 
+## Addendum 2026-07-07 — giro de dirección visual + restyle
+
+Tras validar el prototipo en su GPU, el dueño pidió cambios que **revierten
+parte del look Spider-Verse** y refinan el aula. Estos reemplazan a los AC-3
+y AC-4 originales (que exigían halftone + contorno de tinta):
+
+1. **Se elimina TODO el post-procesado cómico** (contornos inverted-hull en
+   personajes/props + halftone Ben-Day + aberración cromática). Motivo:
+   gasta recursos y "no tiene buen acabado". El render pasa a **3D toon
+   limpio, directo** (sin `EffectComposer`), con MSAA nativo. Aplica a las
+   10 salas (no solo las 3 prototipo). `postfx.ts` se borra;
+   `toon.ts::outlineGroup`/`outlinedMergedBoxes` quedan sin contorno.
+   → commit `4c8b3add`.
+2. **Fix del caminar del jugador**: `setWalking`/`setPose` re-disparaban el
+   clip cada frame (`playClip` → `reset()`), congelando la animación Walk al
+   mantener la tecla. Guard: solo re-dispara al CAMBIAR de pose. → `4c8b3add`.
+3. **Aula = colegio de bajos recursos**: mobiliario a **madera**, monitores
+   **CRT blancos/crema** (estilo 2000), y las **3 pizarras** del muro pasan a
+   **pizarra verde vieja con marco de madera** (tiza sobre verde). → `d7fcb8e8`.
+4. **futuro Plan A**: estaciones de trabajo **sci-fi CC0** (Kenney Space
+   Station Kit), con `toonifyFurniture` que **preserva la textura** del pack.
+   → `a2a62729`.
+
+Pendiente de conversación con el dueño (no bloqueante): la firma sonora por
+rubro y el resto de props del futuro (computer.glb del pack sci-fi está
+vendorizado pero sin colocar aún); si quiere, las pizarras RETOS/APRENDIZAJES
+(infoKit, hoy navy) también podrían ir a verde.
+
 ## Decisiones no reabribles (resumen — detalle en 01)
 
 1. Reemplazo total del manga-ink en las 3 salas prototipo (no evolución).

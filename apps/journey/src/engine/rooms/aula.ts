@@ -23,13 +23,9 @@ import { makeNpc, type NpcHandle } from '../character'
 import { npcTalk } from '../dialog'
 import { AULA_PRESENTE_DIALOGS } from '../dialogs/aula-presente'
 import type { Interactable } from '../state'
-import {
-  disposeDeep,
-  outlinedMergedBoxes,
-  outlineGroup,
-  toonMat,
-} from '../toon'
+import { disposeDeep, outlineGroup } from '../toon'
 import type { RoomBuild, RoomCtx } from '../world'
+import { placeFurniture } from './furniture'
 import {
   footprint,
   infoKit,
@@ -39,6 +35,10 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+
+// mobiliario CC0 (Kenney Furniture Kit, ver public/models/CREDITS.md)
+const DESK_URL = '/models/furniture/desk.glb'
+const CHAIR_URL = '/models/furniture/chairDesk.glb'
 
 const PC_LABELS = {
   mine: {
@@ -280,34 +280,31 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     [-5, room.z - 1.2],
     [5, room.z - 1.2],
   ]
-  // silla de un puesto: asiento + respaldo + 2 patas (dir=-1 la del profe)
-  const chairParts = (x: number, cz: number, dir: 1 | -1) => [
-    { w: 0.42, h: 0.05, d: 0.42, x, y: 0.44, z: cz },
-    { w: 0.42, h: 0.5, d: 0.05, x, y: 0.72, z: cz - 0.2 * dir },
-    { w: 0.05, h: 0.44, d: 0.05, x: x - 0.17, y: 0.22, z: cz - 0.1 * dir },
-    { w: 0.05, h: 0.44, d: 0.05, x: x + 0.17, y: 0.22, z: cz - 0.1 * dir },
-  ]
-  // profesor + 8 pupitres + 9 sillas fusionados: 2 draw calls (AC-10).
-  // Mobiliario AZUL (tema del aula: blanco + beige + azul, guiños morados)
   const seatSpots = [...deskSpots, ...emptySpots]
   const allDesks: readonly (readonly [number, number])[] = [
     [-2, room.z + 3.6],
     ...seatSpots,
   ]
+  // mobiliario CC0 Kenney (T4): escritorios + sillas GLB en las MISMAS
+  // posiciones del pupitre viejo. Los colliders (footprint, abajo) siguen
+  // siendo la fuente de verdad de la navegacion. El alumno se sienta en
+  // z-0.55 mirando al frente (+Z); el profesor mira a la clase (-Z).
+  for (const [x, z] of allDesks) {
+    group.add(placeFurniture({ url: DESK_URL, x, z, targetWidth: 1.15 }))
+  }
+  for (const [x, z] of seatSpots) {
+    group.add(
+      placeFurniture({ url: CHAIR_URL, x, z: z - 0.55, targetWidth: 0.52 }),
+    )
+  }
   group.add(
-    outlinedMergedBoxes(
-      [
-        ...allDesks.flatMap(([x, z]) => [
-          { w: 1.1, h: 0.05, d: 0.6, x, y: 0.72, z },
-          { w: 0.06, h: 0.72, d: 0.55, x: x - 0.5, y: 0.36, z },
-          { w: 0.06, h: 0.72, d: 0.55, x: x + 0.5, y: 0.36, z },
-        ]),
-        ...seatSpots.flatMap(([x, z]) => chairParts(x, z - 0.55, 1)),
-        ...chairParts(-2, room.z + 4.15, -1),
-      ],
-      toonMat('#33517e'),
-      { inflate: 0.035, castShadow: true },
-    ),
+    placeFurniture({
+      url: CHAIR_URL,
+      x: -2,
+      z: room.z + 4.15,
+      targetWidth: 0.52,
+      rotationY: Math.PI,
+    }),
   )
   staticColliders.push(
     footprint(-2, room.z + 3.6, 1.2, 0.8),

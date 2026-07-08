@@ -58,6 +58,7 @@ import {
   toonMat,
   unitGeo,
 } from '../toon'
+import { placeFurniture } from './furniture'
 
 export interface PropHandle {
   group: Group
@@ -1129,6 +1130,9 @@ export function officeLayout(opts: {
   roomIndex: number
   /** Estado del motor: el toggle de sentarse muta state.playerSeat directo. */
   state: EngineState
+  /** Opt-in T4: escritorios/sillas GLB CC0 en vez de las cajas fusionadas
+   *  (solo lo pasan las salas migradas; el resto conserva el merge). */
+  furniture?: { deskUrl: string; chairUrl: string }
 }): OfficeLayout {
   const powered = opts.poweredSpots ?? new Set<number>()
   const group = new Group()
@@ -1143,18 +1147,40 @@ export function officeLayout(opts: {
     { w: 0.05, h: 0.44, d: 0.05, x: x - 0.17, y: 0.22, z: cz - 0.1 },
     { w: 0.05, h: 0.44, d: 0.05, x: x + 0.17, y: 0.22, z: cz - 0.1 },
   ]
-  group.add(
-    outlinedMergedBoxes(
-      opts.spots.flatMap(([x, z]) => [
-        { w: 1.1, h: 0.05, d: 0.6, x, y: 0.72, z },
-        { w: 0.06, h: 0.72, d: 0.55, x: x - 0.5, y: 0.36, z },
-        { w: 0.06, h: 0.72, d: 0.55, x: x + 0.5, y: 0.36, z },
-        ...chairParts(x, z - 0.55),
-      ]),
-      toonMat(opts.color),
-      { inflate: 0.035, castShadow: true },
-    ),
-  )
+  if (opts.furniture) {
+    // T4: escritorio + silla GLB Kenney en cada puesto (mismas posiciones)
+    for (const [x, z] of opts.spots) {
+      group.add(
+        placeFurniture({
+          url: opts.furniture.deskUrl,
+          x,
+          z,
+          targetWidth: 1.15,
+        }),
+      )
+      group.add(
+        placeFurniture({
+          url: opts.furniture.chairUrl,
+          x,
+          z: z - 0.55,
+          targetWidth: 0.52,
+        }),
+      )
+    }
+  } else {
+    group.add(
+      outlinedMergedBoxes(
+        opts.spots.flatMap(([x, z]) => [
+          { w: 1.1, h: 0.05, d: 0.6, x, y: 0.72, z },
+          { w: 0.06, h: 0.72, d: 0.55, x: x - 0.5, y: 0.36, z },
+          { w: 0.06, h: 0.72, d: 0.55, x: x + 0.5, y: 0.36, z },
+          ...chairParts(x, z - 0.55),
+        ]),
+        toonMat(opts.color),
+        { inflate: 0.035, castShadow: true },
+      ),
+    )
+  }
   const offVariant = {
     lines: [],
     theme: {

@@ -133,6 +133,11 @@ const OK_GREEN = '#22c55e'
 const MORA_CORAL = '#ef4444'
 const COIN_GOLD = '#d9a92b'
 const PANEL_INK = '#10182b'
+// mobiliario CC0 (Kenney Furniture Kit, ver public/models/CREDITS.md)
+const DESK_URL = '/models/furniture/desk.glb'
+const CHAIR_URL = '/models/furniture/chairDesk.glb'
+// tono claro para los pedestales de kiosco (antes navy oscuro PANEL_INK)
+const KIOSK_DESK = '#aeb8cc'
 
 // --- laminas de los cuadros (wallArt): tinta plana sobre papel claro ---
 
@@ -1341,6 +1346,7 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
     state,
     spots: deskSpots,
     color: PANEL_INK,
+    furniture: { deskUrl: DESK_URL, chairUrl: CHAIR_URL },
     poweredSpots: new Set([0, 1]),
     screenTheme,
     screenFor: (index) => LAPTOP_SCREENS[index] ?? LAPTOP_SCREENS[0],
@@ -1364,7 +1370,7 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
       position: [-half + 1.1, 0, room.z - 3.0],
       rotationY: Math.PI / 2,
       width: 1.8,
-      color: '#1b2a4a',
+      color: KIOSK_DESK,
     }),
   )
   const kiosco = switchableMonitor({
@@ -1621,7 +1627,7 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
       position: [-half + 1.0, 0, room.z + 2.6],
       rotationY: Math.PI / 2,
       width: 1.2,
-      color: PANEL_INK,
+      color: KIOSK_DESK,
     }),
   )
   const campanaAdmin = switchableMonitor({

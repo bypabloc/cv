@@ -54,6 +54,11 @@ function toonifyFurniture(
     }
     // prioridad: tint por nombre de material > color plano > color original
     const override = tint?.[material.name] ?? color
+    if (material.map && override === undefined) {
+      // modelo texturado (ej. atlas colormap del pack sci-fi): preserva la
+      // textura y solo aplica el toon shading sobre blanco (no la tiñe).
+      return toonMat('#ffffff', { map: material.map })
+    }
     const hex = override ?? liftDark(`#${material.color.getHexString()}`)
     return toonMat(hex)
   }

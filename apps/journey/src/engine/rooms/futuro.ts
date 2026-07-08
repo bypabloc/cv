@@ -87,6 +87,12 @@ const LAPTOP_SCREENS = [
   },
 ] as const
 
+// mobiliario sci-fi CC0 (Kenney Space Station Kit, ver public/models/CREDITS.md):
+// la vision futura estrena estaciones de trabajo del pack espacial (texturadas
+// con su colormap; el toon shading las integra al resto de la sala)
+const SPACE_DESK = '/models/furniture/space/table.glb'
+const SPACE_CHAIR = '/models/furniture/space/chair.glb'
+
 // --- paleta de la vision (informe 14) ---
 
 const FUT_VIOLET = '#5a6ff0'
@@ -582,6 +588,14 @@ export default function buildFuturo(ctx: RoomCtx): RoomBuild {
     color: PANEL_INK,
     screenTheme,
     screenFor: (index) => LAPTOP_SCREENS[index] ?? LAPTOP_SCREENS[0],
+    // T4b: estaciones de trabajo sci-fi (Space Station Kit). El pack es mas
+    // grande que el Kenney plano -> se afina la auto-escala.
+    furniture: {
+      deskUrl: SPACE_DESK,
+      chairUrl: SPACE_CHAIR,
+      deskWidth: 1.15,
+      chairWidth: 0.58,
+    },
   })
   group.add(office.group)
   staticColliders.push(...office.colliders)

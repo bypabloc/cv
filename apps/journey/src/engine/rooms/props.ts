@@ -1141,8 +1141,15 @@ export function officeLayout(opts: {
   /** Estado del motor: el toggle de sentarse muta state.playerSeat directo. */
   state: EngineState
   /** Opt-in T4: escritorios/sillas GLB CC0 en vez de las cajas fusionadas
-   *  (solo lo pasan las salas migradas; el resto conserva el merge). */
-  furniture?: { deskUrl: string; chairUrl: string }
+   *  (solo lo pasan las salas migradas; el resto conserva el merge).
+   *  `deskWidth`/`chairWidth` afinan la auto-escala por pack (el sci-fi de
+   *  futuro es mas grande que el Kenney plano). */
+  furniture?: {
+    deskUrl: string
+    chairUrl: string
+    deskWidth?: number
+    chairWidth?: number
+  }
 }): OfficeLayout {
   const powered = opts.poweredSpots ?? new Set<number>()
   const group = new Group()
@@ -1158,14 +1165,16 @@ export function officeLayout(opts: {
     { w: 0.05, h: 0.44, d: 0.05, x: x + 0.17, y: 0.22, z: cz - 0.1 },
   ]
   if (opts.furniture) {
-    // T4: escritorio + silla GLB Kenney en cada puesto (mismas posiciones)
+    // T4: escritorio + silla GLB CC0 en cada puesto (mismas posiciones)
+    const deskWidth = opts.furniture.deskWidth ?? 1.15
+    const chairWidth = opts.furniture.chairWidth ?? 0.52
     for (const [x, z] of opts.spots) {
       group.add(
         placeFurniture({
           url: opts.furniture.deskUrl,
           x,
           z,
-          targetWidth: 1.15,
+          targetWidth: deskWidth,
         }),
       )
       group.add(
@@ -1173,7 +1182,7 @@ export function officeLayout(opts: {
           url: opts.furniture.chairUrl,
           x,
           z: z - 0.55,
-          targetWidth: 0.52,
+          targetWidth: chairWidth,
         }),
       )
     }

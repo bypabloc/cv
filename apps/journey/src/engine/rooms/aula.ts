@@ -31,14 +31,15 @@ import {
   infoKit,
   npcCoworkers,
   paperStack,
+  schoolChair,
   seatInteractable,
   switchableMonitor,
   wallArt,
 } from './props'
 
-// mobiliario CC0 (Kenney Furniture Kit, ver public/models/CREDITS.md)
+// escritorio CC0 (Kenney Furniture Kit) tintado de BLANCO; las sillas son
+// procedurales de 4 patas (schoolChair) — universidad de bajos recursos, 2011
 const DESK_URL = '/models/furniture/desk.glb'
-const CHAIR_URL = '/models/furniture/chairDesk.glb'
 
 const PC_LABELS = {
   mine: {
@@ -99,9 +100,10 @@ const ART_INK = '#eef2e6' // tiza blanca (texto y trazos)
 const ART_BLUE = '#a9d6ef' // tiza celeste (acento)
 const ART_PURPLE = '#f2e2a6' // tiza amarilla (acento)
 
-// mobiliario de madera + monitor CRT crema (estilo 2000)
-const WOOD_DESK = '#a9743f'
-const WOOD_CHAIR = '#8f5d30'
+// escritorios BLANCOS + sillas de madera (4 patas) + monitor CRT crema (2000);
+// las pizarras verdes llevan marco de madera
+const WHITE_DESK = '#eeece4'
+const CHAIR_WOOD = '#a9743f'
 const WOOD_FRAME = '#7a5230'
 const CRT_CREAM = '#e3ddcb'
 
@@ -317,52 +319,46 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
         x,
         z,
         targetWidth: 1.15,
-        color: WOOD_DESK,
+        color: WHITE_DESK,
       }),
     )
   }
+  // sillas de 4 patas (procedurales) detras de cada escritorio, mirando +Z
   for (const [x, z] of seatSpots) {
-    group.add(
-      placeFurniture({
-        url: CHAIR_URL,
-        x,
-        z: z - 0.55,
-        targetWidth: 0.52,
-        color: WOOD_CHAIR,
-      }),
-    )
+    group.add(schoolChair({ position: [x, 0, z - 0.55], color: CHAIR_WOOD }))
   }
+  // silla del profesor: mira a la clase (-Z)
   group.add(
-    placeFurniture({
-      url: CHAIR_URL,
-      x: -2,
-      z: room.z + 4.15,
-      targetWidth: 0.52,
+    schoolChair({
+      position: [-2, 0, room.z + 4.15],
       rotationY: Math.PI,
-      color: WOOD_CHAIR,
+      color: CHAIR_WOOD,
     }),
   )
-  staticColliders.push(
-    footprint(-2, room.z + 3.6, 1.2, 0.8),
-    // sillas vacias (tu PC, la del lab y la del profesor)
-    footprint(2, room.z + 0.65, 0.5, 0.5),
-    footprint(-2, room.z - 1.75, 0.5, 0.5),
-    footprint(-2, room.z + 4.15, 0.5, 0.5),
-  )
+  // COLISIONES (fuente de verdad de la navegacion, desacopladas de la
+  // geometria): UN footprint por escritorio + UNO por silla VACIA, en una
+  // sola pasada consistente. Las sillas con NPC sentado (deskSpots 0 y 3, y
+  // la del profesor) las cubre el collider del propio NPC -> se saltan aca.
+  const NPC_PCS: ReadonlySet<number> = new Set([0, 3])
+  staticColliders.push(footprint(-2, room.z + 3.6, 1.2, 0.7)) // escritorio profe
+  deskSpots.forEach(([x, z], i) => {
+    staticColliders.push(footprint(x, z, 1.2, 0.7))
+    if (!NPC_PCS.has(i)) {
+      staticColliders.push(footprint(x, z - 0.55, 0.46, 0.46))
+    }
+  })
   for (const [x, z] of emptySpots) {
     staticColliders.push(
-      footprint(x, z, 1.3, 0.8),
-      footprint(x, z - 0.55, 0.5, 0.5),
+      footprint(x, z, 1.2, 0.7),
+      footprint(x, z - 0.55, 0.46, 0.46),
     )
   }
   // trabajos de catedra impresos sobre el escritorio del profesor
   group.add(paperStack({ position: [-2.3, 0.745, room.z + 3.6], count: 6 }))
 
   // monitores: los de los NPCs ya estan ENCENDIDOS (estan trabajando);
-  // las 2 PCs libres se encienden INDIVIDUALMENTE con E
-  const NPC_PCS: ReadonlySet<number> = new Set([0, 3])
+  // las 2 PCs libres se encienden INDIVIDUALMENTE con E (NPC_PCS definido arriba)
   deskSpots.forEach(([x, z], index) => {
-    staticColliders.push(footprint(x, z, 1.3, 0.8))
     const isPlayerPc = index === 1
     const code = isPlayerPc
       ? PLAYER_PC_SCREEN
@@ -432,6 +428,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     locale: state.locale,
     texts,
     withLight: state.tier === 'full',
+    // salon de clases: RETOS/APRENDIZAJES en pizarra verde con tiza
+    boardStyle: 'chalk',
     onFicha: actions.openFicha,
     onEnterPast: actions.enterPast,
     onStory: actions.openStory,

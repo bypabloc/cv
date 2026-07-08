@@ -670,6 +670,8 @@ export default function buildFuturo(ctx: RoomCtx): RoomBuild {
     texts,
     withLight: state.tier === 'full',
     withPortal: false,
+    // el futuro estrena pizarras de cristal (el estilo nuevo)
+    boardStyle: 'glass',
     onFicha: actions.openFicha,
     onEnterPast: actions.enterPast,
     onStory: actions.openStory,

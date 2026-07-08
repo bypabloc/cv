@@ -178,35 +178,97 @@ const FICHA_TITLES: Record<FichaKind, Record<Locale, string>> = {
   aprendizajes: { es: 'APRENDIZAJES', en: 'LEARNINGS' },
 }
 
-/** Tiza sobre pizarra: titulo grande subrayado + bullets del CV. */
-function chalkTexture(opts: {
-  title: string
-  bullets: readonly string[]
-  theme: RoomTheme
-}): CanvasTexture {
+/**
+ * Estilo de las pizarras RETOS/APRENDIZAJES por tipo de sala:
+ * - `chalk`: pizarra verde de aula con tiza y marco de madera.
+ * - `whiteboard`: pizarra blanca de oficina con marcador negro (DEFAULT).
+ * - `glass`: pizarra de cristal esmerilado (el estilo "nuevo" del futuro).
+ */
+export type BoardStyle = 'chalk' | 'whiteboard' | 'glass'
+
+interface BoardPalette {
+  /** Fondo del tablero; null = cristal esmerilado (se pinta con alpha). */
+  bg: string | null
+  /** Texto (titulo + bullets). */
+  ink: string
+  /** Trazo del marco interno. */
+  border: string
+  /** Color del backing (marco fisico). */
+  frame: string
+  /** El tablero se renderiza translucido (cristal). */
+  transparent: boolean
+}
+
+const BOARD_PALETTES: Record<BoardStyle, BoardPalette> = {
+  chalk: {
+    bg: '#33503f',
+    ink: '#eef2e6',
+    border: '#e8e4d4',
+    frame: '#7a5230',
+    transparent: false,
+  },
+  whiteboard: {
+    bg: '#f5f5f1',
+    ink: '#1a1c22',
+    border: '#c9ccd2',
+    frame: '#b0b4bc',
+    transparent: false,
+  },
+  glass: {
+    bg: null,
+    ink: '#243044',
+    border: '#cdd8ea',
+    frame: '#c6ccd6',
+    transparent: true,
+  },
+}
+
+/** Titulo + subrayado de acento + bullets del CV, segun el estilo de sala. */
+function boardTexture(
+  style: BoardStyle,
+  opts: { title: string; bullets: readonly string[]; theme: RoomTheme },
+): CanvasTexture {
+  const pal = BOARD_PALETTES[style]
   const rng = makeRng(opts.title.length * 31 + opts.bullets.length)
   return makeCanvasTexture(512, (ctx, size) => {
-    ctx.fillStyle = opts.theme.screenBg
-    ctx.fillRect(0, 0, size, size)
-    // borde de tiza irregular
-    ctx.strokeStyle = '#e8e4d4'
+    if (pal.bg) {
+      ctx.fillStyle = pal.bg
+      ctx.fillRect(0, 0, size, size)
+    } else {
+      // cristal esmerilado: base blanca translucida + reflejo diagonal
+      ctx.clearRect(0, 0, size, size)
+      ctx.fillStyle = 'rgba(226,236,248,0.42)'
+      ctx.fillRect(0, 0, size, size)
+      ctx.fillStyle = 'rgba(255,255,255,0.16)'
+      ctx.beginPath()
+      ctx.moveTo(0, size * 0.22)
+      ctx.lineTo(size * 0.5, 0)
+      ctx.lineTo(size * 0.82, 0)
+      ctx.lineTo(0, size * 0.62)
+      ctx.closePath()
+      ctx.fill()
+    }
+    // marco interno
+    ctx.strokeStyle = pal.border
     ctx.lineCap = 'round'
-    ctx.globalAlpha = 0.5
+    ctx.globalAlpha = style === 'chalk' ? 0.5 : 0.7
     ctx.lineWidth = 4
     ctx.strokeRect(12, 12, size - 24, size - 24)
     ctx.globalAlpha = 1
-    // titulo grande + subrayado con el acento de la sala
-    ctx.fillStyle = '#f2eedd'
-    ctx.font = `bold 58px ${'"Space Grotesk", system-ui, sans-serif'}`
+    // titulo + subrayado con el acento de la sala
+    ctx.fillStyle = pal.ink
+    ctx.font = 'bold 58px "Space Grotesk", system-ui, sans-serif'
     ctx.fillText(opts.title, 36, 96)
     ctx.strokeStyle = opts.theme.accent
     ctx.lineWidth = 6
     ctx.beginPath()
     ctx.moveTo(36, 118)
-    ctx.lineTo(36 + Math.min(420, opts.title.length * 34), 118 + rng() * 3)
+    // trazo irregular solo en tiza; recto en marcador/cristal
+    const jitter = style === 'chalk' ? rng() * 3 : 0
+    ctx.lineTo(36 + Math.min(420, opts.title.length * 34), 118 + jitter)
     ctx.stroke()
     // bullets cortos (el detalle completo vive en el panel DOM con E)
-    ctx.fillStyle = '#e8e4d4'
+    ctx.fillStyle = pal.ink
     ctx.font = '26px "Space Grotesk", system-ui, sans-serif'
     let y = 190
     for (const bullet of opts.bullets.slice(0, 3)) {
@@ -214,7 +276,7 @@ function chalkTexture(opts: {
       ctx.fillText(`· ${text}`, 36, y)
       y += 88
     }
-    // hint de interaccion escrito con tiza chica
+    // hint de interaccion
     ctx.globalAlpha = 0.55
     ctx.font = '22px "Space Mono", ui-monospace, monospace'
     ctx.fillText('[E]', size - 78, size - 36)
@@ -223,10 +285,10 @@ function chalkTexture(opts: {
 }
 
 /**
- * Pizarra de ficha (RETOS / APRENDIZAJES): titulo pintado + 2-3 bullets
- * de tiza del CV real. E abre el panel DOM completo (la lectura de verdad
- * sigue siendo HTML). El marco toma el `trim` del theme (guiño morado en
- * el aula); sin barra inferior (el feedback vive en el prompt del HUD).
+ * Pizarra de ficha (RETOS / APRENDIZAJES): titulo + 2-3 bullets del CV real.
+ * E abre el panel DOM completo (la lectura de verdad sigue siendo HTML). El
+ * `boardStyle` define el look segun el tipo de sala (chalk aula / whiteboard
+ * oficinas / glass futuro); el marco fisico toma su color de la paleta.
  */
 export function fichaBoard(opts: {
   roomIndex: number
@@ -235,30 +297,29 @@ export function fichaBoard(opts: {
   rotationY?: number
   theme: RoomTheme
   locale: Locale
-  /** Bullets del CV para el resumen de tiza (se truncan a ~34 chars). */
+  /** Bullets del CV para el resumen (se truncan a ~34 chars). */
   preview: readonly string[]
+  /** Estilo de pizarra por tipo de sala (default whiteboard). */
+  boardStyle?: BoardStyle
   onOpen(roomIndex: number, kind: FichaKind): void
 }): PropHandle {
   const id = `ficha-${opts.roomIndex}-${opts.kind}`
+  const style = opts.boardStyle ?? 'whiteboard'
+  const pal = BOARD_PALETTES[style]
   const group = new Group()
   group.position.set(opts.position[0], opts.position[1], opts.position[2])
   group.rotation.y = opts.rotationY ?? 0
-  // marco (trim del theme) con hull + tablero canvas
-  const backing = boxMesh(
-    2.4,
-    1.55,
-    0.06,
-    toonMat(opts.theme.trim ?? '#5a4632'),
-  )
+  // marco fisico segun el estilo (madera / aluminio / metalico)
+  const backing = boxMesh(2.4, 1.55, 0.06, toonMat(pal.frame))
   backing.position.set(0, 1.62, -0.045)
-  const boardTexture = chalkTexture({
+  const boardTex = boardTexture(style, {
     title: FICHA_TITLES[opts.kind][opts.locale],
     bullets: opts.preview,
     theme: opts.theme,
   })
   const board = new Mesh(
     new PlaneGeometry(2.2, 1.38),
-    new MeshBasicMaterial({ map: boardTexture }),
+    new MeshBasicMaterial({ map: boardTex, transparent: pal.transparent }),
   )
   board.position.set(0, 1.62, 0)
   board.userData.noOutline = true
@@ -373,6 +434,39 @@ export function switchableMonitor(opts: {
   screen.mesh.position.set(0, screenY, opts.crt ? 0.082 : 0.01)
   group.add(body, screen.mesh)
   return { group, screen }
+}
+
+/**
+ * Silla escolar simple de 4 patas (asiento + respaldo + 4 patas), fusionada
+ * en 1 mesh (1 draw call). El respaldo queda en el lado -Z local: colocada con
+ * rotationY 0, el que se sienta mira +Z. Para el aula 2011 (bajos recursos):
+ * NO es la silla de oficina con base/ruedas del pack.
+ */
+export function schoolChair(opts: {
+  position: readonly [number, number, number]
+  rotationY?: number
+  color?: string
+}): Group {
+  const group = new Group()
+  group.position.set(opts.position[0], opts.position[1], opts.position[2])
+  group.rotation.y = opts.rotationY ?? 0
+  const seatY = 0.46
+  const legH = seatY - 0.03
+  const spread = 0.19 // media distancia entre patas
+  const mesh = mergedBoxes(
+    [
+      { w: 0.44, h: 0.04, d: 0.42, x: 0, y: seatY, z: 0 }, // asiento
+      { w: 0.44, h: 0.44, d: 0.04, x: 0, y: seatY + 0.24, z: -0.19 }, // respaldo
+      { w: 0.04, h: legH, d: 0.04, x: -spread, y: legH / 2, z: -spread }, // patas
+      { w: 0.04, h: legH, d: 0.04, x: spread, y: legH / 2, z: -spread },
+      { w: 0.04, h: legH, d: 0.04, x: -spread, y: legH / 2, z: spread },
+      { w: 0.04, h: legH, d: 0.04, x: spread, y: legH / 2, z: spread },
+    ],
+    toonMat(opts.color ?? '#a9743f'),
+  )
+  mesh.castShadow = true
+  group.add(mesh)
+  return group
 }
 
 const PORTAL_LABEL = {
@@ -987,6 +1081,8 @@ export function infoKit(opts: {
   withLight: boolean
   /** Sala sin pasado (ej. `futuro`): false omite la grieta. Default true. */
   withPortal?: boolean
+  /** Estilo de las pizarras RETOS/APRENDIZAJES (default whiteboard oficina). */
+  boardStyle?: BoardStyle
   onFicha(roomIndex: number, kind: FichaKind): void
   onEnterPast(roomIndex: number, spawn: { x: number; z: number }): void
   onStory(title: string, paragraphs: readonly string[]): void
@@ -1001,6 +1097,7 @@ export function infoKit(opts: {
     theme: opts.theme,
     locale: opts.locale,
     preview: texts.retos,
+    boardStyle: opts.boardStyle,
     onOpen: opts.onFicha,
   })
   const aprendizajes = fichaBoard({
@@ -1011,6 +1108,7 @@ export function infoKit(opts: {
     theme: opts.theme,
     locale: opts.locale,
     preview: texts.aprendizajes,
+    boardStyle: opts.boardStyle,
     onOpen: opts.onFicha,
   })
   const portal =

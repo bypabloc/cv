@@ -43,6 +43,7 @@ import type {
 } from '../state'
 import type { RoomTheme } from '../themes'
 import {
+  type BoxSpec,
   boxMesh,
   type DrawFn,
   label,
@@ -332,26 +333,35 @@ export function switchableMonitor(opts: {
   width?: number
   variants: Record<string, Omit<ScreenPanelOpts, 'width' | 'height'>>
   initial: string
+  /** Color del cuerpo (default oscuro `#15151a`; crema para CRT viejo). */
+  bodyColor?: string
+  /** Cuerpo CRT abultado (monitor blanco de los 2000) en vez del plano. */
+  crt?: boolean
 }): { group: Group; screen: ScreenSwap } {
   const width = opts.width ?? 0.6
   const height = width * 0.6
   const group = new Group()
   group.position.set(opts.position[0], opts.position[1], opts.position[2])
   group.rotation.y = opts.rotationY ?? 0
+  const screenY = height / 2 + 0.14
+  // CRT viejo: bisel grueso + tubo trasero abultado + base + teclado.
+  // Plano: marco fino (flat-screen). El screenZ apoya la pantalla en la cara
+  // frontal del bisel/marco.
+  const crtParts: BoxSpec[] = [
+    { w: 0.2, h: 0.06, d: 0.2, x: 0, y: 0.03, z: -0.02 },
+    { w: 0.1, h: 0.08, d: 0.1, x: 0, y: 0.1, z: -0.02 },
+    { w: width + 0.14, h: height + 0.14, d: 0.16, x: 0, y: screenY, z: 0 },
+    { w: width - 0.04, h: height - 0.04, d: 0.16, x: 0, y: screenY, z: -0.15 },
+    { w: 0.42, h: 0.03, d: 0.16, x: 0, y: 0.015, z: 0.3 },
+  ]
+  const flatParts: BoxSpec[] = [
+    { w: 0.16, h: 0.14, d: 0.16, x: 0, y: 0.07, z: 0 },
+    { w: width + 0.05, h: height + 0.05, d: 0.05, x: 0, y: screenY, z: -0.02 },
+    { w: 0.36, h: 0.025, d: 0.14, x: 0, y: 0.013, z: 0.26 },
+  ]
   const body = mergedBoxes(
-    [
-      { w: 0.16, h: 0.14, d: 0.16, x: 0, y: 0.07, z: 0 },
-      {
-        w: width + 0.05,
-        h: height + 0.05,
-        d: 0.05,
-        x: 0,
-        y: height / 2 + 0.14,
-        z: -0.02,
-      },
-      { w: 0.36, h: 0.025, d: 0.14, x: 0, y: 0.013, z: 0.26 },
-    ],
-    toonMat('#15151a'),
+    opts.crt ? crtParts : flatParts,
+    toonMat(opts.bodyColor ?? '#15151a'),
   )
   body.userData.noOutline = true
   const screen = screenVariants({
@@ -360,7 +370,7 @@ export function switchableMonitor(opts: {
     variants: opts.variants,
     initial: opts.initial,
   })
-  screen.mesh.position.set(0, height / 2 + 0.14, 0.01)
+  screen.mesh.position.set(0, screenY, opts.crt ? 0.082 : 0.01)
   group.add(body, screen.mesh)
   return { group, screen }
 }
@@ -1329,8 +1339,10 @@ export function wallArt(opts: {
   locale: Locale
   frames: readonly WallFrame[]
   onFicha(title: string, paragraphs: readonly string[]): void
+  /** Color del marco (default `trim` del theme; ej. madera para pizarras). */
+  frameColor?: string
 }): { props: PropHandle[]; colliders: Box2[] } {
-  const trim = opts.theme.trim ?? opts.theme.accent
+  const trim = opts.frameColor ?? opts.theme.trim ?? opts.theme.accent
   const marcoGroup = new Group()
   // outlinedMergedBoxes (no mergedBoxes + outline generico): el contorno
   // de un merge con posiciones horneadas se desplaza del marco al escalar

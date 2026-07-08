@@ -46,12 +46,14 @@ function liftDark(hex: string): string {
 function toonifyFurniture(
   mesh: Mesh,
   tint: Record<string, string> | undefined,
+  color: string | undefined,
 ): void {
   const applyOne = (material: Material): Material => {
     if (!(material instanceof MeshStandardMaterial)) {
       return material
     }
-    const override = tint?.[material.name]
+    // prioridad: tint por nombre de material > color plano > color original
+    const override = tint?.[material.name] ?? color
     const hex = override ?? liftDark(`#${material.color.getHexString()}`)
     return toonMat(hex)
   }
@@ -69,6 +71,8 @@ export interface FurnitureOpts {
   targetWidth?: number
   /** Recolor por nombre de material del pack (ej. asiento del rubro). */
   tint?: Record<string, string>
+  /** Color plano que sobreescribe TODOS los materiales (ej. madera). */
+  color?: string
   /** Contorno de tinta (default true). */
   outline?: boolean
 }
@@ -94,7 +98,7 @@ export function placeFurniture(opts: FurnitureOpts): Group {
           // resto de instancias).
           obj.geometry.userData.shared = true
           obj.castShadow = true
-          toonifyFurniture(obj, opts.tint)
+          toonifyFurniture(obj, opts.tint, opts.color)
         }
       })
       const box = new Box3().setFromObject(clone)

@@ -89,23 +89,46 @@ const PLAYER_PC_SCREEN = {
   ],
 } as const
 
-// --- laminas de los cuadros (wallArt): tinta plana sobre papel claro ---
+// --- pizarras del aula (wallArt): TIZA sobre pizarra verde vieja con marco
+// de madera (colegio de bajos recursos, pedido del dueno 2026-07-07). Los
+// nombres ART_* se conservan (los usan las draw fns); los valores son ahora
+// la paleta de tiza. ---
 
-const ART_PAPER = '#f4efe2'
-const ART_INK = '#232840'
-const ART_BLUE = '#2f6fd0'
-const ART_PURPLE = '#7a4fc0'
+const ART_PAPER = '#33503f' // verde pizarra (fondo del tablero)
+const ART_INK = '#eef2e6' // tiza blanca (texto y trazos)
+const ART_BLUE = '#a9d6ef' // tiza celeste (acento)
+const ART_PURPLE = '#f2e2a6' // tiza amarilla (acento)
+
+// mobiliario de madera + monitor CRT crema (estilo 2000)
+const WOOD_DESK = '#a9743f'
+const WOOD_CHAIR = '#8f5d30'
+const WOOD_FRAME = '#7a5230'
+const CRT_CREAM = '#e3ddcb'
 
 function artBase(ctx: CanvasRenderingContext2D, size: number): void {
   ctx.fillStyle = ART_PAPER
   ctx.fillRect(0, 0, size, size)
+  // manchas de borrador (polvo de tiza) muy sutiles
+  ctx.globalAlpha = 0.06
+  ctx.fillStyle = ART_INK
+  const smudges: readonly (readonly [number, number, number])[] = [
+    [70, 58, 58],
+    [188, 150, 66],
+    [120, 210, 48],
+  ]
+  for (const [cx, cy, r] of smudges) {
+    ctx.beginPath()
+    ctx.ellipse(cx, cy, r, r * 0.5, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.globalAlpha = 0.4
   ctx.strokeStyle = ART_INK
-  ctx.globalAlpha = 0.35
   ctx.lineWidth = 3
   ctx.strokeRect(10, 10, size - 20, size - 20)
   ctx.globalAlpha = 1
 }
 
+/** Caja de tiza: contorno + etiqueta (sin relleno — el trazo es tiza). */
 function artBox(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -115,8 +138,6 @@ function artBox(
   text: string,
   color: string,
 ): void {
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(x, y, w, h)
   ctx.strokeStyle = color
   ctx.lineWidth = 3
   ctx.strokeRect(x, y, w, h)
@@ -290,11 +311,25 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
   // siendo la fuente de verdad de la navegacion. El alumno se sienta en
   // z-0.55 mirando al frente (+Z); el profesor mira a la clase (-Z).
   for (const [x, z] of allDesks) {
-    group.add(placeFurniture({ url: DESK_URL, x, z, targetWidth: 1.15 }))
+    group.add(
+      placeFurniture({
+        url: DESK_URL,
+        x,
+        z,
+        targetWidth: 1.15,
+        color: WOOD_DESK,
+      }),
+    )
   }
   for (const [x, z] of seatSpots) {
     group.add(
-      placeFurniture({ url: CHAIR_URL, x, z: z - 0.55, targetWidth: 0.52 }),
+      placeFurniture({
+        url: CHAIR_URL,
+        x,
+        z: z - 0.55,
+        targetWidth: 0.52,
+        color: WOOD_CHAIR,
+      }),
     )
   }
   group.add(
@@ -304,6 +339,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       z: room.z + 4.15,
       targetWidth: 0.52,
       rotationY: Math.PI,
+      color: WOOD_CHAIR,
     }),
   )
   staticColliders.push(
@@ -335,6 +371,9 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       position: [x, 0.72, z + 0.05],
       rotationY: Math.PI,
       width: 0.46,
+      // PC blanca vieja (CRT abultado crema, estilo 2000)
+      crt: true,
+      bodyColor: CRT_CREAM,
       variants: {
         off: offScreen,
         on: {
@@ -548,6 +587,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     theme,
     locale: state.locale,
     onFicha: actions.openStory,
+    // marco de madera: las 3 laminas son pizarras verdes del aula
+    frameColor: WOOD_FRAME,
     frames: [
       {
         key: 'cliente-servidor',

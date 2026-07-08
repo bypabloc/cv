@@ -452,6 +452,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     hair: { style: 'ponytail', color: '#5a3a22' },
     top: '#4a6a52',
     bottom: '#3a4048',
+    model: 'female-casual',
     faceSeed: 11,
     position: [-2, 0, room.z + 0.65],
     rotationY: 0,
@@ -472,6 +473,7 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     hair: { style: 'bun', color: '#2a1c12' },
     top: '#3f5a8a',
     bottom: '#3a4048',
+    model: 'female-office',
     faceSeed: 37,
     position: [3.6, 0, room.z + 2.6],
     path: [

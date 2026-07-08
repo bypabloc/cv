@@ -41,12 +41,29 @@ export type CharacterPose =
   | 'wave'
   | 'talk'
 
+/**
+ * Cuerpos GLB CC0 disponibles (Quaternius Ultimate Modular Men/Women, ver
+ * public/models/characters/CREDITS.md): 3 masculinos + 3 femeninos, todos con
+ * el mismo esqueleto/clips `CharacterArmature|*`. 'base' es el Hoodie
+ * masculino (Pablo). El resto da variedad de cuerpos y el reparto 50/50.
+ */
+export type CharacterModel =
+  | 'base'
+  | 'male-casual'
+  | 'male-suit'
+  | 'male-worker'
+  | 'female-casual'
+  | 'female-office'
+  | 'female-worker'
+
 export interface CharacterSpec {
   skin: string
   hair: { style: HairStyle; color: string }
   top: string
   bottom: string
   accessory?: Accessory
+  /** Cuerpo GLB (default 'base' = Pablo, Hoodie masculino). */
+  model?: CharacterModel
   /** Sin uso en el modelo GLB (se preserva por compatibilidad de API). */
   faceSeed: number
 }
@@ -91,7 +108,15 @@ export function configureCharacters(opts: { shadows?: 'cast' | 'blob' }): void {
 // Carga del modelo base (una vez, cacheada — todas las instancias clonan)
 // ---------------------------------------------------------------------------
 
-const MODEL_URL = '/models/characters/base.glb'
+const MODEL_URLS: Record<CharacterModel, string> = {
+  base: '/models/characters/base.glb',
+  'male-casual': '/models/characters/male-casual.glb',
+  'male-suit': '/models/characters/male-suit.glb',
+  'male-worker': '/models/characters/male-worker.glb',
+  'female-casual': '/models/characters/female-casual.glb',
+  'female-office': '/models/characters/female-office.glb',
+  'female-worker': '/models/characters/female-worker.glb',
+}
 const CLIP_PREFIX = 'CharacterArmature|'
 
 const POSE_CLIP: Record<CharacterPose, string> = {
@@ -109,15 +134,17 @@ interface LoadedModel {
   animations: AnimationClip[]
 }
 
-let modelPromise: Promise<LoadedModel> | null = null
+const modelPromises = new Map<CharacterModel, Promise<LoadedModel>>()
 
-function loadModel(): Promise<LoadedModel> {
-  if (!modelPromise) {
-    modelPromise = gltfLoader
-      .loadAsync(MODEL_URL)
+function loadModel(model: CharacterModel): Promise<LoadedModel> {
+  let promise = modelPromises.get(model)
+  if (!promise) {
+    promise = gltfLoader
+      .loadAsync(MODEL_URLS[model])
       .then((gltf) => ({ scene: gltf.scene, animations: gltf.animations }))
+    modelPromises.set(model, promise)
   }
-  return modelPromise
+  return promise
 }
 
 /**
@@ -136,7 +163,12 @@ function brightenColor(hex: string): string {
   return `#${color.getHexString()}`
 }
 
-/** Slots de material del pack Quaternius que se retinen por CharacterSpec. */
+/**
+ * Slots de material del pack Quaternius que se retinen por CharacterSpec.
+ * Los cuerpos femeninos usan otros nombres de slot de pelo (Hair_Blond/Brown/
+ * Black) y a veces `Blue` para la parte de abajo; el resto de slots (ropa
+ * especifica de cada variante) conserva su color nativo -> variedad.
+ */
 function colorForSlot(
   materialName: string,
   spec: CharacterSpec,
@@ -144,13 +176,13 @@ function colorForSlot(
   if (materialName === 'Purple') {
     return spec.top
   }
-  if (materialName === 'LightBlue') {
+  if (materialName === 'LightBlue' || materialName === 'Blue') {
     return spec.bottom
   }
   if (materialName === 'Skin') {
     return spec.skin
   }
-  if (materialName === 'Hair') {
+  if (materialName.startsWith('Hair')) {
     return spec.hair.color
   }
   return null
@@ -215,7 +247,7 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     currentAction = next
   }
 
-  loadModel()
+  loadModel(spec.model ?? 'base')
     .then((model) => {
       if (disposed) {
         return

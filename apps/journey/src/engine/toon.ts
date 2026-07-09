@@ -104,6 +104,21 @@ export const DEFAULT_GRADIENT: readonly [string, string, string] = [
 ]
 
 /**
+ * Gradiente cel-shading "Arcane" para personajes con textura de cara: 3 bandas
+ * con SALTO DURO y una sombra mas marcada (pero que no aplasta la piel), para
+ * un corte cartoon/ilustracion mas pronunciado sobre la textura real. Pedido
+ * del dueno 2026-07-08 (subir el cel-shading vs la version -lite anterior). Se
+ * usa con `color: white` + `map` en toonMat: el gradientMap modula la luz en
+ * bandas sin teñir la textura. El zocalo oscuro (#5a5560) da la sombra de
+ * ilustracion; el salto directo a #e8e6ee marca el corte.
+ */
+export const CHARACTER_GRADIENT: readonly [string, string, string] = [
+  '#5a5560',
+  '#e8e6ee',
+  '#ffffff',
+]
+
+/**
  * @function makeToonGradient
  * @description Canvas Nx1 con NearestFilter: los "saltos" de luz duros del
  *   cel shading. Cacheado y compartido (disposeDeep nunca lo libera).
@@ -144,6 +159,12 @@ export interface ToonMatOpts {
   gradient?: readonly [string, string, string]
   transparent?: boolean
   opacity?: number
+  /**
+   * Rim light (fresnel) estilo Arcane: aclara el BORDE del personaje visto
+   * desde la camara -> silueta luminosa que separa del fondo. `power` controla
+   * el ancho del borde (mayor = mas fino), `intensity` la fuerza.
+   */
+  rim?: { color?: ColorRepresentation; power?: number; intensity?: number }
 }
 
 const toonPool = new Map<string, MeshToonMaterial>()
@@ -151,6 +172,36 @@ const basicPool = new Map<string, MeshBasicMaterial>()
 
 function colorKey(value: ColorRepresentation | undefined): string {
   return value === undefined ? '' : new Color(value).getHexString()
+}
+
+/**
+ * Inyecta un rim light fresnel en el fragment shader del MeshToonMaterial via
+ * onBeforeCompile: `rim = pow(1 - dot(normal, viewDir), power)` sumado al
+ * color final. Barato (sin pases extra) y funciona sobre SkinnedMesh.
+ */
+function applyRim(
+  material: MeshToonMaterial,
+  rim: NonNullable<ToonMatOpts['rim']>,
+): void {
+  const color = new Color(rim.color ?? '#ffffff')
+  const power = rim.power ?? 3
+  const intensity = rim.intensity ?? 0.6
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.rimColor = { value: color }
+    shader.uniforms.rimPower = { value: power }
+    shader.uniforms.rimIntensity = { value: intensity }
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform vec3 rimColor;\nuniform float rimPower;\nuniform float rimIntensity;',
+      )
+      .replace(
+        '#include <dithering_fragment>',
+        'float rimF = pow(1.0 - clamp(dot(normalize(vNormal), normalize(vViewPosition)), 0.0, 1.0), rimPower);\n' +
+          'gl_FragColor.rgb += rimColor * rimF * rimIntensity;\n' +
+          '#include <dithering_fragment>',
+      )
+  }
 }
 
 function buildToon(
@@ -171,6 +222,9 @@ function buildToon(
   if (opts.transparent) {
     material.transparent = true
     material.opacity = opts.opacity ?? 1
+  }
+  if (opts.rim) {
+    applyRim(material, opts.rim)
   }
   return material
 }
@@ -193,6 +247,9 @@ export function toonMat(
     opts.emissiveIntensity ?? '',
     (opts.gradient ?? DEFAULT_GRADIENT).join(','),
     opts.transparent ? `t${opts.opacity ?? 1}` : '',
+    opts.rim
+      ? `rim${colorKey(opts.rim.color)}:${opts.rim.power ?? 3}:${opts.rim.intensity ?? 0.6}`
+      : '',
   ].join('|')
   const cached = toonPool.get(key)
   if (cached) {
@@ -497,6 +554,161 @@ export interface ScreenPanelOpts {
   height: number
   /** LED de estado abajo a la derecha (pantallas apagadas/encendidas). */
   dot?: string
+  /**
+   * Estilo de la pantalla. Por defecto `terminal` (viñeta manga con texto
+   * monospace). `windows7` / `windowsxp` dibujan el escritorio retro de esa
+   * era (wallpaper + taskbar + ventana) — para las PCs de las salas viejas.
+   */
+  kind?: 'terminal' | 'windows7' | 'windowsxp'
+}
+
+/**
+ * Escritorio retro (Windows 7 / XP) dibujado con Canvas 2D — cero asset,
+ * nítido a cualquier zoom. Windows 7: wallpaper azul degradado, taskbar
+ * translúcida oscura con orbe Start y ventana Aero. XP: wallpaper "Bliss"
+ * (cielo + colina verde), taskbar azul con botón Start verde. Las `lines`
+ * del CV se muestran como el contenido de la ventana (sigue siendo texto real
+ * del showcase). El titulo va en la barra de la ventana.
+ */
+function windowsDesktopTexture(
+  opts: ScreenPanelOpts & { xp: boolean },
+): CanvasTexture {
+  return makeCanvasTexture(512, (ctx, size) => {
+    const bar = Math.round(size * 0.085) // alto de la taskbar
+    // ---- wallpaper ----
+    if (opts.xp) {
+      // Bliss: cielo celeste degradado + colina verde
+      const sky = ctx.createLinearGradient(0, 0, 0, size * 0.62)
+      sky.addColorStop(0, '#3a6ea5')
+      sky.addColorStop(0.55, '#8fc0ea')
+      sky.addColorStop(1, '#cfe6f7')
+      ctx.fillStyle = sky
+      ctx.fillRect(0, 0, size, size)
+      ctx.fillStyle = '#7aa84b'
+      ctx.beginPath()
+      ctx.moveTo(0, size * 0.66)
+      ctx.quadraticCurveTo(size * 0.4, size * 0.5, size, size * 0.6)
+      ctx.lineTo(size, size)
+      ctx.lineTo(0, size)
+      ctx.closePath()
+      ctx.fill()
+      ctx.fillStyle = '#6b9a3f'
+      ctx.beginPath()
+      ctx.moveTo(0, size * 0.74)
+      ctx.quadraticCurveTo(size * 0.55, size * 0.62, size, size * 0.72)
+      ctx.lineTo(size, size)
+      ctx.lineTo(0, size)
+      ctx.closePath()
+      ctx.fill()
+    } else {
+      // Windows 7: degradado azul profundo con halo central
+      const bg = ctx.createRadialGradient(
+        size / 2,
+        size * 0.42,
+        size * 0.1,
+        size / 2,
+        size * 0.42,
+        size * 0.75,
+      )
+      bg.addColorStop(0, '#2b6bb0')
+      bg.addColorStop(0.6, '#164a86')
+      bg.addColorStop(1, '#0a2b52')
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, size, size)
+    }
+    // ---- ventana Aero/Luna ----
+    const wx = size * 0.14
+    const wy = size * 0.16
+    const ww = size * 0.72
+    const wh = size * 0.58
+    const titleH = size * 0.07
+    // sombra
+    ctx.fillStyle = 'rgba(0,0,0,0.28)'
+    ctx.fillRect(wx + 4, wy + 5, ww, wh)
+    // marco ventana
+    ctx.fillStyle = opts.xp ? '#ece9d8' : '#f2f6fb'
+    ctx.fillRect(wx, wy, ww, wh)
+    // barra de titulo
+    const tg = ctx.createLinearGradient(0, wy, 0, wy + titleH)
+    if (opts.xp) {
+      tg.addColorStop(0, '#3f8be8')
+      tg.addColorStop(1, '#0a4bc0')
+    } else {
+      tg.addColorStop(0, '#dbe9f7')
+      tg.addColorStop(1, '#a9c9ec')
+    }
+    ctx.fillStyle = tg
+    ctx.fillRect(wx, wy, ww, titleH)
+    // titulo de la ventana
+    ctx.fillStyle = opts.xp ? '#ffffff' : '#1c3c60'
+    ctx.font = `bold 22px ${MONO_FONT}`
+    ctx.fillText(
+      (opts.title ?? 'ventana').slice(0, 24),
+      wx + 14,
+      wy + titleH * 0.7,
+    )
+    // botones de ventana (min/max/close)
+    const bs = titleH * 0.5
+    const by = wy + (titleH - bs) / 2
+    ctx.fillStyle = opts.xp ? '#e24b3a' : '#d64a3f'
+    ctx.fillRect(wx + ww - bs - 8, by, bs, bs)
+    ctx.fillStyle = opts.xp ? '#f0f0f0' : '#c6d8ee'
+    ctx.fillRect(wx + ww - bs * 2 - 16, by, bs, bs)
+    ctx.fillRect(wx + ww - bs * 3 - 24, by, bs, bs)
+    // contenido de la ventana: las lineas del CV
+    ctx.fillStyle = '#1a1c22'
+    ctx.font = `20px ${MONO_FONT}`
+    let y = wy + titleH + 34
+    for (const line of opts.lines.slice(0, 10)) {
+      ctx.fillText(line.slice(0, 30), wx + 16, y)
+      y += 30
+    }
+    // ---- taskbar ----
+    if (opts.xp) {
+      const tb = ctx.createLinearGradient(0, size - bar, 0, size)
+      tb.addColorStop(0, '#3f8be8')
+      tb.addColorStop(1, '#245bc4')
+      ctx.fillStyle = tb
+      ctx.fillRect(0, size - bar, size, bar)
+      // boton Start verde
+      ctx.fillStyle = '#3fa63f'
+      ctx.beginPath()
+      const sbW = size * 0.2
+      ctx.roundRect(0, size - bar + 3, sbW, bar - 6, bar * 0.4)
+      ctx.fill()
+      ctx.fillStyle = '#ffffff'
+      ctx.font = `italic bold 24px ${MONO_FONT}`
+      ctx.fillText('start', 20, size - bar * 0.32)
+    } else {
+      ctx.fillStyle = 'rgba(20,28,44,0.82)'
+      ctx.fillRect(0, size - bar, size, bar)
+      // orbe Start (circulo con glow)
+      const ox = bar * 0.55
+      const oy = size - bar / 2
+      const orb = ctx.createRadialGradient(ox, oy, 2, ox, oy, bar * 0.42)
+      orb.addColorStop(0, '#cfe6ff')
+      orb.addColorStop(0.5, '#3a8fd8')
+      orb.addColorStop(1, '#12406e')
+      ctx.fillStyle = orb
+      ctx.beginPath()
+      ctx.arc(ox, oy, bar * 0.4, 0, Math.PI * 2)
+      ctx.fill()
+      // iconos pinneados (cuadraditos)
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'
+      for (let i = 0; i < 3; i += 1) {
+        ctx.fillRect(
+          bar * 1.25 + i * bar * 0.85,
+          size - bar * 0.78,
+          bar * 0.55,
+          bar * 0.55,
+        )
+      }
+    }
+    // reloj
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `18px ${MONO_FONT}`
+    ctx.fillText('09:41', size - 62, size - bar * 0.32)
+  })
 }
 
 /**
@@ -504,8 +716,12 @@ export interface ScreenPanelOpts {
  * @description Textura de pantalla/viñeta manga: marco de tinta irregular
  *   con hatching + texto monospace + LED opcional. Base de screenPanel y
  *   de las pantallas intercambiables (PC que bootea, OFFLINE->ONLINE).
+ *   `kind: 'windows7' | 'windowsxp'` dibuja el escritorio retro de esa era.
  */
 export function screenTexture(opts: ScreenPanelOpts): CanvasTexture {
+  if (opts.kind === 'windows7' || opts.kind === 'windowsxp') {
+    return windowsDesktopTexture({ ...opts, xp: opts.kind === 'windowsxp' })
+  }
   const rng = makeRng(hashSeed([opts.title ?? '', ...opts.lines].join('|')))
   return makeCanvasTexture(512, (ctx, size) => {
     ctx.fillStyle = opts.theme.screenBg

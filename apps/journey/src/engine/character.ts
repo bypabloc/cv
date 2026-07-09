@@ -1,12 +1,14 @@
 /**
  * @module character (engine)
- * @description Personajes estilo Spider-Verse (docs/specs/journey-spiderverse-style/):
- *   humanoide riggeado CC0 (Quaternius "Hoodie Character", ver
- *   public/models/characters/CREDITS.md) cargado UNA vez y clonado por
- *   instancia via SkeletonUtils. El estado de alto nivel (patrulla,
- *   conversacion, salto, sfx) es el MISMO state machine del sistema
- *   procedural anterior — solo cambia como se anima el cuerpo (AnimationMixer
- *   + clips reales en vez de rotar limbs a mano).
+ * @description Personajes cel-shaded (docs/specs/journey-spiderverse-style/):
+ *   cuerpos humanoides Mixamo CC0 con CARA PINTADA (textura), rig
+ *   `mixamorig:*` NATIVO — las animaciones (tambien de Mixamo) se aplican
+ *   sin retarget. Cada GLB (cuerpo + su set de clips ya mergeados en Blender,
+ *   ver scripts/blender/build-character.py) se carga UNA vez y se clona por
+ *   instancia via SkeletonUtils. El look Arcane-lite lo da MeshToonMaterial
+ *   con la textura de cara como `map` + gradientMap de bandas duras
+ *   (CHARACTER_GRADIENT). El state machine de alto nivel (patrulla,
+ *   conversacion, salto, sfx) es el MISMO del sistema anterior.
  */
 
 import type { AnimationAction, AnimationClip, Material } from 'three'
@@ -22,33 +24,89 @@ import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.j
 import type { Box2 } from '../lib/collision'
 import { sfx } from './audio'
 import { gltfLoader } from './loaders'
-import { toonMat } from './toon'
+import { CHARACTER_GRADIENT, toonMat } from './toon'
 
 export type HairStyle = 'short' | 'spiky' | 'ponytail' | 'bun'
 export type Accessory = 'helmet' | 'glasses' | 'tie' | 'badge'
 /**
- * Poses fijas ademas de idle/walk: fight = golpe repetido, sit/kneel =
- * aproximados a idle (el pack Quaternius no trae esos clips — riesgo 2 de
- * docs/specs/journey-spiderverse-style/05-riesgos-y-decisiones-abiertas.md),
- * wave = saludo, talk = gesticulando (clip Interact).
+ * Poses del recorrido. Cada una mapea a un clip Mixamo real (POSE_CLIP).
+ * Base: idle/walk/sit/wave/talk/typing. Extendidas por el mapeo de salas
+ * (tmp/mixamo/*.md): crisis del pasado de cada oficina, facetas del pasado
+ * del aula (karate/gamer/tecnico), cruce de portal, telefono, futuro.
+ * Un clip ausente en un GLB cae a 'idle' (fallback en playPose).
  */
 export type CharacterPose =
   | 'idle'
   | 'walk'
-  | 'fight'
   | 'sit'
   | 'kneel'
   | 'wave'
   | 'talk'
+  | 'typing'
+  | 'sitTalk'
+  | 'phone'
+  | 'point'
+  | 'write'
+  // pasado del aula (facetas de Pablo)
+  | 'fight'
+  | 'karateKick'
+  | 'gaming'
+  | 'acLookUp'
+  | 'carryBox'
+  // crisis del pasado de las oficinas
+  | 'panic'
+  | 'shocked'
+  | 'argue'
+  | 'yelling'
+  | 'frustrated'
+  | 'defeated'
+  | 'injured'
+  | 'nervous'
+  | 'disbelief'
+  | 'shoved'
+  // futuro
+  | 'relaxed'
+  | 'stretch'
+  // cruce de portal
+  | 'portal'
 
 /**
- * Cuerpos GLB CC0 disponibles (Quaternius Ultimate Modular Men/Women, ver
- * public/models/characters/CREDITS.md): 3 masculinos + 3 femeninos, todos con
- * el mismo esqueleto/clips `CharacterArmature|*`. 'base' es el Hoodie
- * masculino (Pablo). El resto da variedad de cuerpos y el reparto 50/50.
+ * Cuerpos GLB CC0 disponibles (Mixamo Characters, rig mixamorig nativo, ver
+ * public/models/characters/CREDITS.md). 23 cuerpos con cara pintada: elenco
+ * casual/oficina (hombres + mujeres) + roles tematicos (salud, obra, jefe,
+ * ejecutiva, profesora). 'base' = el cuerpo del jugador Pablo (+ sus facetas
+ * en el pasado del aula). Los nombres antiguos (male-casual/female-office/...)
+ * se conservan como ALIAS de compatibilidad (MODEL_ALIAS) mientras se migra
+ * el reparto de las salas.
  */
 export type CharacterModel =
+  // elenco base — casual / oficina
   | 'base'
+  | 'brian'
+  | 'james'
+  | 'adam'
+  | 'leonard'
+  | 'josh'
+  | 'bryce'
+  | 'david'
+  | 'lewis'
+  | 'louise'
+  | 'kate'
+  | 'michelle'
+  | 'sophie'
+  | 'jackie'
+  | 'elizabeth'
+  | 'claire'
+  | 'suzie'
+  // roles tematicos
+  | 'chad' // enfermero (scrubs)
+  | 'pete' // obrero (chaleco + casco)
+  | 'the-boss' // obrero/capataz (rustico)
+  | 'joe' // jefe (traje)
+  | 'roth' // formal / ingeniero
+  | 'jennifer' // ejecutiva
+  | 'martha' // profesora / supervisora (mayor)
+  // alias de compatibilidad (reparto viejo Quaternius -> Mixamo)
   | 'male-casual'
   | 'male-suit'
   | 'male-worker'
@@ -108,25 +166,69 @@ export function configureCharacters(opts: { shadows?: 'cast' | 'blob' }): void {
 // Carga del modelo base (una vez, cacheada — todas las instancias clonan)
 // ---------------------------------------------------------------------------
 
-const MODEL_URLS: Record<CharacterModel, string> = {
-  base: '/models/characters/base.glb',
-  'male-casual': '/models/characters/male-casual.glb',
-  'male-suit': '/models/characters/male-suit.glb',
-  'male-worker': '/models/characters/male-worker.glb',
-  'female-casual': '/models/characters/female-casual.glb',
-  'female-office': '/models/characters/female-office.glb',
-  'female-worker': '/models/characters/female-worker.glb',
+/**
+ * Alias del reparto viejo (nombres genericos Quaternius) -> un cuerpo Mixamo
+ * concreto. Permite que las salas que todavia usan `male-casual`/`female-office`
+ * carguen sin editar, hasta migrar el reparto sala por sala.
+ */
+const MODEL_ALIAS: Record<string, CharacterModel> = {
+  'male-casual': 'brian',
+  'male-suit': 'joe',
+  'male-worker': 'pete',
+  'female-casual': 'kate',
+  'female-office': 'louise',
+  'female-worker': 'jennifer',
 }
-const CLIP_PREFIX = 'CharacterArmature|'
 
+function resolveModel(model: CharacterModel): CharacterModel {
+  return MODEL_ALIAS[model] ?? model
+}
+
+function modelUrl(model: CharacterModel): string {
+  return `/models/characters/${resolveModel(model)}.glb`
+}
+
+/**
+ * Pose -> nombre base del clip Mixamo (el mergeado por build-character.py).
+ * El exporter glTF de Blender le agrega el sufijo `_Body` al nombre de la
+ * Action -> `normalizeClipName` lo quita al indexar. Un clip que un GLB no
+ * incluye (porque ese cuerpo no lo usa) cae a 'Idle' en playPose.
+ */
 const POSE_CLIP: Record<CharacterPose, string> = {
-  idle: `${CLIP_PREFIX}Idle`,
-  walk: `${CLIP_PREFIX}Walk`,
-  fight: `${CLIP_PREFIX}Punch_Left`,
-  sit: `${CLIP_PREFIX}Idle`,
-  kneel: `${CLIP_PREFIX}Idle`,
-  wave: `${CLIP_PREFIX}Wave`,
-  talk: `${CLIP_PREFIX}Interact`,
+  idle: 'Idle',
+  walk: 'Walk',
+  sit: 'Sit',
+  kneel: 'Sit',
+  wave: 'Wave',
+  talk: 'Talk',
+  typing: 'Typing',
+  sitTalk: 'SittingTalking',
+  phone: 'PhoneUse',
+  point: 'Pointing',
+  write: 'Writing',
+  fight: 'KarateIdle',
+  karateKick: 'KarateKick',
+  gaming: 'Gaming',
+  acLookUp: 'AcLookUp',
+  carryBox: 'CarryBox',
+  panic: 'PanicRun',
+  shocked: 'Shocked',
+  argue: 'AngryArgue',
+  yelling: 'Yelling',
+  frustrated: 'Frustrated',
+  defeated: 'DefeatedCollapse',
+  injured: 'InjuredIdle',
+  nervous: 'NervousWait',
+  disbelief: 'Disbelief',
+  shoved: 'ShovedReaction',
+  relaxed: 'RelaxedIdle',
+  stretch: 'Stretching',
+  portal: 'PortalFloat',
+}
+
+/** El exporter glTF agrega `_Body` al nombre de la Action; se normaliza. */
+function normalizeClipName(name: string): string {
+  return name.endsWith('_Body') ? name.slice(0, -'_Body'.length) : name
 }
 
 interface LoadedModel {
@@ -137,12 +239,13 @@ interface LoadedModel {
 const modelPromises = new Map<CharacterModel, Promise<LoadedModel>>()
 
 function loadModel(model: CharacterModel): Promise<LoadedModel> {
-  let promise = modelPromises.get(model)
+  const real = resolveModel(model)
+  let promise = modelPromises.get(real)
   if (!promise) {
     promise = gltfLoader
-      .loadAsync(MODEL_URLS[model])
+      .loadAsync(modelUrl(real))
       .then((gltf) => ({ scene: gltf.scene, animations: gltf.animations }))
-    modelPromises.set(model, promise)
+    modelPromises.set(real, promise)
   }
   return promise
 }
@@ -164,47 +267,43 @@ function brightenColor(hex: string): string {
 }
 
 /**
- * Slots de material del pack Quaternius que se retinen por CharacterSpec.
- * Los cuerpos femeninos usan otros nombres de slot de pelo (Hair_Blond/Brown/
- * Black) y a veces `Blue` para la parte de abajo; el resto de slots (ropa
- * especifica de cada variante) conserva su color nativo -> variedad.
+ * Rim light Arcane de los personajes: borde blanco sutil (fresnel) que separa
+ * la silueta del fondo blanco de las salas sin lavar la cara. power alto =
+ * borde fino; intensity moderada para que no sea neon.
  */
-function colorForSlot(
-  materialName: string,
-  spec: CharacterSpec,
-): string | null {
-  if (materialName === 'Purple') {
-    return spec.top
-  }
-  if (materialName === 'LightBlue' || materialName === 'Blue') {
-    return spec.bottom
-  }
-  if (materialName === 'Skin') {
-    return spec.skin
-  }
-  if (materialName.startsWith('Hair')) {
-    return spec.hair.color
-  }
-  return null
-}
+const CHARACTER_RIM = { color: '#ffffff', power: 3.5, intensity: 0.45 } as const
 
 /**
  * @function toonifyMesh
- * @description Reemplaza el material PBR del GLB (MeshStandardMaterial,
- *   metalness ~0.4 sin environment map -> renderiza negro) por el
- *   MeshToonMaterial pooled del proyecto — mismo lenguaje de shading que
- *   paredes/props, y evita el problema de PBR sin IBL. Los slots mapeados
- *   por CharacterSpec (Purple/LightBlue/Skin/Hair) toman el color de la
- *   spec; el resto conserva el color base del material original.
+ * @description Reemplaza el material PBR del GLB (MeshStandardMaterial de
+ *   Mixamo, que sin IBL renderiza plano/oscuro) por MeshToonMaterial — mismo
+ *   lenguaje de shading que paredes/props. CLAVE: si el material trae textura
+ *   (`map`, la CARA PINTADA de Mixamo), se PRESERVA como `map` con color base
+ *   blanco (para no teñirla) + CHARACTER_GRADIENT (bandas duras = corte
+ *   cel-shading Arcane-lite). Sin textura (ropa de color plano) se usa el
+ *   color base del material, levantado si es muy oscuro.
  */
-function toonifyMesh(mesh: Mesh, spec: CharacterSpec): void {
+function toonifyMesh(mesh: Mesh): void {
   const applyOne = (material: Material): Material => {
     if (!(material instanceof MeshStandardMaterial)) {
       return material
     }
-    const hex =
-      colorForSlot(material.name, spec) ?? `#${material.color.getHexString()}`
-    return toonMat(brightenColor(hex))
+    if (material.map) {
+      // cara/ropa texturizada: preservar la textura, la luz la modula el
+      // gradientMap de bandas duras (cel-shading Arcane sobre la textura real)
+      // + rim light fresnel que separa la silueta del fondo (look ilustracion).
+      return toonMat('#ffffff', {
+        map: material.map,
+        gradient: CHARACTER_GRADIENT,
+        rim: CHARACTER_RIM,
+      })
+    }
+    // material de color plano (sin textura): mismo criterio de antes.
+    const hex = `#${material.color.getHexString()}`
+    return toonMat(brightenColor(hex), {
+      gradient: CHARACTER_GRADIENT,
+      rim: CHARACTER_RIM,
+    })
   }
   mesh.material = Array.isArray(mesh.material)
     ? mesh.material.map(applyOne)
@@ -232,19 +331,23 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   let headBone: Object3D | null = null
   let disposed = false
 
-  function playClip(name: string): void {
-    const clip = clipMap.get(name)
-    if (!mixer || !clip) {
+  /** Reproduce una pose: resuelve el clip Mixamo, cae a 'Idle' si falta. */
+  function playPose(next: CharacterPose): void {
+    if (!mixer) {
       return
     }
-    const next = mixer.clipAction(clip)
-    next.reset()
-    next.fadeIn(0.2)
-    next.play()
-    if (currentAction && currentAction !== next) {
+    const clip = clipMap.get(POSE_CLIP[next]) ?? clipMap.get('Idle')
+    if (!clip) {
+      return
+    }
+    const action = mixer.clipAction(clip)
+    action.reset()
+    action.fadeIn(0.2)
+    action.play()
+    if (currentAction && currentAction !== action) {
       currentAction.fadeOut(0.2)
     }
-    currentAction = next
+    currentAction = action
   }
 
   loadModel(spec.model ?? 'base')
@@ -253,6 +356,8 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
         return
       }
       const clone = cloneSkeleton(model.scene)
+      // el GLB Mixamo ya viene a metros (build-character.py importa el FBX con
+      // global_scale=100: bind pose correcto, cuerpo ~1.7 m). No se escala aca.
       clone.traverse((obj: Object3D) => {
         if (obj instanceof Mesh) {
           // SkeletonUtils.clone COMPARTE la geometry con el modelo cacheado:
@@ -260,28 +365,33 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
           // (corromperia el resto de instancias que clonan la misma geometry).
           obj.geometry.userData.shared = true
           obj.castShadow = shadowMode === 'cast'
-          toonifyMesh(obj, spec)
+          obj.frustumCulled = false
+          toonifyMesh(obj)
         }
-        if (obj.name === 'Head') {
+        // build-character.py normaliza los huesos a "mixamorig_<Nombre>"
+        // (sin ':', para que Three.js resuelva los tracks). El nodo del head
+        // puede aparecer con o sin el ':' saneado por el loader -> se aceptan
+        // ambas variantes.
+        if (obj.name === 'mixamorig_Head' || obj.name === 'mixamorigHead') {
           headBone = obj
         }
       })
       group.add(clone)
       mixer = new AnimationMixer(clone)
       for (const clip of model.animations) {
-        clipMap.set(clip.name, clip)
+        clipMap.set(normalizeClipName(clip.name), clip)
       }
-      playClip(POSE_CLIP[pose])
+      playPose(pose)
     })
     .catch((err: unknown) => {
-      console.error('[character] no se pudo cargar el modelo base', err)
+      console.error('[character] no se pudo cargar el modelo', err)
     })
 
   return {
     group,
     setWalking(on) {
       // GUARD: controls llama setWalking cada frame. Sin este guard,
-      // playClip -> reset() reinicia el clip Walk al frame 0 en cada cuadro
+      // playPose -> reset() reinicia el clip Walk al frame 0 en cada cuadro
       // (el personaje avanza pero la animacion queda congelada). Solo se
       // re-dispara el clip cuando la pose CAMBIA.
       const next: CharacterPose = on ? 'walk' : 'idle'
@@ -289,14 +399,14 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
         return
       }
       pose = next
-      playClip(POSE_CLIP[pose])
+      playPose(pose)
     },
     setPose(next) {
       if (next === pose) {
         return
       }
       pose = next
-      playClip(POSE_CLIP[pose])
+      playPose(pose)
     },
     setHeadYaw(yaw) {
       headYaw = yaw
@@ -329,9 +439,22 @@ export interface NpcOpts extends CharacterSpec {
   path?: readonly (readonly [number, number])[]
   rotationY?: number
   speed?: number
-  /** Pose fija (sin path): fight / sit / kneel. Sin pose: idle con sway. */
-  pose?: 'fight' | 'sit' | 'kneel'
+  /**
+   * Pose fija (sin path): cualquier CharacterPose salvo idle/walk (esas las
+   * decide el path). Sin pose: idle con sway. Las poses "sentadas"
+   * (sit/kneel/typing/sitTalk) no giran el cuerpo al hablar (solo la cabeza).
+   */
+  pose?: Exclude<CharacterPose, 'idle' | 'walk'>
 }
+
+/** Poses en las que el NPC esta sentado (no gira el cuerpo, solo la cabeza). */
+const SEATED_POSES: ReadonlySet<CharacterPose> = new Set<CharacterPose>([
+  'sit',
+  'kneel',
+  'typing',
+  'sitTalk',
+  'disbelief',
+])
 
 /** Avanza por los waypoints en loop a velocidad constante y orienta. */
 function moveAlongPath(
@@ -402,7 +525,7 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
   // conversacion: reloj de patrulla propio (se congela al hablar), giro
   // hacia el jugador (cuerpo de pie / solo cabeza si esta sentado) y
   // saludo breve antes de gesticular
-  const seated = opts.pose === 'sit' || opts.pose === 'kneel'
+  const seated = opts.pose !== undefined && SEATED_POSES.has(opts.pose)
   let talking = false
   let faceYaw = opts.rotationY ?? 0
   let waveLeft = 0
@@ -484,7 +607,7 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
       } else if (!opts.pose) {
         // con pose fija no hay sway: esta concentrado en lo suyo
         group.rotation.y = (opts.rotationY ?? 0) + Math.sin(tt * 0.7) * 0.08
-      } else if (opts.pose === 'sit') {
+      } else if (opts.pose === 'sit' || opts.pose === 'typing') {
         sfx.feed(sfxId, 'typing', group.position.x, group.position.z)
       }
       advanceAnim(tt, dt)

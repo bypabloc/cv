@@ -496,7 +496,7 @@ export function aulaPast(
     faceSeed: 47,
     position: [x + 2.95, 0, z + 1.8],
     rotationY: Math.PI / 2,
-    pose: 'kneel',
+    pose: 'acLookUp', // mira/revisa el split de A/C en la pared (clip Mixamo)
   })
   npcs.push(tecnicoAc)
   const tecnicoTalk = npcTalk({

@@ -121,3 +121,4 @@ tmp/
 # Lighthouse Chrome temp profiles (WSL: created in CWD as a Windows path)
 lighthouse.*
 C:\\*
+tools/

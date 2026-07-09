@@ -236,18 +236,20 @@ def decimate_action(action: bpy.types.Action) -> None:
 
 
 def _lock_root_xz(action: bpy.types.Action) -> None:
-    """Fija en su valor inicial la traslación del plano del piso de
-    mixamorig:Hips, dejando el eje VERTICAL libre (para conservar el bob del
-    caminar). Medido empíricamente en los FBX de Mixamo tras import en Blender:
-    en `pose.bones["mixamorig_Hips"].location` el avance/root motion es el
-    array_index 2 (Z-forward), el sway lateral es el 0 (X), y el VERTICAL es
-    el 1 (Y). Se anclan 0 y 2; se deja libre el 1 -> clip IN-PLACE con bob.
-    (Se llama tras normalize_action_paths, con el nombre ya normalizado.)"""
+    """Ancla SOLO el eje de AVANCE (Z) de la traslación de mixamorig_Hips,
+    dejando libres el sway lateral (X) y el bob vertical (Y). Medido
+    empíricamente en los FBX de Mixamo tras import en Blender: en
+    `pose.bones["mixamorig_Hips"].location` el avance/root motion es el
+    array_index 2 (Z-forward), el sway lateral es el 0 (X) y el vertical el 1
+    (Y). El sistema mueve al NPC por código (in-place en Z), pero conservar el
+    sway lateral X + el bob Y le da al caminar su balanceo natural (evita el
+    andar rígido/robótico que se leía como 'malandro' al anclar X). Solo se
+    congela Z. (Se llama tras normalize_action_paths, nombre ya normalizado.)"""
     path = 'pose.bones["mixamorig_Hips"].location'
     for fc in action.fcurves:
         if fc.data_path != path:
             continue
-        if fc.array_index in (0, 2):  # X lateral + Z avance (plano del piso)
+        if fc.array_index == 2:  # solo Z (avance) -> in-place; X/Y libres
             base = fc.keyframe_points[0].co[1] if fc.keyframe_points else 0.0
             for kp in fc.keyframe_points:
                 kp.co[1] = base

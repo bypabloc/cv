@@ -556,158 +556,158 @@ export interface ScreenPanelOpts {
   dot?: string
   /**
    * Estilo de la pantalla. Por defecto `terminal` (viñeta manga con texto
-   * monospace). `windows7` / `windowsxp` dibujan el escritorio retro de esa
-   * era (wallpaper + taskbar + ventana) — para las PCs de las salas viejas.
+   * monospace). `linux` dibuja un escritorio Linux (terminal + barra tipo
+   * GNOME); `ide` dibuja un editor de código oscuro (tipo VS Code) con las
+   * `lines` del CV como código coloreado. Pedido del dueño 2026-07-08: los
+   * monitores del recorrido son de un dev Linux, no Windows.
    */
-  kind?: 'terminal' | 'windows7' | 'windowsxp'
+  kind?: 'terminal' | 'linux' | 'ide'
 }
 
 /**
- * Escritorio retro (Windows 7 / XP) dibujado con Canvas 2D — cero asset,
- * nítido a cualquier zoom. Windows 7: wallpaper azul degradado, taskbar
- * translúcida oscura con orbe Start y ventana Aero. XP: wallpaper "Bliss"
- * (cielo + colina verde), taskbar azul con botón Start verde. Las `lines`
- * del CV se muestran como el contenido de la ventana (sigue siendo texto real
- * del showcase). El titulo va en la barra de la ventana.
+ * Escritorio Linux dibujado con Canvas 2D — cero asset, nítido a cualquier
+ * zoom. Barra superior tipo GNOME (Actividades + reloj) + una terminal oscura
+ * con prompt `user@host:~$` y las `lines` del CV como salida real de comandos
+ * (sigue siendo texto del showcase). Pedido del dueño: los monitores son de
+ * un dev Linux, no Windows.
  */
-function windowsDesktopTexture(
-  opts: ScreenPanelOpts & { xp: boolean },
-): CanvasTexture {
+function linuxDesktopTexture(opts: ScreenPanelOpts): CanvasTexture {
   return makeCanvasTexture(512, (ctx, size) => {
-    const bar = Math.round(size * 0.085) // alto de la taskbar
-    // ---- wallpaper ----
-    if (opts.xp) {
-      // Bliss: cielo celeste degradado + colina verde
-      const sky = ctx.createLinearGradient(0, 0, 0, size * 0.62)
-      sky.addColorStop(0, '#3a6ea5')
-      sky.addColorStop(0.55, '#8fc0ea')
-      sky.addColorStop(1, '#cfe6f7')
-      ctx.fillStyle = sky
-      ctx.fillRect(0, 0, size, size)
-      ctx.fillStyle = '#7aa84b'
-      ctx.beginPath()
-      ctx.moveTo(0, size * 0.66)
-      ctx.quadraticCurveTo(size * 0.4, size * 0.5, size, size * 0.6)
-      ctx.lineTo(size, size)
-      ctx.lineTo(0, size)
-      ctx.closePath()
-      ctx.fill()
-      ctx.fillStyle = '#6b9a3f'
-      ctx.beginPath()
-      ctx.moveTo(0, size * 0.74)
-      ctx.quadraticCurveTo(size * 0.55, size * 0.62, size, size * 0.72)
-      ctx.lineTo(size, size)
-      ctx.lineTo(0, size)
-      ctx.closePath()
-      ctx.fill()
-    } else {
-      // Windows 7: degradado azul profundo con halo central
-      const bg = ctx.createRadialGradient(
-        size / 2,
-        size * 0.42,
-        size * 0.1,
-        size / 2,
-        size * 0.42,
-        size * 0.75,
-      )
-      bg.addColorStop(0, '#2b6bb0')
-      bg.addColorStop(0.6, '#164a86')
-      bg.addColorStop(1, '#0a2b52')
-      ctx.fillStyle = bg
-      ctx.fillRect(0, 0, size, size)
-    }
-    // ---- ventana Aero/Luna ----
-    const wx = size * 0.14
+    const bar = Math.round(size * 0.07) // barra superior GNOME
+    // ---- wallpaper: degradado violeta/índigo sobrio ----
+    const bg = ctx.createLinearGradient(0, 0, size, size)
+    bg.addColorStop(0, '#2b213a')
+    bg.addColorStop(0.55, '#3a2d52')
+    bg.addColorStop(1, '#1e2440')
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, size, size)
+    // ---- barra superior tipo GNOME ----
+    ctx.fillStyle = 'rgba(16,14,24,0.9)'
+    ctx.fillRect(0, 0, size, bar)
+    ctx.fillStyle = '#e8e4f0'
+    ctx.font = `bold 18px ${MONO_FONT}`
+    ctx.fillText('Actividades', 16, bar * 0.68)
+    ctx.textAlign = 'center'
+    ctx.fillText('09:41', size / 2, bar * 0.68)
+    ctx.textAlign = 'right'
+    ctx.fillText('▤ ▼ ⏻', size - 14, bar * 0.68)
+    ctx.textAlign = 'left'
+    // ---- ventana de terminal ----
+    const wx = size * 0.1
     const wy = size * 0.16
-    const ww = size * 0.72
-    const wh = size * 0.58
-    const titleH = size * 0.07
-    // sombra
-    ctx.fillStyle = 'rgba(0,0,0,0.28)'
+    const ww = size * 0.8
+    const wh = size * 0.68
+    const titleH = size * 0.062
+    ctx.fillStyle = 'rgba(0,0,0,0.32)'
     ctx.fillRect(wx + 4, wy + 5, ww, wh)
-    // marco ventana
-    ctx.fillStyle = opts.xp ? '#ece9d8' : '#f2f6fb'
-    ctx.fillRect(wx, wy, ww, wh)
-    // barra de titulo
-    const tg = ctx.createLinearGradient(0, wy, 0, wy + titleH)
-    if (opts.xp) {
-      tg.addColorStop(0, '#3f8be8')
-      tg.addColorStop(1, '#0a4bc0')
-    } else {
-      tg.addColorStop(0, '#dbe9f7')
-      tg.addColorStop(1, '#a9c9ec')
-    }
-    ctx.fillStyle = tg
+    // barra de titulo oscura con los 3 botones (rojo/amarillo/verde)
+    ctx.fillStyle = '#3a3340'
     ctx.fillRect(wx, wy, ww, titleH)
-    // titulo de la ventana
-    ctx.fillStyle = opts.xp ? '#ffffff' : '#1c3c60'
-    ctx.font = `bold 22px ${MONO_FONT}`
+    const r = titleH * 0.24
+    const cy = wy + titleH / 2
+    for (const [i, col] of ['#e35a4f', '#e6b84f', '#4fbf6a'].entries()) {
+      ctx.fillStyle = col
+      ctx.beginPath()
+      ctx.arc(wx + 18 + i * (r * 3), cy, r, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillStyle = '#d8d4e0'
+    ctx.font = `16px ${MONO_FONT}`
+    ctx.textAlign = 'center'
     ctx.fillText(
-      (opts.title ?? 'ventana').slice(0, 24),
-      wx + 14,
-      wy + titleH * 0.7,
+      (opts.title ?? 'bash').slice(0, 28),
+      wx + ww / 2,
+      cy + titleH * 0.18,
     )
-    // botones de ventana (min/max/close)
-    const bs = titleH * 0.5
-    const by = wy + (titleH - bs) / 2
-    ctx.fillStyle = opts.xp ? '#e24b3a' : '#d64a3f'
-    ctx.fillRect(wx + ww - bs - 8, by, bs, bs)
-    ctx.fillStyle = opts.xp ? '#f0f0f0' : '#c6d8ee'
-    ctx.fillRect(wx + ww - bs * 2 - 16, by, bs, bs)
-    ctx.fillRect(wx + ww - bs * 3 - 24, by, bs, bs)
-    // contenido de la ventana: las lineas del CV
-    ctx.fillStyle = '#1a1c22'
-    ctx.font = `20px ${MONO_FONT}`
-    let y = wy + titleH + 34
-    for (const line of opts.lines.slice(0, 10)) {
-      ctx.fillText(line.slice(0, 30), wx + 16, y)
-      y += 30
-    }
-    // ---- taskbar ----
-    if (opts.xp) {
-      const tb = ctx.createLinearGradient(0, size - bar, 0, size)
-      tb.addColorStop(0, '#3f8be8')
-      tb.addColorStop(1, '#245bc4')
-      ctx.fillStyle = tb
-      ctx.fillRect(0, size - bar, size, bar)
-      // boton Start verde
-      ctx.fillStyle = '#3fa63f'
-      ctx.beginPath()
-      const sbW = size * 0.2
-      ctx.roundRect(0, size - bar + 3, sbW, bar - 6, bar * 0.4)
-      ctx.fill()
-      ctx.fillStyle = '#ffffff'
-      ctx.font = `italic bold 24px ${MONO_FONT}`
-      ctx.fillText('start', 20, size - bar * 0.32)
-    } else {
-      ctx.fillStyle = 'rgba(20,28,44,0.82)'
-      ctx.fillRect(0, size - bar, size, bar)
-      // orbe Start (circulo con glow)
-      const ox = bar * 0.55
-      const oy = size - bar / 2
-      const orb = ctx.createRadialGradient(ox, oy, 2, ox, oy, bar * 0.42)
-      orb.addColorStop(0, '#cfe6ff')
-      orb.addColorStop(0.5, '#3a8fd8')
-      orb.addColorStop(1, '#12406e')
-      ctx.fillStyle = orb
-      ctx.beginPath()
-      ctx.arc(ox, oy, bar * 0.4, 0, Math.PI * 2)
-      ctx.fill()
-      // iconos pinneados (cuadraditos)
-      ctx.fillStyle = 'rgba(255,255,255,0.18)'
-      for (let i = 0; i < 3; i += 1) {
-        ctx.fillRect(
-          bar * 1.25 + i * bar * 0.85,
-          size - bar * 0.78,
-          bar * 0.55,
-          bar * 0.55,
-        )
-      }
-    }
-    // reloj
-    ctx.fillStyle = '#ffffff'
+    ctx.textAlign = 'left'
+    // cuerpo de la terminal
+    ctx.fillStyle = '#14121c'
+    ctx.fillRect(wx, wy + titleH, ww, wh - titleH)
+    // prompt + salida
     ctx.font = `18px ${MONO_FONT}`
-    ctx.fillText('09:41', size - 62, size - bar * 0.32)
+    let y = wy + titleH + 30
+    ctx.fillStyle = '#5fd75f'
+    ctx.fillText('pablo@dev', wx + 14, y)
+    ctx.fillStyle = '#8ab4ff'
+    ctx.fillText(':~$', wx + 14 + 100, y)
+    ctx.fillStyle = '#e8e4f0'
+    ctx.fillText((opts.lines[0] ?? 'run').slice(0, 22), wx + 14 + 148, y)
+    y += 30
+    for (const line of opts.lines.slice(1, 9)) {
+      ctx.fillStyle = '#c8c4d0'
+      ctx.fillText(line.slice(0, 34), wx + 14, y)
+      y += 28
+    }
+    // cursor parpadeante (bloque)
+    ctx.fillStyle = '#5fd75f'
+    ctx.fillRect(wx + 14, y - 14, 10, 18)
+  })
+}
+
+/** Sintaxis mínima para colorear una línea de código en el editor. */
+function ideLineColor(line: string): string {
+  const t = line.trim()
+  if (t.startsWith('//') || t.startsWith('#')) {
+    return '#6a7a5a' // comentario verde apagado
+  }
+  if (
+    /^(import|from|export|const|let|function|return|def|class|if|for)\b/.test(t)
+  ) {
+    return '#c586c0' // keyword violeta
+  }
+  if (/[{}();=]/.test(t)) {
+    return '#9cdcfe' // código azul claro
+  }
+  return '#d4d4d4' // texto por defecto
+}
+
+/**
+ * Editor de código oscuro (tipo VS Code) dibujado con Canvas 2D. Barra de
+ * pestañas + gutter con números de línea + las `lines` del CV como código
+ * con resaltado de sintaxis mínimo. Pedido del dueño 2026-07-08.
+ */
+function ideTexture(opts: ScreenPanelOpts): CanvasTexture {
+  return makeCanvasTexture(512, (ctx, size) => {
+    const tab = Math.round(size * 0.07)
+    const gutter = size * 0.1
+    // fondo del editor (#1e1e1e clásico)
+    ctx.fillStyle = '#1e1e1e'
+    ctx.fillRect(0, 0, size, size)
+    // barra de pestañas
+    ctx.fillStyle = '#252526'
+    ctx.fillRect(0, 0, size, tab)
+    // pestaña activa
+    ctx.fillStyle = '#1e1e1e'
+    ctx.fillRect(8, 0, size * 0.42, tab)
+    ctx.fillStyle = '#4fbf6a'
+    ctx.fillRect(8, tab - 3, size * 0.42, 3) // subrayado activo
+    ctx.fillStyle = '#d4d4d4'
+    ctx.font = `16px ${MONO_FONT}`
+    ctx.fillText((opts.title ?? 'main.ts').slice(0, 24), 20, tab * 0.66)
+    // gutter (números de línea)
+    ctx.fillStyle = '#252526'
+    ctx.fillRect(0, tab, gutter, size - tab)
+    // código
+    ctx.font = `18px ${MONO_FONT}`
+    let y = tab + 30
+    let ln = 1
+    for (const line of opts.lines.slice(0, 12)) {
+      ctx.fillStyle = '#5a5a5a'
+      ctx.textAlign = 'right'
+      ctx.fillText(String(ln), gutter - 8, y)
+      ctx.textAlign = 'left'
+      ctx.fillStyle = ideLineColor(line)
+      ctx.fillText(line.slice(0, 34), gutter + 10, y)
+      y += 28
+      ln += 1
+    }
+    // barra de estado inferior (azul VS Code)
+    const sb = size * 0.05
+    ctx.fillStyle = '#007acc'
+    ctx.fillRect(0, size - sb, size, sb)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `14px ${MONO_FONT}`
+    ctx.fillText('main ✓  TypeScript  UTF-8', 12, size - sb * 0.3)
   })
 }
 
@@ -716,11 +716,15 @@ function windowsDesktopTexture(
  * @description Textura de pantalla/viñeta manga: marco de tinta irregular
  *   con hatching + texto monospace + LED opcional. Base de screenPanel y
  *   de las pantallas intercambiables (PC que bootea, OFFLINE->ONLINE).
- *   `kind: 'windows7' | 'windowsxp'` dibuja el escritorio retro de esa era.
+ *   `kind: 'linux'` dibuja un escritorio Linux (terminal + barra GNOME);
+ *   `kind: 'ide'` dibuja un editor de código oscuro (tipo VS Code).
  */
 export function screenTexture(opts: ScreenPanelOpts): CanvasTexture {
-  if (opts.kind === 'windows7' || opts.kind === 'windowsxp') {
-    return windowsDesktopTexture({ ...opts, xp: opts.kind === 'windowsxp' })
+  if (opts.kind === 'linux') {
+    return linuxDesktopTexture(opts)
+  }
+  if (opts.kind === 'ide') {
+    return ideTexture(opts)
   }
   const rng = makeRng(hashSeed([opts.title ?? '', ...opts.lines].join('|')))
   return makeCanvasTexture(512, (ctx, size) => {

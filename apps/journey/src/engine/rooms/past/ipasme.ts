@@ -333,6 +333,8 @@ export function ipasmePast(
     faceSeed: 29,
     position: [x - 0.4, 0, z + 1.45],
     rotationY: Math.PI,
+    // crisis del rubro (pedido de Pablo): la ansiedad de la sala de salud
+    pose: 'nervous',
   })
   npcs.push(argenis, yuleima, petra)
   const talks = [

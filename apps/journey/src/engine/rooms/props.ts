@@ -1234,6 +1234,10 @@ export function officeLayout(opts: {
   screenTheme: Pick<RoomTheme, 'screenBg' | 'screenFg' | 'ink'>
   /** Contenido de pantalla por puesto (loop de codigo del rubro). */
   screenFor?: (index: number) => { title: string; lines: readonly string[] }
+  /** Estilo de pantalla por puesto: 'linux' (terminal) o 'ide' (editor de
+   *  código). Default: alterna linux/ide por puesto para dar variedad
+   *  (pedido del dueño: monitores de dev Linux + algún IDE). */
+  screenKindFor?: (index: number) => 'linux' | 'ide'
   /** Identificador de la sala, para ids unicos del interactable de silla. */
   roomIndex: number
   /** Estado del motor: el toggle de sentarse muta state.playerSeat directo. */
@@ -1310,6 +1314,10 @@ export function officeLayout(opts: {
   opts.spots.forEach(([x, z], index) => {
     colliders.push(footprint(x, z, 1.3, 0.8), footprint(x, z - 0.55, 0.5, 0.5))
     const code = opts.screenFor?.(index) ?? { title: '', lines: [] }
+    // linux (terminal) por defecto; alterna a ide (editor) en puestos impares
+    // para variar (pedido del dueño). La sala puede forzar con screenKindFor.
+    const screenKind =
+      opts.screenKindFor?.(index) ?? (index % 2 === 1 ? 'ide' : 'linux')
     const { group: monitorGroup, screen } = switchableMonitor({
       position: [x, 0.72, z + 0.05],
       rotationY: Math.PI,
@@ -1321,6 +1329,7 @@ export function officeLayout(opts: {
           lines: code.lines,
           theme: opts.screenTheme,
           dot: '#3f9d63',
+          kind: screenKind,
         },
       },
       initial: powered.has(index) ? 'on' : 'off',

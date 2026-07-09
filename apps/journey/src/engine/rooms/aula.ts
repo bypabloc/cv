@@ -290,19 +290,19 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
 
   // pupitres en filas mirando al frente (+Z); el front-right es "tu PC".
   // Con la sala uniforme (13.2 m) hay 2 columnas con PC + 2 columnas de
-  // pupitres libres a los costados (sin monitor: laminas del mismo merge).
-  const deskSpots: readonly (readonly [number, number])[] = [
-    [-2, room.z + 1.2],
-    [2, room.z + 1.2],
-    [-2, room.z - 1.2],
-    [2, room.z - 1.2],
-  ]
-  const emptySpots: readonly (readonly [number, number])[] = [
-    [-5, room.z + 1.2],
-    [5, room.z + 1.2],
-    [-5, room.z - 1.2],
-    [5, room.z - 1.2],
-  ]
+  // pupitres en 2 FILAS PROLIJAS de 3 columnas mirando al profesor (+Z), bien
+  // alineados (pedido de Pablo: antes estaban dispersos y desalineados). La
+  // fila delantera (z-1.2) y la trasera (z+1.4); columnas juntas en -3.1/0/3.1.
+  // Los 2 pupitres CON PC (NPC sentado) son los indices en NPC_PCS.
+  const FRONT_Z = room.z - 1.2
+  const BACK_Z = room.z + 1.4
+  const COLS = [-3.1, 0, 3.1] as const
+  const deskSpots: readonly (readonly [number, number])[] = COLS.map(
+    (cx) => [cx, BACK_Z] as const,
+  )
+  const emptySpots: readonly (readonly [number, number])[] = COLS.map(
+    (cx) => [cx, FRONT_Z] as const,
+  )
   const seatSpots = [...deskSpots, ...emptySpots]
   const allDesks: readonly (readonly [number, number])[] = [
     [-2, room.z + 3.6],
@@ -337,9 +337,11 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
   )
   // COLISIONES (fuente de verdad de la navegacion, desacopladas de la
   // geometria): UN footprint por escritorio + UNO por silla VACIA, en una
-  // sola pasada consistente. Las sillas con NPC sentado (deskSpots 0 y 3, y
-  // la del profesor) las cubre el collider del propio NPC -> se saltan aca.
-  const NPC_PCS: ReadonlySet<number> = new Set([0, 3])
+  // sola pasada consistente. Las sillas con NPC sentado (deskSpots 0 y 2 =
+  // kate/josh, emptySpots 0 y 2 = los 2 coworkers, y la del profesor) las
+  // cubre el collider del propio NPC -> se saltan aca.
+  const NPC_PCS: ReadonlySet<number> = new Set([0, 2])
+  const NPC_EMPTY: ReadonlySet<number> = new Set([0, 2]) // coworkers sentados
   staticColliders.push(footprint(-2, room.z + 3.6, 1.2, 0.7)) // escritorio profe
   deskSpots.forEach(([x, z], i) => {
     staticColliders.push(footprint(x, z, 1.2, 0.7))
@@ -347,12 +349,12 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
       staticColliders.push(footprint(x, z - 0.55, 0.46, 0.46))
     }
   })
-  for (const [x, z] of emptySpots) {
-    staticColliders.push(
-      footprint(x, z, 1.2, 0.7),
-      footprint(x, z - 0.55, 0.46, 0.46),
-    )
-  }
+  emptySpots.forEach(([x, z], i) => {
+    staticColliders.push(footprint(x, z, 1.2, 0.7))
+    if (!NPC_EMPTY.has(i)) {
+      staticColliders.push(footprint(x, z - 0.55, 0.46, 0.46))
+    }
+  })
   // trabajos de catedra impresos sobre el escritorio del profesor
   group.add(paperStack({ position: [-2.3, 0.745, room.z + 3.6], count: 6 }))
 
@@ -377,6 +379,9 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
           lines: code.lines,
           theme: screenTheme,
           dot: '#3f9d63',
+          // terminal Linux (la práctica de redes en C era sobre Linux; pedido
+          // del dueño: monitores de dev Linux, no Windows)
+          kind: 'linux',
         },
       },
       initial: NPC_PCS.has(index) ? 'on' : 'off',
@@ -404,10 +409,10 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     }
   })
 
-  // sillas vacias sentables (AC-4): tu PC, la del laboratorio y los 4
-  // pupitres decorativos. La silla del profesor (room.z+4.15, dir=-1)
-  // queda EXCLUIDA: la ocupa el NPC profesor.
-  const sittableSpots = [deskSpots[1], deskSpots[2], ...emptySpots]
+  // sillas vacias sentables (AC-4): el pupitre central de cada fila (los que
+  // NO tienen NPC). deskSpots[0]/[2] los ocupan kate/josh; emptySpots[0]/[2]
+  // los ocupan los coworkers; la del profesor la ocupa el profesor NPC.
+  const sittableSpots = [deskSpots[1], emptySpots[1]]
   sittableSpots.forEach((spot, index) => {
     if (!spot) {
       return
@@ -452,9 +457,12 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     hair: { style: 'ponytail', color: '#5a3a22' },
     top: '#4a6a52',
     bottom: '#3a4048',
-    model: 'michelle',
+    // estudiante universitaria JOVEN (kate, casual) — antes michelle se veia
+    // adulta; el salon es de universidad, pedido de Pablo
+    model: 'kate',
     faceSeed: 11,
-    position: [-2, 0, room.z + 0.65],
+    // sentada en la silla del pupitre con PC de la fila trasera (deskSpots[0])
+    position: [-3.1, 0, BACK_Z - 0.55],
     rotationY: 0,
     pose: 'sit',
   })
@@ -465,7 +473,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
     bottom: '#2e3238',
     model: 'josh',
     faceSeed: 23,
-    position: [2, 0, room.z - 1.75],
+    // sentado en la silla del pupitre con PC de la fila trasera (deskSpots[2])
+    position: [3.1, 0, BACK_Z - 0.55],
     rotationY: 0,
     pose: 'sit',
   })
@@ -550,7 +559,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
           model: 'bryce',
           faceSeed: 71,
         },
-        position: [-5, 0, room.z + 0.65],
+        // sentado en el pupitre izquierdo de la fila delantera (emptySpots[0])
+        position: [-3.1, 0, FRONT_Z - 0.55],
         rotationY: 0,
         pose: 'sit',
         dialog: AULA_PRESENTE_DIALOGS['companero-proyecto'],
@@ -566,7 +576,8 @@ export default function buildAula(ctx: RoomCtx): RoomBuild {
           model: 'leonard',
           faceSeed: 79,
         },
-        position: [5, 0, room.z + 0.65],
+        // sentado en el pupitre derecho de la fila delantera (emptySpots[2])
+        position: [3.1, 0, FRONT_Z - 0.55],
         rotationY: 0,
         pose: 'sit',
         dialog: AULA_PRESENTE_DIALOGS['companero-ayudado'],

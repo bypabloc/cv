@@ -40,6 +40,7 @@ export type CharacterPose =
   | 'walk'
   | 'sit'
   | 'kneel'
+  | 'standUp'
   | 'wave'
   | 'talk'
   | 'typing'
@@ -50,6 +51,7 @@ export type CharacterPose =
   // pasado del aula (facetas de Pablo)
   | 'fight'
   | 'karateKick'
+  | 'punch'
   | 'gaming'
   | 'acLookUp'
   | 'carryBox'
@@ -126,9 +128,21 @@ export interface CharacterSpec {
   faceSeed: number
 }
 
+/**
+ * Velocidad (m/s) a la que "camina" el clip Walk de Mixamo: medido en Blender
+ * (avance del root Hips 1.84 m en 2.03 s del ciclo). El sistema mueve al NPC
+ * por codigo a otra velocidad; para que los pies NO patinen, el clip Walk se
+ * reproduce con timeScale = velocidadReal / WALK_CLIP_SPEED (mas lento si el
+ * NPC avanza mas despacio). Ver setWalkSpeed.
+ */
+const WALK_CLIP_SPEED = 0.91
+
 export interface CharacterHandle {
   group: Group
   setWalking(on: boolean): void
+  /** Velocidad real (m/s) del NPC: calibra el timeScale del clip Walk para
+   *  que la cadencia de pasos coincida con el avance (sin patinaje). */
+  setWalkSpeed(metersPerSecond: number): void
   setPose(pose: CharacterPose): void
   /** Giro extra de cabeza (mirar al jugador sin girar el cuerpo). */
   setHeadYaw(yaw: number | null): void
@@ -147,6 +161,10 @@ export interface NpcHandle {
   talk(player?: { x: number; z: number }): void
   /** Cierra la conversacion y retoma patrulla/pose original. */
   endTalk(): void
+  /** Cambia la pose ACTUAL (ej. una secuencia de combate del karateka). No
+   *  interfiere con el estado de patrulla/talk: al hablar/endTalk se retoma
+   *  la logica normal. Sin efecto si el NPC esta hablando. */
+  setPose(pose: CharacterPose): void
   /** Salto one-shot (arco ~0.55 s) montado sobre la pose actual. */
   jump(): void
   dispose(): void
@@ -199,6 +217,7 @@ const POSE_CLIP: Record<CharacterPose, string> = {
   walk: 'Walk',
   sit: 'Sit',
   kneel: 'Sit',
+  standUp: 'StandUpDesk',
   wave: 'Wave',
   talk: 'Talk',
   typing: 'Typing',
@@ -208,6 +227,7 @@ const POSE_CLIP: Record<CharacterPose, string> = {
   write: 'Writing',
   fight: 'KarateIdle',
   karateKick: 'KarateKick',
+  punch: 'FightPunch',
   gaming: 'Gaming',
   acLookUp: 'AcLookUp',
   carryBox: 'CarryBox',
@@ -330,6 +350,19 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
   let headYaw: number | null = null
   let headBone: Object3D | null = null
   let disposed = false
+  // velocidad real del NPC (m/s) para calibrar el timeScale del clip Walk y
+  // eliminar el patinaje. 0 (por defecto) => timeScale 1 (jugador en 1a persona).
+  let walkSpeed = 0
+
+  /** timeScale del clip Walk segun la velocidad real: cadencia == avance.
+   *  Clamp amplio: NPCs lentos (0.5 m/s -> 0.55x) hasta el jugador rapido en
+   *  3a persona (3.5 m/s -> 2.2x, trote sin patinar demasiado). */
+  function walkTimeScale(): number {
+    if (walkSpeed <= 0) {
+      return 1
+    }
+    return Math.min(2.2, Math.max(0.5, walkSpeed / WALK_CLIP_SPEED))
+  }
 
   /** Reproduce una pose: resuelve el clip Mixamo, cae a 'Idle' si falta. */
   function playPose(next: CharacterPose): void {
@@ -342,6 +375,9 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
     }
     const action = mixer.clipAction(clip)
     action.reset()
+    // el clip Walk se ralentiza/acelera para que los pies no patinen respecto
+    // al avance real; el resto de poses corren a velocidad natural.
+    action.timeScale = next === 'walk' ? walkTimeScale() : 1
     action.fadeIn(0.2)
     action.play()
     if (currentAction && currentAction !== action) {
@@ -407,6 +443,13 @@ export function makeCharacter(spec: CharacterSpec): CharacterHandle {
       }
       pose = next
       playPose(pose)
+    },
+    setWalkSpeed(metersPerSecond) {
+      walkSpeed = metersPerSecond
+      // si ya está caminando, actualiza el timeScale en caliente
+      if (pose === 'walk' && currentAction) {
+        currentAction.timeScale = walkTimeScale()
+      }
     },
     setHeadYaw(yaw) {
       headYaw = yaw
@@ -509,6 +552,8 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
   const walking = (opts.path?.length ?? 0) >= 2
   const speed = opts.speed ?? 0.7
   if (walking) {
+    // calibra la cadencia del clip Walk a la velocidad real (sin patinaje)
+    character.setWalkSpeed(speed)
     character.setWalking(true)
   } else if (opts.pose) {
     character.setPose(opts.pose)
@@ -653,6 +698,12 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
         group.rotation.y = opts.rotationY ?? 0
       } else {
         character.setPose('idle')
+      }
+    },
+    setPose(next) {
+      // no pisa la conversacion (wave/talk); util para secuencias del entorno
+      if (!talking) {
+        character.setPose(next)
       }
     },
     jump() {

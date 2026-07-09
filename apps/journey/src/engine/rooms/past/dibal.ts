@@ -411,6 +411,8 @@ export function dibalPast(
     faceSeed: 47,
     position: [x - 1.8, 0, z - 0.6],
     rotationY: -Math.PI / 2,
+    // crisis del rubro (pedido de Pablo): el shock por el sistema caido del POS
+    pose: 'shocked',
   })
   // Elena (antes) sentada en la caja, talonario y calculadora
   const elena = makeNpc({

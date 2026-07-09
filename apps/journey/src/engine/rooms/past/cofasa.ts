@@ -334,6 +334,8 @@ export function cofasaPast(
     faceSeed: 77,
     position: [x - 2.2, 0, z - 0.2],
     rotationY: -Math.PI / 2,
+    // crisis del rubro (pedido de Pablo): el shock por la produccion parada
+    pose: 'shocked',
   })
   // Carmen (antes) cargando planillas que ni cuadran, de un lado a otro
   const carmen = makeNpc({

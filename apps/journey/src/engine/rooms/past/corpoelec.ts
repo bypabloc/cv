@@ -251,6 +251,8 @@ export function corpoelecPast(
     faceSeed: 53,
     position: [x, 0, z + 0.1],
     rotationY: Math.PI,
+    // crisis del rubro (pedido de Pablo): el apagon/falla de la electrica
+    pose: 'shocked',
   })
   // Wilmer (antes) de rodillas frente al archivador, hurgando carpetas
   // por el radio que nadie registro — el mismo veterano del presente

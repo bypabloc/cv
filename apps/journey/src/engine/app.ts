@@ -22,6 +22,7 @@ import {
   buildPastRooms,
   buildPastWallBoxes,
   buildWallBoxes,
+  WALK_SPEED,
 } from '../lib/layout'
 import { buildRooms, type Locale, type RoomId } from '../lib/rooms'
 import { ambientAudio, sfx } from './audio'
@@ -137,6 +138,9 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
   scene.add(hemi, sun, sun.target)
 
   const player = makeCharacter(PLAYER_SPEC)
+  // calibra la cadencia del clip Walk del jugador a su velocidad real (3a
+  // persona: sin patinaje). En POV el cuerpo se oculta, no afecta.
+  player.setWalkSpeed(WALK_SPEED)
   scene.add(player.group)
 
   // HUD (DOM) — el boton Tour: reduced siempre, full solo con ?tour

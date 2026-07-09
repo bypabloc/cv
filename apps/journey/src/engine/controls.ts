@@ -33,6 +33,7 @@ import {
   type InteractableBubble,
   isUiOpen,
   nearestInteractableIn,
+  type SeatTarget,
 } from './state'
 
 export interface ControlsHud {
@@ -123,6 +124,17 @@ export function createControls(deps: ControlsDeps): Controls {
   let tourOffset = 0
   let lastTourX = 0
   let lastTourZ = 0
+
+  // transicion "levantarse de la silla" (pedido de Pablo): al pasar de
+  // sentado -> de pie, el jugador reproduce el clip StandUpDesk y sale hacia
+  // UN COSTADO (no de frente, para no chocar con el escritorio). Se rastrea
+  // el seat previo para detectar el flanco de subida y animar la salida.
+  // (objeto mutable para no reasignar la binding — evita fricciones del linter)
+  const seatRef: { prev: SeatTarget | null } = { prev: null }
+  const STAND_DURATION = 0.9 // s (dura el clip StandUpDesk + el paso lateral)
+  const stand = { left: 0 }
+  const standFrom = { x: 0, z: 0 }
+  const standTo = { x: 0, z: 0 }
 
   // spawn: primer cuarto de la sala 0 (como el MVP actual)
   const firstRoom = layout.rooms[0]
@@ -474,6 +486,77 @@ export function createControls(deps: ControlsDeps): Controls {
   deps.touch?.joystick.addEventListener('pointerdown', onJoystickDown)
   deps.touch?.actionButton.addEventListener('pointerdown', onActionButton)
 
+  /** Elige el costado (+1 o -1) hacia el que salir de la silla sin chocar:
+   *  el que NO cae dentro de un muro/obstaculo. Empata -> +1. */
+  function pickFreeSide(
+    sx: number,
+    sz: number,
+    latX: number,
+    latZ: number,
+  ): 1 | -1 {
+    const obstacles = [...deps.walls, ...collectObstacles(state)]
+    const blocked = (side: 1 | -1): boolean => {
+      const px = sx + latX * side * 0.6
+      const pz = sz + latZ * side * 0.6
+      return obstacles.some((box) =>
+        circleIntersectsBox(px, pz, PLAYER_RADIUS, box),
+      )
+    }
+    if (blocked(1) && !blocked(-1)) {
+      return -1
+    }
+    return 1
+  }
+
+  /** Flanco de subida (estaba sentado y ahora no): arranca la transicion de
+   *  levantarse (clip StandUpDesk + salida lateral del escritorio). */
+  function detectStandUp(): void {
+    const seat = seatRef.prev
+    if (seat && !state.playerSeat && !state.tourOn) {
+      // la silla mira al escritorio (forward). Salir de costado = perpendicular
+      // + un paso atras (alejandose del escritorio), para no chocar de frente.
+      const rot = seat.rotationY
+      const fwdX = Math.sin(rot)
+      const fwdZ = Math.cos(rot)
+      const latX = fwdZ // perpendicular a forward (costado)
+      const latZ = -fwdX
+      standFrom.x = seat.x
+      standFrom.z = seat.z
+      const side = pickFreeSide(seat.x, seat.z, latX, latZ)
+      standTo.x = seat.x + latX * side * 0.6 - fwdX * 0.45
+      standTo.z = seat.z + latZ * side * 0.45 - fwdZ * 0.45
+      stand.left = STAND_DURATION
+    }
+    seatRef.prev = state.playerSeat
+  }
+
+  /** Actualiza al jugador segun su modo (tour / sentado / levantandose /
+   *  caminando). Extraido del loop para acotar su complejidad. */
+  function updatePlayerMode(dt: number): void {
+    if (state.tourOn) {
+      updateTour()
+    } else if (state.playerSeat) {
+      // sentado: posicion/orientacion fijas de la silla + pose sit; el
+      // interactable de la silla (radio 1.4) sigue activo para levantarse
+      pos.x = state.playerSeat.x
+      pos.z = state.playerSeat.z
+      player.group.position.set(pos.x, 0, pos.z)
+      player.group.rotation.y = state.playerSeat.rotationY
+      player.setPose('sit')
+    } else if (stand.left > 0) {
+      // levantandose: pose StandUpDesk + interpola de la silla al costado.
+      // El input WASD queda inhibido hasta que termina (movimiento suave).
+      stand.left = Math.max(0, stand.left - dt)
+      const k = 1 - stand.left / STAND_DURATION
+      pos.x = standFrom.x + (standTo.x - standFrom.x) * k
+      pos.z = standFrom.z + (standTo.z - standFrom.z) * k
+      player.group.position.set(pos.x, 0, pos.z)
+      player.setPose('standUp')
+    } else {
+      player.setWalking(applyMovement(dt))
+    }
+  }
+
   const controls: Controls = {
     update(t, dt) {
       time += dt
@@ -499,19 +582,8 @@ export function createControls(deps: ControlsDeps): Controls {
         updateCamera(realDt)
         return
       }
-      if (state.tourOn) {
-        updateTour()
-      } else if (state.playerSeat) {
-        // sentado: posicion/orientacion fijas de la silla + pose sit; el
-        // interactable de la silla (radio 1.4) sigue activo para levantarse
-        pos.x = state.playerSeat.x
-        pos.z = state.playerSeat.z
-        player.group.position.set(pos.x, 0, pos.z)
-        player.group.rotation.y = state.playerSeat.rotationY
-        player.setPose('sit')
-      } else {
-        player.setWalking(applyMovement(dt))
-      }
+      detectStandUp()
+      updatePlayerMode(dt)
       updateZone()
       updateProximity()
       player.update(time, dt)
@@ -522,6 +594,9 @@ export function createControls(deps: ControlsDeps): Controls {
       // cualquier teleport (esclusa, HUD, portal, cruce de puerta) levanta
       // al jugador: la sala nueva nunca arranca con el movimiento congelado
       state.playerSeat = null
+      // cancela cualquier transicion de levantarse en curso (no arrastrarla)
+      stand.left = 0
+      seatRef.prev = null
       pos.x = x
       pos.z = z
       player.group.position.x = x

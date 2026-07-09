@@ -363,6 +363,8 @@ export function goodmealPast(
     faceSeed: 58,
     position: [x - 2.4, 0, z - 0.6],
     rotationY: -Math.PI / 2,
+    // crisis del rubro (pedido de Pablo): la frustracion por la merma/caos
+    pose: 'frustrated',
   })
   // el Sr. Peña (antes) en su caja, calculadora en mano, sacando la
   // cuenta de la merma del dia

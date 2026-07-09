@@ -587,6 +587,8 @@ export function asesoriaPast(
     faceSeed: 41,
     position: [x - 2.6, 0, z - 0.9],
     rotationY: Math.PI,
+    // crisis del rubro (pedido de Pablo): la frustracion por sobrecarga
+    pose: 'frustrated',
   })
   // Coromoto (antes) con su cuaderno de tachones en la farmacia a medio
   // inventariar
@@ -600,6 +602,8 @@ export function asesoriaPast(
     faceSeed: 53,
     position: [x + 2.6, 0, z + 0.25],
     rotationY: Math.PI,
+    // crisis del rubro (pedido de Pablo): el estres de la sobrecarga de trabajo
+    pose: 'yelling',
   })
   // Maigualida (antes) entre el pincho y la cola, repartiendo papelitos
   const maigualida = makeNpc({

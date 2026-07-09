@@ -379,6 +379,8 @@ export function iaiPast(
     faceSeed: 62,
     position: [x - 1.6, 0, z - 1.5],
     rotationY: Math.PI,
+    // crisis del rubro (pedido de Pablo): la discusion por presupuesto/obra
+    pose: 'argue',
   })
   // Ing. Gregorio (antes) cargando sus tres papeles entre el meson y
   // la PC compartida — mismo inspector del presente

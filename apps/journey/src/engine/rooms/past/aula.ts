@@ -415,14 +415,43 @@ export function aulaPast(
   belt.userData.noOutline = true
   karateka.group.add(belt)
   npcs.push(karateka)
-  // hablarle al Pablo del pasado: SALTA (tobi geri) y abre su arbol
+  // El Pablo karateka entrena kihon en bucle: guardia -> golpe -> guardia ->
+  // patada -> guardia (clips Mixamo KarateIdle / FightPunch / KarateKick). Se
+  // reemplaza el viejo jump() (que se salia de pantalla, pedido de Pablo) por
+  // esta secuencia de combate temporizada por el update loop.
+  const KATA: readonly {
+    pose: 'fight' | 'punch' | 'karateKick'
+    hold: number
+  }[] = [
+    { pose: 'fight', hold: 1.4 },
+    { pose: 'punch', hold: 0.9 },
+    { pose: 'fight', hold: 1.0 },
+    { pose: 'karateKick', hold: 1.0 },
+  ]
+  let kataIndex = 0
+  let kataTimer = 0
+  updates.push((_t, dt) => {
+    kataTimer += dt
+    const step = KATA[kataIndex]
+    if (step && kataTimer >= step.hold) {
+      kataTimer = 0
+      kataIndex = (kataIndex + 1) % KATA.length
+      const next = KATA[kataIndex]
+      if (next) {
+        karateka.setPose(next.pose)
+        if (next.pose === 'punch' || next.pose === 'karateKick') {
+          sfx.play('blip')
+        }
+      }
+    }
+  })
+  // hablarle al Pablo del pasado abre su arbol de dialogo (sin salto)
   const karateTalk = npcTalk({
     id: 'talk-past-aula-karate',
     npc: karateka,
     dialog: AULA_PASADO_DIALOGS['pablo-karateka'],
     openDialog: actions.openDialog,
     onGreet: () => {
-      karateka.jump()
       sfx.play('blip')
     },
   })
@@ -463,7 +492,7 @@ export function aulaPast(
     faceSeed: 29,
     position: [x + 2.6, 0, z - 2.4],
     rotationY: Math.PI / 2,
-    pose: 'sit',
+    pose: 'gaming', // jugando con el teclado frente a la PC (clip Mixamo Gaming)
   })
   npcs.push(gamer)
   const gamerTalk = npcTalk({
@@ -494,7 +523,9 @@ export function aulaPast(
     top: '#5a6a73',
     bottom: '#3a4048',
     faceSeed: 47,
-    position: [x + 2.95, 0, z + 1.8],
+    // pegado a la pared del split (wallUnit en x+4.3): mira hacia arriba a la
+    // unidad. Antes en x+2.95 quedaba muy lejos del A/C (pedido de Pablo).
+    position: [x + 3.75, 0, z + 1.8],
     rotationY: Math.PI / 2,
     pose: 'acLookUp', // mira/revisa el split de A/C en la pared (clip Mixamo)
   })

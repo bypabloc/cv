@@ -358,6 +358,8 @@ export function destacamePast(
     faceSeed: 54,
     position: [x - 2.2, 0, z - 0.3],
     rotationY: -Math.PI / 2,
+    // crisis del rubro (pedido de Pablo): clientes molestos / cobros fallidos
+    pose: 'yelling',
   })
   // Nicolas (antes) clavado en su escritorio de planillas
   const nicolas = makeNpc({
@@ -370,6 +372,8 @@ export function destacamePast(
     faceSeed: 76,
     position: [x + 2.6, 0, z + 1.7],
     rotationY: Math.PI,
+    // crisis del rubro (pedido de Pablo): el hartazgo de tanta planilla manual
+    pose: 'frustrated',
   })
   npcs.push(hernan, marta, nicolas)
   const talks = [

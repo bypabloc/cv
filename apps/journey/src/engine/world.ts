@@ -51,11 +51,10 @@ import {
   unitGeo,
 } from './toon'
 
-// Colores FIJOS de los portales entre salas (decision del usuario 2026-07-06):
-// TODOS los de ida al futuro comparten el azul fosforecente; los de regreso a
-// la sala anterior, un azul celeste (mas claro) para distinguirlos.
-const PORTAL_FUTURE_COLOR = '#1fb0ff'
-const PORTAL_RETURN_COLOR = '#8fd6ff'
+// La paleta de los portales vive junto al shader (TEAR_STYLES en
+// rooms/props.ts): 'future' magenta electrico / 'return' cian electrico
+// (rediseño fractura dimensional 2026-07-10; reemplaza los azules fijos
+// del 2026-07-06 — re-decidido por el dueno).
 
 // ---------------------------------------------------------------------------
 // Contratos (congelados para las factories de sala — plan seccion 8)
@@ -341,11 +340,11 @@ export function createWorld(deps: WorldDeps): World {
         ),
       )
     }
-    // portal al FUTURO en el muro de SALIDA (+Z, si hay sala siguiente):
-    // mira hacia adentro (-Z), color azul fosforecente + año destino arriba.
+    // fractura al FUTURO en el muro de SALIDA (+Z, si hay sala siguiente):
+    // mira hacia adentro (-Z), magenta electrico + año destino arriba.
     const next = rooms[index + 1]
     if (next) {
-      const portal = futurePortal(PORTAL_FUTURE_COLOR, {
+      const portal = futurePortal('future', {
         year: `${next.year}`,
       })
       portal.group.position.set(room.x, 0, room.z + room.depth / 2 - 0.05)
@@ -353,11 +352,11 @@ export function createWorld(deps: WorldDeps): World {
       group.add(portal.group)
       portalUpdates.push(portal.update)
     }
-    // portal de REGRESO en el muro de ENTRADA (-Z, si hay sala anterior):
-    // mira hacia adentro (+Z, sin rotar), azul celeste + año anterior arriba.
+    // fractura de REGRESO en el muro de ENTRADA (-Z, si hay sala anterior):
+    // mira hacia adentro (+Z, sin rotar), cian electrico + año anterior.
     const prev = rooms[index - 1]
     if (prev) {
-      const back = futurePortal(PORTAL_RETURN_COLOR, { year: `${prev.year}` })
+      const back = futurePortal('return', { year: `${prev.year}` })
       back.group.position.set(room.x, 0, room.z - room.depth / 2 + 0.05)
       group.add(back.group)
       portalUpdates.push(back.update)
@@ -845,7 +844,7 @@ export function createWorld(deps: WorldDeps): World {
     },
 
     update(t, dt) {
-      // portales (ida + regreso): energia + vortice girando (shells cacheados)
+      // portales (ida + regreso): rasgadura + esquirlas (shells cacheados)
       for (const portal of portalUpdates) {
         portal(t)
       }

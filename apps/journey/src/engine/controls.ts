@@ -542,7 +542,8 @@ export function createControls(deps: ControlsDeps): Controls {
       pos.z = state.playerSeat.z
       player.group.position.set(pos.x, 0, pos.z)
       player.group.rotation.y = state.playerSeat.rotationY
-      player.setPose('sit')
+      // 'typing' si la silla esta frente a una PC (teclea); si no, 'sit'
+      player.setPose(state.playerSeat.pose ?? 'sit')
     } else if (stand.left > 0) {
       // levantandose: pose StandUpDesk + interpola de la silla al costado.
       // El input WASD queda inhibido hasta que termina (movimiento suave).
@@ -574,7 +575,7 @@ export function createControls(deps: ControlsDeps): Controls {
           tourOffset -= dt
         }
         if (state.playerSeat) {
-          player.setPose('sit')
+          player.setPose(state.playerSeat.pose ?? 'sit')
         } else {
           player.setWalking(false)
         }

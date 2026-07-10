@@ -31,7 +31,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint, paperStack } from '../props'
+import { footprint, paperStack } from '../props'
+import { placeProp } from '../props-catalog'
 import {
   carryPapers,
   PAST_SCREEN,
@@ -200,14 +201,16 @@ export function ipasmePast(
     ),
   )
 
-  // escritorio de admision saturado: planillas, telefono descolgado y
+  // mostrador de admision saturado GLB: planillas, telefono descolgado y
   // la lista manuscrita de pendientes por buscar
-  const admision = desk({
-    position: [x - 0.4, 0, z + 2.0],
-    color: '#4c4740',
-    width: 1.5,
-  })
-  group.add(admision)
+  group.add(
+    placeProp('reception_counter', {
+      x: x - 0.4,
+      z: z + 2.0,
+      width: 1.5,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x - 0.4, z + 2.0, 1.6, 0.8))
   group.add(
     paperStack({ position: [x - 0.9, 0.745, z + 2.0], count: 12 }),

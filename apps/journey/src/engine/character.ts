@@ -488,6 +488,13 @@ export interface NpcOpts extends CharacterSpec {
    * (sit/kneel/typing/sitTalk) no giran el cuerpo al hablar (solo la cabeza).
    */
   pose?: Exclude<CharacterPose, 'idle' | 'walk'>
+  /**
+   * Si el NPC arranca sentado (typing/sit), al conversar SE LEVANTA
+   * (standUp -> gesticula de pie) y al terminar vuelve a sentarse en su pose
+   * original. Sin esto, un NPC sentado solo gira la cabeza. Opt-in por sala
+   * (el aula lo activa; pedido de Pablo).
+   */
+  standToTalk?: boolean
 }
 
 /** Poses en las que el NPC esta sentado (no gira el cuerpo, solo la cabeza). */
@@ -571,11 +578,19 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
   // hacia el jugador (cuerpo de pie / solo cabeza si esta sentado) y
   // saludo breve antes de gesticular
   const seated = opts.pose !== undefined && SEATED_POSES.has(opts.pose)
+  // standToTalk: un NPC sentado que, al conversar, se LEVANTA y gesticula de
+  // pie (pedido de Pablo, aula). Mientras dura la conversacion se comporta
+  // como NO-sentado (gira el cuerpo, saluda). standUpLeft cuenta la transicion
+  // del clip StandUpDesk antes de pasar a hablar.
+  const standToTalk = opts.standToTalk ?? false
+  let standUpLeft = 0
   let talking = false
   let faceYaw = opts.rotationY ?? 0
   let waveLeft = 0
   let jumpLeft = 0
   let walkTime = phase
+  /** ¿Funcionalmente sentado ahora? (seated salvo que este de pie hablando). */
+  const effSeated = (): boolean => seated && !(standToTalk && talking)
 
   // throttle de animacion: los NPCs de fondo (idle/sentados, sin hablar)
   // avanzan el mixer a ~22 fps (imperceptible en un idle lento, baja el CPU
@@ -586,9 +601,19 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
 
   const NPC_RADIUS = 0.26
 
-  /** Conversando: gira suave hacia el jugador y pasa de wave a talk. */
+  /** Conversando: gira suave hacia el jugador y pasa de wave/standUp a talk. */
   function updateTalking(dt: number): void {
-    if (seated) {
+    // levantandose (standToTalk): espera a que termine el clip StandUpDesk y
+    // recien ahi empieza a gesticular de pie.
+    if (standUpLeft > 0) {
+      standUpLeft = Math.max(0, standUpLeft - dt)
+      if (standUpLeft <= 0) {
+        character.setPose('talk')
+      } else {
+        return
+      }
+    }
+    if (effSeated()) {
       return
     }
     let delta = faceYaw - group.rotation.y
@@ -668,12 +693,14 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
     },
     talk(player) {
       talking = true
+      const willStand = standToTalk && seated // se levanta a hablar
       if (player) {
         faceYaw = Math.atan2(
           player.x - group.position.x,
           player.z - group.position.z,
         )
-        if (seated) {
+        if (seated && !willStand) {
+          // sentado sin levantarse: solo gira la cabeza al jugador
           let rel = faceYaw - group.rotation.y
           rel = Math.atan2(Math.sin(rel), Math.cos(rel))
           character.setHeadYaw(Math.min(Math.max(rel, -1.1), 1.1))
@@ -682,7 +709,12 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
       if (walking) {
         character.setWalking(false)
       }
-      if (!seated) {
+      if (willStand) {
+        // levantarse: clip StandUpDesk; updateTalking pasa a 'talk' al terminar
+        character.setHeadYaw(null)
+        character.setPose('standUp')
+        standUpLeft = 0.7
+      } else if (!seated) {
         character.setPose('wave')
         waveLeft = 0.9
       }
@@ -690,10 +722,12 @@ export function makeNpc(opts: NpcOpts): NpcHandle {
     endTalk() {
       talking = false
       waveLeft = 0
+      standUpLeft = 0
       character.setHeadYaw(null)
       if (walking) {
         character.setWalking(true)
       } else if (opts.pose) {
+        // vuelve a su pose original (los standToTalk se vuelven a sentar)
         character.setPose(opts.pose)
         group.rotation.y = opts.rotationY ?? 0
       } else {

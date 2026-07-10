@@ -68,6 +68,9 @@ export interface SeatTarget {
   x: number
   z: number
   rotationY: number
+  /** Pose del jugador sentado: 'sit' (default) o 'typing' (silla frente a
+   *  una PC — teclea al sentarse). Evita importar CharacterPose (ciclo). */
+  pose?: 'sit' | 'typing'
 }
 
 export interface EngineState {

@@ -29,7 +29,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint, paperStack } from '../props'
+import { footprint, paperStack } from '../props'
+import { placeProp } from '../props-catalog'
 import {
   carryPapers,
   PAST_SCREEN,
@@ -103,7 +104,10 @@ export function corpoelecPast(
   for (const [index, dx] of [-2.2, 0, 2.2].entries()) {
     const stack = paperStack({ position: [x + dx, 0.76, z - 0.6], count: 12 })
     stacks.push(stack)
-    group.add(desk({ position: [x + dx, 0, z - 0.6], color: '#4c4740' }), stack)
+    group.add(
+      placeProp('desk_office', { x: x + dx, z: z - 0.6, color: '#4c4740' }),
+      stack,
+    )
     colliders.push(footprint(x + dx, z - 0.6, 1.3, 0.8))
     // cada escritorio es "una sede": la misma planilla copiada tres veces
     const sede = label(sedeNames[index] ?? '', {
@@ -113,35 +117,44 @@ export function corpoelecPast(
     sede.position.set(x + dx, 1.35, z - 0.6)
     group.add(sede)
   }
-  const cabinet = boxMesh(0.6, 1.8, 0.5, toonMat('#5a5750'))
-  cabinet.position.set(x + 3.6, 0.9, z + 2.2)
-  group.add(cabinet)
+  // archivador estatico GLB sepia (el cuerpo; el cajon deslizante animado
+  // se agrega abajo por separado)
+  group.add(
+    placeProp('filing_cabinet', { x: x + 3.6, z: z + 2.2, color: '#5a5750' }),
+  )
   colliders.push(footprint(x + 3.6, z + 2.2, 0.7, 0.6))
 
-  // los MISMOS equipos que el presente guarda etiquetados en cajas,
-  // aqui regados por suelo y mesas sin orden ni etiqueta (1 lote sepia):
-  // walkie-talkies, radio base, telefono descolgado, laptop gruesa y la
-  // PC apagada polvorienta del rincon
+  // los MISMOS equipos que el presente guarda etiquetados en cajas, aqui
+  // regados por suelo y mesas sin orden ni etiqueta, como GLB sepia:
+  // radio, laptop, PC torre + monitor CRT. El telefono descolgado queda
+  // procedural (sin GLB).
   group.add(
+    placeProp('old_radio', {
+      x: x + 0.45,
+      y: 0.82,
+      z: z - 0.75,
+      color: '#4a453c',
+    }),
+    placeProp('laptop', { x: x + 1.5, z: z + 0.2, color: '#4a453c' }),
+    placeProp('computer_tower', { x: x - 3.4, z: z + 2.3, color: '#4a453c' }),
+    placeProp('crt_monitor', {
+      x: x - 3.35,
+      y: 0.55,
+      z: z + 2.3,
+      color: '#4a453c',
+    }),
+    // walkie tirado + telefono descolgado (sin GLB de telefono): procedural
     outlinedMergedBoxes(
       [
-        // walkie tirado en el piso + su antena
-        { w: 0.09, h: 0.06, d: 0.24, x: x - 1.1, y: 0.03, z: z + 1.4 },
-        { w: 0.14, h: 0.02, d: 0.02, x: x - 0.95, y: 0.02, z: z + 1.5 },
-        // radio base torcida sobre el escritorio central
-        { w: 0.3, h: 0.12, d: 0.22, x: x + 0.45, y: 0.82, z: z - 0.75 },
-        // telefono con el auricular descolgado al lado
         { w: 0.22, h: 0.08, d: 0.2, x: x - 2.6, y: 0.8, z: z - 0.4 },
         { w: 0.06, h: 0.05, d: 0.18, x: x - 2.38, y: 0.785, z: z - 0.32 },
-        // laptop gruesa cerrada en el piso, contra una pata
-        { w: 0.32, h: 0.06, d: 0.24, x: x + 1.5, y: 0.03, z: z + 0.2 },
-        // PC de escritorio apagada y polvorienta en el rincon + monitor
-        { w: 0.2, h: 0.52, d: 0.46, x: x - 3.4, y: 0.26, z: z + 2.3 },
-        { w: 0.34, h: 0.3, d: 0.36, x: x - 3.35, y: 0.67, z: z + 2.3 },
       ],
       toonMat('#4a453c'),
       { castShadow: true },
     ),
+  )
+  group.add(
+    placeProp('walkie_talkie', { x: x - 1.1, z: z + 1.4, color: '#4a453c' }),
   )
   colliders.push(footprint(x - 3.38, z + 2.3, 0.5, 0.6))
 

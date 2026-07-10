@@ -31,7 +31,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint, paperStack } from '../props'
+import { footprint, paperStack } from '../props'
+import { placeProp } from '../props-catalog'
 import {
   carryPapers,
   PAST_SCREEN,
@@ -123,31 +124,46 @@ export function dibalPast(
   const interactables: Interactable[] = []
   const updates: ((t: number, dt: number) => void)[] = []
 
-  // cocina contra el muro izquierdo: mesada sepia con ollas frias y el
+  // cocina GLB contra el muro izquierdo: mesada sepia con ollas frias y el
   // pase con DOS platos equivocados esperando a nadie
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 1.0, h: 0.9, d: 2.4, x: x - 3.3, y: 0.45, z: z - 0.6 },
-        { w: 0.9, h: 0.5, d: 1.4, x: x - 3.3, y: 2.3, z: z - 0.7 },
-        // el pase: mesa angosta hacia el salon
-        { w: 0.7, h: 0.86, d: 1.6, x: x - 2.4, y: 0.43, z: z - 0.6 },
-      ],
-      toonMat('#6a5f4e'),
-      { castShadow: true },
-    ),
-    mergedBoxes(
-      [
-        { w: 0.36, h: 0.22, d: 0.36, x: x - 3.3, y: 1.0, z: z - 1.2 },
-        { w: 0.3, h: 0.18, d: 0.3, x: x - 3.3, y: 0.98, z: z - 0.2 },
-        // los dos platos equivocados en el pase
-        { w: 0.24, h: 0.04, d: 0.24, x: x - 2.4, y: 0.88, z: z - 1.0 },
-        { w: 0.24, h: 0.04, d: 0.24, x: x - 2.4, y: 0.88, z: z - 0.3 },
-        { w: 0.14, h: 0.07, d: 0.14, x: x - 2.4, y: 0.92, z: z - 1.0 },
-        { w: 0.14, h: 0.07, d: 0.14, x: x - 2.4, y: 0.92, z: z - 0.3 },
-      ],
-      toonMat('#4c4740'),
-    ),
+    // mesada + campana GLB sepia
+    placeProp('kitchen_counter', {
+      x: x - 3.3,
+      z: z - 0.6,
+      width: 2.4,
+      color: '#6a5f4e',
+    }),
+    placeProp('range_hood', {
+      x: x - 3.3,
+      y: 2.3,
+      z: z - 0.7,
+      width: 1.4,
+      color: '#6a5f4e',
+    }),
+    // el pase: mesa angosta hacia el salon
+    placeProp('kitchen_counter', {
+      x: x - 2.4,
+      z: z - 0.6,
+      width: 1.6,
+      color: '#6a5f4e',
+    }),
+    // ollas frias GLB
+    placeProp('cooking_pot', {
+      x: x - 3.3,
+      y: 0.9,
+      z: z - 1.2,
+      color: '#4c4740',
+    }),
+    placeProp('cooking_pot', {
+      x: x - 3.3,
+      y: 0.9,
+      z: z - 0.2,
+      color: '#4c4740',
+    }),
+    // los dos platos equivocados GLB en el pase
+    placeProp('plate', { x: x - 2.4, y: 0.86, z: z - 1.0, color: '#4c4740' }),
+    placeProp('plate', { x: x - 2.4, y: 0.86, z: z - 0.3, color: '#4c4740' }),
   )
   colliders.push(
     footprint(x - 3.3, z - 0.6, 1.2, 2.6),
@@ -222,14 +238,16 @@ export function dibalPast(
     colliders.push(footprint(mx, mz, 1.15, 1.15))
   }
 
-  // caja del talonario: boletas a mano, papel carbon, calculadora
+  // caja del talonario GLB: boletas a mano, papel carbon, calculadora
   // vieja y el post-it del cajon descuadrado
-  const caja = desk({
-    position: [x + 1.6, 0, z - 1.2],
-    color: '#4c4740',
-    width: 1.5,
-  })
-  group.add(caja)
+  group.add(
+    placeProp('reception_counter', {
+      x: x + 1.6,
+      z: z - 1.2,
+      width: 1.5,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x + 1.6, z - 1.2, 1.6, 0.8))
   group.add(
     paperStack({ position: [x + 1.15, 0.745, z - 1.2], count: 10 }),

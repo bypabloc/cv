@@ -33,7 +33,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint, paperStack } from '../props'
+import { footprint, paperStack } from '../props'
+import { placeProp } from '../props-catalog'
 import {
   carryPapers,
   PAST_SCREEN,
@@ -186,14 +187,16 @@ export function iaiPast(
   const interactables: Interactable[] = []
   const updates: ((t: number, dt: number) => void)[] = []
 
-  // meson tecnico saturado: planos enrollados, calculadora, escalimetro
+  // meson tecnico saturado GLB: planos enrollados, calculadora, escalimetro
   // y hojas de computos metricos a medio tachar
-  const meson = desk({
-    position: [x - 1.6, 0, z - 0.8],
-    color: '#4c4740',
-    width: 2.2,
-  })
-  group.add(meson)
+  group.add(
+    placeProp('work_table', {
+      x: x - 1.6,
+      z: z - 0.8,
+      width: 2.2,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x - 1.6, z - 0.8, 2.3, 0.9))
   group.add(
     paperStack({ position: [x - 2.3, 0.745, z - 0.9], count: 11 }),
@@ -254,14 +257,16 @@ export function iaiPast(
     group.add(print)
   }
 
-  // escritorio de la unica PC vieja compartida (Excel abierto) +
+  // escritorio GLB de la unica PC vieja compartida (Excel abierto) +
   // telefono descolgado: el instituto pidiendo el consolidado
-  const pcDesk = desk({
-    position: [x - 0.2, 0, z + 2.0],
-    color: '#4c4740',
-    width: 1.5,
-  })
-  group.add(pcDesk)
+  group.add(
+    placeProp('desk_office', {
+      x: x - 0.2,
+      z: z + 2.0,
+      width: 1.5,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x - 0.2, z + 2.0, 1.6, 0.8))
   const pcScreen = screenPanel({
     title: 'presupuesto_v6_FINAL.xls',

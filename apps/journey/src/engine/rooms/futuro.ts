@@ -33,7 +33,6 @@ import {
   outlineGroup,
   toonMat,
   toonMatOwn,
-  unitGeo,
 } from '../toon'
 import type { RoomBuild, RoomCtx } from '../world'
 import {
@@ -45,6 +44,7 @@ import {
   type PropHandle,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const CONTACT_LABEL = {
   es: 'Contactar a Pablo',
@@ -498,7 +498,6 @@ export default function buildFuturo(ctx: RoomCtx): RoomBuild {
   const backZ = room.z - room.depth / 2
   const frontZ = room.z + room.depth / 2
   const locale: Locale = state.locale
-  const units = unitGeo()
   const screenTheme = {
     screenBg: theme.screenBg,
     screenFg: theme.screenFg,
@@ -544,9 +543,8 @@ export default function buildFuturo(ctx: RoomCtx): RoomBuild {
   // el eje de la sala, delante de la puerta — el objetivo de negocio
   const beacon = new Group()
   beacon.position.set(0, 0, room.z + 3.0)
-  const pedestal = new Mesh(units.cylinder, toonMat(PANEL_INK))
-  pedestal.scale.set(0.62, 1, 0.62)
-  pedestal.position.y = 0.5
+  // pedestal GLB CC0 (podio) — el holograma violeta de contacto flota encima
+  beacon.add(placeProp('pedestal', { x: 0, z: 0, width: 0.72 }))
   const holoMat = toonMatOwn(FUT_VIOLET, {
     emissive: '#8a9aff',
     emissiveIntensity: 0.9,
@@ -556,7 +554,7 @@ export default function buildFuturo(ctx: RoomCtx): RoomBuild {
   const holo = new Mesh(new OctahedronGeometry(0.24, 0), holoMat)
   holo.position.y = 1.35
   holo.rotation.y = 0.6
-  beacon.add(pedestal, holo)
+  beacon.add(holo)
   group.add(beacon)
   staticColliders.push(footprint(0, room.z + 3.0, 0.8, 0.8))
   interactables.push({

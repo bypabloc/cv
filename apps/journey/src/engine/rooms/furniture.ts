@@ -71,6 +71,8 @@ export interface FurnitureOpts {
   url: string
   x: number
   z: number
+  /** Altura del grupo (default 0 = piso). Para props sobre un mueble. */
+  y?: number
   rotationY?: number
   /** Ancho objetivo (unidades de mundo): auto-escala desde el bounding box. */
   targetWidth?: number
@@ -90,7 +92,7 @@ export interface FurnitureOpts {
  */
 export function placeFurniture(opts: FurnitureOpts): Group {
   const group = new Group()
-  group.position.set(opts.x, 0, opts.z)
+  group.position.set(opts.x, opts.y ?? 0, opts.z)
   group.rotation.y = opts.rotationY ?? 0
 
   loadFurnitureModel(opts.url)

@@ -36,6 +36,7 @@ import { createHud } from './hud'
 import { configureLoaders } from './loaders'
 import { createEngineState, type EngineState, type EngineTier } from './state'
 import { configureToon, disposeDeep, disposeToonPool } from './toon'
+import { createWarpTunnel } from './warp'
 import { createWorld } from './world'
 
 export interface JourneyHandle {
@@ -209,6 +210,14 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     onTourStop: () => hud.setTour(false),
   })
 
+  // tunel de cruce dimensional (~2 s, overlay WebGL de warp.ts): solo tier
+  // full y sin prefers-reduced-motion; si no, cae al fade DOM del HUD
+  const reducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches
+  const tunnel =
+    tier === 'full' && !reducedMotion ? createWarpTunnel(renderer) : null
+
   const world = createWorld({
     scene,
     renderer,
@@ -217,7 +226,10 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     layout,
     pastRooms,
     state,
-    fade: (on, style) => hud.fade(on, style),
+    fade: (on, style) =>
+      tunnel && (style === 'warp' || style === 'dream')
+        ? tunnel.fade(on, style)
+        : hud.fade(on, style),
     setPastMode: (on) => hud.setPastMode(on),
     ui: {
       openFicha: (roomIndex, kind) => hud.openFicha(roomIndex, kind),
@@ -326,6 +338,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
     }
     sfx.update(dt)
     renderer.render(scene, camera)
+    tunnel?.render()
     if (dt > 0) {
       degrade(dt)
     }
@@ -376,6 +389,7 @@ export async function startJourney(opts: StartOptions): Promise<JourneyHandle> {
       sfx.dispose()
       controls.dispose()
       world.dispose()
+      tunnel?.dispose()
       hud.dispose()
       scene.remove(player.group)
       player.dispose()

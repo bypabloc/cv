@@ -55,6 +55,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const COMANDA_LABEL = {
   es: 'Enviar una comanda',
@@ -1224,40 +1225,60 @@ export default function buildDibal(ctx: RoomCtx): RoomBuild {
   )
 
   // COCINA (muro -X, fondo): mesada corrida con hornillas, ollas y la
-  // campana — la mitad que recibe las comandas
+  // campana — la mitad que recibe las comandas. Mesada, hornillas, campana
+  // y ollas como GLB CC0; el soporte del KDS queda procedural.
   group.add(
+    // mesada de cocina GLB
+    placeProp('kitchen_counter', {
+      x: -half + 0.75,
+      z: room.z - 4.2,
+      rotationY: Math.PI / 2,
+      width: 2.8,
+      color: STEEL_KITCHEN,
+    }),
+    // campana extractora GLB colgada
+    placeProp('range_hood', {
+      x: -half + 0.75,
+      y: 2.35,
+      z: room.z - 4.5,
+      rotationY: Math.PI / 2,
+      width: 1.6,
+      color: STEEL_KITCHEN,
+    }),
+    // hornillas GLB sobre la mesada
+    placeProp('stove', {
+      x: -half + 0.75,
+      y: 0.9,
+      z: room.z - 4.9,
+      width: 0.6,
+    }),
+    placeProp('stove', {
+      x: -half + 0.75,
+      y: 0.9,
+      z: room.z - 4.1,
+      width: 0.6,
+    }),
+    // ollas GLB humeantes sobre las hornillas
+    placeProp('cooking_pot', { x: -half + 0.75, y: 0.96, z: room.z - 4.9 }),
+    placeProp('cooking_pot', {
+      x: -half + 0.75,
+      y: 0.96,
+      z: room.z - 4.1,
+      width: 0.26,
+    }),
+    // soporte del KDS sobre el pase (procedural)
     outlinedMergedBoxes(
-      [
-        // mesada en L + cuerpo bajo
-        { w: 1.1, h: 0.9, d: 2.8, x: -half + 0.75, y: 0.45, z: room.z - 4.2 },
-        // hornillas sobre la mesada
-        {
-          w: 0.6,
-          h: 0.06,
-          d: 0.6,
-          x: -half + 0.75,
-          y: 0.93,
-          z: room.z - 4.9,
-        },
-        { w: 0.6, h: 0.06, d: 0.6, x: -half + 0.75, y: 0.93, z: room.z - 4.1 },
-        // campana extractora colgada
-        { w: 1.0, h: 0.5, d: 1.6, x: -half + 0.75, y: 2.35, z: room.z - 4.5 },
-        // soporte del KDS sobre el pase
-        { w: 0.08, h: 0.5, d: 0.08, x: -half + 1.4, y: 2.0, z: room.z - 3.0 },
-      ],
+      [{ w: 0.08, h: 0.5, d: 0.08, x: -half + 1.4, y: 2.0, z: room.z - 3.0 }],
       toonMat(STEEL_KITCHEN),
       { castShadow: true },
     ),
-    // ollas humeantes sobre las hornillas
-    mergedBoxes(
-      [
-        { w: 0.4, h: 0.26, d: 0.4, x: -half + 0.75, y: 1.1, z: room.z - 4.9 },
-        { w: 0.32, h: 0.2, d: 0.32, x: -half + 0.75, y: 1.06, z: room.z - 4.1 },
-      ],
-      toonMat('#3a4048'),
-    ),
   )
   staticColliders.push(footprint(-half + 0.75, room.z - 4.2, 1.3, 3.0))
+  // props decorativos: planta del salon + tacho de la cocina
+  group.add(
+    placeProp('potted_plant', { x: half - 0.6, z: frontZ - 0.6, width: 0.5 }),
+    placeProp('trash_can', { x: -half + 0.5, z: room.z - 2.6, width: 0.36 }),
+  )
   const cocinaLabel = label(locale === 'es' ? 'COCINA' : 'KITCHEN', {
     size: 0.14,
     color: theme.accent,

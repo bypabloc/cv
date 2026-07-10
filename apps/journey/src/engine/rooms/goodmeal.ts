@@ -55,6 +55,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const BAG_LABEL = {
   es: 'Empacar una Good Bag',
@@ -1199,42 +1200,45 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
       ],
       toonMat('#e8e2d0'),
     ),
-    // donas glaseadas
-    mergedBoxes(
-      [
-        { w: 0.16, h: 0.08, d: 0.16, x: -half + 0.6, y: 1.02, z: room.z - 4.7 },
-        { w: 0.16, h: 0.08, d: 0.16, x: -half + 0.9, y: 1.02, z: room.z - 4.5 },
-      ],
-      toonMat(DONA_PINK),
-    ),
-    // panes
-    mergedBoxes(
-      [
-        { w: 0.2, h: 0.1, d: 0.14, x: -half + 0.6, y: 1.03, z: room.z - 3.7 },
-        { w: 0.2, h: 0.1, d: 0.14, x: -half + 0.92, y: 1.03, z: room.z - 3.5 },
-      ],
-      toonMat(PAN_BROWN),
-    ),
-    // porciones de pizza
-    mergedBoxes(
-      [
-        {
-          w: 0.2,
-          h: 0.06,
-          d: 0.18,
-          x: -half + 0.72,
-          y: 1.01,
-          z: room.z - 2.75,
-          rotY: 0.5,
-        },
-      ],
-      toonMat(PIZZA_AMBER),
-    ),
-    // tarro de propinas junto a la caja
+    // tarro de propinas junto a la caja (procedural)
     mergedBoxes(
       [{ w: 0.12, h: 0.16, d: 0.12, x: -half + 1.1, y: 1.0, z: room.z - 1.95 }],
       toonMat('#dce8e4'),
     ),
+  )
+  // productos de panaderia como GLB CC0 apetitosos dentro de la vitrina
+  group.add(
+    placeProp('donut', {
+      x: -half + 0.6,
+      y: 0.98,
+      z: room.z - 4.7,
+      width: 0.16,
+    }),
+    placeProp('donut', {
+      x: -half + 0.9,
+      y: 0.98,
+      z: room.z - 4.5,
+      width: 0.16,
+    }),
+    placeProp('bread', {
+      x: -half + 0.6,
+      y: 0.98,
+      z: room.z - 3.7,
+      width: 0.2,
+    }),
+    placeProp('bread', {
+      x: -half + 0.92,
+      y: 0.98,
+      z: room.z - 3.5,
+      width: 0.2,
+    }),
+    placeProp('pizza', {
+      x: -half + 0.72,
+      y: 0.98,
+      z: room.z - 2.75,
+      rotationY: 0.5,
+      width: 0.24,
+    }),
   )
   staticColliders.push(footprint(-half + 0.75, room.z - 3.6, 1.3, 3.2))
   const cafeLabel = label(locale === 'es' ? 'CAFETERIA' : 'CAFE', {
@@ -1419,25 +1423,12 @@ export default function buildGoodmeal(ctx: RoomCtx): RoomBuild {
   interactables.push(comprar.interactable)
   updates.push(comprar.update)
 
-  // plantas y brotes en maceta: el motivo eco de la marca
+  // plantas GLB CC0 en maceta: el motivo eco de la marca
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 0.3, h: 0.3, d: 0.3, x: 3.2, y: 0.15, z: room.z + 2.4 },
-        { w: 0.3, h: 0.3, d: 0.3, x: -2.6, y: 0.15, z: room.z + 4.2 },
-      ],
-      toonMat('#b06a4a'),
-      { castShadow: true },
-    ),
-    mergedBoxes(
-      [
-        { w: 0.34, h: 0.4, d: 0.34, x: 3.2, y: 0.55, z: room.z + 2.4 },
-        { w: 0.2, h: 0.28, d: 0.2, x: 3.2, y: 0.9, z: room.z + 2.4 },
-        { w: 0.34, h: 0.4, d: 0.34, x: -2.6, y: 0.55, z: room.z + 4.2 },
-        { w: 0.2, h: 0.28, d: 0.2, x: -2.6, y: 0.9, z: room.z + 4.2 },
-      ],
-      toonMat(LEAF),
-    ),
+    placeProp('potted_plant', { x: 3.2, z: room.z + 2.4, width: 0.6 }),
+    placeProp('potted_plant', { x: -2.6, z: room.z + 4.2, width: 0.6 }),
+    // planta eco extra en el rincon dev
+    placeProp('potted_plant', { x: -half + 0.4, z: room.z + 3.0, width: 0.5 }),
   )
   staticColliders.push(
     footprint(3.2, room.z + 2.4, 0.45, 0.45),

@@ -57,6 +57,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const RECALC_LABEL = {
   es: 'Recalcular el presupuesto',
@@ -1134,35 +1135,36 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
     led.visible = Math.sin(t * 6) > -0.2
   })
 
-  // meson de planos (centro-frente izquierda): rollos + plano desplegado
-  // con pesas — donde el Ing. Gregorio revisa antes de salir a obra
+  // meson de planos (centro-frente izquierda): mesa de trabajo GLB + rollos
+  // GLB + plano desplegado con pesas — donde el Ing. Gregorio revisa antes
+  // de salir a obra
   const mesonX = -3.6
   const mesonZ = room.z + 1.2
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 2.2, h: 0.06, d: 1.2, x: mesonX, y: 0.86, z: mesonZ },
-        { w: 0.08, h: 0.86, d: 1.1, x: mesonX - 1, y: 0.43, z: mesonZ },
-        { w: 0.08, h: 0.86, d: 1.1, x: mesonX + 1, y: 0.43, z: mesonZ },
-      ],
-      toonMat('#7a6a52'),
-      { castShadow: true },
-    ),
+    placeProp('work_table', {
+      x: mesonX,
+      z: mesonZ,
+      width: 2.2,
+      color: '#7a6a52',
+    }),
   )
   staticColliders.push(footprint(mesonX, mesonZ, 2.4, 1.4))
   const units = unitGeo()
-  // rollos de planos (cilindros acostados) + pesas sobre el desplegado
+  // rollos de planos GLB acostados sobre el meson
   for (const [dx, dz, rot] of [
     [-0.6, -0.35, 0.2],
     [-0.75, -0.1, -0.15],
     [0.8, -0.4, 0.35],
   ] as const) {
-    const rollo = new Mesh(units.cylinder, toonMat('#e8dfc8'))
-    rollo.scale.set(0.05, 0.9, 0.05)
-    rollo.rotation.z = Math.PI / 2
-    rollo.rotation.y = rot
-    rollo.position.set(mesonX + dx, 0.94, mesonZ + dz)
-    group.add(rollo)
+    group.add(
+      placeProp('blueprint_roll', {
+        x: mesonX + dx,
+        y: 0.86,
+        z: mesonZ + dz,
+        rotationY: rot,
+        width: 0.5,
+      }),
+    )
   }
   const desplegado = new Mesh(
     new PlaneGeometry(1.1, 0.78),
@@ -1197,23 +1199,15 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
     ),
   )
 
-  // planoteca (muro -X, fondo): mueble de cajones anchos para planos
+  // planoteca (muro -X, fondo): mueble GLB de cajones anchos para planos
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 0.7, h: 0.95, d: 1.5, x: -half + 0.55, y: 0.475, z: room.z - 3.6 },
-        ...[0.18, 0.42, 0.66].map((y) => ({
-          w: 0.06,
-          h: 0.14,
-          d: 1.3,
-          x: -half + 0.88,
-          y,
-          z: room.z - 3.6,
-        })),
-      ],
-      toonMat('#8a8270'),
-      { castShadow: true },
-    ),
+    placeProp('flat_file_cabinet', {
+      x: -half + 0.55,
+      z: room.z - 3.6,
+      rotationY: Math.PI / 2,
+      width: 1.5,
+      color: '#8a8270',
+    }),
   )
   staticColliders.push(footprint(-half + 0.55, room.z - 3.6, 0.9, 1.7))
 
@@ -1458,23 +1452,14 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
     group.add(casco)
   }
   staticColliders.push(footprint(perchX, perchZ, 0.4, 0.4))
+  // conos de obra GLB CC0 (2 en el rincon de la entrada)
   group.add(
-    outlinedMergedBoxes(
-      [-half + 0.8, -half + 1.25].flatMap((cx, i) => [
-        {
-          w: 0.34,
-          h: 0.05,
-          d: 0.34,
-          x: cx,
-          y: 0.025,
-          z: frontZ - 0.8 + i * 0.15,
-        },
-        { w: 0.2, h: 0.2, d: 0.2, x: cx, y: 0.15, z: frontZ - 0.8 + i * 0.15 },
-        { w: 0.1, h: 0.18, d: 0.1, x: cx, y: 0.34, z: frontZ - 0.8 + i * 0.15 },
-      ]),
-      toonMat('#e2732b'),
-      { castShadow: true },
-    ),
+    placeProp('traffic_cone', { x: -half + 0.8, z: frontZ - 0.8, width: 0.3 }),
+    placeProp('traffic_cone', {
+      x: -half + 1.25,
+      z: frontZ - 0.65,
+      width: 0.3,
+    }),
   )
   staticColliders.push(footprint(-half + 1, frontZ - 0.75, 0.9, 0.6))
 
@@ -1507,6 +1492,12 @@ export default function buildIai(ctx: RoomCtx): RoomBuild {
     fanHead.rotation.y = Math.sin(t * 0.7) * 0.6
     blades.rotation.z += dt * 14
   })
+  // props decorativos: planta del rincon + cono extra suelto (oficina de
+  // obra real, no vacia)
+  group.add(
+    placeProp('potted_plant', { x: half - 0.6, z: frontZ - 1.2, width: 0.5 }),
+    placeProp('traffic_cone', { x: half - 0.9, z: room.z + 2.8, width: 0.3 }),
+  )
 
   // cuadros de rubro (wallArt): valla institucional y diagrama de red
   // inspeccionables al fondo; APU inspeccionable y plano decorativo

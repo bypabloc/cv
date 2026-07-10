@@ -34,7 +34,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint, paperStack } from '../props'
+import { footprint, paperStack } from '../props'
+import { placeProp } from '../props-catalog'
 import { PAST_SCREEN, PAST_STORY_LABEL, type PastSet } from './shared'
 
 const ASESORIA_STORY: Record<Locale, { title: string; paragraphs: string[] }> =
@@ -278,13 +279,15 @@ export function asesoriaPast(
     footprint(x - 3.6, z + 2.6, 2.6, 0.6),
   )
 
-  // mostrador de admision saturado: el pincho de papelitos + planillas
-  const mostrador = desk({
-    position: [x + 0.6, 0, z + 2.0],
-    color: '#4c4740',
-    width: 1.5,
-  })
-  group.add(mostrador)
+  // mostrador de admision saturado GLB: el pincho de papelitos + planillas
+  group.add(
+    placeProp('reception_counter', {
+      x: x + 0.6,
+      z: z + 2.0,
+      width: 1.5,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x + 0.6, z + 2.0, 1.6, 0.8))
   group.add(
     // pincho: base + aguja + papelitos ensartados
@@ -368,13 +371,15 @@ export function asesoriaPast(
     ),
   )
   colliders.push(footprint(x + 3.6, z - 0.6, 0.7, 1.8))
-  const cuadernoDesk = desk({
-    position: [x + 2.6, 0, z + 0.9],
-    rotationY: -Math.PI / 2,
-    width: 0.9,
-    color: '#4c4740',
-  })
-  group.add(cuadernoDesk)
+  group.add(
+    placeProp('desk_office', {
+      x: x + 2.6,
+      z: z + 0.9,
+      rotationY: -Math.PI / 2,
+      width: 0.9,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x + 2.6, z + 0.9, 0.7, 1.0))
   // el cuaderno abierto (dos paginas) con lineas de tachones
   group.add(
@@ -452,14 +457,16 @@ export function asesoriaPast(
     hand.rotation.z = -t * 0.52
   })
 
-  // ZONA TESIS (fondo): la mesa de los tesistas con el stack trace, la
+  // ZONA TESIS (fondo): la mesa GLB de los tesistas con el stack trace, la
   // pila de intentos fallidos y las tazas de cafe
-  const mesaTesis = desk({
-    position: [x - 2.6, 0, z - 1.6],
-    color: '#4c4740',
-    width: 1.6,
-  })
-  group.add(mesaTesis)
+  group.add(
+    placeProp('desk_office', {
+      x: x - 2.6,
+      z: z - 1.6,
+      width: 1.6,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x - 2.6, z - 1.6, 1.7, 0.8))
   // laptop 2015 con el error fatal en pantalla (rojo sobre sepia)
   const errorPanel = screenPanel({

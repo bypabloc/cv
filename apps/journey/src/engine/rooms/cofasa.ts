@@ -54,6 +54,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const ANDON_LABEL = {
   es: 'Simular una parada',
@@ -1112,21 +1113,26 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
     }
   })
 
-  // mesa QC (+X, fondo): frascos, ampollas de muestra e instrumental
+  // mesa QC (+X, fondo): mesa de lab GLB + lupa GLB + frascos e ampollas
+  // de muestra (GLB vial)
   group.add(
-    desk({
-      position: [half - 1.5, 0, room.z - 4.6],
+    placeProp('lab_table', {
+      x: half - 1.5,
+      z: room.z - 4.6,
       rotationY: Math.PI / 2,
       width: 1.5,
       color: '#4a5560',
     }),
-    outlinedMergedBoxes(
+    // lupa de inspeccion GLB sobre la mesa
+    placeProp('magnifying_lamp', {
+      x: half - 1.4,
+      y: 0.75,
+      z: room.z - 4.9,
+      width: 0.3,
+    }),
+    // frascos de reactivos (procedural, prop menor)
+    mergedBoxes(
       [
-        // lupa de inspeccion: base + brazo + aro
-        { w: 0.12, h: 0.05, d: 0.12, x: half - 1.4, y: 0.77, z: room.z - 4.9 },
-        { w: 0.04, h: 0.3, d: 0.04, x: half - 1.4, y: 0.94, z: room.z - 4.9 },
-        { w: 0.2, h: 0.2, d: 0.03, x: half - 1.4, y: 1.14, z: room.z - 4.86 },
-        // frascos de reactivos
         { w: 0.1, h: 0.2, d: 0.1, x: half - 1.7, y: 0.85, z: room.z - 4.35 },
         {
           w: 0.08,
@@ -1138,20 +1144,26 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
         },
       ],
       toonMat('#c8ccd2'),
-      { castShadow: true },
     ),
-    // gradilla con ampollas de muestra
-    mergedBoxes(
-      Array.from({ length: 5 }, (_, i) => ({
-        w: 0.06,
-        h: 0.14,
-        d: 0.06,
-        x: half - 1.32,
-        y: 0.83,
-        z: room.z - 4.6 + (i - 2) * 0.1,
-      })),
-      toonMat(AMBER),
-    ),
+    // ampollas de muestra QC (GLB vial ambar)
+    placeProp('vial', {
+      x: half - 1.32,
+      y: 0.76,
+      z: room.z - 4.7,
+      width: 0.09,
+    }),
+    placeProp('vial', {
+      x: half - 1.32,
+      y: 0.76,
+      z: room.z - 4.6,
+      width: 0.09,
+    }),
+    placeProp('vial', {
+      x: half - 1.32,
+      y: 0.76,
+      z: room.z - 4.5,
+      width: 0.09,
+    }),
   )
   staticColliders.push(footprint(half - 1.5, room.z - 4.6, 0.9, 1.6))
   const qcLabel = label(
@@ -1162,34 +1174,29 @@ export default function buildCofasa(ctx: RoomCtx): RoomBuild {
   qcLabel.rotation.y = -Math.PI / 2
   group.add(qcLabel)
 
-  // estanteria de registros de lote (+X, medio): carpetas blancas con
-  // lomo azul — la documentacion cGMP de cada lote
+  // estanteria de registros de lote (+X, medio): estanteria GLB + carpetas
+  // GLB (binder) — la documentacion cGMP de cada lote
   const shelfX = half - 0.55
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 0.5, h: 0.04, d: 1.7, x: shelfX, y: 0.6, z: room.z - 2.0 },
-        { w: 0.5, h: 0.04, d: 1.7, x: shelfX, y: 1.15, z: room.z - 2.0 },
-        { w: 0.5, h: 0.04, d: 1.7, x: shelfX, y: 1.7, z: room.z - 2.0 },
-        { w: 0.5, h: 1.72, d: 0.05, x: shelfX, y: 0.86, z: room.z - 2.87 },
-        { w: 0.5, h: 1.72, d: 0.05, x: shelfX, y: 0.86, z: room.z - 1.13 },
-      ],
-      toonMat('#c8ccd2'),
-      { castShadow: true },
-    ),
-    mergedBoxes(
-      Array.from({ length: 10 }, (_, i) => ({
-        w: 0.3,
-        h: 0.3,
-        d: 0.09,
-        x: shelfX,
-        y: (i < 5 ? 0.62 : 1.17) + 0.15,
-        z: room.z - 2.72 + (i % 5) * 0.34,
-      })),
-      toonMat('#e8e6e0'),
-    ),
+    placeProp('shelf', {
+      x: shelfX,
+      z: room.z - 2.0,
+      rotationY: Math.PI / 2,
+      width: 1.7,
+      color: '#c8ccd2',
+    }),
+    // carpetas cGMP GLB en las baldas
+    placeProp('binder', { x: shelfX, y: 0.64, z: room.z - 2.4, width: 0.3 }),
+    placeProp('binder', { x: shelfX, y: 0.64, z: room.z - 1.7, width: 0.3 }),
+    placeProp('binder', { x: shelfX, y: 1.19, z: room.z - 2.4, width: 0.3 }),
+    placeProp('binder', { x: shelfX, y: 1.19, z: room.z - 1.7, width: 0.3 }),
   )
   staticColliders.push(footprint(shelfX, room.z - 2.0, 0.7, 1.9))
+  // props decorativos: planta del rincon (sala limpia) + caja de embalaje
+  group.add(
+    placeProp('potted_plant', { x: half - 0.6, z: frontZ - 0.6, width: 0.5 }),
+    placeProp('cardboard_box', { x: -half + 1.0, z: room.z + 2.2, width: 0.5 }),
+  )
   const lotesLabel = label(
     locale === 'es' ? 'REGISTROS DE LOTE' : 'BATCH RECORDS',
     { size: 0.13, color: theme.accent },

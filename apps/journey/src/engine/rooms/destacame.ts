@@ -60,6 +60,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const DEUDA_LABEL = {
   es: 'Pagar la deuda (WebPay)',
@@ -131,7 +132,6 @@ const SANT_RED = '#ea1d25'
 const SCOTIA_RED = '#ec111a'
 const OK_GREEN = '#22c55e'
 const MORA_CORAL = '#ef4444'
-const COIN_GOLD = '#d9a92b'
 const PANEL_INK = '#10182b'
 // mobiliario CC0 (Kenney Furniture Kit, ver public/models/CREDITS.md)
 const DESK_URL = '/models/furniture/desk.glb'
@@ -1401,12 +1401,16 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
 
   // props firma del Area A: la tarjeta bancaria sobre el kiosco, el
   // sello WebPay y la pila de monedas del pago que por fin sale
-  const tarjeta = boxMesh(0.6, 0.05, 0.4, toonMat('#1a2e5a'))
-  tarjeta.position.set(-half + 1.3, 0.81, room.z - 1.9)
-  tarjeta.rotation.y = 0.45
-  // C15: tarjeta plana y oscura — el hull no aporta trazo visible
-  tarjeta.userData.noOutline = true
-  group.add(tarjeta)
+  // tarjeta bancaria GLB CC0 apoyada sobre el kiosco (co-branded)
+  group.add(
+    placeProp('credit_card', {
+      x: -half + 1.3,
+      y: 0.79,
+      z: room.z - 1.9,
+      rotationY: 0.45,
+      width: 0.5,
+    }),
+  )
   // sello WebPay: PANEL_INK casi negro — sin hull (C15, trazo invisible)
   const selloWebpay = mergedBoxes(
     [
@@ -1418,26 +1422,11 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   )
   selloWebpay.castShadow = true
   selloWebpay.userData.noOutline = true
+  group.add(selloWebpay)
+  // monedas apiladas (el pago recuperado): pila de monedas GLB CC0
   group.add(
-    selloWebpay,
-    // monedas apiladas (el pago recuperado)
-    mergedBoxes(
-      [
-        { w: 0.22, h: 0.05, d: 0.22, x: -half + 0.6, y: 0.03, z: room.z - 4.3 },
-        { w: 0.22, h: 0.05, d: 0.22, x: -half + 0.6, y: 0.08, z: room.z - 4.3 },
-        {
-          w: 0.22,
-          h: 0.05,
-          d: 0.22,
-          x: -half + 0.62,
-          y: 0.13,
-          z: room.z - 4.28,
-        },
-        { w: 0.22, h: 0.05, d: 0.22, x: -half + 0.9, y: 0.03, z: room.z - 4.1 },
-        { w: 0.22, h: 0.05, d: 0.22, x: -half + 0.9, y: 0.08, z: room.z - 4.1 },
-      ],
-      toonMat(COIN_GOLD),
-    ),
+    placeProp('coin', { x: -half + 0.6, z: room.z - 4.3, width: 0.34 }),
+    placeProp('coin', { x: -half + 0.9, z: room.z - 4.1, width: 0.28 }),
   )
   const webpayLabel = label('WebPay', { size: 0.1, color: '#e8eef8' })
   webpayLabel.position.set(-half + 0.5, 1.55, room.z - 1.53)
@@ -1740,11 +1729,8 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   // la cima de la carrera, al centro del muro del fondo
   const beacon = new Group()
   beacon.position.set(0, 0, room.z + 4.9)
-  const pedestal = new Mesh(units.cylinder, toonMat('#141a26'))
-  pedestal.scale.set(0.62, 1, 0.62)
-  pedestal.position.y = 0.5
-  // C15: cilindro casi negro — el holo encima es el foco, sin hull
-  pedestal.userData.noOutline = true
+  // pedestal GLB CC0 (podio) — el holograma azul flota encima
+  beacon.add(placeProp('pedestal', { x: 0, z: 0, width: 0.72 }))
   const holoMat = toonMatOwn(DTC_BLUE, {
     emissive: '#5aa2ff',
     emissiveIntensity: 0.9,
@@ -1754,9 +1740,16 @@ export default function buildDestacame(ctx: RoomCtx): RoomBuild {
   const holo = new Mesh(new OctahedronGeometry(0.24, 0), holoMat)
   holo.position.y = 1.35
   holo.rotation.y = 0.6
-  beacon.add(pedestal, holo)
+  beacon.add(holo)
   group.add(beacon)
   staticColliders.push(footprint(0, room.z + 4.9, 0.8, 0.8))
+  // props decorativos: plantas eco flanqueando el beacon + taza en el
+  // rincon dev (oficina moderna real, no vacia)
+  group.add(
+    placeProp('potted_plant', { x: -2.4, z: room.z + 4.7, width: 0.55 }),
+    placeProp('potted_plant', { x: 2.4, z: room.z + 4.7, width: 0.55 }),
+    placeProp('coffee_mug', { x: -2.4, y: 0.77, z: room.z - 3.4, width: 0.12 }),
+  )
   interactables.push({
     id: `contact-${room.index}`,
     x: 0,

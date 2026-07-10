@@ -55,6 +55,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const TURNO_LABEL = {
   es: 'Tomar un turno',
@@ -1130,7 +1131,8 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   pantalla.mesh.rotation.y = Math.PI / 2
   group.add(pantalla.mesh)
   disposables.push(pantalla)
-  // marco de la pantalla + proyector sobre su mesita (lote fusionado)
+  // marco de la pantalla de proyeccion + mesita (procedurales) + proyector
+  // GLB sobre la mesita apuntando a la pantalla
   group.add(
     outlinedMergedBoxes(
       [
@@ -1160,27 +1162,19 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
           y: 0.31,
           z: room.z - 2.92,
         },
-        // proyector: cuerpo + lente hacia la pantalla
-        {
-          w: 0.34,
-          h: 0.14,
-          d: 0.24,
-          x: -half + 1.6,
-          y: 0.72,
-          z: room.z - 3.1,
-        },
-        {
-          w: 0.08,
-          h: 0.08,
-          d: 0.08,
-          x: -half + 1.41,
-          y: 0.72,
-          z: room.z - 3.1,
-        },
       ],
       toonMat('#3a3f4a'),
       { castShadow: true },
     ),
+    // proyector GLB CC0 sobre la mesita
+    placeProp('projector', {
+      x: -half + 1.6,
+      y: 0.65,
+      z: room.z - 3.1,
+      rotationY: -Math.PI / 2,
+      width: 0.4,
+      color: '#3a3f4a',
+    }),
   )
   staticColliders.push(footprint(-half + 1.6, room.z - 3.1, 0.6, 0.6))
   // cartel de celebracion del ensayo perfecto (visible solo al completar)
@@ -1192,23 +1186,17 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   cheer.rotation.y = Math.PI / 2
   group.add(cheer)
 
-  // sobre de pago sobre la mesa de asesoria: el guiño del primer trabajo
-  // cobrado (decision del usuario: con ficha inspeccionable)
+  // sobre de pago GLB sobre la mesa de asesoria: el guiño del primer
+  // trabajo cobrado (decision del usuario: con ficha inspeccionable)
   group.add(
-    mergedBoxes(
-      [
-        {
-          w: 0.26,
-          h: 0.015,
-          d: 0.16,
-          x: -2.05,
-          y: 0.755,
-          z: room.z - 2.35,
-          rotY: 0.4,
-        },
-      ],
-      toonMat('#d9c39a'),
-    ),
+    placeProp('envelope', {
+      x: -2.05,
+      y: 0.755,
+      z: room.z - 2.35,
+      rotationY: 0.4,
+      width: 0.24,
+      color: '#d9c39a',
+    }),
   )
   const sobreStory = SOBRE_STORY[locale]
   interactables.push({
@@ -1250,25 +1238,23 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   // MOSTRADOR DE ADMISION (centro-derecha, frente): frente + tapa +
   // laterales + cruz de salud verde + carnet sobre el meson
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 2.6, h: 1.0, d: 0.08, x: 1.7, y: 0.5, z: room.z + 3.18 },
-        { w: 2.6, h: 0.06, d: 0.7, x: 1.7, y: 1.02, z: room.z + 2.9 },
-        { w: 0.08, h: 1.0, d: 0.62, x: 0.44, y: 0.5, z: room.z + 2.88 },
-        { w: 0.08, h: 1.0, d: 0.62, x: 2.96, y: 0.5, z: room.z + 2.88 },
-      ],
-      toonMat('#e8ece6'),
-      { castShadow: true },
-    ),
-    // cruz de salud verde sobre el mostrador
-    mergedBoxes(
-      [
-        { w: 0.14, h: 0.5, d: 0.06, x: 2.5, y: 2.5, z: room.z + 3.16 },
-        { w: 0.5, h: 0.14, d: 0.06, x: 2.5, y: 2.5, z: room.z + 3.16 },
-      ],
-      toonMat(theme.accent),
-    ),
-    // carnet de afiliado sobre el meson
+    // mostrador de admision GLB PROSALUD
+    placeProp('reception_counter', {
+      x: 1.7,
+      z: room.z + 2.9,
+      rotationY: Math.PI,
+      width: 2.6,
+      color: '#e8ece6',
+    }),
+    // cruz de salud verde GLB sobre el mostrador (en la pared)
+    placeProp('medical_cross', {
+      x: 2.5,
+      y: 2.5,
+      z: room.z + 3.16,
+      width: 0.5,
+      color: theme.accent,
+    }),
+    // carnet de afiliado sobre el meson (procedural, prop menor)
     mergedBoxes(
       [
         {
@@ -1351,17 +1337,17 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
   // SALA DE ESPERA (-X, frente): hilera de sillas mirando a admision +
   // dos afiliados de fondo (siluetas fusionadas, baratas)
   const chairXs = [-4.9, -4.1, -3.3, -2.5] as const
+  for (const x of chairXs) {
+    group.add(
+      placeProp('waiting_chair', {
+        x,
+        z: room.z + 3.6,
+        width: 0.5,
+        color: '#5a9c82',
+      }),
+    )
+  }
   group.add(
-    outlinedMergedBoxes(
-      chairXs.flatMap((x) => [
-        { w: 0.5, h: 0.06, d: 0.45, x, y: 0.46, z: room.z + 3.6 },
-        { w: 0.5, h: 0.45, d: 0.06, x, y: 0.74, z: room.z + 3.82 },
-        { w: 0.05, h: 0.44, d: 0.05, x: x - 0.2, y: 0.22, z: room.z + 3.7 },
-        { w: 0.05, h: 0.44, d: 0.05, x: x + 0.2, y: 0.22, z: room.z + 3.7 },
-      ]),
-      toonMat('#5a9c82'),
-      { inflate: 0.03, castShadow: true },
-    ),
     // siluetas sentadas: torso + cabeza en dos de las sillas
     outlinedMergedBoxes(
       [
@@ -1375,6 +1361,11 @@ export default function buildAsesoria(ctx: RoomCtx): RoomBuild {
     ),
   )
   staticColliders.push(footprint(-3.7, room.z + 3.7, 3.0, 0.7))
+  // props decorativos: plantas del rincon de espera y de la asesoria
+  group.add(
+    placeProp('potted_plant', { x: half - 0.6, z: room.z + 3.2, width: 0.5 }),
+    placeProp('potted_plant', { x: -4.6, z: room.z - 2.0, width: 0.5 }),
+  )
 
   // el ticket del turno que vuela del mostrador a la primera silla
   const ticket = boxMesh(0.16, 0.012, 0.1, toonMat('#f7f5ea'))

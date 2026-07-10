@@ -2,7 +2,8 @@
  * @module rooms/props (engine)
  * @description Props procedurales compartidos entre salas manga-ink:
  *   escritorio, monitor (estatico e intercambiable), pizarra de ficha con
- *   titulo + tiza, GRIETA TEMPORAL al pasado (rasgadura con vortice-reloj),
+ *   titulo + tiza, FRACTURA DIMENSIONAL (todos los portales: rasgadura
+ *   shader con aberracion RGB local),
  *   pedestal con el cuaderno-reseña FLOTANTE de la etapa, pila de papeles
  *   y los 4 helpers del CANON de sala (plan journey-salas-estandar):
  *   officeLayout, npcCoworkers, wallArt y softwareShowcase. Todo
@@ -11,17 +12,14 @@
 import {
   BoxGeometry,
   CanvasTexture,
-  CircleGeometry,
   Color,
   Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
   PointLight,
-  RingGeometry,
   ShaderMaterial,
   SRGBColorSpace,
-  type Texture,
 } from 'three'
 import type { Box2 } from '../../lib/collision'
 import { PAST_OFFSET_X, type RoomLayout } from '../../lib/layout'
@@ -122,6 +120,96 @@ export function desk(opts: {
       toonMat(opts.color ?? '#4a4038'),
     ),
   )
+  return group
+}
+
+/**
+ * Teclado de escritorio: placa negra con las teclas horneadas en una textura
+ * Canvas (una cuadricula de teclas + barra espaciadora). Se apoya en la mesa
+ * mirando +Z (el que teclea esta detras, en -Z). 2 draw calls (base + placa
+ * de teclas). Lo usa el aula para que las PCs "tengan teclado" de verdad.
+ */
+export function deskKeyboard(opts: {
+  position: readonly [number, number, number]
+  rotationY?: number
+  width?: number
+}): Group {
+  const width = opts.width ?? 0.34
+  const depth = width * 0.42
+  const group = new Group()
+  group.position.set(opts.position[0], opts.position[1], opts.position[2])
+  group.rotation.y = opts.rotationY ?? 0
+  // base ligeramente inclinada (parte trasera mas alta)
+  const base = new Mesh(new BoxGeometry(width, 0.02, depth), toonMat('#26262c'))
+  base.rotation.x = -0.14
+  base.castShadow = true
+  base.userData.noOutline = true
+  // teclas horneadas: cuadricula de rectangulos claros + barra espaciadora
+  const tex = makeCanvasTexture(128, (ctx, size) => {
+    ctx.fillStyle = '#1c1c22'
+    ctx.fillRect(0, 0, size, size)
+    ctx.fillStyle = '#c9c9cf'
+    const cols = 12
+    const rows = 4
+    const pad = 8
+    const gap = 3
+    const kw = (size - pad * 2 - gap * (cols - 1)) / cols
+    const kh = ((size - pad * 2) * 0.62 - gap * (rows - 1)) / rows
+    for (let r = 0; r < rows; r += 1) {
+      const off = r * 3 // filas escalonadas
+      for (let c = 0; c < cols; c += 1) {
+        const x = pad + off + c * (kw + gap)
+        const y = pad + r * (kh + gap)
+        if (x + kw > size - pad) {
+          continue
+        }
+        ctx.fillRect(x, y, kw, kh)
+      }
+    }
+    // barra espaciadora
+    ctx.fillRect(size * 0.28, size - pad - kh, size * 0.44, kh)
+  })
+  const keys = new Mesh(
+    new PlaneGeometry(width - 0.02, depth - 0.01),
+    new MeshBasicMaterial({ map: tex }),
+  )
+  keys.rotation.x = -Math.PI / 2 - 0.14
+  keys.position.set(0, 0.012, 0)
+  keys.userData.noOutline = true
+  group.add(base, keys)
+  return group
+}
+
+/**
+ * Mouse de escritorio: media esfera achatada (cuerpo) + una ranura de botones
+ * horneada por escala. Se apoya en la mesa; se coloca al costado del teclado.
+ * 1 draw call (la esfera compartida de unitGeo escalada). Lo usa el aula junto
+ * al deskKeyboard.
+ */
+export function deskMouse(opts: {
+  position: readonly [number, number, number]
+  color?: string
+}): Group {
+  const group = new Group()
+  group.position.set(opts.position[0], opts.position[1], opts.position[2])
+  // cuerpo: esfera unidad escalada a un ovalo BAJO y ALARGADO (ancho 0.055,
+  // largo 0.11, alto 0.035) para que parezca un mouse, no un boton. Color del
+  // teclado (negro `#26262c`) por defecto para que CONTRASTE con la mesa blanca
+  // y se vea (pedido de Pablo: mismo color que la PC/teclado). Se sube y para
+  // apoyar sobre la mesa.
+  const body = new Mesh(unitGeo().sphere, toonMat(opts.color ?? '#26262c'))
+  body.scale.set(0.055, 0.035, 0.11)
+  body.position.y = 0.014
+  body.castShadow = true
+  // ranura de botones: una linea gris CLARA al frente (division izq/der) que
+  // contrasta con el cuerpo negro.
+  const split = new Mesh(
+    new BoxGeometry(0.002, 0.001, 0.05),
+    toonMat('#c9c9cf'),
+  )
+  split.position.set(0, 0.032, 0.028)
+  split.userData.noOutline = true
+  group.add(body, split)
   return group
 }
 
@@ -479,211 +567,41 @@ const EXIT_LABEL = {
   en: 'Return to the present',
 } as const
 
-/** Color unico de TODAS las grietas al pasado: marron/sepia (el "antes"). */
-const RIFT_SEPIA = '#c8a878'
+// ---------------------------------------------------------------------------
+// FRACTURA DIMENSIONAL (rediseño 2026-07-10, iterado con el dueno: SIN
+// glitch — todo movimiento continuo y fluido; 2da iteracion: sin esquirlas
+// poligonales sueltas, "se leian como triangulos random" sin proposito
+// claro — eliminadas): dos formas segun el destino. PASADO/SALIDA = GRIETA
+// ROTA (fisura vertical que serpentea, con ramas, filo caliente y rayos de
+// energia brotando — una ruptura del muro, nunca una puerta). FUTURO/
+// REGRESO = WORMHOLE tipo puente Einstein-Rosen (disco de streaks
+// radiales difuminados torciendose hacia el centro con lente
+// gravitacional + anillo de fotones: absorbe el espacio-tiempo). Ambos
+// viven en el shader del MESH (cero postfx fullscreen, canon toon limpio
+// intacto). 1-2 draw calls por portal: fractura + letrero/año opcional.
+// ---------------------------------------------------------------------------
 
-/**
- * Esfera de reloj SEPIA vista de frente, para apoyar PLANA en el piso bajo
- * la grieta (el reloj ya no vive dentro de la grieta: decision del usuario
- * 2026-07-06). Marcas horarias + agujas 10:10 horneadas — 1 draw call.
- */
-function floorClockTexture(): CanvasTexture {
-  return makeCanvasTexture(256, (ctx, size) => {
-    const c = size / 2
-    ctx.clearRect(0, 0, size, size)
-    // esfera crema con aro sepia
-    ctx.fillStyle = '#e8d8b0'
-    ctx.beginPath()
-    ctx.arc(c, c, c - 6, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.strokeStyle = '#6b4a2a'
-    ctx.lineWidth = 9
-    ctx.stroke()
-    // marcas horarias
-    for (let i = 0; i < 12; i += 1) {
-      const angle = (i / 12) * Math.PI * 2
-      const r0 = c - 16
-      const r1 = i % 3 === 0 ? c - 38 : c - 26
-      ctx.lineWidth = i % 3 === 0 ? 7 : 3
-      ctx.beginPath()
-      ctx.moveTo(c + Math.cos(angle) * r0, c + Math.sin(angle) * r0)
-      ctx.lineTo(c + Math.cos(angle) * r1, c + Math.sin(angle) * r1)
-      ctx.stroke()
-    }
-    // agujas 10:10 (clasico) horneadas
-    ctx.strokeStyle = '#3a2416'
-    ctx.lineCap = 'round'
-    const hand = (angle: number, len: number, w: number) => {
-      ctx.lineWidth = w
-      ctx.beginPath()
-      ctx.moveTo(c, c)
-      ctx.lineTo(c + Math.cos(angle) * len, c + Math.sin(angle) * len)
-      ctx.stroke()
-    }
-    hand(-Math.PI / 2 - Math.PI / 6, c * 0.48, 10)
-    hand(-Math.PI / 2 + Math.PI / 6, c * 0.68, 7)
-    ctx.fillStyle = '#3a2416'
-    ctx.beginPath()
-    ctx.arc(c, c, 9, 0, Math.PI * 2)
-    ctx.fill()
-  })
-}
+/** Paleta + forma por tipo de portal. Semantica (re-decidido por el dueno
+ *  2026-07-10, segunda iteracion): los wormholes (future/return) vuelven a
+ *  una paleta azul-blanco-gris (reemplaza el magenta/cian anterior) — el
+ *  sentido se sigue distinguiendo por el TONO de azul (ida = azul electrico
+ *  profundo, regreso = azul-gris mas frio/desaturado) y por el nucleo
+ *  blanco compartido. El año sigue visible. La grieta al pasado NO cambia
+ *  (ambar/sepia, le gusta al dueno). */
+const TEAR_STYLES = {
+  /** Ida a la sala siguiente: wormhole azul electrico, nucleo blanco. */
+  future: { core: '#eaf3ff', edge: '#1f6fe0', fringe: 1, shape: 'wormhole' },
+  /** Regreso a la sala anterior: wormhole azul-gris frio, nucleo blanco. */
+  return: { core: '#eef2f6', edge: '#5c7a94', fringe: 1, shape: 'wormhole' },
+  /** Grieta al pasado: fisura rota ambar sobre sepia. */
+  past: { core: '#ffb454', edge: '#8a5a2a', fringe: 0.5, shape: 'crack' },
+  /** Salida del pasado: fisura ambar con filo cian (el presente llama). */
+  exit: { core: '#ffb454', edge: '#2ae0ff', fringe: 0.7, shape: 'crack' },
+} as const
 
-/** Silueta irregular de la grieta (rasgadura — NUNCA forma de puerta). */
-function riftOutline(
-  size: number,
-  rng: () => number,
-): readonly (readonly [number, number])[] {
-  const cx = size / 2
-  const cy = size / 2
-  const rx = size * 0.3
-  const ry = size * 0.43
-  const spikes = 16
-  return Array.from({ length: spikes }, (_, i) => {
-    const angle = (i / spikes) * Math.PI * 2
-    const jag = 0.66 + rng() * 0.5
-    return [
-      cx + Math.cos(angle) * rx * jag,
-      cy + Math.sin(angle) * ry * jag,
-    ] as const
-  })
-}
+type TearKind = keyof typeof TEAR_STYLES
 
-function traceRift(
-  ctx: CanvasRenderingContext2D,
-  points: readonly (readonly [number, number])[],
-): void {
-  ctx.beginPath()
-  points.forEach(([x, y], i) => {
-    if (i === 0) {
-      ctx.moveTo(x, y)
-    } else {
-      ctx.lineTo(x, y)
-    }
-  })
-  ctx.closePath()
-}
-
-/**
- * Textura de la grieta temporal: rasgadura oscura de bordes irregulares
- * con glow del acento, filo crema y fisuras ramificandose hacia el muro.
- * Fondo transparente (se pega plana al muro, sin marco).
- */
-function riftTexture(accent: string): CanvasTexture {
-  let seed = 13
-  for (const ch of accent) {
-    seed = seed * 31 + ch.charCodeAt(0)
-  }
-  const rng = makeRng(seed >>> 0)
-  return makeCanvasTexture(512, (ctx, size) => {
-    ctx.clearRect(0, 0, size, size)
-    const points = riftOutline(size, rng)
-    // vacio interior
-    traceRift(ctx, points)
-    const bg = ctx.createRadialGradient(
-      size / 2,
-      size / 2,
-      10,
-      size / 2,
-      size / 2,
-      size * 0.45,
-    )
-    bg.addColorStop(0, '#050308')
-    bg.addColorStop(1, '#130c1a')
-    ctx.fillStyle = bg
-    ctx.fill()
-    // borde: glow del acento + trazo firme + filo crema
-    ctx.lineJoin = 'round'
-    traceRift(ctx, points)
-    ctx.strokeStyle = accent
-    ctx.globalAlpha = 0.35
-    ctx.lineWidth = 16
-    ctx.stroke()
-    traceRift(ctx, points)
-    ctx.globalAlpha = 0.95
-    ctx.lineWidth = 5
-    ctx.stroke()
-    traceRift(ctx, points)
-    ctx.strokeStyle = '#f2e6c8'
-    ctx.globalAlpha = 0.85
-    ctx.lineWidth = 2
-    ctx.stroke()
-    // fisuras/destellos ramificandose desde el borde hacia afuera
-    ctx.strokeStyle = accent
-    ctx.lineCap = 'round'
-    for (let i = 0; i < 7; i += 1) {
-      const point = points[Math.floor(rng() * points.length)]
-      if (!point) {
-        continue
-      }
-      let [x, y] = point
-      const away = Math.atan2(y - size / 2, x - size / 2)
-      ctx.globalAlpha = 0.75
-      ctx.lineWidth = 2.5
-      ctx.beginPath()
-      ctx.moveTo(x, y)
-      for (let s = 0; s < 3; s += 1) {
-        x += Math.cos(away + (rng() - 0.5) * 1.1) * (10 + rng() * 16)
-        y += Math.sin(away + (rng() - 0.5) * 1.1) * (10 + rng() * 16)
-        ctx.lineTo(x, y)
-      }
-      ctx.stroke()
-    }
-    ctx.globalAlpha = 1
-  })
-}
-
-interface PortalRift {
-  group: Group
-  update(t: number): void
-  /** Alimenta la ventana del portal con el snapshot de la sala destino
-   *  (render-to-texture). El `futurePortal` lo implementa; `timeRift` no. */
-  setPreview?(tex: Texture): void
-}
-
-/**
- * GRIETA TEMPORAL al pasado (rediseño 2026-07-06, decision del usuario):
- * rasgadura SEPIA irregular pegada plana al muro — SIN marco ni arco — SOLO
- * la grieta (el vortice-reloj y las motas se quitaron). El reloj ahora vive
- * de PIE en el piso, bajo la grieta. Todas las grietas son marron/sepia (el
- * "antes"). Letrero arriba + marca oscura + reloj en el piso. ~2.9 m de alto.
- * Es el portal al PASADO; la ida/regreso entre salas usa `futurePortal`.
- */
-function timeRift(signText: string): PortalRift {
-  const group = new Group()
-  const rift = new Mesh(
-    new PlaneGeometry(2.7, 3),
-    new MeshBasicMaterial({ map: riftTexture(RIFT_SEPIA), transparent: true }),
-  )
-  rift.position.set(0, 1.5, 0.04)
-  rift.userData.noOutline = true
-  const sign = label(signText, { size: 0.16, color: '#e8d8b0' })
-  sign.position.set(0, 2.88, 0.09)
-  const scorch = new Mesh(unitGeo().plane, toonMat('#15101c'))
-  scorch.rotation.x = -Math.PI / 2
-  scorch.scale.set(2.1, 1.3, 1)
-  scorch.position.set(0, 0.014, 0.5)
-  scorch.userData.noOutline = true
-  // reloj SEPIA de piso bajo la grieta (el reloj ya no vive adentro)
-  const clock = new Mesh(
-    new CircleGeometry(0.42, 40),
-    new MeshBasicMaterial({ map: floorClockTexture() }),
-  )
-  clock.rotation.x = -Math.PI / 2
-  clock.position.set(0, 0.02, 0.55)
-  clock.userData.noOutline = true
-  group.add(rift, sign, scorch, clock)
-  return {
-    group,
-    update: (t) => {
-      // la grieta respira apenas (el reloj de piso es estatico)
-      const pulse = 1 + Math.sin(t * 2.1) * 0.015
-      rift.scale.set(pulse, pulse, 1)
-    },
-  }
-}
-
-const PORTAL_VERT = `
+const TEAR_VERT = `
   varying vec2 vUv;
   void main() {
     vUv = uv;
@@ -691,14 +609,167 @@ const PORTAL_VERT = `
   }
 `
 
-// Superficie de energia del portal: vortice espiral + rayos/electricidad
-// procedurales animados por uTime + ventana translucida con el snapshot de la
-// sala destino (uPreview). Todo en 1 fragment shader -> 1 draw call.
-const PORTAL_FRAG = `
+// GRIETA ROTA (pasado/salida): fisura vertical que serpentea (meandro suave
+// + quiebres finos), afilada en ambas puntas, con 3 ramas diagonales y
+// fisuras capilares — una RUPTURA dimensional del muro, nunca una puerta.
+// Interior de vacio profundo con brasas que derivan; filo caliente que
+// respira, y RAYOS DE ENERGIA brotando del filo hacia afuera (arcos que
+// titilan y se extinguen en loop, como electricidad escapando de la
+// ruptura). Todo continuo y fluido: CERO glitch, cero saltos. 1 draw call.
+const CRACK_FRAG = `
   uniform float uTime;
-  uniform vec3 uAccent;
-  uniform sampler2D uPreview;
-  uniform float uHasPreview;
+  uniform vec3 uCore;
+  uniform vec3 uEdge;
+  uniform float uSeed;
+  uniform float uAspect;
+  uniform float uFringe;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453);
+  }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  // distancia a un rayo quebrado (zigzag) que nace en 'a' hacia 'dirB':
+  // cada segmento se desvia con ruido, como un arco electrico real.
+  float boltDist(vec2 p, vec2 a, vec2 dirB, float len, float t) {
+    vec2 dir = normalize(dirB);
+    vec2 perp = vec2(-dir.y, dir.x);
+    float h = clamp(dot(p - a, dir) / len, 0.0, 1.0);
+    float wobble = (vnoise(vec2(h * 9.0 + t * 3.1, t)) - 0.5) * 0.14
+      * smoothstep(0.0, 0.15, h) * smoothstep(1.0, 0.7, h);
+    vec2 spine = a + dir * h * len + perp * wobble;
+    return length(p - spine);
+  }
+
+  // distancia a una rama recta que nace en 'a' hacia 'dirB', afilandose
+  float branchDist(vec2 p, vec2 a, vec2 dirB, float len, float w0) {
+    vec2 pa = p - a;
+    float h = clamp(dot(pa, dirB) / len, 0.0, 1.0);
+    float d = length(pa - dirB * h * len);
+    return d - w0 * (1.0 - h);
+  }
+
+  void main() {
+    vec2 p = (vUv - 0.5) * vec2(2.0 * uAspect, 2.0);
+
+    // tronco de la grieta: linea vertical que serpentea, afilada en puntas
+    float meander = (vnoise(vec2(p.y * 1.6 + uSeed, uSeed)) - 0.5) * 0.5;
+    float jag = (vnoise(vec2(p.y * 6.5 + uSeed * 2.7, uSeed + 4.0)) - 0.5)
+      * 0.24;
+    float cx = meander + jag;
+    float taper = 1.0 - smoothstep(0.35, 0.96, abs(p.y));
+    float wVar = 0.45 + vnoise(vec2(p.y * 3.1 + uSeed, uSeed + 9.0)) * 0.9;
+    float w = 0.13 * taper * wVar;
+    float d = abs(p.x - cx) - w;
+
+    // 3 ramas diagonales (sub-grietas que nacen del tronco)
+    float side = step(0.5, hash(vec2(uSeed, 1.0))) * 2.0 - 1.0;
+    d = min(d, branchDist(
+      p, vec2(cx, 0.28), normalize(vec2(0.75 * side, 0.55)), 0.42, 0.05));
+    d = min(d, branchDist(
+      p, vec2(cx, -0.2), normalize(vec2(-0.8 * side, -0.45)), 0.4, 0.045));
+    d = min(d, branchDist(
+      p, vec2(cx, 0.02), normalize(vec2(-0.7 * side, 0.2)), 0.34, 0.04));
+
+    if (d > 0.5) {
+      discard;
+    }
+
+    // respiracion suave del filo (continua, sin saltos)
+    float breathe = 0.5 + 0.5 * sin(uTime * 1.3 + uSeed);
+
+    // mascaras: interior + filo + fringes suaves del duotono
+    float ab = 0.02 * uFringe;
+    float inside = smoothstep(0.015, -0.015, d);
+    float eG = smoothstep(0.075, 0.0, abs(d));
+    float eR = smoothstep(0.06, 0.0, abs(d + ab));
+    float eB = smoothstep(0.06, 0.0, abs(d - ab));
+
+    // interior: vacio profundo con brasas que derivan lento
+    float ember = vnoise(p * 3.0 + vec2(uSeed, uTime * 0.12));
+    vec3 col = mix(vec3(0.02, 0.012, 0.008), uCore * 0.35, ember * ember);
+    col *= inside;
+
+    // filo caliente + fringes
+    col += mix(uCore, vec3(1.0), 0.35) * eG * (0.85 + 0.3 * breathe);
+    col += uCore * eR * 0.5 * uFringe;
+    col += uEdge * eB * 0.6;
+
+    // resplandor que sangra hacia el muro (la ruptura ilumina)
+    float halo = smoothstep(0.34, 0.0, d) * (1.0 - inside);
+    col += uCore * halo * (0.16 + 0.08 * breathe);
+
+    // fisuras capilares saliendo del tronco
+    float hairSeed = vnoise(vec2(p.y * 9.0 + uSeed * 3.1, uSeed));
+    float hair = pow(hairSeed, 7.0)
+      * smoothstep(0.4, 0.05, abs(p.x - cx)) * taper;
+    col += uEdge * hair * 0.9;
+
+    // RAYOS DE ENERGIA: 4 arcos quebrados que brotan del tronco y titilan
+    // en loop (chispazos de electricidad escapando de la ruptura). Cada
+    // uno nace en un punto distinto del tronco y crece/muere en su propia
+    // ventana de tiempo -> nunca laten todos a la vez (continuo, sin
+    // parpadeo global).
+    float bolt = 0.0;
+    for (int i = 0; i < 4; i += 1) {
+      float fi = float(i);
+      float cyc = fract(uTime * 0.35 + fi * 0.27 + uSeed * 0.11);
+      // ventana de vida del rayo dentro de su ciclo (aparece, crece, muere)
+      float life = smoothstep(0.0, 0.12, cyc) * smoothstep(0.62, 0.2, cyc);
+      if (life < 0.01) {
+        continue;
+      }
+      float originY = (hash(vec2(uSeed + fi * 3.1, 2.0)) - 0.5) * 0.68;
+      float originX = cx + (vnoise(vec2(originY * 1.6 + uSeed, uSeed))
+        - 0.5) * 0.5;
+      float dirSign = hash(vec2(uSeed + fi * 5.7, 6.0)) > 0.5 ? 1.0 : -1.0;
+      float ang = 0.35 + hash(vec2(uSeed + fi * 2.3, 8.0)) * 0.9;
+      vec2 dir = vec2(dirSign * sin(ang), cos(ang) * 0.6 - 0.3);
+      float len = (0.22 + hash(vec2(uSeed + fi, 4.0)) * 0.2) * life;
+      float bd = boltDist(p, vec2(originX, originY), dir, max(len, 0.001),
+        uTime + fi * 12.0);
+      float core = smoothstep(0.028, 0.0, bd);
+      float glow = smoothstep(0.09, 0.0, bd) * 0.5;
+      bolt += (core + glow) * life;
+    }
+    col += mix(uEdge, vec3(1.0), 0.4) * bolt * 1.1;
+
+    float alpha = max(inside * 0.96, eG);
+    alpha = max(alpha, halo * 0.55);
+    alpha = max(alpha, hair * 0.8);
+    alpha = max(alpha, bolt * 0.9);
+    if (alpha < 0.01) {
+      discard;
+    }
+    gl_FragColor = vec4(col, alpha);
+  }
+`
+
+// WORMHOLE (futuro/regreso): puente Einstein-Rosen — disco de streaks
+// radiales difuminados que se tuercen y fluyen HACIA el centro (absorbe el
+// espacio-tiempo), con LENTE GRAVITACIONAL explicita (el radio de muestreo
+// se comprime cerca del horizonte, como si el propio espacio se doblara) +
+// un anillo de fotones brillante justo en el horizonte (la imagen icónica
+// de curvatura extrema), agujero central oscuro, borde emplumado que se
+// difumina mas alla del disco. Paleta azul-blanco-gris (core = nucleo
+// blanco, edge = azul del sentido). Movimiento continuo y fluido: cero
+// glitch. El plane es CUADRADO (aspect 1). 1 draw call.
+const WORMHOLE_FRAG = `
+  uniform float uTime;
+  uniform vec3 uCore;
+  uniform vec3 uEdge;
+  uniform float uSeed;
+  uniform float uFringe;
   varying vec2 vUv;
 
   float hash(vec2 p) {
@@ -716,119 +787,174 @@ const PORTAL_FRAG = `
   }
 
   void main() {
-    vec2 p = vUv - 0.5;
-    float r = length(p) * 2.0;
-    if (r > 1.0) discard;
+    vec2 p = (vUv - 0.5) * 2.0;
+    float rRaw = length(p);
     float ang = atan(p.y, p.x);
 
-    // gradiente radial: nucleo brillante -> acento -> borde oscuro
-    vec3 core = vec3(0.95, 0.98, 1.0);
-    vec3 col = mix(core, uAccent, smoothstep(0.0, 0.35, r));
-    col = mix(col, vec3(0.02, 0.03, 0.07), smoothstep(0.5, 1.0, r));
+    // borde del disco: ondulacion suave que gira lenta (fluida)
+    float wob = vnoise(
+      vec2(cos(ang), sin(ang)) * 1.6 + uSeed + uTime * 0.12
+    );
+    float R = 0.72 + (wob - 0.5) * 0.09;
 
-    // vortice espiral (3 brazos) girando -> "otra dimension"
-    float spiral = 0.5 + 0.5 * sin((ang - r * 7.0 + uTime * 0.6) * 3.0);
-    col += uAccent * spiral * (0.4 * (1.0 - r));
+    if (rRaw > R + 0.26) {
+      discard;
+    }
 
-    // anillos de energia expandiendose
-    float rings = 0.5 + 0.5 * sin(r * 26.0 - uTime * 3.0);
-    col += uAccent * pow(rings, 3.0) * 0.16;
+    // LENTE GRAVITACIONAL: el radio efectivo se comprime cerca del
+    // horizonte (r/R se curva hacia adentro), como si la luz se doblara
+    // al pasar cerca de la masa central. rRaw sigue guiando el
+    // discard/feather (geometria real); r es el radio "curvado" que
+    // alimenta el flujo y el color (la dilatacion visual). SIN clamp: si
+    // se satura en un valor fijo para rRaw > R, todo el anillo exterior
+    // (la pluma) queda con r CONSTANTE -> el ruido que depende de r se
+    // congela ahi y se ve como una costura/linea recta cruzando el disco.
+    float k = rRaw / R;
+    float r = R * pow(k, 1.6);
 
-    // rayos / electricidad: filamentos radiales titilando hacia el borde
-    float jitter = vnoise(vec2(ang * 3.0, uTime * 2.0));
-    float fil = abs(sin(ang * 20.0 + jitter * 6.2831 + uTime * 1.4));
-    float bolt = pow(1.0 - fil, 26.0) * smoothstep(0.15, 1.0, r);
-    bolt *= step(0.55, hash(vec2(floor(ang * 5.0), floor(uTime * 8.0))));
-    col += vec3(0.75, 0.88, 1.0) * bolt * 1.5;
+    // remolino: torsion creciente hacia el centro + rotacion global
+    float twist = ang + (1.0 - clamp(r / R, 0.0, 1.0)) * 2.6 + uTime * 0.3;
 
-    // ventana translucida: guiño de la sala destino en el centro
-    vec3 preview = mix(uAccent * 0.45, texture2D(uPreview, vUv).rgb, uHasPreview);
-    float win = smoothstep(0.72, 0.12, r);
-    col = mix(col, preview, win * 0.5);
+    // streaks radiales fluyendo HACIA el centro (absorcion), estirados por
+    // la misma compresion de la lente -> se acumulan/aceleran al acercarse
+    float s1 = vnoise(vec2(twist * 4.5, r * 2.2 + uTime * 1.5));
+    float s2 = vnoise(vec2(twist * 10.0, r * 4.6 + uTime * 2.3));
+    float flow = clamp(pow(s1 * 0.65 + s2 * 0.35, 1.5) * 1.25, 0.0, 1.0);
 
-    // brillo glassy sutil hacia el centro
-    col += vec3(0.06) * smoothstep(0.6, 0.0, r);
+    // cuerpo: streaks brillantes sobre vacio; el centro es el agujero
+    vec3 bright = mix(vec3(1.0), uCore, 0.35);
+    vec3 col = mix(vec3(0.01, 0.012, 0.02), bright, flow);
+    float hole = smoothstep(0.3, 0.05, r);
+    col = mix(col, mix(vec3(0.0), uEdge, 0.15), hole);
 
-    float alpha = 0.96 * smoothstep(1.0, 0.86, r);
+    // anillo de acrecion sutil que late suave
+    float accr = smoothstep(0.16, 0.0, abs(r - R * 0.62));
+    col += uCore * accr * 0.35 * (0.7 + 0.3 * sin(uTime * 1.1 + uSeed));
+
+    // ANILLO DE FOTONES: linea brillante y nitida justo en el horizonte de
+    // eventos (rRaw, sin la compresion de la lente) — la firma visual de
+    // un espacio-tiempo curvado al extremo.
+    float photonRing = smoothstep(0.045, 0.0, abs(rRaw - R * 0.97));
+    col += mix(vec3(1.0), uCore, 0.3) * photonRing
+      * (0.8 + 0.2 * sin(uTime * 2.0 + uSeed));
+
+    // pluma del borde: streaks difuminandose mas alla del disco (succion)
+    float feather = smoothstep(R + 0.26, R - 0.04, rRaw)
+      * smoothstep(R - 0.18, R, rRaw);
+    col += mix(vec3(1.0), uEdge, 0.55) * feather * (0.4 + flow * 0.8);
+
+    // fringe cromatico suave del borde (sobre el radio geometrico real)
+    float ab = 0.02 * uFringe;
+    col += uCore * smoothstep(0.05, 0.0, abs(rRaw - (R - ab))) * 0.35;
+    col += uEdge * smoothstep(0.05, 0.0, abs(rRaw - (R + ab))) * 0.45;
+
+    // alpha: disco opaco (radio geometrico real) + pluma que se desvanece
+    float alpha = smoothstep(R + 0.02, R - 0.1, rRaw);
+    alpha = max(alpha, feather * (0.35 + flow * 0.6));
+    if (alpha < 0.01) {
+      discard;
+    }
     gl_FragColor = vec4(col, alpha);
   }
 `
 
-/** Textura fallback 2x2 (tinte del acento) para el sampler uPreview mientras
- *  no haya snapshot de la sala destino. */
-function portalFallbackTex(accent: string): CanvasTexture {
-  return makeCanvasTexture(2, (ctx, size) => {
-    ctx.fillStyle = accent
-    ctx.fillRect(0, 0, size, size)
-  })
-}
-
-function portalEnergyMaterial(accent: string): ShaderMaterial {
-  return new ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uAccent: { value: new Color(accent) },
-      uPreview: { value: portalFallbackTex(accent) },
-      uHasPreview: { value: 0 },
-    },
-    vertexShader: PORTAL_VERT,
-    fragmentShader: PORTAL_FRAG,
-    transparent: true,
-    depthWrite: false,
-  })
+interface PortalRift {
+  group: Group
+  update(t: number): void
 }
 
 /**
- * PORTAL AL FUTURO / DE REGRESO: reemplaza a la puerta entre salas. Oval con
- * superficie de energia SHADER (vortice + rayos/electricidad procedurales que
- * giran por uTime) y una VENTANA translucida que insinua la sala destino via
- * `setPreview` (render-to-texture; cae a un tinte del acento mientras no haya
- * snapshot). Color FIJO segun el sentido (decision del usuario 2026-07-06):
- * azul fosforecente al FUTURO, azul celeste (mas claro) al REGRESO — NO el
- * acento del rubro. Con `opts.year`, muestra el año de la sala destino
- * flotando arriba. Va pegado al muro sellado — la ventana es una ilusion
- * del shader, NO un vano real. 2-3 draw calls (energia + marco + año).
+ * FRACTURA DIMENSIONAL: el prop base de TODOS los portales del recorrido.
+ * La forma la decide el estilo: 'crack' (grieta rota, CRACK_FRAG) o
+ * 'wormhole' (disco absorbente, WORMHOLE_FRAG) — forma unica por uSeed —
+ * + letrero y/o año opcionales. El grupo nace con origen en el PISO y la
+ * fractura centrada en `cy`. 1-3 draw calls segun letreros (las esquirlas
+ * poligonales se eliminaron 2026-07-10: leian como "triangulos random"
+ * sueltos, sin lectura clara — decision del dueno).
  */
-export function futurePortal(
-  accent: string,
-  opts: { year?: string } = {},
-): PortalRift {
+function dimensionalTear(opts: {
+  kind: TearKind
+  width: number
+  height: number
+  /** Centro vertical de la fractura (m sobre el piso). */
+  cy: number
+  seed: number
+  sign?: string
+  year?: string
+}): PortalRift {
+  const style = TEAR_STYLES[opts.kind]
+  const crack = style.shape === 'crack'
+  const material = new ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uCore: { value: new Color(style.core) },
+      uEdge: { value: new Color(style.edge) },
+      uSeed: { value: opts.seed },
+      uAspect: { value: opts.width / opts.height },
+      uFringe: { value: style.fringe },
+    },
+    vertexShader: TEAR_VERT,
+    fragmentShader: crack ? CRACK_FRAG : WORMHOLE_FRAG,
+    transparent: true,
+    depthWrite: false,
+  })
   const group = new Group()
-  const cy = 1.4
-  const material = portalEnergyMaterial(accent)
-  const energy = new Mesh(new CircleGeometry(1, 48), material)
-  energy.scale.set(0.8, 1.12, 1)
-  energy.position.set(0, cy, 0.02)
-  energy.userData.noOutline = true
-  const frame = new Mesh(
-    new RingGeometry(1, 1.14, 48),
-    new MeshBasicMaterial({ color: accent }),
-  )
-  frame.scale.set(0.8, 1.12, 1)
-  frame.position.set(0, cy, 0.03)
-  frame.userData.noOutline = true
-  group.add(energy, frame)
-  // año de la sala destino, flotando ARRIBA del portal
+  const tear = new Mesh(new PlaneGeometry(opts.width, opts.height), material)
+  tear.position.set(0, opts.cy, 0.03)
+  tear.userData.noOutline = true
+  group.add(tear)
+  if (opts.sign) {
+    const tone = crack ? '#e8d8b0' : '#eafcff'
+    const sign = label(opts.sign, { size: 0.16, color: tone })
+    sign.position.set(0, opts.cy + opts.height * 0.44, 0.09)
+    group.add(sign)
+  }
   if (opts.year) {
-    const yearTag = label(opts.year, { size: 0.4, color: '#eaf6ff' })
-    yearTag.position.set(0, cy + 1.5, 0.06)
+    const year = label(opts.year, { size: 0.4, color: '#eafcff' })
     // el label hereda la rotacion del grupo: cuando el muro de salida lo
     // gira 180deg, la cara LEGIBLE queda mirando al jugador (no se espeja).
-    yearTag.userData.noOutline = true
-    group.add(yearTag)
+    year.position.set(0, opts.cy + 1.5, 0.06)
+    year.userData.noOutline = true
+    group.add(year)
   }
   return {
     group,
     update: (t) => {
       material.uniforms.uTime.value = t
-      const pulse = 1 + Math.sin(t * 2.4) * 0.02
-      frame.scale.set(0.8 * pulse, 1.12 * pulse, 1)
-    },
-    setPreview: (tex) => {
-      material.uniforms.uPreview.value = tex
-      material.uniforms.uHasPreview.value = 1
+      // la fractura respira apenas (continuo, sin saltos)
+      const pulse = 1 + Math.sin(t * 1.7) * 0.012
+      tear.scale.set(pulse, pulse, 1)
     },
   }
+}
+
+/**
+ * PORTAL ENTRE SALAS (ida/regreso): WORMHOLE tipo puente Einstein-Rosen en
+ * el muro sellado — disco de streaks difuminados absorbiendo el espacio,
+ * lente gravitacional + anillo de fotones. `kind` fija la paleta (la
+ * semantica del sentido): 'future' azul electrico/nucleo blanco, 'return'
+ * azul-gris frio/nucleo blanco — paleta azul-blanco-gris (re-decidido por
+ * el dueno 2026-07-10, 2da iteracion). Con `opts.year`, muestra el año de
+ * la sala destino flotando arriba (decision que SE CONSERVA). 2 draw
+ * calls (fractura + letrero del año).
+ */
+export function futurePortal(
+  kind: 'future' | 'return',
+  opts: { year?: string } = {},
+): PortalRift {
+  let seed = kind === 'future' ? 3.7 : 8.2
+  for (const ch of opts.year ?? '') {
+    seed += ch.charCodeAt(0) * 0.13
+  }
+  // plane CUADRADO: el disco del wormhole asume aspect 1
+  return dimensionalTear({
+    kind,
+    width: 2.6,
+    height: 2.6,
+    cy: 1.4,
+    seed,
+    year: opts.year,
+  })
 }
 
 /** Grieta-portal al "antes" de la sala (teleporta a la sala espejo).
@@ -848,9 +974,16 @@ export function pastPortal(opts: {
 }): PropHandle {
   // letrero solo "ANTES" (decision del usuario 2026-07-06): sin el año.
   const sign = opts.locale === 'es' ? 'ANTES' : 'BEFORE'
-  // ponytail: opts.accent y opts.year ya no se usan (grietas siempre sepia,
+  // ponytail: opts.accent y opts.year ya no se usan (paleta por TEAR_STYLES,
   // letrero sin año); se conservan en la firma por los call sites de salas.
-  const rift = timeRift(sign)
+  const rift = dimensionalTear({
+    kind: 'past',
+    width: 2.2,
+    height: 3.1,
+    cy: 1.55,
+    seed: 11.3 + opts.room.index * 2.7,
+    sign,
+  })
   rift.group.position.set(opts.position[0], opts.position[1], opts.position[2])
   rift.group.rotation.y = opts.rotationY ?? 0
   return {
@@ -889,7 +1022,14 @@ export function exitPortal(opts: {
   onExit(): void
 }): PropHandle {
   const sign = opts.locale === 'es' ? 'VOLVER · HOY' : 'BACK · TODAY'
-  const rift = timeRift(sign)
+  const rift = dimensionalTear({
+    kind: 'exit',
+    width: 2.2,
+    height: 3.1,
+    cy: 1.55,
+    seed: 5.1 + opts.roomIndex * 3.3,
+    sign,
+  })
   rift.group.position.set(opts.position[0], opts.position[1], opts.position[2])
   rift.group.rotation.y = opts.rotationY ?? 0
   return {
@@ -980,6 +1120,8 @@ export function lecternNotebook(opts: {
   story: { title: string; paragraphs: readonly string[] }
   /** Luz puntual de acento sobre el cuaderno (solo tier full). */
   withLight?: boolean
+  /** Oculta el pilar cilindrico procedural (la sala pone su propio GLB). */
+  hidePillar?: boolean
   onOpen(title: string, paragraphs: readonly string[]): void
 }): PropHandle {
   const group = new Group()
@@ -987,20 +1129,24 @@ export function lecternNotebook(opts: {
   group.rotation.y = opts.rotationY ?? 0
   const trim = opts.theme.trim ?? opts.theme.accent
   const units = unitGeo()
-  // pilar cilindrico (mismo lenguaje que el pedestal de contacto)
-  const pedestal = new Mesh(units.cylinder, toonMat('#141a26'))
-  pedestal.scale.set(0.5, 0.9, 0.5)
-  pedestal.position.y = 0.45
-  pedestal.castShadow = true
-  // filo superior con el trim de la sala (guiño)
-  const lip = new Mesh(
-    units.cylinder,
-    toonMat(trim, { emissive: trim, emissiveIntensity: 0.35 }),
-  )
-  lip.scale.set(0.54, 0.04, 0.54)
-  lip.position.y = 0.92
-  lip.userData.noOutline = true
-  group.add(pedestal, lip)
+  // pilar cilindrico (mismo lenguaje que el pedestal de contacto). El aula lo
+  // oculta (hidePillar) y monta su pedestal.glb CC0 en su lugar; el cuaderno
+  // flotante y el halo/luz siguen viniendo de aca.
+  if (!opts.hidePillar) {
+    const pedestal = new Mesh(units.cylinder, toonMat('#141a26'))
+    pedestal.scale.set(0.5, 0.9, 0.5)
+    pedestal.position.y = 0.45
+    pedestal.castShadow = true
+    // filo superior con el trim de la sala (guiño)
+    const lip = new Mesh(
+      units.cylinder,
+      toonMat(trim, { emissive: trim, emissiveIntensity: 0.35 }),
+    )
+    lip.scale.set(0.54, 0.04, 0.54)
+    lip.position.y = 0.92
+    lip.userData.noOutline = true
+    group.add(pedestal, lip)
+  }
   // cuaderno FLOTANDO separado del pilar: libro con VOLUMEN (portada/lomo
   // como caja delgada) + pagina con el texto al frente + halo del acento
   // detras (el pulso lo anima el update). La caja garantiza que desde
@@ -1083,6 +1229,8 @@ export function infoKit(opts: {
   withPortal?: boolean
   /** Estilo de las pizarras RETOS/APRENDIZAJES (default whiteboard oficina). */
   boardStyle?: BoardStyle
+  /** Oculta el pilar procedural del cuaderno (la sala monta su GLB). */
+  hidePillar?: boolean
   onFicha(roomIndex: number, kind: FichaKind): void
   onEnterPast(roomIndex: number, spawn: { x: number; z: number }): void
   onStory(title: string, paragraphs: readonly string[]): void
@@ -1135,6 +1283,7 @@ export function infoKit(opts: {
     notebook: { title: texts.title, lines: texts.notebook },
     story: { title: texts.title, paragraphs: texts.resena },
     withLight: opts.withLight,
+    hidePillar: opts.hidePillar,
     onOpen: opts.onStory,
   })
   return {
@@ -1201,6 +1350,15 @@ export function seatInteractable(
   x: number,
   z: number,
   state: EngineState,
+  opts?: {
+    /** Orientacion del jugador sentado (default 0 = mira +Z). */
+    rotationY?: number
+    /** Pose sentada: 'typing' si la silla esta frente a una PC. */
+    pose?: 'sit' | 'typing'
+    /** Se dispara al sentarse (true) / levantarse (false) en esta silla:
+     *  la sala lo usa para encender/apagar la PC del puesto. */
+    onSeatChange?: (seated: boolean) => void
+  },
 ): Interactable {
   const item: Interactable = {
     id,
@@ -1210,8 +1368,11 @@ export function seatInteractable(
     label: { ...SIT_LABEL },
     onActivate: () => {
       const sameSeat = state.playerSeat?.x === x && state.playerSeat?.z === z
-      state.playerSeat = sameSeat ? null : { x, z, rotationY: 0 }
+      state.playerSeat = sameSeat
+        ? null
+        : { x, z, rotationY: opts?.rotationY ?? 0, pose: opts?.pose }
       item.label = sameSeat ? { ...SIT_LABEL } : { ...STAND_LABEL }
+      opts?.onSeatChange?.(!sameSeat)
     },
   }
   return item
@@ -1371,7 +1532,10 @@ export interface CoworkerDef {
   spec: CharacterSpec
   position: readonly [number, number, number]
   rotationY?: number
-  pose?: 'sit' | 'kneel'
+  /** Poses sentadas admitidas para un coworker (typing = tecleando). */
+  pose?: 'sit' | 'kneel' | 'typing' | 'sitTalk'
+  /** Si esta sentado, al conversar se levanta y gesticula de pie (opt-in). */
+  standToTalk?: boolean
   path?: readonly (readonly [number, number])[]
   speed?: number
   dialog: NpcDialog
@@ -1408,6 +1572,7 @@ export function npcCoworkers(opts: {
       position: def.position,
       rotationY: def.rotationY,
       pose: def.pose,
+      standToTalk: def.standToTalk,
       path: def.path,
       speed: def.speed,
     })

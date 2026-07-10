@@ -3,10 +3,15 @@
 > Estandar de las salas del journey 3D (`apps/journey`, Three.js vanilla
 > **toon 3D limpio**, cero React/R3F): los 4 helpers del canon, la estructura
 > fija de una sala presente y de un pasado, la paleta paredes-blancas + acento
-> del rubro, el presupuesto <100 draw calls por sala, los 4 puntos de
+> del rubro, el presupuesto <200 draw calls por sala, los 4 puntos de
 > infra que exige agregar una sala y el estandar de NPCs con 2 enfoques +
 > reparto de genero. Promovido del plan `journey-salas-estandar` (10 salas,
-> 2026-07). **Giro visual 2026-07-07 (pedido del dueno):** se ELIMINO todo el
+> 2026-07). **Techo de draw calls subido a <200 (pedido del dueno
+> 2026-07-09):** al poblar las salas con props GLB CC0 reales (73 modelos,
+> ver `public/models/CREDITS.md`) el conteo sube — cada GLB suma 2-8 draw
+> calls sin fusionar. El dueno autorizo pasar de <100 a **<200** por sala
+> para priorizar el look; la fluidez la valida el dueno en su GPU
+> (local-first). **Giro visual 2026-07-07 (pedido del dueno):** se ELIMINO todo el
 > postfx comico — contornos de tinta (inverted-hull) + halftone Ben-Day +
 > aberracion cromatica. El render es DIRECTO (`renderer.render`, MSAA nativo,
 > sin `EffectComposer`); `toon.ts::outlineGroup` es NO-OP y `outlinedMergedBoxes`
@@ -35,10 +40,15 @@ data-driven y escala solo).
 - **SIEMPRE** paredes blanco hueso (`#f2f0eb`) en TODA sala presente. El
   color del rubro vive en `floor`/`trim`/`accent`/`lightColor`/pantallas
   y props firma — NUNCA en la pared. Los pasados mantienen su sepia.
-- **SIEMPRE** <100 draw calls por sala (presente Y pasado). Medir en DEV
-  con `window.__journeyDebug.info.render.calls` (smoke con browser,
-  patron `tmp/journey-smoke-perf.py`: max sobre ventana de 4 s tras el
-  mount, capturando NPCs caminantes).
+- **SIEMPRE** <200 draw calls por sala (presente Y pasado). Techo subido
+  de <100 a <200 el 2026-07-09 (pedido del dueno) para poblar las salas
+  con props GLB CC0 reales. Medir en DEV con
+  `window.__journeyDebug.info.render.calls` (smoke con browser, patron
+  `tmp/journey-smoke-perf.py`: max sobre ventana de 4 s tras el mount,
+  capturando NPCs caminantes). Palanca #1 sigue siendo fusionar estaticos
+  del mismo material; los GLB no fusionan (cada uno es su closure de
+  meshes), por eso suben el conteo — usarlos para props HERO, no para
+  relleno barato (eso sigue procedural fusionado).
 - **SIEMPRE** el texto del CV (retos/aprendizajes/fichas/dialogos/
   showcase) viaja como HTML real (panel DOM), NUNCA como pixeles WebGL
   (SEO/ATS/a11y).
@@ -202,7 +212,7 @@ colorea el audio: cada sala presente tiene su firma sonora por rubro.
 | Cargar la sala siguiente "por si acaso" | 1 sala viva; el zone manager desmonta la anterior |
 | Sala nueva sin los 4 puntos de infra | El build falla en `RoomId`; completar los 4 + audio |
 | Textos hardcodeados de una experiencia | Data-driven desde `@portfolio/content` (slug en `ROOM_SPECS`) |
-| Declarar la sala lista sin medir draw calls | Smoke de perf presente+pasado <100 |
+| Declarar la sala lista sin medir draw calls | Smoke de perf presente+pasado <200 |
 
 ## Referencias cruzadas
 

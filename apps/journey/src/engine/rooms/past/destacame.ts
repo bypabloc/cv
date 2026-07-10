@@ -31,7 +31,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint, paperStack } from '../props'
+import { footprint, paperStack } from '../props'
+import { placeProp } from '../props-catalog'
 import { PAST_SCREEN, PAST_STORY_LABEL, type PastSet } from './shared'
 
 const DESTACAME_STORY: Record<Locale, { title: string; paragraphs: string[] }> =
@@ -159,8 +160,9 @@ export function destacamePast(
   // el rincon de los deudores: la mesita con las cartas de cobranza
   // apiladas y el telefono que no deja de sonar (el cobrador)
   group.add(
-    desk({
-      position: [x - 3.0, 0, z - 0.3],
+    placeProp('desk_office', {
+      x: x - 3.0,
+      z: z - 0.3,
       rotationY: Math.PI / 2,
       width: 1.4,
       color: '#4c4740',
@@ -222,10 +224,11 @@ export function destacamePast(
   // el escritorio del operador desbordado: planillas por todos lados,
   // la calculadora y el cafe que se enfrio hace dos horas
   group.add(
-    desk({
-      position: [x + 2.6, 0, z + 0.9],
-      color: '#4c4740',
+    placeProp('desk_office', {
+      x: x + 2.6,
+      z: z + 0.9,
       width: 1.5,
+      color: '#4c4740',
     }),
     paperStack({ position: [x + 2.1, 0.76, z + 0.75], count: 14 }),
     paperStack({ position: [x + 3.1, 0.76, z + 0.8], count: 10 }),

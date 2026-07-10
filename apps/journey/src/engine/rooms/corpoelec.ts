@@ -52,6 +52,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const BOARD_LABEL_ON = {
   es: 'Energizar el tablero de control',
@@ -839,23 +840,27 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
   assetTag.rotation.y = Math.PI / 2
   group.add(assetTag)
 
-  // seccion de inventario (+X, frente): estanteria metalica con cajas
-  // etiquetadas y los equipos 2013 que el sistema rastreaba — 3 lotes
-  // fusionados (metal / kraft / equipos oscuros) = 6 draw calls
+  // seccion de inventario (+X, frente): estanteria metalica GLB con los
+  // equipos 2013 que el sistema rastreaba como props GLB reales (radios,
+  // PC torre, CRT, laptop, walkie-talkies, cajas, bobina). Los aisladores
+  // ceramicos y el telefono fijo (sin GLB) quedan procedurales.
   const shelfX = half - 0.55
+  // armazon de la estanteria (GLB) + aisladores ceramicos apilados en la
+  // repisa alta (sin GLB adecuado, quedan como merge)
   group.add(
-    // lote metal: estanteria (3 repisas + laterales) + radios base +
-    // telefonos fijos + PC torre en el piso
+    placeProp('shelf', {
+      x: shelfX,
+      z: room.z - 4.1,
+      rotationY: Math.PI / 2,
+      width: 1.9,
+      color: '#6a7078',
+    }),
     outlinedMergedBoxes(
       [
-        { w: 0.5, h: 0.04, d: 1.9, x: shelfX, y: 0.5, z: room.z - 4.1 },
-        { w: 0.5, h: 0.04, d: 1.9, x: shelfX, y: 1.0, z: room.z - 4.1 },
-        { w: 0.5, h: 0.04, d: 1.9, x: shelfX, y: 1.5, z: room.z - 4.1 },
-        { w: 0.5, h: 1.62, d: 0.05, x: shelfX, y: 0.81, z: room.z - 5.07 },
-        { w: 0.5, h: 1.62, d: 0.05, x: shelfX, y: 0.81, z: room.z - 3.13 },
-        // radio base con perilla (repisa media)
-        { w: 0.3, h: 0.12, d: 0.22, x: shelfX, y: 1.08, z: room.z - 4.7 },
-        // telefono fijo de escritorio
+        // aisladores ceramicos apilados (repisa alta)
+        { w: 0.14, h: 0.3, d: 0.14, x: shelfX, y: 1.67, z: room.z - 3.5 },
+        { w: 0.14, h: 0.3, d: 0.14, x: shelfX, y: 1.67, z: room.z - 3.72 },
+        // telefono fijo de escritorio (repisa media)
         { w: 0.22, h: 0.08, d: 0.2, x: shelfX, y: 1.06, z: room.z - 3.6 },
         {
           w: 0.06,
@@ -865,84 +870,42 @@ export default function buildCorpoelec(ctx: RoomCtx): RoomBuild {
           y: 1.12,
           z: room.z - 3.6,
         },
-        // PC torre 2013 en el piso junto a la estanteria
-        { w: 0.2, h: 0.52, d: 0.46, x: shelfX - 0.5, y: 0.26, z: room.z - 2.7 },
-      ],
-      toonMat('#6a7078'),
-      { castShadow: true },
-    ),
-    // lote kraft: cajas etiquetadas + bobinas de cable + aisladores
-    outlinedMergedBoxes(
-      [
-        { w: 0.55, h: 0.4, d: 0.55, x: shelfX, y: 0.72, z: room.z - 4.1 },
-        { w: 0.5, h: 0.36, d: 0.5, x: shelfX, y: 0.22, z: room.z - 4.55 },
-        { w: 0.5, h: 0.36, d: 0.5, x: shelfX, y: 0.22, z: room.z - 3.65 },
-        { w: 0.45, h: 0.34, d: 0.45, x: shelfX, y: 1.7, z: room.z - 4.55 },
-        // bobinas de cable (carrete: 2 flanges + nucleo) en el rincon
-        { w: 0.1, h: 0.62, d: 0.62, x: half - 1.35, y: 0.31, z: room.z - 5.15 },
-        { w: 0.1, h: 0.62, d: 0.62, x: half - 1.75, y: 0.31, z: room.z - 5.15 },
-        { w: 0.32, h: 0.3, d: 0.3, x: half - 1.55, y: 0.31, z: room.z - 5.15 },
-        // aisladores ceramicos apilados (repisa alta)
-        { w: 0.14, h: 0.3, d: 0.14, x: shelfX, y: 1.67, z: room.z - 3.5 },
-        { w: 0.14, h: 0.3, d: 0.14, x: shelfX, y: 1.67, z: room.z - 3.72 },
       ],
       toonMat('#8a6f4d'),
       { castShadow: true },
     ),
-    // lote oscuro: walkie-talkies con antena, laptops gruesas y tablets
-    outlinedMergedBoxes(
-      [
-        {
-          w: 0.09,
-          h: 0.24,
-          d: 0.06,
-          x: shelfX - 0.12,
-          y: 1.14,
-          z: room.z - 4.4,
-        },
-        {
-          w: 0.02,
-          h: 0.14,
-          d: 0.02,
-          x: shelfX - 0.14,
-          y: 1.32,
-          z: room.z - 4.4,
-        },
-        {
-          w: 0.09,
-          h: 0.24,
-          d: 0.06,
-          x: shelfX + 0.1,
-          y: 1.14,
-          z: room.z - 4.3,
-        },
-        {
-          w: 0.02,
-          h: 0.14,
-          d: 0.02,
-          x: shelfX + 0.08,
-          y: 1.32,
-          z: room.z - 4.3,
-        },
-        // laptop gruesa 2013 (base + tapa abierta) en la repisa baja
-        { w: 0.32, h: 0.05, d: 0.24, x: shelfX, y: 0.55, z: room.z - 3.4 },
-        { w: 0.32, h: 0.24, d: 0.04, x: shelfX, y: 0.68, z: room.z - 3.28 },
-        // tablets de bisel grueso apiladas
-        { w: 0.17, h: 0.03, d: 0.24, x: shelfX, y: 1.53, z: room.z - 4.0 },
-        {
-          w: 0.17,
-          h: 0.03,
-          d: 0.24,
-          x: shelfX + 0.02,
-          y: 1.56,
-          z: room.z - 3.95,
-        },
-        // monitor CRT panzon sobre la repisa media (sede vieja)
-        { w: 0.34, h: 0.3, d: 0.36, x: shelfX, y: 1.19, z: room.z - 5.0 },
-      ],
-      toonMat('#2e3238'),
-      { castShadow: true },
-    ),
+  )
+  // equipos 2013 como GLB CC0 sobre las repisas y el piso
+  group.add(
+    placeProp('old_radio', { x: shelfX, y: 1.02, z: room.z - 4.7, width: 0.3 }),
+    placeProp('computer_tower', {
+      x: shelfX - 0.5,
+      z: room.z - 2.7,
+      width: 0.28,
+    }),
+    placeProp('crt_monitor', {
+      x: shelfX,
+      y: 1.02,
+      z: room.z - 5.0,
+      width: 0.42,
+    }),
+    placeProp('laptop', { x: shelfX, y: 0.52, z: room.z - 3.35, width: 0.36 }),
+    placeProp('walkie_talkie', { x: shelfX - 0.12, y: 1.02, z: room.z - 4.4 }),
+    placeProp('walkie_talkie', {
+      x: shelfX + 0.1,
+      y: 1.02,
+      z: room.z - 4.3,
+      rotationY: 0.3,
+    }),
+    placeProp('cardboard_box', {
+      x: shelfX,
+      y: 0.52,
+      z: room.z - 4.1,
+      width: 0.5,
+    }),
+    placeProp('cardboard_box', { x: shelfX, z: room.z - 4.55, width: 0.46 }),
+    placeProp('cardboard_box', { x: shelfX, z: room.z - 3.65, width: 0.46 }),
+    placeProp('cable_reel', { x: half - 1.55, z: room.z - 5.15, width: 0.62 }),
   )
   staticColliders.push(
     footprint(shelfX, room.z - 4.1, 0.7, 2.1),

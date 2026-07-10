@@ -153,18 +153,26 @@ const CSS = `
 .jny-dream { position: absolute; inset: 0; pointer-events: none; z-index: 41;
   opacity: 0; visibility: hidden;
   transition: opacity 620ms ease, visibility 0s linear 620ms;
-  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #fdf6e6 55%, #e8dcc0 100%); }
+  background:
+    repeating-conic-gradient(from 8deg at 50% 46%, transparent 0deg 9deg,
+      rgba(138, 90, 42, 0.18) 9deg 11deg),
+    radial-gradient(circle at 50% 46%, #fffdf4 0%, #f6e3bd 44%,
+      #c89a5e 76%, #4a3016 100%); }
 .jny-dream.on { opacity: 1; visibility: visible;
-  transition: opacity 520ms ease; backdrop-filter: blur(12px) brightness(1.3); }
+  transition: opacity 520ms ease;
+  backdrop-filter: blur(10px) sepia(0.45) brightness(1.18); }
 .jny-warp { position: absolute; inset: 0; pointer-events: none; z-index: 41;
   opacity: 0; visibility: hidden;
   transition: opacity 460ms ease, visibility 0s linear 460ms;
   background:
-    linear-gradient(105deg, transparent 26%, rgba(96, 200, 255, 0.5) 44%,
-      #eaf7ff 50%, rgba(96, 200, 255, 0.5) 56%, transparent 74%),
-    radial-gradient(circle at 50% 48%, #dff2ff 0%, #5f9fd8 55%, #101a30 100%); }
+    repeating-conic-gradient(from 0deg at 50% 48%, transparent 0deg 5deg,
+      rgba(42, 224, 255, 0.35) 5deg 6.5deg, transparent 6.5deg 14deg,
+      rgba(255, 47, 214, 0.32) 14deg 15.5deg),
+    radial-gradient(circle at 50% 48%, #ffffff 0%, #ff2fd6 24%,
+      #3c0f52 58%, #05020c 100%); }
 .jny-warp.on { opacity: 1; visibility: visible;
-  transition: opacity 400ms ease; backdrop-filter: blur(10px) brightness(1.25); }
+  transition: opacity 400ms ease;
+  backdrop-filter: blur(10px) brightness(1.2); }
 .jny-loader { position: absolute; inset: 0; display: grid; place-items: center;
   background: #0b0b10; color: var(--color-grey-5, #f7f7f5); z-index: 50; }
 .jny-screentone { position: absolute; inset: 0; pointer-events: none;
@@ -438,6 +446,10 @@ export function createHud(deps: HudDeps): Hud {
   }
 
   // fade (negro) + fade de sueño (white-out del portal) + loader
+  // con reduced-motion todo cruce cae al fade oscuro simple (sin streaks)
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches
   const fadeEl = el('div', 'jny-fade')
   fadeEl.setAttribute('aria-hidden', 'true')
   const dreamEl = el('div', 'jny-dream')
@@ -806,13 +818,13 @@ export function createHud(deps: HudDeps): Hud {
     },
 
     fade(on, mode = 'dark') {
-      if (mode === 'dream') {
+      if (mode === 'dream' && !prefersReducedMotion) {
         dreamEl.classList.toggle('on', on)
         return new Promise((resolve) => {
           window.setTimeout(resolve, on ? 560 : 650)
         })
       }
-      if (mode === 'warp') {
+      if (mode === 'warp' && !prefersReducedMotion) {
         warpEl.classList.toggle('on', on)
         return new Promise((resolve) => {
           window.setTimeout(resolve, on ? 420 : 480)

@@ -53,6 +53,7 @@ import {
   switchableMonitor,
   wallArt,
 } from './props'
+import { placeProp } from './props-catalog'
 
 const SEARCH_LABEL = {
   es: 'Buscar una historia',
@@ -859,54 +860,17 @@ export default function buildIpasme(ctx: RoomCtx): RoomBuild {
   interactables.push(...laptopToggles(office, deskSpots, room.index))
   interactables.push(...office.seats)
 
-  // consultorio (-X, fondo): camilla con rollo de papel, escritorio del
-  // medico con tensiometro, negatoscopio con radiografia y la bascula —
-  // lote blanco clinico fusionado (2 draw calls)
+  // consultorio (-X, fondo): camilla GLB CC0 (examination_table) + la
+  // bascula de columna procedural (sin GLB adecuado). El escritorio del
+  // medico, el negatoscopio y el instrumental siguen procedurales abajo.
   group.add(
+    placeProp('examination_table', {
+      x: -half + 1.7,
+      z: room.z - 4.6,
+      width: 0.72,
+    }),
     outlinedMergedBoxes(
       [
-        // camilla: colchoneta + cabecera inclinada + 4 patas
-        { w: 0.72, h: 0.14, d: 1.8, x: -half + 1.7, y: 0.62, z: room.z - 4.6 },
-        {
-          w: 0.72,
-          h: 0.1,
-          d: 0.5,
-          x: -half + 1.7,
-          y: 0.78,
-          z: room.z - 5.35,
-        },
-        {
-          w: 0.06,
-          h: 0.55,
-          d: 0.06,
-          x: -half + 1.4,
-          y: 0.27,
-          z: room.z - 5.32,
-        },
-        {
-          w: 0.06,
-          h: 0.55,
-          d: 0.06,
-          x: -half + 2.0,
-          y: 0.27,
-          z: room.z - 5.32,
-        },
-        {
-          w: 0.06,
-          h: 0.55,
-          d: 0.06,
-          x: -half + 1.4,
-          y: 0.27,
-          z: room.z - 3.9,
-        },
-        {
-          w: 0.06,
-          h: 0.55,
-          d: 0.06,
-          x: -half + 2.0,
-          y: 0.27,
-          z: room.z - 3.9,
-        },
         // bascula de consultorio: base + columna + cabezal
         { w: 0.42, h: 0.06, d: 0.5, x: -half + 0.9, y: 0.03, z: room.z - 5.7 },
         {
@@ -1000,34 +964,20 @@ export default function buildIpasme(ctx: RoomCtx): RoomBuild {
   negatoscopio.add(negFrame, radiografia)
   group.add(negatoscopio)
 
-  // farmacia (+X, fondo): estanteria clinica + cajas de medicamentos
+  // farmacia (+X, fondo): estanteria clinica GLB + cajas de medicamentos GLB
   const shelfX = half - 0.55
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 0.5, h: 0.04, d: 1.9, x: shelfX, y: 0.55, z: room.z - 4.2 },
-        { w: 0.5, h: 0.04, d: 1.9, x: shelfX, y: 1.05, z: room.z - 4.2 },
-        { w: 0.5, h: 0.04, d: 1.9, x: shelfX, y: 1.55, z: room.z - 4.2 },
-        { w: 0.5, h: 1.66, d: 0.05, x: shelfX, y: 0.83, z: room.z - 5.17 },
-        { w: 0.5, h: 1.66, d: 0.05, x: shelfX, y: 0.83, z: room.z - 3.23 },
-      ],
-      toonMat('#c8ccd2'),
-      { castShadow: true },
-    ),
-    // cajas de medicamentos (los unicos toques calidos de la sala)
-    outlinedMergedBoxes(
-      [
-        { w: 0.2, h: 0.12, d: 0.3, x: shelfX, y: 0.63, z: room.z - 4.8 },
-        { w: 0.16, h: 0.1, d: 0.24, x: shelfX, y: 0.62, z: room.z - 4.3 },
-        { w: 0.22, h: 0.14, d: 0.26, x: shelfX, y: 1.14, z: room.z - 4.6 },
-        { w: 0.14, h: 0.1, d: 0.2, x: shelfX, y: 1.12, z: room.z - 3.9 },
-        { w: 0.18, h: 0.12, d: 0.24, x: shelfX, y: 1.63, z: room.z - 4.9 },
-        { w: 0.16, h: 0.1, d: 0.22, x: shelfX, y: 1.62, z: room.z - 4.15 },
-        { w: 0.2, h: 0.1, d: 0.2, x: shelfX, y: 1.62, z: room.z - 3.5 },
-      ],
-      toonMat('#5b8fb8'),
-      { castShadow: true },
-    ),
+    placeProp('shelf', {
+      x: shelfX,
+      z: room.z - 4.2,
+      rotationY: Math.PI / 2,
+      width: 1.9,
+      color: '#c8ccd2',
+    }),
+    // cajas de medicamentos GLB (los unicos toques calidos de la sala)
+    placeProp('medicine_box', { x: shelfX, y: 0.6, z: room.z - 4.6 }),
+    placeProp('medicine_box', { x: shelfX, y: 1.12, z: room.z - 4.3 }),
+    placeProp('medicine_box', { x: shelfX, y: 1.62, z: room.z - 4.9 }),
   )
   staticColliders.push(footprint(shelfX, room.z - 4.2, 0.7, 2.1))
   const farmaciaLabel = label(locale === 'es' ? 'FARMACIA' : 'PHARMACY', {
@@ -1037,6 +987,18 @@ export default function buildIpasme(ctx: RoomCtx): RoomBuild {
   farmaciaLabel.position.set(shelfX - 0.1, 1.95, room.z - 4.2)
   farmaciaLabel.rotation.y = -Math.PI / 2
   group.add(farmaciaLabel)
+  // props decorativos: plantas de sala de espera + taza en el escritorio
+  // del medico (consultorio real, no vacio)
+  group.add(
+    placeProp('potted_plant', { x: -half + 0.6, z: frontZ - 0.8, width: 0.5 }),
+    placeProp('potted_plant', { x: 0.44, z: room.z + 2.6, width: 0.5 }),
+    placeProp('coffee_mug', {
+      x: -half + 1.5,
+      y: 0.77,
+      z: room.z - 2.4,
+      width: 0.12,
+    }),
+  )
 
   // archivador semivacio (+X, medio): el papel migrado — cajon abierto
   // con un par de carpetas manila y el hueco del tarjeton
@@ -1070,34 +1032,31 @@ export default function buildIpasme(ctx: RoomCtx): RoomBuild {
   )
   staticColliders.push(footprint(half - 0.6, room.z - 1.9, 0.7, 0.8))
 
-  // admision (centro, frente): mostrador con ventanilla, PC bajo el
-  // meson, monitor de historias, cruz roja y cartel IPASME
+  // admision (centro, frente): mostrador GLB con ventanilla, PC torre GLB
+  // bajo el meson, monitor de historias, cruz roja GLB y cartel IPASME
   group.add(
-    outlinedMergedBoxes(
-      [
-        // frente + tapa + laterales del mostrador
-        { w: 2.6, h: 1.0, d: 0.08, x: 1.7, y: 0.5, z: room.z + 3.18 },
-        { w: 2.6, h: 0.06, d: 0.7, x: 1.7, y: 1.02, z: room.z + 2.9 },
-        { w: 0.08, h: 1.0, d: 0.62, x: 0.44, y: 0.5, z: room.z + 2.88 },
-        { w: 0.08, h: 1.0, d: 0.62, x: 2.96, y: 0.5, z: room.z + 2.88 },
-      ],
-      toonMat('#e8e6e0'),
-      { castShadow: true },
-    ),
+    placeProp('reception_counter', {
+      x: 1.7,
+      z: room.z + 2.9,
+      rotationY: Math.PI,
+      width: 2.6,
+      color: '#e8e6e0',
+    }),
     // PC de mostrador (torre 2014) bajo el meson — la que instala J.M.
-    outlinedMergedBoxes(
-      [{ w: 0.2, h: 0.5, d: 0.44, x: 2.5, y: 0.25, z: room.z + 2.8 }],
-      toonMat('#2e3238'),
-      { castShadow: true },
-    ),
-    // cruz medica roja sobre el mostrador
-    mergedBoxes(
-      [
-        { w: 0.14, h: 0.5, d: 0.06, x: 1.7, y: 2.5, z: room.z + 3.16 },
-        { w: 0.5, h: 0.14, d: 0.06, x: 1.7, y: 2.5, z: room.z + 3.16 },
-      ],
-      toonMat('#c0392b'),
-    ),
+    placeProp('computer_tower', {
+      x: 2.5,
+      z: room.z + 2.8,
+      rotationY: Math.PI,
+      width: 0.28,
+    }),
+    // cruz medica roja GLB sobre el mostrador (en la pared)
+    placeProp('medical_cross', {
+      x: 1.7,
+      y: 2.5,
+      z: room.z + 3.16,
+      width: 0.5,
+      color: '#c0392b',
+    }),
   )
   staticColliders.push(footprint(1.7, room.z + 2.95, 2.7, 0.9))
   const admisionLabel = label('IPASME', { size: 0.22, color: theme.accent })
@@ -1162,20 +1121,19 @@ export default function buildIpasme(ctx: RoomCtx): RoomBuild {
     }
   })
 
-  // sala de espera (-X, frente): sillas en hilera mirando a admision
+  // sala de espera (-X, frente): sillas de espera GLB en hilera mirando a
+  // admision (+Z)
   const chairXs = [-4.9, -4.1, -3.3, -2.5] as const
-  group.add(
-    outlinedMergedBoxes(
-      chairXs.flatMap((x) => [
-        { w: 0.5, h: 0.06, d: 0.45, x, y: 0.46, z: room.z + 3.6 },
-        { w: 0.5, h: 0.45, d: 0.06, x, y: 0.74, z: room.z + 3.82 },
-        { w: 0.05, h: 0.44, d: 0.05, x: x - 0.2, y: 0.22, z: room.z + 3.7 },
-        { w: 0.05, h: 0.44, d: 0.05, x: x + 0.2, y: 0.22, z: room.z + 3.7 },
-      ]),
-      toonMat('#5aa08c'),
-      { inflate: 0.03, castShadow: true },
-    ),
-  )
+  for (const x of chairXs) {
+    group.add(
+      placeProp('waiting_chair', {
+        x,
+        z: room.z + 3.6,
+        width: 0.5,
+        color: '#5aa08c',
+      }),
+    )
+  }
   staticColliders.push(footprint(-3.7, room.z + 3.7, 3.0, 0.7))
 
   // dispensador de turnos junto a la hilera: E toma el siguiente numero

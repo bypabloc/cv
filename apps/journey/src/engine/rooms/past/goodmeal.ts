@@ -29,7 +29,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint } from '../props'
+import { footprint } from '../props'
+import { placeProp } from '../props-catalog'
 import { PAST_SCREEN, PAST_STORY_LABEL, type PastSet } from './shared'
 
 const GOODMEAL_STORY: Record<Locale, { title: string; paragraphs: string[] }> =
@@ -150,53 +151,26 @@ export function goodmealPast(
   vitrinaSign.rotation.y = Math.PI / 2
   group.add(vitrinaSign)
 
-  // carro de desechos: la vitrina se vuelca aqui en vez de rescatarse
+  // carro de desechos GLB: la vitrina se vuelca aqui en vez de rescatarse
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 0.8, h: 0.5, d: 0.55, x: x - 1.7, y: 0.5, z: z - 1.2 },
-        { w: 0.08, h: 0.3, d: 0.08, x: x - 2.0, y: 0.15, z: z - 1.4 },
-        { w: 0.08, h: 0.3, d: 0.08, x: x - 1.4, y: 0.15, z: z - 1.0 },
-      ],
-      toonMat('#4c4740'),
-      { castShadow: true },
-    ),
-    // bandeja inclinada volcando comida al carro
-    mergedBoxes(
-      [
-        {
-          w: 0.5,
-          h: 0.04,
-          d: 0.4,
-          x: x - 1.7,
-          y: 0.82,
-          z: z - 1.2,
-          rotY: 0.4,
-        },
-        { w: 0.14, h: 0.07, d: 0.12, x: x - 1.8, y: 0.7, z: z - 1.1 },
-        { w: 0.12, h: 0.06, d: 0.12, x: x - 1.6, y: 0.68, z: z - 1.3 },
-      ],
-      toonMat('#b09a6e'),
-    ),
+    placeProp('service_cart', { x: x - 1.7, z: z - 1.2, color: '#4c4740' }),
+    // comida volcandose al carro (GLB sepia)
+    placeProp('bread', { x: x - 1.8, y: 0.7, z: z - 1.1, color: '#b09a6e' }),
+    placeProp('donut', { x: x - 1.6, y: 0.68, z: z - 1.3, color: '#b09a6e' }),
   )
   colliders.push(footprint(x - 1.7, z - 1.2, 1.0, 0.8))
 
-  // el tacho grande rebosante + el cartel gris del flujo inverso
+  // el tacho grande rebosante GLB + el cartel gris del flujo inverso
   group.add(
-    outlinedMergedBoxes(
-      [{ w: 0.7, h: 0.8, d: 0.7, x: x + 0.3, y: 0.4, z: z - 1.5 }],
-      toonMat('#3a352c'),
-      { castShadow: true },
-    ),
-    // comida asomando por encima del borde
-    mergedBoxes(
-      [
-        { w: 0.2, h: 0.1, d: 0.18, x: x + 0.15, y: 0.86, z: z - 1.55 },
-        { w: 0.16, h: 0.09, d: 0.16, x: x + 0.45, y: 0.85, z: z - 1.4 },
-        { w: 0.18, h: 0.08, d: 0.14, x: x + 0.3, y: 0.9, z: z - 1.6 },
-      ],
-      toonMat('#b09a6e'),
-    ),
+    placeProp('trash_can', {
+      x: x + 0.3,
+      z: z - 1.5,
+      width: 0.7,
+      color: '#3a352c',
+    }),
+    // comida asomando por encima del borde (GLB sepia)
+    placeProp('donut', { x: x + 0.15, y: 0.82, z: z - 1.55, color: '#b09a6e' }),
+    placeProp('bread', { x: x + 0.45, y: 0.82, z: z - 1.4, color: '#b09a6e' }),
   )
   colliders.push(footprint(x + 0.3, z - 1.5, 0.9, 0.9))
   const cartelSign = label(
@@ -206,18 +180,17 @@ export function goodmealPast(
   cartelSign.position.set(x + 0.3, 1.6, z - 1.5)
   group.add(cartelSign)
 
-  // bolsas negras apiladas junto a la puerta trasera: la cosecha
-  // triste de cada cierre (siluetas de cajas adentro)
+  // bolsas negras GLB apiladas junto a la puerta trasera: la cosecha
+  // triste de cada cierre
   group.add(
-    outlinedMergedBoxes(
-      [
-        { w: 0.5, h: 0.55, d: 0.5, x: x + 1.8, y: 0.275, z: z - 1.6 },
-        { w: 0.46, h: 0.5, d: 0.46, x: x + 2.4, y: 0.25, z: z - 1.45 },
-        { w: 0.44, h: 0.42, d: 0.44, x: x + 2.1, y: 0.86, z: z - 1.55 },
-      ],
-      toonMat('#26221c'),
-      { castShadow: true },
-    ),
+    placeProp('garbage_bag', { x: x + 1.8, z: z - 1.6, color: '#26221c' }),
+    placeProp('garbage_bag', { x: x + 2.4, z: z - 1.45, color: '#26221c' }),
+    placeProp('garbage_bag', {
+      x: x + 2.1,
+      y: 0.6,
+      z: z - 1.55,
+      color: '#26221c',
+    }),
   )
   colliders.push(footprint(x + 2.1, z - 1.5, 1.3, 0.9))
   const bolsasSign = label(
@@ -227,12 +200,13 @@ export function goodmealPast(
   bolsasSign.position.set(x + 2.1, 1.4, z - 1.5)
   group.add(bolsasSign)
 
-  // la caja del dueño: calculadora vieja y la cuenta que nunca cuadra
+  // la caja del dueño GLB: calculadora vieja y la cuenta que nunca cuadra
   group.add(
-    desk({
-      position: [x + 2.3, 0, z + 0.7],
-      color: '#4c4740',
+    placeProp('desk_office', {
+      x: x + 2.3,
+      z: z + 0.7,
       width: 1.3,
+      color: '#4c4740',
     }),
     mergedBoxes(
       [

@@ -31,7 +31,8 @@ import {
   toonMat,
 } from '../../toon'
 import type { PastCtx } from '../../world'
-import { desk, footprint, paperStack } from '../props'
+import { footprint, paperStack } from '../props'
+import { placeProp } from '../props-catalog'
 import {
   carryPapers,
   PAST_SCREEN,
@@ -175,14 +176,16 @@ export function cofasaPast(
   group.add(andonRed)
   colliders.push(footprint(x - 1.9, z - 1.3, 0.4, 0.4))
 
-  // escritorio de supervision saturado: planillas apiladas, calculadora
+  // escritorio de supervision GLB saturado: planillas apiladas, calculadora
   // vieja y la pila de reportes a medio consolidar
-  const supervision = desk({
-    position: [x + 1.3, 0, z + 0.6],
-    color: '#4c4740',
-    width: 1.6,
-  })
-  group.add(supervision)
+  group.add(
+    placeProp('desk_office', {
+      x: x + 1.3,
+      z: z + 0.6,
+      width: 1.6,
+      color: '#4c4740',
+    }),
+  )
   colliders.push(footprint(x + 1.3, z + 0.6, 1.7, 0.8))
   group.add(
     paperStack({ position: [x + 0.75, 0.745, z + 0.6], count: 12 }),

@@ -312,8 +312,8 @@ Maximo paralelismo util: 3-4 worktrees.
 
 ```bash
 # desde la raiz, con la base secuencial ya commiteada
-git worktree add tmp/wt-<fase> feature/<nombre>
-cd tmp/wt-<fase>
+git worktree add .worktrees/<fase> feature/<nombre>
+cd .worktrees/<fase>
 git checkout -b feature/<nombre>-<fase>
 # ... implementar la fase ...
 # al terminar: merge a feature/<nombre> como el commit que corresponda

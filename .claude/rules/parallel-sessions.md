@@ -50,7 +50,14 @@ SOLO NO aisla nada a nivel git.
   checkout en paralelo (corrompen el working tree, el index y los caches).
 - **SIEMPRE** crear el worktree con `claude --worktree <nombre>` (lo pone
   en `.claude/worktrees/<nombre>/`, rama `worktree-<nombre>`) o con
-  `git worktree add <ruta> -b <branch>` para control total de ruta/branch.
+  `git worktree add .claude/worktrees/<nombre> -b <branch> origin/dev`.
+- **SIEMPRE** dentro de `.claude/worktrees/`, tambien los creados a mano:
+  nunca rutas fuera del repo (`../`). Asi quedan centralizados en una
+  sola carpeta y fuera de git.
+- **SIEMPRE** partir de `dev`: `origin/dev` tras `git fetch origin dev`.
+  `worktree.baseRef: "fresh"` (en `.claude/settings.json`) hace que
+  `claude --worktree` y `EnterWorktree` partan de `origin/<rama por defecto>`,
+  que es `dev`.
 - **SIEMPRE** `.claude/worktrees/` esta gitignored (ya lo esta en este
   repo, `.gitignore` linea 7) para que los worktrees no aparezcan como
   untracked en el checkout principal.
@@ -126,9 +133,10 @@ SOLO NO aisla nada a nivel git.
 
 ## Setup del repo (una sola vez)
 
-`.claude/worktrees/` ya esta gitignored. Falta declarar que archivos
-gitignored copiar a cada worktree nuevo. Crear `.worktreeinclude` en la
-raiz (sintaxis `.gitignore`); solo copia lo que matchea Y es gitignored:
+`.claude/worktrees/` ya esta gitignored y `.worktreeinclude` ya existe en
+la raiz: declara que archivos gitignored copiar a cada worktree nuevo
+(sintaxis `.gitignore`; solo copia lo que matchea Y es gitignored). Si un
+worktree necesita otro archivo gitignored, agregarlo ahi:
 
 ```text
 # .worktreeinclude — archivos gitignored que un worktree fresco necesita.
@@ -215,6 +223,7 @@ forma de NO perder de vista las 2-3 sesiones en paralelo.
 | Abrir 5+ ventanas activas para ir mas rapido | La cuota es de cuenta + throttle de rafaga -> 429 | 2-3 sesiones activas a la vez; combinar capas, no multiplicarlas |
 | Correr un workflow Y abrir varias ventanas activas | El throttle se suma -> pega el techo | Una cosa a la vez: o el workflow, o las ventanas |
 | Dejar worktrees de `--worktree` sin borrar | NO se barren solos (solo los de subagentes/background) | `git worktree remove` + `prune` al terminar |
+| `git worktree add ../<repo>-wt-<x>` (ruta fuera del repo) | Rompe la centralizacion: el worktree queda fuera de `.claude/worktrees/` | `git worktree add .claude/worktrees/<x> -b <branch> origin/dev` |
 | Crear `dev`/`main` como worktree | Son ramas de entorno protegidas | Worktree = rama de trabajo (`feature/`, `fix/`, ...) |
 | Decir / buscar "FleetView" | No es feature oficial | Es **Agent View** (`claude agents`) |
 

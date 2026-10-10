@@ -3,6 +3,9 @@
 *.tmp
 *.log
 
+# Worktrees de trabajo (git worktree add .worktrees/<nombre> -b <branch> origin/dev)
+.worktrees/
+
 # Claude Code worktrees efimeros (creados por agentes con isolation: worktree)
 .claude/worktrees/
 

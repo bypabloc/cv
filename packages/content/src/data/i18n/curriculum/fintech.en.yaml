@@ -3,7 +3,7 @@
 
 meta:
   title: "Pablo Contreras — Senior Full Stack LATAM Fintech"
-  description: "Senior Full Stack specialized in LATAM fintech (Chile, Mexico). Debt settlement, credit scoring and credit products with Vue + Django + AWS. 8+ years shipping product."
+  description: "Senior Full Stack specialized in LATAM fintech (Chile, Mexico). Debt settlement, credit scoring and credit products with Vue + Django + AWS. 12+ years shipping product."
 
 hero:
   eyebrow: "Pablo Contreras · LATAM Fintech · Lima, Peru · Remote LATAM/US"
@@ -13,7 +13,7 @@ hero:
 
 sections:
   experienceSubtitle: "Fintech roles first: Destacame (Chile, Mexico) and GoodMeal."
-  projectsSubtitle: "Case studies of LATAM fintech products (under NDA) + side projects."
+  projectsSubtitle: "Case studies of LATAM fintech products (under NDA) and my own products."
 
 atsKeywords:
   - "Senior Full Stack Developer"

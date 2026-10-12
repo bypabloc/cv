@@ -16,38 +16,38 @@ interface Props {
 const { locale } = Astro.props
 const isEs = locale === 'es'
 
-const title = isEs ? 'Leadership track record' : 'Leadership track record'
+const title = isEs ? 'Trayectoria de liderazgo' : 'Leadership track record'
 const subtitle = isEs
-  ? 'Liderazgo de equipos, navegacion de cambios organizacionales y entrega continua en contexto fintech LATAM.'
+  ? 'Liderazgo de equipos, gestión de cambios organizacionales y entrega continua en fintech LATAM.'
   : 'Team leadership, organizational change navigation and continuous delivery in LATAM fintech context.'
 
 const stats = isEs
   ? [
       { value: 4, label: 'Roles de liderazgo' },
       { value: 8, label: 'Equipos liderados' },
-      { value: 11, label: 'Años entregando producto' },
+      { value: 12, label: 'Años entregando producto' },
       { value: 1, label: 'Premio Innovador del Año' },
     ]
   : [
       { value: 4, label: 'Leadership roles' },
       { value: 8, label: 'Teams led' },
-      { value: 11, label: 'Years shipping product' },
+      { value: 12, label: 'Years shipping product' },
       { value: 1, label: 'Innovator of the Year award' },
     ]
 
 const pillars = isEs
   ? [
       {
-        title: 'Tech leadership',
-        body: 'Lider del equipo inicial en Dibal (primer dev contratado). Decision de arquitectura, hiring, mentoria a juniors, hand-off a equipos sucesores cuando la empresa crece.',
+        title: 'Liderazgo técnico',
+        body: 'Líder del equipo inicial en Dibal (primer dev contratado): decisiones de arquitectura, contratación, mentoría a juniors y traspaso a los equipos que vinieron cuando la empresa creció.',
       },
       {
-        title: 'Organizational resilience',
-        body: 'Navegue reducciones de personal en Destacame manteniendo entrega y moral del equipo. Adaptacion entre frontend → microservices → equipo de plataforma sin perder velocidad.',
+        title: 'Resiliencia organizacional',
+        body: 'Atravesé reducciones de personal en Destacame manteniendo la entrega y la moral del equipo. Pasé de frontend a microservicios y a equipo de plataforma sin perder velocidad.',
       },
       {
-        title: 'Mentoring + delivery',
-        body: 'Triple Alianza 2020: 1er lugar sector Comercio. Premio Innovador del Año 2023 Destacame por implementar soluciones automatizadas con impacto medible en operaciones.',
+        title: 'Mentoría y entrega',
+        body: 'Triple Alianza 2020: 1er lugar en el sector Comercio. Premio Innovador del Año 2023 en Destacame por implementar soluciones automatizadas con impacto medible en operaciones.',
       },
     ]
   : [
@@ -82,7 +82,7 @@ const pillars = isEs
         <div class="leadership__stat">
           <dt class="leadership__stat-label text-mono-label text-muted">{s.label}</dt>
           <dd class="leadership__stat-value text-display-sm">
-            <span class="stat-number gradient-text" data-target={s.value}>0</span>
+            <span class="stat-number gradient-text" data-target={s.value}>{s.value}</span>
           </dd>
         </div>
       ))

@@ -1,372 +1,5 @@
 [
   {
-    "slug": "destacame-frontend",
-    "company": "Destacame",
-    "country": "Chile",
-    "companyUrl": "https://destacame.cl",
-    "start": "2021-12",
-    "end": "2022-08",
-    "seniority": "senior",
-    "metricsEstimated": true,
-    "role": {
-      "en": "Web Frontend Developer",
-      "es": "Desarrollador Web Frontend"
-    },
-    "summary": {
-      "es": "Construi interfaces Vue/Nuxt para los productos fintech de Destacame en Chile antes de pasar al rol de arquitecto.",
-      "en": "Built Vue/Nuxt UIs for Destacame fintech products in Chile before moving up to the Frontend Architect role."
-    },
-    "responsibilities": {
-      "es": [
-        "Desarrollo frontend de productos fintech con Vue y Nuxt.js, construyendo interfaces para flujos financieros de los usuarios de la plataforma.",
-        "Implementación de estándares y nuevas tecnologías en el desarrollo frontend para mejorar la experiencia de usuario y la consistencia del producto.",
-        "Trabajo con datos sensibles de los usuarios, cuidando la validación de formularios y la correcta presentación de la información financiera.",
-        "Aprendizaje y aplicación progresiva del backend con Python y Django para crecer hacia un rol full stack.",
-        "Colaboración con el equipo de producto y diseño para traducir los requerimientos en interfaces claras y usables.",
-        "Refactorización de componentes existentes para reducir la deuda técnica del frontend y facilitar su mantenimiento."
-      ],
-      "en": [
-        "Frontend development of fintech products with Vue and Nuxt.js, building interfaces for the platform users' financial flows.",
-        "Introduced standards and new technologies in frontend development to improve user experience and product consistency.",
-        "Worked with sensitive user data, taking care of form validation and the correct presentation of financial information.",
-        "Progressively learned and applied backend development with Python and Django to grow into a full stack role.",
-        "Collaborated with the product and design teams to translate requirements into clear, usable interfaces.",
-        "Refactored existing components to reduce frontend technical debt and ease maintenance."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Construí interfaces para productos fintech en uso real por los usuarios de la plataforma de gestión financiera en Chile.",
-        "Mejoré de forma notable la calidad y la eficiencia del desarrollo frontend mediante la adopción de nuevas tecnologías y estándares.",
-        "Reduje la deuda técnica del frontend al refactorizar componentes heredados, acortando el tiempo de implementación de nuevas funcionalidades.",
-        "Pasé de un perfil exclusivamente frontend a uno full stack en cerca de ocho meses, incorporando Python y Django desde cero.",
-        "Aporté a la versatilidad del equipo al cubrir tanto frontend como backend, adaptándome a las necesidades cambiantes del producto."
-      ],
-      "en": [
-        "Built interfaces for fintech products in real use by the users of the financial management platform in Chile.",
-        "Noticeably improved frontend quality and efficiency by adopting modern tooling and standards.",
-        "Reduced frontend technical debt by refactoring legacy components, shortening the time to ship new features.",
-        "Grew from a frontend-only profile to a full stack one in about eight months, picking up Python and Django from scratch.",
-        "Contributed to team versatility by covering both frontend and backend, adapting to the product's changing needs."
-      ]
-    },
-    "niches": [
-      "fintech",
-      "generic"
-    ],
-    "priority": {
-      "fintech": 90,
-      "generic": 110
-    },
-    "skillsTechnical": [
-      "Desarrollo Frontend",
-      "Desarrollo Web",
-      "Django",
-      "Nuxt.js",
-      "Python",
-      "TypeScript",
-      "Vue.js"
-    ],
-    "skillsSoft": [
-      "Agilidad de Aprendizaje",
-      "Resolución de Problemas",
-      "Trabajo en Equipo"
-    ]
-  },
-  {
-    "slug": "dibal",
-    "company": "Dibal",
-    "country": "Perú",
-    "companyUrl": "https://dibal.pe",
-    "start": "2018-12",
-    "end": "2021-09",
-    "seniority": "senior",
-    "metricsEstimated": true,
-    "role": {
-      "es": "Líder de Equipo de Desarrollo y Desarrollador",
-      "en": "Development Team Lead and Developer"
-    },
-    "summary": {
-      "es": "Tech lead y primer desarrollador de Dibal: lleve el equipo de 1 a ~5 personas y defini sus estandares de trabajo.",
-      "en": "Tech lead and first dev at Dibal: grew the team from 1 to ~5 people and defined their engineering standards."
-    },
-    "responsibilities": {
-      "es": [
-        "Liderazgo del equipo de desarrollo de la startup, organizando el trabajo, definiendo prioridades y acompañando técnicamente a cada integrante.",
-        "Definición e implementación de arquitecturas de sistema adaptadas a las necesidades cambiantes del negocio, incluyendo un modelo de microfrontends.",
-        "Primer desarrollador contratado, responsable de construir desde cero un sistema web para múltiples restaurantes con jQuery y Laravel.",
-        "Desarrollo de un e-commerce en Vue que integró la gestión de los restaurantes con la experiencia del cliente, minimizando la interacción humana.",
-        "Responsable del despliegue de las aplicaciones en AWS, usando EC2, RDS, S3, Route 53, SES, AutoScaling y Load Balancer.",
-        "Definición de estándares de desarrollo y de los flujos de trabajo del equipo a medida que la startup escalaba.",
-        "Incorporación y onboarding técnico de los nuevos desarrolladores que se sumaron al equipo."
-      ],
-      "en": [
-        "Led the startup's development team, organizing the work, setting priorities and technically supporting every team member.",
-        "Defined and implemented system architectures adapted to evolving business needs, including a microfrontends model.",
-        "First developer hired, responsible for building a multi-restaurant web system from scratch with jQuery and Laravel.",
-        "Built a Vue e-commerce that integrated restaurant management with the customer experience, minimizing human interaction.",
-        "Owned application deployments on AWS using EC2, RDS, S3, Route 53, SES, AutoScaling and Load Balancer.",
-        "Defined development standards and team workflows as the startup scaled.",
-        "Onboarded and technically ramped up the new developers who joined the team."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Lideré el crecimiento del equipo de desarrollo desde un único desarrollador hasta un grupo de aproximadamente cuatro a seis personas, definiendo sus estándares de trabajo.",
-        "Diseñé una arquitectura de microfrontends que permitió evolucionar partes de la plataforma de forma independiente y reducir el acoplamiento del sistema.",
-        "Construí desde cero la plataforma multi-restaurante, llevándola de un prototipo inicial a un sistema en uso productivo por varios restaurantes.",
-        "Diseñé el despliegue en AWS con AutoScaling y Load Balancer, sosteniendo la disponibilidad del servicio durante los picos de demanda de los restaurantes.",
-        "Reduje el tiempo de despliegue de nuevas versiones de jornadas manuales a un proceso repetible de pocas horas sobre infraestructura AWS.",
-        "Acompañé el crecimiento de la startup durante casi tres años, adaptando la tecnología a cada nueva necesidad del negocio."
-      ],
-      "en": [
-        "Led the development team's growth from a single developer to a group of roughly four to six people, defining their working standards.",
-        "Designed a microfrontends architecture that allowed parts of the platform to evolve independently and reduced system coupling.",
-        "Built the multi-restaurant platform from scratch, taking it from an initial prototype to a system in productive use by several restaurants.",
-        "Designed the AWS deployment with AutoScaling and Load Balancer, sustaining service availability through the restaurants' demand peaks.",
-        "Cut new-version deployment time from manual full-day efforts to a repeatable few-hour process on AWS infrastructure.",
-        "Supported the startup's growth for nearly three years, adapting the technology to every new business need."
-      ]
-    },
-    "niches": [
-      "architect",
-      "leader",
-      "generic"
-    ],
-    "priority": {
-      "architect": 90,
-      "leader": 95,
-      "generic": 90
-    },
-    "skillsTechnical": [
-      "Arquitectura de Sistemas",
-      "Computación en la Nube",
-      "Desarrollo de E-commerce",
-      "Despliegue en AWS",
-      "Laravel",
-      "Microfrontend",
-      "Vue"
-    ],
-    "skillsSoft": [
-      "Gestión de Equipos",
-      "Liderazgo de Equipo",
-      "Metodologías Ágiles",
-      "Orientado al Cliente"
-    ]
-  },
-  {
-    "slug": "goodmeal",
-    "company": "GoodMeal",
-    "country": "Chile",
-    "companyUrl": "https://www.goodmeal.app",
-    "start": "2021-05",
-    "end": "2021-12",
-    "seniority": "mid",
-    "metricsEstimated": true,
-    "role": {
-      "es": "Desarrollador Web Full Stack",
-      "en": "Full Stack Web Developer"
-    },
-    "summary": {
-      "es": "Lidere la migracion del frontend de GoodMeal a Vue 3, modernizando la base de codigo y la experiencia del usuario.",
-      "en": "Led the frontend migration of GoodMeal to Vue 3, modernizing the codebase and the user experience."
-    },
-    "responsibilities": {
-      "es": [
-        "Reestructuración del frontend de la aplicación web, migrándolo a Vue 3 con tooling moderno para mejorar el rendimiento y la mantenibilidad.",
-        "Desarrollo full stack de funcionalidades de la plataforma, integrando el frontend con los servicios de backend.",
-        "Resolución eficiente de bugs y atención de las solicitudes de los Project Managers, trabajando bajo plazos ajustados.",
-        "Colaboración estrecha con el equipo bajo prácticas de Scrum, participando en las reuniones diarias y en la planificación de iteraciones.",
-        "Soporte al flujo de pagos y transacciones de la aplicación de pedidos, cuidando la consistencia de los datos sensibles del negocio.",
-        "Adopción de estándares de código y buenas prácticas durante la modernización del frontend."
-      ],
-      "en": [
-        "Restructured the web application's frontend, migrating it to Vue 3 with modern tooling to improve performance and maintainability.",
-        "Full stack development of platform features, integrating the frontend with backend services.",
-        "Efficiently fixed bugs and handled Project Managers' requests while working under tight deadlines.",
-        "Worked closely with the team under Scrum practices, taking part in daily standups and iteration planning.",
-        "Supported the ordering app's payment and transaction flow, safeguarding the consistency of business-sensitive data.",
-        "Adopted coding standards and best practices throughout the frontend modernization."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Lideré la migración del frontend a Vue 3, modernizando la base de código y mejorando de forma notable la experiencia de usuario de la aplicación de pedidos.",
-        "Contribuí al flujo de pagos de la plataforma fintech-adyacente, reforzando la fiabilidad de las transacciones de los pedidos.",
-        "Reduje el tiempo de resolución de bugs recurrentes al estabilizar el frontend sobre un stack más moderno y predecible.",
-        "Entregué soluciones de manera consistente bajo plazos ajustados en un entorno de startup dinámico y en rápido crecimiento.",
-        "Aporté a la adopción de prácticas de Scrum del equipo, mejorando la previsibilidad de las entregas iteración a iteración."
-      ],
-      "en": [
-        "Led the frontend migration to Vue 3, modernizing the codebase and noticeably improving the ordering app's user experience.",
-        "Contributed to the payment flow of the fintech-adjacent platform, strengthening the reliability of order transactions.",
-        "Cut resolution time for recurring bugs by stabilizing the frontend on a more modern, predictable stack.",
-        "Consistently delivered solutions under tight deadlines in a dynamic, fast-growing startup environment.",
-        "Contributed to the team's adoption of Scrum practices, improving delivery predictability iteration over iteration."
-      ]
-    },
-    "niches": [
-      "fintech",
-      "generic"
-    ],
-    "priority": {
-      "fintech": 70,
-      "generic": 100
-    },
-    "skillsTechnical": [
-      "Aplicación Web",
-      "Corrección de Errores",
-      "Desarrollo Full Stack",
-      "Scrum",
-      "Vue 3"
-    ],
-    "skillsSoft": [
-      "Adaptabilidad",
-      "Gestión de Proyectos",
-      "Gestión del Tiempo",
-      "Resolución de Problemas",
-      "Trabajo en Equipo"
-    ]
-  },
-  {
-    "slug": "ipasme",
-    "company": "IPASME",
-    "country": "Venezuela",
-    "start": "2014-01",
-    "end": "2014-12",
-    "seniority": "junior",
-    "metricsEstimated": true,
-    "role": {
-      "es": "Desarrollador de Software",
-      "en": "Software Developer"
-    },
-    "summary": {
-      "es": "Entregue un sistema digital de historias medicas que reemplazo el registro en papel en el IPASME.",
-      "en": "Delivered a digital medical records system that replaced paper-based registration at IPASME."
-    },
-    "responsibilities": {
-      "es": [
-        "Desarrollo e implementación de un sistema de gestión de historias médicas para el registro y consulta de pacientes en el instituto.",
-        "Creación de interfaces de escritorio en Java para Windows, aplicando programación orientada a objetos y un modelo de datos persistente.",
-        "Implementación de operaciones CRUD para la administración de pacientes, consultas y registros clínicos asociados.",
-        "Levantamiento de requerimientos con el personal médico y administrativo para alinear el sistema con el flujo real de atención.",
-        "Manejo de datos sensibles de salud con controles básicos de acceso y validación de la información ingresada."
-      ],
-      "en": [
-        "Built and deployed a patient medical-records management system for registering and consulting patients at the institute.",
-        "Created Java desktop interfaces for Windows, applying object-oriented programming and a persistent data model.",
-        "Implemented CRUD operations to manage patients, appointments and associated clinical records.",
-        "Gathered requirements with medical and administrative staff to align the system with the real care workflow.",
-        "Handled sensitive health data with basic access controls and input validation of the information entered."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Entregué un sistema funcional de historias médicas que reemplazó el manejo de fichas en papel por un registro digital consultable.",
-        "Reduje el tiempo de búsqueda de la historia de un paciente de varios minutos en archivo físico a una consulta inmediata en pantalla.",
-        "Apliqué conceptos de POO y operaciones CRUD en Java de forma consistente, consolidando bases sólidas de ingeniería de software.",
-        "Mejoré mis habilidades de comunicación técnica y de levantamiento de requerimientos al trabajar directamente con el personal de salud."
-      ],
-      "en": [
-        "Delivered a working medical-records system that replaced paper file handling with a searchable digital record.",
-        "Cut patient history lookup time from several minutes in physical archives to an instant on-screen query.",
-        "Applied OOP and CRUD operations in Java consistently, building solid software-engineering foundations.",
-        "Improved technical communication and requirements-gathering skills by working directly with healthcare staff."
-      ]
-    },
-    "niches": [
-      "generic"
-    ],
-    "priority": {
-      "generic": 50
-    },
-    "skillsTechnical": [
-      "Aplicación de Escritorio",
-      "Historias Médicas",
-      "Java",
-      "Levantamiento de Requerimientos",
-      "Programación Orientada a Objetos"
-    ],
-    "skillsSoft": [
-      "Adaptabilidad",
-      "Comunicación Técnica",
-      "Pensamiento Analítico",
-      "Resolución de Problemas"
-    ]
-  },
-  {
-    "slug": "iai",
-    "company": "Instituto Autónomo de Infraestructura del Estado Yaracuy (IAI)",
-    "country": "Venezuela",
-    "start": "2015-01",
-    "end": "2015-12",
-    "seniority": "mid",
-    "metricsEstimated": true,
-    "role": {
-      "es": "Líder de Desarrollo de Software y Arquitectura de Sistemas",
-      "en": "Software Development Lead and Systems Architecture"
-    },
-    "summary": {
-      "es": "Lidere el desarrollo y arquitectura de un proyecto academico, coordinando un equipo pequeno hasta su entrega exitosa.",
-      "en": "Led development and architecture of an academic project, coordinating a small team through successful delivery."
-    },
-    "responsibilities": {
-      "es": [
-        "Liderazgo del equipo de desarrollo del proyecto, coordinando la distribución de tareas y el seguimiento del avance hasta su entrega.",
-        "Definición de la arquitectura de la solución y de las decisiones técnicas clave del sistema de gestión de obras.",
-        "Diseño de una arquitectura de red con una PC como servidor central, habilitando el acceso compartido a los datos del proyecto.",
-        "Desarrollo e implementación del sistema informático para la gestión de obras, presupuestos y seguimiento de avances.",
-        "Elaboración de la documentación técnica del proyecto de grado, justificando cada decisión de diseño e implementación.",
-        "Planificación de los hitos del proyecto y gestión de los riesgos técnicos para cumplir con los plazos académicos."
-      ],
-      "en": [
-        "Led the project development team, coordinating task distribution and progress tracking through to delivery.",
-        "Defined the solution architecture and the key technical decisions for the construction-site management system.",
-        "Designed a network architecture using a PC as a central server, enabling shared access to the project data.",
-        "Built and deployed the software system for managing construction sites, budgets and progress tracking.",
-        "Produced the technical documentation for the thesis project, justifying each design and implementation decision.",
-        "Planned project milestones and managed technical risks to meet the academic deadlines."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Coordiné un equipo pequeño de aproximadamente tres personas, llevando el proyecto de grado a una entrega exitosa dentro del plazo previsto.",
-        "Diseñé e implementé una arquitectura cliente-servidor sobre red local que centralizó los datos y eliminó las copias de información desincronizadas.",
-        "Reduje el tiempo de consolidación de presupuestos y avances de obra de jornadas de trabajo manual a reportes generados directamente desde el sistema.",
-        "Documenté la arquitectura completa de la solución, dejando una base técnica clara para su defensa y eventual mantenimiento."
-      ],
-      "en": [
-        "Coordinated a small team of about three people, taking the thesis project to a successful delivery within the planned timeframe.",
-        "Designed and implemented a client-server architecture over a local network that centralized data and removed out-of-sync information copies.",
-        "Cut budget and site-progress consolidation from days of manual work to reports generated directly from the system.",
-        "Documented the full solution architecture, leaving a clear technical foundation for its defense and eventual maintenance."
-      ]
-    },
-    "niches": [
-      "leader",
-      "generic"
-    ],
-    "priority": {
-      "leader": 55,
-      "generic": 60
-    },
-    "skillsTechnical": [
-      "Desarrollo de Software",
-      "Gestión de Datos",
-      "Gestión de Infraestructura",
-      "Implementación de Soluciones",
-      "Proyecto de Grado",
-      "Redacción Técnica"
-    ],
-    "skillsSoft": [
-      "Gestión de Proyectos",
-      "Gestión del Presupuesto",
-      "Gestión del Trabajo",
-      "Planificación de Proyecto",
-      "Trabajo Colaborativo"
-    ]
-  },
-  {
     "slug": "projects-degrees",
     "company": "Asesoría de proyectos de grado",
     "country": "Venezuela",
@@ -451,7 +84,7 @@
       "en": "Web Systems Developer"
     },
     "summary": {
-      "es": "Desarrolle un sistema web (jQuery + Laravel) para monitorear la produccion farmaceutica y analizar paradas de maquina.",
+      "es": "Desarrollé un sistema web (jQuery + Laravel) para monitorear la producción farmacéutica y analizar las paradas de máquina.",
       "en": "Built a web system (jQuery + Laravel) to monitor pharmaceutical production and analyze machine downtime for productivity."
     },
     "responsibilities": {
@@ -492,7 +125,7 @@
       "generic"
     ],
     "priority": {
-      "generic": 80
+      "generic": 70
     },
     "skillsTechnical": [
       "Análisis de Productividad",
@@ -520,7 +153,7 @@
       "es": "Desarrollador Web"
     },
     "summary": {
-      "es": "Pasantia: implemente un sistema de inventario de equipos electricos (PHP + jQuery) desplegado offline en 3 estados de Venezuela.",
+      "es": "Pasantía: implementé un sistema de inventario de equipos eléctricos (PHP + jQuery) desplegado offline en 3 estados de Venezuela.",
       "en": "Internship: built an offline-capable electrical inventory system (PHP + jQuery) deployed across 3 Venezuelan states."
     },
     "responsibilities": {
@@ -557,7 +190,7 @@
       "generic"
     ],
     "priority": {
-      "generic": 40
+      "generic": 20
     },
     "skillsTechnical": [
       "CRUD",
@@ -584,7 +217,7 @@
       "en": "Frontend Architect and Microservices Developer"
     },
     "summary": {
-      "es": "Arquitecto frontend lidere la migracion a microfrontends y orqueste los productos fintech de Destacame para Chile y Mexico.",
+      "es": "Como arquitecto frontend, lideré la migración a microfrontends y orquesté los productos fintech de Destacame para Chile y México.",
       "en": "Frontend Architect leading the microfrontend migration and orchestrating Destacame fintech products for Chile and Mexico."
     },
     "responsibilities": {
@@ -637,7 +270,7 @@
       "architect": 100,
       "leader": 100,
       "vibe": 100,
-      "generic": 120
+      "generic": 100
     },
     "skillsTechnical": [
       "AWS",
@@ -653,6 +286,373 @@
       "Fintech",
       "Liderazgo Técnico",
       "Planificación Estratégica"
+    ]
+  },
+  {
+    "slug": "destacame-frontend",
+    "company": "Destacame",
+    "country": "Chile",
+    "companyUrl": "https://destacame.cl",
+    "start": "2021-12",
+    "end": "2022-08",
+    "seniority": "senior",
+    "metricsEstimated": true,
+    "role": {
+      "en": "Web Frontend Developer",
+      "es": "Desarrollador Web Frontend"
+    },
+    "summary": {
+      "es": "Construí interfaces Vue/Nuxt para los productos fintech de Destacame en Chile antes de pasar al rol de arquitecto.",
+      "en": "Built Vue/Nuxt UIs for Destacame fintech products in Chile before moving up to the Frontend Architect role."
+    },
+    "responsibilities": {
+      "es": [
+        "Desarrollo frontend de productos fintech con Vue y Nuxt.js, construyendo interfaces para flujos financieros de los usuarios de la plataforma.",
+        "Implementación de estándares y nuevas tecnologías en el desarrollo frontend para mejorar la experiencia de usuario y la consistencia del producto.",
+        "Trabajo con datos sensibles de los usuarios, cuidando la validación de formularios y la correcta presentación de la información financiera.",
+        "Aprendizaje y aplicación progresiva del backend con Python y Django para crecer hacia un rol full stack.",
+        "Colaboración con el equipo de producto y diseño para traducir los requerimientos en interfaces claras y usables.",
+        "Refactorización de componentes existentes para reducir la deuda técnica del frontend y facilitar su mantenimiento."
+      ],
+      "en": [
+        "Frontend development of fintech products with Vue and Nuxt.js, building interfaces for the platform users' financial flows.",
+        "Introduced standards and new technologies in frontend development to improve user experience and product consistency.",
+        "Worked with sensitive user data, taking care of form validation and the correct presentation of financial information.",
+        "Progressively learned and applied backend development with Python and Django to grow into a full stack role.",
+        "Collaborated with the product and design teams to translate requirements into clear, usable interfaces.",
+        "Refactored existing components to reduce frontend technical debt and ease maintenance."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Construí interfaces para productos fintech en uso real por los usuarios de la plataforma de gestión financiera en Chile.",
+        "Mejoré de forma notable la calidad y la eficiencia del desarrollo frontend mediante la adopción de nuevas tecnologías y estándares.",
+        "Reduje la deuda técnica del frontend al refactorizar componentes heredados, acortando el tiempo de implementación de nuevas funcionalidades.",
+        "Pasé de un perfil exclusivamente frontend a uno full stack en cerca de ocho meses, incorporando Python y Django desde cero.",
+        "Aporté a la versatilidad del equipo al cubrir tanto frontend como backend, adaptándome a las necesidades cambiantes del producto."
+      ],
+      "en": [
+        "Built interfaces for fintech products in real use by the users of the financial management platform in Chile.",
+        "Noticeably improved frontend quality and efficiency by adopting modern tooling and standards.",
+        "Reduced frontend technical debt by refactoring legacy components, shortening the time to ship new features.",
+        "Grew from a frontend-only profile to a full stack one in about eight months, picking up Python and Django from scratch.",
+        "Contributed to team versatility by covering both frontend and backend, adapting to the product's changing needs."
+      ]
+    },
+    "niches": [
+      "fintech",
+      "generic"
+    ],
+    "priority": {
+      "fintech": 90,
+      "generic": 95
+    },
+    "skillsTechnical": [
+      "Desarrollo Frontend",
+      "Desarrollo Web",
+      "Django",
+      "Nuxt.js",
+      "Python",
+      "TypeScript",
+      "Vue.js"
+    ],
+    "skillsSoft": [
+      "Agilidad de Aprendizaje",
+      "Resolución de Problemas",
+      "Trabajo en Equipo"
+    ]
+  },
+  {
+    "slug": "dibal",
+    "company": "Dibal",
+    "country": "Perú",
+    "companyUrl": "https://dibal.pe",
+    "start": "2018-12",
+    "end": "2021-09",
+    "seniority": "senior",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Líder de Equipo de Desarrollo y Desarrollador",
+      "en": "Development Team Lead and Developer"
+    },
+    "summary": {
+      "es": "Tech lead y primer desarrollador de Dibal: llevé el equipo de 1 a ~5 personas y definí sus estándares de trabajo.",
+      "en": "Tech lead and first dev at Dibal: grew the team from 1 to ~5 people and defined their engineering standards."
+    },
+    "responsibilities": {
+      "es": [
+        "Liderazgo del equipo de desarrollo de la startup, organizando el trabajo, definiendo prioridades y acompañando técnicamente a cada integrante.",
+        "Definición e implementación de arquitecturas de sistema adaptadas a las necesidades cambiantes del negocio, incluyendo un modelo de microfrontends.",
+        "Primer desarrollador contratado, responsable de construir desde cero un sistema web para múltiples restaurantes con jQuery y Laravel.",
+        "Desarrollo de un e-commerce en Vue que integró la gestión de los restaurantes con la experiencia del cliente, minimizando la interacción humana.",
+        "Responsable del despliegue de las aplicaciones en AWS, usando EC2, RDS, S3, Route 53, SES, AutoScaling y Load Balancer.",
+        "Definición de estándares de desarrollo y de los flujos de trabajo del equipo a medida que la startup escalaba.",
+        "Incorporación y onboarding técnico de los nuevos desarrolladores que se sumaron al equipo."
+      ],
+      "en": [
+        "Led the startup's development team, organizing the work, setting priorities and technically supporting every team member.",
+        "Defined and implemented system architectures adapted to evolving business needs, including a microfrontends model.",
+        "First developer hired, responsible for building a multi-restaurant web system from scratch with jQuery and Laravel.",
+        "Built a Vue e-commerce that integrated restaurant management with the customer experience, minimizing human interaction.",
+        "Owned application deployments on AWS using EC2, RDS, S3, Route 53, SES, AutoScaling and Load Balancer.",
+        "Defined development standards and team workflows as the startup scaled.",
+        "Onboarded and technically ramped up the new developers who joined the team."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Lideré el crecimiento del equipo de desarrollo desde un único desarrollador hasta un grupo de aproximadamente cuatro a seis personas, definiendo sus estándares de trabajo.",
+        "Diseñé una arquitectura de microfrontends que permitió evolucionar partes de la plataforma de forma independiente y reducir el acoplamiento del sistema.",
+        "Construí desde cero la plataforma multi-restaurante, llevándola de un prototipo inicial a un sistema en uso productivo por varios restaurantes.",
+        "Diseñé el despliegue en AWS con AutoScaling y Load Balancer, sosteniendo la disponibilidad del servicio durante los picos de demanda de los restaurantes.",
+        "Reduje el tiempo de despliegue de nuevas versiones de jornadas manuales a un proceso repetible de pocas horas sobre infraestructura AWS.",
+        "Acompañé el crecimiento de la startup durante casi tres años, adaptando la tecnología a cada nueva necesidad del negocio."
+      ],
+      "en": [
+        "Led the development team's growth from a single developer to a group of roughly four to six people, defining their working standards.",
+        "Designed a microfrontends architecture that allowed parts of the platform to evolve independently and reduced system coupling.",
+        "Built the multi-restaurant platform from scratch, taking it from an initial prototype to a system in productive use by several restaurants.",
+        "Designed the AWS deployment with AutoScaling and Load Balancer, sustaining service availability through the restaurants' demand peaks.",
+        "Cut new-version deployment time from manual full-day efforts to a repeatable few-hour process on AWS infrastructure.",
+        "Supported the startup's growth for nearly three years, adapting the technology to every new business need."
+      ]
+    },
+    "niches": [
+      "architect",
+      "leader",
+      "generic"
+    ],
+    "priority": {
+      "architect": 90,
+      "leader": 95,
+      "generic": 85
+    },
+    "skillsTechnical": [
+      "Arquitectura de Sistemas",
+      "Computación en la Nube",
+      "Desarrollo de E-commerce",
+      "Despliegue en AWS",
+      "Laravel",
+      "Microfrontend",
+      "Vue"
+    ],
+    "skillsSoft": [
+      "Gestión de Equipos",
+      "Liderazgo de Equipo",
+      "Metodologías Ágiles",
+      "Orientado al Cliente"
+    ]
+  },
+  {
+    "slug": "goodmeal",
+    "company": "GoodMeal",
+    "country": "Chile",
+    "companyUrl": "https://www.goodmeal.app",
+    "start": "2021-05",
+    "end": "2021-12",
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador Web Full Stack",
+      "en": "Full Stack Web Developer"
+    },
+    "summary": {
+      "es": "Lideré la migración del frontend de GoodMeal a Vue 3, modernizando la base de código y la experiencia del usuario.",
+      "en": "Led the frontend migration of GoodMeal to Vue 3, modernizing the codebase and the user experience."
+    },
+    "responsibilities": {
+      "es": [
+        "Reestructuración del frontend de la aplicación web, migrándolo a Vue 3 con tooling moderno para mejorar el rendimiento y la mantenibilidad.",
+        "Desarrollo full stack de funcionalidades de la plataforma, integrando el frontend con los servicios de backend.",
+        "Resolución eficiente de bugs y atención de las solicitudes de los Project Managers, trabajando bajo plazos ajustados.",
+        "Colaboración estrecha con el equipo bajo prácticas de Scrum, participando en las reuniones diarias y en la planificación de iteraciones.",
+        "Soporte al flujo de pagos y transacciones de la aplicación de pedidos, cuidando la consistencia de los datos sensibles del negocio.",
+        "Adopción de estándares de código y buenas prácticas durante la modernización del frontend."
+      ],
+      "en": [
+        "Restructured the web application's frontend, migrating it to Vue 3 with modern tooling to improve performance and maintainability.",
+        "Full stack development of platform features, integrating the frontend with backend services.",
+        "Efficiently fixed bugs and handled Project Managers' requests while working under tight deadlines.",
+        "Worked closely with the team under Scrum practices, taking part in daily standups and iteration planning.",
+        "Supported the ordering app's payment and transaction flow, safeguarding the consistency of business-sensitive data.",
+        "Adopted coding standards and best practices throughout the frontend modernization."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Lideré la migración del frontend a Vue 3, modernizando la base de código y mejorando de forma notable la experiencia de usuario de la aplicación de pedidos.",
+        "Contribuí al flujo de pagos de la plataforma fintech-adyacente, reforzando la fiabilidad de las transacciones de los pedidos.",
+        "Reduje el tiempo de resolución de bugs recurrentes al estabilizar el frontend sobre un stack más moderno y predecible.",
+        "Entregué soluciones de manera consistente bajo plazos ajustados en un entorno de startup dinámico y en rápido crecimiento.",
+        "Aporté a la adopción de prácticas de Scrum del equipo, mejorando la previsibilidad de las entregas iteración a iteración."
+      ],
+      "en": [
+        "Led the frontend migration to Vue 3, modernizing the codebase and noticeably improving the ordering app's user experience.",
+        "Contributed to the payment flow of the fintech-adjacent platform, strengthening the reliability of order transactions.",
+        "Cut resolution time for recurring bugs by stabilizing the frontend on a more modern, predictable stack.",
+        "Consistently delivered solutions under tight deadlines in a dynamic, fast-growing startup environment.",
+        "Contributed to the team's adoption of Scrum practices, improving delivery predictability iteration over iteration."
+      ]
+    },
+    "niches": [
+      "fintech",
+      "generic"
+    ],
+    "priority": {
+      "fintech": 70,
+      "generic": 90
+    },
+    "skillsTechnical": [
+      "Aplicación Web",
+      "Corrección de Errores",
+      "Desarrollo Full Stack",
+      "Scrum",
+      "Vue 3"
+    ],
+    "skillsSoft": [
+      "Adaptabilidad",
+      "Gestión de Proyectos",
+      "Gestión del Tiempo",
+      "Resolución de Problemas",
+      "Trabajo en Equipo"
+    ]
+  },
+  {
+    "slug": "ipasme",
+    "company": "IPASME",
+    "country": "Venezuela",
+    "start": "2014-01",
+    "end": "2014-12",
+    "seniority": "junior",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador de Software",
+      "en": "Software Developer"
+    },
+    "summary": {
+      "en": "Delivered a digital medical records system that replaced paper-based registration at IPASME.",
+      "es": "Entregué un sistema digital de historias médicas que reemplazó el registro en papel en el IPASME."
+    },
+    "responsibilities": {
+      "es": [
+        "Desarrollo e implementación de un sistema de gestión de historias médicas para el registro y consulta de pacientes en el instituto.",
+        "Creación de interfaces de escritorio en Java para Windows, aplicando programación orientada a objetos y un modelo de datos persistente.",
+        "Implementación de operaciones CRUD para la administración de pacientes, consultas y registros clínicos asociados.",
+        "Levantamiento de requerimientos con el personal médico y administrativo para alinear el sistema con el flujo real de atención.",
+        "Manejo de datos sensibles de salud con controles básicos de acceso y validación de la información ingresada."
+      ],
+      "en": [
+        "Built and deployed a patient medical-records management system for registering and consulting patients at the institute.",
+        "Created Java desktop interfaces for Windows, applying object-oriented programming and a persistent data model.",
+        "Implemented CRUD operations to manage patients, appointments and associated clinical records.",
+        "Gathered requirements with medical and administrative staff to align the system with the real care workflow.",
+        "Handled sensitive health data with basic access controls and input validation of the information entered."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Entregué un sistema funcional de historias médicas que reemplazó el manejo de fichas en papel por un registro digital consultable.",
+        "Reduje el tiempo de búsqueda de la historia de un paciente de varios minutos en archivo físico a una consulta inmediata en pantalla.",
+        "Apliqué conceptos de POO y operaciones CRUD en Java de forma consistente, consolidando bases sólidas de ingeniería de software.",
+        "Mejoré mis habilidades de comunicación técnica y de levantamiento de requerimientos al trabajar directamente con el personal de salud."
+      ],
+      "en": [
+        "Delivered a working medical-records system that replaced paper file handling with a searchable digital record.",
+        "Cut patient history lookup time from several minutes in physical archives to an instant on-screen query.",
+        "Applied OOP and CRUD operations in Java consistently, building solid software-engineering foundations.",
+        "Improved technical communication and requirements-gathering skills by working directly with healthcare staff."
+      ]
+    },
+    "niches": [
+      "generic"
+    ],
+    "priority": {
+      "generic": 30
+    },
+    "skillsTechnical": [
+      "Aplicación de Escritorio",
+      "Historias Médicas",
+      "Java",
+      "Levantamiento de Requerimientos",
+      "Programación Orientada a Objetos"
+    ],
+    "skillsSoft": [
+      "Adaptabilidad",
+      "Comunicación Técnica",
+      "Pensamiento Analítico",
+      "Resolución de Problemas"
+    ]
+  },
+  {
+    "slug": "iai",
+    "company": "Instituto Autónomo de Infraestructura del Estado Yaracuy (IAI)",
+    "country": "Venezuela",
+    "start": "2015-01",
+    "end": "2015-12",
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "en": "Software Development Lead and Systems Architecture",
+      "es": "Líder de Desarrollo de Software y Arquitectura de Sistemas"
+    },
+    "summary": {
+      "es": "Lideré el desarrollo y la arquitectura de un proyecto académico, coordinando un equipo pequeño hasta su entrega exitosa.",
+      "en": "Led development and architecture of an academic project, coordinating a small team through successful delivery."
+    },
+    "responsibilities": {
+      "es": [
+        "Liderazgo del equipo de desarrollo del proyecto, coordinando la distribución de tareas y el seguimiento del avance hasta su entrega.",
+        "Definición de la arquitectura de la solución y de las decisiones técnicas clave del sistema de gestión de obras.",
+        "Diseño de una arquitectura de red con una PC como servidor central, habilitando el acceso compartido a los datos del proyecto.",
+        "Desarrollo e implementación del sistema informático para la gestión de obras, presupuestos y seguimiento de avances.",
+        "Elaboración de la documentación técnica del proyecto de grado, justificando cada decisión de diseño e implementación.",
+        "Planificación de los hitos del proyecto y gestión de los riesgos técnicos para cumplir con los plazos académicos."
+      ],
+      "en": [
+        "Led the project development team, coordinating task distribution and progress tracking through to delivery.",
+        "Defined the solution architecture and the key technical decisions for the construction-site management system.",
+        "Designed a network architecture using a PC as a central server, enabling shared access to the project data.",
+        "Built and deployed the software system for managing construction sites, budgets and progress tracking.",
+        "Produced the technical documentation for the thesis project, justifying each design and implementation decision.",
+        "Planned project milestones and managed technical risks to meet the academic deadlines."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Coordiné un equipo pequeño de aproximadamente tres personas, llevando el proyecto de grado a una entrega exitosa dentro del plazo previsto.",
+        "Diseñé e implementé una arquitectura cliente-servidor sobre red local que centralizó los datos y eliminó las copias de información desincronizadas.",
+        "Reduje el tiempo de consolidación de presupuestos y avances de obra de jornadas de trabajo manual a reportes generados directamente desde el sistema.",
+        "Documenté la arquitectura completa de la solución, dejando una base técnica clara para su defensa y eventual mantenimiento."
+      ],
+      "en": [
+        "Coordinated a small team of about three people, taking the thesis project to a successful delivery within the planned timeframe.",
+        "Designed and implemented a client-server architecture over a local network that centralized data and removed out-of-sync information copies.",
+        "Cut budget and site-progress consolidation from days of manual work to reports generated directly from the system.",
+        "Documented the full solution architecture, leaving a clear technical foundation for its defense and eventual maintenance."
+      ]
+    },
+    "niches": [
+      "leader",
+      "generic"
+    ],
+    "priority": {
+      "leader": 55,
+      "generic": 45
+    },
+    "skillsTechnical": [
+      "Desarrollo de Software",
+      "Gestión de Datos",
+      "Gestión de Infraestructura",
+      "Implementación de Soluciones",
+      "Proyecto de Grado",
+      "Redacción Técnica"
+    ],
+    "skillsSoft": [
+      "Gestión de Proyectos",
+      "Gestión del Presupuesto",
+      "Gestión del Trabajo",
+      "Planificación de Proyecto",
+      "Trabajo Colaborativo"
     ]
   }
 ]

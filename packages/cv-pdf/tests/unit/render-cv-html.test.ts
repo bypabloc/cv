@@ -28,9 +28,9 @@ describe('renderCvHtml', () => {
     expect(firstRoleBlock).toMatch(/Destacame/u)
   })
 
-  it('Given niche vibe When render Then includes FastStruct project', () => {
+  it('Given niche vibe When render Then includes Klinikae project', () => {
     const html = renderCvHtml({ locale: 'en', niche: 'vibe' })
-    expect(html).toContain('FastStruct')
+    expect(html).toContain('Klinikae')
   })
 
   it('Given any niche When render Then has valid HTML doctype and lang attr', () => {

@@ -89,6 +89,6 @@ It takes ~2 minutes.
 Oracle has **two** firewalls, and both must allow the port:
 
 1. The VCN's **Security List** (this chapter).
-2. **`iptables` inside the VM**: Oracle's Ubuntu image ships with a `REJECT` for everything except SSH. It's opened in [chapter 07](07-primer-arranque.md).
+2. **`iptables` inside the VM**: Oracle's Ubuntu image ships with a `REJECT` for all new inbound traffic except SSH. It's opened in [chapter 07](07-primer-arranque.md).
 
 `oracle-cloud` `vcn` `security-list` `firewall` `oci-cli`

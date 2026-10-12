@@ -13,7 +13,8 @@ export const UI = {
     eyebrow: 'Por Pablo Contreras',
     headline: 'Posts',
     lede: 'Guías, notas y todo lo que vale la pena compartir.',
-    readGuide: 'Leer el post',
+    navLabel: 'Navegación principal',
+    tags: 'Etiquetas',
     chapters: 'capítulos',
     minRead: 'min de lectura',
     by: 'Por',
@@ -38,7 +39,8 @@ export const UI = {
     eyebrow: 'By Pablo Contreras',
     headline: 'Posts',
     lede: 'Guides, notes and anything worth sharing.',
-    readGuide: 'Read the post',
+    navLabel: 'Main navigation',
+    tags: 'Tags',
     chapters: 'chapters',
     minRead: 'min read',
     by: 'By',
@@ -66,6 +68,21 @@ export const AUTHOR = 'Pablo Contreras'
 export function pathFor(locale: Locale, slug = ''): string {
   const base = locale === 'es' ? '' : '/en'
   return slug ? `${base}/${slug}/` : `${base}/`
+}
+
+/**
+ * Recorta un texto a `max` caracteres (meta description: Google muestra
+ * ~155). Prefiere cortar en la ultima coma (cierra una idea); si no hay
+ * una razonable, corta en limite de palabra.
+ * @example truncate('uno, dos tres cuatro', 12) // 'uno…'
+ */
+export function truncate(text: string, max = 155): string {
+  if (text.length <= max) return text
+  const head = text.slice(0, max - 1)
+  const comma = head.lastIndexOf(',')
+  const cut =
+    comma > max * 0.5 ? head.slice(0, comma) : head.replace(/\s+\S*$/, '')
+  return `${cut}…`
 }
 
 /** Fecha legible: "11 de octubre de 2026" / "October 11, 2026". */

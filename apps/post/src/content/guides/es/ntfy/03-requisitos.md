@@ -17,7 +17,7 @@
 | Red | IP pública fija | Debe estar encendida 24/7 |
 | Acceso | SSH con un usuario con `sudo` | Los ejemplos usan el alias `mi-vm` |
 
-Sirve cualquier proveedor: Hetzner, DigitalOcean, AWS, una capa gratis de nube, un servidor en casa con IP fija.
+Sirve cualquier proveedor: Hetzner, DigitalOcean, AWS, la capa gratuita de algún proveedor de nube, un servidor en casa con IP fija.
 
 Alias SSH recomendado en `~/.ssh/config`:
 

@@ -43,7 +43,7 @@ ntfy, caddy and cron active · TLS 89 days · up 45 minutes
 # ntfy server status report. Run by the systemd timer every 45 min.
 # Config in /etc/ntfy-report.env (root only):
 #   NTFY_TOKEN=tk_...  NTFY_DOMAIN=ntfy.your-domain.com  NTFY_LOCAL_TOPIC=alertas
-#   NTFY_TOPIC=<ntfy.sh-topic>  TZ_REPORT=America/Guayaquil
+#   NTFY_TOPIC=<random-topic>  TZ_REPORT=America/Guayaquil
 set -u
 . /etc/ntfy-report.env
 : "${NTFY_LOCAL_TOPIC:=alertas}" "${TZ_REPORT:=UTC}"
@@ -133,7 +133,6 @@ Description=ntfy server status report every 45 minutes
 [Timer]
 OnBootSec=3min
 OnUnitActiveSec=45min
-Persistent=true
 
 [Install]
 WantedBy=timers.target
@@ -157,7 +156,7 @@ ssh mi-vm "sudo env NTFY_DOMAIN=ntfy.your-domain.com NTFY_ADMIN=admin NTFY_LOCAL
 
 - `cron` cannot express "every 45 minutes": `*/45` fires at :00 and :45, leaving 15-minute gaps.
 - `OnUnitActiveSec=45min` counts from the last run.
-- `Persistent=true` catches up on a missed run if the server was off.
+- `OnBootSec=3min` sends a report 3 min after every boot, so downtime doesn't leave a long gap.
 
 ### Operate
 

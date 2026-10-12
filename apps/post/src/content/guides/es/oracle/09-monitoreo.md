@@ -27,7 +27,7 @@ oci monitoring metric-data summarize-metrics-data -c "$C" --namespace oci_comput
   | jq -r '.[] | "\(.[0][11:16]) UTC  \(.[1]|floor)%"'
 ```
 
-Percentil 95 (para la ventana real de Oracle usa `-7 days` y `[7d]`):
+Percentil 95 (para la ventana real de Oracle usa `-7 days` y `[1d]`: obtienes un p95 por día, porque MQL no acepta intervalos mayores a `1d`):
 
 ```bash
 S=$(date -u -d '-60 min' +%Y-%m-%dT%H:%M:%SZ)
@@ -43,7 +43,7 @@ Otras métricas del namespace: `MemoryUtilization`, `NetworksBytesIn`, `Networks
 La VM registra su CPU cada minuto, calcula el p95 de 24 h y de 7 días, revisa RAM, disco y servicios, y envía un reporte cada 45 min a un **webhook** (cualquier URL que acepte un `POST`: Slack, Discord, Telegram, un endpoint propio…).
 
 - **Por qué desde la VM:** no depende de que tu PC esté encendida y ve datos internos.
-- **Límite:** si la VM muere, no envía nada. **No recibir el reporte en más de 45 min es la alarma.**
+- **Límite:** si la VM muere, no envía nada. **Si pasan más de 45 min sin reporte, esa es la alarma.**
 
 Ejemplo de reporte:
 
@@ -162,7 +162,6 @@ Description=Reporte de estado de la VM cada 45 minutos
 [Timer]
 OnBootSec=3min
 OnUnitActiveSec=45min
-Persistent=true
 
 [Install]
 WantedBy=timers.target
@@ -189,7 +188,7 @@ Para agregar la cabecera de autenticación, escribe `REPORT_AUTH="Bearer <token>
 
 - **`vmstat 55 2`**: el segundo renglón es el promedio de 55 s; la columna 15 es `idle`.
 - **`%` en cron** se escapa como `\%`.
-- **Timer de systemd y no cron:** `*/45` en cron dispara a :00 y :45 (huecos de 15 min). `OnUnitActiveSec=45min` cuenta desde la última ejecución y `Persistent=true` recupera una ejecución perdida.
+- **Timer de systemd y no cron:** `*/45` en cron dispara a :00 y :45 (huecos de 15 min). `OnUnitActiveSec=45min` cuenta desde la última ejecución y `OnBootSec=3min` envía un reporte tras cada arranque.
 - **Coincidencia medida:** p95 local 49 % vs. Oracle 49,9 % en la misma hora.
 - Mientras el registro tenga menos de 7 días, la cifra de "7d" cubre solo lo que haya.
 

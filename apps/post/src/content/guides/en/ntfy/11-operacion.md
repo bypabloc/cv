@@ -60,7 +60,7 @@ sudo apt-get update && sudo apt-get install --only-upgrade ntfy caddy
 | `/etc/ntfy-report.env` | Report token (secret) |
 
 ```bash
-ssh mi-vm 'sudo tar czf - /var/lib/ntfy/user.db /etc/ntfy /etc/caddy/Caddyfile' > ntfy-respaldo-$(date +%F).tgz
+ssh mi-vm 'sudo tar czf - /var/lib/ntfy/user.db /etc/ntfy /etc/caddy/Caddyfile /etc/ntfy-report.env' > ntfy-respaldo-$(date +%F).tgz
 ```
 
 The message cache (24 h) does not need a backup.
@@ -75,7 +75,7 @@ ssh mi-vm 'sudo cat /var/lib/ntfy/user.db' | ssh nuevo-vm \
   'sudo systemctl stop ntfy && sudo tee /var/lib/ntfy/user.db >/dev/null && sudo chown ntfy:ntfy /var/lib/ntfy/user.db && sudo systemctl start ntfy'
 ```
 
-3. Point the DNS record to the new IP; Caddy obtains the certificate once DNS points to it.
+3. Point the DNS record to the new IP; Caddy obtains the certificate once DNS points to the new server.
 
 ### Remove ntfy from the server
 

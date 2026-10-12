@@ -22,7 +22,7 @@ Texto exacto de [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 - Las condiciones van **unidas por "y"**: la instancia es inactiva solo si **todas** se cumplen. **Basta con que una supere el 20 %** para no serlo.
 - **Percentil 95 de 7 días:** se ordenan todas las mediciones de la semana y se toma la que deja el 95 % por debajo. Si la CPU pasa de 20 % durante algo más del **5 % del tiempo**, el p95 supera 20 %.
 - **La memoria solo cuenta en A1.** En la Micro solo cuentan CPU y red.
-- Un servicio liviano (un bot, un webhook, un servidor de notificaciones) casi no usa CPU ni red: **es inactivo por definición**.
+- Un servicio liviano (un bot, un webhook, un servidor de notificaciones) casi no usa CPU ni red: **para esta regla, casi siempre cuenta como inactivo**.
 - La documentación **no dice** si avisa antes de reclamar ni cómo.
 - Pasar la cuenta a *Pay As You Go* se recomienda en foros, pero la documentación **no** dice que exima del reclamo.
 - Una instancia **detenida** tampoco usa CPU: no la dejes apagada días.
@@ -32,7 +32,7 @@ Texto exacto de [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 | Estrategia | Aplica a | Cómo | Evaluación |
 | :-- | :-- | :-- | :-- |
 | **Instancia chica** | A1 | 1 OCPU y 1 GB: el uso normal (~400 MB) supera el 20 % de RAM | Limpia, sin carga artificial. **La mejor** |
-| **Keepalive de CPU** | Micro (y A1 si se quiere) | Cron que usa CPU unos segundos cada pocos minutos | Funciona; es carga artificial (zona gris frente a los términos) |
+| **Keepalive de CPU** | Micro (y A1 si se quiere) | Cron que usa CPU poco más de un minuto cada pocos minutos | Funciona; es carga artificial (zona gris frente a los términos) |
 | Tráfico de red | Ambas | Generar tráfico sostenido | Desperdicia ancho de banda; descartada |
 
 ### El keepalive (Micro)
@@ -73,7 +73,7 @@ Ver **CPU 0 %** en un momento dado no significa riesgo: es la foto de un instant
 ### Si la reclaman
 
 - La IP pública cambia al recrear la instancia: actualiza tu DNS.
-- Lo que estaba en el disco se pierde: guarda tus scripts de instalación y respaldos fuera ([capítulo 10](10-operacion-y-borrado.md)).
+- Lo que estaba en el disco se pierde: guarda tus scripts de instalación y respaldos fuera de la VM ([capítulo 10](10-operacion-y-borrado.md)).
 - El reporte de estado deja de llegar: **la ausencia de reporte es la alarma**.
 
 `oracle-cloud` `always-free` `idle-reclamation` `keepalive` `p95`

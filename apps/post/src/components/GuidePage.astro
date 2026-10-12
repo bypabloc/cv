@@ -19,7 +19,7 @@ import {
   loadGuide,
   PUBLISHED,
 } from '../lib/guides'
-import { AUTHOR, formatDate, pathFor, UI } from '../lib/i18n'
+import { AUTHOR, formatDate, pathFor, truncate, UI } from '../lib/i18n'
 
 interface Props {
   locale: Locale
@@ -77,8 +77,8 @@ const jsonLd = [
 
 <Layout
   locale={locale}
-  title={`${guide.title} — post · the-full-stack`}
-  description={guide.description}
+  title={guide.title}
+  description={truncate(guide.description)}
   slug={slug}
   ogType="article"
   jsonLd={jsonLd}
@@ -94,7 +94,7 @@ const jsonLd = [
         <span>{guide.minutes} {t.minRead}</span>
         <span>{guide.chapters.length} {t.chapters}</span>
       </p>
-      <ul class="chips" aria-label="Tags">
+      <ul class="chips" aria-label={t.tags}>
         {guide.tags.map((tag) => <li>{tag}</li>)}
       </ul>
     </div>

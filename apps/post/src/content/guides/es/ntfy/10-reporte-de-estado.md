@@ -18,7 +18,7 @@ ntfy, caddy y cron activos · TLS 89 días · encendido 45 minutes
 
 - **Desde el servidor:** no depende de que tu PC esté encendida y ve datos internos.
 - **Doble destino:** si tu ntfy deja de responder, el aviso llega igual por ntfy.sh.
-- **Límite:** si el servidor muere por completo, no envía nada. **No recibir el reporte en más de 45 min es la alarma.**
+- **Límite:** si el servidor muere por completo, no envía nada. **No recibir el reporte por más de 45 min es la alarma.**
 
 ### Qué revisa
 
@@ -43,7 +43,7 @@ ntfy, caddy y cron activos · TLS 89 días · encendido 45 minutes
 # Reporte de estado del servidor ntfy. Lo ejecuta el timer systemd cada 45 min.
 # Config en /etc/ntfy-report.env (solo root):
 #   NTFY_TOKEN=tk_...  NTFY_DOMAIN=ntfy.tu-dominio.com  NTFY_LOCAL_TOPIC=alertas
-#   NTFY_TOPIC=<tema-ntfy.sh>  TZ_REPORT=America/Guayaquil
+#   NTFY_TOPIC=<tema-aleatorio>  TZ_REPORT=America/Guayaquil
 set -u
 . /etc/ntfy-report.env
 : "${NTFY_LOCAL_TOPIC:=alertas}" "${TZ_REPORT:=UTC}"
@@ -133,7 +133,6 @@ Description=Reporte de estado del servidor ntfy cada 45 minutos
 [Timer]
 OnBootSec=3min
 OnUnitActiveSec=45min
-Persistent=true
 
 [Install]
 WantedBy=timers.target
@@ -157,7 +156,7 @@ ssh mi-vm "sudo env NTFY_DOMAIN=ntfy.tu-dominio.com NTFY_ADMIN=admin NTFY_LOCAL_
 
 - `cron` no puede expresar "cada 45 minutos": `*/45` dispara a :00 y :45, con huecos de 15 min.
 - `OnUnitActiveSec=45min` cuenta desde la última ejecución.
-- `Persistent=true` recupera una ejecución perdida si el servidor estuvo apagado.
+- `OnBootSec=3min` envía un reporte 3 min después de cada arranque, así que un apagado no deja un hueco largo.
 
 ### Operar
 
@@ -168,6 +167,6 @@ journalctl -u ntfy-report -n 20                  # últimas ejecuciones
 sudo systemctl disable --now ntfy-report.timer   # desactivar
 ```
 
-32 reportes al día por destino: bajo el límite de 250/día de ntfy.sh gratis.
+32 reportes al día por destino: por debajo del límite de 250/día de ntfy.sh gratis.
 
 `ntfy` `monitoring` `systemd-timer` `healthcheck`

@@ -8,7 +8,7 @@ Sources: [docs.ntfy.sh/publish, Limitations section](https://docs.ntfy.sh/publis
 
 ---
 
-### Free limits (per IP, no account)
+### Free-tier limits (per IP, no account)
 
 | Limit | ntfy.sh |
 | :-- | :-- |

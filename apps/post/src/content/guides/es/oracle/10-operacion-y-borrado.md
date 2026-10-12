@@ -25,18 +25,18 @@ oci compute instance action --instance-id "$I" --action START
 
 ### Actualizaciones
 
-- `unattended-upgrades` instala los parches de seguridad solo.
+- `unattended-upgrades` instala los parches de seguridad por sí solo.
 - Si el reporte dice "requiere reinicio":
 
 ```bash
 ssh mi-vm 'sudo apt-get update && sudo apt-get -y upgrade && sudo reboot'
 ```
 
-Todo lo que esté `enable` en systemd (servicios, timer del reporte) y los crons arrancan solos.
+Todo lo que esté habilitado (`enable`) en systemd (servicios, timer del reporte) y los crons arrancan solos.
 
 ### Respaldo
 
-La VM puede ser reclamada. Respalda fuera:
+La VM puede ser reclamada. Respalda fuera de ella:
 
 - **Scripts de instalación:** en un repo; recrean el servidor en minutos.
 - **Datos y configuración:** lo que tu servicio guarde, más `/etc/cron.d/oci-keepalive` y `/etc/vm-report.env`.
@@ -48,6 +48,7 @@ ssh mi-vm 'sudo tar czf - /etc/cron.d /etc/vm-report.env /ruta/de/tus/datos' > r
 Oracle también permite respaldar el volumen de arranque (5 respaldos gratis):
 
 ```bash
+AD=$(oci iam availability-domain list -c "$C" --query 'data[0].name' --raw-output)
 BV=$(oci compute boot-volume-attachment list -c "$C" --availability-domain "$AD" --instance-id "$I" \
   --query 'data[0]."boot-volume-id"' --raw-output)
 oci bv boot-volume-backup create --boot-volume-id "$BV" --display-name "mi-vm-$(date +%F)"

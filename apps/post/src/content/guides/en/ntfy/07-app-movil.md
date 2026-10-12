@@ -43,7 +43,7 @@ Symptom in the subscription list:
 
 ```
 ntfy.sh/<random-topic>/Alertas
-0 notificaciones, reconectando...  ⚠
+0 notifications, reconnecting...  ⚠
 ```
 
 - The full URL plus a name was typed into the **Topic** field.

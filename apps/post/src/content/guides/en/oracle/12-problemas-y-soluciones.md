@@ -23,7 +23,7 @@
 | `NotAuthorizedOrNotFound` right after creating the compartment | Propagation | `sleep 20` before creating the VCN |
 | "Out of host capacity" on A1 | No free ARM hosts for the free tier | Retry in a loop every 2 min or use Micro |
 | Huge A1 quotas in `oci limits` | They come from the trial credit | Stick to the Always Free 2 OCPU / 12 GB |
-| SSH `Connection refused` | cloud-init still starting up | Retry for 1–2 min |
+| SSH `Connection refused` | cloud-init still starting up | Wait 1–2 min and retry |
 | 80/443 don't respond even though the Security List allows them | The image's `iptables` with a final `REJECT` | Insert the `ACCEPT` before the `REJECT` and run `netfilter-persistent save` |
 | `apt` dies from lack of memory on the Micro | 1 GB without swap | 1 GB swap (chapter 07) |
 
@@ -36,6 +36,6 @@
 | "Every 45 min" with cron fires at :00 and :45 | `*/45` isn't a real interval | systemd timer with `OnUnitActiveSec=45min` |
 | A cron line with `%` gets cut off | `%` is special in crontab | Escape it as `\%` |
 | A downed VM doesn't alert | It can't report if it's dead | The **absence** of a report for more than 45 min is the alarm |
-| Instance reclaimed | CPU p95 below 20% for 7 days | Recreate it with the scripts; new IP → update DNS |
+| Instance reclaimed | CPU p95 (and network; on A1, memory too) below 20% for 7 days | Recreate it with the scripts; new IP → update DNS |
 
 `troubleshooting` `oracle-cloud`

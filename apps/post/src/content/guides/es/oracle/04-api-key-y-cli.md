@@ -59,7 +59,7 @@ uv tool install oci-cli      # o: pipx install oci-cli
 oci --version
 ```
 
-Si dice `command not found`: `uv tool update-shell` y abre otra terminal.
+Si dice `command not found`: ejecuta `uv tool update-shell` y abre otra terminal.
 
 ### 4. Verificar el acceso (solo lectura)
 
@@ -96,7 +96,7 @@ done
 
 ### Errores frecuentes
 
-| Error | Causa |
+| Error | Causa o solución |
 | :-- | :-- |
 | `NotAuthenticated` | Fingerprint, `user` o `tenancy` mal copiados |
 | Advertencia de permisos | `oci setup repair-file-permissions --file ~/.oci/config` |

@@ -112,7 +112,11 @@ const ogImage = `${SITE_URLS.generic}/og-image.svg`
       </div>
     </header>
     <main id="main">
+      <!-- Cloudflare Email Obfuscation reescribe `ubuntu@203.0.113.10` de los
+           bloques de codigo a "[email protected]": se apaga en el contenido. -->
+      <Fragment set:html="<!--email_off-->" />
       <slot />
+      <Fragment set:html="<!--email_on-->" />
     </main>
     <footer class="site-footer">
       <div class="container">

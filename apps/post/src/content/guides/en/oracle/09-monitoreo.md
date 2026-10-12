@@ -27,7 +27,7 @@ oci monitoring metric-data summarize-metrics-data -c "$C" --namespace oci_comput
   | jq -r '.[] | "\(.[0][11:16]) UTC  \(.[1]|floor)%"'
 ```
 
-95th percentile (for Oracle's actual window use `-7 days` and `[7d]`):
+95th percentile (for Oracle's actual window use `-7 days` and `[1d]`: you get one p95 per day, since MQL doesn't accept intervals above `1d`):
 
 ```bash
 S=$(date -u -d '-60 min' +%Y-%m-%dT%H:%M:%SZ)
@@ -162,7 +162,6 @@ Description=VM status report every 45 minutes
 [Timer]
 OnBootSec=3min
 OnUnitActiveSec=45min
-Persistent=true
 
 [Install]
 WantedBy=timers.target
@@ -189,7 +188,7 @@ To add the authentication header, write `REPORT_AUTH="Bearer <token>"` to `/etc/
 
 - **`vmstat 55 2`**: the second line is the 55 s average; column 15 is `idle`.
 - **`%` in cron** is escaped as `\%`.
-- **systemd timer, not cron:** `*/45` in cron fires at :00 and :45 (15 min gaps). `OnUnitActiveSec=45min` counts from the last run, and `Persistent=true` catches up on a missed run.
+- **systemd timer, not cron:** `*/45` in cron fires at :00 and :45 (15 min gaps). `OnUnitActiveSec=45min` counts from the last run, and `OnBootSec=3min` sends a report after every boot.
 - **Measured agreement:** local p95 49% vs. Oracle 49.9% over the same hour.
 - While the log has less than 7 days of data, the "7d" figure only covers what's there.
 

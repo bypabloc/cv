@@ -58,7 +58,7 @@ ntfy.sh/<tema-aleatorio>/Alertas
 | Aparecen en la app pero no suenan | Ajustes de Android → Apps → ntfy → Notificaciones permitidas |
 | Llegan tarde con la pantalla apagada | Ajustes → Batería → ntfy → **Sin restricciones** |
 | iOS no recibe del servidor propio | Revisa `upstream-base-url: "https://ntfy.sh"` en `server.yml` |
-| 401/403 al suscribirte | Usuario no cargado para esa URL o sin permiso de lectura en el tópico |
+| 401/403 al suscribirte | Usuario no agregado para esa URL o sin permiso de lectura en el tópico |
 
 ### Prioridades en el celular
 

@@ -21,7 +21,7 @@
 | :-- | :-- | :-- |
 | 403 when publishing | `auth-default-access: deny-all` with no credentials | `-H "Authorization: Bearer tk_..."` |
 | 401 with a token | Token revoked or copied wrong | `sudo ntfy token list admin` |
-| Messages published but not received | Nobody subscribed to that topic | Subscribe before using a new topic |
+| Messages published but not received | Nobody subscribed to that topic | Subscribe to the topic; you'll only see what was published in the last 24 h |
 | App "reconnecting…" with ⚠ | Topic with `/` (a URL was pasted) | Just the topic name |
 | Notifications that do not ring | Permissions or battery optimization | Allow notifications and set battery to "Unrestricted" |
 | iOS does not receive | Relay missing | `upstream-base-url: "https://ntfy.sh"` |

@@ -21,7 +21,7 @@
 | :-- | :-- | :-- |
 | 403 al publicar | `auth-default-access: deny-all` sin credenciales | `-H "Authorization: Bearer tk_..."` |
 | 401 con token | Token revocado o mal copiado | `sudo ntfy token list admin` |
-| Mensajes publicados pero no recibidos | Nadie suscrito a ese tópico | Suscribirse antes de usar un tópico nuevo |
+| Mensajes publicados pero no recibidos | Nadie suscrito a ese tópico | Suscribirse al tópico; al hacerlo solo verás lo publicado en las últimas 24 h |
 | App "reconectando…" con ⚠ | Tópico con `/` (se pegó una URL) | Solo el nombre del tópico |
 | Notificaciones que no suenan | Permisos u optimización de batería | Permitir notificaciones y "Sin restricciones" de batería |
 | iOS no recibe | Falta el relay | `upstream-base-url: "https://ntfy.sh"` |

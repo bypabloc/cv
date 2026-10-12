@@ -49,7 +49,7 @@ Source: [Regions and Availability Domains](https://docs.oracle.com/en-us/iaas/Co
 
 ### Real case
 
-- Assigned region: **Chile Central (Santiago)**, with a single availability domain (`AD-1`).
+- Home region: **Chile Central (Santiago)**, with a single availability domain (`AD-1`).
 - No A1 capacity on signup day (12 attempts). See [chapter 06](06-instancia.md).
 
 `oracle-cloud` `signup` `regions` `home-region`

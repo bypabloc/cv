@@ -22,7 +22,7 @@ Exact text from [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 - The conditions are **joined by "and"**: the instance is idle only if **all** of them are true. **It's enough for one to exceed 20%** for it not to be.
 - **7-day 95th percentile:** all of the week's measurements are sorted and the one with 95% below it is taken. If CPU exceeds 20% for a bit more than **5% of the time**, the p95 is above 20%.
 - **Memory only counts on A1.** On the Micro, only CPU and network count.
-- A lightweight service (a bot, a webhook, a notification server) barely uses CPU or network: **it's idle by definition**.
+- A lightweight service (a bot, a webhook, a notification server) barely uses CPU or network: **under this rule, it almost always counts as idle**.
 - The documentation **doesn't say** whether or how it warns before reclaiming.
 - Forums recommend upgrading the account to *Pay As You Go*, but the documentation **doesn't** say it exempts you from reclamation.
 - A **stopped** instance doesn't use CPU either: don't leave it off for days.
@@ -32,7 +32,7 @@ Exact text from [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 | Strategy | Applies to | How | Assessment |
 | :-- | :-- | :-- | :-- |
 | **Small instance** | A1 | 1 OCPU and 1 GB: normal usage (~400 MB) exceeds 20% of RAM | Clean, no artificial load. **The best** |
-| **CPU keepalive** | Micro (and A1 if desired) | Cron job that uses CPU for a few seconds every few minutes | Works; it's artificial load (gray area under the terms) |
+| **CPU keepalive** | Micro (and A1 if desired) | Cron job that uses CPU for a little over a minute every few minutes | Works; it's artificial load (gray area under the terms) |
 | Network traffic | Both | Generate sustained traffic | Wastes bandwidth; discarded |
 
 ### The keepalive (Micro)

@@ -20,7 +20,12 @@ Deja el script del [capítulo 06](06-instancia.md) reintentando en segundo plano
 NAME=mi-vm-a1 nohup bash oci-crear-instancia.sh a1 > instancia-a1.env 2> intentos-a1.log &
 ```
 
-Al conseguirla: `eval "$(cat instancia-a1.env)"` deja `I` e `IP` de la nueva instancia.
+Al conseguirla, guarda primero el OCID de la Micro (lo usa el paso 6) y luego carga los datos de la A1:
+
+```bash
+I_MICRO=$I
+eval "$(cat instancia-a1.env)"   # deja I e IP de la nueva instancia
+```
 
 ### Paso 2: preparar la A1
 

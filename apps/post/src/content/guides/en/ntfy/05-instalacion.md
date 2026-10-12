@@ -112,7 +112,7 @@ To generate a random password: `openssl rand -base64 18 | tr -d '/+='`.
 | Option | Value | Why |
 | :-- | :-- | :-- |
 | `base-url` | `https://ntfy.your-domain.com` | Correct URLs in the app and attachments |
-| `listen-http` | `127.0.0.1:2586` | Local only: the public comes in through Caddy |
+| `listen-http` | `127.0.0.1:2586` | Local only: public traffic comes in through Caddy |
 | `behind-proxy` | `true` | Takes the real client IP from `X-Forwarded-For` |
 | `cache-duration` | `24h` | History the app sees when subscribing |
 | `auth-default-access` | `deny-all` | Nothing without a user or token |

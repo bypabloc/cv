@@ -8,12 +8,12 @@ Fuentes: [docs.ntfy.sh/publish, sección Limitations](https://docs.ntfy.sh/publi
 
 ---
 
-### Límites gratis (por IP, sin cuenta)
+### Límites del plan gratis (por IP, sin cuenta)
 
 | Límite | ntfy.sh |
 | :-- | :-- |
 | Mensajes por día | **250** |
-| Ráfaga | 60 requests seguidos, luego 1 cada 5 s |
+| Ráfaga | 60 solicitudes seguidas, luego 1 cada 5 s |
 | Tamaño del mensaje | 4.096 bytes (título 1 KB, tags 512 bytes) |
 | Adjuntos | 2 MB cada uno, 20 MB en total, se borran a las 3 h |
 | Emails | 5 por día |

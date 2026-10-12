@@ -57,5 +57,6 @@ export {
 } from './lib/event-types'
 export { filterByNiche } from './lib/filter-by-niche'
 export { formatRange, formatYearMonth } from './lib/format-date'
+export { sortByDateDesc } from './lib/sort-by-date-desc'
 export { sortByPriority } from './lib/sort-by-priority'
 export * from './schemas'

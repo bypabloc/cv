@@ -1,5 +1,16 @@
 [
   {
+    "slug": "youtube-autodidacta",
+    "institution": "YouTube — Desarrollo Web (autodidacta)",
+    "start": "2012",
+    "url": "https://youtube.com",
+    "description": {
+      "es": "Desde 2012 accedo a material gratuito y de paga en línea; no paro de aprender.",
+      "en": "Since 2012 I have leveraged free and paid online material; I never stop learning."
+    },
+    "priority": {}
+  },
+  {
     "slug": "udemy",
     "institution": "Udemy — Desarrollo Web",
     "start": "2017",
@@ -23,17 +34,6 @@
     "description": {
       "es": "Adquirí conocimientos en programación, bases de datos, redes, sistemas operativos y arquitectura de software.",
       "en": "Acquired knowledge in programming, databases, networks, operating systems and software architecture."
-    },
-    "priority": {}
-  },
-  {
-    "slug": "youtube-autodidacta",
-    "institution": "YouTube — Desarrollo Web (autodidacta)",
-    "start": "2012",
-    "url": "https://youtube.com",
-    "description": {
-      "es": "Desde 2013 accedo a material gratuito y de paga en línea; no paro de aprender.",
-      "en": "Since 2013 I have leveraged free and paid online material; I never stop learning."
     },
     "priority": {}
   }

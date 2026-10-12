@@ -28,7 +28,10 @@ const pubs = filterByNiche(publications, niche)
 ---
 
 <section class="container-medium section">
-  <SectionHeader eyebrow="About" title={t.sections.about.title} />
+  <SectionHeader
+    eyebrow={locale === 'es' ? 'Perfil' : 'Profile'}
+    title={t.sections.about.title}
+  />
 
   <h3 class="text-h4 about-h3">{t.sections.education.title}</h3>
   <ul class="about-list">

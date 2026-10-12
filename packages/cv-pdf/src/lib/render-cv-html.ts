@@ -24,6 +24,7 @@ import {
   publications,
   references,
   skills,
+  sortByDateDesc,
   sortByPriority,
 } from '@portfolio/content'
 
@@ -215,7 +216,7 @@ export function renderCvHtml(input: RenderInput): string {
   const { locale, niche = 'generic', enableFilters = false } = input
   const t = LABELS[locale]
 
-  const exps = sortByPriority(filterByNiche(experiences, niche), niche)
+  const exps = sortByDateDesc(filterByNiche(experiences, niche))
   const projs = sortByPriority(filterByNiche(projects, niche), niche)
   const certs = filterByNiche(certificates, niche)
   const pubs = filterByNiche(publications, niche)

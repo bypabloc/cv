@@ -96,7 +96,7 @@ done
 
 ### Common errors
 
-| Error | Cause |
+| Error | Cause or fix |
 | :-- | :-- |
 | `NotAuthenticated` | Fingerprint, `user`, or `tenancy` copied incorrectly |
 | Permissions warning | `oci setup repair-file-permissions --file ~/.oci/config` |

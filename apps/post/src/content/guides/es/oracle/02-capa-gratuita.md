@@ -10,7 +10,7 @@ Fuente: [Always Free Resources](https://docs.oracle.com/en-us/iaas/Content/FreeT
 
 ### Free Trial vs. Always Free
 
-Al crear la cuenta la consola muestra:
+Al crear la cuenta, la consola muestra:
 
 > *Free Tier account · You are in a Free Trial. When your trial is over, your account is limited to Always Free resources.*
 
@@ -53,7 +53,7 @@ Al crear la cuenta la consola muestra:
 | Monitoring | 500 millones de puntos ingeridos, 1.000 millones consultados |
 | Notifications | 1 millón HTTPS y 1.000 emails al mes |
 | Email Delivery | 3.000 emails al mes |
-| Autonomous Database | 2 bases de 1 OCPU y 20 GB |
+| Autonomous Database | 2 bases de datos de 1 OCPU y 20 GB |
 | Vault | 20 versiones de clave HSM, 150 secretos |
 
 ### Cuánto dura

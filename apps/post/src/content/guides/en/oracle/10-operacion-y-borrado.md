@@ -48,6 +48,7 @@ ssh my-vm 'sudo tar czf - /etc/cron.d /etc/vm-report.env /path/to/your/data' > r
 Oracle also lets you back up the boot volume (5 free backups):
 
 ```bash
+AD=$(oci iam availability-domain list -c "$C" --query 'data[0].name' --raw-output)
 BV=$(oci compute boot-volume-attachment list -c "$C" --availability-domain "$AD" --instance-id "$I" \
   --query 'data[0]."boot-volume-id"' --raw-output)
 oci bv boot-volume-backup create --boot-volume-id "$BV" --display-name "my-vm-$(date +%F)"

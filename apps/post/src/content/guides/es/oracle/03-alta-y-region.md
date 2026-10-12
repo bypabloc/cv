@@ -10,13 +10,13 @@
 
 1. Entra a **https://signup.cloud.oracle.com/**.
 2. País, nombre y correo; verifica el correo.
-3. Elige el **nombre de la cuenta** (*cloud account name* o *tenancy*). Lo pedirá cada login.
+3. Elige el **nombre de la cuenta** (*cloud account name* o *tenancy*). Te lo pedirán en cada inicio de sesión.
 4. Elige la **región principal** (ver abajo).
-5. Tarjeta de verificación: hace un cargo temporal que se reversa. No hay cobro sin *Upgrade*.
+5. Tarjeta de verificación: Oracle hace un cargo temporal que luego se reversa. No hay cobro sin *Upgrade*.
 6. Espera el aprovisionamiento. La pantalla dice:
    > *Estamos creando su cuenta; este proceso puede tardar hasta 15 minutos.*
 
-   Llegan dos correos: cuenta creada y cuenta lista (*fully provisioned*). Puedes probar a entrar en **https://cloud.oracle.com/** antes del segundo.
+   Llegan dos correos: cuenta creada y cuenta lista (*fully provisioned*). Puedes intentar entrar en **https://cloud.oracle.com/** antes del segundo.
 
 ### La región principal: la decisión irreversible
 
@@ -49,7 +49,7 @@ Fuente: [Regions and Availability Domains](https://docs.oracle.com/en-us/iaas/Co
 
 ### Caso real
 
-- Región asignada: **Chile Central (Santiago)**, con un solo dominio de disponibilidad (`AD-1`).
+- Región principal: **Chile Central (Santiago)**, con un solo dominio de disponibilidad (`AD-1`).
 - Sin capacidad A1 el día del alta (12 intentos). Ver [capítulo 06](06-instancia.md).
 
 `oracle-cloud` `signup` `regiones` `home-region`

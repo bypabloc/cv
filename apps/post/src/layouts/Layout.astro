@@ -94,7 +94,7 @@ const ogImage = `${SITE_URLS.generic}/og-image.svg`
     <header class="site-header">
       <div class="container site-header__inner">
         <a class="brand" href={pathFor(locale)}>the-full-stack<span>/post</span></a>
-        <nav class="site-nav" aria-label={t.siteName}>
+        <nav class="site-nav" aria-label={t.navLabel}>
           <a class="hide-sm" href={SITE_URLS.generic + (locale === 'en' ? '/en/' : '/')}>{t.portfolio}</a>
           <a href={pathFor(other, slug)} hreflang={other} lang={other}>{t.langLabel}</a>
           <button

@@ -44,7 +44,7 @@ flowchart LR
 | Option | Cost | Private | Maintenance | When |
 | :-- | :-- | :-- | :-- | :-- |
 | Free ntfy.sh | USD 0 | No: anyone who guesses the topic can read it | None | Personal alerts with no sensitive data |
-| ntfy.sh Supporter | USD 5 | Yes (3 reserved topics) | None | Privacy without running a server |
+| ntfy.sh Supporter | USD 5 (billing period: see [ch. 02](02-ntfy-sh-limites.md)) | Yes (3 reserved topics) | None | Privacy without running a server |
 | **Self-hosted server** | The VM's cost | Yes | Medium | Full control, your own domain, your own limits |
 
 ### What running your own server means

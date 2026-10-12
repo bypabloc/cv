@@ -20,7 +20,12 @@ Leave the script from [chapter 06](06-instancia.md) retrying in the background:
 NAME=my-vm-a1 nohup bash oci-crear-instancia.sh a1 > instancia-a1.env 2> intentos-a1.log &
 ```
 
-Once you get it: `eval "$(cat instancia-a1.env)"` sets `I` and `IP` for the new instance.
+Once you get it, first save the Micro's OCID (step 6 uses it), then load the A1 values:
+
+```bash
+I_MICRO=$I
+eval "$(cat instancia-a1.env)"   # sets I and IP for the new instance
+```
 
 ### Step 2: prepare the A1
 

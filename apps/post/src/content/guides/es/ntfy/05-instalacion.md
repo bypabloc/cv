@@ -112,7 +112,7 @@ Para generar una clave aleatoria: `openssl rand -base64 18 | tr -d '/+='`.
 | Opción | Valor | Por qué |
 | :-- | :-- | :-- |
 | `base-url` | `https://ntfy.tu-dominio.com` | URLs correctas en la app y los adjuntos |
-| `listen-http` | `127.0.0.1:2586` | Solo local: el público entra por Caddy |
+| `listen-http` | `127.0.0.1:2586` | Solo local: el tráfico público entra por Caddy |
 | `behind-proxy` | `true` | Toma la IP real del cliente desde `X-Forwarded-For` |
 | `cache-duration` | `24h` | Historial que ve la app al suscribirse |
 | `auth-default-access` | `deny-all` | Nada sin usuario o token |

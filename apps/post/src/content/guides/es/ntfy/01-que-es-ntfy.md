@@ -44,7 +44,7 @@ flowchart LR
 | Opción | Costo | Privado | Mantenimiento | Cuándo |
 | :-- | :-- | :-- | :-- | :-- |
 | ntfy.sh gratis | USD 0 | No: quien adivine el tópico lo lee | Ninguno | Avisos personales sin datos sensibles |
-| ntfy.sh Supporter | USD 5 | Sí (3 tópicos reservados) | Ninguno | Privacidad sin administrar un servidor |
+| ntfy.sh Supporter | USD 5 (periodo: ver [cap. 02](02-ntfy-sh-limites.md)) | Sí (3 tópicos reservados) | Ninguno | Privacidad sin administrar un servidor |
 | **Servidor propio** | El de la VM | Sí | Medio | Control total, dominio propio, límites propios |
 
 ### Qué implica el servidor propio

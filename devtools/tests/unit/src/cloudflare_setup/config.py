@@ -9,6 +9,8 @@ Cubre:
 - site_url_for produce https://<custom_domain>
 """
 
+import pytest
+
 from cloudflare_setup.config import APEX_DOMAIN
 from cloudflare_setup.config import APPS
 from cloudflare_setup.config import ENVS
@@ -18,7 +20,6 @@ from cloudflare_setup.config import EnvConfig
 from cloudflare_setup.config import custom_domain_for
 from cloudflare_setup.config import project_name_for
 from cloudflare_setup.config import site_url_for
-import pytest
 
 
 pytestmark = pytest.mark.unit
@@ -152,7 +153,7 @@ class TestSiteUrlFor:
 # ---- APPS ---------------------------------------------------------------
 
 
-def test_apps_has_seven_entries_six_niches_plus_admin():
+def test_apps_has_nine_entries():
     names = {a.project_name for a in APPS}
     assert names == {
         'generic',
@@ -161,6 +162,8 @@ def test_apps_has_seven_entries_six_niches_plus_admin():
         'architect',
         'leader',
         'vibe',
+        'journey',
+        'post',
         'admin',
     }
 
@@ -177,11 +180,19 @@ def test_apps_carries_app_type_and_build_output_dir_fields():
     }
 
 
-def test_six_astro_apps_default_to_astro_dist():
-    """Las 6 apps Astro preservan los defaults app_type/build_output_dir."""
+def test_eight_astro_apps_default_to_astro_dist():
+    """Las 8 apps Astro preservan los defaults app_type/build_output_dir."""
     astro = [a for a in APPS if a.project_name != 'admin']
-    assert [a.app_type for a in astro] == ['astro'] * 6
-    assert [a.build_output_dir for a in astro] == ['dist'] * 6
+    assert [a.app_type for a in astro] == ['astro'] * 8
+    assert [a.build_output_dir for a in astro] == ['dist'] * 8
+
+
+def test_post_custom_domain_is_its_own_product():
+    """post es un product propio: cuelga del apex, no de portfolio."""
+    post = next(a for a in APPS if a.project_name == 'post')
+    assert custom_domain_for(post, ENVS['prod']) == 'post.the-full-stack.com'
+    assert custom_domain_for(post, ENVS['dev']) == 'post.dev.the-full-stack.com'
+    assert project_name_for(post, 'dev') == 'post-dev'
 
 
 def test_admin_app_is_nextjs_with_out_output_dir():

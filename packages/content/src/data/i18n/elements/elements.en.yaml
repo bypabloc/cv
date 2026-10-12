@@ -20,6 +20,8 @@ nav:
     label: "Contact"
   - key: hub
     label: "Other views"
+  - key: posts
+    label: "Posts"
 
 # StatsBar labels.
 stats:

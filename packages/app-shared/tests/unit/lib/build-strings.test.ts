@@ -63,6 +63,22 @@ describe('buildStrings', () => {
     expect(about?.href).toBe('/en/about')
   })
 
+  it('Given the es locale When built Then the nav links Posts to the post site as external', () => {
+    const strings = buildStrings('generic', null)
+    const posts = strings.es.nav.find((n) => n.label === 'Posts')
+    expect(posts).toEqual({
+      href: 'https://post.the-full-stack.com/',
+      label: 'Posts',
+      external: true,
+    })
+  })
+
+  it('Given the en locale When built Then the Posts link points to the en post site', () => {
+    const strings = buildStrings('generic', null)
+    const posts = strings.en.nav.find((n) => n.label === 'Posts')
+    expect(posts?.href).toBe('https://post.the-full-stack.com/en/')
+  })
+
   it('Given any app When built Then component strings are present', () => {
     const strings = buildStrings('architect', null)
     expect(strings.es.components.contactForm.submit).toBe('Enviar')

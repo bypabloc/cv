@@ -25,6 +25,18 @@ describe('sortByDateDesc', () => {
     expect(result).toEqual(['vigente', 'cerrada'])
   })
 
+  it('Given mismo start y ambas cerradas When ordenar Then la que termino despues va primero', () => {
+    const items = [
+      { slug: 'vigente', start: '2020-01' },
+      { slug: 'corta', start: '2020-01', end: '2020-06' },
+      { slug: 'larga', start: '2020-01', end: '2021-06' },
+    ]
+
+    const result = sortByDateDesc(items).map((e) => e.slug)
+
+    expect(result).toEqual(['vigente', 'larga', 'corta'])
+  })
+
   it('Given un array When ordenar Then no muta el input', () => {
     const items = [
       { slug: 'a', start: '2014-01' },

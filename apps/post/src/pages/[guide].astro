@@ -1,0 +1,12 @@
+---
+import type { GetStaticPaths } from 'astro'
+import GuidePage from '../components/GuidePage.astro'
+import { GUIDE_SLUGS, type GuideSlug } from '../lib/guides'
+
+export const getStaticPaths = (() =>
+  GUIDE_SLUGS.map((guide) => ({ params: { guide } }))) satisfies GetStaticPaths
+
+const slug = Astro.params.guide as GuideSlug
+---
+
+<GuidePage locale="es" slug={slug} />

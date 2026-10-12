@@ -64,7 +64,7 @@ const jsonLd = [
       {
         guides.map((g) => (
           <li class="card">
-            <ul class="chips" aria-label="Tags">
+            <ul class="chips" aria-label={t.tags}>
               {g.tags.slice(0, 3).map((tag) => <li>{tag}</li>)}
             </ul>
             <h2>

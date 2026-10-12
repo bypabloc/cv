@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { buildStrings } from '../../../src/lib/site-config'
+import { SITE_URLS } from '../../../src/lib/site-urls'
 
 describe('buildStrings', () => {
   it('Given app vibe When built Then hero comes from the vibe curriculum', () => {
@@ -67,7 +68,7 @@ describe('buildStrings', () => {
     const strings = buildStrings('generic', null)
     const posts = strings.es.nav.find((n) => n.label === 'Posts')
     expect(posts).toEqual({
-      href: 'https://post.the-full-stack.com/',
+      href: `${SITE_URLS.post}/`,
       label: 'Posts',
       external: true,
     })
@@ -76,7 +77,7 @@ describe('buildStrings', () => {
   it('Given the en locale When built Then the Posts link points to the en post site', () => {
     const strings = buildStrings('generic', null)
     const posts = strings.en.nav.find((n) => n.label === 'Posts')
-    expect(posts?.href).toBe('https://post.the-full-stack.com/en/')
+    expect(posts?.href).toBe(`${SITE_URLS.post}/en/`)
   })
 
   it('Given any app When built Then component strings are present', () => {

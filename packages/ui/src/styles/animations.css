@@ -93,7 +93,9 @@
 .tilt-3d__inner {
   transition: transform var(--motion-slow) var(--easing-out);
   transform: rotateX(0) rotateY(0);
-  transform-style: preserve-3d;
+  /* Sin preserve-3d: los hijos quedan en el plano de la tarjeta. Con
+     preserve-3d el hit-testing ordena por profundidad y, con la tarjeta
+     rotada, el footer tapaba los enlaces con transform (.magnetic). */
   will-change: transform;
 }
 

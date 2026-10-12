@@ -8,6 +8,7 @@ import {
   profile,
   projects,
   skills,
+  sortByDateDesc,
   sortByPriority,
 } from '@portfolio/content'
 import AwardCard from '@portfolio/ui/components/AwardCard.astro'
@@ -64,7 +65,7 @@ const {
 } = Astro.props
 // Prefijo de ruta segun locale: el ingles vive bajo /en.
 const localePrefix = locale === 'en' ? '/en' : ''
-const exps = sortByPriority(filterByNiche(experiences, niche), niche)
+const exps = sortByDateDesc(filterByNiche(experiences, niche))
 const projs = sortByPriority(filterByNiche(projects, niche), niche)
 const sks = filterByNiche(skills, niche)
 const technicalSkills = sks.filter((s) => s.kind === 'technical')

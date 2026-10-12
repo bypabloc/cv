@@ -22,12 +22,12 @@ otherLocaleLink: "English version →"
 cards:
   - niche: generic
     title: "Full Stack Senior"
-    blurb: "Vue + Django + AWS · 8 años · todas las skills"
+    blurb: "Vue + Django + AWS · 12+ años · todas las skills"
   - niche: fintech
     title: "Fintech LATAM"
     blurb: "Chile, México · saldar deudas · scoring · créditos"
   - niche: architect
-    title: "Architect"
+    title: "Arquitecto"
     blurb: "Microservicios · microfrontend · sistemas escalables"
   - niche: leader
     title: "Tech Lead"

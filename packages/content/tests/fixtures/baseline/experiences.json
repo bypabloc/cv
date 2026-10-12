@@ -1,21 +1,87 @@
 [
   {
-    "slug": "cofasa",
+    "slug": "projects-degrees",
+    "company": "Asesoría de proyectos de grado",
+    "country": "Venezuela",
+    "start": "2015-11",
+    "end": "2015-12",
+    "seniority": "mid",
+    "metricsEstimated": true,
     "role": {
-      "es": "Desarrollador de Sistemas Web",
-      "en": "Web Systems Developer"
+      "en": "Leader, Architect and Developer",
+      "es": "Líder, Arquitecto y Desarrollador"
     },
+    "summary": {
+      "es": "Me contrataron para rescatar una tesis bloqueada: desarrollé e implanté yo solo la solución para PROSALUD y preparé al equipo para defenderla.",
+      "en": "I was hired to rescue a stalled thesis: I single-handedly built and deployed the solution for PROSALUD and coached the team through their defense."
+    },
+    "responsibilities": {
+      "es": [
+        "Diagnóstico de los puntos de falla en el código y la arquitectura heredados de un proyecto de grado bloqueado durante meses.",
+        "Definición de la arquitectura y del plan de trabajo para reencaminar el proyecto hacia su entrega.",
+        "Desarrollo e implantación completa de la solución web (PHP y MySQL sobre la red local) para el Instituto Autónomo de la Salud del Estado Yaracuy (PROSALUD).",
+        "Mentoría técnica de los tesistas, explicando cada implementación y el razonamiento detrás de las decisiones.",
+        "Preparación del equipo para la defensa: ensayos de la exposición y documentación de soporte."
+      ],
+      "en": [
+        "Diagnosed the failure points in the code and architecture inherited from a thesis project stalled for months.",
+        "Defined the architecture and the work plan to steer the project back toward delivery.",
+        "Built and fully deployed the web solution (PHP and MySQL over the local network) for the Instituto Autónomo de la Salud del Estado Yaracuy (PROSALUD).",
+        "Mentored the thesis students, explaining each implementation and the reasoning behind the decisions.",
+        "Prepared the team for the defense: presentation rehearsals and supporting documentation."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Reencaminé y completé en aproximadamente una semana una tesis que el equipo no había logrado avanzar en varios meses.",
+        "Desarrollé e implanté yo solo la solución para PROSALUD, cobrando por el desarrollo y por la capacitación del equipo.",
+        "Dejé a los tesistas en capacidad de explicar y sostener técnicamente su propia solución en la defensa.",
+        "Reduje el tiempo estimado de finalización de meses a días mediante un diagnóstico técnico preciso y un plan de trabajo claro."
+      ],
+      "en": [
+        "Got a thesis back on track and completed it in roughly one week after the team had failed to make progress for several months.",
+        "Single-handedly built and deployed the PROSALUD solution, getting paid for both the development and the team training.",
+        "Left the thesis students able to explain and technically defend their own solution.",
+        "Cut the estimated completion time from months to days through a precise technical diagnosis and a clear work plan."
+      ]
+    },
+    "niches": ["leader", "generic"],
+    "priority": {
+      "leader": 60,
+      "generic": 50
+    },
+    "skillsTechnical": [
+      "Arquitectura de Software",
+      "Diagnóstico Técnico",
+      "Implementación de Soluciones",
+      "MySQL",
+      "PHP",
+      "Reestructuración de Proyectos"
+    ],
+    "skillsSoft": [
+      "Adaptabilidad",
+      "Colaboración de Equipo",
+      "Consultoría Técnica",
+      "Dirección de Proyecto",
+      "Gestión del Tiempo",
+      "Resolución de Problemas"
+    ]
+  },
+  {
+    "slug": "cofasa",
     "company": "Laboratorio Cofasa S.A.",
     "country": "Venezuela",
     "companyUrl": "https://laboratoriocofasa.com",
     "start": "2017-01",
     "end": "2018-11",
-    "niches": ["generic"],
-    "priority": {
-      "generic": 80
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador de Sistemas Web",
+      "en": "Web Systems Developer"
     },
     "summary": {
-      "es": "Desarrolle un sistema web (jQuery + Laravel) para monitorear la produccion farmaceutica y analizar paradas de maquina.",
+      "es": "Desarrollé un sistema web (jQuery + Laravel) para monitorear la producción farmacéutica y analizar las paradas de máquina.",
       "en": "Built a web system (jQuery + Laravel) to monitor pharmaceutical production and analyze machine downtime for productivity."
     },
     "responsibilities": {
@@ -52,6 +118,10 @@
         "Kept a system in productive use for nearly two years, adapting it to the operation's changing needs."
       ]
     },
+    "niches": ["generic"],
+    "priority": {
+      "generic": 70
+    },
     "skillsTechnical": [
       "Análisis de Productividad",
       "Laravel",
@@ -60,26 +130,22 @@
       "Red Local",
       "jQuery"
     ],
-    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
-    "seniority": "mid",
-    "metricsEstimated": true
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"]
   },
   {
     "slug": "corpoelec",
-    "role": {
-      "es": "Desarrollador Web",
-      "en": "Web Developer"
-    },
     "company": "CORPOELEC",
     "country": "Venezuela",
     "start": "2013-01",
     "end": "2013-12",
-    "niches": ["generic"],
-    "priority": {
-      "generic": 40
+    "seniority": "intern",
+    "metricsEstimated": true,
+    "role": {
+      "en": "Web Developer",
+      "es": "Desarrollador Web"
     },
     "summary": {
-      "es": "Pasantia: implemente un sistema de inventario de equipos electricos (PHP + jQuery) desplegado offline en 3 estados de Venezuela.",
+      "es": "Pasantía: implementé un sistema de inventario de equipos eléctricos (PHP + jQuery) desplegado offline en 3 estados de Venezuela.",
       "en": "Internship: built an offline-capable electrical inventory system (PHP + jQuery) deployed across 3 Venezuelan states."
     },
     "responsibilities": {
@@ -112,6 +178,10 @@
         "Delivered the system within the planned year and trained staff at each site on its daily use."
       ]
     },
+    "niches": ["generic"],
+    "priority": {
+      "generic": 20
+    },
     "skillsTechnical": [
       "CRUD",
       "Gestión de Activos",
@@ -119,30 +189,22 @@
       "PHP",
       "Sistema Offline"
     ],
-    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"],
-    "seniority": "intern",
-    "metricsEstimated": true
+    "skillsSoft": ["Colaboración de Equipo", "Resolución de Problemas"]
   },
   {
     "slug": "destacame-architect",
-    "role": {
-      "es": "Arquitecto Frontend y Desarrollador de Microservicios",
-      "en": "Frontend Architect and Microservices Developer"
-    },
     "company": "Destacame",
     "country": "Chile",
     "companyUrl": "https://destacame.cl",
     "start": "2022-08",
-    "niches": ["fintech", "architect", "leader", "vibe", "generic"],
-    "priority": {
-      "fintech": 100,
-      "architect": 100,
-      "leader": 100,
-      "vibe": 100,
-      "generic": 120
+    "seniority": "lead",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Arquitecto Frontend y Desarrollador de Microservicios",
+      "en": "Frontend Architect and Microservices Developer"
     },
     "summary": {
-      "es": "Arquitecto frontend lidere la migracion a microfrontends y orqueste los productos fintech de Destacame para Chile y Mexico.",
+      "es": "Como arquitecto frontend, lideré la migración a microfrontends y orquesté los productos fintech de Destacame para Chile y México.",
       "en": "Frontend Architect leading the microfrontend migration and orchestrating Destacame fintech products for Chile and Mexico."
     },
     "responsibilities": {
@@ -183,6 +245,14 @@
         "Have held a technical role of growing responsibility for over three years, currently on the platform team."
       ]
     },
+    "niches": ["fintech", "architect", "leader", "vibe", "generic"],
+    "priority": {
+      "fintech": 100,
+      "architect": 100,
+      "leader": 100,
+      "vibe": 100,
+      "generic": 100
+    },
     "skillsTechnical": [
       "AWS",
       "Arquitectura Frontend",
@@ -197,28 +267,23 @@
       "Fintech",
       "Liderazgo Técnico",
       "Planificación Estratégica"
-    ],
-    "seniority": "lead",
-    "metricsEstimated": true
+    ]
   },
   {
     "slug": "destacame-frontend",
-    "role": {
-      "es": "Desarrollador Web Frontend",
-      "en": "Web Frontend Developer"
-    },
     "company": "Destacame",
     "country": "Chile",
     "companyUrl": "https://destacame.cl",
     "start": "2021-12",
     "end": "2022-08",
-    "niches": ["fintech", "generic"],
-    "priority": {
-      "fintech": 90,
-      "generic": 110
+    "seniority": "senior",
+    "metricsEstimated": true,
+    "role": {
+      "en": "Web Frontend Developer",
+      "es": "Desarrollador Web Frontend"
     },
     "summary": {
-      "es": "Construi interfaces Vue/Nuxt para los productos fintech de Destacame en Chile antes de pasar al rol de arquitecto.",
+      "es": "Construí interfaces Vue/Nuxt para los productos fintech de Destacame en Chile antes de pasar al rol de arquitecto.",
       "en": "Built Vue/Nuxt UIs for Destacame fintech products in Chile before moving up to the Frontend Architect role."
     },
     "responsibilities": {
@@ -255,6 +320,11 @@
         "Contributed to team versatility by covering both frontend and backend, adapting to the product's changing needs."
       ]
     },
+    "niches": ["fintech", "generic"],
+    "priority": {
+      "fintech": 90,
+      "generic": 95
+    },
     "skillsTechnical": [
       "Desarrollo Frontend",
       "Desarrollo Web",
@@ -268,29 +338,23 @@
       "Agilidad de Aprendizaje",
       "Resolución de Problemas",
       "Trabajo en Equipo"
-    ],
-    "seniority": "senior",
-    "metricsEstimated": true
+    ]
   },
   {
     "slug": "dibal",
-    "role": {
-      "es": "Líder de Equipo de Desarrollo y Desarrollador",
-      "en": "Development Team Lead and Developer"
-    },
     "company": "Dibal",
     "country": "Perú",
     "companyUrl": "https://dibal.pe",
     "start": "2018-12",
     "end": "2021-09",
-    "niches": ["architect", "leader", "generic"],
-    "priority": {
-      "architect": 90,
-      "leader": 95,
-      "generic": 90
+    "seniority": "senior",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Líder de Equipo de Desarrollo y Desarrollador",
+      "en": "Development Team Lead and Developer"
     },
     "summary": {
-      "es": "Tech lead y primer desarrollador de Dibal: lleve el equipo de 1 a ~5 personas y defini sus estandares de trabajo.",
+      "es": "Tech lead y primer desarrollador de Dibal: llevé el equipo de 1 a ~5 personas y definí sus estándares de trabajo.",
       "en": "Tech lead and first dev at Dibal: grew the team from 1 to ~5 people and defined their engineering standards."
     },
     "responsibilities": {
@@ -331,6 +395,12 @@
         "Supported the startup's growth for nearly three years, adapting the technology to every new business need."
       ]
     },
+    "niches": ["architect", "leader", "generic"],
+    "priority": {
+      "architect": 90,
+      "leader": 95,
+      "generic": 85
+    },
     "skillsTechnical": [
       "Arquitectura de Sistemas",
       "Computación en la Nube",
@@ -345,28 +415,23 @@
       "Liderazgo de Equipo",
       "Metodologías Ágiles",
       "Orientado al Cliente"
-    ],
-    "seniority": "senior",
-    "metricsEstimated": true
+    ]
   },
   {
     "slug": "goodmeal",
-    "role": {
-      "es": "Desarrollador Web Full Stack",
-      "en": "Full Stack Web Developer"
-    },
     "company": "GoodMeal",
     "country": "Chile",
     "companyUrl": "https://www.goodmeal.app",
     "start": "2021-05",
     "end": "2021-12",
-    "niches": ["fintech", "generic"],
-    "priority": {
-      "fintech": 70,
-      "generic": 100
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador Web Full Stack",
+      "en": "Full Stack Web Developer"
     },
     "summary": {
-      "es": "Lidere la migracion del frontend de GoodMeal a Vue 3, modernizando la base de codigo y la experiencia del usuario.",
+      "es": "Lideré la migración del frontend de GoodMeal a Vue 3, modernizando la base de código y la experiencia del usuario.",
       "en": "Led the frontend migration of GoodMeal to Vue 3, modernizing the codebase and the user experience."
     },
     "responsibilities": {
@@ -403,6 +468,11 @@
         "Contributed to the team's adoption of Scrum practices, improving delivery predictability iteration over iteration."
       ]
     },
+    "niches": ["fintech", "generic"],
+    "priority": {
+      "fintech": 70,
+      "generic": 90
+    },
     "skillsTechnical": [
       "Aplicación Web",
       "Corrección de Errores",
@@ -416,27 +486,86 @@
       "Gestión del Tiempo",
       "Resolución de Problemas",
       "Trabajo en Equipo"
+    ]
+  },
+  {
+    "slug": "ipasme",
+    "company": "IPASME",
+    "country": "Venezuela",
+    "start": "2014-01",
+    "end": "2014-12",
+    "seniority": "junior",
+    "metricsEstimated": true,
+    "role": {
+      "es": "Desarrollador de Software",
+      "en": "Software Developer"
+    },
+    "summary": {
+      "en": "Delivered a digital medical records system that replaced paper-based registration at IPASME.",
+      "es": "Entregué un sistema digital de historias médicas que reemplazó el registro en papel en el IPASME."
+    },
+    "responsibilities": {
+      "es": [
+        "Desarrollo e implementación de un sistema de gestión de historias médicas para el registro y consulta de pacientes en el instituto.",
+        "Creación de interfaces de escritorio en Java para Windows, aplicando programación orientada a objetos y un modelo de datos persistente.",
+        "Implementación de operaciones CRUD para la administración de pacientes, consultas y registros clínicos asociados.",
+        "Levantamiento de requerimientos con el personal médico y administrativo para alinear el sistema con el flujo real de atención.",
+        "Manejo de datos sensibles de salud con controles básicos de acceso y validación de la información ingresada."
+      ],
+      "en": [
+        "Built and deployed a patient medical-records management system for registering and consulting patients at the institute.",
+        "Created Java desktop interfaces for Windows, applying object-oriented programming and a persistent data model.",
+        "Implemented CRUD operations to manage patients, appointments and associated clinical records.",
+        "Gathered requirements with medical and administrative staff to align the system with the real care workflow.",
+        "Handled sensitive health data with basic access controls and input validation of the information entered."
+      ]
+    },
+    "achievements": {
+      "es": [
+        "Entregué un sistema funcional de historias médicas que reemplazó el manejo de fichas en papel por un registro digital consultable.",
+        "Reduje el tiempo de búsqueda de la historia de un paciente de varios minutos en archivo físico a una consulta inmediata en pantalla.",
+        "Apliqué conceptos de POO y operaciones CRUD en Java de forma consistente, consolidando bases sólidas de ingeniería de software.",
+        "Mejoré mis habilidades de comunicación técnica y de levantamiento de requerimientos al trabajar directamente con el personal de salud."
+      ],
+      "en": [
+        "Delivered a working medical-records system that replaced paper file handling with a searchable digital record.",
+        "Cut patient history lookup time from several minutes in physical archives to an instant on-screen query.",
+        "Applied OOP and CRUD operations in Java consistently, building solid software-engineering foundations.",
+        "Improved technical communication and requirements-gathering skills by working directly with healthcare staff."
+      ]
+    },
+    "niches": ["generic"],
+    "priority": {
+      "generic": 30
+    },
+    "skillsTechnical": [
+      "Aplicación de Escritorio",
+      "Historias Médicas",
+      "Java",
+      "Levantamiento de Requerimientos",
+      "Programación Orientada a Objetos"
     ],
-    "seniority": "mid",
-    "metricsEstimated": true
+    "skillsSoft": [
+      "Adaptabilidad",
+      "Comunicación Técnica",
+      "Pensamiento Analítico",
+      "Resolución de Problemas"
+    ]
   },
   {
     "slug": "iai",
-    "role": {
-      "es": "Líder de Desarrollo de Software y Arquitectura de Sistemas",
-      "en": "Software Development Lead and Systems Architecture"
-    },
     "company": "Instituto Autónomo de Infraestructura del Estado Yaracuy (IAI)",
     "country": "Venezuela",
     "start": "2015-01",
     "end": "2015-12",
-    "niches": ["leader", "generic"],
-    "priority": {
-      "leader": 55,
-      "generic": 60
+    "seniority": "mid",
+    "metricsEstimated": true,
+    "role": {
+      "en": "Software Development Lead and Systems Architecture",
+      "es": "Líder de Desarrollo de Software y Arquitectura de Sistemas"
     },
     "summary": {
-      "es": "Lidere el desarrollo y arquitectura de un proyecto academico, coordinando un equipo pequeno hasta su entrega exitosa.",
+      "es": "Lideré el desarrollo y la arquitectura de un proyecto académico, coordinando un equipo pequeño hasta su entrega exitosa.",
       "en": "Led development and architecture of an academic project, coordinating a small team through successful delivery."
     },
     "responsibilities": {
@@ -471,6 +600,11 @@
         "Documented the full solution architecture, leaving a clear technical foundation for its defense and eventual maintenance."
       ]
     },
+    "niches": ["leader", "generic"],
+    "priority": {
+      "leader": 55,
+      "generic": 45
+    },
     "skillsTechnical": [
       "Desarrollo de Software",
       "Gestión de Datos",
@@ -485,140 +619,6 @@
       "Gestión del Trabajo",
       "Planificación de Proyecto",
       "Trabajo Colaborativo"
-    ],
-    "seniority": "mid",
-    "metricsEstimated": true
-  },
-  {
-    "slug": "ipasme",
-    "role": {
-      "es": "Desarrollador de Software",
-      "en": "Software Developer"
-    },
-    "company": "IPASME",
-    "country": "Venezuela",
-    "start": "2014-01",
-    "end": "2014-12",
-    "niches": ["generic"],
-    "priority": {
-      "generic": 50
-    },
-    "summary": {
-      "es": "Entregue un sistema digital de historias medicas que reemplazo el registro en papel en el IPASME.",
-      "en": "Delivered a digital medical records system that replaced paper-based registration at IPASME."
-    },
-    "responsibilities": {
-      "es": [
-        "Desarrollo e implementación de un sistema de gestión de historias médicas para el registro y consulta de pacientes en el instituto.",
-        "Creación de interfaces de escritorio en Java para Windows, aplicando programación orientada a objetos y un modelo de datos persistente.",
-        "Implementación de operaciones CRUD para la administración de pacientes, consultas y registros clínicos asociados.",
-        "Levantamiento de requerimientos con el personal médico y administrativo para alinear el sistema con el flujo real de atención.",
-        "Manejo de datos sensibles de salud con controles básicos de acceso y validación de la información ingresada."
-      ],
-      "en": [
-        "Built and deployed a patient medical-records management system for registering and consulting patients at the institute.",
-        "Created Java desktop interfaces for Windows, applying object-oriented programming and a persistent data model.",
-        "Implemented CRUD operations to manage patients, appointments and associated clinical records.",
-        "Gathered requirements with medical and administrative staff to align the system with the real care workflow.",
-        "Handled sensitive health data with basic access controls and input validation of the information entered."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Entregué un sistema funcional de historias médicas que reemplazó el manejo de fichas en papel por un registro digital consultable.",
-        "Reduje el tiempo de búsqueda de la historia de un paciente de varios minutos en archivo físico a una consulta inmediata en pantalla.",
-        "Apliqué conceptos de POO y operaciones CRUD en Java de forma consistente, consolidando bases sólidas de ingeniería de software.",
-        "Mejoré mis habilidades de comunicación técnica y de levantamiento de requerimientos al trabajar directamente con el personal de salud."
-      ],
-      "en": [
-        "Delivered a working medical-records system that replaced paper file handling with a searchable digital record.",
-        "Cut patient history lookup time from several minutes in physical archives to an instant on-screen query.",
-        "Applied OOP and CRUD operations in Java consistently, building solid software-engineering foundations.",
-        "Improved technical communication and requirements-gathering skills by working directly with healthcare staff."
-      ]
-    },
-    "skillsTechnical": [
-      "Aplicación de Escritorio",
-      "Historias Médicas",
-      "Java",
-      "Levantamiento de Requerimientos",
-      "Programación Orientada a Objetos"
-    ],
-    "skillsSoft": [
-      "Adaptabilidad",
-      "Comunicación Técnica",
-      "Pensamiento Analítico",
-      "Resolución de Problemas"
-    ],
-    "seniority": "junior",
-    "metricsEstimated": true
-  },
-  {
-    "slug": "projects-degrees",
-    "role": {
-      "es": "Líder, Arquitecto y Desarrollador",
-      "en": "Leader, Architect and Developer"
-    },
-    "company": "Asesoría de proyectos de grado",
-    "country": "Venezuela",
-    "start": "2015-11",
-    "end": "2015-12",
-    "niches": ["leader", "generic"],
-    "priority": {
-      "leader": 60,
-      "generic": 50
-    },
-    "summary": {
-      "es": "Me contrataron para rescatar una tesis bloqueada: desarrollé e implanté yo solo la solución para PROSALUD y preparé al equipo para defenderla.",
-      "en": "I was hired to rescue a stalled thesis: I single-handedly built and deployed the solution for PROSALUD and coached the team through their defense."
-    },
-    "responsibilities": {
-      "es": [
-        "Diagnóstico de los puntos de falla en el código y la arquitectura heredados de un proyecto de grado bloqueado durante meses.",
-        "Definición de la arquitectura y del plan de trabajo para reencaminar el proyecto hacia su entrega.",
-        "Desarrollo e implantación completa de la solución web (PHP y MySQL sobre la red local) para el Instituto Autónomo de la Salud del Estado Yaracuy (PROSALUD).",
-        "Mentoría técnica de los tesistas, explicando cada implementación y el razonamiento detrás de las decisiones.",
-        "Preparación del equipo para la defensa: ensayos de la exposición y documentación de soporte."
-      ],
-      "en": [
-        "Diagnosed the failure points in the code and architecture inherited from a thesis project stalled for months.",
-        "Defined the architecture and the work plan to steer the project back toward delivery.",
-        "Built and fully deployed the web solution (PHP and MySQL over the local network) for the Instituto Autónomo de la Salud del Estado Yaracuy (PROSALUD).",
-        "Mentored the thesis students, explaining each implementation and the reasoning behind the decisions.",
-        "Prepared the team for the defense: presentation rehearsals and supporting documentation."
-      ]
-    },
-    "achievements": {
-      "es": [
-        "Reencaminé y completé en aproximadamente una semana una tesis que el equipo no había logrado avanzar en varios meses.",
-        "Desarrollé e implanté yo solo la solución para PROSALUD, cobrando por el desarrollo y por la capacitación del equipo.",
-        "Dejé a los tesistas en capacidad de explicar y sostener técnicamente su propia solución en la defensa.",
-        "Reduje el tiempo estimado de finalización de meses a días mediante un diagnóstico técnico preciso y un plan de trabajo claro."
-      ],
-      "en": [
-        "Got a thesis back on track and completed it in roughly one week after the team had failed to make progress for several months.",
-        "Single-handedly built and deployed the PROSALUD solution, getting paid for both the development and the team training.",
-        "Left the thesis students able to explain and technically defend their own solution.",
-        "Cut the estimated completion time from months to days through a precise technical diagnosis and a clear work plan."
-      ]
-    },
-    "skillsTechnical": [
-      "Arquitectura de Software",
-      "Diagnóstico Técnico",
-      "Implementación de Soluciones",
-      "MySQL",
-      "PHP",
-      "Reestructuración de Proyectos"
-    ],
-    "skillsSoft": [
-      "Adaptabilidad",
-      "Colaboración de Equipo",
-      "Consultoría Técnica",
-      "Dirección de Proyecto",
-      "Gestión del Tiempo",
-      "Resolución de Problemas"
-    ],
-    "seniority": "mid",
-    "metricsEstimated": true
+    ]
   }
 ]

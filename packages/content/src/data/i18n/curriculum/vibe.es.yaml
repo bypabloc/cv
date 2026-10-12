@@ -3,7 +3,7 @@
 
 meta:
   title: "Pablo Contreras — Vibe Coding / Claude Code / Dev Tools"
-  description: "Ingeniero que documenta workflows reales con Claude Code (desde el lanzamiento, mayo 2025) y antes Claude web + FastStruct. FastStruct (VS Code), monorepo Astro de este portfolio y un CV builder construido en una sola noche."
+  description: "Ingeniero que trabaja con Claude Code desde su lanzamiento (mayo 2025): este portfolio (monorepo Astro + backend serverless) y Klinikae, un SaaS de gestión clínica, construidos con flujos de IA documentados."
 
 hero:
   eyebrow: "Pablo Contreras · Vibe Coding · Lima, Perú · Remoto LATAM/US"
@@ -13,7 +13,7 @@ hero:
 
 sections:
   experienceSubtitle: "Roles donde integro IA en el día a día (Destacame actual)."
-  projectsSubtitle: "FastStruct + CV builder (bypabloc/cv) + monorepo Astro de este portfolio. Tools que uso para entregar."
+  projectsSubtitle: "Productos que construyo con Claude Code: Klinikae y este portfolio."
 
 atsKeywords:
   - "AI-Augmented Developer"

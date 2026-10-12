@@ -55,10 +55,9 @@ const NICHE_HIGHLIGHTS: Record<Niche, string[]> = {
   ],
   vibe: [
     'Claude Code early adopter since launch (May 22, 2025)',
-    'FastStruct — VS Code extension published on Marketplace',
+    'Klinikae (klinikae.com) — clinic management SaaS built with Claude Code',
     'Rolled out Claude Code at Destacame with skills/rules/docs structure',
-    'Built bypabloc/cv (CV builder MVP) in one night (May 12-13, 2026)',
-    'Reference template: bypabloc/mvp-template-full-stack',
+    'This portfolio: Astro monorepo + AWS serverless backend (bypabloc/cv)',
   ],
   generic: [
     '9 roles in 8 companies (2013-present)',

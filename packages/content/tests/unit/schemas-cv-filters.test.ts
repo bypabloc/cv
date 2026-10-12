@@ -182,7 +182,7 @@ describe('backfill completeness [AC-3]', () => {
     const map = new Map(projects.map((p) => [p.slug, p.projectType]))
     expect(map.get('destacame-credit-mexico')).toBe('fintech-platform')
     expect(map.get('destacame-debt-chile')).toBe('fintech-platform')
-    expect(map.get('faststruct')).toBe('cli')
+    expect(map.get('klinikae')).toBe('web')
     expect(map.get('mvp-template-full-stack')).toBe('library')
     expect(projects.length).toBe(4)
   })

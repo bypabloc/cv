@@ -303,4 +303,10 @@ const menuLabel = strings.openMenu
       display: none;
     }
   }
+  /* Tablet: con 8 items (incl. Posts) el gap de 24px desborda 768px. */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .site-nav__list {
+      gap: var(--space-16);
+    }
+  }
 </style>

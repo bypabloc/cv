@@ -1,94 +1,40 @@
 [
   {
-    "slug": "faststruct",
-    "name": "FastStruct",
-    "url": "https://marketplace.visualstudio.com/items?itemName=the-full-stack.faststruct",
-    "repo": "https://github.com/bypabloc/faststruct",
+    "slug": "klinikae",
+    "name": "Klinikae",
+    "url": "https://klinikae.com/",
     "status": "active",
-    "projectType": "cli",
-    "isConfidential": false,
-    "metricsEstimated": true,
-    "summary": {
-      "es": "Extensión de VS Code para visualizar y documentar la estructura de un proyecto en segundos, optimizando workflows con IA.",
-      "en": "VS Code extension that visualizes and documents a project structure in seconds, optimized for AI workflows."
-    },
-    "description": {
-      "es": "Genera documentación clara y bien formateada de la estructura de directorios e incluye contenido de archivos cuando sea necesario. Nació antes de Claude Code para pasarle contexto estructural a la interfaz web de Claude sin copiar manualmente.",
-      "en": "Generates clear, well-formatted documentation of a directory tree, optionally including file contents. Born before Claude Code to feed structural context to the Claude web interface without copy-pasting."
-    },
-    "caseStudy": {
-      "es": "Problema: pasarle estructura de proyecto a Claude/ChatGPT requería pegar manualmente cada path. Solución: extensión que genera markdown estructurado con un click. Impacto: workflow personal 5x más rápido al instruir IAs.",
-      "en": "Problem: feeding project structure to Claude/ChatGPT meant pasting each path manually. Solution: an extension that produces structured markdown in one click. Impact: 5x faster personal workflow when instructing AIs."
-    },
-    "stack": [
-      "TypeScript",
-      "VS Code Extension API",
-      "Node.js"
-    ],
-    "metrics": {
-      "speedup": "5x faster context handoff",
-      "adoption": "Marketplace published",
-      "precursor": "Pre-Claude-Code era (< May 2025)"
-    },
-    "niches": [
-      "vibe",
-      "generic"
-    ],
-    "priority": {
-      "vibe": 80,
-      "generic": 65
-    },
-    "caseStudyDetailed": {
-      "problem": {
-        "es": "Antes de Claude Code (mayo 2025) usaba la interfaz web de Claude para programar. Pasarle el contexto de un proyecto significaba copiar archivo por archivo manualmente.",
-        "en": "Before Claude Code (May 2025) I used the Claude web interface to code. Sharing project context meant copy-pasting file by file manually."
-      },
-      "process": {
-        "en": "I built FastStruct as a TypeScript VS Code extension: single command that scans the workspace, honors .gitignore, formats structured markdown and copies to clipboard. Configurable exclusion patterns.",
-        "es": "Construí FastStruct como extensión VS Code en TypeScript: comando único que escanea workspace, respeta .gitignore, formatea en markdown estructurado y copia al portapapeles. Patrones de exclusión configurables."
-      },
-      "result": {
-        "en": "5x faster personal workflow when instructing AIs. Published in the Marketplace, still useful even now with Claude Code for cases where I need compact context for sub-agents or external summaries.",
-        "es": "Workflow personal 5x más rápido para instruir IAs. Publicada en Marketplace, sigue siendo útil incluso ahora con Claude Code para casos donde necesito contexto compacto para sub-agentes o resumenes externos."
-      }
-    }
-  },
-  {
-    "slug": "mvp-template-full-stack",
-    "name": "MVP template Full Stack",
-    "url": "https://the-full-stack.com/",
-    "repo": "https://github.com/bypabloc/cv",
-    "status": "active",
-    "projectType": "library",
+    "projectType": "web",
     "isConfidential": false,
     "metricsEstimated": false,
     "summary": {
-      "es": "Este portfolio open source es mi template de referencia para arrancar full stack: Astro 6, backend serverless en AWS, devtools en Python 3.14 y harness de Claude Code estandarizado.",
-      "en": "This open source portfolio is my reference template to bootstrap full stack: Astro 6, AWS serverless backend, Python 3.14 devtools and a standardized Claude Code harness."
+      "es": "Sistema en la nube para que profesionales y centros de salud lleven su atención y su gestión en un solo lugar: historias clínicas por especialidad, recetas y certificados verificables con código QR, inventario y portal del paciente.",
+      "en": "Cloud system that lets health professionals and clinics run their care and their operations in one place: specialty-specific medical records, prescriptions and certificates verifiable by QR code, inventory and a patient portal."
     },
     "description": {
-      "es": "The Full Stack es el sitio publico y a la vez el blueprint del flujo vibe coding completo: 6 apps Astro 6 + backend serverless en AWS (Lambdas Python, DynamoDB, Neon PostgreSQL, SES, Turnstile) + harness de Claude Code estandarizado (skills, rules, hooks) + quality gates en pre-commit/pre-push + devtools CLI en Python 3.14 con uv. Mismo patron que adopte en Destacame al introducir Claude Code en el equipo.",
-      "en": "The Full Stack is both the public site and the blueprint of the full vibe coding workflow: 6 Astro 6 apps + AWS serverless backend (Python Lambdas, DynamoDB, Neon PostgreSQL, SES, Turnstile) + standardized Claude Code harness (skills, rules, hooks) + quality gates in pre-commit/pre-push + Python 3.14 devtools CLI with uv. Same pattern I adopted at Destacame when rolling out Claude Code in the team."
+      "es": "Klinikae sirve igual al médico independiente que a la clínica o la policlínica, y se usa desde el navegador, sin instalar nada. Cubre siete especialidades (medicina general, ginecología y obstetricia, pediatría, otorrinolaringología, odontología, dermatología y optometría) que cada centro activa según lo que atiende. Incluye historias clínicas por especialidad, recetas y certificados en PDF verificables con código QR, consentimientos informados, inventario con alertas de stock, órdenes de laboratorio, reportes, enlaces seguros y portal del paciente. Es multi-tenant: cada clínica ve solo sus datos, recepción no ve el contenido clínico y queda registro de quién hizo qué y cuándo.",
+      "en": "Klinikae works the same for an independent doctor as for a clinic or a polyclinic, and runs in the browser with nothing to install. It covers seven specialties (general medicine, obstetrics and gynecology, pediatrics, otorhinolaryngology, dentistry, dermatology and optometry) that each practice enables as needed. It includes specialty-specific medical records, PDF prescriptions and certificates verifiable by QR code, informed consents, inventory with stock alerts, lab orders, reports, secure links and a patient portal. It is multi-tenant: each clinic sees only its own data, front desk staff cannot see clinical content and every action is logged with who did what and when."
     },
     "caseStudy": {
-      "es": "Blueprint para arrancar proyectos full stack con flujo vibe coding estandarizado: harness Claude Code + quality gates + devtools CLI + backend serverless real. Mismo patron usado al implementar Claude Code en Destacame.",
-      "en": "Blueprint to bootstrap full stack projects with a standardized vibe coding workflow: Claude Code harness + quality gates + devtools CLI + real serverless backend. Same pattern used when rolling out Claude Code at Destacame."
+      "es": "Producto propio en producción: historias clínicas, documentos verificables con QR e inventario para profesionales y centros de salud de cualquier tamaño.",
+      "en": "My own product in production: medical records, QR-verifiable documents and inventory for health professionals and practices of any size."
     },
     "stack": [
-      "Claude Code",
-      "Astro 6",
+      "Next.js 16",
+      "React 19",
       "TypeScript",
-      "Python 3.14",
-      "AWS Lambda",
-      "DynamoDB",
-      "Neon PostgreSQL",
-      "Biome v2",
-      "uv"
+      "Tailwind v4",
+      "Django 6",
+      "django-ninja",
+      "PostgreSQL",
+      "Astro",
+      "Docker",
+      "Claude Code"
     ],
     "metrics": {
-      "coverage": "Skills + Rules + Hooks + Devtools + Serverless backend",
-      "role": "Reference for Destacame Claude Code rollout",
-      "stack": "Astro + AWS Lambda + Neon + Python 3.14 + uv"
+      "specialties": "7",
+      "tenancy": "Multi-tenant, data isolated per clinic",
+      "documents": "PDF prescriptions and certificates verifiable by QR"
     },
     "niches": [
       "architect",
@@ -96,22 +42,22 @@
       "generic"
     ],
     "priority": {
-      "architect": 80,
-      "vibe": 90,
-      "generic": 75
+      "generic": 90,
+      "vibe": 100,
+      "architect": 85
     },
     "caseStudyDetailed": {
       "problem": {
-        "en": "Bootstrapping a new full stack project meant repeating the same setup every time: the Claude Code harness structure, quality gates, code conventions, tooling and serverless backend. Without a standard starting point, each repo diverged and setup consumed time before writing the first line of product code.",
-        "es": "Arrancar un proyecto full stack nuevo significaba repetir cada vez la misma configuracion: estructura del harness de Claude Code, quality gates, convenciones de codigo, tooling y backend serverless. Sin un punto de partida estandar, cada repo divergia y el setup consumia tiempo antes de escribir la primera linea de producto."
+        "es": "Muchas historias clínicas todavía se llevan en papel o en hojas sueltas, y el inventario va por separado. Eso trae pérdida de información, errores de stock, recetas ilegibles y poca protección de los datos de los pacientes. Las alternativas suelen ser software de escritorio pesado o pensado solo para clínicas grandes.",
+        "en": "Many medical records are still kept on paper or loose sheets, and inventory is tracked separately. That leads to lost information, stock errors, illegible prescriptions and weak protection of patient data. The alternatives tend to be heavy desktop software or tools built only for large clinics."
       },
       "process": {
-        "es": "Construi un portfolio publico que es a la vez template: 6 apps Astro 6, backend serverless en AWS (Lambdas Python, DynamoDB, Neon, SES, Turnstile) provisionado con devtools y AWS CLI, harness Claude Code con skills/rules/hooks, quality gates en pre-commit y pre-push y un CLI de devtools en Python 3.14 con uv. Biome v2 unifica lint y formato. Es el mismo patron que adopte al introducir Claude Code en el equipo de Destacame.",
-        "en": "I built a public portfolio that doubles as a template: 6 Astro 6 apps, AWS serverless backend (Python Lambdas, DynamoDB, Neon, SES, Turnstile) provisioned with devtools and AWS CLI, a Claude Code harness with skills/rules/hooks, quality gates in pre-commit and pre-push and a Python 3.14 devtools CLI with uv. Biome v2 unifies linting and formatting. It is the same pattern I adopted when rolling out Claude Code on the Destacame team."
+        "es": "Diseñé un SaaS multi-tenant con frontend Next.js 16 + React 19 (export estático, Tailwind v4) y backend Django 6 + django-ninja + PostgreSQL, con datos aislados por clínica, roles (recepción, profesional, administración) y trazabilidad de cada acción. Los documentos se generan en PDF con un código QR que cualquier farmacia o empresa puede verificar sin ver datos del paciente. La interfaz usa Atkinson Hyperlegible y contraste alto en modo claro y oscuro para leer dosis y cifras sin error. Lo desarrollo con Claude Code y un harness propio de reglas, agentes y quality gates.",
+        "en": "I designed a multi-tenant SaaS with a Next.js 16 + React 19 frontend (static export, Tailwind v4) and a Django 6 + django-ninja + PostgreSQL backend, with data isolated per clinic, roles (front desk, professional, administration) and an audit trail for every action. Documents are generated as PDFs with a QR code that any pharmacy or company can verify without seeing patient data. The interface uses Atkinson Hyperlegible and high contrast in light and dark mode so doses and figures are read without error. I build it with Claude Code and my own harness of rules, agents and quality gates."
       },
       "result": {
-        "en": "A reusable template that reduces the setup of a new full stack project to cloning and adapting, with the Claude Code harness, the quality gates and the serverless backend already configured. It served as the reference for the Claude Code rollout at Destacame and standardizes the workflow across projects.",
-        "es": "Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar, con el harness de Claude Code, los quality gates y el backend serverless ya configurados. Sirvio de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos."
+        "es": "Klinikae está en producción en klinikae.com: el mismo sistema sirve al consultorio independiente y a la policlínica, cada uno con solo las especialidades que atiende, sin invertir en equipos ni en soporte técnico propio.",
+        "en": "Klinikae is live at klinikae.com: the same system serves the independent practice and the polyclinic, each with only the specialties it needs, with no investment in hardware or in-house IT support."
       }
     }
   },
@@ -124,8 +70,8 @@
     "isConfidential": true,
     "metricsEstimated": false,
     "summary": {
-      "en": "Fintech product offering tiered personal credit to users in Mexico.",
-      "es": "Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México."
+      "es": "Producto fintech que ofrece créditos personales con diferentes niveles a usuarios en México.",
+      "en": "Fintech product offering tiered personal credit to users in Mexico."
     },
     "description": {
       "es": "Producto desarrollado en Destacame para el mercado mexicano. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus de crédito.",
@@ -161,16 +107,16 @@
     },
     "caseStudyDetailed": {
       "problem": {
-        "en": "Mexican market required accessible personal credit with fast onboarding. Local regulatory constraints + KYC friction + credit bureau integrations.",
-        "es": "Mercado mexicano requeria creditos personales accesibles con onboarding rapido. Restricciones regulatorias locales + fricciones de KYC + integracion con bureaus de credito."
+        "es": "Mercado mexicano requería créditos personales accesibles con onboarding rápido. Restricciones regulatorias locales + fricciones de KYC + integración con bureaus de crédito.",
+        "en": "Mexican market required accessible personal credit with fast onboarding. Local regulatory constraints + KYC friction + credit bureau integrations."
       },
       "process": {
-        "es": "Producto con tramos de credito + scoring embebido + flujo de aprobacion de baja friccion. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus mexicanos. Decisiones de arquitectura documentadas para sucesores.",
+        "es": "Producto con tramos de crédito + scoring embebido + flujo de aprobación de baja fricción. Frontend Vue/Nuxt + microservicios Django + integraciones con bureaus mexicanos. Decisiones de arquitectura documentadas para sucesores.",
         "en": "Tiered-credit product + embedded scoring + low-friction approval flow. Vue/Nuxt frontend + Django microservices + Mexican credit bureau integrations. Documented architecture decisions for successors."
       },
       "result": {
-        "en": "Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse from the Chilean product with local regulatory adaptation (metrics under NDA).",
-        "es": "Contribucion clave al portafolio fintech LATAM de Destacame en el mercado mexicano. Reutilizacion de patrones del producto Chile con adaptacion regulatoria local (metricas bajo NDA)."
+        "es": "Contribución clave al portafolio fintech LATAM de Destacame en el mercado mexicano. Reutilización de patrones del producto Chile con adaptación regulatoria local (métricas bajo NDA).",
+        "en": "Key contribution to Destacame LATAM fintech portfolio in the Mexican market. Pattern reuse from the Chilean product with local regulatory adaptation (metrics under NDA)."
       }
     }
   },
@@ -206,11 +152,11 @@
     "isConfidential": true,
     "metricsEstimated": false,
     "summary": {
-      "es": "Plataforma fintech B2C que ayuda a usuarios chilenos a negociar y saldar deudas con bancos e instituciones financieras. Cubre 3 marcas en produccion (Santander, Santander Consumer, Scotiabank).",
+      "es": "Plataforma fintech B2C que ayuda a usuarios chilenos a negociar y saldar deudas con bancos e instituciones financieras. Cubre 3 marcas en producción (Santander, Santander Consumer, Scotiabank).",
       "en": "Fintech B2C platform that helps Chilean users negotiate and settle debts with banks and financial institutions. Covers 3 brands in production (Santander, Santander Consumer, Scotiabank)."
     },
     "description": {
-      "es": "Producto desarrollado en Destacame como Arquitecto Frontend. Integra microservicios Django + frontend Vue/Nuxt y maneja flujos sensibles de PII y compliance financiero. Una misma base tecnologica sirve a 3 marcas comerciales con branding y reglas de negocio independientes.",
+      "es": "Producto desarrollado en Destacame como Arquitecto Frontend. Integra microservicios Django + frontend Vue/Nuxt y maneja flujos sensibles de PII y compliance financiero. Una misma base tecnológica sirve a 3 marcas comerciales con branding y reglas de negocio independientes.",
       "en": "Product built at Destacame as Frontend Architect. Integrates Django microservices with a Vue/Nuxt frontend and handles sensitive PII flows and financial compliance. A single tech foundation serves 3 commercial brands with independent branding and business rules."
     },
     "caseStudy": {
@@ -246,16 +192,78 @@
     },
     "caseStudyDetailed": {
       "problem": {
-        "en": "Chilean users lacked a clear channel to regularize debts and financial institutions were losing significant collections. Sensitive data (PII) + LATAM financial compliance + need to serve multiple commercial brands from the same technical platform.",
-        "es": "Los usuarios chilenos no tenian un canal claro para regularizar deudas y las instituciones financieras perdian cobranzas significativas. Datos sensibles (PII) + compliance financiero LATAM + necesidad de servir multiples marcas comerciales con la misma plataforma tecnica."
+        "es": "Los usuarios chilenos no tenían un canal claro para regularizar deudas y las instituciones financieras perdían cobranzas significativas. Datos sensibles (PII) + compliance financiero LATAM + necesidad de servir múltiples marcas comerciales con la misma plataforma técnica.",
+        "en": "Chilean users lacked a clear channel to regularize debts and financial institutions were losing significant collections. Sensitive data (PII) + LATAM financial compliance + need to serve multiple commercial brands from the same technical platform."
       },
       "process": {
-        "es": "Como Frontend Architect orqueste microservicios Django con frontend Vue/Nuxt: elegibilidad → oferta → pago. Manejo de PII con encriptacion en transito y reposo. Integracion con bureaus + verificacion KYC. Branding white-label para servir a Santander, Santander Consumer y Scotiabank desde una sola base de codigo.",
+        "es": "Como Frontend Architect orquesté microservicios Django con frontend Vue/Nuxt: elegibilidad → oferta → pago. Manejo de PII con encriptación en tránsito y reposo. Integración con bureaus + verificación KYC. Branding white-label para servir a Santander, Santander Consumer y Scotiabank desde una sola base de código.",
         "en": "As Frontend Architect I orchestrated Django microservices with Vue/Nuxt frontend: eligibility → offer → payment. PII handling with encryption in transit and at rest. Bureau integrations + KYC verification. White-label branding to serve Santander, Santander Consumer and Scotiabank from a single codebase."
       },
       "result": {
-        "es": "Plataforma con 3 marcas en produccion (Santander, Santander Consumer, Scotiabank) sirviendo el mercado chileno. Mejora medible en eficiencia operativa de cobranza y experiencia del usuario final (metricas detalladas bajo NDA).",
-        "en": "Platform with 3 brands in production (Santander, Santander Consumer, Scotiabank) serving the Chilean market. Measurable improvement in collection operational efficiency and end-user experience (detailed metrics under NDA)."
+        "en": "Platform with 3 brands in production (Santander, Santander Consumer, Scotiabank) serving the Chilean market. Measurable improvement in collection operational efficiency and end-user experience (detailed metrics under NDA).",
+        "es": "Plataforma con 3 marcas en producción (Santander, Santander Consumer, Scotiabank) sirviendo el mercado chileno. Mejora medible en eficiencia operativa de cobranza y experiencia del usuario final (métricas detalladas bajo NDA)."
+      }
+    }
+  },
+  {
+    "slug": "mvp-template-full-stack",
+    "name": "Portfolio",
+    "url": "https://the-full-stack.com/",
+    "repo": "https://github.com/bypabloc/cv",
+    "status": "active",
+    "projectType": "library",
+    "isConfidential": false,
+    "metricsEstimated": false,
+    "summary": {
+      "es": "Este portfolio open source es mi template de referencia para arrancar full stack: Astro 6, backend serverless en AWS, devtools en Python 3.14 y harness de Claude Code estandarizado.",
+      "en": "This open source portfolio is my reference template to bootstrap full stack: Astro 6, AWS serverless backend, Python 3.14 devtools and a standardized Claude Code harness."
+    },
+    "description": {
+      "es": "The Full Stack es el sitio público y a la vez el blueprint del flujo vibe coding completo: sitios Astro por nicho, un CV interactivo 3D y un sitio de posts + backend serverless en AWS (Lambdas Python, DynamoDB, Neon PostgreSQL, SES, Turnstile) + harness de Claude Code estandarizado (skills, rules, hooks) + quality gates en pre-commit/pre-push + devtools CLI en Python 3.14 con uv. Mismo patrón que adopté en Destacame al introducir Claude Code en el equipo.",
+      "en": "The Full Stack is both the public site and the blueprint of the full vibe coding workflow: Astro sites per niche, an interactive 3D CV and a posts site + AWS serverless backend (Python Lambdas, DynamoDB, Neon PostgreSQL, SES, Turnstile) + standardized Claude Code harness (skills, rules, hooks) + quality gates in pre-commit/pre-push + Python 3.14 devtools CLI with uv. Same pattern I adopted at Destacame when rolling out Claude Code in the team."
+    },
+    "caseStudy": {
+      "en": "Blueprint to bootstrap full stack projects with a standardized vibe coding workflow: Claude Code harness + quality gates + devtools CLI + real serverless backend. Same pattern used when rolling out Claude Code at Destacame.",
+      "es": "Blueprint para arrancar proyectos full stack con flujo vibe coding estandarizado: harness Claude Code + quality gates + devtools CLI + backend serverless real. Mismo patrón usado al implementar Claude Code en Destacame."
+    },
+    "stack": [
+      "Claude Code",
+      "Astro 6",
+      "TypeScript",
+      "Python 3.14",
+      "AWS Lambda",
+      "DynamoDB",
+      "Neon PostgreSQL",
+      "Biome v2",
+      "uv"
+    ],
+    "metrics": {
+      "coverage": "Skills + Rules + Hooks + Devtools + Serverless backend",
+      "role": "Reference for Destacame Claude Code rollout",
+      "stack": "Astro + AWS Lambda + Neon + Python 3.14 + uv"
+    },
+    "niches": [
+      "architect",
+      "vibe",
+      "generic"
+    ],
+    "priority": {
+      "architect": 80,
+      "vibe": 90,
+      "generic": 75
+    },
+    "caseStudyDetailed": {
+      "problem": {
+        "es": "Arrancar un proyecto full stack nuevo significaba repetir cada vez la misma configuración: estructura del harness de Claude Code, quality gates, convenciones de código, tooling y backend serverless. Sin un punto de partida estándar, cada repo divergía y el setup consumía tiempo antes de escribir la primera línea de producto.",
+        "en": "Bootstrapping a new full stack project meant repeating the same setup every time: the Claude Code harness structure, quality gates, code conventions, tooling and serverless backend. Without a standard starting point, each repo diverged and setup consumed time before writing the first line of product code."
+      },
+      "process": {
+        "es": "Construí un portfolio público que es a la vez template: 6 apps Astro 6, backend serverless en AWS (Lambdas Python, DynamoDB, Neon, SES, Turnstile) provisionado con devtools y AWS CLI, harness Claude Code con skills/rules/hooks, quality gates en pre-commit y pre-push y un CLI de devtools en Python 3.14 con uv. Biome v2 unifica lint y formato. Es el mismo patrón que adopté al introducir Claude Code en el equipo de Destacame.",
+        "en": "I built a public portfolio that doubles as a template: 6 Astro 6 apps, AWS serverless backend (Python Lambdas, DynamoDB, Neon, SES, Turnstile) provisioned with devtools and AWS CLI, a Claude Code harness with skills/rules/hooks, quality gates in pre-commit and pre-push and a Python 3.14 devtools CLI with uv. Biome v2 unifies linting and formatting. It is the same pattern I adopted when rolling out Claude Code on the Destacame team."
+      },
+      "result": {
+        "es": "Template reutilizable que reduce el setup de un proyecto full stack nuevo a clonar y adaptar, con el harness de Claude Code, los quality gates y el backend serverless ya configurados. Sirvió de referencia para el rollout de Claude Code en Destacame y estandariza el flujo de trabajo entre proyectos.",
+        "en": "A reusable template that reduces the setup of a new full stack project to cloning and adapting, with the Claude Code harness, the quality gates and the serverless backend already configured. It served as the reference for the Claude Code rollout at Destacame and standardizes the workflow across projects."
       }
     }
   }

@@ -53,7 +53,7 @@ const { items, eyebrow } = Astro.props
               data-target={item.value}
               data-stat={item.dataStat}
             >
-              0
+              {item.value}
             </span>
             {item.suffix && (
               <span class="stats-bar__suffix text-display-md">{item.suffix}</span>

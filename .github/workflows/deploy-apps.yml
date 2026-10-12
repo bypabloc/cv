@@ -169,6 +169,9 @@ jobs:
     timeout-minutes: 10
     strategy:
       fail-fast: false
+      # 9 wrangler deploys simultaneos pegan el rate limit de la API de
+      # Cloudflare (code 10429, runs de 2026-10-10): se encolan de a 3.
+      max-parallel: 3
       matrix:
         include:
           - {name: generic, dist-dir: apps/generic/dist, project: generic}

@@ -1,0 +1,84 @@
+---
+/**
+ * @component HomePage
+ * @description Indice de post: hero + una card por guia.
+ *
+ * @props {'es' | 'en'} locale - Idioma
+ *
+ * @example
+ *   <HomePage locale="en" />
+ */
+import { SITE_URLS } from '@portfolio/app-shared/lib/site-urls'
+import Layout from '../layouts/Layout.astro'
+import { type Locale, loadGuides, PUBLISHED } from '../lib/guides'
+import { AUTHOR, formatDate, pathFor, UI } from '../lib/i18n'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = UI[locale]
+const guides = await loadGuides(locale)
+const site = Astro.site?.href.replace(/\/$/, '') ?? ''
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: t.homeTitle,
+    description: t.homeDescription,
+    inLanguage: locale,
+    url: `${site}${pathFor(locale)}`,
+    author: { '@type': 'Person', name: AUTHOR, url: SITE_URLS.generic },
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: guides.map((g, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        url: `${site}${pathFor(locale, g.slug)}`,
+        name: g.title,
+      })),
+    },
+  },
+]
+---
+
+<Layout
+  locale={locale}
+  title={t.homeTitle}
+  description={t.homeDescription}
+  slug=""
+  jsonLd={jsonLd}
+>
+  <header class="hero">
+    <div class="container">
+      <p class="eyebrow">{t.eyebrow}</p>
+      <h1 class="display">{t.headline}</h1>
+      <p class="lede">{t.lede}</p>
+    </div>
+  </header>
+
+  <div class="container">
+    <ul class="cards" role="list">
+      {
+        guides.map((g) => (
+          <li class="card">
+            <ul class="chips" aria-label="Tags">
+              {g.tags.slice(0, 3).map((tag) => <li>{tag}</li>)}
+            </ul>
+            <h2>
+              <a href={pathFor(locale, g.slug)}>{g.title}</a>
+            </h2>
+            <p>{g.description}</p>
+            <p class="meta">
+              <time datetime={PUBLISHED}>{formatDate(PUBLISHED, locale)}</time>
+              <span>{g.minutes} {t.minRead}</span>
+              <span>{g.chapters.length} {t.chapters}</span>
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Layout>

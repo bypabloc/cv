@@ -92,6 +92,7 @@ describe('defineSiteConfig', () => {
       'Certificados',
       'Contacto',
       'Otras vistas',
+      'Posts',
     ])
   })
 
@@ -109,6 +110,7 @@ describe('defineSiteConfig', () => {
       'Sobre mí',
       'Certificados',
       'Contacto',
+      'Posts',
     ])
   })
 

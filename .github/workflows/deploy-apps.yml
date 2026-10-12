@@ -134,8 +134,8 @@ jobs:
           : "${BASE_DOMAIN:?BASE_DOMAIN no esta en vars del environment ${{ needs.resolve-env.outputs.stage }}. Corre 'python devtools/run.py sync_secrets --env=${{ needs.resolve-env.outputs.stage }} --category=client' para poblarlo.}"
           : "${PUBLIC_API_ENDPOINT:?PUBLIC_API_ENDPOINT no esta en vars. Corre sync_secrets --category=client.}"
           : "${PUBLIC_TURNSTILE_SITEKEY:?PUBLIC_TURNSTILE_SITEKEY no esta en vars. Corre sync_secrets --category=client.}"
-          # 7 apps Astro + el admin Next.js (@portfolio/admin) = 8 packages.
-          pnpm -r --filter "./apps/*" --filter "@portfolio/admin" --workspace-concurrency=8 run build
+          # 8 apps Astro + el admin Next.js (@portfolio/admin) = 9 packages.
+          pnpm -r --filter "./apps/*" --filter "@portfolio/admin" --workspace-concurrency=9 run build
 
       # Subir el artifact con un nombre estable para los jobs del matrix.
       # Incluye los 6 dist Astro + el out del admin Next.js.
@@ -169,6 +169,9 @@ jobs:
     timeout-minutes: 10
     strategy:
       fail-fast: false
+      # 9 wrangler deploys simultaneos pegan el rate limit de la API de
+      # Cloudflare (code 10429, runs de 2026-10-10): se encolan de a 3.
+      max-parallel: 3
       matrix:
         include:
           - {name: generic, dist-dir: apps/generic/dist, project: generic}
@@ -178,6 +181,7 @@ jobs:
           - {name: leader, dist-dir: apps/leader/dist, project: leader}
           - {name: vibe, dist-dir: apps/vibe/dist, project: vibe}
           - {name: journey, dist-dir: apps/journey/dist, project: journey}
+          - {name: post, dist-dir: apps/post/dist, project: post}
           - {name: admin, dist-dir: admin/out, project: admin}
     steps:
       - name: Download dist artifact
@@ -219,7 +223,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [generic, hub, fintech, architect, leader, vibe, journey, admin]
+        name: [generic, hub, fintech, architect, leader, vibe, journey, post, admin]
     steps:
       - name: Resolve expected URL + API endpoint
         id: url
@@ -230,11 +234,15 @@ jobs:
           # admin NO es apex (a diferencia de generic): siempre cuelga de
           # admin.portfolio.{base}. Tampoco emite los markers Astro
           # (data-api-endpoint / dropdown), por eso solo se le hace el
-          # smoke HTTP 200 (ver el paso `is_admin` mas abajo).
+          # smoke HTTP 200 (ver el paso `smoke_only` mas abajo).
+          # post es un product propio (post.the-full-stack.com /
+          # post.dev.the-full-stack.com) sin TrackingPixel: tambien smoke.
           if [[ "$stage" == "prod" ]]; then
             base="portfolio.the-full-stack.com"
             api="https://api.portfolio.the-full-stack.com"
-            if [[ "$niche" == "admin" ]]; then
+            if [[ "$niche" == "post" ]]; then
+              url="https://post.the-full-stack.com"
+            elif [[ "$niche" == "admin" ]]; then
               url="https://admin.${base}"
             elif [[ "$niche" == "generic" ]]; then
               url="https://the-full-stack.com"
@@ -244,7 +252,9 @@ jobs:
           else
             base="portfolio.${stage}.the-full-stack.com"
             api="https://api.${base}"
-            if [[ "$niche" == "admin" ]]; then
+            if [[ "$niche" == "post" ]]; then
+              url="https://post.${stage}.the-full-stack.com"
+            elif [[ "$niche" == "admin" ]]; then
               url="https://admin.${base}"
             elif [[ "$niche" == "generic" ]]; then
               url="https://${base}"
@@ -253,16 +263,16 @@ jobs:
             fi
           fi
 
-          [[ "$niche" == "admin" ]] && is_admin=true || is_admin=false
+          [[ "$niche" == "admin" || "$niche" == "post" ]] && smoke_only=true || smoke_only=false
 
           echo "url=$url"   >> "$GITHUB_OUTPUT"
           echo "api=$api"   >> "$GITHUB_OUTPUT"
           echo "stage=$stage" >> "$GITHUB_OUTPUT"
-          echo "is_admin=$is_admin" >> "$GITHUB_OUTPUT"
+          echo "smoke_only=$smoke_only" >> "$GITHUB_OUTPUT"
           echo "Verificando: $url (api esperado: $api)"
 
-      - name: Curl y assert HTTP 200 (admin, sin markers Astro)
-        if: steps.url.outputs.is_admin == 'true'
+      - name: Curl y assert HTTP 200 (admin/post, sin markers Astro)
+        if: steps.url.outputs.smoke_only == 'true'
         run: |
           # El admin Next.js no emite data-api-endpoint ni el dropdown de
           # nichos; solo se valida que responda 200.
@@ -284,7 +294,7 @@ jobs:
           exit 1
 
       - name: Curl y assert data-api-endpoint
-        if: steps.url.outputs.is_admin != 'true'
+        if: steps.url.outputs.smoke_only != 'true'
         run: |
           # Reintentos con backoff: Cloudflare puede tardar en propagar el
           # deploy / el DNS de un subdominio nuevo (un solo sleep 5 da falso
@@ -311,7 +321,7 @@ jobs:
           fi
 
       - name: Curl y assert dropdown hrefs no apunten a prod en dev
-        if: steps.url.outputs.is_admin != 'true' && steps.url.outputs.stage != 'prod'
+        if: steps.url.outputs.smoke_only != 'true' && steps.url.outputs.stage != 'prod'
         run: |
           html=$(curl -fsSL --max-time 30 "${{ steps.url.outputs.url }}/")
           bad=$(grep -oE 'href="https://[a-z]+\.portfolio\.the-full-stack\.com[^"]*"' <<<"$html" | head -5 || true)
@@ -357,9 +367,11 @@ jobs:
             echo
             echo "| App | Project | URL |"
             echo "|-----|---------|-----|"
-            for niche in generic hub fintech architect leader vibe journey admin; do
+            for niche in generic hub fintech architect leader vibe journey post admin; do
               project="${niche}${suffix}"
-              if [[ "$niche" == "admin" ]]; then
+              if [[ "$niche" == "post" ]]; then
+                url="https://post.${base_url#portfolio.}"
+              elif [[ "$niche" == "admin" ]]; then
                 # admin NO es apex (a diferencia de generic): cuelga de
                 # admin.portfolio.{base}.
                 url="https://admin.${base_url}"

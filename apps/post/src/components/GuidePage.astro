@@ -1,0 +1,138 @@
+---
+import { render } from 'astro:content'
+/**
+ * @component GuidePage
+ * @description Una guia completa en una sola pagina: cabecera con byline,
+ *   TOC sticky por capitulo y el README + los 12 capitulos renderizados.
+ *
+ * @props {'es' | 'en'} locale - Idioma
+ * @props {'ntfy' | 'oracle'} slug - Guia a renderizar
+ *
+ * @example
+ *   <GuidePage locale="es" slug="ntfy" />
+ */
+import { SITE_URLS } from '@portfolio/app-shared/lib/site-urls'
+import Layout from '../layouts/Layout.astro'
+import {
+  type GuideSlug,
+  type Locale,
+  loadGuide,
+  PUBLISHED,
+} from '../lib/guides'
+import { AUTHOR, formatDate, pathFor, UI } from '../lib/i18n'
+
+interface Props {
+  locale: Locale
+  slug: GuideSlug
+}
+
+const { locale, slug } = Astro.props
+const t = UI[locale]
+const guide = await loadGuide(locale, slug)
+const { Content: Intro } = await render(guide.readme)
+const chapters = await Promise.all(
+  guide.chapters.map(async (c) => ({
+    ...c,
+    Content: (await render(c.entry)).Content,
+  })),
+)
+const site = Astro.site?.href.replace(/\/$/, '') ?? ''
+const pageUrl = `${site}${pathFor(locale, slug)}`
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: guide.title,
+    description: guide.description,
+    inLanguage: locale,
+    url: pageUrl,
+    datePublished: PUBLISHED,
+    dateModified: PUBLISHED,
+    keywords: guide.tags.join(', '),
+    timeRequired: `PT${guide.minutes}M`,
+    author: { '@type': 'Person', name: AUTHOR, url: SITE_URLS.generic },
+    publisher: { '@type': 'Person', name: AUTHOR, url: SITE_URLS.generic },
+    hasPart: guide.chapters.map((c) => ({
+      '@type': 'WebPageElement',
+      name: c.title,
+      url: `${pageUrl}#${c.id}`,
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: t.allGuides,
+        item: `${site}${pathFor(locale)}`,
+      },
+      { '@type': 'ListItem', position: 2, name: guide.title, item: pageUrl },
+    ],
+  },
+]
+---
+
+<Layout
+  locale={locale}
+  title={`${guide.title} — post · the-full-stack`}
+  description={guide.description}
+  slug={slug}
+  ogType="article"
+  jsonLd={jsonLd}
+>
+  <header class="hero" id="top">
+    <div class="container">
+      <a class="eyebrow" href={pathFor(locale)}>← {t.allGuides}</a>
+      <h1 class="display display--guide">{guide.title}</h1>
+      <p class="lede">{guide.description}</p>
+      <p class="meta">
+        <span>{t.by} {AUTHOR}</span>
+        <time datetime={PUBLISHED}>{formatDate(PUBLISHED, locale)}</time>
+        <span>{guide.minutes} {t.minRead}</span>
+        <span>{guide.chapters.length} {t.chapters}</span>
+      </p>
+      <ul class="chips" aria-label="Tags">
+        {guide.tags.map((tag) => <li>{tag}</li>)}
+      </ul>
+    </div>
+  </header>
+
+  <div class="container guide-layout">
+    <nav class="toc" aria-label={t.contents}>
+      <details open>
+        <summary>{t.contents}</summary>
+        <ol>
+          <li><a href="#top"><span class="num">00</span>{t.intro}</a></li>
+          {
+            guide.chapters.map((c) => (
+              <li>
+                <a href={`#${c.id}`}>
+                  <span class="num">{c.number}</span>
+                  {c.title}
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </details>
+    </nav>
+
+    <article class="prose">
+      <section data-chapter="top" aria-label={t.intro}>
+        <Intro />
+      </section>
+      {
+        chapters.map(({ id, number, Content }) => (
+          <section data-chapter={id}>
+            <span class="chapter-num" aria-hidden="true">{number}</span>
+            <Content />
+          </section>
+        ))
+      }
+      <a class="back-top" href="#top">↑ {t.backToTop}</a>
+    </article>
+  </div>
+</Layout>

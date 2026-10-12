@@ -20,6 +20,8 @@ nav:
     label: "Contacto"
   - key: hub
     label: "Otras vistas"
+  - key: posts
+    label: "Posts"
 
 # Etiquetas de la barra de estadisticas (StatsBar).
 stats:

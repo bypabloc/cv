@@ -1,7 +1,7 @@
 """
 Configuration for the portfolio Cloudflare Pages setup.
 
-Eight apps and two environments (dev | prod) -> 16 Pages projects.
+Nine apps and two environments (dev | prod) -> 18 Pages projects.
 Project name and custom domain are derived from (app, env):
 
   prod   generic -> name `generic`,        domain `the-full-stack.com` (apex)
@@ -97,6 +97,13 @@ APPS: tuple[AppConfig, ...] = (
         package_name='@portfolio/journey',
         root_dir='apps/journey',
     ),
+    # post: guias tecnicas. Product propio (post.the-full-stack.com), NO
+    # cuelga de portfolio — ver custom_domain_for.
+    AppConfig(
+        project_name='post',
+        package_name='@portfolio/post',
+        root_dir='apps/post',
+    ),
     # Admin panel Next.js (NO en apps/, vive en root como admin/).
     # 8vo project por env -> 16 projects totales (8 apps x 2 envs).
     AppConfig(
@@ -157,6 +164,9 @@ def custom_domain_for(app: AppConfig, env_cfg: EnvConfig) -> str:
     """
     if app.project_name == 'generic':
         return env_cfg.apex_domain or env_cfg.base_domain
+    if app.project_name == 'post':
+        # product propio: post.the-full-stack.com / post.dev.the-full-stack.com
+        return f'post.{env_cfg.base_domain.removeprefix("portfolio.")}'
     # admin NO es apex en prod (a diferencia de generic): siempre cuelga
     # de portfolio.{base_domain}. base_domain en prod es
     # 'portfolio.the-full-stack.com' -> 'admin.portfolio.the-full-stack.com'.

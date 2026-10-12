@@ -152,6 +152,15 @@ function buildNav(
       })
       continue
     }
+    if (item.key === 'posts') {
+      // Sitio aparte (post.the-full-stack.com): abre en otra pestana.
+      items.push({
+        href: `${SITE_URLS.post}${basePrefix}/`,
+        label: item.label,
+        external: true,
+      })
+      continue
+    }
     items.push({ href: navHrefFor(item.key, basePrefix), label: item.label })
   }
   return items

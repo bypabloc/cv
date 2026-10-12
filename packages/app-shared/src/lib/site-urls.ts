@@ -47,6 +47,7 @@ export type SiteKey =
   | 'leader'
   | 'vibe'
   | 'journey'
+  | 'post'
 
 // Defaults de prod: los niches cuelgan de `portfolio.the-full-stack.com`,
 // el apex de generic es `the-full-stack.com`. Cubren `pnpm run build` sin
@@ -83,6 +84,15 @@ function isStandardPort(scheme: string, port: string): boolean {
   )
 }
 
+// `post` es un product propio (no un componente de `portfolio`): cuelga
+// del dominio del env sin el label `portfolio.` -> post.the-full-stack.com
+// (prod) / post.dev.the-full-stack.com (dev) / post.localhost (local).
+function hostFor(key: SiteKey, domain: string, apexDomain: string): string {
+  if (key === 'generic') return apexDomain
+  if (key === 'post') return `post.${domain.replace(/^portfolio\./, '')}`
+  return `${key}.${domain}`
+}
+
 /**
  * @function buildSiteUrl
  * @description Construye la URL absoluta del sitio para un site key dado.
@@ -105,7 +115,7 @@ export function buildSiteUrl(key: SiteKey): string {
   const apexDomain =
     readEnv('APEX_DOMAIN') || (baseDomain ? domain : DEFAULT_APEX)
 
-  const host = key === 'generic' ? apexDomain : `${key}.${domain}`
+  const host = hostFor(key, domain, apexDomain)
   const portSuffix = port && !isStandardPort(scheme, port) ? `:${port}` : ''
 
   return `${scheme}://${host}${portSuffix}`
@@ -124,4 +134,5 @@ export const SITE_URLS: Record<SiteKey, string> = {
   leader: buildSiteUrl('leader'),
   vibe: buildSiteUrl('vibe'),
   journey: buildSiteUrl('journey'),
+  post: buildSiteUrl('post'),
 }

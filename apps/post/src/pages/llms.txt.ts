@@ -4,7 +4,7 @@
  */
 import type { APIRoute } from 'astro'
 import { LOCALES, loadGuides } from '../lib/guides'
-import { AUTHOR, pathFor, UI } from '../lib/i18n'
+import { pathFor, UI } from '../lib/i18n'
 
 export const GET: APIRoute = async ({ site }) => {
   const origin = site?.href.replace(/\/$/, '') ?? ''
@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ site }) => {
     LOCALES.map(async (locale) => {
       const guides = await loadGuides(locale)
       return [
-        `## ${UI[locale].eyebrow} (${locale})`,
+        `## Posts (${locale})`,
         '',
         ...guides.map(
           (g) =>
@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ site }) => {
   const body = [
     '# post · the-full-stack',
     '',
-    `> ${UI.en.homeDescription} Author: ${AUTHOR}.`,
+    `> ${UI.en.homeDescription}`,
     '',
     ...sections,
   ].join('\n')

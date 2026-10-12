@@ -15,7 +15,7 @@ import { remarkGuide } from './src/lib/remark-guide'
 export default defineConfig({
   site: process.env.SITE_URL ?? buildSiteUrl('post'),
   output: 'static',
-  trailingSlash: 'ignore',
+  trailingSlash: 'always',
   i18n: {
     defaultLocale: 'es',
     locales: ['es', 'en'],

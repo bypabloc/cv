@@ -59,10 +59,13 @@ export const UI = {
 
 export const AUTHOR = 'Pablo Contreras'
 
-/** Path de una pagina en un locale (`/ntfy`, `/en/ntfy`, `/`, `/en/`). */
+/**
+ * Path de una pagina en un locale (`/ntfy/`, `/en/ntfy/`, `/`, `/en/`).
+ * Con barra final: Cloudflare Pages redirige (308) `/ntfy` -> `/ntfy/`.
+ */
 export function pathFor(locale: Locale, slug = ''): string {
   const base = locale === 'es' ? '' : '/en'
-  return slug ? `${base}/${slug}` : `${base}/`
+  return slug ? `${base}/${slug}/` : `${base}/`
 }
 
 /** Fecha legible: "11 de octubre de 2026" / "October 11, 2026". */

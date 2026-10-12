@@ -51,7 +51,7 @@ describe('i18n parity es/en', () => {
 })
 
 describe('i18n content sanity', () => {
-  it('Given elements When loaded Then nav has the 7 expected keys', () => {
+  it('Given elements When loaded Then nav has the 8 expected keys', () => {
     expect(elements.es.nav.map((n) => n.key)).toEqual([
       'experience',
       'projects',
@@ -60,6 +60,7 @@ describe('i18n content sanity', () => {
       'certificates',
       'contact',
       'hub',
+      'posts',
     ])
   })
 

@@ -9,6 +9,9 @@
   },
   "autoCompactEnabled": true,
   "skillListingBudgetFraction": 0.025,
+  "worktree": {
+    "baseRef": "fresh"
+  },
   "permissions": {
     "defaultMode": "acceptEdits",
     "additionalDirectories": [],

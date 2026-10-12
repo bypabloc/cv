@@ -55,6 +55,25 @@ describe('SITE_URLS', () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
       expect(SITE_URLS.journey).toBe('http://journey.localhost:9970')
     })
+
+    it('Given env local When read SITE_URLS.post Then returns "http://post.localhost:9970"', async () => {
+      const { SITE_URLS } = await import('../../../src/lib/site-urls')
+      expect(SITE_URLS.post).toBe('http://post.localhost:9970')
+    })
+  })
+
+  describe('dev env (BASE_DOMAIN=portfolio.dev.the-full-stack.com, sin APEX_DOMAIN)', () => {
+    beforeEach(() => {
+      vi.stubEnv('BASE_DOMAIN', 'portfolio.dev.the-full-stack.com')
+      vi.stubEnv('APEX_DOMAIN', '')
+      vi.stubEnv('BASE_SCHEME', 'https')
+      vi.stubEnv('BASE_PORT', '')
+    })
+
+    it('Given env dev When read SITE_URLS.post Then returns "https://post.dev.the-full-stack.com" (product propio, fuera de portfolio)', async () => {
+      const { SITE_URLS } = await import('../../../src/lib/site-urls')
+      expect(SITE_URLS.post).toBe('https://post.dev.the-full-stack.com')
+    })
   })
 
   describe('prod env component-based (BASE_DOMAIN=portfolio.the-full-stack.com, APEX_DOMAIN=the-full-stack.com)', () => {
@@ -93,6 +112,11 @@ describe('SITE_URLS', () => {
         'https://journey.portfolio.the-full-stack.com',
       )
     })
+
+    it('Given env prod When read SITE_URLS.post Then returns "https://post.the-full-stack.com"', async () => {
+      const { SITE_URLS } = await import('../../../src/lib/site-urls')
+      expect(SITE_URLS.post).toBe('https://post.the-full-stack.com')
+    })
   })
 
   describe('fallback (no env vars defined)', () => {
@@ -110,6 +134,11 @@ describe('SITE_URLS', () => {
     it('Given no env vars When read SITE_URLS.vibe Then falls back to "https://vibe.portfolio.the-full-stack.com" [AC-3]', async () => {
       const { SITE_URLS } = await import('../../../src/lib/site-urls')
       expect(SITE_URLS.vibe).toBe('https://vibe.portfolio.the-full-stack.com')
+    })
+
+    it('Given no env vars When read SITE_URLS.post Then falls back to "https://post.the-full-stack.com"', async () => {
+      const { SITE_URLS } = await import('../../../src/lib/site-urls')
+      expect(SITE_URLS.post).toBe('https://post.the-full-stack.com')
     })
   })
 

@@ -48,12 +48,19 @@ SOLO NO aisla nada a nivel git.
 - **SIEMPRE** dos sesiones que vayan a MUTAR archivos del mismo repo a la
   vez van en **worktrees separados**. NUNCA dos sesiones editando el mismo
   checkout en paralelo (corrompen el working tree, el index y los caches).
-- **SIEMPRE** crear el worktree con `claude --worktree <nombre>` (lo pone
-  en `.claude/worktrees/<nombre>/`, rama `worktree-<nombre>`) o con
-  `git worktree add <ruta> -b <branch>` para control total de ruta/branch.
-- **SIEMPRE** `.claude/worktrees/` esta gitignored (ya lo esta en este
-  repo, `.gitignore` linea 7) para que los worktrees no aparezcan como
-  untracked en el checkout principal.
+- **SIEMPRE** crear los worktrees de trabajo a mano, en `.worktrees/<nombre>/`:
+  `git worktree add .worktrees/<nombre> -b <branch> origin/dev`. Convencion del
+  proyecto; `.worktrees/` esta gitignored.
+- **NUNCA** rutas fuera del repo (`../`), `tmp/` ni `.claude/worktrees/` para
+  trabajo propio: esa ultima la usan `claude --worktree` y los agentes con
+  `isolation: worktree`, y su ubicacion la fija Claude Code.
+- **SIEMPRE** partir de `dev`: `origin/dev` tras `git fetch origin dev`.
+  `worktree.baseRef: "fresh"` (en `.claude/settings.json`) hace que
+  `claude --worktree` y `EnterWorktree` partan de `origin/<rama por defecto>`,
+  que es `dev`.
+- **SIEMPRE** `.worktrees/` y `.claude/worktrees/` estan gitignored
+  (`.gitignore`) para que los worktrees no aparezcan como untracked en el
+  checkout principal.
 - **NUNCA** crear ni borrar el branch base (`dev`/`main`) como
   worktree: son ramas de entorno. Un worktree es SIEMPRE una rama de
   trabajo (`feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`).
@@ -88,7 +95,7 @@ SOLO NO aisla nada a nivel git.
   [env-files.md](env-files.md)):
 
   ```bash
-  cp -rn docker/env/. .claude/worktrees/<nombre>/docker/env/
+  cp -rn docker/env/. .worktrees/<nombre>/docker/env/
   ```
 
 - **NUNCA** correr el pre-push hook (o `pnpm build` del admin) en un worktree
@@ -126,9 +133,10 @@ SOLO NO aisla nada a nivel git.
 
 ## Setup del repo (una sola vez)
 
-`.claude/worktrees/` ya esta gitignored. Falta declarar que archivos
-gitignored copiar a cada worktree nuevo. Crear `.worktreeinclude` en la
-raiz (sintaxis `.gitignore`); solo copia lo que matchea Y es gitignored:
+`.worktrees/` y `.claude/worktrees/` ya estan gitignored y `.worktreeinclude` ya
+existe en la raiz: declara que archivos gitignored copiar a cada worktree nuevo
+(sintaxis `.gitignore`; solo copia lo que matchea Y es gitignored). Si un
+worktree necesita otro archivo gitignored, agregarlo ahi:
 
 ```text
 # .worktreeinclude — archivos gitignored que un worktree fresco necesita.
@@ -145,14 +153,12 @@ docker/env/
 ## Workflow operativo (paso a paso)
 
 ```bash
-# 1. Crear el worktree + arrancar Claude ahi (una ventana por feature)
-claude --worktree feature-a        # -> .claude/worktrees/feature-a, rama worktree-feature-a
-#   `claude --worktree` aplica .worktreeinclude solo: los .env ya estan copiados.
-#   o, para una rama de trabajo con nombre del proyecto:
-git worktree add .claude/worktrees/feature-a -b feature/<nombre>
+# 1. Crear el worktree (una ventana por feature)
+git worktree add .worktrees/feature-a -b feature/<nombre> origin/dev
 #   git worktree add NO copia los gitignored -> copiarlos a mano (file-a-file):
-cp -rn docker/env/. .claude/worktrees/feature-a/docker/env/
-code .claude/worktrees/feature-a   # abrir VS Code en el worktree, abrir Claude ahi
+cp -rn docker/env/. .worktrees/feature-a/docker/env/
+code .worktrees/feature-a   # abrir VS Code en el worktree, abrir Claude ahi
+#   `claude --worktree` crea en .claude/worktrees/ (lo gestiona Claude Code): no lo uses para trabajo propio.
 
 # 2. Dentro del worktree: aislar recursos
 pnpm install                       # node_modules propio (store compartido = rapido)
@@ -169,7 +175,7 @@ COMPOSE_PROJECT_NAME=portfolio-wt-a python devtools/run.py docker up --env=local
 #    recien ahi mergear. Ver plan-format.md seccion 10.
 
 # 5. Limpiar el worktree al terminar (los de --worktree NO se barren solos)
-git worktree remove .claude/worktrees/feature-a
+git worktree remove .worktrees/feature-a
 git worktree prune                 # limpia referencias colgadas
 ```
 
@@ -187,8 +193,9 @@ git worktree prune                 # limpia referencias colgadas
 
 Dentro de una sesion, Claude puede crear un worktree (`EnterWorktree`) o
 saltar a otro existente bajo `.claude/worktrees/` pasando su `path` a
-`EnterWorktree` (el worktree previo queda intacto en disco). `ExitWorktree`
-vuelve al checkout principal.
+`EnterWorktree`. Los `.worktrees/<nombre>` no son destino de `EnterWorktree`:
+para trabajar en uno, abre la sesion en esa carpeta. `ExitWorktree` vuelve al
+checkout principal.
 
 ### Gestion multi-sesion: `claude agents` (Agent View)
 
@@ -204,7 +211,7 @@ forma de NO perder de vista las 2-3 sesiones en paralelo.
 
 | Anti-patron | Por que | Correccion |
 |-------------|---------|------------|
-| Dos sesiones editando el MISMO checkout en paralelo | Corrompen working tree / index / caches de build | Un worktree por sesion (`--worktree`) |
+| Dos sesiones editando el MISMO checkout en paralelo | Corrompen working tree / index / caches de build | Un worktree por sesion (`.worktrees/<nombre>`) |
 | Confiar en multi-tab VS Code para aislar archivos | Las tabs comparten el working tree | Solo los worktrees aislan a nivel git |
 | Dos `pnpm install` sobre el mismo `node_modules` | Race en el node_modules hoisted | `pnpm install` propio por worktree (store compartido) |
 | Dos `docker:up --env=local` a la vez | Choque de `portfolio-<svc>-local` + puerto 9970 | Env distinto por worktree, o `COMPOSE_PROJECT_NAME` distinto |
@@ -215,6 +222,7 @@ forma de NO perder de vista las 2-3 sesiones en paralelo.
 | Abrir 5+ ventanas activas para ir mas rapido | La cuota es de cuenta + throttle de rafaga -> 429 | 2-3 sesiones activas a la vez; combinar capas, no multiplicarlas |
 | Correr un workflow Y abrir varias ventanas activas | El throttle se suma -> pega el techo | Una cosa a la vez: o el workflow, o las ventanas |
 | Dejar worktrees de `--worktree` sin borrar | NO se barren solos (solo los de subagentes/background) | `git worktree remove` + `prune` al terminar |
+| `git worktree add ../<repo>-wt-<x>`, `git worktree add tmp/<x>` o `git worktree add .claude/worktrees/<x>` para trabajo propio | Fuera de `.worktrees/`, la convencion del proyecto; `.claude/worktrees/` la gestiona Claude Code | `git worktree add .worktrees/<x> -b <branch> origin/dev` |
 | Crear `dev`/`main` como worktree | Son ramas de entorno protegidas | Worktree = rama de trabajo (`feature/`, `fix/`, ...) |
 | Decir / buscar "FleetView" | No es feature oficial | Es **Agent View** (`claude agents`) |
 

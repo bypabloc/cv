@@ -13,12 +13,7 @@ import { render } from 'astro:content'
  */
 import { SITE_URLS } from '@portfolio/app-shared/lib/site-urls'
 import Layout from '../layouts/Layout.astro'
-import {
-  type GuideSlug,
-  type Locale,
-  loadGuide,
-  PUBLISHED,
-} from '../lib/guides'
+import { type GuideSlug, type Locale, loadGuide } from '../lib/guides'
 import { AUTHOR, formatDate, pathFor, truncate, UI } from '../lib/i18n'
 
 interface Props {
@@ -47,8 +42,8 @@ const jsonLd = [
     description: guide.description,
     inLanguage: locale,
     url: pageUrl,
-    datePublished: PUBLISHED,
-    dateModified: PUBLISHED,
+    datePublished: guide.published,
+    dateModified: guide.published,
     keywords: guide.tags.join(', '),
     timeRequired: `PT${guide.minutes}M`,
     author: { '@type': 'Person', name: AUTHOR, url: SITE_URLS.generic },
@@ -89,7 +84,9 @@ const jsonLd = [
       <h1 class="display display--guide">{guide.title}</h1>
       <p class="lede">{guide.description}</p>
       <p class="meta">
-        <time datetime={PUBLISHED}>{formatDate(PUBLISHED, locale)}</time>
+        <time datetime={guide.published}>
+          {formatDate(guide.published, locale)}
+        </time>
         <span>{guide.minutes} {t.minRead}</span>
         <span>{guide.chapters.length} {t.chapters}</span>
       </p>

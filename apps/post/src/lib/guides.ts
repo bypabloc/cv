@@ -8,10 +8,15 @@ import { type CollectionEntry, getCollection } from 'astro:content'
 
 export type Locale = 'es' | 'en'
 export const LOCALES: readonly Locale[] = ['es', 'en']
-export const GUIDE_SLUGS = ['ntfy', 'oracle'] as const
+/** Orden de la portada: la mas reciente primero. */
+export const GUIDE_SLUGS = ['agents-handoff', 'ntfy', 'oracle'] as const
 export type GuideSlug = (typeof GUIDE_SLUGS)[number]
-/** Fecha de publicacion (datos de las guias: octubre 2026). */
-export const PUBLISHED = '2026-10-11'
+/** Fecha de publicacion de cada guia (YYYY-MM-DD). */
+const PUBLISHED: Record<GuideSlug, string> = {
+  'agents-handoff': '2026-11-18',
+  ntfy: '2026-10-11',
+  oracle: '2026-10-11',
+}
 
 export interface Chapter {
   id: string
@@ -23,6 +28,7 @@ export interface Chapter {
 export interface Guide {
   slug: GuideSlug
   locale: Locale
+  published: string
   title: string
   description: string
   tags: string[]
@@ -71,6 +77,7 @@ export async function loadGuide(
   return {
     slug,
     locale,
+    published: PUBLISHED[slug],
     title: match(body, /^# (.+)$/m),
     description: match(body, /^> (.+)$/m),
     tags: [...lastLine.matchAll(/`([^`]+)`/g)].map((m) => m[1] ?? ''),

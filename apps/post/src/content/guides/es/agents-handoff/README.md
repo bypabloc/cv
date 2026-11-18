@@ -1,4 +1,4 @@
-# Que tu agente de código no pierda el hilo: compactación, handoff y caché vencida
+# Que tu agente de código no pierda el foco
 
 > Guía práctica para que Claude Code, Codex, OpenCode y Antigravity sigan un trabajo largo sin perder decisiones ni el paso actual: compactar antes, guardar el estado en disco, reinyectarlo con hooks, retomar tras una pausa sin pagar todo el historial y evitar que el agente corte el trabajo. Con el caso real de mis proyectos y sus cifras medidas.
 
@@ -14,6 +14,18 @@
 - **Que el agente siga:** un hook de cierre de turno que no deja parar mientras haya un `Next step`; `blocked` solo por cuatro motivos.
 - **Compactar sin resumen (Claude Code):** un plugin conserva los ~20k tokens recientes tal cual. Ahorra ~37–64 s por compactación; en tokens queda cerca del empate.
 - **Varias sesiones:** worktrees fuera del repo, una carpeta por trabajo y un vínculo por sesión.
+
+---
+
+## De dónde salió la idea
+
+Todo empezó con un post que circulaba en redes sociales. Decía que conviene pedirle a Claude, en el `CLAUDE.md`, que empiece cada respuesta con tu nombre: no por simpatía, sino como **canario**. El modelo no pasa de funcionar bien a alucinar de golpe; primero deja de cumplir una instrucción pequeña. Si un día deja de llamarte por tu nombre, el canario murió y es momento de abrir una sesión nueva. El post le atribuía la técnica a Peter Steinberger, el creador de OpenClaw.
+
+Al revisar la fuente, el propio Steinberger lo desmintió [en X](https://x.com/steipete/status/2113741901384089824):
+
+> «No, nunca lo llamé canary y no tengo archivos claude.md.»
+
+La atribución era falsa, pero la observación de fondo me sirvió: la ventana de contexto se degrada de a poco, y para cuando lo notas el agente ya trabaja con un resumen que perdió lo importante. En vez de esperar a que el canario muera, quise que la sesión no dependiera de lo que recuerda la conversación. De ahí salió el handoff en disco: gestionar el conocimiento del trabajo fuera del contexto, reinyectarlo cuando hace falta y compactar antes de que la ventana se sature. La prueba del marcador del [capítulo 10](10-probar-el-handoff.md) es, de hecho, un canario deliberado: un dato que solo puede responder si el handoff llegó.
 
 ---
 

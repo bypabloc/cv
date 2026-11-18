@@ -1,4 +1,4 @@
-# Keep your coding agent on track: compaction, handoff and expired cache
+# Keep your coding agent focused
 
 > A practical guide to making Claude Code, Codex, OpenCode and Antigravity carry a long task without losing decisions or the current step: compact earlier, keep the state on disk, re-inject it with hooks, resume after a long pause without paying for the whole history, and stop the agent from cutting the work short. With the real case study from my projects and its measured numbers.
 
@@ -14,6 +14,16 @@
 - **Keep the agent going:** an end-of-turn hook that won't let it stop while there is a `Next step`; `blocked` only for four reasons.
 - **Compact without a summary (Claude Code):** a plugin keeps the most recent ~20k tokens verbatim. It saves ~37–64 s per compaction; on tokens it comes out close to a tie.
 - **Several sessions:** worktrees outside the repo, one folder per task and one link per session.
+
+---
+
+## Where the idea came from
+
+It started with a post going around on social media. It suggested asking Claude, in `CLAUDE.md`, to start every answer with your name: not to be friendly, but as a **canary**. The model doesn't go from working well to hallucinating all at once; first it stops following a small instruction. If one day it stops calling you by name, the canary died and it's time to open a new session. The post attributed the technique to Peter Steinberger, the creator of OpenClaw.
+
+When I checked the source, Steinberger himself denied it [on X](https://x.com/steipete/status/2113741901384089824): he never called it a canary, and he doesn't have `CLAUDE.md` files.
+
+The attribution was false, but the underlying observation was useful: the context window degrades gradually, and by the time you notice, the agent is already working from a summary that lost what mattered. Instead of waiting for the canary to die, I wanted the session not to depend on what the conversation remembers. That is where the on-disk handoff came from: manage the task's knowledge outside the context, re-inject it when needed, and compact before the window saturates. The marker test in [chapter 10](10-probar-el-handoff.md) is, in fact, a deliberate canary: a fact the agent can only answer if the handoff arrived.
 
 ---
 

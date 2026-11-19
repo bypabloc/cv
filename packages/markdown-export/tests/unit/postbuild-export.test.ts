@@ -60,6 +60,15 @@ describe('postbuildExport', () => {
     ])
   })
 
+  it('Given dist con cv.html suelto When export Then crea cv.md gemelo', async () => {
+    await writeFile(join(workDir, 'cv.html'), '<body><main>CV</main></body>')
+
+    const result = await postbuildExport({ distDir: workDir })
+
+    expect(result.paths).toEqual([join(workDir, 'cv.md')])
+    expect(await readFile(join(workDir, 'cv.md'), 'utf8')).toContain('CV')
+  })
+
   it('Given dist sin index.html When export Then count es 0', async () => {
     await writeFile(join(workDir, '404.html'), '<body><main>404</main></body>')
 

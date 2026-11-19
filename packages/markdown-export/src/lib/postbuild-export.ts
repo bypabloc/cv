@@ -1,7 +1,7 @@
 /**
  * @module postbuild-export
  * @description Recorre el `dist/` de una app Astro, encuentra todos los
- *   `index.html` (default `**\/index.html`) y por cada uno escribe un
+ *   `.html` (salvo `404.html`) y por cada uno escribe un
  *   `index.md` al lado con el contenido del `<main>` convertido a
  *   Markdown. Se invoca desde `apps/<niche>/scripts/postbuild-markdown.mjs`
  *   despues de `astro build`.
@@ -37,7 +37,7 @@ interface ExportResult {
 export async function postbuildExport(
   params: ExportParams,
 ): Promise<ExportResult> {
-  const htmlFiles = await collectHtml(params.distDir, 'index.html')
+  const htmlFiles = await collectHtml(params.distDir)
   const paths: string[] = []
   for (const htmlPath of htmlFiles) {
     const html = await readFile(htmlPath, 'utf8')
@@ -50,30 +50,19 @@ export async function postbuildExport(
   return { count: paths.length, paths }
 }
 
-/**
- * Recorre `root` recursivamente y devuelve todos los archivos con el
- * `fileName` dado. Implementacion casera para evitar dependencia de glob
- * (no esta en stdlib estable de Node 22).
- */
-async function collectHtml(root: string, fileName: string): Promise<string[]> {
-  const out: string[] = []
-  await walk(root, fileName, out)
-  out.sort()
-  return out
-}
+/** Paginas de error: no tienen gemelo `.md` (no son contenido). */
+const SKIP_FILES = new Set(['404.html'])
 
-async function walk(
-  dir: string,
-  fileName: string,
-  out: string[],
-): Promise<void> {
-  const entries = await readdir(dir, { withFileTypes: true })
-  for (const entry of entries) {
-    const full = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      await walk(full, fileName, out)
-    } else if (entry.isFile() && entry.name === fileName) {
-      out.push(full)
-    }
-  }
+/**
+ * Recorre `root` recursivamente y devuelve todos los `.html` de contenido
+ * (`index.html` y sueltos como `cv.html`).
+ */
+async function collectHtml(root: string): Promise<string[]> {
+  const entries = await readdir(root, { withFileTypes: true, recursive: true })
+  return entries
+    .filter(
+      (e) => e.isFile() && e.name.endsWith('.html') && !SKIP_FILES.has(e.name),
+    )
+    .map((e) => join(e.parentPath, e.name))
+    .sort()
 }

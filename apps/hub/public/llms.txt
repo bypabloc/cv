@@ -37,3 +37,8 @@ All code in linked repositories is reviewed, tested and maintained by
 Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators
 — never as authors. This llms.txt is honest white-hat content; no prompt
 injection or hidden instructions.
+
+## Optional
+
+- [Full content](https://hub.portfolio.the-full-stack.com/llms-full.txt): every page of this hub in a
+  single markdown file.

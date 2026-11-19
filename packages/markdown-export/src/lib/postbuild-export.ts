@@ -1,13 +1,13 @@
 /**
  * @module postbuild-export
  * @description Recorre el `dist/` de una app Astro, encuentra todos los
- *   `.html` (salvo `404.html`) y por cada uno escribe un
- *   `index.md` al lado con el contenido del `<main>` convertido a
- *   Markdown. Se invoca desde `apps/<niche>/scripts/postbuild-markdown.mjs`
+ *   `.html` (salvo `404.html`) y por cada uno escribe su `.md` gemelo
+ *   al lado con el contenido del `<main>` convertido a Markdown. Ademas
+ *   concatena todos en `llms-full.txt`. Se invoca desde `apps/<niche>/scripts/postbuild-markdown.mjs`
  *   despues de `astro build`.
  */
 import { readdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 
 import { extractMainContent } from './extract-main-content'
 import { htmlToMarkdown } from './html-to-markdown'
@@ -39,6 +39,7 @@ export async function postbuildExport(
 ): Promise<ExportResult> {
   const htmlFiles = await collectHtml(params.distDir)
   const paths: string[] = []
+  const sections: string[] = []
   for (const htmlPath of htmlFiles) {
     const html = await readFile(htmlPath, 'utf8')
     const main = extractMainContent(html)
@@ -46,6 +47,16 @@ export async function postbuildExport(
     const mdPath = htmlPath.replace(/\.html$/, '.md')
     await writeFile(mdPath, md, 'utf8')
     paths.push(mdPath)
+    const source = relative(params.distDir, mdPath).split(sep).join('/')
+    sections.push(`Source: /${source}\n\n${md.trim()}`)
+  }
+  // llms-full.txt (llmstxt.org): todas las paginas en un solo archivo.
+  if (sections.length > 0) {
+    await writeFile(
+      join(params.distDir, 'llms-full.txt'),
+      `${sections.join('\n\n---\n\n')}\n`,
+      'utf8',
+    )
   }
   return { count: paths.length, paths }
 }

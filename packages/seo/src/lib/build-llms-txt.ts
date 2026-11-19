@@ -138,5 +138,12 @@ export function buildLlmsTxt(input: BuildLlmsTxtInput): string {
   )
   lines.push('')
 
+  lines.push('## Optional')
+  lines.push('')
+  lines.push(
+    `- [Full content](${siteUrl.replace(/\/$/, '')}/llms-full.txt): every page of this site in a single markdown file`,
+  )
+  lines.push('')
+
   return `${lines.join('\n')}\n`
 }

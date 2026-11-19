@@ -97,6 +97,27 @@ export async function loadGuide(
   }
 }
 
+/**
+ * @function guideMarkdown
+ * @description La guia completa como un solo Markdown (README + capitulos)
+ *   para `/<slug>.md`. Los links entre capitulos (`NN-x.md[#a]`,
+ *   `README.md`) se reescriben a anclas absolutas de la pagina HTML, igual
+ *   que hace remark-guide.
+ * @example guideMarkdown(guide, 'https://post.the-full-stack.com/ntfy/')
+ */
+export function guideMarkdown(guide: Guide, pageUrl: string): string {
+  return [guide.readme, ...guide.chapters.map((c) => c.entry)]
+    .map((e) => (e.body ?? '').trim())
+    .join('\n\n---\n\n')
+    .replace(
+      /\]\((\d\d-[\w-]+)\.md(?:#([^)]+))?\)/g,
+      (_, id: string, anchor?: string) =>
+        `](${pageUrl}#${id}${anchor ? `--${anchor}` : ''})`,
+    )
+    .replace(/\]\(README\.md\)/g, `](${pageUrl})`)
+    .concat('\n')
+}
+
 /** Todas las guias de un locale, en el orden de GUIDE_SLUGS. */
 export function loadGuides(locale: Locale): Promise<Guide[]> {
   return Promise.all(GUIDE_SLUGS.map((slug) => loadGuide(locale, slug)))

@@ -16,11 +16,11 @@ Senior Full Stack Developer · Senior Software Engineer · Vue 3 · Nuxt · Type
 
 ## Pages
 
-- [Home](https://the-full-stack.com/): Senior Full Stack Engineer (Vue + Django + AWS), 8+ years
-- [About](https://the-full-stack.com/about): Education, languages, awards, publications, references
-- [Certificates](https://the-full-stack.com/certificates): 11 certifications from Udemy and DevTalles
-- [CV (HTML)](https://the-full-stack.com/cv.html): ATS-friendly CV in Spanish
-- [CV (EN)](https://the-full-stack.com/cv-en.html): ATS-friendly CV in English
+- [Home](https://the-full-stack.com/index.md): Senior Full Stack Engineer (Vue + Django + AWS), 8+ years
+- [About](https://the-full-stack.com/about/index.md): Education, languages, awards, publications, references
+- [Certificates](https://the-full-stack.com/certificates/index.md): 11 certifications from Udemy and DevTalles
+- [CV (HTML)](https://the-full-stack.com/cv.md): ATS-friendly CV in Spanish
+- [CV (EN)](https://the-full-stack.com/cv-en.md): ATS-friendly CV in English
 
 ## Identity
 

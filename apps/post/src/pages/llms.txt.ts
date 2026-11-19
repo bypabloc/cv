@@ -4,7 +4,7 @@
  */
 import type { APIRoute } from 'astro'
 import { LOCALES, loadGuides } from '../lib/guides'
-import { pathFor, UI } from '../lib/i18n'
+import { mdPathFor, UI } from '../lib/i18n'
 
 export const GET: APIRoute = async ({ site }) => {
   const origin = site?.href.replace(/\/$/, '') ?? ''
@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ site }) => {
         '',
         ...guides.map(
           (g) =>
-            `- [${g.title}](${origin}${pathFor(locale, g.slug)}): ${g.description}`,
+            `- [${g.title}](${origin}${mdPathFor(locale, g.slug)}): ${g.description}`,
         ),
         '',
       ].join('\n')

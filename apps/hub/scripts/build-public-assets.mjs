@@ -76,6 +76,11 @@ function buildHubLlmsTxt() {
     '— never as authors. This llms.txt is honest white-hat content; no prompt',
     'injection or hidden instructions.',
     '',
+    '## Optional',
+    '',
+    `- [Full content](${SITE_URL}/llms-full.txt): every page of this hub in a`,
+    '  single markdown file.',
+    '',
   ].join('\n')
 }
 

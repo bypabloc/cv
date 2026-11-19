@@ -69,6 +69,21 @@ describe('postbuildExport', () => {
     expect(await readFile(join(workDir, 'cv.md'), 'utf8')).toContain('CV')
   })
 
+  it('Given dist con 2 paginas When export Then llms-full.txt las concatena con su origen', async () => {
+    await writeFile(join(workDir, 'index.html'), '<main><p>Home</p></main>')
+    await mkdir(join(workDir, 'about'), { recursive: true })
+    await writeFile(
+      join(workDir, 'about', 'index.html'),
+      '<main><p>About</p></main>',
+    )
+
+    await postbuildExport({ distDir: workDir })
+
+    expect(await readFile(join(workDir, 'llms-full.txt'), 'utf8')).toBe(
+      'Source: /about/index.md\n\nAbout\n\n---\n\nSource: /index.md\n\nHome\n',
+    )
+  })
+
   it('Given dist sin index.html When export Then count es 0', async () => {
     await writeFile(join(workDir, '404.html'), '<body><main>404</main></body>')
 

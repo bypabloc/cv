@@ -28,6 +28,10 @@ export const GET: APIRoute = async ({ site }) => {
     `> ${UI.en.homeDescription}`,
     '',
     ...sections,
+    '## Optional',
+    '',
+    `- [Full content](${origin}/llms-full.txt): every guide (es and en) in a single markdown file`,
+    '',
   ].join('\n')
   return new Response(body, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },

@@ -24,6 +24,15 @@ describe('extractMainContent', () => {
     expect(out).toBe('<p>X</p>')
   })
 
+  it('Given HTML sin main con varios article When extract Then devuelve el body completo', () => {
+    const html =
+      '<body><h1>CV</h1><article>A</article><article>B</article></body>'
+
+    const out = extractMainContent(html)
+
+    expect(out).toBe('<h1>CV</h1><article>A</article><article>B</article>')
+  })
+
   it('Given HTML sin main ni article When extract Then devuelve el body innerHTML sin nav/footer', () => {
     const html = '<body><nav>N</nav><p>Y</p><footer>F</footer></body>'
 

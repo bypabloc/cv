@@ -4,7 +4,7 @@
 
 import { profile } from '@portfolio/content'
 import { describe, expect, it } from 'vitest'
-import { buildLlmsTxt } from '../../src/lib/build-llms-txt'
+import { buildLlmsTxt, toMarkdownPath } from '../../src/lib/build-llms-txt'
 
 describe('buildLlmsTxt', () => {
   it('Given fintech niche When build Then contains H1, summary and pages', () => {
@@ -29,10 +29,10 @@ describe('buildLlmsTxt', () => {
     expect(out).toMatch(/Latin American fintech/u)
     expect(out).toMatch(/## Pages/u)
     expect(out).toContain(
-      '- [Home](https://fintech.portfolio.the-full-stack.com/): Senior fintech engineer for LATAM',
+      '- [Home](https://fintech.portfolio.the-full-stack.com/index.md): Senior fintech engineer for LATAM',
     )
     expect(out).toContain(
-      '- [Experience](https://fintech.portfolio.the-full-stack.com/experience): 9 roles in 8 employers',
+      '- [Experience](https://fintech.portfolio.the-full-stack.com/experience/index.md): 9 roles in 8 employers',
     )
     expect(out).toContain('LinkedIn: https://linkedin.com/in/bypabloc')
     expect(out).toContain('GitHub: https://github.com/bypabloc')
@@ -75,5 +75,17 @@ describe('buildLlmsTxt', () => {
       pages: [],
     })
     expect(out).not.toMatch(/Availability:/u)
+  })
+})
+
+describe('toMarkdownPath', () => {
+  it.each([
+    ['/', '/index.md'],
+    ['/about', '/about/index.md'],
+    ['/en/', '/en/index.md'],
+    ['/cv.html', '/cv.md'],
+    ['/notes.md', '/notes.md'],
+  ])('Given path %s When map Then returns %s', (input, expected) => {
+    expect(toMarkdownPath(input)).toBe(expected)
   })
 })

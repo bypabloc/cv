@@ -66,6 +66,23 @@ const NICHE_HIGHLIGHTS: Record<Niche, string[]> = {
   ],
 }
 
+/**
+ * @function toMarkdownPath
+ * @description Path del gemelo `.md` de una pagina (convencion llmstxt.org):
+ *   directorio -> `index.md`, `.html` -> `.md`. Los gemelos los genera
+ *   `@portfolio/markdown-export` en el postbuild.
+ *
+ * @example
+ *   toMarkdownPath('/')         // '/index.md'
+ *   toMarkdownPath('/about')    // '/about/index.md'
+ *   toMarkdownPath('/cv.html')  // '/cv.md'
+ */
+export function toMarkdownPath(path: string): string {
+  if (path.endsWith('.md')) return path
+  if (path.endsWith('.html')) return path.replace(/\.html$/, '.md')
+  return `${path.replace(/\/$/, '')}/index.md`
+}
+
 export function buildLlmsTxt(input: BuildLlmsTxtInput): string {
   const { siteUrl, profile, niche, pages, atsKeywords = [] } = input
   const lines: string[] = []
@@ -100,7 +117,7 @@ export function buildLlmsTxt(input: BuildLlmsTxtInput): string {
   for (const page of pages) {
     const url = page.path.startsWith('http')
       ? page.path
-      : `${siteUrl.replace(/\/$/, '')}${page.path}`
+      : `${siteUrl.replace(/\/$/, '')}${toMarkdownPath(page.path)}`
     lines.push(`- [${page.title}](${url}): ${page.description}`)
   }
   lines.push('')

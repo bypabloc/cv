@@ -16,8 +16,8 @@ Interactive 3D CV · three.js · React Three Fiber · WebGL · Creative Develope
 
 ## Pages
 
-- [Home](https://journey.portfolio.the-full-stack.com/): Pablo Contreras — el CV como viaje 3D: recorre mi carrera sala por sala (walking-sim en three.js) con fallback de CV completo en HTML
-- [Home (EN)](https://journey.portfolio.the-full-stack.com/en/): Pablo Contreras — the CV as a 3D journey: walk my career room by room (three.js walking-sim) with a full HTML CV fallback
+- [Home](https://journey.portfolio.the-full-stack.com/index.md): Pablo Contreras — el CV como viaje 3D: recorre mi carrera sala por sala (walking-sim en three.js) con fallback de CV completo en HTML
+- [Home (EN)](https://journey.portfolio.the-full-stack.com/en/index.md): Pablo Contreras — the CV as a 3D journey: walk my career room by room (three.js walking-sim) with a full HTML CV fallback
 
 ## Identity
 

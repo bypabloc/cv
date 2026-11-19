@@ -16,7 +16,7 @@
  */
 import { SITE_URLS } from '@portfolio/app-shared/lib/site-urls'
 import type { Locale } from '../lib/guides'
-import { AUTHOR, pathFor, UI } from '../lib/i18n'
+import { AUTHOR, mdPathFor, pathFor, UI } from '../lib/i18n'
 import '../styles/site.css'
 
 interface Props {
@@ -59,6 +59,7 @@ const ogImage = `${SITE_URLS.generic}/og-image.svg`
     <link rel="alternate" hreflang="x-default" href={url('es')} />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt" />
+    {slug && <link rel="alternate" type="text/markdown" href={`${site}${mdPathFor(locale, slug)}`} />}
     <link rel="icon" href={`${SITE_URLS.generic}/favicon.svg`} type="image/svg+xml" />
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={t.siteName} />

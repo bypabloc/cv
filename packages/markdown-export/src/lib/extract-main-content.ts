@@ -37,9 +37,12 @@ const STRIP_SELECTORS = [
  */
 export function extractMainContent(html: string): string {
   const root = parse(html)
+  // `<article>` solo si es unico: con varios (ej. cv.html, 1 por
+  // experiencia) el contenido es el `<body>` entero.
+  const articles = root.querySelectorAll('article')
   const main =
     root.querySelector('main') ??
-    root.querySelector('article') ??
+    (articles.length === 1 ? articles[0] : undefined) ??
     root.querySelector('body') ??
     root
   for (const sel of STRIP_SELECTORS) {

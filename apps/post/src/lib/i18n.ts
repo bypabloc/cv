@@ -66,6 +66,11 @@ export function pathFor(locale: Locale, slug = ''): string {
   return slug ? `${base}/${slug}/` : `${base}/`
 }
 
+/** Path de la version Markdown de una guia (`/ntfy.md`, `/en/ntfy.md`). */
+export function mdPathFor(locale: Locale, slug: string): string {
+  return `${pathFor(locale, slug).replace(/\/$/, '')}.md`
+}
+
 /**
  * Recorta un texto a `max` caracteres (meta description: Google muestra
  * ~155). Prefiere cortar en la ultima coma (cierra una idea); si no hay

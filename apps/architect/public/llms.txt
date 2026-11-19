@@ -16,11 +16,11 @@ Frontend Architect · Software Architect · Microservices · Microfrontend · Di
 
 ## Pages
 
-- [Home](https://architect.portfolio.the-full-stack.com/): Pablo Contreras — Architect · Microservicios · Microfrontends
-- [About](https://architect.portfolio.the-full-stack.com/about): Education, languages, awards, publications, references
-- [Certificates](https://architect.portfolio.the-full-stack.com/certificates): Technical certifications relevant to this profile
-- [CV (HTML)](https://architect.portfolio.the-full-stack.com/cv.html): ATS-friendly CV in Spanish
-- [CV (EN)](https://architect.portfolio.the-full-stack.com/cv-en.html): ATS-friendly CV in English
+- [Home](https://architect.portfolio.the-full-stack.com/index.md): Pablo Contreras — Architect · Microservicios · Microfrontends
+- [About](https://architect.portfolio.the-full-stack.com/about/index.md): Education, languages, awards, publications, references
+- [Certificates](https://architect.portfolio.the-full-stack.com/certificates/index.md): Technical certifications relevant to this profile
+- [CV (HTML)](https://architect.portfolio.the-full-stack.com/cv.md): ATS-friendly CV in Spanish
+- [CV (EN)](https://architect.portfolio.the-full-stack.com/cv-en.md): ATS-friendly CV in English
 
 ## Identity
 

@@ -34,6 +34,9 @@ describe('buildLlmsTxt', () => {
     expect(out).toContain(
       '- [Experience](https://fintech.portfolio.the-full-stack.com/experience/index.md): 9 roles in 8 employers',
     )
+    expect(out).toContain(
+      '- [Full content](https://fintech.portfolio.the-full-stack.com/llms-full.txt): every page of this site in a single markdown file',
+    )
     expect(out).toContain('LinkedIn: https://linkedin.com/in/bypabloc')
     expect(out).toContain('GitHub: https://github.com/bypabloc')
   })

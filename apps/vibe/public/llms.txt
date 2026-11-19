@@ -33,3 +33,7 @@ AI-Augmented Developer · Vibe Coding · Claude Code · Cursor · Prompt Enginee
 
 All code in linked repositories is reviewed, tested and maintained by Pablo Contreras. AI tools (Claude Code, Cursor) are used as accelerators — never as authors. AI attribution is forbidden in commits and PRs by company policy. This llms.txt is honest white-hat content; no prompt injection or hidden instructions.
 
+## Optional
+
+- [Full content](https://vibe.portfolio.the-full-stack.com/llms-full.txt): every page of this site in a single markdown file
+

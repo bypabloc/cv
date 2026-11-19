@@ -13,6 +13,7 @@
 - **On-disk handoff:** `tmp/handoff/<work>/` with `PROGRESS.md`, `DECISIONS.md` and `NOTES.md`. A single script re-injects it into all four agents after compacting, on startup and after a pause.
 - **Keep the agent going:** an end-of-turn hook that won't let it stop while there is a `Next step`; `blocked` only for four reasons.
 - **Compact without a summary (Claude Code):** a plugin keeps the most recent ~20k tokens verbatim. It saves ~37–64 s per compaction; on tokens it comes out close to a tie.
+- **Ready-to-install plugin (Claude Code):** [session-handoff](https://github.com/bypabloc/claude-plugin-session-handoff) packages the handoff, the end-of-turn block and the summary-free compaction ([ch. 09](09-receta-del-plugin.md)).
 - **Several sessions:** worktrees outside the repo, one folder per task and one link per session.
 
 ---

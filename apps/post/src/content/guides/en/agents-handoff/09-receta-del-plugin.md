@@ -6,6 +6,20 @@
 
 ---
 
+### Shortcut: the published plugin
+
+If you only use Claude Code and don't want to build it by hand, install the plugin that came out of this recipe: [bypabloc/claude-plugin-session-handoff](https://github.com/bypabloc/claude-plugin-session-handoff) (MIT).
+
+```bash
+claude plugin marketplace add bypabloc/claude-plugins
+claude plugin install session-handoff@bypabloc
+claude plugin list   # check
+```
+
+It requires Claude Code 2.1.287 or later and needs no Python or Node. Besides the summary-free compaction in this chapter, it brings the rest of the guide's system: it re-injects the handoff on start, resume and compaction ([ch. 03](03-handoff-en-disco.md)), won't let the turn end while a `Next step` remains, rejects `AskUserQuestion` without a valid `blocked`, and shows phase, ETA and `ctx %` in a band above the prompt. The `blocked` categories, the specs folder and the closing text are configured in `.claude/session-handoff.json`. Details are in its README.
+
+The rest of the chapter builds the compaction piece from scratch, to understand or adapt it.
+
 ### Requirements
 
 - Claude Code **2.1.287 or later** (module plugins in TypeScript, early access).

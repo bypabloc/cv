@@ -13,6 +13,7 @@
 - **Handoff en disco:** `tmp/handoff/<trabajo>/` con `PROGRESS.md`, `DECISIONS.md` y `NOTES.md`. Un solo script lo reinyecta en los cuatro agentes después de compactar, al iniciar y al volver de una pausa.
 - **Que el agente siga:** un hook de cierre de turno que no deja parar mientras haya un `Next step`; `blocked` solo por cuatro motivos.
 - **Compactar sin resumen (Claude Code):** un plugin conserva los ~20k tokens recientes tal cual. Ahorra ~37–64 s por compactación; en tokens queda cerca del empate.
+- **Plugin listo para instalar (Claude Code):** [session-handoff](https://github.com/bypabloc/claude-plugin-session-handoff) empaqueta el handoff, el bloqueo de cierre de turno y la compactación sin resumen ([cap. 09](09-receta-del-plugin.md)).
 - **Varias sesiones:** worktrees fuera del repo, una carpeta por trabajo y un vínculo por sesión.
 
 ---

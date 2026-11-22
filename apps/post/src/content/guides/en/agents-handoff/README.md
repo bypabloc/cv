@@ -65,11 +65,11 @@ Paths and task names are anonymized; the numbers are real measurements from thos
 
 ### Tested with
 
-Exact versions I used. **[test]**
+Exact versions I used. **[test]** I did not record the Claude Code version I tested the plugin with, so it is not listed.
 
 | Agent | The guide's system (ch. 02–08, 10–11) | session-handoff plugin 0.5.4 (ch. 09) |
 | :-- | :-- | :-- |
-| Claude Code | 2.1.319 (the one used for the cross-check in [ch. 12](12-problemas-y-soluciones.md); over the weeks of use, several 2.1.3xx) | Not recorded |
+| Claude Code | 2.1.319 (the one used for the cross-check in [ch. 12](12-problemas-y-soluciones.md); over the weeks of use, several 2.1.3xx) | — |
 | Codex | `codex-cli 0.167.0` | 0.171.0 |
 | OpenCode | `2.0.29` | 2.3.2 (V2) |
 | Antigravity CLI | `agy 1.5.3` | `agy 1.5.13` |

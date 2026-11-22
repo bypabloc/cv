@@ -92,6 +92,9 @@ apps/*/public/_headers
 !apps/post/public/_headers
 apps/*/public/_redirects
 apps/*/public/.well-known/
+# openapi.json tambien lo genera build-public-assets.mjs con el API_ENDPOINT
+# del env del build: versionado quedaba con la URL de dev tras un build local.
+apps/*/public/openapi.json
 
 # Playwright
 playwright-report/

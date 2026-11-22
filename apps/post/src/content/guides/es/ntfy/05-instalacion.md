@@ -44,7 +44,13 @@ if iptables -S INPUT | grep -q -- '-j REJECT'; then
     iptables -C INPUT -p tcp -m state --state NEW --dport "$p" -j ACCEPT 2>/dev/null \
       || iptables -I INPUT "$pos" -p tcp -m state --state NEW --dport "$p" -j ACCEPT
   done
-  command -v netfilter-persistent >/dev/null || apt-get install -y -q iptables-persistent
+  if ! command -v netfilter-persistent >/dev/null; then
+    # debconf responde de antemano la pregunta que iptables-persistent hace al instalarse
+    echo 'iptables-persistent iptables-persistent/autosave_v4 boolean true' | debconf-set-selections
+    echo 'iptables-persistent iptables-persistent/autosave_v6 boolean true' | debconf-set-selections
+    apt-get update -q
+    apt-get install -y -q iptables-persistent netfilter-persistent
+  fi
   netfilter-persistent save
 fi
 

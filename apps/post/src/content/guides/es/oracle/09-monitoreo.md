@@ -51,7 +51,7 @@ Ejemplo de reporte:
 VM OK (16:43)
 CPU p95 24h 49% · 7d 49% (mín. 20%) · ahora 0% (load 0.00 0.00 0.01)
 RAM 409/954 MB (42%) · swap 0 MB · disco 8%
-servicios activos: cron · encendida 45 minutes
+servicios activos: cron · encendida 45 min
 ```
 
 #### Script del reporte: `vm-report.sh`
@@ -102,7 +102,7 @@ reboot=""; [ -f /var/run/reboot-required ] && reboot=" · requiere reinicio"
 now=$(TZ="$TZ_REPORT" date '+%H:%M')
 body="CPU p95 24h ${p95_24h}% · 7d ${p95_7d}% (mín. 20%) · ahora ${cpu}% (load ${load})
 RAM ${mem_used}/${mem_total} MB (${mem_pct}%) · swap ${swap_used} MB · disco ${disk_pct}%
-servicios activos: ${SERVICES} · encendida $(uptime -p | sed 's/^up //')${reboot}"
+servicios activos: ${SERVICES} · encendida $(awk '{s=int($1); d=int(s/86400); h=int(s%86400/3600); m=int(s%3600/60); if (d) printf "%d d ", d; if (h) printf "%d h ", h; printf "%d min", m}' /proc/uptime)${reboot}"
 
 if [ ${#fails[@]} -eq 0 ]; then title="VM OK ($now)"
 else title="FALLO VM ($now)"; body="$(IFS='; '; echo "${fails[*]}")

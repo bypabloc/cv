@@ -32,7 +32,7 @@ Exact text from [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 | Strategy | Applies to | How | Assessment |
 | :-- | :-- | :-- | :-- |
 | **Small instance** | A1 | 1 OCPU and 1 GB: normal usage (~400 MB) exceeds 20% of RAM | Clean, no artificial load. **The best** |
-| **CPU keepalive** | Micro (and A1 if desired) | Cron job that uses CPU for a little over a minute every few minutes | Works; it's artificial load (gray area under the terms) |
+| **CPU keepalive** | Micro (and A1 if desired) | Cron job that uses CPU for a little over a minute every 10 minutes | Works; it's artificial load (gray area under the terms) |
 | Network traffic | Both | Generate sustained traffic | Wastes bandwidth; discarded |
 
 ### The keepalive (Micro)

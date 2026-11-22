@@ -112,17 +112,46 @@ export async function loadGuide(
   }
 }
 
+/** Lineas que solo sirven para navegar en HTML: el `**NN**` y el link al indice. */
+const NAV_LINE = /^(\*\*\d+\*\*|\[← [^\]]+\]\(README\.md\))$/
+
+/**
+ * @function llmBody
+ * @description Adapta un .md de guia para consumo de LLM: quita las lineas de
+ *   navegacion y, si `demote`, baja cada encabezado un nivel. Respeta los
+ *   bloques de codigo (un `# comentario` de bash no es un encabezado).
+ * @example llmBody('# Cap\n[← Índice](README.md)', true) // '## Cap'
+ */
+export function llmBody(md: string, demote: boolean): string {
+  let inFence = false
+  const out: string[] = []
+  for (const line of md.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence
+    else if (!inFence && NAV_LINE.test(line.trim())) continue
+    else if (!inFence && demote && /^#{1,5} /.test(line)) {
+      out.push(`#${line}`)
+      continue
+    }
+    out.push(line)
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n')
+}
+
 /**
  * @function guideMarkdown
  * @description La guia completa como un solo Markdown (README + capitulos)
- *   para `/<slug>.md`. Los links entre capitulos (`NN-x.md[#a]`,
- *   `README.md`) se reescriben a anclas absolutas de la pagina HTML, igual
- *   que hace remark-guide.
+ *   para `/<slug>.md` y llms-full.txt: un solo `#` (el titulo), capitulos
+ *   en `##` y sin lineas de navegacion. Los links entre capitulos
+ *   (`NN-x.md[#a]`, `README.md`) se reescriben a anclas absolutas de la
+ *   pagina HTML, igual que hace remark-guide.
  * @example guideMarkdown(guide, 'https://post.the-full-stack.com/ntfy/')
  */
 export function guideMarkdown(guide: Guide, pageUrl: string): string {
-  return [guide.readme, ...guide.chapters.map((c) => c.entry)]
-    .map((e) => (e.body ?? '').trim())
+  return [
+    llmBody(guide.readme.body ?? '', false),
+    ...guide.chapters.map((c) => llmBody(c.entry.body ?? '', true)),
+  ]
+    .map((body) => body.trim())
     .join('\n\n---\n\n')
     .replace(
       /\]\((\d\d-[\w-]+)\.md(?:#([^)]+))?\)/g,

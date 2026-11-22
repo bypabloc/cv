@@ -1,22 +1,12 @@
 /**
  * @function GET llms-full.txt
- * @description Todas las guias de post (es y en) completas en un solo
- *   Markdown (llmstxt.org).
+ * @description Todas las guias de post en es completas en un solo Markdown
+ *   (llmstxt.org), con una cabecera por articulo.
  */
 import type { APIRoute } from 'astro'
-import { guideMarkdown, LOCALES, loadGuides } from '../lib/guides'
-import { pathFor } from '../lib/i18n'
+import { llmsFull } from '../lib/llms-full'
 
-export const GET: APIRoute = async ({ site }) => {
-  const origin = site?.href.replace(/\/$/, '') ?? ''
-  const guides = (await Promise.all(LOCALES.map(loadGuides))).flat()
-  const body = guides
-    .map((g) => {
-      const url = `${origin}${pathFor(g.locale, g.slug)}`
-      return `Source: ${url}\n\n${guideMarkdown(g, url).trim()}`
-    })
-    .join('\n\n---\n\n')
-  return new Response(`${body}\n`, {
+export const GET: APIRoute = async ({ site }) =>
+  new Response(await llmsFull('es', site?.href.replace(/\/$/, '') ?? ''), {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   })
-}

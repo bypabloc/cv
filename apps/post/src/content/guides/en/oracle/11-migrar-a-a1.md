@@ -47,8 +47,13 @@ ssh my-vm 'sudo tar czf - /path/to/your/data' | ssh -i ~/.ssh/oci_my_vm ubuntu@$
 Install it as in [chapter 09](09-monitoreo.md). On A1 the relevant check is **memory**: replace the CPU p95 line with:
 
 ```bash
+# Oracle's A1 rule: memory < 20% over 7 days (MemoryUtilization: % of used pages).
+# Oracle doesn't document the percentile for those 7 days nor whether cache counts as used.
+# mem_pct uses "used" from free -m (no cache or buffers): the lowest, conservative reading.
 [ "$mem_pct" -ge 20 ] || fails+=("RAM ${mem_pct}% (Oracle could reclaim it)")
 ```
+
+This check is a snapshot at each report, not Oracle's 7-day calculation; the basis of the calculation is in [chapter 08](08-reclamo-por-inactividad.md).
 
 ### Step 5: update DNS
 

@@ -47,8 +47,13 @@ ssh mi-vm 'sudo tar czf - /ruta/de/tus/datos' | ssh -i ~/.ssh/oci_mi_vm ubuntu@$
 Instálalo como en el [capítulo 09](09-monitoreo.md). En A1 el control relevante es la **memoria**: cambia la línea del p95 de CPU por:
 
 ```bash
+# Regla A1 de Oracle: memoria < 20 % durante 7 días (MemoryUtilization: % de páginas usadas).
+# Oracle no documenta el percentil de esos 7 días ni si la caché cuenta como usada.
+# mem_pct usa "used" de free -m (sin caché ni buffers): la lectura más baja, conservadora.
 [ "$mem_pct" -ge 20 ] || fails+=("RAM ${mem_pct}% (Oracle podría reclamarla)")
 ```
+
+Esta comprobación es una foto de cada reporte, no el cálculo de 7 días de Oracle; la base del cálculo está en el [capítulo 08](08-reclamo-por-inactividad.md).
 
 ### Paso 5: cambiar el DNS
 

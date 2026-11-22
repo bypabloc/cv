@@ -10,6 +10,7 @@ export type Locale = 'es' | 'en'
 export const LOCALES: readonly Locale[] = ['es', 'en']
 /** Orden de la portada: la mas reciente primero. */
 export const GUIDE_SLUGS = [
+  'claude-code-mode',
   'agent-synapse',
   'agents-handoff',
   'ntfy',
@@ -18,6 +19,7 @@ export const GUIDE_SLUGS = [
 export type GuideSlug = (typeof GUIDE_SLUGS)[number]
 /** Fecha de publicacion de cada guia (YYYY-MM-DD). */
 const PUBLISHED: Record<GuideSlug, string> = {
+  'claude-code-mode': '2026-11-22',
   'agent-synapse': '2026-11-22',
   'agents-handoff': '2026-11-18',
   ntfy: '2026-10-11',

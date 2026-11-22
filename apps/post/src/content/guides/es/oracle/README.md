@@ -12,7 +12,9 @@
 - **Formas gratis:** ARM `A1.Flex` (hasta 2 OCPU y 12 GB) o AMD `E2.1.Micro` (1/8 OCPU, 1 GB). A1 suele estar **sin capacidad**; la Micro casi siempre está disponible.
 - **El riesgo:** Oracle puede reclamar las instancias cuyo **percentil 95 de CPU** queda bajo 20 % durante 7 días (si la red y, solo en A1, la memoria también quedan bajo 20 %).
 - **La solución:** en A1, instancia chica (la RAM usada supera el 20 %); en Micro, un **keepalive de CPU** de prioridad mínima.
-- **Monitoreo:** la VM registra su CPU cada minuto, calcula el p95 igual que Oracle y envía un reporte cada 45 min a un webhook.
+- **Monitoreo:** la VM registra su CPU cada minuto, calcula el p95 con el mismo método que Oracle y envía un reporte cada 45 min a un webhook.
+
+> **Aviso sobre el keepalive:** es carga artificial y está en **zona gris** frente a los términos de Oracle. Ni la página de [recursos Always Free](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm) ni las [preguntas frecuentes de la capa gratuita](https://www.oracle.com/cloud/free/faq/) lo permiten o lo prohíben de forma explícita, y el FAQ advierte que incumplir el [Cloud Services Agreement](https://www.oracle.com/contracts/docs/cloud_csa_online_v062223_us_eng.pdf) puede llevar a suspender o terminar la cuenta. Sirve para side projects; **no lo uses en producción**.
 
 Sirve para cualquier servicio liviano: un bot, una API pequeña, un servidor de notificaciones, un proxy, un cron.
 
@@ -42,6 +44,7 @@ Sirve para cualquier servicio liviano: un bot, una API pequeña, un servidor de 
 - **Valores de ejemplo:** IP `203.0.113.10` (rango de documentación), región `sa-santiago-1`, nombre del proyecto `mi-vm`. Cámbialos por los tuyos.
 - **Placeholders:** `<TENANCY_OCID>`, `<USER_OCID>`, `<FINGERPRINT>`. Los OCID no son secretos; la API key privada sí.
 - **Terminal:** Linux o WSL2 con `bash`, `curl`, `jq` y `uv` (o `pipx`).
+- **Evidencia:** **[criterio]** marca un razonamiento o una comparación sin medición suficiente para afirmarlo como hecho.
 - **Fecha de los datos:** octubre de 2026. Los capítulos enlazan la fuente oficial cuando existe.
 
 `oracle-cloud` `always-free` `oci-cli` `vm` `self-hosting`

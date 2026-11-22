@@ -22,6 +22,7 @@ Texto exacto de [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 - Las condiciones van **unidas por "y"**: la instancia es inactiva solo si **todas** se cumplen. **Basta con que una supere el 20 %** para no serlo.
 - **Percentil 95 de 7 días:** se ordenan todas las mediciones de la semana y se toma la que deja el 95 % por debajo. Si la CPU pasa de 20 % durante algo más del **5 % del tiempo**, el p95 supera 20 %.
 - **La memoria solo cuenta en A1.** En la Micro solo cuentan CPU y red.
+- **Cómo mide Oracle la memoria:** la regla no lo dice. La métrica `MemoryUtilization` del agente de cómputo se define como «Space currently in use. Measured by pages. Expressed as a percentage of used pages.», con muestras cada 10 s que se publican por minuto ([Compute Instance Metrics](https://docs.oracle.com/en-us/iaas/Content/Compute/References/computemetrics.htm)). La documentación **no aclara** qué percentil o promedio aplica a los 7 días ni si la caché de páginas y los buffers cuentan como usados. **[criterio]** Los scripts de esta guía usan la columna `used` de `free -m` sobre el total, que no cuenta la caché ni los buffers recuperables: es la lectura más baja, así que si esa supera el 20 %, un cálculo que sume la caché también lo supera.
 - Un servicio liviano (un bot, un webhook, un servidor de notificaciones) casi no usa CPU ni red: **para esta regla, casi siempre cuenta como inactivo**.
 - La documentación **no dice** si avisa antes de reclamar ni cómo.
 - Pasar la cuenta a *Pay As You Go* se recomienda en foros, pero la documentación **no** dice que exima del reclamo.
@@ -36,6 +37,8 @@ Texto exacto de [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 | Tráfico de red | Ambas | Generar tráfico sostenido | Desperdicia ancho de banda; descartada |
 
 ### El keepalive (Micro)
+
+> **Aviso sobre el keepalive:** es carga artificial y está en **zona gris** frente a los términos de Oracle. Ni la página de [recursos Always Free](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm) ni las [preguntas frecuentes de la capa gratuita](https://www.oracle.com/cloud/free/faq/) lo permiten o lo prohíben de forma explícita, y el FAQ advierte que incumplir el [Cloud Services Agreement](https://www.oracle.com/contracts/docs/cloud_csa_online_v062223_us_eng.pdf) puede llevar a suspender o terminar la cuenta. Sirve para side projects; **no lo uses en producción**.
 
 ```bash
 ssh mi-vm "echo \"*/10 * * * * root timeout 75 nice -n 19 sh -c 'cat /dev/urandom | sha256sum >/dev/null' 2>/dev/null || true\" | sudo tee /etc/cron.d/oci-keepalive"
@@ -65,6 +68,10 @@ CPU máxima por minuto según Oracle Monitoring (UTC):
 ```
 
 **Percentil 95 de la última hora: 49,9 %** según Oracle y **49 %** según el registro local de la VM. Muy por encima del 20 %.
+
+**[criterio]** La coincidencia entre las dos cifras se comprobó en una ventana de **1 hora**, y la regla de reclamo mira **7 días**: indica que el cálculo local se parece al de Oracle, no que lo reproduzca en la semana completa.
+
+> **Pendiente:** agregar la comparación del p95 de 7 días (Oracle con `-7 days` y `[1d]`, frente al `p95_7d` del registro local del [capítulo 09](09-monitoreo.md)).
 
 ### No te confundas con el "0 %"
 

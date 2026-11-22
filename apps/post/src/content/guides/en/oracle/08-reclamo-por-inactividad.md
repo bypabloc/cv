@@ -22,6 +22,7 @@ Exact text from [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 - The conditions are **joined by "and"**: the instance is idle only if **all** of them are true. **It's enough for one to exceed 20%** for it not to be.
 - **7-day 95th percentile:** all of the week's measurements are sorted and the one with 95% below it is taken. If CPU exceeds 20% for a bit more than **5% of the time**, the p95 is above 20%.
 - **Memory only counts on A1.** On the Micro, only CPU and network count.
+- **How Oracle measures memory:** the rule doesn't say. The compute agent's `MemoryUtilization` metric is defined as "Space currently in use. Measured by pages. Expressed as a percentage of used pages.", sampled every 10 s and published per minute ([Compute Instance Metrics](https://docs.oracle.com/en-us/iaas/Content/Compute/References/computemetrics.htm)). The documentation **doesn't state** which percentile or average applies over the 7 days, nor whether the page cache and buffers count as used. **[judgment]** The scripts in this guide use the `used` column of `free -m` over the total, which excludes the cache and reclaimable buffers: it is the lowest reading, so if it exceeds 20%, a calculation that adds the cache exceeds it too.
 - A lightweight service (a bot, a webhook, a notification server) barely uses CPU or network: **under this rule, it almost always counts as idle**.
 - The documentation **doesn't say** whether or how it warns before reclaiming.
 - Forums recommend upgrading the account to *Pay As You Go*, but the documentation **doesn't** say it exempts you from reclamation.
@@ -36,6 +37,8 @@ Exact text from [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 | Network traffic | Both | Generate sustained traffic | Wastes bandwidth; discarded |
 
 ### The keepalive (Micro)
+
+> **Keepalive warning:** it is artificial load and sits in a **gray area** under Oracle's terms. Neither the [Always Free resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm) page nor the [Free Tier FAQ](https://www.oracle.com/cloud/free/faq/) explicitly allows or forbids it, and the FAQ warns that failing to comply with the [Cloud Services Agreement](https://www.oracle.com/contracts/docs/cloud_csa_online_v062223_us_eng.pdf) may result in the suspension or termination of the account. Fine for side projects; **do not use it in production**.
 
 ```bash
 ssh my-vm "echo \"*/10 * * * * root timeout 75 nice -n 19 sh -c 'cat /dev/urandom | sha256sum >/dev/null' 2>/dev/null || true\" | sudo tee /etc/cron.d/oci-keepalive"
@@ -65,6 +68,10 @@ Maximum CPU per minute according to Oracle Monitoring (UTC):
 ```
 
 **95th percentile for the last hour: 49.9%** according to Oracle and **49%** according to the VM's local log. Well above 20%.
+
+**[judgment]** The agreement between the two figures was checked over a **1-hour** window, while the reclamation rule looks at **7 days**: it shows that the local calculation resembles Oracle's, not that it reproduces it over the full week.
+
+> **Pending:** add the 7-day p95 comparison (Oracle with `-7 days` and `[1d]`, against `p95_7d` from the local log in [chapter 09](09-monitoreo.md)).
 
 ### Don't be fooled by "0%"
 

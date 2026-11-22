@@ -8,7 +8,7 @@
 
 ### What it is
 
-Every 45 min the server checks itself and sends the result to your ntfy **and** to ntfy.sh:
+Every 45 min the server checks itself and sends the full report to your ntfy; to ntfy.sh, if you set `NTFY_TOPIC`, it sends only a heartbeat with no metrics:
 
 ```
 ntfy OK (16:43)
@@ -17,7 +17,7 @@ ntfy, caddy and cron active · TLS 89 days · up 45 minutes
 ```
 
 - **From the server:** it does not depend on your PC being on, and it sees internal data.
-- **Two destinations:** if your ntfy stops responding, the alert still arrives through ntfy.sh.
+- **Heartbeat on ntfy.sh, no metrics:** ntfy.sh topics are public and the name works as a password ([docs.ntfy.sh/publish](https://docs.ntfy.sh/publish/#public-topics)): anyone who knows it reads everything. So only the title goes there, `ntfy OK (hh:mm)` or `FAILURE ntfy (hh:mm)`, without CPU, RAM, disk, services, TLS days or the details of the failures. If your ntfy stops responding, the `FAILURE` still arrives through ntfy.sh and the details stay in `journalctl -u ntfy-report`.
 - **Limit:** if the server dies completely, it sends nothing. **Not receiving the report for more than 45 min is the alarm.**
 
 ### What it checks
@@ -35,6 +35,8 @@ ntfy, caddy and cron active · TLS 89 days · up 45 minutes
 | :-- | :-- | :-- | :-- |
 | All good | `ntfy OK (hh:mm)` | `low` (silent) | ✅ |
 | Something fails | `FAILURE ntfy (hh:mm)` + list of failures | `high` | 🚨 |
+
+On ntfy.sh only the title from this table arrives, with the same priority and emoji.
 
 ### Script: `ntfy-report.sh`
 
@@ -90,9 +92,10 @@ else
 $body"
 fi
 
-post() { curl -fsS -m 10 -o /dev/null -H "Title: $title" -H "Tags: $tags" -H "Priority: $prio" "$@" -d "$body"; }
-post -H "Authorization: Bearer ${NTFY_TOKEN}" "http://127.0.0.1:2586/${NTFY_LOCAL_TOPIC}"
-[ -z "${NTFY_TOPIC:-}" ] || post "https://ntfy.sh/${NTFY_TOPIC}"
+post() { curl -fsS -m 10 -o /dev/null -H "Title: $title" -H "Tags: $tags" -H "Priority: $prio" "$@"; }
+post -H "Authorization: Bearer ${NTFY_TOKEN}" -d "$body" "http://127.0.0.1:2586/${NTFY_LOCAL_TOPIC}"
+# ntfy.sh is public to anyone who knows the topic: heartbeat only (OK/FAILURE), no metrics
+[ -z "${NTFY_TOPIC:-}" ] || post -d "$title" "https://ntfy.sh/${NTFY_TOPIC}"
 ```
 
 > It publishes to your ntfy via `127.0.0.1:2586` (bypassing Caddy): that way a "Caddy down" or "TLS expired" alert also arrives through your server.
@@ -167,6 +170,6 @@ journalctl -u ntfy-report -n 20                  # latest runs
 sudo systemctl disable --now ntfy-report.timer   # disable
 ```
 
-32 reports per day per destination: below free ntfy.sh's 250/day limit.
+32 sends per day to each destination (the full report to your ntfy, the heartbeat to ntfy.sh): below free ntfy.sh's 250/day limit.
 
 `ntfy` `monitoring` `systemd-timer` `healthcheck`

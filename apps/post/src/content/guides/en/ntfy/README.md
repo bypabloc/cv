@@ -11,8 +11,8 @@
 - **What you get:** `https://ntfy.your-domain.com`, private (user and token), with a Let's Encrypt TLS certificate that renews itself.
 - **What you need:** an Ubuntu 24.04 VM with a public IP (any provider), a domain, and access to its DNS.
 - **How you publish:** `curl -H "Authorization: Bearer $TOKEN" -d "Hello" https://ntfy.your-domain.com/alertas`.
-- **Fallback:** free ntfy.sh receives the failure alert if your server goes down.
-- **Monitoring:** every 45 min the server sends its status (services, RAM, disk, TLS days left).
+- **Monitoring:** every 45 min the server sends its full status to your ntfy (services, RAM, disk, TLS days left).
+- **Fallback:** free ntfy.sh receives only a heartbeat with no metrics each cycle (`OK` or `FAILURE`, 32 per day): if your ntfy fails, the alert still arrives; if the VM dies, the missing heartbeat is the alarm.
 
 ---
 

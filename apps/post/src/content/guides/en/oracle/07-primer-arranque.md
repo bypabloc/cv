@@ -42,7 +42,7 @@ The final `iptables` `REJECT` **blocks 80 and 443 even if the Security List allo
 
 ### 3. Script: `vm-base.sh`
 
-Swap, ports 80/443 in `iptables`, and automatic security patches. Idempotent.
+Packages to persist the firewall, swap, ports 80/443 in `iptables`, and automatic security patches. Idempotent.
 
 ```bash
 #!/usr/bin/env bash
@@ -52,22 +52,25 @@ set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 PORTS="${PORTS:-80 443}"
 
-# 1. 1 GB swap (the Micro has 1 GB RAM; apt and other processes can run out of memory)
+# 1. Packages: netfilter-persistent saves the iptables rules; unattended-upgrades applies patches.
+#    debconf answers in advance the question iptables-persistent asks when installed.
+echo 'iptables-persistent iptables-persistent/autosave_v4 boolean true' | debconf-set-selections
+echo 'iptables-persistent iptables-persistent/autosave_v6 boolean true' | debconf-set-selections
+apt-get update -q
+apt-get install -y -q iptables-persistent netfilter-persistent unattended-upgrades
+
+# 2. 1 GB swap (the Micro has 1 GB RAM; apt and other processes can run out of memory)
 if ! swapon --show | grep -q /swapfile; then
   fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
   grep -q /swapfile /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
 
-# 2. iptables: open the ports BEFORE the final REJECT (position 5) and persist
+# 3. iptables: open the ports BEFORE the final REJECT (position 5) and persist
 for p in $PORTS; do
   iptables -C INPUT -p tcp -m state --state NEW --dport "$p" -j ACCEPT 2>/dev/null \
     || iptables -I INPUT 5 -p tcp -m state --state NEW --dport "$p" -j ACCEPT
 done
 netfilter-persistent save
-
-# 3. Automatic security patches
-apt-get update -q
-apt-get install -y -q unattended-upgrades
 
 iptables -S INPUT
 swapon --show

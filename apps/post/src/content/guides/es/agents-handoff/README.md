@@ -61,9 +61,29 @@ Las rutas y los nombres de trabajos están anonimizados; las cifras son medicion
 
 - **Rutas de ejemplo:** `<repo>` es el checkout principal (`~/code/mi-app`); `../<repo>-worktrees/` es la carpeta de worktrees, **fuera** del repo; `<plan>` es la carpeta de la especificación del trabajo (`docs/specs/042-login-form/`).
 - **Handoff:** `<repo>/tmp/handoff/`, dentro de una carpeta ignorada por git. El script vive en `<repo>/agent-hooks/session_handoff.py` (versionado).
-- **Versiones probadas:** Claude Code 2.1.3xx, Codex `codex-cli 0.167.0`, OpenCode `2.0.29` y Antigravity CLI `agy 1.5.3`.
-- **Plugin session-handoff 0.5.4:** Claude Code 2.1.287 o posterior, Codex ≥ 0.171, `agy` ≥ 1.5.4 y OpenCode V2 ≥ 2.3 (probado con Codex 0.171.0, `agy` 1.5.13 y OpenCode 2.3.2).
+- **Versiones:** las dos tablas de abajo separan lo que instalé y probé de lo que se exige como mínimo.
 - **Evidencia de cada dato:** **[doc]** documentación oficial, **[bin]** visto en el binario o su caché, **[prueba]** ejecutado y observado, **[medido]** con números reales, **[cálculo]** con tarifas oficiales, **[uso real]** visto en semanas de uso, **[comunidad]** blog o issue sin verificar, **[criterio]** razonamiento sin medición. Al actualizar un agente, vuelve a probar lo marcado **[prueba]** y **[bin]**.
 - **Fecha de los datos:** noviembre de 2026.
+
+### Probado con
+
+Versiones exactas que usé. **[prueba]**
+
+| Agente | Sistema de la guía (cap. 02–08, 10–11) | Plugin session-handoff 0.5.4 (cap. 09) |
+| :-- | :-- | :-- |
+| Claude Code | 2.1.319 (la del contraste del [cap. 12](12-problemas-y-soluciones.md); durante las semanas de uso, varias 2.1.3xx) | Sin registrar |
+| Codex | `codex-cli 0.167.0` | 0.171.0 |
+| OpenCode | `2.0.29` | 2.3.2 (V2) |
+| Antigravity CLI | `agy 1.5.3` | `agy 1.5.13` |
+
+### Requisitos mínimos
+
+| Agente | Sistema de la guía | Plugin session-handoff 0.5.4 **[doc]** ([README del plugin](https://github.com/bypabloc/agent-plugin-session-handoff#readme)) |
+| :-- | :-- | :-- |
+| Claude Code | Sin mínimo documentado **[criterio]**: usa la versión probada o una posterior | 2.1.287 o posterior |
+| Codex | Sin mínimo documentado **[criterio]**: usa la versión probada o una posterior | ≥ 0.171 |
+| OpenCode | Sin mínimo documentado **[criterio]**: usa la versión probada o una posterior | V2 ≥ 2.3 |
+| Antigravity CLI | Sin mínimo documentado **[criterio]**: usa la versión probada o una posterior | `agy` ≥ 1.5.4 |
+| Node | No hace falta (el script es Python) | 20 o superior, solo en Codex y Antigravity |
 
 `claude-code` `codex` `opencode` `antigravity` `context-engineering` `hooks` `prompt-caching`

@@ -81,7 +81,8 @@ p95() {
 p95_24h=$(p95 86400); p95_7d=$(p95 604800)
 [ "$p95_7d" = "?" ] || [ "$p95_7d" -ge 20 ] || fails+=("CPU p95 7d ${p95_7d}% (Oracle could reclaim it)")
 
-# RAM, swap, disk
+# RAM, swap, disk. mem_pct = "used" / total from free -m: excludes cache and reclaimable buffers.
+# Oracle measures MemoryUtilization as % of used pages and doesn't document whether cache counts.
 read -r mem_total mem_used <<<"$(free -m | awk '/^Mem:/{print $2, $3}')"
 mem_pct=$((mem_used * 100 / mem_total))
 swap_used=$(free -m | awk '/^Swap:/{print $3}')
@@ -189,7 +190,7 @@ To add the authentication header, write `REPORT_AUTH="Bearer <token>"` to `/etc/
 - **`vmstat 55 2`**: the second line is the 55 s average; column 15 is `idle`.
 - **`%` in cron** is escaped as `\%`.
 - **systemd timer, not cron:** `*/45` in cron fires at :00 and :45 (15 min gaps). `OnUnitActiveSec=45min` counts from the last run, and `OnBootSec=3min` sends a report after every boot.
-- **Measured agreement:** local p95 49% vs. Oracle 49.9% over the same hour.
+- **Agreement over 1 hour [judgment]:** local p95 49% vs. Oracle 49.9% over the same hour. Oracle's rule looks at 7 days and that comparison has not been done yet ([chapter 08](08-reclamo-por-inactividad.md)).
 - While the log has less than 7 days of data, the "7d" figure only covers what's there.
 
 ### Operating the report

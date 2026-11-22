@@ -9,13 +9,23 @@ import { type CollectionEntry, getCollection } from 'astro:content'
 export type Locale = 'es' | 'en'
 export const LOCALES: readonly Locale[] = ['es', 'en']
 /** Orden de la portada: la mas reciente primero. */
-export const GUIDE_SLUGS = ['agents-handoff', 'ntfy', 'oracle'] as const
+export const GUIDE_SLUGS = [
+  'agent-synapse',
+  'agents-handoff',
+  'ntfy',
+  'oracle',
+] as const
 export type GuideSlug = (typeof GUIDE_SLUGS)[number]
 /** Fecha de publicacion de cada guia (YYYY-MM-DD). */
 const PUBLISHED: Record<GuideSlug, string> = {
+  'agent-synapse': '2026-11-22',
   'agents-handoff': '2026-11-18',
   ntfy: '2026-10-11',
   oracle: '2026-10-11',
+}
+/** Ultima actualizacion de contenido (YYYY-MM-DD), solo si difiere de la publicacion. */
+const UPDATED: Partial<Record<GuideSlug, string>> = {
+  'agents-handoff': '2026-11-22',
 }
 
 export interface Chapter {
@@ -29,6 +39,8 @@ export interface Guide {
   slug: GuideSlug
   locale: Locale
   published: string
+  /** Fecha de la ultima actualizacion; igual a `published` si nunca cambio. */
+  updated: string
   title: string
   description: string
   tags: string[]
@@ -78,6 +90,7 @@ export async function loadGuide(
     slug,
     locale,
     published: PUBLISHED[slug],
+    updated: UPDATED[slug] ?? PUBLISHED[slug],
     title: match(body, /^# (.+)$/m),
     description: match(body, /^> (.+)$/m),
     tags: [...lastLine.matchAll(/`([^`]+)`/g)].map((m) => m[1] ?? ''),

@@ -13,7 +13,7 @@
 - **On-disk handoff:** `tmp/handoff/<work>/` with `PROGRESS.md`, `DECISIONS.md` and `NOTES.md`. A single script re-injects it into all four agents after compacting, on startup and after a pause.
 - **Keep the agent going:** an end-of-turn hook that won't let it stop while there is a `Next step`; `blocked` only for four reasons.
 - **Compact without a summary (Claude Code):** a plugin keeps the most recent ~20k tokens verbatim. It saves ~37–64 s per compaction; on tokens it comes out close to a tie.
-- **Ready-to-install plugin (Claude Code):** [session-handoff](https://github.com/bypabloc/claude-plugin-session-handoff) packages the handoff, the end-of-turn block and the summary-free compaction ([ch. 09](09-receta-del-plugin.md)).
+- **Ready-to-install plugin (Claude Code, Codex, Antigravity and OpenCode):** [session-handoff](https://github.com/bypabloc/agent-plugin-session-handoff), from the [agent-plugins](https://github.com/bypabloc/agent-plugins) monorepo, packages the handoff, the end-of-turn block and, in Claude Code, the summary-free compaction ([ch. 09](09-receta-del-plugin.md)).
 - **Several sessions:** worktrees outside the repo, one folder per task and one link per session.
 
 ---
@@ -60,6 +60,7 @@ Paths and task names are anonymized; the numbers are real measurements from thos
 - **Example paths:** `<repo>` is the main checkout (`~/code/my-app`); `../<repo>-worktrees/` is the worktrees folder, **outside** the repo; `<plan>` is the task's spec folder (`docs/specs/042-login-form/`).
 - **Handoff:** `<repo>/tmp/handoff/`, inside a git-ignored folder. The script lives in `<repo>/agent-hooks/session_handoff.py` (versioned).
 - **Versions tested:** Claude Code 2.1.3xx, Codex `codex-cli 0.167.0`, OpenCode `2.0.29` and Antigravity CLI `agy 1.5.3`.
+- **session-handoff plugin 0.5.4:** Claude Code 2.1.287 or later, Codex ≥ 0.171, `agy` ≥ 1.5.4 and OpenCode V2 ≥ 2.3 (tested with Codex 0.171.0, `agy` 1.5.13 and OpenCode 2.3.2).
 - **Evidence for each claim:** **[doc]** official documentation, **[bin]** seen in the binary or its cache, **[test]** run and observed, **[measured]** with real numbers, **[calculation]** from official prices, **[real use]** seen over weeks of use, **[community]** unverified blog or issue, **[judgment]** reasoning without measurement. When an agent updates, re-test whatever is marked **[test]** and **[bin]**.
 - **Data as of:** November 2026.
 

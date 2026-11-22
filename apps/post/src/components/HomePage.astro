@@ -74,6 +74,16 @@ const jsonLd = [
               <time datetime={g.published}>
                 {formatDate(g.published, locale)}
               </time>
+              {
+                g.updated !== g.published && (
+                  <span>
+                    {t.updated}{' '}
+                    <time datetime={g.updated}>
+                      {formatDate(g.updated, locale)}
+                    </time>
+                  </span>
+                )
+              }
               <span>{g.minutes} {t.minRead}</span>
               <span>{g.chapters.length} {t.chapters}</span>
             </p>

@@ -6,7 +6,7 @@ import { render } from 'astro:content'
  *   TOC sticky por capitulo y el README + los 12 capitulos renderizados.
  *
  * @props {'es' | 'en'} locale - Idioma
- * @props {'ntfy' | 'oracle'} slug - Guia a renderizar
+ * @props {GuideSlug} slug - Guia a renderizar
  *
  * @example
  *   <GuidePage locale="es" slug="ntfy" />
@@ -43,7 +43,7 @@ const jsonLd = [
     inLanguage: locale,
     url: pageUrl,
     datePublished: guide.published,
-    dateModified: guide.published,
+    dateModified: guide.updated,
     keywords: guide.tags.join(', '),
     timeRequired: `PT${guide.minutes}M`,
     author: { '@type': 'Person', name: AUTHOR, url: SITE_URLS.generic },
@@ -87,6 +87,16 @@ const jsonLd = [
         <time datetime={guide.published}>
           {formatDate(guide.published, locale)}
         </time>
+        {
+          guide.updated !== guide.published && (
+            <span>
+              {t.updated}{' '}
+              <time datetime={guide.updated}>
+                {formatDate(guide.updated, locale)}
+              </time>
+            </span>
+          )
+        }
         <span>{guide.minutes} {t.minRead}</span>
         <span>{guide.chapters.length} {t.chapters}</span>
       </p>

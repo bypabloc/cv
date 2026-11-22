@@ -13,7 +13,7 @@
 - **Handoff en disco:** `tmp/handoff/<trabajo>/` con `PROGRESS.md`, `DECISIONS.md` y `NOTES.md`. Un solo script lo reinyecta en los cuatro agentes después de compactar, al iniciar y al volver de una pausa.
 - **Que el agente siga:** un hook de cierre de turno que no deja parar mientras haya un `Next step`; `blocked` solo por cuatro motivos.
 - **Compactar sin resumen (Claude Code):** un plugin conserva los ~20k tokens recientes tal cual. Ahorra ~37–64 s por compactación; en tokens queda cerca del empate.
-- **Plugin listo para instalar (Claude Code):** [session-handoff](https://github.com/bypabloc/claude-plugin-session-handoff) empaqueta el handoff, el bloqueo de cierre de turno y la compactación sin resumen ([cap. 09](09-receta-del-plugin.md)).
+- **Plugin listo para instalar (Claude Code, Codex, Antigravity y OpenCode):** [session-handoff](https://github.com/bypabloc/agent-plugin-session-handoff), del monorepo [agent-plugins](https://github.com/bypabloc/agent-plugins), empaqueta el handoff, el bloqueo de cierre de turno y, en Claude Code, la compactación sin resumen ([cap. 09](09-receta-del-plugin.md)).
 - **Varias sesiones:** worktrees fuera del repo, una carpeta por trabajo y un vínculo por sesión.
 
 ---
@@ -62,6 +62,7 @@ Las rutas y los nombres de trabajos están anonimizados; las cifras son medicion
 - **Rutas de ejemplo:** `<repo>` es el checkout principal (`~/code/mi-app`); `../<repo>-worktrees/` es la carpeta de worktrees, **fuera** del repo; `<plan>` es la carpeta de la especificación del trabajo (`docs/specs/042-login-form/`).
 - **Handoff:** `<repo>/tmp/handoff/`, dentro de una carpeta ignorada por git. El script vive en `<repo>/agent-hooks/session_handoff.py` (versionado).
 - **Versiones probadas:** Claude Code 2.1.3xx, Codex `codex-cli 0.167.0`, OpenCode `2.0.29` y Antigravity CLI `agy 1.5.3`.
+- **Plugin session-handoff 0.5.4:** Claude Code 2.1.287 o posterior, Codex ≥ 0.171, `agy` ≥ 1.5.4 y OpenCode V2 ≥ 2.3 (probado con Codex 0.171.0, `agy` 1.5.13 y OpenCode 2.3.2).
 - **Evidencia de cada dato:** **[doc]** documentación oficial, **[bin]** visto en el binario o su caché, **[prueba]** ejecutado y observado, **[medido]** con números reales, **[cálculo]** con tarifas oficiales, **[uso real]** visto en semanas de uso, **[comunidad]** blog o issue sin verificar, **[criterio]** razonamiento sin medición. Al actualizar un agente, vuelve a probar lo marcado **[prueba]** y **[bin]**.
 - **Fecha de los datos:** noviembre de 2026.
 

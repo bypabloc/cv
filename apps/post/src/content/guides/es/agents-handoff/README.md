@@ -67,11 +67,11 @@ Las rutas y los nombres de trabajos están anonimizados; las cifras son medicion
 
 ### Probado con
 
-Versiones exactas que usé. **[prueba]**
+Versiones exactas que usé. **[prueba]** En Claude Code no registré la versión con la que probé el plugin, así que no la listo.
 
 | Agente | Sistema de la guía (cap. 02–08, 10–11) | Plugin session-handoff 0.5.4 (cap. 09) |
 | :-- | :-- | :-- |
-| Claude Code | 2.1.319 (la del contraste del [cap. 12](12-problemas-y-soluciones.md); durante las semanas de uso, varias 2.1.3xx) | Sin registrar |
+| Claude Code | 2.1.319 (la del contraste del [cap. 12](12-problemas-y-soluciones.md); durante las semanas de uso, varias 2.1.3xx) | — |
 | Codex | `codex-cli 0.167.0` | 0.171.0 |
 | OpenCode | `2.0.29` | 2.3.2 (V2) |
 | Antigravity CLI | `agy 1.5.3` | `agy 1.5.13` |

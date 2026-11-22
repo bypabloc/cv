@@ -44,7 +44,7 @@ echo "avisos-$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 
 ### Papel de ntfy.sh con un servidor propio
 
-- **Respaldo**: el reporte de estado también publica ahí; si tu servidor cae, el aviso de falla igual llega.
+- **Respaldo**: el reporte de estado publica ahí solo un latido (`OK` o `FALLO`, sin métricas, porque el tópico es público); si tu ntfy falla, el aviso igual llega, y si la VM muere, la falta de latido es la alarma ([capítulo 10](10-reporte-de-estado.md)).
 - **Relay de iOS**: necesario aunque tengas servidor propio.
 
 `ntfy` `ntfy-sh` `limites` `precios`

@@ -18,10 +18,17 @@ Idempotente: se puede volver a ejecutar sin romper nada.
 ```bash
 #!/usr/bin/env bash
 # Instala ntfy + Caddy (TLS automático) en Ubuntu 24.04. Se ejecuta EN EL SERVIDOR con sudo.
-# Variables: NTFY_DOMAIN (obligatoria), NTFY_ADMIN (default admin), NTFY_PASSWORD (la lee `ntfy user add`).
+# Variables: NTFY_DOMAIN (obligatoria), NTFY_ADMIN (default admin),
+#   NTFY_PASSWORD_FILE (archivo 600 con la clave del admin; el script lo borra al terminar).
 set -euo pipefail
 : "${NTFY_DOMAIN:?falta NTFY_DOMAIN}" "${NTFY_ADMIN:=admin}"
 export DEBIAN_FRONTEND=noninteractive
+
+# 0. La clave llega en un archivo, nunca en la línea de comandos: se lee y el archivo se borra
+if [ -n "${NTFY_PASSWORD_FILE:-}" ]; then
+  trap 'rm -f "$NTFY_PASSWORD_FILE"' EXIT
+  NTFY_PASSWORD=$(cat "$NTFY_PASSWORD_FILE"); export NTFY_PASSWORD   # la lee `ntfy user add`
+fi
 ARCH=$(dpkg --print-architecture)          # amd64 o arm64
 
 # 1. Swap de 1 GB si no hay (servidores de 1 GB de RAM)
@@ -78,21 +85,30 @@ systemctl restart ntfy caddy
 sleep 2
 
 # 6. Usuario administrador
-ntfy user list 2>&1 | grep -q "user ${NTFY_ADMIN}" || ntfy user add --role=admin "$NTFY_ADMIN"
+if ! ntfy user list 2>&1 | grep -q "user ${NTFY_ADMIN}"; then
+  : "${NTFY_PASSWORD:?falta NTFY_PASSWORD_FILE para crear el admin}"
+  ntfy user add --role=admin "$NTFY_ADMIN"
+fi
 
 systemctl is-active ntfy caddy
 ```
 
 ### Ejecutar
 
-La clave del admin se pide por teclado (no queda en el historial) y viaja por el entorno:
+La clave del admin se pide por teclado (no queda en el historial), viaja por stdin a un archivo temporal con permisos `600` en el servidor y el script la borra al terminar. Nunca aparece en la línea de comandos, así que tampoco en `ps` ni en tu PC ni en la VM:
 
 ```bash
 read -rsp 'Clave del admin de ntfy: ' PW; echo
-ssh mi-vm "sudo env NTFY_DOMAIN=ntfy.tu-dominio.com NTFY_ADMIN=admin NTFY_PASSWORD=$(printf %q "$PW") bash -s" \
+# 1. stdin → archivo temporal 600 en la VM (mktemp lo crea con permisos 600)
+PWF=$(printf '%s' "$PW" | ssh mi-vm 'f=$(mktemp); cat > "$f"; echo "$f"'); unset PW
+# 2. El script lee la clave de ese archivo y lo borra
+ssh mi-vm "sudo env NTFY_DOMAIN=ntfy.tu-dominio.com NTFY_ADMIN=admin NTFY_PASSWORD_FILE=$PWF bash -s" \
   < setup-ntfy.sh
-unset PW
 ```
+
+- `printf` es un builtin de `bash`: no crea un proceso con la clave en sus argumentos.
+- Dentro del script la clave pasa a `ntfy user add` por la variable `NTFY_PASSWORD` ([la ayuda de `ntfy user add`](https://github.com/binwiederhier/ntfy/blob/main/cmd/user.go) la documenta para scripts): las variables de entorno de un proceso solo las lee root o su dueño, no aparecen en `ps`.
+- Si el paso 2 no llega a ejecutarse, borra el archivo a mano: `ssh mi-vm "rm -f $PWF"`.
 
 Para generar una clave aleatoria: `openssl rand -base64 18 | tr -d '/+='`.
 

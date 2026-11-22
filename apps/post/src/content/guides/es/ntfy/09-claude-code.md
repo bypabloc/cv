@@ -56,8 +56,12 @@ exit $rc
 }
 ```
 
+```bash
+chmod 600 ~/.claude/settings.json   # solo tu usuario lo lee
+```
+
 - Sin `NTFY_TOPIC`, solo usa tu servidor.
-- `settings.json` queda con el token en texto plano: no lo subas a ningún repo.
+- `settings.json` queda con el token en texto plano: déjalo con permisos `600` y **no lo versiones**. Si guardas `~/.claude` en un repo de dotfiles, excluye ese archivo (`.gitignore`) o saca el token a otro archivo que no se suba.
 
 ### 3. Hook `Notification`
 
@@ -92,8 +96,12 @@ Se dispara cuando Claude Code espera tu permiso o tu respuesta. Agrégalo al mis
 
 ### 5. Probarlo
 
+Con el mismo patrón del [capítulo 08](08-publicar-con-curl.md), el token se pide por teclado y no queda en el historial del shell:
+
 ```bash
-echo '{"message":"Prueba del hook"}' | NTFY_URL=... NTFY_TOKEN=... bash ~/.claude/hooks/ntfy-notify.sh; echo "exit=$?"
+read -rsp 'Token de ntfy: ' NTFY_TOKEN; echo; export NTFY_TOKEN
+export NTFY_URL=https://ntfy.tu-dominio.com/alertas
+echo '{"message":"Prueba del hook"}' | bash ~/.claude/hooks/ntfy-notify.sh; echo "exit=$?"
 ```
 
 ### 6. Pedirle avisos a Claude

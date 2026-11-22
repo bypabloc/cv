@@ -18,10 +18,17 @@ Idempotent: it can be run again without breaking anything.
 ```bash
 #!/usr/bin/env bash
 # Installs ntfy + Caddy (automatic TLS) on Ubuntu 24.04. Runs ON THE SERVER with sudo.
-# Variables: NTFY_DOMAIN (required), NTFY_ADMIN (default admin), NTFY_PASSWORD (read by `ntfy user add`).
+# Variables: NTFY_DOMAIN (required), NTFY_ADMIN (default admin),
+#   NTFY_PASSWORD_FILE (600 file with the admin password; the script deletes it on exit).
 set -euo pipefail
 : "${NTFY_DOMAIN:?NTFY_DOMAIN is missing}" "${NTFY_ADMIN:=admin}"
 export DEBIAN_FRONTEND=noninteractive
+
+# 0. The password arrives in a file, never on the command line: read it and delete the file
+if [ -n "${NTFY_PASSWORD_FILE:-}" ]; then
+  trap 'rm -f "$NTFY_PASSWORD_FILE"' EXIT
+  NTFY_PASSWORD=$(cat "$NTFY_PASSWORD_FILE"); export NTFY_PASSWORD   # read by `ntfy user add`
+fi
 ARCH=$(dpkg --print-architecture)          # amd64 or arm64
 
 # 1. 1 GB swap if there is none (servers with 1 GB of RAM)
@@ -78,21 +85,30 @@ systemctl restart ntfy caddy
 sleep 2
 
 # 6. Admin user
-ntfy user list 2>&1 | grep -q "user ${NTFY_ADMIN}" || ntfy user add --role=admin "$NTFY_ADMIN"
+if ! ntfy user list 2>&1 | grep -q "user ${NTFY_ADMIN}"; then
+  : "${NTFY_PASSWORD:?NTFY_PASSWORD_FILE is missing to create the admin}"
+  ntfy user add --role=admin "$NTFY_ADMIN"
+fi
 
 systemctl is-active ntfy caddy
 ```
 
 ### Run it
 
-The admin password is typed at a prompt (it does not end up in the history) and travels through the environment:
+The admin password is typed at a prompt (it does not end up in the history), travels over stdin to a temporary file with `600` permissions on the server, and the script deletes it when it finishes. It never appears on a command line, so it does not show up in `ps` on your PC or on the VM:
 
 ```bash
 read -rsp 'Admin password for ntfy: ' PW; echo
-ssh mi-vm "sudo env NTFY_DOMAIN=ntfy.your-domain.com NTFY_ADMIN=admin NTFY_PASSWORD=$(printf %q "$PW") bash -s" \
+# 1. stdin → temporary 600 file on the VM (mktemp creates it with 600 permissions)
+PWF=$(printf '%s' "$PW" | ssh mi-vm 'f=$(mktemp); cat > "$f"; echo "$f"'); unset PW
+# 2. The script reads the password from that file and deletes it
+ssh mi-vm "sudo env NTFY_DOMAIN=ntfy.your-domain.com NTFY_ADMIN=admin NTFY_PASSWORD_FILE=$PWF bash -s" \
   < setup-ntfy.sh
-unset PW
 ```
+
+- `printf` is a `bash` builtin: it does not start a process with the password in its arguments.
+- Inside the script the password reaches `ntfy user add` through the `NTFY_PASSWORD` variable ([`ntfy user add` help](https://github.com/binwiederhier/ntfy/blob/main/cmd/user.go) documents it for scripts): a process's environment can only be read by root or its owner, and it does not show up in `ps`.
+- If step 2 never runs, delete the file by hand: `ssh mi-vm "rm -f $PWF"`.
 
 To generate a random password: `openssl rand -base64 18 | tr -d '/+='`.
 

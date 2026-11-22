@@ -44,7 +44,7 @@ echo "avisos-$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 
 ### ntfy.sh's role alongside a self-hosted server
 
-- **Fallback**: the status report also publishes there; if your server goes down, the failure alert still arrives.
+- **Fallback**: the status report publishes only a heartbeat there (`OK` or `FAILURE`, no metrics, because the topic is public); if your ntfy fails, the alert still arrives, and if the VM dies, the missing heartbeat is the alarm ([chapter 10](10-reporte-de-estado.md)).
 - **iOS relay**: required even if you have your own server.
 
 `ntfy` `ntfy-sh` `limits` `pricing`

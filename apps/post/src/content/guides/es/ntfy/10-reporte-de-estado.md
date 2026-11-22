@@ -8,7 +8,7 @@
 
 ### Qué es
 
-El servidor se revisa a sí mismo cada 45 min y envía el resultado a tu ntfy **y** a ntfy.sh:
+El servidor se revisa a sí mismo cada 45 min y envía el reporte completo a tu ntfy; a ntfy.sh, si configuras `NTFY_TOPIC`, solo un latido sin métricas:
 
 ```
 ntfy OK (16:43)
@@ -17,7 +17,7 @@ ntfy, caddy y cron activos · TLS 89 días · encendido 45 min
 ```
 
 - **Desde el servidor:** no depende de que tu PC esté encendida y ve datos internos.
-- **Doble destino:** si tu ntfy deja de responder, el aviso llega igual por ntfy.sh.
+- **Latido en ntfy.sh, sin métricas:** los tópicos de ntfy.sh son públicos y el nombre funciona como contraseña ([docs.ntfy.sh/publish](https://docs.ntfy.sh/publish/#public-topics)): quien lo conozca lee todo. Por eso ahí solo va el título, `ntfy OK (hh:mm)` o `FALLO ntfy (hh:mm)`, sin CPU, RAM, disco, servicios, días de TLS ni el detalle de las fallas. Si tu ntfy deja de responder, el `FALLO` llega igual por ntfy.sh y el detalle queda en `journalctl -u ntfy-report`.
 - **Límite:** si el servidor muere por completo, no envía nada. **No recibir el reporte por más de 45 min es la alarma.**
 
 ### Qué revisa
@@ -35,6 +35,8 @@ ntfy, caddy y cron activos · TLS 89 días · encendido 45 min
 | :-- | :-- | :-- | :-- |
 | Todo bien | `ntfy OK (hh:mm)` | `low` (sin sonido) | ✅ |
 | Algo falla | `FALLO ntfy (hh:mm)` + lista de fallas | `high` | 🚨 |
+
+En ntfy.sh llega solo el título de esta tabla, con la misma prioridad y emoji.
 
 ### Script: `ntfy-report.sh`
 
@@ -90,9 +92,10 @@ else
 $body"
 fi
 
-post() { curl -fsS -m 10 -o /dev/null -H "Title: $title" -H "Tags: $tags" -H "Priority: $prio" "$@" -d "$body"; }
-post -H "Authorization: Bearer ${NTFY_TOKEN}" "http://127.0.0.1:2586/${NTFY_LOCAL_TOPIC}"
-[ -z "${NTFY_TOPIC:-}" ] || post "https://ntfy.sh/${NTFY_TOPIC}"
+post() { curl -fsS -m 10 -o /dev/null -H "Title: $title" -H "Tags: $tags" -H "Priority: $prio" "$@"; }
+post -H "Authorization: Bearer ${NTFY_TOKEN}" -d "$body" "http://127.0.0.1:2586/${NTFY_LOCAL_TOPIC}"
+# ntfy.sh es público para quien conozca el tópico: solo el latido (OK/FALLO), sin métricas
+[ -z "${NTFY_TOPIC:-}" ] || post -d "$title" "https://ntfy.sh/${NTFY_TOPIC}"
 ```
 
 > Publica a tu ntfy por `127.0.0.1:2586` (sin pasar por Caddy): así el aviso de "Caddy caído" o "TLS vencido" también llega por tu servidor.
@@ -167,6 +170,6 @@ journalctl -u ntfy-report -n 20                  # últimas ejecuciones
 sudo systemctl disable --now ntfy-report.timer   # desactivar
 ```
 
-32 reportes al día por destino: por debajo del límite de 250/día de ntfy.sh gratis.
+32 envíos al día a cada destino (el reporte completo a tu ntfy, el latido a ntfy.sh): por debajo del límite de 250/día de ntfy.sh gratis.
 
 `ntfy` `monitoring` `systemd-timer` `healthcheck`

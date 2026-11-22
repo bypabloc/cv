@@ -16,13 +16,15 @@ claude plugin install session-handoff@bypabloc-agents
 claude plugin list   # comprobar
 ```
 
-| Agente | Instalación |
+Versiones mínimas **[doc]** según el [README del plugin](https://github.com/bypabloc/agent-plugin-session-handoff#readme); las que probé están en el [índice](README.md), sección «Probado con».
+
+| Agente (mínimo) | Instalación |
 | :-- | :-- |
 | Codex ≥ 0.171 | `codex plugin marketplace add bypabloc/agent-plugins` · `codex plugin add session-handoff@bypabloc-agents` · `/hooks` para confiar |
 | Antigravity (`agy` ≥ 1.5.4) | `agy plugin install https://github.com/bypabloc/agent-plugin-session-handoff` |
 | OpenCode V2 ≥ 2.3 | En `opencode.json`: `"plugins": ["@bypabloc/session-handoff@git+https://github.com/bypabloc/agent-plugin-session-handoff.git"]` |
 
-En Claude Code requiere la versión 2.1.287 o posterior y no necesita Python ni Node. En Codex y Antigravity corre como `dist/hook.mjs` con Node 20 o superior; en OpenCode corre en proceso, sin instalar nada. Además de la compactación sin resumen de este capítulo, trae el resto del sistema de la guía: reinyecta el handoff al iniciar, reanudar y compactar ([cap. 03](03-handoff-en-disco.md)), no deja cerrar el turno mientras quede un `Next step`, rechaza la pregunta al usuario sin un `blocked` válido y pide anotar el hash de cada commit en `PROGRESS.md`. En Claude Code, además, muestra fase, ETA y `ctx %` en una banda sobre el prompt. Las categorías de `blocked`, la carpeta de specs y el texto de cierre se ajustan en `.claude/session-handoff.json`.
+En Claude Code requiere la versión 2.1.287 o posterior **[doc]** y no necesita Python ni Node. En Codex y Antigravity corre como `dist/hook.mjs` con Node 20 o superior **[doc]**; en OpenCode corre en proceso, sin instalar nada. Además de la compactación sin resumen de este capítulo, trae el resto del sistema de la guía: reinyecta el handoff al iniciar, reanudar y compactar ([cap. 03](03-handoff-en-disco.md)), no deja cerrar el turno mientras quede un `Next step`, rechaza la pregunta al usuario sin un `blocked` válido y pide anotar el hash de cada commit en `PROGRESS.md`. En Claude Code, además, muestra fase, ETA y `ctx %` en una banda sobre el prompt. Las categorías de `blocked`, la carpeta de specs y el texto de cierre se ajustan en `.claude/session-handoff.json`.
 
 Fuera de Claude Code no se portan la compactación sin resumen (en OpenCode se marca y se reinyecta tras la compactación nativa), el spinner ni la banda. El detalle por agente está en su README.
 
@@ -30,7 +32,7 @@ El resto del capítulo arma la pieza de compactación desde cero, para entenderl
 
 ### Requisitos
 
-- Claude Code **2.1.287 o posterior** (plugins con módulo TypeScript, acceso anticipado).
+- Claude Code **2.1.287 o posterior** (plugins con módulo TypeScript, acceso anticipado). **[doc]**
 - Un handoff con vínculo por sesión ([cap. 03](03-handoff-en-disco.md)): `<repo>/tmp/handoff/.sessions/<session_id>` contiene el nombre del trabajo y `<repo>/tmp/handoff/<trabajo>/PROGRESS.md` existe.
 - `git` en el `PATH`.
 

@@ -11,8 +11,8 @@
 - **Qué obtienes:** `https://ntfy.tu-dominio.com`, privado (usuario y token), con TLS de Let's Encrypt renovado solo.
 - **Qué necesitas:** una VM Ubuntu 24.04 con IP pública (cualquier proveedor), un dominio y acceso a su DNS.
 - **Cómo publicas:** `curl -H "Authorization: Bearer $TOKEN" -d "Hola" https://ntfy.tu-dominio.com/alertas`.
-- **Respaldo:** ntfy.sh gratis recibe el aviso de falla si tu servidor cae.
-- **Monitoreo:** el servidor envía cada 45 min su estado (servicios, RAM, disco, días de TLS).
+- **Monitoreo:** el servidor envía cada 45 min su estado completo a tu ntfy (servicios, RAM, disco, días de TLS).
+- **Respaldo:** ntfy.sh gratis recibe en cada ciclo solo un latido sin métricas (`OK` o `FALLO`, 32 al día): si tu ntfy falla, el aviso llega igual; si la VM muere, la falta de latido es la alarma.
 
 ---
 

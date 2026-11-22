@@ -60,10 +60,14 @@ sudo apt-get update && sudo apt-get install --only-upgrade ntfy caddy
 | `/etc/ntfy-report.env` | Report token (secret) |
 
 ```bash
-ssh mi-vm 'sudo tar czf - /var/lib/ntfy/user.db /etc/ntfy /etc/caddy/Caddyfile /etc/ntfy-report.env' > ntfy-respaldo-$(date +%F).tgz
+( umask 077   # the backup file is created with 600 permissions
+  ssh mi-vm 'sudo tar czf - /var/lib/ntfy/user.db /etc/ntfy /etc/caddy/Caddyfile /etc/ntfy-report.env' \
+    > ntfy-respaldo-$(date +%F).tgz )
 ```
 
-The message cache (24 h) does not need a backup.
+- **The backup is a secret:** `user.db` holds users and tokens, and `/etc/ntfy-report.env` the report token. Keep it at `600` permissions and store it somewhere private (or encrypted): never in a repo, a chat, a shared drive or any other place third parties can see.
+- **If you would rather not back up the report token**, remove `/etc/ntfy-report.env` from the `tar`. When restoring, revoke the old token (`sudo ntfy token list admin`, label `server-report`, then `sudo ntfy token remove admin <tk_old>`) and run `install-ntfy-report.sh` again ([chapter 10](10-reporte-de-estado.md)): since the `.env` is missing, it creates a new token with `ntfy token add`.
+- The message cache (24 h) does not need a backup.
 
 ### Move to another server
 

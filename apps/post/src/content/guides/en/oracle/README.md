@@ -12,7 +12,9 @@
 - **Free shapes:** ARM `A1.Flex` (up to 2 OCPU and 12 GB) or AMD `E2.1.Micro` (1/8 OCPU, 1 GB). A1 is usually **out of capacity**; the Micro is almost always available.
 - **The risk:** Oracle may reclaim instances whose **95th percentile CPU** stays below 20% for 7 days (if network and, on A1 only, memory also stay below 20%).
 - **The fix:** on A1, a small instance (used RAM exceeds 20%); on Micro, a lowest-priority **CPU keepalive**.
-- **Monitoring:** the VM logs its CPU every minute, computes the p95 the same way Oracle does, and sends a report to a webhook every 45 min.
+- **Monitoring:** the VM logs its CPU every minute, computes the p95 with the same method Oracle uses, and sends a report to a webhook every 45 min.
+
+> **Keepalive warning:** it is artificial load and sits in a **gray area** under Oracle's terms. Neither the [Always Free resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm) page nor the [Free Tier FAQ](https://www.oracle.com/cloud/free/faq/) explicitly allows or forbids it, and the FAQ warns that failing to comply with the [Cloud Services Agreement](https://www.oracle.com/contracts/docs/cloud_csa_online_v062223_us_eng.pdf) may result in the suspension or termination of the account. Fine for side projects; **do not use it in production**.
 
 Works for any lightweight service: a bot, a small API, a notification server, a proxy, a cron job.
 
@@ -42,6 +44,7 @@ Works for any lightweight service: a bot, a small API, a notification server, a 
 - **Example values:** IP `203.0.113.10` (documentation range), region `sa-santiago-1`, project name `my-vm`. Replace them with your own.
 - **Placeholders:** `<TENANCY_OCID>`, `<USER_OCID>`, `<FINGERPRINT>`. OCIDs are not secrets; the private API key is.
 - **Terminal:** Linux or WSL2 with `bash`, `curl`, `jq`, and `uv` (or `pipx`).
+- **Evidence:** **[judgment]** marks reasoning or a comparison without enough measurement to state it as fact.
 - **Data as of:** October 2026. Chapters link to the official source where one exists.
 
 `oracle-cloud` `always-free` `oci-cli` `vm` `self-hosting`

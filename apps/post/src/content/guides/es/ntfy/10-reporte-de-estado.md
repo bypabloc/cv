@@ -13,7 +13,7 @@ El servidor se revisa a sí mismo cada 45 min y envía el resultado a tu ntfy **
 ```
 ntfy OK (16:43)
 CPU 0% (load 0.00 0.00 0.01) · RAM 409/954 MB (42%) · swap 0 MB · disco 8%
-ntfy, caddy y cron activos · TLS 89 días · encendido 45 minutes
+ntfy, caddy y cron activos · TLS 89 días · encendido 45 min
 ```
 
 - **Desde el servidor:** no depende de que tu PC esté encendida y ve datos internos.
@@ -80,7 +80,7 @@ fi
 reboot=""; [ -f /var/run/reboot-required ] && reboot=" · requiere reinicio"
 now=$(TZ="$TZ_REPORT" date '+%H:%M')
 body="CPU ${cpu}% (load ${load}) · RAM ${mem_used}/${mem_total} MB (${mem_pct}%) · swap ${swap_used} MB · disco ${disk_pct}%
-ntfy, caddy y cron activos · TLS ${tls} días · encendido $(uptime -p | sed 's/^up //')${reboot}"
+ntfy, caddy y cron activos · TLS ${tls} días · encendido $(awk '{s=int($1); d=int(s/86400); h=int(s%86400/3600); m=int(s%3600/60); if (d) printf "%d d ", d; if (h) printf "%d h ", h; printf "%d min", m}' /proc/uptime)${reboot}"
 
 if [ ${#fails[@]} -eq 0 ]; then
   title="ntfy OK ($now)"; tags="white_check_mark"; prio="low"

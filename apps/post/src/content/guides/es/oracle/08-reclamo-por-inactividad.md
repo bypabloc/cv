@@ -32,7 +32,7 @@ Texto exacto de [Always Free Resources](https://docs.oracle.com/en-us/iaas/Conte
 | Estrategia | Aplica a | Cómo | Evaluación |
 | :-- | :-- | :-- | :-- |
 | **Instancia chica** | A1 | 1 OCPU y 1 GB: el uso normal (~400 MB) supera el 20 % de RAM | Limpia, sin carga artificial. **La mejor** |
-| **Keepalive de CPU** | Micro (y A1 si se quiere) | Cron que usa CPU poco más de un minuto cada pocos minutos | Funciona; es carga artificial (zona gris frente a los términos) |
+| **Keepalive de CPU** | Micro (y A1 si se quiere) | Cron que usa CPU poco más de un minuto cada 10 minutos | Funciona; es carga artificial (zona gris frente a los términos) |
 | Tráfico de red | Ambas | Generar tráfico sostenido | Desperdicia ancho de banda; descartada |
 
 ### El keepalive (Micro)

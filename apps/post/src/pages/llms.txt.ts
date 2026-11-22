@@ -30,7 +30,8 @@ export const GET: APIRoute = async ({ site }) => {
     ...sections,
     '## Optional',
     '',
-    `- [Full content](${origin}/llms-full.txt): every guide (es and en) in a single markdown file`,
+    `- [Full content (es)](${origin}/llms-full.txt): every Spanish guide in a single markdown file`,
+    `- [Full content (en)](${origin}/en/llms-full.txt): every English guide in a single markdown file`,
     '',
   ].join('\n')
   return new Response(body, {
